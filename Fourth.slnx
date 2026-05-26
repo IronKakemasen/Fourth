@@ -1,0 +1,9 @@
+<Solution>
+  <Configurations>
+    <Platform Name="x64" />
+  </Configurations>
+  <Folder Name="/ソリューション項目/">
+    <File Path=".editorconfig" />
+  </Folder>
+  <Project Path="Fourth.vcxproj" Id="614249c4-cbda-4ccd-82dc-9d4d033433a4" />
+</Solution>
