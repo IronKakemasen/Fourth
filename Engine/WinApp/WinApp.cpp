@@ -13,5 +13,5 @@ WinApp::WinApp(uint32_t width_, uint32_t height_, LPCWSTR windowName_)
 
 WinApp::~WinApp()
 {
-	windowContext->Finalize();
+	windowContext->Finalize(WindowContext::AccessKey{});
 }

@@ -14,7 +14,7 @@ public:
 	};
 
 	WindowContext(AccessKey accessKey_, uint32_t width_, uint32_t height_, LPCWSTR windowName_);
-	void Finalize();
+	void Finalize(AccessKey accessKey_);
 
 private:
 

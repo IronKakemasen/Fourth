@@ -1,15 +1,181 @@
 #pragma once
 
+struct Matrix4;
 
 struct Vector3
 {
-	//保管用
 	DirectX::XMFLOAT3 data;
 
+	//正規化
+	inline Vector3 GetNormalize()const
+	{
+		DirectX::XMVECTOR v = DirectX::XMLoadFloat3(&data);
+		DirectX::XMVECTOR lengthSqVector = DirectX::XMVector3LengthSq(v);
 
-	Vector3();
-	Vector3(float x_, float y_, float z_);
-	Vector3(float entries_[3]);
+		if (DirectX::XMVector3LessOrEqual(lengthSqVector, DirectX::XMVectorZero()))
+		{
+			return Vector3(0.0f, 0.0f, 0.0f);
+		}
+
+		Vector3 normalized;
+		DirectX::XMStoreFloat3(&normalized.data, DirectX::XMVector3Normalize(v));
+
+		return normalized;
+	}
+
+	inline float Length()const
+	{
+		DirectX::XMVECTOR v = DirectX::XMLoadFloat3(&data);
+		DirectX::XMVECTOR lengthSqVector = DirectX::XMVector3LengthSq(v);
+
+		if (DirectX::XMVector3LessOrEqual(lengthSqVector, DirectX::XMVectorZero()))
+		{
+			return 0.0f;
+		}
+
+		return DirectX::XMVectorGetX(DirectX::XMVector3Length(v));
+	}
+
+	//内積
+	inline float GetCos(const Vector3 other_)const
+	{
+		DirectX::XMVECTOR v1 = DirectX::XMLoadFloat3(&data);
+		DirectX::XMVECTOR v2 = DirectX::XMLoadFloat3(&other_.data);
+
+		return DirectX::XMVectorGetX(DirectX::XMVector3Dot(v1, v2));	
+	}
+
+	//外積
+	inline Vector3 GetCross(const Vector3 other_)const
+	{
+		DirectX::XMVECTOR v1 = DirectX::XMLoadFloat3(&data);
+		DirectX::XMVECTOR v2 = DirectX::XMLoadFloat3(&other_.data);
+
+		Vector3 cross;
+		DirectX::XMStoreFloat3(&cross.data, DirectX::XMVector3Cross(v1, v2));
+
+		return cross;
+	}
+
+	//長さ
+	inline float GetNorm()const
+	{
+		DirectX::XMVECTOR v = DirectX::XMLoadFloat3(&data);
+
+		return DirectX::XMVectorGetX(DirectX::XMVector3Length(v));
+	}
+
+	inline float LengthSq()const
+	{
+		DirectX::XMVECTOR v = DirectX::XMLoadFloat3(&data);
+		DirectX::XMVECTOR lengthSqVector = DirectX::XMVector3LengthSq(v);
+
+		return DirectX::XMVectorGetX(lengthSqVector);
+	}
+
+	//長さ比較return [0] or [-] or [+] 
+	inline int LengthComparison(const Vector3 rVec_)const
+	{
+		float subtractResult = LengthSq() - rVec_.LengthSq();
+
+		return (subtractResult > 0) - (subtractResult < 0);
+	}
+
+	//長さ比較（実数値）
+	inline int LengthComparison(float const num_)const
+	{
+		float subtractResult = LengthSq() - (num_ * num_);
+
+		return (subtractResult > 0) - (subtractResult < 0);
+	}
+
+
+	inline Vector3() : data(0.0f, 0.0f, 0.0f) {}
+
+	inline Vector3(float x_, float y_, float z_) : data(x_, y_, z_) {}
+
+	inline Vector3(float entries_[3]) :data(entries_[0], entries_[1], entries_[2]) {}
+
+	inline Vector3 operator+(const Vector3 other_)
+	{
+		//保管用のデータを、計算用データに入れ替える
+		DirectX::XMVECTOR v1 = DirectX::XMLoadFloat3(&data);
+		DirectX::XMVECTOR v2 = DirectX::XMLoadFloat3(&other_.data);
+
+		//simd命令でxyzを同時に足し算する
+		DirectX::XMVECTOR resultvec = DirectX::XMVectorAdd(v1, v2);
+		
+		//計算結果を再びXMFloat3に戻す
+		Vector3 result;
+		DirectX::XMStoreFloat3(&result.data, resultvec);
+
+		return result;
+	}
+
+	inline Vector3 operator-(const Vector3 other_)
+	{
+		//保管用のデータを、計算用データに入れ替える
+		DirectX::XMVECTOR v1 = DirectX::XMLoadFloat3(&data);
+		DirectX::XMVECTOR v2 = DirectX::XMLoadFloat3(&other_.data);
+
+		//simd命令でxyzを同時に引き算する
+		DirectX::XMVECTOR resultvec = DirectX::XMVectorSubtract(v1, v2);
+
+		//計算結果を再びXMFloat3に戻す
+		Vector3 result;
+		DirectX::XMStoreFloat3(&result.data, resultvec);
+
+		return result;
+	}
+
+	inline Vector3 operator*(const float num_)
+	{
+		//保管用のデータを、計算用データに入れ替える
+		DirectX::XMVECTOR v = DirectX::XMLoadFloat3(&data);
+
+		//計算結果を再びXMFloat3に戻す
+		Vector3 result;
+		DirectX::XMStoreFloat3(&result.data, DirectX::XMVectorScale(v,num_));
+
+		return result;
+	}
+
+	inline Vector3& operator+=(const Vector3 other_)
+	{
+		//保管用のデータを、計算用データに入れ替える
+		DirectX::XMVECTOR v1 = DirectX::XMLoadFloat3(&data);
+		DirectX::XMVECTOR v2 = DirectX::XMLoadFloat3(&other_.data);
+
+		//simd命令でxyzを同時に足し算する
+		DirectX::XMVECTOR resultvec = DirectX::XMVectorAdd(v1, v2);
+
+		//計算結果を再びXMFloat3に戻す
+		DirectX::XMStoreFloat3(&data, resultvec);
+
+		return *this;
+	}
+
+	inline Vector3& operator-=(const Vector3 other_) 
+	{
+		//保管用のデータを、計算用データに入れ替える
+		DirectX::XMVECTOR v1 = DirectX::XMLoadFloat3(&data);
+		DirectX::XMVECTOR v2 = DirectX::XMLoadFloat3(&other_.data);
+
+		//simd命令でxyzを同時に足し算する
+		DirectX::XMVECTOR resultvec = DirectX::XMVectorSubtract(v1, v2);
+
+		//計算結果を再びXMFloat3に戻す
+		DirectX::XMStoreFloat3(&data, resultvec);
+
+		return *this;
+	}
+
+	Vector3 GetMultiply(Matrix4 const& other) const;
 
 };
+
+inline Vector3 operator*(const float num_,Vector3 vec_)
+{
+	return vec_ * num_;
+}
 
