@@ -192,6 +192,8 @@
     </ClCompile>
     <ClCompile Include="Engine\Utility\StringConnverter\StringConverter.cpp" />
     <ClCompile Include="Engine\WinApp\WinApp.cpp" />
+    <ClCompile Include="Engine\Math\Quaternion\Quaternion.cpp" />
+    <ClCompile Include="Engine\Math\Vector\Vector2.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Engine\Core\Device\DeviceContext.h" />
@@ -222,6 +224,8 @@
     <ClInclude Include="Engine\Utility\StringConnverter\StringConverter.h" />
     <ClInclude Include="Engine\WinApp\WinApp.h" />
     <ClInclude Include="Engine\Math\Vector\Vector3.h" />
+    <ClInclude Include="Engine\Math\Quaternion\Quaternion.h" />
+    <ClInclude Include="Engine\Math\Vector\Vector2.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
