@@ -1,0 +1,56 @@
+#include "PreCompileHedder.h"
+#include "Vector2.h"
+
+float Vector2::GetMagnitutde()
+{
+	float ret_mag = sqrtf(x * x + y * y);
+	return ret_mag;
+}
+
+Vector2 Vector2::GetNormalized()
+{
+	if (x == 0.0f && y == 0.0f)
+	{
+		return { 0,0 };
+	}
+
+	float inv_mag = 1.0f / GetMagnitutde();
+
+	return { x * inv_mag ,y * inv_mag };
+}
+
+float Vector2::GetCos(Vector2 other_)
+{
+	//正規化する
+	Vector2 normalized1 = GetNormalized();
+	Vector2 normalized2 = other_.GetNormalized();
+
+	//cos(🍆角)
+	float ret_cos = normalized1.x * normalized2.x + normalized1.y * normalized2.y;
+
+	return ret_cos;
+
+}
+
+float Vector2::GetDot(Vector2 other_)
+{
+	float ret_dot = x * other_.x + y * other_.y;
+	return ret_dot;
+}
+
+
+Vector2 operator+(Vector2 const& lVec_, Vector2 const& rVec_)
+{
+	return { lVec_.x + rVec_.x,lVec_.y + rVec_.y };
+}
+
+
+Vector2 operator-(Vector2  const& lVec_, Vector2  const& rVec_)
+{
+	return { lVec_.x - rVec_.x,lVec_.y - rVec_.y };
+
+}
+Vector2 operator*(Vector2 const& dst_vec_, float const multipleNum)
+{
+	return { dst_vec_.x * multipleNum,dst_vec_.y * multipleNum };
+}
