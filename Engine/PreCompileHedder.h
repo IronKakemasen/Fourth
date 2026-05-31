@@ -25,6 +25,7 @@
 #include <time.h>
 #include <stdlib.h>
 #include <directXMath.h>
+#include <array>
 
 #pragma comment(lib,"d3d12.lib")
 #pragma comment(lib,"dxgi.lib")
@@ -36,19 +37,34 @@
 
 namespace ConstantForCalculation
 {
-	inline constexpr float kPi = 3.141592653589f;
-	inline constexpr float kInvPi = 1.0f / 3.141592653589f;
-	inline constexpr float kInv255 = 1.0f / 255.0f;
-	inline constexpr float kHalf = 0.5f;
+	constexpr float kPi = 3.141592653589f;
+	constexpr float kInvPi = 1.0f / 3.141592653589f;
+	constexpr float kInv255 = 1.0f / 255.0f;
+	constexpr float kHalf = 0.5f;
 
 }
 
 namespace ProjectConfig
 {
-	inline constexpr float kWindowWidth = 1280.0f;
-	inline constexpr float kWindowHeight = 720.0f;
-	inline constexpr float kDefaultFovY = 90.0f * 3.141592653589f / 180.0f;
-	inline const LPCWSTR kWindowTitle  = L"Fourth";
+	namespace Window
+	{
+		constexpr float kWidth = 1280.0f;
+		constexpr float kHeight = 720.0f;
+		constexpr float kDefaultFovY = 90.0f * 3.141592653589f / 180.0f;
+		inline const LPCWSTR kTitle = L"Fourth";
+	}
+
+	namespace Render
+	{
+		constexpr int kRequiredGPUBufferSum = 2;
+	}
+
+	namespace Debug
+	{
+		constexpr bool kEnableDebugLayer = true;
+		constexpr bool kEnableLeakChecker = true;
+		constexpr bool kEnablePointerValidator = true;
+	}
 }
 
 

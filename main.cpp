@@ -1,14 +1,15 @@
 #include "Engine/WinApp/WinApp.h"
+#include "Engine/Debug/RuntimeDebugger/RuntimeDebugger.h"
 
 using namespace ProjectConfig;
 
 int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 {
-	//＜ポインタ破壊などを検知するためのもの＞
-	_CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
-	_CrtSetDbgFlag(_CrtSetDbgFlag(_CRTDBG_REPORT_FLAG) | _CRTDBG_CHECK_ALWAYS_DF);
+	//デバッガー。kDebugLayer,kPointerValidator,kLeakChecker
+	RuntimeDebugger runtimeDebugger({Debug::kEnableDebugLayer,Debug::kEnablePointerValidator, Debug::kEnableDebugLayer});
 
-	WinApp winApp((UINT)kWindowWidth, (UINT)kWindowHeight, kWindowTitle);
+	//アプリケーションクラス
+	WinApp winApp((UINT)Window::kWidth, (UINT)Window::kHeight, Window::kTitle);
 
 	MSG msg = {};
 
