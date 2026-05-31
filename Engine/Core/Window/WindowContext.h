@@ -6,15 +6,10 @@ class WindowContext
 {
 public:
 
-	struct AccessKey
-	{
-	private:
-		friend class WinApp;
-		explicit AccessKey() = default;
-	};
+	struct CraftKey;
 
-	WindowContext(AccessKey accessKey_, uint32_t width_, uint32_t height_, LPCWSTR windowName_);
-	void Finalize(AccessKey accessKey_);
+	WindowContext(CraftKey craftKey_, uint32_t width_, uint32_t height_, LPCWSTR windowName_);
+	void Finalize();
 
 private:
 
@@ -35,3 +30,9 @@ private:
 LONG WINAPI ExportDump(EXCEPTION_POINTERS* exception);
 
 
+struct WindowContext::CraftKey
+{
+private:
+	friend class WinApp;
+	explicit CraftKey() = default;
+};

@@ -28,7 +28,7 @@ LRESULT CALLBACK WindowContext::WndProc(HWND hWnd_, UINT msg_, WPARAM wParam_, L
 }
 
 
-void WindowContext::Finalize(AccessKey accessKey_)
+void WindowContext::Finalize()
 {
 	//ウィンドウの登録を解除
 	if (setupParam.m_hInst)
@@ -41,7 +41,7 @@ void WindowContext::Finalize(AccessKey accessKey_)
 }
 
 
-WindowContext::WindowContext(AccessKey accessKey_, uint32_t width_, uint32_t height_, LPCWSTR windowName_)
+WindowContext::WindowContext(CraftKey craftKey_, uint32_t width_, uint32_t height_, LPCWSTR windowName_)
 {
 //#ifdef _DEBUG
 //

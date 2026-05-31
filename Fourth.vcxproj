@@ -51,7 +51,7 @@
       <PreprocessorDefinitions>_DEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
-      <AdditionalOptions>/utf-8 %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalOptions>/utf-8 /FS %(AdditionalOptions)</AdditionalOptions>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <TreatWarningAsError>true</TreatWarningAsError>
@@ -76,7 +76,7 @@
       <PreprocessorDefinitions>NDEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
-      <AdditionalOptions>/utf-8 %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalOptions>/utf-8 /FS %(AdditionalOptions)</AdditionalOptions>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <PrecompiledHeader>Use</PrecompiledHeader>
@@ -101,7 +101,6 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
     </ClCompile>
-    <ClCompile Include="Engine\WinApp\WinAppInstanceLimiter.cpp" />
     <ClCompile Include="Engine\Debug\ErrorMessageOutput\ErrorMessageOutput.cpp" />
     <ClCompile Include="External\Audio\xaudio_player_mf.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
@@ -204,7 +203,6 @@
     <ClCompile Include="Engine\Debug\RuntimeDebugger\DebugSystems\PointerValidator\PointerValidator.cpp" />
     <ClCompile Include="Engine\Debug\RuntimeDebugger\DebugSystems\RuntimeDebuggerBehavior.cpp" />
     <ClCompile Include="Engine\Debug\RuntimeDebugger\RuntimeDebugger.cpp" />
-    <ClCompile Include="Engine\Debug\RuntimeDebugger\RuntimeDebuggerInstanceLimiter.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Engine\Debug\RuntimeDebugger\DebugSystems\DebugLayer\DebugLayer.h" />
@@ -213,9 +211,7 @@
     <ClInclude Include="Engine\Core\Window\WindowContext.h" />
     <ClInclude Include="Engine\Math\Matrix\Matrix4.h" />
     <ClInclude Include="Engine\Render\kara.h" />
-    <ClInclude Include="Engine\Resource\GPUBuffer\GPUBufferPassKey.h" />
     <ClInclude Include="Engine\Resource\MeshShaderPipelineStateStream.h" />
-    <ClInclude Include="Engine\WinApp\WinAppInstanceLimiter.h" />
     <ClInclude Include="Engine\Debug\ErrorMessageOutput\ErrorMessageOutput.h" />
     <ClInclude Include="External\Audio\SoundCommon.h" />
     <ClInclude Include="External\Audio\xaudio_player_core.h" />
@@ -248,7 +244,6 @@
     <ClInclude Include="Engine\Debug\RuntimeDebugger\DebugSystems\PointerValidator\PointerValidator.h" />
     <ClInclude Include="Engine\Debug\RuntimeDebugger\DebugSystems\RuntimeDebuggerBehavior.h" />
     <ClInclude Include="Engine\Debug\RuntimeDebugger\RuntimeDebugger.h" />
-    <ClInclude Include="Engine\Debug\RuntimeDebugger\RuntimeDebuggerInstanceLimiter.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

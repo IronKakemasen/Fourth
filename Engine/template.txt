@@ -1,0 +1,13 @@
+
+TTT(const TTT&) = delete;
+TTT& operator=(const TTT&) = delete;
+TTT(TTT&&) = delete;
+TTT& operator=(TTT&&) = delete;
+
+struct TTT::Key
+{
+private:
+	friend class FRIEND;
+	explicit Key() = default;
+};
+
