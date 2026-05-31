@@ -26,6 +26,7 @@
 #include <stdlib.h>
 #include <directXMath.h>
 #include <array>
+#include <format>
 
 #pragma comment(lib,"d3d12.lib")
 #pragma comment(lib,"dxgi.lib")
@@ -61,9 +62,10 @@ namespace ProjectConfig
 
 	namespace Debug
 	{
-		constexpr bool kEnableDebugLayer = true;
-		constexpr bool kEnableLeakChecker = true;
-		constexpr bool kEnablePointerValidator = true;
+		constexpr bool k0EnableDebugLayer = true;
+		constexpr bool k1EnablePointerValidator = true;
+		constexpr bool k2EnableLeakChecker = true;
+
 	}
 }
 

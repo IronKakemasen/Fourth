@@ -2,7 +2,6 @@
 #include "GPUBufferBehavior.h"
 #include "../../Utility/StringConnverter/StringConverter.h"
 #include "ErrorMessageOutput.h"
-#include "GPUBufferPassKey.h"
 
 
 GPUBufferBehavior::GPUBufferBehavior(const CreateKey& createKey_ , std::string name_) : name(name_)

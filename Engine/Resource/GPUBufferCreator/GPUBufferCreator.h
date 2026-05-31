@@ -7,16 +7,9 @@ class GPUBufferCreator
 {
 public:
 
-	struct AccessKey
-	{
+	struct CreateKey;
 
-	private:
-
-		friend class WinApp;
-		explicit AccessKey() = default;
-	};
-
-	GPUBufferCreator(AccessKey accessKey_ , ID3D12Device8* device_);
+	GPUBufferCreator(CreateKey createKey_, ID3D12Device8* device_);
 
 
 private:
@@ -24,3 +17,13 @@ private:
 	ID3D12Device8* device;
 };
 
+
+
+struct GPUBufferCreator::CreateKey
+{
+
+private:
+
+	friend class WinApp;
+	explicit CreateKey() = default;
+};
