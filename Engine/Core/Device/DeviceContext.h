@@ -14,7 +14,6 @@ class DeviceContext
 public:
 	DeviceContext();
 
-
 private:
 	void CreateDevice();
 };
