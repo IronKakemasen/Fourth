@@ -57,7 +57,7 @@
       <TreatWarningAsError>true</TreatWarningAsError>
       <PrecompiledHeader>Use</PrecompiledHeader>
       <PrecompiledHeaderFile>PreCompileHedder.h</PrecompiledHeaderFile>
-      <AdditionalIncludeDirectories>$(ProjectDir)\Engine\Debug\ErrorMessageOutput;$(ProjectDir)\Engine\Debug\Logger;$(ProjectDir)\Engine;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)\Engine;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <ForcedIncludeFiles>PreCompileHedder.h;%(ForcedIncludeFiles)</ForcedIncludeFiles>
     </ClCompile>
     <Link>
@@ -81,7 +81,7 @@
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <PrecompiledHeader>Use</PrecompiledHeader>
       <PrecompiledHeaderFile>PreCompileHedder.h</PrecompiledHeaderFile>
-      <AdditionalIncludeDirectories>$(ProjectDir)\Engine\Debug\ErrorMessageOutput;$(ProjectDir)\Engine\Debug\Logger;$(ProjectDir)\Engine;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)\Engine;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <ForcedIncludeFiles>PreCompileHedder.h;%(ForcedIncludeFiles)</ForcedIncludeFiles>
     </ClCompile>
     <Link>
@@ -90,6 +90,9 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Engine\Resource\BufferDescriptions\TypeB\BufferDescriptionTypeB.cpp" />
+    <ClCompile Include="Engine\Resource\BufferDescriptions\TypeA\BufferDescriptionTypeA.cpp" />
+    <ClCompile Include="Engine\Core\Device\Commands\CreatGPUBuffer\CommandOfCreatingGPUBuffer.cpp" />
     <ClCompile Include="Engine\Debug\RuntimeDebugger\DebugSystems\DebugLayer\DebugLayer.cpp" />
     <ClCompile Include="Engine\Resource\GPUBuffer\ConstantBuffer\ConstantBuffer.cpp" />
     <ClCompile Include="Engine\Core\Device\DeviceContext.cpp">
@@ -205,6 +208,11 @@
     <ClCompile Include="Engine\Debug\RuntimeDebugger\RuntimeDebugger.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Engine\Resource\BufferDescriptions\TypeB\BufferDescriptionTypeB.h" />
+    <ClInclude Include="Engine\Resource\BufferDescriptions\TypeA\BufferDescriptionTypeA.h" />
+    <ClInclude Include="Engine\Resource\BufferDescriptions\BufferDescriptionBehavior.h" />
+    <ClInclude Include="Engine\Core\Device\Commands\CreatGPUBuffer\CommandOfCreatingGPUBuffer.h" />
+    <ClInclude Include="Engine\Core\Window\DumpExporter.h" />
     <ClInclude Include="Engine\Debug\RuntimeDebugger\DebugSystems\DebugLayer\DebugLayer.h" />
     <ClInclude Include="Engine\Resource\GPUBuffer\ConstantBuffer\ConstantBuffer.h" />
     <ClInclude Include="Engine\Core\Device\DeviceContext.h" />

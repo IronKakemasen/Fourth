@@ -99,9 +99,6 @@
     <ClCompile Include="Engine\WinApp\WinApp.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="Engine\WinApp\WinAppInstanceLimiter.cpp">
-      <Filter>ソース ファイル</Filter>
-    </ClCompile>
     <ClCompile Include="Engine\Math\Vector\Vector3.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
@@ -141,7 +138,13 @@
     <ClCompile Include="Engine\Debug\RuntimeDebugger\RuntimeDebugger.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="Engine\Debug\RuntimeDebugger\RuntimeDebuggerInstanceLimiter.cpp">
+    <ClCompile Include="Engine\Core\Device\Commands\CreatGPUBuffer\CommandOfCreatingGPUBuffer.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\Resource\BufferDescriptions\TypeA\BufferDescriptionTypeA.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\Resource\BufferDescriptions\TypeB\BufferDescriptionTypeB.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
   </ItemGroup>
@@ -221,9 +224,6 @@
     <ClInclude Include="Engine\Math\Vector\Vector3.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\WinApp\WinAppInstanceLimiter.h">
-      <Filter>ヘッダー ファイル</Filter>
-    </ClInclude>
     <ClInclude Include="Engine\Render\kara.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
@@ -251,9 +251,6 @@
     <ClInclude Include="Engine\Resource\GPUBuffer\GPUBufferBehavior.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\Resource\GPUBuffer\GPUBufferPassKey.h">
-      <Filter>ヘッダー ファイル</Filter>
-    </ClInclude>
     <ClInclude Include="Engine\Debug\RuntimeDebugger\DebugSystems\LeakChecker\LeakChecker.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
@@ -269,7 +266,19 @@
     <ClInclude Include="Engine\Debug\RuntimeDebugger\RuntimeDebugger.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\Debug\RuntimeDebugger\RuntimeDebuggerInstanceLimiter.h">
+    <ClInclude Include="Engine\Core\Window\DumpExporter.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Core\Device\Commands\CreatGPUBuffer\CommandOfCreatingGPUBuffer.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Resource\BufferDescriptions\BufferDescriptionBehavior.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Resource\BufferDescriptions\TypeA\BufferDescriptionTypeA.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Resource\BufferDescriptions\TypeB\BufferDescriptionTypeB.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
   </ItemGroup>

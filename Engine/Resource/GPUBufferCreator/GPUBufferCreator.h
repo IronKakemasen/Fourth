@@ -1,5 +1,5 @@
 #pragma once
-
+#include "../../Resource/BufferDescriptions/BufferDescriptionBehavior.h"
 
 class WinApp;
 
@@ -9,12 +9,13 @@ public:
 
 	struct CreateKey;
 
-	GPUBufferCreator(CreateKey createKey_, ID3D12Device8* device_);
-
+	GPUBufferCreator(CreateKey createKey_);
 
 private:
 
-	ID3D12Device8* device;
+	//引数のDescriptionに不備がないかチェックしてエラーを吐く
+	void CheckDescription(BufferDescriptionBehavior* srcDesc_);
+
 };
 
 

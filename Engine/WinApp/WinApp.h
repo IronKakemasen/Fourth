@@ -21,13 +21,12 @@ private:
 	//WinAppのインスタンスを1つに制限するためのシングルトンクラス
 	class InstanceLimiter;
 
+	//IDXGIFactory7、IDXGIAdapter4、ID3D12Device8を持っている。
+	std::unique_ptr<DeviceContext> deviceContext;
 	//ウィンドウを制御するもの
 	std::unique_ptr<WindowContext> windowContext;
 	//GPUリソースを作るもの
 	std::unique_ptr<GPUBufferCreator> gpuBufferCreator;
-	//IDXGIFactory7、IDXGIAdapter4、ID3D12Device8を持っている。
-	std::unique_ptr<DeviceContext> deviceContext;
-
 
 	//メンバー変数のインスタンス化
 	void InstantiateMemberVariables(uint32_t width_, uint32_t height_, LPCWSTR windowName_);

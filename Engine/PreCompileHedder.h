@@ -11,6 +11,8 @@
 #include <dxgi1_6.h>
 #include <dbghelp.h>
 #include <wrl/client.h>
+#include <directXMath.h>
+
 #include "../External/d3dx12/d3dx12.h"
 #include "../External/imgui/imgui.h"
 
@@ -24,9 +26,15 @@
 #include <fstream>
 #include <time.h>
 #include <stdlib.h>
-#include <directXMath.h>
 #include <array>
 #include <format>
+#include <functional>
+
+//abort()でエラーを吐いて文字列を出力する
+#include "Debug/ErrorMessageOutput/ErrorMessageOutput.h"
+//出力ウィンドウにログを出力
+#include "Debug/Logger/Logger.h"
+
 
 #pragma comment(lib,"d3d12.lib")
 #pragma comment(lib,"dxgi.lib")
