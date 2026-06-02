@@ -26,9 +26,6 @@ private:
 	static LRESULT CALLBACK WndProc(HWND hWnd_, UINT msg_, WPARAM wParam_, LPARAM lParam_);
 };
 
-//例外登録関数
-LONG WINAPI ExportDump(EXCEPTION_POINTERS* exception);
-
 
 struct WindowContext::CraftKey
 {

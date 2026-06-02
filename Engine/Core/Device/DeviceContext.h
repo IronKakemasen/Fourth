@@ -7,19 +7,26 @@ class DeviceContext
 {
 public:
 
+	//生成キー。WinAppしか許さない
 	struct CreateKey;
-	struct DevicePtrKey;
+	//GPUバッファを生成を許可するキー。デバイスは渡さず、コマンドを渡す
+	struct BufferCreationPermitKey;
 
 	DeviceContext(CreateKey createKey_);
-	ID3D12Device8* GetDevicePtr(DevicePtrKey devicePtrKey_);
 
-private:
+private:	
 
 	Microsoft::WRL::ComPtr<IDXGIFactory7> dxgiFactory = nullptr;
 	Microsoft::WRL::ComPtr<IDXGIAdapter4> useAdapter = nullptr;
 	Microsoft::WRL::ComPtr<ID3D12Device8> device = nullptr;
 
+	void CreateDXGI_Factory();
+	void FetchAdapter();
 	void CreateDevice();
+	void ShaderModelChack(D3D_SHADER_MODEL shaderModel_);
+	void IsMeshShaderSupported();
+	void SetDebugLayerFilter();
+
 };
 
 
@@ -27,15 +34,17 @@ private:
 struct DeviceContext::CreateKey
 {
 private:
+
 	friend class WinApp;
+
 	explicit CreateKey() = default;
 };
 
 
-//Deviceのポインターを取得できるクラスの制限
-struct DeviceContext::DevicePtrKey
+//バッファ生成関数群を取得できるクラスの制限
+struct DeviceContext::BufferCreationPermitKey
 {
 private:
 	friend class WinApp;
-	explicit DevicePtrKey() = default;
+	explicit BufferCreationPermitKey() = default;
 };
