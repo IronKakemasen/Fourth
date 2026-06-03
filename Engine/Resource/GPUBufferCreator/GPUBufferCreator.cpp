@@ -6,7 +6,7 @@ void GPUBufferCreator::CheckDescription(BufferDescriptionBehavior* srcDesc_)
 	srcDesc_->CheckRequirementsFilled();
 }
 
-GPUBufferCreator::GPUBufferCreator(GPUBufferCreator::CreateKey createKey_)
+GPUBufferCreator::GPUBufferCreator(GPUBufferCreator::InstanceKey instanceKey_)
 {
 
 }

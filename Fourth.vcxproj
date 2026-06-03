@@ -90,8 +90,11 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="Engine\Resource\BufferDescriptions\TypeB\BufferDescriptionTypeB.cpp" />
-    <ClCompile Include="Engine\Resource\BufferDescriptions\TypeA\BufferDescriptionTypeA.cpp" />
+    <ClCompile Include="Engine\Core\Device\DeviceContextCommandGenerator\DeviceContextCommandGenerator.cpp" />
+    <ClCompile Include="Engine\Core\Device\DeviceSetupper\DeviceContextSetupper.cpp" />
+    <ClCompile Include="Engine\Core\Device\DeviceContextCommandExecutor\DeviceContextCommandExecutor.cpp" />
+    <ClCompile Include="Engine\Resource\BufferDescriptions\ColorBufferDescription\ColorBufferDescription.cpp" />
+    <ClCompile Include="Engine\Resource\BufferDescriptions\ConstantBufferDescription\ConstantBufferDescription.cpp" />
     <ClCompile Include="Engine\Core\Device\Commands\CreatGPUBuffer\CommandOfCreatingGPUBuffer.cpp" />
     <ClCompile Include="Engine\Debug\RuntimeDebugger\DebugSystems\DebugLayer\DebugLayer.cpp" />
     <ClCompile Include="Engine\Resource\GPUBuffer\ConstantBuffer\ConstantBuffer.cpp" />
@@ -208,10 +211,13 @@
     <ClCompile Include="Engine\Debug\RuntimeDebugger\RuntimeDebugger.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Engine\Resource\BufferDescriptions\TypeB\BufferDescriptionTypeB.h" />
-    <ClInclude Include="Engine\Resource\BufferDescriptions\TypeA\BufferDescriptionTypeA.h" />
-    <ClInclude Include="Engine\Resource\BufferDescriptions\BufferDescriptionBehavior.h" />
     <ClInclude Include="Engine\Core\Device\Commands\CreatGPUBuffer\CommandOfCreatingGPUBuffer.h" />
+    <ClInclude Include="Engine\Core\Device\DeviceContextCommandGenerator\DeviceContextCommandGenerator.h" />
+    <ClInclude Include="Engine\Core\Device\DeviceSetupper\DeviceContextSetupper.h" />
+    <ClInclude Include="Engine\Core\Device\DeviceContextCommandExecutor\DeviceContextCommandExecutor.h" />
+    <ClInclude Include="Engine\Resource\BufferDescriptions\ColorBufferDescription\ColorBufferDescription.h" />
+    <ClInclude Include="Engine\Resource\BufferDescriptions\ConstantBufferDescription\ConstantBufferDescription.h" />
+    <ClInclude Include="Engine\Resource\BufferDescriptions\BufferDescriptionBehavior.h" />
     <ClInclude Include="Engine\Core\Window\DumpExporter.h" />
     <ClInclude Include="Engine\Debug\RuntimeDebugger\DebugSystems\DebugLayer\DebugLayer.h" />
     <ClInclude Include="Engine\Resource\GPUBuffer\ConstantBuffer\ConstantBuffer.h" />

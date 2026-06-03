@@ -1,49 +1,105 @@
 #include "PreCompileHedder.h"
 #include "CommandOfCreatingGPUBuffer.h"
+#include "../../DeviceContextCommandGenerator/DeviceContextCommandGenerator.h"
+#include "../../../../Resource/BufferDescriptions/ConstantBufferDescription/ConstantBufferDescription.h"
+#include "../../../../Resource/BufferDescriptions/ColorBufferDescription/ColorBufferDescription.h"
+ 
 
-#include "../../../../Resource/BufferDescriptions/TypeA/BufferDescriptionTypeA.h"
-#include "../../../../Resource/BufferDescriptions/TypeB/BufferDescriptionTypeB.h"
-
-[[nodiscard]] Microsoft::WRL::ComPtr<ID3D12Resource> CommandOfCreatingGPUBuffer::CreateResourceTypeA(ID3D12Device8* device_, const BufferDescriptionTypeA& typeA_Desc_)
+[[nodiscard]] Microsoft::WRL::ComPtr<ID3D12Resource> DeviceContext::CommandGenerator::CreatingGPUBuffer::CreateConstantBuffer
+	( ID3D12Device8* device_ , const ConstantBufferDescription& desc_)
 {
 	Microsoft::WRL::ComPtr<ID3D12Resource> ret_resource;
-	
-	//頂点リソースのヒープ設定
-	//upLoadHEapを使う
-	D3D12_HEAP_PROPERTIES uploadHeapProperties{};
-	uploadHeapProperties.Type = D3D12_HEAP_TYPE_UPLOAD;
-	//頂点リソースの設定
+	//リソースの設定
 	D3D12_RESOURCE_DESC resourceDesc{};
+	//リソースのヒープ設定
+	D3D12_HEAP_PROPERTIES heapProperties{};
+
 	//バッファリソース。テクスチャの場合はまた別の設定をする
 	resourceDesc.Dimension = D3D12_RESOURCE_DIMENSION_BUFFER;
-	//resourceDesc.Dimension = D3D12_RESOURCE_DIMENSION_UNKNOWN;
-
 	//リソースのサイズ。
-	resourceDesc.Width = typeA_Desc_.sizeInByte;
-	//バッファの場合はこれらを1にする決まり
+	resourceDesc.Width = (desc_.sizeInByte + 255) & ~255;
+	//DimensionがBufferの場合はこれらを1にする決まり
 	resourceDesc.Height = 1;
 	resourceDesc.DepthOrArraySize = 1;
 	resourceDesc.MipLevels = 1;
 	resourceDesc.SampleDesc.Count = 1;
-	//決まり2
+	//行優先レイアウト
 	resourceDesc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
 
-	//実際に頂点リソースを作る
-	[[maybe_unused]] HRESULT hr = device_->CreateCommittedResource(&uploadHeapProperties, D3D12_HEAP_FLAG_NONE,
-		&resourceDesc, D3D12_RESOURCE_STATE_GENERIC_READ, nullptr,
+	//CPUから書き込みもできるが遅い
+	heapProperties.Type = D3D12_HEAP_TYPE_UPLOAD;
+
+
+	//[ 生成 ]
+	[[maybe_unused]] HRESULT hr = device_->CreateCommittedResource(
+		&heapProperties,
+		D3D12_HEAP_FLAG_NONE,
+		&resourceDesc, 
+		D3D12_RESOURCE_STATE_GENERIC_READ,
+		nullptr,
 		IID_PPV_ARGS(&ret_resource));
-	assert(SUCCEEDED(hr));
+	
+	ErrorMessageOutput::Assert::DetectError(SUCCEEDED(hr), "Resource : TypeA の生成に失敗", "CommandOfCreatingGPUBuffer.cpp");
 
 	return ret_resource;
 
 }
 
-[[nodiscard]] Microsoft::WRL::ComPtr<ID3D12Resource> CreateResourceTypeB(ID3D12Device8* device_,
-	const BufferDescriptionTypeB& typeB_Desc_)
+[[nodiscard]] Microsoft::WRL::ComPtr<ID3D12Resource> DeviceContext::CommandGenerator::CreatingGPUBuffer::CreateColorBuffer
+	( ID3D12Device8* device_ , const ColorBufferDescription& desc_)
 {
 	Microsoft::WRL::ComPtr<ID3D12Resource> ret_resource;
+	D3D12_RESOURCE_DESC resourceDesc{};
 
+	//幅
+	resourceDesc.Width = UINT(desc_.width);
+	//高さ
+	resourceDesc.Height = UINT(desc_.height);
+	//mipmapの数
+	resourceDesc.MipLevels = 1;
+	//奥行orTextureの配列数
+	resourceDesc.DepthOrArraySize = 1;
+	//Textureのformat
+	resourceDesc.Format = desc_.format;
+	//サンプリングカウント。１固定
+	resourceDesc.SampleDesc.Count = 1;
+	//テクスチャの次元数。2
+	resourceDesc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
+	resourceDesc.Flags = desc_.flag;
+	resourceDesc.Layout = D3D12_TEXTURE_LAYOUT_UNKNOWN;
+
+	//[ 利用するHeapの設定 ]
+	D3D12_HEAP_PROPERTIES heapProperties{};
+	//vramの奥
+	heapProperties.Type = D3D12_HEAP_TYPE_DEFAULT;
+
+	// Clear 値を正しく渡す（CreateRenderTargetView と同じフォーマット）
+	D3D12_CLEAR_VALUE clearValue{};
+	clearValue.Format = desc_.format;
+	for (int i = 0;i < 4;++i)clearValue.Color[i] = desc_.clearColor[i];
+
+	// [ 生成 ]
+	[[maybe_unused]]HRESULT hr = device_->CreateCommittedResource(
+		&heapProperties,									//Heapの設定
+		D3D12_HEAP_FLAG_NONE,								//Heapの特殊な設定、特になし
+		&resourceDesc,										//Resourceの設定
+		desc_.initialState,									//初期ステート
+		&clearValue,										//Clear最適値。使わないのでnullptr
+		IID_PPV_ARGS(ret_resource.GetAddressOf()));			//作成するresourceへのポインタのポインタ
+
+	ErrorMessageOutput::Assert::DetectError(SUCCEEDED(hr), "Resource : TypeB の生成に失敗", "CommandOfCreatingGPUBuffer.cpp");
 
 
 	return ret_resource;
+}
+
+
+DeviceContext::CommandGenerator::CreatingGPUBuffer::CreatingGPUBuffer(DeviceContext::CommandGenerator::GenerateKey generateKey_)
+{
+
+}
+
+DeviceContext::CommandGenerator::CreatingGPUBuffer::~CreatingGPUBuffer()
+{
+
 }

@@ -2,8 +2,8 @@
 #include "../BufferDescriptionBehavior.h"
 
 
-//CBやVB、IBなどの単純なバッファ
-struct BufferDescriptionTypeA final : public BufferDescriptionBehavior
+//CBバッファ
+struct ConstantBufferDescription final : public BufferDescriptionBehavior
 {
 	UINT sizeInByte{};
 

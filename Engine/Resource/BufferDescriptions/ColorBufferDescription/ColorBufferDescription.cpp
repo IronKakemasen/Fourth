@@ -1,7 +1,7 @@
 #include "PreCompileHedder.h"
-#include "BufferDescriptionTypeB.h"
+#include "ColorBufferDescription.h"
 
-void BufferDescriptionTypeB::CheckRequirementsFilled()
+void ColorBufferDescription::CheckRequirementsFilled()
 {
 	std::string errorMess{};
 
