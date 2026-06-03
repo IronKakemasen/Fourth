@@ -32,12 +32,12 @@ void WinApp::InstantiateMemberVariables(uint32_t width_, uint32_t height_, LPCWS
 	ID3D12Device8* devicePtr = nullptr;
 
 	//deviceContextクラスのインスタンス化
-	deviceContext.reset(new DeviceContext(DeviceContext::CreateKey{}));
+	deviceContext.reset(new DeviceContext(DeviceContext::InstanceKey{}));
 
 	//windowContextのインスタンス化
 	windowContext.reset(new WindowContext(WindowContext::CraftKey{}, width_, height_, windowName_));
 
 	//gpuBufferCreatorクラスのインスタンス化
-	//gpuBufferCreator.reset(new GPUBufferCreator(GPUBufferCreator::CreateKey{}, devicePtr));
+	//gpuBufferCreator.reset(new GPUBufferCreator(GPUBufferCreator::InstanceKey{}, devicePtr));
 
 }

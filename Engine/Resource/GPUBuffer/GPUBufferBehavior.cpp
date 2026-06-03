@@ -3,7 +3,7 @@
 #include "../../Utility/StringConnverter/StringConverter.h"
 
 
-GPUBufferBehavior::GPUBufferBehavior(const CreateKey& createKey_ , std::string name_) : name(name_)
+GPUBufferBehavior::GPUBufferBehavior(const InstanceKey& instanceKey , std::string name_) : name(name_)
 {
 
 }
@@ -16,7 +16,7 @@ ID3D12Resource& GPUBufferBehavior::GetResource(const BufferAccessKey& bufferAcce
 	return *resources[index_].Get();
 }
 
-void GPUBufferBehavior::SetName(const CreateKey& createKey_)
+void GPUBufferBehavior::SetName(const InstanceKey& instanceKey)
 {
 	for (size_t i = 0; i < resources.size(); ++i)
 	{

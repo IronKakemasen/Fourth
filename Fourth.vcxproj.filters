@@ -141,10 +141,19 @@
     <ClCompile Include="Engine\Core\Device\Commands\CreatGPUBuffer\CommandOfCreatingGPUBuffer.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="Engine\Resource\BufferDescriptions\TypeA\BufferDescriptionTypeA.cpp">
+    <ClCompile Include="Engine\Resource\BufferDescriptions\ConstantBufferDescription\ConstantBufferDescription.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="Engine\Resource\BufferDescriptions\TypeB\BufferDescriptionTypeB.cpp">
+    <ClCompile Include="Engine\Resource\BufferDescriptions\ColorBufferDescription\ColorBufferDescription.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\Core\Device\DeviceContextCommandExecutor\DeviceContextCommandExecutor.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\Core\Device\DeviceSetupper\DeviceContextSetupper.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\Core\Device\DeviceContextCommandGenerator\DeviceContextCommandGenerator.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
   </ItemGroup>
@@ -269,16 +278,25 @@
     <ClInclude Include="Engine\Core\Window\DumpExporter.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\Core\Device\Commands\CreatGPUBuffer\CommandOfCreatingGPUBuffer.h">
-      <Filter>ヘッダー ファイル</Filter>
-    </ClInclude>
     <ClInclude Include="Engine\Resource\BufferDescriptions\BufferDescriptionBehavior.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\Resource\BufferDescriptions\TypeA\BufferDescriptionTypeA.h">
+    <ClInclude Include="Engine\Resource\BufferDescriptions\ConstantBufferDescription\ConstantBufferDescription.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\Resource\BufferDescriptions\TypeB\BufferDescriptionTypeB.h">
+    <ClInclude Include="Engine\Resource\BufferDescriptions\ColorBufferDescription\ColorBufferDescription.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Core\Device\DeviceContextCommandExecutor\DeviceContextCommandExecutor.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Core\Device\DeviceSetupper\DeviceContextSetupper.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Core\Device\DeviceContextCommandGenerator\DeviceContextCommandGenerator.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Core\Device\Commands\CreatGPUBuffer\CommandOfCreatingGPUBuffer.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
   </ItemGroup>

@@ -7,9 +7,9 @@ class GPUBufferCreator
 {
 public:
 
-	struct CreateKey;
+	struct InstanceKey;
 
-	GPUBufferCreator(CreateKey createKey_);
+	GPUBufferCreator(InstanceKey instanceKey_);
 
 private:
 
@@ -20,11 +20,11 @@ private:
 
 
 
-struct GPUBufferCreator::CreateKey
+struct GPUBufferCreator::InstanceKey
 {
 
 private:
 
 	friend class WinApp;
-	explicit CreateKey() = default;
+	explicit InstanceKey() = default;
 };

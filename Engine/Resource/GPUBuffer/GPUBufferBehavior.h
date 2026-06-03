@@ -3,12 +3,12 @@
 
 struct GPUBufferBehavior
 {
-	struct CreateKey;
+	struct InstanceKey;
 	struct BufferAccessKey;
 
-	GPUBufferBehavior(const CreateKey& createKey_ , std::string name_);
+	GPUBufferBehavior(const InstanceKey& instanceKey , std::string name_);
 	ID3D12Resource& GetResource( const BufferAccessKey& bufferAccessKey_ , int index_);
-	void SetName(const CreateKey& createKey_);
+	void SetName(const InstanceKey& instanceKey);
 
 private:
 
@@ -21,13 +21,13 @@ private:
 class GPUBufferCreator;
 class GpuBufferManager;
 
-struct GPUBufferBehavior::CreateKey
+struct GPUBufferBehavior::InstanceKey
 {
 private:
 
 	friend class GPUBufferCreator;
 
-	explicit CreateKey() = default;
+	explicit InstanceKey() = default;
 };
 
 struct GPUBufferBehavior::BufferAccessKey
