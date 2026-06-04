@@ -29,7 +29,7 @@ public:
 		std::string convName = NameConverter<BufferType>(name_);
 
 		//生成
-		return std::move(CallSpecificCreator<BufferType , DescType>(desc_, convName, std::move(resource1), std::move(resource2)));
+		return std::move(CreateSpecificBuffer<BufferType , DescType>(desc_, convName, std::move(resource1), std::move(resource2)));
 	}
 
 
@@ -38,11 +38,6 @@ private:
 	//引数のDescriptionに不備がないかチェックしてエラーを吐く
 	void CheckDescription(const BufferDescriptionBehavior& srcDesc_);
 
-	////コンスタントバッファ生成
-	//[[nodiscard]] std::unique_ptr<ConstantBuffer> CreateConstantBuffer(const ConstantBufferDescription& desc_, const std::string& name_);
-	////カラーバッファ生成
-	//[[nodiscard]] std::unique_ptr<ColorBuffer> CreateColorBuffer(const ColorBufferDescription& desc_, const std::string& name_);
-
 	//コマンド群
 	std::function<Microsoft::WRL::ComPtr<ID3D12Resource>(const ColorBufferDescription&)> createColorBuffer;
 	std::function<Microsoft::WRL::ComPtr<ID3D12Resource>(const ConstantBufferDescription&)> createConstantBuffer;
@@ -50,7 +45,7 @@ private:
 
 	//ヘルパー関数
 	template <typename BufferType, typename DescType>
-	std::unique_ptr<BufferType> CallSpecificCreator(const DescType& desc_, const std::string& name_, Microsoft::WRL::ComPtr<ID3D12Resource> resource1_ , Microsoft::WRL::ComPtr<ID3D12Resource> resource2_);
+	std::unique_ptr<BufferType> CreateSpecificBuffer(const DescType& desc_, const std::string& name_, Microsoft::WRL::ComPtr<ID3D12Resource>&& resource1_ , Microsoft::WRL::ComPtr<ID3D12Resource>&& resource2_);
 
 	template <typename BufferType>
 	std::string NameConverter(const std::string& name_) = delete;
