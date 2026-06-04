@@ -2,12 +2,28 @@
 
 class WinApp;
 class GPUBufferCreator;
+class DeviceContextCommandBehavior;
+
+struct ConstantBufferDescription;
+struct ColorBufferDescription;
 
 
 class DeviceContext
 {
 public:
 
+	enum CommandType
+	{
+		//GPUリソース生成
+		kCreatingGPU_Buffer,
+
+
+		kCount
+	};
+
+
+	//コマンド生成クラス
+	class CommandGenerator;
 	//生成キー。WinAppしか許さない
 	struct InstanceKey;
 	//デバイスにアクセスするのを許可するキー
@@ -16,12 +32,14 @@ public:
 	DeviceContext(InstanceKey instanceKey);
 	~DeviceContext();
 
-	//DeviceContextの中にコマンドをセット
-	void SetGPU_CreationCommands(GPUBufferCreator* gpuBufferCreator_);
+	std::function<Microsoft::WRL::ComPtr<ID3D12Resource>(const ConstantBufferDescription&)>GetGetCreateConstantBufferCommand();
+	std::function<Microsoft::WRL::ComPtr<ID3D12Resource>(const ColorBufferDescription&)>GetGetCreateColorBufferCommand();
 
-private:	
-	//コマンド生成クラス
-	class CommandGenerator;
+private:
+
+	using CommandList = std::vector<std::unique_ptr<DeviceContextCommandBehavior>>;
+	using CommandMap = std::unordered_map<CommandType, CommandList>;
+
 	//Setupper
 	class Setupper;
 	//CommandExecutor
@@ -34,11 +52,18 @@ private:
 	std::unique_ptr<CommandExecutor> commandExecutor;
 	std::unique_ptr<CommandGenerator> commandGenerator;
 
+	//コマンドのコンテナ
+	CommandMap commandContainer;
 
 	//Setupperからコアパーツを生成し、引き継ぐ
 	void TakeOverCoreParts(DeviceContext::InstanceKey instanceKey_);
 	//CommandExecutorの生成
-	void CreateCommandExecutor();
+	void CreateCommandExecutor(DeviceContext::InstanceKey instanceKey_);
+	//CommandGeneratorの生成
+	void CreateCommandGenerator(DeviceContext::InstanceKey instanceKey_);
+	//コマンドの生成
+	void CreateCommands(DeviceContext::InstanceKey instanceKey_);
+
 };
 
 

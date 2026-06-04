@@ -6,17 +6,15 @@
 class DeviceContext::CommandGenerator
 {
 public:
-
+	//コマンド群を生成するのに必要。
 	struct GenerateKey;
 
 	CommandGenerator(DeviceContext::InstanceKey instanceKey_);
 	~CommandGenerator();
 
-private:
+	//引数のコマンドを生成する
+	[[nodiscard]] std::unique_ptr<DeviceContextCommandBehavior> CreateCommand(DeviceContext::InstanceKey instanceKey_ , DeviceContext::CommandType type_);
 
-	//GPUバッファを生成するコマンド群
-	class CreatingGPUBuffer;
-	std::unique_ptr<CreatingGPUBuffer> creatingGPUBuffer;
 
 };
 

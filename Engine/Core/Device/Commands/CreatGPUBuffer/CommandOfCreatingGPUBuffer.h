@@ -1,5 +1,5 @@
 #pragma once
-#include "../../DeviceContextCommandGenerator/DeviceContextCommandGenerator.h"
+#include "../DeviceContextCommandBehavior.h"
 
 struct ConstantBufferDescription;
 struct ColorBufferDescription;
@@ -7,7 +7,7 @@ class GPUBufferCreator;
 
 
 //各Typeのバッファを作る関数群
-class DeviceContext::CommandGenerator::CreatingGPUBuffer
+class CreatingGPUBuffer : public DeviceContextCommandBehavior
 {
 public:
 

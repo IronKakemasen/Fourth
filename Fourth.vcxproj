@@ -90,6 +90,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Engine\Core\Device\Commands\DeviceContextCommandBehavior.cpp" />
     <ClCompile Include="Engine\Core\Device\DeviceContextCommandGenerator\DeviceContextCommandGenerator.cpp" />
     <ClCompile Include="Engine\Core\Device\DeviceSetupper\DeviceContextSetupper.cpp" />
     <ClCompile Include="Engine\Core\Device\DeviceContextCommandExecutor\DeviceContextCommandExecutor.cpp" />
@@ -211,6 +212,7 @@
     <ClCompile Include="Engine\Debug\RuntimeDebugger\RuntimeDebugger.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Engine\Core\Device\Commands\DeviceContextCommandBehavior.h" />
     <ClInclude Include="Engine\Core\Device\Commands\CreatGPUBuffer\CommandOfCreatingGPUBuffer.h" />
     <ClInclude Include="Engine\Core\Device\DeviceContextCommandGenerator\DeviceContextCommandGenerator.h" />
     <ClInclude Include="Engine\Core\Device\DeviceSetupper\DeviceContextSetupper.h" />

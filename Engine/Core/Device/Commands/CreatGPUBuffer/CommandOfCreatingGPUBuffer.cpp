@@ -5,7 +5,7 @@
 #include "../../../../Resource/BufferDescriptions/ColorBufferDescription/ColorBufferDescription.h"
  
 
-[[nodiscard]] Microsoft::WRL::ComPtr<ID3D12Resource> DeviceContext::CommandGenerator::CreatingGPUBuffer::CreateConstantBuffer
+[[nodiscard]] Microsoft::WRL::ComPtr<ID3D12Resource> CreatingGPUBuffer::CreateConstantBuffer
 	( ID3D12Device8* device_ , const ConstantBufferDescription& desc_)
 {
 	Microsoft::WRL::ComPtr<ID3D12Resource> ret_resource;
@@ -45,7 +45,7 @@
 
 }
 
-[[nodiscard]] Microsoft::WRL::ComPtr<ID3D12Resource> DeviceContext::CommandGenerator::CreatingGPUBuffer::CreateColorBuffer
+[[nodiscard]] Microsoft::WRL::ComPtr<ID3D12Resource> CreatingGPUBuffer::CreateColorBuffer
 	( ID3D12Device8* device_ , const ColorBufferDescription& desc_)
 {
 	Microsoft::WRL::ComPtr<ID3D12Resource> ret_resource;
@@ -94,12 +94,12 @@
 }
 
 
-DeviceContext::CommandGenerator::CreatingGPUBuffer::CreatingGPUBuffer(DeviceContext::CommandGenerator::GenerateKey generateKey_)
+CreatingGPUBuffer::CreatingGPUBuffer(DeviceContext::CommandGenerator::GenerateKey generateKey_) :DeviceContextCommandBehavior(generateKey_)
 {
 
 }
 
-DeviceContext::CommandGenerator::CreatingGPUBuffer::~CreatingGPUBuffer()
+CreatingGPUBuffer::~CreatingGPUBuffer()
 {
 
 }
