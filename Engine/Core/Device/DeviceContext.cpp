@@ -2,18 +2,18 @@
 #include "DeviceContext.h"
 #include "Commands/DeviceContextCommandBehavior.h"
 #include "DeviceSetupper/DeviceContextSetupper.h"
-#include "DeviceContextCommandExecutor/DeviceContextCommandExecutor.h"
+#include "DeviceContextCommandProvider/DeviceContextCommandProvider.h"
 #include "DeviceContextCommandGenerator/DeviceContextCommandGenerator.h"
 
 
 std::function<Microsoft::WRL::ComPtr<ID3D12Resource>(const ConstantBufferDescription&)>DeviceContext::GetGetCreateConstantBufferCommand()
 {
-	return commandExecutor->GetCreateConstantBufferCommmand();
+	return commandProvider->GetCreateConstantBufferCommmand();
 }
 
 std::function<Microsoft::WRL::ComPtr<ID3D12Resource>(const ColorBufferDescription&)>DeviceContext::GetGetCreateColorBufferCommand()
 {
-	return commandExecutor->GetCreateColorBufferCommmand();
+	return commandProvider->GetCreateColorBufferCommmand();
 }
 
 
@@ -49,7 +49,7 @@ void DeviceContext::CreateCommandExecutor(DeviceContext::InstanceKey instanceKey
 		return device.Get();
 	};
 
-	commandExecutor.reset(new CommandExecutor(instanceKey_, deviceGetFunc,&commandContainer));
+	commandProvider.reset(new CommandProvider(instanceKey_, deviceGetFunc,&commandContainer));
 }
 
 void DeviceContext::CreateCommandGenerator(DeviceContext::InstanceKey instanceKey_)

@@ -1,5 +1,5 @@
 #include "PreCompileHedder.h"
-#include "DeviceContextCommandExecutor.h"
+#include "DeviceContextCommandProvider.h"
 #include "../../../Resource/BufferDescriptions/ColorBufferDescription/ColorBufferDescription.h"
 #include "../../../Resource/BufferDescriptions/ConstantBufferDescription/ConstantBufferDescription.h"
 
@@ -7,14 +7,14 @@
 
 
 
-DeviceContext::CommandExecutor::CommandExecutor(DeviceContext::InstanceKey instanceKey_, 
+DeviceContext::CommandProvider::CommandProvider(DeviceContext::InstanceKey instanceKey_, 
 	std::function< ID3D12Device8* (DeviceContext::DeviceAccessKey)> func_,CommandMap* commandContainer_) : deviceGetter(func_), commandContainer(commandContainer_)
 {
 	
 }
 
 
-[[nodiscard]] std::function<Microsoft::WRL::ComPtr<ID3D12Resource>(const ConstantBufferDescription&)> DeviceContext::CommandExecutor::GetCreateConstantBufferCommmand()
+[[nodiscard]] std::function<Microsoft::WRL::ComPtr<ID3D12Resource>(const ConstantBufferDescription&)> DeviceContext::CommandProvider::GetCreateConstantBufferCommmand()
 {
 	auto retFunc = [this](const ConstantBufferDescription& desc_)
 	{
@@ -29,7 +29,7 @@ DeviceContext::CommandExecutor::CommandExecutor(DeviceContext::InstanceKey insta
 	return retFunc;
 };
 
-[[nodiscard]] std::function<Microsoft::WRL::ComPtr<ID3D12Resource>(const ColorBufferDescription&)> DeviceContext::CommandExecutor::GetCreateColorBufferCommmand()
+[[nodiscard]] std::function<Microsoft::WRL::ComPtr<ID3D12Resource>(const ColorBufferDescription&)> DeviceContext::CommandProvider::GetCreateColorBufferCommmand()
 {
 	auto retFunc = [this](const ColorBufferDescription& desc_)
 	{

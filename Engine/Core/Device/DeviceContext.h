@@ -32,7 +32,9 @@ public:
 	DeviceContext(InstanceKey instanceKey);
 	~DeviceContext();
 
+	//コンスタントバッファを生成するコマンドを取得する関数
 	std::function<Microsoft::WRL::ComPtr<ID3D12Resource>(const ConstantBufferDescription&)>GetGetCreateConstantBufferCommand();
+	//カラーバッファを生成するコマンドを取得する関数
 	std::function<Microsoft::WRL::ComPtr<ID3D12Resource>(const ColorBufferDescription&)>GetGetCreateColorBufferCommand();
 
 private:
@@ -42,14 +44,14 @@ private:
 
 	//Setupper
 	class Setupper;
-	//CommandExecutor
-	class CommandExecutor;
+	//CommandProvider
+	class CommandProvider;
 
 	Microsoft::WRL::ComPtr<IDXGIFactory7> dxgiFactory = nullptr;
 	Microsoft::WRL::ComPtr<IDXGIAdapter4> useAdapter = nullptr;
 	Microsoft::WRL::ComPtr<ID3D12Device8> device = nullptr;
 
-	std::unique_ptr<CommandExecutor> commandExecutor;
+	std::unique_ptr<CommandProvider> commandProvider;
 	std::unique_ptr<CommandGenerator> commandGenerator;
 
 	//コマンドのコンテナ
@@ -57,7 +59,7 @@ private:
 
 	//Setupperからコアパーツを生成し、引き継ぐ
 	void TakeOverCoreParts(DeviceContext::InstanceKey instanceKey_);
-	//CommandExecutorの生成
+	//CommandProviderの生成
 	void CreateCommandExecutor(DeviceContext::InstanceKey instanceKey_);
 	//CommandGeneratorの生成
 	void CreateCommandGenerator(DeviceContext::InstanceKey instanceKey_);
@@ -82,7 +84,7 @@ struct DeviceContext::DeviceAccessKey
 {
 private:
 
-	friend class CommandExecutor;
+	friend class CommandProvider;
 	explicit DeviceAccessKey() = default;
 };
 

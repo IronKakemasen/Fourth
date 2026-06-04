@@ -6,20 +6,18 @@ struct ConstantBufferDescription;
 struct ColorBufferDescription;
 class CreatingGPUBuffer;
 
-//DeviceContextから都度deviceをリクエストしてコマンド実行するクラス。
-class DeviceContext::CommandExecutor
+//Deviceを使用する処理を、使用しない形にコマンド化して提供するクラス
+class DeviceContext::CommandProvider
 {
 public:
 
-	CommandExecutor(DeviceContext::InstanceKey instanceKey_, 
+	CommandProvider(DeviceContext::InstanceKey instanceKey_, 
 		std::function< ID3D12Device8* (DeviceContext::DeviceAccessKey)> func_ , CommandMap* commandContainer_);
 	
 	//定数バッファを生成するコマンドを返す関数
 	[[nodiscard]] std::function<Microsoft::WRL::ComPtr<ID3D12Resource>(const ConstantBufferDescription&)> GetCreateConstantBufferCommmand();
 	//カラーバッファを生成するコマンドを返す関数
 	[[nodiscard]] std::function<Microsoft::WRL::ComPtr<ID3D12Resource>(const ColorBufferDescription&)> GetCreateColorBufferCommmand();
-
-
 
 private:
 
