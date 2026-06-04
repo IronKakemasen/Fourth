@@ -13,7 +13,7 @@ struct ColorBufferDescription final : public BufferDescriptionBehavior
 	DXGI_FORMAT format = DXGI_FORMAT_Error_Detection;
 
 public:
-	virtual void CheckRequirementsFilled()override;
+	virtual void CheckRequirementsFilled() const override;
 
 };
 

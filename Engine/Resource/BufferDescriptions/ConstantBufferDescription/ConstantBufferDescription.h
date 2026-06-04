@@ -8,7 +8,7 @@ struct ConstantBufferDescription final : public BufferDescriptionBehavior
 	UINT sizeInByte{};
 
 public: 
-	virtual void CheckRequirementsFilled()override;
+	virtual void CheckRequirementsFilled() const override;
 
 };
 

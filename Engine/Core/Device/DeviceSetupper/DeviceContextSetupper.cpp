@@ -2,7 +2,10 @@
 #include "DeviceContextSetupper.h"
 #include "../../../Utility/StringConnverter/StringConverter.h"
 
-std::string fileName = "DeviceContextSetupper.cpp";
+namespace 
+{
+	std::string fileName = "DeviceContextSetupper.cpp";
+}
 
 DeviceContext::Setupper::Setupper(InstanceKey instanceKey_)
 {

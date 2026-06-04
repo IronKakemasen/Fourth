@@ -147,13 +147,19 @@
     <ClCompile Include="Engine\Resource\BufferDescriptions\ColorBufferDescription\ColorBufferDescription.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="Engine\Core\Device\DeviceContextCommandExecutor\DeviceContextCommandExecutor.cpp">
+    <ClCompile Include="Engine\Core\Device\DeviceContextCommandProvider\DeviceContextCommandProvider.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
     <ClCompile Include="Engine\Core\Device\DeviceSetupper\DeviceContextSetupper.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
     <ClCompile Include="Engine\Core\Device\DeviceContextCommandGenerator\DeviceContextCommandGenerator.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\Core\Device\Commands\DeviceContextCommandBehavior.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\Resource\GPUBuffer\ColorBuffer\ColorBuffer.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
   </ItemGroup>
@@ -287,7 +293,7 @@
     <ClInclude Include="Engine\Resource\BufferDescriptions\ColorBufferDescription\ColorBufferDescription.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\Core\Device\DeviceContextCommandExecutor\DeviceContextCommandExecutor.h">
+    <ClInclude Include="Engine\Core\Device\DeviceContextCommandProvider\DeviceContextCommandProvider.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
     <ClInclude Include="Engine\Core\Device\DeviceSetupper\DeviceContextSetupper.h">
@@ -297,6 +303,12 @@
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
     <ClInclude Include="Engine\Core\Device\Commands\CreatGPUBuffer\CommandOfCreatingGPUBuffer.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Core\Device\Commands\DeviceContextCommandBehavior.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Resource\GPUBuffer\ColorBuffer\ColorBuffer.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
   </ItemGroup>

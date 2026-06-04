@@ -1,7 +1,7 @@
 #include "PreCompileHedder.h"
 #include "ConstantBufferDescription.h"
 
-void ConstantBufferDescription::CheckRequirementsFilled()
+void ConstantBufferDescription::CheckRequirementsFilled() const
 {
 	std::string errorMess{};
 

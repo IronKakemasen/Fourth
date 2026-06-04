@@ -5,6 +5,7 @@
 class DeviceContext::Setupper
 {
 public:
+
 	Setupper(InstanceKey instanceKey_);
 
 	[[nodiscard]] Microsoft::WRL::ComPtr<IDXGIAdapter4> HandOverAdapter(DeviceContext::InstanceKey instanceKey_);

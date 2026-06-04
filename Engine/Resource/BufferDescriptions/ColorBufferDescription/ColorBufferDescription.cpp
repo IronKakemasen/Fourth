@@ -1,7 +1,7 @@
 #include "PreCompileHedder.h"
 #include "ColorBufferDescription.h"
 
-void ColorBufferDescription::CheckRequirementsFilled()
+void ColorBufferDescription::CheckRequirementsFilled() const
 {
 	std::string errorMess{};
 
