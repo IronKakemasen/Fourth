@@ -6,16 +6,17 @@
 #include "DeviceContextCommandGenerator/DeviceContextCommandGenerator.h"
 
 
-std::function<Microsoft::WRL::ComPtr<ID3D12Resource>(const ConstantBufferDescription&)>DeviceContext::GetGetCreateConstantBufferCommand()
+template<>
+std::function<Microsoft::WRL::ComPtr<ID3D12Resource>(const ConstantBufferDescription&)>DeviceContext::GetBufferCreateCommand<ConstantBufferDescription>()
 {
-	return commandProvider->GetCreateConstantBufferCommmand();
+	return commandProvider->PassCreateConstantBufferCommand();
 }
 
-std::function<Microsoft::WRL::ComPtr<ID3D12Resource>(const ColorBufferDescription&)>DeviceContext::GetGetCreateColorBufferCommand()
+template<>
+std::function<Microsoft::WRL::ComPtr<ID3D12Resource>(const ColorBufferDescription&)>DeviceContext::GetBufferCreateCommand<ColorBufferDescription>()
 {
-	return commandProvider->GetCreateColorBufferCommmand();
+	return commandProvider->PassCreateColorBufferCommand();
 }
-
 
 DeviceContext::DeviceContext(DeviceContext::InstanceKey instanceKey_)
 {

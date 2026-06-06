@@ -28,9 +28,6 @@ bool WinApp::InstanceLimiter::CanInstantiate()
 
 void WinApp::InstantiateMemberVariables(uint32_t width_, uint32_t height_, LPCWSTR windowName_)
 {
-	//デバイスのポインター
-	ID3D12Device8* devicePtr = nullptr;
-
 	//deviceContextクラスのインスタンス化
 	deviceContext.reset(new DeviceContext(DeviceContext::InstanceKey{}));
 
@@ -38,6 +35,14 @@ void WinApp::InstantiateMemberVariables(uint32_t width_, uint32_t height_, LPCWS
 	windowContext.reset(new WindowContext(WindowContext::CraftKey{}, width_, height_, windowName_));
 
 	//gpuBufferCreatorクラスのインスタンス化
-	//gpuBufferCreator.reset(new GPUBufferCreator(GPUBufferCreator::InstanceKey{}, devicePtr));
+	gpuBufferCreator.reset(new GPUBufferCreator(GPUBufferCreator::InstanceKey{}));
 
+}
+
+void WinApp::GivingAndReceivingCommands()
+{
+	auto createConstantBufferCommand = deviceContext->GetBufferCreateCommand<ConstantBufferDescription>();
+	auto createColorbufferCommand = deviceContext->GetBufferCreateCommand<ColorBufferDescription>();
+
+	gpuBufferCreator->SetCommands(createColorbufferCommand, createConstantBufferCommand);
 }

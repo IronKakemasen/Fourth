@@ -15,9 +15,9 @@ public:
 		std::function< ID3D12Device8* (DeviceContext::DeviceAccessKey)> func_ , CommandMap* commandContainer_);
 	
 	//定数バッファを生成するコマンドを返す関数
-	[[nodiscard]] std::function<Microsoft::WRL::ComPtr<ID3D12Resource>(const ConstantBufferDescription&)> GetCreateConstantBufferCommmand();
+	[[nodiscard]] std::function<Microsoft::WRL::ComPtr<ID3D12Resource>(const ConstantBufferDescription&)> PassCreateConstantBufferCommand();
 	//カラーバッファを生成するコマンドを返す関数
-	[[nodiscard]] std::function<Microsoft::WRL::ComPtr<ID3D12Resource>(const ColorBufferDescription&)> GetCreateColorBufferCommmand();
+	[[nodiscard]] std::function<Microsoft::WRL::ComPtr<ID3D12Resource>(const ColorBufferDescription&)> PassCreateColorBufferCommand();
 
 private:
 

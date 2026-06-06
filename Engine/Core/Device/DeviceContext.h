@@ -32,10 +32,10 @@ public:
 	DeviceContext(InstanceKey instanceKey);
 	~DeviceContext();
 
-	//コンスタントバッファを生成するコマンドを取得する関数
-	std::function<Microsoft::WRL::ComPtr<ID3D12Resource>(const ConstantBufferDescription&)>GetGetCreateConstantBufferCommand();
-	//カラーバッファを生成するコマンドを取得する関数
-	std::function<Microsoft::WRL::ComPtr<ID3D12Resource>(const ColorBufferDescription&)>GetGetCreateColorBufferCommand();
+	//リソース生成コマンドパス窓口
+	//ConstantBufferDescription,ColorBufferDescription
+	template<typename BufferDescriptionType>
+	std::function < Microsoft::WRL::ComPtr<ID3D12Resource>(const BufferDescriptionType&)> GetBufferCreateCommand();
 
 private:
 
@@ -47,9 +47,9 @@ private:
 	//CommandProvider
 	class CommandProvider;
 
+	Microsoft::WRL::ComPtr<ID3D12Device8> device = nullptr;
 	Microsoft::WRL::ComPtr<IDXGIFactory7> dxgiFactory = nullptr;
 	Microsoft::WRL::ComPtr<IDXGIAdapter4> useAdapter = nullptr;
-	Microsoft::WRL::ComPtr<ID3D12Device8> device = nullptr;
 
 	std::unique_ptr<CommandProvider> commandProvider;
 	std::unique_ptr<CommandGenerator> commandGenerator;

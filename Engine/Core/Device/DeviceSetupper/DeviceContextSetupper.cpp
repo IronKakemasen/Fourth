@@ -16,7 +16,7 @@ DeviceContext::Setupper::Setupper(InstanceKey instanceKey_)
 	//デバイスの生成
 	CreateDevice();
 	//シェーダーモデル6_5以上をサポートしてるかチェック
-	ShaderModelChack(D3D_SHADER_MODEL_6_5);
+	ShaderModelChack(ProjectConfig::Render::kMaximumShaderModel);
 	//メッシュシェーダーをサポートしているかチェック
 	IsMeshShaderSupported();
 	//デバッグレイヤーのフィルターを設定
@@ -30,11 +30,6 @@ DeviceContext::Setupper::Setupper(InstanceKey instanceKey_)
 
 [[nodiscard]] Microsoft::WRL::ComPtr<ID3D12Device8> DeviceContext::Setupper::HandOverDevice(DeviceContext::InstanceKey instanceKey_)
 {
-	//Microsoft::WRL::ComPtr<ID3D12Device8> device8 = nullptr;
-
-	//HRESULT hr = device->QueryInterface(IID_PPV_ARGS(&device8));
-	//ErrorMessageOutput::Abort::DetectError(SUCCEEDED(hr), "ID3D12Device8へのキャストに失敗しました", "DeviceContextSetupper.cpp");
-
 	return std::move(device);
 }
 
@@ -75,7 +70,6 @@ void DeviceContext::Setupper::SetDebugLayerFilter()
 
 		//指定したメッセージの表示を抑制する
 		infoQueue->PushStorageFilter(&filter);
-		infoQueue->Release();
 
 	}
 #endif
