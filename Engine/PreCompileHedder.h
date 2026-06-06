@@ -66,6 +66,7 @@ namespace ProjectConfig
 	namespace Render
 	{
 		constexpr int kRequiredGPUBufferSum = 2;
+		constexpr D3D_SHADER_MODEL kMaximumShaderModel = D3D_SHADER_MODEL_6_5;
 	}
 
 	namespace Debug

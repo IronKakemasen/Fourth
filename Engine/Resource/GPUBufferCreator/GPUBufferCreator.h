@@ -9,12 +9,22 @@ class ColorBuffer;
 
 class GPUBufferCreator
 {
+private:
+
+	using CrateColorBufferCommand = std::function<Microsoft::WRL::ComPtr<ID3D12Resource>(const ColorBufferDescription&)>;
+	using CrateConstantBufferCommand = std::function<Microsoft::WRL::ComPtr<ID3D12Resource>(const ConstantBufferDescription&)>;
+
+
 public:
 
+	//自身のインスタンス化キー
 	struct InstanceKey;
 
 	GPUBufferCreator(InstanceKey instanceKey_);
 	~GPUBufferCreator();
+
+	//外部クラスが作ったコマンドをセットする
+	void SetCommands(CrateColorBufferCommand crateColorBufferCommand_, CrateConstantBufferCommand crateConstantBufferCommand_);
 
 	//一括窓口
 	template<typename BufferType,typename DescType>
@@ -35,13 +45,12 @@ public:
 
 private:
 
+	//コマンド群
+	CrateConstantBufferCommand crateConstantBufferCommand;
+	CrateColorBufferCommand crateColorBufferCommand;
+
 	//引数のDescriptionに不備がないかチェックしてエラーを吐く
 	void CheckDescription(const BufferDescriptionBehavior& srcDesc_);
-
-	//コマンド群
-	std::function<Microsoft::WRL::ComPtr<ID3D12Resource>(const ColorBufferDescription&)> createColorBuffer;
-	std::function<Microsoft::WRL::ComPtr<ID3D12Resource>(const ConstantBufferDescription&)> createConstantBuffer;
-
 
 	//ヘルパー関数
 	template <typename BufferType, typename DescType>

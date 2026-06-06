@@ -14,7 +14,7 @@ DeviceContext::CommandProvider::CommandProvider(DeviceContext::InstanceKey insta
 }
 
 
-[[nodiscard]] std::function<Microsoft::WRL::ComPtr<ID3D12Resource>(const ConstantBufferDescription&)> DeviceContext::CommandProvider::GetCreateConstantBufferCommmand()
+[[nodiscard]] std::function<Microsoft::WRL::ComPtr<ID3D12Resource>(const ConstantBufferDescription&)> DeviceContext::CommandProvider::PassCreateConstantBufferCommand()
 {
 	auto retFunc = [this](const ConstantBufferDescription& desc_)
 	{
@@ -29,7 +29,7 @@ DeviceContext::CommandProvider::CommandProvider(DeviceContext::InstanceKey insta
 	return retFunc;
 };
 
-[[nodiscard]] std::function<Microsoft::WRL::ComPtr<ID3D12Resource>(const ColorBufferDescription&)> DeviceContext::CommandProvider::GetCreateColorBufferCommmand()
+[[nodiscard]] std::function<Microsoft::WRL::ComPtr<ID3D12Resource>(const ColorBufferDescription&)> DeviceContext::CommandProvider::PassCreateColorBufferCommand()
 {
 	auto retFunc = [this](const ColorBufferDescription& desc_)
 	{
