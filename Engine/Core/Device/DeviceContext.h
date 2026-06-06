@@ -16,6 +16,8 @@ public:
 	{
 		//GPUリソース生成
 		kCreatingGPU_Buffer,
+		//DescriptorHeapを作成
+		kCreateDescriptorHeap,
 
 
 		kCount
@@ -60,7 +62,7 @@ private:
 	//Setupperからコアパーツを生成し、引き継ぐ
 	void TakeOverCoreParts(DeviceContext::InstanceKey instanceKey_);
 	//CommandProviderの生成
-	void CreateCommandExecutor(DeviceContext::InstanceKey instanceKey_);
+	void CreateCommandProvider(DeviceContext::InstanceKey instanceKey_);
 	//CommandGeneratorの生成
 	void CreateCommandGenerator(DeviceContext::InstanceKey instanceKey_);
 	//コマンドの生成

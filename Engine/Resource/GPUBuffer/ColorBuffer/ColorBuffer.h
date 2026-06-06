@@ -14,11 +14,13 @@ public:
 
 private:
 
-	D3D12_CPU_DESCRIPTOR_HANDLE handle;
+	//rtvHeap上のインデックス（D3D12_CPU_DESCRIPTOR_HANDLE）
+	uint16_t rtvHeapIndex{};
 	ColorBufferDescription desc;
 	D3D12_VIEWPORT viewport;
 	D3D12_RECT scissorRect;
 
+	//viewportとscissorRectをせっと
 	void SetMatrix();
 
 };

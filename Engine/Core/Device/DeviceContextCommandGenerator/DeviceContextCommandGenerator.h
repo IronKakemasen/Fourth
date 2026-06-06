@@ -12,9 +12,15 @@ public:
 	CommandGenerator(DeviceContext::InstanceKey instanceKey_);
 	~CommandGenerator();
 
-	//引数のコマンドを生成する
-	[[nodiscard]] std::unique_ptr<DeviceContextCommandBehavior> CreateCommand(DeviceContext::InstanceKey instanceKey_ , DeviceContext::CommandType type_);
+	//コマンドを生成する
+	template<typename CommandClass>
+	[[nodiscard]] std::unique_ptr<DeviceContextCommandBehavior> CreateCommand(DeviceContext::InstanceKey instanceKey_)
+	{
+		auto generateKey = CommandGenerator::GenerateKey{};
+		std::unique_ptr<DeviceContextCommandBehavior> retCommand = std::make_unique<CommandClass>(generateKey);
 
+		return retCommand;
+	}
 
 };
 

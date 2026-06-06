@@ -13,37 +13,40 @@ DeviceContext::CommandProvider::CommandProvider(DeviceContext::InstanceKey insta
 	
 }
 
-
-[[nodiscard]] std::function<Microsoft::WRL::ComPtr<ID3D12Resource>(const ConstantBufferDescription&)> DeviceContext::CommandProvider::PassCreateConstantBufferCommand()
+template <>
+[[nodiscard]] std::function<Microsoft::WRL::ComPtr<ID3D12Resource>(const ConstantBufferDescription&)> DeviceContext::CommandProvider::PassCreateBufferCommand()
 {
 	auto retFunc = [this](const ConstantBufferDescription& desc_)
-	{
-		auto* device = deviceGetter(DeviceContext::DeviceAccessKey{});
-		auto& container = *commandContainer;
+		{
+			auto* device = deviceGetter(DeviceContext::DeviceAccessKey{});
+			auto& container = *commandContainer;
 
-		CreatingGPUBuffer* command = static_cast<CreatingGPUBuffer*>(container[DeviceContext::CommandType::kCreatingGPU_Buffer][0].get());
+			CreatingGPUBuffer* command = static_cast<CreatingGPUBuffer*>(container[DeviceContext::CommandType::kCreatingGPU_Buffer][0].get());
 
-		return command->CreateConstantBuffer(device, desc_);
-	};
-
-	return retFunc;
-};
-
-[[nodiscard]] std::function<Microsoft::WRL::ComPtr<ID3D12Resource>(const ColorBufferDescription&)> DeviceContext::CommandProvider::PassCreateColorBufferCommand()
-{
-	auto retFunc = [this](const ColorBufferDescription& desc_)
-	{
-		auto* device = deviceGetter(DeviceContext::DeviceAccessKey{});
-		auto& container = *commandContainer;
-
-		CreatingGPUBuffer* command = static_cast<CreatingGPUBuffer*>(container[DeviceContext::CommandType::kCreatingGPU_Buffer][0].get());
-
-		return command->CreateColorBuffer(device, desc_);
-	};
+			return command->CreateConstantBuffer(device, desc_);
+		};
 
 	return retFunc;
 
 }
+
+template <>
+[[nodiscard]] std::function<Microsoft::WRL::ComPtr<ID3D12Resource>(const ColorBufferDescription&)> DeviceContext::CommandProvider::PassCreateBufferCommand()
+{
+	auto retFunc = [this](const ColorBufferDescription& desc_)
+		{
+			auto* device = deviceGetter(DeviceContext::DeviceAccessKey{});
+			auto& container = *commandContainer;
+
+			CreatingGPUBuffer* command = static_cast<CreatingGPUBuffer*>(container[DeviceContext::CommandType::kCreatingGPU_Buffer][0].get());
+
+			return command->CreateColorBuffer(device, desc_);
+		};
+
+	return retFunc;
+}
+
+
 
 
 
