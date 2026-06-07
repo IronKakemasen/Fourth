@@ -4,6 +4,7 @@
 #include "../../../Resource/BufferDescriptions/ConstantBufferDescription/ConstantBufferDescription.h"
 
 #include "../Commands/CreatGPUBuffer/CommandOfCreatingGPUBuffer.h"
+#include "../Commands/CreateDescriptorHeap/CommandCreateDescriptorHeap.h"
 
 
 
@@ -13,37 +14,56 @@ DeviceContext::CommandProvider::CommandProvider(DeviceContext::InstanceKey insta
 	
 }
 
-
-[[nodiscard]] std::function<Microsoft::WRL::ComPtr<ID3D12Resource>(const ConstantBufferDescription&)> DeviceContext::CommandProvider::PassCreateConstantBufferCommand()
+[[nodiscard]] std::function<Microsoft::WRL::ComPtr<ID3D12DescriptorHeap>(D3D12_DESCRIPTOR_HEAP_TYPE, UINT, bool)> DeviceContext::CommandProvider::PassCreateDescriptorHeapCommand()
 {
-	auto retFunc = [this](const ConstantBufferDescription& desc_)
+	auto retFunc = [this](D3D12_DESCRIPTOR_HEAP_TYPE heapType_, UINT numDescriptors_, bool shaderVisible_)
 	{
 		auto* device = deviceGetter(DeviceContext::DeviceAccessKey{});
 		auto& container = *commandContainer;
+		auto* command = static_cast<CommandCreateDescriptorHeap*>(container[DeviceContext::CommandType::kCreateDescriptorHeap][0].get());
 
-		CreatingGPUBuffer* command = static_cast<CreatingGPUBuffer*>(container[DeviceContext::CommandType::kCreatingGPU_Buffer][0].get());
-
-		return command->CreateConstantBuffer(device, desc_);
-	};
-
-	return retFunc;
-};
-
-[[nodiscard]] std::function<Microsoft::WRL::ComPtr<ID3D12Resource>(const ColorBufferDescription&)> DeviceContext::CommandProvider::PassCreateColorBufferCommand()
-{
-	auto retFunc = [this](const ColorBufferDescription& desc_)
-	{
-		auto* device = deviceGetter(DeviceContext::DeviceAccessKey{});
-		auto& container = *commandContainer;
-
-		CreatingGPUBuffer* command = static_cast<CreatingGPUBuffer*>(container[DeviceContext::CommandType::kCreatingGPU_Buffer][0].get());
-
-		return command->CreateColorBuffer(device, desc_);
+		return command->Create(device, heapType_,numDescriptors_, shaderVisible_);
 	};
 
 	return retFunc;
 
 }
+
+
+template <>
+[[nodiscard]] std::function<Microsoft::WRL::ComPtr<ID3D12Resource>(const ConstantBufferDescription&)> DeviceContext::CommandProvider::PassCreateBufferCommand()
+{
+	auto retFunc = [this](const ConstantBufferDescription& desc_)
+		{
+			auto* device = deviceGetter(DeviceContext::DeviceAccessKey{});
+			auto& container = *commandContainer;
+
+			CommandCreateGPUBuffer* command = static_cast<CommandCreateGPUBuffer*>(container[DeviceContext::CommandType::kCreateGPUBuffer][0].get());
+
+			return command->CreateConstantBuffer(device, desc_);
+		};
+
+	return retFunc;
+
+}
+
+template <>
+[[nodiscard]] std::function<Microsoft::WRL::ComPtr<ID3D12Resource>(const ColorBufferDescription&)> DeviceContext::CommandProvider::PassCreateBufferCommand()
+{
+	auto retFunc = [this](const ColorBufferDescription& desc_)
+		{
+			auto* device = deviceGetter(DeviceContext::DeviceAccessKey{});
+			auto& container = *commandContainer;
+
+			CommandCreateGPUBuffer* command = static_cast<CommandCreateGPUBuffer*>(container[DeviceContext::CommandType::kCreateGPUBuffer][0].get());
+
+			return command->CreateColorBuffer(device, desc_);
+		};
+
+	return retFunc;
+}
+
+
 
 
 

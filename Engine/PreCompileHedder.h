@@ -69,6 +69,7 @@ namespace ProjectConfig
 		constexpr D3D_SHADER_MODEL kMaximumShaderModel = D3D_SHADER_MODEL_6_5;
 	}
 
+
 	namespace Debug
 	{
 		constexpr bool k0EnableDebugLayer = true;
@@ -76,6 +77,14 @@ namespace ProjectConfig
 		constexpr bool k2EnableLeakChecker = true;
 
 	}
+
+	namespace Core
+	{
+		constexpr uint16_t kNumDescriptorsRTVHeap = 16;
+		constexpr uint16_t kNumDescriptorSRVHeap = 256;
+		constexpr uint16_t kNumDescriptorsDSVHeap = 16;
+	}
+
 }
 
 

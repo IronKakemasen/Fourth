@@ -4,45 +4,37 @@
 #include "DeviceSetupper/DeviceContextSetupper.h"
 #include "DeviceContextCommandProvider/DeviceContextCommandProvider.h"
 #include "DeviceContextCommandGenerator/DeviceContextCommandGenerator.h"
-
-
-template<>
-std::function<Microsoft::WRL::ComPtr<ID3D12Resource>(const ConstantBufferDescription&)>DeviceContext::GetBufferCreateCommand<ConstantBufferDescription>()
-{
-	return commandProvider->PassCreateConstantBufferCommand();
-}
-
-template<>
-std::function<Microsoft::WRL::ComPtr<ID3D12Resource>(const ColorBufferDescription&)>DeviceContext::GetBufferCreateCommand<ColorBufferDescription>()
-{
-	return commandProvider->PassCreateColorBufferCommand();
-}
+#include "Commands/CreateDescriptorHeap/CommandCreateDescriptorHeap.h"
+#include "Commands/CreatGPUBuffer/CommandOfCreatingGPUBuffer.h"
 
 DeviceContext::DeviceContext(DeviceContext::InstanceKey instanceKey_)
 {
-	//コアパーツの生成
-	TakeOverCoreParts(instanceKey_);
-	//コマンド生成クラスのインスタンス化
-	CreateCommandGenerator(instanceKey_);
-	//コマンド実行クラスのインスタンス化
-	CreateCommandExecutor(instanceKey_);
-	//コマンド生成
-	CreateCommands(instanceKey_);
+	Logger::Entry("DeviceContext::Constructor");
 
+	TakeOverCoreParts(instanceKey_);
+	Logger::Log("Create : CoreParts");
+
+	CreateCommandGenerator(instanceKey_);
+	Logger::Log("Create : CommandGenerator");
+
+	CreateCommandProvider(instanceKey_);
+	Logger::Log("Create : CommandProvider");
+
+	CreateCommands(instanceKey_);
+	Logger::Log("Create : Commands");
+
+
+	Logger::End("DeviceContext::Constructor");
 }
 
 void DeviceContext::CreateCommands(DeviceContext::InstanceKey instanceKey_)
 {
-	auto generate = [this, instanceKey_](CommandType type_)
-	{
-		commandContainer[type_].emplace_back(commandGenerator->CreateCommand(instanceKey_, type_));
-	};
-
-	generate(CommandType::kCreatingGPU_Buffer);
+	commandContainer[CommandType::kCreateGPUBuffer].emplace_back(commandGenerator->CreateCommand<CommandCreateGPUBuffer>(instanceKey_));
+	commandContainer[CommandType::kCreateDescriptorHeap].emplace_back(commandGenerator->CreateCommand<CommandCreateDescriptorHeap>(instanceKey_));
 
 }
 
-void DeviceContext::CreateCommandExecutor(DeviceContext::InstanceKey instanceKey_)
+void DeviceContext::CreateCommandProvider(DeviceContext::InstanceKey instanceKey_)
 {
 	//デバイスにアクセスする関数オブジェ
 	auto deviceGetFunc = [this](DeviceContext::DeviceAccessKey key_) -> ID3D12Device8*

@@ -2,6 +2,7 @@
 #include "../Core/Window/WindowContext.h"
 #include "../Resource/GPUBufferCreator/GPUBufferCreator.h"
 #include "../Core/Device/DeviceContext.h"
+#include "../Core/DescriptorHeap/DescriptorHeapContext.h"
 
 
 class WinApp
@@ -9,7 +10,7 @@ class WinApp
 public:
 
 	~WinApp();
-	WinApp(uint32_t width_, uint32_t height_, LPCWSTR windowName_);
+	WinApp();
 
 	WinApp(const WinApp&) = delete;
 	WinApp& operator=(const WinApp&) = delete;
@@ -27,11 +28,18 @@ private:
 	std::unique_ptr<GPUBufferCreator> gpuBufferCreator;
 	//ウィンドウを制御するもの
 	std::unique_ptr<WindowContext> windowContext;
+	//DescriptorHeapを作り、viewを生成するクラスを所持
+	std::unique_ptr<DescriptorHeapContext> descriptorHeapContext;
+
+
 
 	//メンバー変数のインスタンス化
-	void InstantiateMemberVariables(uint32_t width_, uint32_t height_, LPCWSTR windowName_);
+	void InstantiateMemberVariables();
 	//コマンドの受け渡し（GPUresourceCreateなど）
 	void GivingAndReceivingCommands();
+	//DescriptorHeapの生成
+	void CreateDescriptorHeaps();
+
 
 };
 

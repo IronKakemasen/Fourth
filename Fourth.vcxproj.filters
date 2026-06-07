@@ -162,6 +162,24 @@
     <ClCompile Include="Engine\Resource\GPUBuffer\ColorBuffer\ColorBuffer.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
+    <ClCompile Include="Engine\Core\DescriptorHeap\DescriptorHeapContext.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\Core\DescriptorHeap\ViewCreator\RTV_Creator\RTV_Creator.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\Core\DescriptorHeap\ViewCreator\SRV_Creator\SRV_Creator.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\Core\DescriptorHeap\ViewCreator\ViewCreatorBehavior.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\Core\DescriptorHeap\DescriptorHeapCreator\DescriptorHeapCreator.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\Core\Device\Commands\CreateDescriptorHeap\CommandCreateDescriptorHeap.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Engine\Core\Window\WindowContext.h">
@@ -309,6 +327,24 @@
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
     <ClInclude Include="Engine\Resource\GPUBuffer\ColorBuffer\ColorBuffer.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Core\DescriptorHeap\DescriptorHeapContext.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Core\DescriptorHeap\ViewCreator\RTV_Creator\RTV_Creator.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Core\DescriptorHeap\ViewCreator\SRV_Creator\SRV_Creator.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Core\DescriptorHeap\ViewCreator\ViewCreatorBehavior.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Core\DescriptorHeap\DescriptorHeapCreator\DescriptorHeapCreator.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Core\Device\Commands\CreateDescriptorHeap\CommandCreateDescriptorHeap.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
   </ItemGroup>

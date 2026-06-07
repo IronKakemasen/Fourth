@@ -8,7 +8,7 @@ public:
 
 	struct CraftKey;
 
-	WindowContext(CraftKey craftKey_, uint32_t width_, uint32_t height_, LPCWSTR windowName_);
+	WindowContext(CraftKey craftKey_);
 	void Finalize();
 
 private:

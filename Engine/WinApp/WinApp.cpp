@@ -2,15 +2,33 @@
 #include "WinApp.h"
 #include "../Debug/RuntimeDebugger/RuntimeDebugger.h"
 #include "../Debug/ErrorMessageOutput/ErrorMessageOutput.h"
+#include "../Core/Device/DeviceContextCommandProvider/DeviceContextCommandProvider.h"
 
-WinApp::WinApp(uint32_t width_, uint32_t height_, LPCWSTR windowName_)
+namespace
 {
+	std::string const fileName = "WinApp.cpp";
+}
+
+WinApp::WinApp()
+{
+	Logger::Entry("WinApp::Constructor");
 
 	//自身のインスタンス制限
-	ErrorMessageOutput::Assert::DetectError(InstanceLimiter::CanInstantiate(), "WinAppクラスが複数具現化されてます", "WinApp.cpp");
+	ErrorMessageOutput::Assert::DetectError(InstanceLimiter::CanInstantiate(), "WinAppクラスが複数具現化されてます", fileName);
 
 	//メンバー変数のインスタンス化
-	InstantiateMemberVariables(width_, height_, windowName_);
+	InstantiateMemberVariables();
+	Logger::Log("Instantiate : CoreSystems ");
+
+	//コマンドの授受
+	GivingAndReceivingCommands();
+	Logger::Log("Complete Giving Commands ");
+
+	//DescriptorHeapの生成
+	CreateDescriptorHeaps();
+	Logger::Log("Create : DescriptorHeaps");
+
+	Logger::End("WinApp::Constructor");
 }
 
 WinApp::~WinApp()
@@ -26,23 +44,43 @@ bool WinApp::InstanceLimiter::CanInstantiate()
 	return (instanceLimiter.instanceCnt++ == 0);
 }
 
-void WinApp::InstantiateMemberVariables(uint32_t width_, uint32_t height_, LPCWSTR windowName_)
+void WinApp::InstantiateMemberVariables()
 {
 	//deviceContextクラスのインスタンス化
 	deviceContext.reset(new DeviceContext(DeviceContext::InstanceKey{}));
-
 	//windowContextのインスタンス化
-	windowContext.reset(new WindowContext(WindowContext::CraftKey{}, width_, height_, windowName_));
-
+	windowContext.reset(new WindowContext(WindowContext::CraftKey{}));
 	//gpuBufferCreatorクラスのインスタンス化
 	gpuBufferCreator.reset(new GPUBufferCreator(GPUBufferCreator::InstanceKey{}));
+	//descriptorHeapContextクラスのインスタンス化
+	descriptorHeapContext.reset(new DescriptorHeapContext(DescriptorHeapContext::InstanceKey{}));
 
 }
 
 void WinApp::GivingAndReceivingCommands()
 {
-	auto createConstantBufferCommand = deviceContext->GetBufferCreateCommand<ConstantBufferDescription>();
-	auto createColorbufferCommand = deviceContext->GetBufferCreateCommand<ColorBufferDescription>();
+	//バッファ生成コマンド
+	{
+		auto createConstantBufferCommand = deviceContext->commandProvider->PassCreateBufferCommand<ConstantBufferDescription>();
+		auto createColorbufferCommand = deviceContext->commandProvider->PassCreateBufferCommand<ColorBufferDescription>();
 
-	gpuBufferCreator->SetCommands(createColorbufferCommand, createConstantBufferCommand);
+		gpuBufferCreator->SetCommands(createColorbufferCommand, createConstantBufferCommand);
+	}
+
+	//DescriptorHeap生成コマンド
+	{
+		auto createDescriptorHeapCommand = deviceContext->commandProvider->PassCreateDescriptorHeapCommand();
+
+		descriptorHeapContext->SetCommand(createDescriptorHeapCommand);
+	}
+
+}
+
+void WinApp::CreateDescriptorHeaps()
+{
+	using namespace ProjectConfig::Core;
+
+	descriptorHeapContext->CreateDescriptorHeap(D3D12_DESCRIPTOR_HEAP_TYPE_RTV, kNumDescriptorsRTVHeap, false);
+	descriptorHeapContext->CreateDescriptorHeap(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, kNumDescriptorSRVHeap, false);
+	descriptorHeapContext->CreateDescriptorHeap(D3D12_DESCRIPTOR_HEAP_TYPE_DSV, kNumDescriptorsDSVHeap, false);
 }

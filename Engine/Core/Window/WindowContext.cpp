@@ -42,8 +42,10 @@ void WindowContext::Finalize()
 }
 
 
-WindowContext::WindowContext(CraftKey craftKey_, uint32_t width_, uint32_t height_, LPCWSTR windowName_)
+WindowContext::WindowContext(CraftKey craftKey_)
 {
+	using namespace ProjectConfig::Window;
+
 //#ifdef _DEBUG
 //
 //	if (SUCCEEDED(D3D12GetDebugInterface(IID_PPV_ARGS(&debugController))))
@@ -61,9 +63,9 @@ WindowContext::WindowContext(CraftKey craftKey_, uint32_t width_, uint32_t heigh
 	// ウィンドウクラスの登録
 	WNDCLASSEX wc = {};
 
-	setupParam.m_windowName = windowName_;
-	setupParam.m_width = (uint32_t)width_;
-	setupParam.m_height = (uint32_t)height_;
+	setupParam.m_windowName = kTitle;
+	setupParam.m_width = (uint32_t)kWidth;
+	setupParam.m_height = (uint32_t)kHeight;
 
 	wc.cbSize = sizeof(WNDCLASSEX);
 	wc.style = CS_HREDRAW | CS_VREDRAW;
@@ -72,7 +74,7 @@ WindowContext::WindowContext(CraftKey craftKey_, uint32_t width_, uint32_t heigh
 	wc.hCursor = LoadCursor(hInst, IDC_ARROW);
 	wc.hbrBackground = GetSysColorBrush(COLOR_BACKGROUND);
 	wc.lpszMenuName = nullptr;
-	wc.lpszClassName = windowName_;
+	wc.lpszClassName = kTitle;
 	wc.hIconSm = LoadIcon(hInst, IDI_APPLICATION);
 
 	//ウィンドウの登録
@@ -91,8 +93,8 @@ WindowContext::WindowContext(CraftKey craftKey_, uint32_t width_, uint32_t heigh
 	// ウィンドウの作成
 	setupParam.m_hWnd = CreateWindowEx(
 		0,                              // Optional window styles.
-		windowName_,                   // Window class
-		windowName_,					// Window text
+		kTitle,                   // Window class
+		kTitle,					// Window text
 		style,							// Window style
 		// Size and position
 		CW_USEDEFAULT,

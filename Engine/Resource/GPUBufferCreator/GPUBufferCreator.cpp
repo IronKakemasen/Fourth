@@ -67,3 +67,7 @@ GPUBufferCreator::~GPUBufferCreator()
 
 }
 
+void GPUBufferCreator::Log(std::string convName_)
+{
+	Logger::Log("CreateBuffer :" + convName_);
+}
