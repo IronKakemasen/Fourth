@@ -7,35 +7,29 @@
 #include "Commands/CreateDescriptorHeap/CommandCreateDescriptorHeap.h"
 #include "Commands/CreatGPUBuffer/CommandOfCreatingGPUBuffer.h"
 
-
-template<>
-std::function<Microsoft::WRL::ComPtr<ID3D12Resource>(const ConstantBufferDescription&)>DeviceContext::GetBufferCreateCommand<ConstantBufferDescription>()
-{
-	return commandProvider->PassCreateBufferCommand<ConstantBufferDescription>();
-}
-
-template<>
-std::function<Microsoft::WRL::ComPtr<ID3D12Resource>(const ColorBufferDescription&)>DeviceContext::GetBufferCreateCommand<ColorBufferDescription>()
-{
-	return commandProvider->PassCreateBufferCommand<ColorBufferDescription>();
-}
-
 DeviceContext::DeviceContext(DeviceContext::InstanceKey instanceKey_)
 {
-	//コアパーツの生成
-	TakeOverCoreParts(instanceKey_);
-	//コマンド生成クラスのインスタンス化
-	CreateCommandGenerator(instanceKey_);
-	//コマンド配布クラスのインスタンス化
-	CreateCommandProvider(instanceKey_);
-	//コマンド生成
-	CreateCommands(instanceKey_);
+	Logger::Entry("DeviceContext::Constructor");
 
+	TakeOverCoreParts(instanceKey_);
+	Logger::Log("Create : CoreParts");
+
+	CreateCommandGenerator(instanceKey_);
+	Logger::Log("Create : CommandGenerator");
+
+	CreateCommandProvider(instanceKey_);
+	Logger::Log("Create : CommandProvider");
+
+	CreateCommands(instanceKey_);
+	Logger::Log("Create : Commands");
+
+
+	Logger::End("DeviceContext::Constructor");
 }
 
 void DeviceContext::CreateCommands(DeviceContext::InstanceKey instanceKey_)
 {
-	commandContainer[CommandType::kCreatingGPU_Buffer].emplace_back(commandGenerator->CreateCommand<CreatingGPUBuffer>(instanceKey_));
+	commandContainer[CommandType::kCreateGPUBuffer].emplace_back(commandGenerator->CreateCommand<CommandCreateGPUBuffer>(instanceKey_));
 	commandContainer[CommandType::kCreateDescriptorHeap].emplace_back(commandGenerator->CreateCommand<CommandCreateDescriptorHeap>(instanceKey_));
 
 }

@@ -15,7 +15,7 @@ public:
 	enum CommandType
 	{
 		//GPUリソース生成
-		kCreatingGPU_Buffer,
+		kCreateGPUBuffer,
 		//DescriptorHeapを作成
 		kCreateDescriptorHeap,
 
@@ -23,37 +23,31 @@ public:
 		kCount
 	};
 
-
 	//コマンド生成クラス
 	class CommandGenerator;
 	//生成キー。WinAppしか許さない
 	struct InstanceKey;
 	//デバイスにアクセスするのを許可するキー
 	struct DeviceAccessKey;
+	//CommandProvider
+	class CommandProvider;
+	std::unique_ptr<CommandProvider> commandProvider;
 
 	DeviceContext(InstanceKey instanceKey);
 	~DeviceContext();
 
-	//リソース生成コマンドパス窓口
-	//ConstantBufferDescription,ColorBufferDescription
-	template<typename BufferDescriptionType>
-	std::function < Microsoft::WRL::ComPtr<ID3D12Resource>(const BufferDescriptionType&)> GetBufferCreateCommand();
-
 private:
-
-	using CommandList = std::vector<std::unique_ptr<DeviceContextCommandBehavior>>;
-	using CommandMap = std::unordered_map<CommandType, CommandList>;
 
 	//Setupper
 	class Setupper;
-	//CommandProvider
-	class CommandProvider;
+
+	using CommandList = std::vector<std::unique_ptr<DeviceContextCommandBehavior>>;
+	using CommandMap = std::unordered_map<CommandType, CommandList>;
 
 	Microsoft::WRL::ComPtr<ID3D12Device8> device = nullptr;
 	Microsoft::WRL::ComPtr<IDXGIFactory7> dxgiFactory = nullptr;
 	Microsoft::WRL::ComPtr<IDXGIAdapter4> useAdapter = nullptr;
 
-	std::unique_ptr<CommandProvider> commandProvider;
 	std::unique_ptr<CommandGenerator> commandGenerator;
 
 	//コマンドのコンテナ

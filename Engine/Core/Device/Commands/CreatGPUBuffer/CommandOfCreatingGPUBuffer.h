@@ -6,11 +6,11 @@ struct ColorBufferDescription;
 
 
 //各Typeのバッファを作る関数群
-struct CreatingGPUBuffer : public DeviceContextCommandBehavior
+struct CommandCreateGPUBuffer : public DeviceContextCommandBehavior
 {
 	//DeviceContext::CommandGeneratorクラスのみ生成可能
-	CreatingGPUBuffer(DeviceContext::CommandGenerator::GenerateKey generateKey_);
-	~CreatingGPUBuffer();
+	CommandCreateGPUBuffer(DeviceContext::CommandGenerator::GenerateKey generateKey_);
+	~CommandCreateGPUBuffer();
 
 	//ConstantBufferを作る
 	[[nodiscard]] Microsoft::WRL::ComPtr<ID3D12Resource> CreateConstantBuffer(ID3D12Device8* device_,

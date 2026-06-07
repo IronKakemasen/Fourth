@@ -37,6 +37,7 @@ public:
 
 		//名前を分かりやすい形に変換
 		std::string convName = NameConverter<BufferType>(name_);
+		Log(convName);
 
 		//生成
 		return std::move(CreateSpecificBuffer<BufferType , DescType>(desc_, convName, std::move(resource1), std::move(resource2)));
@@ -59,6 +60,7 @@ private:
 	template <typename BufferType>
 	std::string NameConverter(const std::string& name_) = delete;
 
+	void Log(std::string convName_);
 
 };
 

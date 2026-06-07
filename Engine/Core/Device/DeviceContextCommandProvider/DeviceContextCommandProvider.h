@@ -4,7 +4,7 @@
 
 struct ConstantBufferDescription;
 struct ColorBufferDescription;
-struct CreatingGPUBuffer;
+struct CommandCreateGPUBuffer;
 struct CommandCreateDescriptorHeap;
 
 //Deviceを使用する処理を、使用しない形にコマンド化して提供するクラス
@@ -19,11 +19,9 @@ public:
 	template <typename DescriptionType>
 	[[nodiscard]] std::function<Microsoft::WRL::ComPtr<ID3D12Resource>(const DescriptionType&)> PassCreateBufferCommand();
 
+	//DescriptorHeapを生成するコマンドを返す関数
+	[[nodiscard]] std::function<Microsoft::WRL::ComPtr<ID3D12DescriptorHeap>(D3D12_DESCRIPTOR_HEAP_TYPE , UINT , bool )> PassCreateDescriptorHeapCommand();
 
-	////定数バッファを生成するコマンドを返す関数
-	//[[nodiscard]] std::function<Microsoft::WRL::ComPtr<ID3D12Resource>(const ConstantBufferDescription&)> PassCreateConstantBufferCommand();
-	////カラーバッファを生成するコマンドを返す関数
-	//[[nodiscard]] std::function<Microsoft::WRL::ComPtr<ID3D12Resource>(const ColorBufferDescription&)> PassCreateColorBufferCommand();
 
 private:
 

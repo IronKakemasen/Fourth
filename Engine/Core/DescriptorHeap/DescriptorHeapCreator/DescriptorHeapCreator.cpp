@@ -11,3 +11,8 @@ DescriptorHeapContext::DescriptorHeapCreator::~DescriptorHeapCreator()
 {
 
 }
+
+void DescriptorHeapContext::DescriptorHeapCreator::SetCommand(std::function<Microsoft::WRL::ComPtr<ID3D12DescriptorHeap>(D3D12_DESCRIPTOR_HEAP_TYPE, UINT, bool)> func_)
+{
+	createFunc = func_;
+}

@@ -10,7 +10,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 	RuntimeDebugger runtimeDebugger({Debug::k0EnableDebugLayer,Debug::k1EnablePointerValidator, Debug::k2EnableLeakChecker});
 
 	//アプリケーションクラス
-	WinApp winApp((UINT)Window::kWidth, (UINT)Window::kHeight, Window::kTitle);
+	WinApp winApp;
 
 	MSG msg = {};
 
