@@ -36,6 +36,9 @@ public:
 	DeviceContext(InstanceKey instanceKey);
 	~DeviceContext();
 
+	//DescriptorHeapのハンドルインクリメントサイズを返す関数
+	UINT PassDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE type_);
+
 private:
 
 	//Setupper

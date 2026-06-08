@@ -2,37 +2,60 @@
 
 class WinApp;
 class ViewCreatorBehavior;
-
+class DescriptorHeapClass;
+class ViewCreatorBehavior;
 
 class DescriptorHeapContext
 {
+	//View生成クラスの識別タグ
+	enum ViewCreatorType
+	{
+		kSRV,
+		kSampler,
+		kRTV,
+		kDSV,
+
+		kCount
+	};
+
 private:
 
 	using DescroptorCreateCommand = 
 		std::function<Microsoft::WRL::ComPtr<ID3D12DescriptorHeap>(D3D12_DESCRIPTOR_HEAP_TYPE, UINT, bool)>;
 
+	//DescriptorHeap生成クラス
+	class DescriptorHeapCreator;
+	std::unique_ptr<DescriptorHeapCreator> descriptorHeapCreator;
+
+	//DescriptorHeapClassのコンテナ
+	std::unordered_map < D3D12_DESCRIPTOR_HEAP_TYPE, std::unique_ptr<DescriptorHeapClass>> descriptorHeapContainer;
+
+	//Viewを生成するクラスのコンテナ
+	std::unordered_map<ViewCreatorType, std::unique_ptr<ViewCreatorBehavior>> viewCreatorContainer;
+
 public:
 
+	//WinAppのみ生成可能
 	struct InstanceKey;
-	
+	//ViewCreator生成キー
+	struct CreateKey;
+
 	DescriptorHeapContext(InstanceKey instanceKey_);
 	~DescriptorHeapContext();
 
 	//コマンドのセット
 	void SetCommand(DescroptorCreateCommand createFunc_);
+
 	//DescriptorHeapの作成
-	void CreateDescriptorHeap(D3D12_DESCRIPTOR_HEAP_TYPE heapType_, UINT numDescriptors_, bool shaderVisible_);
+	template<D3D12_DESCRIPTOR_HEAP_TYPE HeapType>
+	void CreateDescriptorHeap(UINT numDescriptors_, bool shaderVisible_, UINT handleIncSize_);
 
 private:
 
-	//DescriptorHeap生成クラス
-	class DescriptorHeapCreator;
-	std::unique_ptr<DescriptorHeapCreator> descriptorHeapCreator;
+	template<D3D12_DESCRIPTOR_HEAP_TYPE HeapType>
+	void CreateViewCreator(DescriptorHeapClass* srcPtr_);
 
-	//DescriptorHeapのコンテナ
-	std::unordered_map<D3D12_DESCRIPTOR_HEAP_TYPE,Microsoft::WRL::ComPtr<ID3D12DescriptorHeap>> descriptorHeaps;
 };
-
 
 //生成できるのはWinAppのみ
 struct DescriptorHeapContext::InstanceKey
@@ -43,6 +66,24 @@ private:
 	explicit InstanceKey() = default;
 };
 
+//ViewCreatorを生成するためのキー
+struct DescriptorHeapContext::CreateKey
+{
+private:
 
-[[nodiscard]] Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> CreateDescriptorHeap(ID3D12Device* device_,
-	D3D12_DESCRIPTOR_HEAP_TYPE heapType_, UINT numDescriptors_, bool shaderVisible);
+	friend class DescriptorHeapContext;
+	explicit CreateKey() = default;
+};
+
+
+template <>
+void DescriptorHeapContext::CreateViewCreator<D3D12_DESCRIPTOR_HEAP_TYPE_RTV>(DescriptorHeapClass* srcPtr_);
+
+template <>
+void DescriptorHeapContext::CreateViewCreator<D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV>(DescriptorHeapClass* srcPtr_);
+
+template <>
+void DescriptorHeapContext::CreateViewCreator<D3D12_DESCRIPTOR_HEAP_TYPE_DSV>(DescriptorHeapClass* srcPtr_);
+
+
+

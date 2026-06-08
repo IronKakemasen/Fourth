@@ -65,4 +65,8 @@ DeviceContext::~DeviceContext()
 
 }
 
+UINT DeviceContext::PassDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE type_)
+{
+	return device->GetDescriptorHandleIncrementSize(type_);
+}
 
