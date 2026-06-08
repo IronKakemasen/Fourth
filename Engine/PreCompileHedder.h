@@ -30,9 +30,9 @@
 #include <format>
 #include <functional>
 
-//abort()でエラーを吐いて文字列を出力する
+//abort()やassert()でエラーを吐いて文字列を出力する
 #include "Debug/ErrorMessageOutput/ErrorMessageOutput.h"
-//出力ウィンドウにログを出力
+//出力ウィンドウとログファイルにログを出力
 #include "Debug/Logger/Logger.h"
 
 
@@ -57,10 +57,10 @@ namespace ProjectConfig
 {
 	namespace Window
 	{
+		inline const LPCWSTR kTitle = L"Fourth";
 		constexpr float kWidth = 1280.0f;
 		constexpr float kHeight = 720.0f;
 		constexpr float kDefaultFovY = 90.0f * 3.141592653589f / 180.0f;
-		inline const LPCWSTR kTitle = L"Fourth";
 	}
 
 	namespace Render
@@ -72,9 +72,12 @@ namespace ProjectConfig
 
 	namespace Debug
 	{
-		constexpr bool k0EnableDebugLayer = true;
-		constexpr bool k1EnablePointerValidator = true;
-		constexpr bool k2EnableLeakChecker = true;
+		//DebugLayer
+		constexpr bool kEnableDebugLayer = true;
+		//ポインター破壊検知
+		constexpr bool kEnablePointerValidator = true;
+		//Comptrのリークチェック
+		constexpr bool kEnableLeakChecker = true;
 
 	}
 

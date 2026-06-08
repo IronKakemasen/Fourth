@@ -41,9 +41,9 @@
 #include <format>
 #include <functional>
 
-//abort()でエラーを吐いて文字列を出力する
+//abort()やassert()でエラーを吐いて文字列を出力する
 #include "Debug/ErrorMessageOutput/ErrorMessageOutput.h"
-//出力ウィンドウにログを出力
+//出力ウィンドウとログファイルにログを出力
 #include "Debug/Logger/Logger.h"
 
 
@@ -68,10 +68,10 @@ namespace ProjectConfig
 {
 	namespace Window
 	{
+		inline const LPCWSTR kTitle = L"Fourth";
 		constexpr float kWidth = 1280.0f;
 		constexpr float kHeight = 720.0f;
 		constexpr float kDefaultFovY = 90.0f * 3.141592653589f / 180.0f;
-		inline const LPCWSTR kTitle = L"Fourth";
 	}
 
 	namespace Render
@@ -80,13 +80,25 @@ namespace ProjectConfig
 		constexpr D3D_SHADER_MODEL kMaximumShaderModel = D3D_SHADER_MODEL_6_5;
 	}
 
+
 	namespace Debug
 	{
-		constexpr bool k0EnableDebugLayer = true;
-		constexpr bool k1EnablePointerValidator = true;
-		constexpr bool k2EnableLeakChecker = true;
+		//DebugLayer
+		constexpr bool kEnableDebugLayer = true;
+		//ポインター破壊検知
+		constexpr bool kEnablePointerValidator = true;
+		//Comptrのリークチェック
+		constexpr bool kEnableLeakChecker = true;
 
 	}
+
+	namespace Core
+	{
+		constexpr uint16_t kNumDescriptorsRTVHeap = 16;
+		constexpr uint16_t kNumDescriptorSRVHeap = 256;
+		constexpr uint16_t kNumDescriptorsDSVHeap = 16;
+	}
+
 }
 
 
@@ -116,6 +128,222 @@ private:
 
 
 ========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Core\DescriptorHeap\DescriptorHeapContext.cpp ===
+========================================
+#include "PreCompileHedder.h"
+#include "DescriptorHeapContext.h"
+#include "DescriptorHeapCreator/DescriptorHeapCreator.h"
+
+DescriptorHeapContext::DescriptorHeapContext(InstanceKey instanceKey_)
+{
+	Logger::Entry("DescriptorHeapContext::Constructor");
+
+	descriptorHeapCreator.reset(new DescriptorHeapCreator(instanceKey_));
+	Logger::Log("Instantiate : DescriptorHeapCreator");
+
+
+	Logger::End("DescriptorHeapContext::Constructor");
+}
+
+DescriptorHeapContext::~DescriptorHeapContext()
+{
+
+}
+
+void DescriptorHeapContext::SetCommand(DescroptorCreateCommand createFunc_)
+{
+	descriptorHeapCreator->SetCommand(createFunc_);
+}
+
+void DescriptorHeapContext::CreateDescriptorHeap(D3D12_DESCRIPTOR_HEAP_TYPE heapType_, UINT numDescriptors_, bool shaderVisible_)
+{
+	descriptorHeaps[heapType_] = std::move(descriptorHeapCreator->createFunc(heapType_, numDescriptors_, shaderVisible_));
+}
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Core\DescriptorHeap\DescriptorHeapContext.h ===
+========================================
+#pragma once
+
+class WinApp;
+class ViewCreatorBehavior;
+
+
+class DescriptorHeapContext
+{
+private:
+
+	using DescroptorCreateCommand = 
+		std::function<Microsoft::WRL::ComPtr<ID3D12DescriptorHeap>(D3D12_DESCRIPTOR_HEAP_TYPE, UINT, bool)>;
+
+public:
+
+	struct InstanceKey;
+	
+	DescriptorHeapContext(InstanceKey instanceKey_);
+	~DescriptorHeapContext();
+
+	//コマンドのセット
+	void SetCommand(DescroptorCreateCommand createFunc_);
+	//DescriptorHeapの作成
+	void CreateDescriptorHeap(D3D12_DESCRIPTOR_HEAP_TYPE heapType_, UINT numDescriptors_, bool shaderVisible_);
+
+private:
+
+	//DescriptorHeap生成クラス
+	class DescriptorHeapCreator;
+	std::unique_ptr<DescriptorHeapCreator> descriptorHeapCreator;
+
+	//DescriptorHeapのコンテナ
+	std::unordered_map<D3D12_DESCRIPTOR_HEAP_TYPE,Microsoft::WRL::ComPtr<ID3D12DescriptorHeap>> descriptorHeaps;
+};
+
+
+//生成できるのはWinAppのみ
+struct DescriptorHeapContext::InstanceKey
+{
+private:
+
+	friend class WinApp;
+	explicit InstanceKey() = default;
+};
+
+
+[[nodiscard]] Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> CreateDescriptorHeap(ID3D12Device* device_,
+	D3D12_DESCRIPTOR_HEAP_TYPE heapType_, UINT numDescriptors_, bool shaderVisible);
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Core\DescriptorHeap\DescriptorHeapCreator\DescriptorHeapCreator.cpp ===
+========================================
+#include "PreCompileHedder.h"
+#include "DescriptorHeapCreator.h"
+
+
+DescriptorHeapContext::DescriptorHeapCreator::DescriptorHeapCreator(DescriptorHeapContext::InstanceKey instanceKey_)
+{
+
+}
+
+DescriptorHeapContext::DescriptorHeapCreator::~DescriptorHeapCreator()
+{
+
+}
+
+void DescriptorHeapContext::DescriptorHeapCreator::SetCommand(std::function<Microsoft::WRL::ComPtr<ID3D12DescriptorHeap>(D3D12_DESCRIPTOR_HEAP_TYPE, UINT, bool)> func_)
+{
+	createFunc = func_;
+}
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Core\DescriptorHeap\DescriptorHeapCreator\DescriptorHeapCreator.h ===
+========================================
+#pragma once
+#include "../DescriptorHeapContext.h"
+
+
+class DescriptorHeapContext::DescriptorHeapCreator
+{
+public:
+
+	std::function<Microsoft::WRL::ComPtr<ID3D12DescriptorHeap>(D3D12_DESCRIPTOR_HEAP_TYPE, UINT, bool)> createFunc;
+
+	DescriptorHeapCreator(DescriptorHeapContext::InstanceKey instanceKey_);
+	~DescriptorHeapCreator();
+
+	void SetCommand(std::function<Microsoft::WRL::ComPtr<ID3D12DescriptorHeap>(D3D12_DESCRIPTOR_HEAP_TYPE, UINT, bool)> func_);
+};
+
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Core\DescriptorHeap\ViewCreator\ViewCreatorBehavior.cpp ===
+========================================
+#include "PreCompileHedder.h"
+#include "ViewCreatorBehavior.h"
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Core\DescriptorHeap\ViewCreator\ViewCreatorBehavior.h ===
+========================================
+#pragma once
+
+
+
+class ViewCreatorBehavior
+{
+
+protected:
+	//ヒープ
+	Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> descriptorHeap = nullptr;
+	//最大領域分割数
+	uint16_t maxDescriptorNum{};
+	//viewの生成数
+	uint32_t currentCreateNum{};
+	//ディスクリプターサイズ
+	uint32_t sizeOfDescriptor{};
+
+
+};
+
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Core\DescriptorHeap\ViewCreator\RTV_Creator\RTV_Creator.cpp ===
+========================================
+#include "PreCompileHedder.h"
+#include "RTV_Creator.h"
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Core\DescriptorHeap\ViewCreator\RTV_Creator\RTV_Creator.h ===
+========================================
+#pragma once
+class RTV_Creator
+{
+};
+
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Core\DescriptorHeap\ViewCreator\SRV_Creator\SRV_Creator.cpp ===
+========================================
+#include "PreCompileHedder.h"
+#include "SRV_Creator.h"
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Core\DescriptorHeap\ViewCreator\SRV_Creator\SRV_Creator.h ===
+========================================
+#pragma once
+class SRV_Creator
+{
+};
+
+
+
+
+
+========================================
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Core\Device\DeviceContext.cpp ===
 ========================================
 #include "PreCompileHedder.h"
@@ -124,45 +352,37 @@ private:
 #include "DeviceSetupper/DeviceContextSetupper.h"
 #include "DeviceContextCommandProvider/DeviceContextCommandProvider.h"
 #include "DeviceContextCommandGenerator/DeviceContextCommandGenerator.h"
-
-
-template<>
-std::function<Microsoft::WRL::ComPtr<ID3D12Resource>(const ConstantBufferDescription&)>DeviceContext::GetBufferCreateCommand<ConstantBufferDescription>()
-{
-	return commandProvider->PassCreateConstantBufferCommand();
-}
-
-template<>
-std::function<Microsoft::WRL::ComPtr<ID3D12Resource>(const ColorBufferDescription&)>DeviceContext::GetBufferCreateCommand<ColorBufferDescription>()
-{
-	return commandProvider->PassCreateColorBufferCommand();
-}
+#include "Commands/CreateDescriptorHeap/CommandCreateDescriptorHeap.h"
+#include "Commands/CreatGPUBuffer/CommandOfCreatingGPUBuffer.h"
 
 DeviceContext::DeviceContext(DeviceContext::InstanceKey instanceKey_)
 {
-	//コアパーツの生成
-	TakeOverCoreParts(instanceKey_);
-	//コマンド生成クラスのインスタンス化
-	CreateCommandGenerator(instanceKey_);
-	//コマンド実行クラスのインスタンス化
-	CreateCommandExecutor(instanceKey_);
-	//コマンド生成
-	CreateCommands(instanceKey_);
+	Logger::Entry("DeviceContext::Constructor");
 
+	TakeOverCoreParts(instanceKey_);
+	Logger::Log("Create : CoreParts");
+
+	CreateCommandGenerator(instanceKey_);
+	Logger::Log("Create : CommandGenerator");
+
+	CreateCommandProvider(instanceKey_);
+	Logger::Log("Create : CommandProvider");
+
+	CreateCommands(instanceKey_);
+	Logger::Log("Create : Commands");
+
+
+	Logger::End("DeviceContext::Constructor");
 }
 
 void DeviceContext::CreateCommands(DeviceContext::InstanceKey instanceKey_)
 {
-	auto generate = [this, instanceKey_](CommandType type_)
-	{
-		commandContainer[type_].emplace_back(commandGenerator->CreateCommand(instanceKey_, type_));
-	};
-
-	generate(CommandType::kCreatingGPU_Buffer);
+	commandContainer[CommandType::kCreateGPUBuffer].emplace_back(commandGenerator->CreateCommand<CommandCreateGPUBuffer>(instanceKey_));
+	commandContainer[CommandType::kCreateDescriptorHeap].emplace_back(commandGenerator->CreateCommand<CommandCreateDescriptorHeap>(instanceKey_));
 
 }
 
-void DeviceContext::CreateCommandExecutor(DeviceContext::InstanceKey instanceKey_)
+void DeviceContext::CreateCommandProvider(DeviceContext::InstanceKey instanceKey_)
 {
 	//デバイスにアクセスする関数オブジェ
 	auto deviceGetFunc = [this](DeviceContext::DeviceAccessKey key_) -> ID3D12Device8*
@@ -218,12 +438,13 @@ public:
 	enum CommandType
 	{
 		//GPUリソース生成
-		kCreatingGPU_Buffer,
+		kCreateGPUBuffer,
+		//DescriptorHeapを作成
+		kCreateDescriptorHeap,
 
 
 		kCount
 	};
-
 
 	//コマンド生成クラス
 	class CommandGenerator;
@@ -231,30 +452,25 @@ public:
 	struct InstanceKey;
 	//デバイスにアクセスするのを許可するキー
 	struct DeviceAccessKey;
+	//CommandProvider
+	class CommandProvider;
+	std::unique_ptr<CommandProvider> commandProvider;
 
 	DeviceContext(InstanceKey instanceKey);
 	~DeviceContext();
 
-	//リソース生成コマンドパス窓口
-	//ConstantBufferDescription,ColorBufferDescription
-	template<typename BufferDescriptionType>
-	std::function < Microsoft::WRL::ComPtr<ID3D12Resource>(const BufferDescriptionType&)> GetBufferCreateCommand();
-
 private:
-
-	using CommandList = std::vector<std::unique_ptr<DeviceContextCommandBehavior>>;
-	using CommandMap = std::unordered_map<CommandType, CommandList>;
 
 	//Setupper
 	class Setupper;
-	//CommandProvider
-	class CommandProvider;
+
+	using CommandList = std::vector<std::unique_ptr<DeviceContextCommandBehavior>>;
+	using CommandMap = std::unordered_map<CommandType, CommandList>;
 
 	Microsoft::WRL::ComPtr<ID3D12Device8> device = nullptr;
 	Microsoft::WRL::ComPtr<IDXGIFactory7> dxgiFactory = nullptr;
 	Microsoft::WRL::ComPtr<IDXGIAdapter4> useAdapter = nullptr;
 
-	std::unique_ptr<CommandProvider> commandProvider;
 	std::unique_ptr<CommandGenerator> commandGenerator;
 
 	//コマンドのコンテナ
@@ -263,7 +479,7 @@ private:
 	//Setupperからコアパーツを生成し、引き継ぐ
 	void TakeOverCoreParts(DeviceContext::InstanceKey instanceKey_);
 	//CommandProviderの生成
-	void CreateCommandExecutor(DeviceContext::InstanceKey instanceKey_);
+	void CreateCommandProvider(DeviceContext::InstanceKey instanceKey_);
 	//CommandGeneratorの生成
 	void CreateCommandGenerator(DeviceContext::InstanceKey instanceKey_);
 	//コマンドの生成
@@ -333,6 +549,70 @@ public:
 
 
 ========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Core\Device\Commands\CreateDescriptorHeap\CommandCreateDescriptorHeap.cpp ===
+========================================
+#include "PreCompileHedder.h"
+#include "CommandCreateDescriptorHeap.h"
+
+
+CommandCreateDescriptorHeap::CommandCreateDescriptorHeap(DeviceContext::CommandGenerator::GenerateKey generateKey_) :DeviceContextCommandBehavior(generateKey_)
+{
+
+}
+
+CommandCreateDescriptorHeap::~CommandCreateDescriptorHeap()
+{
+
+}
+
+
+Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> CommandCreateDescriptorHeap::Create(ID3D12Device* device_, D3D12_DESCRIPTOR_HEAP_TYPE heapType_, UINT numDescriptors_, bool shaderVisible)
+{
+	Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> ret_descriptorHeap = nullptr;
+	D3D12_DESCRIPTOR_HEAP_DESC descriptorheapDesc{};
+
+	descriptorheapDesc.NodeMask = 0;
+	descriptorheapDesc.Type = heapType_;
+	descriptorheapDesc.NumDescriptors = numDescriptors_;
+	descriptorheapDesc.Flags = shaderVisible ? D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE : D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
+
+	HRESULT hr = device_->CreateDescriptorHeap(&descriptorheapDesc,
+		IID_PPV_ARGS(ret_descriptorHeap.GetAddressOf()));
+
+	assert(SUCCEEDED(hr));
+
+	return ret_descriptorHeap;
+}
+
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Core\Device\Commands\CreateDescriptorHeap\CommandCreateDescriptorHeap.h ===
+========================================
+#pragma once
+
+#include "../DeviceContextCommandBehavior.h"
+
+
+//DescriptorHeapを生成するコマンド
+struct CommandCreateDescriptorHeap  : public DeviceContextCommandBehavior
+{
+	//DeviceContext::CommandGeneratorクラスのみ生成可能
+	CommandCreateDescriptorHeap(DeviceContext::CommandGenerator::GenerateKey generateKey_);
+	~CommandCreateDescriptorHeap();
+
+
+	[[nodiscard]] Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> Create(ID3D12Device* device_,
+		D3D12_DESCRIPTOR_HEAP_TYPE heapType_, UINT numDescriptors_, bool shaderVisible);
+};
+
+
+
+
+
+========================================
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Core\Device\Commands\CreatGPUBuffer\CommandOfCreatingGPUBuffer.cpp ===
 ========================================
 #include "PreCompileHedder.h"
@@ -342,7 +622,7 @@ public:
 #include "../../../../Resource/BufferDescriptions/ColorBufferDescription/ColorBufferDescription.h"
  
 
-[[nodiscard]] Microsoft::WRL::ComPtr<ID3D12Resource> CreatingGPUBuffer::CreateConstantBuffer
+[[nodiscard]] Microsoft::WRL::ComPtr<ID3D12Resource> CommandCreateGPUBuffer::CreateConstantBuffer
 	( ID3D12Device8* device_ , const ConstantBufferDescription& desc_)
 {
 	Microsoft::WRL::ComPtr<ID3D12Resource> ret_resource;
@@ -382,7 +662,7 @@ public:
 
 }
 
-[[nodiscard]] Microsoft::WRL::ComPtr<ID3D12Resource> CreatingGPUBuffer::CreateColorBuffer
+[[nodiscard]] Microsoft::WRL::ComPtr<ID3D12Resource> CommandCreateGPUBuffer::CreateColorBuffer
 	( ID3D12Device8* device_ , const ColorBufferDescription& desc_)
 {
 	Microsoft::WRL::ComPtr<ID3D12Resource> ret_resource;
@@ -431,12 +711,12 @@ public:
 }
 
 
-CreatingGPUBuffer::CreatingGPUBuffer(DeviceContext::CommandGenerator::GenerateKey generateKey_) :DeviceContextCommandBehavior(generateKey_)
+CommandCreateGPUBuffer::CommandCreateGPUBuffer(DeviceContext::CommandGenerator::GenerateKey generateKey_) :DeviceContextCommandBehavior(generateKey_)
 {
 
 }
 
-CreatingGPUBuffer::~CreatingGPUBuffer()
+CommandCreateGPUBuffer::~CommandCreateGPUBuffer()
 {
 
 }
@@ -451,27 +731,21 @@ CreatingGPUBuffer::~CreatingGPUBuffer()
 
 struct ConstantBufferDescription;
 struct ColorBufferDescription;
-class GPUBufferCreator;
 
 
 //各Typeのバッファを作る関数群
-class CreatingGPUBuffer : public DeviceContextCommandBehavior
+struct CommandCreateGPUBuffer : public DeviceContextCommandBehavior
 {
-public:
-
 	//DeviceContext::CommandGeneratorクラスのみ生成可能
-	CreatingGPUBuffer(DeviceContext::CommandGenerator::GenerateKey generateKey_);
-	~CreatingGPUBuffer();
+	CommandCreateGPUBuffer(DeviceContext::CommandGenerator::GenerateKey generateKey_);
+	~CommandCreateGPUBuffer();
 
 	//ConstantBufferを作る
 	[[nodiscard]] Microsoft::WRL::ComPtr<ID3D12Resource> CreateConstantBuffer(ID3D12Device8* device_,
 		const ConstantBufferDescription& desc_);
 	//ColorBufferを作る
 	[[nodiscard]] Microsoft::WRL::ComPtr<ID3D12Resource> CreateColorBuffer(ID3D12Device8* device_, 
-		const ColorBufferDescription& desc_);
-
-private:
-	
+		const ColorBufferDescription& desc_);	
 
 };
 
@@ -486,31 +760,12 @@ private:
 #include "DeviceContextCommandGenerator.h"
 
 #include "../Commands/CreatGPUBuffer/CommandOfCreatingGPUBuffer.h"
+#include "../Commands/CreateDescriptorHeap/CommandCreateDescriptorHeap.h"
 
 DeviceContext::CommandGenerator::CommandGenerator(DeviceContext::InstanceKey instanceKey_)
 {
 
 
-}
-
-[[nodiscard]] std::unique_ptr<DeviceContextCommandBehavior> DeviceContext::CommandGenerator::CreateCommand(
-	DeviceContext::InstanceKey instanceKey_, DeviceContext::CommandType type_)
-{
-	auto generateKey = CommandGenerator::GenerateKey{};
-	std::unique_ptr<DeviceContextCommandBehavior> ret;
-
-
-	switch (type_)
-	{
-	case DeviceContext::kCreatingGPU_Buffer:
-
-		ret = std::make_unique<CreatingGPUBuffer>(generateKey);
-
-		break;
-
-	}
-
-	return std::move(ret);
 }
 
 DeviceContext::CommandGenerator::~CommandGenerator()
@@ -540,9 +795,15 @@ public:
 	CommandGenerator(DeviceContext::InstanceKey instanceKey_);
 	~CommandGenerator();
 
-	//引数のコマンドを生成する
-	[[nodiscard]] std::unique_ptr<DeviceContextCommandBehavior> CreateCommand(DeviceContext::InstanceKey instanceKey_ , DeviceContext::CommandType type_);
+	//コマンドを生成する
+	template<typename CommandClass>
+	[[nodiscard]] std::unique_ptr<DeviceContextCommandBehavior> CreateCommand(DeviceContext::InstanceKey instanceKey_)
+	{
+		auto generateKey = CommandGenerator::GenerateKey{};
+		std::unique_ptr<DeviceContextCommandBehavior> retCommand = std::make_unique<CommandClass>(generateKey);
 
+		return retCommand;
+	}
 
 };
 
@@ -567,6 +828,7 @@ private:
 #include "../../../Resource/BufferDescriptions/ConstantBufferDescription/ConstantBufferDescription.h"
 
 #include "../Commands/CreatGPUBuffer/CommandOfCreatingGPUBuffer.h"
+#include "../Commands/CreateDescriptorHeap/CommandCreateDescriptorHeap.h"
 
 
 
@@ -576,37 +838,56 @@ DeviceContext::CommandProvider::CommandProvider(DeviceContext::InstanceKey insta
 	
 }
 
-
-[[nodiscard]] std::function<Microsoft::WRL::ComPtr<ID3D12Resource>(const ConstantBufferDescription&)> DeviceContext::CommandProvider::PassCreateConstantBufferCommand()
+[[nodiscard]] std::function<Microsoft::WRL::ComPtr<ID3D12DescriptorHeap>(D3D12_DESCRIPTOR_HEAP_TYPE, UINT, bool)> DeviceContext::CommandProvider::PassCreateDescriptorHeapCommand()
 {
-	auto retFunc = [this](const ConstantBufferDescription& desc_)
+	auto retFunc = [this](D3D12_DESCRIPTOR_HEAP_TYPE heapType_, UINT numDescriptors_, bool shaderVisible_)
 	{
 		auto* device = deviceGetter(DeviceContext::DeviceAccessKey{});
 		auto& container = *commandContainer;
+		auto* command = static_cast<CommandCreateDescriptorHeap*>(container[DeviceContext::CommandType::kCreateDescriptorHeap][0].get());
 
-		CreatingGPUBuffer* command = static_cast<CreatingGPUBuffer*>(container[DeviceContext::CommandType::kCreatingGPU_Buffer][0].get());
-
-		return command->CreateConstantBuffer(device, desc_);
-	};
-
-	return retFunc;
-};
-
-[[nodiscard]] std::function<Microsoft::WRL::ComPtr<ID3D12Resource>(const ColorBufferDescription&)> DeviceContext::CommandProvider::PassCreateColorBufferCommand()
-{
-	auto retFunc = [this](const ColorBufferDescription& desc_)
-	{
-		auto* device = deviceGetter(DeviceContext::DeviceAccessKey{});
-		auto& container = *commandContainer;
-
-		CreatingGPUBuffer* command = static_cast<CreatingGPUBuffer*>(container[DeviceContext::CommandType::kCreatingGPU_Buffer][0].get());
-
-		return command->CreateColorBuffer(device, desc_);
+		return command->Create(device, heapType_,numDescriptors_, shaderVisible_);
 	};
 
 	return retFunc;
 
 }
+
+
+template <>
+[[nodiscard]] std::function<Microsoft::WRL::ComPtr<ID3D12Resource>(const ConstantBufferDescription&)> DeviceContext::CommandProvider::PassCreateBufferCommand()
+{
+	auto retFunc = [this](const ConstantBufferDescription& desc_)
+		{
+			auto* device = deviceGetter(DeviceContext::DeviceAccessKey{});
+			auto& container = *commandContainer;
+
+			CommandCreateGPUBuffer* command = static_cast<CommandCreateGPUBuffer*>(container[DeviceContext::CommandType::kCreateGPUBuffer][0].get());
+
+			return command->CreateConstantBuffer(device, desc_);
+		};
+
+	return retFunc;
+
+}
+
+template <>
+[[nodiscard]] std::function<Microsoft::WRL::ComPtr<ID3D12Resource>(const ColorBufferDescription&)> DeviceContext::CommandProvider::PassCreateBufferCommand()
+{
+	auto retFunc = [this](const ColorBufferDescription& desc_)
+		{
+			auto* device = deviceGetter(DeviceContext::DeviceAccessKey{});
+			auto& container = *commandContainer;
+
+			CommandCreateGPUBuffer* command = static_cast<CommandCreateGPUBuffer*>(container[DeviceContext::CommandType::kCreateGPUBuffer][0].get());
+
+			return command->CreateColorBuffer(device, desc_);
+		};
+
+	return retFunc;
+}
+
+
 
 
 
@@ -624,7 +905,8 @@ DeviceContext::CommandProvider::CommandProvider(DeviceContext::InstanceKey insta
 
 struct ConstantBufferDescription;
 struct ColorBufferDescription;
-class CreatingGPUBuffer;
+struct CommandCreateGPUBuffer;
+struct CommandCreateDescriptorHeap;
 
 //Deviceを使用する処理を、使用しない形にコマンド化して提供するクラス
 class DeviceContext::CommandProvider
@@ -634,10 +916,13 @@ public:
 	CommandProvider(DeviceContext::InstanceKey instanceKey_, 
 		std::function< ID3D12Device8* (DeviceContext::DeviceAccessKey)> func_ , CommandMap* commandContainer_);
 	
-	//定数バッファを生成するコマンドを返す関数
-	[[nodiscard]] std::function<Microsoft::WRL::ComPtr<ID3D12Resource>(const ConstantBufferDescription&)> PassCreateConstantBufferCommand();
-	//カラーバッファを生成するコマンドを返す関数
-	[[nodiscard]] std::function<Microsoft::WRL::ComPtr<ID3D12Resource>(const ColorBufferDescription&)> PassCreateColorBufferCommand();
+	//バッファを生成するコマンドを返す関数(ConstantBufferDescription , ColorBufferDescription)
+	template <typename DescriptionType>
+	[[nodiscard]] std::function<Microsoft::WRL::ComPtr<ID3D12Resource>(const DescriptionType&)> PassCreateBufferCommand();
+
+	//DescriptorHeapを生成するコマンドを返す関数
+	[[nodiscard]] std::function<Microsoft::WRL::ComPtr<ID3D12DescriptorHeap>(D3D12_DESCRIPTOR_HEAP_TYPE , UINT , bool )> PassCreateDescriptorHeapCommand();
+
 
 private:
 
@@ -978,8 +1263,10 @@ void WindowContext::Finalize()
 }
 
 
-WindowContext::WindowContext(CraftKey craftKey_, uint32_t width_, uint32_t height_, LPCWSTR windowName_)
+WindowContext::WindowContext(CraftKey craftKey_)
 {
+	using namespace ProjectConfig::Window;
+
 //#ifdef _DEBUG
 //
 //	if (SUCCEEDED(D3D12GetDebugInterface(IID_PPV_ARGS(&debugController))))
@@ -997,9 +1284,9 @@ WindowContext::WindowContext(CraftKey craftKey_, uint32_t width_, uint32_t heigh
 	// ウィンドウクラスの登録
 	WNDCLASSEX wc = {};
 
-	setupParam.m_windowName = windowName_;
-	setupParam.m_width = (uint32_t)width_;
-	setupParam.m_height = (uint32_t)height_;
+	setupParam.m_windowName = kTitle;
+	setupParam.m_width = (uint32_t)kWidth;
+	setupParam.m_height = (uint32_t)kHeight;
 
 	wc.cbSize = sizeof(WNDCLASSEX);
 	wc.style = CS_HREDRAW | CS_VREDRAW;
@@ -1008,7 +1295,7 @@ WindowContext::WindowContext(CraftKey craftKey_, uint32_t width_, uint32_t heigh
 	wc.hCursor = LoadCursor(hInst, IDC_ARROW);
 	wc.hbrBackground = GetSysColorBrush(COLOR_BACKGROUND);
 	wc.lpszMenuName = nullptr;
-	wc.lpszClassName = windowName_;
+	wc.lpszClassName = kTitle;
 	wc.hIconSm = LoadIcon(hInst, IDI_APPLICATION);
 
 	//ウィンドウの登録
@@ -1027,8 +1314,8 @@ WindowContext::WindowContext(CraftKey craftKey_, uint32_t width_, uint32_t heigh
 	// ウィンドウの作成
 	setupParam.m_hWnd = CreateWindowEx(
 		0,                              // Optional window styles.
-		windowName_,                   // Window class
-		windowName_,					// Window text
+		kTitle,                   // Window class
+		kTitle,					// Window text
 		style,							// Window style
 		// Size and position
 		CW_USEDEFAULT,
@@ -1077,7 +1364,7 @@ public:
 
 	struct CraftKey;
 
-	WindowContext(CraftKey craftKey_, uint32_t width_, uint32_t height_, LPCWSTR windowName_);
+	WindowContext(CraftKey craftKey_);
 	void Finalize();
 
 private:
@@ -1205,23 +1492,33 @@ Logger::Logger()
 	Log("=========================================================================================================");
 }
 
-void Logger::Log(std::string const& str_)
+void Logger::Log(std::string const& message_, const std::string& fileName_)
 {
 #ifdef _DEBUG
-	logFIle << str_ << std::endl;
-	OutputDebugStringA(str_.c_str());
+	std::string output = message_;
+	if (fileName_.size() > 0) output += " : " + fileName_;
+
+	logFIle << output << std::endl;
+	OutputDebugStringA((output + "\n").c_str());
 #endif
 }
 
-//void Logger::Log(std::ostream& os, std::string const& message)
-//{
-//
-//#ifdef _DEBUG
-//	os << message << std::endl;
-//	OutputDebugStringA(message.c_str());
-//#endif
-//
-//}
+void Logger::Entry(const std::string& message_)
+{
+	std::string output = "\n [ Entry ]=======================----" + message_ + "----=================================================================================================================================\n\n";
+
+	logFIle << output << std::endl;
+	OutputDebugStringA(output.c_str());
+}
+
+void Logger::End(const std::string& message_)
+{
+	std::string output = "\n[ End ]=======================----" + message_ + "----=================================================================================================================================\n\n";
+
+	logFIle << output << std::endl;
+	OutputDebugStringA(output.c_str());
+
+}
 
 
 
@@ -1239,8 +1536,9 @@ class Logger
 
 public:
 
-	static void Log(std::string const& str_);
-	static void Log(std::ostream& os, std::string const& message);
+	static void Log(std::string const& message_,const std::string& fileName_ = "");
+	static void Entry(const std::string& message_);
+	static void End(const std::string& message_);
 
 };
 
@@ -1256,15 +1554,17 @@ public:
 #include "../ErrorMessageOutput/ErrorMessageOutput.h"
 
 
-RuntimeDebugger::RuntimeDebugger(const std::array<bool, Tag::kCount> enableFlags_)
+RuntimeDebugger::RuntimeDebugger()
 {
+	using namespace ProjectConfig::Debug;
+
 	//インスタンス制限
 	std::string errorMessage = "RuntimeDebuggerクラスが複数具現化されてます";
 	ErrorMessageOutput::Assert::DetectError(InstanceLimiter::CanInstantiate(), errorMessage,"RuntimeDebugger.cpp");
 
-	if (enableFlags_[kDebugLayer]) debugLayer.Init();
-	if (enableFlags_[kPointerValidator]) pointerValidator.Init();
-	if (enableFlags_[kLeakChecker]) leakChecker.Init();
+	if (kEnableDebugLayer) debugLayer.Init();
+	if (kEnablePointerValidator) pointerValidator.Init();
+	if (kEnableLeakChecker) leakChecker.Init();
 
 }
 
@@ -1290,18 +1590,9 @@ bool RuntimeDebugger::InstanceLimiter::CanInstantiate()
 
 class RuntimeDebugger
 {
-	enum Tag
-	{
-		kDebugLayer,
-		kPointerValidator,
-		kLeakChecker,
-
-		kCount
-	};
-
 public:
 
-	RuntimeDebugger(const std::array<bool,Tag::kCount> enableFlags_);
+	RuntimeDebugger();
 
 	RuntimeDebugger(const RuntimeDebugger&) = delete;
 	RuntimeDebugger& operator=(const RuntimeDebugger&) = delete;
@@ -2284,7 +2575,24 @@ private:
 ColorBuffer::ColorBuffer(const InstanceKey& instanceKey_, std::string name_, Microsoft::WRL::ComPtr<ID3D12Resource> resource1_, Microsoft::WRL::ComPtr<ID3D12Resource> resource2_, ColorBufferDescription desc_) :
 	GPUBufferBehavior(instanceKey_, name_, std::move(resource1_), std::move(resource2_)), desc(desc_)
 {
+	SetMatrix();
+}
 
+void ColorBuffer::SetMatrix()
+{
+	//クライアント領域と一緒のサイズにして画面全体に表示
+	viewport.Width = static_cast<FLOAT>(desc.width);
+	viewport.Height = static_cast<FLOAT>(desc.height);
+	viewport.TopLeftX = 0.0f;
+	viewport.TopLeftY = 0.0f;
+	viewport.MinDepth = 0.0f;
+	viewport.MaxDepth = 1.0f;
+
+	//しざー矩形
+	scissorRect.right = static_cast<LONG>(desc.width);
+	scissorRect.bottom = static_cast<LONG>(desc.height);
+	scissorRect.left = static_cast<LONG>(0.0f);
+	scissorRect.top = static_cast<LONG>(0.0f);
 
 }
 
@@ -2308,7 +2616,16 @@ public:
 		Microsoft::WRL::ComPtr<ID3D12Resource> resource1_, Microsoft::WRL::ComPtr<ID3D12Resource> resource2_, ColorBufferDescription desc_);
 
 private:
+
+	//rtvHeap上のインデックス（D3D12_CPU_DESCRIPTOR_HANDLE）
+	uint16_t rtvHeapIndex{};
 	ColorBufferDescription desc;
+	D3D12_VIEWPORT viewport;
+	D3D12_RECT scissorRect;
+
+	//viewportとscissorRectをせっと
+	void SetMatrix();
+
 };
 
 
@@ -2430,6 +2747,10 @@ GPUBufferCreator::~GPUBufferCreator()
 
 }
 
+void GPUBufferCreator::Log(std::string convName_)
+{
+	Logger::Log("CreateBuffer :" + convName_);
+}
 
 
 
@@ -2476,6 +2797,7 @@ public:
 
 		//名前を分かりやすい形に変換
 		std::string convName = NameConverter<BufferType>(name_);
+		Log(convName);
 
 		//生成
 		return std::move(CreateSpecificBuffer<BufferType , DescType>(desc_, convName, std::move(resource1), std::move(resource2)));
@@ -2498,6 +2820,7 @@ private:
 	template <typename BufferType>
 	std::string NameConverter(const std::string& name_) = delete;
 
+	void Log(std::string convName_);
 
 };
 
@@ -2601,15 +2924,33 @@ namespace StringConverter
 #include "WinApp.h"
 #include "../Debug/RuntimeDebugger/RuntimeDebugger.h"
 #include "../Debug/ErrorMessageOutput/ErrorMessageOutput.h"
+#include "../Core/Device/DeviceContextCommandProvider/DeviceContextCommandProvider.h"
 
-WinApp::WinApp(uint32_t width_, uint32_t height_, LPCWSTR windowName_)
+namespace
 {
+	std::string const fileName = "WinApp.cpp";
+}
+
+WinApp::WinApp()
+{
+	Logger::Entry("WinApp::Constructor");
 
 	//自身のインスタンス制限
-	ErrorMessageOutput::Assert::DetectError(InstanceLimiter::CanInstantiate(), "WinAppクラスが複数具現化されてます", "WinApp.cpp");
+	ErrorMessageOutput::Assert::DetectError(InstanceLimiter::CanInstantiate(), "WinAppクラスが複数具現化されてます", fileName);
 
 	//メンバー変数のインスタンス化
-	InstantiateMemberVariables(width_, height_, windowName_);
+	InstantiateMemberVariables();
+	Logger::Log("Instantiate : CoreSystems ");
+
+	//コマンドの授受
+	GivingAndReceivingCommands();
+	Logger::Log("Complete Giving Commands ");
+
+	//DescriptorHeapの生成
+	CreateDescriptorHeaps();
+	Logger::Log("Create : DescriptorHeaps");
+
+	Logger::End("WinApp::Constructor");
 }
 
 WinApp::~WinApp()
@@ -2625,25 +2966,45 @@ bool WinApp::InstanceLimiter::CanInstantiate()
 	return (instanceLimiter.instanceCnt++ == 0);
 }
 
-void WinApp::InstantiateMemberVariables(uint32_t width_, uint32_t height_, LPCWSTR windowName_)
+void WinApp::InstantiateMemberVariables()
 {
 	//deviceContextクラスのインスタンス化
 	deviceContext.reset(new DeviceContext(DeviceContext::InstanceKey{}));
-
 	//windowContextのインスタンス化
-	windowContext.reset(new WindowContext(WindowContext::CraftKey{}, width_, height_, windowName_));
-
+	windowContext.reset(new WindowContext(WindowContext::CraftKey{}));
 	//gpuBufferCreatorクラスのインスタンス化
 	gpuBufferCreator.reset(new GPUBufferCreator(GPUBufferCreator::InstanceKey{}));
+	//descriptorHeapContextクラスのインスタンス化
+	descriptorHeapContext.reset(new DescriptorHeapContext(DescriptorHeapContext::InstanceKey{}));
 
 }
 
 void WinApp::GivingAndReceivingCommands()
 {
-	auto createConstantBufferCommand = deviceContext->GetBufferCreateCommand<ConstantBufferDescription>();
-	auto createColorbufferCommand = deviceContext->GetBufferCreateCommand<ColorBufferDescription>();
+	//バッファ生成コマンド
+	{
+		auto createConstantBufferCommand = deviceContext->commandProvider->PassCreateBufferCommand<ConstantBufferDescription>();
+		auto createColorbufferCommand = deviceContext->commandProvider->PassCreateBufferCommand<ColorBufferDescription>();
 
-	gpuBufferCreator->SetCommands(createColorbufferCommand, createConstantBufferCommand);
+		gpuBufferCreator->SetCommands(createColorbufferCommand, createConstantBufferCommand);
+	}
+
+	//DescriptorHeap生成コマンド
+	{
+		auto createDescriptorHeapCommand = deviceContext->commandProvider->PassCreateDescriptorHeapCommand();
+
+		descriptorHeapContext->SetCommand(createDescriptorHeapCommand);
+	}
+
+}
+
+void WinApp::CreateDescriptorHeaps()
+{
+	using namespace ProjectConfig::Core;
+
+	descriptorHeapContext->CreateDescriptorHeap(D3D12_DESCRIPTOR_HEAP_TYPE_RTV, kNumDescriptorsRTVHeap, false);
+	descriptorHeapContext->CreateDescriptorHeap(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, kNumDescriptorSRVHeap, false);
+	descriptorHeapContext->CreateDescriptorHeap(D3D12_DESCRIPTOR_HEAP_TYPE_DSV, kNumDescriptorsDSVHeap, false);
 }
 
 
@@ -2655,6 +3016,7 @@ void WinApp::GivingAndReceivingCommands()
 #include "../Core/Window/WindowContext.h"
 #include "../Resource/GPUBufferCreator/GPUBufferCreator.h"
 #include "../Core/Device/DeviceContext.h"
+#include "../Core/DescriptorHeap/DescriptorHeapContext.h"
 
 
 class WinApp
@@ -2662,7 +3024,7 @@ class WinApp
 public:
 
 	~WinApp();
-	WinApp(uint32_t width_, uint32_t height_, LPCWSTR windowName_);
+	WinApp();
 
 	WinApp(const WinApp&) = delete;
 	WinApp& operator=(const WinApp&) = delete;
@@ -2680,11 +3042,18 @@ private:
 	std::unique_ptr<GPUBufferCreator> gpuBufferCreator;
 	//ウィンドウを制御するもの
 	std::unique_ptr<WindowContext> windowContext;
+	//DescriptorHeapを作り、viewを生成するクラスを所持
+	std::unique_ptr<DescriptorHeapContext> descriptorHeapContext;
+
+
 
 	//メンバー変数のインスタンス化
-	void InstantiateMemberVariables(uint32_t width_, uint32_t height_, LPCWSTR windowName_);
+	void InstantiateMemberVariables();
 	//コマンドの受け渡し（GPUresourceCreateなど）
 	void GivingAndReceivingCommands();
+	//DescriptorHeapの生成
+	void CreateDescriptorHeaps();
+
 
 };
 

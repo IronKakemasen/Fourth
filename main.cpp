@@ -1,14 +1,10 @@
 #include "Engine/Debug/RuntimeDebugger/RuntimeDebugger.h"
 #include "Engine/WinApp/WinApp.h"
 
-//プロジェクトの設定がつまってる
-using namespace ProjectConfig;
-
 int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 {
-	//デバッガー。kDebugLayer,kPointerValidator,kLeakChecker
-	RuntimeDebugger runtimeDebugger({Debug::k0EnableDebugLayer,Debug::k1EnablePointerValidator, Debug::k2EnableLeakChecker});
-
+	//デバッガー。DebugLayer,PointerValidator,LeakChecker
+	RuntimeDebugger runtimeDebugger;
 	//アプリケーションクラス
 	WinApp winApp;
 
