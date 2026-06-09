@@ -1,5 +1,6 @@
 #include "PreCompileHedder.h"
 #include "DescriptorHeapClass.h"
+#include "../ViewCreator/ViewCreatorBehavior.h"
 
 DescriptorHeapClass::DescriptorHeapClass(
 	Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> descriptorHeap_,

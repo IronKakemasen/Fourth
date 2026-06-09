@@ -4,7 +4,7 @@
 
 
 //RTVを作る
-class RTV_Creator : public ViewCreatorBehavior
+class RTV_Creator : public ViewCreatorBehavior<D3D12_RENDER_TARGET_VIEW_DESC>
 {
 public:
 
@@ -17,12 +17,7 @@ private:
 	//RTV_descriptorHandleCPUコンテナのアドレス
 	std::vector<D3D12_CPU_DESCRIPTOR_HANDLE>* RTV_descriptorHandleCPUContainer;
 
-	//ビュー生成コマンド
-	std::function<Microsoft::WRL::ComPtr<ID3D12DescriptorHeap>(D3D12_DESCRIPTOR_HEAP_TYPE, UINT, bool)> createViewCommand;
-
 	//Viewdescの生成
-	D3D12_RENDER_TARGET_VIEW_DESC CreateViewDesc();
-	//コマンドセット
-	void SetCommand(std::function<Microsoft::WRL::ComPtr<ID3D12DescriptorHeap>(D3D12_DESCRIPTOR_HEAP_TYPE, UINT, bool)> command_);
+	D3D12_RENDER_TARGET_VIEW_DESC CreateViewDesc() {};
 };
 

@@ -1,9 +1,11 @@
 #pragma once
 
 class WinApp;
-class ViewCreatorBehavior;
+class IViewCreatorBehavior;
 class DescriptorHeapClass;
-class ViewCreatorBehavior;
+template<typename ViewDescType> class ViewCreatorBehavior;
+
+
 
 class DescriptorHeapContext
 {
@@ -41,7 +43,7 @@ private:
 	std::unordered_map < D3D12_DESCRIPTOR_HEAP_TYPE, std::unique_ptr<DescriptorHeapClass>> descriptorHeapContainer;
 
 	//Viewを生成するクラスのコンテナ
-	std::unordered_map<ViewCreatorType, std::unique_ptr<ViewCreatorBehavior>> viewCreatorContainer;
+	std::unordered_map<ViewCreatorType, std::unique_ptr<IViewCreatorBehavior>> viewCreatorContainer;
 
 	//DepthStencilViewのCPU_DescriptorHandleのコンテナ
 	std::vector<D3D12_CPU_DESCRIPTOR_HANDLE> DSV_descriptorHandleCPUContainer;

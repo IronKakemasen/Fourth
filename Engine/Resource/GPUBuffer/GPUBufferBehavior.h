@@ -3,7 +3,6 @@
 
 class GPUBufferCreator;
 class GPUBufferManager;
-class ViewCreatorBehavior;
 
 class GPUBufferBehavior
 {
