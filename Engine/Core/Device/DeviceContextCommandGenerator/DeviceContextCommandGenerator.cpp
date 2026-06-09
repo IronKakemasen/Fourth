@@ -7,7 +7,6 @@
 DeviceContext::CommandGenerator::CommandGenerator(DeviceContext::InstanceKey instanceKey_)
 {
 
-
 }
 
 DeviceContext::CommandGenerator::~CommandGenerator()

@@ -1,11 +1,10 @@
 #pragma once
 
 class WinApp;
-class GPUBufferCreator;
 class DeviceContextCommandBehavior;
-
 struct ConstantBufferDescription;
 struct ColorBufferDescription;
+
 
 
 class DeviceContext
@@ -18,6 +17,9 @@ public:
 		kCreateGPUBuffer,
 		//DescriptorHeapを作成
 		kCreateDescriptorHeap,
+		//Resourceのビューを作成
+		kCreateResourceView,
+
 
 
 		kCount

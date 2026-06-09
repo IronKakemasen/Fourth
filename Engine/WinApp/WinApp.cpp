@@ -78,20 +78,33 @@ void WinApp::InstantiateMemberVariables()
 
 void WinApp::GivingAndReceivingCommands()
 {
-	//バッファ生成コマンド
+	//CreateGPUBuffer
 	{
-		const auto& createConstantBufferCommand = deviceContext->commandProvider->PassCreateBufferCommand<ConstantBufferDescription>();
-		const auto& createColorbufferCommand = deviceContext->commandProvider->PassCreateBufferCommand<ColorBufferDescription>();
+		//バッファ生成コマンド
+		const auto& createConstantBufferCommand = deviceContext->commandProvider->ProvideCreateBufferCommand<ConstantBufferDescription>();
+		const auto& createColorbufferCommand = deviceContext->commandProvider->ProvideCreateBufferCommand<ColorBufferDescription>();
 
 		gpuBufferCreator->SetCommands(createColorbufferCommand, createConstantBufferCommand);
 	}
 
-	//DescriptorHeap生成コマンド
+	//DescriptorHeapContext	
 	{
-		auto createDescriptorHeapCommand = deviceContext->commandProvider->PassCreateDescriptorHeapCommand();
+		//DescriptorHeap生成コマンド
+		auto createDescriptorHeapCommand = deviceContext->commandProvider->ProvideCreateDescriptorHeapCommand();
+		//ResourceのView生成コマンド
+		auto createRTVCommand = deviceContext->commandProvider->ProvideCreateViewCommand<D3D12_RENDER_TARGET_VIEW_DESC>();
+		auto createSRVCommand = deviceContext->commandProvider->ProvideCreateViewCommand<D3D12_SHADER_RESOURCE_VIEW_DESC>();
+		auto createDSVCommand = deviceContext->commandProvider->ProvideCreateViewCommand<D3D12_DEPTH_STENCIL_VIEW_DESC>();
 
-		descriptorHeapContext->SetCommand(createDescriptorHeapCommand);
+		descriptorHeapContext->SetCommand
+		(
+			createDescriptorHeapCommand,
+			createRTVCommand,
+			createSRVCommand,
+			createDSVCommand
+		);
 	}
+
 
 }
 

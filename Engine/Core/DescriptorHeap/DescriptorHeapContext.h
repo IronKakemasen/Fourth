@@ -1,9 +1,11 @@
 #pragma once
 
 class WinApp;
-class ViewCreatorBehavior;
+class IViewCreatorBehavior;
 class DescriptorHeapClass;
-class ViewCreatorBehavior;
+template<typename ViewDescType> class ViewCreatorBehavior;
+
+
 
 class DescriptorHeapContext
 {
@@ -20,8 +22,18 @@ class DescriptorHeapContext
 
 private:
 
+	//DescriptorHeapを生成するコマンド
 	using DescroptorCreateCommand = 
 		std::function<Microsoft::WRL::ComPtr<ID3D12DescriptorHeap>(D3D12_DESCRIPTOR_HEAP_TYPE, UINT, bool)>;
+	//RTVを生成するコマンド
+	using CreateRTVCommand =
+		std::function<void(ID3D12Resource* resource_, const D3D12_RENDER_TARGET_VIEW_DESC* desc_, D3D12_CPU_DESCRIPTOR_HANDLE descriptorHandleCPU_)>;
+	//SRVを生成するコマンド
+	using CreateSRVCommand =
+		std::function<void(ID3D12Resource* resource_, const D3D12_SHADER_RESOURCE_VIEW_DESC* desc_, D3D12_CPU_DESCRIPTOR_HANDLE descriptorHandleCPU_)>;
+	//DSVを生成するコマンド
+	using CreateDSVCommand =
+		std::function<void(ID3D12Resource* resource_, const D3D12_DEPTH_STENCIL_VIEW_DESC* desc_, D3D12_CPU_DESCRIPTOR_HANDLE descriptorHandleCPU_)>;
 
 	//DescriptorHeap生成クラス
 	class DescriptorHeapCreator;
@@ -31,7 +43,7 @@ private:
 	std::unordered_map < D3D12_DESCRIPTOR_HEAP_TYPE, std::unique_ptr<DescriptorHeapClass>> descriptorHeapContainer;
 
 	//Viewを生成するクラスのコンテナ
-	std::unordered_map<ViewCreatorType, std::unique_ptr<ViewCreatorBehavior>> viewCreatorContainer;
+	std::unordered_map<ViewCreatorType, std::unique_ptr<IViewCreatorBehavior>> viewCreatorContainer;
 
 	//DepthStencilViewのCPU_DescriptorHandleのコンテナ
 	std::vector<D3D12_CPU_DESCRIPTOR_HANDLE> DSV_descriptorHandleCPUContainer;
@@ -51,7 +63,13 @@ public:
 	~DescriptorHeapContext();
 
 	//コマンドのセット
-	void SetCommand(DescroptorCreateCommand createFunc_);
+	void SetCommand
+	(
+		DescroptorCreateCommand descriptorCreate, 
+		CreateRTVCommand rtvCreate_ , 
+		CreateSRVCommand srvCreate_,
+		CreateDSVCommand dsvCreate_
+	);
 
 	//DescriptorHeapの作成
 	template<D3D12_DESCRIPTOR_HEAP_TYPE HeapType>

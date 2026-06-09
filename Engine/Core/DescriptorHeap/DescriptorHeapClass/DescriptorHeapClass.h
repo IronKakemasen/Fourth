@@ -1,7 +1,7 @@
 #pragma once
 #include "../DescriptorHeapContext.h"
 
-class ViewCreatorBehavior;
+template<typename ViewDescType> class ViewCreatorBehavior;
 
 class DescriptorHeapClass
 {
@@ -10,7 +10,7 @@ public:
 		UINT handleIncrementSize_, uint32_t kMaxDescriptor_);
 
 	//アクセスできるのはViewCreatorのみ
-	friend class ViewCreatorBehavior;
+	template<typename ViewDescType> friend class ViewCreatorBehavior;
 
 private:
 

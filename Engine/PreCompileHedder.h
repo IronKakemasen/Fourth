@@ -67,7 +67,7 @@ namespace ProjectConfig
 	namespace Render
 	{
 		constexpr int kRequiredGPUBufferSum = 2;
-		constexpr D3D_SHADER_MODEL kMaximumShaderModel = D3D_SHADER_MODEL_6_5;
+		constexpr D3D_SHADER_MODEL kMaximumShaderModel = D3D_SHADER_MODEL_6_6;
 	}
 
 
@@ -84,9 +84,9 @@ namespace ProjectConfig
 
 	namespace Core
 	{
-		constexpr uint16_t kNumDescriptorsRTVHeap = 16;
-		constexpr uint16_t kNumDescriptorSRVHeap = 256;
-		constexpr uint16_t kNumDescriptorsDSVHeap = 16;
+		constexpr uint32_t kNumDescriptorsRTVHeap = 16;
+		constexpr uint32_t kNumDescriptorSRVHeap = 256;
+		constexpr uint32_t kNumDescriptorsDSVHeap = 16;
 	}
 
 }

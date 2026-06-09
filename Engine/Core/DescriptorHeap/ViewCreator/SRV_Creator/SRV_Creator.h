@@ -1,12 +1,12 @@
 #pragma once
 #include "../ViewCreatorBehavior.h"
 
-class SRV_Creator : public ViewCreatorBehavior
+class SRV_Creator : public ViewCreatorBehavior<D3D12_SHADER_RESOURCE_VIEW_DESC>
 {
 public:
 	SRV_Creator(DescriptorHeapContext::CreateKey createKey_, DescriptorHeapClass* descriptorHeapClass_);
 
-	virtual [[nodiscard]] uint32_t CreateView(const GPUBufferBehavior& buffer_)override;
+	virtual void CreateView(GPUBufferBehavior& buffer_)override;
 
 };
 

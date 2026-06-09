@@ -2,15 +2,20 @@
 #include "../ViewCreatorBehavior.h"
 
 
-class DSV_Creator : public ViewCreatorBehavior
+class DSV_Creator : public ViewCreatorBehavior<D3D12_DEPTH_STENCIL_VIEW_DESC>
 {
-	std::vector<D3D12_CPU_DESCRIPTOR_HANDLE>* DSV_descriptorHandleCPUContainer;
-
 public:
 
 	DSV_Creator(DescriptorHeapContext::CreateKey createKey_, DescriptorHeapClass* descriptorHeapClass_, std::vector<D3D12_CPU_DESCRIPTOR_HANDLE>* DSV_descriptorHandleCPUContainer_);
 
-	virtual [[nodiscard]] uint32_t CreateView(const GPUBufferBehavior& buffer_)override;
+	//ビュー生成
+	virtual void CreateView(GPUBufferBehavior& buffer_)override;
+
+private:
+
+	//DSV_descriptorHandleCPUコンテナのアドレス
+	std::vector<D3D12_CPU_DESCRIPTOR_HANDLE>* DSV_descriptorHandleCPUContainer;
+
 
 };
 

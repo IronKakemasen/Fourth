@@ -39,7 +39,7 @@
 		nullptr,
 		IID_PPV_ARGS(&ret_resource));
 	
-	ErrorMessageOutput::Assert::DetectError(SUCCEEDED(hr), "Resource : TypeA の生成に失敗", "CommandOfCreatingGPUBuffer.cpp");
+	ErrorMessageOutput::Assert::DetectError(SUCCEEDED(hr), "定数バッファの生成に失敗", "CommandOfCreatingGPUBuffer.cpp");
 
 	return ret_resource;
 
@@ -87,7 +87,7 @@
 		&clearValue,										//Clear最適値。使わないのでnullptr
 		IID_PPV_ARGS(ret_resource.GetAddressOf()));			//作成するresourceへのポインタのポインタ
 
-	ErrorMessageOutput::Assert::DetectError(SUCCEEDED(hr), "Resource : TypeB の生成に失敗", "CommandOfCreatingGPUBuffer.cpp");
+	ErrorMessageOutput::Assert::DetectError(SUCCEEDED(hr), "ColorBufferの生成に失敗", "CommandOfCreatingGPUBuffer.cpp");
 
 
 	return ret_resource;

@@ -4,13 +4,13 @@
 
 
 DSV_Creator::DSV_Creator(DescriptorHeapContext::CreateKey createKey_, DescriptorHeapClass* descriptorHeapClass_, std::vector<D3D12_CPU_DESCRIPTOR_HANDLE>* DSV_descriptorHandleCPUContainer_)
-	:ViewCreatorBehavior(createKey_, descriptorHeapClass_), DSV_descriptorHandleCPUContainer(DSV_descriptorHandleCPUContainer_)
+	:ViewCreatorBehavior<D3D12_DEPTH_STENCIL_VIEW_DESC>(createKey_, descriptorHeapClass_), DSV_descriptorHandleCPUContainer(DSV_descriptorHandleCPUContainer_)
 {
 
 }
 
 
-[[nodiscard]] uint32_t DSV_Creator::CreateView(const GPUBufferBehavior& buffer_)
+void DSV_Creator::CreateView(GPUBufferBehavior& buffer_)
 {
-	return 1;
+	
 }
