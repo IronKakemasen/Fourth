@@ -15,7 +15,6 @@ public:
 	//インデックスを書き換えキー
 	struct IndexOverrideKey;
 
-
 private:
 
 	//rtvHeap上のインデックスコンテナのアクセスインデックス

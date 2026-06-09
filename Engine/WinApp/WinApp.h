@@ -17,8 +17,6 @@ public:
 	WinApp(WinApp&&) = delete;
 	WinApp& operator=(WinApp&&) = delete;
 
-	void Finalize();
-
 private:
 
 	//WinAppのインスタンスを1つに制限するためのシングルトンクラス

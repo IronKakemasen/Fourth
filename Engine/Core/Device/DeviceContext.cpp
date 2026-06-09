@@ -7,21 +7,26 @@
 #include "Commands/CreateDescriptorHeap/CommandCreateDescriptorHeap.h"
 #include "Commands/CreatGPUBuffer/CommandOfCreatingGPUBuffer.h"
 
+namespace
+{
+	std::string const fileName = "DeviceContext.cpp";
+}
+
 DeviceContext::DeviceContext(DeviceContext::InstanceKey instanceKey_)
 {
 	Logger::Entry("DeviceContext::Constructor");
 
 	TakeOverCoreParts(instanceKey_);
-	Logger::Log("Create : CoreParts");
+	Logger::Log("Create: CoreParts", fileName);
 
 	CreateCommandGenerator(instanceKey_);
-	Logger::Log("Create : CommandGenerator");
+	Logger::Log("Create: CommandGenerator", fileName);
 
 	CreateCommandProvider(instanceKey_);
-	Logger::Log("Create : CommandProvider");
+	Logger::Log("Create: CommandProvider", fileName);
 
 	CreateCommands(instanceKey_);
-	Logger::Log("Create : Commands");
+	Logger::Log("Create: Commands", fileName);
 
 
 	Logger::End("DeviceContext::Constructor");

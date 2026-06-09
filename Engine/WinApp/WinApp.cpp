@@ -27,32 +27,27 @@ private:
 	InstanceLimiter() = default;
 };
 
-void WinApp::Finalize()
-{
-	windowContext->Finalize();
-}
-
 WinApp::WinApp()
 {
-	Logger::Entry("WinApp::Constructor");
+	Logger::Entry("WinApp: Constructor");
 
 	//自身のインスタンス制限
 	ErrorMessageOutput::Assert::DetectError(InstanceLimiter::CanInstantiate(), "WinAppクラスが複数具現化されてます", fileName);
 
 	//メンバー変数のインスタンス化
 	InstantiateMemberVariables();
-	Logger::Log("Instantiate : CoreSystems ");
+	Logger::Log("Instantiate : CoreSystems ", fileName);
 
-	////コマンドの授受
-	//GivingAndReceivingCommands();
-	//Logger::Log("Complete Giving Commands ");
+	//コマンドの授受
+	GivingAndReceivingCommands();
+	Logger::Log("Complete: Giving Commands ", fileName);
 
-	////DescriptorHeapの生成
-	//CreateDescriptorHeaps();
-	//Logger::Log("Create : DescriptorHeaps");
+	//DescriptorHeapの生成
+	CreateDescriptorHeaps();
+	Logger::Log("Create: DescriptorHeaps", fileName);
 
 
-	Logger::End("WinApp::Constructor");
+	Logger::End("WinApp: Constructor");
 }
 
 WinApp::~WinApp()
@@ -74,10 +69,10 @@ void WinApp::InstantiateMemberVariables()
 	deviceContext.reset(new DeviceContext(DeviceContext::InstanceKey{}));
 	//windowContextのインスタンス化
 	windowContext.reset(new WindowContext(WindowContext::CraftKey{}));
-	////gpuBufferCreatorクラスのインスタンス化
-	//gpuBufferCreator.reset(new GPUBufferCreator(GPUBufferCreator::InstanceKey{}));
-	////descriptorHeapContextクラスのインスタンス化
-	//descriptorHeapContext.reset(new DescriptorHeapContext(DescriptorHeapContext::InstanceKey{}));
+	//gpuBufferCreatorクラスのインスタンス化
+	gpuBufferCreator.reset(new GPUBufferCreator(GPUBufferCreator::InstanceKey{}));
+	//descriptorHeapContextクラスのインスタンス化
+	descriptorHeapContext.reset(new DescriptorHeapContext(DescriptorHeapContext::InstanceKey{}));
 
 }
 
@@ -85,8 +80,8 @@ void WinApp::GivingAndReceivingCommands()
 {
 	//バッファ生成コマンド
 	{
-		auto createConstantBufferCommand = deviceContext->commandProvider->PassCreateBufferCommand<ConstantBufferDescription>();
-		auto createColorbufferCommand = deviceContext->commandProvider->PassCreateBufferCommand<ColorBufferDescription>();
+		const auto& createConstantBufferCommand = deviceContext->commandProvider->PassCreateBufferCommand<ConstantBufferDescription>();
+		const auto& createColorbufferCommand = deviceContext->commandProvider->PassCreateBufferCommand<ColorBufferDescription>();
 
 		gpuBufferCreator->SetCommands(createColorbufferCommand, createConstantBufferCommand);
 	}
@@ -127,3 +122,4 @@ void WinApp::CreateDescriptorHeaps()
 	//DSV
 	descriptorHeapContext->CreateDescriptorHeap<D3D12_DESCRIPTOR_HEAP_TYPE_DSV>(kNumDescriptorsDSVHeap, false, sizeArray.dsv);
 }
+

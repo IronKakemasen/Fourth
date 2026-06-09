@@ -28,8 +28,5 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
         }
     }
 
-
-    winApp.Finalize();
-
     return 0;
 }

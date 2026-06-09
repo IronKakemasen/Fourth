@@ -34,10 +34,10 @@ private:
 	std::unordered_map<ViewCreatorType, std::unique_ptr<ViewCreatorBehavior>> viewCreatorContainer;
 
 	//DepthStencilViewのCPU_DescriptorHandleのコンテナ
-	std::vector<D3D12_CPU_DESCRIPTOR_HANDLE> DSV_descriptorHandleContainerCPU;
+	std::vector<D3D12_CPU_DESCRIPTOR_HANDLE> DSV_descriptorHandleCPUContainer;
 
 	//RenderTargetViewのCPU_DescriptorHandleのコンテナ
-	std::vector<D3D12_CPU_DESCRIPTOR_HANDLE> RTV_descriptorHandleContainerCPU;
+	std::vector<D3D12_CPU_DESCRIPTOR_HANDLE> RTV_descriptorHandleCPUContainer;
 
 
 public:

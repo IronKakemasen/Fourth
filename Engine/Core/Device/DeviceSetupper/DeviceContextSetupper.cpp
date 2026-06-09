@@ -11,14 +11,24 @@ DeviceContext::Setupper::Setupper(InstanceKey instanceKey_)
 {
 	//dxgiFactoryの生成
 	CreateDXGI_Factory();
+	Logger::Log("Create: DXGI_Factory");
+
 	//アダプターを取得
 	FetchAdapter();
+	Logger::Log("Fetch: Adapter");
+
 	//デバイスの生成
 	CreateDevice();
-	//シェーダーモデル6_5以上をサポートしてるかチェック
+	Logger::Log("Create: Device");
+
+	//シェーダーモデルサポートチェック
 	ShaderModelChack(ProjectConfig::Render::kMaximumShaderModel);
+	Logger::Log("Check: ShaderModelMaximum");
+
 	//メッシュシェーダーをサポートしているかチェック
 	IsMeshShaderSupported();
+	Logger::Log("Check: MeshShaderSupported");
+
 	//デバッグレイヤーのフィルターを設定
 	SetDebugLayerFilter();
 }
@@ -114,7 +124,7 @@ void DeviceContext::Setupper::FetchAdapter()
 		if (!(adapterDisc.Flags & DXGI_ADAPTER_FLAG3_SOFTWARE))
 		{
 			//採用したアダプタの情報をログに出力
-			Logger::Log(StringConverter::ConvertString(std::format(L"Use Adapter:{}\n", adapterDisc.Description)));
+			Logger::Log(StringConverter::ConvertString(std::format(L"Use Adapter:{}", adapterDisc.Description)));
 
 			break;
 		}
@@ -158,7 +168,7 @@ void DeviceContext::Setupper::CreateDevice()
 		if (SUCCEEDED(hr))
 		{
 			//生成できたのでログを出力してループを抜ける
-			Logger::Log(std::format("FeatureLevel:{}\n", featureLevelStrings[i]));
+			Logger::Log(std::format("FeatureLevel:{}", featureLevelStrings[i]));
 
 			break;
 		}
@@ -166,7 +176,4 @@ void DeviceContext::Setupper::CreateDevice()
 
 	//デバイスの生成が上手くいかなかったので起動できない
 	ErrorMessageOutput::Abort::DetectError(device != nullptr, "でバイスの生成が上手くいかなかったので起動できない", fileName);
-	Logger::Log("Complete create D3D12Device\n");
-
-
 }
