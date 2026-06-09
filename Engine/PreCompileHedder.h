@@ -29,6 +29,7 @@
 #include <array>
 #include <format>
 #include <functional>
+#include <mutex>
 
 //abort()やassert()でエラーを吐いて文字列を出力する
 #include "Debug/ErrorMessageOutput/ErrorMessageOutput.h"

@@ -17,6 +17,8 @@ public:
 	WinApp(WinApp&&) = delete;
 	WinApp& operator=(WinApp&&) = delete;
 
+	void Finalize();
+
 private:
 
 	//WinAppのインスタンスを1つに制限するためのシングルトンクラス
@@ -31,34 +33,13 @@ private:
 	//DescriptorHeapを作り、viewを生成するクラスを所持
 	std::unique_ptr<DescriptorHeapContext> descriptorHeapContext;
 
-
-
 	//メンバー変数のインスタンス化
 	void InstantiateMemberVariables();
 	//コマンドの受け渡し（GPUresourceCreateなど）
 	void GivingAndReceivingCommands();
 	//DescriptorHeapの生成
 	void CreateDescriptorHeaps();
-
-
 };
 
 
-//WinAppクラスのインスタンスを制御するクラス
-class WinApp::InstanceLimiter
-{
-public:
-	static bool CanInstantiate();
-
-	InstanceLimiter(const InstanceLimiter&) = delete;
-	InstanceLimiter& operator=(const InstanceLimiter&) = delete;
-	InstanceLimiter(InstanceLimiter&&) = delete;
-	InstanceLimiter& operator=(InstanceLimiter&&) = delete;
-
-private:
-	int instanceCnt{};
-
-	~InstanceLimiter() = default;
-	InstanceLimiter() = default;
-};
 

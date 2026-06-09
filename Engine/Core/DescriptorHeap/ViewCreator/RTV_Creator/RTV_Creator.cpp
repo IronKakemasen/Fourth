@@ -6,3 +6,8 @@ RTV_Creator::RTV_Creator(DescriptorHeapContext::CreateKey createKey_, Descriptor
 {
 
 }
+
+[[nodiscard]] uint32_t RTV_Creator::CreateView(const GPUBufferBehavior& buffer_)
+{
+	return 1;
+}

@@ -8,3 +8,9 @@ DSV_Creator::DSV_Creator(DescriptorHeapContext::CreateKey createKey_, Descriptor
 {
 
 }
+
+
+[[nodiscard]] uint32_t DSV_Creator::CreateView(const GPUBufferBehavior& buffer_)
+{
+	return 1;
+}

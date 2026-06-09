@@ -33,6 +33,13 @@ private:
 	//Viewを生成するクラスのコンテナ
 	std::unordered_map<ViewCreatorType, std::unique_ptr<ViewCreatorBehavior>> viewCreatorContainer;
 
+	//DepthStencilViewのCPU_DescriptorHandleのコンテナ
+	std::vector<D3D12_CPU_DESCRIPTOR_HANDLE> DSV_descriptorHandleContainerCPU;
+
+	//RenderTargetViewのCPU_DescriptorHandleのコンテナ
+	std::vector<D3D12_CPU_DESCRIPTOR_HANDLE> RTV_descriptorHandleContainerCPU;
+
+
 public:
 
 	//WinAppのみ生成可能
