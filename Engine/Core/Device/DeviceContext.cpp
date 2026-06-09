@@ -4,8 +4,13 @@
 #include "DeviceSetupper/DeviceContextSetupper.h"
 #include "DeviceContextCommandProvider/DeviceContextCommandProvider.h"
 #include "DeviceContextCommandGenerator/DeviceContextCommandGenerator.h"
+
+
+//コマンド
 #include "Commands/CreateDescriptorHeap/CommandCreateDescriptorHeap.h"
 #include "Commands/CreatGPUBuffer/CommandOfCreatingGPUBuffer.h"
+#include "Commands/CreateView/CommandCreateView.h"
+
 
 namespace
 {
@@ -36,6 +41,8 @@ void DeviceContext::CreateCommands(DeviceContext::InstanceKey instanceKey_)
 {
 	commandContainer[CommandType::kCreateGPUBuffer].emplace_back(commandGenerator->CreateCommand<CommandCreateGPUBuffer>(instanceKey_));
 	commandContainer[CommandType::kCreateDescriptorHeap].emplace_back(commandGenerator->CreateCommand<CommandCreateDescriptorHeap>(instanceKey_));
+	commandContainer[CommandType::kCreateResourceView].emplace_back(commandGenerator->CreateCommand<CommandCreateView>(instanceKey_));
+
 
 }
 

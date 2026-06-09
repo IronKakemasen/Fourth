@@ -20,8 +20,18 @@ class DescriptorHeapContext
 
 private:
 
+	//DescriptorHeapを生成するコマンド
 	using DescroptorCreateCommand = 
 		std::function<Microsoft::WRL::ComPtr<ID3D12DescriptorHeap>(D3D12_DESCRIPTOR_HEAP_TYPE, UINT, bool)>;
+	//RTVを生成するコマンド
+	using CreateRTVCommand =
+		std::function<void(ID3D12Resource* resource_, const D3D12_RENDER_TARGET_VIEW_DESC* desc_, D3D12_CPU_DESCRIPTOR_HANDLE descriptorHandleCPU_)>;
+	//SRVを生成するコマンド
+	using CreateSRVCommand =
+		std::function<void(ID3D12Resource* resource_, const D3D12_SHADER_RESOURCE_VIEW_DESC* desc_, D3D12_CPU_DESCRIPTOR_HANDLE descriptorHandleCPU_)>;
+	//DSVを生成するコマンド
+	using CreateDSVCommand =
+		std::function<void(ID3D12Resource* resource_, const D3D12_DEPTH_STENCIL_VIEW_DESC* desc_, D3D12_CPU_DESCRIPTOR_HANDLE descriptorHandleCPU_)>;
 
 	//DescriptorHeap生成クラス
 	class DescriptorHeapCreator;
@@ -51,7 +61,13 @@ public:
 	~DescriptorHeapContext();
 
 	//コマンドのセット
-	void SetCommand(DescroptorCreateCommand createFunc_);
+	void SetCommand
+	(
+		DescroptorCreateCommand descriptorCreate, 
+		CreateRTVCommand rtvCreate_ , 
+		CreateSRVCommand srvCreate_,
+		CreateDSVCommand dsvCreate_
+	);
 
 	//DescriptorHeapの作成
 	template<D3D12_DESCRIPTOR_HEAP_TYPE HeapType>

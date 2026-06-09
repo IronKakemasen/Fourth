@@ -27,16 +27,25 @@ DescriptorHeapContext::~DescriptorHeapContext()
 
 }
 
-void DescriptorHeapContext::SetCommand(DescroptorCreateCommand createFunc_)
+void DescriptorHeapContext::SetCommand
+(
+	DescroptorCreateCommand createFunc_,
+	CreateRTVCommand rtvCreate_,
+	CreateSRVCommand srvCreate_,
+	CreateDSVCommand dsvCreate_
+)
 {
 	descriptorHeapCreator->SetCommand(createFunc_);
 	Logger::Log("Set: DescroptorCreateCommand ", fileName);
+
+
 }
 
 template<D3D12_DESCRIPTOR_HEAP_TYPE HeapType>
 void DescriptorHeapContext::CreateDescriptorHeap(UINT numDescriptors_, bool shaderVisible_, UINT handleIncSize_)
 {
-	descriptorHeapContainer[HeapType] = std::make_unique<DescriptorHeapClass>(
+	descriptorHeapContainer[HeapType] = std::make_unique<DescriptorHeapClass>
+	(
 		std::move(descriptorHeapCreator->createFunc(HeapType, numDescriptors_, shaderVisible_)),
 		handleIncSize_,
 		numDescriptors_

@@ -8,6 +8,17 @@ ColorBuffer::ColorBuffer(const InstanceKey& instanceKey_, std::string name_, Mic
 	SetMatrix();
 }
 
+void ColorBuffer::OverrideIndex(OverrideIndexKey key_, uint32_t index_)
+{
+	rtvHeapIndex = index_;
+}
+
+ColorBufferDescription ColorBuffer::WatchDescription() const
+{
+	return desc;
+}
+
+
 void ColorBuffer::SetMatrix()
 {
 	//クライアント領域と一緒のサイズにして画面全体に表示

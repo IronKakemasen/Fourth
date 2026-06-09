@@ -139,15 +139,20 @@ private:
 #include "ViewCreator/SRV_Creator/SRV_Creator.h"
 #include "ViewCreator/DSV_Creator/DSV_Creator.h"
 
+namespace
+{
+	std::string fileName = "DescriptorHeapContext.cpp";
+}
+
 DescriptorHeapContext::DescriptorHeapContext(InstanceKey instanceKey_)
 {
-	Logger::Entry("DescriptorHeapContext::Constructor");
+	Logger::Entry("DescriptorHeapContext: Constructor");
 
 	descriptorHeapCreator.reset(new DescriptorHeapCreator(instanceKey_));
-	Logger::Log("Instantiate : DescriptorHeapCreator");
+	Logger::Log("Instantiate: DescriptorHeapCreator", fileName);
 
 
-	Logger::End("DescriptorHeapContext::Constructor");
+	Logger::End("DescriptorHeapContext: Constructor");
 }
 
 DescriptorHeapContext::~DescriptorHeapContext()
@@ -158,6 +163,7 @@ DescriptorHeapContext::~DescriptorHeapContext()
 void DescriptorHeapContext::SetCommand(DescroptorCreateCommand createFunc_)
 {
 	descriptorHeapCreator->SetCommand(createFunc_);
+	Logger::Log("Set: DescroptorCreateCommand ", fileName);
 }
 
 template<D3D12_DESCRIPTOR_HEAP_TYPE HeapType>
@@ -177,7 +183,9 @@ template <>
 void DescriptorHeapContext::CreateViewCreator<D3D12_DESCRIPTOR_HEAP_TYPE_RTV>(DescriptorHeapClass* srcPtr_)
 {
 	viewCreatorContainer[kRTV] =
-		std::make_unique<RTV_Creator>(DescriptorHeapContext::CreateKey{}, srcPtr_);
+		std::make_unique<RTV_Creator>(DescriptorHeapContext::CreateKey{}, srcPtr_,&RTV_descriptorHandleCPUContainer);
+	Logger::Log("Create: RTV_Creator ", fileName);
+
 }
 
 template <>
@@ -185,13 +193,17 @@ void DescriptorHeapContext::CreateViewCreator<D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV
 {
 	viewCreatorContainer[kSRV] =
 		std::make_unique<SRV_Creator>(DescriptorHeapContext::CreateKey{}, srcPtr_);
+	Logger::Log("Create: SRV_Creator ", fileName);
+
 }
 
 template <>
 void DescriptorHeapContext::CreateViewCreator<D3D12_DESCRIPTOR_HEAP_TYPE_DSV>(DescriptorHeapClass* srcPtr_)
 {
 	viewCreatorContainer[kDSV] =
-		std::make_unique<DSV_Creator>(DescriptorHeapContext::CreateKey{}, srcPtr_);
+		std::make_unique<DSV_Creator>(DescriptorHeapContext::CreateKey{}, srcPtr_, &DSV_descriptorHandleCPUContainer);
+	Logger::Log("Create: DSV_Creator ", fileName);
+
 }
 
 template void DescriptorHeapContext::CreateDescriptorHeap<D3D12_DESCRIPTOR_HEAP_TYPE_RTV>(UINT, bool, UINT);
@@ -238,6 +250,13 @@ private:
 
 	//Viewを生成するクラスのコンテナ
 	std::unordered_map<ViewCreatorType, std::unique_ptr<ViewCreatorBehavior>> viewCreatorContainer;
+
+	//DepthStencilViewのCPU_DescriptorHandleのコンテナ
+	std::vector<D3D12_CPU_DESCRIPTOR_HANDLE> DSV_descriptorHandleCPUContainer;
+
+	//RenderTargetViewのCPU_DescriptorHandleのコンテナ
+	std::vector<D3D12_CPU_DESCRIPTOR_HANDLE> RTV_descriptorHandleCPUContainer;
+
 
 public:
 
@@ -312,11 +331,6 @@ DescriptorHeapClass::DescriptorHeapClass(
 }
 
 
-const DescriptorHeapClass& DescriptorHeapClass::Access(DescriptorHeapClass::AccessKey accessKey_) const
-{
-	return *this; 
-}
-
 
 
 
@@ -335,12 +349,10 @@ public:
 		UINT handleIncrementSize_, uint32_t kMaxDescriptor_);
 
 	//アクセスできるのはViewCreatorのみ
-	struct AccessKey;
-
-	//アクセスする関数
-	const DescriptorHeapClass& Access(AccessKey accessKey_) const;
+	friend class ViewCreatorBehavior;
 
 private:
+
 	Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> descriptorHeap;
 	//ハンドルのインクリメントサイズ
 	UINT handleIncrementSize{};
@@ -349,15 +361,6 @@ private:
 
 };
 
-
-struct DescriptorHeapClass::AccessKey
-{
-private:
-
-	friend class ViewCreatorBehavior;
-	explicit AccessKey() = default;
-
-};
 
 
 
@@ -417,12 +420,55 @@ public:
 ========================================
 #include "PreCompileHedder.h"
 #include "ViewCreatorBehavior.h"
+#include "../DescriptorHeapClass/DescriptorHeapClass.h"
+
+namespace
+{
+	const std::string fileName = "ViewCreatorBehavior.cpp";
+}
+
 
 ViewCreatorBehavior::ViewCreatorBehavior(DescriptorHeapContext::CreateKey createKey_, DescriptorHeapClass* descriptorHeapClass_)
 	: descriptorHeapClass(descriptorHeapClass_)
 {
 
 }
+
+template<>
+[[nodiscard]] D3D12_CPU_DESCRIPTOR_HANDLE ViewCreatorBehavior::CalculateNextHandle()
+{
+	ErrorMessageOutput::Assert::DetectError
+	(
+		(currentCreateNum < descriptorHeapClass->kMaxDescriptor),
+		"もうこれ以上Viewを作れません", fileName
+	);
+
+	D3D12_CPU_DESCRIPTOR_HANDLE handleStartCPU = descriptorHeapClass->descriptorHeap->GetCPUDescriptorHandleForHeapStart();
+	D3D12_CPU_DESCRIPTOR_HANDLE next;
+
+	next.ptr = handleStartCPU.ptr + descriptorHeapClass->handleIncrementSize * currentCreateNum;
+
+	return next;
+}
+
+template<>
+[[nodiscard]] D3D12_GPU_DESCRIPTOR_HANDLE ViewCreatorBehavior::CalculateNextHandle()
+{
+	ErrorMessageOutput::Assert::DetectError
+	(
+		(currentCreateNum < descriptorHeapClass->kMaxDescriptor),
+		"もうこれ以上Viewを作れません", fileName
+	);
+
+	D3D12_GPU_DESCRIPTOR_HANDLE handleStartCPU = descriptorHeapClass->descriptorHeap->GetGPUDescriptorHandleForHeapStart();
+	D3D12_GPU_DESCRIPTOR_HANDLE next;
+
+	next.ptr = handleStartCPU.ptr + descriptorHeapClass->handleIncrementSize * currentCreateNum;
+
+	return next;
+}
+
+
 
 
 
@@ -434,6 +480,7 @@ ViewCreatorBehavior::ViewCreatorBehavior(DescriptorHeapContext::CreateKey create
 #include "../DescriptorHeapContext.h"
 
 class DescriptorHeapClass;
+class GPUBufferBehavior;
 
 class ViewCreatorBehavior
 {
@@ -441,7 +488,14 @@ public:
 
 	ViewCreatorBehavior(DescriptorHeapContext::CreateKey createKey_, DescriptorHeapClass* descriptorHeapClass_);
 
+	//Viewを生成する。
+	virtual [[nodiscard]] uint32_t CreateView(const GPUBufferBehavior& buffer_) = 0;
+
 protected:
+
+	//次のDescriptorHeapの空き空間を計算
+	template<typename HandleType>
+	[[nodiscard]] HandleType CalculateNextHandle();
 
 	//DescriptorHeapClassのアドレス
 	DescriptorHeapClass* descriptorHeapClass = nullptr;
@@ -463,10 +517,16 @@ protected:
 
 
 
-DSV_Creator::DSV_Creator(DescriptorHeapContext::CreateKey createKey_, DescriptorHeapClass* descriptorHeapClass_)
-	:ViewCreatorBehavior(createKey_, descriptorHeapClass_)
+DSV_Creator::DSV_Creator(DescriptorHeapContext::CreateKey createKey_, DescriptorHeapClass* descriptorHeapClass_, std::vector<D3D12_CPU_DESCRIPTOR_HANDLE>* DSV_descriptorHandleCPUContainer_)
+	:ViewCreatorBehavior(createKey_, descriptorHeapClass_), DSV_descriptorHandleCPUContainer(DSV_descriptorHandleCPUContainer_)
 {
 
+}
+
+
+[[nodiscard]] uint32_t DSV_Creator::CreateView(const GPUBufferBehavior& buffer_)
+{
+	return 1;
 }
 
 
@@ -481,8 +541,13 @@ DSV_Creator::DSV_Creator(DescriptorHeapContext::CreateKey createKey_, Descriptor
 
 class DSV_Creator : public ViewCreatorBehavior
 {
+	std::vector<D3D12_CPU_DESCRIPTOR_HANDLE>* DSV_descriptorHandleCPUContainer;
+
 public:
-	DSV_Creator(DescriptorHeapContext::CreateKey createKey_, DescriptorHeapClass* descriptorHeapClass_);
+
+	DSV_Creator(DescriptorHeapContext::CreateKey createKey_, DescriptorHeapClass* descriptorHeapClass_, std::vector<D3D12_CPU_DESCRIPTOR_HANDLE>* DSV_descriptorHandleCPUContainer_);
+
+	virtual [[nodiscard]] uint32_t CreateView(const GPUBufferBehavior& buffer_)override;
 
 };
 
@@ -496,10 +561,15 @@ public:
 #include "PreCompileHedder.h"
 #include "RTV_Creator.h"
 
-RTV_Creator::RTV_Creator(DescriptorHeapContext::CreateKey createKey_, DescriptorHeapClass* descriptorHeapClass_)
-	:ViewCreatorBehavior(createKey_, descriptorHeapClass_)
+RTV_Creator::RTV_Creator(DescriptorHeapContext::CreateKey createKey_, DescriptorHeapClass* descriptorHeapClass_, std::vector<D3D12_CPU_DESCRIPTOR_HANDLE>* RTV_descriptorHandleCPUContainer_)
+	:ViewCreatorBehavior(createKey_, descriptorHeapClass_), RTV_descriptorHandleCPUContainer(RTV_descriptorHandleCPUContainer_)
 {
 
+}
+
+[[nodiscard]] uint32_t RTV_Creator::CreateView(const GPUBufferBehavior& buffer_)
+{
+	return 1;
 }
 
 
@@ -513,8 +583,12 @@ RTV_Creator::RTV_Creator(DescriptorHeapContext::CreateKey createKey_, Descriptor
 
 class RTV_Creator : public ViewCreatorBehavior
 {
+	std::vector<D3D12_CPU_DESCRIPTOR_HANDLE>* RTV_descriptorHandleCPUContainer;
+
 public:
-	RTV_Creator(DescriptorHeapContext::CreateKey createKey_, DescriptorHeapClass* descriptorHeapClass_);
+	RTV_Creator(DescriptorHeapContext::CreateKey createKey_, DescriptorHeapClass* descriptorHeapClass_, std::vector<D3D12_CPU_DESCRIPTOR_HANDLE>* RTV_descriptorHandleCPUContainer_);
+
+	virtual [[nodiscard]] uint32_t CreateView(const GPUBufferBehavior& buffer_)override;
 
 };
 
@@ -536,6 +610,12 @@ SRV_Creator::SRV_Creator(DescriptorHeapContext::CreateKey createKey_, Descriptor
 }
 
 
+[[nodiscard]] uint32_t SRV_Creator::CreateView(const GPUBufferBehavior& buffer_)
+{
+	return 1;
+}
+
+
 
 
 ========================================
@@ -548,6 +628,8 @@ class SRV_Creator : public ViewCreatorBehavior
 {
 public:
 	SRV_Creator(DescriptorHeapContext::CreateKey createKey_, DescriptorHeapClass* descriptorHeapClass_);
+
+	virtual [[nodiscard]] uint32_t CreateView(const GPUBufferBehavior& buffer_)override;
 
 };
 
@@ -567,21 +649,26 @@ public:
 #include "Commands/CreateDescriptorHeap/CommandCreateDescriptorHeap.h"
 #include "Commands/CreatGPUBuffer/CommandOfCreatingGPUBuffer.h"
 
+namespace
+{
+	std::string const fileName = "DeviceContext.cpp";
+}
+
 DeviceContext::DeviceContext(DeviceContext::InstanceKey instanceKey_)
 {
 	Logger::Entry("DeviceContext::Constructor");
 
 	TakeOverCoreParts(instanceKey_);
-	Logger::Log("Create : CoreParts");
+	Logger::Log("Create: CoreParts", fileName);
 
 	CreateCommandGenerator(instanceKey_);
-	Logger::Log("Create : CommandGenerator");
+	Logger::Log("Create: CommandGenerator", fileName);
 
 	CreateCommandProvider(instanceKey_);
-	Logger::Log("Create : CommandProvider");
+	Logger::Log("Create: CommandProvider", fileName);
 
 	CreateCommands(instanceKey_);
-	Logger::Log("Create : Commands");
+	Logger::Log("Create: Commands", fileName);
 
 
 	Logger::End("DeviceContext::Constructor");
@@ -1176,14 +1263,24 @@ DeviceContext::Setupper::Setupper(InstanceKey instanceKey_)
 {
 	//dxgiFactoryの生成
 	CreateDXGI_Factory();
+	Logger::Log("Create: DXGI_Factory");
+
 	//アダプターを取得
 	FetchAdapter();
+	Logger::Log("Fetch: Adapter");
+
 	//デバイスの生成
 	CreateDevice();
-	//シェーダーモデル6_5以上をサポートしてるかチェック
+	Logger::Log("Create: Device");
+
+	//シェーダーモデルサポートチェック
 	ShaderModelChack(ProjectConfig::Render::kMaximumShaderModel);
+	Logger::Log("Check: ShaderModelMaximum");
+
 	//メッシュシェーダーをサポートしているかチェック
 	IsMeshShaderSupported();
+	Logger::Log("Check: MeshShaderSupported");
+
 	//デバッグレイヤーのフィルターを設定
 	SetDebugLayerFilter();
 }
@@ -1279,7 +1376,7 @@ void DeviceContext::Setupper::FetchAdapter()
 		if (!(adapterDisc.Flags & DXGI_ADAPTER_FLAG3_SOFTWARE))
 		{
 			//採用したアダプタの情報をログに出力
-			Logger::Log(StringConverter::ConvertString(std::format(L"Use Adapter:{}\n", adapterDisc.Description)));
+			Logger::Log(StringConverter::ConvertString(std::format(L"Use Adapter:{}", adapterDisc.Description)));
 
 			break;
 		}
@@ -1323,7 +1420,7 @@ void DeviceContext::Setupper::CreateDevice()
 		if (SUCCEEDED(hr))
 		{
 			//生成できたのでログを出力してループを抜ける
-			Logger::Log(std::format("FeatureLevel:{}\n", featureLevelStrings[i]));
+			Logger::Log(std::format("FeatureLevel:{}", featureLevelStrings[i]));
 
 			break;
 		}
@@ -1331,9 +1428,6 @@ void DeviceContext::Setupper::CreateDevice()
 
 	//デバイスの生成が上手くいかなかったので起動できない
 	ErrorMessageOutput::Abort::DetectError(device != nullptr, "でバイスの生成が上手くいかなかったので起動できない", fileName);
-	Logger::Log("Complete create D3D12Device\n");
-
-
 }
 
 
@@ -1613,83 +1707,6 @@ private:
 
 
 ========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Debug\StringColorConverter.cpp ===
-========================================
-#include "StringColorConverter.h"
-
-
-template<>
-std::string StringColorConverter::ChangeColor<StringColor::kRed>(const std::string& string_)
-{
-	return kRed + string_ + kReset;
-}
-
-template<>
-std::string StringColorConverter::ChangeColor<StringColor::kGreen>(const std::string& string_)
-{
-	return kGreen + string_ + kReset;
-}
-
-template<>
-std::string StringColorConverter::ChangeColor<StringColor::kYellow>(const std::string& string_)
-{
-	return kYellow + string_ + kReset;
-}
-
-template<>
-std::string StringColorConverter::ChangeColor<StringColor::kBlue>(const std::string& string_)
-{
-	return kBlue + string_ + kReset;
-}
-
-
-
-
-========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Debug\StringColorConverter.h ===
-========================================
-#pragma once
-
-enum class StringColor
-{
-	kRed,
-	kGreen,
-	kYellow,
-	kBlue
-};
-
-
-struct StringColorConverter
-{
-public:
-
-	template<StringColor stringColor>
-	static std::string ChangeColor(const std::string& string_);
-
-private:
-	static inline const std::string kRed =    "|\x1b[31m";
-	static inline const std::string kGreen =  "|\x1b[32m";
-	static inline const std::string kYellow = "|\x1b[33m";
-	static inline const std::string kBlue =   "|\x1b[34m";
-	static inline const std::string kReset =  "\x1b[0m";
-};
-
-template<>
-std::string StringColorConverter::ChangeColor<StringColor::kRed>(const std::string& string_);
-
-template<>
-std::string StringColorConverter::ChangeColor<StringColor::kGreen>(const std::string& string_);
-
-template<>
-std::string StringColorConverter::ChangeColor<StringColor::kYellow>(const std::string& string_);
-
-template<>
-std::string StringColorConverter::ChangeColor<StringColor::kBlue>(const std::string& string_);
-
-
-
-
-========================================
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Debug\ErrorMessageOutput\ErrorMessageOutput.cpp ===
 ========================================
 #include "PreCompileHedder.h"
@@ -1794,7 +1811,21 @@ void Logger::Log(std::string const& message_, const std::string& fileName_)
 	Init();
 
 	std::string output = message_;
-	if (fileName_.size() > 0) output += " : " + fileName_;
+
+	if (fileName_.size() > 0)
+	{
+		std::string space = " ";
+		std::string colon = ": ";
+		int const numSpace = 60;
+		int numSpaceRequired = numSpace - (int)message_.size();
+
+		for (int i = 0;i < numSpaceRequired;++i)
+		{
+			output += space;
+		}
+
+		output += colon + fileName_;
+	}
 
 	logFIle << output << std::endl;
 	OutputDebugStringA((output + "\n").c_str());
@@ -1808,7 +1839,19 @@ void Logger::Entry(const std::string& message_)
 
 	Init();
 
-	std::string output = "\n [ Entry ]=======----" + message_ + "----=======\n\n";
+	std::string output = "\n[ Entry ]=======----[ " + message_ + " ]----";
+
+	std::string const lineBreak = "\n";
+	std::string const doubleLine = "=";
+
+	int const numEnd = 90;
+	int numCharRequired = numEnd - (int)output.size();
+	for (int i = 0;i < numCharRequired;++i)
+	{
+		output += doubleLine;
+	}
+
+	output += lineBreak;
 
 	logFIle << output << std::endl;
 	OutputDebugStringA(output.c_str());
@@ -1820,9 +1863,19 @@ void Logger::End(const std::string& message_)
 {
 #ifdef _DEBUG
 
-	Init();
+	std::string output = "\n[ End ]=========----[ " + message_ + " ]----";
 
-	std::string output = "\n[ End ]=======----" + message_ + "----=======\n\n";
+	std::string const lineBreak = "\n";
+	std::string const doubleLine = "=";
+
+	int const numEnd = 90;
+	int numCharRequired = numEnd - (int)output.size();
+	for (int i = 0;i < numCharRequired;++i)
+	{
+		output += doubleLine;
+	}
+
+	output += lineBreak;
 
 	logFIle << output << std::endl;
 	OutputDebugStringA(output.c_str());
@@ -2800,16 +2853,17 @@ namespace
 	std::string fileName = "GPUBufferBehavior.cpp";
 }
 
-GPUBufferBehavior::GPUBufferBehavior(const InstanceKey& instanceKey, std::string name_,
+GPUBufferBehavior::GPUBufferBehavior(const InstanceKey& instanceKey_, std::string name_,
 	Microsoft::WRL::ComPtr<ID3D12Resource> resource1_, Microsoft::WRL::ComPtr<ID3D12Resource> resource2_) : name(name_), resources{ {std::move(resource1_), std::move(resource2_)} }
 {
-
+	//リソースの名前をセット
+	SetName(instanceKey_);
 }
 
 ID3D12Resource& GPUBufferBehavior::GetResource(const BufferAccessKey& bufferAccessKey_ ,int index_)
 {
 	std::string errorMsg = name + "は空です (GetResourceに失敗)";
-	ErrorMessageOutput::Assert::DetectError((resources[index_] == nullptr), errorMsg , fileName);
+	ErrorMessageOutput::Assert::DetectError((resources[index_] != nullptr), errorMsg , fileName);
 
 	return *resources[index_].Get();
 }
@@ -2819,7 +2873,7 @@ void GPUBufferBehavior::SetName(const InstanceKey& instanceKey)
 	for (size_t i = 0; i < resources.size(); ++i)
 	{
 		std::string errorMsg = name + "は空です";
-		ErrorMessageOutput::Assert::DetectError((resources[i] == nullptr), errorMsg, fileName);
+		ErrorMessageOutput::Assert::DetectError((resources[i] != nullptr), errorMsg, fileName);
 
 		resources[i]->SetName(StringConverter::ConvertString(name + "[ " + std::to_string(i) + " ]").c_str());
 	}
@@ -2835,6 +2889,7 @@ void GPUBufferBehavior::SetName(const InstanceKey& instanceKey)
 
 class GPUBufferCreator;
 class GPUBufferManager;
+class ViewCreatorBehavior;
 
 class GPUBufferBehavior
 {
@@ -2842,15 +2897,17 @@ public:
 	struct InstanceKey;
 	struct BufferAccessKey;
 
-	GPUBufferBehavior(const InstanceKey& instanceKey, std::string name_, Microsoft::WRL::ComPtr<ID3D12Resource> resource1_, Microsoft::WRL::ComPtr<ID3D12Resource> resource2_);
+	GPUBufferBehavior(const InstanceKey& instanceKey_, std::string name_, Microsoft::WRL::ComPtr<ID3D12Resource> resource1_, Microsoft::WRL::ComPtr<ID3D12Resource> resource2_);
 	ID3D12Resource& GetResource( const BufferAccessKey& bufferAccessKey_ , int index_);
-	void SetName(const InstanceKey& instanceKey);
+	
 
 private:
 
+	//リソースに名を刻む
+	void SetName(const InstanceKey& instanceKey_);
+
 	std::array<Microsoft::WRL::ComPtr<ID3D12Resource>, ProjectConfig::Render::kRequiredGPUBufferSum> resources;
 	std::string name = "noName";
-	
 };
 
 
@@ -2869,6 +2926,7 @@ struct GPUBufferBehavior::BufferAccessKey
 private:
 	friend class GPUBufferCreator;
 	friend class GPUBufferManager;
+	friend class ViewCreatorBehavior;
 
 	explicit BufferAccessKey() = default;
 };
@@ -2926,19 +2984,31 @@ public:
 	ColorBuffer(const InstanceKey& instanceKey_, std::string name_,
 		Microsoft::WRL::ComPtr<ID3D12Resource> resource1_, Microsoft::WRL::ComPtr<ID3D12Resource> resource2_, ColorBufferDescription desc_);
 
+	//インデックスを書き換えキー
+	struct IndexOverrideKey;
+
 private:
 
-	//rtvHeap上のインデックス（D3D12_CPU_DESCRIPTOR_HANDLE）
-	uint16_t rtvHeapIndex{};
+	//rtvHeap上のインデックスコンテナのアクセスインデックス
+	uint32_t rtvHeapIndex{};
 	ColorBufferDescription desc;
 	D3D12_VIEWPORT viewport;
 	D3D12_RECT scissorRect;
 
-	//viewportとscissorRectをせっと
+	//viewportとscissorRectをセット
 	void SetMatrix();
 
 };
 
+
+//インデックスの書き換えはViewCreatorのみ可能
+struct ColorBuffer::IndexOverrideKey
+{
+private:
+	friend class ViewCreatorBahevior;
+
+	explicit IndexOverrideKey() = default;
+};
 
 
 
@@ -2997,13 +3067,19 @@ private:
 #include "../GPUBuffer/ConstantBuffer/ConstantBuffer.h"
 #include "../GPUBuffer/ColorBuffer/ColorBuffer.h"
 
-void GPUBufferCreator::SetCommands(CrateColorBufferCommand crateColorBufferCommand_, CrateConstantBufferCommand crateConstantBufferCommand_)
+namespace
 {
-	crateConstantBufferCommand = crateConstantBufferCommand_;
-	crateColorBufferCommand = crateColorBufferCommand_;
+	const std::string fileName = "GPUBufferCreator.cpp";
 }
 
+void GPUBufferCreator::SetCommands(const CrateColorBufferCommand& crateColorBufferCommand_, const CrateConstantBufferCommand& crateConstantBufferCommand_)
+{
+	crateConstantBufferCommand = crateConstantBufferCommand_;
+	Logger::Log("Set: crateConstantBufferCommand", fileName);
+	crateColorBufferCommand = crateColorBufferCommand_;
+	Logger::Log("Set: crateColorBufferCommand", fileName);
 
+}
 
 template <>
 std::unique_ptr<ConstantBuffer> GPUBufferCreator::CreateSpecificBuffer<ConstantBuffer, ConstantBufferDescription>(const ConstantBufferDescription& desc_, const std::string& name_, Microsoft::WRL::ComPtr<ID3D12Resource>&& resource1_, Microsoft::WRL::ComPtr<ID3D12Resource>&& resource2_)
@@ -3013,6 +3089,8 @@ std::unique_ptr<ConstantBuffer> GPUBufferCreator::CreateSpecificBuffer<ConstantB
 
 	std::unique_ptr<ConstantBuffer> constantBuffer(new ConstantBuffer(GPUBufferBehavior::InstanceKey{},
 		name_, std::move(resource1_), std::move(resource2_), desc_));
+
+	Logger::Log("Create: name_", fileName);
 
 	return std::move(constantBuffer);
 }
@@ -3026,6 +3104,8 @@ std::unique_ptr<ColorBuffer> GPUBufferCreator::CreateSpecificBuffer<ColorBuffer,
 
 	std::unique_ptr<ColorBuffer> colorBuffer(new ColorBuffer(GPUBufferBehavior::InstanceKey{},
 		name_, std::move(resource1_), std::move(resource2_), desc_));
+
+	Logger::Log("Create: name_", fileName);
 
 	return std::move(colorBuffer);
 }
@@ -3095,7 +3175,7 @@ public:
 	~GPUBufferCreator();
 
 	//外部クラスが作ったコマンドをセットする
-	void SetCommands(CrateColorBufferCommand crateColorBufferCommand_, CrateConstantBufferCommand crateConstantBufferCommand_);
+	void SetCommands(const CrateColorBufferCommand& crateColorBufferCommand_, const CrateConstantBufferCommand& crateConstantBufferCommand_);
 
 	//一括窓口
 	template<typename BufferType,typename DescType>
@@ -3260,32 +3340,27 @@ private:
 	InstanceLimiter() = default;
 };
 
-void WinApp::Finalize()
-{
-	windowContext->Finalize();
-}
-
 WinApp::WinApp()
 {
-	Logger::Entry("WinApp::Constructor");
+	Logger::Entry("WinApp: Constructor");
 
 	//自身のインスタンス制限
 	ErrorMessageOutput::Assert::DetectError(InstanceLimiter::CanInstantiate(), "WinAppクラスが複数具現化されてます", fileName);
 
 	//メンバー変数のインスタンス化
 	InstantiateMemberVariables();
-	Logger::Log("Instantiate : CoreSystems ");
+	Logger::Log("Instantiate : CoreSystems ", fileName);
 
-	////コマンドの授受
-	//GivingAndReceivingCommands();
-	//Logger::Log("Complete Giving Commands ");
+	//コマンドの授受
+	GivingAndReceivingCommands();
+	Logger::Log("Complete: Giving Commands ", fileName);
 
-	////DescriptorHeapの生成
-	//CreateDescriptorHeaps();
-	//Logger::Log("Create : DescriptorHeaps");
+	//DescriptorHeapの生成
+	CreateDescriptorHeaps();
+	Logger::Log("Create: DescriptorHeaps", fileName);
 
 
-	Logger::End("WinApp::Constructor");
+	Logger::End("WinApp: Constructor");
 }
 
 WinApp::~WinApp()
@@ -3307,10 +3382,10 @@ void WinApp::InstantiateMemberVariables()
 	deviceContext.reset(new DeviceContext(DeviceContext::InstanceKey{}));
 	//windowContextのインスタンス化
 	windowContext.reset(new WindowContext(WindowContext::CraftKey{}));
-	////gpuBufferCreatorクラスのインスタンス化
-	//gpuBufferCreator.reset(new GPUBufferCreator(GPUBufferCreator::InstanceKey{}));
-	////descriptorHeapContextクラスのインスタンス化
-	//descriptorHeapContext.reset(new DescriptorHeapContext(DescriptorHeapContext::InstanceKey{}));
+	//gpuBufferCreatorクラスのインスタンス化
+	gpuBufferCreator.reset(new GPUBufferCreator(GPUBufferCreator::InstanceKey{}));
+	//descriptorHeapContextクラスのインスタンス化
+	descriptorHeapContext.reset(new DescriptorHeapContext(DescriptorHeapContext::InstanceKey{}));
 
 }
 
@@ -3318,8 +3393,8 @@ void WinApp::GivingAndReceivingCommands()
 {
 	//バッファ生成コマンド
 	{
-		auto createConstantBufferCommand = deviceContext->commandProvider->PassCreateBufferCommand<ConstantBufferDescription>();
-		auto createColorbufferCommand = deviceContext->commandProvider->PassCreateBufferCommand<ColorBufferDescription>();
+		const auto& createConstantBufferCommand = deviceContext->commandProvider->PassCreateBufferCommand<ConstantBufferDescription>();
+		const auto& createColorbufferCommand = deviceContext->commandProvider->PassCreateBufferCommand<ColorBufferDescription>();
 
 		gpuBufferCreator->SetCommands(createColorbufferCommand, createConstantBufferCommand);
 	}
@@ -3364,6 +3439,7 @@ void WinApp::CreateDescriptorHeaps()
 
 
 
+
 ========================================
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\WinApp\WinApp.h ===
 ========================================
@@ -3385,8 +3461,6 @@ public:
 	WinApp& operator=(const WinApp&) = delete;
 	WinApp(WinApp&&) = delete;
 	WinApp& operator=(WinApp&&) = delete;
-
-	void Finalize();
 
 private:
 

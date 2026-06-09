@@ -90,6 +90,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Engine\Core\Device\Commands\CreateView\CommandCreateView.cpp" />
     <ClCompile Include="Engine\Core\DescriptorHeap\ViewCreator\DSV_Creator\DSV_Creator.cpp" />
     <ClCompile Include="Engine\Core\DescriptorHeap\DescriptorHeapClass\DescriptorHeapClass.cpp" />
     <ClCompile Include="Engine\Core\Device\Commands\CreateDescriptorHeap\CommandCreateDescriptorHeap.cpp" />
@@ -221,6 +222,7 @@
     <ClCompile Include="Engine\Core\DescriptorHeap\ViewCreator\ViewCreatorBehavior.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Engine\Core\Device\Commands\CreateView\CommandCreateView.h" />
     <ClInclude Include="Engine\Core\DescriptorHeap\ViewCreator\DSV_Creator\DSV_Creator.h" />
     <ClInclude Include="Engine\Core\DescriptorHeap\DescriptorHeapClass\DescriptorHeapClass.h" />
     <ClInclude Include="Engine\Core\Device\Commands\CreateDescriptorHeap\CommandCreateDescriptorHeap.h" />

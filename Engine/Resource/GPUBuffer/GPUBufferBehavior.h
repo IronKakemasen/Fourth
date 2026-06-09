@@ -40,7 +40,6 @@ struct GPUBufferBehavior::BufferAccessKey
 private:
 	friend class GPUBufferCreator;
 	friend class GPUBufferManager;
-	friend class ViewCreatorBehavior;
 
 	explicit BufferAccessKey() = default;
 };

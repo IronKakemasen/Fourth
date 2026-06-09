@@ -12,8 +12,6 @@ public:
 	ConstantBuffer(const InstanceKey& instanceKey_, std::string name_, 
 		Microsoft::WRL::ComPtr<ID3D12Resource> resource1_, Microsoft::WRL::ComPtr<ID3D12Resource> resource2_, ConstantBufferDescription desc_);
 
-
-
 private:
 	ConstantBufferDescription desc;
 };

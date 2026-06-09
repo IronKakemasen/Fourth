@@ -11,7 +11,7 @@ public:
 	ViewCreatorBehavior(DescriptorHeapContext::CreateKey createKey_, DescriptorHeapClass* descriptorHeapClass_);
 
 	//Viewを生成する。
-	virtual [[nodiscard]] uint32_t CreateView(const GPUBufferBehavior& buffer_) = 0;
+	virtual void CreateView(GPUBufferBehavior& buffer_) = 0;
 
 protected:
 

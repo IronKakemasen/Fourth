@@ -10,7 +10,12 @@ DSV_Creator::DSV_Creator(DescriptorHeapContext::CreateKey createKey_, Descriptor
 }
 
 
-[[nodiscard]] uint32_t DSV_Creator::CreateView(const GPUBufferBehavior& buffer_)
+void DSV_Creator::CreateView(GPUBufferBehavior& buffer_)
 {
-	return 1;
+	
+}
+
+void DSV_Creator::SetCommand(std::function<Microsoft::WRL::ComPtr<ID3D12DescriptorHeap>(D3D12_DEPTH_STENCIL_VIEW_DESC, UINT, bool)> command_)
+{
+	createViewCommand = command_;
 }

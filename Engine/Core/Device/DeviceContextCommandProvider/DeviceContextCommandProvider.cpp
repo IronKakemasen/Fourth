@@ -5,6 +5,7 @@
 
 #include "../Commands/CreatGPUBuffer/CommandOfCreatingGPUBuffer.h"
 #include "../Commands/CreateDescriptorHeap/CommandCreateDescriptorHeap.h"
+#include "../Commands/CreateView/CommandCreateView.h"
 
 
 
@@ -14,7 +15,72 @@ DeviceContext::CommandProvider::CommandProvider(DeviceContext::InstanceKey insta
 	
 }
 
-[[nodiscard]] std::function<Microsoft::WRL::ComPtr<ID3D12DescriptorHeap>(D3D12_DESCRIPTOR_HEAP_TYPE, UINT, bool)> DeviceContext::CommandProvider::PassCreateDescriptorHeapCommand()
+
+//CreateViewCommand
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+template<>
+[[nodiscard]] std::function<void(ID3D12Resource* resource_, const D3D12_RENDER_TARGET_VIEW_DESC* desc_, D3D12_CPU_DESCRIPTOR_HANDLE descriptorHandleCPU_)>
+DeviceContext::CommandProvider::ProvideCreateViewCommand()
+{
+	auto retFunc = [this](ID3D12Resource* resource_, const D3D12_RENDER_TARGET_VIEW_DESC* desc_, D3D12_CPU_DESCRIPTOR_HANDLE descriptorHandleCPU_)
+	{
+		auto* device = deviceGetter(DeviceContext::DeviceAccessKey{});
+		auto& container = *commandContainer;
+		auto* command = static_cast<CommandCreateView*>(container[DeviceContext::CommandType::kCreateResourceView][0].get());
+
+		return command->CreateRTV(device, resource_, desc_, descriptorHandleCPU_);
+	};
+
+	return retFunc;
+}
+template<>
+[[nodiscard]] std::function<void(ID3D12Resource* resource_, const D3D12_SHADER_RESOURCE_VIEW_DESC* desc_, D3D12_CPU_DESCRIPTOR_HANDLE descriptorHandleCPU_)>
+DeviceContext::CommandProvider::ProvideCreateViewCommand()
+{
+	auto retFunc = [this](ID3D12Resource* resource_, const D3D12_SHADER_RESOURCE_VIEW_DESC* desc_, D3D12_CPU_DESCRIPTOR_HANDLE descriptorHandleCPU_)
+	{
+		auto* device = deviceGetter(DeviceContext::DeviceAccessKey{});
+		auto& container = *commandContainer;
+		auto* command = static_cast<CommandCreateView*>(container[DeviceContext::CommandType::kCreateResourceView][0].get());
+
+		return command->CreateSRV(device, resource_, desc_, descriptorHandleCPU_);
+	};
+
+	return retFunc;
+}
+
+template<>
+[[nodiscard]] std::function<void(ID3D12Resource* resource_, const D3D12_DEPTH_STENCIL_VIEW_DESC* desc_, D3D12_CPU_DESCRIPTOR_HANDLE descriptorHandleCPU_)>
+DeviceContext::CommandProvider::ProvideCreateViewCommand()
+{
+	auto retFunc = [this](ID3D12Resource* resource_, const D3D12_DEPTH_STENCIL_VIEW_DESC* desc_, D3D12_CPU_DESCRIPTOR_HANDLE descriptorHandleCPU_)
+	{
+		auto* device = deviceGetter(DeviceContext::DeviceAccessKey{});
+		auto& container = *commandContainer;
+		auto* command = static_cast<CommandCreateView*>(container[DeviceContext::CommandType::kCreateResourceView][0].get());
+
+		return command->CreateDSV(device, resource_, desc_, descriptorHandleCPU_);
+	};
+
+	return retFunc;
+}
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+
+
+
+
+//CreateDescriptorHeapCommand
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+[[nodiscard]] std::function<Microsoft::WRL::ComPtr<ID3D12DescriptorHeap>(D3D12_DESCRIPTOR_HEAP_TYPE, UINT, bool)>
+DeviceContext::CommandProvider::ProvideCreateDescriptorHeapCommand()
 {
 	auto retFunc = [this](D3D12_DESCRIPTOR_HEAP_TYPE heapType_, UINT numDescriptors_, bool shaderVisible_)
 	{
@@ -26,12 +92,23 @@ DeviceContext::CommandProvider::CommandProvider(DeviceContext::InstanceKey insta
 	};
 
 	return retFunc;
-
 }
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
+
+
+
+
+//CreateBufferCommand
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 template <>
-[[nodiscard]] std::function<Microsoft::WRL::ComPtr<ID3D12Resource>(const ConstantBufferDescription&)> DeviceContext::CommandProvider::PassCreateBufferCommand()
+[[nodiscard]] std::function<Microsoft::WRL::ComPtr<ID3D12Resource>(const ConstantBufferDescription&)>
+DeviceContext::CommandProvider::ProvideCreateBufferCommand()
 {
 	auto retFunc = [this](const ConstantBufferDescription& desc_)
 		{
@@ -48,7 +125,7 @@ template <>
 }
 
 template <>
-[[nodiscard]] std::function<Microsoft::WRL::ComPtr<ID3D12Resource>(const ColorBufferDescription&)> DeviceContext::CommandProvider::PassCreateBufferCommand()
+[[nodiscard]] std::function<Microsoft::WRL::ComPtr<ID3D12Resource>(const ColorBufferDescription&)> DeviceContext::CommandProvider::ProvideCreateBufferCommand()
 {
 	auto retFunc = [this](const ColorBufferDescription& desc_)
 		{
@@ -62,6 +139,9 @@ template <>
 
 	return retFunc;
 }
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
 

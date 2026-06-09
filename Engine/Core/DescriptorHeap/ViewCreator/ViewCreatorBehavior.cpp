@@ -28,6 +28,8 @@ template<>
 
 	next.ptr = handleStartCPU.ptr + descriptorHeapClass->handleIncrementSize * currentCreateNum;
 
+
+
 	return next;
 }
 
