@@ -19,8 +19,12 @@ void RTV_Creator::CreateView(GPUBufferBehavior& buffer_)
 	//リソースからディスクリプションを取得
 	auto desc = colorBuffer.WatchDescription();
 
-
 	//そのコンテナのインデックスをせっとする
 	colorBuffer.OverrideIndex(ColorBuffer::OverrideIndexKey{}, currentCreateNum++);
 }
 
+
+D3D12_RENDER_TARGET_VIEW_DESC RTV_Creator::CreateViewDesc()
+{
+	return D3D12_RENDER_TARGET_VIEW_DESC{};
+}

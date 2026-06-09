@@ -8,5 +8,10 @@ public:
 
 	virtual void CreateView(GPUBufferBehavior& buffer_)override;
 
+
+private:
+
+	virtual D3D12_SHADER_RESOURCE_VIEW_DESC CreateViewDesc()override;
+
 };
 

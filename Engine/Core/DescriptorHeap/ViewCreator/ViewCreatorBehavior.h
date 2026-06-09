@@ -11,10 +11,11 @@ class IViewCreatorBehavior
 public:
 	virtual ~IViewCreatorBehavior() = default;
 	virtual void CreateView(GPUBufferBehavior& buffer_) = 0;
+
 };
 
 
-//こちらが中身
+//こちらが中身のビュー生成テンプレ基底クラス
 template<typename ViewDescType>
 class ViewCreatorBehavior :public IViewCreatorBehavior
 {
@@ -45,9 +46,12 @@ protected:
 	//ビュー生成コマンド
 	std::function<void(ID3D12Resource*, const ViewDescType*, D3D12_CPU_DESCRIPTOR_HANDLE)> createViewCommand;
 
+	//ViewDescの生成関数
+	virtual ViewDescType CreateViewDesc() = 0;
+
 	//次のDescriptorHeapの空き空間を計算
 	template<typename HandleType>
-	[[nodiscard]] HandleType CalculateNextHandle()
+	[[nodiscard]] inline HandleType CalculateNextHandle()
 	{
 		ErrorMessageOutput::Assert::DetectError
 		(

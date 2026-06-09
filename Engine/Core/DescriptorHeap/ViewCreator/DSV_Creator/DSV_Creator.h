@@ -16,6 +16,7 @@ private:
 	//DSV_descriptorHandleCPUコンテナのアドレス
 	std::vector<D3D12_CPU_DESCRIPTOR_HANDLE>* DSV_descriptorHandleCPUContainer;
 
+	virtual D3D12_DEPTH_STENCIL_VIEW_DESC CreateViewDesc()override;
 
 };
 

@@ -13,3 +13,8 @@ void SRV_Creator::CreateView(GPUBufferBehavior& buffer_)
 {
 	
 }
+
+D3D12_SHADER_RESOURCE_VIEW_DESC SRV_Creator::CreateViewDesc()
+{
+	return D3D12_SHADER_RESOURCE_VIEW_DESC{};
+}

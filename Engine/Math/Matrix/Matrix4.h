@@ -1,8 +1,6 @@
 #pragma once
 #include "../Vector/Vector3.h"
 
-
-
 struct Matrix4
 {
 	DirectX::XMFLOAT4X4 data;
