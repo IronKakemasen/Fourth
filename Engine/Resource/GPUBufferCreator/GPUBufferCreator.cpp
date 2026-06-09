@@ -6,13 +6,19 @@
 #include "../GPUBuffer/ConstantBuffer/ConstantBuffer.h"
 #include "../GPUBuffer/ColorBuffer/ColorBuffer.h"
 
-void GPUBufferCreator::SetCommands(CrateColorBufferCommand crateColorBufferCommand_, CrateConstantBufferCommand crateConstantBufferCommand_)
+namespace
 {
-	crateConstantBufferCommand = crateConstantBufferCommand_;
-	crateColorBufferCommand = crateColorBufferCommand_;
+	const std::string fileName = "GPUBufferCreator.cpp";
 }
 
+void GPUBufferCreator::SetCommands(const CrateColorBufferCommand& crateColorBufferCommand_, const CrateConstantBufferCommand& crateConstantBufferCommand_)
+{
+	crateConstantBufferCommand = crateConstantBufferCommand_;
+	Logger::Log("Set: crateConstantBufferCommand", fileName);
+	crateColorBufferCommand = crateColorBufferCommand_;
+	Logger::Log("Set: crateColorBufferCommand", fileName);
 
+}
 
 template <>
 std::unique_ptr<ConstantBuffer> GPUBufferCreator::CreateSpecificBuffer<ConstantBuffer, ConstantBufferDescription>(const ConstantBufferDescription& desc_, const std::string& name_, Microsoft::WRL::ComPtr<ID3D12Resource>&& resource1_, Microsoft::WRL::ComPtr<ID3D12Resource>&& resource2_)
@@ -22,6 +28,8 @@ std::unique_ptr<ConstantBuffer> GPUBufferCreator::CreateSpecificBuffer<ConstantB
 
 	std::unique_ptr<ConstantBuffer> constantBuffer(new ConstantBuffer(GPUBufferBehavior::InstanceKey{},
 		name_, std::move(resource1_), std::move(resource2_), desc_));
+
+	Logger::Log("Create: name_", fileName);
 
 	return std::move(constantBuffer);
 }
@@ -35,6 +43,8 @@ std::unique_ptr<ColorBuffer> GPUBufferCreator::CreateSpecificBuffer<ColorBuffer,
 
 	std::unique_ptr<ColorBuffer> colorBuffer(new ColorBuffer(GPUBufferBehavior::InstanceKey{},
 		name_, std::move(resource1_), std::move(resource2_), desc_));
+
+	Logger::Log("Create: name_", fileName);
 
 	return std::move(colorBuffer);
 }

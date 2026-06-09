@@ -24,7 +24,7 @@ public:
 	~GPUBufferCreator();
 
 	//外部クラスが作ったコマンドをセットする
-	void SetCommands(CrateColorBufferCommand crateColorBufferCommand_, CrateConstantBufferCommand crateConstantBufferCommand_);
+	void SetCommands(const CrateColorBufferCommand& crateColorBufferCommand_, const CrateConstantBufferCommand& crateConstantBufferCommand_);
 
 	//一括窓口
 	template<typename BufferType,typename DescType>

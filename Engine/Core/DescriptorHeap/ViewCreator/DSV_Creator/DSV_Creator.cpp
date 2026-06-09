@@ -3,8 +3,8 @@
 
 
 
-DSV_Creator::DSV_Creator(DescriptorHeapContext::CreateKey createKey_, DescriptorHeapClass* descriptorHeapClass_)
-	:ViewCreatorBehavior(createKey_, descriptorHeapClass_)
+DSV_Creator::DSV_Creator(DescriptorHeapContext::CreateKey createKey_, DescriptorHeapClass* descriptorHeapClass_, std::vector<D3D12_CPU_DESCRIPTOR_HANDLE>* DSV_descriptorHandleCPUContainer_)
+	:ViewCreatorBehavior(createKey_, descriptorHeapClass_), DSV_descriptorHandleCPUContainer(DSV_descriptorHandleCPUContainer_)
 {
 
 }
