@@ -7,3 +7,9 @@ SRV_Creator::SRV_Creator(DescriptorHeapContext::CreateKey createKey_, Descriptor
 {
 
 }
+
+
+[[nodiscard]] uint32_t SRV_Creator::CreateView(const GPUBufferBehavior& buffer_)
+{
+	return 1;
+}

@@ -6,5 +6,7 @@ class RTV_Creator : public ViewCreatorBehavior
 public:
 	RTV_Creator(DescriptorHeapContext::CreateKey createKey_, DescriptorHeapClass* descriptorHeapClass_);
 
+	virtual [[nodiscard]] uint32_t CreateView(const GPUBufferBehavior& buffer_)override;
+
 };
 

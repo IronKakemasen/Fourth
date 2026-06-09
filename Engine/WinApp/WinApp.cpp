@@ -9,6 +9,29 @@ namespace
 	std::string const fileName = "WinApp.cpp";
 }
 
+//WinAppクラスのインスタンスを制御するクラス
+class WinApp::InstanceLimiter
+{
+public:
+	static bool CanInstantiate();
+
+	InstanceLimiter(const InstanceLimiter&) = delete;
+	InstanceLimiter& operator=(const InstanceLimiter&) = delete;
+	InstanceLimiter(InstanceLimiter&&) = delete;
+	InstanceLimiter& operator=(InstanceLimiter&&) = delete;
+
+private:
+	int instanceCnt{};
+
+	~InstanceLimiter() = default;
+	InstanceLimiter() = default;
+};
+
+void WinApp::Finalize()
+{
+	windowContext->Finalize();
+}
+
 WinApp::WinApp()
 {
 	Logger::Entry("WinApp::Constructor");
@@ -20,13 +43,14 @@ WinApp::WinApp()
 	InstantiateMemberVariables();
 	Logger::Log("Instantiate : CoreSystems ");
 
-	//コマンドの授受
-	GivingAndReceivingCommands();
-	Logger::Log("Complete Giving Commands ");
+	////コマンドの授受
+	//GivingAndReceivingCommands();
+	//Logger::Log("Complete Giving Commands ");
 
-	//DescriptorHeapの生成
-	CreateDescriptorHeaps();
-	Logger::Log("Create : DescriptorHeaps");
+	////DescriptorHeapの生成
+	//CreateDescriptorHeaps();
+	//Logger::Log("Create : DescriptorHeaps");
+
 
 	Logger::End("WinApp::Constructor");
 }
@@ -50,10 +74,10 @@ void WinApp::InstantiateMemberVariables()
 	deviceContext.reset(new DeviceContext(DeviceContext::InstanceKey{}));
 	//windowContextのインスタンス化
 	windowContext.reset(new WindowContext(WindowContext::CraftKey{}));
-	//gpuBufferCreatorクラスのインスタンス化
-	gpuBufferCreator.reset(new GPUBufferCreator(GPUBufferCreator::InstanceKey{}));
-	//descriptorHeapContextクラスのインスタンス化
-	descriptorHeapContext.reset(new DescriptorHeapContext(DescriptorHeapContext::InstanceKey{}));
+	////gpuBufferCreatorクラスのインスタンス化
+	//gpuBufferCreator.reset(new GPUBufferCreator(GPUBufferCreator::InstanceKey{}));
+	////descriptorHeapContextクラスのインスタンス化
+	//descriptorHeapContext.reset(new DescriptorHeapContext(DescriptorHeapContext::InstanceKey{}));
 
 }
 
@@ -88,6 +112,7 @@ void WinApp::CreateDescriptorHeaps()
 		IncrementSizeOfDescriptorHeaps(UINT rtv_, UINT srv_, UINT dsv_) : rtv(rtv_), srv(srv_), dsv(dsv_) {}
 	};
 	
+	//deviceContextからDescriptorHandleIncrementSizeを教えてもらう
 	IncrementSizeOfDescriptorHeaps sizeArray
 	(
 		deviceContext->PassDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV),
@@ -95,7 +120,10 @@ void WinApp::CreateDescriptorHeaps()
 		deviceContext->PassDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_DSV)
 	);
 
+	//RTV
 	descriptorHeapContext->CreateDescriptorHeap<D3D12_DESCRIPTOR_HEAP_TYPE_RTV>(kNumDescriptorsRTVHeap, false, sizeArray.rtv);
+	//SRV
 	descriptorHeapContext->CreateDescriptorHeap<D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV>(kNumDescriptorSRVHeap, false, sizeArray.srv);
+	//DSV
 	descriptorHeapContext->CreateDescriptorHeap<D3D12_DESCRIPTOR_HEAP_TYPE_DSV>(kNumDescriptorsDSVHeap, false, sizeArray.dsv);
 }

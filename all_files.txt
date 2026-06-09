@@ -40,6 +40,7 @@
 #include <array>
 #include <format>
 #include <functional>
+#include <mutex>
 
 //abort()やassert()でエラーを吐いて文字列を出力する
 #include "Debug/ErrorMessageOutput/ErrorMessageOutput.h"
@@ -133,6 +134,10 @@ private:
 #include "PreCompileHedder.h"
 #include "DescriptorHeapContext.h"
 #include "DescriptorHeapCreator/DescriptorHeapCreator.h"
+#include "DescriptorHeapClass/DescriptorHeapClass.h"
+#include "ViewCreator/RTV_Creator/RTV_Creator.h"
+#include "ViewCreator/SRV_Creator/SRV_Creator.h"
+#include "ViewCreator/DSV_Creator/DSV_Creator.h"
 
 DescriptorHeapContext::DescriptorHeapContext(InstanceKey instanceKey_)
 {
@@ -155,10 +160,43 @@ void DescriptorHeapContext::SetCommand(DescroptorCreateCommand createFunc_)
 	descriptorHeapCreator->SetCommand(createFunc_);
 }
 
-void DescriptorHeapContext::CreateDescriptorHeap(D3D12_DESCRIPTOR_HEAP_TYPE heapType_, UINT numDescriptors_, bool shaderVisible_)
+template<D3D12_DESCRIPTOR_HEAP_TYPE HeapType>
+void DescriptorHeapContext::CreateDescriptorHeap(UINT numDescriptors_, bool shaderVisible_, UINT handleIncSize_)
 {
-	descriptorHeaps[heapType_] = std::move(descriptorHeapCreator->createFunc(heapType_, numDescriptors_, shaderVisible_));
+	descriptorHeapContainer[HeapType] = std::make_unique<DescriptorHeapClass>(
+		std::move(descriptorHeapCreator->createFunc(HeapType, numDescriptors_, shaderVisible_)),
+		handleIncSize_,
+		numDescriptors_
+	);
+
+	CreateViewCreator<HeapType>(descriptorHeapContainer[HeapType].get());
 }
+
+
+template <>
+void DescriptorHeapContext::CreateViewCreator<D3D12_DESCRIPTOR_HEAP_TYPE_RTV>(DescriptorHeapClass* srcPtr_)
+{
+	viewCreatorContainer[kRTV] =
+		std::make_unique<RTV_Creator>(DescriptorHeapContext::CreateKey{}, srcPtr_);
+}
+
+template <>
+void DescriptorHeapContext::CreateViewCreator<D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV>(DescriptorHeapClass* srcPtr_)
+{
+	viewCreatorContainer[kSRV] =
+		std::make_unique<SRV_Creator>(DescriptorHeapContext::CreateKey{}, srcPtr_);
+}
+
+template <>
+void DescriptorHeapContext::CreateViewCreator<D3D12_DESCRIPTOR_HEAP_TYPE_DSV>(DescriptorHeapClass* srcPtr_)
+{
+	viewCreatorContainer[kDSV] =
+		std::make_unique<DSV_Creator>(DescriptorHeapContext::CreateKey{}, srcPtr_);
+}
+
+template void DescriptorHeapContext::CreateDescriptorHeap<D3D12_DESCRIPTOR_HEAP_TYPE_RTV>(UINT, bool, UINT);
+template void DescriptorHeapContext::CreateDescriptorHeap<D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV>(UINT, bool, UINT);
+template void DescriptorHeapContext::CreateDescriptorHeap<D3D12_DESCRIPTOR_HEAP_TYPE_DSV>(UINT, bool, UINT);
 
 
 
@@ -170,37 +208,60 @@ void DescriptorHeapContext::CreateDescriptorHeap(D3D12_DESCRIPTOR_HEAP_TYPE heap
 
 class WinApp;
 class ViewCreatorBehavior;
-
+class DescriptorHeapClass;
+class ViewCreatorBehavior;
 
 class DescriptorHeapContext
 {
+	//View生成クラスの識別タグ
+	enum ViewCreatorType
+	{
+		kSRV,
+		kSampler,
+		kRTV,
+		kDSV,
+
+		kCount
+	};
+
 private:
 
 	using DescroptorCreateCommand = 
 		std::function<Microsoft::WRL::ComPtr<ID3D12DescriptorHeap>(D3D12_DESCRIPTOR_HEAP_TYPE, UINT, bool)>;
 
+	//DescriptorHeap生成クラス
+	class DescriptorHeapCreator;
+	std::unique_ptr<DescriptorHeapCreator> descriptorHeapCreator;
+
+	//DescriptorHeapClassのコンテナ
+	std::unordered_map < D3D12_DESCRIPTOR_HEAP_TYPE, std::unique_ptr<DescriptorHeapClass>> descriptorHeapContainer;
+
+	//Viewを生成するクラスのコンテナ
+	std::unordered_map<ViewCreatorType, std::unique_ptr<ViewCreatorBehavior>> viewCreatorContainer;
+
 public:
 
+	//WinAppのみ生成可能
 	struct InstanceKey;
-	
+	//ViewCreator生成キー
+	struct CreateKey;
+
 	DescriptorHeapContext(InstanceKey instanceKey_);
 	~DescriptorHeapContext();
 
 	//コマンドのセット
 	void SetCommand(DescroptorCreateCommand createFunc_);
+
 	//DescriptorHeapの作成
-	void CreateDescriptorHeap(D3D12_DESCRIPTOR_HEAP_TYPE heapType_, UINT numDescriptors_, bool shaderVisible_);
+	template<D3D12_DESCRIPTOR_HEAP_TYPE HeapType>
+	void CreateDescriptorHeap(UINT numDescriptors_, bool shaderVisible_, UINT handleIncSize_);
 
 private:
 
-	//DescriptorHeap生成クラス
-	class DescriptorHeapCreator;
-	std::unique_ptr<DescriptorHeapCreator> descriptorHeapCreator;
+	template<D3D12_DESCRIPTOR_HEAP_TYPE HeapType>
+	void CreateViewCreator(DescriptorHeapClass* srcPtr_);
 
-	//DescriptorHeapのコンテナ
-	std::unordered_map<D3D12_DESCRIPTOR_HEAP_TYPE,Microsoft::WRL::ComPtr<ID3D12DescriptorHeap>> descriptorHeaps;
 };
-
 
 //生成できるのはWinAppのみ
 struct DescriptorHeapContext::InstanceKey
@@ -211,9 +272,92 @@ private:
 	explicit InstanceKey() = default;
 };
 
+//ViewCreatorを生成するためのキー
+struct DescriptorHeapContext::CreateKey
+{
+private:
 
-[[nodiscard]] Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> CreateDescriptorHeap(ID3D12Device* device_,
-	D3D12_DESCRIPTOR_HEAP_TYPE heapType_, UINT numDescriptors_, bool shaderVisible);
+	friend class DescriptorHeapContext;
+	explicit CreateKey() = default;
+};
+
+
+template <>
+void DescriptorHeapContext::CreateViewCreator<D3D12_DESCRIPTOR_HEAP_TYPE_RTV>(DescriptorHeapClass* srcPtr_);
+
+template <>
+void DescriptorHeapContext::CreateViewCreator<D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV>(DescriptorHeapClass* srcPtr_);
+
+template <>
+void DescriptorHeapContext::CreateViewCreator<D3D12_DESCRIPTOR_HEAP_TYPE_DSV>(DescriptorHeapClass* srcPtr_);
+
+
+
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Core\DescriptorHeap\DescriptorHeapClass\DescriptorHeapClass.cpp ===
+========================================
+#include "PreCompileHedder.h"
+#include "DescriptorHeapClass.h"
+
+DescriptorHeapClass::DescriptorHeapClass(
+	Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> descriptorHeap_,
+	UINT handleIncrementSize_, uint32_t kMaxDescriptor_) :
+	descriptorHeap(descriptorHeap_), handleIncrementSize(handleIncrementSize_), kMaxDescriptor(kMaxDescriptor_)
+{
+
+}
+
+
+const DescriptorHeapClass& DescriptorHeapClass::Access(DescriptorHeapClass::AccessKey accessKey_) const
+{
+	return *this; 
+}
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Core\DescriptorHeap\DescriptorHeapClass\DescriptorHeapClass.h ===
+========================================
+#pragma once
+#include "../DescriptorHeapContext.h"
+
+class ViewCreatorBehavior;
+
+class DescriptorHeapClass
+{
+public:
+	DescriptorHeapClass(Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> descriptorHeap_,
+		UINT handleIncrementSize_, uint32_t kMaxDescriptor_);
+
+	//アクセスできるのはViewCreatorのみ
+	struct AccessKey;
+
+	//アクセスする関数
+	const DescriptorHeapClass& Access(AccessKey accessKey_) const;
+
+private:
+	Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> descriptorHeap;
+	//ハンドルのインクリメントサイズ
+	UINT handleIncrementSize{};
+	//最大領域分割数
+	uint32_t kMaxDescriptor{};
+
+};
+
+
+struct DescriptorHeapClass::AccessKey
+{
+private:
+
+	friend class ViewCreatorBehavior;
+	explicit AccessKey() = default;
+
+};
 
 
 
@@ -253,12 +397,15 @@ class DescriptorHeapContext::DescriptorHeapCreator
 {
 public:
 
+	//DescriptorHeapを生成するコマンド
 	std::function<Microsoft::WRL::ComPtr<ID3D12DescriptorHeap>(D3D12_DESCRIPTOR_HEAP_TYPE, UINT, bool)> createFunc;
+
+	//コマンドをセットする
+	void SetCommand(std::function<Microsoft::WRL::ComPtr<ID3D12DescriptorHeap>(D3D12_DESCRIPTOR_HEAP_TYPE, UINT, bool)> func_);
 
 	DescriptorHeapCreator(DescriptorHeapContext::InstanceKey instanceKey_);
 	~DescriptorHeapCreator();
 
-	void SetCommand(std::function<Microsoft::WRL::ComPtr<ID3D12DescriptorHeap>(D3D12_DESCRIPTOR_HEAP_TYPE, UINT, bool)> func_);
 };
 
 
@@ -271,6 +418,12 @@ public:
 #include "PreCompileHedder.h"
 #include "ViewCreatorBehavior.h"
 
+ViewCreatorBehavior::ViewCreatorBehavior(DescriptorHeapContext::CreateKey createKey_, DescriptorHeapClass* descriptorHeapClass_)
+	: descriptorHeapClass(descriptorHeapClass_)
+{
+
+}
+
 
 
 
@@ -278,22 +431,58 @@ public:
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Core\DescriptorHeap\ViewCreator\ViewCreatorBehavior.h ===
 ========================================
 #pragma once
+#include "../DescriptorHeapContext.h"
 
-
+class DescriptorHeapClass;
 
 class ViewCreatorBehavior
 {
+public:
+
+	ViewCreatorBehavior(DescriptorHeapContext::CreateKey createKey_, DescriptorHeapClass* descriptorHeapClass_);
 
 protected:
-	//ヒープ
-	Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> descriptorHeap = nullptr;
-	//最大領域分割数
-	uint16_t maxDescriptorNum{};
-	//viewの生成数
-	uint32_t currentCreateNum{};
-	//ディスクリプターサイズ
-	uint32_t sizeOfDescriptor{};
 
+	//DescriptorHeapClassのアドレス
+	DescriptorHeapClass* descriptorHeapClass = nullptr;
+
+	//現在のviewの生成数
+	uint32_t currentCreateNum{};
+
+};
+
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Core\DescriptorHeap\ViewCreator\DSV_Creator\DSV_Creator.cpp ===
+========================================
+#include "PreCompileHedder.h"
+#include "DSV_Creator.h"
+
+
+
+DSV_Creator::DSV_Creator(DescriptorHeapContext::CreateKey createKey_, DescriptorHeapClass* descriptorHeapClass_)
+	:ViewCreatorBehavior(createKey_, descriptorHeapClass_)
+{
+
+}
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Core\DescriptorHeap\ViewCreator\DSV_Creator\DSV_Creator.h ===
+========================================
+#pragma once
+#include "../ViewCreatorBehavior.h"
+
+
+class DSV_Creator : public ViewCreatorBehavior
+{
+public:
+	DSV_Creator(DescriptorHeapContext::CreateKey createKey_, DescriptorHeapClass* descriptorHeapClass_);
 
 };
 
@@ -307,6 +496,12 @@ protected:
 #include "PreCompileHedder.h"
 #include "RTV_Creator.h"
 
+RTV_Creator::RTV_Creator(DescriptorHeapContext::CreateKey createKey_, DescriptorHeapClass* descriptorHeapClass_)
+	:ViewCreatorBehavior(createKey_, descriptorHeapClass_)
+{
+
+}
+
 
 
 
@@ -314,8 +509,13 @@ protected:
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Core\DescriptorHeap\ViewCreator\RTV_Creator\RTV_Creator.h ===
 ========================================
 #pragma once
-class RTV_Creator
+#include "../ViewCreatorBehavior.h"
+
+class RTV_Creator : public ViewCreatorBehavior
 {
+public:
+	RTV_Creator(DescriptorHeapContext::CreateKey createKey_, DescriptorHeapClass* descriptorHeapClass_);
+
 };
 
 
@@ -329,14 +529,26 @@ class RTV_Creator
 #include "SRV_Creator.h"
 
 
+SRV_Creator::SRV_Creator(DescriptorHeapContext::CreateKey createKey_, DescriptorHeapClass* descriptorHeapClass_)
+	:ViewCreatorBehavior(createKey_, descriptorHeapClass_)
+{
+
+}
+
+
 
 
 ========================================
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Core\DescriptorHeap\ViewCreator\SRV_Creator\SRV_Creator.h ===
 ========================================
 #pragma once
-class SRV_Creator
+#include "../ViewCreatorBehavior.h"
+
+class SRV_Creator : public ViewCreatorBehavior
 {
+public:
+	SRV_Creator(DescriptorHeapContext::CreateKey createKey_, DescriptorHeapClass* descriptorHeapClass_);
+
 };
 
 
@@ -413,6 +625,10 @@ DeviceContext::~DeviceContext()
 
 }
 
+UINT DeviceContext::PassDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE type_)
+{
+	return device->GetDescriptorHandleIncrementSize(type_);
+}
 
 
 
@@ -458,6 +674,9 @@ public:
 
 	DeviceContext(InstanceKey instanceKey);
 	~DeviceContext();
+
+	//DescriptorHeapのハンドルインクリメントサイズを返す関数
+	UINT PassDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE type_);
 
 private:
 
@@ -566,7 +785,7 @@ CommandCreateDescriptorHeap::~CommandCreateDescriptorHeap()
 }
 
 
-Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> CommandCreateDescriptorHeap::Create(ID3D12Device* device_, D3D12_DESCRIPTOR_HEAP_TYPE heapType_, UINT numDescriptors_, bool shaderVisible)
+Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> CommandCreateDescriptorHeap::Create(ID3D12Device8* device_, D3D12_DESCRIPTOR_HEAP_TYPE heapType_, UINT numDescriptors_, bool shaderVisible)
 {
 	Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> ret_descriptorHeap = nullptr;
 	D3D12_DESCRIPTOR_HEAP_DESC descriptorheapDesc{};
@@ -604,7 +823,7 @@ struct CommandCreateDescriptorHeap  : public DeviceContextCommandBehavior
 	~CommandCreateDescriptorHeap();
 
 
-	[[nodiscard]] Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> Create(ID3D12Device* device_,
+	[[nodiscard]] Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> Create(ID3D12Device8* device_,
 		D3D12_DESCRIPTOR_HEAP_TYPE heapType_, UINT numDescriptors_, bool shaderVisible);
 };
 
@@ -1394,6 +1613,83 @@ private:
 
 
 ========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Debug\StringColorConverter.cpp ===
+========================================
+#include "StringColorConverter.h"
+
+
+template<>
+std::string StringColorConverter::ChangeColor<StringColor::kRed>(const std::string& string_)
+{
+	return kRed + string_ + kReset;
+}
+
+template<>
+std::string StringColorConverter::ChangeColor<StringColor::kGreen>(const std::string& string_)
+{
+	return kGreen + string_ + kReset;
+}
+
+template<>
+std::string StringColorConverter::ChangeColor<StringColor::kYellow>(const std::string& string_)
+{
+	return kYellow + string_ + kReset;
+}
+
+template<>
+std::string StringColorConverter::ChangeColor<StringColor::kBlue>(const std::string& string_)
+{
+	return kBlue + string_ + kReset;
+}
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Debug\StringColorConverter.h ===
+========================================
+#pragma once
+
+enum class StringColor
+{
+	kRed,
+	kGreen,
+	kYellow,
+	kBlue
+};
+
+
+struct StringColorConverter
+{
+public:
+
+	template<StringColor stringColor>
+	static std::string ChangeColor(const std::string& string_);
+
+private:
+	static inline const std::string kRed =    "|\x1b[31m";
+	static inline const std::string kGreen =  "|\x1b[32m";
+	static inline const std::string kYellow = "|\x1b[33m";
+	static inline const std::string kBlue =   "|\x1b[34m";
+	static inline const std::string kReset =  "\x1b[0m";
+};
+
+template<>
+std::string StringColorConverter::ChangeColor<StringColor::kRed>(const std::string& string_);
+
+template<>
+std::string StringColorConverter::ChangeColor<StringColor::kGreen>(const std::string& string_);
+
+template<>
+std::string StringColorConverter::ChangeColor<StringColor::kYellow>(const std::string& string_);
+
+template<>
+std::string StringColorConverter::ChangeColor<StringColor::kBlue>(const std::string& string_);
+
+
+
+
+========================================
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Debug\ErrorMessageOutput\ErrorMessageOutput.cpp ===
 ========================================
 #include "PreCompileHedder.h"
@@ -1466,58 +1762,72 @@ namespace ErrorMessageOutput
 #include "Logger.h"
 #include <filesystem>
 
-Logger::Logger()
+void Logger::Init()
 {
-	static int onlyOnce{};
-	if (onlyOnce++ != 0) return;
+	static int onlyOnce{ };
+	if (onlyOnce++ > 0) return;
 
 	std::filesystem::create_directory("DebugLog");
 
-	//現在時刻を取得
-	std::chrono::system_clock::time_point now = std::chrono::system_clock::now();
-	//ログファイルの名前にコンマ以下はいらないので削る
-	std::chrono::time_point<std::chrono::system_clock, std::chrono::seconds>
-		nowSeconds = std::chrono::time_point_cast<std::chrono::seconds>(now);
-	//日本時間に変換
-	std::chrono::zoned_time localTime{ std::chrono::current_zone(),nowSeconds };
-	//formatを使って年月日_時分秒の文字列に変換
-	std::string dateString = std::format("{:%Y%m%d_%H%M%S}", localTime);
-	//時刻を使ってファイル名を決定
-	std::string logFilePath = std::string("DebugLog/") + dateString + "log";
-	//ファイルを使って書き込み準備
-	std::ofstream logStream(logFilePath);
+	// 現在時刻を取得
+	auto now = std::chrono::system_clock::now();
+	std::time_t time_t_now = std::chrono::system_clock::to_time_t(now);
 
-	logFIle.swap(logStream);
+	std::tm localTime{};
+	localtime_s(&localTime, &time_t_now);
 
-	Log("=========================================================================================================");
+	// バッファに "YYYYMMDD_HHMMSS" を書き込む
+	char buffer[32];
+	std::strftime(buffer, sizeof(buffer), "%Y%m%d_%H%M%S", &localTime);
+
+	std::string dateString(buffer);
+	std::string logFilePath = std::string("DebugLog/") + dateString + ".log";
+
+	logFIle.open(logFilePath);
 }
+
 
 void Logger::Log(std::string const& message_, const std::string& fileName_)
 {
 #ifdef _DEBUG
+
+	Init();
+
 	std::string output = message_;
 	if (fileName_.size() > 0) output += " : " + fileName_;
 
 	logFIle << output << std::endl;
 	OutputDebugStringA((output + "\n").c_str());
+
 #endif
 }
 
 void Logger::Entry(const std::string& message_)
 {
-	std::string output = "\n [ Entry ]=======================----" + message_ + "----=================================================================================================================================\n\n";
+#ifdef _DEBUG
+
+	Init();
+
+	std::string output = "\n [ Entry ]=======----" + message_ + "----=======\n\n";
 
 	logFIle << output << std::endl;
 	OutputDebugStringA(output.c_str());
+#endif
+
 }
 
 void Logger::End(const std::string& message_)
 {
-	std::string output = "\n[ End ]=======================----" + message_ + "----=================================================================================================================================\n\n";
+#ifdef _DEBUG
+
+	Init();
+
+	std::string output = "\n[ End ]=======----" + message_ + "----=======\n\n";
 
 	logFIle << output << std::endl;
 	OutputDebugStringA(output.c_str());
 
+#endif
 }
 
 
@@ -1532,15 +1842,16 @@ void Logger::End(const std::string& message_)
 class Logger
 {
 	static inline std::ofstream logFIle;
-	Logger();
+	static void Init();
 
 public:
 
-	static void Log(std::string const& message_,const std::string& fileName_ = "");
+	static void Log(std::string const& message_, const std::string& fileName_ = "");
 	static void Entry(const std::string& message_);
 	static void End(const std::string& message_);
 
 };
+
 
 
 
@@ -2931,6 +3242,29 @@ namespace
 	std::string const fileName = "WinApp.cpp";
 }
 
+//WinAppクラスのインスタンスを制御するクラス
+class WinApp::InstanceLimiter
+{
+public:
+	static bool CanInstantiate();
+
+	InstanceLimiter(const InstanceLimiter&) = delete;
+	InstanceLimiter& operator=(const InstanceLimiter&) = delete;
+	InstanceLimiter(InstanceLimiter&&) = delete;
+	InstanceLimiter& operator=(InstanceLimiter&&) = delete;
+
+private:
+	int instanceCnt{};
+
+	~InstanceLimiter() = default;
+	InstanceLimiter() = default;
+};
+
+void WinApp::Finalize()
+{
+	windowContext->Finalize();
+}
+
 WinApp::WinApp()
 {
 	Logger::Entry("WinApp::Constructor");
@@ -2942,13 +3276,14 @@ WinApp::WinApp()
 	InstantiateMemberVariables();
 	Logger::Log("Instantiate : CoreSystems ");
 
-	//コマンドの授受
-	GivingAndReceivingCommands();
-	Logger::Log("Complete Giving Commands ");
+	////コマンドの授受
+	//GivingAndReceivingCommands();
+	//Logger::Log("Complete Giving Commands ");
 
-	//DescriptorHeapの生成
-	CreateDescriptorHeaps();
-	Logger::Log("Create : DescriptorHeaps");
+	////DescriptorHeapの生成
+	//CreateDescriptorHeaps();
+	//Logger::Log("Create : DescriptorHeaps");
+
 
 	Logger::End("WinApp::Constructor");
 }
@@ -2972,10 +3307,10 @@ void WinApp::InstantiateMemberVariables()
 	deviceContext.reset(new DeviceContext(DeviceContext::InstanceKey{}));
 	//windowContextのインスタンス化
 	windowContext.reset(new WindowContext(WindowContext::CraftKey{}));
-	//gpuBufferCreatorクラスのインスタンス化
-	gpuBufferCreator.reset(new GPUBufferCreator(GPUBufferCreator::InstanceKey{}));
-	//descriptorHeapContextクラスのインスタンス化
-	descriptorHeapContext.reset(new DescriptorHeapContext(DescriptorHeapContext::InstanceKey{}));
+	////gpuBufferCreatorクラスのインスタンス化
+	//gpuBufferCreator.reset(new GPUBufferCreator(GPUBufferCreator::InstanceKey{}));
+	////descriptorHeapContextクラスのインスタンス化
+	//descriptorHeapContext.reset(new DescriptorHeapContext(DescriptorHeapContext::InstanceKey{}));
 
 }
 
@@ -3002,10 +3337,30 @@ void WinApp::CreateDescriptorHeaps()
 {
 	using namespace ProjectConfig::Core;
 
-	descriptorHeapContext->CreateDescriptorHeap(D3D12_DESCRIPTOR_HEAP_TYPE_RTV, kNumDescriptorsRTVHeap, false);
-	descriptorHeapContext->CreateDescriptorHeap(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, kNumDescriptorSRVHeap, false);
-	descriptorHeapContext->CreateDescriptorHeap(D3D12_DESCRIPTOR_HEAP_TYPE_DSV, kNumDescriptorsDSVHeap, false);
+	struct IncrementSizeOfDescriptorHeaps
+	{
+		UINT rtv{};
+		UINT srv{};
+		UINT dsv{};
+		IncrementSizeOfDescriptorHeaps(UINT rtv_, UINT srv_, UINT dsv_) : rtv(rtv_), srv(srv_), dsv(dsv_) {}
+	};
+	
+	//deviceContextからDescriptorHandleIncrementSizeを教えてもらう
+	IncrementSizeOfDescriptorHeaps sizeArray
+	(
+		deviceContext->PassDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV),
+		deviceContext->PassDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV),
+		deviceContext->PassDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_DSV)
+	);
+
+	//RTV
+	descriptorHeapContext->CreateDescriptorHeap<D3D12_DESCRIPTOR_HEAP_TYPE_RTV>(kNumDescriptorsRTVHeap, false, sizeArray.rtv);
+	//SRV
+	descriptorHeapContext->CreateDescriptorHeap<D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV>(kNumDescriptorSRVHeap, false, sizeArray.srv);
+	//DSV
+	descriptorHeapContext->CreateDescriptorHeap<D3D12_DESCRIPTOR_HEAP_TYPE_DSV>(kNumDescriptorsDSVHeap, false, sizeArray.dsv);
 }
+
 
 
 
@@ -3031,6 +3386,8 @@ public:
 	WinApp(WinApp&&) = delete;
 	WinApp& operator=(WinApp&&) = delete;
 
+	void Finalize();
+
 private:
 
 	//WinAppのインスタンスを1つに制限するためのシングルトンクラス
@@ -3045,36 +3402,15 @@ private:
 	//DescriptorHeapを作り、viewを生成するクラスを所持
 	std::unique_ptr<DescriptorHeapContext> descriptorHeapContext;
 
-
-
 	//メンバー変数のインスタンス化
 	void InstantiateMemberVariables();
 	//コマンドの受け渡し（GPUresourceCreateなど）
 	void GivingAndReceivingCommands();
 	//DescriptorHeapの生成
 	void CreateDescriptorHeaps();
-
-
 };
 
 
-//WinAppクラスのインスタンスを制御するクラス
-class WinApp::InstanceLimiter
-{
-public:
-	static bool CanInstantiate();
-
-	InstanceLimiter(const InstanceLimiter&) = delete;
-	InstanceLimiter& operator=(const InstanceLimiter&) = delete;
-	InstanceLimiter(InstanceLimiter&&) = delete;
-	InstanceLimiter& operator=(InstanceLimiter&&) = delete;
-
-private:
-	int instanceCnt{};
-
-	~InstanceLimiter() = default;
-	InstanceLimiter() = default;
-};
 
 
 

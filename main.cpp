@@ -3,26 +3,33 @@
 
 int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 {
-	//デバッガー。DebugLayer,PointerValidator,LeakChecker
-	RuntimeDebugger runtimeDebugger;
-	//アプリケーションクラス
-	WinApp winApp;
+    // デバッガー。DebugLayer, PointerValidator, LeakChecker
+    RuntimeDebugger runtimeDebugger;
+    // アプリケーションクラス
+    WinApp winApp;
 
-	MSG msg = {};
+    MSG msg = {};
 
-	while (WM_QUIT != msg.message)
-	{
-		//Windowにメッセージが来てたら最優先で処理させる
-		if (PeekMessage(&msg, nullptr, 0, 0, PM_REMOVE))
-		{
-			TranslateMessage(&msg);
-			DispatchMessage(&msg);
-		}
-		else
-		{
+    while (true)
+    {
+        //Windowにメッセージが来てたら最優先で処理させる
+        if (PeekMessage(&msg, nullptr, 0, 0, PM_REMOVE))
+        {
+            if (msg.message == WM_QUIT)
+            {
+                break;
+            }
+            TranslateMessage(&msg);
+            DispatchMessage(&msg);
+        }
+        else
+        {
 
-		}
-	}
+        }
+    }
 
-	return 0;
+
+    winApp.Finalize();
+
+    return 0;
 }
