@@ -12,7 +12,7 @@ class DescriptorHeapContext
 	//View生成クラスの識別タグ
 	enum ViewCreatorType
 	{
-		kSRV,
+		kSRV_UAV,
 		kSampler,
 		kRTV,
 		kDSV,
@@ -77,9 +77,12 @@ public:
 
 private:
 
+	//ビュークリエイターの生成
 	template<D3D12_DESCRIPTOR_HEAP_TYPE HeapType>
 	void CreateViewCreator(DescriptorHeapClass* srcPtr_);
 
+	//DescriptorHeapの名前を取得（初期化用）
+	std::string GetDescriptorName(D3D12_DESCRIPTOR_HEAP_TYPE heapType_);
 };
 
 //生成できるのはWinAppのみ

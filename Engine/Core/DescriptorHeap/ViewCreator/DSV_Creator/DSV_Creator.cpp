@@ -14,3 +14,8 @@ void DSV_Creator::CreateView(GPUBufferBehavior& buffer_)
 {
 	
 }
+
+D3D12_DEPTH_STENCIL_VIEW_DESC DSV_Creator::CreateViewDesc()
+{
+	return D3D12_DEPTH_STENCIL_VIEW_DESC{};
+}

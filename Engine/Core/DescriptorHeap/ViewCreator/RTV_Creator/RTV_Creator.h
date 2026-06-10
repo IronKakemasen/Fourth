@@ -17,7 +17,7 @@ private:
 	//RTV_descriptorHandleCPUコンテナのアドレス
 	std::vector<D3D12_CPU_DESCRIPTOR_HANDLE>* RTV_descriptorHandleCPUContainer;
 
-	//Viewdescの生成
-	D3D12_RENDER_TARGET_VIEW_DESC CreateViewDesc() {};
+	virtual D3D12_RENDER_TARGET_VIEW_DESC CreateViewDesc()override;
+
 };
 
