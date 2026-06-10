@@ -3,10 +3,12 @@
 
 class WinApp;
 
+//Description
 struct ColorBufferDescription;
 struct ConstantBufferDescription;
 struct SRV_UAVBufferDescription;
 
+//Buffer
 class ConstantBuffer;
 class ColorBuffer;
 class SRV_UAVBuffer;

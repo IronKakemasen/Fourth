@@ -1,10 +1,7 @@
 #include "PreCompileHedder.h"
 #include "WinApp.h"
-#include "../Debug/RuntimeDebugger/RuntimeDebugger.h"
-#include "../Debug/ErrorMessageOutput/ErrorMessageOutput.h"
 #include "../Core/Device/DeviceContextCommandProvider/DeviceContextCommandProvider.h"
 
-#include "../Resource/BufferDescriptions/SRV_UAVBufferDescription/SRV_UAVBufferDescription.h"
 
 namespace
 {
