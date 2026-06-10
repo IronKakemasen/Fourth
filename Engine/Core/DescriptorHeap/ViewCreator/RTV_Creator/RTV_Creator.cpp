@@ -11,7 +11,12 @@ RTV_Creator::RTV_Creator(DescriptorHeapContext::CreateKey createKey_, Descriptor
 void RTV_Creator::CreateView(GPUBufferBehavior& buffer_)
 {
 	ColorBuffer& colorBuffer = static_cast<ColorBuffer&>(buffer_);
-	auto handle = CalculateNextHandle<D3D12_CPU_DESCRIPTOR_HANDLE>();
+
+	//ビュー生成数をインクリメント
+	uint32_t allocateIndex = descriptorHeapClass->WatchAllocateIndex();
+
+	//ビュー生成数に応じたハンドルを返す
+	auto handle = CalculateHandle<D3D12_CPU_DESCRIPTOR_HANDLE>();
 	
 	//ハンドルをコンテナに入れる
 	RTV_descriptorHandleCPUContainer->emplace_back(handle);
@@ -20,7 +25,7 @@ void RTV_Creator::CreateView(GPUBufferBehavior& buffer_)
 	auto desc = colorBuffer.WatchDescription();
 
 	//そのコンテナのインデックスをせっとする
-	colorBuffer.OverrideIndex(ColorBuffer::OverrideIndexKey{}, currentCreateNum++);
+	colorBuffer.OverrideIndex(ColorBuffer::OverrideIndexKey{}, allocateIndex);
 }
 
 

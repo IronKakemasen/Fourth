@@ -218,7 +218,7 @@
     <ClCompile Include="Engine\Debug\RuntimeDebugger\DebugSystems\RuntimeDebuggerBehavior.cpp" />
     <ClCompile Include="Engine\Debug\RuntimeDebugger\RuntimeDebugger.cpp" />
     <ClCompile Include="Engine\Core\DescriptorHeap\ViewCreator\RTV_Creator\RTV_Creator.cpp" />
-    <ClCompile Include="Engine\Core\DescriptorHeap\ViewCreator\SRV_Creator\SRV_Creator.cpp" />
+    <ClCompile Include="Engine\Core\DescriptorHeap\ViewCreator\SRV_UAV_Creator\SRV_UAV_Creator.cpp" />
     <ClCompile Include="Engine\Core\DescriptorHeap\ViewCreator\ViewCreatorBehavior.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -278,7 +278,7 @@
     <ClInclude Include="Engine\Debug\RuntimeDebugger\DebugSystems\RuntimeDebuggerBehavior.h" />
     <ClInclude Include="Engine\Debug\RuntimeDebugger\RuntimeDebugger.h" />
     <ClInclude Include="Engine\Core\DescriptorHeap\ViewCreator\RTV_Creator\RTV_Creator.h" />
-    <ClInclude Include="Engine\Core\DescriptorHeap\ViewCreator\SRV_Creator\SRV_Creator.h" />
+    <ClInclude Include="Engine\Core\DescriptorHeap\ViewCreator\SRV_UAV_Creator\SRV_UAV_Creator.h" />
     <ClInclude Include="Engine\Core\DescriptorHeap\ViewCreator\ViewCreatorBehavior.h" />
   </ItemGroup>
   <ItemGroup>
