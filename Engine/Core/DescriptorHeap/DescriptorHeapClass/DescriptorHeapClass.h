@@ -18,7 +18,6 @@ public:
 	template<typename HandleType>
 	[[nodiscard]] HandleType CalculateHandle(AccessKey accessKey_);
 
-	//ID3D12DescriptorHeap* GetDescriptorHeap(AccessKey accessKey_);
 
 private:
 
