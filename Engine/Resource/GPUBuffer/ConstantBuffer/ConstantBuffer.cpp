@@ -6,5 +6,4 @@ ConstantBuffer::ConstantBuffer(const InstanceKey& instanceKey_, std::string name
 	GPUBufferBehavior(instanceKey_, name_, std::move(resource1_), std::move(resource2_)), desc(desc_)
 {
 
-
 }

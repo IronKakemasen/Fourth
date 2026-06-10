@@ -2,18 +2,22 @@
 #include "../../Resource/BufferDescriptions/BufferDescriptionBehavior.h"
 
 class WinApp;
+
 struct ColorBufferDescription;
 struct ConstantBufferDescription;
+struct SRV_UAVBufferDescription;
+
 class ConstantBuffer;
 class ColorBuffer;
+class SRV_UAVBuffer;
 
 class GPUBufferCreator
 {
 private:
 
-	using CrateColorBufferCommand = std::function<Microsoft::WRL::ComPtr<ID3D12Resource>(const ColorBufferDescription&)>;
-	using CrateConstantBufferCommand = std::function<Microsoft::WRL::ComPtr<ID3D12Resource>(const ConstantBufferDescription&)>;
-
+	using CreateColorBufferCommand = std::function<Microsoft::WRL::ComPtr<ID3D12Resource>(const ColorBufferDescription&)>;
+	using CreateConstantBufferCommand = std::function<Microsoft::WRL::ComPtr<ID3D12Resource>(const ConstantBufferDescription&)>;
+	using CreateSRV_UAVBufferCommand = std::function<Microsoft::WRL::ComPtr<ID3D12Resource>(const SRV_UAVBufferDescription&)>;
 
 public:
 
@@ -24,7 +28,12 @@ public:
 	~GPUBufferCreator();
 
 	//外部クラスが作ったコマンドをセットする
-	void SetCommands(const CrateColorBufferCommand& crateColorBufferCommand_, const CrateConstantBufferCommand& crateConstantBufferCommand_);
+	void SetCommands
+	(
+		const CreateColorBufferCommand& createColorBufferCommand_,
+		const CreateConstantBufferCommand& createConstantBufferCommand_,
+		const CreateSRV_UAVBufferCommand& createSRV_UAVBufferCommand_
+	);
 
 	//一括窓口
 	template<typename BufferType,typename DescType>
@@ -47,8 +56,9 @@ public:
 private:
 
 	//コマンド群
-	CrateConstantBufferCommand crateConstantBufferCommand;
-	CrateColorBufferCommand crateColorBufferCommand;
+	CreateConstantBufferCommand createConstantBufferCommand;
+	CreateColorBufferCommand createColorBufferCommand;
+	CreateSRV_UAVBufferCommand createSRV_UAVBufferCommand;
 
 	//引数のDescriptionに不備がないかチェックしてエラーを吐く
 	void CheckDescription(const BufferDescriptionBehavior& srcDesc_);
@@ -69,6 +79,10 @@ std::string GPUBufferCreator::NameConverter<ConstantBuffer>(const std::string& n
 
 template <>
 std::string GPUBufferCreator::NameConverter<ColorBuffer>(const std::string& name_);
+
+template <>
+std::string GPUBufferCreator::NameConverter<SRV_UAVBuffer>(const std::string& name_);
+
 
 struct GPUBufferCreator::InstanceKey
 {

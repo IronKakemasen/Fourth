@@ -12,7 +12,6 @@ struct ColorBufferDescription final : public BufferDescriptionBehavior
 	D3D12_RESOURCE_FLAGS flag = D3D12_RESOURCE_FLAG_Error_Detection;
 	DXGI_FORMAT format = DXGI_FORMAT_Error_Detection;
 
-public:
 	virtual void CheckRequirementsFilled() const override;
 
 };

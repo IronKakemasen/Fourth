@@ -1,7 +1,9 @@
 #include "PreCompileHedder.h"
 #include "DeviceContextCommandProvider.h"
+
 #include "../../../Resource/BufferDescriptions/ColorBufferDescription/ColorBufferDescription.h"
 #include "../../../Resource/BufferDescriptions/ConstantBufferDescription/ConstantBufferDescription.h"
+#include "../../../Resource/BufferDescriptions/SRV_UAVBufferDescription/SRV_UAVBufferDescription.h"
 
 #include "../Commands/CreatGPUBuffer/CommandOfCreatingGPUBuffer.h"
 #include "../Commands/CreateDescriptorHeap/CommandCreateDescriptorHeap.h"
@@ -139,6 +141,23 @@ template <>
 
 	return retFunc;
 }
+
+template <>
+[[nodiscard]] std::function<Microsoft::WRL::ComPtr<ID3D12Resource>(const SRV_UAVBufferDescription&)> DeviceContext::CommandProvider::ProvideCreateBufferCommand()
+{
+	auto retFunc = [this](const SRV_UAVBufferDescription& desc_)
+		{
+			auto* device = deviceGetter(DeviceContext::DeviceAccessKey{});
+			auto& container = *commandContainer;
+
+			CommandCreateGPUBuffer* command = static_cast<CommandCreateGPUBuffer*>(container[DeviceContext::CommandType::kCreateGPUBuffer][0].get());
+
+			return command->CreateSRV_UAVBuffer(device, desc_);
+		};
+
+	return retFunc;
+}
+
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

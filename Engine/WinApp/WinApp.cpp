@@ -4,6 +4,8 @@
 #include "../Debug/ErrorMessageOutput/ErrorMessageOutput.h"
 #include "../Core/Device/DeviceContextCommandProvider/DeviceContextCommandProvider.h"
 
+#include "../Resource/BufferDescriptions/SRV_UAVBufferDescription/SRV_UAVBufferDescription.h"
+
 namespace
 {
 	std::string const fileName = "WinApp.cpp";
@@ -82,9 +84,10 @@ void WinApp::GivingAndReceivingCommands()
 	{
 		//バッファ生成コマンド
 		const auto& createConstantBufferCommand = deviceContext->commandProvider->ProvideCreateBufferCommand<ConstantBufferDescription>();
-		const auto& createColorbufferCommand = deviceContext->commandProvider->ProvideCreateBufferCommand<ColorBufferDescription>();
+		const auto& createColorBufferCommand = deviceContext->commandProvider->ProvideCreateBufferCommand<ColorBufferDescription>();
+		const auto& createSRV_UAVBufferCommand = deviceContext->commandProvider->ProvideCreateBufferCommand<SRV_UAVBufferDescription>();
 
-		gpuBufferCreator->SetCommands(createColorbufferCommand, createConstantBufferCommand);
+		gpuBufferCreator->SetCommands(createColorBufferCommand, createConstantBufferCommand, createSRV_UAVBufferCommand);
 	}
 
 	//DescriptorHeapContext	

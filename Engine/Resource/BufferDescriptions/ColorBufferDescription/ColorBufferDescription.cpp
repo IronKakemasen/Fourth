@@ -7,9 +7,9 @@ void ColorBufferDescription::CheckRequirementsFilled() const
 
 	for (int i = 0;i < 4;++i)
 	{
-		if (clearColor[1] > 1)
+		if (clearColor[i] > 1)
 		{
-			errorMess += "[sizeInByte]";
+			errorMess += "[color]";
 			break;
 		}
 	}
@@ -20,6 +20,6 @@ void ColorBufferDescription::CheckRequirementsFilled() const
 	if (flag == D3D12_RESOURCE_FLAG_Error_Detection) errorMess += "[flag]";
 	if(initialState == D3D12_RESOURCE_STATE_Error_Detection) errorMess += "[initialState]";
 
-	ErrorMessageOutput::Assert::DetectError((errorMess.length() > 0), errorMess + "の情報が未設定です", "BufferDescriptionTypeB.cpp");
+	ErrorMessageOutput::Assert::DetectError((errorMess.length() == 0), errorMess + "の情報が未設定です", "ColorBufferDescription.cpp");
 
 }

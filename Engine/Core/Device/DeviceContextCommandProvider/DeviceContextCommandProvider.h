@@ -1,8 +1,8 @@
 #pragma once
 #include "../DeviceContext.h"
 
-struct ConstantBufferDescription;
-struct ColorBufferDescription;
+//struct ConstantBufferDescription;
+//struct ColorBufferDescription;
 
 //Deviceを使用する処理を、使用しない形にコマンド化して提供するクラス
 class DeviceContext::CommandProvider

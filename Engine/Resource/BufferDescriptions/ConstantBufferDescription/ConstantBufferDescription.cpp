@@ -7,6 +7,6 @@ void ConstantBufferDescription::CheckRequirementsFilled() const
 
 	if (sizeInByte > 0) errorMess += "[sizeInByte]";
 
-	ErrorMessageOutput::Assert::DetectError((errorMess.length() > 0), errorMess + "の情報が未設定です","ConstantBufferDescription.cpp");
+	ErrorMessageOutput::Assert::DetectError((errorMess.length() == 0), errorMess + "の情報が未設定です","ConstantBufferDescription.cpp");
 
 }
