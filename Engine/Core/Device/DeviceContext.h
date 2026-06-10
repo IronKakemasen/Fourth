@@ -2,8 +2,8 @@
 
 class WinApp;
 class DeviceContextCommandBehavior;
-struct ConstantBufferDescription;
-struct ColorBufferDescription;
+//struct ConstantBufferDescription;
+//struct ColorBufferDescription;
 
 
 

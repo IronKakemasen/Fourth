@@ -1,6 +1,8 @@
 #include "PreCompileHedder.h"
 #include "CommandOfCreatingGPUBuffer.h"
 #include "../../DeviceContextCommandGenerator/DeviceContextCommandGenerator.h"
+
+#include "../../../../Resource/BufferDescriptions/SRV_UAVBufferDescription/SRV_UAVBufferDescription.h"
 #include "../../../../Resource/BufferDescriptions/ConstantBufferDescription/ConstantBufferDescription.h"
 #include "../../../../Resource/BufferDescriptions/ColorBufferDescription/ColorBufferDescription.h"
  
@@ -91,6 +93,66 @@
 
 
 	return ret_resource;
+}
+
+[[nodiscard]] Microsoft::WRL::ComPtr<ID3D12Resource> CommandCreateGPUBuffer::CreateSRV_UAVBuffer(ID3D12Device8* device_,
+	const SRV_UAVBufferDescription& desc_)
+{
+	Microsoft::WRL::ComPtr<ID3D12Resource> ret_resource;
+	//頂点リソースのヒープ設定.upLoadHEapを使う
+	D3D12_HEAP_PROPERTIES uploadHeapProperties{};
+	uploadHeapProperties.Type = desc_.heapType;
+
+	//頂点リソースの設定
+	D3D12_RESOURCE_DESC resourceDesc{};
+
+	//バッファリソース。テクスチャの場合はまた別の設定をする
+	resourceDesc.Dimension = D3D12_RESOURCE_DIMENSION_BUFFER;
+
+	//リソースのサイズ。
+	resourceDesc.Width = desc_.structureByte * desc_.numElements;
+	resourceDesc.Height = 1;
+	resourceDesc.DepthOrArraySize = 1;
+	resourceDesc.MipLevels = 1;
+	resourceDesc.SampleDesc.Count = 1;
+	resourceDesc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
+	resourceDesc.Flags = desc_.resourceFlag;
+
+	D3D12_RESOURCE_STATES initialState{};
+
+	//CPUの近くにおく。からアクセスできるけど遅し。GPUからは触れない
+	if (desc_.heapType == D3D12_HEAP_TYPE_UPLOAD)
+	{
+		//こうしなきゃいけない
+		initialState = D3D12_RESOURCE_STATE_GENERIC_READ;
+	}
+	//GPUの近くのメモリ、Vramにおく。速し。CPUからアクセスできなくなる
+	else if (desc_.heapType == D3D12_HEAP_TYPE_DEFAULT)
+	{
+		//UAV生成フラグがあるときは、GPUが書き込めるようにする
+		if (desc_.resourceFlag & D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS)
+		{
+			initialState = D3D12_RESOURCE_STATE_UNORDERED_ACCESS;
+		}
+		//読み込み専用のStructuredBufferなら、中継バッファからのデータ転送待ち状態にする
+		else
+		{
+			initialState = D3D12_RESOURCE_STATE_COPY_DEST;
+		}
+	}
+
+	//実際に頂点リソースを作る
+	HRESULT hr = device_->CreateCommittedResource(
+		&uploadHeapProperties, 
+		D3D12_HEAP_FLAG_NONE,
+		&resourceDesc, 
+		initialState,
+		nullptr,
+		IID_PPV_ARGS(&ret_resource));
+	assert(SUCCEEDED(hr));
+
+	return ret_resource;
+
 }
 
 
