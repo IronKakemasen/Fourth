@@ -10,7 +10,7 @@ class IViewCreatorBehavior
 {
 public:
 	virtual ~IViewCreatorBehavior() = default;
-	virtual void CreateView(GPUBufferBehavior& buffer_) = 0;
+	virtual void CreateView(GPUBufferBehavior& buffer_, uint32_t allocateIndex_) = 0;
 
 };
 
@@ -27,7 +27,7 @@ public:
 	virtual ~ViewCreatorBehavior() = default;
 
 	//Viewを生成する。
-	virtual void CreateView(GPUBufferBehavior& buffer_) = 0;
+	virtual void CreateView(GPUBufferBehavior& buffer_, uint32_t allocateIndex_) = 0;
 
 	//ビュー生成コマンドをセットする
 	inline void SetCommand(std::function<void(ID3D12Resource*, const ViewDescType*, D3D12_CPU_DESCRIPTOR_HANDLE) > command_)
@@ -47,19 +47,19 @@ protected:
 	virtual ViewDescType CreateViewDesc() = 0;
 
 	//次のDescriptorHeapの空き空間を計算
-	//この中ではView生成数は上昇しない
+	//ここでView生成数は上昇する！！！
 	template<typename HandleType>
 	[[nodiscard]] inline HandleType CalculateHandle()
 	{
 		//CPU
 		if constexpr (std::is_same_v<HandleType, D3D12_CPU_DESCRIPTOR_HANDLE>)
 		{
-			return descriptorHeapClass->CalculateHandle<D3D12_CPU_DESCRIPTOR_HANDLE>(DescriptorHeapClass::AccessKey{});
-		}
+			return descriptorHeapClass->CalculateHandleThenIncrement<D3D12_CPU_DESCRIPTOR_HANDLE>(DescriptorHeapClass::AccessKey{});
+		}[]
 		//GPU
 		else if constexpr (std::is_same_v<HandleType, D3D12_GPU_DESCRIPTOR_HANDLE>)
 		{
-			return descriptorHeapClass->CalculateHandle<D3D12_GPU_DESCRIPTOR_HANDLE>(DescriptorHeapClass::AccessKey{});
+			return descriptorHeapClass->CalculateHandleThenIncrement<D3D12_GPU_DESCRIPTOR_HANDLE>(DescriptorHeapClass::AccessKey{});
 		}
 	}
 };

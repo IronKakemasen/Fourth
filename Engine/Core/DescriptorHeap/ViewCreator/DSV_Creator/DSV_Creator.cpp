@@ -10,7 +10,7 @@ DSV_Creator::DSV_Creator(DescriptorHeapContext::CreateKey createKey_, Descriptor
 }
 
 
-void DSV_Creator::CreateView(GPUBufferBehavior& buffer_)
+void DSV_Creator::CreateView(GPUBufferBehavior& buffer_, uint32_t allocateIndex_)
 {
 	
 }

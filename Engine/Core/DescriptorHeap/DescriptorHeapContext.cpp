@@ -3,7 +3,7 @@
 #include "DescriptorHeapCreator/DescriptorHeapCreator.h"
 #include "DescriptorHeapClass/DescriptorHeapClass.h"
 #include "ViewCreator/RTV_Creator/RTV_Creator.h"
-#include "ViewCreator/SRV_UAV_Creator/SRV_UAV_Creator.h"
+#include "ViewCreator/SRV_Creator/SRV_Creator .h"
 #include "ViewCreator/DSV_Creator/DSV_Creator.h"
 
 namespace

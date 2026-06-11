@@ -136,7 +136,7 @@ private:
 #include "DescriptorHeapCreator/DescriptorHeapCreator.h"
 #include "DescriptorHeapClass/DescriptorHeapClass.h"
 #include "ViewCreator/RTV_Creator/RTV_Creator.h"
-#include "ViewCreator/SRV_Creator/SRV_Creator.h"
+#include "ViewCreator/SRV_UAV_Creator/SRV_UAV_Creator.h"
 #include "ViewCreator/DSV_Creator/DSV_Creator.h"
 
 namespace
@@ -181,12 +181,28 @@ void DescriptorHeapContext::CreateDescriptorHeap(UINT numDescriptors_, bool shad
 	(
 		std::move(descriptorHeapCreator->createFunc(HeapType, numDescriptors_, shaderVisible_)),
 		handleIncSize_,
-		numDescriptors_
+		numDescriptors_,
+		GetDescriptorName(HeapType)
 	);
 
 	CreateViewCreator<HeapType>(descriptorHeapContainer[HeapType].get());
 }
 
+
+std::string DescriptorHeapContext::GetDescriptorName(D3D12_DESCRIPTOR_HEAP_TYPE heapType_)
+{
+	std::string descriptorHeap = "_descriptorHeap";
+
+	std::string nameTable[D3D12_DESCRIPTOR_HEAP_TYPE::D3D12_DESCRIPTOR_HEAP_TYPE_NUM_TYPES] =
+	{
+		"SRV_UAV",
+		"Sampler",
+		"RTV",
+		"DSV"
+	};
+
+	return nameTable[heapType_] + descriptorHeap;
+}
 
 template <>
 void DescriptorHeapContext::CreateViewCreator<D3D12_DESCRIPTOR_HEAP_TYPE_RTV>(DescriptorHeapClass* srcPtr_)
@@ -200,9 +216,9 @@ void DescriptorHeapContext::CreateViewCreator<D3D12_DESCRIPTOR_HEAP_TYPE_RTV>(De
 template <>
 void DescriptorHeapContext::CreateViewCreator<D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV>(DescriptorHeapClass* srcPtr_)
 {
-	viewCreatorContainer[kSRV] =
-		std::make_unique<SRV_Creator>(DescriptorHeapContext::CreateKey{}, srcPtr_);
-	Logger::Log("Create: SRV_Creator ", fileName);
+	viewCreatorContainer[kSRV_UAV] =
+		std::make_unique<SRV_UAV_Creator>(DescriptorHeapContext::CreateKey{}, srcPtr_);
+	Logger::Log("Create: SRV_UAV_Creator ", fileName);
 
 }
 
@@ -239,7 +255,7 @@ class DescriptorHeapContext
 	//View生成クラスの識別タグ
 	enum ViewCreatorType
 	{
-		kSRV,
+		kSRV_UAV,
 		kSampler,
 		kRTV,
 		kDSV,
@@ -304,9 +320,12 @@ public:
 
 private:
 
+	//ビュークリエイターの生成
 	template<D3D12_DESCRIPTOR_HEAP_TYPE HeapType>
 	void CreateViewCreator(DescriptorHeapClass* srcPtr_);
 
+	//DescriptorHeapの名前を取得（初期化用）
+	std::string GetDescriptorName(D3D12_DESCRIPTOR_HEAP_TYPE heapType_);
 };
 
 //生成できるのはWinAppのみ
@@ -350,14 +369,49 @@ void DescriptorHeapContext::CreateViewCreator<D3D12_DESCRIPTOR_HEAP_TYPE_DSV>(De
 #include "DescriptorHeapClass.h"
 #include "../ViewCreator/ViewCreatorBehavior.h"
 
+namespace
+{
+	std::string fileName = "DescriptorHeapClass.cpp";
+}
+
+
 DescriptorHeapClass::DescriptorHeapClass(
 	Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> descriptorHeap_,
-	UINT handleIncrementSize_, uint32_t kMaxDescriptor_) :
-	descriptorHeap(descriptorHeap_), handleIncrementSize(handleIncrementSize_), kMaxDescriptor(kMaxDescriptor_)
+	UINT handleIncrementSize_, uint32_t kMaxDescriptor_,std::string name_) :
+	descriptorHeap(descriptorHeap_), handleIncrementSize(handleIncrementSize_), kMaxDescriptor(kMaxDescriptor_),name(name_)
 {
+	std::string log = "Instantiate: " + name_ + "[" + std::to_string(kMaxDescriptor_) + "]";
+	Logger::Log(log, fileName);
 
 }
 
+[[nodiscard]]uint32_t DescriptorHeapClass::WatchAllocateIndex()
+{
+	ErrorMessageOutput::Assert::DetectError((currentCreateNum > kMaxDescriptor),
+		name + "がリミットブレイク!", fileName);
+
+	return currentCreateNum;
+}
+
+template<>
+[[nodiscard]] D3D12_GPU_DESCRIPTOR_HANDLE DescriptorHeapClass::CalculateHandle(AccessKey accessKey_)
+{
+	D3D12_GPU_DESCRIPTOR_HANDLE handleStartGPU = descriptorHeap->GetGPUDescriptorHandleForHeapStart();
+	D3D12_GPU_DESCRIPTOR_HANDLE next;
+	next.ptr = handleStartGPU.ptr + handleIncrementSize * currentCreateNum++;
+
+	return next;
+}
+
+template<>
+[[nodiscard]] D3D12_CPU_DESCRIPTOR_HANDLE DescriptorHeapClass::CalculateHandle(AccessKey accessKey_)
+{
+	D3D12_CPU_DESCRIPTOR_HANDLE handleStartCPU = descriptorHeap->GetCPUDescriptorHandleForHeapStart();
+	D3D12_CPU_DESCRIPTOR_HANDLE next;
+	next.ptr = handleStartCPU.ptr + handleIncrementSize * currentCreateNum++;
+
+	return next;
+}
 
 
 
@@ -374,10 +428,17 @@ class DescriptorHeapClass
 {
 public:
 	DescriptorHeapClass(Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> descriptorHeap_,
-		UINT handleIncrementSize_, uint32_t kMaxDescriptor_);
+		UINT handleIncrementSize_, uint32_t kMaxDescriptor_, std::string name_);
 
-	//アクセスできるのはViewCreatorのみ
-	template<typename ViewDescType> friend class ViewCreatorBehavior;
+	struct AccessKey;
+	
+	//currentCreateNum(ビュー生成数)を返す、その数をインクリメントする
+	[[nodiscard]] uint32_t WatchAllocateIndex();
+
+	//CPU / GPUの次のハンドルを計算し返したあと、currentCreateNum(ビュー生成数)をインクリメントする
+	template<typename HandleType>
+	[[nodiscard]] HandleType CalculateHandle(AccessKey accessKey_);
+
 
 private:
 
@@ -386,7 +447,25 @@ private:
 	UINT handleIncrementSize{};
 	//最大領域分割数
 	uint32_t kMaxDescriptor{};
+	//現在のviewの生成数
+	uint32_t currentCreateNum{};
+	//名前
+	std::string name{};
+};
 
+template<>
+[[nodiscard]] D3D12_CPU_DESCRIPTOR_HANDLE DescriptorHeapClass::CalculateHandle(AccessKey accessKey_);
+
+template<>
+[[nodiscard]] D3D12_GPU_DESCRIPTOR_HANDLE DescriptorHeapClass::CalculateHandle(AccessKey accessKey_);
+
+struct DescriptorHeapClass::AccessKey
+{
+private:
+
+	//アクセスできるのはビュークリエイターのみ
+	template<typename ViewDescType> friend class ViewCreatorBehavior;
+	explicit AccessKey() = default;
 };
 
 
@@ -481,7 +560,7 @@ class ViewCreatorBehavior :public IViewCreatorBehavior
 public:
 
 	ViewCreatorBehavior(DescriptorHeapContext::CreateKey createKey_, DescriptorHeapClass* descriptorHeapClass_)
-		: descriptorHeapClass(descriptorHeapClass_), currentCreateNum(0){ }
+		: descriptorHeapClass(descriptorHeapClass_){ }
 	
 	virtual ~ViewCreatorBehavior() = default;
 
@@ -499,9 +578,6 @@ protected:
 	//DescriptorHeapClassのアドレス
 	DescriptorHeapClass* descriptorHeapClass = nullptr;
 
-	//現在のviewの生成数
-	uint32_t currentCreateNum{};
-
 	//ビュー生成コマンド
 	std::function<void(ID3D12Resource*, const ViewDescType*, D3D12_CPU_DESCRIPTOR_HANDLE)> createViewCommand;
 
@@ -509,28 +585,19 @@ protected:
 	virtual ViewDescType CreateViewDesc() = 0;
 
 	//次のDescriptorHeapの空き空間を計算
+	//この中ではView生成数は上昇しない
 	template<typename HandleType>
-	[[nodiscard]] inline HandleType CalculateNextHandle()
+	[[nodiscard]] inline HandleType CalculateHandle()
 	{
-		ErrorMessageOutput::Assert::DetectError
-		(
-			(currentCreateNum < descriptorHeapClass->kMaxDescriptor),
-			"もうこれ以上Viewを作れません", "ViewCreatorBehavior.h"
-		);
-
+		//CPU
 		if constexpr (std::is_same_v<HandleType, D3D12_CPU_DESCRIPTOR_HANDLE>)
 		{
-			D3D12_CPU_DESCRIPTOR_HANDLE handleStartCPU = descriptorHeapClass->descriptorHeap->GetCPUDescriptorHandleForHeapStart();
-			D3D12_CPU_DESCRIPTOR_HANDLE next;
-			next.ptr = handleStartCPU.ptr + descriptorHeapClass->handleIncrementSize * currentCreateNum;
-			return next;
+			return descriptorHeapClass->CalculateHandle<D3D12_CPU_DESCRIPTOR_HANDLE>(DescriptorHeapClass::AccessKey{});
 		}
+		//GPU
 		else if constexpr (std::is_same_v<HandleType, D3D12_GPU_DESCRIPTOR_HANDLE>)
 		{
-			D3D12_GPU_DESCRIPTOR_HANDLE handleStartGPU = descriptorHeapClass->descriptorHeap->GetGPUDescriptorHandleForHeapStart();
-			D3D12_GPU_DESCRIPTOR_HANDLE next;
-			next.ptr = handleStartGPU.ptr + descriptorHeapClass->handleIncrementSize * currentCreateNum;
-			return next;
+			return descriptorHeapClass->CalculateHandle<D3D12_GPU_DESCRIPTOR_HANDLE>(DescriptorHeapClass::AccessKey{});
 		}
 	}
 };
@@ -612,7 +679,12 @@ RTV_Creator::RTV_Creator(DescriptorHeapContext::CreateKey createKey_, Descriptor
 void RTV_Creator::CreateView(GPUBufferBehavior& buffer_)
 {
 	ColorBuffer& colorBuffer = static_cast<ColorBuffer&>(buffer_);
-	auto handle = CalculateNextHandle<D3D12_CPU_DESCRIPTOR_HANDLE>();
+
+	//ビュー生成数をインクリメント
+	uint32_t allocateIndex = descriptorHeapClass->WatchAllocateIndex();
+
+	//ビュー生成数に応じたハンドルを返す
+	auto handle = CalculateHandle<D3D12_CPU_DESCRIPTOR_HANDLE>();
 	
 	//ハンドルをコンテナに入れる
 	RTV_descriptorHandleCPUContainer->emplace_back(handle);
@@ -621,7 +693,7 @@ void RTV_Creator::CreateView(GPUBufferBehavior& buffer_)
 	auto desc = colorBuffer.WatchDescription();
 
 	//そのコンテナのインデックスをせっとする
-	colorBuffer.OverrideIndex(ColorBuffer::OverrideIndexKey{}, currentCreateNum++);
+	colorBuffer.OverrideIndex(ColorBuffer::OverrideIndexKey{}, allocateIndex);
 }
 
 
@@ -664,25 +736,25 @@ private:
 
 
 ========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Core\DescriptorHeap\ViewCreator\SRV_Creator\SRV_Creator.cpp ===
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Core\DescriptorHeap\ViewCreator\SRV_UAV_Creator\SRV_UAV_Creator.cpp ===
 ========================================
 #include "PreCompileHedder.h"
-#include "SRV_Creator.h"
+#include "SRV_UAV_Creator.h"
 
 
-SRV_Creator::SRV_Creator(DescriptorHeapContext::CreateKey createKey_, DescriptorHeapClass* descriptorHeapClass_)
+SRV_UAV_Creator::SRV_UAV_Creator(DescriptorHeapContext::CreateKey createKey_, DescriptorHeapClass* descriptorHeapClass_)
 	:ViewCreatorBehavior<D3D12_SHADER_RESOURCE_VIEW_DESC>(createKey_, descriptorHeapClass_)
 {
 
 }
 
 
-void SRV_Creator::CreateView(GPUBufferBehavior& buffer_)
+void SRV_UAV_Creator::CreateView(GPUBufferBehavior& buffer_)
 {
 	
 }
 
-D3D12_SHADER_RESOURCE_VIEW_DESC SRV_Creator::CreateViewDesc()
+D3D12_SHADER_RESOURCE_VIEW_DESC SRV_UAV_Creator::CreateViewDesc()
 {
 	return D3D12_SHADER_RESOURCE_VIEW_DESC{};
 }
@@ -690,15 +762,17 @@ D3D12_SHADER_RESOURCE_VIEW_DESC SRV_Creator::CreateViewDesc()
 
 
 ========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Core\DescriptorHeap\ViewCreator\SRV_Creator\SRV_Creator.h ===
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Core\DescriptorHeap\ViewCreator\SRV_UAV_Creator\SRV_UAV_Creator.h ===
 ========================================
 #pragma once
 #include "../ViewCreatorBehavior.h"
 
-class SRV_Creator : public ViewCreatorBehavior<D3D12_SHADER_RESOURCE_VIEW_DESC>
+
+//SRV、UAVを同一のディスクリプタヒープ上に作る。
+class SRV_UAV_Creator : public ViewCreatorBehavior<D3D12_SHADER_RESOURCE_VIEW_DESC>
 {
 public:
-	SRV_Creator(DescriptorHeapContext::CreateKey createKey_, DescriptorHeapClass* descriptorHeapClass_);
+	SRV_UAV_Creator(DescriptorHeapContext::CreateKey createKey_, DescriptorHeapClass* descriptorHeapClass_);
 
 	virtual void CreateView(GPUBufferBehavior& buffer_)override;
 
@@ -706,6 +780,7 @@ public:
 private:
 
 	virtual D3D12_SHADER_RESOURCE_VIEW_DESC CreateViewDesc()override;
+
 
 };
 
@@ -811,9 +886,6 @@ UINT DeviceContext::PassDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE
 
 class WinApp;
 class DeviceContextCommandBehavior;
-struct ConstantBufferDescription;
-struct ColorBufferDescription;
-
 
 
 class DeviceContext
@@ -1058,6 +1130,8 @@ struct CommandCreateView : public DeviceContextCommandBehavior
 
 	void CreateRTV(ID3D12Device8* device_, ID3D12Resource* resource_ , const D3D12_RENDER_TARGET_VIEW_DESC* desc_, D3D12_CPU_DESCRIPTOR_HANDLE descriptorHandleCPU_);
 	void CreateSRV(ID3D12Device8* device_, ID3D12Resource* resource_, const D3D12_SHADER_RESOURCE_VIEW_DESC* desc_, D3D12_CPU_DESCRIPTOR_HANDLE descriptorHandleCPU_);
+	//void CreateSRV(ID3D12Device8* device_, ID3D12Resource* resource_, const D3D12_SHADER_RESOURCE_VIEW_DESC* desc_, D3D12_CPU_DESCRIPTOR_HANDLE descriptorHandleCPU_);
+
 	void CreateDSV(ID3D12Device8* device_, ID3D12Resource* resource_, const D3D12_DEPTH_STENCIL_VIEW_DESC* desc_, D3D12_CPU_DESCRIPTOR_HANDLE descriptorHandleCPU_);
 
 };
@@ -1071,7 +1145,8 @@ struct CommandCreateView : public DeviceContextCommandBehavior
 ========================================
 #include "PreCompileHedder.h"
 #include "CommandOfCreatingGPUBuffer.h"
-#include "../../DeviceContextCommandGenerator/DeviceContextCommandGenerator.h"
+
+#include "../../../../Resource/BufferDescriptions/SRV_UAVBufferDescription/SRV_UAVBufferDescription.h"
 #include "../../../../Resource/BufferDescriptions/ConstantBufferDescription/ConstantBufferDescription.h"
 #include "../../../../Resource/BufferDescriptions/ColorBufferDescription/ColorBufferDescription.h"
  
@@ -1164,6 +1239,66 @@ struct CommandCreateView : public DeviceContextCommandBehavior
 	return ret_resource;
 }
 
+[[nodiscard]] Microsoft::WRL::ComPtr<ID3D12Resource> CommandCreateGPUBuffer::CreateSRV_UAVBuffer(ID3D12Device8* device_,
+	const SRV_UAVBufferDescription& desc_)
+{
+	Microsoft::WRL::ComPtr<ID3D12Resource> ret_resource;
+	//頂点リソースのヒープ設定.upLoadHEapを使う
+	D3D12_HEAP_PROPERTIES uploadHeapProperties{};
+	uploadHeapProperties.Type = desc_.heapType;
+
+	//頂点リソースの設定
+	D3D12_RESOURCE_DESC resourceDesc{};
+
+	//バッファリソース。テクスチャの場合はまた別の設定をする
+	resourceDesc.Dimension = D3D12_RESOURCE_DIMENSION_BUFFER;
+
+	//リソースのサイズ。
+	resourceDesc.Width = desc_.structureByte * desc_.numElements;
+	resourceDesc.Height = 1;
+	resourceDesc.DepthOrArraySize = 1;
+	resourceDesc.MipLevels = 1;
+	resourceDesc.SampleDesc.Count = 1;
+	resourceDesc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
+	resourceDesc.Flags = desc_.resourceFlag;
+
+	D3D12_RESOURCE_STATES initialState{};
+
+	//CPUの近くにおく。からアクセスできるけど遅し。GPUからは触れない
+	if (desc_.heapType == D3D12_HEAP_TYPE_UPLOAD)
+	{
+		//こうしなきゃいけない
+		initialState = D3D12_RESOURCE_STATE_GENERIC_READ;
+	}
+	//GPUの近くのメモリ、Vramにおく。速し。CPUからアクセスできなくなる
+	else if (desc_.heapType == D3D12_HEAP_TYPE_DEFAULT)
+	{
+		//UAV生成フラグがあるときは、GPUが書き込めるようにする
+		if (desc_.resourceFlag & D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS)
+		{
+			initialState = D3D12_RESOURCE_STATE_UNORDERED_ACCESS;
+		}
+		//読み込み専用のStructuredBufferなら、中継バッファからのデータ転送待ち状態にする
+		else
+		{
+			initialState = D3D12_RESOURCE_STATE_COPY_DEST;
+		}
+	}
+
+	//実際に頂点リソースを作る
+	HRESULT hr = device_->CreateCommittedResource(
+		&uploadHeapProperties, 
+		D3D12_HEAP_FLAG_NONE,
+		&resourceDesc, 
+		initialState,
+		nullptr,
+		IID_PPV_ARGS(&ret_resource));
+	assert(SUCCEEDED(hr));
+
+	return ret_resource;
+
+}
+
 
 CommandCreateGPUBuffer::CommandCreateGPUBuffer(DeviceContext::CommandGenerator::GenerateKey generateKey_) :DeviceContextCommandBehavior(generateKey_)
 {
@@ -1185,22 +1320,24 @@ CommandCreateGPUBuffer::~CommandCreateGPUBuffer()
 
 struct ConstantBufferDescription;
 struct ColorBufferDescription;
+struct SRV_UAVBufferDescription;
 
-
-//各Typeのバッファを作る関数群
+//各バッファのId3d12Resourceを作るコマンド群
 struct CommandCreateGPUBuffer : public DeviceContextCommandBehavior
 {
 	//DeviceContext::CommandGeneratorクラスのみ生成可能
 	CommandCreateGPUBuffer(DeviceContext::CommandGenerator::GenerateKey generateKey_);
 	~CommandCreateGPUBuffer();
 
-	//ConstantBufferを作る
+	//ConstantBufferのリソースを作る
 	[[nodiscard]] Microsoft::WRL::ComPtr<ID3D12Resource> CreateConstantBuffer(ID3D12Device8* device_,
 		const ConstantBufferDescription& desc_);
-	//ColorBufferを作る
+	//ColorBufferのリソースを作る
 	[[nodiscard]] Microsoft::WRL::ComPtr<ID3D12Resource> CreateColorBuffer(ID3D12Device8* device_, 
 		const ColorBufferDescription& desc_);	
-
+	//SRV_UAVBufferのリソースを作る
+	[[nodiscard]] Microsoft::WRL::ComPtr<ID3D12Resource> CreateSRV_UAVBuffer(ID3D12Device8* device_,
+		const SRV_UAVBufferDescription& desc_);
 };
 
 
@@ -1277,8 +1414,10 @@ private:
 ========================================
 #include "PreCompileHedder.h"
 #include "DeviceContextCommandProvider.h"
+
 #include "../../../Resource/BufferDescriptions/ColorBufferDescription/ColorBufferDescription.h"
 #include "../../../Resource/BufferDescriptions/ConstantBufferDescription/ConstantBufferDescription.h"
+#include "../../../Resource/BufferDescriptions/SRV_UAVBufferDescription/SRV_UAVBufferDescription.h"
 
 #include "../Commands/CreatGPUBuffer/CommandOfCreatingGPUBuffer.h"
 #include "../Commands/CreateDescriptorHeap/CommandCreateDescriptorHeap.h"
@@ -1416,6 +1555,23 @@ template <>
 
 	return retFunc;
 }
+
+template <>
+[[nodiscard]] std::function<Microsoft::WRL::ComPtr<ID3D12Resource>(const SRV_UAVBufferDescription&)> DeviceContext::CommandProvider::ProvideCreateBufferCommand()
+{
+	auto retFunc = [this](const SRV_UAVBufferDescription& desc_)
+		{
+			auto* device = deviceGetter(DeviceContext::DeviceAccessKey{});
+			auto& container = *commandContainer;
+
+			CommandCreateGPUBuffer* command = static_cast<CommandCreateGPUBuffer*>(container[DeviceContext::CommandType::kCreateGPUBuffer][0].get());
+
+			return command->CreateSRV_UAVBuffer(device, desc_);
+		};
+
+	return retFunc;
+}
+
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -1434,9 +1590,6 @@ template <>
 ========================================
 #pragma once
 #include "../DeviceContext.h"
-
-struct ConstantBufferDescription;
-struct ColorBufferDescription;
 
 //Deviceを使用する処理を、使用しない形にコマンド化して提供するクラス
 class DeviceContext::CommandProvider
@@ -2395,8 +2548,6 @@ public:
 #pragma once
 #include "../Vector/Vector3.h"
 
-
-
 struct Matrix4
 {
 	DirectX::XMFLOAT4X4 data;
@@ -2957,8 +3108,8 @@ struct MeshShaderPipelineStateStream
 
 //GPUバッファ生成に必要な情報をまとめてある。
 //CBやIB、VBなどの単純なバッファ
-//ColorバッファやSRVバッファなどのちょい複雑なバッファ
-
+//Colorバッファ
+//srvバッファやuavバッファ
 
 //＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝
 
@@ -2985,9 +3136,9 @@ void ColorBufferDescription::CheckRequirementsFilled() const
 
 	for (int i = 0;i < 4;++i)
 	{
-		if (clearColor[1] > 1)
+		if (clearColor[i] > 1)
 		{
-			errorMess += "[sizeInByte]";
+			errorMess += "[color]";
 			break;
 		}
 	}
@@ -2998,7 +3149,7 @@ void ColorBufferDescription::CheckRequirementsFilled() const
 	if (flag == D3D12_RESOURCE_FLAG_Error_Detection) errorMess += "[flag]";
 	if(initialState == D3D12_RESOURCE_STATE_Error_Detection) errorMess += "[initialState]";
 
-	ErrorMessageOutput::Assert::DetectError((errorMess.length() > 0), errorMess + "の情報が未設定です", "BufferDescriptionTypeB.cpp");
+	ErrorMessageOutput::Assert::DetectError((errorMess.length() == 0), errorMess + "の情報が未設定です", "ColorBufferDescription.cpp");
 
 }
 
@@ -3021,7 +3172,6 @@ struct ColorBufferDescription final : public BufferDescriptionBehavior
 	D3D12_RESOURCE_FLAGS flag = D3D12_RESOURCE_FLAG_Error_Detection;
 	DXGI_FORMAT format = DXGI_FORMAT_Error_Detection;
 
-public:
 	virtual void CheckRequirementsFilled() const override;
 
 };
@@ -3043,7 +3193,7 @@ void ConstantBufferDescription::CheckRequirementsFilled() const
 
 	if (sizeInByte > 0) errorMess += "[sizeInByte]";
 
-	ErrorMessageOutput::Assert::DetectError((errorMess.length() > 0), errorMess + "の情報が未設定です","ConstantBufferDescription.cpp");
+	ErrorMessageOutput::Assert::DetectError((errorMess.length() == 0), errorMess + "の情報が未設定です","ConstantBufferDescription.cpp");
 
 }
 
@@ -3061,7 +3211,69 @@ struct ConstantBufferDescription final : public BufferDescriptionBehavior
 {
 	UINT sizeInByte{};
 
-public: 
+	virtual void CheckRequirementsFilled() const override;
+};
+
+
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Resource\BufferDescriptions\SRV_UAVBufferDescription\SRV_UAVBufferDescription.cpp ===
+========================================
+#include "PreCompileHedder.h"
+#include "SRV_UAVBufferDescription.h"
+
+void SRV_UAVBufferDescription::CheckRequirementsFilled() const
+{
+	std::string errorMess{};
+
+	if (structureByte == 0)errorMess += "[structureByte]";
+	if (numElements == 0)errorMess += "[numElements]";
+	if (firstElement == -1) errorMess += "[firstElement]";
+	if (srvFlags == D3D12_BUFFER_SRV_FLAG_notDefined) errorMess += "[srvFlags]";
+	if (resourceFlag == D3D12_RESOURCE_FLAG_Error_Detection) errorMess += "[resourceFlag]";
+	if (heapType == D3D12_HEAP_TYPE_notDefined) errorMess += "[heapType]";
+	
+	//uav生成フラグがあるときはほかのもチェック
+	if (resourceFlag & D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS)
+	{
+		if (uavFlags == D3D12_BUFFER_UAV_FLAG_notDefined) errorMess += "[uavFlags]";
+		if (uavCounterOffsetInBytes == -1) errorMess += "[uavCounterOffsetInBytes]";
+	}
+
+	ErrorMessageOutput::Assert::DetectError((errorMess.length() == 0), errorMess + "の情報が未設定です", "SRV_UAVBufferDescription.cpp");
+}
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Resource\BufferDescriptions\SRV_UAVBufferDescription\SRV_UAVBufferDescription.h ===
+========================================
+#pragma once
+#include "../BufferDescriptionBehavior.h"
+
+
+//StructuredBuffer（読み込み専用やRWStructuredBuffer（読み書き汎用）のDescription
+struct SRV_UAVBufferDescription :public BufferDescriptionBehavior
+{
+	//そのデータ型のサイズ
+	UINT structureByte{};
+	//要素数
+	UINT numElements{};
+	UINT firstElement = -1;
+
+	D3D12_RESOURCE_FLAGS resourceFlag = D3D12_RESOURCE_FLAG_Error_Detection;
+
+	D3D12_HEAP_TYPE heapType = D3D12_HEAP_TYPE_notDefined;
+
+	D3D12_BUFFER_SRV_FLAGS srvFlags = D3D12_BUFFER_SRV_FLAG_notDefined;
+	//UAVのビューを作るのであれば
+	D3D12_BUFFER_UAV_FLAGS uavFlags = D3D12_BUFFER_UAV_FLAG_notDefined;
+	// カウンターバッファ用のオフセット
+	uint64_t uavCounterOffsetInBytes = -1; 
+
 	virtual void CheckRequirementsFilled() const override;
 
 };
@@ -3128,7 +3340,6 @@ public:
 
 	GPUBufferBehavior(const InstanceKey& instanceKey_, std::string name_, Microsoft::WRL::ComPtr<ID3D12Resource> resource1_, Microsoft::WRL::ComPtr<ID3D12Resource> resource2_);
 	ID3D12Resource& GetResource( const BufferAccessKey& bufferAccessKey_ , int index_);
-	
 
 private:
 
@@ -3269,7 +3480,6 @@ ConstantBuffer::ConstantBuffer(const InstanceKey& instanceKey_, std::string name
 	GPUBufferBehavior(instanceKey_, name_, std::move(resource1_), std::move(resource2_)), desc(desc_)
 {
 
-
 }
 
 
@@ -3300,35 +3510,90 @@ private:
 
 
 ========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Resource\GPUBuffer\SRV_UAVBuffer\SRV_UAVBuffer.cpp ===
+========================================
+#include "PreCompileHedder.h"
+#include "SRV_UAVBuffer.h"
+
+
+SRV_UAVBuffer::SRV_UAVBuffer(const InstanceKey& instanceKey_, std::string name_, Microsoft::WRL::ComPtr<ID3D12Resource> resource1_, Microsoft::WRL::ComPtr<ID3D12Resource> resource2_, SRV_UAVBufferDescription desc_) :
+	GPUBufferBehavior(instanceKey_, name_, std::move(resource1_), std::move(resource2_)), desc(desc_)
+{
+
+}
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Resource\GPUBuffer\SRV_UAVBuffer\SRV_UAVBuffer.h ===
+========================================
+#pragma once
+#include "../GPUBufferBehavior.h"
+#include "../../BufferDescriptions/SRV_UAVBufferDescription/SRV_UAVBufferDescription.h"
+
+
+
+//StructuredBuffer（読み込み専用やRWStructuredBuffer（読み書き汎用）リソース
+class SRV_UAVBuffer : public GPUBufferBehavior
+{
+public:
+
+	SRV_UAVBuffer(const InstanceKey& instanceKey_, std::string name_,
+		Microsoft::WRL::ComPtr<ID3D12Resource> resource1_, Microsoft::WRL::ComPtr<ID3D12Resource> resource2_, SRV_UAVBufferDescription desc_);
+
+private:
+	SRV_UAVBufferDescription desc;
+};
+
+
+
+
+
+========================================
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Resource\GPUBufferCreator\GPUBufferCreator.cpp ===
 ========================================
 #include "PreCompileHedder.h"
 #include "GPUBufferCreator.h"
+
 #include "../BufferDescriptions/ColorBufferDescription/ColorBufferDescription.h"
 #include "../BufferDescriptions/ConstantBufferDescription/ConstantBufferDescription.h"
+#include "../BufferDescriptions/SRV_UAVBufferDescription/SRV_UAVBufferDescription.h"
 
 #include "../GPUBuffer/ConstantBuffer/ConstantBuffer.h"
 #include "../GPUBuffer/ColorBuffer/ColorBuffer.h"
+#include "../GPUBuffer/SRV_UAVBuffer/SRV_UAVBuffer.h"
 
 namespace
 {
 	const std::string fileName = "GPUBufferCreator.cpp";
 }
 
-void GPUBufferCreator::SetCommands(const CrateColorBufferCommand& crateColorBufferCommand_, const CrateConstantBufferCommand& crateConstantBufferCommand_)
+void GPUBufferCreator::SetCommands
+(
+	const CreateColorBufferCommand& createColorBufferCommand_,
+	const CreateConstantBufferCommand& createConstantBufferCommand_,
+	const CreateSRV_UAVBufferCommand& createSRV_UAVBufferCommand_
+)
 {
-	crateConstantBufferCommand = crateConstantBufferCommand_;
+	createConstantBufferCommand = createConstantBufferCommand_;
 	Logger::Log("Set: crateConstantBufferCommand", fileName);
-	crateColorBufferCommand = crateColorBufferCommand_;
+	createColorBufferCommand = createColorBufferCommand_;
 	Logger::Log("Set: crateColorBufferCommand", fileName);
+	createSRV_UAVBufferCommand = createSRV_UAVBufferCommand_;
+	Logger::Log("Set: createSRV_UAVBufferCommand_", fileName);
 
 }
 
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////
 template <>
 std::unique_ptr<ConstantBuffer> GPUBufferCreator::CreateSpecificBuffer<ConstantBuffer, ConstantBufferDescription>(const ConstantBufferDescription& desc_, const std::string& name_, Microsoft::WRL::ComPtr<ID3D12Resource>&& resource1_, Microsoft::WRL::ComPtr<ID3D12Resource>&& resource2_)
 {
-	resource1_ = crateConstantBufferCommand(desc_);
-	resource2_ = crateConstantBufferCommand(desc_);
+	resource1_ = createConstantBufferCommand(desc_);
+	resource2_ = createConstantBufferCommand(desc_);
 
 	std::unique_ptr<ConstantBuffer> constantBuffer(new ConstantBuffer(GPUBufferBehavior::InstanceKey{},
 		name_, std::move(resource1_), std::move(resource2_), desc_));
@@ -3342,8 +3607,8 @@ std::unique_ptr<ConstantBuffer> GPUBufferCreator::CreateSpecificBuffer<ConstantB
 template <>
 std::unique_ptr<ColorBuffer> GPUBufferCreator::CreateSpecificBuffer<ColorBuffer, ColorBufferDescription>(const ColorBufferDescription& desc_, const std::string& name_, Microsoft::WRL::ComPtr<ID3D12Resource>&& resource1_, Microsoft::WRL::ComPtr<ID3D12Resource>&& resource2_)
 {
-	resource1_ = crateColorBufferCommand(desc_);
-	resource2_ = crateColorBufferCommand(desc_);
+	resource1_ = createColorBufferCommand(desc_);
+	resource2_ = createColorBufferCommand(desc_);
 
 	std::unique_ptr<ColorBuffer> colorBuffer(new ColorBuffer(GPUBufferBehavior::InstanceKey{},
 		name_, std::move(resource1_), std::move(resource2_), desc_));
@@ -3353,6 +3618,24 @@ std::unique_ptr<ColorBuffer> GPUBufferCreator::CreateSpecificBuffer<ColorBuffer,
 	return std::move(colorBuffer);
 }
 
+template <>
+std::unique_ptr<SRV_UAVBuffer> GPUBufferCreator::CreateSpecificBuffer<SRV_UAVBuffer, SRV_UAVBufferDescription>(const SRV_UAVBufferDescription& desc_, const std::string& name_, Microsoft::WRL::ComPtr<ID3D12Resource>&& resource1_, Microsoft::WRL::ComPtr<ID3D12Resource>&& resource2_)
+{
+	resource1_ = createSRV_UAVBufferCommand(desc_);
+	resource2_ = createSRV_UAVBufferCommand(desc_);
+
+	std::unique_ptr<SRV_UAVBuffer> srv_uavBuffer(new SRV_UAVBuffer(GPUBufferBehavior::InstanceKey{},
+		name_, std::move(resource1_), std::move(resource2_), desc_));
+
+	Logger::Log("Create: name_", fileName);
+
+	return std::move(srv_uavBuffer);
+}
+
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////
 template <>
 std::string GPUBufferCreator::NameConverter<ConstantBuffer>(const std::string& name_)
 {
@@ -3365,12 +3648,31 @@ std::string GPUBufferCreator::NameConverter<ColorBuffer>(const std::string& name
 	return "ColorBuffer [ " + name_ + " ] ";
 }
 
+template <>
+std::string GPUBufferCreator::NameConverter<SRV_UAVBuffer>(const std::string& name_)
+{
+	return "SRV_UAVBuffer [ " + name_ + " ] ";
+}
+
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////
+void GPUBufferCreator::Log(std::string convName_)
+{
+	Logger::Log("CreateBuffer :" + convName_);
+}
 
 void GPUBufferCreator::CheckDescription(const BufferDescriptionBehavior& srcDesc_)
 {
 	srcDesc_.CheckRequirementsFilled();
 }
 
+
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////
 GPUBufferCreator::GPUBufferCreator(GPUBufferCreator::InstanceKey instanceKey_)
 {
 
@@ -3381,10 +3683,6 @@ GPUBufferCreator::~GPUBufferCreator()
 
 }
 
-void GPUBufferCreator::Log(std::string convName_)
-{
-	Logger::Log("CreateBuffer :" + convName_);
-}
 
 
 
@@ -3396,18 +3694,24 @@ void GPUBufferCreator::Log(std::string convName_)
 #include "../../Resource/BufferDescriptions/BufferDescriptionBehavior.h"
 
 class WinApp;
+
+//Description
 struct ColorBufferDescription;
 struct ConstantBufferDescription;
+struct SRV_UAVBufferDescription;
+
+//Buffer
 class ConstantBuffer;
 class ColorBuffer;
+class SRV_UAVBuffer;
 
 class GPUBufferCreator
 {
 private:
 
-	using CrateColorBufferCommand = std::function<Microsoft::WRL::ComPtr<ID3D12Resource>(const ColorBufferDescription&)>;
-	using CrateConstantBufferCommand = std::function<Microsoft::WRL::ComPtr<ID3D12Resource>(const ConstantBufferDescription&)>;
-
+	using CreateColorBufferCommand = std::function<Microsoft::WRL::ComPtr<ID3D12Resource>(const ColorBufferDescription&)>;
+	using CreateConstantBufferCommand = std::function<Microsoft::WRL::ComPtr<ID3D12Resource>(const ConstantBufferDescription&)>;
+	using CreateSRV_UAVBufferCommand = std::function<Microsoft::WRL::ComPtr<ID3D12Resource>(const SRV_UAVBufferDescription&)>;
 
 public:
 
@@ -3418,7 +3722,12 @@ public:
 	~GPUBufferCreator();
 
 	//外部クラスが作ったコマンドをセットする
-	void SetCommands(const CrateColorBufferCommand& crateColorBufferCommand_, const CrateConstantBufferCommand& crateConstantBufferCommand_);
+	void SetCommands
+	(
+		const CreateColorBufferCommand& createColorBufferCommand_,
+		const CreateConstantBufferCommand& createConstantBufferCommand_,
+		const CreateSRV_UAVBufferCommand& createSRV_UAVBufferCommand_
+	);
 
 	//一括窓口
 	template<typename BufferType,typename DescType>
@@ -3441,8 +3750,9 @@ public:
 private:
 
 	//コマンド群
-	CrateConstantBufferCommand crateConstantBufferCommand;
-	CrateColorBufferCommand crateColorBufferCommand;
+	CreateConstantBufferCommand createConstantBufferCommand;
+	CreateColorBufferCommand createColorBufferCommand;
+	CreateSRV_UAVBufferCommand createSRV_UAVBufferCommand;
 
 	//引数のDescriptionに不備がないかチェックしてエラーを吐く
 	void CheckDescription(const BufferDescriptionBehavior& srcDesc_);
@@ -3463,6 +3773,10 @@ std::string GPUBufferCreator::NameConverter<ConstantBuffer>(const std::string& n
 
 template <>
 std::string GPUBufferCreator::NameConverter<ColorBuffer>(const std::string& name_);
+
+template <>
+std::string GPUBufferCreator::NameConverter<SRV_UAVBuffer>(const std::string& name_);
+
 
 struct GPUBufferCreator::InstanceKey
 {
@@ -3556,9 +3870,8 @@ namespace StringConverter
 ========================================
 #include "PreCompileHedder.h"
 #include "WinApp.h"
-#include "../Debug/RuntimeDebugger/RuntimeDebugger.h"
-#include "../Debug/ErrorMessageOutput/ErrorMessageOutput.h"
 #include "../Core/Device/DeviceContextCommandProvider/DeviceContextCommandProvider.h"
+
 
 namespace
 {
@@ -3638,9 +3951,10 @@ void WinApp::GivingAndReceivingCommands()
 	{
 		//バッファ生成コマンド
 		const auto& createConstantBufferCommand = deviceContext->commandProvider->ProvideCreateBufferCommand<ConstantBufferDescription>();
-		const auto& createColorbufferCommand = deviceContext->commandProvider->ProvideCreateBufferCommand<ColorBufferDescription>();
+		const auto& createColorBufferCommand = deviceContext->commandProvider->ProvideCreateBufferCommand<ColorBufferDescription>();
+		const auto& createSRV_UAVBufferCommand = deviceContext->commandProvider->ProvideCreateBufferCommand<SRV_UAVBufferDescription>();
 
-		gpuBufferCreator->SetCommands(createColorbufferCommand, createConstantBufferCommand);
+		gpuBufferCreator->SetCommands(createColorBufferCommand, createConstantBufferCommand, createSRV_UAVBufferCommand);
 	}
 
 	//DescriptorHeapContext	
