@@ -8,23 +8,19 @@ class ColorBuffer : public GPUBufferBehavior
 {
 public:
 
-	ColorBuffer(const InstanceKey& instanceKey_, std::string name_,
-		Microsoft::WRL::ComPtr<ID3D12Resource> resource1_, Microsoft::WRL::ComPtr<ID3D12Resource> resource2_, ColorBufferDescription desc_);
-
-
-	//アクセスインデックスを入力(SRV / RTV)
-	template<ViewType viewType>
-	void OverrideIndex(OverrideIndexKey key_, uint32_t index_);
+	ColorBuffer
+	(
+		const InstanceKey& instanceKey_,
+		std::string name_,
+		Microsoft::WRL::ComPtr<ID3D12Resource> resource1_,
+		Microsoft::WRL::ComPtr<ID3D12Resource> resource2_,
+		std::unique_ptr <BufferDescriptionBehavior>&& description_
+	);
 
 	//リソースのディスクリプションを見る
 	ColorBufferDescription WatchDescription() const;
 
 private:
-
-	//rtvHeap上のインデックスコンテナのアクセスインデックス
-	uint32_t rtvContainerIndex{};
-	//そのsrv
-	uint32_t srvHeapIndex{};
 
 	//ディスクリプション
 	ColorBufferDescription desc;

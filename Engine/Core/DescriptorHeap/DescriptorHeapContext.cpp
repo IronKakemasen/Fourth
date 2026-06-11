@@ -51,11 +51,11 @@ void DescriptorHeapContext::SetCreateViewCommand
 	auto* dsvCreator = static_cast<ViewCreatorBehavior<D3D12_DEPTH_STENCIL_VIEW_DESC>*>(viewCreatorContainer[ViewType::kDSV].get());
 	auto* uavCreator = static_cast<ViewCreatorBehavior<D3D12_UNORDERED_ACCESS_VIEW_DESC>*>(viewCreatorContainer[ViewType::kUAV].get());
 
-	rtvCreator->SetCommand(createRtv_);
-	srvCreator->SetCommand(createSrv_);
-	dsvCreator->SetCommand(createDsv_);
+	rtvCreator->SetCommand(std::move(createRtv_));
+	srvCreator->SetCommand(std::move(createSrv_));
+	dsvCreator->SetCommand(std::move(createDsv_));
 
-	uavCreator->SetCommand([createUav_](ID3D12Resource* resource_, const D3D12_UNORDERED_ACCESS_VIEW_DESC* desc_, D3D12_CPU_DESCRIPTOR_HANDLE handle_)
+	uavCreator->SetCommand([createUav_ = std::move(createUav_)](ID3D12Resource* resource_, const D3D12_UNORDERED_ACCESS_VIEW_DESC* desc_, D3D12_CPU_DESCRIPTOR_HANDLE handle_)
 	{
 		createUav_(resource_, desc_, handle_, nullptr);
 	});
@@ -96,7 +96,7 @@ template <>
 void DescriptorHeapContext::CreateViewCreator<D3D12_DESCRIPTOR_HEAP_TYPE_RTV>(DescriptorHeapClass* srcPtr_)
 {
 	viewCreatorContainer[ViewType::kRTV] =
-		std::make_unique<RTV_Creator>(DescriptorHeapContext::CreateKey{}, srcPtr_,&RTV_descriptorHandleCPUContainer);
+		std::make_unique<RTV_Creator>(DescriptorHeapContext::CreateKey{}, srcPtr_);
 	Logger::Log("Create: RTV_Creator ", fileName);
 
 }
@@ -119,7 +119,7 @@ template <>
 void DescriptorHeapContext::CreateViewCreator<D3D12_DESCRIPTOR_HEAP_TYPE_DSV>(DescriptorHeapClass* srcPtr_)
 {
 	viewCreatorContainer[ViewType::kDSV] =
-		std::make_unique<DSV_Creator>(DescriptorHeapContext::CreateKey{}, srcPtr_, &DSV_descriptorHandleCPUContainer);
+		std::make_unique<DSV_Creator>(DescriptorHeapContext::CreateKey{}, srcPtr_);
 	Logger::Log("Create: DSV_Creator ", fileName);
 
 }

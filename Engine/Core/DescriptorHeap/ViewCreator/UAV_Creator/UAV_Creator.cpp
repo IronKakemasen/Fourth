@@ -8,7 +8,7 @@ UAV_Creator::UAV_Creator(DescriptorHeapContext::CreateKey createKey_, Descriptor
 }
 
 
-void UAV_Creator::CreateView(GPUBufferBehavior& buffer_, uint32_t allocateIndex_)
+void UAV_Creator::CreateView(GPUBufferBehavior& buffer_)
 {
 
 }

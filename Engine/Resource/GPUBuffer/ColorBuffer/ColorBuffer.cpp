@@ -1,23 +1,18 @@
 #include "PreCompileHedder.h"
 #include "ColorBuffer.h"
+#include "../../BufferDescriptions/BufferDescriptionBehavior.h"
 
 
-ColorBuffer::ColorBuffer(const InstanceKey& instanceKey_, std::string name_, Microsoft::WRL::ComPtr<ID3D12Resource> resource1_, Microsoft::WRL::ComPtr<ID3D12Resource> resource2_, ColorBufferDescription desc_) :
-	GPUBufferBehavior(instanceKey_, name_, std::move(resource1_), std::move(resource2_)), desc(desc_)
+ColorBuffer::ColorBuffer
+(
+	const InstanceKey& instanceKey_,
+	std::string name_,
+	Microsoft::WRL::ComPtr<ID3D12Resource> resource1_,
+	Microsoft::WRL::ComPtr<ID3D12Resource> resource2_,
+	std::unique_ptr <BufferDescriptionBehavior>&& description_
+) : GPUBufferBehavior(instanceKey_, name_, std::move(resource1_), std::move(resource2_), std::move(description_))
 {
 	SetMatrix();
-}
-
-template<>
-void ColorBuffer::OverrideIndex<ViewType::kSRV>(OverrideIndexKey key_, uint32_t index_)
-{
-	srvHeapIndex = index_;
-}
-
-template<>
-void ColorBuffer::OverrideIndex<ViewType::kRTV>(OverrideIndexKey key_, uint32_t index_)
-{
-	rtvContainerIndex = index_;
 }
 
 
@@ -44,6 +39,3 @@ void ColorBuffer::SetMatrix()
 	scissorRect.top = static_cast<LONG>(0.0f);
 
 }
-
-template void ColorBuffer::OverrideIndex<ViewType::kRTV>(OverrideIndexKey key_, uint32_t index_);
-template void ColorBuffer::OverrideIndex<ViewType::kSRV>(OverrideIndexKey key_, uint32_t index_);

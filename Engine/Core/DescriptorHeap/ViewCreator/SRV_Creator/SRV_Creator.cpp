@@ -9,7 +9,7 @@ SRV_Creator::SRV_Creator(DescriptorHeapContext::CreateKey createKey_, Descriptor
 }
 
 
-void SRV_Creator::CreateView(GPUBufferBehavior& buffer_, uint32_t allocateIndex_)
+void SRV_Creator::CreateView(GPUBufferBehavior& buffer_)
 {
 
 }
