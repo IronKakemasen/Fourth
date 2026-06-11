@@ -13,7 +13,7 @@ void SRV_UAVBufferDescription::CheckRequirementsFilled() const
 	if (heapType == D3D12_HEAP_TYPE_notDefined) errorMess += "[heapType]";
 	
 	//uav生成フラグがあるときはほかのもチェック
-	if (resourceFlag & D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS)
+	if ((resourceFlag & D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS) > 0 )
 	{
 		if (uavFlags == D3D12_BUFFER_UAV_FLAG_notDefined) errorMess += "[uavFlags]";
 		if (uavCounterOffsetInBytes == -1) errorMess += "[uavCounterOffsetInBytes]";

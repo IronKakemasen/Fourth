@@ -88,8 +88,19 @@ namespace ProjectConfig
 		constexpr uint32_t kNumDescriptorSRVHeap = 256;
 		constexpr uint32_t kNumDescriptorsDSVHeap = 16;
 	}
-
 }
+
+
+enum class ViewType
+{
+	kSRV,
+	kUAV,
+	kSampler,
+	kRTV,
+	kDSV,
+
+	kCount
+};
 
 
 

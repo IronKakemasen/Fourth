@@ -12,7 +12,7 @@ void RTV_Creator::CreateView(GPUBufferBehavior& buffer_,uint32_t allocateIndex_)
 {
 	ColorBuffer& colorBuffer = static_cast<ColorBuffer&>(buffer_);
 
-	//ビュー生成数をインクリメント
+	//ビュー生成数を取得
 	uint32_t allocateIndex = descriptorHeapClass->WatchAllocateIndex();
 
 	//ビュー生成数に応じたハンドルを返す
@@ -25,11 +25,12 @@ void RTV_Creator::CreateView(GPUBufferBehavior& buffer_,uint32_t allocateIndex_)
 	auto desc = colorBuffer.WatchDescription();
 
 	//そのコンテナのインデックスをせっとする
-	colorBuffer.OverrideIndex(ColorBuffer::OverrideIndexKey{}, allocateIndex);
+	colorBuffer.OverrideIndex<ViewType::kRTV>(ColorBuffer::OverrideIndexKey{}, allocateIndex);
 }
 
 
 D3D12_RENDER_TARGET_VIEW_DESC RTV_Creator::CreateViewDesc()
 {
+
 	return D3D12_RENDER_TARGET_VIEW_DESC{};
 }

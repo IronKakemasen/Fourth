@@ -3,8 +3,6 @@
 #include "../../BufferDescriptions/ColorBufferDescription/ColorBufferDescription.h"
 
 
-class RTV_Creator;
-
 //カラーバッファクラス
 class ColorBuffer : public GPUBufferBehavior
 {
@@ -13,33 +11,31 @@ public:
 	ColorBuffer(const InstanceKey& instanceKey_, std::string name_,
 		Microsoft::WRL::ComPtr<ID3D12Resource> resource1_, Microsoft::WRL::ComPtr<ID3D12Resource> resource2_, ColorBufferDescription desc_);
 
-	//インデックスを書き換えキー
-	struct OverrideIndexKey;
 
-	//アクセスインデックスを入力
+	//アクセスインデックスを入力(SRV / RTV)
+	template<ViewType viewType>
 	void OverrideIndex(OverrideIndexKey key_, uint32_t index_);
+
 	//リソースのディスクリプションを見る
 	ColorBufferDescription WatchDescription() const;
 
 private:
 
 	//rtvHeap上のインデックスコンテナのアクセスインデックス
-	uint32_t rtvHeapIndex{};
+	uint32_t rtvContainerIndex{};
+	//そのsrv
+	uint32_t srvHeapIndex{};
+
+	//ディスクリプション
 	ColorBufferDescription desc;
+
+	//行列
 	D3D12_VIEWPORT viewport;
 	D3D12_RECT scissorRect;
 
 	//viewportとscissorRectをセット
 	void SetMatrix();
-
 };
 
 
-//インデックスの書き換えはViewCreatorのみ可能
-struct ColorBuffer::OverrideIndexKey
-{
-private:
-	friend class RTV_Creator;
 
-	explicit OverrideIndexKey() = default;
-};

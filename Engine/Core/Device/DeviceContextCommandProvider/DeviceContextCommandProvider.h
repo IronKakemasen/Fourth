@@ -23,6 +23,11 @@ public:
 	[[nodiscard]] std::function<void(ID3D12Resource* resource_, const ViewType* desc_, D3D12_CPU_DESCRIPTOR_HANDLE descriptorHandleCPU_)>
 		ProvideCreateViewCommand();
 
+	//UAV作成コマンドのみ引数が異なるため別途用意
+	[[nodiscard]] std::function<void(ID3D12Resource* resource_, const D3D12_UNORDERED_ACCESS_VIEW_DESC* desc_, D3D12_CPU_DESCRIPTOR_HANDLE descriptorHandleCPU_, ID3D12Resource* CounterResource_)>
+		ProvideCreateUAVCommand();
+
+
 private:
 
 	//デバイスにアクセスする関数
