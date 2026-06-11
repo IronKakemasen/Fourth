@@ -31,12 +31,11 @@ private:
 	//DescriptorHeapを作り、viewを生成するクラスを所持
 	std::unique_ptr<DescriptorHeapContext> descriptorHeapContext;
 
-	//メンバー変数のインスタンス化
-	void InstantiateMemberVariables();
-	//コマンドの受け渡し（GPUresourceCreateなど）
-	void GivingAndReceivingCommands();
-	//DescriptorHeapの生成
-	void CreateDescriptorHeaps();
+	void InitDeviceContext();
+	void InitGPUBufferCreator();
+	void InitWindowContext();
+	void InitDescriptorHeapContext();
+
 };
 
 

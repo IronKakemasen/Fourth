@@ -7,3 +7,19 @@ SRV_UAVBuffer::SRV_UAVBuffer(const InstanceKey& instanceKey_, std::string name_,
 {
 
 }
+
+template<>
+void SRV_UAVBuffer::OverrideIndex<ViewType::kSRV>(OverrideIndexKey key_, uint32_t index_)
+{
+	srvHeapIndex = index_;
+}
+
+template<>
+void SRV_UAVBuffer::OverrideIndex<ViewType::kRTV>(OverrideIndexKey key_, uint32_t index_)
+{
+	uavHeapIndex = index_;
+}
+
+
+template void SRV_UAVBuffer::OverrideIndex<ViewType::kRTV>(OverrideIndexKey key_, uint32_t index_);
+template void SRV_UAVBuffer::OverrideIndex<ViewType::kSRV>(OverrideIndexKey key_, uint32_t index_);

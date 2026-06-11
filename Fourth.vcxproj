@@ -222,7 +222,7 @@
     <ClCompile Include="Engine\Resource\GPUBuffer\SRV_UAVBuffer\SRV_UAVBuffer.cpp" />
     <ClCompile Include="Engine\Resource\BufferDescriptions\SRV_UAVBufferDescription\SRV_UAVBufferDescription.cpp" />
     <ClCompile Include="Engine\Core\DescriptorHeap\ViewCreator\UAV_Creator\UAV_Creator.cpp" />
-    <ClCompile Include="Engine\Core\DescriptorHeap\ViewCreator\SRV_Creator\SRV_Creator2.cpp" />
+    <ClCompile Include="Engine\Core\DescriptorHeap\ViewCreator\SRV_Creator\SRV_Creator.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Engine\Core\Device\Commands\CreateView\CommandCreateView.h" />
@@ -285,7 +285,7 @@
     <ClInclude Include="Engine\Resource\GPUBuffer\SRV_UAVBuffer\SRV_UAVBuffer.h" />
     <ClInclude Include="Engine\Resource\BufferDescriptions\SRV_UAVBufferDescription\SRV_UAVBufferDescription.h" />
     <ClInclude Include="Engine\Core\DescriptorHeap\ViewCreator\UAV_Creator\UAV_Creator.h" />
-    <ClInclude Include="Engine\Core\DescriptorHeap\ViewCreator\SRV_Creator\SRV_Creator2.h" />
+    <ClInclude Include="Engine\Core\DescriptorHeap\ViewCreator\SRV_Creator\SRV_Creator.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

@@ -9,16 +9,6 @@ template<typename ViewDescType> class ViewCreatorBehavior;
 
 class DescriptorHeapContext
 {
-	//View生成クラスの識別タグ
-	enum ViewCreatorType
-	{
-		kSRV_UAV,
-		kSampler,
-		kRTV,
-		kDSV,
-
-		kCount
-	};
 
 private:
 
@@ -34,6 +24,11 @@ private:
 	//DSVを生成するコマンド
 	using CreateDSVCommand =
 		std::function<void(ID3D12Resource* resource_, const D3D12_DEPTH_STENCIL_VIEW_DESC* desc_, D3D12_CPU_DESCRIPTOR_HANDLE descriptorHandleCPU_)>;
+	//UAVを生成するコマンド
+	using CreateUAVCommand =
+		std::function<void(ID3D12Resource* resource_, const D3D12_UNORDERED_ACCESS_VIEW_DESC* desc_, D3D12_CPU_DESCRIPTOR_HANDLE descriptorHandleCPU_, ID3D12Resource* CounterResource_)>;
+
+
 
 	//DescriptorHeap生成クラス
 	class DescriptorHeapCreator;
@@ -43,7 +38,7 @@ private:
 	std::unordered_map < D3D12_DESCRIPTOR_HEAP_TYPE, std::unique_ptr<DescriptorHeapClass>> descriptorHeapContainer;
 
 	//Viewを生成するクラスのコンテナ
-	std::unordered_map<ViewCreatorType, std::unique_ptr<IViewCreatorBehavior>> viewCreatorContainer;
+	std::unordered_map<ViewType, std::unique_ptr<IViewCreatorBehavior>> viewCreatorContainer;
 
 	//DepthStencilViewのCPU_DescriptorHandleのコンテナ
 	std::vector<D3D12_CPU_DESCRIPTOR_HANDLE> DSV_descriptorHandleCPUContainer;
@@ -62,18 +57,20 @@ public:
 	DescriptorHeapContext(InstanceKey instanceKey_);
 	~DescriptorHeapContext();
 
-	//コマンドのセット
-	void SetCommand
-	(
-		DescroptorCreateCommand descriptorCreate, 
-		CreateRTVCommand rtvCreate_ , 
-		CreateSRVCommand srvCreate_,
-		CreateDSVCommand dsvCreate_
-	);
-
 	//DescriptorHeapの作成
 	template<D3D12_DESCRIPTOR_HEAP_TYPE HeapType>
 	void CreateDescriptorHeap(UINT numDescriptors_, bool shaderVisible_, UINT handleIncSize_);
+
+	//コマンドのセット
+	void SetCreateDescroptorHeapCommand(DescroptorCreateCommand createDescriptor);
+	//コマンドのセット2
+	void SetCreateViewCommand
+	(
+		CreateRTVCommand createRtv_,
+		CreateSRVCommand createSrv_,
+		CreateDSVCommand createDsv_,
+		CreateUAVCommand createUav_
+	);
 
 private:
 
@@ -83,6 +80,7 @@ private:
 
 	//DescriptorHeapの名前を取得（初期化用）
 	std::string GetDescriptorName(D3D12_DESCRIPTOR_HEAP_TYPE heapType_);
+
 };
 
 //生成できるのはWinAppのみ
@@ -112,6 +110,7 @@ void DescriptorHeapContext::CreateViewCreator<D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV
 
 template <>
 void DescriptorHeapContext::CreateViewCreator<D3D12_DESCRIPTOR_HEAP_TYPE_DSV>(DescriptorHeapClass* srcPtr_);
+
 
 
 

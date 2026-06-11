@@ -55,7 +55,7 @@ protected:
 		if constexpr (std::is_same_v<HandleType, D3D12_CPU_DESCRIPTOR_HANDLE>)
 		{
 			return descriptorHeapClass->CalculateHandleThenIncrement<D3D12_CPU_DESCRIPTOR_HANDLE>(DescriptorHeapClass::AccessKey{});
-		}[]
+		}
 		//GPU
 		else if constexpr (std::is_same_v<HandleType, D3D12_GPU_DESCRIPTOR_HANDLE>)
 		{

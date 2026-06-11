@@ -8,10 +8,18 @@ ColorBuffer::ColorBuffer(const InstanceKey& instanceKey_, std::string name_, Mic
 	SetMatrix();
 }
 
-void ColorBuffer::OverrideIndex(OverrideIndexKey key_, uint32_t index_)
+template<>
+void ColorBuffer::OverrideIndex<ViewType::kSRV>(OverrideIndexKey key_, uint32_t index_)
 {
-	rtvHeapIndex = index_;
+	srvHeapIndex = index_;
 }
+
+template<>
+void ColorBuffer::OverrideIndex<ViewType::kRTV>(OverrideIndexKey key_, uint32_t index_)
+{
+	rtvContainerIndex = index_;
+}
+
 
 ColorBufferDescription ColorBuffer::WatchDescription() const
 {
@@ -36,3 +44,6 @@ void ColorBuffer::SetMatrix()
 	scissorRect.top = static_cast<LONG>(0.0f);
 
 }
+
+template void ColorBuffer::OverrideIndex<ViewType::kRTV>(OverrideIndexKey key_, uint32_t index_);
+template void ColorBuffer::OverrideIndex<ViewType::kSRV>(OverrideIndexKey key_, uint32_t index_);

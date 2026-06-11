@@ -33,18 +33,10 @@ WinApp::WinApp()
 	//自身のインスタンス制限
 	ErrorMessageOutput::Assert::DetectError(InstanceLimiter::CanInstantiate(), "WinAppクラスが複数具現化されてます", fileName);
 
-	//メンバー変数のインスタンス化
-	InstantiateMemberVariables();
-	Logger::Log("Instantiate : CoreSystems ", fileName);
-
-	//コマンドの授受
-	GivingAndReceivingCommands();
-	Logger::Log("Complete: Giving Commands ", fileName);
-
-	//DescriptorHeapの生成
-	CreateDescriptorHeaps();
-	Logger::Log("Create: DescriptorHeaps", fileName);
-
+	InitDeviceContext();
+	InitGPUBufferCreator();
+	InitWindowContext();
+	InitDescriptorHeapContext();
 
 	Logger::End("WinApp: Constructor");
 }
@@ -52,6 +44,7 @@ WinApp::WinApp()
 WinApp::~WinApp()
 {
 	windowContext->Finalize();
+
 }
 
 //WinAppクラスのインスタンスを1つに制限する
@@ -62,77 +55,102 @@ bool WinApp::InstanceLimiter::CanInstantiate()
 	return (instanceLimiter.instanceCnt++ == 0);
 }
 
-void WinApp::InstantiateMemberVariables()
+void WinApp::InitDeviceContext()
 {
 	//deviceContextクラスのインスタンス化
 	deviceContext.reset(new DeviceContext(DeviceContext::InstanceKey{}));
-	//windowContextのインスタンス化
-	windowContext.reset(new WindowContext(WindowContext::CraftKey{}));
+	Logger::Log("Instantiate: deviceContext", fileName);
+}
+
+void WinApp::InitGPUBufferCreator()
+{
 	//gpuBufferCreatorクラスのインスタンス化
 	gpuBufferCreator.reset(new GPUBufferCreator(GPUBufferCreator::InstanceKey{}));
-	//descriptorHeapContextクラスのインスタンス化
-	descriptorHeapContext.reset(new DescriptorHeapContext(DescriptorHeapContext::InstanceKey{}));
+	Logger::Log("Instantiate: gpuBufferCreator", fileName);
+
+	//バッファ生成コマンド
+	const auto& createConstantBufferCommand = deviceContext->commandProvider->ProvideCreateBufferCommand<ConstantBufferDescription>();
+	const auto& createColorBufferCommand = deviceContext->commandProvider->ProvideCreateBufferCommand<ColorBufferDescription>();
+	const auto& createSRV_UAVBufferCommand = deviceContext->commandProvider->ProvideCreateBufferCommand<SRV_UAVBufferDescription>();
+
+	gpuBufferCreator->SetCommands(createColorBufferCommand, createConstantBufferCommand, createSRV_UAVBufferCommand);
+	
+	Logger::Log("Set: createGPUBufferCommands", fileName);
 
 }
 
-void WinApp::GivingAndReceivingCommands()
+void WinApp::InitWindowContext()
 {
-	//CreateGPUBuffer
-	{
-		//バッファ生成コマンド
-		const auto& createConstantBufferCommand = deviceContext->commandProvider->ProvideCreateBufferCommand<ConstantBufferDescription>();
-		const auto& createColorBufferCommand = deviceContext->commandProvider->ProvideCreateBufferCommand<ColorBufferDescription>();
-		const auto& createSRV_UAVBufferCommand = deviceContext->commandProvider->ProvideCreateBufferCommand<SRV_UAVBufferDescription>();
+	//windowContextのインスタンス化
+	windowContext.reset(new WindowContext(WindowContext::CraftKey{}));
+	Logger::Log("Instantiate: windowContext", fileName);
 
-		gpuBufferCreator->SetCommands(createColorBufferCommand, createConstantBufferCommand, createSRV_UAVBufferCommand);
-	}
+}
 
-	//DescriptorHeapContext	
+void WinApp::InitDescriptorHeapContext()
+{
+	//descriptorHeapContextクラスのインスタンス化
+	descriptorHeapContext.reset(new DescriptorHeapContext(DescriptorHeapContext::InstanceKey{}));
+	Logger::Log("Instantiate: descriptorHeapContext", fileName);
+
+	//DescriptorHeap生成コマンドのセット
 	{
 		//DescriptorHeap生成コマンド
 		auto createDescriptorHeapCommand = deviceContext->commandProvider->ProvideCreateDescriptorHeapCommand();
-		//ResourceのView生成コマンド
+		descriptorHeapContext->SetCreateDescroptorHeapCommand(createDescriptorHeapCommand);
+		Logger::Log("Set: createDescriptorHeapCommand", fileName);
+
+	}
+
+	//各種DescriptorHeapの生成
+	{
+		using namespace ProjectConfig::Core;
+
+		struct IncrementSizeOfDescriptorHeaps
+		{
+			UINT rtv{};
+			UINT srv{};
+			UINT dsv{};
+			IncrementSizeOfDescriptorHeaps(UINT rtv_, UINT srv_, UINT dsv_) : rtv(rtv_), srv(srv_), dsv(dsv_) {}
+		};
+
+		//deviceContextからDescriptorHandleIncrementSizeを教えてもらう
+		IncrementSizeOfDescriptorHeaps sizeArray
+		(
+			deviceContext->PassDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV),
+			deviceContext->PassDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV),
+			deviceContext->PassDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_DSV)
+		);
+
+		//RTV
+		descriptorHeapContext->CreateDescriptorHeap<D3D12_DESCRIPTOR_HEAP_TYPE_RTV>(kNumDescriptorsRTVHeap, false, sizeArray.rtv);
+		//SRV
+		descriptorHeapContext->CreateDescriptorHeap<D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV>(kNumDescriptorSRVHeap, false, sizeArray.srv);
+		//DSV
+		descriptorHeapContext->CreateDescriptorHeap<D3D12_DESCRIPTOR_HEAP_TYPE_DSV>(kNumDescriptorsDSVHeap, false, sizeArray.dsv);
+
+		Logger::Log("Create: descriptorHeaps", fileName);
+	}
+
+	//ResourceのView生成コマンドのセット
+	{
 		auto createRTVCommand = deviceContext->commandProvider->ProvideCreateViewCommand<D3D12_RENDER_TARGET_VIEW_DESC>();
 		auto createSRVCommand = deviceContext->commandProvider->ProvideCreateViewCommand<D3D12_SHADER_RESOURCE_VIEW_DESC>();
 		auto createDSVCommand = deviceContext->commandProvider->ProvideCreateViewCommand<D3D12_DEPTH_STENCIL_VIEW_DESC>();
+		auto createUAVCommand = deviceContext->commandProvider->ProvideCreateUAVCommand();
 
-		descriptorHeapContext->SetCommand
+
+		//コマンドをセット
+		descriptorHeapContext->SetCreateViewCommand
 		(
-			createDescriptorHeapCommand,
 			createRTVCommand,
 			createSRVCommand,
-			createDSVCommand
+			createDSVCommand,
+			createUAVCommand
 		);
+
+		Logger::Log("Set: createViewCommands", fileName);
+
 	}
-
-
-}
-
-void WinApp::CreateDescriptorHeaps()
-{
-	using namespace ProjectConfig::Core;
-
-	struct IncrementSizeOfDescriptorHeaps
-	{
-		UINT rtv{};
-		UINT srv{};
-		UINT dsv{};
-		IncrementSizeOfDescriptorHeaps(UINT rtv_, UINT srv_, UINT dsv_) : rtv(rtv_), srv(srv_), dsv(dsv_) {}
-	};
-	
-	//deviceContextからDescriptorHandleIncrementSizeを教えてもらう
-	IncrementSizeOfDescriptorHeaps sizeArray
-	(
-		deviceContext->PassDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV),
-		deviceContext->PassDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV),
-		deviceContext->PassDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_DSV)
-	);
-
-	//RTV
-	descriptorHeapContext->CreateDescriptorHeap<D3D12_DESCRIPTOR_HEAP_TYPE_RTV>(kNumDescriptorsRTVHeap, false, sizeArray.rtv);
-	//SRV
-	descriptorHeapContext->CreateDescriptorHeap<D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV>(kNumDescriptorSRVHeap, false, sizeArray.srv);
-	//DSV
-	descriptorHeapContext->CreateDescriptorHeap<D3D12_DESCRIPTOR_HEAP_TYPE_DSV>(kNumDescriptorsDSVHeap, false, sizeArray.dsv);
 }
 

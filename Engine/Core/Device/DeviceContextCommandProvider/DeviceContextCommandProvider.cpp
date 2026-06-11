@@ -68,6 +68,23 @@ DeviceContext::CommandProvider::ProvideCreateViewCommand()
 
 	return retFunc;
 }
+
+[[nodiscard]] std::function<void(ID3D12Resource* resource_, const D3D12_UNORDERED_ACCESS_VIEW_DESC* desc_, D3D12_CPU_DESCRIPTOR_HANDLE descriptorHandleCPU_, ID3D12Resource* CounterResource_)>
+DeviceContext::CommandProvider::ProvideCreateUAVCommand()
+{
+	auto retFunc = [this](ID3D12Resource* resource_, const D3D12_UNORDERED_ACCESS_VIEW_DESC* desc_, D3D12_CPU_DESCRIPTOR_HANDLE descriptorHandleCPU_, ID3D12Resource* CounterResource_)
+		{
+			auto* device = deviceGetter(DeviceContext::DeviceAccessKey{});
+			auto& container = *commandContainer;
+			auto* command = static_cast<CommandCreateView*>(container[DeviceContext::CommandType::kCreateResourceView][0].get());
+
+			return command->CreateUAV(device, resource_, desc_, descriptorHandleCPU_, CounterResource_);
+		};
+
+	return retFunc;
+
+}
+
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
