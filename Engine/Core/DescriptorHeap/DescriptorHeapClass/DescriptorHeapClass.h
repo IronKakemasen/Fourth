@@ -16,7 +16,7 @@ public:
 
 	//CPU / GPUの次のハンドルを計算し返したあと、currentCreateNum(ビュー生成数)をインクリメントする
 	template<typename HandleType>
-	[[nodiscard]] HandleType CalculateHandle(AccessKey accessKey_);
+	[[nodiscard]] HandleType CalculateHandleThenIncrement(AccessKey accessKey_);
 
 
 private:
@@ -33,10 +33,10 @@ private:
 };
 
 template<>
-[[nodiscard]] D3D12_CPU_DESCRIPTOR_HANDLE DescriptorHeapClass::CalculateHandle(AccessKey accessKey_);
+[[nodiscard]] D3D12_CPU_DESCRIPTOR_HANDLE DescriptorHeapClass::CalculateHandleThenIncrement(AccessKey accessKey_);
 
 template<>
-[[nodiscard]] D3D12_GPU_DESCRIPTOR_HANDLE DescriptorHeapClass::CalculateHandle(AccessKey accessKey_);
+[[nodiscard]] D3D12_GPU_DESCRIPTOR_HANDLE DescriptorHeapClass::CalculateHandleThenIncrement(AccessKey accessKey_);
 
 struct DescriptorHeapClass::AccessKey
 {

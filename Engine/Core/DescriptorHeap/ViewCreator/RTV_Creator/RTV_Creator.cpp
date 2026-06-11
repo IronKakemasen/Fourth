@@ -8,7 +8,7 @@ RTV_Creator::RTV_Creator(DescriptorHeapContext::CreateKey createKey_, Descriptor
 
 }
 
-void RTV_Creator::CreateView(GPUBufferBehavior& buffer_)
+void RTV_Creator::CreateView(GPUBufferBehavior& buffer_,uint32_t allocateIndex_)
 {
 	ColorBuffer& colorBuffer = static_cast<ColorBuffer&>(buffer_);
 

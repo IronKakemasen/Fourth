@@ -9,7 +9,7 @@ public:
 	DSV_Creator(DescriptorHeapContext::CreateKey createKey_, DescriptorHeapClass* descriptorHeapClass_, std::vector<D3D12_CPU_DESCRIPTOR_HANDLE>* DSV_descriptorHandleCPUContainer_);
 
 	//ビュー生成
-	virtual void CreateView(GPUBufferBehavior& buffer_)override;
+	virtual void CreateView(GPUBufferBehavior& buffer_, uint32_t allocateIndex_)override;
 
 private:
 
