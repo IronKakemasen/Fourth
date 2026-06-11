@@ -1,18 +1,33 @@
 #include "PreCompileHedder.h"
 #include "GPUBufferBehavior.h"
 #include "../../Utility/StringConnverter/StringConverter.h"
+#include "../BufferDescriptions/BufferDescriptionBehavior.h"
+
+
 
 namespace
 {
 	std::string fileName = "GPUBufferBehavior.cpp";
 }
 
-GPUBufferBehavior::GPUBufferBehavior(const InstanceKey& instanceKey_, std::string name_,
-	Microsoft::WRL::ComPtr<ID3D12Resource> resource1_, Microsoft::WRL::ComPtr<ID3D12Resource> resource2_) : name(name_), resources{ {std::move(resource1_), std::move(resource2_)} }
+GPUBufferBehavior::GPUBufferBehavior
+(
+	const InstanceKey& instanceKey_,
+	std::string name_,
+	Microsoft::WRL::ComPtr<ID3D12Resource> resource1_, 
+	Microsoft::WRL::ComPtr<ID3D12Resource> resource2_,
+	std::unique_ptr <BufferDescriptionBehavior>&& description_
+) : name(name_), resources{ {std::move(resource1_), std::move(resource2_)} }, description(std::move(description_))
 {
 	//リソースの名前をセット
 	SetName(instanceKey_);
 }
+
+GPUBufferBehavior::~GPUBufferBehavior()
+{
+
+}
+
 
 ID3D12Resource& GPUBufferBehavior::GetResource(const BufferAccessKey& bufferAccessKey_ ,int index_)
 {
@@ -32,3 +47,4 @@ void GPUBufferBehavior::SetName(const InstanceKey& instanceKey)
 		resources[i]->SetName(StringConverter::ConvertString(name + "[ " + std::to_string(i) + " ]").c_str());
 	}
 }
+

@@ -9,10 +9,9 @@
 
 //＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝
 
-class BufferDescriptionBehavior
+struct BufferDescriptionBehavior
 {
-public:
-
 	virtual void CheckRequirementsFilled() const = 0;
+	
 };
 

@@ -29,7 +29,6 @@ private:
 		std::function<void(ID3D12Resource* resource_, const D3D12_UNORDERED_ACCESS_VIEW_DESC* desc_, D3D12_CPU_DESCRIPTOR_HANDLE descriptorHandleCPU_, ID3D12Resource* CounterResource_)>;
 
 
-
 	//DescriptorHeap生成クラス
 	class DescriptorHeapCreator;
 	std::unique_ptr<DescriptorHeapCreator> descriptorHeapCreator;
@@ -39,13 +38,6 @@ private:
 
 	//Viewを生成するクラスのコンテナ
 	std::unordered_map<ViewType, std::unique_ptr<IViewCreatorBehavior>> viewCreatorContainer;
-
-	//DepthStencilViewのCPU_DescriptorHandleのコンテナ
-	std::vector<D3D12_CPU_DESCRIPTOR_HANDLE> DSV_descriptorHandleCPUContainer;
-
-	//RenderTargetViewのCPU_DescriptorHandleのコンテナ
-	std::vector<D3D12_CPU_DESCRIPTOR_HANDLE> RTV_descriptorHandleCPUContainer;
-
 
 public:
 

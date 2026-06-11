@@ -1,5 +1,5 @@
 #pragma once
-#include "../../Resource/BufferDescriptions/BufferDescriptionBehavior.h"
+#include "../BufferDescriptions/BufferDescriptionBehavior.h"
 
 class WinApp;
 
@@ -39,19 +39,19 @@ public:
 
 	//一括窓口
 	template<typename BufferType,typename DescType>
-	[[nodiscard]] std::unique_ptr<BufferType> CreateBuffer(const DescType& desc_, const std::string& name_)
+	[[nodiscard]] std::unique_ptr<BufferType> CreateBuffer(std::unique_ptr<BufferDescriptionBehavior>&& desc_, const std::string& name_)
 	{
 		Microsoft::WRL::ComPtr<ID3D12Resource> resource1, resource2;
 
 		//descriptionの中身が書き込まれているかチェック
-		CheckDescription(desc_);
+		CheckDescription(*desc_.get());
 
 		//名前を分かりやすい形に変換
 		std::string convName = NameConverter<BufferType>(name_);
 		Log(convName);
 
 		//生成
-		return std::move(CreateSpecificBuffer<BufferType , DescType>(desc_, convName, std::move(resource1), std::move(resource2)));
+		return std::move(CreateSpecificBuffer<BufferType, DescType>(std::move(desc_), convName, std::move(resource1), std::move(resource2)));
 	}
 
 
@@ -67,7 +67,7 @@ private:
 
 	//ヘルパー関数
 	template <typename BufferType, typename DescType>
-	std::unique_ptr<BufferType> CreateSpecificBuffer(const DescType& desc_, const std::string& name_, Microsoft::WRL::ComPtr<ID3D12Resource>&& resource1_ , Microsoft::WRL::ComPtr<ID3D12Resource>&& resource2_);
+	std::unique_ptr<BufferType> CreateSpecificBuffer(std::unique_ptr<DescType>&& desc_, const std::string& name_, Microsoft::WRL::ComPtr<ID3D12Resource>&& resource1_, Microsoft::WRL::ComPtr<ID3D12Resource>&& resource2_);
 
 	template <typename BufferType>
 	std::string NameConverter(const std::string& name_) = delete;

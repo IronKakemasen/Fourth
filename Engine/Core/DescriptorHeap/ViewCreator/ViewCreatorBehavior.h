@@ -10,7 +10,7 @@ class IViewCreatorBehavior
 {
 public:
 	virtual ~IViewCreatorBehavior() = default;
-	virtual void CreateView(GPUBufferBehavior& buffer_, uint32_t allocateIndex_) = 0;
+	virtual void CreateView(GPUBufferBehavior& buffer_) = 0;
 
 };
 
@@ -27,7 +27,7 @@ public:
 	virtual ~ViewCreatorBehavior() = default;
 
 	//Viewを生成する。
-	virtual void CreateView(GPUBufferBehavior& buffer_, uint32_t allocateIndex_) = 0;
+	virtual void CreateView(GPUBufferBehavior& buffer_) = 0;
 
 	//ビュー生成コマンドをセットする
 	inline void SetCommand(std::function<void(ID3D12Resource*, const ViewDescType*, D3D12_CPU_DESCRIPTOR_HANDLE) > command_)
