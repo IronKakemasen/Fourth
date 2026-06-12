@@ -1416,6 +1416,10 @@ struct CommandCreateGPUBuffer : public DeviceContextCommandBehavior
 	//SRV_UAVBufferのリソースを作る
 	[[nodiscard]] Microsoft::WRL::ComPtr<ID3D12Resource> CreateSRV_UAVBuffer(ID3D12Device8* device_,
 		const SRV_UAVBufferDescription& desc_);
+
+
+private:
+
 };
 
 
@@ -3200,23 +3204,91 @@ struct MeshShaderPipelineStateStream
 
 
 ========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Resource\BufferDescriptions\BufferDescriptionBehavior.h ===
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Resource\BufferDescriptions\IBufferDescription.cpp ===
+========================================
+#include "PreCompileHedder.h"
+#include"IBufferDescription.h"
+
+D3D12_RESOURCE_STATES IBufferDescription::ConfigureInitialResourceState(D3D12_HEAP_TYPE heapType_, D3D12_RESOURCE_FLAGS resourceFlag_)
+{
+	D3D12_RESOURCE_STATES initialState{};
+
+	//CPUの近くにおく。からアクセスできるけど遅し。GPUからは触れない
+	if (heapType_ == D3D12_HEAP_TYPE_UPLOAD)
+	{
+		//こうしなきゃいけない
+		initialState = D3D12_RESOURCE_STATE_GENERIC_READ;
+	}
+	//GPUの近くのメモリ、Vramにおく。速し。CPUからアクセスできなくなる
+	else if (heapType_ == D3D12_HEAP_TYPE_DEFAULT)
+	{
+		//UAV生成フラグがあるときは、GPUが書き込めるようにする
+		if (resourceFlag_ & D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS)
+		{
+			initialState = D3D12_RESOURCE_STATE_UNORDERED_ACCESS;
+		}
+		//読み込み専用のStructuredBufferなら、中継バッファからのデータ転送待ち状態にする
+		else
+		{
+			initialState = D3D12_RESOURCE_STATE_COPY_DEST;
+		}
+	}
+
+	return initialState;
+}
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Resource\BufferDescriptions\IBufferDescription.h ===
 ========================================
 #pragma once
 
 //＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝
 
-//GPUバッファ生成に必要な情報をまとめてある。
+//GPUバッファ生成、view生成に必要な情報をまとめてある。
 //CBやIB、VBなどの単純なバッファ
 //Colorバッファ
 //srvバッファやuavバッファ
 
 //＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝
 
-struct BufferDescriptionBehavior
+//バッファのディスクリプション共通インターフェース
+struct IBufferDescription
 {
 	virtual void CheckRequirementsFilled() const = 0;
-	
+	virtual D3D12_RESOURCE_DESC CreateResourceDesc()const = 0;
+	virtual D3D12_HEAP_PROPERTIES CreateHeapProperties()const = 0;
+	//初期ステートを割り出す
+	D3D12_RESOURCE_STATES ConfigureInitialResourceState(D3D12_HEAP_TYPE heapType_, D3D12_RESOURCE_FLAGS resourceFlag_);
+
+};
+
+
+//それぞれの固有のビュー生成インターフェース
+struct ISRBufferAssembler 
+{
+	virtual D3D12_SHADER_RESOURCE_VIEW_DESC CreateSRV_Desc()const = 0; 
+};
+
+struct IUAV_Assembler 
+{
+	virtual D3D12_UNORDERED_ACCESS_VIEW_DESC CreateUAV_Desc()const = 0; 
+
+};
+
+struct IRTBufferAssembler 
+{
+	virtual D3D12_RENDER_TARGET_VIEW_DESC CreateRTV_Desc()const = 0; 
+	virtual D3D12_CLEAR_VALUE WatchClearValue() const = 0;
+};
+
+struct IDSV_Assembler 
+{
+	virtual D3D12_DEPTH_STENCIL_VIEW_DESC CreateDSVDesc()const = 0; 
+	virtual D3D12_CLEAR_VALUE WatchClearValue() const = 0;
+
 };
 
 
@@ -3242,8 +3314,8 @@ void ColorBufferDescription::CheckRequirementsFilled() const
 		}
 	}
 
-	if (width == 0.0f)errorMess += "[width]";
-	if (height == 0.0f)errorMess += "[height]";
+	if (width == 0)errorMess += "[width]";
+	if (height == 0)errorMess += "[height]";
 	if(format == DXGI_FORMAT_Error_Detection) errorMess += "[format]";
 	if (flag == D3D12_RESOURCE_FLAG_Error_Detection) errorMess += "[flag]";
 	if(initialState == D3D12_RESOURCE_STATE_Error_Detection) errorMess += "[initialState]";
@@ -3252,26 +3324,91 @@ void ColorBufferDescription::CheckRequirementsFilled() const
 
 }
 
+D3D12_HEAP_PROPERTIES ColorBufferDescription::CreateHeapProperties()const
+{
+	D3D12_HEAP_PROPERTIES properties = {};
+	//vramの奥
+	properties.Type = D3D12_HEAP_TYPE_DEFAULT;
+
+	return properties;
+}
+
+D3D12_RESOURCE_DESC ColorBufferDescription::CreateResourceDesc()const
+{
+	D3D12_RESOURCE_DESC resourceDesc = {};
+
+	//幅
+	resourceDesc.Width = width;
+	//高さ
+	resourceDesc.Height = height;
+	//mipmapの数
+	resourceDesc.MipLevels = 1;
+	//奥行orTextureの配列数
+	resourceDesc.DepthOrArraySize = 1;
+	//Textureのformat
+	resourceDesc.Format = format;
+	//サンプリングカウント。１固定
+	resourceDesc.SampleDesc.Count = 1;
+	//テクスチャの次元数。2
+	resourceDesc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
+	resourceDesc.Flags = flag;
+	resourceDesc.Layout = D3D12_TEXTURE_LAYOUT_UNKNOWN;
+
+	return resourceDesc;
+}
+
+D3D12_CLEAR_VALUE ColorBufferDescription::WatchClearValue() const
+{
+	D3D12_CLEAR_VALUE clearValue = {};
+	for (int i = 0; i < 4;++i) clearValue.Color[i] = clearColor[i];
+
+	return clearValue;
+}
+
+D3D12_RENDER_TARGET_VIEW_DESC ColorBufferDescription::CreateRTV_Desc()const
+{
+	D3D12_RENDER_TARGET_VIEW_DESC rtvDesc = {};
+
+	//出力結果をSRGBに変換する
+	rtvDesc.Format = format;
+	//2Dテクスチャとして書き込む
+	rtvDesc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2D;
+	rtvDesc.Texture2D.PlaneSlice = 0;
+	rtvDesc.Texture2D.MipSlice = 0;
+
+	return rtvDesc;
+}
+
+
 
 
 ========================================
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Resource\BufferDescriptions\ColorBufferDescription\ColorBufferDescription.h ===
 ========================================
 #pragma once
-#include "../BufferDescriptionBehavior.h"
+#include "../IBufferDescription.h"
 
 
 //ColorバッファやSRVバッファなどのちょい複雑なバッファ
-struct ColorBufferDescription final : public BufferDescriptionBehavior
+struct ColorBufferDescription final : public IBufferDescription,IRTBufferAssembler
 {
 	float clearColor[4] = { 9,9,9,9 };
-	float width{};
-	float height{};
+	UINT width{};
+	UINT height{};
 	D3D12_RESOURCE_STATES initialState =  D3D12_RESOURCE_STATE_Error_Detection;
 	D3D12_RESOURCE_FLAGS flag = D3D12_RESOURCE_FLAG_Error_Detection;
 	DXGI_FORMAT format = DXGI_FORMAT_Error_Detection;
 
+	//要項チェック
 	virtual void CheckRequirementsFilled() const override;
+	//リソースディスクの生成
+	virtual D3D12_RESOURCE_DESC CreateResourceDesc()const override;
+	//ヒーププロパティの生成
+	virtual D3D12_HEAP_PROPERTIES CreateHeapProperties()const override;
+	//RTV生成
+	virtual D3D12_RENDER_TARGET_VIEW_DESC CreateRTV_Desc()const override;
+	//クリアバリュー
+	virtual D3D12_CLEAR_VALUE WatchClearValue() const override;
 
 };
 
@@ -3290,11 +3427,37 @@ void ConstantBufferDescription::CheckRequirementsFilled() const
 {
 	std::string errorMess{};
 
-	if (sizeInByte > 0) errorMess += "[sizeInByte]";
+	if (sizeInByte == 0) errorMess += "[sizeInByte]";
 
 	ErrorMessageOutput::Assert::DetectError((errorMess.length() == 0), errorMess + "の情報が未設定です","ConstantBufferDescription.cpp");
 
 }
+
+D3D12_RESOURCE_DESC ConstantBufferDescription::CreateResourceDesc()const
+{
+	D3D12_RESOURCE_DESC resourceDesc = {};
+
+	resourceDesc.Dimension = D3D12_RESOURCE_DIMENSION_BUFFER;
+	resourceDesc.Width = (sizeInByte + 255) & ~255;;
+	resourceDesc.Height = 1;
+	resourceDesc.DepthOrArraySize = 1;
+	resourceDesc.MipLevels = 1;
+	resourceDesc.SampleDesc.Count = 1;
+	resourceDesc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
+
+	return resourceDesc;
+}
+
+D3D12_HEAP_PROPERTIES ConstantBufferDescription::CreateHeapProperties()const
+{
+	D3D12_HEAP_PROPERTIES properties = {};
+	properties.Type = D3D12_HEAP_TYPE_UPLOAD;
+
+	return properties;
+
+}
+
+
 
 
 
@@ -3302,15 +3465,130 @@ void ConstantBufferDescription::CheckRequirementsFilled() const
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Resource\BufferDescriptions\ConstantBufferDescription\ConstantBufferDescription.h ===
 ========================================
 #pragma once
-#include "../BufferDescriptionBehavior.h"
+#include "../IBufferDescription.h"
 
 
 //CBバッファ
-struct ConstantBufferDescription final : public BufferDescriptionBehavior
+struct ConstantBufferDescription final : public IBufferDescription
 {
 	UINT sizeInByte{};
 
+	//パラーメーターチェック
 	virtual void CheckRequirementsFilled() const override;
+	//ヒーププロパティの生成
+	virtual D3D12_HEAP_PROPERTIES CreateHeapProperties()const override;
+	//リソースディスクの生成
+	virtual D3D12_RESOURCE_DESC CreateResourceDesc()const override;
+};
+
+
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Resource\BufferDescriptions\DepthStencilBufferDescription\DepthStencilBufferDescription.cpp ===
+========================================
+#include "PreCompileHedder.h"
+#include "DepthStencilBufferDescription.h"
+
+
+void DepthStencilBufferDescription::CheckRequirementsFilled() const
+{
+
+}
+
+D3D12_RESOURCE_DESC DepthStencilBufferDescription::CreateResourceDesc()const
+{
+	D3D12_RESOURCE_DESC resourceDesc = {};
+
+	resourceDesc.Width = width;
+	resourceDesc.Height = height;
+	resourceDesc.Alignment = 0;
+	//mipmapの数
+	resourceDesc.MipLevels = 1;
+	//奥行or配列Textureの配列数
+	resourceDesc.DepthOrArraySize = 1;
+	//depthstencilとして利用可能なフォーマット
+	resourceDesc.Format = format;
+	//サンプリングカウント1固定
+	resourceDesc.SampleDesc.Count = 1;
+	resourceDesc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
+	//DepthStencilとして使う通知
+	resourceDesc.Flags = D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL;
+	resourceDesc.Layout = D3D12_TEXTURE_LAYOUT_UNKNOWN;
+
+	return resourceDesc;
+}
+
+
+D3D12_DEPTH_STENCIL_VIEW_DESC DepthStencilBufferDescription::CreateDSVDesc()const
+{
+	D3D12_DEPTH_STENCIL_VIEW_DESC dsvDesc = {};
+
+	//format。基本的にはリソースに合わせる
+	dsvDesc.Format = format;
+	//2DTexture
+	dsvDesc.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2D;
+	dsvDesc.Texture2D.MipSlice = 0;
+	dsvDesc.Flags = D3D12_DSV_FLAG_NONE;
+
+	return dsvDesc;
+}
+
+D3D12_HEAP_PROPERTIES DepthStencilBufferDescription::CreateHeapProperties()const
+{
+	D3D12_HEAP_PROPERTIES properties = {};
+
+	properties.Type = D3D12_HEAP_TYPE_DEFAULT;
+	properties.CPUPageProperty = D3D12_CPU_PAGE_PROPERTY_UNKNOWN;
+	properties.MemoryPoolPreference = D3D12_MEMORY_POOL_UNKNOWN;
+	properties.CreationNodeMask = 1;
+	properties.VisibleNodeMask = 1;
+
+	return properties;
+}
+
+D3D12_CLEAR_VALUE DepthStencilBufferDescription::WatchClearValue() const
+{
+	D3D12_CLEAR_VALUE clearValue = {};
+
+	clearValue.DepthStencil.Depth = clearColor;
+	clearValue.Format = format;
+
+	return clearValue;
+}
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Resource\BufferDescriptions\DepthStencilBufferDescription\DepthStencilBufferDescription.h ===
+========================================
+#pragma once
+#include "../IBufferDescription.h"
+
+
+//DepthStencilBuffer
+struct DepthStencilBufferDescription final : public IBufferDescription, IDSV_Assembler
+{
+	UINT width{};
+	UINT height{};
+	FLOAT clearColor = -1.0f;
+	DXGI_FORMAT format = DXGI_FORMAT::DXGI_FORMAT_Error_Detection;
+
+	//要項チェック
+	virtual void CheckRequirementsFilled() const override;
+	//リソースディスクの生成
+	virtual D3D12_RESOURCE_DESC CreateResourceDesc()const override;
+	//ヒーププロパティの生成
+	virtual D3D12_HEAP_PROPERTIES CreateHeapProperties()const override;
+
+	//DSV生成
+	virtual D3D12_DEPTH_STENCIL_VIEW_DESC CreateDSVDesc()const override;
+	//クリアバリュー
+	virtual D3D12_CLEAR_VALUE WatchClearValue() const override;
+
 };
 
 
@@ -3334,7 +3612,8 @@ void SRV_UAVBufferDescription::CheckRequirementsFilled() const
 	if (srvFlags == D3D12_BUFFER_SRV_FLAG_notDefined) errorMess += "[srvFlags]";
 	if (resourceFlag == D3D12_RESOURCE_FLAG_Error_Detection) errorMess += "[resourceFlag]";
 	if (heapType == D3D12_HEAP_TYPE_notDefined) errorMess += "[heapType]";
-	
+	//if (initialState == D3D12_RESOURCE_STATE_Error_Detection) errorMess += "[initialState]";
+
 	//uav生成フラグがあるときはほかのもチェック
 	if ((resourceFlag & D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS) > 0 )
 	{
@@ -3345,17 +3624,70 @@ void SRV_UAVBufferDescription::CheckRequirementsFilled() const
 	ErrorMessageOutput::Assert::DetectError((errorMess.length() == 0), errorMess + "の情報が未設定です", "SRV_UAVBufferDescription.cpp");
 }
 
+D3D12_RESOURCE_DESC SRV_UAVBufferDescription::CreateResourceDesc()const
+{
+	D3D12_RESOURCE_DESC resourceDesc = {};
+
+	resourceDesc.Width = numElements * structureByte;
+	resourceDesc.Flags = resourceFlag;
+
+	resourceDesc.Height = 1;
+	resourceDesc.DepthOrArraySize = 1;
+	resourceDesc.MipLevels = 1;
+	resourceDesc.SampleDesc.Count = 1;
+	resourceDesc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
+	resourceDesc.Dimension = D3D12_RESOURCE_DIMENSION_BUFFER;
+
+	return resourceDesc;
+}
+
+D3D12_SHADER_RESOURCE_VIEW_DESC SRV_UAVBufferDescription::CreateSRV_Desc()const
+{
+	D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
+
+	srvDesc.Buffer.NumElements = numElements;
+	srvDesc.Buffer.StructureByteStride = structureByte;
+	srvDesc.Buffer.Flags = srvFlags;
+	srvDesc.Buffer.FirstElement = firstElement;
+
+	srvDesc.Format = DXGI_FORMAT_UNKNOWN;
+	srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+	srvDesc.ViewDimension = D3D12_SRV_DIMENSION_BUFFER;
+
+	return srvDesc;
+}
+
+D3D12_HEAP_PROPERTIES SRV_UAVBufferDescription::CreateHeapProperties()const
+{
+	D3D12_HEAP_PROPERTIES properties = {};
+
+	properties.Type = heapType;
+
+	return properties;
+
+}
+
+
+D3D12_UNORDERED_ACCESS_VIEW_DESC SRV_UAVBufferDescription::CreateUAV_Desc()const
+{
+	D3D12_UNORDERED_ACCESS_VIEW_DESC uavDesc = {};
+
+	return uavDesc;
+}
+
+
+
 
 
 ========================================
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Resource\BufferDescriptions\SRV_UAVBufferDescription\SRV_UAVBufferDescription.h ===
 ========================================
 #pragma once
-#include "../BufferDescriptionBehavior.h"
+#include "../IBufferDescription.h"
 
 
 //StructuredBuffer（読み込み専用やRWStructuredBuffer（読み書き汎用）のDescription
-struct SRV_UAVBufferDescription :public BufferDescriptionBehavior
+struct SRV_UAVBufferDescription final :public IBufferDescription, ISRBufferAssembler, IUAV_Assembler
 {
 	//そのデータ型のサイズ
 	UINT structureByte{};
@@ -3364,6 +3696,7 @@ struct SRV_UAVBufferDescription :public BufferDescriptionBehavior
 	UINT firstElement = -1;
 
 	D3D12_RESOURCE_FLAGS resourceFlag = D3D12_RESOURCE_FLAG_Error_Detection;
+	//D3D12_RESOURCE_STATES initialState = D3D12_RESOURCE_STATE_Error_Detection;
 
 	D3D12_HEAP_TYPE heapType = D3D12_HEAP_TYPE_notDefined;
 
@@ -3373,7 +3706,16 @@ struct SRV_UAVBufferDescription :public BufferDescriptionBehavior
 	// カウンターバッファ用のオフセット
 	uint64_t uavCounterOffsetInBytes = -1; 
 
+	//パラーメーターチェック
 	virtual void CheckRequirementsFilled() const override;
+	//リソースディスクの生成
+	virtual D3D12_RESOURCE_DESC CreateResourceDesc()const override;
+	//ヒーププロパティの生成
+	virtual D3D12_HEAP_PROPERTIES CreateHeapProperties()const override;
+
+	//View生成
+	virtual D3D12_SHADER_RESOURCE_VIEW_DESC CreateSRV_Desc()const override;
+	virtual D3D12_UNORDERED_ACCESS_VIEW_DESC CreateUAV_Desc()const override;
 
 };
 
@@ -3388,7 +3730,7 @@ struct SRV_UAVBufferDescription :public BufferDescriptionBehavior
 #include "PreCompileHedder.h"
 #include "GPUBufferBehavior.h"
 #include "../../Utility/StringConnverter/StringConverter.h"
-#include "../BufferDescriptions/BufferDescriptionBehavior.h"
+#include "../BufferDescriptions/IBufferDescription.h"
 
 
 
@@ -3403,7 +3745,7 @@ GPUBufferBehavior::GPUBufferBehavior
 	std::string name_,
 	Microsoft::WRL::ComPtr<ID3D12Resource> resource1_, 
 	Microsoft::WRL::ComPtr<ID3D12Resource> resource2_,
-	std::unique_ptr <BufferDescriptionBehavior>&& description_
+	std::unique_ptr <IBufferDescription>&& description_
 ) : name(name_), resources{ {std::move(resource1_), std::move(resource2_)} }, description(std::move(description_))
 {
 	//リソースの名前をセット
@@ -3450,7 +3792,7 @@ class GPUBufferManager;
 class RTV_Creator;
 class SRV_Creator;
 class UAV_Creator;
-struct BufferDescriptionBehavior;
+struct IBufferDescription;
 
 
 class GPUBufferBehavior
@@ -3470,7 +3812,7 @@ public:
 		std::string name_, 
 		Microsoft::WRL::ComPtr<ID3D12Resource> resource1_, 
 		Microsoft::WRL::ComPtr<ID3D12Resource> resource2_,
-		std::unique_ptr <BufferDescriptionBehavior>&& description_
+		std::unique_ptr <IBufferDescription>&& description_
 	);
 
 	virtual ~GPUBufferBehavior();
@@ -3498,7 +3840,7 @@ public:
 
 protected:
 
-	std::unique_ptr <BufferDescriptionBehavior> description;
+	std::unique_ptr <IBufferDescription> description;
 
 private:
 
@@ -3552,7 +3894,7 @@ private:
 ========================================
 #include "PreCompileHedder.h"
 #include "ColorBuffer.h"
-#include "../../BufferDescriptions/BufferDescriptionBehavior.h"
+#include "../../BufferDescriptions/IBufferDescription.h"
 
 
 ColorBuffer::ColorBuffer
@@ -3561,7 +3903,7 @@ ColorBuffer::ColorBuffer
 	std::string name_,
 	Microsoft::WRL::ComPtr<ID3D12Resource> resource1_,
 	Microsoft::WRL::ComPtr<ID3D12Resource> resource2_,
-	std::unique_ptr <BufferDescriptionBehavior>&& description_
+	std::unique_ptr <IBufferDescription>&& description_
 ) : GPUBufferBehavior(instanceKey_, name_, std::move(resource1_), std::move(resource2_), std::move(description_))
 {
 	SetMatrix();
@@ -3614,7 +3956,7 @@ public:
 		std::string name_,
 		Microsoft::WRL::ComPtr<ID3D12Resource> resource1_,
 		Microsoft::WRL::ComPtr<ID3D12Resource> resource2_,
-		std::unique_ptr <BufferDescriptionBehavior>&& description_
+		std::unique_ptr <IBufferDescription>&& description_
 	);
 
 	//リソースのディスクリプションを見る
@@ -3644,7 +3986,7 @@ private:
 ========================================
 #include "PreCompileHedder.h"
 #include "ConstantBuffer.h"
-#include "../../BufferDescriptions/BufferDescriptionBehavior.h"
+#include "../../BufferDescriptions/IBufferDescription.h"
 
 
 ConstantBuffer::ConstantBuffer
@@ -3653,7 +3995,7 @@ ConstantBuffer::ConstantBuffer
 	std::string name_,
 	Microsoft::WRL::ComPtr<ID3D12Resource> resource1_,
 	Microsoft::WRL::ComPtr<ID3D12Resource> resource2_,
-	std::unique_ptr <BufferDescriptionBehavior>&& description_
+	std::unique_ptr <IBufferDescription>&& description_
 ) : GPUBufferBehavior(instanceKey_, name_, std::move(resource1_), std::move(resource2_), std::move(description_))
 {
 
@@ -3681,7 +4023,7 @@ public:
 		std::string name_,
 		Microsoft::WRL::ComPtr<ID3D12Resource> resource1_,
 		Microsoft::WRL::ComPtr<ID3D12Resource> resource2_,
-		std::unique_ptr <BufferDescriptionBehavior>&& description_
+		std::unique_ptr <IBufferDescription>&& description_
 	);
 
 private:
@@ -3697,7 +4039,7 @@ private:
 ========================================
 #include "PreCompileHedder.h"
 #include "SRV_UAVBuffer.h"
-#include "../../BufferDescriptions/BufferDescriptionBehavior.h"
+#include "../../BufferDescriptions/IBufferDescription.h"
 
 
 SRV_UAVBuffer::SRV_UAVBuffer
@@ -3706,7 +4048,7 @@ SRV_UAVBuffer::SRV_UAVBuffer
 	std::string name_, 
 	Microsoft::WRL::ComPtr<ID3D12Resource> resource1_, 
 	Microsoft::WRL::ComPtr<ID3D12Resource> resource2_, 
-	std::unique_ptr <BufferDescriptionBehavior>&& description_
+	std::unique_ptr <IBufferDescription>&& description_
 ) : GPUBufferBehavior(instanceKey_, name_, std::move(resource1_), std::move(resource2_), std::move(description_))
 {
 
@@ -3735,7 +4077,7 @@ public:
 		std::string name_,
 		Microsoft::WRL::ComPtr<ID3D12Resource> resource1_, 
 		Microsoft::WRL::ComPtr<ID3D12Resource> resource2_, 
-		std::unique_ptr <BufferDescriptionBehavior>&& description_
+		std::unique_ptr <IBufferDescription>&& description_
 	);
 
 private:
@@ -3867,7 +4209,7 @@ void GPUBufferCreator::Log(std::string convName_)
 	Logger::Log("CreateBuffer :" + convName_);
 }
 
-void GPUBufferCreator::CheckDescription(const BufferDescriptionBehavior& srcDesc_)
+void GPUBufferCreator::CheckDescription(const IBufferDescription& srcDesc_)
 {
 	srcDesc_.CheckRequirementsFilled();
 }
@@ -3895,7 +4237,7 @@ GPUBufferCreator::~GPUBufferCreator()
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Resource\GPUBufferCreator\GPUBufferCreator.h ===
 ========================================
 #pragma once
-#include "../BufferDescriptions/BufferDescriptionBehavior.h"
+#include "../BufferDescriptions/IBufferDescription.h"
 
 class WinApp;
 
@@ -3935,7 +4277,7 @@ public:
 
 	//一括窓口
 	template<typename BufferType,typename DescType>
-	[[nodiscard]] std::unique_ptr<BufferType> CreateBuffer(std::unique_ptr<BufferDescriptionBehavior>&& desc_, const std::string& name_)
+	[[nodiscard]] std::unique_ptr<BufferType> CreateBuffer(std::unique_ptr<IBufferDescription>&& desc_, const std::string& name_)
 	{
 		Microsoft::WRL::ComPtr<ID3D12Resource> resource1, resource2;
 
@@ -3959,7 +4301,7 @@ private:
 	CreateSRV_UAVBufferCommand createSRV_UAVBufferCommand;
 
 	//引数のDescriptionに不備がないかチェックしてエラーを吐く
-	void CheckDescription(const BufferDescriptionBehavior& srcDesc_);
+	void CheckDescription(const IBufferDescription& srcDesc_);
 
 	//ヘルパー関数
 	template <typename BufferType, typename DescType>
