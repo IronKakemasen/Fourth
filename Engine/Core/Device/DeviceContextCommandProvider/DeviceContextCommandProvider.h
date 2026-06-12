@@ -9,10 +9,15 @@ public:
 	CommandProvider(DeviceContext::InstanceKey instanceKey_, 
 		std::function< ID3D12Device8* (DeviceContext::DeviceAccessKey)> func_ , CommandMap* commandContainer_);
 	
-	//バッファを生成するコマンドを返す関数(ConstantBufferDescription , ColorBufferDescription)
-	template <typename DescriptionType>
-	[[nodiscard]] std::function<Microsoft::WRL::ComPtr<ID3D12Resource>(const DescriptionType&)> 
-		ProvideCreateBufferCommand();
+	//リソースを生成するコマンドを返す関数(ConstantBufferDescription , ColorBufferDescription)
+	[[nodiscard]] std::function<Microsoft::WRL::ComPtr<ID3D12Resource>
+	(
+		const D3D12_RESOURCE_DESC& resourceDesc_,
+		const D3D12_HEAP_PROPERTIES& heapProperties_,
+		const D3D12_CLEAR_VALUE* clearValue_,
+		const std::string& name_
+	)>
+	ProvideCreateResourceCommand();
 
 	//DescriptorHeapを生成するコマンドを返す関数
 	[[nodiscard]] std::function<Microsoft::WRL::ComPtr<ID3D12DescriptorHeap>(D3D12_DESCRIPTOR_HEAP_TYPE , UINT , bool )>

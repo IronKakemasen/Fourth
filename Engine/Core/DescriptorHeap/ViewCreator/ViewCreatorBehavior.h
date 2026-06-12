@@ -1,7 +1,7 @@
 #pragma once
 #include "../DescriptorHeapContext.h"
-#include <type_traits> 
 #include "../DescriptorHeapClass/DescriptorHeapClass.h"
+#include <type_traits> 
 
 class GPUBufferBehavior;
 
@@ -46,21 +46,24 @@ protected:
 	//ViewDescの生成関数
 	virtual ViewDescType CreateViewDesc() = 0;
 
-	//次のDescriptorHeapの空き空間を計算
-	//ここでView生成数は上昇する！！！
+	//次のDescriptorHeapの空き空間を計算.ここでView生成数は上昇する！！！
 	template<typename HandleType>
-	[[nodiscard]] inline HandleType CalculateHandle()
-	{
-		//CPU
-		if constexpr (std::is_same_v<HandleType, D3D12_CPU_DESCRIPTOR_HANDLE>)
-		{
-			return descriptorHeapClass->CalculateHandleThenIncrement<D3D12_CPU_DESCRIPTOR_HANDLE>(DescriptorHeapClass::AccessKey{});
-		}
-		//GPU
-		else if constexpr (std::is_same_v<HandleType, D3D12_GPU_DESCRIPTOR_HANDLE>)
-		{
-			return descriptorHeapClass->CalculateHandleThenIncrement<D3D12_GPU_DESCRIPTOR_HANDLE>(DescriptorHeapClass::AccessKey{});
-		}
-	}
+	[[nodiscard]] HandleType CalculateHandle();
 };
+
+template<typename ViewDescType>
+template<typename HandleType>
+[[nodiscard]] HandleType ViewCreatorBehavior<ViewDescType>::CalculateHandle()
+{
+	//CPU
+	if constexpr (std::is_same_v<HandleType, D3D12_CPU_DESCRIPTOR_HANDLE>)
+	{
+		return descriptorHeapClass->CalculateHandleThenIncrement<D3D12_CPU_DESCRIPTOR_HANDLE>(DescriptorHeapClass::AccessKey{});
+	}
+	//GPU
+	else if constexpr (std::is_same_v<HandleType, D3D12_GPU_DESCRIPTOR_HANDLE>)
+	{
+		return descriptorHeapClass->CalculateHandleThenIncrement<D3D12_GPU_DESCRIPTOR_HANDLE>(DescriptorHeapClass::AccessKey{});
+	}
+}
 

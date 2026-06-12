@@ -1,96 +1,98 @@
 #pragma once
 #include "../BufferDescriptions/IBufferDescription.h"
+#include "../BufferContext.h"
+#include <type_traits> 
+#include "../GPUBuffer/ColorBuffer/ColorBuffer.h"
+#include "../GPUBuffer/ConstantBuffer/ConstantBuffer.h"
+#include "../GPUBuffer//SRV_UAVBuffer/SRV_UAVBuffer.h"
+#include "../GPUBuffer/DepthStencilBuffer/DepthStencilBuffer.h"
 
 class WinApp;
 
-//Description
-struct ColorBufferDescription;
-struct ConstantBufferDescription;
-struct SRV_UAVBufferDescription;
-
-//Buffer
-class ConstantBuffer;
-class ColorBuffer;
-class SRV_UAVBuffer;
-
 class GPUBufferCreator
 {
-private:
-
-	using CreateColorBufferCommand = std::function<Microsoft::WRL::ComPtr<ID3D12Resource>(const ColorBufferDescription&)>;
-	using CreateConstantBufferCommand = std::function<Microsoft::WRL::ComPtr<ID3D12Resource>(const ConstantBufferDescription&)>;
-	using CreateSRV_UAVBufferCommand = std::function<Microsoft::WRL::ComPtr<ID3D12Resource>(const SRV_UAVBufferDescription&)>;
 
 public:
 
-	//自身のインスタンス化キー
-	struct InstanceKey;
+	GPUBufferCreator(BufferContext::InstanceKey instanceKey_, BufferContext::CreateResourceCommand createResourceCommand_)
+		: createResourceCommand(createResourceCommand_) {}
 
-	GPUBufferCreator(InstanceKey instanceKey_);
-	~GPUBufferCreator();
+	~GPUBufferCreator() = default;
 
-	//外部クラスが作ったコマンドをセットする
-	void SetCommands
-	(
-		const CreateColorBufferCommand& createColorBufferCommand_,
-		const CreateConstantBufferCommand& createConstantBufferCommand_,
-		const CreateSRV_UAVBufferCommand& createSRV_UAVBufferCommand_
-	);
-
-	//一括窓口
-	template<typename BufferType,typename DescType>
-	[[nodiscard]] std::unique_ptr<BufferType> CreateBuffer(std::unique_ptr<IBufferDescription>&& desc_, const std::string& name_)
+	//バッファ生成
+	template<typename BufferType, typename DescType>
+	[[nodiscard]] std::unique_ptr<BufferType> CreateBuffer(DescType descType_, const std::string& name_)
 	{
-		Microsoft::WRL::ComPtr<ID3D12Resource> resource1, resource2;
-
-		//descriptionの中身が書き込まれているかチェック
-		CheckDescription(*desc_.get());
-
-		//名前を分かりやすい形に変換
+		//要項チェック
+		descType_.CheckRequirementsFilled();
+		//名前変換
 		std::string convName = NameConverter<BufferType>(name_);
-		Log(convName);
 
-		//生成
-		return std::move(CreateSpecificBuffer<BufferType, DescType>(std::move(desc_), convName, std::move(resource1), std::move(resource2)));
+		auto resource1 = CreateResource<BufferType>(descType_, convName);
+		auto resource2 = CreateResource<BufferType>(descType_, convName);
+
+		auto descPtr = std::make_unique<DescType>(std::move(descType_));
+
+		return std::make_unique<BufferType>
+		(
+			GPUBufferBehavior::InstanceKey{},
+			convName,
+			std::move(resource1),
+			std::move(resource2),
+			std::move(descPtr)
+		);
 	}
 
-
 private:
 
-	//コマンド群
-	CreateConstantBufferCommand createConstantBufferCommand;
-	CreateColorBufferCommand createColorBufferCommand;
-	CreateSRV_UAVBufferCommand createSRV_UAVBufferCommand;
+	//リソース生成コマンド
+	BufferContext::CreateResourceCommand createResourceCommand;
 
-	//引数のDescriptionに不備がないかチェックしてエラーを吐く
-	void CheckDescription(const IBufferDescription& srcDesc_);
+	//リソースをコマンドから生成する
+	template<typename BufferType, typename DescType>
+	Microsoft::WRL::ComPtr<ID3D12Resource> CreateResource(DescType descType_, const std::string& name_)
+	{
+		Microsoft::WRL::ComPtr<ID3D12Resource> resource;
 
-	//ヘルパー関数
-	template <typename BufferType, typename DescType>
-	std::unique_ptr<BufferType> CreateSpecificBuffer(std::unique_ptr<DescType>&& desc_, const std::string& name_, Microsoft::WRL::ComPtr<ID3D12Resource>&& resource1_, Microsoft::WRL::ComPtr<ID3D12Resource>&& resource2_);
+		D3D12_RESOURCE_DESC resourceDesc = descType_.CreateResourceDesc();
+		D3D12_HEAP_PROPERTIES heapProperties = descType_.CreateHeapProperties();
 
-	template <typename BufferType>
-	std::string NameConverter(const std::string& name_) = delete;
+		if constexpr (std::is_same_v<BufferType, ColorBuffer> || std::is_same_v<BufferType, DepthStencilBuffer>)
+		{
+			D3D12_CLEAR_VALUE clearValue = descType_.WatchClearValue();
+			resource = createResourceCommand(resourceDesc, heapProperties, &clearValue, name_);
+		}
+		else
+		{
+			resource = createResourceCommand(resourceDesc, heapProperties, nullptr, name_);
+		}
 
-	void Log(std::string convName_);
+		return resource;
+	}
 
-};
+	//名前変換
+	template<typename BufferType>
+	std::string NameConverter(const std::string& name_)
+	{
+		std::string conName;
 
-template <>
-std::string GPUBufferCreator::NameConverter<ConstantBuffer>(const std::string& name_);
+		if constexpr (std::is_same_v<BufferType, ColorBuffer>)
+		{
+			conName += "ColorBuffer [ " + name_ + " ] ";
+		}
+		else if constexpr (std::is_same_v<BufferType, ConstantBuffer>)	 
+		{
+			conName += "ConstantBuffer [ " + name_ + " ] ";
+		}
+		else if constexpr (std::is_same_v<BufferType, SRV_UAVBuffer>)
+		{
+			conName += "SRV_Creator [ " + name_ + " ] ";
+		}
+		else if constexpr (std::is_same_v<BufferType, DepthStencilBuffer>)
+		{
+			conName += "DepthStencilBuffer [ " + name_ + " ] ";
+		}
 
-template <>
-std::string GPUBufferCreator::NameConverter<ColorBuffer>(const std::string& name_);
-
-template <>
-std::string GPUBufferCreator::NameConverter<SRV_UAVBuffer>(const std::string& name_);
-
-
-struct GPUBufferCreator::InstanceKey
-{
-
-private:
-
-	friend class WinApp;
-	explicit InstanceKey() = default;
+		return conName;
+	}
 };
