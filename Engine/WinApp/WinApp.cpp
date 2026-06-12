@@ -1,5 +1,11 @@
 #include "PreCompileHedder.h"
 #include "WinApp.h"
+#include "../Core/Device/DeviceContext.h"
+#include "../Core/Window/WindowContext.h"
+#include "../Core/DescriptorHeap/DescriptorHeapContext.h"
+#include "../Resource/BufferContext.h"
+
+
 #include "../Core/Device/DeviceContextCommandProvider/DeviceContextCommandProvider.h"
 
 
@@ -34,7 +40,7 @@ WinApp::WinApp()
 	ErrorMessageOutput::Assert::DetectError(InstanceLimiter::CanInstantiate(), "WinAppクラスが複数具現化されてます", fileName);
 
 	InitDeviceContext();
-	InitGPUBufferCreator();
+	InitBufferContext();
 	InitWindowContext();
 	InitDescriptorHeapContext();
 
@@ -62,20 +68,14 @@ void WinApp::InitDeviceContext()
 	Logger::Log("Instantiate: deviceContext", fileName);
 }
 
-void WinApp::InitGPUBufferCreator()
+void WinApp::InitBufferContext()
 {
-	//gpuBufferCreatorクラスのインスタンス化
-	gpuBufferCreator.reset(new GPUBufferCreator(GPUBufferCreator::InstanceKey{}));
-	Logger::Log("Instantiate: gpuBufferCreator", fileName);
+	//リソース生成コマンド
+	auto createResourceCommand = deviceContext->commandProvider->ProvideCreateResourceCommand();
+	Logger::Log("Set: CommandCreateResource", fileName);
 
-	//バッファ生成コマンド
-	const auto& createConstantBufferCommand = deviceContext->commandProvider->ProvideCreateBufferCommand<ConstantBufferDescription>();
-	const auto& createColorBufferCommand = deviceContext->commandProvider->ProvideCreateBufferCommand<ColorBufferDescription>();
-	const auto& createSRV_UAVBufferCommand = deviceContext->commandProvider->ProvideCreateBufferCommand<SRV_UAVBufferDescription>();
-
-	gpuBufferCreator->SetCommands(createColorBufferCommand, createConstantBufferCommand, createSRV_UAVBufferCommand);
-	
-	Logger::Log("Set: createGPUBufferCommands", fileName);
+	bufferContext.reset(new BufferContext(BufferContext::InstanceKey{}, createResourceCommand));
+	Logger::Log("Instantiate: bufferContext", fileName);
 
 }
 

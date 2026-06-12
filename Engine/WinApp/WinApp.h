@@ -1,9 +1,9 @@
 #pragma once
-#include "../Core/Window/WindowContext.h"
-#include "../Resource/GPUBufferCreator/GPUBufferCreator.h"
-#include "../Core/Device/DeviceContext.h"
-#include "../Core/DescriptorHeap/DescriptorHeapContext.h"
 
+class DeviceContext;
+class BufferContext;
+class WindowContext;
+class DescriptorHeapContext;
 
 class WinApp
 {
@@ -24,15 +24,15 @@ private:
 
 	//IDXGIFactory7、IDXGIAdapter4、ID3D12Device8を持っている。
 	std::unique_ptr<DeviceContext> deviceContext;
-	//GPUリソースを作るもの
-	std::unique_ptr<GPUBufferCreator> gpuBufferCreator;
+	//GPUバッファを生成・管理
+	std::unique_ptr<BufferContext> bufferContext;
 	//ウィンドウを制御するもの
 	std::unique_ptr<WindowContext> windowContext;
-	//DescriptorHeapを作り、viewを生成するクラスを所持
+	//DescriptorHeapを作り、各種バッファのviewを生成する
 	std::unique_ptr<DescriptorHeapContext> descriptorHeapContext;
 
 	void InitDeviceContext();
-	void InitGPUBufferCreator();
+	void InitBufferContext();
 	void InitWindowContext();
 	void InitDescriptorHeapContext();
 

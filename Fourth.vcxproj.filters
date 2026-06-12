@@ -201,6 +201,12 @@
     <ClCompile Include="Engine\Resource\BufferDescriptions\DepthStencilBufferDescription\DepthStencilBufferDescription.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
+    <ClCompile Include="Engine\Resource\BufferContext.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\Resource\GPUBuffer\DepthStencilBuffer\DepthStencilBuffer.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Engine\Core\Window\WindowContext.h">
@@ -387,6 +393,12 @@
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
     <ClInclude Include="Engine\Resource\BufferDescriptions\DepthStencilBufferDescription\DepthStencilBufferDescription.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Resource\BufferContext.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Resource\GPUBuffer\DepthStencilBuffer\DepthStencilBuffer.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
   </ItemGroup>

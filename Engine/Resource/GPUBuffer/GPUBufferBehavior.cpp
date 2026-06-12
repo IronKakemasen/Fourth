@@ -19,8 +19,7 @@ GPUBufferBehavior::GPUBufferBehavior
 	std::unique_ptr <IBufferDescription>&& description_
 ) : name(name_), resources{ {std::move(resource1_), std::move(resource2_)} }, description(std::move(description_))
 {
-	//リソースの名前をセット
-	SetName(instanceKey_);
+
 }
 
 GPUBufferBehavior::~GPUBufferBehavior()
