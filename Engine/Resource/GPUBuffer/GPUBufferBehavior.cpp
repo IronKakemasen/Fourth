@@ -1,7 +1,7 @@
 #include "PreCompileHedder.h"
 #include "GPUBufferBehavior.h"
 #include "../../Utility/StringConnverter/StringConverter.h"
-#include "../BufferDescriptions/BufferDescriptionBehavior.h"
+#include "../BufferDescriptions/IBufferDescription.h"
 
 
 
@@ -16,7 +16,7 @@ GPUBufferBehavior::GPUBufferBehavior
 	std::string name_,
 	Microsoft::WRL::ComPtr<ID3D12Resource> resource1_, 
 	Microsoft::WRL::ComPtr<ID3D12Resource> resource2_,
-	std::unique_ptr <BufferDescriptionBehavior>&& description_
+	std::unique_ptr <IBufferDescription>&& description_
 ) : name(name_), resources{ {std::move(resource1_), std::move(resource2_)} }, description(std::move(description_))
 {
 	//リソースの名前をセット

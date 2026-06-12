@@ -90,6 +90,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Engine\Resource\BufferDescriptions\DepthStencilBufferDescription\DepthStencilBufferDescription.cpp" />
     <ClCompile Include="Engine\Core\Device\Commands\CreateView\CommandCreateView.cpp" />
     <ClCompile Include="Engine\Core\DescriptorHeap\ViewCreator\DSV_Creator\DSV_Creator.cpp" />
     <ClCompile Include="Engine\Core\DescriptorHeap\DescriptorHeapClass\DescriptorHeapClass.cpp" />
@@ -225,6 +226,7 @@
     <ClCompile Include="Engine\Core\DescriptorHeap\ViewCreator\SRV_Creator\SRV_Creator.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Engine\Resource\BufferDescriptions\DepthStencilBufferDescription\DepthStencilBufferDescription.h" />
     <ClInclude Include="Engine\Core\Device\Commands\CreateView\CommandCreateView.h" />
     <ClInclude Include="Engine\Core\DescriptorHeap\ViewCreator\DSV_Creator\DSV_Creator.h" />
     <ClInclude Include="Engine\Core\DescriptorHeap\DescriptorHeapClass\DescriptorHeapClass.h" />
@@ -239,7 +241,7 @@
     <ClInclude Include="Engine\Core\Device\DeviceContextCommandProvider\DeviceContextCommandProvider.h" />
     <ClInclude Include="Engine\Resource\BufferDescriptions\ColorBufferDescription\ColorBufferDescription.h" />
     <ClInclude Include="Engine\Resource\BufferDescriptions\ConstantBufferDescription\ConstantBufferDescription.h" />
-    <ClInclude Include="Engine\Resource\BufferDescriptions\BufferDescriptionBehavior.h" />
+    <ClInclude Include="Engine\Resource\BufferDescriptions\IBufferDescription.h" />
     <ClInclude Include="Engine\Core\Window\DumpExporter.h" />
     <ClInclude Include="Engine\Debug\RuntimeDebugger\DebugSystems\DebugLayer\DebugLayer.h" />
     <ClInclude Include="Engine\Resource\GPUBuffer\ConstantBuffer\ConstantBuffer.h" />

@@ -6,7 +6,7 @@ class GPUBufferManager;
 class RTV_Creator;
 class SRV_Creator;
 class UAV_Creator;
-struct BufferDescriptionBehavior;
+struct IBufferDescription;
 
 
 class GPUBufferBehavior
@@ -26,7 +26,7 @@ public:
 		std::string name_, 
 		Microsoft::WRL::ComPtr<ID3D12Resource> resource1_, 
 		Microsoft::WRL::ComPtr<ID3D12Resource> resource2_,
-		std::unique_ptr <BufferDescriptionBehavior>&& description_
+		std::unique_ptr <IBufferDescription>&& description_
 	);
 
 	virtual ~GPUBufferBehavior();
@@ -54,7 +54,7 @@ public:
 
 protected:
 
-	std::unique_ptr <BufferDescriptionBehavior> description;
+	std::unique_ptr <IBufferDescription> description;
 
 private:
 

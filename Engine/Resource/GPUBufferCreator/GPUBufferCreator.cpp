@@ -116,7 +116,7 @@ void GPUBufferCreator::Log(std::string convName_)
 	Logger::Log("CreateBuffer :" + convName_);
 }
 
-void GPUBufferCreator::CheckDescription(const BufferDescriptionBehavior& srcDesc_)
+void GPUBufferCreator::CheckDescription(const IBufferDescription& srcDesc_)
 {
 	srcDesc_.CheckRequirementsFilled();
 }

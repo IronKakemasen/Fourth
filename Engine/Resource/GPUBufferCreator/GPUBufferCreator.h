@@ -1,5 +1,5 @@
 #pragma once
-#include "../BufferDescriptions/BufferDescriptionBehavior.h"
+#include "../BufferDescriptions/IBufferDescription.h"
 
 class WinApp;
 
@@ -39,7 +39,7 @@ public:
 
 	//一括窓口
 	template<typename BufferType,typename DescType>
-	[[nodiscard]] std::unique_ptr<BufferType> CreateBuffer(std::unique_ptr<BufferDescriptionBehavior>&& desc_, const std::string& name_)
+	[[nodiscard]] std::unique_ptr<BufferType> CreateBuffer(std::unique_ptr<IBufferDescription>&& desc_, const std::string& name_)
 	{
 		Microsoft::WRL::ComPtr<ID3D12Resource> resource1, resource2;
 
@@ -63,7 +63,7 @@ private:
 	CreateSRV_UAVBufferCommand createSRV_UAVBufferCommand;
 
 	//引数のDescriptionに不備がないかチェックしてエラーを吐く
-	void CheckDescription(const BufferDescriptionBehavior& srcDesc_);
+	void CheckDescription(const IBufferDescription& srcDesc_);
 
 	//ヘルパー関数
 	template <typename BufferType, typename DescType>
