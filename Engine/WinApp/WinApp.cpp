@@ -40,9 +40,9 @@ WinApp::WinApp()
 	ErrorMessageOutput::Assert::DetectError(InstanceLimiter::CanInstantiate(), "WinAppクラスが複数具現化されてます", fileName);
 
 	InitDeviceContext();
-	InitBufferContext();
 	InitWindowContext();
 	InitDescriptorHeapContext();
+	InitBufferContext();
 
 	Logger::End("WinApp: Constructor");
 }
@@ -139,8 +139,7 @@ void WinApp::InitDescriptorHeapContext()
 		auto createDSVCommand = deviceContext->commandProvider->ProvideCreateViewCommand<D3D12_DEPTH_STENCIL_VIEW_DESC>();
 		auto createUAVCommand = deviceContext->commandProvider->ProvideCreateUAVCommand();
 
-
-		//コマンドをセット
+		//ビュークリエイターを生成し、コマンドをセット
 		descriptorHeapContext->SetCreateViewCommand
 		(
 			createRTVCommand,

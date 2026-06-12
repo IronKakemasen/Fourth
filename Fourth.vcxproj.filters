@@ -114,7 +114,7 @@
     <ClCompile Include="Engine\Debug\ErrorMessageOutput\ErrorMessageOutput.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="Engine\Resource\GPUBufferCreator\GPUBufferCreator.cpp">
+    <ClCompile Include="Engine\Resource\ResourceCreator\ResourceCreator.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
     <ClCompile Include="Engine\Resource\GPUBuffer\GPUBufferBehavior.cpp">
@@ -165,10 +165,7 @@
     <ClCompile Include="Engine\Core\DescriptorHeap\DescriptorHeapContext.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="Engine\Core\DescriptorHeap\ViewCreator\RTV_Creator\RTV_Creator.cpp">
-      <Filter>ソース ファイル</Filter>
-    </ClCompile>
-    <ClCompile Include="Engine\Core\DescriptorHeap\ViewCreator\ViewCreatorBehavior.cpp">
+    <ClCompile Include="Engine\Core\DescriptorHeap\ViewCreator\ViewCreator.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
     <ClCompile Include="Engine\Core\DescriptorHeap\DescriptorHeapCreator\DescriptorHeapCreator.cpp">
@@ -180,9 +177,6 @@
     <ClCompile Include="Engine\Core\DescriptorHeap\DescriptorHeapClass\DescriptorHeapClass.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="Engine\Core\DescriptorHeap\ViewCreator\DSV_Creator\DSV_Creator.cpp">
-      <Filter>ソース ファイル</Filter>
-    </ClCompile>
     <ClCompile Include="Engine\Core\Device\Commands\CreateView\CommandCreateView.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
@@ -190,12 +184,6 @@
       <Filter>ソース ファイル</Filter>
     </ClCompile>
     <ClCompile Include="Engine\Resource\BufferDescriptions\SRV_UAVBufferDescription\SRV_UAVBufferDescription.cpp">
-      <Filter>ソース ファイル</Filter>
-    </ClCompile>
-    <ClCompile Include="Engine\Core\DescriptorHeap\ViewCreator\UAV_Creator\UAV_Creator.cpp">
-      <Filter>ソース ファイル</Filter>
-    </ClCompile>
-    <ClCompile Include="Engine\Core\DescriptorHeap\ViewCreator\SRV_Creator\SRV_Creator.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
     <ClCompile Include="Engine\Resource\BufferDescriptions\DepthStencilBufferDescription\DepthStencilBufferDescription.cpp">
@@ -305,7 +293,7 @@
     <ClInclude Include="Engine\Core\SwapChain\SwapChainContext.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\Resource\GPUBufferCreator\GPUBufferCreator.h">
+    <ClInclude Include="Engine\Resource\ResourceCreator\ResourceCreator.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
     <ClInclude Include="Engine\Resource\GPUBuffer\GPUBufferBehavior.h">
@@ -359,10 +347,7 @@
     <ClInclude Include="Engine\Core\DescriptorHeap\DescriptorHeapContext.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\Core\DescriptorHeap\ViewCreator\RTV_Creator\RTV_Creator.h">
-      <Filter>ヘッダー ファイル</Filter>
-    </ClInclude>
-    <ClInclude Include="Engine\Core\DescriptorHeap\ViewCreator\ViewCreatorBehavior.h">
+    <ClInclude Include="Engine\Core\DescriptorHeap\ViewCreator\ViewCreator.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
     <ClInclude Include="Engine\Core\DescriptorHeap\DescriptorHeapCreator\DescriptorHeapCreator.h">
@@ -374,9 +359,6 @@
     <ClInclude Include="Engine\Core\DescriptorHeap\DescriptorHeapClass\DescriptorHeapClass.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\Core\DescriptorHeap\ViewCreator\DSV_Creator\DSV_Creator.h">
-      <Filter>ヘッダー ファイル</Filter>
-    </ClInclude>
     <ClInclude Include="Engine\Core\Device\Commands\CreateView\CommandCreateView.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
@@ -384,12 +366,6 @@
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
     <ClInclude Include="Engine\Resource\BufferDescriptions\SRV_UAVBufferDescription\SRV_UAVBufferDescription.h">
-      <Filter>ヘッダー ファイル</Filter>
-    </ClInclude>
-    <ClInclude Include="Engine\Core\DescriptorHeap\ViewCreator\UAV_Creator\UAV_Creator.h">
-      <Filter>ヘッダー ファイル</Filter>
-    </ClInclude>
-    <ClInclude Include="Engine\Core\DescriptorHeap\ViewCreator\SRV_Creator\SRV_Creator.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
     <ClInclude Include="Engine\Resource\BufferDescriptions\DepthStencilBufferDescription\DepthStencilBufferDescription.h">

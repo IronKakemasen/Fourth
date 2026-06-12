@@ -1,6 +1,5 @@
 #include "PreCompileHedder.h"
 #include "CommandOfCreatingGPUBuffer.h"
-#include "../../../../Utility/StringConnverter/StringConverter.h"
  
 
 [[nodiscard]] Microsoft::WRL::ComPtr<ID3D12Resource> CommandCreateGPUResource::CreateResource
@@ -28,9 +27,6 @@
 		IID_PPV_ARGS(&resource));
 
 	ErrorMessageOutput::Assert::DetectError(SUCCEEDED(hr), name_ + ": リソース生成失敗", "CommandOfCreatingGPUBuffer.cpp");
-
-	//命名
-	resource->SetName(StringConverter::ConvertString(name_).c_str());
 
 	return resource;
 }

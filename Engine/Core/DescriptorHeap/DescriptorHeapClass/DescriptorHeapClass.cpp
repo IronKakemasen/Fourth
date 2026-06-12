@@ -1,6 +1,5 @@
 #include "PreCompileHedder.h"
 #include "DescriptorHeapClass.h"
-#include "../ViewCreator/ViewCreatorBehavior.h"
 
 namespace
 {
@@ -18,12 +17,26 @@ DescriptorHeapClass::DescriptorHeapClass(
 
 }
 
-[[nodiscard]]uint32_t DescriptorHeapClass::WatchAllocateIndex()
+template<>
+[[nodiscard]] uint32_t DescriptorHeapClass::WatchAllocateIndex()
 {
 	ErrorMessageOutput::Assert::DetectError((currentCreateNum > kMaxDescriptor),
 		name + "がリミットブレイク!", fileName);
 
 	return currentCreateNum;
+}
+
+template<>
+[[nodiscard]] D3D12_CPU_DESCRIPTOR_HANDLE DescriptorHeapClass::WatchAllocateIndex()
+{
+	ErrorMessageOutput::Assert::DetectError((currentCreateNum > kMaxDescriptor),
+		name + "がリミットブレイク!", fileName);
+
+	D3D12_CPU_DESCRIPTOR_HANDLE handleStartCPU = descriptorHeap->GetCPUDescriptorHandleForHeapStart();
+	D3D12_CPU_DESCRIPTOR_HANDLE handleCPU;
+	handleCPU.ptr = handleStartCPU.ptr + handleIncrementSize * currentCreateNum;
+
+	return handleCPU;
 }
 
 template<>
