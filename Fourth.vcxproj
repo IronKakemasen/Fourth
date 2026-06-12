@@ -94,7 +94,6 @@
     <ClCompile Include="Engine\Resource\BufferContext.cpp" />
     <ClCompile Include="Engine\Resource\BufferDescriptions\DepthStencilBufferDescription\DepthStencilBufferDescription.cpp" />
     <ClCompile Include="Engine\Core\Device\Commands\CreateView\CommandCreateView.cpp" />
-    <ClCompile Include="Engine\Core\DescriptorHeap\ViewCreator\DSV_Creator\DSV_Creator.cpp" />
     <ClCompile Include="Engine\Core\DescriptorHeap\DescriptorHeapClass\DescriptorHeapClass.cpp" />
     <ClCompile Include="Engine\Core\Device\Commands\CreateDescriptorHeap\CommandCreateDescriptorHeap.cpp" />
     <ClCompile Include="Engine\Core\DescriptorHeap\DescriptorHeapCreator\DescriptorHeapCreator.cpp" />
@@ -204,7 +203,7 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="Engine\Debug\Logger\Logger.cpp" />
-    <ClCompile Include="Engine\Resource\GPUBufferCreator\GPUBufferCreator.cpp" />
+    <ClCompile Include="Engine\Resource\ResourceCreator\ResourceCreator.cpp" />
     <ClCompile Include="Engine\Resource\GPUBuffer\GPUBufferBehavior.cpp" />
     <ClCompile Include="Engine\Debug\RuntimeDebugger\DebugSystems\LeakChecker\LeakChecker.cpp" />
     <ClCompile Include="main.cpp" />
@@ -220,19 +219,15 @@
     <ClCompile Include="Engine\Debug\RuntimeDebugger\DebugSystems\PointerValidator\PointerValidator.cpp" />
     <ClCompile Include="Engine\Debug\RuntimeDebugger\DebugSystems\RuntimeDebuggerBehavior.cpp" />
     <ClCompile Include="Engine\Debug\RuntimeDebugger\RuntimeDebugger.cpp" />
-    <ClCompile Include="Engine\Core\DescriptorHeap\ViewCreator\RTV_Creator\RTV_Creator.cpp" />
-    <ClCompile Include="Engine\Core\DescriptorHeap\ViewCreator\ViewCreatorBehavior.cpp" />
+    <ClCompile Include="Engine\Core\DescriptorHeap\ViewCreator\ViewCreator.cpp" />
     <ClCompile Include="Engine\Resource\GPUBuffer\SRV_UAVBuffer\SRV_UAVBuffer.cpp" />
     <ClCompile Include="Engine\Resource\BufferDescriptions\SRV_UAVBufferDescription\SRV_UAVBufferDescription.cpp" />
-    <ClCompile Include="Engine\Core\DescriptorHeap\ViewCreator\UAV_Creator\UAV_Creator.cpp" />
-    <ClCompile Include="Engine\Core\DescriptorHeap\ViewCreator\SRV_Creator\SRV_Creator.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Engine\Resource\GPUBuffer\DepthStencilBuffer\DepthStencilBuffer.h" />
     <ClInclude Include="Engine\Resource\BufferContext.h" />
     <ClInclude Include="Engine\Resource\BufferDescriptions\DepthStencilBufferDescription\DepthStencilBufferDescription.h" />
     <ClInclude Include="Engine\Core\Device\Commands\CreateView\CommandCreateView.h" />
-    <ClInclude Include="Engine\Core\DescriptorHeap\ViewCreator\DSV_Creator\DSV_Creator.h" />
     <ClInclude Include="Engine\Core\DescriptorHeap\DescriptorHeapClass\DescriptorHeapClass.h" />
     <ClInclude Include="Engine\Core\Device\Commands\CreateDescriptorHeap\CommandCreateDescriptorHeap.h" />
     <ClInclude Include="Engine\Core\DescriptorHeap\DescriptorHeapCreator\DescriptorHeapCreator.h" />
@@ -280,18 +275,15 @@
     <ClInclude Include="Engine\Math\Quaternion\Quaternion.h" />
     <ClInclude Include="Engine\Math\Vector\Vector2.h" />
     <ClInclude Include="Engine\Core\SwapChain\SwapChainContext.h" />
-    <ClInclude Include="Engine\Resource\GPUBufferCreator\GPUBufferCreator.h" />
+    <ClInclude Include="Engine\Resource\ResourceCreator\ResourceCreator.h" />
     <ClInclude Include="Engine\Resource\GPUBuffer\GPUBufferBehavior.h" />
     <ClInclude Include="Engine\Debug\RuntimeDebugger\DebugSystems\LeakChecker\LeakChecker.h" />
     <ClInclude Include="Engine\Debug\RuntimeDebugger\DebugSystems\PointerValidator\PointerValidator.h" />
     <ClInclude Include="Engine\Debug\RuntimeDebugger\DebugSystems\RuntimeDebuggerBehavior.h" />
     <ClInclude Include="Engine\Debug\RuntimeDebugger\RuntimeDebugger.h" />
-    <ClInclude Include="Engine\Core\DescriptorHeap\ViewCreator\RTV_Creator\RTV_Creator.h" />
-    <ClInclude Include="Engine\Core\DescriptorHeap\ViewCreator\ViewCreatorBehavior.h" />
+    <ClInclude Include="Engine\Core\DescriptorHeap\ViewCreator\ViewCreator.h" />
     <ClInclude Include="Engine\Resource\GPUBuffer\SRV_UAVBuffer\SRV_UAVBuffer.h" />
     <ClInclude Include="Engine\Resource\BufferDescriptions\SRV_UAVBufferDescription\SRV_UAVBufferDescription.h" />
-    <ClInclude Include="Engine\Core\DescriptorHeap\ViewCreator\UAV_Creator\UAV_Creator.h" />
-    <ClInclude Include="Engine\Core\DescriptorHeap\ViewCreator\SRV_Creator\SRV_Creator.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

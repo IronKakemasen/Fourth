@@ -1,7 +1,7 @@
 #pragma once
 #include "../DescriptorHeapContext.h"
 
-template<typename ViewDescType> class ViewCreatorBehavior;
+class ViewCreator;
 
 class DescriptorHeapClass
 {
@@ -11,8 +11,9 @@ public:
 
 	struct AccessKey;
 	
-	//currentCreateNum(ビュー生成数)を返す、その数をインクリメントする
-	[[nodiscard]] uint32_t WatchAllocateIndex();
+	//currentCreateNumまたはCPUHandle(ビュー生成数)を返す
+	template<typename HandleType>
+	[[nodiscard]] HandleType WatchAllocateIndex();
 
 	//CPU / GPUの次のハンドルを計算し返したあと、currentCreateNum(ビュー生成数)をインクリメントする
 	template<typename HandleType>
@@ -33,6 +34,13 @@ private:
 };
 
 template<>
+[[nodiscard]] uint32_t DescriptorHeapClass::WatchAllocateIndex();
+
+template<>
+[[nodiscard]] D3D12_CPU_DESCRIPTOR_HANDLE DescriptorHeapClass::WatchAllocateIndex();
+
+
+template<>
 [[nodiscard]] D3D12_CPU_DESCRIPTOR_HANDLE DescriptorHeapClass::CalculateHandleThenIncrement(AccessKey accessKey_);
 
 template<>
@@ -43,6 +51,6 @@ struct DescriptorHeapClass::AccessKey
 private:
 
 	//アクセスできるのはビュークリエイターのみ
-	template<typename ViewDescType> friend class ViewCreatorBehavior;
+	friend class ViewCreator;
 	explicit AccessKey() = default;
 };

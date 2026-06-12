@@ -1,7 +1,7 @@
 #pragma once
 
 class WinApp;
-class GPUBufferCreator;
+class ResourceCreator;
 
 class BufferContext
 {
@@ -26,7 +26,7 @@ public:
 private:
 
 	//バッファ生成クラス
-	std::unique_ptr<GPUBufferCreator> gpuBufferCreator;
+	std::unique_ptr<ResourceCreator> resourceCreator;
 
 };
 

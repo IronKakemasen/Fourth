@@ -1,16 +1,14 @@
 #pragma once
 
 class WinApp;
-class IViewCreatorBehavior;
 class DescriptorHeapClass;
-template<typename ViewDescType> class ViewCreatorBehavior;
-
+class ViewCreator;
 
 
 class DescriptorHeapContext
 {
 
-private:
+public:
 
 	//DescriptorHeapを生成するコマンド
 	using DescroptorCreateCommand = 
@@ -29,6 +27,7 @@ private:
 		std::function<void(ID3D12Resource* resource_, const D3D12_UNORDERED_ACCESS_VIEW_DESC* desc_, D3D12_CPU_DESCRIPTOR_HANDLE descriptorHandleCPU_, ID3D12Resource* CounterResource_)>;
 
 
+private:
 	//DescriptorHeap生成クラス
 	class DescriptorHeapCreator;
 	std::unique_ptr<DescriptorHeapCreator> descriptorHeapCreator;
@@ -36,8 +35,8 @@ private:
 	//DescriptorHeapClassのコンテナ
 	std::unordered_map < D3D12_DESCRIPTOR_HEAP_TYPE, std::unique_ptr<DescriptorHeapClass>> descriptorHeapContainer;
 
-	//Viewを生成するクラスのコンテナ
-	std::unordered_map<ViewType, std::unique_ptr<IViewCreatorBehavior>> viewCreatorContainer;
+	//ビュー生成機関
+	std::unique_ptr<ViewCreator> viewCreator;
 
 public:
 
@@ -66,14 +65,14 @@ public:
 
 private:
 
-	//ビュークリエイターの生成
-	template<D3D12_DESCRIPTOR_HEAP_TYPE HeapType>
-	void CreateViewCreator(DescriptorHeapClass* srcPtr_);
-
 	//DescriptorHeapの名前を取得（初期化用）
 	std::string GetDescriptorName(D3D12_DESCRIPTOR_HEAP_TYPE heapType_);
 
 };
+
+
+
+
 
 //生成できるのはWinAppのみ
 struct DescriptorHeapContext::InstanceKey
@@ -92,17 +91,6 @@ private:
 	friend class DescriptorHeapContext;
 	explicit CreateKey() = default;
 };
-
-
-template <>
-void DescriptorHeapContext::CreateViewCreator<D3D12_DESCRIPTOR_HEAP_TYPE_RTV>(DescriptorHeapClass* srcPtr_);
-
-template <>
-void DescriptorHeapContext::CreateViewCreator<D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV>(DescriptorHeapClass* srcPtr_);
-
-template <>
-void DescriptorHeapContext::CreateViewCreator<D3D12_DESCRIPTOR_HEAP_TYPE_DSV>(DescriptorHeapClass* srcPtr_);
-
 
 
 

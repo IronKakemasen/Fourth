@@ -1,7 +1,7 @@
 #pragma once
 
 
-class GPUBufferCreator;
+class ResourceCreator;
 class GPUBufferManager;
 class RTV_Creator;
 class SRV_Creator;
@@ -73,7 +73,7 @@ struct GPUBufferBehavior::InstanceKey
 {
 private:
 
-	friend class GPUBufferCreator;
+	friend class ResourceCreator;
 
 	explicit InstanceKey() = default;
 };
@@ -82,7 +82,7 @@ private:
 struct GPUBufferBehavior::BufferAccessKey
 {
 private:
-	friend class GPUBufferCreator;
+	friend class ResourceCreator;
 	friend class GPUBufferManager;
 
 	explicit BufferAccessKey() = default;

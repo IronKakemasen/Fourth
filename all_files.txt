@@ -1,8 +1,202 @@
 ========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Core\DescriptorHeap\ViewCreator\ViewCreatorBehavior.cpp ===
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Core\DescriptorHeap\DescriptorHeapContext.cpp ===
 ========================================
 #include "PreCompileHedder.h"
-#include "ViewCreatorBehavior.h"
+#include "DescriptorHeapContext.h"
+#include "DescriptorHeapCreator/DescriptorHeapCreator.h"
+#include "DescriptorHeapClass/DescriptorHeapClass.h"
+#include "ViewCreator/ViewCreator.h"
+
+
+//ビュー生成クラス達
+
+namespace
+{
+	std::string fileName = "DescriptorHeapContext.cpp";
+}
+
+DescriptorHeapContext::DescriptorHeapContext(InstanceKey instanceKey_)
+{
+	Logger::Entry("DescriptorHeapContext: Constructor");
+
+	descriptorHeapCreator.reset(new DescriptorHeapCreator(instanceKey_));
+	Logger::Log("Instantiate: DescriptorHeapCreator", fileName);
+
+
+	Logger::End("DescriptorHeapContext: Constructor");
+}
+
+DescriptorHeapContext::~DescriptorHeapContext()
+{
+
+}
+
+void DescriptorHeapContext::SetCreateDescroptorHeapCommand(DescroptorCreateCommand createDescriptor)
+{
+	descriptorHeapCreator->SetCommand(createDescriptor);
+	Logger::Log("Set: DescroptorCreateCommand ", fileName);
+}
+
+void DescriptorHeapContext::SetCreateViewCommand
+(
+	CreateRTVCommand createRtv_,
+	CreateSRVCommand createSrv_,
+	CreateDSVCommand createDsv_,
+	CreateUAVCommand createUav_
+)
+{
+	viewCreator.reset
+	(
+		new ViewCreator
+		(
+			CreateKey{},
+			descriptorHeapContainer[D3D12_DESCRIPTOR_HEAP_TYPE::D3D12_DESCRIPTOR_HEAP_TYPE_RTV].get(),
+			descriptorHeapContainer[D3D12_DESCRIPTOR_HEAP_TYPE::D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV].get(),
+			descriptorHeapContainer[D3D12_DESCRIPTOR_HEAP_TYPE::D3D12_DESCRIPTOR_HEAP_TYPE_DSV].get(),
+			std::move(createRtv_),
+			std::move(createSrv_),
+			std::move(createDsv_),
+			std::move(createUav_)
+		)
+	);
+}
+
+
+template<D3D12_DESCRIPTOR_HEAP_TYPE HeapType>
+void DescriptorHeapContext::CreateDescriptorHeap(UINT numDescriptors_, bool shaderVisible_, UINT handleIncSize_)
+{
+	descriptorHeapContainer[HeapType] = std::make_unique<DescriptorHeapClass>
+	(
+		std::move(descriptorHeapCreator->createFunc(HeapType, numDescriptors_, shaderVisible_)),
+		handleIncSize_,
+		numDescriptors_,
+		GetDescriptorName(HeapType)
+	);
+
+}
+
+
+std::string DescriptorHeapContext::GetDescriptorName(D3D12_DESCRIPTOR_HEAP_TYPE heapType_)
+{
+	std::string descriptorHeap = "_descriptorHeap";
+
+	std::string nameTable[D3D12_DESCRIPTOR_HEAP_TYPE::D3D12_DESCRIPTOR_HEAP_TYPE_NUM_TYPES] =
+	{
+		"SRV_UAV",
+		"Sampler",
+		"RTV",
+		"DSV"
+	};
+
+	return nameTable[heapType_] + descriptorHeap;
+}
+
+
+
+template void DescriptorHeapContext::CreateDescriptorHeap<D3D12_DESCRIPTOR_HEAP_TYPE_RTV>(UINT, bool, UINT);
+template void DescriptorHeapContext::CreateDescriptorHeap<D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV>(UINT, bool, UINT);
+template void DescriptorHeapContext::CreateDescriptorHeap<D3D12_DESCRIPTOR_HEAP_TYPE_DSV>(UINT, bool, UINT);
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Core\DescriptorHeap\DescriptorHeapContext.h ===
+========================================
+#pragma once
+
+class WinApp;
+class DescriptorHeapClass;
+class ViewCreator;
+
+
+class DescriptorHeapContext
+{
+
+public:
+
+	//DescriptorHeapを生成するコマンド
+	using DescroptorCreateCommand = 
+		std::function<Microsoft::WRL::ComPtr<ID3D12DescriptorHeap>(D3D12_DESCRIPTOR_HEAP_TYPE, UINT, bool)>;
+	//RTVを生成するコマンド
+	using CreateRTVCommand =
+		std::function<void(ID3D12Resource* resource_, const D3D12_RENDER_TARGET_VIEW_DESC* desc_, D3D12_CPU_DESCRIPTOR_HANDLE descriptorHandleCPU_)>;
+	//SRVを生成するコマンド
+	using CreateSRVCommand =
+		std::function<void(ID3D12Resource* resource_, const D3D12_SHADER_RESOURCE_VIEW_DESC* desc_, D3D12_CPU_DESCRIPTOR_HANDLE descriptorHandleCPU_)>;
+	//DSVを生成するコマンド
+	using CreateDSVCommand =
+		std::function<void(ID3D12Resource* resource_, const D3D12_DEPTH_STENCIL_VIEW_DESC* desc_, D3D12_CPU_DESCRIPTOR_HANDLE descriptorHandleCPU_)>;
+	//UAVを生成するコマンド
+	using CreateUAVCommand =
+		std::function<void(ID3D12Resource* resource_, const D3D12_UNORDERED_ACCESS_VIEW_DESC* desc_, D3D12_CPU_DESCRIPTOR_HANDLE descriptorHandleCPU_, ID3D12Resource* CounterResource_)>;
+
+
+private:
+	//DescriptorHeap生成クラス
+	class DescriptorHeapCreator;
+	std::unique_ptr<DescriptorHeapCreator> descriptorHeapCreator;
+
+	//DescriptorHeapClassのコンテナ
+	std::unordered_map < D3D12_DESCRIPTOR_HEAP_TYPE, std::unique_ptr<DescriptorHeapClass>> descriptorHeapContainer;
+
+	//ビュー生成機関
+	std::unique_ptr<ViewCreator> viewCreator;
+
+public:
+
+	//WinAppのみ生成可能
+	struct InstanceKey;
+	//ViewCreator生成キー
+	struct CreateKey;
+
+	DescriptorHeapContext(InstanceKey instanceKey_);
+	~DescriptorHeapContext();
+
+	//DescriptorHeapの作成
+	template<D3D12_DESCRIPTOR_HEAP_TYPE HeapType>
+	void CreateDescriptorHeap(UINT numDescriptors_, bool shaderVisible_, UINT handleIncSize_);
+
+	//コマンドのセット
+	void SetCreateDescroptorHeapCommand(DescroptorCreateCommand createDescriptor);
+	//コマンドのセット2
+	void SetCreateViewCommand
+	(
+		CreateRTVCommand createRtv_,
+		CreateSRVCommand createSrv_,
+		CreateDSVCommand createDsv_,
+		CreateUAVCommand createUav_
+	);
+
+private:
+
+	//DescriptorHeapの名前を取得（初期化用）
+	std::string GetDescriptorName(D3D12_DESCRIPTOR_HEAP_TYPE heapType_);
+
+};
+
+
+
+
+
+//生成できるのはWinAppのみ
+struct DescriptorHeapContext::InstanceKey
+{
+private:
+
+	friend class WinApp;
+	explicit InstanceKey() = default;
+};
+
+//ViewCreatorを生成するためのキー
+struct DescriptorHeapContext::CreateKey
+{
+private:
+
+	friend class DescriptorHeapContext;
+	explicit CreateKey() = default;
+};
+
 
 
 
@@ -10,7 +204,255 @@
 
 
 ========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Core\DescriptorHeap\ViewCreator\ViewCreatorBehavior.h ===
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Core\DescriptorHeap\DescriptorHeapClass\DescriptorHeapClass.cpp ===
+========================================
+#include "PreCompileHedder.h"
+#include "DescriptorHeapClass.h"
+
+namespace
+{
+	std::string fileName = "DescriptorHeapClass.cpp";
+}
+
+
+DescriptorHeapClass::DescriptorHeapClass(
+	Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> descriptorHeap_,
+	UINT handleIncrementSize_, uint32_t kMaxDescriptor_,std::string name_) :
+	descriptorHeap(descriptorHeap_), handleIncrementSize(handleIncrementSize_), kMaxDescriptor(kMaxDescriptor_),name(name_)
+{
+	std::string log = "Instantiate: " + name_ + "[" + std::to_string(kMaxDescriptor_) + "]";
+	Logger::Log(log, fileName);
+
+}
+
+template<>
+[[nodiscard]] uint32_t DescriptorHeapClass::WatchAllocateIndex()
+{
+	ErrorMessageOutput::Assert::DetectError((currentCreateNum > kMaxDescriptor),
+		name + "がリミットブレイク!", fileName);
+
+	return currentCreateNum;
+}
+
+template<>
+[[nodiscard]] D3D12_CPU_DESCRIPTOR_HANDLE DescriptorHeapClass::WatchAllocateIndex()
+{
+	ErrorMessageOutput::Assert::DetectError((currentCreateNum > kMaxDescriptor),
+		name + "がリミットブレイク!", fileName);
+
+	D3D12_CPU_DESCRIPTOR_HANDLE handleStartCPU = descriptorHeap->GetCPUDescriptorHandleForHeapStart();
+	D3D12_CPU_DESCRIPTOR_HANDLE handleCPU;
+	handleCPU.ptr = handleStartCPU.ptr + handleIncrementSize * currentCreateNum;
+
+	return handleCPU;
+}
+
+template<>
+[[nodiscard]] D3D12_GPU_DESCRIPTOR_HANDLE DescriptorHeapClass::CalculateHandleThenIncrement(AccessKey accessKey_)
+{
+	D3D12_GPU_DESCRIPTOR_HANDLE handleStartGPU = descriptorHeap->GetGPUDescriptorHandleForHeapStart();
+	D3D12_GPU_DESCRIPTOR_HANDLE next;
+	next.ptr = handleStartGPU.ptr + handleIncrementSize * currentCreateNum++;
+
+	return next;
+}
+
+template<>
+[[nodiscard]] D3D12_CPU_DESCRIPTOR_HANDLE DescriptorHeapClass::CalculateHandleThenIncrement(AccessKey accessKey_)
+{
+	D3D12_CPU_DESCRIPTOR_HANDLE handleStartCPU = descriptorHeap->GetCPUDescriptorHandleForHeapStart();
+	D3D12_CPU_DESCRIPTOR_HANDLE next;
+	next.ptr = handleStartCPU.ptr + handleIncrementSize * currentCreateNum++;
+
+	return next;
+}
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Core\DescriptorHeap\DescriptorHeapClass\DescriptorHeapClass.h ===
+========================================
+#pragma once
+#include "../DescriptorHeapContext.h"
+
+class ViewCreator;
+
+class DescriptorHeapClass
+{
+public:
+	DescriptorHeapClass(Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> descriptorHeap_,
+		UINT handleIncrementSize_, uint32_t kMaxDescriptor_, std::string name_);
+
+	struct AccessKey;
+	
+	//currentCreateNumまたはCPUHandle(ビュー生成数)を返す
+	template<typename HandleType>
+	[[nodiscard]] HandleType WatchAllocateIndex();
+
+	//CPU / GPUの次のハンドルを計算し返したあと、currentCreateNum(ビュー生成数)をインクリメントする
+	template<typename HandleType>
+	[[nodiscard]] HandleType CalculateHandleThenIncrement(AccessKey accessKey_);
+
+
+private:
+
+	Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> descriptorHeap;
+	//ハンドルのインクリメントサイズ
+	UINT handleIncrementSize{};
+	//最大領域分割数
+	uint32_t kMaxDescriptor{};
+	//現在のviewの生成数
+	uint32_t currentCreateNum{};
+	//名前
+	std::string name{};
+};
+
+template<>
+[[nodiscard]] uint32_t DescriptorHeapClass::WatchAllocateIndex();
+
+template<>
+[[nodiscard]] D3D12_CPU_DESCRIPTOR_HANDLE DescriptorHeapClass::WatchAllocateIndex();
+
+
+template<>
+[[nodiscard]] D3D12_CPU_DESCRIPTOR_HANDLE DescriptorHeapClass::CalculateHandleThenIncrement(AccessKey accessKey_);
+
+template<>
+[[nodiscard]] D3D12_GPU_DESCRIPTOR_HANDLE DescriptorHeapClass::CalculateHandleThenIncrement(AccessKey accessKey_);
+
+struct DescriptorHeapClass::AccessKey
+{
+private:
+
+	//アクセスできるのはビュークリエイターのみ
+	friend class ViewCreator;
+	explicit AccessKey() = default;
+};
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Core\DescriptorHeap\DescriptorHeapCreator\DescriptorHeapCreator.cpp ===
+========================================
+#include "PreCompileHedder.h"
+#include "DescriptorHeapCreator.h"
+
+
+DescriptorHeapContext::DescriptorHeapCreator::DescriptorHeapCreator(DescriptorHeapContext::InstanceKey instanceKey_)
+{
+
+}
+
+DescriptorHeapContext::DescriptorHeapCreator::~DescriptorHeapCreator()
+{
+
+}
+
+void DescriptorHeapContext::DescriptorHeapCreator::SetCommand(std::function<Microsoft::WRL::ComPtr<ID3D12DescriptorHeap>(D3D12_DESCRIPTOR_HEAP_TYPE, UINT, bool)> func_)
+{
+	createFunc = func_;
+}
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Core\DescriptorHeap\DescriptorHeapCreator\DescriptorHeapCreator.h ===
+========================================
+#pragma once
+#include "../DescriptorHeapContext.h"
+
+
+class DescriptorHeapContext::DescriptorHeapCreator
+{
+public:
+
+	//DescriptorHeapを生成するコマンド
+	std::function<Microsoft::WRL::ComPtr<ID3D12DescriptorHeap>(D3D12_DESCRIPTOR_HEAP_TYPE, UINT, bool)> createFunc;
+
+	//コマンドをセットする
+	void SetCommand(std::function<Microsoft::WRL::ComPtr<ID3D12DescriptorHeap>(D3D12_DESCRIPTOR_HEAP_TYPE, UINT, bool)> func_);
+
+	DescriptorHeapCreator(DescriptorHeapContext::InstanceKey instanceKey_);
+	~DescriptorHeapCreator();
+
+};
+
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Core\DescriptorHeap\ViewCreator\ViewCreator.cpp ===
+========================================
+#include "PreCompileHedder.h"
+#include "ViewCreator.h"
+
+
+ViewCreator::ViewCreator
+(
+	DescriptorHeapContext::CreateKey createKey_,
+	DescriptorHeapClass* RTVdescriptorHeapClass_,
+	DescriptorHeapClass* SRVUAVdescriptorHeapClass_,
+	DescriptorHeapClass* DSVdescriptorHeapClass_,
+	DescriptorHeapContext::CreateRTVCommand rtvCmd_,
+	DescriptorHeapContext::CreateSRVCommand srvCmd_,
+	DescriptorHeapContext::CreateDSVCommand dsvCmd_,
+	DescriptorHeapContext::CreateUAVCommand uavCmd_
+) :rtvCmd(rtvCmd_), srvCmd(srvCmd_), dsvCmd(dsvCmd_), uavCmd(uavCmd_)
+{
+	descriptorHeap_map[kRTV] = RTVdescriptorHeapClass_;
+	descriptorHeap_map[kSRVUAV] = SRVUAVdescriptorHeapClass_;
+	descriptorHeap_map[kDSV] = DSVdescriptorHeapClass_;
+
+}
+
+
+template<typename ViewType, typename Index>
+Index ViewCreator::CreateView(ID3D12Resource* resource_, const ViewType& viewDesc)
+{
+	//ViewTypeどのヒープを使うべきか分岐
+	HeapType type;
+	if constexpr (std::is_same_v<ViewType, D3D12_RENDER_TARGET_VIEW_DESC>) { type = kRTV; }
+	else if constexpr (std::is_same_v<ViewType, D3D12_DEPTH_STENCIL_VIEW_DESC>) { type = kDSV; }
+	else { type = kSRVUAV; }
+
+	//ヒープを取り出す
+	auto* targetHeap = descriptorHeap_map[type];
+
+	Index allocateIndex = targetHeap->WatchAllocateIndex<Index>();
+
+	//view生成数に応じたCPUハンドルを取得し、その後ヒープ側のカウンタを進める
+	auto handleCPU = targetHeap->CalculateHandleThenIncrement<D3D12_CPU_DESCRIPTOR_HANDLE>(DescriptorHeapClass::AccessKey{});
+
+	//ビュー生成
+	if constexpr (std::is_same_v<ViewType, D3D12_RENDER_TARGET_VIEW_DESC>)
+	{
+		rtvCmd(resource_, &viewDesc, handleCPU);
+	}
+	else if constexpr (std::is_same_v<ViewType, D3D12_SHADER_RESOURCE_VIEW_DESC>)
+	{
+		srvCmd(resource_, &viewDesc, handleCPU);
+	}
+	else if constexpr (std::is_same_v<ViewType, D3D12_DEPTH_STENCIL_VIEW_DESC>)
+	{
+		dsvCmd(resource_, &viewDesc, handleCPU);
+	}
+	else if constexpr (std::is_same_v<ViewType, D3D12_UNORDERED_ACCESS_VIEW_DESC>)
+	{
+		uavCmd(resource_, &viewDesc, handleCPU,nullptr);
+	}
+
+	//uintまたはCPUのインデックスを返す
+	return allocateIndex;
+}
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Core\DescriptorHeap\ViewCreator\ViewCreator.h ===
 ========================================
 #pragma once
 #include "../DescriptorHeapContext.h"
@@ -19,295 +461,55 @@
 
 class GPUBufferBehavior;
 
-//ViewCreatorBehaviorの共通インターフェースクラス
-class IViewCreatorBehavior 
+class ViewCreator
 {
-public:
-	virtual ~IViewCreatorBehavior() = default;
-	virtual void CreateView(GPUBufferBehavior& buffer_) = 0;
-
-};
-
-
-//こちらが中身のビュー生成テンプレ基底クラス
-template<typename ViewDescType>
-class ViewCreatorBehavior :public IViewCreatorBehavior
-{
-public:
-
-	ViewCreatorBehavior(DescriptorHeapContext::CreateKey createKey_, DescriptorHeapClass* descriptorHeapClass_)
-		: descriptorHeapClass(descriptorHeapClass_){ }
-	
-	virtual ~ViewCreatorBehavior() = default;
-
-	//Viewを生成する。
-	virtual void CreateView(GPUBufferBehavior& buffer_) = 0;
-
-	//ビュー生成コマンドをセットする
-	inline void SetCommand(std::function<void(ID3D12Resource*, const ViewDescType*, D3D12_CPU_DESCRIPTOR_HANDLE) > command_)
+	enum HeapType
 	{
-		createViewCommand = command_;
-	}
-
-protected:
+		kRTV,
+		kSRVUAV,
+		kDSV
+	};
 
 	//DescriptorHeapClassのアドレス
-	DescriptorHeapClass* descriptorHeapClass = nullptr;
+	std::unordered_map<HeapType, DescriptorHeapClass*> descriptorHeap_map;
 
-	//ビュー生成コマンド
-	std::function<void(ID3D12Resource*, const ViewDescType*, D3D12_CPU_DESCRIPTOR_HANDLE)> createViewCommand;
-
-	//ViewDescの生成関数
-	virtual ViewDescType CreateViewDesc() = 0;
-
-	//次のDescriptorHeapの空き空間を計算.ここでView生成数は上昇する！！！
-	template<typename HandleType>
-	[[nodiscard]] HandleType CalculateHandle();
-};
-
-
-template<typename ViewDescType>
-template<typename HandleType>
-[[nodiscard]] HandleType ViewCreatorBehavior<ViewDescType>::CalculateHandle()
-{
-	//CPU
-	if constexpr (std::is_same_v<HandleType, D3D12_CPU_DESCRIPTOR_HANDLE>)
-	{
-		return descriptorHeapClass->CalculateHandleThenIncrement<D3D12_CPU_DESCRIPTOR_HANDLE>(DescriptorHeapClass::AccessKey{});
-	}
-	//GPU
-	else if constexpr (std::is_same_v<HandleType, D3D12_GPU_DESCRIPTOR_HANDLE>)
-	{
-		return descriptorHeapClass->CalculateHandleThenIncrement<D3D12_GPU_DESCRIPTOR_HANDLE>(DescriptorHeapClass::AccessKey{});
-	}
-}
-
-
-
-
-
-========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Core\DescriptorHeap\ViewCreator\DSV_Creator\DSV_Creator.cpp ===
-========================================
-#include "PreCompileHedder.h"
-#include "DSV_Creator.h"
-
-
-
-DSV_Creator::DSV_Creator(DescriptorHeapContext::CreateKey createKey_, DescriptorHeapClass* descriptorHeapClass_)
-	:ViewCreatorBehavior<D3D12_DEPTH_STENCIL_VIEW_DESC>(createKey_, descriptorHeapClass_)
-{
-
-}
-
-
-void DSV_Creator::CreateView(GPUBufferBehavior& buffer_)
-{
-	
-}
-
-D3D12_DEPTH_STENCIL_VIEW_DESC DSV_Creator::CreateViewDesc()
-{
-	return D3D12_DEPTH_STENCIL_VIEW_DESC{};
-}
-
-
-
-
-========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Core\DescriptorHeap\ViewCreator\DSV_Creator\DSV_Creator.h ===
-========================================
-#pragma once
-#include "../ViewCreatorBehavior.h"
-
-
-class DSV_Creator : public ViewCreatorBehavior<D3D12_DEPTH_STENCIL_VIEW_DESC>
-{
+	//コマンド
+	DescriptorHeapContext::CreateRTVCommand rtvCmd;
+	DescriptorHeapContext::CreateSRVCommand srvCmd;
+	DescriptorHeapContext::CreateDSVCommand dsvCmd;
+	DescriptorHeapContext::CreateUAVCommand uavCmd;
 public:
+	ViewCreator
+	(
+		DescriptorHeapContext::CreateKey createKey_,
+		DescriptorHeapClass* RTVdescriptorHeapClass_,
+		DescriptorHeapClass* SRVUAVdescriptorHeapClass_,
+		DescriptorHeapClass* DSVdescriptorHeapClass_,
+		DescriptorHeapContext::CreateRTVCommand rtvCmd_,
+		DescriptorHeapContext::CreateSRVCommand srvCmd_,
+		DescriptorHeapContext::CreateDSVCommand dsvCmd_,
+		DescriptorHeapContext::CreateUAVCommand uavCmd_
+	);
 
-	DSV_Creator(DescriptorHeapContext::CreateKey createKey_, DescriptorHeapClass* descriptorHeapClass_);
-
-	//ビュー生成
-	virtual void CreateView(GPUBufferBehavior& buffer_)override;
-
-private:
-
-
-	virtual D3D12_DEPTH_STENCIL_VIEW_DESC CreateViewDesc()override;
-
+	//VIEWを生成し、インデックスまたはハンドルを返す。
+	template<typename ViewType,typename Index>
+	Index CreateView(ID3D12Resource* resource_, const ViewType& viewDesc);
 };
 
 
 
 
 
-========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Core\DescriptorHeap\ViewCreator\RTV_Creator\RTV_Creator.cpp ===
-========================================
-#include "PreCompileHedder.h"
-#include "RTV_Creator.h"
-#include "../../../../Resource/GPUBuffer/ColorBuffer/ColorBuffer.h"
 
-RTV_Creator::RTV_Creator(DescriptorHeapContext::CreateKey createKey_, DescriptorHeapClass* descriptorHeapClass_)
-	:ViewCreatorBehavior<D3D12_RENDER_TARGET_VIEW_DESC>(createKey_, descriptorHeapClass_)
-{
 
-}
 
-void RTV_Creator::CreateView(GPUBufferBehavior& buffer_)
-{
-	ColorBuffer& colorBuffer = static_cast<ColorBuffer&>(buffer_);
 
-	//ビュー生成数を取得
-	uint32_t allocateIndex = descriptorHeapClass->WatchAllocateIndex();
 
-	//ビュー生成数に応じたハンドルを返す
-	auto handle = CalculateHandle<D3D12_CPU_DESCRIPTOR_HANDLE>();
-	
-	//リソースからディスクリプションを取得
-	auto desc = colorBuffer.WatchDescription();
 
-	//そのコンテナのインデックスをせっとする
-	colorBuffer.OverrideIndex<ViewType::kRTV>(ColorBuffer::OverrideIndexKey{}, allocateIndex);
-}
 
 
-D3D12_RENDER_TARGET_VIEW_DESC RTV_Creator::CreateViewDesc()
-{
 
-	return D3D12_RENDER_TARGET_VIEW_DESC{};
-}
 
-
-
-
-========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Core\DescriptorHeap\ViewCreator\RTV_Creator\RTV_Creator.h ===
-========================================
-#pragma once
-#include "../ViewCreatorBehavior.h"
-
-
-
-//RTVを作る
-class RTV_Creator : public ViewCreatorBehavior<D3D12_RENDER_TARGET_VIEW_DESC>
-{
-public:
-
-	RTV_Creator(DescriptorHeapContext::CreateKey createKey_, DescriptorHeapClass* descriptorHeapClass_);
-
-	virtual void CreateView(GPUBufferBehavior& buffer_)override;
-
-private:
-
-	virtual D3D12_RENDER_TARGET_VIEW_DESC CreateViewDesc()override;
-
-};
-
-
-
-
-
-========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Core\DescriptorHeap\ViewCreator\SRV_Creator\SRV_Creator.cpp ===
-========================================
-#include "PreCompileHedder.h"
-#include "SRV_Creator.h"
-
-
-SRV_Creator::SRV_Creator(DescriptorHeapContext::CreateKey createKey_, DescriptorHeapClass* descriptorHeapClass_)
-	:ViewCreatorBehavior<D3D12_SHADER_RESOURCE_VIEW_DESC>(createKey_, descriptorHeapClass_)
-{
-
-}
-
-
-void SRV_Creator::CreateView(GPUBufferBehavior& buffer_)
-{
-
-}
-
-D3D12_SHADER_RESOURCE_VIEW_DESC SRV_Creator::CreateViewDesc()
-{
-	return D3D12_SHADER_RESOURCE_VIEW_DESC{};
-}
-
-
-
-========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Core\DescriptorHeap\ViewCreator\SRV_Creator\SRV_Creator.h ===
-========================================
-#pragma once
-#include "../ViewCreatorBehavior.h"
-
-
-//SRVを作る
-class SRV_Creator : public ViewCreatorBehavior<D3D12_SHADER_RESOURCE_VIEW_DESC>
-{
-public:
-	SRV_Creator(DescriptorHeapContext::CreateKey createKey_, DescriptorHeapClass* descriptorHeapClass_);
-
-	virtual void CreateView(GPUBufferBehavior& buffer_)override;
-
-
-private:
-
-	virtual D3D12_SHADER_RESOURCE_VIEW_DESC CreateViewDesc()override;
-
-
-};
-
-
-
-
-
-========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Core\DescriptorHeap\ViewCreator\UAV_Creator\UAV_Creator.cpp ===
-========================================
-#include "PreCompileHedder.h"
-#include "UAV_Creator.h"
-
-UAV_Creator::UAV_Creator(DescriptorHeapContext::CreateKey createKey_, DescriptorHeapClass* descriptorHeapClass_)
-	:ViewCreatorBehavior<D3D12_UNORDERED_ACCESS_VIEW_DESC>(createKey_, descriptorHeapClass_)
-{
-
-}
-
-
-void UAV_Creator::CreateView(GPUBufferBehavior& buffer_)
-{
-
-}
-
-D3D12_UNORDERED_ACCESS_VIEW_DESC UAV_Creator::CreateViewDesc()
-{
-	return D3D12_UNORDERED_ACCESS_VIEW_DESC{};
-}
-
-
-
-
-========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Core\DescriptorHeap\ViewCreator\UAV_Creator\UAV_Creator.h ===
-========================================
-#pragma once
-#include "../ViewCreatorBehavior.h"
-
-
-//SRV、UAVを同一のディスクリプタヒープ上に作る。
-class UAV_Creator : public ViewCreatorBehavior< D3D12_UNORDERED_ACCESS_VIEW_DESC>
-{
-public:
-	UAV_Creator(DescriptorHeapContext::CreateKey createKey_, DescriptorHeapClass* descriptorHeapClass_);
-
-	virtual void CreateView(GPUBufferBehavior& buffer_)override;
-
-
-private:
-
-	virtual D3D12_UNORDERED_ACCESS_VIEW_DESC CreateViewDesc()override;
-
-};
 
 
 
