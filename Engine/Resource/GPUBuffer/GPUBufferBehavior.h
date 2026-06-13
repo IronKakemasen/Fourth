@@ -1,13 +1,9 @@
 #pragma once
 
 
-class ResourceCreator;
 class GPUBufferManager;
-class RTV_Creator;
-class SRV_Creator;
-class UAV_Creator;
 struct IBufferDescription;
-
+class BufferAssembler;
 
 class GPUBufferBehavior
 {
@@ -17,8 +13,6 @@ public:
 	struct InstanceKey;
 	//アクセスキー
 	struct BufferAccessKey;
-	//インデックス書き換えキー
-	struct OverrideIndexKey;
 
 	GPUBufferBehavior
 	(
@@ -31,25 +25,28 @@ public:
 
 	virtual ~GPUBufferBehavior();
 
-	ID3D12Resource& GetResource( const BufferAccessKey& bufferAccessKey_ , int index_);
+	ID3D12Resource* GetResource( const BufferAccessKey& bufferAccessKey_ , int index_);
 	
 	//descriptorHeapIndexを書き込む
 	template<ViewType type, typename Index>
-	inline void OverrideIndex(OverrideIndexKey overrideIndexKey_, Index index_)
+	inline void OverrideIndex(InstanceKey instanceKey_, Index index_,uint8_t resourceNo_)
 	{
-		heapIndices[type] = index_;
+		heapIndices[type][resourceNo_] = index_;
 	}
 
-	//indexを取得
-	template<typename T>
-	inline T GetHeapData(ViewType type) const
+	//descriptorHeapIndexを取得
+	template<ViewType type, typename Index>
+	[[nodiscard]] Index WatchIndex(uint8_t resourceNo_) const
 	{
-		auto it = heapIndices.find(type);
-		if (it != heapIndices.end())
-		{
-			return std::get<T>(it->second);
-		}
-		return T{}; 
+		const auto& variantVal = heapIndices.at(type)[resourceNo_];
+
+		ErrorMessageOutput::Assert::DetectError
+		(
+			std::holds_alternative<Index>(variantVal),
+			"要求しているインデクスの型が不一致","GPUBufferBehavior.h"
+		);
+
+		return std::get<Index>(variantVal);
 	}
 
 protected:
@@ -58,22 +55,20 @@ protected:
 
 private:
 
-	//リソースに名を刻む
-	void SetName(const InstanceKey& instanceKey_);
-
 	std::array<Microsoft::WRL::ComPtr<ID3D12Resource>, ProjectConfig::Render::kRequiredGPUBufferSum> resources;
 	std::string name = "noName";
 
 	//各desctiptorheapのインデックス
-	std::unordered_map<ViewType, std::variant<uint32_t, D3D12_CPU_DESCRIPTOR_HANDLE>> heapIndices;
+	std::unordered_map<ViewType, 
+		std::array<std::variant<uint32_t, D3D12_CPU_DESCRIPTOR_HANDLE> , ProjectConfig::Render::kMaximumShaderModel>> heapIndices;
 };
 
-
+//生成できるのはBufferAssemblerのみ
 struct GPUBufferBehavior::InstanceKey
 {
 private:
 
-	friend class ResourceCreator;
+	friend class BufferAssembler;
 
 	explicit InstanceKey() = default;
 };
@@ -82,20 +77,9 @@ private:
 struct GPUBufferBehavior::BufferAccessKey
 {
 private:
-	friend class ResourceCreator;
+	friend class BufferAssembler;
 	friend class GPUBufferManager;
 
 	explicit BufferAccessKey() = default;
 };
 
-//インデックスの書き換えはViewCreatorのみ可能
-struct GPUBufferBehavior::OverrideIndexKey
-{
-private:
-
-	friend class RTV_Creator;
-	friend class SRV_Creator;
-	friend class UAV_Creator;
-
-	explicit OverrideIndexKey() = default;
-};

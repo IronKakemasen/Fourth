@@ -1,4 +1,146 @@
 ========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\PreCompileHedder.cpp ===
+========================================
+#include "PreCompileHedder.h"
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\PreCompileHedder.h ===
+========================================
+#pragma once
+
+#ifndef WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN
+#endif
+
+#include <wrl.h>
+#include <dxgidebug.h>
+#include <windows.h>
+#include <d3d12.h>
+#include <dxgi1_6.h>
+#include <dbghelp.h>
+#include <wrl/client.h>
+#include <directXMath.h>
+
+#include "../External/d3dx12/d3dx12.h"
+#include "../External/imgui/imgui.h"
+
+#include <vector>
+#include <memory>
+#include <string>
+#include <optional>
+#include <unordered_map>
+#include <stdint.h>
+#include <assert.h>
+#include <fstream>
+#include <time.h>
+#include <stdlib.h>
+#include <array>
+#include <format>
+#include <functional>
+#include <mutex>
+#include <variant>
+
+//abort()やassert()でエラーを吐いて文字列を出力する
+#include "Debug/ErrorMessageOutput/ErrorMessageOutput.h"
+//出力ウィンドウとログファイルにログを出力
+#include "Debug/Logger/Logger.h"
+
+
+#pragma comment(lib,"d3d12.lib")
+#pragma comment(lib,"dxgi.lib")
+#pragma comment(lib,"dxcompiler.lib")
+#pragma comment(lib,"dxguid.lib")
+#pragma comment(lib,"Dbghelp.lib")
+#pragma comment(lib,"winmm.lib")
+
+
+namespace ConstantForCalculation
+{
+	constexpr float kPi = 3.141592653589f;
+	constexpr float kInvPi = 1.0f / 3.141592653589f;
+	constexpr float kInv255 = 1.0f / 255.0f;
+	constexpr float kHalf = 0.5f;
+
+}
+
+namespace ProjectConfig
+{
+	namespace Window
+	{
+		inline const LPCWSTR kTitle = L"Fourth";
+		constexpr float kWidth = 1280.0f;
+		constexpr float kHeight = 720.0f;
+		constexpr float kDefaultFovY = 90.0f * 3.141592653589f / 180.0f;
+	}
+
+	namespace Render
+	{
+		constexpr int kRequiredGPUBufferSum = 2;
+		constexpr D3D_SHADER_MODEL kMaximumShaderModel = D3D_SHADER_MODEL_6_6;
+	}
+
+
+	namespace Debug
+	{
+		//DebugLayer
+		constexpr bool kEnableDebugLayer = true;
+		//ポインター破壊検知
+		constexpr bool kEnablePointerValidator = true;
+		//Comptrのリークチェック
+		constexpr bool kEnableLeakChecker = true;
+
+	}
+
+	namespace Core
+	{
+		constexpr uint32_t kNumDescriptorsRTVHeap = 16;
+		constexpr uint32_t kNumDescriptorSRVHeap = 256;
+		constexpr uint32_t kNumDescriptorsDSVHeap = 16;
+	}
+}
+
+
+enum class ViewType
+{
+	kSRV,
+	kUAV,
+	kSampler,
+	kRTV,
+	kDSV,
+
+	kCount
+};
+
+
+
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\template.txt ===
+========================================
+
+TTT(const TTT&) = delete;
+TTT& operator=(const TTT&) = delete;
+TTT(TTT&&) = delete;
+TTT& operator=(TTT&&) = delete;
+
+struct TTT::Key
+{
+private:
+	friend class FRIEND;
+	explicit Key() = default;
+};
+
+
+
+
+
+========================================
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Core\DescriptorHeap\DescriptorHeapContext.cpp ===
 ========================================
 #include "PreCompileHedder.h"
@@ -59,6 +201,9 @@ void DescriptorHeapContext::SetCreateViewCommand
 			std::move(createUav_)
 		)
 	);
+
+	Logger::Log("Create: ViewCreator", fileName);
+
 }
 
 
@@ -410,44 +555,7 @@ ViewCreator::ViewCreator
 }
 
 
-template<typename ViewType, typename Index>
-Index ViewCreator::CreateView(ID3D12Resource* resource_, const ViewType& viewDesc)
-{
-	//ViewTypeどのヒープを使うべきか分岐
-	HeapType type;
-	if constexpr (std::is_same_v<ViewType, D3D12_RENDER_TARGET_VIEW_DESC>) { type = kRTV; }
-	else if constexpr (std::is_same_v<ViewType, D3D12_DEPTH_STENCIL_VIEW_DESC>) { type = kDSV; }
-	else { type = kSRVUAV; }
 
-	//ヒープを取り出す
-	auto* targetHeap = descriptorHeap_map[type];
-
-	Index allocateIndex = targetHeap->WatchAllocateIndex<Index>();
-
-	//view生成数に応じたCPUハンドルを取得し、その後ヒープ側のカウンタを進める
-	auto handleCPU = targetHeap->CalculateHandleThenIncrement<D3D12_CPU_DESCRIPTOR_HANDLE>(DescriptorHeapClass::AccessKey{});
-
-	//ビュー生成
-	if constexpr (std::is_same_v<ViewType, D3D12_RENDER_TARGET_VIEW_DESC>)
-	{
-		rtvCmd(resource_, &viewDesc, handleCPU);
-	}
-	else if constexpr (std::is_same_v<ViewType, D3D12_SHADER_RESOURCE_VIEW_DESC>)
-	{
-		srvCmd(resource_, &viewDesc, handleCPU);
-	}
-	else if constexpr (std::is_same_v<ViewType, D3D12_DEPTH_STENCIL_VIEW_DESC>)
-	{
-		dsvCmd(resource_, &viewDesc, handleCPU);
-	}
-	else if constexpr (std::is_same_v<ViewType, D3D12_UNORDERED_ACCESS_VIEW_DESC>)
-	{
-		uavCmd(resource_, &viewDesc, handleCPU,nullptr);
-	}
-
-	//uintまたはCPUのインデックスを返す
-	return allocateIndex;
-}
 
 
 
@@ -492,8 +600,44 @@ public:
 	);
 
 	//VIEWを生成し、インデックスまたはハンドルを返す。
-	template<typename ViewType,typename Index>
-	Index CreateView(ID3D12Resource* resource_, const ViewType& viewDesc);
+	template<typename Index , typename ViewType>
+	Index CreateView(ID3D12Resource* resource_, const ViewType& viewDesc)
+	{
+		//ViewTypeどのヒープを使うべきか分岐
+		HeapType type;
+		if constexpr (std::is_same_v<ViewType, D3D12_RENDER_TARGET_VIEW_DESC>) { type = kRTV; }
+		else if constexpr (std::is_same_v<ViewType, D3D12_DEPTH_STENCIL_VIEW_DESC>) { type = kDSV; }
+		else { type = kSRVUAV; }
+
+		//ヒープを取り出す
+		auto* targetHeap = descriptorHeap_map[type];
+
+		Index allocateIndex = targetHeap->WatchAllocateIndex<Index>();
+
+		//view生成数に応じたCPUハンドルを取得し、その後ヒープ側のカウンタを進める
+		auto handleCPU = targetHeap->CalculateHandleThenIncrement<D3D12_CPU_DESCRIPTOR_HANDLE>(DescriptorHeapClass::AccessKey{});
+
+		//ビュー生成
+		if constexpr (std::is_same_v<ViewType, D3D12_RENDER_TARGET_VIEW_DESC>)
+		{
+			rtvCmd(resource_, &viewDesc, handleCPU);
+		}
+		else if constexpr (std::is_same_v<ViewType, D3D12_SHADER_RESOURCE_VIEW_DESC>)
+		{
+			srvCmd(resource_, &viewDesc, handleCPU);
+		}
+		else if constexpr (std::is_same_v<ViewType, D3D12_DEPTH_STENCIL_VIEW_DESC>)
+		{
+			dsvCmd(resource_, &viewDesc, handleCPU);
+		}
+		else if constexpr (std::is_same_v<ViewType, D3D12_UNORDERED_ACCESS_VIEW_DESC>)
+		{
+			uavCmd(resource_, &viewDesc, handleCPU, nullptr);
+		}
+
+		//uintまたはCPUのインデックスを返す
+		return allocateIndex;
+	}
 };
 
 
@@ -508,6 +652,3729 @@ public:
 
 
 
+
+
+
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Core\Device\DeviceContext.cpp ===
+========================================
+#include "PreCompileHedder.h"
+#include "DeviceContext.h"
+#include "Commands/DeviceContextCommandBehavior.h"
+#include "DeviceSetupper/DeviceContextSetupper.h"
+#include "DeviceContextCommandProvider/DeviceContextCommandProvider.h"
+#include "DeviceContextCommandGenerator/DeviceContextCommandGenerator.h"
+
+
+//コマンド
+#include "Commands/CreateDescriptorHeap/CommandCreateDescriptorHeap.h"
+#include "Commands/CreatGPUBuffer/CommandOfCreatingGPUBuffer.h"
+#include "Commands/CreateView/CommandCreateView.h"
+
+
+namespace
+{
+	std::string const fileName = "DeviceContext.cpp";
+}
+
+DeviceContext::DeviceContext(DeviceContext::InstanceKey instanceKey_)
+{
+	Logger::Entry("DeviceContext::Constructor");
+
+	TakeOverCoreParts(instanceKey_);
+	Logger::Log("Create: CoreParts", fileName);
+
+	CreateCommandGenerator(instanceKey_);
+	Logger::Log("Create: CommandGenerator", fileName);
+
+	CreateCommandProvider(instanceKey_);
+	Logger::Log("Create: CommandProvider", fileName);
+
+	CreateCommands(instanceKey_);
+	Logger::Log("Create: Commands", fileName);
+
+
+	Logger::End("DeviceContext::Constructor");
+}
+
+void DeviceContext::CreateCommands(DeviceContext::InstanceKey instanceKey_)
+{
+	commandContainer[CommandType::kCreateGPUBuffer].emplace_back(commandGenerator->CreateCommand<CommandCreateGPUResource>(instanceKey_));
+	commandContainer[CommandType::kCreateDescriptorHeap].emplace_back(commandGenerator->CreateCommand<CommandCreateDescriptorHeap>(instanceKey_));
+	commandContainer[CommandType::kCreateResourceView].emplace_back(commandGenerator->CreateCommand<CommandCreateView>(instanceKey_));
+
+
+}
+
+void DeviceContext::CreateCommandProvider(DeviceContext::InstanceKey instanceKey_)
+{
+	//デバイスにアクセスする関数オブジェ
+	auto deviceGetFunc = [this](DeviceContext::DeviceAccessKey key_) -> ID3D12Device8*
+	{
+		return device.Get();
+	};
+
+	commandProvider.reset(new CommandProvider(instanceKey_, deviceGetFunc,&commandContainer));
+}
+
+void DeviceContext::CreateCommandGenerator(DeviceContext::InstanceKey instanceKey_)
+{
+	commandGenerator.reset(new CommandGenerator(instanceKey_));
+}
+
+void DeviceContext::TakeOverCoreParts(DeviceContext::InstanceKey instanceKey_)
+{
+	//コアパーツの生成
+	std::unique_ptr<Setupper> setupper = std::make_unique<DeviceContext::Setupper>(instanceKey_);
+
+	device = setupper->HandOverDevice(instanceKey_);
+	dxgiFactory = setupper->HandOverDxgiFactory(instanceKey_);
+	useAdapter = setupper->HandOverAdapter(instanceKey_);
+}
+
+DeviceContext::~DeviceContext()
+{
+
+}
+
+UINT DeviceContext::PassDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE type_)
+{
+	return device->GetDescriptorHandleIncrementSize(type_);
+}
+
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Core\Device\DeviceContext.h ===
+========================================
+#pragma once
+
+class WinApp;
+class DeviceContextCommandBehavior;
+
+
+class DeviceContext
+{
+public:
+
+	enum CommandType
+	{
+		//GPUリソース生成
+		kCreateGPUBuffer,
+		//DescriptorHeapを作成
+		kCreateDescriptorHeap,
+		//Resourceのビューを作成
+		kCreateResourceView,
+
+
+
+		kCount
+	};
+
+	//コマンド生成クラス
+	class CommandGenerator;
+	//生成キー。WinAppしか許さない
+	struct InstanceKey;
+	//デバイスにアクセスするのを許可するキー
+	struct DeviceAccessKey;
+	//CommandProvider
+	class CommandProvider;
+	std::unique_ptr<CommandProvider> commandProvider;
+
+	DeviceContext(InstanceKey instanceKey);
+	~DeviceContext();
+
+	//DescriptorHeapのハンドルインクリメントサイズを返す関数
+	UINT PassDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE type_);
+
+private:
+
+	//Setupper
+	class Setupper;
+
+	using CommandList = std::vector<std::unique_ptr<DeviceContextCommandBehavior>>;
+	using CommandMap = std::unordered_map<CommandType, CommandList>;
+
+	Microsoft::WRL::ComPtr<ID3D12Device8> device = nullptr;
+	Microsoft::WRL::ComPtr<IDXGIFactory7> dxgiFactory = nullptr;
+	Microsoft::WRL::ComPtr<IDXGIAdapter4> useAdapter = nullptr;
+
+	std::unique_ptr<CommandGenerator> commandGenerator;
+
+	//コマンドのコンテナ
+	CommandMap commandContainer;
+
+	//Setupperからコアパーツを生成し、引き継ぐ
+	void TakeOverCoreParts(DeviceContext::InstanceKey instanceKey_);
+	//CommandProviderの生成
+	void CreateCommandProvider(DeviceContext::InstanceKey instanceKey_);
+	//CommandGeneratorの生成
+	void CreateCommandGenerator(DeviceContext::InstanceKey instanceKey_);
+	//コマンドの生成
+	void CreateCommands(DeviceContext::InstanceKey instanceKey_);
+
+};
+
+
+//生成できるのはWinAppのみ
+struct DeviceContext::InstanceKey
+{
+private:
+
+	friend class WinApp;
+	explicit InstanceKey() = default;
+};
+
+
+//アクセスさせるがポインタは渡さん
+struct DeviceContext::DeviceAccessKey
+{
+private:
+
+	friend class CommandProvider;
+	explicit DeviceAccessKey() = default;
+};
+
+
+
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Core\Device\Commands\DeviceContextCommandBehavior.cpp ===
+========================================
+#include "PreCompileHedder.h"
+#include "DeviceContextCommandBehavior.h"
+
+DeviceContextCommandBehavior::DeviceContextCommandBehavior(DeviceContext::CommandGenerator::GenerateKey generateKey_)
+{
+
+}
+
+DeviceContextCommandBehavior::~DeviceContextCommandBehavior()
+{
+
+}
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Core\Device\Commands\DeviceContextCommandBehavior.h ===
+========================================
+#pragma once
+#include "../DeviceContextCommandGenerator/DeviceContextCommandGenerator.h"
+
+class DeviceContextCommandBehavior
+{
+public:
+	DeviceContextCommandBehavior(DeviceContext::CommandGenerator::GenerateKey generateKey_);
+	~DeviceContextCommandBehavior();
+};
+
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Core\Device\Commands\CreateDescriptorHeap\CommandCreateDescriptorHeap.cpp ===
+========================================
+#include "PreCompileHedder.h"
+#include "CommandCreateDescriptorHeap.h"
+
+
+CommandCreateDescriptorHeap::CommandCreateDescriptorHeap(DeviceContext::CommandGenerator::GenerateKey generateKey_) :DeviceContextCommandBehavior(generateKey_)
+{
+
+}
+
+CommandCreateDescriptorHeap::~CommandCreateDescriptorHeap()
+{
+
+}
+
+
+Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> CommandCreateDescriptorHeap::Create(ID3D12Device8* device_, D3D12_DESCRIPTOR_HEAP_TYPE heapType_, UINT numDescriptors_, bool shaderVisible)
+{
+	Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> ret_descriptorHeap = nullptr;
+	D3D12_DESCRIPTOR_HEAP_DESC descriptorheapDesc{};
+
+	descriptorheapDesc.NodeMask = 0;
+	descriptorheapDesc.Type = heapType_;
+	descriptorheapDesc.NumDescriptors = numDescriptors_;
+	descriptorheapDesc.Flags = shaderVisible ? D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE : D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
+
+	HRESULT hr = device_->CreateDescriptorHeap(&descriptorheapDesc,
+		IID_PPV_ARGS(ret_descriptorHeap.GetAddressOf()));
+
+	assert(SUCCEEDED(hr));
+
+	return ret_descriptorHeap;
+}
+
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Core\Device\Commands\CreateDescriptorHeap\CommandCreateDescriptorHeap.h ===
+========================================
+#pragma once
+
+#include "../DeviceContextCommandBehavior.h"
+
+
+//DescriptorHeapを生成するコマンド
+struct CommandCreateDescriptorHeap  : public DeviceContextCommandBehavior
+{
+	//DeviceContext::CommandGeneratorクラスのみ生成可能
+	CommandCreateDescriptorHeap(DeviceContext::CommandGenerator::GenerateKey generateKey_);
+	~CommandCreateDescriptorHeap();
+
+
+	[[nodiscard]] Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> Create(ID3D12Device8* device_,
+		D3D12_DESCRIPTOR_HEAP_TYPE heapType_, UINT numDescriptors_, bool shaderVisible);
+};
+
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Core\Device\Commands\CreateView\CommandCreateView.cpp ===
+========================================
+#include "PreCompileHedder.h"
+#include "CommandCreateView.h"
+
+
+CommandCreateView::CommandCreateView(DeviceContext::CommandGenerator::GenerateKey generateKey_) :DeviceContextCommandBehavior(generateKey_)
+{
+
+}
+
+CommandCreateView::~CommandCreateView()
+{
+
+}
+
+
+void CommandCreateView::CreateRTV(ID3D12Device8* device_,ID3D12Resource* resource_ ,const D3D12_RENDER_TARGET_VIEW_DESC* desc_, D3D12_CPU_DESCRIPTOR_HANDLE descriptorHandleCPU_)
+{
+	device_->CreateRenderTargetView(resource_ , desc_, descriptorHandleCPU_);
+}
+
+void CommandCreateView::CreateUAV(ID3D12Device8* device_, ID3D12Resource* resource_, const D3D12_UNORDERED_ACCESS_VIEW_DESC* desc_, D3D12_CPU_DESCRIPTOR_HANDLE descriptorHandleCPU_, ID3D12Resource* counterResource_)
+{
+	device_->CreateUnorderedAccessView(resource_, nullptr, desc_, descriptorHandleCPU_);
+}
+
+
+void CommandCreateView::CreateSRV(ID3D12Device8* device_, ID3D12Resource* resource_, const D3D12_SHADER_RESOURCE_VIEW_DESC* desc_, D3D12_CPU_DESCRIPTOR_HANDLE descriptorHandleCPU_)
+{
+	device_->CreateShaderResourceView(resource_, desc_, descriptorHandleCPU_);
+
+}
+
+void CommandCreateView::CreateDSV(ID3D12Device8* device_, ID3D12Resource* resource_, const D3D12_DEPTH_STENCIL_VIEW_DESC* desc_, D3D12_CPU_DESCRIPTOR_HANDLE descriptorHandleCPU_)
+{
+	device_->CreateDepthStencilView(resource_, desc_, descriptorHandleCPU_);
+
+}
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Core\Device\Commands\CreateView\CommandCreateView.h ===
+========================================
+#pragma once
+#include "../DeviceContextCommandBehavior.h"
+
+
+//Resourceのビューを生成するコマンド
+struct CommandCreateView : public DeviceContextCommandBehavior
+{
+	//DeviceContext::CommandGeneratorクラスのみ生成可能
+	CommandCreateView(DeviceContext::CommandGenerator::GenerateKey generateKey_);
+	~CommandCreateView();
+
+	void CreateRTV(ID3D12Device8* device_, ID3D12Resource* resource_ , const D3D12_RENDER_TARGET_VIEW_DESC* desc_, D3D12_CPU_DESCRIPTOR_HANDLE descriptorHandleCPU_);
+	void CreateSRV(ID3D12Device8* device_, ID3D12Resource* resource_, const D3D12_SHADER_RESOURCE_VIEW_DESC* desc_, D3D12_CPU_DESCRIPTOR_HANDLE descriptorHandleCPU_);
+	void CreateUAV(ID3D12Device8* device_, ID3D12Resource* resource_, const D3D12_UNORDERED_ACCESS_VIEW_DESC* desc_, D3D12_CPU_DESCRIPTOR_HANDLE descriptorHandleCPU_, ID3D12Resource* counterResource_ = nullptr);
+	void CreateDSV(ID3D12Device8* device_, ID3D12Resource* resource_, const D3D12_DEPTH_STENCIL_VIEW_DESC* desc_, D3D12_CPU_DESCRIPTOR_HANDLE descriptorHandleCPU_);
+
+};
+
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Core\Device\Commands\CreatGPUBuffer\CommandOfCreatingGPUBuffer.cpp ===
+========================================
+#include "PreCompileHedder.h"
+#include "CommandOfCreatingGPUBuffer.h"
+ 
+
+[[nodiscard]] Microsoft::WRL::ComPtr<ID3D12Resource> CommandCreateGPUResource::CreateResource
+(
+	ID3D12Device8* device_,
+	const D3D12_RESOURCE_DESC& resourceDesc_,
+	const D3D12_HEAP_PROPERTIES& heapProperties_,
+	const D3D12_CLEAR_VALUE* clearValue_,
+	const std::string& name_
+)
+{
+	Microsoft::WRL::ComPtr<ID3D12Resource> resource;
+
+	//初期ステートを割り出す
+	D3D12_RESOURCE_STATES initialState =
+		ConfigureInitialResourceState(heapProperties_.Type, resourceDesc_.Flags);
+
+	//[ 生成 ]
+	[[maybe_unused]] HRESULT hr = device_->CreateCommittedResource(
+		&heapProperties_,
+		D3D12_HEAP_FLAG_NONE,
+		&resourceDesc_,
+		initialState,
+		clearValue_,
+		IID_PPV_ARGS(&resource));
+
+	ErrorMessageOutput::Assert::DetectError(SUCCEEDED(hr), name_ + ": リソース生成失敗", "CommandOfCreatingGPUBuffer.cpp");
+
+	return resource;
+}
+
+D3D12_RESOURCE_STATES CommandCreateGPUResource::ConfigureInitialResourceState(D3D12_HEAP_TYPE heapType_, D3D12_RESOURCE_FLAGS resourceFlag_)
+{
+	D3D12_RESOURCE_STATES initialState{};
+
+	//CPUの近くにおく。からアクセスできるけど遅し。GPUからは触れない
+	if (heapType_ == D3D12_HEAP_TYPE_UPLOAD)
+	{
+		//こうしなきゃいけない
+		initialState = D3D12_RESOURCE_STATE_GENERIC_READ;
+	}
+	//GPUの近くのメモリ、Vramにおく。速し。CPUからアクセスできなくなる
+	else if (heapType_ == D3D12_HEAP_TYPE_DEFAULT)
+	{
+		//UAV生成フラグがあるときは、GPUが書き込めるようにする
+		if (resourceFlag_ & D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS)
+		{
+			initialState = D3D12_RESOURCE_STATE_UNORDERED_ACCESS;
+		}
+		//読み込み専用のStructuredBufferなら、中継バッファからのデータ転送待ち状態にする
+		else
+		{
+			initialState = D3D12_RESOURCE_STATE_COPY_DEST;
+		}
+	}
+
+	return initialState;
+}
+
+
+CommandCreateGPUResource::CommandCreateGPUResource(DeviceContext::CommandGenerator::GenerateKey generateKey_) :DeviceContextCommandBehavior(generateKey_)
+{
+
+}
+
+CommandCreateGPUResource::~CommandCreateGPUResource()
+{
+
+}
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Core\Device\Commands\CreatGPUBuffer\CommandOfCreatingGPUBuffer.h ===
+========================================
+#pragma once
+#include "../DeviceContextCommandBehavior.h"
+
+//各バッファのId3d12Resourceを作るコマンド群
+struct CommandCreateGPUResource : public DeviceContextCommandBehavior
+{
+	//DeviceContext::CommandGeneratorクラスのみ生成可能
+	CommandCreateGPUResource(DeviceContext::CommandGenerator::GenerateKey generateKey_);
+	~CommandCreateGPUResource();
+
+	[[nodiscard]] Microsoft::WRL::ComPtr<ID3D12Resource> CreateResource
+	(
+		ID3D12Device8* device_,
+		const D3D12_RESOURCE_DESC& resourceDesc_,
+		const D3D12_HEAP_PROPERTIES& heapProperties_,
+		const D3D12_CLEAR_VALUE* clearValue_,
+		const std::string& name_
+	);
+
+private:
+	//初期ステートを割り出す
+	D3D12_RESOURCE_STATES ConfigureInitialResourceState(D3D12_HEAP_TYPE heapType_, D3D12_RESOURCE_FLAGS resourceFlag_);
+
+};
+
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Core\Device\DeviceContextCommandGenerator\DeviceContextCommandGenerator.cpp ===
+========================================
+#include "PreCompileHedder.h"
+#include "DeviceContextCommandGenerator.h"
+
+#include "../Commands/CreatGPUBuffer/CommandOfCreatingGPUBuffer.h"
+#include "../Commands/CreateDescriptorHeap/CommandCreateDescriptorHeap.h"
+
+DeviceContext::CommandGenerator::CommandGenerator(DeviceContext::InstanceKey instanceKey_)
+{
+
+}
+
+DeviceContext::CommandGenerator::~CommandGenerator()
+{
+
+}
+
+
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Core\Device\DeviceContextCommandGenerator\DeviceContextCommandGenerator.h ===
+========================================
+#pragma once
+#include "../DeviceContext.h"
+
+
+//Deviceを使用するコマンド群を生成するクラス
+class DeviceContext::CommandGenerator
+{
+public:
+	//コマンド群を生成するのに必要。
+	struct GenerateKey;
+
+	CommandGenerator(DeviceContext::InstanceKey instanceKey_);
+	~CommandGenerator();
+
+	//コマンドを生成する
+	template<typename CommandClass>
+	[[nodiscard]] std::unique_ptr<DeviceContextCommandBehavior> CreateCommand(DeviceContext::InstanceKey instanceKey_)
+	{
+		auto generateKey = CommandGenerator::GenerateKey{};
+		std::unique_ptr<DeviceContextCommandBehavior> retCommand = std::make_unique<CommandClass>(generateKey);
+
+		return retCommand;
+	}
+
+};
+
+//DeviceContext::CommandGeneratorのみ生成できる
+struct DeviceContext::CommandGenerator::GenerateKey
+{
+private:
+	friend class DeviceContext::CommandGenerator;
+
+	explicit GenerateKey() = default;
+};
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Core\Device\DeviceContextCommandProvider\DeviceContextCommandProvider.cpp ===
+========================================
+#include "PreCompileHedder.h"
+#include "DeviceContextCommandProvider.h"
+
+#include "../Commands/CreatGPUBuffer/CommandOfCreatingGPUBuffer.h"
+#include "../Commands/CreateDescriptorHeap/CommandCreateDescriptorHeap.h"
+#include "../Commands/CreateView/CommandCreateView.h"
+
+
+
+DeviceContext::CommandProvider::CommandProvider(DeviceContext::InstanceKey instanceKey_, 
+	std::function< ID3D12Device8* (DeviceContext::DeviceAccessKey)> func_,CommandMap* commandContainer_) : deviceGetter(func_), commandContainer(commandContainer_)
+{
+	
+}
+
+
+//CreateViewCommand
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+template<>
+[[nodiscard]] std::function<void(ID3D12Resource* resource_, const D3D12_RENDER_TARGET_VIEW_DESC* desc_, D3D12_CPU_DESCRIPTOR_HANDLE descriptorHandleCPU_)>
+DeviceContext::CommandProvider::ProvideCreateViewCommand()
+{
+	auto retFunc = [this](ID3D12Resource* resource_, const D3D12_RENDER_TARGET_VIEW_DESC* desc_, D3D12_CPU_DESCRIPTOR_HANDLE descriptorHandleCPU_)
+	{
+		auto* device = deviceGetter(DeviceContext::DeviceAccessKey{});
+		auto& container = *commandContainer;
+		auto* command = static_cast<CommandCreateView*>(container[DeviceContext::CommandType::kCreateResourceView][0].get());
+
+		return command->CreateRTV(device, resource_, desc_, descriptorHandleCPU_);
+	};
+
+	return retFunc;
+}
+template<>
+[[nodiscard]] std::function<void(ID3D12Resource* resource_, const D3D12_SHADER_RESOURCE_VIEW_DESC* desc_, D3D12_CPU_DESCRIPTOR_HANDLE descriptorHandleCPU_)>
+DeviceContext::CommandProvider::ProvideCreateViewCommand()
+{
+	auto retFunc = [this](ID3D12Resource* resource_, const D3D12_SHADER_RESOURCE_VIEW_DESC* desc_, D3D12_CPU_DESCRIPTOR_HANDLE descriptorHandleCPU_)
+	{
+		auto* device = deviceGetter(DeviceContext::DeviceAccessKey{});
+		auto& container = *commandContainer;
+		auto* command = static_cast<CommandCreateView*>(container[DeviceContext::CommandType::kCreateResourceView][0].get());
+
+		return command->CreateSRV(device, resource_, desc_, descriptorHandleCPU_);
+	};
+
+	return retFunc;
+}
+
+template<>
+[[nodiscard]] std::function<void(ID3D12Resource* resource_, const D3D12_DEPTH_STENCIL_VIEW_DESC* desc_, D3D12_CPU_DESCRIPTOR_HANDLE descriptorHandleCPU_)>
+DeviceContext::CommandProvider::ProvideCreateViewCommand()
+{
+	auto retFunc = [this](ID3D12Resource* resource_, const D3D12_DEPTH_STENCIL_VIEW_DESC* desc_, D3D12_CPU_DESCRIPTOR_HANDLE descriptorHandleCPU_)
+	{
+		auto* device = deviceGetter(DeviceContext::DeviceAccessKey{});
+		auto& container = *commandContainer;
+		auto* command = static_cast<CommandCreateView*>(container[DeviceContext::CommandType::kCreateResourceView][0].get());
+
+		return command->CreateDSV(device, resource_, desc_, descriptorHandleCPU_);
+	};
+
+	return retFunc;
+}
+
+[[nodiscard]] std::function<void(ID3D12Resource* resource_, const D3D12_UNORDERED_ACCESS_VIEW_DESC* desc_, D3D12_CPU_DESCRIPTOR_HANDLE descriptorHandleCPU_, ID3D12Resource* CounterResource_)>
+DeviceContext::CommandProvider::ProvideCreateUAVCommand()
+{
+	auto retFunc = [this](ID3D12Resource* resource_, const D3D12_UNORDERED_ACCESS_VIEW_DESC* desc_, D3D12_CPU_DESCRIPTOR_HANDLE descriptorHandleCPU_, ID3D12Resource* CounterResource_)
+		{
+			auto* device = deviceGetter(DeviceContext::DeviceAccessKey{});
+			auto& container = *commandContainer;
+			auto* command = static_cast<CommandCreateView*>(container[DeviceContext::CommandType::kCreateResourceView][0].get());
+
+			return command->CreateUAV(device, resource_, desc_, descriptorHandleCPU_, CounterResource_);
+		};
+
+	return retFunc;
+
+}
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+
+
+
+
+//CreateDescriptorHeapCommand
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+[[nodiscard]] std::function<Microsoft::WRL::ComPtr<ID3D12DescriptorHeap>(D3D12_DESCRIPTOR_HEAP_TYPE, UINT, bool)>
+DeviceContext::CommandProvider::ProvideCreateDescriptorHeapCommand()
+{
+	auto retFunc = [this](D3D12_DESCRIPTOR_HEAP_TYPE heapType_, UINT numDescriptors_, bool shaderVisible_)
+	{
+		auto* device = deviceGetter(DeviceContext::DeviceAccessKey{});
+		auto& container = *commandContainer;
+		auto* command = static_cast<CommandCreateDescriptorHeap*>(container[DeviceContext::CommandType::kCreateDescriptorHeap][0].get());
+
+		return command->Create(device, heapType_,numDescriptors_, shaderVisible_);
+	};
+
+	return retFunc;
+}
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+
+
+
+
+//リソース生成こまんど
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+[[nodiscard]] std::function<Microsoft::WRL::ComPtr<ID3D12Resource>
+(
+	const D3D12_RESOURCE_DESC& resourceDesc_,
+	const D3D12_HEAP_PROPERTIES& heapProperties_,
+	const D3D12_CLEAR_VALUE* clearValue_,
+	const std::string& name_
+)>
+DeviceContext::CommandProvider::ProvideCreateResourceCommand()
+{
+	auto retFunc = [this]
+	(
+		const D3D12_RESOURCE_DESC& resourceDesc_,
+		const D3D12_HEAP_PROPERTIES& heapProperties_,
+		const D3D12_CLEAR_VALUE* clearValue_,
+		const std::string& name_
+	)
+	{
+			auto* device = deviceGetter(DeviceContext::DeviceAccessKey{});
+			auto& container = *commandContainer;
+
+			CommandCreateGPUResource* command = static_cast<CommandCreateGPUResource*>(container[DeviceContext::CommandType::kCreateGPUBuffer][0].get());
+
+			return command->CreateResource
+			(
+				device, 
+				resourceDesc_,
+				heapProperties_,
+				clearValue_,
+				name_
+			);
+	};
+
+	return retFunc;
+
+}
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+
+
+
+
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Core\Device\DeviceContextCommandProvider\DeviceContextCommandProvider.h ===
+========================================
+#pragma once
+#include "../DeviceContext.h"
+
+//Deviceを使用する処理を、使用しない形にコマンド化して提供するクラス
+class DeviceContext::CommandProvider
+{
+public:
+
+	CommandProvider(DeviceContext::InstanceKey instanceKey_, 
+		std::function< ID3D12Device8* (DeviceContext::DeviceAccessKey)> func_ , CommandMap* commandContainer_);
+	
+	//リソースを生成するコマンドを返す関数(ConstantBufferDescription , ColorBufferDescription)
+	[[nodiscard]] std::function<Microsoft::WRL::ComPtr<ID3D12Resource>
+	(
+		const D3D12_RESOURCE_DESC& resourceDesc_,
+		const D3D12_HEAP_PROPERTIES& heapProperties_,
+		const D3D12_CLEAR_VALUE* clearValue_,
+		const std::string& name_
+	)>
+	ProvideCreateResourceCommand();
+
+	//DescriptorHeapを生成するコマンドを返す関数
+	[[nodiscard]] std::function<Microsoft::WRL::ComPtr<ID3D12DescriptorHeap>(D3D12_DESCRIPTOR_HEAP_TYPE , UINT , bool )>
+		ProvideCreateDescriptorHeapCommand();
+
+	//リソースのViewを作成するコマンドを返す関数
+	template<typename ViewType>
+	[[nodiscard]] std::function<void(ID3D12Resource* resource_, const ViewType* desc_, D3D12_CPU_DESCRIPTOR_HANDLE descriptorHandleCPU_)>
+		ProvideCreateViewCommand();
+
+	//UAV作成コマンドのみ引数が異なるため別途用意
+	[[nodiscard]] std::function<void(ID3D12Resource* resource_, const D3D12_UNORDERED_ACCESS_VIEW_DESC* desc_, D3D12_CPU_DESCRIPTOR_HANDLE descriptorHandleCPU_, ID3D12Resource* CounterResource_)>
+		ProvideCreateUAVCommand();
+
+
+private:
+
+	//デバイスにアクセスする関数
+	std::function< ID3D12Device8* (DeviceContext::DeviceAccessKey)> deviceGetter;
+	//コマンドのコンテナ
+	CommandMap* commandContainer;
+
+};
+
+
+
+
+
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Core\Device\DeviceSetupper\DeviceContextSetupper.cpp ===
+========================================
+#include "PreCompileHedder.h"
+#include "DeviceContextSetupper.h"
+#include "../../../Utility/StringConnverter/StringConverter.h"
+
+namespace 
+{
+	std::string fileName = "DeviceContextSetupper.cpp";
+}
+
+DeviceContext::Setupper::Setupper(InstanceKey instanceKey_)
+{
+	//dxgiFactoryの生成
+	CreateDXGI_Factory();
+	Logger::Log("Create: DXGI_Factory");
+
+	//アダプターを取得
+	FetchAdapter();
+	Logger::Log("Fetch: Adapter");
+
+	//デバイスの生成
+	CreateDevice();
+	Logger::Log("Create: Device");
+
+	//シェーダーモデルサポートチェック
+	ShaderModelChack(ProjectConfig::Render::kMaximumShaderModel);
+	Logger::Log("Check: ShaderModelMaximum");
+
+	//メッシュシェーダーをサポートしているかチェック
+	IsMeshShaderSupported();
+	Logger::Log("Check: MeshShaderSupported");
+
+	//デバッグレイヤーのフィルターを設定
+	SetDebugLayerFilter();
+}
+
+[[nodiscard]] Microsoft::WRL::ComPtr<IDXGIAdapter4> DeviceContext::Setupper::HandOverAdapter(DeviceContext::InstanceKey instanceKey_)
+{
+	return useAdapter;
+}
+
+[[nodiscard]] Microsoft::WRL::ComPtr<ID3D12Device8> DeviceContext::Setupper::HandOverDevice(DeviceContext::InstanceKey instanceKey_)
+{
+	return std::move(device);
+}
+
+[[nodiscard]] Microsoft::WRL::ComPtr<IDXGIFactory7> DeviceContext::Setupper::HandOverDxgiFactory(DeviceContext::InstanceKey instanceKey_)
+{
+	return dxgiFactory;
+}
+
+void DeviceContext::Setupper::SetDebugLayerFilter()
+{
+#if defined(_DEBUG)
+
+	Microsoft::WRL::ComPtr<ID3D12InfoQueue> infoQueue;
+
+	if (SUCCEEDED(device->QueryInterface(IID_PPV_ARGS(&infoQueue))))
+	{
+		// ヤバいエラーの時に止まる
+		infoQueue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_CORRUPTION, true);
+		// エラー時に止まる
+		infoQueue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_ERROR, true);
+		// 警告時に止まる
+		// infoQueue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_WARNING, true);
+
+		// 抑制するメッセージのID
+		D3D12_MESSAGE_ID denyIds[] =
+		{
+			D3D12_MESSAGE_ID_RESOURCE_BARRIER_MISMATCHING_COMMAND_LIST_TYPE
+		};
+
+		//抑制するレベル
+		D3D12_MESSAGE_SEVERITY severities[] = { D3D12_MESSAGE_SEVERITY_INFO };
+
+		D3D12_INFO_QUEUE_FILTER filter{};
+		filter.DenyList.NumIDs = static_cast<UINT>(_countof(denyIds));
+		filter.DenyList.pIDList = denyIds;
+		filter.DenyList.NumSeverities = static_cast<UINT>(_countof(severities));
+		filter.DenyList.pSeverityList = severities;
+
+		//指定したメッセージの表示を抑制する
+		infoQueue->PushStorageFilter(&filter);
+
+	}
+#endif
+
+}
+
+
+void DeviceContext::Setupper::ShaderModelChack(D3D_SHADER_MODEL shaderModel_)
+{
+
+	D3D12_FEATURE_DATA_SHADER_MODEL shaderModel = { shaderModel_ };
+
+	HRESULT hr = device->CheckFeatureSupport(D3D12_FEATURE_SHADER_MODEL, &shaderModel, sizeof(shaderModel));
+
+	ErrorMessageOutput::Abort::DetectError((SUCCEEDED(hr)) || shaderModel.HighestShaderModel >= D3D_SHADER_MODEL_6_5,
+		"ShaderModelが6_5以上を対応していません。", fileName);
+}
+
+void DeviceContext::Setupper::IsMeshShaderSupported()
+{
+	//メッシュシェーダがサポートされているかどうか
+	D3D12_FEATURE_DATA_D3D12_OPTIONS7 features = {};
+
+	HRESULT hr = device->CheckFeatureSupport(D3D12_FEATURE_D3D12_OPTIONS7, &features, sizeof(features));
+
+	ErrorMessageOutput::Abort::DetectError((SUCCEEDED(hr)) || features.MeshShaderTier == D3D12_MESH_SHADER_TIER_NOT_SUPPORTED,
+		"ShaderModelがサポートされていません。", fileName);
+}
+
+void DeviceContext::Setupper::FetchAdapter()
+{
+	//一番いいアダプタを頼む
+	for (UINT i = 0; dxgiFactory->EnumAdapterByGpuPreference(i,
+		DXGI_GPU_PREFERENCE_HIGH_PERFORMANCE, IID_PPV_ARGS(&useAdapter)) != DXGI_ERROR_NOT_FOUND; ++i)
+	{
+		//アダプタの情報を取得する
+		DXGI_ADAPTER_DESC3 adapterDisc{};
+		HRESULT hr = useAdapter->GetDesc3(&adapterDisc);
+		ErrorMessageOutput::Abort::DetectError((SUCCEEDED(hr)), "アダプタの取得に失敗しました", fileName);
+
+		//ソフトウェアアダプタでなければ採用
+		if (!(adapterDisc.Flags & DXGI_ADAPTER_FLAG3_SOFTWARE))
+		{
+			//採用したアダプタの情報をログに出力
+			Logger::Log(StringConverter::ConvertString(std::format(L"Use Adapter:{}", adapterDisc.Description)));
+
+			break;
+		}
+		//ソフトウェアアダプタの場合はなかったことに
+		useAdapter = nullptr;
+	}
+
+	//適切なアダプタが見つからなかった場合は起動できない
+	ErrorMessageOutput::Abort::DetectError((useAdapter != nullptr), "適切なアダプタが見つからなかった", fileName);
+}
+
+void DeviceContext::Setupper::CreateDXGI_Factory()
+{
+	HRESULT hr = CreateDXGIFactory(IID_PPV_ARGS(&dxgiFactory));
+	//初期化の根本的な部分でエラーが出た場合はプログラムが間違っているか、
+	//どうにもできない場合が多いのでassertにしておく
+	ErrorMessageOutput::Abort::DetectError(SUCCEEDED(hr), "DXGIFactoryの生成に失敗しました", fileName);
+
+}
+
+
+void DeviceContext::Setupper::CreateDevice()
+{
+	//機能レベルとログ出力用の文字列
+	D3D_FEATURE_LEVEL featureLevels[] =
+	{
+		D3D_FEATURE_LEVEL_12_2,
+		D3D_FEATURE_LEVEL_12_1,
+		D3D_FEATURE_LEVEL_12_0
+	};
+
+	std::string featureLevelStrings[] = { "12.2","12.1","12.0" };
+
+	//高い順に生成できるか試していく
+	for (size_t i = 0; i < _countof(featureLevels); ++i)
+	{
+		//採用したアダプタでデバイスを生成
+		HRESULT hr = D3D12CreateDevice(useAdapter.Get(), featureLevels[i], IID_PPV_ARGS(&device));
+
+		//指定した機能7レベルでデバイスが生成できたか確認
+		if (SUCCEEDED(hr))
+		{
+			//生成できたのでログを出力してループを抜ける
+			Logger::Log(std::format("FeatureLevel:{}", featureLevelStrings[i]));
+
+			break;
+		}
+	}
+
+	//デバイスの生成が上手くいかなかったので起動できない
+	ErrorMessageOutput::Abort::DetectError(device != nullptr, "でバイスの生成が上手くいかなかったので起動できない", fileName);
+}
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Core\Device\DeviceSetupper\DeviceContextSetupper.h ===
+========================================
+#pragma once
+#include "../DeviceContext.h"
+
+
+class DeviceContext::Setupper
+{
+public:
+
+	Setupper(InstanceKey instanceKey_);
+
+	[[nodiscard]] Microsoft::WRL::ComPtr<IDXGIAdapter4> HandOverAdapter(DeviceContext::InstanceKey instanceKey_);
+	[[nodiscard]] Microsoft::WRL::ComPtr<ID3D12Device8> HandOverDevice(DeviceContext::InstanceKey instanceKey_);
+	[[nodiscard]] Microsoft::WRL::ComPtr<IDXGIFactory7> HandOverDxgiFactory(DeviceContext::InstanceKey instanceKey_);
+
+private:
+
+	Microsoft::WRL::ComPtr<IDXGIFactory7> dxgiFactory = nullptr;
+	Microsoft::WRL::ComPtr<IDXGIAdapter4> useAdapter = nullptr;
+	Microsoft::WRL::ComPtr<ID3D12Device8> device = nullptr;
+
+	void CreateDXGI_Factory();
+	void FetchAdapter();
+	void CreateDevice();
+	void ShaderModelChack(D3D_SHADER_MODEL shaderModel_);
+	void IsMeshShaderSupported();
+	void SetDebugLayerFilter();
+};
+
+
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Core\SwapChain\SwapChainContext.cpp ===
+========================================
+#include "PreCompileHedder.h"
+#include "SwapChainContext.h"
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Core\SwapChain\SwapChainContext.h ===
+========================================
+#pragma once
+
+class SwapChainContext
+{
+	Microsoft::WRL::ComPtr<IDXGISwapChain4> swapChain = nullptr;
+
+};
+
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Core\Window\DumpExporter.h ===
+========================================
+#pragma once
+#include <strsafe.h>
+
+//例外登録関数
+LONG WINAPI ExportDump(EXCEPTION_POINTERS* exception)
+{
+	//時刻を取得して、時刻を名前に入れたファイルを作成
+	SYSTEMTIME time;
+	GetLocalTime(&time);
+	wchar_t filePath[MAX_PATH] = { 0 };
+	CreateDirectory(L"./Dumps", nullptr);
+	StringCchPrintfW(filePath, MAX_PATH, L"./Dumps/%04d-%02d%02d-%02d%02d.dmp",
+		time.wYear, time.wMonth, time.wDay, time.wHour, time.wMinute);
+	HANDLE dumpFileHandle = CreateFile(filePath, GENERIC_READ | GENERIC_WRITE,
+		FILE_SHARE_WRITE | FILE_SHARE_READ, 0, CREATE_ALWAYS, 0, 0);
+	//processID(このexeのID)とクラッシュの発生したthreadIDを取得
+	DWORD processId = GetCurrentProcessId();
+	DWORD threadId = GetCurrentThreadId();
+	//設定情報を入力
+	MINIDUMP_EXCEPTION_INFORMATION minidumpInformation{ 0 };
+	minidumpInformation.ThreadId = threadId;
+	minidumpInformation.ExceptionPointers = exception;
+	minidumpInformation.ClientPointers = TRUE;
+	//Dumpを出力。MiniDumpNormalは最低限の情報を出力するフラグ
+	MiniDumpWriteDump(GetCurrentProcess(), processId, dumpFileHandle,
+		MiniDumpNormal, &minidumpInformation, nullptr, nullptr);
+
+	//他に関連付けられているSEHハンドラがあれば実行
+	return EXCEPTION_EXECUTE_HANDLER;
+}
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Core\Window\WindowContext.cpp ===
+========================================
+#include "WindowContext.h"
+#include <strsafe.h>
+#include "../../WinApp/WinApp.h"
+#include "DumpExporter.h"
+
+LRESULT CALLBACK WindowContext::WndProc(HWND hWnd_, UINT msg_, WPARAM wParam_, LPARAM lParam_)
+{
+#ifdef USE_IMGUI
+	//ImGuiにメッセージを渡す
+	if (ImGui_ImplWin32_WndProcHandler(hWnd_, msg_, wParam_, lParam_))
+	{
+		return true;
+	}
+#endif
+
+	//メッセージに応じてゲーム固有の処理を行う
+	switch (msg_)
+	{
+		//ウィンドウが破棄された
+	case WM_DESTROY:
+		//OSに対して、アプリの終了を伝える
+		PostQuitMessage(0);
+
+		return 0;
+	}
+
+	//標準メッセージの処理を行う
+	return DefWindowProc(hWnd_, msg_, wParam_, lParam_);
+}
+
+
+void WindowContext::Finalize()
+{
+	//ウィンドウの登録を解除
+	if (setupParam.m_hInst)
+	{
+		UnregisterClass(setupParam.m_windowName, setupParam.m_hInst);
+	}
+
+	setupParam.m_hInst = nullptr;
+	setupParam.m_hWnd = nullptr;
+}
+
+
+WindowContext::WindowContext(CraftKey craftKey_)
+{
+	using namespace ProjectConfig::Window;
+
+//#ifdef _DEBUG
+//
+//	if (SUCCEEDED(D3D12GetDebugInterface(IID_PPV_ARGS(&debugController))))
+//	{
+//		debugController->EnableDebugLayer();
+//		debugController->SetEnableGPUBasedValidation(TRUE);
+//	}
+//
+//#endif // _DEBUG
+
+	auto hInst = GetModuleHandle(nullptr);
+
+	assert(!(!hInst) && "hInstがぬるぽ");
+
+	// ウィンドウクラスの登録
+	WNDCLASSEX wc = {};
+
+	setupParam.m_windowName = kTitle;
+	setupParam.m_width = (uint32_t)kWidth;
+	setupParam.m_height = (uint32_t)kHeight;
+
+	wc.cbSize = sizeof(WNDCLASSEX);
+	wc.style = CS_HREDRAW | CS_VREDRAW;
+	wc.lpfnWndProc = WindowContext::WndProc;
+	wc.hIcon = LoadIcon(hInst, IDI_APPLICATION);
+	wc.hCursor = LoadCursor(hInst, IDC_ARROW);
+	wc.hbrBackground = GetSysColorBrush(COLOR_BACKGROUND);
+	wc.lpszMenuName = nullptr;
+	wc.lpszClassName = kTitle;
+	wc.hIconSm = LoadIcon(hInst, IDI_APPLICATION);
+
+	//ウィンドウの登録
+	ErrorMessageOutput::Abort::DetectError(RegisterClassEx(&wc), "ウィンドウの登録失敗", "WindowContext.cpp");
+
+	//インスタンスハンドルの設定
+	setupParam.m_hInst = hInst;
+
+	//WindowSize
+	RECT rc = {};
+	rc.right = static_cast<LONG>(setupParam.m_width);
+	rc.bottom = static_cast<LONG>(setupParam.m_height);
+	auto style = WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU;
+	AdjustWindowRect(&rc, style, FALSE);
+
+	// ウィンドウの作成
+	setupParam.m_hWnd = CreateWindowEx(
+		0,                              // Optional window styles.
+		kTitle,                   // Window class
+		kTitle,					// Window text
+		style,							// Window style
+		// Size and position
+		CW_USEDEFAULT,
+		CW_USEDEFAULT,
+		rc.right - rc.left,
+		rc.bottom - rc.top,
+		nullptr,							// Parent window    
+		nullptr,							// Menu
+		setupParam.m_hInst,						// Instance handle
+		nullptr							// Additional application data
+	);
+
+	ErrorMessageOutput::Abort::DetectError((setupParam.m_hWnd != NULL), "m_hWndがぬるぽ","WindowContext.cpp");
+
+	// ウィンドウの表示
+	if(setupParam.m_hWnd != 0 ) ShowWindow(setupParam.m_hWnd, SW_SHOWNORMAL);
+
+	//ウィンドウにフォーカスを設定
+	SetFocus(setupParam.m_hWnd);
+
+	//入力インターフェースの初期化
+	//inputInterface.Initialize(m_hInst, m_hWnd);
+
+	//誰も捕捉しなかった場合に(Unhandled)、補足する関数を登録
+	SetUnhandledExceptionFilter(ExportDump);
+
+
+}
+
+
+
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Core\Window\WindowContext.h ===
+========================================
+#pragma once
+
+class WinApp;
+
+class WindowContext
+{
+public:
+
+	struct CraftKey;
+
+	WindowContext(CraftKey craftKey_);
+	void Finalize();
+
+private:
+
+	struct Param
+	{
+		HINSTANCE m_hInst;
+		HWND m_hWnd;
+		uint32_t m_width;
+		uint32_t m_height;
+		LPCWSTR m_windowName;
+	};
+
+	Param setupParam;
+	static LRESULT CALLBACK WndProc(HWND hWnd_, UINT msg_, WPARAM wParam_, LPARAM lParam_);
+};
+
+
+struct WindowContext::CraftKey
+{
+private:
+	friend class WinApp;
+	explicit CraftKey() = default;
+};
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Debug\ErrorMessageOutput\ErrorMessageOutput.cpp ===
+========================================
+#include "PreCompileHedder.h"
+#include "ErrorMessageOutput.h"
+#include "../../Utility/StringConnverter/StringConverter.h"
+
+
+void ErrorMessageOutput::Abort::OutputError(const std::string& message_ , const std::string& fileName_)
+{
+	std::string outputMes = message_ + "\nFileName : " + fileName_;
+
+	MessageBoxW(nullptr, StringConverter::ConvertString(outputMes).c_str(), L"Fatal Error", MB_OK | MB_ICONERROR);
+	std::abort();
+}
+
+void ErrorMessageOutput::Abort::DetectError(bool positiveResult_, const std::string& message_, const std::string& fileName_)
+{
+	if (!positiveResult_)
+	{
+		std::string outputMes = message_ + "\nFileName : " + fileName_;
+
+		MessageBoxW(nullptr, StringConverter::ConvertString(outputMes).c_str(), L"Fatal Error", MB_OK | MB_ICONERROR);
+		std::abort();
+	}
+}
+
+void ErrorMessageOutput::Assert::DetectError(bool positiveResult_, const std::string& message_, const std::string& fileName_)
+{
+	if (!positiveResult_)
+	{
+		std::string outputMes = message_ + "\nFileName : " + fileName_;
+		MessageBoxW(nullptr, StringConverter::ConvertString(outputMes).c_str(), L"Fatal Error", MB_OK | MB_ICONERROR);
+		assert(false);
+	}
+}
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Debug\ErrorMessageOutput\ErrorMessageOutput.h ===
+========================================
+#pragma once
+
+
+namespace ErrorMessageOutput
+{
+	namespace Abort
+	{
+		void OutputError(const std::string& message_, const std::string& fileName_);
+		void DetectError(bool positiveResult_, const std::string& message_, const std::string& fileName_);
+	}
+
+	namespace Assert
+	{
+		void DetectError(bool positiveResult_, const std::string& message_, const std::string& fileName_);
+	}
+
+}
+
+
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Debug\Logger\Logger.cpp ===
+========================================
+#include "PreCompileHedder.h"
+#include "Logger.h"
+#include <filesystem>
+
+void Logger::Init()
+{
+	static int onlyOnce{ };
+	if (onlyOnce++ > 0) return;
+
+	std::filesystem::create_directory("DebugLog");
+
+	// 現在時刻を取得
+	auto now = std::chrono::system_clock::now();
+	std::time_t time_t_now = std::chrono::system_clock::to_time_t(now);
+
+	std::tm localTime{};
+	localtime_s(&localTime, &time_t_now);
+
+	// バッファに "YYYYMMDD_HHMMSS" を書き込む
+	char buffer[32];
+	std::strftime(buffer, sizeof(buffer), "%Y%m%d_%H%M%S", &localTime);
+
+	std::string dateString(buffer);
+	std::string logFilePath = std::string("DebugLog/") + dateString + ".log";
+
+	logFIle.open(logFilePath);
+}
+
+
+void Logger::Log(std::string const& message_, const std::string& fileName_)
+{
+#ifdef _DEBUG
+
+	Init();
+
+	std::string output = message_;
+
+	if (fileName_.size() > 0)
+	{
+		std::string space = " ";
+		std::string colon = ": ";
+		int const numSpace = 60;
+		int numSpaceRequired = numSpace - (int)message_.size();
+
+		for (int i = 0;i < numSpaceRequired;++i)
+		{
+			output += space;
+		}
+
+		output += colon + fileName_;
+	}
+
+	logFIle << output << std::endl;
+	OutputDebugStringA((output + "\n").c_str());
+
+#endif
+}
+
+void Logger::Entry(const std::string& message_)
+{
+#ifdef _DEBUG
+
+	Init();
+
+	std::string output = "\n[ Entry ]=======----[ " + message_ + " ]----";
+
+	std::string const lineBreak = "\n";
+	std::string const doubleLine = "=";
+
+	int const numEnd = 90;
+	int numCharRequired = numEnd - (int)output.size();
+	for (int i = 0;i < numCharRequired;++i)
+	{
+		output += doubleLine;
+	}
+
+	output += lineBreak;
+
+	logFIle << output << std::endl;
+	OutputDebugStringA(output.c_str());
+#endif
+
+}
+
+void Logger::End(const std::string& message_)
+{
+#ifdef _DEBUG
+
+	std::string output = "\n[ End ]=========----[ " + message_ + " ]----";
+
+	std::string const lineBreak = "\n";
+	std::string const doubleLine = "=";
+
+	int const numEnd = 90;
+	int numCharRequired = numEnd - (int)output.size();
+	for (int i = 0;i < numCharRequired;++i)
+	{
+		output += doubleLine;
+	}
+
+	output += lineBreak;
+
+	logFIle << output << std::endl;
+	OutputDebugStringA(output.c_str());
+
+#endif
+}
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Debug\Logger\Logger.h ===
+========================================
+#pragma once
+
+
+class Logger
+{
+	static inline std::ofstream logFIle;
+	static void Init();
+
+public:
+
+	static void Log(std::string const& message_, const std::string& fileName_ = "");
+	static void Entry(const std::string& message_);
+	static void End(const std::string& message_);
+
+};
+
+
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Debug\RuntimeDebugger\RuntimeDebugger.cpp ===
+========================================
+#include "PreCompileHedder.h"
+#include "RuntimeDebugger.h"
+#include "../ErrorMessageOutput/ErrorMessageOutput.h"
+
+
+RuntimeDebugger::RuntimeDebugger()
+{
+	using namespace ProjectConfig::Debug;
+
+	//インスタンス制限
+	std::string errorMessage = "RuntimeDebuggerクラスが複数具現化されてます";
+	ErrorMessageOutput::Assert::DetectError(InstanceLimiter::CanInstantiate(), errorMessage,"RuntimeDebugger.cpp");
+
+	if (kEnableDebugLayer) debugLayer.Init();
+	if (kEnablePointerValidator) pointerValidator.Init();
+	if (kEnableLeakChecker) leakChecker.Init();
+
+}
+
+//RuntimeDebuggerクラスのインスタンスを1つに制限する
+bool RuntimeDebugger::InstanceLimiter::CanInstantiate()
+{
+	static InstanceLimiter instanceLimiter;
+
+	return (instanceLimiter.instanceCnt++ == 0);
+}
+
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Debug\RuntimeDebugger\RuntimeDebugger.h ===
+========================================
+#pragma once
+#include "DebugSystems/DebugLayer/DebugLayer.h"
+#include "DebugSystems/LeakChecker/LeakChecker.h"
+#include "DebugSystems/PointerValidator/PointerValidator.h"
+
+class RuntimeDebugger
+{
+public:
+
+	RuntimeDebugger();
+
+	RuntimeDebugger(const RuntimeDebugger&) = delete;
+	RuntimeDebugger& operator=(const RuntimeDebugger&) = delete;
+	RuntimeDebugger(RuntimeDebugger&&) = delete;
+	RuntimeDebugger& operator=(RuntimeDebugger&&) = delete;
+
+private:
+
+	//インスタンス制限
+	class InstanceLimiter;
+
+	DebugLayer debugLayer{ RuntimeDebuggerBehavior::InstanceKey{} };
+	PointerValidator pointerValidator{ RuntimeDebuggerBehavior::InstanceKey{} };
+	LeakChecker leakChecker{ RuntimeDebuggerBehavior::InstanceKey{} };
+};
+
+
+//RuntimeDebuggerクラスのインスタンスを制御するクラス
+class RuntimeDebugger::InstanceLimiter
+{
+public:
+	static bool CanInstantiate();
+
+	InstanceLimiter(const InstanceLimiter&) = delete;
+	InstanceLimiter& operator=(const InstanceLimiter&) = delete;
+	InstanceLimiter(InstanceLimiter&&) = delete;
+	InstanceLimiter& operator=(InstanceLimiter&&) = delete;
+
+private:
+	int instanceCnt{};
+
+	~InstanceLimiter() = default;
+	InstanceLimiter() = default;
+};
+
+
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Debug\RuntimeDebugger\DebugSystems\RuntimeDebuggerBehavior.cpp ===
+========================================
+#include "PreCompileHedder.h"
+#include "RuntimeDebuggerBehavior.h"
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Debug\RuntimeDebugger\DebugSystems\RuntimeDebuggerBehavior.h ===
+========================================
+#pragma once
+
+class RuntimeDebugger;
+
+class RuntimeDebuggerBehavior
+{
+public:
+	struct InstanceKey
+	{
+	private:
+		friend class RuntimeDebugger;
+		explicit InstanceKey() = default;
+	};
+
+protected:
+
+	virtual void Init() = 0;
+	RuntimeDebuggerBehavior(InstanceKey instanceKey_) {};
+};
+
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Debug\RuntimeDebugger\DebugSystems\DebugLayer\DebugLayer.cpp ===
+========================================
+#include "PreCompileHedder.h"
+#include "DebugLayer.h"
+
+
+void DebugLayer::Init()
+{
+
+	if (SUCCEEDED(D3D12GetDebugInterface(IID_PPV_ARGS(&debugController))))
+	{
+		debugController->EnableDebugLayer();
+		debugController->SetEnableGPUBasedValidation(TRUE);
+	}
+
+}
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Debug\RuntimeDebugger\DebugSystems\DebugLayer\DebugLayer.h ===
+========================================
+#pragma once
+#include "../RuntimeDebuggerBehavior.h"
+
+class DebugLayer:public RuntimeDebuggerBehavior
+{
+	Microsoft::WRL::ComPtr <ID3D12Debug1> debugController = nullptr;
+
+public:
+	virtual void Init()override;
+	DebugLayer(InstanceKey instanceKey_) :RuntimeDebuggerBehavior(instanceKey_) {}
+	
+};
+
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Debug\RuntimeDebugger\DebugSystems\LeakChecker\LeakChecker.cpp ===
+========================================
+#include "PreCompileHedder.h"
+#include "LeakChecker.h"
+
+void LeakChecker::Init()
+{
+
+}
+
+LeakChecker::~LeakChecker()
+{
+	//リソースリークチェック
+	Microsoft::WRL::ComPtr<IDXGIDebug1> debug = nullptr;
+
+	if (SUCCEEDED(DXGIGetDebugInterface1(0, IID_PPV_ARGS(&debug))))
+	{
+		debug->ReportLiveObjects(DXGI_DEBUG_ALL, DXGI_DEBUG_RLO_ALL);
+		debug->ReportLiveObjects(DXGI_DEBUG_APP, DXGI_DEBUG_RLO_ALL);
+		debug->ReportLiveObjects(DXGI_DEBUG_D3D12, DXGI_DEBUG_RLO_ALL);
+	}
+}
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Debug\RuntimeDebugger\DebugSystems\LeakChecker\LeakChecker.h ===
+========================================
+#pragma once
+#include "../RuntimeDebuggerBehavior.h"
+
+class LeakChecker :public RuntimeDebuggerBehavior
+{
+public:
+
+	~LeakChecker();
+	LeakChecker(InstanceKey instanceKey_) :RuntimeDebuggerBehavior(instanceKey_) {}
+
+
+	virtual void Init()override;
+
+	LeakChecker(const LeakChecker&) = delete;
+	LeakChecker& operator=(const LeakChecker&) = delete;
+};
+
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Debug\RuntimeDebugger\DebugSystems\PointerValidator\PointerValidator.cpp ===
+========================================
+#include "PreCompileHedder.h"
+#include "PointerValidator.h"
+
+void PointerValidator::Init()
+{
+	//＜ポインタ破壊などを検知するためのもの＞
+	_CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
+	_CrtSetDbgFlag(_CrtSetDbgFlag(_CRTDBG_REPORT_FLAG) | _CRTDBG_CHECK_ALWAYS_DF);
+
+}
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Debug\RuntimeDebugger\DebugSystems\PointerValidator\PointerValidator.h ===
+========================================
+#pragma once
+#include "../RuntimeDebuggerBehavior.h"
+
+class PointerValidator :public RuntimeDebuggerBehavior
+{
+public:
+	virtual void Init()override;
+	PointerValidator(InstanceKey instanceKey_) :RuntimeDebuggerBehavior(instanceKey_) {}
+
+};
+
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Math\Matrix\Matrix4.h ===
+========================================
+#pragma once
+#include "../Vector/Vector3.h"
+
+struct Matrix4
+{
+	DirectX::XMFLOAT4X4 data;
+
+	inline Matrix4()
+	{
+		DirectX::XMStoreFloat4x4(&data, DirectX::XMMatrixIdentity());
+	}
+
+	inline Matrix4
+	(
+		float m00, float m01, float m02, float m03,
+		float m10, float m11, float m12, float m13,
+		float m20, float m21, float m22, float m23,
+		float m30, float m31, float m32, float m33
+	)
+	{
+		data = DirectX::XMFLOAT4X4
+		(
+			m00, m01, m02, m03,
+			m10, m11, m12, m13,
+			m20, m21, m22, m23,
+			m30, m31, m32, m33
+		);
+	}
+
+
+	inline static Matrix4 CreateScale(float x_, float y_ , float z_)
+	{
+		Matrix4 scaleMat;
+		DirectX::XMStoreFloat4x4(&scaleMat.data, DirectX::XMMatrixScaling(x_, y_, z_));
+		
+		return scaleMat;
+	}
+
+	inline static Matrix4 CreateScale(const Vector3 scale_ )
+	{
+		Matrix4 scaleMat;
+		DirectX::XMStoreFloat4x4(&scaleMat.data, DirectX::XMMatrixScaling(scale_.data.x, scale_.data.y, scale_.data.z));
+
+		return scaleMat;
+	}
+
+	inline static Matrix4 CreateTranslation(float x_, float y_, float z_)
+	{
+		Matrix4 translationMat;
+		DirectX::XMStoreFloat4x4(&translationMat.data, DirectX::XMMatrixTranslation(x_, y_, z_));
+
+		return translationMat;
+	}
+
+	inline static Matrix4 CreateTranslation(const Vector3 translation_)
+	{
+		Matrix4 translationMat;
+		DirectX::XMStoreFloat4x4(&translationMat.data, DirectX::XMMatrixTranslation(translation_.data.x, translation_.data.y, translation_.data.z));
+
+		return translationMat;
+	}
+
+	Matrix4 GetMultiply(Matrix4 const& other) const
+	{
+		DirectX::XMMATRIX m1 = DirectX::XMLoadFloat4x4(&data);
+		DirectX::XMMATRIX m2 = DirectX::XMLoadFloat4x4(&other.data);
+
+		Matrix4 result;
+		DirectX::XMStoreFloat4x4(&result.data, DirectX::XMMatrixMultiply(m1, m2));
+
+		return result;
+	}
+
+	inline float GetDeterminant()const
+	{
+		DirectX::XMMATRIX m = DirectX::XMLoadFloat4x4(&data);
+
+		return DirectX::XMVectorGetX(DirectX::XMMatrixDeterminant(m));
+	}
+
+	inline Matrix4 GetInversed() const
+	{
+		DirectX::XMMATRIX m = DirectX::XMLoadFloat4x4(&data);
+		DirectX::XMVECTOR determinant = DirectX::XMMatrixDeterminant(m);
+
+		if (DirectX::XMVector4Equal(determinant, DirectX::XMVectorZero()))
+		{
+			return Matrix4(); 
+		}
+
+		Matrix4 result;
+
+		DirectX::XMStoreFloat4x4(&result.data, DirectX::XMMatrixInverse(&determinant, m));
+		return result;
+	}
+
+	inline Matrix4 Transpose() const
+	{
+		DirectX::XMMATRIX m = DirectX::XMLoadFloat4x4(&data);
+
+		Matrix4 result;
+		
+		DirectX::XMStoreFloat4x4(&result.data, DirectX::XMMatrixTranspose(m));
+		return result;
+	}
+
+};
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Math\Quaternion\Quaternion.cpp ===
+========================================
+#include "PreCompileHedder.h"
+#include "Quaternion.h"
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Math\Quaternion\Quaternion.h ===
+========================================
+	#pragma once
+	#include "../Matrix/Matrix4.h"
+
+
+	struct Quaternion
+	{
+		DirectX::XMFLOAT4 data;
+		
+		inline Quaternion()
+		{
+			DirectX::XMStoreFloat4(&data, DirectX::XMQuaternionIdentity());
+		}
+
+		inline Quaternion(float x_, float y_, float z_, float w_) : data(x_, y_, z_, w_) {};
+
+		inline Matrix4 GetRotateMatrix() const
+		{
+			DirectX::XMVECTOR q = DirectX::XMLoadFloat4(&data);
+
+			Matrix4 result;
+
+			DirectX::XMStoreFloat4x4(&result.data, DirectX::XMMatrixRotationQuaternion(q));
+			return result;
+		}
+
+		inline static Quaternion CreateQuaternion(const Vector3 axis_, const float radian_)
+		{
+			DirectX::XMVECTOR axisVec = DirectX::XMVectorSet(axis_.data.x, axis_.data.y, axis_.data.z, 0.0f);
+			axisVec = DirectX::XMVector3Normalize(axisVec);
+
+			Quaternion result;
+			DirectX::XMStoreFloat4(&result.data, DirectX::XMQuaternionRotationAxis(axisVec, radian_));
+
+			return result;
+		}
+
+		inline static Quaternion CreateQuaternion(const Vector3 lookDir_)
+		{
+			DirectX::XMVECTOR xAxis;
+			DirectX::XMVECTOR yAxis;
+			DirectX::XMVECTOR zAxis;
+			DirectX::XMVECTOR vertical;
+
+			zAxis = DirectX::XMVectorSet(lookDir_.data.x, lookDir_.data.y, lookDir_.data.z, 0.0f);
+			zAxis = DirectX::XMVector3Normalize(zAxis);
+
+			DirectX::XMVECTOR up = DirectX::XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f);
+			float dot = DirectX::XMVectorGetX(DirectX::XMVector3Dot(zAxis, up));
+
+			//真下か真上を向いている場合を回避
+			if (fabsf(dot) > 0.99f)
+			{
+				//代わりの上方向として前を垂直軸として作る
+				vertical = DirectX::XMVectorSet(0.0f, 0.0f, 1.0f, 0.0f);
+			}
+			else
+			{
+				vertical = DirectX::XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f);
+			}
+
+			xAxis = DirectX::XMVector3Normalize(DirectX::XMVector3Cross(vertical, zAxis));
+
+			yAxis = DirectX::XMVector3Normalize(DirectX::XMVector3Cross(zAxis, xAxis));
+
+			DirectX::XMMATRIX roatationMatrix = DirectX::XMMatrixIdentity();
+			roatationMatrix.r[0] = xAxis;
+			roatationMatrix.r[1] = yAxis;
+			roatationMatrix.r[2] = zAxis;
+
+			Quaternion result;
+			DirectX::XMStoreFloat4(&result.data, DirectX::XMQuaternionRotationMatrix(roatationMatrix));
+
+			return result;
+		}
+
+		inline Quaternion Multiply(const Quaternion& rQuaternion_)const
+		{
+			DirectX::XMVECTOR q1 = DirectX::XMLoadFloat4(&data);
+			DirectX::XMVECTOR q2 = DirectX::XMLoadFloat4(&rQuaternion_.data);
+
+			Quaternion result;
+			DirectX::XMStoreFloat4(&result.data, DirectX::XMQuaternionMultiply(q1, q2));
+
+			return result;
+		}
+
+		inline Quaternion Slerp(const Quaternion& rQuaternion_, float t_) const
+		{
+			DirectX::XMVECTOR startQ = DirectX::XMLoadFloat4(&data);
+			DirectX::XMVECTOR endQ = DirectX::XMLoadFloat4(&rQuaternion_.data);
+
+			Quaternion result;
+			DirectX::XMStoreFloat4(&result.data, DirectX::XMQuaternionSlerp(startQ, endQ, t_));
+
+			return result;
+		}
+
+	};
+
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Math\Vector\Vector2.cpp ===
+========================================
+#include "PreCompileHedder.h"
+#include "Vector2.h"
+
+float Vector2::GetMagnitutde()
+{
+	float ret_mag = sqrtf(x * x + y * y);
+	return ret_mag;
+}
+
+Vector2 Vector2::GetNormalized()
+{
+	if (x == 0.0f && y == 0.0f)
+	{
+		return { 0,0 };
+	}
+
+	float inv_mag = 1.0f / GetMagnitutde();
+
+	return { x * inv_mag ,y * inv_mag };
+}
+
+float Vector2::GetCos(Vector2 other_)
+{
+	//正規化する
+	Vector2 normalized1 = GetNormalized();
+	Vector2 normalized2 = other_.GetNormalized();
+
+	//cos(🍆角)
+	float ret_cos = normalized1.x * normalized2.x + normalized1.y * normalized2.y;
+
+	return ret_cos;
+
+}
+
+float Vector2::GetDot(Vector2 other_)
+{
+	float ret_dot = x * other_.x + y * other_.y;
+	return ret_dot;
+}
+
+
+Vector2 operator+(Vector2 const& lVec_, Vector2 const& rVec_)
+{
+	return { lVec_.x + rVec_.x,lVec_.y + rVec_.y };
+}
+
+
+Vector2 operator-(Vector2  const& lVec_, Vector2  const& rVec_)
+{
+	return { lVec_.x - rVec_.x,lVec_.y - rVec_.y };
+
+}
+Vector2 operator*(Vector2 const& dst_vec_, float const multipleNum)
+{
+	return { dst_vec_.x * multipleNum,dst_vec_.y * multipleNum };
+}
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Math\Vector\Vector2.h ===
+========================================
+#pragma once
+
+struct Vector2
+{
+	float x = 0.0f;
+	float y = 0.0f;
+
+	Vector2(float entries[2]) : x(entries[0]), y(entries[1]) {}
+	Vector2(float u_, float v_) : x(u_), y(v_) {}
+	Vector2() {};
+	float GetMagnitutde();
+	Vector2 GetNormalized();
+	float GetCos(Vector2 other_);
+	float GetDot(Vector2 other_);
+
+};
+
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Math\Vector\Vector3.cpp ===
+========================================
+#include "Vector3.h"
+#include "../Matrix/Matrix4.h"
+
+Vector3 Vector3::GetMultiply(Matrix4 const& other) const
+{
+	DirectX::XMVECTOR v = DirectX::XMLoadFloat3(&data);
+	DirectX::XMMATRIX m = DirectX::XMLoadFloat4x4(&other.data);
+
+	DirectX::XMVECTOR resultVector = DirectX::XMVector3TransformCoord(v, m);
+
+	Vector3 result;
+	DirectX::XMStoreFloat3(&result.data, resultVector);
+
+	return result;
+}
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Math\Vector\Vector3.h ===
+========================================
+#pragma once
+
+struct Matrix4;
+
+struct Vector3
+{
+	DirectX::XMFLOAT3 data;
+
+	//正規化
+	inline Vector3 GetNormalize()const
+	{
+		DirectX::XMVECTOR v = DirectX::XMLoadFloat3(&data);
+		DirectX::XMVECTOR lengthSqVector = DirectX::XMVector3LengthSq(v);
+
+		if (DirectX::XMVector3LessOrEqual(lengthSqVector, DirectX::XMVectorZero()))
+		{
+			return Vector3(0.0f, 0.0f, 0.0f);
+		}
+
+		Vector3 normalized;
+		DirectX::XMStoreFloat3(&normalized.data, DirectX::XMVector3Normalize(v));
+
+		return normalized;
+	}
+
+	inline float Length()const
+	{
+		DirectX::XMVECTOR v = DirectX::XMLoadFloat3(&data);
+		DirectX::XMVECTOR lengthSqVector = DirectX::XMVector3LengthSq(v);
+
+		if (DirectX::XMVector3LessOrEqual(lengthSqVector, DirectX::XMVectorZero()))
+		{
+			return 0.0f;
+		}
+
+		return DirectX::XMVectorGetX(DirectX::XMVector3Length(v));
+	}
+
+	//内積
+	inline float GetCos(const Vector3 other_)const
+	{
+		DirectX::XMVECTOR v1 = DirectX::XMLoadFloat3(&data);
+		DirectX::XMVECTOR v2 = DirectX::XMLoadFloat3(&other_.data);
+
+		return DirectX::XMVectorGetX(DirectX::XMVector3Dot(v1, v2));	
+	}
+
+	//外積
+	inline Vector3 GetCross(const Vector3 other_)const
+	{
+		DirectX::XMVECTOR v1 = DirectX::XMLoadFloat3(&data);
+		DirectX::XMVECTOR v2 = DirectX::XMLoadFloat3(&other_.data);
+
+		Vector3 cross;
+		DirectX::XMStoreFloat3(&cross.data, DirectX::XMVector3Cross(v1, v2));
+
+		return cross;
+	}
+
+	//長さ
+	inline float GetNorm()const
+	{
+		DirectX::XMVECTOR v = DirectX::XMLoadFloat3(&data);
+
+		return DirectX::XMVectorGetX(DirectX::XMVector3Length(v));
+	}
+
+	inline float LengthSq()const
+	{
+		DirectX::XMVECTOR v = DirectX::XMLoadFloat3(&data);
+		DirectX::XMVECTOR lengthSqVector = DirectX::XMVector3LengthSq(v);
+
+		return DirectX::XMVectorGetX(lengthSqVector);
+	}
+
+	//長さ比較return [0] or [-] or [+] 
+	inline int LengthComparison(const Vector3 rVec_)const
+	{
+		float subtractResult = LengthSq() - rVec_.LengthSq();
+
+		return (subtractResult > 0) - (subtractResult < 0);
+	}
+
+	//長さ比較（実数値）
+	inline int LengthComparison(float const num_)const
+	{
+		float subtractResult = LengthSq() - (num_ * num_);
+
+		return (subtractResult > 0) - (subtractResult < 0);
+	}
+
+
+	inline Vector3() : data(0.0f, 0.0f, 0.0f) {}
+
+	inline Vector3(float x_, float y_, float z_) : data(x_, y_, z_) {}
+
+	inline Vector3(float entries_[3]) :data(entries_[0], entries_[1], entries_[2]) {}
+
+	inline Vector3 operator+(const Vector3 other_)
+	{
+		//保管用のデータを、計算用データに入れ替える
+		DirectX::XMVECTOR v1 = DirectX::XMLoadFloat3(&data);
+		DirectX::XMVECTOR v2 = DirectX::XMLoadFloat3(&other_.data);
+
+		//simd命令でxyzを同時に足し算する
+		DirectX::XMVECTOR resultvec = DirectX::XMVectorAdd(v1, v2);
+		
+		//計算結果を再びXMFloat3に戻す
+		Vector3 result;
+		DirectX::XMStoreFloat3(&result.data, resultvec);
+
+		return result;
+	}
+
+	inline Vector3 operator-(const Vector3 other_)
+	{
+		//保管用のデータを、計算用データに入れ替える
+		DirectX::XMVECTOR v1 = DirectX::XMLoadFloat3(&data);
+		DirectX::XMVECTOR v2 = DirectX::XMLoadFloat3(&other_.data);
+
+		//simd命令でxyzを同時に引き算する
+		DirectX::XMVECTOR resultvec = DirectX::XMVectorSubtract(v1, v2);
+
+		//計算結果を再びXMFloat3に戻す
+		Vector3 result;
+		DirectX::XMStoreFloat3(&result.data, resultvec);
+
+		return result;
+	}
+
+	inline Vector3 operator*(const float num_)
+	{
+		//保管用のデータを、計算用データに入れ替える
+		DirectX::XMVECTOR v = DirectX::XMLoadFloat3(&data);
+
+		//計算結果を再びXMFloat3に戻す
+		Vector3 result;
+		DirectX::XMStoreFloat3(&result.data, DirectX::XMVectorScale(v,num_));
+
+		return result;
+	}
+
+	inline Vector3& operator+=(const Vector3 other_)
+	{
+		//保管用のデータを、計算用データに入れ替える
+		DirectX::XMVECTOR v1 = DirectX::XMLoadFloat3(&data);
+		DirectX::XMVECTOR v2 = DirectX::XMLoadFloat3(&other_.data);
+
+		//simd命令でxyzを同時に足し算する
+		DirectX::XMVECTOR resultvec = DirectX::XMVectorAdd(v1, v2);
+
+		//計算結果を再びXMFloat3に戻す
+		DirectX::XMStoreFloat3(&data, resultvec);
+
+		return *this;
+	}
+
+	inline Vector3& operator-=(const Vector3 other_) 
+	{
+		//保管用のデータを、計算用データに入れ替える
+		DirectX::XMVECTOR v1 = DirectX::XMLoadFloat3(&data);
+		DirectX::XMVECTOR v2 = DirectX::XMLoadFloat3(&other_.data);
+
+		//simd命令でxyzを同時に足し算する
+		DirectX::XMVECTOR resultvec = DirectX::XMVectorSubtract(v1, v2);
+
+		//計算結果を再びXMFloat3に戻す
+		DirectX::XMStoreFloat3(&data, resultvec);
+
+		return *this;
+	}
+
+	Vector3 GetMultiply(Matrix4 const& other) const;
+
+};
+
+inline Vector3 operator*(const float num_,Vector3 vec_)
+{
+	return vec_ * num_;
+}
+
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Render\kara.h ===
+========================================
+#pragma once
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Resource\BufferContext.cpp ===
+========================================
+#include "PreCompileHedder.h"
+#include "BufferContext.h"
+#include "ResourceCreator/ResourceCreator.h"
+
+
+BufferContext::BufferContext(InstanceKey instanceKey_, CreateResourceCommand createResourceCommand_)
+{
+	resourceCreator.reset(new ResourceCreator(instanceKey_, createResourceCommand_)) ;
+}
+
+BufferContext::~BufferContext()
+{
+
+}
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Resource\BufferContext.h ===
+========================================
+#pragma once
+
+class WinApp;
+class ResourceCreator;
+
+class BufferContext
+{
+public:
+
+	//リソース生成コマンド
+	using CreateResourceCommand = std::function<Microsoft::WRL::ComPtr<ID3D12Resource>
+		(
+			const D3D12_RESOURCE_DESC& resourceDesc_,
+			const D3D12_HEAP_PROPERTIES& heapProperties_,
+			const D3D12_CLEAR_VALUE* clearValue_,
+			const std::string& name_
+		)>;
+
+
+	//自身のインスタンス化キー
+	struct InstanceKey;
+
+	BufferContext(InstanceKey instanceKey_, CreateResourceCommand createResourceCommand_);
+	~BufferContext();
+
+private:
+
+	//バッファ生成クラス
+	std::unique_ptr<ResourceCreator> resourceCreator;
+
+};
+
+
+
+struct BufferContext::InstanceKey
+{
+
+private:
+
+	friend class WinApp;
+	explicit InstanceKey() = default;
+};
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Resource\MeshShaderPipelineStateStream.h ===
+========================================
+#pragma once
+#include "../../External/d3dx12/d3dx12.h"
+
+struct MeshShaderPipelineStateStream
+{
+	CD3DX12_PIPELINE_STATE_STREAM_ROOT_SIGNATURE pRootSignature;
+	CD3DX12_PIPELINE_STATE_STREAM_MS MS;
+	CD3DX12_PIPELINE_STATE_STREAM_PS PS;
+	CD3DX12_PIPELINE_STATE_STREAM_RASTERIZER RasterizerState;
+	CD3DX12_PIPELINE_STATE_STREAM_BLEND_DESC BlendState;
+	CD3DX12_PIPELINE_STATE_STREAM_DEPTH_STENCIL DepthStencilState;
+	CD3DX12_PIPELINE_STATE_STREAM_SAMPLE_DESC SampleDesc;
+	CD3DX12_PIPELINE_STATE_STREAM_SAMPLE_MASK SampleMask;
+	CD3DX12_PIPELINE_STATE_STREAM_RENDER_TARGET_FORMATS RTVFormats;
+	CD3DX12_PIPELINE_STATE_STREAM_DEPTH_STENCIL_FORMAT DSVFormat;
+};
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Resource\BufferAssembler\BufferAssembler.cpp ===
+========================================
+#include "PreCompileHedder.h"
+#include "BufferAssembler.h"
+
+//バッファ
+#include "../GPUBuffer/ColorBuffer/ColorBuffer.h"
+#include "../GPUBuffer/ConstantBuffer/ConstantBuffer.h"
+#include "../GPUBuffer/DepthStencilBuffer/DepthStencilBuffer.h"
+#include "../GPUBuffer/SRV_UAVBuffer/SRV_UAVBuffer.h"
+
+//ディスクリプション
+#include "../BufferDescriptions/ColorBufferDescription/ColorBufferDescription.h"
+#include "../BufferDescriptions/ConstantBufferDescription/ConstantBufferDescription.h"
+#include "../BufferDescriptions/DepthStencilBufferDescription/DepthStencilBufferDescription.h"
+#include "../BufferDescriptions/SRV_UAVBufferDescription/SRV_UAVBufferDescription.h"
+
+//ツール
+#include "../ResourceCreator/ResourceCreator.h"
+#include "../../Core/DescriptorHeap/ViewCreator/ViewCreator.h"
+
+BufferAssembler::BufferAssembler(ResourceCreator* resourceCreator_, ViewCreator* viewCreator_)
+	:resourceCreator(resourceCreator_), viewCreator(viewCreator_)
+{
+
+}
+
+std::pair<D3D12_RESOURCE_DESC, D3D12_HEAP_PROPERTIES> BufferAssembler::AssembleResourceCreateRequirements(const IBufferDescription& desc_)
+{
+	D3D12_HEAP_PROPERTIES heapProp = desc_.CreateHeapProperties();
+	D3D12_RESOURCE_DESC resourceDesc = desc_.CreateResourceDesc();
+
+	return std::make_pair(resourceDesc, heapProp);
+}
+
+
+
+template<>
+std::unique_ptr<ColorBuffer> BufferAssembler::AssembleResource(D3D12_RESOURCE_DESC resourceDesc_, D3D12_HEAP_PROPERTIES heapProp_,const std::string& name_ ,ColorBufferDescription desc_)
+{
+	using DoubleResource = std::pair<Microsoft::WRL::ComPtr<ID3D12Resource>, Microsoft::WRL::ComPtr<ID3D12Resource>> ;
+
+	//名前変換
+	std::string nameCnv = ConvertName(name_, "ColorBuffer");
+
+	//クリアバリュー必要
+	auto clearValue = desc_.WatchClearValue();
+	//リソース生成
+	DoubleResource doubleResource = resourceCreator->CreateResource(resourceDesc_, heapProp_, &clearValue, nameCnv);
+
+	//移し替え
+	auto descPtr = std::make_unique<ColorBufferDescription>(std::move(desc_));
+
+	//バッファ生成
+	return std::make_unique<ColorBuffer>
+	(
+		ColorBuffer::InstanceKey{},
+		nameCnv,
+		std::move(doubleResource.first), std::move(doubleResource.second),
+		std::move(descPtr)
+	);
+}
+
+template<>
+void BufferAssembler::AssembleView(ColorBuffer* buffer_, const ColorBufferDescription& desc_)
+{
+	auto srv = desc_.CreateSRV_Desc();
+	auto rtv = desc_.CreateRTV_Desc();
+
+	for (int i = 0;i < ProjectConfig::Render::kRequiredGPUBufferSum;++i)
+	{
+		auto accessKey = ColorBuffer::BufferAccessKey{};
+		auto instanceKey = ColorBuffer::InstanceKey{};
+
+		//srvを作り、インデックスを格納
+		uint32_t srvHeapIndex = viewCreator->CreateView<uint32_t>(buffer_->GetResource(accessKey , i), srv);
+		buffer_->OverrideIndex<ViewType::kSRV>(instanceKey, srvHeapIndex, i);
+
+		//rtvを作り、インデックスを格納
+		D3D12_CPU_DESCRIPTOR_HANDLE rtvHeapIndex = viewCreator->CreateView<D3D12_CPU_DESCRIPTOR_HANDLE>(buffer_->GetResource(accessKey , i), rtv);
+		buffer_->OverrideIndex<ViewType::kRTV>(instanceKey, rtvHeapIndex, i);
+
+	}
+}
+
+
+
+std::string BufferAssembler::ConvertName(const std::string& srcName_, const std::string& attach_)
+{
+	return attach_ + "[ " + srcName_ + " ] ";
+}
+
+
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Resource\BufferAssembler\BufferAssembler.h ===
+========================================
+#pragma once
+
+//ツール
+class ResourceCreator;
+class ViewCreator;
+
+//ディスクリプション
+struct ColorBufferDescription;
+struct ConstantBufferDescription;
+struct DepthStencilBufferDescription;
+struct SRV_UAVBufferDescription;
+
+//バッファ
+class ColorBuffer;
+class ConstantBuffer;
+class DepthStencilBuffer;
+class SRV_UAVBuffer;
+
+struct IBufferDescription;
+
+//バッファとディスクを特定のクラスに限定して組み立てる
+class BufferAssembler
+{
+public:
+    BufferAssembler(ResourceCreator* resourceCreator_, ViewCreator* viewCreator_);
+
+    template<typename BufferType, typename DescriptionType>
+    [[nodiscard]] std::unique_ptr<BufferType> Assemble(const DescriptionType& desc_, const std::string& name_)
+    {
+        //要項チェック
+        desc_.CheckRequirementsFilled();
+
+        //リソース生成に必要な情報を組み立てる
+        std::pair<D3D12_RESOURCE_DESC, D3D12_HEAP_PROPERTIES> resourceDescAndHeapProp  = AssembleResourceCreateRequirements(desc_);
+
+        //実体生成、リソースも生成
+        std::unique_ptr<BufferType> buffer = std::move
+        (
+            AssembleResource<BufferType>(resourceDescAndHeapProp.first, resourceDescAndHeapProp.second, name_, desc_)
+        );
+
+
+        return buffer;
+    }
+
+
+private:
+
+    //バッファ生成、中身のリソースも生成
+    template<typename BufferType,typename DescriptionType>
+    std::unique_ptr<BufferType> AssembleResource
+    (
+        D3D12_RESOURCE_DESC resourceDesc_,
+        D3D12_HEAP_PROPERTIES heapProp_,
+        const std::string& name_,
+        DescriptionType desc_
+    );
+    
+    //ビュー生成
+    template<typename BufferType, typename DescriptionType>
+    void AssembleView(BufferType* buffer_ , const DescriptionType& desc_);
+
+    //リソース生成に必要なものを組み立てる
+    std::pair<D3D12_RESOURCE_DESC, D3D12_HEAP_PROPERTIES> AssembleResourceCreateRequirements(const IBufferDescription& desc_);
+
+    //名前変換
+    std::string ConvertName(const std::string& srcName_, const std::string& attach_);
+
+
+    ResourceCreator* resourceCreator;
+    ViewCreator* viewCreator;
+};
+
+
+template<>
+std::unique_ptr<ColorBuffer> BufferAssembler::AssembleResource
+(
+    D3D12_RESOURCE_DESC resourceDesc_,
+    D3D12_HEAP_PROPERTIES heapProp_, 
+    const std::string& name_,
+    ColorBufferDescription desc_
+);
+
+
+template<>
+void BufferAssembler::AssembleView(ColorBuffer* buffer_, const ColorBufferDescription& desc_);
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Resource\BufferDescriptions\IBufferDescription.h ===
+========================================
+#pragma once
+
+//＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝
+
+//GPUバッファ生成、view生成に必要な情報をまとめてある。
+//CB
+//Colorバッファ
+//sr_uaバッファ
+//depthBuffer
+
+//＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝
+
+//バッファのディスクリプション共通インターフェース
+struct IBufferDescription
+{
+	virtual void CheckRequirementsFilled() const = 0;
+	virtual D3D12_RESOURCE_DESC CreateResourceDesc()const = 0;
+	virtual D3D12_HEAP_PROPERTIES CreateHeapProperties()const = 0;
+
+};
+
+
+//それぞれの固有のビュー生成インターフェース
+struct ISRBufferAssembler 
+{
+	virtual D3D12_SHADER_RESOURCE_VIEW_DESC CreateSRV_Desc()const = 0; 
+};
+
+struct IUAV_Assembler 
+{
+	virtual D3D12_UNORDERED_ACCESS_VIEW_DESC CreateUAV_Desc()const = 0; 
+
+};
+
+struct IRTBufferAssembler 
+{
+	virtual D3D12_RENDER_TARGET_VIEW_DESC CreateRTV_Desc()const = 0; 
+	virtual D3D12_CLEAR_VALUE WatchClearValue() const = 0;
+};
+
+struct IDSV_Assembler 
+{
+	virtual D3D12_DEPTH_STENCIL_VIEW_DESC CreateDSVDesc()const = 0; 
+	virtual D3D12_CLEAR_VALUE WatchClearValue() const = 0;
+
+};
+
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Resource\BufferDescriptions\ColorBufferDescription\ColorBufferDescription.cpp ===
+========================================
+#include "PreCompileHedder.h"
+#include "ColorBufferDescription.h"
+
+void ColorBufferDescription::CheckRequirementsFilled() const
+{
+	std::string errorMess{};
+
+	for (int i = 0;i < 4;++i)
+	{
+		if (clearColor[i] > 1)
+		{
+			errorMess += "[color]";
+			break;
+		}
+	}
+
+	if (width == 0)errorMess += "[width]";
+	if (height == 0)errorMess += "[height]";
+	if(format == DXGI_FORMAT_Error_Detection) errorMess += "[format]";
+	if (flag == D3D12_RESOURCE_FLAG_Error_Detection) errorMess += "[flag]";
+	if(initialState == D3D12_RESOURCE_STATE_Error_Detection) errorMess += "[initialState]";
+
+	ErrorMessageOutput::Assert::DetectError((errorMess.length() == 0), errorMess + "の情報が未設定です", "ColorBufferDescription.cpp");
+
+}
+
+D3D12_HEAP_PROPERTIES ColorBufferDescription::CreateHeapProperties()const
+{
+	D3D12_HEAP_PROPERTIES properties = {};
+	//vramの奥
+	properties.Type = D3D12_HEAP_TYPE_DEFAULT;
+
+	return properties;
+}
+
+D3D12_RESOURCE_DESC ColorBufferDescription::CreateResourceDesc()const
+{
+	D3D12_RESOURCE_DESC resourceDesc = {};
+
+	//幅
+	resourceDesc.Width = width;
+	//高さ
+	resourceDesc.Height = height;
+	//mipmapの数
+	resourceDesc.MipLevels = 1;
+	//奥行orTextureの配列数
+	resourceDesc.DepthOrArraySize = 1;
+	//Textureのformat
+	resourceDesc.Format = format;
+	//サンプリングカウント。１固定
+	resourceDesc.SampleDesc.Count = 1;
+	//テクスチャの次元数。2
+	resourceDesc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
+	resourceDesc.Flags = flag;
+	resourceDesc.Layout = D3D12_TEXTURE_LAYOUT_UNKNOWN;
+
+	return resourceDesc;
+}
+
+D3D12_CLEAR_VALUE ColorBufferDescription::WatchClearValue() const
+{
+	D3D12_CLEAR_VALUE clearValue = {};
+	for (int i = 0; i < 4;++i) clearValue.Color[i] = clearColor[i];
+
+	return clearValue;
+}
+
+D3D12_RENDER_TARGET_VIEW_DESC ColorBufferDescription::CreateRTV_Desc()const
+{
+	D3D12_RENDER_TARGET_VIEW_DESC rtvDesc = {};
+
+	//出力結果をSRGBに変換する
+	rtvDesc.Format = format;
+	//2Dテクスチャとして書き込む
+	rtvDesc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2D;
+	rtvDesc.Texture2D.PlaneSlice = 0;
+	rtvDesc.Texture2D.MipSlice = 0;
+
+	return rtvDesc;
+}
+
+D3D12_SHADER_RESOURCE_VIEW_DESC ColorBufferDescription::CreateSRV_Desc()const
+{
+	D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
+
+	srvDesc.Format = format;
+	srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+	srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
+	srvDesc.Texture2D.MipLevels = UINT(1);
+
+	return srvDesc;
+}
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Resource\BufferDescriptions\ColorBufferDescription\ColorBufferDescription.h ===
+========================================
+#pragma once
+#include "../IBufferDescription.h"
+
+
+//Colorバッファ
+struct ColorBufferDescription final : public IBufferDescription,IRTBufferAssembler, ISRBufferAssembler
+{
+	float clearColor[4] = { 9,9,9,9 };
+	UINT width{};
+	UINT height{};
+	D3D12_RESOURCE_STATES initialState =  D3D12_RESOURCE_STATE_Error_Detection;
+	D3D12_RESOURCE_FLAGS flag = D3D12_RESOURCE_FLAG_Error_Detection;
+	DXGI_FORMAT format = DXGI_FORMAT_Error_Detection;
+
+	//要項チェック
+	virtual void CheckRequirementsFilled() const override;
+	//リソースディスクの生成
+	virtual D3D12_RESOURCE_DESC CreateResourceDesc()const override;
+	//ヒーププロパティの生成
+	virtual D3D12_HEAP_PROPERTIES CreateHeapProperties()const override;
+	//RTV生成
+	virtual D3D12_RENDER_TARGET_VIEW_DESC CreateRTV_Desc()const override;
+	//SRV生成
+	virtual D3D12_SHADER_RESOURCE_VIEW_DESC CreateSRV_Desc()const override;
+	//クリアバリュー
+	virtual D3D12_CLEAR_VALUE WatchClearValue() const override;
+
+};
+
+
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Resource\BufferDescriptions\ConstantBufferDescription\ConstantBufferDescription.cpp ===
+========================================
+#include "PreCompileHedder.h"
+#include "ConstantBufferDescription.h"
+
+void ConstantBufferDescription::CheckRequirementsFilled() const
+{
+	std::string errorMess{};
+
+	if (sizeInByte == 0) errorMess += "[sizeInByte]";
+
+	ErrorMessageOutput::Assert::DetectError((errorMess.length() == 0), errorMess + "の情報が未設定です","ConstantBufferDescription.cpp");
+
+}
+
+D3D12_RESOURCE_DESC ConstantBufferDescription::CreateResourceDesc()const
+{
+	D3D12_RESOURCE_DESC resourceDesc = {};
+
+	resourceDesc.Dimension = D3D12_RESOURCE_DIMENSION_BUFFER;
+	resourceDesc.Width = (sizeInByte + 255) & ~255;;
+	resourceDesc.Height = 1;
+	resourceDesc.DepthOrArraySize = 1;
+	resourceDesc.MipLevels = 1;
+	resourceDesc.SampleDesc.Count = 1;
+	resourceDesc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
+
+	return resourceDesc;
+}
+
+D3D12_HEAP_PROPERTIES ConstantBufferDescription::CreateHeapProperties()const
+{
+	D3D12_HEAP_PROPERTIES properties = {};
+	properties.Type = D3D12_HEAP_TYPE_UPLOAD;
+
+	return properties;
+
+}
+
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Resource\BufferDescriptions\ConstantBufferDescription\ConstantBufferDescription.h ===
+========================================
+#pragma once
+#include "../IBufferDescription.h"
+
+
+//CBバッファ
+struct ConstantBufferDescription final : public IBufferDescription
+{
+	UINT sizeInByte{};
+
+	//パラーメーターチェック
+	virtual void CheckRequirementsFilled() const override;
+	//ヒーププロパティの生成
+	virtual D3D12_HEAP_PROPERTIES CreateHeapProperties()const override;
+	//リソースディスクの生成
+	virtual D3D12_RESOURCE_DESC CreateResourceDesc()const override;
+};
+
+
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Resource\BufferDescriptions\DepthStencilBufferDescription\DepthStencilBufferDescription.cpp ===
+========================================
+#include "PreCompileHedder.h"
+#include "DepthStencilBufferDescription.h"
+
+
+void DepthStencilBufferDescription::CheckRequirementsFilled() const
+{
+
+}
+
+D3D12_RESOURCE_DESC DepthStencilBufferDescription::CreateResourceDesc()const
+{
+	D3D12_RESOURCE_DESC resourceDesc = {};
+
+	resourceDesc.Width = width;
+	resourceDesc.Height = height;
+	resourceDesc.Alignment = 0;
+	//mipmapの数
+	resourceDesc.MipLevels = 1;
+	//奥行or配列Textureの配列数
+	resourceDesc.DepthOrArraySize = 1;
+	//depthstencilとして利用可能なフォーマット
+	resourceDesc.Format = format;
+	//サンプリングカウント1固定
+	resourceDesc.SampleDesc.Count = 1;
+	resourceDesc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
+	//DepthStencilとして使う通知
+	resourceDesc.Flags = D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL;
+	resourceDesc.Layout = D3D12_TEXTURE_LAYOUT_UNKNOWN;
+
+	return resourceDesc;
+}
+
+
+D3D12_DEPTH_STENCIL_VIEW_DESC DepthStencilBufferDescription::CreateDSVDesc()const
+{
+	D3D12_DEPTH_STENCIL_VIEW_DESC dsvDesc = {};
+
+	//format。基本的にはリソースに合わせる
+	dsvDesc.Format = format;
+	//2DTexture
+	dsvDesc.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2D;
+	dsvDesc.Texture2D.MipSlice = 0;
+	dsvDesc.Flags = D3D12_DSV_FLAG_NONE;
+
+	return dsvDesc;
+}
+
+D3D12_HEAP_PROPERTIES DepthStencilBufferDescription::CreateHeapProperties()const
+{
+	D3D12_HEAP_PROPERTIES properties = {};
+
+	properties.Type = D3D12_HEAP_TYPE_DEFAULT;
+	properties.CPUPageProperty = D3D12_CPU_PAGE_PROPERTY_UNKNOWN;
+	properties.MemoryPoolPreference = D3D12_MEMORY_POOL_UNKNOWN;
+	properties.CreationNodeMask = 1;
+	properties.VisibleNodeMask = 1;
+
+	return properties;
+}
+
+D3D12_CLEAR_VALUE DepthStencilBufferDescription::WatchClearValue() const
+{
+	D3D12_CLEAR_VALUE clearValue = {};
+
+	clearValue.DepthStencil.Depth = clearColor;
+	clearValue.Format = format;
+
+	return clearValue;
+}
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Resource\BufferDescriptions\DepthStencilBufferDescription\DepthStencilBufferDescription.h ===
+========================================
+#pragma once
+#include "../IBufferDescription.h"
+
+
+//DepthStencilBuffer
+struct DepthStencilBufferDescription final : public IBufferDescription, IDSV_Assembler
+{
+	UINT width{};
+	UINT height{};
+	FLOAT clearColor = -1.0f;
+	DXGI_FORMAT format = DXGI_FORMAT::DXGI_FORMAT_Error_Detection;
+
+	//要項チェック
+	virtual void CheckRequirementsFilled() const override;
+	//リソースディスクの生成
+	virtual D3D12_RESOURCE_DESC CreateResourceDesc()const override;
+	//ヒーププロパティの生成
+	virtual D3D12_HEAP_PROPERTIES CreateHeapProperties()const override;
+
+	//DSV生成
+	virtual D3D12_DEPTH_STENCIL_VIEW_DESC CreateDSVDesc()const override;
+	//クリアバリュー
+	virtual D3D12_CLEAR_VALUE WatchClearValue() const override;
+
+};
+
+
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Resource\BufferDescriptions\SRV_UAVBufferDescription\SRV_UAVBufferDescription.cpp ===
+========================================
+#include "PreCompileHedder.h"
+#include "SRV_UAVBufferDescription.h"
+
+void SRV_UAVBufferDescription::CheckRequirementsFilled() const
+{
+	std::string errorMess{};
+
+	if (structureByte == 0)errorMess += "[structureByte]";
+	if (numElements == 0)errorMess += "[numElements]";
+	if (firstElement == -1) errorMess += "[firstElement]";
+	if (srvFlags == D3D12_BUFFER_SRV_FLAG_notDefined) errorMess += "[srvFlags]";
+	if (resourceFlag == D3D12_RESOURCE_FLAG_Error_Detection) errorMess += "[resourceFlag]";
+	if (heapType == D3D12_HEAP_TYPE_notDefined) errorMess += "[heapType]";
+	//if (initialState == D3D12_RESOURCE_STATE_Error_Detection) errorMess += "[initialState]";
+
+	//uav生成フラグがあるときはほかのもチェック
+	if ((resourceFlag & D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS) > 0 )
+	{
+		if (uavFlags == D3D12_BUFFER_UAV_FLAG_notDefined) errorMess += "[uavFlags]";
+		if (uavCounterOffsetInBytes == -1) errorMess += "[uavCounterOffsetInBytes]";
+	}
+
+	ErrorMessageOutput::Assert::DetectError((errorMess.length() == 0), errorMess + "の情報が未設定です", "SRV_UAVBufferDescription.cpp");
+}
+
+D3D12_RESOURCE_DESC SRV_UAVBufferDescription::CreateResourceDesc()const
+{
+	D3D12_RESOURCE_DESC resourceDesc = {};
+
+	resourceDesc.Width = numElements * structureByte;
+	resourceDesc.Flags = resourceFlag;
+
+	resourceDesc.Height = 1;
+	resourceDesc.DepthOrArraySize = 1;
+	resourceDesc.MipLevels = 1;
+	resourceDesc.SampleDesc.Count = 1;
+	resourceDesc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
+	resourceDesc.Dimension = D3D12_RESOURCE_DIMENSION_BUFFER;
+
+	return resourceDesc;
+}
+
+D3D12_SHADER_RESOURCE_VIEW_DESC SRV_UAVBufferDescription::CreateSRV_Desc()const
+{
+	D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
+
+	srvDesc.Buffer.NumElements = numElements;
+	srvDesc.Buffer.StructureByteStride = structureByte;
+	srvDesc.Buffer.Flags = srvFlags;
+	srvDesc.Buffer.FirstElement = firstElement;
+
+	srvDesc.Format = DXGI_FORMAT_UNKNOWN;
+	srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+	srvDesc.ViewDimension = D3D12_SRV_DIMENSION_BUFFER;
+
+	return srvDesc;
+}
+
+D3D12_HEAP_PROPERTIES SRV_UAVBufferDescription::CreateHeapProperties()const
+{
+	D3D12_HEAP_PROPERTIES properties = {};
+
+	properties.Type = heapType;
+
+	return properties;
+
+}
+
+
+D3D12_UNORDERED_ACCESS_VIEW_DESC SRV_UAVBufferDescription::CreateUAV_Desc()const
+{
+	D3D12_UNORDERED_ACCESS_VIEW_DESC uavDesc = {};
+
+	return uavDesc;
+}
+
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Resource\BufferDescriptions\SRV_UAVBufferDescription\SRV_UAVBufferDescription.h ===
+========================================
+#pragma once
+#include "../IBufferDescription.h"
+
+
+//StructuredBuffer（読み込み専用やRWStructuredBuffer（読み書き汎用）のDescription
+struct SRV_UAVBufferDescription final :public IBufferDescription, ISRBufferAssembler, IUAV_Assembler
+{
+	//そのデータ型のサイズ
+	UINT structureByte{};
+	//要素数
+	UINT numElements{};
+	UINT firstElement = -1;
+
+	D3D12_RESOURCE_FLAGS resourceFlag = D3D12_RESOURCE_FLAG_Error_Detection;
+	//D3D12_RESOURCE_STATES initialState = D3D12_RESOURCE_STATE_Error_Detection;
+
+	D3D12_HEAP_TYPE heapType = D3D12_HEAP_TYPE_notDefined;
+
+	D3D12_BUFFER_SRV_FLAGS srvFlags = D3D12_BUFFER_SRV_FLAG_notDefined;
+	//UAVのビューを作るのであれば
+	D3D12_BUFFER_UAV_FLAGS uavFlags = D3D12_BUFFER_UAV_FLAG_notDefined;
+	// カウンターバッファ用のオフセット
+	uint64_t uavCounterOffsetInBytes = -1; 
+
+	//パラーメーターチェック
+	virtual void CheckRequirementsFilled() const override;
+	//リソースディスクの生成
+	virtual D3D12_RESOURCE_DESC CreateResourceDesc()const override;
+	//ヒーププロパティの生成
+	virtual D3D12_HEAP_PROPERTIES CreateHeapProperties()const override;
+
+	//View生成
+	virtual D3D12_SHADER_RESOURCE_VIEW_DESC CreateSRV_Desc()const override;
+	virtual D3D12_UNORDERED_ACCESS_VIEW_DESC CreateUAV_Desc()const override;
+
+};
+
+
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Resource\GPUBuffer\GPUBufferBehavior.cpp ===
+========================================
+#include "PreCompileHedder.h"
+#include "GPUBufferBehavior.h"
+#include "../../Utility/StringConnverter/StringConverter.h"
+#include "../BufferDescriptions/IBufferDescription.h"
+
+
+
+namespace
+{
+	std::string fileName = "GPUBufferBehavior.cpp";
+}
+
+GPUBufferBehavior::GPUBufferBehavior
+(
+	const InstanceKey& instanceKey_,
+	std::string name_,
+	Microsoft::WRL::ComPtr<ID3D12Resource> resource1_, 
+	Microsoft::WRL::ComPtr<ID3D12Resource> resource2_,
+	std::unique_ptr <IBufferDescription>&& description_
+) : name(name_), resources{ {std::move(resource1_), std::move(resource2_)} }, description(std::move(description_))
+{
+
+}
+
+GPUBufferBehavior::~GPUBufferBehavior()
+{
+
+}
+
+
+ID3D12Resource* GPUBufferBehavior::GetResource(const BufferAccessKey& bufferAccessKey_ ,int index_)
+{
+	std::string errorMsg = name + "は空です (GetResourceに失敗)";
+	ErrorMessageOutput::Assert::DetectError((resources[index_] != nullptr), errorMsg , fileName);
+
+	return resources[index_].Get();
+}
+
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Resource\GPUBuffer\GPUBufferBehavior.h ===
+========================================
+#pragma once
+
+
+class GPUBufferManager;
+struct IBufferDescription;
+class BufferAssembler;
+
+class GPUBufferBehavior
+{
+public:
+
+	//生成キー
+	struct InstanceKey;
+	//アクセスキー
+	struct BufferAccessKey;
+
+	GPUBufferBehavior
+	(
+		const InstanceKey& instanceKey_, 
+		std::string name_, 
+		Microsoft::WRL::ComPtr<ID3D12Resource> resource1_, 
+		Microsoft::WRL::ComPtr<ID3D12Resource> resource2_,
+		std::unique_ptr <IBufferDescription>&& description_
+	);
+
+	virtual ~GPUBufferBehavior();
+
+	ID3D12Resource* GetResource( const BufferAccessKey& bufferAccessKey_ , int index_);
+	
+	//descriptorHeapIndexを書き込む
+	template<ViewType type, typename Index>
+	inline void OverrideIndex(InstanceKey instanceKey_, Index index_,uint8_t resourceNo_)
+	{
+		heapIndices[type][resourceNo_] = index_;
+	}
+
+	//descriptorHeapIndexを取得
+	template<ViewType type, typename Index>
+	[[nodiscard]] Index WatchIndex(uint8_t resourceNo_) const
+	{
+		const auto& variantVal = heapIndices.at(type)[resourceNo_];
+
+		ErrorMessageOutput::Assert::DetectError
+		(
+			std::holds_alternative<Index>(variantVal),
+			"要求しているインデクスの型が不一致","GPUBufferBehavior.h"
+		);
+
+		return std::get<Index>(variantVal);
+	}
+
+protected:
+
+	std::unique_ptr <IBufferDescription> description;
+
+private:
+
+	std::array<Microsoft::WRL::ComPtr<ID3D12Resource>, ProjectConfig::Render::kRequiredGPUBufferSum> resources;
+	std::string name = "noName";
+
+	//各desctiptorheapのインデックス
+	std::unordered_map<ViewType, 
+		std::array<std::variant<uint32_t, D3D12_CPU_DESCRIPTOR_HANDLE> , ProjectConfig::Render::kMaximumShaderModel>> heapIndices;
+};
+
+//生成できるのはBufferAssemblerのみ
+struct GPUBufferBehavior::InstanceKey
+{
+private:
+
+	friend class BufferAssembler;
+
+	explicit InstanceKey() = default;
+};
+
+
+struct GPUBufferBehavior::BufferAccessKey
+{
+private:
+	friend class BufferAssembler;
+	friend class GPUBufferManager;
+
+	explicit BufferAccessKey() = default;
+};
+
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Resource\GPUBuffer\ColorBuffer\ColorBuffer.cpp ===
+========================================
+#include "PreCompileHedder.h"
+#include "ColorBuffer.h"
+#include "../../BufferDescriptions/IBufferDescription.h"
+
+
+ColorBuffer::ColorBuffer
+(
+	const InstanceKey& instanceKey_,
+	std::string name_,
+	Microsoft::WRL::ComPtr<ID3D12Resource> resource1_,
+	Microsoft::WRL::ComPtr<ID3D12Resource> resource2_,
+	std::unique_ptr <IBufferDescription>&& description_
+) : GPUBufferBehavior(instanceKey_, name_, std::move(resource1_), std::move(resource2_), std::move(description_))
+{
+	SetMatrix();
+}
+
+
+ColorBufferDescription ColorBuffer::WatchDescription() const
+{
+	return desc;
+}
+
+
+void ColorBuffer::SetMatrix()
+{
+	//クライアント領域と一緒のサイズにして画面全体に表示
+	viewport.Width = static_cast<FLOAT>(desc.width);
+	viewport.Height = static_cast<FLOAT>(desc.height);
+	viewport.TopLeftX = 0.0f;
+	viewport.TopLeftY = 0.0f;
+	viewport.MinDepth = 0.0f;
+	viewport.MaxDepth = 1.0f;
+
+	//しざー矩形
+	scissorRect.right = static_cast<LONG>(desc.width);
+	scissorRect.bottom = static_cast<LONG>(desc.height);
+	scissorRect.left = static_cast<LONG>(0.0f);
+	scissorRect.top = static_cast<LONG>(0.0f);
+
+}
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Resource\GPUBuffer\ColorBuffer\ColorBuffer.h ===
+========================================
+#pragma once
+#include "../GPUBufferBehavior.h"
+#include "../../BufferDescriptions/ColorBufferDescription/ColorBufferDescription.h"
+
+
+//カラーバッファクラス
+class ColorBuffer : public GPUBufferBehavior
+{
+public:
+
+	ColorBuffer
+	(
+		const InstanceKey& instanceKey_,
+		std::string name_,
+		Microsoft::WRL::ComPtr<ID3D12Resource> resource1_,
+		Microsoft::WRL::ComPtr<ID3D12Resource> resource2_,
+		std::unique_ptr <IBufferDescription>&& description_
+	);
+
+	//リソースのディスクリプションを見る
+	ColorBufferDescription WatchDescription() const;
+
+private:
+
+	//ディスクリプション
+	ColorBufferDescription desc;
+
+	//行列
+	D3D12_VIEWPORT viewport;
+	D3D12_RECT scissorRect;
+
+	//viewportとscissorRectをセット
+	void SetMatrix();
+};
+
+
+
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Resource\GPUBuffer\ConstantBuffer\ConstantBuffer.cpp ===
+========================================
+#include "PreCompileHedder.h"
+#include "ConstantBuffer.h"
+#include "../../BufferDescriptions/IBufferDescription.h"
+
+
+ConstantBuffer::ConstantBuffer
+(
+	const InstanceKey& instanceKey_,
+	std::string name_,
+	Microsoft::WRL::ComPtr<ID3D12Resource> resource1_,
+	Microsoft::WRL::ComPtr<ID3D12Resource> resource2_,
+	std::unique_ptr <IBufferDescription>&& description_
+) : GPUBufferBehavior(instanceKey_, name_, std::move(resource1_), std::move(resource2_), std::move(description_))
+{
+
+}
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Resource\GPUBuffer\ConstantBuffer\ConstantBuffer.h ===
+========================================
+#pragma once
+#include "../GPUBufferBehavior.h"
+#include "../../BufferDescriptions/ConstantBufferDescription/ConstantBufferDescription.h"
+
+
+
+//定数バッファクラス
+class ConstantBuffer : public GPUBufferBehavior
+{
+public:
+
+	ConstantBuffer
+	(
+		const InstanceKey& instanceKey_,
+		std::string name_,
+		Microsoft::WRL::ComPtr<ID3D12Resource> resource1_,
+		Microsoft::WRL::ComPtr<ID3D12Resource> resource2_,
+		std::unique_ptr <IBufferDescription>&& description_
+	);
+
+private:
+	ConstantBufferDescription desc;
+};
+
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Resource\GPUBuffer\DepthStencilBuffer\DepthStencilBuffer.cpp ===
+========================================
+#include "PreCompileHedder.h"
+#include "DepthStencilBuffer.h"
+
+
+DepthStencilBuffer::DepthStencilBuffer
+(
+	const InstanceKey& instanceKey_,
+	std::string name_,
+	Microsoft::WRL::ComPtr<ID3D12Resource> resource1_,
+	Microsoft::WRL::ComPtr<ID3D12Resource> resource2_,
+	std::unique_ptr <IBufferDescription>&& description_
+) : GPUBufferBehavior(instanceKey_, name_, std::move(resource1_), std::move(resource2_), std::move(description_))
+{
+
+}
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Resource\GPUBuffer\DepthStencilBuffer\DepthStencilBuffer.h ===
+========================================
+#pragma once
+#include "../GPUBufferBehavior.h"
+#include "../../BufferDescriptions/DepthStencilBufferDescription/DepthStencilBufferDescription.h"
+
+
+//定数バッファクラス
+class DepthStencilBuffer : public GPUBufferBehavior
+{
+public:
+
+	DepthStencilBuffer
+	(
+		const InstanceKey& instanceKey_,
+		std::string name_,
+		Microsoft::WRL::ComPtr<ID3D12Resource> resource1_,
+		Microsoft::WRL::ComPtr<ID3D12Resource> resource2_,
+		std::unique_ptr <IBufferDescription>&& description_
+	);
+
+private:
+	DepthStencilBufferDescription desc;
+};
+
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Resource\GPUBuffer\SRV_UAVBuffer\SRV_UAVBuffer.cpp ===
+========================================
+#include "PreCompileHedder.h"
+#include "SRV_UAVBuffer.h"
+#include "../../BufferDescriptions/IBufferDescription.h"
+
+
+SRV_UAVBuffer::SRV_UAVBuffer
+(
+	const InstanceKey& instanceKey_, 
+	std::string name_, 
+	Microsoft::WRL::ComPtr<ID3D12Resource> resource1_, 
+	Microsoft::WRL::ComPtr<ID3D12Resource> resource2_, 
+	std::unique_ptr <IBufferDescription>&& description_
+) : GPUBufferBehavior(instanceKey_, name_, std::move(resource1_), std::move(resource2_), std::move(description_))
+{
+
+}
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Resource\GPUBuffer\SRV_UAVBuffer\SRV_UAVBuffer.h ===
+========================================
+#pragma once
+#include "../GPUBufferBehavior.h"
+#include "../../BufferDescriptions/SRV_UAVBufferDescription/SRV_UAVBufferDescription.h"
+
+
+
+//StructuredBuffer（読み込み専用やRWStructuredBuffer（読み書き汎用）リソース
+class SRV_UAVBuffer : public GPUBufferBehavior
+{
+public:
+
+	SRV_UAVBuffer
+	(
+		const InstanceKey& instanceKey_, 
+		std::string name_,
+		Microsoft::WRL::ComPtr<ID3D12Resource> resource1_, 
+		Microsoft::WRL::ComPtr<ID3D12Resource> resource2_, 
+		std::unique_ptr <IBufferDescription>&& description_
+	);
+
+private:
+
+};
+
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Resource\ResourceCreator\ResourceCreator.cpp ===
+========================================
+#include "PreCompileHedder.h"
+#include "ResourceCreator.h"
+#include "../../Utility/StringConnverter/StringConverter.h"
+
+
+
+[[nodiscard]] std::pair<Microsoft::WRL::ComPtr<ID3D12Resource>, Microsoft::WRL::ComPtr<ID3D12Resource>> ResourceCreator::CreateResource
+(
+	const D3D12_RESOURCE_DESC& resourceDesc_,
+	const D3D12_HEAP_PROPERTIES& heapProperties_,
+	const D3D12_CLEAR_VALUE* clearValuePtr_,
+	const std::string& name_
+)
+{
+	auto resource1 = createResourceCommand(resourceDesc_, heapProperties_, clearValuePtr_, name_);
+	auto resource2 = createResourceCommand(resourceDesc_, heapProperties_, clearValuePtr_, name_);
+
+	//命名
+	resource1->SetName(StringConverter::ConvertString(name_ + "[0]").c_str());
+	resource2->SetName(StringConverter::ConvertString(name_ + "[1]").c_str());
+
+	return { std::move(resource1), std::move(resource2) };
+}
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Resource\ResourceCreator\ResourceCreator.h ===
+========================================
+#pragma once
+#include "../BufferContext.h"
+
+class ResourceCreator
+{
+
+public:
+
+	ResourceCreator(BufferContext::InstanceKey instanceKey_, BufferContext::CreateResourceCommand createResourceCommand_)
+		: createResourceCommand(createResourceCommand_) {}
+
+	~ResourceCreator() = default;
+
+	[[nodiscard]] std::pair<Microsoft::WRL::ComPtr<ID3D12Resource>, Microsoft::WRL::ComPtr<ID3D12Resource>> CreateResource
+	(
+		const D3D12_RESOURCE_DESC& resourceDesc_,
+		const D3D12_HEAP_PROPERTIES& heapProperties_,
+		const D3D12_CLEAR_VALUE* clearValuePtr_, 
+		const std::string& name_
+	);
+
+private:
+
+	//リソース生成コマンド
+	BufferContext::CreateResourceCommand createResourceCommand;
+
+
+};
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Utility\StringConnverter\StringConverter.cpp ===
+========================================
+//#include "PreCompileHedder.h"
+#include "StringConverter.h"
+
+std::wstring StringConverter::ConvertString(const std::string& str)
+{
+	if (str.empty()) {
+		return std::wstring();
+	}
+
+	auto sizeNeeded = MultiByteToWideChar(CP_UTF8, 0, reinterpret_cast<const char*>(&str[0]), static_cast<int>(str.size()), NULL, 0);
+	if (sizeNeeded == 0) {
+		return std::wstring();
+	}
+	std::wstring result(sizeNeeded, 0);
+	MultiByteToWideChar(CP_UTF8, 0, reinterpret_cast<const char*>(&str[0]), static_cast<int>(str.size()), &result[0], sizeNeeded);
+	return result;
+}
+
+std::string StringConverter::ConvertString(const std::wstring& str)
+{
+	if (str.empty()) {
+		return std::string();
+	}
+
+	auto sizeNeeded = WideCharToMultiByte(CP_UTF8, 0, str.data(), static_cast<int>(str.size()), NULL, 0, NULL, NULL);
+	if (sizeNeeded == 0) {
+		return std::string();
+	}
+	std::string result(sizeNeeded, 0);
+	WideCharToMultiByte(CP_UTF8, 0, str.data(), static_cast<int>(str.size()), result.data(), sizeNeeded, NULL, NULL);
+	return result;
+}
+
+std::string StringConverter::ToUTF8(const std::wstring& value)
+{
+	if (value.empty()) {
+		return std::string();
+	}
+
+	int length = WideCharToMultiByte(
+		CP_UTF8, 0, value.data(), static_cast<int>(value.size()), nullptr, 0, nullptr, nullptr);
+
+	if (length <= 0) {
+		return std::string();
+	}
+
+	std::string result(length, '\0');
+
+	WideCharToMultiByte(
+		CP_UTF8, 0, value.data(), static_cast<int>(value.size()), result.data(), length, nullptr, nullptr);
+
+	return result;
+}
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Utility\StringConnverter\StringConverter.h ===
+========================================
+#pragma once
+
+namespace StringConverter
+{
+	std::wstring ConvertString(const std::string& str);
+	std::string ConvertString(const std::wstring& str);
+	std::string ToUTF8(const std::wstring& value);
+}
+
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\WinApp\WinApp.cpp ===
+========================================
+#include "PreCompileHedder.h"
+#include "WinApp.h"
+#include "../Core/Device/DeviceContext.h"
+#include "../Core/Window/WindowContext.h"
+#include "../Core/DescriptorHeap/DescriptorHeapContext.h"
+#include "../Resource/BufferContext.h"
+
+
+#include "../Core/Device/DeviceContextCommandProvider/DeviceContextCommandProvider.h"
+
+
+namespace
+{
+	std::string const fileName = "WinApp.cpp";
+}
+
+//WinAppクラスのインスタンスを制御するクラス
+class WinApp::InstanceLimiter
+{
+public:
+	static bool CanInstantiate();
+
+	InstanceLimiter(const InstanceLimiter&) = delete;
+	InstanceLimiter& operator=(const InstanceLimiter&) = delete;
+	InstanceLimiter(InstanceLimiter&&) = delete;
+	InstanceLimiter& operator=(InstanceLimiter&&) = delete;
+
+private:
+	int instanceCnt{};
+
+	~InstanceLimiter() = default;
+	InstanceLimiter() = default;
+};
+
+WinApp::WinApp()
+{
+	Logger::Entry("WinApp: Constructor");
+
+	//自身のインスタンス制限
+	ErrorMessageOutput::Assert::DetectError(InstanceLimiter::CanInstantiate(), "WinAppクラスが複数具現化されてます", fileName);
+
+	InitDeviceContext();
+	InitWindowContext();
+	InitDescriptorHeapContext();
+	InitBufferContext();
+
+	Logger::End("WinApp: Constructor");
+}
+
+WinApp::~WinApp()
+{
+	windowContext->Finalize();
+
+}
+
+//WinAppクラスのインスタンスを1つに制限する
+bool WinApp::InstanceLimiter::CanInstantiate()
+{
+	static InstanceLimiter instanceLimiter;
+
+	return (instanceLimiter.instanceCnt++ == 0);
+}
+
+void WinApp::InitDeviceContext()
+{
+	//deviceContextクラスのインスタンス化
+	deviceContext.reset(new DeviceContext(DeviceContext::InstanceKey{}));
+	Logger::Log("Instantiate: deviceContext", fileName);
+}
+
+void WinApp::InitBufferContext()
+{
+	//リソース生成コマンド
+	auto createResourceCommand = deviceContext->commandProvider->ProvideCreateResourceCommand();
+	Logger::Log("Set: CommandCreateResource", fileName);
+
+	bufferContext.reset(new BufferContext(BufferContext::InstanceKey{}, createResourceCommand));
+	Logger::Log("Instantiate: bufferContext", fileName);
+
+}
+
+void WinApp::InitWindowContext()
+{
+	//windowContextのインスタンス化
+	windowContext.reset(new WindowContext(WindowContext::CraftKey{}));
+	Logger::Log("Instantiate: windowContext", fileName);
+
+}
+
+void WinApp::InitDescriptorHeapContext()
+{
+	//descriptorHeapContextクラスのインスタンス化
+	descriptorHeapContext.reset(new DescriptorHeapContext(DescriptorHeapContext::InstanceKey{}));
+	Logger::Log("Instantiate: descriptorHeapContext", fileName);
+
+	//DescriptorHeap生成コマンドのセット
+	{
+		//DescriptorHeap生成コマンド
+		auto createDescriptorHeapCommand = deviceContext->commandProvider->ProvideCreateDescriptorHeapCommand();
+		descriptorHeapContext->SetCreateDescroptorHeapCommand(createDescriptorHeapCommand);
+		Logger::Log("Set: createDescriptorHeapCommand", fileName);
+
+	}
+
+	//各種DescriptorHeapの生成
+	{
+		using namespace ProjectConfig::Core;
+
+		struct IncrementSizeOfDescriptorHeaps
+		{
+			UINT rtv{};
+			UINT srv{};
+			UINT dsv{};
+			IncrementSizeOfDescriptorHeaps(UINT rtv_, UINT srv_, UINT dsv_) : rtv(rtv_), srv(srv_), dsv(dsv_) {}
+		};
+
+		//deviceContextからDescriptorHandleIncrementSizeを教えてもらう
+		IncrementSizeOfDescriptorHeaps sizeArray
+		(
+			deviceContext->PassDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV),
+			deviceContext->PassDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV),
+			deviceContext->PassDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_DSV)
+		);
+
+		//RTV
+		descriptorHeapContext->CreateDescriptorHeap<D3D12_DESCRIPTOR_HEAP_TYPE_RTV>(kNumDescriptorsRTVHeap, false, sizeArray.rtv);
+		//SRV
+		descriptorHeapContext->CreateDescriptorHeap<D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV>(kNumDescriptorSRVHeap, false, sizeArray.srv);
+		//DSV
+		descriptorHeapContext->CreateDescriptorHeap<D3D12_DESCRIPTOR_HEAP_TYPE_DSV>(kNumDescriptorsDSVHeap, false, sizeArray.dsv);
+
+		Logger::Log("Create: descriptorHeaps", fileName);
+	}
+
+	//ResourceのView生成コマンドのセット
+	{
+		auto createRTVCommand = deviceContext->commandProvider->ProvideCreateViewCommand<D3D12_RENDER_TARGET_VIEW_DESC>();
+		auto createSRVCommand = deviceContext->commandProvider->ProvideCreateViewCommand<D3D12_SHADER_RESOURCE_VIEW_DESC>();
+		auto createDSVCommand = deviceContext->commandProvider->ProvideCreateViewCommand<D3D12_DEPTH_STENCIL_VIEW_DESC>();
+		auto createUAVCommand = deviceContext->commandProvider->ProvideCreateUAVCommand();
+
+		//ビュークリエイターを生成し、コマンドをセット
+		descriptorHeapContext->SetCreateViewCommand
+		(
+			createRTVCommand,
+			createSRVCommand,
+			createDSVCommand,
+			createUAVCommand
+		);
+
+		Logger::Log("Set: createViewCommands", fileName);
+
+	}
+}
+
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\WinApp\WinApp.h ===
+========================================
+#pragma once
+
+class DeviceContext;
+class BufferContext;
+class WindowContext;
+class DescriptorHeapContext;
+
+class WinApp
+{
+public:
+
+	~WinApp();
+	WinApp();
+
+	WinApp(const WinApp&) = delete;
+	WinApp& operator=(const WinApp&) = delete;
+	WinApp(WinApp&&) = delete;
+	WinApp& operator=(WinApp&&) = delete;
+
+private:
+
+	//WinAppのインスタンスを1つに制限するためのシングルトンクラス
+	class InstanceLimiter;
+
+	//IDXGIFactory7、IDXGIAdapter4、ID3D12Device8を持っている。
+	std::unique_ptr<DeviceContext> deviceContext;
+	//GPUバッファを生成・管理
+	std::unique_ptr<BufferContext> bufferContext;
+	//ウィンドウを制御するもの
+	std::unique_ptr<WindowContext> windowContext;
+	//DescriptorHeapを作り、各種バッファのviewを生成する
+	std::unique_ptr<DescriptorHeapContext> descriptorHeapContext;
+
+	void InitDeviceContext();
+	void InitBufferContext();
+	void InitWindowContext();
+	void InitDescriptorHeapContext();
+
+};
 
 
 
