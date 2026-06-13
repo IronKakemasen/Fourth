@@ -36,7 +36,7 @@ public:
 	);
 
 	//VIEWを生成し、インデックスまたはハンドルを返す。
-	template<typename ViewType, typename Index>
+	template<typename Index , typename ViewType>
 	Index CreateView(ID3D12Resource* resource_, const ViewType& viewDesc)
 	{
 		//ViewTypeどのヒープを使うべきか分岐

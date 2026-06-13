@@ -90,6 +90,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Engine\Resource\BufferAssembler\BufferAssembler.cpp" />
     <ClCompile Include="Engine\Resource\GPUBuffer\DepthStencilBuffer\DepthStencilBuffer.cpp" />
     <ClCompile Include="Engine\Resource\BufferContext.cpp" />
     <ClCompile Include="Engine\Resource\BufferDescriptions\DepthStencilBufferDescription\DepthStencilBufferDescription.cpp" />
@@ -224,6 +225,7 @@
     <ClCompile Include="Engine\Resource\BufferDescriptions\SRV_UAVBufferDescription\SRV_UAVBufferDescription.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Engine\Resource\BufferAssembler\BufferAssembler.h" />
     <ClInclude Include="Engine\Resource\GPUBuffer\DepthStencilBuffer\DepthStencilBuffer.h" />
     <ClInclude Include="Engine\Resource\BufferContext.h" />
     <ClInclude Include="Engine\Resource\BufferDescriptions\DepthStencilBufferDescription\DepthStencilBufferDescription.h" />

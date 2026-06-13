@@ -1,10 +1,6 @@
 #include "PreCompileHedder.h"
 #include "DeviceContextCommandProvider.h"
 
-#include "../../../Resource/BufferDescriptions/ColorBufferDescription/ColorBufferDescription.h"
-#include "../../../Resource/BufferDescriptions/ConstantBufferDescription/ConstantBufferDescription.h"
-#include "../../../Resource/BufferDescriptions/SRV_UAVBufferDescription/SRV_UAVBufferDescription.h"
-
 #include "../Commands/CreatGPUBuffer/CommandOfCreatingGPUBuffer.h"
 #include "../Commands/CreateDescriptorHeap/CommandCreateDescriptorHeap.h"
 #include "../Commands/CreateView/CommandCreateView.h"

@@ -2,8 +2,8 @@
 #include "../IBufferDescription.h"
 
 
-//ColorバッファやSRVバッファなどのちょい複雑なバッファ
-struct ColorBufferDescription final : public IBufferDescription,IRTBufferAssembler
+//Colorバッファ
+struct ColorBufferDescription final : public IBufferDescription,IRTBufferAssembler, ISRBufferAssembler
 {
 	float clearColor[4] = { 9,9,9,9 };
 	UINT width{};
@@ -20,6 +20,8 @@ struct ColorBufferDescription final : public IBufferDescription,IRTBufferAssembl
 	virtual D3D12_HEAP_PROPERTIES CreateHeapProperties()const override;
 	//RTV生成
 	virtual D3D12_RENDER_TARGET_VIEW_DESC CreateRTV_Desc()const override;
+	//SRV生成
+	virtual D3D12_SHADER_RESOURCE_VIEW_DESC CreateSRV_Desc()const override;
 	//クリアバリュー
 	virtual D3D12_CLEAR_VALUE WatchClearValue() const override;
 

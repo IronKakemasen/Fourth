@@ -16,7 +16,8 @@
 	auto resource2 = createResourceCommand(resourceDesc_, heapProperties_, clearValuePtr_, name_);
 
 	//命名
-	resource1->SetName(StringConverter::ConvertString(name_).c_str());
+	resource1->SetName(StringConverter::ConvertString(name_ + "[0]").c_str());
+	resource2->SetName(StringConverter::ConvertString(name_ + "[1]").c_str());
 
 	return { std::move(resource1), std::move(resource2) };
 }

@@ -78,3 +78,15 @@ D3D12_RENDER_TARGET_VIEW_DESC ColorBufferDescription::CreateRTV_Desc()const
 
 	return rtvDesc;
 }
+
+D3D12_SHADER_RESOURCE_VIEW_DESC ColorBufferDescription::CreateSRV_Desc()const
+{
+	D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
+
+	srvDesc.Format = format;
+	srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+	srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
+	srvDesc.Texture2D.MipLevels = UINT(1);
+
+	return srvDesc;
+}
