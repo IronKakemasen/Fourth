@@ -7,18 +7,16 @@ class DescriptorHeapClass
 {
 public:
 	DescriptorHeapClass(Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> descriptorHeap_,
-		UINT handleIncrementSize_, uint32_t kMaxDescriptor_, std::string name_);
+		UINT handleIncrementSize_, uint32_t kMaxDescriptor_,bool shaderVisible_ ,std::string name_);
 
 	struct AccessKey;
 	
-	//currentCreateNumまたはCPUHandle(ビュー生成数)を返す
+	//CPU / GPU / 生成数を返す
 	template<typename HandleType>
-	[[nodiscard]] HandleType WatchAllocateIndex();
+	[[nodiscard]] HandleType GetHandle();
 
-	//CPU / GPUの次のハンドルを計算し返したあと、currentCreateNum(ビュー生成数)をインクリメントする
-	template<typename HandleType>
-	[[nodiscard]] HandleType CalculateHandleThenIncrement(AccessKey accessKey_);
-
+	//currentCreateNum(ビュー生成数)をインクリメントする
+	void Increment(AccessKey accessKey_);
 
 private:
 
@@ -29,22 +27,21 @@ private:
 	uint32_t kMaxDescriptor{};
 	//現在のviewの生成数
 	uint32_t currentCreateNum{};
+	//SRVかどうか
+	bool shaderVisible{};
 	//名前
 	std::string name{};
 };
 
-template<>
-[[nodiscard]] uint32_t DescriptorHeapClass::WatchAllocateIndex();
 
 template<>
-[[nodiscard]] D3D12_CPU_DESCRIPTOR_HANDLE DescriptorHeapClass::WatchAllocateIndex();
-
-
-template<>
-[[nodiscard]] D3D12_CPU_DESCRIPTOR_HANDLE DescriptorHeapClass::CalculateHandleThenIncrement(AccessKey accessKey_);
+[[nodiscard]] D3D12_CPU_DESCRIPTOR_HANDLE DescriptorHeapClass::GetHandle();
 
 template<>
-[[nodiscard]] D3D12_GPU_DESCRIPTOR_HANDLE DescriptorHeapClass::CalculateHandleThenIncrement(AccessKey accessKey_);
+[[nodiscard]] D3D12_GPU_DESCRIPTOR_HANDLE DescriptorHeapClass::GetHandle();
+
+template<>
+[[nodiscard]] uint32_t DescriptorHeapClass::GetHandle();
 
 struct DescriptorHeapClass::AccessKey
 {

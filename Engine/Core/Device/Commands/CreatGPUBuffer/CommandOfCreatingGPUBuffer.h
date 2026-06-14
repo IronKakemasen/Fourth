@@ -14,12 +14,9 @@ struct CommandCreateGPUResource : public DeviceContextCommandBehavior
 		const D3D12_RESOURCE_DESC& resourceDesc_,
 		const D3D12_HEAP_PROPERTIES& heapProperties_,
 		const D3D12_CLEAR_VALUE* clearValue_,
+		D3D12_RESOURCE_STATES initialState_,
 		const std::string& name_
 	);
-
-private:
-	//初期ステートを割り出す
-	D3D12_RESOURCE_STATES ConfigureInitialResourceState(D3D12_HEAP_TYPE heapType_, D3D12_RESOURCE_FLAGS resourceFlag_);
 
 };
 

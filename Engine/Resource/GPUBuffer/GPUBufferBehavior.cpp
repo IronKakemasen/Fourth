@@ -1,8 +1,7 @@
 #include "PreCompileHedder.h"
 #include "GPUBufferBehavior.h"
 #include "../../Utility/StringConnverter/StringConverter.h"
-#include "../BufferDescriptions/IBufferDescription.h"
-
+#include "../BufferDescriptions/BufferDescriptionBehavior.h"
 
 
 namespace
@@ -16,10 +15,10 @@ GPUBufferBehavior::GPUBufferBehavior
 	std::string name_,
 	Microsoft::WRL::ComPtr<ID3D12Resource> resource1_, 
 	Microsoft::WRL::ComPtr<ID3D12Resource> resource2_,
-	std::unique_ptr <IBufferDescription>&& description_
+	std::unique_ptr <BufferDescriptionBehavior>&& description_
 ) : name(name_), resources{ {std::move(resource1_), std::move(resource2_)} }, description(std::move(description_))
 {
-
+	curState = description->initialState;
 }
 
 GPUBufferBehavior::~GPUBufferBehavior()
@@ -28,11 +27,11 @@ GPUBufferBehavior::~GPUBufferBehavior()
 }
 
 
-ID3D12Resource* GPUBufferBehavior::GetResource(const BufferAccessKey& bufferAccessKey_ ,int index_)
+ID3D12Resource* GPUBufferBehavior::GetResource(BufferAccessKey bufferAccessKey_ ,int resourceNo_)
 {
 	std::string errorMsg = name + "は空です (GetResourceに失敗)";
-	ErrorMessageOutput::Assert::DetectError((resources[index_] != nullptr), errorMsg , fileName);
+	ErrorMessageOutput::Assert::DetectError((resources[resourceNo_] != nullptr), errorMsg , fileName);
 
-	return resources[index_].Get();
+	return resources[resourceNo_].Get();
 }
 

@@ -10,13 +10,18 @@
 
 //＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝
 
-//バッファのディスクリプション共通インターフェース
-struct IBufferDescription
+//バッファのディスクリプション共通
+struct BufferDescriptionBehavior
 {
+	BufferDescriptionBehavior(D3D12_RESOURCE_STATES initialState_);
+
+	BufferDescriptionBehavior() = default;
+
 	virtual void CheckRequirementsFilled() const = 0;
 	virtual D3D12_RESOURCE_DESC CreateResourceDesc()const = 0;
 	virtual D3D12_HEAP_PROPERTIES CreateHeapProperties()const = 0;
 
+	D3D12_RESOURCE_STATES initialState = D3D12_RESOURCE_STATE_Error_Detection;
 };
 
 

@@ -13,6 +13,7 @@ public:
 			const D3D12_RESOURCE_DESC& resourceDesc_,
 			const D3D12_HEAP_PROPERTIES& heapProperties_,
 			const D3D12_CLEAR_VALUE* clearValue_,
+			D3D12_RESOURCE_STATES initialState_,
 			const std::string& name_
 		)>;
 

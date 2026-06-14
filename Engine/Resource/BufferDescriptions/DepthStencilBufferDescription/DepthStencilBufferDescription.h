@@ -1,14 +1,31 @@
 #pragma once
-#include "../IBufferDescription.h"
+#include "../BufferDescriptionBehavior.h"
 
 
 //DepthStencilBuffer
-struct DepthStencilBufferDescription final : public IBufferDescription, IDSV_Assembler
+struct DepthStencilBufferDescription final : public BufferDescriptionBehavior, IDSV_Assembler
 {
-	UINT width{};
-	UINT height{};
-	FLOAT clearColor = -1.0f;
-	DXGI_FORMAT format = DXGI_FORMAT::DXGI_FORMAT_Error_Detection;
+private:
+
+	struct Param
+	{
+		UINT width{};
+		UINT height{};
+		FLOAT clearColor = -1.0f;
+		DXGI_FORMAT format = DXGI_FORMAT::DXGI_FORMAT_Error_Detection;
+
+	}param;
+
+public:
+
+	DepthStencilBufferDescription
+	(
+		UINT width_,
+		UINT height_,
+		FLOAT clearColor_,
+		DXGI_FORMAT format_,
+		D3D12_RESOURCE_STATES initialState_ = D3D12_RESOURCE_STATE_DEPTH_WRITE
+	);
 
 	//要項チェック
 	virtual void CheckRequirementsFilled() const override;
@@ -21,6 +38,11 @@ struct DepthStencilBufferDescription final : public IBufferDescription, IDSV_Ass
 	virtual D3D12_DEPTH_STENCIL_VIEW_DESC CreateDSVDesc()const override;
 	//クリアバリュー
 	virtual D3D12_CLEAR_VALUE WatchClearValue() const override;
+
+	inline const Param& WatchParam()
+	{
+		return param;
+	}
 
 };
 

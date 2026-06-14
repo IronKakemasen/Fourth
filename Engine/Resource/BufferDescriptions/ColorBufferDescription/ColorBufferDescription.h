@@ -1,17 +1,34 @@
 #pragma once
-#include "../IBufferDescription.h"
+#include "../BufferDescriptionBehavior.h"
 
 
 //Colorバッファ
-struct ColorBufferDescription final : public IBufferDescription,IRTBufferAssembler, ISRBufferAssembler
+struct ColorBufferDescription final : public BufferDescriptionBehavior,IRTBufferAssembler, ISRBufferAssembler
 {
-	float clearColor[4] = { 9,9,9,9 };
-	UINT width{};
-	UINT height{};
-	D3D12_RESOURCE_STATES initialState =  D3D12_RESOURCE_STATE_Error_Detection;
-	D3D12_RESOURCE_FLAGS flag = D3D12_RESOURCE_FLAG_Error_Detection;
-	DXGI_FORMAT format = DXGI_FORMAT_Error_Detection;
+private:
 
+	struct Param
+	{
+		float clearColor[4] = { 9,9,9,9 };
+		UINT width{};
+		UINT height{};
+		D3D12_RESOURCE_FLAGS flag = D3D12_RESOURCE_FLAG_Error_Detection;
+		DXGI_FORMAT format = DXGI_FORMAT_Error_Detection;
+
+	}param;
+
+public:
+
+	ColorBufferDescription
+	(
+		float clearColors_[4],
+		UINT width_,
+		UINT height_,
+		D3D12_RESOURCE_FLAGS flag_,
+		DXGI_FORMAT format_,
+		D3D12_RESOURCE_STATES initialState_
+	);
+	
 	//要項チェック
 	virtual void CheckRequirementsFilled() const override;
 	//リソースディスクの生成
@@ -24,6 +41,11 @@ struct ColorBufferDescription final : public IBufferDescription,IRTBufferAssembl
 	virtual D3D12_SHADER_RESOURCE_VIEW_DESC CreateSRV_Desc()const override;
 	//クリアバリュー
 	virtual D3D12_CLEAR_VALUE WatchClearValue() const override;
+
+	inline const Param& WatchParam()
+	{
+		return param;
+	}
 
 };
 

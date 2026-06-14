@@ -91,6 +91,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="Engine\Resource\BufferAssembler\BufferAssembler.cpp" />
+    <ClCompile Include="Engine\Resource\BufferDescriptions\BufferDescriptionBehavior.cpp" />
     <ClCompile Include="Engine\Resource\GPUBuffer\DepthStencilBuffer\DepthStencilBuffer.cpp" />
     <ClCompile Include="Engine\Resource\BufferContext.cpp" />
     <ClCompile Include="Engine\Resource\BufferDescriptions\DepthStencilBufferDescription\DepthStencilBufferDescription.cpp" />
@@ -242,7 +243,7 @@
     <ClInclude Include="Engine\Core\Device\DeviceContextCommandProvider\DeviceContextCommandProvider.h" />
     <ClInclude Include="Engine\Resource\BufferDescriptions\ColorBufferDescription\ColorBufferDescription.h" />
     <ClInclude Include="Engine\Resource\BufferDescriptions\ConstantBufferDescription\ConstantBufferDescription.h" />
-    <ClInclude Include="Engine\Resource\BufferDescriptions\IBufferDescription.h" />
+    <ClInclude Include="Engine\Resource\BufferDescriptions\BufferDescriptionBehavior.h" />
     <ClInclude Include="Engine\Core\Window\DumpExporter.h" />
     <ClInclude Include="Engine\Debug\RuntimeDebugger\DebugSystems\DebugLayer\DebugLayer.h" />
     <ClInclude Include="Engine\Resource\GPUBuffer\ConstantBuffer\ConstantBuffer.h" />

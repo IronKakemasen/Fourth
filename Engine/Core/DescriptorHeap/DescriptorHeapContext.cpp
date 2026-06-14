@@ -70,6 +70,7 @@ void DescriptorHeapContext::CreateDescriptorHeap(UINT numDescriptors_, bool shad
 		std::move(descriptorHeapCreator->createFunc(HeapType, numDescriptors_, shaderVisible_)),
 		handleIncSize_,
 		numDescriptors_,
+		shaderVisible_,
 		GetDescriptorName(HeapType)
 	);
 

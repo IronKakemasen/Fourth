@@ -31,6 +31,7 @@
 #include <functional>
 #include <mutex>
 #include <variant>
+#include <type_traits> 
 
 //abort()やassert()でエラーを吐いて文字列を出力する
 #include "Debug/ErrorMessageOutput/ErrorMessageOutput.h"

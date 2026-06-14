@@ -23,61 +23,78 @@ BufferAssembler::BufferAssembler(ResourceCreator* resourceCreator_, ViewCreator*
 
 }
 
-std::pair<D3D12_RESOURCE_DESC, D3D12_HEAP_PROPERTIES> BufferAssembler::AssembleResourceCreateRequirements(const IBufferDescription& desc_)
+std::pair<D3D12_RESOURCE_DESC, D3D12_HEAP_PROPERTIES> BufferAssembler::AssembleResourceCreateRequirements(const BufferDescriptionBehavior& desc_)
 {
+	//要項チェック
+	desc_.CheckRequirementsFilled();
+
 	D3D12_HEAP_PROPERTIES heapProp = desc_.CreateHeapProperties();
 	D3D12_RESOURCE_DESC resourceDesc = desc_.CreateResourceDesc();
-
+	
 	return std::make_pair(resourceDesc, heapProp);
 }
 
 
 
 template<>
-std::unique_ptr<ColorBuffer> BufferAssembler::AssembleResource(D3D12_RESOURCE_DESC resourceDesc_, D3D12_HEAP_PROPERTIES heapProp_,const std::string& name_ ,ColorBufferDescription desc_)
+std::unique_ptr<ColorBuffer> BufferAssembler::AssembleResource<ColorBuffer, ColorBufferDescription>
+(
+	D3D12_RESOURCE_DESC resourceDesc_,
+	D3D12_HEAP_PROPERTIES heapProp_,
+	const std::string& name_,
+	const ColorBufferDescription& desc_
+)
 {
 	using DoubleResource = std::pair<Microsoft::WRL::ComPtr<ID3D12Resource>, Microsoft::WRL::ComPtr<ID3D12Resource>> ;
-
+	
 	//名前変換
 	std::string nameCnv = ConvertName(name_, "ColorBuffer");
 
 	//クリアバリュー必要
 	auto clearValue = desc_.WatchClearValue();
 	//リソース生成
-	DoubleResource doubleResource = resourceCreator->CreateResource(resourceDesc_, heapProp_, &clearValue, nameCnv);
-
-	//移し替え
-	auto descPtr = std::make_unique<ColorBufferDescription>(std::move(desc_));
+	DoubleResource doubleResource = resourceCreator->CreateResource(resourceDesc_, heapProp_, &clearValue, desc_.initialState,nameCnv);
 
 	//バッファ生成
 	return std::make_unique<ColorBuffer>
-	(
-		ColorBuffer::InstanceKey{},
-		nameCnv,
-		std::move(doubleResource.first), std::move(doubleResource.second),
-		std::move(descPtr)
-	);
+		(
+			ColorBuffer::InstanceKey{},
+			nameCnv,
+			std::move(doubleResource.first), std::move(doubleResource.second),
+			std::make_unique<ColorBufferDescription>(desc_)
+		);
 }
 
 template<>
-void BufferAssembler::AssembleView(ColorBuffer* buffer_, const ColorBufferDescription& desc_)
+void BufferAssembler::AssembleView<ColorBuffer, ColorBufferDescription>(ColorBuffer* buffer_, const ColorBufferDescription& desc_)
 {
-	auto srv = desc_.CreateSRV_Desc();
-	auto rtv = desc_.CreateRTV_Desc();
+	auto srvDesc = desc_.CreateSRV_Desc();
+	auto rtvDesc = desc_.CreateRTV_Desc();
 
 	for (int i = 0;i < ProjectConfig::Render::kRequiredGPUBufferSum;++i)
 	{
 		auto accessKey = ColorBuffer::BufferAccessKey{};
 		auto instanceKey = ColorBuffer::InstanceKey{};
 
-		//srvを作り、インデックスを格納
-		uint32_t srvHeapIndex = viewCreator->CreateView<uint32_t>(buffer_->GetResource(accessKey , i), srv);
-		buffer_->OverrideIndex<ViewType::kSRV>(instanceKey, srvHeapIndex, i);
+		//srv生成
+		{
+			uint32_t srvIndex{};
+			D3D12_CPU_DESCRIPTOR_HANDLE srvCPU{};
+			D3D12_GPU_DESCRIPTOR_HANDLE srvGPU{};
 
-		//rtvを作り、インデックスを格納
-		D3D12_CPU_DESCRIPTOR_HANDLE rtvHeapIndex = viewCreator->CreateView<D3D12_CPU_DESCRIPTOR_HANDLE>(buffer_->GetResource(accessKey , i), rtv);
-		buffer_->OverrideIndex<ViewType::kRTV>(instanceKey, rtvHeapIndex, i);
+			std::tie(srvIndex, srvCPU, srvGPU) = viewCreator->CreateView(buffer_->GetResource(accessKey, i), srvDesc);
+			buffer_->OverrideHeapIndex<ViewType::kSRV>(instanceKey, srvIndex, i);
+			buffer_->OverrideHeapIndex<ViewType::kSRV>(instanceKey, srvCPU, i);
+			buffer_->OverrideHeapIndex<ViewType::kSRV>(instanceKey, srvGPU, i);
+		}
 
+		//rtv生成
+		{
+			D3D12_CPU_DESCRIPTOR_HANDLE rtvCPU{};
+
+			std::tie(std::ignore, rtvCPU, std::ignore) = viewCreator->CreateView(buffer_->GetResource(accessKey, i), rtvDesc);
+			buffer_->OverrideHeapIndex<ViewType::kRTV>(instanceKey, rtvCPU, i);
+		}
 	}
 }
 

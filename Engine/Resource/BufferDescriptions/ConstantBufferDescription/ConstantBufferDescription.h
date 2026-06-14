@@ -1,11 +1,20 @@
 #pragma once
-#include "../IBufferDescription.h"
+#include "../BufferDescriptionBehavior.h"
 
 
 //CBバッファ
-struct ConstantBufferDescription final : public IBufferDescription
+struct ConstantBufferDescription final : public BufferDescriptionBehavior
 {
-	UINT sizeInByte{};
+private:
+
+	struct Param
+	{
+		UINT sizeInByte{};
+	}param;
+
+public:
+
+	ConstantBufferDescription(UINT sizeInByte_, D3D12_RESOURCE_STATES initialState_ = D3D12_RESOURCE_STATE_GENERIC_READ);
 
 	//パラーメーターチェック
 	virtual void CheckRequirementsFilled() const override;
@@ -13,6 +22,12 @@ struct ConstantBufferDescription final : public IBufferDescription
 	virtual D3D12_HEAP_PROPERTIES CreateHeapProperties()const override;
 	//リソースディスクの生成
 	virtual D3D12_RESOURCE_DESC CreateResourceDesc()const override;
+
+	inline const Param& WatchParam()
+	{
+		return param;
+	}
+
 };
 
 
