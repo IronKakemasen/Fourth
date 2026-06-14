@@ -2,11 +2,24 @@
 
 
 class GPUBufferManager;
-struct IBufferDescription;
+struct BufferDescriptionBehavior;
 class BufferAssembler;
 
 class GPUBufferBehavior
 {
+private:
+
+	//各desctiptorheapのインデックス
+	struct IndexSet
+	{
+		uint32_t uint{};
+		D3D12_CPU_DESCRIPTOR_HANDLE cpu;
+		D3D12_GPU_DESCRIPTOR_HANDLE gpu;
+	};
+
+	//各ビューのインデックス
+	std::array< std::unordered_map<ViewType, IndexSet>, ProjectConfig::Render::kRequiredGPUBufferSum> heapIndicesContainer;
+
 public:
 
 	//生成キー
@@ -20,48 +33,72 @@ public:
 		std::string name_, 
 		Microsoft::WRL::ComPtr<ID3D12Resource> resource1_, 
 		Microsoft::WRL::ComPtr<ID3D12Resource> resource2_,
-		std::unique_ptr <IBufferDescription>&& description_
+		std::unique_ptr <BufferDescriptionBehavior>&& description_
 	);
 
 	virtual ~GPUBufferBehavior();
 
-	ID3D12Resource* GetResource( const BufferAccessKey& bufferAccessKey_ , int index_);
+	//生英ソースを取得
+	ID3D12Resource* GetResource( BufferAccessKey bufferAccessKey_ , int resourceNo_);
 	
 	//descriptorHeapIndexを書き込む
 	template<ViewType type, typename Index>
-	inline void OverrideIndex(InstanceKey instanceKey_, Index index_,uint8_t resourceNo_)
+	void OverrideHeapIndex(InstanceKey instanceKey_, Index index_, uint8_t resourceNo_)
 	{
-		heapIndices[type][resourceNo_] = index_;
+		if constexpr (std::is_same_v<Index, uint32_t>)
+		{
+			heapIndicesContainer.at(resourceNo_)[type].uint = index_;
+		}
+		else if constexpr (std::is_same_v<Index, D3D12_CPU_DESCRIPTOR_HANDLE>)
+		{
+			heapIndicesContainer.at(resourceNo_)[type].cpu = index_;
+		}
+		else if constexpr (std::is_same_v<Index, D3D12_GPU_DESCRIPTOR_HANDLE>)
+		{
+			heapIndicesContainer.at(resourceNo_)[type].gpu = index_;
+		}
 	}
 
-	//descriptorHeapIndexを取得
+	//各種ビューのインデックスを取得
 	template<ViewType type, typename Index>
-	[[nodiscard]] Index WatchIndex(uint8_t resourceNo_) const
+	Index WatchIndex(uint8_t resourceNo_)const 
 	{
-		const auto& variantVal = heapIndices.at(type)[resourceNo_];
+		if constexpr (std::is_same_v<Index, uint32_t>)
+		{
+			return heapIndicesContainer.at(resourceNo_).at(type).uint;
+		}
+		else if constexpr (std::is_same_v<Index, D3D12_CPU_DESCRIPTOR_HANDLE>)
+		{
+			return heapIndicesContainer.at(resourceNo_).at(type).cpu;
+		}
+		else if constexpr (std::is_same_v<Index, D3D12_GPU_DESCRIPTOR_HANDLE>)
+		{
+			return heapIndicesContainer.at(resourceNo_).at(type).gpu;
+		}
+		else
+		{
+			ErrorMessageOutput::Assert::DetectError((false), "IndexTypeError", "GPUBufferBehavior.h");
+		}
 
-		ErrorMessageOutput::Assert::DetectError
-		(
-			std::holds_alternative<Index>(variantVal),
-			"要求しているインデクスの型が不一致","GPUBufferBehavior.h"
-		);
-
-		return std::get<Index>(variantVal);
+		return Index{};
 	}
 
 protected:
 
-	std::unique_ptr <IBufferDescription> description;
+	//自身を構成するディスクリプション
+	std::unique_ptr <BufferDescriptionBehavior> description;
 
 private:
 
+	//生リソース
 	std::array<Microsoft::WRL::ComPtr<ID3D12Resource>, ProjectConfig::Render::kRequiredGPUBufferSum> resources;
+	//なまえ
 	std::string name = "noName";
-
-	//各desctiptorheapのインデックス
-	std::unordered_map<ViewType, 
-		std::array<std::variant<uint32_t, D3D12_CPU_DESCRIPTOR_HANDLE> , ProjectConfig::Render::kMaximumShaderModel>> heapIndices;
+	//現在リソースステート
+	D3D12_RESOURCE_STATES curState;
 };
+
+
 
 //生成できるのはBufferAssemblerのみ
 struct GPUBufferBehavior::InstanceKey

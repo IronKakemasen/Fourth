@@ -1,6 +1,6 @@
 #include "PreCompileHedder.h"
 #include "ColorBuffer.h"
-#include "../../BufferDescriptions/IBufferDescription.h"
+#include "../../BufferDescriptions/ColorBufferDescription/ColorBufferDescription.h"
 
 
 ColorBuffer::ColorBuffer
@@ -9,32 +9,34 @@ ColorBuffer::ColorBuffer
 	std::string name_,
 	Microsoft::WRL::ComPtr<ID3D12Resource> resource1_,
 	Microsoft::WRL::ComPtr<ID3D12Resource> resource2_,
-	std::unique_ptr <IBufferDescription>&& description_
+	std::unique_ptr <BufferDescriptionBehavior>&& description_
 ) : GPUBufferBehavior(instanceKey_, name_, std::move(resource1_), std::move(resource2_), std::move(description_))
 {
 	SetMatrix();
 }
 
 
-ColorBufferDescription ColorBuffer::WatchDescription() const
+const ColorBufferDescription& ColorBuffer::WatchDescription() 
 {
-	return desc;
+	return static_cast<ColorBufferDescription&>(*description.get());
 }
 
 
 void ColorBuffer::SetMatrix()
 {
+	const auto& param = static_cast<ColorBufferDescription&>(*description.get()).WatchParam();
+
 	//クライアント領域と一緒のサイズにして画面全体に表示
-	viewport.Width = static_cast<FLOAT>(desc.width);
-	viewport.Height = static_cast<FLOAT>(desc.height);
+	viewport.Width = static_cast<FLOAT>(param.width);
+	viewport.Height = static_cast<FLOAT>(param.height);
 	viewport.TopLeftX = 0.0f;
 	viewport.TopLeftY = 0.0f;
 	viewport.MinDepth = 0.0f;
 	viewport.MaxDepth = 1.0f;
 
 	//しざー矩形
-	scissorRect.right = static_cast<LONG>(desc.width);
-	scissorRect.bottom = static_cast<LONG>(desc.height);
+	scissorRect.right = static_cast<LONG>(param.width);
+	scissorRect.bottom = static_cast<LONG>(param.height);
 	scissorRect.left = static_cast<LONG>(0.0f);
 	scissorRect.top = static_cast<LONG>(0.0f);
 

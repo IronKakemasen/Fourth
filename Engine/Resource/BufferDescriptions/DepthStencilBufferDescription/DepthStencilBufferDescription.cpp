@@ -7,19 +7,35 @@ void DepthStencilBufferDescription::CheckRequirementsFilled() const
 
 }
 
+DepthStencilBufferDescription::DepthStencilBufferDescription
+(
+	UINT width_,
+	UINT height_,
+	FLOAT clearColor_,
+	DXGI_FORMAT format_,
+	D3D12_RESOURCE_STATES initialState_
+):BufferDescriptionBehavior(initialState_)
+{
+	param.width = width_;
+	param.height = height_;
+	param.clearColor = clearColor_;
+	param.format = format_;
+}
+
+
 D3D12_RESOURCE_DESC DepthStencilBufferDescription::CreateResourceDesc()const
 {
 	D3D12_RESOURCE_DESC resourceDesc = {};
 
-	resourceDesc.Width = width;
-	resourceDesc.Height = height;
+	resourceDesc.Width = param.width;
+	resourceDesc.Height = param.height;
 	resourceDesc.Alignment = 0;
 	//mipmapの数
 	resourceDesc.MipLevels = 1;
 	//奥行or配列Textureの配列数
 	resourceDesc.DepthOrArraySize = 1;
 	//depthstencilとして利用可能なフォーマット
-	resourceDesc.Format = format;
+	resourceDesc.Format = param.format;
 	//サンプリングカウント1固定
 	resourceDesc.SampleDesc.Count = 1;
 	resourceDesc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
@@ -36,7 +52,7 @@ D3D12_DEPTH_STENCIL_VIEW_DESC DepthStencilBufferDescription::CreateDSVDesc()cons
 	D3D12_DEPTH_STENCIL_VIEW_DESC dsvDesc = {};
 
 	//format。基本的にはリソースに合わせる
-	dsvDesc.Format = format;
+	dsvDesc.Format = param.format;
 	//2DTexture
 	dsvDesc.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2D;
 	dsvDesc.Texture2D.MipSlice = 0;
@@ -62,8 +78,8 @@ D3D12_CLEAR_VALUE DepthStencilBufferDescription::WatchClearValue() const
 {
 	D3D12_CLEAR_VALUE clearValue = {};
 
-	clearValue.DepthStencil.Depth = clearColor;
-	clearValue.Format = format;
+	clearValue.DepthStencil.Depth = param.clearColor;
+	clearValue.Format = param.format;
 
 	return clearValue;
 }

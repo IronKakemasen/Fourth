@@ -14,16 +14,13 @@ public:
 		std::string name_,
 		Microsoft::WRL::ComPtr<ID3D12Resource> resource1_,
 		Microsoft::WRL::ComPtr<ID3D12Resource> resource2_,
-		std::unique_ptr <IBufferDescription>&& description_
+		std::unique_ptr <BufferDescriptionBehavior>&& description_
 	);
 
 	//リソースのディスクリプションを見る
-	ColorBufferDescription WatchDescription() const;
+	const ColorBufferDescription& WatchDescription();
 
 private:
-
-	//ディスクリプション
-	ColorBufferDescription desc;
 
 	//行列
 	D3D12_VIEWPORT viewport;

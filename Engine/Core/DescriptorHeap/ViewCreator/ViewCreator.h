@@ -1,7 +1,6 @@
 #pragma once
 #include "../DescriptorHeapContext.h"
 #include "../DescriptorHeapClass/DescriptorHeapClass.h"
-#include <type_traits> 
 
 class GPUBufferBehavior;
 
@@ -36,8 +35,8 @@ public:
 	);
 
 	//VIEWを生成し、インデックスまたはハンドルを返す。
-	template<typename Index , typename ViewType>
-	Index CreateView(ID3D12Resource* resource_, const ViewType& viewDesc)
+	template<typename ViewType>
+	std::tuple<uint32_t, D3D12_CPU_DESCRIPTOR_HANDLE, D3D12_GPU_DESCRIPTOR_HANDLE> CreateView(ID3D12Resource* resource_, const ViewType& viewDesc, ID3D12Resource* counterResource_ = nullptr)
 	{
 		//ViewTypeどのヒープを使うべきか分岐
 		HeapType type;
@@ -48,10 +47,10 @@ public:
 		//ヒープを取り出す
 		auto* targetHeap = descriptorHeap_map[type];
 
-		Index allocateIndex = targetHeap->WatchAllocateIndex<Index>();
-
-		//view生成数に応じたCPUハンドルを取得し、その後ヒープ側のカウンタを進める
-		auto handleCPU = targetHeap->CalculateHandleThenIncrement<D3D12_CPU_DESCRIPTOR_HANDLE>(DescriptorHeapClass::AccessKey{});
+		//view生成数に応じたハンドルを取得
+		uint32_t allocateIndex = targetHeap->GetHandle<uint32_t>();
+		auto handleCPU = targetHeap->GetHandle<D3D12_CPU_DESCRIPTOR_HANDLE>();
+		auto handleGPU = targetHeap->GetHandle<D3D12_GPU_DESCRIPTOR_HANDLE>();
 
 		//ビュー生成
 		if constexpr (std::is_same_v<ViewType, D3D12_RENDER_TARGET_VIEW_DESC>)
@@ -68,11 +67,15 @@ public:
 		}
 		else if constexpr (std::is_same_v<ViewType, D3D12_UNORDERED_ACCESS_VIEW_DESC>)
 		{
-			uavCmd(resource_, &viewDesc, handleCPU, nullptr);
+			uavCmd(resource_, &viewDesc, handleCPU, counterResource_);
 		}
 
-		//uintまたはCPUのインデックスを返す
-		return allocateIndex;
+		//ビュー生成数をインクリメント
+		targetHeap->Increment(DescriptorHeapClass::AccessKey{});
+
+
+		//uint、CPU・GPUのインデックスを返す
+		return std::make_tuple(allocateIndex, handleCPU, handleGPU);
 	}
 };
 

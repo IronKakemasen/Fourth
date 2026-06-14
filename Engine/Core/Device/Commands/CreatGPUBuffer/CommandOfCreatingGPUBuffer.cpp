@@ -8,21 +8,18 @@
 	const D3D12_RESOURCE_DESC& resourceDesc_,
 	const D3D12_HEAP_PROPERTIES& heapProperties_,
 	const D3D12_CLEAR_VALUE* clearValue_,
+	D3D12_RESOURCE_STATES initialState_,
 	const std::string& name_
 )
 {
 	Microsoft::WRL::ComPtr<ID3D12Resource> resource;
-
-	//初期ステートを割り出す
-	D3D12_RESOURCE_STATES initialState =
-		ConfigureInitialResourceState(heapProperties_.Type, resourceDesc_.Flags);
 
 	//[ 生成 ]
 	[[maybe_unused]] HRESULT hr = device_->CreateCommittedResource(
 		&heapProperties_,
 		D3D12_HEAP_FLAG_NONE,
 		&resourceDesc_,
-		initialState,
+		initialState_,
 		clearValue_,
 		IID_PPV_ARGS(&resource));
 
@@ -31,33 +28,33 @@
 	return resource;
 }
 
-D3D12_RESOURCE_STATES CommandCreateGPUResource::ConfigureInitialResourceState(D3D12_HEAP_TYPE heapType_, D3D12_RESOURCE_FLAGS resourceFlag_)
-{
-	D3D12_RESOURCE_STATES initialState{};
-
-	//CPUの近くにおく。からアクセスできるけど遅し。GPUからは触れない
-	if (heapType_ == D3D12_HEAP_TYPE_UPLOAD)
-	{
-		//こうしなきゃいけない
-		initialState = D3D12_RESOURCE_STATE_GENERIC_READ;
-	}
-	//GPUの近くのメモリ、Vramにおく。速し。CPUからアクセスできなくなる
-	else if (heapType_ == D3D12_HEAP_TYPE_DEFAULT)
-	{
-		//UAV生成フラグがあるときは、GPUが書き込めるようにする
-		if (resourceFlag_ & D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS)
-		{
-			initialState = D3D12_RESOURCE_STATE_UNORDERED_ACCESS;
-		}
-		//読み込み専用のStructuredBufferなら、中継バッファからのデータ転送待ち状態にする
-		else
-		{
-			initialState = D3D12_RESOURCE_STATE_COPY_DEST;
-		}
-	}
-
-	return initialState;
-}
+//D3D12_RESOURCE_STATES CommandCreateGPUResource::ConfigureInitialResourceState(D3D12_HEAP_TYPE heapType_, D3D12_RESOURCE_FLAGS resourceFlag_)
+//{
+//	D3D12_RESOURCE_STATES initialState{};
+//
+//	//CPUの近くにおく。からアクセスできるけど遅し。GPUからは触れない
+//	if (heapType_ == D3D12_HEAP_TYPE_UPLOAD)
+//	{
+//		//こうしなきゃいけない
+//		initialState = D3D12_RESOURCE_STATE_GENERIC_READ;
+//	}
+//	//GPUの近くのメモリ、Vramにおく。速し。CPUからアクセスできなくなる
+//	else if (heapType_ == D3D12_HEAP_TYPE_DEFAULT)
+//	{
+//		//UAV生成フラグがあるときは、GPUが書き込めるようにする
+//		if (resourceFlag_ & D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS)
+//		{
+//			initialState = D3D12_RESOURCE_STATE_UNORDERED_ACCESS;
+//		}
+//		//読み込み専用のStructuredBufferなら、中継バッファからのデータ転送待ち状態にする
+//		else
+//		{
+//			initialState = D3D12_RESOURCE_STATE_COPY_DEST;
+//		}
+//	}
+//
+//	return initialState;
+//}
 
 
 CommandCreateGPUResource::CommandCreateGPUResource(DeviceContext::CommandGenerator::GenerateKey generateKey_) :DeviceContextCommandBehavior(generateKey_)

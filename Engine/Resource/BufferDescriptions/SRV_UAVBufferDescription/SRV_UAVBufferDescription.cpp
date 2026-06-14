@@ -1,23 +1,47 @@
 #include "PreCompileHedder.h"
 #include "SRV_UAVBufferDescription.h"
 
+
+SRV_UAVBufferDescription::SRV_UAVBufferDescription
+(
+	UINT structureByte_,
+	UINT numElements_,
+	UINT firstElement_,
+	D3D12_RESOURCE_FLAGS resourceFlag_,
+	D3D12_HEAP_TYPE heapType_,
+	D3D12_BUFFER_SRV_FLAGS srvFlags_,
+	D3D12_BUFFER_UAV_FLAGS uavFlags_,
+	uint64_t uavCounterOffsetInBytes_,
+	D3D12_RESOURCE_STATES initialState_
+) :BufferDescriptionBehavior(initialState_)
+{
+	param.structureByte = structureByte_;
+	param.numElements = numElements_;
+	param.firstElement = firstElement_;
+	param.resourceFlag = resourceFlag_;
+	param.heapType = heapType_;
+	param.srvFlags = srvFlags_;
+	param.uavFlags = uavFlags_;
+	param.uavCounterOffsetInBytes = uavCounterOffsetInBytes_;
+}
+
+
 void SRV_UAVBufferDescription::CheckRequirementsFilled() const
 {
 	std::string errorMess{};
 
-	if (structureByte == 0)errorMess += "[structureByte]";
-	if (numElements == 0)errorMess += "[numElements]";
-	if (firstElement == -1) errorMess += "[firstElement]";
-	if (srvFlags == D3D12_BUFFER_SRV_FLAG_notDefined) errorMess += "[srvFlags]";
-	if (resourceFlag == D3D12_RESOURCE_FLAG_Error_Detection) errorMess += "[resourceFlag]";
-	if (heapType == D3D12_HEAP_TYPE_notDefined) errorMess += "[heapType]";
-	//if (initialState == D3D12_RESOURCE_STATE_Error_Detection) errorMess += "[initialState]";
+	if (param.structureByte == 0)errorMess += "[structureByte]";
+	if (param.numElements == 0)errorMess += "[numElements]";
+	if (param.firstElement == -1) errorMess += "[firstElement]";
+	if (param.srvFlags == D3D12_BUFFER_SRV_FLAG_notDefined) errorMess += "[srvFlags]";
+	if (param.resourceFlag == D3D12_RESOURCE_FLAG_Error_Detection) errorMess += "[resourceFlag]";
+	if (param.heapType == D3D12_HEAP_TYPE_notDefined) errorMess += "[heapType]";
 
-	//uav生成フラグがあるときはほかのもチェック
-	if ((resourceFlag & D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS) > 0 )
+	//uav生成フラグがあるときはチェック
+	if ((param.resourceFlag & D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS) > 0 )
 	{
-		if (uavFlags == D3D12_BUFFER_UAV_FLAG_notDefined) errorMess += "[uavFlags]";
-		if (uavCounterOffsetInBytes == -1) errorMess += "[uavCounterOffsetInBytes]";
+		if (param.uavFlags == D3D12_BUFFER_UAV_FLAG_notDefined) errorMess += "[uavFlags]";
+		if (param.uavCounterOffsetInBytes == -1) errorMess += "[uavCounterOffsetInBytes]";
 	}
 
 	ErrorMessageOutput::Assert::DetectError((errorMess.length() == 0), errorMess + "の情報が未設定です", "SRV_UAVBufferDescription.cpp");
@@ -27,8 +51,8 @@ D3D12_RESOURCE_DESC SRV_UAVBufferDescription::CreateResourceDesc()const
 {
 	D3D12_RESOURCE_DESC resourceDesc = {};
 
-	resourceDesc.Width = numElements * structureByte;
-	resourceDesc.Flags = resourceFlag;
+	resourceDesc.Width = param.numElements * param.structureByte;
+	resourceDesc.Flags = param.resourceFlag;
 
 	resourceDesc.Height = 1;
 	resourceDesc.DepthOrArraySize = 1;
@@ -44,10 +68,10 @@ D3D12_SHADER_RESOURCE_VIEW_DESC SRV_UAVBufferDescription::CreateSRV_Desc()const
 {
 	D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
 
-	srvDesc.Buffer.NumElements = numElements;
-	srvDesc.Buffer.StructureByteStride = structureByte;
-	srvDesc.Buffer.Flags = srvFlags;
-	srvDesc.Buffer.FirstElement = firstElement;
+	srvDesc.Buffer.NumElements = param.numElements;
+	srvDesc.Buffer.StructureByteStride = param.structureByte;
+	srvDesc.Buffer.Flags = param.srvFlags;
+	srvDesc.Buffer.FirstElement = param.firstElement;
 
 	srvDesc.Format = DXGI_FORMAT_UNKNOWN;
 	srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
@@ -60,7 +84,7 @@ D3D12_HEAP_PROPERTIES SRV_UAVBufferDescription::CreateHeapProperties()const
 {
 	D3D12_HEAP_PROPERTIES properties = {};
 
-	properties.Type = heapType;
+	properties.Type = param.heapType;
 
 	return properties;
 

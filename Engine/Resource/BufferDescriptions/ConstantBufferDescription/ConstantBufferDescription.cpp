@@ -1,11 +1,18 @@
 #include "PreCompileHedder.h"
 #include "ConstantBufferDescription.h"
 
+ConstantBufferDescription::ConstantBufferDescription(UINT sizeInByte_, D3D12_RESOURCE_STATES initialState_ )
+	:BufferDescriptionBehavior(initialState_)
+{
+	param.sizeInByte = sizeInByte_;
+}
+
+
 void ConstantBufferDescription::CheckRequirementsFilled() const
 {
 	std::string errorMess{};
 
-	if (sizeInByte == 0) errorMess += "[sizeInByte]";
+	if (param.sizeInByte == 0) errorMess += "[sizeInByte]";
 
 	ErrorMessageOutput::Assert::DetectError((errorMess.length() == 0), errorMess + "の情報が未設定です","ConstantBufferDescription.cpp");
 
@@ -16,7 +23,7 @@ D3D12_RESOURCE_DESC ConstantBufferDescription::CreateResourceDesc()const
 	D3D12_RESOURCE_DESC resourceDesc = {};
 
 	resourceDesc.Dimension = D3D12_RESOURCE_DIMENSION_BUFFER;
-	resourceDesc.Width = (sizeInByte + 255) & ~255;;
+	resourceDesc.Width = (param.sizeInByte + 255) & ~255;;
 	resourceDesc.Height = 1;
 	resourceDesc.DepthOrArraySize = 1;
 	resourceDesc.MipLevels = 1;
