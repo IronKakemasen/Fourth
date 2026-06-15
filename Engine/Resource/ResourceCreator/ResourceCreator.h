@@ -1,7 +1,7 @@
 #pragma once
 #include "../BufferContext.h"
 
-class ResourceCreator
+class BufferContext::ResourceCreator
 {
 
 public:
@@ -11,7 +11,7 @@ public:
 
 	~ResourceCreator() = default;
 
-	[[nodiscard]] std::pair<Microsoft::WRL::ComPtr<ID3D12Resource>, Microsoft::WRL::ComPtr<ID3D12Resource>> CreateResource
+	[[nodiscard]] std::pair<Microsoft::WRL::ComPtr<ID3D12Resource>, Microsoft::WRL::ComPtr<ID3D12Resource>> Create
 	(
 		const D3D12_RESOURCE_DESC& resourceDesc_,
 		const D3D12_HEAP_PROPERTIES& heapProperties_,

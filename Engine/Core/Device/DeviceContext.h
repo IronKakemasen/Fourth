@@ -16,15 +16,20 @@ public:
 		kCreateDescriptorHeap,
 		//Resourceのビューを作成
 		kCreateResourceView,
+		//SwapChainまわりを構成
+		kStructureSwapChain,
 
 
 		kCount
 	};
+
 	//生成キー。WinAppしか許さない
 	struct InstanceKey;
-	//デバイスにアクセスするのを許可するキー
-	struct DeviceAccessKey;
-	//CommandProvider
+	
+	//コアパーツにアクセスするのを許可するキー
+	struct AccessKey;
+
+	//CommandProvider.他クラスにコアパーツを流用させないようにコマンドを生成して渡す
 	class CommandProvider;
 	std::unique_ptr<CommandProvider> commandProvider;
 
@@ -32,11 +37,11 @@ public:
 	~DeviceContext();
 
 	//DescriptorHeapのハンドルインクリメントサイズを返す関数
-	UINT PassDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE type_);
+	UINT CalcDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE type_);
 
 private:
 
-	//Setupper
+	//コアパーツを生成する
 	class Setupper;
 
 	Microsoft::WRL::ComPtr<ID3D12Device8> device = nullptr;
@@ -61,12 +66,12 @@ private:
 
 
 //アクセスさせるがポインタは渡さん
-struct DeviceContext::DeviceAccessKey
+struct DeviceContext::AccessKey
 {
 private:
 
 	friend class CommandProvider;
-	explicit DeviceAccessKey() = default;
+	explicit AccessKey() = default;
 };
 
 

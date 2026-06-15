@@ -17,13 +17,18 @@
 #include "../ResourceCreator/ResourceCreator.h"
 #include "../../Core/DescriptorHeap/ViewCreator/ViewCreator.h"
 
-BufferAssembler::BufferAssembler(ResourceCreator* resourceCreator_, ViewCreator* viewCreator_)
-	:resourceCreator(resourceCreator_), viewCreator(viewCreator_)
+BufferContext::BufferAssembler::BufferAssembler
+(
+	BufferContext::InstanceKey instancekey_, 
+	std::unique_ptr<BufferContext::ResourceCreator> resourceCreator_, 
+	ViewCreator* viewCreator_
+)
+	:resourceCreator(std::move(resourceCreator_)), viewCreator(viewCreator_)
 {
 
 }
 
-std::pair<D3D12_RESOURCE_DESC, D3D12_HEAP_PROPERTIES> BufferAssembler::AssembleResourceCreateRequirements(const BufferDescriptionBehavior& desc_)
+std::pair<D3D12_RESOURCE_DESC, D3D12_HEAP_PROPERTIES> BufferContext::BufferAssembler::AssembleResourceCreateRequirements(const BufferDescriptionBehavior& desc_)
 {
 	//要項チェック
 	desc_.CheckRequirementsFilled();
@@ -37,7 +42,7 @@ std::pair<D3D12_RESOURCE_DESC, D3D12_HEAP_PROPERTIES> BufferAssembler::AssembleR
 
 
 template<>
-std::unique_ptr<ColorBuffer> BufferAssembler::AssembleResource<ColorBuffer, ColorBufferDescription>
+std::unique_ptr<ColorBuffer> BufferContext::BufferAssembler::AssembleResource<ColorBuffer, ColorBufferDescription>
 (
 	D3D12_RESOURCE_DESC resourceDesc_,
 	D3D12_HEAP_PROPERTIES heapProp_,
@@ -53,20 +58,20 @@ std::unique_ptr<ColorBuffer> BufferAssembler::AssembleResource<ColorBuffer, Colo
 	//クリアバリュー必要
 	auto clearValue = desc_.WatchClearValue();
 	//リソース生成
-	DoubleResource doubleResource = resourceCreator->CreateResource(resourceDesc_, heapProp_, &clearValue, desc_.initialState,nameCnv);
+	DoubleResource doubleResource = resourceCreator->Create(resourceDesc_, heapProp_, &clearValue, desc_.initialState,nameCnv);
 
 	//バッファ生成
 	return std::make_unique<ColorBuffer>
-		(
-			ColorBuffer::InstanceKey{},
-			nameCnv,
-			std::move(doubleResource.first), std::move(doubleResource.second),
-			std::make_unique<ColorBufferDescription>(desc_)
-		);
+	(
+		ColorBuffer::InstanceKey{},
+		nameCnv,
+		std::move(doubleResource.first), std::move(doubleResource.second),
+		std::make_unique<ColorBufferDescription>(desc_)
+	);
 }
 
 template<>
-void BufferAssembler::AssembleView<ColorBuffer, ColorBufferDescription>(ColorBuffer* buffer_, const ColorBufferDescription& desc_)
+void BufferContext::BufferAssembler::AssembleView<ColorBuffer, ColorBufferDescription>(ColorBuffer* buffer_, const ColorBufferDescription& desc_)
 {
 	auto srvDesc = desc_.CreateSRV_Desc();
 	auto rtvDesc = desc_.CreateRTV_Desc();
@@ -98,7 +103,7 @@ void BufferAssembler::AssembleView<ColorBuffer, ColorBufferDescription>(ColorBuf
 	}
 }
 
-std::string BufferAssembler::ConvertName(const std::string& srcName_, const std::string& attach_)
+std::string BufferContext::BufferAssembler::ConvertName(const std::string& srcName_, const std::string& attach_)
 {
 	return attach_ + "[ " + srcName_ + " ] ";
 }

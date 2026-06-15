@@ -33,12 +33,18 @@ DeviceContext::DeviceContext(DeviceContext::InstanceKey instanceKey_)
 void DeviceContext::CreateCommandProvider(DeviceContext::InstanceKey instanceKey_)
 {
 	//デバイスにアクセスする関数オブジェ
-	auto deviceGetFunc = [this](DeviceContext::DeviceAccessKey key_) -> ID3D12Device8*
+	auto deviceGetFunc = [this](DeviceContext::AccessKey key_) -> ID3D12Device8*
 	{
 		return device.Get();
 	};
 
-	commandProvider.reset(new CommandProvider(instanceKey_, deviceGetFunc));
+	//dxgiFactoryにアクセスする関数オブジェ
+	auto dxgiFactoryGetter = [this](DeviceContext::AccessKey key_) -> IDXGIFactory7*
+	{
+		return dxgiFactory.Get();
+	};
+
+	commandProvider.reset(new CommandProvider(instanceKey_, deviceGetFunc, dxgiFactoryGetter));
 }
 
 void DeviceContext::TakeOverCoreParts(DeviceContext::InstanceKey instanceKey_)
@@ -56,7 +62,7 @@ DeviceContext::~DeviceContext()
 
 }
 
-UINT DeviceContext::PassDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE type_)
+UINT DeviceContext::CalcDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE type_)
 {
 	return device->GetDescriptorHandleIncrementSize(type_);
 }

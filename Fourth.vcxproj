@@ -90,6 +90,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Engine\Core\Device\Commands\StructureSwapChain\CommandStructureSwapChain.cpp" />
     <ClCompile Include="Engine\Resource\BufferAssembler\BufferAssembler.cpp" />
     <ClCompile Include="Engine\Resource\BufferDescriptions\BufferDescriptionBehavior.cpp" />
     <ClCompile Include="Engine\Resource\GPUBuffer\DepthStencilBuffer\DepthStencilBuffer.cpp" />
@@ -226,6 +227,7 @@
     <ClCompile Include="Engine\Core\SwapChain\SwapChainColorBuffer\SwapChainColorBuffer.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Engine\Core\Device\Commands\StructureSwapChain\CommandStructureSwapChain.h" />
     <ClInclude Include="Engine\Resource\BufferAssembler\BufferAssembler.h" />
     <ClInclude Include="Engine\Resource\GPUBuffer\DepthStencilBuffer\DepthStencilBuffer.h" />
     <ClInclude Include="Engine\Resource\BufferContext.h" />

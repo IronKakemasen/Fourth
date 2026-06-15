@@ -6,6 +6,14 @@ class ViewCreator;
 
 class SwapChainContext
 {
+	//swapChain生成コマンド
+	using CommandCreateSwapChain = std::function< HRESULT
+	(
+		ID3D12CommandQueue* commandQueue_,
+		DXGI_SWAP_CHAIN_DESC1 desc_,
+		IDXGISwapChain4** swapChainDoublePtr_,
+		const HWND hWnd_
+	)>;
 
 public:
 
@@ -18,20 +26,34 @@ public:
 	(
 		InstanceKey instanceKey_, 
 		ViewCreator& viewCreator_,
+		CommandCreateSwapChain cmdCreateSwapChain_,
 		float clearColor_[4],
-		DXGI_FORMAT format_
+		DXGI_FORMAT format_,
+		const HWND hWnd_,
+		ID3D12CommandQueue* commandQueue_
 	);
 
 	~SwapChainContext();
 	
 private:
 
-	void CreateSwapChainColorBuffer
+	void Assemble
 	(
 		InstanceKey instanceKey_,
 		ViewCreator& viewCreator_,
+		CommandCreateSwapChain cmdCreateSwapChain_,
 		float clearColor_[4],
-		DXGI_FORMAT format_
+		DXGI_FORMAT format_,
+		const HWND hWnd_,
+		ID3D12CommandQueue* commandQueue_
+	);
+
+	void CreateSwapChain
+	(
+		CommandCreateSwapChain cmdCreateSwapChain_, 
+		const DXGI_SWAP_CHAIN_DESC1& desc_, 
+		const HWND hWnd_, 
+		ID3D12CommandQueue* commandQueue_
 	);
 
 	//スワップチェーン
