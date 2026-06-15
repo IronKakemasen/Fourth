@@ -7,7 +7,7 @@
 struct CommandCreateDescriptorHeap  : public DeviceContextCommandBehavior
 {
 	//DeviceContext::CommandGeneratorクラスのみ生成可能
-	CommandCreateDescriptorHeap(DeviceContext::CommandGenerator::GenerateKey generateKey_);
+	CommandCreateDescriptorHeap(DeviceContext::CommandProvider::GenerateKey generateKey_);
 	~CommandCreateDescriptorHeap();
 
 

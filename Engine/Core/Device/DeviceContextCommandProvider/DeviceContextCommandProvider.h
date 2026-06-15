@@ -1,13 +1,27 @@
 #pragma once
 #include "../DeviceContext.h"
 
+class DeviceContextCommandBehavior;
+
 //Deviceを使用する処理を、使用しない形にコマンド化して提供するクラス
 class DeviceContext::CommandProvider
 {
+	//コマンドのコンテナ
+	using CommandList = std::vector<std::unique_ptr<DeviceContextCommandBehavior>>;
+	using CommandMap = std::unordered_map<CommandType, CommandList>;
+	CommandMap commandContainer;
+
+
 public:
 
-	CommandProvider(DeviceContext::InstanceKey instanceKey_, 
-		std::function< ID3D12Device8* (DeviceContext::DeviceAccessKey)> func_ , CommandMap* commandContainer_);
+	//コマンド生成キー
+	struct GenerateKey;
+
+	CommandProvider
+	(
+		DeviceContext::InstanceKey instanceKey_, 
+		std::function< ID3D12Device8* (DeviceContext::DeviceAccessKey)> func_ 
+	);
 	
 	//リソースを生成するコマンドを返す関数(ConstantBufferDescription , ColorBufferDescription)
 	[[nodiscard]] std::function<Microsoft::WRL::ComPtr<ID3D12Resource>
@@ -38,12 +52,25 @@ private:
 
 	//デバイスにアクセスする関数
 	std::function< ID3D12Device8* (DeviceContext::DeviceAccessKey)> deviceGetter;
-	//コマンドのコンテナ
-	CommandMap* commandContainer;
+
+	//コマンドを生成する
+	template<typename CommandClass>
+	void CreateCommand(CommandType commandType_)
+	{
+		auto generateKey = GenerateKey{};
+		commandContainer[commandType_].emplace_back(std::make_unique<CommandClass>(generateKey));
+	}
 
 };
 
 
 
 
+struct DeviceContext::CommandProvider::GenerateKey
+{
+private:
+
+	friend class DeviceContext::CommandProvider;
+	explicit GenerateKey() = default;
+};
 

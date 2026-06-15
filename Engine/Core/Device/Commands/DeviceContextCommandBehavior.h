@@ -1,10 +1,13 @@
 #pragma once
-#include "../DeviceContextCommandGenerator/DeviceContextCommandGenerator.h"
+#include "../DeviceContextCommandProvider/DeviceContextCommandProvider.h"
+
 
 class DeviceContextCommandBehavior
 {
 public:
-	DeviceContextCommandBehavior(DeviceContext::CommandGenerator::GenerateKey generateKey_);
+
+
+	DeviceContextCommandBehavior(DeviceContext::CommandProvider::GenerateKey generateKey_);
 	~DeviceContextCommandBehavior();
 };
 

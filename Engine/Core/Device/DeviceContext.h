@@ -18,12 +18,8 @@ public:
 		kCreateResourceView,
 
 
-
 		kCount
 	};
-
-	//コマンド生成クラス
-	class CommandGenerator;
 	//生成キー。WinAppしか許さない
 	struct InstanceKey;
 	//デバイスにアクセスするのを許可するキー
@@ -43,27 +39,14 @@ private:
 	//Setupper
 	class Setupper;
 
-	using CommandList = std::vector<std::unique_ptr<DeviceContextCommandBehavior>>;
-	using CommandMap = std::unordered_map<CommandType, CommandList>;
-
 	Microsoft::WRL::ComPtr<ID3D12Device8> device = nullptr;
 	Microsoft::WRL::ComPtr<IDXGIFactory7> dxgiFactory = nullptr;
 	Microsoft::WRL::ComPtr<IDXGIAdapter4> useAdapter = nullptr;
-
-	std::unique_ptr<CommandGenerator> commandGenerator;
-
-	//コマンドのコンテナ
-	CommandMap commandContainer;
 
 	//Setupperからコアパーツを生成し、引き継ぐ
 	void TakeOverCoreParts(DeviceContext::InstanceKey instanceKey_);
 	//CommandProviderの生成
 	void CreateCommandProvider(DeviceContext::InstanceKey instanceKey_);
-	//CommandGeneratorの生成
-	void CreateCommandGenerator(DeviceContext::InstanceKey instanceKey_);
-	//コマンドの生成
-	void CreateCommands(DeviceContext::InstanceKey instanceKey_);
-
 };
 
 

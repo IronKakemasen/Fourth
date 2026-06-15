@@ -4,8 +4,8 @@
 //各バッファのId3d12Resourceを作るコマンド群
 struct CommandCreateGPUResource : public DeviceContextCommandBehavior
 {
-	//DeviceContext::CommandGeneratorクラスのみ生成可能
-	CommandCreateGPUResource(DeviceContext::CommandGenerator::GenerateKey generateKey_);
+	//DeviceContext::CommandProviderクラスのみ生成可能
+	CommandCreateGPUResource(DeviceContext::CommandProvider::GenerateKey generateKey_);
 	~CommandCreateGPUResource();
 
 	[[nodiscard]] Microsoft::WRL::ComPtr<ID3D12Resource> CreateResource

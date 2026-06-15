@@ -5,8 +5,8 @@
 //Resourceのビューを生成するコマンド
 struct CommandCreateView : public DeviceContextCommandBehavior
 {
-	//DeviceContext::CommandGeneratorクラスのみ生成可能
-	CommandCreateView(DeviceContext::CommandGenerator::GenerateKey generateKey_);
+	//DeviceContext::CommandProviderクラスのみ生成可能
+	CommandCreateView(DeviceContext::CommandProvider::GenerateKey generateKey_);
 	~CommandCreateView();
 
 	void CreateRTV(ID3D12Device8* device_, ID3D12Resource* resource_ , const D3D12_RENDER_TARGET_VIEW_DESC* desc_, D3D12_CPU_DESCRIPTOR_HANDLE descriptorHandleCPU_);

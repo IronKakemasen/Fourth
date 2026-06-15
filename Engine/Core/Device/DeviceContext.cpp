@@ -3,7 +3,6 @@
 #include "Commands/DeviceContextCommandBehavior.h"
 #include "DeviceSetupper/DeviceContextSetupper.h"
 #include "DeviceContextCommandProvider/DeviceContextCommandProvider.h"
-#include "DeviceContextCommandGenerator/DeviceContextCommandGenerator.h"
 
 
 //コマンド
@@ -24,26 +23,11 @@ DeviceContext::DeviceContext(DeviceContext::InstanceKey instanceKey_)
 	TakeOverCoreParts(instanceKey_);
 	Logger::Log("Create: CoreParts", fileName);
 
-	CreateCommandGenerator(instanceKey_);
-	Logger::Log("Create: CommandGenerator", fileName);
-
 	CreateCommandProvider(instanceKey_);
 	Logger::Log("Create: CommandProvider", fileName);
 
-	CreateCommands(instanceKey_);
-	Logger::Log("Create: Commands", fileName);
-
 
 	Logger::End("DeviceContext::Constructor");
-}
-
-void DeviceContext::CreateCommands(DeviceContext::InstanceKey instanceKey_)
-{
-	commandContainer[CommandType::kCreateGPUBuffer].emplace_back(commandGenerator->CreateCommand<CommandCreateGPUResource>(instanceKey_));
-	commandContainer[CommandType::kCreateDescriptorHeap].emplace_back(commandGenerator->CreateCommand<CommandCreateDescriptorHeap>(instanceKey_));
-	commandContainer[CommandType::kCreateResourceView].emplace_back(commandGenerator->CreateCommand<CommandCreateView>(instanceKey_));
-
-
 }
 
 void DeviceContext::CreateCommandProvider(DeviceContext::InstanceKey instanceKey_)
@@ -54,12 +38,7 @@ void DeviceContext::CreateCommandProvider(DeviceContext::InstanceKey instanceKey
 		return device.Get();
 	};
 
-	commandProvider.reset(new CommandProvider(instanceKey_, deviceGetFunc,&commandContainer));
-}
-
-void DeviceContext::CreateCommandGenerator(DeviceContext::InstanceKey instanceKey_)
-{
-	commandGenerator.reset(new CommandGenerator(instanceKey_));
+	commandProvider.reset(new CommandProvider(instanceKey_, deviceGetFunc));
 }
 
 void DeviceContext::TakeOverCoreParts(DeviceContext::InstanceKey instanceKey_)

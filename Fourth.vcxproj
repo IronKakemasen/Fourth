@@ -102,7 +102,6 @@
     <ClCompile Include="Engine\Core\DescriptorHeap\DescriptorHeapContext.cpp" />
     <ClCompile Include="Engine\Resource\GPUBuffer\ColorBuffer\ColorBuffer.cpp" />
     <ClCompile Include="Engine\Core\Device\Commands\DeviceContextCommandBehavior.cpp" />
-    <ClCompile Include="Engine\Core\Device\DeviceContextCommandGenerator\DeviceContextCommandGenerator.cpp" />
     <ClCompile Include="Engine\Core\Device\DeviceSetupper\DeviceContextSetupper.cpp" />
     <ClCompile Include="Engine\Core\Device\DeviceContextCommandProvider\DeviceContextCommandProvider.cpp" />
     <ClCompile Include="Engine\Resource\BufferDescriptions\ColorBufferDescription\ColorBufferDescription.cpp" />
@@ -224,6 +223,7 @@
     <ClCompile Include="Engine\Core\DescriptorHeap\ViewCreator\ViewCreator.cpp" />
     <ClCompile Include="Engine\Resource\GPUBuffer\SRV_UAVBuffer\SRV_UAVBuffer.cpp" />
     <ClCompile Include="Engine\Resource\BufferDescriptions\SRV_UAVBufferDescription\SRV_UAVBufferDescription.cpp" />
+    <ClCompile Include="Engine\Core\SwapChain\SwapChainColorBuffer\SwapChainColorBuffer.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Engine\Resource\BufferAssembler\BufferAssembler.h" />
@@ -238,7 +238,6 @@
     <ClInclude Include="Engine\Resource\GPUBuffer\ColorBuffer\ColorBuffer.h" />
     <ClInclude Include="Engine\Core\Device\Commands\DeviceContextCommandBehavior.h" />
     <ClInclude Include="Engine\Core\Device\Commands\CreatGPUBuffer\CommandOfCreatingGPUBuffer.h" />
-    <ClInclude Include="Engine\Core\Device\DeviceContextCommandGenerator\DeviceContextCommandGenerator.h" />
     <ClInclude Include="Engine\Core\Device\DeviceSetupper\DeviceContextSetupper.h" />
     <ClInclude Include="Engine\Core\Device\DeviceContextCommandProvider\DeviceContextCommandProvider.h" />
     <ClInclude Include="Engine\Resource\BufferDescriptions\ColorBufferDescription\ColorBufferDescription.h" />
@@ -287,6 +286,7 @@
     <ClInclude Include="Engine\Core\DescriptorHeap\ViewCreator\ViewCreator.h" />
     <ClInclude Include="Engine\Resource\GPUBuffer\SRV_UAVBuffer\SRV_UAVBuffer.h" />
     <ClInclude Include="Engine\Resource\BufferDescriptions\SRV_UAVBufferDescription\SRV_UAVBufferDescription.h" />
+    <ClInclude Include="Engine\Core\SwapChain\SwapChainColorBuffer\SwapChainColorBuffer.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
