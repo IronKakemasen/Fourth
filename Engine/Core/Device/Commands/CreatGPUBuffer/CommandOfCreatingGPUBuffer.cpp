@@ -57,7 +57,7 @@
 //}
 
 
-CommandCreateGPUResource::CommandCreateGPUResource(DeviceContext::CommandGenerator::GenerateKey generateKey_) :DeviceContextCommandBehavior(generateKey_)
+CommandCreateGPUResource::CommandCreateGPUResource(DeviceContext::CommandProvider::GenerateKey generateKey_) :DeviceContextCommandBehavior(generateKey_)
 {
 
 }

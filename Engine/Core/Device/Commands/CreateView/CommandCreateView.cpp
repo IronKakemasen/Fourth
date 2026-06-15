@@ -2,7 +2,7 @@
 #include "CommandCreateView.h"
 
 
-CommandCreateView::CommandCreateView(DeviceContext::CommandGenerator::GenerateKey generateKey_) :DeviceContextCommandBehavior(generateKey_)
+CommandCreateView::CommandCreateView(DeviceContext::CommandProvider::GenerateKey generateKey_) :DeviceContextCommandBehavior(generateKey_)
 {
 
 }
@@ -20,7 +20,7 @@ void CommandCreateView::CreateRTV(ID3D12Device8* device_,ID3D12Resource* resourc
 
 void CommandCreateView::CreateUAV(ID3D12Device8* device_, ID3D12Resource* resource_, const D3D12_UNORDERED_ACCESS_VIEW_DESC* desc_, D3D12_CPU_DESCRIPTOR_HANDLE descriptorHandleCPU_, ID3D12Resource* counterResource_)
 {
-	device_->CreateUnorderedAccessView(resource_, nullptr, desc_, descriptorHandleCPU_);
+	device_->CreateUnorderedAccessView(resource_, counterResource_, desc_, descriptorHandleCPU_);
 }
 
 

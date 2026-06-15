@@ -98,8 +98,6 @@ void BufferAssembler::AssembleView<ColorBuffer, ColorBufferDescription>(ColorBuf
 	}
 }
 
-
-
 std::string BufferAssembler::ConvertName(const std::string& srcName_, const std::string& attach_)
 {
 	return attach_ + "[ " + srcName_ + " ] ";

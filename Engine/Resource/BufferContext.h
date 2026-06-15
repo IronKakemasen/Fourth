@@ -35,7 +35,6 @@ private:
 
 struct BufferContext::InstanceKey
 {
-
 private:
 
 	friend class WinApp;
