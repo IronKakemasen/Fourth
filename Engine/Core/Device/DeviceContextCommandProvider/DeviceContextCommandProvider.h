@@ -11,7 +11,6 @@ class DeviceContext::CommandProvider
 	using CommandMap = std::unordered_map<CommandType, CommandList>;
 	CommandMap commandContainer;
 
-
 public:
 
 	//コマンド生成キー
@@ -20,7 +19,8 @@ public:
 	CommandProvider
 	(
 		DeviceContext::InstanceKey instanceKey_, 
-		std::function< ID3D12Device8* (DeviceContext::DeviceAccessKey)> func_ 
+		std::function< ID3D12Device8* (DeviceContext::AccessKey)> deviceGetter_,
+		std::function< IDXGIFactory7* (DeviceContext::AccessKey)> dxgiFactoryGetter_
 	);
 	
 	//リソースを生成するコマンドを返す関数(ConstantBufferDescription , ColorBufferDescription)
@@ -46,12 +46,21 @@ public:
 	//UAV作成コマンドのみ引数が異なるため別途用意
 	[[nodiscard]] std::function<void(ID3D12Resource* resource_, const D3D12_UNORDERED_ACCESS_VIEW_DESC* desc_, D3D12_CPU_DESCRIPTOR_HANDLE descriptorHandleCPU_, ID3D12Resource* CounterResource_)>
 		ProvideCreateUAVCommand();
-
+	
+	//スワップチェーンを生成するためのコマンド
+	[[nodiscard]] std::function< HRESULT
+	(
+		ID3D12CommandQueue* commandQueue_,
+		DXGI_SWAP_CHAIN_DESC1 desc_,
+		IDXGISwapChain4** swapChainDoublePtr_,
+		const HWND hWnd_
+	)> ProvideCreateSwapChainCommand();
 
 private:
 
 	//デバイスにアクセスする関数
-	std::function< ID3D12Device8* (DeviceContext::DeviceAccessKey)> deviceGetter;
+	std::function< ID3D12Device8* (DeviceContext::AccessKey)> deviceGetter;
+	std::function< IDXGIFactory7* (DeviceContext::AccessKey)> dxgiFactoryGetter;
 
 	//コマンドを生成する
 	template<typename CommandClass>

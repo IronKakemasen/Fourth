@@ -3,7 +3,7 @@
 class WinApp;
 class DescriptorHeapClass;
 class ViewCreator;
-
+class BufferContext;
 
 class DescriptorHeapContext
 {
@@ -26,8 +26,33 @@ public:
 	using CreateUAVCommand =
 		std::function<void(ID3D12Resource* resource_, const D3D12_UNORDERED_ACCESS_VIEW_DESC* desc_, D3D12_CPU_DESCRIPTOR_HANDLE descriptorHandleCPU_, ID3D12Resource* CounterResource_)>;
 
+public:
+
+	//WinAppのみ生成可能
+	struct InstanceKey;
+	//ポインターシェアを許可するキー
+	struct ViewCreatorShareKey;
+
+	DescriptorHeapContext
+	(
+		InstanceKey instanceKey_,
+		DescroptorCreateCommand createDescriptor_,
+		CreateRTVCommand createRtv_,
+		CreateSRVCommand createSrv_,
+		CreateDSVCommand createDsv_,
+		CreateUAVCommand createUav_,
+		UINT incrementSizeOfDH_[3]
+	);
+
+	~DescriptorHeapContext();
+
+	//ビュークリエイターをシェアする。
+	ViewCreator* ShareViewCreator(ViewCreatorShareKey key_);
+	//各種ディスクリプターヒープの作成
+	void CreateDescriptorHeaps(UINT rtvDH_, UINT srvDH_, UINT dsvDH_);
 
 private:
+
 	//DescriptorHeap生成クラス
 	class DescriptorHeapCreator;
 	std::unique_ptr<DescriptorHeapCreator> descriptorHeapCreator;
@@ -38,35 +63,25 @@ private:
 	//ビュー生成機関
 	std::unique_ptr<ViewCreator> viewCreator;
 
-public:
-
-	//WinAppのみ生成可能
-	struct InstanceKey;
-	//ViewCreator生成キー
-	struct CreateKey;
-
-	DescriptorHeapContext(InstanceKey instanceKey_);
-	~DescriptorHeapContext();
-
 	//DescriptorHeapの作成
 	template<D3D12_DESCRIPTOR_HEAP_TYPE HeapType>
 	void CreateDescriptorHeap(UINT numDescriptors_, bool shaderVisible_, UINT handleIncSize_);
 
+	//DescriptorHeapの名前を取得（初期化用）
+	std::string GetDescriptorName(D3D12_DESCRIPTOR_HEAP_TYPE heapType_);
+
 	//コマンドのセット
 	void SetCreateDescroptorHeapCommand(DescroptorCreateCommand createDescriptor);
+	
 	//コマンドのセット2
 	void SetCreateViewCommand
 	(
+		InstanceKey key_,
 		CreateRTVCommand createRtv_,
 		CreateSRVCommand createSrv_,
 		CreateDSVCommand createDsv_,
 		CreateUAVCommand createUav_
 	);
-
-private:
-
-	//DescriptorHeapの名前を取得（初期化用）
-	std::string GetDescriptorName(D3D12_DESCRIPTOR_HEAP_TYPE heapType_);
 
 };
 
@@ -83,13 +98,13 @@ private:
 	explicit InstanceKey() = default;
 };
 
-//ViewCreatorを生成するためのキー
-struct DescriptorHeapContext::CreateKey
+struct DescriptorHeapContext::ViewCreatorShareKey
 {
 private:
 
-	friend class DescriptorHeapContext;
-	explicit CreateKey() = default;
+	friend class BufferContext;
+	explicit ViewCreatorShareKey() = default;
+
 };
 
 

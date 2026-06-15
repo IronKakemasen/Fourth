@@ -21,10 +21,11 @@ class ViewCreator
 	DescriptorHeapContext::CreateSRVCommand srvCmd;
 	DescriptorHeapContext::CreateDSVCommand dsvCmd;
 	DescriptorHeapContext::CreateUAVCommand uavCmd;
+
 public:
 	ViewCreator
 	(
-		DescriptorHeapContext::CreateKey createKey_,
+		DescriptorHeapContext::InstanceKey instanceKey_,
 		DescriptorHeapClass* RTVdescriptorHeapClass_,
 		DescriptorHeapClass* SRVUAVdescriptorHeapClass_,
 		DescriptorHeapClass* DSVdescriptorHeapClass_,

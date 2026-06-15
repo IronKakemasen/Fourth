@@ -4,7 +4,7 @@
 
 ViewCreator::ViewCreator
 (
-	DescriptorHeapContext::CreateKey createKey_,
+	DescriptorHeapContext::InstanceKey instanceKey_,
 	DescriptorHeapClass* RTVdescriptorHeapClass_,
 	DescriptorHeapClass* SRVUAVdescriptorHeapClass_,
 	DescriptorHeapClass* DSVdescriptorHeapClass_,
@@ -16,8 +16,7 @@ ViewCreator::ViewCreator
 {
 	descriptorHeap_map[kRTV] = RTVdescriptorHeapClass_;
 	descriptorHeap_map[kSRVUAV] = SRVUAVdescriptorHeapClass_;
-	descriptorHeap_map[kDSV] = DSVdescriptorHeapClass_;
-
+	descriptorHeap_map[kDSV] = DSVdescriptorHeapClass_;	
 }
 
 

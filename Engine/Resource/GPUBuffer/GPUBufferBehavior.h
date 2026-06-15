@@ -1,25 +1,12 @@
 #pragma once
+#include "../BufferAssembler/BufferAssembler.h"
 
 
 class GPUBufferManager;
 struct BufferDescriptionBehavior;
-class BufferAssembler;
 
 class GPUBufferBehavior
 {
-private:
-
-	//各desctiptorheapのインデックス
-	struct IndexSet
-	{
-		uint32_t uint{};
-		D3D12_CPU_DESCRIPTOR_HANDLE cpu;
-		D3D12_GPU_DESCRIPTOR_HANDLE gpu;
-	};
-
-	//各ビューのインデックス
-	std::array< std::unordered_map<ViewType, IndexSet>, ProjectConfig::Render::kRequiredGPUBufferSum> heapIndicesContainer;
-
 public:
 
 	//生成キー
@@ -90,8 +77,18 @@ protected:
 
 private:
 
+	//各desctiptorheapのインデックス
+	struct IndexSet
+	{
+		uint32_t uint{};
+		D3D12_CPU_DESCRIPTOR_HANDLE cpu{};
+		D3D12_GPU_DESCRIPTOR_HANDLE gpu{};
+	};
+
 	//生リソース
 	std::array<Microsoft::WRL::ComPtr<ID3D12Resource>, ProjectConfig::Render::kRequiredGPUBufferSum> resources;
+	//各ビューのインデックス
+	std::array< std::unordered_map<ViewType, IndexSet>, ProjectConfig::Render::kRequiredGPUBufferSum> heapIndicesContainer;
 	//なまえ
 	std::string name = "noName";
 	//現在リソースステート
@@ -105,7 +102,7 @@ struct GPUBufferBehavior::InstanceKey
 {
 private:
 
-	friend class BufferAssembler;
+	friend class BufferContext::BufferAssembler;
 
 	explicit InstanceKey() = default;
 };
@@ -114,7 +111,7 @@ private:
 struct GPUBufferBehavior::BufferAccessKey
 {
 private:
-	friend class BufferAssembler;
+	friend class BufferContext::BufferAssembler;
 	friend class GPUBufferManager;
 
 	explicit BufferAccessKey() = default;

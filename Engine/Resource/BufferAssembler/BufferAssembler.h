@@ -1,8 +1,8 @@
 #pragma once
 #include"../BufferDescriptions/BufferDescriptionBehavior.h"
+#include "../BufferContext.h"
 
 //ツール
-class ResourceCreator;
 class ViewCreator;
 
 //ディスクリプション
@@ -19,10 +19,15 @@ class SRV_UAVBuffer;
 
 
 //バッファとディスクを特定のクラスに限定して組み立てる
-class BufferAssembler
+class BufferContext::BufferAssembler
 {
 public:
-    BufferAssembler(ResourceCreator* resourceCreator_, ViewCreator* viewCreator_);
+    BufferAssembler
+    (
+        BufferContext::InstanceKey instancekey_, 
+        std::unique_ptr<BufferContext::ResourceCreator> resourceCreator_, 
+        ViewCreator* viewCreator_
+    );
 
     template<typename BufferType, typename DescType>
     [[nodiscard]] std::unique_ptr<BufferType> Assemble(const DescType& desc_, const std::string& name_)
@@ -68,13 +73,13 @@ private:
     //名前変換
     std::string ConvertName(const std::string& srcName_, const std::string& attach_);
 
-    ResourceCreator* resourceCreator;
+    std::unique_ptr<BufferContext::ResourceCreator> resourceCreator;
     ViewCreator* viewCreator;
 };
 
 
 template<>
-std::unique_ptr<ColorBuffer> BufferAssembler::AssembleResource<ColorBuffer, ColorBufferDescription>
+std::unique_ptr<ColorBuffer> BufferContext::BufferAssembler::AssembleResource<ColorBuffer, ColorBufferDescription>
 (
     D3D12_RESOURCE_DESC resourceDesc_,
     D3D12_HEAP_PROPERTIES heapProp_, 
@@ -83,4 +88,5 @@ std::unique_ptr<ColorBuffer> BufferAssembler::AssembleResource<ColorBuffer, Colo
 );
 
 template<>
-void BufferAssembler::AssembleView<ColorBuffer, ColorBufferDescription>(ColorBuffer* buffer_, const ColorBufferDescription& desc_);
+void BufferContext::BufferAssembler::AssembleView<ColorBuffer, ColorBufferDescription>
+    (ColorBuffer* buffer_, const ColorBufferDescription& desc_);

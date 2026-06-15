@@ -4,6 +4,7 @@ class DeviceContext;
 class BufferContext;
 class WindowContext;
 class DescriptorHeapContext;
+class SwapChainContext;
 
 class WinApp
 {
@@ -28,9 +29,13 @@ private:
 	std::unique_ptr<BufferContext> bufferContext;
 	//ウィンドウを制御するもの
 	std::unique_ptr<WindowContext> windowContext;
-	//DescriptorHeapを作り、各種バッファのviewを生成する
+	//DescriptorHeapを作り、各種バッファのviewを生成するツールを持つ
 	std::unique_ptr<DescriptorHeapContext> descriptorHeapContext;
+	//SwapChain周りを制御するもの
+	std::unique_ptr<SwapChainContext> swapChainContext;
 
+
+	void InitSwapChainContext();
 	void InitDeviceContext();
 	void InitBufferContext();
 	void InitWindowContext();

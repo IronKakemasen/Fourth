@@ -4,13 +4,19 @@
 
 SwapChainContext::ColorBuffer::ColorBuffer
 (
-	float clearColor_[4],
-	DXGI_FORMAT format_
-)
+	std::unique_ptr<Description> desc_,
+	std::array<Microsoft::WRL::ComPtr<ID3D12Resource>, ProjectConfig::Render::kRequiredGPUBufferSum> resources_
+) : desc(std::move(desc_)),resources(std::move(resources_))
 {
-	for (int i = 0;i < 4;++i) desc.clearColor[i] = clearColor_[i];
-	desc.format = format_;
+	
 }
+
+SwapChainContext::ColorBuffer::Description::Description(float clearColor_[4], DXGI_FORMAT format_)
+{
+	for (int i = 0;i < 4;++i) clearColor[i] = clearColor_[i];
+	format = format_;
+}
+
 
 void SwapChainContext::ColorBuffer::OverrideHeapIndex(SwapChainContext::InstanceKey instanceKey_,int index_ ,D3D12_CPU_DESCRIPTOR_HANDLE handle_)
 {
@@ -24,12 +30,12 @@ ID3D12Resource* SwapChainContext::ColorBuffer::GetResource(SwapChainContext::Res
 
 
 
-D3D12_RENDER_TARGET_VIEW_DESC SwapChainContext::ColorBuffer::CreateRTV_Desc()const
+D3D12_RENDER_TARGET_VIEW_DESC SwapChainContext::ColorBuffer::Description::CreateRTV_Desc()const
 {
 	D3D12_RENDER_TARGET_VIEW_DESC rtvDesc = {};
 
 	//出力結果をSRGBに変換する
-	rtvDesc.Format = desc.format;
+	rtvDesc.Format = format;
 	//2Dテクスチャとして書き込む
 	rtvDesc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2D;
 	rtvDesc.Texture2D.PlaneSlice = 0;
@@ -38,7 +44,7 @@ D3D12_RENDER_TARGET_VIEW_DESC SwapChainContext::ColorBuffer::CreateRTV_Desc()con
 	return rtvDesc;
 }
 
-DXGI_SWAP_CHAIN_DESC1 SwapChainContext::ColorBuffer::CreateSwapChainDesc()const
+DXGI_SWAP_CHAIN_DESC1 SwapChainContext::ColorBuffer::Description::CreateSwapChainDesc()const
 {
 	using namespace ProjectConfig::Window;
 
@@ -48,13 +54,13 @@ DXGI_SWAP_CHAIN_DESC1 SwapChainContext::ColorBuffer::CreateSwapChainDesc()const
 	swapChainDesc.Width = (UINT)kWidth;
 	swapChainDesc.Height = (UINT)kHeight;
 	//色の形成
-	swapChainDesc.Format = desc.format;
+	swapChainDesc.Format = format;
 	//マルチサンプルしない
 	swapChainDesc.SampleDesc.Count = 1;
 	//描画のターゲットとして利用する
 	swapChainDesc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
 	//ダブルバッファ
-	swapChainDesc.BufferCount = 2;
+	swapChainDesc.BufferCount = ProjectConfig::Render::kRequiredGPUBufferSum;
 	//モニタに移したら中身を破棄
 	swapChainDesc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD;
 
