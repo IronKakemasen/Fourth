@@ -16,7 +16,7 @@ public:
 		kCreateDescriptorHeap,
 		//Resourceのビューを作成
 		kCreateResourceView,
-		//SwapChainまわりを構成
+		//SwapChain生成
 		kStructureSwapChain,
 
 

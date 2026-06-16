@@ -46,7 +46,7 @@ DescriptorHeapContext::~DescriptorHeapContext()
 
 }
 
-ViewCreator* DescriptorHeapContext::ShareViewCreator(ViewCreatorShareKey key_)
+ViewCreator* DescriptorHeapContext::GetViewCreator(ViewCreatorGetKey key_)
 {
 	return viewCreator.get();
 }

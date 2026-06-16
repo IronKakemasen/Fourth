@@ -4,6 +4,7 @@ class WinApp;
 class DescriptorHeapClass;
 class ViewCreator;
 class BufferContext;
+class SwapChainContext;
 
 class DescriptorHeapContext
 {
@@ -27,8 +28,8 @@ public:
 
 	//WinAppのみ生成可能
 	struct InstanceKey;
-	//ポインターシェアを許可するキー
-	struct ViewCreatorShareKey;
+	//ViewCreatorポインター取得を許可するキー
+	struct ViewCreatorGetKey;
 
 	DescriptorHeapContext
 	(
@@ -44,7 +45,7 @@ public:
 	~DescriptorHeapContext();
 
 	//ビュークリエイターをシェアする。
-	ViewCreator* ShareViewCreator(ViewCreatorShareKey key_);
+	ViewCreator* GetViewCreator(ViewCreatorGetKey key_);
 	//各種ディスクリプターヒープの作成
 	void CreateDescriptorHeaps(UINT rtvDH_, UINT srvDH_, UINT dsvDH_);
 
@@ -95,12 +96,13 @@ private:
 	explicit InstanceKey() = default;
 };
 
-struct DescriptorHeapContext::ViewCreatorShareKey
+struct DescriptorHeapContext::ViewCreatorGetKey
 {
 private:
 
+	friend class SwapChainContext;
 	friend class BufferContext;
-	explicit ViewCreatorShareKey() = default;
+	explicit ViewCreatorGetKey() = default;
 
 };
 

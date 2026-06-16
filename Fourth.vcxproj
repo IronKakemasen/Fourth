@@ -90,6 +90,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Engine\Core\CommandContext\CommandContext.cpp" />
     <ClCompile Include="Engine\Core\Device\Commands\StructureSwapChain\CommandStructureSwapChain.cpp" />
     <ClCompile Include="Engine\Resource\BufferAssembler\BufferAssembler.cpp" />
     <ClCompile Include="Engine\Resource\BufferDescriptions\BufferDescriptionBehavior.cpp" />
@@ -225,8 +226,10 @@
     <ClCompile Include="Engine\Resource\GPUBuffer\SRV_UAVBuffer\SRV_UAVBuffer.cpp" />
     <ClCompile Include="Engine\Resource\BufferDescriptions\SRV_UAVBufferDescription\SRV_UAVBufferDescription.cpp" />
     <ClCompile Include="Engine\Core\SwapChain\SwapChainColorBuffer\SwapChainColorBuffer.cpp" />
+    <ClCompile Include="Engine\Core\Device\Commands\StructureCommandContext\CommandStructureCommandContext.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Engine\Core\CommandContext\CommandContext.h" />
     <ClInclude Include="Engine\Core\Device\Commands\StructureSwapChain\CommandStructureSwapChain.h" />
     <ClInclude Include="Engine\Resource\BufferAssembler\BufferAssembler.h" />
     <ClInclude Include="Engine\Resource\GPUBuffer\DepthStencilBuffer\DepthStencilBuffer.h" />
@@ -289,6 +292,7 @@
     <ClInclude Include="Engine\Resource\GPUBuffer\SRV_UAVBuffer\SRV_UAVBuffer.h" />
     <ClInclude Include="Engine\Resource\BufferDescriptions\SRV_UAVBufferDescription\SRV_UAVBufferDescription.h" />
     <ClInclude Include="Engine\Core\SwapChain\SwapChainColorBuffer\SwapChainColorBuffer.h" />
+    <ClInclude Include="Engine\Core\Device\Commands\StructureCommandContext\CommandStructureCommandContext.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

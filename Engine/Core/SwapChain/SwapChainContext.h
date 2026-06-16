@@ -2,7 +2,8 @@
 
 class WinApp;
 class ViewCreator;
-
+class CommandContext;
+class DescriptorHeapContext;
 
 class SwapChainContext
 {
@@ -24,13 +25,11 @@ public:
 
 	SwapChainContext
 	(
-		InstanceKey instanceKey_, 
-		ViewCreator& viewCreator_,
+		InstanceKey instanceKey_,
+		DescriptorHeapContext* descriptorHeapContext_,
+		CommandContext* commandContext_,
 		CommandCreateSwapChain cmdCreateSwapChain_,
-		std::array<float, 4> clearColor_,
-		DXGI_FORMAT format_,
-		const HWND hWnd_,
-		ID3D12CommandQueue* commandQueue_
+		const HWND hWnd_
 	);
 
 	~SwapChainContext();
@@ -42,8 +41,6 @@ private:
 		InstanceKey instanceKey_,
 		ViewCreator& viewCreator_,
 		CommandCreateSwapChain cmdCreateSwapChain_,
-		std::array<float, 4> clearColor_,
-		DXGI_FORMAT format_,
 		const HWND hWnd_,
 		ID3D12CommandQueue* commandQueue_
 	);

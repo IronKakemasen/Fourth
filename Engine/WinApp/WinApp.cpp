@@ -6,6 +6,7 @@
 #include "../Resource/BufferContext.h"
 #include "../Core/Device/DeviceContextCommandProvider/DeviceContextCommandProvider.h"
 #include "../Core/SwapChain/SwapChainContext.h"
+#include "../Core/CommandContext/CommandContext.h"
 
 namespace
 {
@@ -41,6 +42,8 @@ WinApp::WinApp()
 	InitWindowContext();
 	InitDescriptorHeapContext();
 	InitBufferContext();
+	InitCommandContext();
+	InitSwapChainContext();
 
 	Logger::End("WinApp: Constructor");
 }
@@ -52,7 +55,23 @@ WinApp::~WinApp()
 
 void WinApp::InitSwapChainContext()
 {
-	//swapChainContext.reset(new SwapChainContext())
+	auto cmdCreateSwapChain = deviceContext->commandProvider->ProvideCreateSwapChainCommand();
+
+
+	swapChainContext.reset
+	(
+		new SwapChainContext
+		(
+			SwapChainContext::InstanceKey{},
+			descriptorHeapContext.get(),
+			commandContext.get(),
+			cmdCreateSwapChain,
+			windowContext->WatchHWND()
+		)
+	);
+
+	Logger::Log("Instantiate: swapChainContext", fileName);
+
 }
 
 //WinAppクラスのインスタンスを1つに制限する
@@ -83,7 +102,7 @@ void WinApp::InitBufferContext()
 void WinApp::InitWindowContext()
 {
 	//windowContextのインスタンス化
-	windowContext.reset(new WindowContext(WindowContext::CraftKey{}));
+	windowContext.reset(new WindowContext(WindowContext::InstacnceKey{}));
 	Logger::Log("Instantiate: windowContext", fileName);
 
 }
@@ -130,3 +149,18 @@ void WinApp::InitDescriptorHeapContext()
 	Logger::Log("Instantiate: descriptorHeapContext", fileName);
 }
 
+void WinApp::InitCommandContext()
+{
+	auto [cmdQueue, cmdAllocators, cmdList] = 
+		deviceContext->commandProvider->CreateCommandContextCoreParts(DeviceContext::InstanceKey{});
+
+	commandContext.reset(new CommandContext
+	(
+		CommandContext::InstanceKey{},
+		std::move(cmdQueue),
+		std::move(cmdAllocators),
+		std::move(cmdList))
+	);
+
+	Logger::Log("Instantiate: commandContext", fileName);
+}

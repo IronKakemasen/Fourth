@@ -2,6 +2,9 @@
 #include "SwapChainContext.h"
 #include "SwapChainColorBuffer/SwapChainColorBuffer.h"
 #include "../DescriptorHeap/ViewCreator/ViewCreator.h"
+#include "../CommandContext/CommandContext.h"
+//#include "../DescriptorHeap/DescriptorHeapContext.h"
+
 
 namespace
 {
@@ -11,18 +14,22 @@ namespace
 SwapChainContext::SwapChainContext
 (
 	InstanceKey instanceKey_,
-	ViewCreator& viewCreator_,
+	DescriptorHeapContext* descriptorHeapContext_,
+	CommandContext* commandContext_,
 	CommandCreateSwapChain cmdCreateSwapChain_,
-	std::array<float, 4> clearColor_,
-	DXGI_FORMAT format_,
-	const HWND hWnd_,
-	ID3D12CommandQueue* commandQueue_
+	const HWND hWnd_
 )
 {
 	Logger::Entry("SwapChainContext: Constructor");
 
+	//コマンドキューを一時的に借りる
+	auto* commandQueue = commandContext_->GetCommandQueue(CommandContext::CmdQueueGetKey{});
+	//ビュークリエイターも一時的に借りる
+	auto& viewCreator = *descriptorHeapContext_->GetViewCreator(DescriptorHeapContext::ViewCreatorGetKey{});
+
+
 	//構築
-	Assemble(instanceKey_, viewCreator_, cmdCreateSwapChain_, clearColor_, format_, hWnd_, commandQueue_);
+	Assemble(instanceKey_, viewCreator, cmdCreateSwapChain_, hWnd_, commandQueue);
 
 	Logger::End("SwapChainContext: Constructor");
 
@@ -36,13 +43,16 @@ SwapChainContext::~SwapChainContext()
 void SwapChainContext::CreateSwapChain
 (
 	CommandCreateSwapChain cmdCreateSwapChain_,
-	const DXGI_SWAP_CHAIN_DESC1& desc_, 
+	const DXGI_SWAP_CHAIN_DESC1& desc_,
 	const HWND hWnd_,
 	ID3D12CommandQueue* commandQueue_
 )
 {
+
 	HRESULT hr = cmdCreateSwapChain_(commandQueue_, desc_, swapChain.GetAddressOf(), hWnd_);
 	ErrorMessageOutput::Assert::DetectError(SUCCEEDED(hr), "SwapChain生成失敗", fileName);
+
+	Logger::Log("Create: SwapChain", fileName);
 }
 
 void SwapChainContext::Assemble
@@ -50,21 +60,20 @@ void SwapChainContext::Assemble
 	InstanceKey instanceKey_,
 	ViewCreator& viewCreator_,
 	CommandCreateSwapChain cmdCreateSwapChain_,
-	std::array<float, 4> clearColor_,
-	DXGI_FORMAT format_,
 	const HWND hWnd_,
 	ID3D12CommandQueue* commandQueue_
 )
 {
 	using namespace ProjectConfig::Render;
+	using namespace ProjectConfig::Window;
 
 
 	//ディスクリプション
 	std::unique_ptr<SwapChainContext::ColorBuffer::Description> desc =
-		std::make_unique<SwapChainContext::ColorBuffer::Description>(clearColor_, format_);
+		std::make_unique<SwapChainContext::ColorBuffer::Description>(kColor, kRtFormat);
 
 	//生リソース
-	std::array<Microsoft::WRL::ComPtr<ID3D12Resource>,kRequiredGPUBufferSum > resources;
+	std::array<Microsoft::WRL::ComPtr<ID3D12Resource>, kRequiredGPUBufferSum > resources;
 
 	//rtvDesc
 	auto rtvDesc = desc->CreateRTV_Desc();
@@ -73,7 +82,7 @@ void SwapChainContext::Assemble
 	{
 		auto swapChainDesc = desc->CreateSwapChainDesc();
 
-		CreateSwapChain(cmdCreateSwapChain_,swapChainDesc, hWnd_, commandQueue_);
+		CreateSwapChain(cmdCreateSwapChain_, swapChainDesc, hWnd_, commandQueue_);
 		Logger::Log("Create: SwapChain", fileName);
 
 		//スワップチェーンからリソースを引っ張る

@@ -5,6 +5,8 @@ class BufferContext;
 class WindowContext;
 class DescriptorHeapContext;
 class SwapChainContext;
+class CommandContext;
+
 
 class WinApp
 {
@@ -31,10 +33,13 @@ private:
 	std::unique_ptr<DescriptorHeapContext> descriptorHeapContext;
 	//GPUバッファを生成・管理
 	std::unique_ptr<BufferContext> bufferContext;
+	//コマンド関連のコアパーツの管理
+	std::unique_ptr<CommandContext> commandContext;
 	//SwapChain周りを制御するもの
 	std::unique_ptr<SwapChainContext> swapChainContext;
 
 
+	void InitCommandContext();
 	void InitSwapChainContext();
 	void InitDeviceContext();
 	void InitBufferContext();

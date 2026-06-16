@@ -6,10 +6,11 @@ class WindowContext
 {
 public:
 
-	struct CraftKey;
+	struct InstacnceKey;
 
-	WindowContext(CraftKey craftKey_);
+	WindowContext(InstacnceKey instanceKey_);
 	void Finalize();
+	HWND WatchHWND();
 
 private:
 
@@ -27,9 +28,9 @@ private:
 };
 
 
-struct WindowContext::CraftKey
+struct WindowContext::InstacnceKey
 {
 private:
 	friend class WinApp;
-	explicit CraftKey() = default;
+	explicit InstacnceKey() = default;
 };

@@ -142,6 +142,70 @@ private:
 
 
 ========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Core\CommandContext\CommandContext.cpp ===
+========================================
+#include "PreCompileHeader.h"
+#include "CommandContext.h"
+
+CommandContext::CommandContext
+(
+	InstanceKey instanceKey_,
+	Microsoft::WRL::ComPtr<ID3D12CommandQueue> commandQueue_,
+	std::array<Microsoft::WRL::ComPtr<ID3D12CommandAllocator>, ProjectConfig::Render::kRequiredGPUBufferSum> commandAllocators_,
+	Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList6> commandList_
+) :commandQueue(std::move(commandQueue_)), commandAllocators(std::move(commandAllocators_)), commandList(std::move(commandList_))
+{
+
+}
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Core\CommandContext\CommandContext.h ===
+========================================
+#pragma once
+
+class WinApp;
+
+class CommandContext
+{
+public:
+
+	struct InstanceKey;
+
+	CommandContext
+	(
+		InstanceKey instanceKey_,
+		Microsoft::WRL::ComPtr<ID3D12CommandQueue> commandQueue_,
+		std::array<Microsoft::WRL::ComPtr<ID3D12CommandAllocator>, ProjectConfig::Render::kRequiredGPUBufferSum> commandAllocators_,
+		Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList6> commandList_
+	);
+
+private:
+
+	//コマンドキュー
+	Microsoft::WRL::ComPtr<ID3D12CommandQueue> commandQueue;
+	//コマンドアローケータ
+	std::array<Microsoft::WRL::ComPtr<ID3D12CommandAllocator>,ProjectConfig::Render::kRequiredGPUBufferSum> commandAllocators;
+	//コマンドリスト		
+	Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList6> commandList;
+
+};
+
+
+struct CommandContext::InstanceKey
+{
+private:
+
+	friend class WinApp;
+	explicit InstanceKey() = default;
+};
+
+
+
+
+========================================
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Core\DescriptorHeap\DescriptorHeapContext.cpp ===
 ========================================
 #include "PreCompileHeader.h"
@@ -802,7 +866,7 @@ public:
 		kCreateDescriptorHeap,
 		//Resourceのビューを作成
 		kCreateResourceView,
-		//SwapChainまわりを構成
+		//SwapChain生成
 		kStructureSwapChain,
 
 
@@ -1140,6 +1204,119 @@ struct CommandCreateGPUResource : public DeviceContextCommandBehavior
 
 
 ========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Core\Device\Commands\StructureCommandContext\CommandStructureCommandContext.cpp ===
+========================================
+#include "PreCompileHeader.h"
+#include "CommandStructureCommandContext.h"
+
+namespace
+{
+	std::string fileName = "CommandStructureCommandContext .cpp";
+}
+
+CommandStructureCommandContext::CommandStructureCommandContext (DeviceContext::CommandProvider::GenerateKey generateKey_) :DeviceContextCommandBehavior(generateKey_)
+{
+
+}
+
+CommandStructureCommandContext::~CommandStructureCommandContext ()
+{
+
+}
+
+[[nodiscard]] Microsoft::WRL::ComPtr <ID3D12CommandQueue> CommandStructureCommandContext::CreateCommandQueue(ID3D12Device* device_)
+{
+	Microsoft::WRL::ComPtr <ID3D12CommandQueue> cmdQueue;
+	
+	D3D12_COMMAND_QUEUE_DESC desc{};
+
+	desc.Type = D3D12_COMMAND_LIST_TYPE_DIRECT;
+	desc.Priority = D3D12_COMMAND_QUEUE_PRIORITY_NORMAL;
+	desc.Flags = D3D12_COMMAND_QUEUE_FLAG_NONE;
+	desc.NodeMask = 0;
+
+	HRESULT hr = device_->CreateCommandQueue
+	(
+		&desc,
+		IID_PPV_ARGS(cmdQueue.GetAddressOf())
+	);
+
+	ErrorMessageOutput::Assert::DetectError(SUCCEEDED(hr), "Create: CommandQueue", fileName);
+
+	return cmdQueue;
+}
+
+[[nodiscard]] Microsoft::WRL::ComPtr<ID3D12CommandAllocator> CommandStructureCommandContext::CreateCommandAllocator(ID3D12Device* device_)
+{
+	Microsoft::WRL::ComPtr<ID3D12CommandAllocator> cmdAllocator;
+
+	HRESULT hr = device_->CreateCommandAllocator
+	(
+		D3D12_COMMAND_LIST_TYPE_DIRECT,
+		IID_PPV_ARGS(cmdAllocator.GetAddressOf())
+	);
+
+	ErrorMessageOutput::Assert::DetectError(SUCCEEDED(hr), "Create: CommandAllocator", fileName);
+
+	return cmdAllocator;
+}
+
+[[nodiscard]] Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList6> CommandStructureCommandContext::CreateCommandList
+(
+	ID3D12Device* device_,
+	ID3D12CommandAllocator* cmdAllocator_
+)
+{
+	Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList6> cmdList;
+
+	HRESULT hr = device_->CreateCommandList
+	(
+		0,
+		D3D12_COMMAND_LIST_TYPE_DIRECT,
+		cmdAllocator_,
+		nullptr,
+		IID_PPV_ARGS(cmdList.GetAddressOf())
+	);
+
+	ErrorMessageOutput::Assert::DetectError(SUCCEEDED(hr), "Create: CommandList", fileName);
+
+	return cmdList;
+}
+
+
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Core\Device\Commands\StructureCommandContext\CommandStructureCommandContext.h ===
+========================================
+#pragma once
+#include "../DeviceContextCommandBehavior.h"
+
+
+//CommandContextを構築するためのコマンド
+//これは初期化字しか呼ばないかつ、引数がほぼないのでコマンドプロバイダーが叩くことにする
+struct CommandStructureCommandContext : public DeviceContextCommandBehavior
+{
+	CommandStructureCommandContext(DeviceContext::CommandProvider::GenerateKey generateKey_);
+	~CommandStructureCommandContext();
+
+	[[nodiscard]] Microsoft::WRL::ComPtr<ID3D12CommandQueue> CreateCommandQueue(ID3D12Device* device_);
+	[[nodiscard]] Microsoft::WRL::ComPtr<ID3D12CommandAllocator> CreateCommandAllocator(ID3D12Device* device_);
+	[[nodiscard]] Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList6> CreateCommandList
+	(
+		ID3D12Device* device_,
+		ID3D12CommandAllocator* cmdAllocator_
+	);
+
+};
+
+
+
+
+
+========================================
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Core\Device\Commands\StructureSwapChain\CommandStructureSwapChain.cpp ===
 ========================================
 #include "PreCompileHeader.h"
@@ -1209,13 +1386,17 @@ struct CommandStructureSwapChain : public DeviceContextCommandBehavior
 #include "PreCompileHeader.h"
 #include "DeviceContextCommandProvider.h"
 
-
 //コマンド群
 #include "../Commands/CreatGPUBuffer/CommandOfCreatingGPUBuffer.h"
 #include "../Commands/CreateDescriptorHeap/CommandCreateDescriptorHeap.h"
 #include "../Commands/CreateView/CommandCreateView.h"
 #include "../Commands/StructureSwapChain/CommandStructureSwapChain.h"
+#include "../Commands/StructureCommandContext/CommandStructureCommandContext.h"
 
+namespace
+{
+	auto const fileName = "CommandProvider.cpp";
+}
 
 DeviceContext::CommandProvider::CommandProvider
 (
@@ -1414,7 +1595,46 @@ template<>
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
+//CommandContextのコアパーツ生成
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+[[nodiscard]] std::tuple
+<
+	Microsoft::WRL::ComPtr<ID3D12CommandQueue>,
+	std::array<Microsoft::WRL::ComPtr<ID3D12CommandAllocator>, ProjectConfig::Render::kRequiredGPUBufferSum>,
+	Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList6>
+>
+DeviceContext::CommandProvider::CreateCommandContextCoreParts(DeviceContext::InstanceKey instanceKey_)
+{
+	using namespace  ProjectConfig::Render;
 
+	//コアパーツ生成ツール
+	CommandStructureCommandContext tool(GenerateKey{});
+	auto* device = deviceGetter(DeviceContext::AccessKey{});
+
+	Microsoft::WRL::ComPtr<ID3D12CommandQueue> cmdQueue;
+	std::array < Microsoft::WRL::ComPtr<ID3D12CommandAllocator>, kRequiredGPUBufferSum > cmdAllocators;
+	Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList6> cmdList;
+
+	//生成
+	cmdQueue = tool.CreateCommandQueue(device);
+	Logger::Log("Create: CommandQueue", fileName);
+
+	for (int i = 0;i < kRequiredGPUBufferSum;++i)
+	{
+		cmdAllocators.at(i) = tool.CreateCommandAllocator(device);
+	}
+	Logger::Log("Create: CommandAllocators", fileName);
+
+	cmdList = tool.CreateCommandList(device,cmdAllocators.at(0).Get());
+	Logger::Log("Create: CommandList", fileName);
+
+	return std::make_tuple(cmdQueue, cmdAllocators, cmdList);
+}
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
 
@@ -1431,6 +1651,7 @@ template<>
 class DeviceContextCommandBehavior;
 
 //Deviceを使用する処理を、使用しない形にコマンド化して提供するクラス
+//初期化生成しか使用しないかつ引数がほぼない場合は、自らコマンドをたたく
 class DeviceContext::CommandProvider
 {
 	//コマンドのコンテナ
@@ -1482,6 +1703,16 @@ public:
 		IDXGISwapChain4** swapChainDoublePtr_,
 		const HWND hWnd_
 	)> ProvideCreateSwapChainCommand();
+
+	//CommandContextのコアパーツ生成関数
+	[[nodiscard]] std::tuple
+	<
+		Microsoft::WRL::ComPtr<ID3D12CommandQueue>,
+		std::array<Microsoft::WRL::ComPtr<ID3D12CommandAllocator>, ProjectConfig::Render::kRequiredGPUBufferSum>,
+		Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList6>
+	>
+	CreateCommandContextCoreParts(DeviceContext::InstanceKey instanceKey_);
+
 
 private:
 
@@ -4830,6 +5061,7 @@ namespace StringConverter
 #include "../Resource/BufferContext.h"
 #include "../Core/Device/DeviceContextCommandProvider/DeviceContextCommandProvider.h"
 #include "../Core/SwapChain/SwapChainContext.h"
+#include "../Core/CommandContext/CommandContext.h"
 
 namespace
 {
@@ -4954,6 +5186,21 @@ void WinApp::InitDescriptorHeapContext()
 	Logger::Log("Instantiate: descriptorHeapContext", fileName);
 }
 
+void WinApp::InitCommandContext()
+{
+	auto [cmdQueue, cmdAllocators, cmdList] = 
+		deviceContext->commandProvider->CreateCommandContextCoreParts(DeviceContext::InstanceKey{});
+
+	commandContext.reset(new CommandContext
+	(
+		CommandContext::InstanceKey{},
+		std::move(cmdQueue),
+		std::move(cmdAllocators),
+		std::move(cmdList))
+	);
+
+	Logger::Log("Instantiate: commandContext", fileName);
+}
 
 
 
@@ -4968,6 +5215,8 @@ class BufferContext;
 class WindowContext;
 class DescriptorHeapContext;
 class SwapChainContext;
+class CommandContext;
+
 
 class WinApp
 {
@@ -4994,10 +5243,13 @@ private:
 	std::unique_ptr<DescriptorHeapContext> descriptorHeapContext;
 	//GPUバッファを生成・管理
 	std::unique_ptr<BufferContext> bufferContext;
+	//コマンド関連のコアパーツの管理
+	std::unique_ptr<CommandContext> commandContext;
 	//SwapChain周りを制御するもの
 	std::unique_ptr<SwapChainContext> swapChainContext;
 
 
+	void InitCommandContext();
 	void InitSwapChainContext();
 	void InitDeviceContext();
 	void InitBufferContext();

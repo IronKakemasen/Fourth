@@ -64,6 +64,8 @@ namespace ProjectConfig
 		constexpr float kWidth = 1280.0f;
 		constexpr float kHeight = 720.0f;
 		constexpr float kDefaultFovY = 90.0f * 3.141592653589f / 180.0f;
+		constexpr std::array kColor = { 1.0f,0.0f,0.0f,1.0f };
+		constexpr DXGI_FORMAT kRtFormat = DXGI_FORMAT_R16G16B16A16_FLOAT;
 	}
 
 	namespace Render
