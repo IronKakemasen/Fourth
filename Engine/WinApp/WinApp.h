@@ -25,12 +25,12 @@ private:
 
 	//IDXGIFactory7、IDXGIAdapter4、ID3D12Device8を持っている。
 	std::unique_ptr<DeviceContext> deviceContext;
-	//GPUバッファを生成・管理
-	std::unique_ptr<BufferContext> bufferContext;
 	//ウィンドウを制御するもの
 	std::unique_ptr<WindowContext> windowContext;
 	//DescriptorHeapを作り、各種バッファのviewを生成するツールを持つ
 	std::unique_ptr<DescriptorHeapContext> descriptorHeapContext;
+	//GPUバッファを生成・管理
+	std::unique_ptr<BufferContext> bufferContext;
 	//SwapChain周りを制御するもの
 	std::unique_ptr<SwapChainContext> swapChainContext;
 

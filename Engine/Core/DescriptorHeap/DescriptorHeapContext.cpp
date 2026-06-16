@@ -1,4 +1,4 @@
-#include "PreCompileHedder.h"
+#include "PreCompileHeader.h"
 #include "DescriptorHeapContext.h"
 #include "DescriptorHeapCreator/DescriptorHeapCreator.h"
 #include "DescriptorHeapClass/DescriptorHeapClass.h"
@@ -15,12 +15,12 @@ namespace
 DescriptorHeapContext::DescriptorHeapContext
 (
 	InstanceKey instanceKey_,
-	DescroptorCreateCommand createDescriptor_,
+	DescriptorCreateCommand createDescriptor_,
 	CreateRTVCommand createRtv_,
 	CreateSRVCommand createSrv_,
 	CreateDSVCommand createDsv_,
 	CreateUAVCommand createUav_,
-	UINT incrementSizeOfDH_[3]
+	std::array<UINT, 3> incrementSizeOfDH_
 )
 {
 	Logger::Entry("DescriptorHeapContext: Constructor");
@@ -31,7 +31,7 @@ DescriptorHeapContext::DescriptorHeapContext
 	descriptorHeapCreator->SetCommand(createDescriptor_);
 	Logger::Log("Set: commandCreateDescriptor", fileName);
 
-	CreateDescriptorHeaps(incrementSizeOfDH_[0], incrementSizeOfDH_[1], incrementSizeOfDH_[2]);
+	CreateDescriptorHeaps(incrementSizeOfDH_.at(0), incrementSizeOfDH_.at(1), incrementSizeOfDH_.at(2));
 	Logger::Log("Create: DescriptorHeaps", fileName);
 
 	SetCreateViewCommand(instanceKey_, createRtv_, createSrv_, createDsv_, createUav_);
@@ -64,10 +64,10 @@ void DescriptorHeapContext::CreateDescriptorHeaps(UINT rtvDH_, UINT srvDH_, UINT
 
 }
 
-void DescriptorHeapContext::SetCreateDescroptorHeapCommand(DescroptorCreateCommand createDescriptor)
+void DescriptorHeapContext::SetCreateDescriptorHeapCommand(DescriptorCreateCommand createDescriptor)
 {
 	descriptorHeapCreator->SetCommand(createDescriptor);
-	Logger::Log("Set: DescroptorCreateCommand ", fileName);
+	Logger::Log("Set: DescriptorCreateCommand ", fileName);
 }
 
 void DescriptorHeapContext::SetCreateViewCommand
@@ -115,14 +115,17 @@ void DescriptorHeapContext::CreateDescriptorHeap(UINT numDescriptors_, bool shad
 
 std::string DescriptorHeapContext::GetDescriptorName(D3D12_DESCRIPTOR_HEAP_TYPE heapType_)
 {
+	ErrorMessageOutput::Assert::DetectError((heapType_ != D3D12_DESCRIPTOR_HEAP_TYPE_NUM_TYPES), "TypeError", fileName);
+
 	std::string descriptorHeap = "_descriptorHeap";
 
-	std::string nameTable[D3D12_DESCRIPTOR_HEAP_TYPE::D3D12_DESCRIPTOR_HEAP_TYPE_NUM_TYPES] =
+	std::string nameTable[D3D12_DESCRIPTOR_HEAP_TYPE::D3D12_DESCRIPTOR_HEAP_TYPE_NUM_TYPES + 1] =
 	{
 		"SRV_UAV",
 		"Sampler",
 		"RTV",
-		"DSV"
+		"DSV",
+		"dummy" //このケースは上で止めてます
 	};
 
 	return nameTable[heapType_] + descriptorHeap;

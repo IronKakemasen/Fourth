@@ -1,4 +1,4 @@
-#include "PreCompileHedder.h"
+#include "PreCompileHeader.h"
 #include "SwapChainColorBuffer.h"
 
 
@@ -11,23 +11,17 @@ SwapChainContext::ColorBuffer::ColorBuffer
 	
 }
 
-SwapChainContext::ColorBuffer::Description::Description(float clearColor_[4], DXGI_FORMAT format_)
+SwapChainContext::ColorBuffer::Description::Description(std::array<float, 4> clearColor_, DXGI_FORMAT format_)
 {
-	for (int i = 0;i < 4;++i) clearColor[i] = clearColor_[i];
+	clearColor = clearColor_;
 	format = format_;
 }
 
 
-void SwapChainContext::ColorBuffer::OverrideHeapIndex(SwapChainContext::InstanceKey instanceKey_,int index_ ,D3D12_CPU_DESCRIPTOR_HANDLE handle_)
+void SwapChainContext::ColorBuffer::OverrideHeapIndex(int index_ ,D3D12_CPU_DESCRIPTOR_HANDLE handle_)
 {
 	cpuHandles.at(index_) = handle_;
 }
-
-ID3D12Resource* SwapChainContext::ColorBuffer::GetResource(SwapChainContext::ResourceGetKey key_, int index_)
-{
-	return resources[index_].Get(); 
-}
-
 
 
 D3D12_RENDER_TARGET_VIEW_DESC SwapChainContext::ColorBuffer::Description::CreateRTV_Desc()const

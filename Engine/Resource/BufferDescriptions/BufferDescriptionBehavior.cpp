@@ -1,4 +1,4 @@
-#include "PreCompileHedder.h"
+#include "PreCompileHeader.h"
 #include "BufferDescriptionBehavior.h"
 
 BufferDescriptionBehavior::BufferDescriptionBehavior(D3D12_RESOURCE_STATES initialState_) : initialState(initialState_)

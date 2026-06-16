@@ -1,4 +1,4 @@
-//#include "PreCompileHedder.h"
+//#include "PreCompileHeader.h"
 #include "StringConverter.h"
 
 std::wstring StringConverter::ConvertString(const std::string& str)

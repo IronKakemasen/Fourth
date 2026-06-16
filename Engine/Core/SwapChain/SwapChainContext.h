@@ -27,7 +27,7 @@ public:
 		InstanceKey instanceKey_, 
 		ViewCreator& viewCreator_,
 		CommandCreateSwapChain cmdCreateSwapChain_,
-		float clearColor_[4],
+		std::array<float, 4> clearColor_,
 		DXGI_FORMAT format_,
 		const HWND hWnd_,
 		ID3D12CommandQueue* commandQueue_
@@ -42,7 +42,7 @@ private:
 		InstanceKey instanceKey_,
 		ViewCreator& viewCreator_,
 		CommandCreateSwapChain cmdCreateSwapChain_,
-		float clearColor_[4],
+		std::array<float, 4> clearColor_,
 		DXGI_FORMAT format_,
 		const HWND hWnd_,
 		ID3D12CommandQueue* commandQueue_

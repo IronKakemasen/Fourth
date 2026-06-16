@@ -1,4 +1,4 @@
-#include "PreCompileHedder.h"
+#include "PreCompileHeader.h"
 #include "WinApp.h"
 #include "../Core/Device/DeviceContext.h"
 #include "../Core/Window/WindowContext.h"
@@ -113,7 +113,7 @@ void WinApp::InitDescriptorHeapContext()
 		deviceContext->CalcDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_DSV)
 	);
 
-	UINT tmpSizeArray[3] = { sizeArray.rtv ,sizeArray.srv,sizeArray.dsv };
+	std::array<UINT,3> tmpSizeArray = { sizeArray.rtv ,sizeArray.srv,sizeArray.dsv };
 
 	//descriptorHeapContextクラスのインスタンス化
 	descriptorHeapContext.reset(new DescriptorHeapContext
