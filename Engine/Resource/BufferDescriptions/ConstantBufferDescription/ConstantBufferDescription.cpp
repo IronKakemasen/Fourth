@@ -1,4 +1,4 @@
-#include "PreCompileHedder.h"
+#include "PreCompileHeader.h"
 #include "ConstantBufferDescription.h"
 
 ConstantBufferDescription::ConstantBufferDescription(UINT sizeInByte_, D3D12_RESOURCE_STATES initialState_ )

@@ -7,11 +7,10 @@ class BufferContext;
 
 class DescriptorHeapContext
 {
-
 public:
 
 	//DescriptorHeapを生成するコマンド
-	using DescroptorCreateCommand = 
+	using DescriptorCreateCommand =
 		std::function<Microsoft::WRL::ComPtr<ID3D12DescriptorHeap>(D3D12_DESCRIPTOR_HEAP_TYPE, UINT, bool)>;
 	//RTVを生成するコマンド
 	using CreateRTVCommand =
@@ -26,8 +25,6 @@ public:
 	using CreateUAVCommand =
 		std::function<void(ID3D12Resource* resource_, const D3D12_UNORDERED_ACCESS_VIEW_DESC* desc_, D3D12_CPU_DESCRIPTOR_HANDLE descriptorHandleCPU_, ID3D12Resource* CounterResource_)>;
 
-public:
-
 	//WinAppのみ生成可能
 	struct InstanceKey;
 	//ポインターシェアを許可するキー
@@ -36,12 +33,12 @@ public:
 	DescriptorHeapContext
 	(
 		InstanceKey instanceKey_,
-		DescroptorCreateCommand createDescriptor_,
+		DescriptorCreateCommand createDescriptor_,
 		CreateRTVCommand createRtv_,
 		CreateSRVCommand createSrv_,
 		CreateDSVCommand createDsv_,
 		CreateUAVCommand createUav_,
-		UINT incrementSizeOfDH_[3]
+		std::array<UINT, 3> incrementSizeOfDH_
 	);
 
 	~DescriptorHeapContext();
@@ -71,7 +68,7 @@ private:
 	std::string GetDescriptorName(D3D12_DESCRIPTOR_HEAP_TYPE heapType_);
 
 	//コマンドのセット
-	void SetCreateDescroptorHeapCommand(DescroptorCreateCommand createDescriptor);
+	void SetCreateDescriptorHeapCommand(DescriptorCreateCommand createDescriptor);
 	
 	//コマンドのセット2
 	void SetCreateViewCommand

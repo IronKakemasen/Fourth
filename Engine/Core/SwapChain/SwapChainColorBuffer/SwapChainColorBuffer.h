@@ -8,10 +8,11 @@ public:
 
 	struct Description
 	{
-		float clearColor[4] = { 9,9,9,9 };
+		std::array<float,4> clearColor = { 9,9,9,9 };
+
 		DXGI_FORMAT format = DXGI_FORMAT_Error_Detection;
 
-		Description(float clearColor_[4], DXGI_FORMAT format_);
+		Description(std::array<float, 4> clearColor_, DXGI_FORMAT format_);
 
 		D3D12_RENDER_TARGET_VIEW_DESC CreateRTV_Desc()const;
 		DXGI_SWAP_CHAIN_DESC1 CreateSwapChainDesc()const;
@@ -23,8 +24,10 @@ public:
 		std::array<Microsoft::WRL::ComPtr<ID3D12Resource>, ProjectConfig::Render::kRequiredGPUBufferSum> resources_
 	);
 
-	ID3D12Resource* GetResource(SwapChainContext::ResourceGetKey key_, int index_);
-	void OverrideHeapIndex(SwapChainContext::InstanceKey instanceKey_, int index_, D3D12_CPU_DESCRIPTOR_HANDLE handle_);
+	//リソース取得
+	inline ID3D12Resource* GetResource(SwapChainContext::ResourceGetKey key_, int index_) { return resources[index_].Get(); }
+	//ヒープインデックスの上書き
+	void OverrideHeapIndex(int index_, D3D12_CPU_DESCRIPTOR_HANDLE handle_);
 
 private:
 

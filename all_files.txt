@@ -1,13 +1,13 @@
 ========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\PreCompileHedder.cpp ===
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\PreCompileHeader.cpp ===
 ========================================
-#include "PreCompileHedder.h"
+#include "PreCompileHeader.h"
 
 
 
 
 ========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\PreCompileHedder.h ===
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\PreCompileHeader.h ===
 ========================================
 #pragma once
 
@@ -144,7 +144,7 @@ private:
 ========================================
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Core\DescriptorHeap\DescriptorHeapContext.cpp ===
 ========================================
-#include "PreCompileHedder.h"
+#include "PreCompileHeader.h"
 #include "DescriptorHeapContext.h"
 #include "DescriptorHeapCreator/DescriptorHeapCreator.h"
 #include "DescriptorHeapClass/DescriptorHeapClass.h"
@@ -158,12 +158,30 @@ namespace
 	std::string fileName = "DescriptorHeapContext.cpp";
 }
 
-DescriptorHeapContext::DescriptorHeapContext(InstanceKey instanceKey_)
+DescriptorHeapContext::DescriptorHeapContext
+(
+	InstanceKey instanceKey_,
+	DescriptorCreateCommand createDescriptor_,
+	CreateRTVCommand createRtv_,
+	CreateSRVCommand createSrv_,
+	CreateDSVCommand createDsv_,
+	CreateUAVCommand createUav_,
+	std::array<UINT, 3> incrementSizeOfDH_
+)
 {
 	Logger::Entry("DescriptorHeapContext: Constructor");
 
 	descriptorHeapCreator.reset(new DescriptorHeapCreator(instanceKey_));
-	Logger::Log("Instantiate: DescriptorHeapCreator", fileName);
+	Logger::Log("Create: DescriptorHeapCreator", fileName);
+	
+	descriptorHeapCreator->SetCommand(createDescriptor_);
+	Logger::Log("Set: commandCreateDescriptor", fileName);
+
+	CreateDescriptorHeaps(incrementSizeOfDH_.at(0), incrementSizeOfDH_.at(1), incrementSizeOfDH_.at(2));
+	Logger::Log("Create: DescriptorHeaps", fileName);
+
+	SetCreateViewCommand(instanceKey_, createRtv_, createSrv_, createDsv_, createUav_);
+	Logger::Log("Set: commandCreateView", fileName);
 
 
 	Logger::End("DescriptorHeapContext: Constructor");
@@ -174,14 +192,33 @@ DescriptorHeapContext::~DescriptorHeapContext()
 
 }
 
-void DescriptorHeapContext::SetCreateDescroptorHeapCommand(DescroptorCreateCommand createDescriptor)
+ViewCreator* DescriptorHeapContext::ShareViewCreator(ViewCreatorShareKey key_)
+{
+	return viewCreator.get();
+}
+
+void DescriptorHeapContext::CreateDescriptorHeaps(UINT rtvDH_, UINT srvDH_, UINT dsvDH_)
+{
+	using namespace ProjectConfig::Core;
+
+	//RTV
+	CreateDescriptorHeap<D3D12_DESCRIPTOR_HEAP_TYPE_RTV>(kNumDescriptorsRTVHeap, false, rtvDH_);
+	//SRV
+	CreateDescriptorHeap<D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV>(kNumDescriptorSRVHeap, false, srvDH_);
+	//DSV
+	CreateDescriptorHeap<D3D12_DESCRIPTOR_HEAP_TYPE_DSV>(kNumDescriptorsDSVHeap, false, dsvDH_);
+
+}
+
+void DescriptorHeapContext::SetCreateDescriptorHeapCommand(DescriptorCreateCommand createDescriptor)
 {
 	descriptorHeapCreator->SetCommand(createDescriptor);
-	Logger::Log("Set: DescroptorCreateCommand ", fileName);
+	Logger::Log("Set: DescriptorCreateCommand ", fileName);
 }
 
 void DescriptorHeapContext::SetCreateViewCommand
 (
+	InstanceKey key_,
 	CreateRTVCommand createRtv_,
 	CreateSRVCommand createSrv_,
 	CreateDSVCommand createDsv_,
@@ -192,7 +229,7 @@ void DescriptorHeapContext::SetCreateViewCommand
 	(
 		new ViewCreator
 		(
-			CreateKey{},
+			key_,
 			descriptorHeapContainer[D3D12_DESCRIPTOR_HEAP_TYPE::D3D12_DESCRIPTOR_HEAP_TYPE_RTV].get(),
 			descriptorHeapContainer[D3D12_DESCRIPTOR_HEAP_TYPE::D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV].get(),
 			descriptorHeapContainer[D3D12_DESCRIPTOR_HEAP_TYPE::D3D12_DESCRIPTOR_HEAP_TYPE_DSV].get(),
@@ -204,7 +241,6 @@ void DescriptorHeapContext::SetCreateViewCommand
 	);
 
 	Logger::Log("Create: ViewCreator", fileName);
-
 }
 
 
@@ -225,20 +261,21 @@ void DescriptorHeapContext::CreateDescriptorHeap(UINT numDescriptors_, bool shad
 
 std::string DescriptorHeapContext::GetDescriptorName(D3D12_DESCRIPTOR_HEAP_TYPE heapType_)
 {
+	ErrorMessageOutput::Assert::DetectError((heapType_ != D3D12_DESCRIPTOR_HEAP_TYPE_NUM_TYPES), "TypeError", fileName);
+
 	std::string descriptorHeap = "_descriptorHeap";
 
-	std::string nameTable[D3D12_DESCRIPTOR_HEAP_TYPE::D3D12_DESCRIPTOR_HEAP_TYPE_NUM_TYPES] =
+	std::string nameTable[D3D12_DESCRIPTOR_HEAP_TYPE::D3D12_DESCRIPTOR_HEAP_TYPE_NUM_TYPES + 1] =
 	{
 		"SRV_UAV",
 		"Sampler",
 		"RTV",
-		"DSV"
+		"DSV",
+		"dummy" //このケースは上で止めてます
 	};
 
 	return nameTable[heapType_] + descriptorHeap;
 }
-
-
 
 template void DescriptorHeapContext::CreateDescriptorHeap<D3D12_DESCRIPTOR_HEAP_TYPE_RTV>(UINT, bool, UINT);
 template void DescriptorHeapContext::CreateDescriptorHeap<D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV>(UINT, bool, UINT);
@@ -255,15 +292,14 @@ template void DescriptorHeapContext::CreateDescriptorHeap<D3D12_DESCRIPTOR_HEAP_
 class WinApp;
 class DescriptorHeapClass;
 class ViewCreator;
-
+class BufferContext;
 
 class DescriptorHeapContext
 {
-
 public:
 
 	//DescriptorHeapを生成するコマンド
-	using DescroptorCreateCommand = 
+	using DescriptorCreateCommand =
 		std::function<Microsoft::WRL::ComPtr<ID3D12DescriptorHeap>(D3D12_DESCRIPTOR_HEAP_TYPE, UINT, bool)>;
 	//RTVを生成するコマンド
 	using CreateRTVCommand =
@@ -278,8 +314,31 @@ public:
 	using CreateUAVCommand =
 		std::function<void(ID3D12Resource* resource_, const D3D12_UNORDERED_ACCESS_VIEW_DESC* desc_, D3D12_CPU_DESCRIPTOR_HANDLE descriptorHandleCPU_, ID3D12Resource* CounterResource_)>;
 
+	//WinAppのみ生成可能
+	struct InstanceKey;
+	//ポインターシェアを許可するキー
+	struct ViewCreatorShareKey;
+
+	DescriptorHeapContext
+	(
+		InstanceKey instanceKey_,
+		DescriptorCreateCommand createDescriptor_,
+		CreateRTVCommand createRtv_,
+		CreateSRVCommand createSrv_,
+		CreateDSVCommand createDsv_,
+		CreateUAVCommand createUav_,
+		std::array<UINT, 3> incrementSizeOfDH_
+	);
+
+	~DescriptorHeapContext();
+
+	//ビュークリエイターをシェアする。
+	ViewCreator* ShareViewCreator(ViewCreatorShareKey key_);
+	//各種ディスクリプターヒープの作成
+	void CreateDescriptorHeaps(UINT rtvDH_, UINT srvDH_, UINT dsvDH_);
 
 private:
+
 	//DescriptorHeap生成クラス
 	class DescriptorHeapCreator;
 	std::unique_ptr<DescriptorHeapCreator> descriptorHeapCreator;
@@ -290,35 +349,25 @@ private:
 	//ビュー生成機関
 	std::unique_ptr<ViewCreator> viewCreator;
 
-public:
-
-	//WinAppのみ生成可能
-	struct InstanceKey;
-	//ViewCreator生成キー
-	struct CreateKey;
-
-	DescriptorHeapContext(InstanceKey instanceKey_);
-	~DescriptorHeapContext();
-
 	//DescriptorHeapの作成
 	template<D3D12_DESCRIPTOR_HEAP_TYPE HeapType>
 	void CreateDescriptorHeap(UINT numDescriptors_, bool shaderVisible_, UINT handleIncSize_);
 
+	//DescriptorHeapの名前を取得（初期化用）
+	std::string GetDescriptorName(D3D12_DESCRIPTOR_HEAP_TYPE heapType_);
+
 	//コマンドのセット
-	void SetCreateDescroptorHeapCommand(DescroptorCreateCommand createDescriptor);
+	void SetCreateDescriptorHeapCommand(DescriptorCreateCommand createDescriptor);
+	
 	//コマンドのセット2
 	void SetCreateViewCommand
 	(
+		InstanceKey key_,
 		CreateRTVCommand createRtv_,
 		CreateSRVCommand createSrv_,
 		CreateDSVCommand createDsv_,
 		CreateUAVCommand createUav_
 	);
-
-private:
-
-	//DescriptorHeapの名前を取得（初期化用）
-	std::string GetDescriptorName(D3D12_DESCRIPTOR_HEAP_TYPE heapType_);
 
 };
 
@@ -335,13 +384,13 @@ private:
 	explicit InstanceKey() = default;
 };
 
-//ViewCreatorを生成するためのキー
-struct DescriptorHeapContext::CreateKey
+struct DescriptorHeapContext::ViewCreatorShareKey
 {
 private:
 
-	friend class DescriptorHeapContext;
-	explicit CreateKey() = default;
+	friend class BufferContext;
+	explicit ViewCreatorShareKey() = default;
+
 };
 
 
@@ -353,7 +402,7 @@ private:
 ========================================
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Core\DescriptorHeap\DescriptorHeapClass\DescriptorHeapClass.cpp ===
 ========================================
-#include "PreCompileHedder.h"
+#include "PreCompileHeader.h"
 #include "DescriptorHeapClass.h"
 
 namespace
@@ -475,7 +524,7 @@ private:
 ========================================
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Core\DescriptorHeap\DescriptorHeapCreator\DescriptorHeapCreator.cpp ===
 ========================================
-#include "PreCompileHedder.h"
+#include "PreCompileHeader.h"
 #include "DescriptorHeapCreator.h"
 
 
@@ -526,13 +575,13 @@ public:
 ========================================
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Core\DescriptorHeap\ViewCreator\ViewCreator.cpp ===
 ========================================
-#include "PreCompileHedder.h"
+#include "PreCompileHeader.h"
 #include "ViewCreator.h"
 
 
 ViewCreator::ViewCreator
 (
-	DescriptorHeapContext::CreateKey createKey_,
+	DescriptorHeapContext::InstanceKey instanceKey_,
 	DescriptorHeapClass* RTVdescriptorHeapClass_,
 	DescriptorHeapClass* SRVUAVdescriptorHeapClass_,
 	DescriptorHeapClass* DSVdescriptorHeapClass_,
@@ -544,8 +593,7 @@ ViewCreator::ViewCreator
 {
 	descriptorHeap_map[kRTV] = RTVdescriptorHeapClass_;
 	descriptorHeap_map[kSRVUAV] = SRVUAVdescriptorHeapClass_;
-	descriptorHeap_map[kDSV] = DSVdescriptorHeapClass_;
-
+	descriptorHeap_map[kDSV] = DSVdescriptorHeapClass_;	
 }
 
 
@@ -579,10 +627,11 @@ class ViewCreator
 	DescriptorHeapContext::CreateSRVCommand srvCmd;
 	DescriptorHeapContext::CreateDSVCommand dsvCmd;
 	DescriptorHeapContext::CreateUAVCommand uavCmd;
+
 public:
 	ViewCreator
 	(
-		DescriptorHeapContext::CreateKey createKey_,
+		DescriptorHeapContext::InstanceKey instanceKey_,
 		DescriptorHeapClass* RTVdescriptorHeapClass_,
 		DescriptorHeapClass* SRVUAVdescriptorHeapClass_,
 		DescriptorHeapClass* DSVdescriptorHeapClass_,
@@ -659,7 +708,7 @@ public:
 ========================================
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Core\Device\DeviceContext.cpp ===
 ========================================
-#include "PreCompileHedder.h"
+#include "PreCompileHeader.h"
 #include "DeviceContext.h"
 #include "Commands/DeviceContextCommandBehavior.h"
 #include "DeviceSetupper/DeviceContextSetupper.h"
@@ -820,7 +869,7 @@ private:
 ========================================
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Core\Device\Commands\DeviceContextCommandBehavior.cpp ===
 ========================================
-#include "PreCompileHedder.h"
+#include "PreCompileHeader.h"
 #include "DeviceContextCommandBehavior.h"
 
 DeviceContextCommandBehavior::DeviceContextCommandBehavior(DeviceContext::CommandProvider::GenerateKey generateKey_)
@@ -858,7 +907,7 @@ public:
 ========================================
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Core\Device\Commands\CreateDescriptorHeap\CommandCreateDescriptorHeap.cpp ===
 ========================================
-#include "PreCompileHedder.h"
+#include "PreCompileHeader.h"
 #include "CommandCreateDescriptorHeap.h"
 
 
@@ -921,7 +970,7 @@ struct CommandCreateDescriptorHeap  : public DeviceContextCommandBehavior
 ========================================
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Core\Device\Commands\CreateView\CommandCreateView.cpp ===
 ========================================
-#include "PreCompileHedder.h"
+#include "PreCompileHeader.h"
 #include "CommandCreateView.h"
 
 
@@ -990,7 +1039,7 @@ struct CommandCreateView : public DeviceContextCommandBehavior
 ========================================
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Core\Device\Commands\CreatGPUBuffer\CommandOfCreatingGPUBuffer.cpp ===
 ========================================
-#include "PreCompileHedder.h"
+#include "PreCompileHeader.h"
 #include "CommandOfCreatingGPUBuffer.h"
  
 
@@ -1093,7 +1142,7 @@ struct CommandCreateGPUResource : public DeviceContextCommandBehavior
 ========================================
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Core\Device\Commands\StructureSwapChain\CommandStructureSwapChain.cpp ===
 ========================================
-#include "PreCompileHedder.h"
+#include "PreCompileHeader.h"
 #include "CommandStructureSwapChain.h"
 
 CommandStructureSwapChain::CommandStructureSwapChain(DeviceContext::CommandProvider::GenerateKey generateKey_) :DeviceContextCommandBehavior(generateKey_)
@@ -1157,7 +1206,7 @@ struct CommandStructureSwapChain : public DeviceContextCommandBehavior
 ========================================
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Core\Device\DeviceContextCommandProvider\DeviceContextCommandProvider.cpp ===
 ========================================
-#include "PreCompileHedder.h"
+#include "PreCompileHeader.h"
 #include "DeviceContextCommandProvider.h"
 
 
@@ -1468,7 +1517,7 @@ private:
 ========================================
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Core\Device\DeviceSetupper\DeviceContextSetupper.cpp ===
 ========================================
-#include "PreCompileHedder.h"
+#include "PreCompileHeader.h"
 #include "DeviceContextSetupper.h"
 #include "../../../Utility/StringConnverter/StringConverter.h"
 
@@ -1689,7 +1738,7 @@ private:
 ========================================
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Core\SwapChain\SwapChainContext.cpp ===
 ========================================
-#include "PreCompileHedder.h"
+#include "PreCompileHeader.h"
 #include "SwapChainContext.h"
 #include "SwapChainColorBuffer/SwapChainColorBuffer.h"
 #include "../DescriptorHeap/ViewCreator/ViewCreator.h"
@@ -1704,14 +1753,18 @@ SwapChainContext::SwapChainContext
 	InstanceKey instanceKey_,
 	ViewCreator& viewCreator_,
 	CommandCreateSwapChain cmdCreateSwapChain_,
-	float clearColor_[4],
+	std::array<float, 4> clearColor_,
 	DXGI_FORMAT format_,
 	const HWND hWnd_,
 	ID3D12CommandQueue* commandQueue_
 )
 {
+	Logger::Entry("SwapChainContext: Constructor");
+
 	//構築
 	Assemble(instanceKey_, viewCreator_, cmdCreateSwapChain_, clearColor_, format_, hWnd_, commandQueue_);
+
+	Logger::End("SwapChainContext: Constructor");
 
 }
 
@@ -1737,7 +1790,7 @@ void SwapChainContext::Assemble
 	InstanceKey instanceKey_,
 	ViewCreator& viewCreator_,
 	CommandCreateSwapChain cmdCreateSwapChain_,
-	float clearColor_[4],
+	std::array<float, 4> clearColor_,
 	DXGI_FORMAT format_,
 	const HWND hWnd_,
 	ID3D12CommandQueue* commandQueue_
@@ -1750,7 +1803,11 @@ void SwapChainContext::Assemble
 	std::unique_ptr<SwapChainContext::ColorBuffer::Description> desc =
 		std::make_unique<SwapChainContext::ColorBuffer::Description>(clearColor_, format_);
 
+	//生リソース
 	std::array<Microsoft::WRL::ComPtr<ID3D12Resource>,kRequiredGPUBufferSum > resources;
+
+	//rtvDesc
+	auto rtvDesc = desc->CreateRTV_Desc();
 
 	//スワップチェーン、生リソース生成
 	{
@@ -1771,13 +1828,11 @@ void SwapChainContext::Assemble
 	}
 
 	//バッファ生成
-	colorBuffer.reset(new SwapChainContext::ColorBuffer(std::move(desc), resources));
+	colorBuffer.reset(new SwapChainContext::ColorBuffer(std::move(desc), std::move(resources)));
 
 	//ビュー生成
 	{
 		ResourceGetKey resourceGetKey;
-
-		auto rtvDesc = desc->CreateRTV_Desc();
 
 		for (int i = 0;i < ProjectConfig::Render::kRequiredGPUBufferSum;++i)
 		{
@@ -1788,8 +1843,10 @@ void SwapChainContext::Assemble
 				viewCreator_.CreateView(colorBuffer->GetResource(resourceGetKey, i), rtvDesc);
 
 			//インデックスを書き込む
-			colorBuffer->OverrideHeapIndex(instanceKey_, i, rtvCPU);
+			colorBuffer->OverrideHeapIndex(i, rtvCPU);
 		}
+
+		Logger::Log("Create: SwapChainResourceRTV", fileName);
 	}
 
 }
@@ -1829,7 +1886,7 @@ public:
 		InstanceKey instanceKey_, 
 		ViewCreator& viewCreator_,
 		CommandCreateSwapChain cmdCreateSwapChain_,
-		float clearColor_[4],
+		std::array<float, 4> clearColor_,
 		DXGI_FORMAT format_,
 		const HWND hWnd_,
 		ID3D12CommandQueue* commandQueue_
@@ -1844,7 +1901,7 @@ private:
 		InstanceKey instanceKey_,
 		ViewCreator& viewCreator_,
 		CommandCreateSwapChain cmdCreateSwapChain_,
-		float clearColor_[4],
+		std::array<float, 4> clearColor_,
 		DXGI_FORMAT format_,
 		const HWND hWnd_,
 		ID3D12CommandQueue* commandQueue_
@@ -1889,7 +1946,7 @@ private:
 ========================================
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Core\SwapChain\SwapChainColorBuffer\SwapChainColorBuffer.cpp ===
 ========================================
-#include "PreCompileHedder.h"
+#include "PreCompileHeader.h"
 #include "SwapChainColorBuffer.h"
 
 
@@ -1897,29 +1954,22 @@ SwapChainContext::ColorBuffer::ColorBuffer
 (
 	std::unique_ptr<Description> desc_,
 	std::array<Microsoft::WRL::ComPtr<ID3D12Resource>, ProjectConfig::Render::kRequiredGPUBufferSum> resources_
-)
+) : desc(std::move(desc_)),resources(std::move(resources_))
 {
-	desc = std::move(desc_);
-
+	
 }
 
-SwapChainContext::ColorBuffer::Description::Description(float clearColor_[4], DXGI_FORMAT format_)
+SwapChainContext::ColorBuffer::Description::Description(std::array<float, 4> clearColor_, DXGI_FORMAT format_)
 {
-	for (int i = 0;i < 4;++i) clearColor[i] = clearColor_[i];
+	clearColor = clearColor_;
 	format = format_;
 }
 
 
-void SwapChainContext::ColorBuffer::OverrideHeapIndex(SwapChainContext::InstanceKey instanceKey_,int index_ ,D3D12_CPU_DESCRIPTOR_HANDLE handle_)
+void SwapChainContext::ColorBuffer::OverrideHeapIndex(int index_ ,D3D12_CPU_DESCRIPTOR_HANDLE handle_)
 {
 	cpuHandles.at(index_) = handle_;
 }
-
-ID3D12Resource* SwapChainContext::ColorBuffer::GetResource(SwapChainContext::ResourceGetKey key_, int index_)
-{
-	return resources[index_].Get(); 
-}
-
 
 
 D3D12_RENDER_TARGET_VIEW_DESC SwapChainContext::ColorBuffer::Description::CreateRTV_Desc()const
@@ -1977,16 +2027,15 @@ public:
 
 	struct Description
 	{
-		float clearColor[4] = { 9,9,9,9 };
+		std::array<float,4> clearColor = { 9,9,9,9 };
+
 		DXGI_FORMAT format = DXGI_FORMAT_Error_Detection;
 
-		Description(float clearColor_[4], DXGI_FORMAT format_);
+		Description(std::array<float, 4> clearColor_, DXGI_FORMAT format_);
 
 		D3D12_RENDER_TARGET_VIEW_DESC CreateRTV_Desc()const;
 		DXGI_SWAP_CHAIN_DESC1 CreateSwapChainDesc()const;
 	};
-
-	std::unique_ptr<Description> desc;
 
 	ColorBuffer
 	(
@@ -1994,13 +2043,16 @@ public:
 		std::array<Microsoft::WRL::ComPtr<ID3D12Resource>, ProjectConfig::Render::kRequiredGPUBufferSum> resources_
 	);
 
-	ID3D12Resource* GetResource(SwapChainContext::ResourceGetKey key_, int index_);
-	void OverrideHeapIndex(SwapChainContext::InstanceKey instanceKey_, int index_, D3D12_CPU_DESCRIPTOR_HANDLE handle_);
+	//リソース取得
+	inline ID3D12Resource* GetResource(SwapChainContext::ResourceGetKey key_, int index_) { return resources[index_].Get(); }
+	//ヒープインデックスの上書き
+	void OverrideHeapIndex(int index_, D3D12_CPU_DESCRIPTOR_HANDLE handle_);
 
 private:
 
 	std::array<Microsoft::WRL::ComPtr<ID3D12Resource>,ProjectConfig::Render::kRequiredGPUBufferSum> resources;
 	std::array<D3D12_CPU_DESCRIPTOR_HANDLE, ProjectConfig::Render::kRequiredGPUBufferSum> cpuHandles;
+	std::unique_ptr<Description> desc;
 
 	D3D12_VIEWPORT viewport;
 	D3D12_RECT scissorRect;
@@ -2228,7 +2280,7 @@ private:
 ========================================
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Debug\ErrorMessageOutput\ErrorMessageOutput.cpp ===
 ========================================
-#include "PreCompileHedder.h"
+#include "PreCompileHeader.h"
 #include "ErrorMessageOutput.h"
 #include "../../Utility/StringConnverter/StringConverter.h"
 
@@ -2294,7 +2346,7 @@ namespace ErrorMessageOutput
 ========================================
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Debug\Logger\Logger.cpp ===
 ========================================
-#include "PreCompileHedder.h"
+#include "PreCompileHeader.h"
 #include "Logger.h"
 #include <filesystem>
 
@@ -2432,7 +2484,7 @@ public:
 ========================================
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Debug\RuntimeDebugger\RuntimeDebugger.cpp ===
 ========================================
-#include "PreCompileHedder.h"
+#include "PreCompileHeader.h"
 #include "RuntimeDebugger.h"
 #include "../ErrorMessageOutput/ErrorMessageOutput.h"
 
@@ -2519,7 +2571,7 @@ private:
 ========================================
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Debug\RuntimeDebugger\DebugSystems\RuntimeDebuggerBehavior.cpp ===
 ========================================
-#include "PreCompileHedder.h"
+#include "PreCompileHeader.h"
 #include "RuntimeDebuggerBehavior.h"
 
 
@@ -2555,7 +2607,7 @@ protected:
 ========================================
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Debug\RuntimeDebugger\DebugSystems\DebugLayer\DebugLayer.cpp ===
 ========================================
-#include "PreCompileHedder.h"
+#include "PreCompileHeader.h"
 #include "DebugLayer.h"
 
 
@@ -2595,7 +2647,7 @@ public:
 ========================================
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Debug\RuntimeDebugger\DebugSystems\LeakChecker\LeakChecker.cpp ===
 ========================================
-#include "PreCompileHedder.h"
+#include "PreCompileHeader.h"
 #include "LeakChecker.h"
 
 void LeakChecker::Init()
@@ -2646,7 +2698,7 @@ public:
 ========================================
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Debug\RuntimeDebugger\DebugSystems\PointerValidator\PointerValidator.cpp ===
 ========================================
-#include "PreCompileHedder.h"
+#include "PreCompileHeader.h"
 #include "PointerValidator.h"
 
 void PointerValidator::Init()
@@ -2795,7 +2847,7 @@ struct Matrix4
 ========================================
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Math\Quaternion\Quaternion.cpp ===
 ========================================
-#include "PreCompileHedder.h"
+#include "PreCompileHeader.h"
 #include "Quaternion.h"
 
 
@@ -2910,7 +2962,7 @@ struct Matrix4
 ========================================
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Math\Vector\Vector2.cpp ===
 ========================================
-#include "PreCompileHedder.h"
+#include "PreCompileHeader.h"
 #include "Vector2.h"
 
 float Vector2::GetMagnitutde()
@@ -3215,14 +3267,35 @@ inline Vector3 operator*(const float num_,Vector3 vec_)
 ========================================
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Resource\BufferContext.cpp ===
 ========================================
-#include "PreCompileHedder.h"
+#include "PreCompileHeader.h"
 #include "BufferContext.h"
 #include "ResourceCreator/ResourceCreator.h"
+#include "BufferAssembler/BufferAssembler.h"
+#include "../Core/DescriptorHeap/DescriptorHeapContext.h"
+#include "../Core/DescriptorHeap/ViewCreator/ViewCreator.h"
 
 
-BufferContext::BufferContext(InstanceKey instanceKey_, CreateResourceCommand createResourceCommand_)
+namespace
 {
-	resourceCreator.reset(new ResourceCreator(instanceKey_, createResourceCommand_)) ;
+	std::string fileName = "BufferContext.cpp";
+}
+
+BufferContext::BufferContext
+(
+	InstanceKey instanceKey_, 
+	CreateResourceCommand createResourceCommand_, 
+	DescriptorHeapContext* descriptorHeapContext_)
+{
+	Logger::Entry("BufferContext: Constructor");
+
+	std::unique_ptr<ResourceCreator> resourceCreator(std::make_unique<ResourceCreator>(instanceKey_, createResourceCommand_));
+	auto* viewCreator = descriptorHeapContext_->ShareViewCreator(DescriptorHeapContext::ViewCreatorShareKey{});
+
+	bufferAssembler.reset(new BufferAssembler(instanceKey_, std::move(resourceCreator), viewCreator));
+	Logger::Log("Create: bufferAssembler", fileName);
+
+	Logger::End("BufferContext: Constructor");
+
 }
 
 BufferContext::~BufferContext()
@@ -3238,36 +3311,43 @@ BufferContext::~BufferContext()
 #pragma once
 
 class WinApp;
-class ResourceCreator;
+class DescriptorHeapContext;
 
 class BufferContext
 {
-public:
-
 	//リソース生成コマンド
 	using CreateResourceCommand = std::function<Microsoft::WRL::ComPtr<ID3D12Resource>
-		(
-			const D3D12_RESOURCE_DESC& resourceDesc_,
-			const D3D12_HEAP_PROPERTIES& heapProperties_,
-			const D3D12_CLEAR_VALUE* clearValue_,
-			D3D12_RESOURCE_STATES initialState_,
-			const std::string& name_
-		)>;
+	(
+		const D3D12_RESOURCE_DESC& resourceDesc_,
+		const D3D12_HEAP_PROPERTIES& heapProperties_,
+		const D3D12_CLEAR_VALUE* clearValue_,
+		D3D12_RESOURCE_STATES initialState_,
+		const std::string& name_
+	)>;
 
+public:
+
+	class ResourceCreator;
+	class BufferAssembler;
 
 	//自身のインスタンス化キー
 	struct InstanceKey;
 
-	BufferContext(InstanceKey instanceKey_, CreateResourceCommand createResourceCommand_);
+	BufferContext
+	(
+		InstanceKey instanceKey_, 
+		CreateResourceCommand createResourceCommand_, 
+		DescriptorHeapContext* descriptorHeapContext_
+	);
+
 	~BufferContext();
 
 private:
 
 	//バッファ生成クラス
-	std::unique_ptr<ResourceCreator> resourceCreator;
+	std::unique_ptr<BufferAssembler> bufferAssembler;
 
 };
-
 
 
 struct BufferContext::InstanceKey
@@ -3307,7 +3387,7 @@ struct MeshShaderPipelineStateStream
 ========================================
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Resource\BufferAssembler\BufferAssembler.cpp ===
 ========================================
-#include "PreCompileHedder.h"
+#include "PreCompileHeader.h"
 #include "BufferAssembler.h"
 
 //バッファ
@@ -3326,13 +3406,18 @@ struct MeshShaderPipelineStateStream
 #include "../ResourceCreator/ResourceCreator.h"
 #include "../../Core/DescriptorHeap/ViewCreator/ViewCreator.h"
 
-BufferAssembler::BufferAssembler(ResourceCreator* resourceCreator_, ViewCreator* viewCreator_)
-	:resourceCreator(resourceCreator_), viewCreator(viewCreator_)
+BufferContext::BufferAssembler::BufferAssembler
+(
+	BufferContext::InstanceKey instancekey_, 
+	std::unique_ptr<BufferContext::ResourceCreator> resourceCreator_, 
+	ViewCreator* viewCreator_
+)
+	:resourceCreator(std::move(resourceCreator_)), viewCreator(viewCreator_)
 {
 
 }
 
-std::pair<D3D12_RESOURCE_DESC, D3D12_HEAP_PROPERTIES> BufferAssembler::AssembleResourceCreateRequirements(const BufferDescriptionBehavior& desc_)
+std::pair<D3D12_RESOURCE_DESC, D3D12_HEAP_PROPERTIES> BufferContext::BufferAssembler::AssembleResourceCreateRequirements(const BufferDescriptionBehavior& desc_)
 {
 	//要項チェック
 	desc_.CheckRequirementsFilled();
@@ -3346,7 +3431,7 @@ std::pair<D3D12_RESOURCE_DESC, D3D12_HEAP_PROPERTIES> BufferAssembler::AssembleR
 
 
 template<>
-std::unique_ptr<ColorBuffer> BufferAssembler::AssembleResource<ColorBuffer, ColorBufferDescription>
+std::unique_ptr<ColorBuffer> BufferContext::BufferAssembler::AssembleResource<ColorBuffer, ColorBufferDescription>
 (
 	D3D12_RESOURCE_DESC resourceDesc_,
 	D3D12_HEAP_PROPERTIES heapProp_,
@@ -3362,7 +3447,7 @@ std::unique_ptr<ColorBuffer> BufferAssembler::AssembleResource<ColorBuffer, Colo
 	//クリアバリュー必要
 	auto clearValue = desc_.WatchClearValue();
 	//リソース生成
-	DoubleResource doubleResource = resourceCreator->CreateResource(resourceDesc_, heapProp_, &clearValue, desc_.initialState,nameCnv);
+	DoubleResource doubleResource = resourceCreator->Create(resourceDesc_, heapProp_, &clearValue, desc_.initialState,nameCnv);
 
 	//バッファ生成
 	return std::make_unique<ColorBuffer>
@@ -3375,7 +3460,7 @@ std::unique_ptr<ColorBuffer> BufferAssembler::AssembleResource<ColorBuffer, Colo
 }
 
 template<>
-void BufferAssembler::AssembleView<ColorBuffer, ColorBufferDescription>(ColorBuffer* buffer_, const ColorBufferDescription& desc_)
+void BufferContext::BufferAssembler::AssembleView<ColorBuffer, ColorBufferDescription>(ColorBuffer* buffer_, const ColorBufferDescription& desc_)
 {
 	auto srvDesc = desc_.CreateSRV_Desc();
 	auto rtvDesc = desc_.CreateRTV_Desc();
@@ -3407,7 +3492,7 @@ void BufferAssembler::AssembleView<ColorBuffer, ColorBufferDescription>(ColorBuf
 	}
 }
 
-std::string BufferAssembler::ConvertName(const std::string& srcName_, const std::string& attach_)
+std::string BufferContext::BufferAssembler::ConvertName(const std::string& srcName_, const std::string& attach_)
 {
 	return attach_ + "[ " + srcName_ + " ] ";
 }
@@ -3422,9 +3507,9 @@ std::string BufferAssembler::ConvertName(const std::string& srcName_, const std:
 ========================================
 #pragma once
 #include"../BufferDescriptions/BufferDescriptionBehavior.h"
+#include "../BufferContext.h"
 
 //ツール
-class ResourceCreator;
 class ViewCreator;
 
 //ディスクリプション
@@ -3441,10 +3526,15 @@ class SRV_UAVBuffer;
 
 
 //バッファとディスクを特定のクラスに限定して組み立てる
-class BufferAssembler
+class BufferContext::BufferAssembler
 {
 public:
-    BufferAssembler(ResourceCreator* resourceCreator_, ViewCreator* viewCreator_);
+    BufferAssembler
+    (
+        BufferContext::InstanceKey instancekey_, 
+        std::unique_ptr<BufferContext::ResourceCreator> resourceCreator_, 
+        ViewCreator* viewCreator_
+    );
 
     template<typename BufferType, typename DescType>
     [[nodiscard]] std::unique_ptr<BufferType> Assemble(const DescType& desc_, const std::string& name_)
@@ -3490,13 +3580,13 @@ private:
     //名前変換
     std::string ConvertName(const std::string& srcName_, const std::string& attach_);
 
-    ResourceCreator* resourceCreator;
+    std::unique_ptr<BufferContext::ResourceCreator> resourceCreator;
     ViewCreator* viewCreator;
 };
 
 
 template<>
-std::unique_ptr<ColorBuffer> BufferAssembler::AssembleResource<ColorBuffer, ColorBufferDescription>
+std::unique_ptr<ColorBuffer> BufferContext::BufferAssembler::AssembleResource<ColorBuffer, ColorBufferDescription>
 (
     D3D12_RESOURCE_DESC resourceDesc_,
     D3D12_HEAP_PROPERTIES heapProp_, 
@@ -3505,7 +3595,8 @@ std::unique_ptr<ColorBuffer> BufferAssembler::AssembleResource<ColorBuffer, Colo
 );
 
 template<>
-void BufferAssembler::AssembleView<ColorBuffer, ColorBufferDescription>(ColorBuffer* buffer_, const ColorBufferDescription& desc_);
+void BufferContext::BufferAssembler::AssembleView<ColorBuffer, ColorBufferDescription>
+    (ColorBuffer* buffer_, const ColorBufferDescription& desc_);
 
 
 
@@ -3513,7 +3604,7 @@ void BufferAssembler::AssembleView<ColorBuffer, ColorBufferDescription>(ColorBuf
 ========================================
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Resource\BufferDescriptions\BufferDescriptionBehavior.cpp ===
 ========================================
-#include "PreCompileHedder.h"
+#include "PreCompileHeader.h"
 #include "BufferDescriptionBehavior.h"
 
 BufferDescriptionBehavior::BufferDescriptionBehavior(D3D12_RESOURCE_STATES initialState_) : initialState(initialState_)
@@ -3590,7 +3681,7 @@ struct IDSV_Assembler
 ========================================
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Resource\BufferDescriptions\ColorBufferDescription\ColorBufferDescription.cpp ===
 ========================================
-#include "PreCompileHedder.h"
+#include "PreCompileHeader.h"
 #include "ColorBufferDescription.h"
 
 ColorBufferDescription::ColorBufferDescription
@@ -3767,7 +3858,7 @@ public:
 ========================================
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Resource\BufferDescriptions\ConstantBufferDescription\ConstantBufferDescription.cpp ===
 ========================================
-#include "PreCompileHedder.h"
+#include "PreCompileHeader.h"
 #include "ConstantBufferDescription.h"
 
 ConstantBufferDescription::ConstantBufferDescription(UINT sizeInByte_, D3D12_RESOURCE_STATES initialState_ )
@@ -3858,7 +3949,7 @@ public:
 ========================================
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Resource\BufferDescriptions\DepthStencilBufferDescription\DepthStencilBufferDescription.cpp ===
 ========================================
-#include "PreCompileHedder.h"
+#include "PreCompileHeader.h"
 #include "DepthStencilBufferDescription.h"
 
 
@@ -4006,7 +4097,7 @@ public:
 ========================================
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Resource\BufferDescriptions\SRV_UAVBufferDescription\SRV_UAVBufferDescription.cpp ===
 ========================================
-#include "PreCompileHedder.h"
+#include "PreCompileHeader.h"
 #include "SRV_UAVBufferDescription.h"
 
 
@@ -4175,7 +4266,7 @@ public:
 ========================================
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Resource\GPUBuffer\GPUBufferBehavior.cpp ===
 ========================================
-#include "PreCompileHedder.h"
+#include "PreCompileHeader.h"
 #include "GPUBufferBehavior.h"
 #include "../../Utility/StringConnverter/StringConverter.h"
 #include "../BufferDescriptions/BufferDescriptionBehavior.h"
@@ -4220,27 +4311,14 @@ ID3D12Resource* GPUBufferBehavior::GetResource(BufferAccessKey bufferAccessKey_ 
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Resource\GPUBuffer\GPUBufferBehavior.h ===
 ========================================
 #pragma once
+#include "../BufferAssembler/BufferAssembler.h"
 
 
 class GPUBufferManager;
 struct BufferDescriptionBehavior;
-class BufferAssembler;
 
 class GPUBufferBehavior
 {
-private:
-
-	//各desctiptorheapのインデックス
-	struct IndexSet
-	{
-		uint32_t uint{};
-		D3D12_CPU_DESCRIPTOR_HANDLE cpu;
-		D3D12_GPU_DESCRIPTOR_HANDLE gpu;
-	};
-
-	//各ビューのインデックス
-	std::array< std::unordered_map<ViewType, IndexSet>, ProjectConfig::Render::kRequiredGPUBufferSum> heapIndicesContainer;
-
 public:
 
 	//生成キー
@@ -4311,8 +4389,18 @@ protected:
 
 private:
 
+	//各desctiptorheapのインデックス
+	struct IndexSet
+	{
+		uint32_t uint{};
+		D3D12_CPU_DESCRIPTOR_HANDLE cpu{};
+		D3D12_GPU_DESCRIPTOR_HANDLE gpu{};
+	};
+
 	//生リソース
 	std::array<Microsoft::WRL::ComPtr<ID3D12Resource>, ProjectConfig::Render::kRequiredGPUBufferSum> resources;
+	//各ビューのインデックス
+	std::array< std::unordered_map<ViewType, IndexSet>, ProjectConfig::Render::kRequiredGPUBufferSum> heapIndicesContainer;
 	//なまえ
 	std::string name = "noName";
 	//現在リソースステート
@@ -4326,7 +4414,7 @@ struct GPUBufferBehavior::InstanceKey
 {
 private:
 
-	friend class BufferAssembler;
+	friend class BufferContext::BufferAssembler;
 
 	explicit InstanceKey() = default;
 };
@@ -4335,7 +4423,7 @@ private:
 struct GPUBufferBehavior::BufferAccessKey
 {
 private:
-	friend class BufferAssembler;
+	friend class BufferContext::BufferAssembler;
 	friend class GPUBufferManager;
 
 	explicit BufferAccessKey() = default;
@@ -4348,7 +4436,7 @@ private:
 ========================================
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Resource\GPUBuffer\ColorBuffer\ColorBuffer.cpp ===
 ========================================
-#include "PreCompileHedder.h"
+#include "PreCompileHeader.h"
 #include "ColorBuffer.h"
 #include "../../BufferDescriptions/ColorBufferDescription/ColorBufferDescription.h"
 
@@ -4439,7 +4527,7 @@ private:
 ========================================
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Resource\GPUBuffer\ConstantBuffer\ConstantBuffer.cpp ===
 ========================================
-#include "PreCompileHedder.h"
+#include "PreCompileHeader.h"
 #include "ConstantBuffer.h"
 #include "../../BufferDescriptions/BufferDescriptionBehavior.h"
 
@@ -4490,7 +4578,7 @@ public:
 ========================================
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Resource\GPUBuffer\DepthStencilBuffer\DepthStencilBuffer.cpp ===
 ========================================
-#include "PreCompileHedder.h"
+#include "PreCompileHeader.h"
 #include "DepthStencilBuffer.h"
 
 
@@ -4539,7 +4627,7 @@ public:
 ========================================
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Resource\GPUBuffer\SRV_UAVBuffer\SRV_UAVBuffer.cpp ===
 ========================================
-#include "PreCompileHedder.h"
+#include "PreCompileHeader.h"
 #include "SRV_UAVBuffer.h"
 #include "../../BufferDescriptions/BufferDescriptionBehavior.h"
 
@@ -4593,13 +4681,13 @@ private:
 ========================================
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Resource\ResourceCreator\ResourceCreator.cpp ===
 ========================================
-#include "PreCompileHedder.h"
+#include "PreCompileHeader.h"
 #include "ResourceCreator.h"
 #include "../../Utility/StringConnverter/StringConverter.h"
 
 
 
-[[nodiscard]] std::pair<Microsoft::WRL::ComPtr<ID3D12Resource>, Microsoft::WRL::ComPtr<ID3D12Resource>> ResourceCreator::CreateResource
+[[nodiscard]] std::pair<Microsoft::WRL::ComPtr<ID3D12Resource>, Microsoft::WRL::ComPtr<ID3D12Resource>> BufferContext::ResourceCreator::Create
 (
 	const D3D12_RESOURCE_DESC& resourceDesc_,
 	const D3D12_HEAP_PROPERTIES& heapProperties_,
@@ -4627,7 +4715,7 @@ private:
 #pragma once
 #include "../BufferContext.h"
 
-class ResourceCreator
+class BufferContext::ResourceCreator
 {
 
 public:
@@ -4637,7 +4725,7 @@ public:
 
 	~ResourceCreator() = default;
 
-	[[nodiscard]] std::pair<Microsoft::WRL::ComPtr<ID3D12Resource>, Microsoft::WRL::ComPtr<ID3D12Resource>> CreateResource
+	[[nodiscard]] std::pair<Microsoft::WRL::ComPtr<ID3D12Resource>, Microsoft::WRL::ComPtr<ID3D12Resource>> Create
 	(
 		const D3D12_RESOURCE_DESC& resourceDesc_,
 		const D3D12_HEAP_PROPERTIES& heapProperties_,
@@ -4659,7 +4747,7 @@ private:
 ========================================
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Utility\StringConnverter\StringConverter.cpp ===
 ========================================
-//#include "PreCompileHedder.h"
+//#include "PreCompileHeader.h"
 #include "StringConverter.h"
 
 std::wstring StringConverter::ConvertString(const std::string& str)
@@ -4734,16 +4822,14 @@ namespace StringConverter
 ========================================
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\WinApp\WinApp.cpp ===
 ========================================
-#include "PreCompileHedder.h"
+#include "PreCompileHeader.h"
 #include "WinApp.h"
 #include "../Core/Device/DeviceContext.h"
 #include "../Core/Window/WindowContext.h"
 #include "../Core/DescriptorHeap/DescriptorHeapContext.h"
 #include "../Resource/BufferContext.h"
-
-
 #include "../Core/Device/DeviceContextCommandProvider/DeviceContextCommandProvider.h"
-
+#include "../Core/SwapChain/SwapChainContext.h"
 
 namespace
 {
@@ -4786,7 +4872,11 @@ WinApp::WinApp()
 WinApp::~WinApp()
 {
 	windowContext->Finalize();
+}
 
+void WinApp::InitSwapChainContext()
+{
+	//swapChainContext.reset(new SwapChainContext())
 }
 
 //WinAppクラスのインスタンスを1つに制限する
@@ -4810,9 +4900,8 @@ void WinApp::InitBufferContext()
 	auto createResourceCommand = deviceContext->commandProvider->ProvideCreateResourceCommand();
 	Logger::Log("Set: CommandCreateResource", fileName);
 
-	bufferContext.reset(new BufferContext(BufferContext::InstanceKey{}, createResourceCommand));
+	bufferContext.reset(new BufferContext(BufferContext::InstanceKey{}, createResourceCommand,descriptorHeapContext.get()));
 	Logger::Log("Instantiate: bufferContext", fileName);
-
 }
 
 void WinApp::InitWindowContext()
@@ -4825,68 +4914,44 @@ void WinApp::InitWindowContext()
 
 void WinApp::InitDescriptorHeapContext()
 {
+	//DescriptorHeap生成コマンド
+	auto createDescriptorHeapCommand = deviceContext->commandProvider->ProvideCreateDescriptorHeapCommand();
+	auto createRTVCommand = deviceContext->commandProvider->ProvideCreateViewCommand<D3D12_RENDER_TARGET_VIEW_DESC>();
+	auto createSRVCommand = deviceContext->commandProvider->ProvideCreateViewCommand<D3D12_SHADER_RESOURCE_VIEW_DESC>();
+	auto createDSVCommand = deviceContext->commandProvider->ProvideCreateViewCommand<D3D12_DEPTH_STENCIL_VIEW_DESC>();
+	auto createUAVCommand = deviceContext->commandProvider->ProvideCreateUAVCommand();
+
+	struct IncrementSizeOfDescriptorHeaps
+	{
+		UINT rtv{};
+		UINT srv{};
+		UINT dsv{};
+		IncrementSizeOfDescriptorHeaps(UINT rtv_, UINT srv_, UINT dsv_) : rtv(rtv_), srv(srv_), dsv(dsv_) {}
+	};
+
+	//deviceContextからDescriptorHandleIncrementSizeを教えてもらう
+	IncrementSizeOfDescriptorHeaps sizeArray
+	(
+		deviceContext->CalcDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV),
+		deviceContext->CalcDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV),
+		deviceContext->CalcDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_DSV)
+	);
+
+	std::array<UINT,3> tmpSizeArray = { sizeArray.rtv ,sizeArray.srv,sizeArray.dsv };
+
 	//descriptorHeapContextクラスのインスタンス化
-	descriptorHeapContext.reset(new DescriptorHeapContext(DescriptorHeapContext::InstanceKey{}));
+	descriptorHeapContext.reset(new DescriptorHeapContext
+	(
+		DescriptorHeapContext::InstanceKey{},
+		createDescriptorHeapCommand,
+		createRTVCommand,
+		createSRVCommand,
+		createDSVCommand,
+		createUAVCommand,
+		tmpSizeArray
+	));
+
 	Logger::Log("Instantiate: descriptorHeapContext", fileName);
-
-	//DescriptorHeap生成コマンドのセット
-	{
-		//DescriptorHeap生成コマンド
-		auto createDescriptorHeapCommand = deviceContext->commandProvider->ProvideCreateDescriptorHeapCommand();
-		descriptorHeapContext->SetCreateDescroptorHeapCommand(createDescriptorHeapCommand);
-		Logger::Log("Set: createDescriptorHeapCommand", fileName);
-
-	}
-
-	//各種DescriptorHeapの生成
-	{
-		using namespace ProjectConfig::Core;
-
-		struct IncrementSizeOfDescriptorHeaps
-		{
-			UINT rtv{};
-			UINT srv{};
-			UINT dsv{};
-			IncrementSizeOfDescriptorHeaps(UINT rtv_, UINT srv_, UINT dsv_) : rtv(rtv_), srv(srv_), dsv(dsv_) {}
-		};
-
-		//deviceContextからDescriptorHandleIncrementSizeを教えてもらう
-		IncrementSizeOfDescriptorHeaps sizeArray
-		(
-			deviceContext->CalcDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV),
-			deviceContext->CalcDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV),
-			deviceContext->CalcDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_DSV)
-		);
-
-		//RTV
-		descriptorHeapContext->CreateDescriptorHeap<D3D12_DESCRIPTOR_HEAP_TYPE_RTV>(kNumDescriptorsRTVHeap, false, sizeArray.rtv);
-		//SRV
-		descriptorHeapContext->CreateDescriptorHeap<D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV>(kNumDescriptorSRVHeap, false, sizeArray.srv);
-		//DSV
-		descriptorHeapContext->CreateDescriptorHeap<D3D12_DESCRIPTOR_HEAP_TYPE_DSV>(kNumDescriptorsDSVHeap, false, sizeArray.dsv);
-
-		Logger::Log("Create: descriptorHeaps", fileName);
-	}
-
-	//ResourceのView生成コマンドのセット
-	{
-		auto createRTVCommand = deviceContext->commandProvider->ProvideCreateViewCommand<D3D12_RENDER_TARGET_VIEW_DESC>();
-		auto createSRVCommand = deviceContext->commandProvider->ProvideCreateViewCommand<D3D12_SHADER_RESOURCE_VIEW_DESC>();
-		auto createDSVCommand = deviceContext->commandProvider->ProvideCreateViewCommand<D3D12_DEPTH_STENCIL_VIEW_DESC>();
-		auto createUAVCommand = deviceContext->commandProvider->ProvideCreateUAVCommand();
-
-		//ビュークリエイターを生成し、コマンドをセット
-		descriptorHeapContext->SetCreateViewCommand
-		(
-			createRTVCommand,
-			createSRVCommand,
-			createDSVCommand,
-			createUAVCommand
-		);
-
-		Logger::Log("Set: createViewCommands", fileName);
-
-	}
 }
 
 
@@ -4902,6 +4967,7 @@ class DeviceContext;
 class BufferContext;
 class WindowContext;
 class DescriptorHeapContext;
+class SwapChainContext;
 
 class WinApp
 {
@@ -4922,13 +4988,17 @@ private:
 
 	//IDXGIFactory7、IDXGIAdapter4、ID3D12Device8を持っている。
 	std::unique_ptr<DeviceContext> deviceContext;
-	//GPUバッファを生成・管理
-	std::unique_ptr<BufferContext> bufferContext;
 	//ウィンドウを制御するもの
 	std::unique_ptr<WindowContext> windowContext;
-	//DescriptorHeapを作り、各種バッファのviewを生成する
+	//DescriptorHeapを作り、各種バッファのviewを生成するツールを持つ
 	std::unique_ptr<DescriptorHeapContext> descriptorHeapContext;
+	//GPUバッファを生成・管理
+	std::unique_ptr<BufferContext> bufferContext;
+	//SwapChain周りを制御するもの
+	std::unique_ptr<SwapChainContext> swapChainContext;
 
+
+	void InitSwapChainContext();
 	void InitDeviceContext();
 	void InitBufferContext();
 	void InitWindowContext();
