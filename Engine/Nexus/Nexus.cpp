@@ -1,19 +1,20 @@
 #include "PreCompileHeader.h"
-#include "WinApp.h"
+#include "Nexus.h"
 #include "../Core/Device/DeviceContext.h"
 #include "../Core/Window/WindowContext.h"
 #include "../Core/DescriptorHeap/DescriptorHeapContext.h"
 #include "../Resource/BufferContext.h"
 #include "../Core/Device/DeviceContextCommandProvider/DeviceContextCommandProvider.h"
 #include "../Core/SwapChain/SwapChainContext.h"
+#include "../Core/CommandContext/CommandContext.h"
 
 namespace
 {
-	std::string const fileName = "WinApp.cpp";
+	std::string const fileName = "Nexus.cpp";
 }
 
-//WinAppクラスのインスタンスを制御するクラス
-class WinApp::InstanceLimiter
+//Nexusクラスのインスタンスを制御するクラス
+class Nexus::InstanceLimiter
 {
 public:
 	static bool CanInstantiate();
@@ -30,47 +31,65 @@ private:
 	InstanceLimiter() = default;
 };
 
-WinApp::WinApp()
+Nexus::Nexus()
 {
-	Logger::Entry("WinApp: Constructor");
+	Logger::Entry("Nexus: Constructor");
 
 	//自身のインスタンス制限
-	ErrorMessageOutput::Assert::DetectError(InstanceLimiter::CanInstantiate(), "WinAppクラスが複数具現化されてます", fileName);
+	ErrorMessageOutput::Assert::DetectError(InstanceLimiter::CanInstantiate(), "Nexusクラスが複数具現化されてます", fileName);
 
 	InitDeviceContext();
 	InitWindowContext();
 	InitDescriptorHeapContext();
 	InitBufferContext();
+	InitCommandContext();
+	InitSwapChainContext();
 
-	Logger::End("WinApp: Constructor");
+	Logger::End("Nexus: Constructor");
 }
 
-WinApp::~WinApp()
+Nexus::~Nexus()
 {
 	windowContext->Finalize();
 }
 
-void WinApp::InitSwapChainContext()
+void Nexus::InitSwapChainContext()
 {
-	//swapChainContext.reset(new SwapChainContext())
+	auto cmdCreateSwapChain = deviceContext->commandProvider->ProvideCreateSwapChainCommand();
+
+
+	swapChainContext.reset
+	(
+		new SwapChainContext
+		(
+			SwapChainContext::InstanceKey{},
+			descriptorHeapContext.get(),
+			commandContext.get(),
+			cmdCreateSwapChain,
+			windowContext->WatchHWND()
+		)
+	);
+
+	Logger::Log("Instantiate: swapChainContext", fileName);
+
 }
 
-//WinAppクラスのインスタンスを1つに制限する
-bool WinApp::InstanceLimiter::CanInstantiate()
+//Nexusクラスのインスタンスを1つに制限する
+bool Nexus::InstanceLimiter::CanInstantiate()
 {
 	static InstanceLimiter instanceLimiter;
 
 	return (instanceLimiter.instanceCnt++ == 0);
 }
 
-void WinApp::InitDeviceContext()
+void Nexus::InitDeviceContext()
 {
 	//deviceContextクラスのインスタンス化
 	deviceContext.reset(new DeviceContext(DeviceContext::InstanceKey{}));
 	Logger::Log("Instantiate: deviceContext", fileName);
 }
 
-void WinApp::InitBufferContext()
+void Nexus::InitBufferContext()
 {
 	//リソース生成コマンド
 	auto createResourceCommand = deviceContext->commandProvider->ProvideCreateResourceCommand();
@@ -80,15 +99,15 @@ void WinApp::InitBufferContext()
 	Logger::Log("Instantiate: bufferContext", fileName);
 }
 
-void WinApp::InitWindowContext()
+void Nexus::InitWindowContext()
 {
 	//windowContextのインスタンス化
-	windowContext.reset(new WindowContext(WindowContext::CraftKey{}));
+	windowContext.reset(new WindowContext(WindowContext::InstacnceKey{}));
 	Logger::Log("Instantiate: windowContext", fileName);
 
 }
 
-void WinApp::InitDescriptorHeapContext()
+void Nexus::InitDescriptorHeapContext()
 {
 	//DescriptorHeap生成コマンド
 	auto createDescriptorHeapCommand = deviceContext->commandProvider->ProvideCreateDescriptorHeapCommand();
@@ -130,3 +149,18 @@ void WinApp::InitDescriptorHeapContext()
 	Logger::Log("Instantiate: descriptorHeapContext", fileName);
 }
 
+void Nexus::InitCommandContext()
+{
+	auto [cmdQueue, cmdAllocators, cmdList] = 
+		deviceContext->commandProvider->CreateCommandContextCoreParts(DeviceContext::InstanceKey{});
+
+	commandContext.reset(new CommandContext
+	(
+		CommandContext::InstanceKey{},
+		std::move(cmdQueue),
+		std::move(cmdAllocators),
+		std::move(cmdList))
+	);
+
+	Logger::Log("Instantiate: commandContext", fileName);
+}

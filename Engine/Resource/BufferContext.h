@@ -1,6 +1,6 @@
 #pragma once
 
-class WinApp;
+class Nexus;
 class DescriptorHeapContext;
 
 class BufferContext
@@ -44,6 +44,6 @@ struct BufferContext::InstanceKey
 {
 private:
 
-	friend class WinApp;
+	friend class Nexus;
 	explicit InstanceKey() = default;
 };

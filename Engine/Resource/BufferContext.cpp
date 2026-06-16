@@ -20,7 +20,7 @@ BufferContext::BufferContext
 	Logger::Entry("BufferContext: Constructor");
 
 	std::unique_ptr<ResourceCreator> resourceCreator(std::make_unique<ResourceCreator>(instanceKey_, createResourceCommand_));
-	auto* viewCreator = descriptorHeapContext_->ShareViewCreator(DescriptorHeapContext::ViewCreatorShareKey{});
+	auto* viewCreator = descriptorHeapContext_->GetViewCreator(DescriptorHeapContext::ViewCreatorGetKey{});
 
 	bufferAssembler.reset(new BufferAssembler(instanceKey_, std::move(resourceCreator), viewCreator));
 	Logger::Log("Create: bufferAssembler", fileName);

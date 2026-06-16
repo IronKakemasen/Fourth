@@ -1,6 +1,6 @@
 #pragma once
 
-class WinApp;
+class Nexus;
 class DeviceContextCommandBehavior;
 
 
@@ -16,14 +16,14 @@ public:
 		kCreateDescriptorHeap,
 		//Resourceのビューを作成
 		kCreateResourceView,
-		//SwapChainまわりを構成
+		//SwapChain生成
 		kStructureSwapChain,
 
 
 		kCount
 	};
 
-	//生成キー。WinAppしか許さない
+	//生成キー。Nexusしか許さない
 	struct InstanceKey;
 	
 	//コアパーツにアクセスするのを許可するキー
@@ -55,12 +55,12 @@ private:
 };
 
 
-//生成できるのはWinAppのみ
+//生成できるのはNexusのみ
 struct DeviceContext::InstanceKey
 {
 private:
 
-	friend class WinApp;
+	friend class Nexus;
 	explicit InstanceKey() = default;
 };
 

@@ -1,6 +1,6 @@
 #include "WindowContext.h"
 #include <strsafe.h>
-#include "../../WinApp/WinApp.h"
+#include "../../Nexus/Nexus.h"
 #include "DumpExporter.h"
 
 LRESULT CALLBACK WindowContext::WndProc(HWND hWnd_, UINT msg_, WPARAM wParam_, LPARAM lParam_)
@@ -41,20 +41,15 @@ void WindowContext::Finalize()
 	setupParam.m_hWnd = nullptr;
 }
 
+HWND WindowContext::WatchHWND()
+{
+	return setupParam.m_hWnd;
+}
 
-WindowContext::WindowContext(CraftKey craftKey_)
+
+WindowContext::WindowContext(InstacnceKey instanceKey_)
 {
 	using namespace ProjectConfig::Window;
-
-//#ifdef _DEBUG
-//
-//	if (SUCCEEDED(D3D12GetDebugInterface(IID_PPV_ARGS(&debugController))))
-//	{
-//		debugController->EnableDebugLayer();
-//		debugController->SetEnableGPUBasedValidation(TRUE);
-//	}
-//
-//#endif // _DEBUG
 
 	auto hInst = GetModuleHandle(nullptr);
 

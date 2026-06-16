@@ -1,13 +1,17 @@
 #include "PreCompileHeader.h"
 #include "DeviceContextCommandProvider.h"
 
-
 //コマンド群
 #include "../Commands/CreatGPUBuffer/CommandOfCreatingGPUBuffer.h"
 #include "../Commands/CreateDescriptorHeap/CommandCreateDescriptorHeap.h"
 #include "../Commands/CreateView/CommandCreateView.h"
 #include "../Commands/StructureSwapChain/CommandStructureSwapChain.h"
+#include "../Commands/StructureCommandContext/CommandStructureCommandContext.h"
 
+namespace
+{
+	auto const fileName = "CommandProvider.cpp";
+}
 
 DeviceContext::CommandProvider::CommandProvider
 (
@@ -31,13 +35,13 @@ using C_CreateDSV = std::function<void(ID3D12Resource* resource_, const D3D12_DE
 using C_CreateDescriptorHeap = std::function<Microsoft::WRL::ComPtr<ID3D12DescriptorHeap>(D3D12_DESCRIPTOR_HEAP_TYPE, UINT, bool)>;
 
 using C_CreateResource = std::function<Microsoft::WRL::ComPtr<ID3D12Resource>
-	(
-		const D3D12_RESOURCE_DESC& resourceDesc_,
-		const D3D12_HEAP_PROPERTIES& heapProperties_,
-		const D3D12_CLEAR_VALUE* clearValue_,
-		D3D12_RESOURCE_STATES initialState_,
-		const std::string& name_
-	)>;
+(
+	const D3D12_RESOURCE_DESC& resourceDesc_,
+	const D3D12_HEAP_PROPERTIES& heapProperties_,
+	const D3D12_CLEAR_VALUE* clearValue_,
+	D3D12_RESOURCE_STATES initialState_,
+	const std::string& name_
+)>;
 
 using C_CreateSwapChain = std::function< HRESULT
 (
@@ -133,10 +137,6 @@ template<>
 
 	return retFunc;
 }
-
-
-
-
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -206,7 +206,46 @@ template<>
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
+//CommandContextのコアパーツ生成
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+[[nodiscard]] std::tuple
+<
+	Microsoft::WRL::ComPtr<ID3D12CommandQueue>,
+	std::array<Microsoft::WRL::ComPtr<ID3D12CommandAllocator>, ProjectConfig::Render::kRequiredGPUBufferSum>,
+	Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList6>
+>
+DeviceContext::CommandProvider::CreateCommandContextCoreParts(DeviceContext::InstanceKey instanceKey_)
+{
+	using namespace  ProjectConfig::Render;
 
+	//コアパーツ生成ツール
+	CommandStructureCommandContext tool(GenerateKey{});
+	auto* device = deviceGetter(DeviceContext::AccessKey{});
+
+	Microsoft::WRL::ComPtr<ID3D12CommandQueue> cmdQueue;
+	std::array < Microsoft::WRL::ComPtr<ID3D12CommandAllocator>, kRequiredGPUBufferSum > cmdAllocators;
+	Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList6> cmdList;
+
+	//生成
+	cmdQueue = tool.CreateCommandQueue(device);
+	Logger::Log("Create: CommandQueue", fileName);
+
+	for (int i = 0;i < kRequiredGPUBufferSum;++i)
+	{
+		cmdAllocators.at(i) = tool.CreateCommandAllocator(device);
+	}
+	Logger::Log("Create: CommandAllocators", fileName);
+
+	cmdList = tool.CreateCommandList(device,cmdAllocators.at(0).Get());
+	Logger::Log("Create: CommandList", fileName);
+
+	return std::make_tuple(cmdQueue, cmdAllocators, cmdList);
+}
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
 

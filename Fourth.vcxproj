@@ -90,6 +90,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Engine\Core\CommandContext\CommandContext.cpp" />
     <ClCompile Include="Engine\Core\Device\Commands\StructureSwapChain\CommandStructureSwapChain.cpp" />
     <ClCompile Include="Engine\Resource\BufferAssembler\BufferAssembler.cpp" />
     <ClCompile Include="Engine\Resource\BufferDescriptions\BufferDescriptionBehavior.cpp" />
@@ -214,7 +215,7 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="Engine\Utility\StringConnverter\StringConverter.cpp" />
-    <ClCompile Include="Engine\WinApp\WinApp.cpp" />
+    <ClCompile Include="Engine\Nexus\Nexus.cpp" />
     <ClCompile Include="Engine\Math\Quaternion\Quaternion.cpp" />
     <ClCompile Include="Engine\Math\Vector\Vector2.cpp" />
     <ClCompile Include="Engine\Core\SwapChain\SwapChainContext.cpp" />
@@ -225,8 +226,10 @@
     <ClCompile Include="Engine\Resource\GPUBuffer\SRV_UAVBuffer\SRV_UAVBuffer.cpp" />
     <ClCompile Include="Engine\Resource\BufferDescriptions\SRV_UAVBufferDescription\SRV_UAVBufferDescription.cpp" />
     <ClCompile Include="Engine\Core\SwapChain\SwapChainColorBuffer\SwapChainColorBuffer.cpp" />
+    <ClCompile Include="Engine\Core\Device\Commands\StructureCommandContext\CommandStructureCommandContext.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Engine\Core\CommandContext\CommandContext.h" />
     <ClInclude Include="Engine\Core\Device\Commands\StructureSwapChain\CommandStructureSwapChain.h" />
     <ClInclude Include="Engine\Resource\BufferAssembler\BufferAssembler.h" />
     <ClInclude Include="Engine\Resource\GPUBuffer\DepthStencilBuffer\DepthStencilBuffer.h" />
@@ -274,7 +277,7 @@
     <ClInclude Include="Engine\PreCompileHeader.h" />
     <ClInclude Include="Engine\Debug\Logger\Logger.h" />
     <ClInclude Include="Engine\Utility\StringConnverter\StringConverter.h" />
-    <ClInclude Include="Engine\WinApp\WinApp.h" />
+    <ClInclude Include="Engine\Nexus\Nexus.h" />
     <ClInclude Include="Engine\Math\Vector\Vector3.h" />
     <ClInclude Include="Engine\Math\Quaternion\Quaternion.h" />
     <ClInclude Include="Engine\Math\Vector\Vector2.h" />
@@ -289,6 +292,7 @@
     <ClInclude Include="Engine\Resource\GPUBuffer\SRV_UAVBuffer\SRV_UAVBuffer.h" />
     <ClInclude Include="Engine\Resource\BufferDescriptions\SRV_UAVBufferDescription\SRV_UAVBufferDescription.h" />
     <ClInclude Include="Engine\Core\SwapChain\SwapChainColorBuffer\SwapChainColorBuffer.h" />
+    <ClInclude Include="Engine\Core\Device\Commands\StructureCommandContext\CommandStructureCommandContext.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

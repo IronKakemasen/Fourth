@@ -4,6 +4,7 @@
 class DeviceContextCommandBehavior;
 
 //Deviceを使用する処理を、使用しない形にコマンド化して提供するクラス
+//初期化生成しか使用しないかつ引数がほぼない場合は、自らコマンドをたたく
 class DeviceContext::CommandProvider
 {
 	//コマンドのコンテナ
@@ -55,6 +56,16 @@ public:
 		IDXGISwapChain4** swapChainDoublePtr_,
 		const HWND hWnd_
 	)> ProvideCreateSwapChainCommand();
+
+	//CommandContextのコアパーツ生成関数
+	[[nodiscard]] std::tuple
+	<
+		Microsoft::WRL::ComPtr<ID3D12CommandQueue>,
+		std::array<Microsoft::WRL::ComPtr<ID3D12CommandAllocator>, ProjectConfig::Render::kRequiredGPUBufferSum>,
+		Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList6>
+	>
+	CreateCommandContextCoreParts(DeviceContext::InstanceKey instanceKey_);
+
 
 private:
 

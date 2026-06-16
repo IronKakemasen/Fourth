@@ -1,9 +1,10 @@
 #pragma once
 
-class WinApp;
+class Nexus;
 class DescriptorHeapClass;
 class ViewCreator;
 class BufferContext;
+class SwapChainContext;
 
 class DescriptorHeapContext
 {
@@ -25,10 +26,10 @@ public:
 	using CreateUAVCommand =
 		std::function<void(ID3D12Resource* resource_, const D3D12_UNORDERED_ACCESS_VIEW_DESC* desc_, D3D12_CPU_DESCRIPTOR_HANDLE descriptorHandleCPU_, ID3D12Resource* CounterResource_)>;
 
-	//WinAppのみ生成可能
+	//Nexusのみ生成可能
 	struct InstanceKey;
-	//ポインターシェアを許可するキー
-	struct ViewCreatorShareKey;
+	//ViewCreatorポインター取得を許可するキー
+	struct ViewCreatorGetKey;
 
 	DescriptorHeapContext
 	(
@@ -44,7 +45,7 @@ public:
 	~DescriptorHeapContext();
 
 	//ビュークリエイターをシェアする。
-	ViewCreator* ShareViewCreator(ViewCreatorShareKey key_);
+	ViewCreator* GetViewCreator(ViewCreatorGetKey key_);
 	//各種ディスクリプターヒープの作成
 	void CreateDescriptorHeaps(UINT rtvDH_, UINT srvDH_, UINT dsvDH_);
 
@@ -86,21 +87,22 @@ private:
 
 
 
-//生成できるのはWinAppのみ
+//生成できるのはNexusのみ
 struct DescriptorHeapContext::InstanceKey
 {
 private:
 
-	friend class WinApp;
+	friend class Nexus;
 	explicit InstanceKey() = default;
 };
 
-struct DescriptorHeapContext::ViewCreatorShareKey
+struct DescriptorHeapContext::ViewCreatorGetKey
 {
 private:
 
+	friend class SwapChainContext;
 	friend class BufferContext;
-	explicit ViewCreatorShareKey() = default;
+	explicit ViewCreatorGetKey() = default;
 
 };
 

@@ -1,8 +1,9 @@
 #pragma once
 
-class WinApp;
+class Nexus;
 class ViewCreator;
-
+class CommandContext;
+class DescriptorHeapContext;
 
 class SwapChainContext
 {
@@ -17,20 +18,18 @@ class SwapChainContext
 
 public:
 
-	//WinAppのみ生成可能
+	//Nexusのみ生成可能
 	struct InstanceKey;
 	//バッファの生リソースアドレスを取得キー
 	struct ResourceGetKey;
 
 	SwapChainContext
 	(
-		InstanceKey instanceKey_, 
-		ViewCreator& viewCreator_,
+		InstanceKey instanceKey_,
+		DescriptorHeapContext* descriptorHeapContext_,
+		CommandContext* commandContext_,
 		CommandCreateSwapChain cmdCreateSwapChain_,
-		std::array<float, 4> clearColor_,
-		DXGI_FORMAT format_,
-		const HWND hWnd_,
-		ID3D12CommandQueue* commandQueue_
+		const HWND hWnd_
 	);
 
 	~SwapChainContext();
@@ -42,8 +41,6 @@ private:
 		InstanceKey instanceKey_,
 		ViewCreator& viewCreator_,
 		CommandCreateSwapChain cmdCreateSwapChain_,
-		std::array<float, 4> clearColor_,
-		DXGI_FORMAT format_,
 		const HWND hWnd_,
 		ID3D12CommandQueue* commandQueue_
 	);
@@ -69,7 +66,7 @@ struct SwapChainContext::InstanceKey
 {
 private:
 
-	friend class WinApp;
+	friend class Nexus;
 	explicit InstanceKey() = default;
 };
 
