@@ -8,21 +8,21 @@ class SwapChainContext;
 class CommandContext;
 
 
-class WinApp
+class Nexus
 {
 public:
 
-	~WinApp();
-	WinApp();
+	~Nexus();
+	Nexus();
 
-	WinApp(const WinApp&) = delete;
-	WinApp& operator=(const WinApp&) = delete;
-	WinApp(WinApp&&) = delete;
-	WinApp& operator=(WinApp&&) = delete;
+	Nexus(const Nexus&) = delete;
+	Nexus& operator=(const Nexus&) = delete;
+	Nexus(Nexus&&) = delete;
+	Nexus& operator=(Nexus&&) = delete;
 
 private:
 
-	//WinAppのインスタンスを1つに制限するためのシングルトンクラス
+	//Nexusのインスタンスを1つに制限するためのシングルトンクラス
 	class InstanceLimiter;
 
 	//IDXGIFactory7、IDXGIAdapter4、ID3D12Device8を持っている。

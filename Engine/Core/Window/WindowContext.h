@@ -1,6 +1,6 @@
 #pragma once
 
-class WinApp;
+class Nexus;
 
 class WindowContext
 {
@@ -31,6 +31,6 @@ private:
 struct WindowContext::InstacnceKey
 {
 private:
-	friend class WinApp;
+	friend class Nexus;
 	explicit InstacnceKey() = default;
 };

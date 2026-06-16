@@ -1,12 +1,12 @@
 #include "Engine/Debug/RuntimeDebugger/RuntimeDebugger.h"
-#include "Engine/WinApp/WinApp.h"
+#include "Engine/Nexus/Nexus.h"
 
 int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 {
     // デバッガー。DebugLayer, PointerValidator, LeakChecker
     RuntimeDebugger runtimeDebugger;
     // アプリケーションクラス
-    WinApp winApp;
+    Nexus nexus;
 
     MSG msg = {};
 

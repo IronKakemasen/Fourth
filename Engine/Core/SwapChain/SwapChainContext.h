@@ -1,6 +1,6 @@
 #pragma once
 
-class WinApp;
+class Nexus;
 class ViewCreator;
 class CommandContext;
 class DescriptorHeapContext;
@@ -18,7 +18,7 @@ class SwapChainContext
 
 public:
 
-	//WinAppのみ生成可能
+	//Nexusのみ生成可能
 	struct InstanceKey;
 	//バッファの生リソースアドレスを取得キー
 	struct ResourceGetKey;
@@ -66,7 +66,7 @@ struct SwapChainContext::InstanceKey
 {
 private:
 
-	friend class WinApp;
+	friend class Nexus;
 	explicit InstanceKey() = default;
 };
 

@@ -1,6 +1,6 @@
 #include "WindowContext.h"
 #include <strsafe.h>
-#include "../../WinApp/WinApp.h"
+#include "../../Nexus/Nexus.h"
 #include "DumpExporter.h"
 
 LRESULT CALLBACK WindowContext::WndProc(HWND hWnd_, UINT msg_, WPARAM wParam_, LPARAM lParam_)

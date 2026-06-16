@@ -1,6 +1,6 @@
 #pragma once
 
-class WinApp;
+class Nexus;
 class SwapChainContext;
 
 
@@ -38,7 +38,7 @@ struct CommandContext::InstanceKey
 {
 private:
 
-	friend class WinApp;
+	friend class Nexus;
 	explicit InstanceKey() = default;
 };
 

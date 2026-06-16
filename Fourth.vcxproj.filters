@@ -96,7 +96,7 @@
     <ClCompile Include="Engine\Utility\StringConnverter\StringConverter.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="Engine\WinApp\WinApp.cpp">
+    <ClCompile Include="Engine\Nexus\Nexus.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
     <ClCompile Include="Engine\Math\Vector\Vector3.cpp">
@@ -281,7 +281,7 @@
     <ClInclude Include="Engine\Utility\StringConnverter\StringConverter.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\WinApp\WinApp.h">
+    <ClInclude Include="Engine\Nexus\Nexus.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
     <ClInclude Include="Engine\Math\Vector\Vector3.h">

@@ -1,6 +1,6 @@
 #pragma once
 
-class WinApp;
+class Nexus;
 class DescriptorHeapClass;
 class ViewCreator;
 class BufferContext;
@@ -26,7 +26,7 @@ public:
 	using CreateUAVCommand =
 		std::function<void(ID3D12Resource* resource_, const D3D12_UNORDERED_ACCESS_VIEW_DESC* desc_, D3D12_CPU_DESCRIPTOR_HANDLE descriptorHandleCPU_, ID3D12Resource* CounterResource_)>;
 
-	//WinAppのみ生成可能
+	//Nexusのみ生成可能
 	struct InstanceKey;
 	//ViewCreatorポインター取得を許可するキー
 	struct ViewCreatorGetKey;
@@ -87,12 +87,12 @@ private:
 
 
 
-//生成できるのはWinAppのみ
+//生成できるのはNexusのみ
 struct DescriptorHeapContext::InstanceKey
 {
 private:
 
-	friend class WinApp;
+	friend class Nexus;
 	explicit InstanceKey() = default;
 };
 
