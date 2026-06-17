@@ -1975,17 +1975,14 @@ private:
 #include "SwapChainColorBuffer/SwapChainColorBuffer.h"
 #include "../DescriptorHeap/ViewCreator/ViewCreator.h"
 #include "../CommandContext/CommandContext.h"
-
+#include "Presenter/Presenter.h"
+#include "RenderPassMaterialProvider/RenderPassMaterialProvider.h"
 
 namespace
 {
 	std::string fileName = "SwapChainContext.cpp";
 }
 
-UINT SwapChainContext::GetFrameIndex()
-{
-	return swapChain->GetCurrentBackBufferIndex();
-}
 
 SwapChainContext::SwapChainContext
 (
@@ -2005,6 +2002,12 @@ SwapChainContext::SwapChainContext
 
 	//構築
 	Assemble(instanceKey_, viewCreator, cmdCreateSwapChain_, hWnd_, commandQueue);
+
+	presenter.reset(new Presenter(swapChain.Get()));
+	Logger::Log("Instantiate: Presenter", fileName);
+	renderPassMaterialProvider.reset(new RenderPassMaterialProvider(colorBuffer.get()));
+	Logger::Log("Instantiate: RenderPassMaterialProvider", fileName);
+
 
 	Logger::End("SwapChainContext: Constructor");
 
@@ -2050,7 +2053,7 @@ void SwapChainContext::PullResourcesFromSwapChain(std::unique_ptr<Description>&&
 	Logger::Log("Complete: Pull SwapChainResources", fileName);
 }
 
-void SwapChainContext::CreateRTV(const D3D12_RENDER_TARGET_VIEW_DESC& rtvDesc_, ViewCreator& viewCreator_)
+void SwapChainContext::CreateRTV(InstanceKey instanceKey_ , const D3D12_RENDER_TARGET_VIEW_DESC& rtvDesc_, ViewCreator& viewCreator_)
 {
 	ResourceGetKey resourceGetKey;
 
@@ -2063,7 +2066,7 @@ void SwapChainContext::CreateRTV(const D3D12_RENDER_TARGET_VIEW_DESC& rtvDesc_, 
 			viewCreator_.CreateView(colorBuffer->GetResource(resourceGetKey, i), &rtvDesc_);
 
 		//インデックスを書き込む
-		colorBuffer->OverrideHeapIndex(i, rtvCPU);
+		colorBuffer->OverrideHeapIndex(instanceKey_,i, rtvCPU);
 	}
 
 }
@@ -2095,7 +2098,7 @@ void SwapChainContext::Assemble
 	PullResourcesFromSwapChain(std::move(bufferDesc));
 
 	//ビュー生成
-	CreateRTV(rtvDesc, viewCreator_);
+	CreateRTV(instanceKey_,rtvDesc, viewCreator_);
 	Logger::Log("Create: SwapChainResourceRTV", fileName);
 }
 
@@ -2129,10 +2132,10 @@ public:
 	struct InstanceKey;
 	//バッファの生リソースアドレスを取得キー
 	struct ResourceGetKey;
+	//マテリアルプロバイダーが情報を取得
 
-	//現在のフレームインデックススを取得
-	UINT GetFrameIndex();
-
+	//専用のカラーバッファ
+	class ColorBuffer;
 
 	SwapChainContext
 	(
@@ -2148,9 +2151,13 @@ public:
 
 private:
 
-	//専用のカラーバッファ
-	class ColorBuffer;
+	//そのディスクリプション
 	struct Description;
+	//画面の表示、バックバッファの切り替えを担う
+	class Presenter;
+	//描画パスに必要な情報を提供する
+	class RenderPassMaterialProvider;
+
 
 	//SwapChainとそのカラーバッファを構築
 	void Assemble
@@ -2174,14 +2181,13 @@ private:
 	//スワップチェーンからリソースを引っ張ってくる
 	void PullResourcesFromSwapChain(std::unique_ptr<Description>&& desc_);
 	//RTVの生成
-	void CreateRTV(const D3D12_RENDER_TARGET_VIEW_DESC& rtvDesc_, ViewCreator& viewCreator_);
+	void CreateRTV(InstanceKey instanceKey_ ,const D3D12_RENDER_TARGET_VIEW_DESC& rtvDesc_, ViewCreator& viewCreator_);
 
 	//スワップチェーン
 	Microsoft::WRL::ComPtr<IDXGISwapChain4> swapChain = nullptr;
-
-	//スワップチェーン専用のカラーバッファ
 	std::unique_ptr<ColorBuffer> colorBuffer;
-
+	std::unique_ptr<Presenter> presenter;
+	std::unique_ptr<RenderPassMaterialProvider> renderPassMaterialProvider;
 };
 
 struct SwapChainContext::InstanceKey
@@ -2204,6 +2210,156 @@ private:
 
 
 ========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Core\SwapChain\Presenter\Presenter.cpp ===
+========================================
+#include "PreCompileHeader.h"
+#include "Presenter.h"
+
+
+SwapChainContext::Presenter::Presenter(IDXGISwapChain4* swapChain_)
+	:swapChain(swapChain_)
+{
+
+}
+
+UINT SwapChainContext::Presenter::GetFrameIndex()
+{
+	return swapChain->GetCurrentBackBufferIndex();
+}
+
+
+void SwapChainContext::Presenter::Present()
+{
+	swapChain->Present(1, 0);
+}
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Core\SwapChain\Presenter\Presenter.h ===
+========================================
+#pragma once
+#include "../SwapChainContext.h"
+
+
+class SwapChainContext::Presenter
+{
+public:
+	Presenter(IDXGISwapChain4* swapChain_);
+
+	//現在のフレームインデックススを取得
+	UINT GetFrameIndex();
+	//バックバッファインデックス入れ替え
+	void Present();
+
+private:
+
+	IDXGISwapChain4* swapChain;
+
+};
+
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Core\SwapChain\RenderPassMaterialProvider\RenderPassMaterialProvider.cpp ===
+========================================
+#include "PreCompileHeader.h"
+#include "RenderPassMaterialProvider.h"
+#include "../../../Resource/ResourceBarrier.h"
+
+
+SwapChainContext::RenderPassMaterialProvider::RenderPassMaterialProvider(SwapChainContext::ColorBuffer* colorBuffer_)
+	:colorBuffer(colorBuffer_)
+{
+
+}
+
+SwapChainContext::RenderPassMaterialProvider::Materials SwapChainContext::RenderPassMaterialProvider::Provide(UINT frameIndex_)
+{
+	
+	SwapChainContext::RenderPassMaterialProvider::Materials::ColorBuffer materialC;
+	SwapChainContext::RenderPassMaterialProvider::Materials::DepthStencilBuffer materialD;
+
+
+	materialC.scissorRect = &colorBuffer->scissorRect;
+	materialC.viewport = &colorBuffer->viewport;
+
+	auto& dstBuffer = colorBuffer->buffers.at(frameIndex_);
+	materialC.handle = dstBuffer.cpuHandle;
+
+	materialC.barrier = ResourceBarrier::Create
+	(
+		dstBuffer.resource.Get(),
+		D3D12_RESOURCE_BARRIER_TYPE_TRANSITION,
+		D3D12_RESOURCE_BARRIER_FLAG_NONE,
+		D3D12_RESOURCE_STATE_PRESENT,
+		D3D12_RESOURCE_STATE_RENDER_TARGET,
+		D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES
+	);
+
+	return SwapChainContext::RenderPassMaterialProvider::Materials
+	(
+		materialC,
+		materialD
+	);
+}
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Core\SwapChain\RenderPassMaterialProvider\RenderPassMaterialProvider.h ===
+========================================
+#pragma once
+#include "../SwapChainColorBuffer/SwapChainColorBuffer.h"
+
+
+//描画パスを構築するのに必要な材料を渡す
+class SwapChainContext::RenderPassMaterialProvider
+{
+public:
+
+	struct Materials
+	{
+		struct ColorBuffer
+		{
+			D3D12_CPU_DESCRIPTOR_HANDLE handle{};
+			D3D12_RESOURCE_BARRIER barrier;
+			D3D12_VIEWPORT* viewport;
+			D3D12_RECT* scissorRect;
+		};
+
+		struct DepthStencilBuffer
+		{
+			D3D12_CPU_DESCRIPTOR_HANDLE dsvhandle{};
+		};
+
+		ColorBuffer colorBuffer;
+		DepthStencilBuffer depthStencilBuffer;
+
+		Materials(ColorBuffer colorBuffer_, DepthStencilBuffer depthStencilBuffer_)
+			:colorBuffer(colorBuffer_), depthStencilBuffer(depthStencilBuffer_){}
+
+	};
+
+
+	RenderPassMaterialProvider(SwapChainContext::ColorBuffer* colorBuffer_);
+	
+	Materials Provide(UINT frameIndex_);
+
+private:
+
+	SwapChainContext::ColorBuffer* colorBuffer;
+};
+
+
+
+
+
+========================================
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Core\SwapChain\SwapChainColorBuffer\SwapChainColorBuffer.cpp ===
 ========================================
 #include "PreCompileHeader.h"
@@ -2214,10 +2370,16 @@ SwapChainContext::ColorBuffer::ColorBuffer
 (
 	std::unique_ptr<Description> desc_,
 	std::array<Microsoft::WRL::ComPtr<ID3D12Resource>, ProjectConfig::Render::kRequiredGPUBufferSum> resources_
-) : desc(std::move(desc_)),resources(std::move(resources_))
+) : desc(std::move(desc_))
 {
 	//行列2種を構築
 	AssembleMatrix();
+
+	for (int i = 0;i < ProjectConfig::Render::kRequiredGPUBufferSum;++i)
+	{
+		buffers.at(i).resource = std::move(resources_.at(i));
+	}
+
 	Logger::Log("Assemble: Matrix", "SwapChainColorBuffer.cpp");
 }
 
@@ -2247,9 +2409,9 @@ SwapChainContext::Description::Description(std::array<float, 4> clearColor_, DXG
 }
 
 
-void SwapChainContext::ColorBuffer::OverrideHeapIndex(int index_ ,D3D12_CPU_DESCRIPTOR_HANDLE handle_)
+void SwapChainContext::ColorBuffer::OverrideHeapIndex(SwapChainContext::InstanceKey instanceKey_, int index_ ,D3D12_CPU_DESCRIPTOR_HANDLE handle_)
 {
-	cpuHandles.at(index_) = handle_;
+	buffers.at(index_).cpuHandle = handle_;
 }
 
 
@@ -2323,25 +2485,39 @@ public:
 	ColorBuffer
 	(
 		std::unique_ptr<SwapChainContext::Description> desc_,
-		std::array<Microsoft::WRL::ComPtr<ID3D12Resource>, ProjectConfig::Render::kRequiredGPUBufferSum> resources_
+		std::array<Microsoft::WRL::ComPtr<ID3D12Resource>, 
+		ProjectConfig::Render::kRequiredGPUBufferSum> resources_
 	);
 
 	//リソース取得
-	inline ID3D12Resource* GetResource(SwapChainContext::ResourceGetKey key_, int index_) { return resources[index_].Get(); }
+	inline ID3D12Resource* GetResource(SwapChainContext::ResourceGetKey key_, int index_) { return buffers.at(index_).resource.Get(); }
 	//ヒープインデックスの上書き
-	void OverrideHeapIndex(int index_, D3D12_CPU_DESCRIPTOR_HANDLE handle_);
+	void OverrideHeapIndex(SwapChainContext::InstanceKey instanceKey_, int index_, D3D12_CPU_DESCRIPTOR_HANDLE handle_);
+
+	//MaterialProviderが情報を欲する
+	friend class SwapChainContext::RenderPassMaterialProvider;
 
 private:
 
-	std::array<Microsoft::WRL::ComPtr<ID3D12Resource>,ProjectConfig::Render::kRequiredGPUBufferSum> resources;
-	std::array<D3D12_CPU_DESCRIPTOR_HANDLE, ProjectConfig::Render::kRequiredGPUBufferSum> cpuHandles;
-	std::unique_ptr<SwapChainContext::Description> desc;
-
 	void AssembleMatrix();
+
+	struct Buffer
+	{
+		Microsoft::WRL::ComPtr <ID3D12Resource> resource;
+		D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle;
+		D3D12_RESOURCE_STATES state;
+	};
+
+	std::array<Buffer, ProjectConfig::Render::kRequiredGPUBufferSum> buffers;
+
+	//std::array<Microsoft::WRL::ComPtr<ID3D12Resource>,ProjectConfig::Render::kRequiredGPUBufferSum> resources;
+	//std::array<D3D12_CPU_DESCRIPTOR_HANDLE, ProjectConfig::Render::kRequiredGPUBufferSum> cpuHandles;
+
+	std::unique_ptr<SwapChainContext::Description> desc;
 
 	D3D12_VIEWPORT viewport;
 	D3D12_RECT scissorRect;
-
+	D3D12_RESOURCE_STATES resourceState;
 };
 
 
@@ -3898,6 +4074,44 @@ struct MeshShaderPipelineStateStream
 
 
 ========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Resource\ResourceBarrier.h ===
+========================================
+#pragma once
+
+namespace ResourceBarrier
+{
+	D3D12_RESOURCE_BARRIER Create
+	(
+		ID3D12Resource* dst_resource_,
+		D3D12_RESOURCE_BARRIER_TYPE Type,
+		D3D12_RESOURCE_BARRIER_FLAGS Flags,
+		D3D12_RESOURCE_STATES before_,
+		D3D12_RESOURCE_STATES after_,
+		UINT transitionSubResource_
+	)
+	{
+		D3D12_RESOURCE_BARRIER barrier{};
+
+		//バリアの設定
+		barrier.Type = Type;
+		barrier.Flags = Flags;
+
+		//バリアを張る対象のリソース。
+		barrier.Transition.pResource = dst_resource_;
+		barrier.Transition.Subresource = transitionSubResource_;
+
+		//バリアステートを遷移
+		barrier.Transition.StateBefore = before_;
+		barrier.Transition.StateAfter = after_;
+
+		return barrier;
+	}
+
+}
+
+
+
+========================================
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Resource\BufferAssembler\BufferAssembler.cpp ===
 ========================================
 #include "PreCompileHeader.h"
@@ -4120,13 +4334,17 @@ void BufferContext::BufferAssembler::AssembleView<ColorBuffer, ColorBufferDescri
 #include "PreCompileHeader.h"
 #include "BufferDescriptionBehavior.h"
 
-BufferDescriptionBehavior::BufferDescriptionBehavior(D3D12_RESOURCE_STATES initialState_) : initialState(initialState_)
+BufferDescriptionBehavior::BufferDescriptionBehavior(ResourceStates initialStates_) : initialStates(initialStates_)
 {
-	if (initialState == D3D12_RESOURCE_STATE_Error_Detection)
+	for (D3D12_RESOURCE_STATES state : initialStates)
 	{
-		ErrorMessageOutput::Assert::DetectError((initialState != D3D12_RESOURCE_STATE_Error_Detection),
-			"初期ステート未設定", "BufferDescriptionBehavior.cpp");
+		ErrorMessageOutput::Assert::DetectError
+		(
+			(state != D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_Error_Detection),
+			"リソースステートが初期化されていない", "BufferDescriptionBehavior.cpp"
+		);
 	}
+
 };
 
 
@@ -4158,7 +4376,8 @@ struct BufferDescriptionBehavior
 	virtual D3D12_RESOURCE_DESC CreateResourceDesc()const = 0;
 	virtual D3D12_HEAP_PROPERTIES CreateHeapProperties()const = 0;
 
-	D3D12_RESOURCE_STATES initialState = D3D12_RESOURCE_STATE_Error_Detection;
+	std::array<D3D12_RESOURCE_STATES, ProjectConfig::Render::kRequiredGPUBufferSum> initialStates =
+	{ D3D12_RESOURCE_STATE_Error_Detection };
 };
 
 
@@ -4204,8 +4423,8 @@ ColorBufferDescription::ColorBufferDescription
 	UINT height_,
 	D3D12_RESOURCE_FLAGS flag_,
 	DXGI_FORMAT format_,
-	D3D12_RESOURCE_STATES initialState_
-) : BufferDescriptionBehavior(initialState_)
+	ResourceStates initialStates_
+) : BufferDescriptionBehavior(initialStates_)
 {
 	for (int i = 0;i < 4;++i) param.clearColor[i] = clearColors_[i];
 	param.width = width_;
@@ -4374,8 +4593,11 @@ public:
 #include "PreCompileHeader.h"
 #include "ConstantBufferDescription.h"
 
-ConstantBufferDescription::ConstantBufferDescription(UINT sizeInByte_, D3D12_RESOURCE_STATES initialState_ )
-	:BufferDescriptionBehavior(initialState_)
+ConstantBufferDescription::ConstantBufferDescription
+(
+	UINT sizeInByte_, 
+	ResourceStates initialStates_
+):BufferDescriptionBehavior(initialStates_)
 {
 	param.sizeInByte = sizeInByte_;
 }
@@ -4438,7 +4660,11 @@ private:
 
 public:
 
-	ConstantBufferDescription(UINT sizeInByte_, D3D12_RESOURCE_STATES initialState_ = D3D12_RESOURCE_STATE_GENERIC_READ);
+	ConstantBufferDescription
+	(
+		UINT sizeInByte_, 
+		ResourceStates initialStates_ = { D3D12_RESOURCE_STATE_GENERIC_READ,D3D12_RESOURCE_STATE_GENERIC_READ }
+	);
 
 	//パラーメーターチェック
 	virtual void CheckRequirementsFilled() const override;
@@ -4794,14 +5020,20 @@ GPUBufferBehavior::GPUBufferBehavior
 (
 	const InstanceKey& instanceKey_,
 	std::string name_,
-	Microsoft::WRL::ComPtr<ID3D12Resource> resource1_, 
+	Microsoft::WRL::ComPtr<ID3D12Resource> resource1_,
 	Microsoft::WRL::ComPtr<ID3D12Resource> resource2_,
 	std::unique_ptr <BufferDescriptionBehavior>&& description_
-) : name(name_), resources{ {std::move(resource1_), std::move(resource2_)} }, description(std::move(description_))
+) : name(name_), description(std::move(description_))
 {
-	curState = description->initialState;
-}
+	buffers.at(0).resource = std::move(resource1_);
+	buffers.at(1).resource = std::move(resource2_);
 
+	for (size_t i = 0; i < buffers.size(); ++i)
+	{
+		buffers.at(i).curState = description->initialStates.at(i);
+	}
+
+}
 GPUBufferBehavior::~GPUBufferBehavior()
 {
 
@@ -4811,7 +5043,7 @@ GPUBufferBehavior::~GPUBufferBehavior()
 ID3D12Resource* GPUBufferBehavior::GetResource(BufferAccessKey bufferAccessKey_ ,int resourceNo_)
 {
 	std::string errorMsg = name + "は空です (GetResourceに失敗)";
-	ErrorMessageOutput::Assert::DetectError((resources[resourceNo_] != nullptr), errorMsg , fileName);
+	ErrorMessageOutput::Assert::DetectError((buffers.at(resourceNo_).resource != nullptr), errorMsg , fileName);
 
 	return resources[resourceNo_].Get();
 }
@@ -4910,14 +5142,19 @@ private:
 		D3D12_GPU_DESCRIPTOR_HANDLE gpu{};
 	};
 
+	struct Buffer
+	{
+		Microsoft::WRL::ComPtr<ID3D12Resource> resource;
+		std::unordered_map<ViewType, IndexSet> heapIndicesContainer;
+		D3D12_RESOURCE_STATES curState;
+	};
+
 	//生リソース
 	std::array<Microsoft::WRL::ComPtr<ID3D12Resource>, ProjectConfig::Render::kRequiredGPUBufferSum> resources;
 	//各ビューのインデックス
 	std::array< std::unordered_map<ViewType, IndexSet>, ProjectConfig::Render::kRequiredGPUBufferSum> heapIndicesContainer;
 	//なまえ
 	std::string name = "noName";
-	//現在リソースステート
-	D3D12_RESOURCE_STATES curState;
 };
 
 

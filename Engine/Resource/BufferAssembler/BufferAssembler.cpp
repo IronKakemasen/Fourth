@@ -58,7 +58,14 @@ std::unique_ptr<ColorBuffer> BufferContext::BufferAssembler::AssembleResource<Co
 	//クリアバリュー必要
 	auto clearValue = desc_.WatchClearValue();
 	//リソース生成
-	DoubleResource doubleResource = resourceCreator->Create(resourceDesc_, heapProp_, &clearValue, desc_.initialState,nameCnv);
+	DoubleResource doubleResource = resourceCreator->Create
+	(
+		resourceDesc_, 
+		heapProp_, 
+		&clearValue,
+		desc_.initialStates,
+		nameCnv
+	);
 
 	//バッファ生成
 	return std::make_unique<ColorBuffer>

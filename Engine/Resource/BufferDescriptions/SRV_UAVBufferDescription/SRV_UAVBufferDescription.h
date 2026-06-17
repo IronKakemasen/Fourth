@@ -36,7 +36,7 @@ public:
 		D3D12_BUFFER_SRV_FLAGS srvFlags_,
 		D3D12_BUFFER_UAV_FLAGS uavFlags_,
 		uint64_t uavCounterOffsetInBytes_,
-		D3D12_RESOURCE_STATES initialState_
+		ResourceStates initialStates_
 	);
 
 	//パラーメーターチェック

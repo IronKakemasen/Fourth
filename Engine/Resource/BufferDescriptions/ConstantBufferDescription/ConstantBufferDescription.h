@@ -14,7 +14,11 @@ private:
 
 public:
 
-	ConstantBufferDescription(UINT sizeInByte_, D3D12_RESOURCE_STATES initialState_ = D3D12_RESOURCE_STATE_GENERIC_READ);
+	ConstantBufferDescription
+	(
+		UINT sizeInByte_, 
+		ResourceStates initialStates_ = { D3D12_RESOURCE_STATE_GENERIC_READ,D3D12_RESOURCE_STATE_GENERIC_READ }
+	);
 
 	//パラーメーターチェック
 	virtual void CheckRequirementsFilled() const override;

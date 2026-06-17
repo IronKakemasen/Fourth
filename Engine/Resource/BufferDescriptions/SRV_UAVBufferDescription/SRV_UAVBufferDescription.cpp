@@ -12,8 +12,8 @@ SRV_UAVBufferDescription::SRV_UAVBufferDescription
 	D3D12_BUFFER_SRV_FLAGS srvFlags_,
 	D3D12_BUFFER_UAV_FLAGS uavFlags_,
 	uint64_t uavCounterOffsetInBytes_,
-	D3D12_RESOURCE_STATES initialState_
-) :BufferDescriptionBehavior(initialState_)
+	ResourceStates initialStates_
+) :BufferDescriptionBehavior(initialStates_)
 {
 	param.structureByte = structureByte_;
 	param.numElements = numElements_;

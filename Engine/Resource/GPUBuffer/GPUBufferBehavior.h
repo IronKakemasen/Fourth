@@ -32,17 +32,19 @@ public:
 	template<ViewType type, typename Index>
 	void OverrideHeapIndex(InstanceKey instanceKey_, Index index_, uint8_t resourceNo_)
 	{
+		auto& dstHeapContainer = buffers.at(resourceNo_).heapIndicesContainer[type];
+
 		if constexpr (std::is_same_v<Index, uint32_t>)
 		{
-			heapIndicesContainer.at(resourceNo_)[type].uint = index_;
+			dstHeapContainer.uint = index_;
 		}
 		else if constexpr (std::is_same_v<Index, D3D12_CPU_DESCRIPTOR_HANDLE>)
 		{
-			heapIndicesContainer.at(resourceNo_)[type].cpu = index_;
+			dstHeapContainer.cpu = index_;
 		}
 		else if constexpr (std::is_same_v<Index, D3D12_GPU_DESCRIPTOR_HANDLE>)
 		{
-			heapIndicesContainer.at(resourceNo_)[type].gpu = index_;
+			dstHeapContainer.gpu = index_;
 		}
 	}
 
@@ -50,17 +52,19 @@ public:
 	template<ViewType type, typename Index>
 	Index WatchIndex(uint8_t resourceNo_)const 
 	{
+		const auto& dstHeapContainer = buffers.at(resourceNo_).heapIndicesContainer[type];
+
 		if constexpr (std::is_same_v<Index, uint32_t>)
 		{
-			return heapIndicesContainer.at(resourceNo_).at(type).uint;
+			return dstHeapContainer.uint;
 		}
 		else if constexpr (std::is_same_v<Index, D3D12_CPU_DESCRIPTOR_HANDLE>)
 		{
-			return heapIndicesContainer.at(resourceNo_).at(type).cpu;
+			return dstHeapContainer.cpu;
 		}
 		else if constexpr (std::is_same_v<Index, D3D12_GPU_DESCRIPTOR_HANDLE>)
 		{
-			return heapIndicesContainer.at(resourceNo_).at(type).gpu;
+			return dstHeapContainer.gpu;
 		}
 		else
 		{
@@ -85,14 +89,21 @@ private:
 		D3D12_GPU_DESCRIPTOR_HANDLE gpu{};
 	};
 
-	//生リソース
-	std::array<Microsoft::WRL::ComPtr<ID3D12Resource>, ProjectConfig::Render::kRequiredGPUBufferSum> resources;
-	//各ビューのインデックス
-	std::array< std::unordered_map<ViewType, IndexSet>, ProjectConfig::Render::kRequiredGPUBufferSum> heapIndicesContainer;
+	struct Buffer
+	{
+		////生リソース
+		Microsoft::WRL::ComPtr<ID3D12Resource> resource;
+		//各ビューのインデックス
+		std::unordered_map<ViewType, IndexSet> heapIndicesContainer;
+		//リソースステート
+		D3D12_RESOURCE_STATES curState;
+	};
+
+	//複数分用意する
+	std::array<Buffer, ProjectConfig::Render::kRequiredGPUBufferSum> buffers;
+	
 	//なまえ
 	std::string name = "noName";
-	//現在リソースステート
-	D3D12_RESOURCE_STATES curState;
 };
 
 

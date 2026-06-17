@@ -8,8 +8,8 @@ ColorBufferDescription::ColorBufferDescription
 	UINT height_,
 	D3D12_RESOURCE_FLAGS flag_,
 	DXGI_FORMAT format_,
-	D3D12_RESOURCE_STATES initialState_
-) : BufferDescriptionBehavior(initialState_)
+	ResourceStates initialStates_
+) : BufferDescriptionBehavior(initialStates_)
 {
 	for (int i = 0;i < 4;++i) param.clearColor[i] = clearColors_[i];
 	param.width = width_;
@@ -37,7 +37,6 @@ void ColorBufferDescription::CheckRequirementsFilled() const
 	if (param.height == 0)errorMess += "[height]";
 	if (param.format == DXGI_FORMAT_Error_Detection) errorMess += "[format]";
 	if (param.flag == D3D12_RESOURCE_FLAG_Error_Detection) errorMess += "[flag]";
-	if(initialState == D3D12_RESOURCE_STATE_Error_Detection) errorMess += "[initialState]";
 
 	ErrorMessageOutput::Assert::DetectError((errorMess.length() == 0), errorMess + "の情報が未設定です", "ColorBufferDescription.cpp");
 

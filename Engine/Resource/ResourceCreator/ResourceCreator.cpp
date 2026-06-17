@@ -9,12 +9,12 @@
 	const D3D12_RESOURCE_DESC& resourceDesc_,
 	const D3D12_HEAP_PROPERTIES& heapProperties_,
 	const D3D12_CLEAR_VALUE* clearValuePtr_,
-	D3D12_RESOURCE_STATES initialState_,
+	std::array<D3D12_RESOURCE_STATES, ProjectConfig::Render::kRequiredGPUBufferSum> initialStates_,
 	const std::string& name_
 )
 {
-	auto resource1 = createResourceCommand(resourceDesc_, heapProperties_, clearValuePtr_, initialState_, name_);
-	auto resource2 = createResourceCommand(resourceDesc_, heapProperties_, clearValuePtr_, initialState_,name_);
+	auto resource1 = createResourceCommand(resourceDesc_, heapProperties_, clearValuePtr_, initialStates_.at(0), name_);
+	auto resource2 = createResourceCommand(resourceDesc_, heapProperties_, clearValuePtr_, initialStates_.at(1),name_);
 
 	//命名
 	resource1->SetName(StringConverter::ConvertString(name_ + "[0]").c_str());

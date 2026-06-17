@@ -1,8 +1,11 @@
 #include "PreCompileHeader.h"
 #include "ConstantBufferDescription.h"
 
-ConstantBufferDescription::ConstantBufferDescription(UINT sizeInByte_, D3D12_RESOURCE_STATES initialState_ )
-	:BufferDescriptionBehavior(initialState_)
+ConstantBufferDescription::ConstantBufferDescription
+(
+	UINT sizeInByte_, 
+	ResourceStates initialStates_
+):BufferDescriptionBehavior(initialStates_)
 {
 	param.sizeInByte = sizeInByte_;
 }
