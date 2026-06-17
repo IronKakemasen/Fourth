@@ -37,7 +37,7 @@ public:
 
 	//VIEWを生成し、インデックスまたはハンドルを返す。
 	template<typename ViewType>
-	std::tuple<uint32_t, D3D12_CPU_DESCRIPTOR_HANDLE, D3D12_GPU_DESCRIPTOR_HANDLE> CreateView(ID3D12Resource* resource_, const ViewType& viewDesc, ID3D12Resource* counterResource_ = nullptr)
+	std::tuple<uint32_t, D3D12_CPU_DESCRIPTOR_HANDLE, D3D12_GPU_DESCRIPTOR_HANDLE> CreateView(ID3D12Resource* resource_, const ViewType* viewDesc, ID3D12Resource* counterResource_ = nullptr)
 	{
 		//ViewTypeどのヒープを使うべきか分岐
 		HeapType type;
@@ -56,19 +56,19 @@ public:
 		//ビュー生成
 		if constexpr (std::is_same_v<ViewType, D3D12_RENDER_TARGET_VIEW_DESC>)
 		{
-			rtvCmd(resource_, &viewDesc, handleCPU);
+			rtvCmd(resource_, viewDesc, handleCPU);
 		}
 		else if constexpr (std::is_same_v<ViewType, D3D12_SHADER_RESOURCE_VIEW_DESC>)
 		{
-			srvCmd(resource_, &viewDesc, handleCPU);
+			srvCmd(resource_, viewDesc, handleCPU);
 		}
 		else if constexpr (std::is_same_v<ViewType, D3D12_DEPTH_STENCIL_VIEW_DESC>)
 		{
-			dsvCmd(resource_, &viewDesc, handleCPU);
+			dsvCmd(resource_, viewDesc, handleCPU);
 		}
 		else if constexpr (std::is_same_v<ViewType, D3D12_UNORDERED_ACCESS_VIEW_DESC>)
 		{
-			uavCmd(resource_, &viewDesc, handleCPU, counterResource_);
+			uavCmd(resource_, viewDesc, handleCPU, counterResource_);
 		}
 
 		//ビュー生成数をインクリメント

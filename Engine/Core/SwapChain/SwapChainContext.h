@@ -22,6 +22,10 @@ public:
 	struct InstanceKey;
 	//バッファの生リソースアドレスを取得キー
 	struct ResourceGetKey;
+	//マテリアルプロバイダーが情報を取得
+
+	//専用のカラーバッファ
+	class ColorBuffer;
 
 	SwapChainContext
 	(
@@ -34,8 +38,18 @@ public:
 
 	~SwapChainContext();
 	
+
 private:
 
+	//そのディスクリプション
+	struct Description;
+	//画面の表示、バックバッファの切り替えを担う
+	class Presenter;
+	//描画パスに必要な情報を提供する
+	class RenderPassMaterialProvider;
+
+
+	//SwapChainとそのカラーバッファを構築
 	void Assemble
 	(
 		InstanceKey instanceKey_,
@@ -45,6 +59,7 @@ private:
 		ID3D12CommandQueue* commandQueue_
 	);
 
+	//スワップチェーンの生成
 	void CreateSwapChain
 	(
 		CommandCreateSwapChain cmdCreateSwapChain_, 
@@ -53,13 +68,16 @@ private:
 		ID3D12CommandQueue* commandQueue_
 	);
 
+	//スワップチェーンからリソースを引っ張ってくる
+	void PullResourcesFromSwapChain(std::unique_ptr<Description>&& desc_);
+	//RTVの生成
+	void CreateRTV(InstanceKey instanceKey_ ,const D3D12_RENDER_TARGET_VIEW_DESC& rtvDesc_, ViewCreator& viewCreator_);
+
 	//スワップチェーン
 	Microsoft::WRL::ComPtr<IDXGISwapChain4> swapChain = nullptr;
-
-	//スワップチェーン専用のカラーバッファ
-	class ColorBuffer;
 	std::unique_ptr<ColorBuffer> colorBuffer;
-
+	std::unique_ptr<Presenter> presenter;
+	std::unique_ptr<RenderPassMaterialProvider> renderPassMaterialProvider;
 };
 
 struct SwapChainContext::InstanceKey

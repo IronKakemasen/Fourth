@@ -26,7 +26,7 @@ Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> CommandCreateDescriptorHeap::Create
 	HRESULT hr = device_->CreateDescriptorHeap(&descriptorheapDesc,
 		IID_PPV_ARGS(ret_descriptorHeap.GetAddressOf()));
 
-	assert(SUCCEEDED(hr));
+	ErrorMessageOutput::Assert::DetectError(SUCCEEDED(hr), "DescriptorHeapの生成失敗", "CommandCreateDescriptorHeap.cpp");
 
 	return ret_descriptorHeap;
 }

@@ -13,7 +13,11 @@
 //バッファのディスクリプション共通
 struct BufferDescriptionBehavior
 {
-	BufferDescriptionBehavior(D3D12_RESOURCE_STATES initialState_);
+protected :
+	using ResourceStates = std::array<D3D12_RESOURCE_STATES, ProjectConfig::Render::kRequiredGPUBufferSum>;
+
+public:
+	BufferDescriptionBehavior(ResourceStates initialStates_);
 
 	BufferDescriptionBehavior() = default;
 
@@ -21,7 +25,8 @@ struct BufferDescriptionBehavior
 	virtual D3D12_RESOURCE_DESC CreateResourceDesc()const = 0;
 	virtual D3D12_HEAP_PROPERTIES CreateHeapProperties()const = 0;
 
-	D3D12_RESOURCE_STATES initialState = D3D12_RESOURCE_STATE_Error_Detection;
+	std::array<D3D12_RESOURCE_STATES, ProjectConfig::Render::kRequiredGPUBufferSum> initialStates =
+	{ D3D12_RESOURCE_STATE_Error_Detection };
 };
 
 

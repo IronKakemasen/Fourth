@@ -58,7 +58,14 @@ std::unique_ptr<ColorBuffer> BufferContext::BufferAssembler::AssembleResource<Co
 	//クリアバリュー必要
 	auto clearValue = desc_.WatchClearValue();
 	//リソース生成
-	DoubleResource doubleResource = resourceCreator->Create(resourceDesc_, heapProp_, &clearValue, desc_.initialState,nameCnv);
+	DoubleResource doubleResource = resourceCreator->Create
+	(
+		resourceDesc_, 
+		heapProp_, 
+		&clearValue,
+		desc_.initialStates,
+		nameCnv
+	);
 
 	//バッファ生成
 	return std::make_unique<ColorBuffer>
@@ -87,7 +94,7 @@ void BufferContext::BufferAssembler::AssembleView<ColorBuffer, ColorBufferDescri
 			D3D12_CPU_DESCRIPTOR_HANDLE srvCPU{};
 			D3D12_GPU_DESCRIPTOR_HANDLE srvGPU{};
 
-			std::tie(srvIndex, srvCPU, srvGPU) = viewCreator->CreateView(buffer_->GetResource(accessKey, i), srvDesc);
+			std::tie(srvIndex, srvCPU, srvGPU) = viewCreator->CreateView(buffer_->GetResource(accessKey, i), &srvDesc);
 			buffer_->OverrideHeapIndex<ViewType::kSRV>(instanceKey, srvIndex, i);
 			buffer_->OverrideHeapIndex<ViewType::kSRV>(instanceKey, srvCPU, i);
 			buffer_->OverrideHeapIndex<ViewType::kSRV>(instanceKey, srvGPU, i);
@@ -97,7 +104,7 @@ void BufferContext::BufferAssembler::AssembleView<ColorBuffer, ColorBufferDescri
 		{
 			D3D12_CPU_DESCRIPTOR_HANDLE rtvCPU{};
 
-			std::tie(std::ignore, rtvCPU, std::ignore) = viewCreator->CreateView(buffer_->GetResource(accessKey, i), rtvDesc);
+			std::tie(std::ignore, rtvCPU, std::ignore) = viewCreator->CreateView(buffer_->GetResource(accessKey, i), &rtvDesc);
 			buffer_->OverrideHeapIndex<ViewType::kRTV>(instanceKey, rtvCPU, i);
 		}
 	}

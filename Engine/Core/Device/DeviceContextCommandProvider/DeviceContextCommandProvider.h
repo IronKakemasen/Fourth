@@ -7,11 +7,6 @@ class DeviceContextCommandBehavior;
 //初期化生成しか使用しないかつ引数がほぼない場合は、自らコマンドをたたく
 class DeviceContext::CommandProvider
 {
-	//コマンドのコンテナ
-	using CommandList = std::vector<std::unique_ptr<DeviceContextCommandBehavior>>;
-	using CommandMap = std::unordered_map<CommandType, CommandList>;
-	CommandMap commandContainer;
-
 public:
 
 	//コマンド生成キー
@@ -72,14 +67,6 @@ private:
 	//デバイスにアクセスする関数
 	std::function< ID3D12Device8* (DeviceContext::AccessKey)> deviceGetter;
 	std::function< IDXGIFactory7* (DeviceContext::AccessKey)> dxgiFactoryGetter;
-
-	//コマンドを生成する
-	template<typename CommandClass>
-	void CreateCommand(CommandType commandType_)
-	{
-		auto generateKey = GenerateKey{};
-		commandContainer[commandType_].emplace_back(std::make_unique<CommandClass>(generateKey));
-	}
 
 };
 

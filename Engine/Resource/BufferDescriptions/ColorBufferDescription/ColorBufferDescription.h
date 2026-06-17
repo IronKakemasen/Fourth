@@ -26,7 +26,7 @@ public:
 		UINT height_,
 		D3D12_RESOURCE_FLAGS flag_,
 		DXGI_FORMAT format_,
-		D3D12_RESOURCE_STATES initialState_
+		ResourceStates initialStates_
 	);
 	
 	//要項チェック

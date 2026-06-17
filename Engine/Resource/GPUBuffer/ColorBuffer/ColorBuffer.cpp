@@ -12,7 +12,7 @@ ColorBuffer::ColorBuffer
 	std::unique_ptr <BufferDescriptionBehavior>&& description_
 ) : GPUBufferBehavior(instanceKey_, name_, std::move(resource1_), std::move(resource2_), std::move(description_))
 {
-	SetMatrix();
+
 }
 
 
@@ -22,7 +22,7 @@ const ColorBufferDescription& ColorBuffer::WatchDescription()
 }
 
 
-void ColorBuffer::SetMatrix()
+void ColorBuffer::AssembleMatrix()
 {
 	const auto& param = static_cast<ColorBufferDescription&>(*description.get()).WatchParam();
 
@@ -39,5 +39,4 @@ void ColorBuffer::SetMatrix()
 	scissorRect.bottom = static_cast<LONG>(param.height);
 	scissorRect.left = static_cast<LONG>(0.0f);
 	scissorRect.top = static_cast<LONG>(0.0f);
-
 }

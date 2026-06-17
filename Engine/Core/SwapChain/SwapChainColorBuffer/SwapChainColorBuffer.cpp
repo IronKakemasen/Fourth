@@ -6,25 +6,52 @@ SwapChainContext::ColorBuffer::ColorBuffer
 (
 	std::unique_ptr<Description> desc_,
 	std::array<Microsoft::WRL::ComPtr<ID3D12Resource>, ProjectConfig::Render::kRequiredGPUBufferSum> resources_
-) : desc(std::move(desc_)),resources(std::move(resources_))
+) : desc(std::move(desc_))
 {
-	
+	//行列2種を構築
+	AssembleMatrix();
+
+	for (int i = 0;i < ProjectConfig::Render::kRequiredGPUBufferSum;++i)
+	{
+		buffers.at(i).resource = std::move(resources_.at(i));
+	}
+
+	Logger::Log("Assemble: Matrix", "SwapChainColorBuffer.cpp");
 }
 
-SwapChainContext::ColorBuffer::Description::Description(std::array<float, 4> clearColor_, DXGI_FORMAT format_)
+void SwapChainContext::ColorBuffer::AssembleMatrix()
+{
+	using namespace ProjectConfig::Window;
+
+	//クライアント領域と一緒のサイズにして画面全体に表示
+	viewport.Width = static_cast<FLOAT>(kWidth);
+	viewport.Height = static_cast<FLOAT>(kHeight);
+	viewport.TopLeftX = 0.0f;
+	viewport.TopLeftY = 0.0f;
+	viewport.MinDepth = 0.0f;
+	viewport.MaxDepth = 1.0f;
+
+	//しざー矩形
+	scissorRect.right = static_cast<LONG>(kWidth);
+	scissorRect.bottom = static_cast<LONG>(kHeight);
+	scissorRect.left = static_cast<LONG>(0.0f);
+	scissorRect.top = static_cast<LONG>(0.0f);
+}
+
+SwapChainContext::Description::Description(std::array<float, 4> clearColor_, DXGI_FORMAT format_)
 {
 	clearColor = clearColor_;
 	format = format_;
 }
 
 
-void SwapChainContext::ColorBuffer::OverrideHeapIndex(int index_ ,D3D12_CPU_DESCRIPTOR_HANDLE handle_)
+void SwapChainContext::ColorBuffer::OverrideHeapIndex(SwapChainContext::InstanceKey instanceKey_, int index_ ,D3D12_CPU_DESCRIPTOR_HANDLE handle_)
 {
-	cpuHandles.at(index_) = handle_;
+	buffers.at(index_).cpuHandle = handle_;
 }
 
 
-D3D12_RENDER_TARGET_VIEW_DESC SwapChainContext::ColorBuffer::Description::CreateRTV_Desc()const
+D3D12_RENDER_TARGET_VIEW_DESC SwapChainContext::Description::CreateRTV_Desc()const
 {
 	D3D12_RENDER_TARGET_VIEW_DESC rtvDesc = {};
 
@@ -38,7 +65,7 @@ D3D12_RENDER_TARGET_VIEW_DESC SwapChainContext::ColorBuffer::Description::Create
 	return rtvDesc;
 }
 
-DXGI_SWAP_CHAIN_DESC1 SwapChainContext::ColorBuffer::Description::CreateSwapChainDesc()const
+DXGI_SWAP_CHAIN_DESC1 SwapChainContext::Description::CreateSwapChainDesc()const
 {
 	using namespace ProjectConfig::Window;
 

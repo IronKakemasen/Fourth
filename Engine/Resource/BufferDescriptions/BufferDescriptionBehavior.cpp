@@ -1,11 +1,15 @@
 #include "PreCompileHeader.h"
 #include "BufferDescriptionBehavior.h"
 
-BufferDescriptionBehavior::BufferDescriptionBehavior(D3D12_RESOURCE_STATES initialState_) : initialState(initialState_)
+BufferDescriptionBehavior::BufferDescriptionBehavior(ResourceStates initialStates_) : initialStates(initialStates_)
 {
-	if (initialState == D3D12_RESOURCE_STATE_Error_Detection)
+	for (D3D12_RESOURCE_STATES state : initialStates)
 	{
-		ErrorMessageOutput::Assert::DetectError((initialState != D3D12_RESOURCE_STATE_Error_Detection),
-			"初期ステート未設定", "BufferDescriptionBehavior.cpp");
+		ErrorMessageOutput::Assert::DetectError
+		(
+			(state != D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_Error_Detection),
+			"リソースステートが初期化されていない", "BufferDescriptionBehavior.cpp"
+		);
 	}
+
 };

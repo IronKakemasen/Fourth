@@ -75,6 +75,8 @@ namespace ProjectConfig
 		constexpr float kWidth = 1280.0f;
 		constexpr float kHeight = 720.0f;
 		constexpr float kDefaultFovY = 90.0f * 3.141592653589f / 180.0f;
+		constexpr std::array kColor = { 1.0f,0.0f,0.0f,1.0f };
+		constexpr DXGI_FORMAT kRtFormat = DXGI_FORMAT_R16G16B16A16_FLOAT;
 	}
 
 	namespace Render
@@ -158,6 +160,10 @@ CommandContext::CommandContext
 
 }
 
+ID3D12CommandQueue* CommandContext::GetCommandQueue(CmdQueueGetKey getKey_)
+{
+	return commandQueue.Get();
+}
 
 
 
@@ -166,13 +172,17 @@ CommandContext::CommandContext
 ========================================
 #pragma once
 
-class WinApp;
+class Nexus;
+class SwapChainContext;
+
 
 class CommandContext
 {
 public:
 
 	struct InstanceKey;
+	//コマンドキューのアドレス取得キー
+	struct CmdQueueGetKey;
 
 	CommandContext
 	(
@@ -181,6 +191,8 @@ public:
 		std::array<Microsoft::WRL::ComPtr<ID3D12CommandAllocator>, ProjectConfig::Render::kRequiredGPUBufferSum> commandAllocators_,
 		Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList6> commandList_
 	);
+
+	ID3D12CommandQueue* GetCommandQueue(CmdQueueGetKey accessKey_);
 
 private:
 
@@ -198,10 +210,18 @@ struct CommandContext::InstanceKey
 {
 private:
 
-	friend class WinApp;
+	friend class Nexus;
 	explicit InstanceKey() = default;
 };
 
+struct CommandContext::CmdQueueGetKey
+{
+private:
+
+	friend class SwapChainContext;
+	explicit CmdQueueGetKey() = default;
+
+};
 
 
 
@@ -256,7 +276,7 @@ DescriptorHeapContext::~DescriptorHeapContext()
 
 }
 
-ViewCreator* DescriptorHeapContext::ShareViewCreator(ViewCreatorShareKey key_)
+ViewCreator* DescriptorHeapContext::GetViewCreator(ViewCreatorGetKey key_)
 {
 	return viewCreator.get();
 }
@@ -353,10 +373,11 @@ template void DescriptorHeapContext::CreateDescriptorHeap<D3D12_DESCRIPTOR_HEAP_
 ========================================
 #pragma once
 
-class WinApp;
+class Nexus;
 class DescriptorHeapClass;
 class ViewCreator;
 class BufferContext;
+class SwapChainContext;
 
 class DescriptorHeapContext
 {
@@ -378,10 +399,10 @@ public:
 	using CreateUAVCommand =
 		std::function<void(ID3D12Resource* resource_, const D3D12_UNORDERED_ACCESS_VIEW_DESC* desc_, D3D12_CPU_DESCRIPTOR_HANDLE descriptorHandleCPU_, ID3D12Resource* CounterResource_)>;
 
-	//WinAppのみ生成可能
+	//Nexusのみ生成可能
 	struct InstanceKey;
-	//ポインターシェアを許可するキー
-	struct ViewCreatorShareKey;
+	//ViewCreatorポインター取得を許可するキー
+	struct ViewCreatorGetKey;
 
 	DescriptorHeapContext
 	(
@@ -397,7 +418,7 @@ public:
 	~DescriptorHeapContext();
 
 	//ビュークリエイターをシェアする。
-	ViewCreator* ShareViewCreator(ViewCreatorShareKey key_);
+	ViewCreator* GetViewCreator(ViewCreatorGetKey key_);
 	//各種ディスクリプターヒープの作成
 	void CreateDescriptorHeaps(UINT rtvDH_, UINT srvDH_, UINT dsvDH_);
 
@@ -439,21 +460,22 @@ private:
 
 
 
-//生成できるのはWinAppのみ
+//生成できるのはNexusのみ
 struct DescriptorHeapContext::InstanceKey
 {
 private:
 
-	friend class WinApp;
+	friend class Nexus;
 	explicit InstanceKey() = default;
 };
 
-struct DescriptorHeapContext::ViewCreatorShareKey
+struct DescriptorHeapContext::ViewCreatorGetKey
 {
 private:
 
+	friend class SwapChainContext;
 	friend class BufferContext;
-	explicit ViewCreatorShareKey() = default;
+	explicit ViewCreatorGetKey() = default;
 
 };
 
@@ -707,7 +729,7 @@ public:
 
 	//VIEWを生成し、インデックスまたはハンドルを返す。
 	template<typename ViewType>
-	std::tuple<uint32_t, D3D12_CPU_DESCRIPTOR_HANDLE, D3D12_GPU_DESCRIPTOR_HANDLE> CreateView(ID3D12Resource* resource_, const ViewType& viewDesc, ID3D12Resource* counterResource_ = nullptr)
+	std::tuple<uint32_t, D3D12_CPU_DESCRIPTOR_HANDLE, D3D12_GPU_DESCRIPTOR_HANDLE> CreateView(ID3D12Resource* resource_, const ViewType* viewDesc, ID3D12Resource* counterResource_ = nullptr)
 	{
 		//ViewTypeどのヒープを使うべきか分岐
 		HeapType type;
@@ -726,19 +748,19 @@ public:
 		//ビュー生成
 		if constexpr (std::is_same_v<ViewType, D3D12_RENDER_TARGET_VIEW_DESC>)
 		{
-			rtvCmd(resource_, &viewDesc, handleCPU);
+			rtvCmd(resource_, viewDesc, handleCPU);
 		}
 		else if constexpr (std::is_same_v<ViewType, D3D12_SHADER_RESOURCE_VIEW_DESC>)
 		{
-			srvCmd(resource_, &viewDesc, handleCPU);
+			srvCmd(resource_, viewDesc, handleCPU);
 		}
 		else if constexpr (std::is_same_v<ViewType, D3D12_DEPTH_STENCIL_VIEW_DESC>)
 		{
-			dsvCmd(resource_, &viewDesc, handleCPU);
+			dsvCmd(resource_, viewDesc, handleCPU);
 		}
 		else if constexpr (std::is_same_v<ViewType, D3D12_UNORDERED_ACCESS_VIEW_DESC>)
 		{
-			uavCmd(resource_, &viewDesc, handleCPU, counterResource_);
+			uavCmd(resource_, viewDesc, handleCPU, counterResource_);
 		}
 
 		//ビュー生成数をインクリメント
@@ -850,7 +872,7 @@ UINT DeviceContext::CalcDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE
 ========================================
 #pragma once
 
-class WinApp;
+class Nexus;
 class DeviceContextCommandBehavior;
 
 
@@ -873,7 +895,7 @@ public:
 		kCount
 	};
 
-	//生成キー。WinAppしか許さない
+	//生成キー。Nexusしか許さない
 	struct InstanceKey;
 	
 	//コアパーツにアクセスするのを許可するキー
@@ -905,12 +927,12 @@ private:
 };
 
 
-//生成できるのはWinAppのみ
+//生成できるのはNexusのみ
 struct DeviceContext::InstanceKey
 {
 private:
 
-	friend class WinApp;
+	friend class Nexus;
 	explicit InstanceKey() = default;
 };
 
@@ -999,7 +1021,7 @@ Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> CommandCreateDescriptorHeap::Create
 	HRESULT hr = device_->CreateDescriptorHeap(&descriptorheapDesc,
 		IID_PPV_ARGS(ret_descriptorHeap.GetAddressOf()));
 
-	assert(SUCCEEDED(hr));
+	ErrorMessageOutput::Assert::DetectError(SUCCEEDED(hr), "DescriptorHeapの生成失敗", "CommandCreateDescriptorHeap.cpp");
 
 	return ret_descriptorHeap;
 }
@@ -1405,11 +1427,7 @@ DeviceContext::CommandProvider::CommandProvider
 	std::function< IDXGIFactory7* (DeviceContext::AccessKey)> dxgiFactoryGetter_
 ) : deviceGetter(deviceGetter_), dxgiFactoryGetter(dxgiFactoryGetter_)
 {
-	//コマンドの実体を生成
-	CreateCommand<CommandCreateGPUResource>(CommandType::kCreateGPUBuffer);
-	CreateCommand<CommandCreateDescriptorHeap>(CommandType::kCreateDescriptorHeap);
-	CreateCommand<CommandCreateView>(CommandType::kCreateResourceView);
-	CreateCommand<CommandStructureSwapChain>(CommandType::kStructureSwapChain);
+
 }
 
 using C_CreateRTV = std::function<void(ID3D12Resource* resource_, const D3D12_RENDER_TARGET_VIEW_DESC* desc_, D3D12_CPU_DESCRIPTOR_HANDLE descriptorHandleCPU_)>;
@@ -1420,13 +1438,13 @@ using C_CreateDSV = std::function<void(ID3D12Resource* resource_, const D3D12_DE
 using C_CreateDescriptorHeap = std::function<Microsoft::WRL::ComPtr<ID3D12DescriptorHeap>(D3D12_DESCRIPTOR_HEAP_TYPE, UINT, bool)>;
 
 using C_CreateResource = std::function<Microsoft::WRL::ComPtr<ID3D12Resource>
-	(
-		const D3D12_RESOURCE_DESC& resourceDesc_,
-		const D3D12_HEAP_PROPERTIES& heapProperties_,
-		const D3D12_CLEAR_VALUE* clearValue_,
-		D3D12_RESOURCE_STATES initialState_,
-		const std::string& name_
-	)>;
+(
+	const D3D12_RESOURCE_DESC& resourceDesc_,
+	const D3D12_HEAP_PROPERTIES& heapProperties_,
+	const D3D12_CLEAR_VALUE* clearValue_,
+	D3D12_RESOURCE_STATES initialState_,
+	const std::string& name_
+)>;
 
 using C_CreateSwapChain = std::function< HRESULT
 (
@@ -1447,9 +1465,9 @@ template<>
 	auto retFunc = [this](ID3D12Resource* resource_, const D3D12_RENDER_TARGET_VIEW_DESC* desc_, D3D12_CPU_DESCRIPTOR_HANDLE descriptorHandleCPU_)
 	{
 		auto* device = deviceGetter(DeviceContext::AccessKey{});
-		auto* command = static_cast<CommandCreateView*>(commandContainer[DeviceContext::CommandType::kCreateResourceView][0].get());
+		CommandCreateView command(GenerateKey{});
 
-		return command->CreateRTV(device, resource_, desc_, descriptorHandleCPU_);
+		return command.CreateRTV(device, resource_, desc_, descriptorHandleCPU_);
 	};
 
 	return retFunc;
@@ -1460,9 +1478,9 @@ template<>
 	auto retFunc = [this](ID3D12Resource* resource_, const D3D12_SHADER_RESOURCE_VIEW_DESC* desc_, D3D12_CPU_DESCRIPTOR_HANDLE descriptorHandleCPU_)
 	{
 		auto* device = deviceGetter(DeviceContext::AccessKey{});
-		auto* command = static_cast<CommandCreateView*>(commandContainer[DeviceContext::CommandType::kCreateResourceView][0].get());
+		CommandCreateView command(GenerateKey{});
 
-		return command->CreateSRV(device, resource_, desc_, descriptorHandleCPU_);
+		return command.CreateSRV(device, resource_, desc_, descriptorHandleCPU_);
 	};
 
 	return retFunc;
@@ -1474,9 +1492,9 @@ template<>
 	auto retFunc = [this](ID3D12Resource* resource_, const D3D12_DEPTH_STENCIL_VIEW_DESC* desc_, D3D12_CPU_DESCRIPTOR_HANDLE descriptorHandleCPU_)
 	{
 		auto* device = deviceGetter(DeviceContext::AccessKey{});
-		auto* command = static_cast<CommandCreateView*>(commandContainer[DeviceContext::CommandType::kCreateResourceView][0].get());
+		CommandCreateView command(GenerateKey{});
 
-		return command->CreateDSV(device, resource_, desc_, descriptorHandleCPU_);
+		return command.CreateDSV(device, resource_, desc_, descriptorHandleCPU_);
 	};
 
 	return retFunc;
@@ -1487,9 +1505,9 @@ template<>
 	auto retFunc = [this](ID3D12Resource* resource_, const D3D12_UNORDERED_ACCESS_VIEW_DESC* desc_, D3D12_CPU_DESCRIPTOR_HANDLE descriptorHandleCPU_, ID3D12Resource* CounterResource_)
 		{
 			auto* device = deviceGetter(DeviceContext::AccessKey{});
-			auto* command = static_cast<CommandCreateView*>(commandContainer[DeviceContext::CommandType::kCreateResourceView][0].get());
+			CommandCreateView command(GenerateKey{});
 
-			return command->CreateUAV(device, resource_, desc_, descriptorHandleCPU_, CounterResource_);
+			return command.CreateUAV(device, resource_, desc_, descriptorHandleCPU_, CounterResource_);
 		};
 
 	return retFunc;
@@ -1515,17 +1533,13 @@ template<>
 	)
 	{
 		auto* dxgiFactory = dxgiFactoryGetter(DeviceContext::AccessKey{});
-		auto* command = static_cast<CommandStructureSwapChain*>(commandContainer[DeviceContext::CommandType::kStructureSwapChain][0].get());
+		CommandStructureSwapChain command(GenerateKey{});
 
-		return command->CreateSwapChain(*dxgiFactory, commandQueue_,desc_, swapChainDoublePtr_, hWnd_);
+		return command.CreateSwapChain(*dxgiFactory, commandQueue_,desc_, swapChainDoublePtr_, hWnd_);
 	};
 
 	return retFunc;
 }
-
-
-
-
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -1542,9 +1556,9 @@ template<>
 	auto retFunc = [this](D3D12_DESCRIPTOR_HEAP_TYPE heapType_, UINT numDescriptors_, bool shaderVisible_)
 	{
 		auto* device = deviceGetter(DeviceContext::AccessKey{});
-		auto* command = static_cast<CommandCreateDescriptorHeap*>(commandContainer[DeviceContext::CommandType::kCreateDescriptorHeap][0].get());
+		CommandCreateDescriptorHeap command(GenerateKey{});
 
-		return command->Create(device, heapType_,numDescriptors_, shaderVisible_);
+		return command.Create(device, heapType_,numDescriptors_, shaderVisible_);
 	};
 
 	return retFunc;
@@ -1573,18 +1587,18 @@ template<>
 		const std::string& name_
 	)
 	{
-			auto* device = deviceGetter(DeviceContext::AccessKey{});
-			CommandCreateGPUResource* command = static_cast<CommandCreateGPUResource*>(commandContainer[DeviceContext::CommandType::kCreateGPUBuffer][0].get());
+		auto* device = deviceGetter(DeviceContext::AccessKey{});
+		CommandCreateGPUResource command(GenerateKey{});
 
-			return command->CreateResource
-			(
-				device, 
-				resourceDesc_,
-				heapProperties_,
-				clearValue_,
-				initialState_,
-				name_
-			);
+		return command.CreateResource
+		(
+			device, 
+			resourceDesc_,
+			heapProperties_,
+			clearValue_,
+			initialState_,
+			name_
+		);
 	};
 
 	return retFunc;
@@ -1654,11 +1668,6 @@ class DeviceContextCommandBehavior;
 //初期化生成しか使用しないかつ引数がほぼない場合は、自らコマンドをたたく
 class DeviceContext::CommandProvider
 {
-	//コマンドのコンテナ
-	using CommandList = std::vector<std::unique_ptr<DeviceContextCommandBehavior>>;
-	using CommandMap = std::unordered_map<CommandType, CommandList>;
-	CommandMap commandContainer;
-
 public:
 
 	//コマンド生成キー
@@ -1719,14 +1728,6 @@ private:
 	//デバイスにアクセスする関数
 	std::function< ID3D12Device8* (DeviceContext::AccessKey)> deviceGetter;
 	std::function< IDXGIFactory7* (DeviceContext::AccessKey)> dxgiFactoryGetter;
-
-	//コマンドを生成する
-	template<typename CommandClass>
-	void CreateCommand(CommandType commandType_)
-	{
-		auto generateKey = GenerateKey{};
-		commandContainer[commandType_].emplace_back(std::make_unique<CommandClass>(generateKey));
-	}
 
 };
 
@@ -1973,27 +1974,40 @@ private:
 #include "SwapChainContext.h"
 #include "SwapChainColorBuffer/SwapChainColorBuffer.h"
 #include "../DescriptorHeap/ViewCreator/ViewCreator.h"
+#include "../CommandContext/CommandContext.h"
+#include "Presenter/Presenter.h"
+#include "RenderPassMaterialProvider/RenderPassMaterialProvider.h"
 
 namespace
 {
 	std::string fileName = "SwapChainContext.cpp";
 }
 
+
 SwapChainContext::SwapChainContext
 (
 	InstanceKey instanceKey_,
-	ViewCreator& viewCreator_,
+	DescriptorHeapContext* descriptorHeapContext_,
+	CommandContext* commandContext_,
 	CommandCreateSwapChain cmdCreateSwapChain_,
-	std::array<float, 4> clearColor_,
-	DXGI_FORMAT format_,
-	const HWND hWnd_,
-	ID3D12CommandQueue* commandQueue_
+	const HWND hWnd_
 )
 {
 	Logger::Entry("SwapChainContext: Constructor");
 
+	//コマンドキューを一時的に借りる
+	auto* commandQueue = commandContext_->GetCommandQueue(CommandContext::CmdQueueGetKey{});
+	//ビュークリエイターも一時的に借りる
+	auto& viewCreator = *descriptorHeapContext_->GetViewCreator(DescriptorHeapContext::ViewCreatorGetKey{});
+
 	//構築
-	Assemble(instanceKey_, viewCreator_, cmdCreateSwapChain_, clearColor_, format_, hWnd_, commandQueue_);
+	Assemble(instanceKey_, viewCreator, cmdCreateSwapChain_, hWnd_, commandQueue);
+
+	presenter.reset(new Presenter(swapChain.Get()));
+	Logger::Log("Instantiate: Presenter", fileName);
+	renderPassMaterialProvider.reset(new RenderPassMaterialProvider(colorBuffer.get()));
+	Logger::Log("Instantiate: RenderPassMaterialProvider", fileName);
+
 
 	Logger::End("SwapChainContext: Constructor");
 
@@ -2007,13 +2021,54 @@ SwapChainContext::~SwapChainContext()
 void SwapChainContext::CreateSwapChain
 (
 	CommandCreateSwapChain cmdCreateSwapChain_,
-	const DXGI_SWAP_CHAIN_DESC1& desc_, 
+	const DXGI_SWAP_CHAIN_DESC1& desc_,
 	const HWND hWnd_,
 	ID3D12CommandQueue* commandQueue_
 )
 {
+
 	HRESULT hr = cmdCreateSwapChain_(commandQueue_, desc_, swapChain.GetAddressOf(), hWnd_);
 	ErrorMessageOutput::Assert::DetectError(SUCCEEDED(hr), "SwapChain生成失敗", fileName);
+}
+
+void SwapChainContext::PullResourcesFromSwapChain(std::unique_ptr<Description>&& desc_)
+{
+	using namespace ProjectConfig::Render;
+
+	//生リソース
+	std::array<Microsoft::WRL::ComPtr<ID3D12Resource>, kRequiredGPUBufferSum > resources;
+
+
+	//スワップチェーンからリソースを引っ張る
+	HRESULT hr{};
+	for (int i = 0;i < kRequiredGPUBufferSum;++i)
+	{
+		hr = swapChain->GetBuffer(i, IID_PPV_ARGS(resources.at(i).GetAddressOf()));
+		ErrorMessageOutput::Assert::DetectError(SUCCEEDED(hr), "SwapChainのリソースを引っ張れなかった", fileName);
+	}
+
+	//バッファ生成
+	colorBuffer.reset(new SwapChainContext::ColorBuffer(std::move(desc_), std::move(resources)));
+
+	Logger::Log("Complete: Pull SwapChainResources", fileName);
+}
+
+void SwapChainContext::CreateRTV(InstanceKey instanceKey_ , const D3D12_RENDER_TARGET_VIEW_DESC& rtvDesc_, ViewCreator& viewCreator_)
+{
+	ResourceGetKey resourceGetKey;
+
+	for (int i = 0;i < ProjectConfig::Render::kRequiredGPUBufferSum;++i)
+	{
+		D3D12_CPU_DESCRIPTOR_HANDLE rtvCPU{};
+
+		//Rtvを作成
+		std::tie(std::ignore, rtvCPU, std::ignore) =
+			viewCreator_.CreateView(colorBuffer->GetResource(resourceGetKey, i), &rtvDesc_);
+
+		//インデックスを書き込む
+		colorBuffer->OverrideHeapIndex(instanceKey_,i, rtvCPU);
+	}
+
 }
 
 void SwapChainContext::Assemble
@@ -2021,65 +2076,30 @@ void SwapChainContext::Assemble
 	InstanceKey instanceKey_,
 	ViewCreator& viewCreator_,
 	CommandCreateSwapChain cmdCreateSwapChain_,
-	std::array<float, 4> clearColor_,
-	DXGI_FORMAT format_,
 	const HWND hWnd_,
 	ID3D12CommandQueue* commandQueue_
 )
 {
-	using namespace ProjectConfig::Render;
-
+	using namespace ProjectConfig::Window;
 
 	//ディスクリプション
-	std::unique_ptr<SwapChainContext::ColorBuffer::Description> desc =
-		std::make_unique<SwapChainContext::ColorBuffer::Description>(clearColor_, format_);
-
-	//生リソース
-	std::array<Microsoft::WRL::ComPtr<ID3D12Resource>,kRequiredGPUBufferSum > resources;
+	std::unique_ptr<Description> bufferDesc = std::make_unique<Description>(kColor, kRtFormat);
 
 	//rtvDesc
-	auto rtvDesc = desc->CreateRTV_Desc();
+	auto rtvDesc = bufferDesc->CreateRTV_Desc();
+	//swapChainDesc
+	auto swapChainDesc = bufferDesc->CreateSwapChainDesc();
 
-	//スワップチェーン、生リソース生成
-	{
-		auto swapChainDesc = desc->CreateSwapChainDesc();
+	//スワップチェーン生成
+	CreateSwapChain(cmdCreateSwapChain_, swapChainDesc, hWnd_, commandQueue_);
+	Logger::Log("Create: SwapChain", fileName);
 
-		CreateSwapChain(cmdCreateSwapChain_,swapChainDesc, hWnd_, commandQueue_);
-		Logger::Log("Create: SwapChain", fileName);
-
-		//スワップチェーンからリソースを引っ張る
-		HRESULT hr{};
-		for (int i = 0;i < kRequiredGPUBufferSum;++i)
-		{
-			hr = swapChain->GetBuffer(i, IID_PPV_ARGS(resources.at(i).GetAddressOf()));
-			ErrorMessageOutput::Assert::DetectError(SUCCEEDED(hr), "SwapChainのリソースを引っ張れなかった", fileName);
-		}
-
-		Logger::Log("Complete: Pull SwapChainResources", fileName);
-	}
-
-	//バッファ生成
-	colorBuffer.reset(new SwapChainContext::ColorBuffer(std::move(desc), std::move(resources)));
+	//スワップチェーンからリソースを引っ張る
+	PullResourcesFromSwapChain(std::move(bufferDesc));
 
 	//ビュー生成
-	{
-		ResourceGetKey resourceGetKey;
-
-		for (int i = 0;i < ProjectConfig::Render::kRequiredGPUBufferSum;++i)
-		{
-			D3D12_CPU_DESCRIPTOR_HANDLE rtvCPU{};
-
-			//Rtvを作成
-			std::tie(std::ignore, rtvCPU, std::ignore) =
-				viewCreator_.CreateView(colorBuffer->GetResource(resourceGetKey, i), rtvDesc);
-
-			//インデックスを書き込む
-			colorBuffer->OverrideHeapIndex(i, rtvCPU);
-		}
-
-		Logger::Log("Create: SwapChainResourceRTV", fileName);
-	}
-
+	CreateRTV(instanceKey_,rtvDesc, viewCreator_);
+	Logger::Log("Create: SwapChainResourceRTV", fileName);
 }
 
 
@@ -2090,9 +2110,10 @@ void SwapChainContext::Assemble
 ========================================
 #pragma once
 
-class WinApp;
+class Nexus;
 class ViewCreator;
-
+class CommandContext;
+class DescriptorHeapContext;
 
 class SwapChainContext
 {
@@ -2107,37 +2128,48 @@ class SwapChainContext
 
 public:
 
-	//WinAppのみ生成可能
+	//Nexusのみ生成可能
 	struct InstanceKey;
 	//バッファの生リソースアドレスを取得キー
 	struct ResourceGetKey;
+	//マテリアルプロバイダーが情報を取得
+
+	//専用のカラーバッファ
+	class ColorBuffer;
 
 	SwapChainContext
 	(
-		InstanceKey instanceKey_, 
-		ViewCreator& viewCreator_,
+		InstanceKey instanceKey_,
+		DescriptorHeapContext* descriptorHeapContext_,
+		CommandContext* commandContext_,
 		CommandCreateSwapChain cmdCreateSwapChain_,
-		std::array<float, 4> clearColor_,
-		DXGI_FORMAT format_,
-		const HWND hWnd_,
-		ID3D12CommandQueue* commandQueue_
+		const HWND hWnd_
 	);
 
 	~SwapChainContext();
 	
+
 private:
 
+	//そのディスクリプション
+	struct Description;
+	//画面の表示、バックバッファの切り替えを担う
+	class Presenter;
+	//描画パスに必要な情報を提供する
+	class RenderPassMaterialProvider;
+
+
+	//SwapChainとそのカラーバッファを構築
 	void Assemble
 	(
 		InstanceKey instanceKey_,
 		ViewCreator& viewCreator_,
 		CommandCreateSwapChain cmdCreateSwapChain_,
-		std::array<float, 4> clearColor_,
-		DXGI_FORMAT format_,
 		const HWND hWnd_,
 		ID3D12CommandQueue* commandQueue_
 	);
 
+	//スワップチェーンの生成
 	void CreateSwapChain
 	(
 		CommandCreateSwapChain cmdCreateSwapChain_, 
@@ -2146,20 +2178,23 @@ private:
 		ID3D12CommandQueue* commandQueue_
 	);
 
+	//スワップチェーンからリソースを引っ張ってくる
+	void PullResourcesFromSwapChain(std::unique_ptr<Description>&& desc_);
+	//RTVの生成
+	void CreateRTV(InstanceKey instanceKey_ ,const D3D12_RENDER_TARGET_VIEW_DESC& rtvDesc_, ViewCreator& viewCreator_);
+
 	//スワップチェーン
 	Microsoft::WRL::ComPtr<IDXGISwapChain4> swapChain = nullptr;
-
-	//スワップチェーン専用のカラーバッファ
-	class ColorBuffer;
 	std::unique_ptr<ColorBuffer> colorBuffer;
-
+	std::unique_ptr<Presenter> presenter;
+	std::unique_ptr<RenderPassMaterialProvider> renderPassMaterialProvider;
 };
 
 struct SwapChainContext::InstanceKey
 {
 private:
 
-	friend class WinApp;
+	friend class Nexus;
 	explicit InstanceKey() = default;
 };
 
@@ -2175,6 +2210,156 @@ private:
 
 
 ========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Core\SwapChain\Presenter\Presenter.cpp ===
+========================================
+#include "PreCompileHeader.h"
+#include "Presenter.h"
+
+
+SwapChainContext::Presenter::Presenter(IDXGISwapChain4* swapChain_)
+	:swapChain(swapChain_)
+{
+
+}
+
+UINT SwapChainContext::Presenter::GetFrameIndex()
+{
+	return swapChain->GetCurrentBackBufferIndex();
+}
+
+
+void SwapChainContext::Presenter::Present()
+{
+	swapChain->Present(1, 0);
+}
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Core\SwapChain\Presenter\Presenter.h ===
+========================================
+#pragma once
+#include "../SwapChainContext.h"
+
+
+class SwapChainContext::Presenter
+{
+public:
+	Presenter(IDXGISwapChain4* swapChain_);
+
+	//現在のフレームインデックススを取得
+	UINT GetFrameIndex();
+	//バックバッファインデックス入れ替え
+	void Present();
+
+private:
+
+	IDXGISwapChain4* swapChain;
+
+};
+
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Core\SwapChain\RenderPassMaterialProvider\RenderPassMaterialProvider.cpp ===
+========================================
+#include "PreCompileHeader.h"
+#include "RenderPassMaterialProvider.h"
+#include "../../../Resource/ResourceBarrier.h"
+
+
+SwapChainContext::RenderPassMaterialProvider::RenderPassMaterialProvider(SwapChainContext::ColorBuffer* colorBuffer_)
+	:colorBuffer(colorBuffer_)
+{
+
+}
+
+SwapChainContext::RenderPassMaterialProvider::Materials SwapChainContext::RenderPassMaterialProvider::Provide(UINT frameIndex_)
+{
+	
+	SwapChainContext::RenderPassMaterialProvider::Materials::ColorBuffer materialC;
+	SwapChainContext::RenderPassMaterialProvider::Materials::DepthStencilBuffer materialD;
+
+
+	materialC.scissorRect = &colorBuffer->scissorRect;
+	materialC.viewport = &colorBuffer->viewport;
+
+	auto& dstBuffer = colorBuffer->buffers.at(frameIndex_);
+	materialC.handle = dstBuffer.cpuHandle;
+
+	materialC.barrier = ResourceBarrier::Create
+	(
+		dstBuffer.resource.Get(),
+		D3D12_RESOURCE_BARRIER_TYPE_TRANSITION,
+		D3D12_RESOURCE_BARRIER_FLAG_NONE,
+		D3D12_RESOURCE_STATE_PRESENT,
+		D3D12_RESOURCE_STATE_RENDER_TARGET,
+		D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES
+	);
+
+	return SwapChainContext::RenderPassMaterialProvider::Materials
+	(
+		materialC,
+		materialD
+	);
+}
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Core\SwapChain\RenderPassMaterialProvider\RenderPassMaterialProvider.h ===
+========================================
+#pragma once
+#include "../SwapChainColorBuffer/SwapChainColorBuffer.h"
+
+
+//描画パスを構築するのに必要な材料を渡す
+class SwapChainContext::RenderPassMaterialProvider
+{
+public:
+
+	struct Materials
+	{
+		struct ColorBuffer
+		{
+			D3D12_CPU_DESCRIPTOR_HANDLE handle{};
+			D3D12_RESOURCE_BARRIER barrier;
+			D3D12_VIEWPORT* viewport;
+			D3D12_RECT* scissorRect;
+		};
+
+		struct DepthStencilBuffer
+		{
+			D3D12_CPU_DESCRIPTOR_HANDLE dsvhandle{};
+		};
+
+		ColorBuffer colorBuffer;
+		DepthStencilBuffer depthStencilBuffer;
+
+		Materials(ColorBuffer colorBuffer_, DepthStencilBuffer depthStencilBuffer_)
+			:colorBuffer(colorBuffer_), depthStencilBuffer(depthStencilBuffer_){}
+
+	};
+
+
+	RenderPassMaterialProvider(SwapChainContext::ColorBuffer* colorBuffer_);
+	
+	Materials Provide(UINT frameIndex_);
+
+private:
+
+	SwapChainContext::ColorBuffer* colorBuffer;
+};
+
+
+
+
+
+========================================
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Core\SwapChain\SwapChainColorBuffer\SwapChainColorBuffer.cpp ===
 ========================================
 #include "PreCompileHeader.h"
@@ -2185,25 +2370,52 @@ SwapChainContext::ColorBuffer::ColorBuffer
 (
 	std::unique_ptr<Description> desc_,
 	std::array<Microsoft::WRL::ComPtr<ID3D12Resource>, ProjectConfig::Render::kRequiredGPUBufferSum> resources_
-) : desc(std::move(desc_)),resources(std::move(resources_))
+) : desc(std::move(desc_))
 {
-	
+	//行列2種を構築
+	AssembleMatrix();
+
+	for (int i = 0;i < ProjectConfig::Render::kRequiredGPUBufferSum;++i)
+	{
+		buffers.at(i).resource = std::move(resources_.at(i));
+	}
+
+	Logger::Log("Assemble: Matrix", "SwapChainColorBuffer.cpp");
 }
 
-SwapChainContext::ColorBuffer::Description::Description(std::array<float, 4> clearColor_, DXGI_FORMAT format_)
+void SwapChainContext::ColorBuffer::AssembleMatrix()
+{
+	using namespace ProjectConfig::Window;
+
+	//クライアント領域と一緒のサイズにして画面全体に表示
+	viewport.Width = static_cast<FLOAT>(kWidth);
+	viewport.Height = static_cast<FLOAT>(kHeight);
+	viewport.TopLeftX = 0.0f;
+	viewport.TopLeftY = 0.0f;
+	viewport.MinDepth = 0.0f;
+	viewport.MaxDepth = 1.0f;
+
+	//しざー矩形
+	scissorRect.right = static_cast<LONG>(kWidth);
+	scissorRect.bottom = static_cast<LONG>(kHeight);
+	scissorRect.left = static_cast<LONG>(0.0f);
+	scissorRect.top = static_cast<LONG>(0.0f);
+}
+
+SwapChainContext::Description::Description(std::array<float, 4> clearColor_, DXGI_FORMAT format_)
 {
 	clearColor = clearColor_;
 	format = format_;
 }
 
 
-void SwapChainContext::ColorBuffer::OverrideHeapIndex(int index_ ,D3D12_CPU_DESCRIPTOR_HANDLE handle_)
+void SwapChainContext::ColorBuffer::OverrideHeapIndex(SwapChainContext::InstanceKey instanceKey_, int index_ ,D3D12_CPU_DESCRIPTOR_HANDLE handle_)
 {
-	cpuHandles.at(index_) = handle_;
+	buffers.at(index_).cpuHandle = handle_;
 }
 
 
-D3D12_RENDER_TARGET_VIEW_DESC SwapChainContext::ColorBuffer::Description::CreateRTV_Desc()const
+D3D12_RENDER_TARGET_VIEW_DESC SwapChainContext::Description::CreateRTV_Desc()const
 {
 	D3D12_RENDER_TARGET_VIEW_DESC rtvDesc = {};
 
@@ -2217,7 +2429,7 @@ D3D12_RENDER_TARGET_VIEW_DESC SwapChainContext::ColorBuffer::Description::Create
 	return rtvDesc;
 }
 
-DXGI_SWAP_CHAIN_DESC1 SwapChainContext::ColorBuffer::Description::CreateSwapChainDesc()const
+DXGI_SWAP_CHAIN_DESC1 SwapChainContext::Description::CreateSwapChainDesc()const
 {
 	using namespace ProjectConfig::Window;
 
@@ -2251,43 +2463,61 @@ DXGI_SWAP_CHAIN_DESC1 SwapChainContext::ColorBuffer::Description::CreateSwapChai
 #pragma once
 #include "../SwapChainContext.h"
 
+
+struct SwapChainContext::Description
+{
+
+	Description(std::array<float, 4> clearColor_, DXGI_FORMAT format_);
+
+	D3D12_RENDER_TARGET_VIEW_DESC CreateRTV_Desc()const;
+	DXGI_SWAP_CHAIN_DESC1 CreateSwapChainDesc()const;
+
+	std::array<float, 4> clearColor = { 9,9,9,9 };
+	DXGI_FORMAT format = DXGI_FORMAT_Error_Detection;
+};
+
+
 //オンリーなバッファなので、抽象クラスを使わない
 class SwapChainContext::ColorBuffer
 {
 public:
 
-	struct Description
-	{
-		std::array<float,4> clearColor = { 9,9,9,9 };
-
-		DXGI_FORMAT format = DXGI_FORMAT_Error_Detection;
-
-		Description(std::array<float, 4> clearColor_, DXGI_FORMAT format_);
-
-		D3D12_RENDER_TARGET_VIEW_DESC CreateRTV_Desc()const;
-		DXGI_SWAP_CHAIN_DESC1 CreateSwapChainDesc()const;
-	};
-
 	ColorBuffer
 	(
-		std::unique_ptr<Description> desc_,
-		std::array<Microsoft::WRL::ComPtr<ID3D12Resource>, ProjectConfig::Render::kRequiredGPUBufferSum> resources_
+		std::unique_ptr<SwapChainContext::Description> desc_,
+		std::array<Microsoft::WRL::ComPtr<ID3D12Resource>, 
+		ProjectConfig::Render::kRequiredGPUBufferSum> resources_
 	);
 
 	//リソース取得
-	inline ID3D12Resource* GetResource(SwapChainContext::ResourceGetKey key_, int index_) { return resources[index_].Get(); }
+	inline ID3D12Resource* GetResource(SwapChainContext::ResourceGetKey key_, int index_) { return buffers.at(index_).resource.Get(); }
 	//ヒープインデックスの上書き
-	void OverrideHeapIndex(int index_, D3D12_CPU_DESCRIPTOR_HANDLE handle_);
+	void OverrideHeapIndex(SwapChainContext::InstanceKey instanceKey_, int index_, D3D12_CPU_DESCRIPTOR_HANDLE handle_);
+
+	//MaterialProviderが情報を欲する
+	friend class SwapChainContext::RenderPassMaterialProvider;
 
 private:
 
-	std::array<Microsoft::WRL::ComPtr<ID3D12Resource>,ProjectConfig::Render::kRequiredGPUBufferSum> resources;
-	std::array<D3D12_CPU_DESCRIPTOR_HANDLE, ProjectConfig::Render::kRequiredGPUBufferSum> cpuHandles;
-	std::unique_ptr<Description> desc;
+	void AssembleMatrix();
+
+	struct Buffer
+	{
+		Microsoft::WRL::ComPtr <ID3D12Resource> resource;
+		D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle;
+		D3D12_RESOURCE_STATES state;
+	};
+
+	std::array<Buffer, ProjectConfig::Render::kRequiredGPUBufferSum> buffers;
+
+	//std::array<Microsoft::WRL::ComPtr<ID3D12Resource>,ProjectConfig::Render::kRequiredGPUBufferSum> resources;
+	//std::array<D3D12_CPU_DESCRIPTOR_HANDLE, ProjectConfig::Render::kRequiredGPUBufferSum> cpuHandles;
+
+	std::unique_ptr<SwapChainContext::Description> desc;
 
 	D3D12_VIEWPORT viewport;
 	D3D12_RECT scissorRect;
-
+	D3D12_RESOURCE_STATES resourceState;
 };
 
 
@@ -2336,7 +2566,7 @@ LONG WINAPI ExportDump(EXCEPTION_POINTERS* exception)
 ========================================
 #include "WindowContext.h"
 #include <strsafe.h>
-#include "../../WinApp/WinApp.h"
+#include "../../Nexus/Nexus.h"
 #include "DumpExporter.h"
 
 LRESULT CALLBACK WindowContext::WndProc(HWND hWnd_, UINT msg_, WPARAM wParam_, LPARAM lParam_)
@@ -2377,20 +2607,15 @@ void WindowContext::Finalize()
 	setupParam.m_hWnd = nullptr;
 }
 
+HWND WindowContext::WatchHWND()
+{
+	return setupParam.m_hWnd;
+}
 
-WindowContext::WindowContext(CraftKey craftKey_)
+
+WindowContext::WindowContext(InstacnceKey instanceKey_)
 {
 	using namespace ProjectConfig::Window;
-
-//#ifdef _DEBUG
-//
-//	if (SUCCEEDED(D3D12GetDebugInterface(IID_PPV_ARGS(&debugController))))
-//	{
-//		debugController->EnableDebugLayer();
-//		debugController->SetEnableGPUBasedValidation(TRUE);
-//	}
-//
-//#endif // _DEBUG
 
 	auto hInst = GetModuleHandle(nullptr);
 
@@ -2471,16 +2696,17 @@ WindowContext::WindowContext(CraftKey craftKey_)
 ========================================
 #pragma once
 
-class WinApp;
+class Nexus;
 
 class WindowContext
 {
 public:
 
-	struct CraftKey;
+	struct InstacnceKey;
 
-	WindowContext(CraftKey craftKey_);
+	WindowContext(InstacnceKey instanceKey_);
 	void Finalize();
+	HWND WatchHWND();
 
 private:
 
@@ -2498,11 +2724,11 @@ private:
 };
 
 
-struct WindowContext::CraftKey
+struct WindowContext::InstacnceKey
 {
 private:
-	friend class WinApp;
-	explicit CraftKey() = default;
+	friend class Nexus;
+	explicit InstacnceKey() = default;
 };
 
 
@@ -3488,6 +3714,238 @@ inline Vector3 operator*(const float num_,Vector3 vec_)
 
 
 ========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Nexus\Nexus.cpp ===
+========================================
+#include "PreCompileHeader.h"
+#include "Nexus.h"
+#include "../Core/Device/DeviceContext.h"
+#include "../Core/Window/WindowContext.h"
+#include "../Core/DescriptorHeap/DescriptorHeapContext.h"
+#include "../Resource/BufferContext.h"
+#include "../Core/Device/DeviceContextCommandProvider/DeviceContextCommandProvider.h"
+#include "../Core/SwapChain/SwapChainContext.h"
+#include "../Core/CommandContext/CommandContext.h"
+
+namespace
+{
+	std::string const fileName = "Nexus.cpp";
+}
+
+//Nexusクラスのインスタンスを制御するクラス
+class Nexus::InstanceLimiter
+{
+public:
+	static bool CanInstantiate();
+
+	InstanceLimiter(const InstanceLimiter&) = delete;
+	InstanceLimiter& operator=(const InstanceLimiter&) = delete;
+	InstanceLimiter(InstanceLimiter&&) = delete;
+	InstanceLimiter& operator=(InstanceLimiter&&) = delete;
+
+private:
+	int instanceCnt{};
+
+	~InstanceLimiter() = default;
+	InstanceLimiter() = default;
+};
+
+Nexus::Nexus()
+{
+	Logger::Entry("Nexus: Constructor");
+
+	//自身のインスタンス制限
+	ErrorMessageOutput::Assert::DetectError(InstanceLimiter::CanInstantiate(), "Nexusクラスが複数具現化されてます", fileName);
+
+	InitDeviceContext();
+	InitWindowContext();
+	InitDescriptorHeapContext();
+	InitBufferContext();
+	InitCommandContext();
+	InitSwapChainContext();
+
+	Logger::End("Nexus: Constructor");
+}
+
+Nexus::~Nexus()
+{
+	windowContext->Finalize();
+}
+
+void Nexus::InitSwapChainContext()
+{
+	auto cmdCreateSwapChain = deviceContext->commandProvider->ProvideCreateSwapChainCommand();
+
+
+	swapChainContext.reset
+	(
+		new SwapChainContext
+		(
+			SwapChainContext::InstanceKey{},
+			descriptorHeapContext.get(),
+			commandContext.get(),
+			cmdCreateSwapChain,
+			windowContext->WatchHWND()
+		)
+	);
+
+	Logger::Log("Instantiate: swapChainContext", fileName);
+
+}
+
+//Nexusクラスのインスタンスを1つに制限する
+bool Nexus::InstanceLimiter::CanInstantiate()
+{
+	static InstanceLimiter instanceLimiter;
+
+	return (instanceLimiter.instanceCnt++ == 0);
+}
+
+void Nexus::InitDeviceContext()
+{
+	//deviceContextクラスのインスタンス化
+	deviceContext.reset(new DeviceContext(DeviceContext::InstanceKey{}));
+	Logger::Log("Instantiate: deviceContext", fileName);
+}
+
+void Nexus::InitBufferContext()
+{
+	//リソース生成コマンド
+	auto createResourceCommand = deviceContext->commandProvider->ProvideCreateResourceCommand();
+	Logger::Log("Set: CommandCreateResource", fileName);
+
+	bufferContext.reset(new BufferContext(BufferContext::InstanceKey{}, createResourceCommand,descriptorHeapContext.get()));
+	Logger::Log("Instantiate: bufferContext", fileName);
+}
+
+void Nexus::InitWindowContext()
+{
+	//windowContextのインスタンス化
+	windowContext.reset(new WindowContext(WindowContext::InstacnceKey{}));
+	Logger::Log("Instantiate: windowContext", fileName);
+
+}
+
+void Nexus::InitDescriptorHeapContext()
+{
+	//DescriptorHeap生成コマンド
+	auto createDescriptorHeapCommand = deviceContext->commandProvider->ProvideCreateDescriptorHeapCommand();
+	auto createRTVCommand = deviceContext->commandProvider->ProvideCreateViewCommand<D3D12_RENDER_TARGET_VIEW_DESC>();
+	auto createSRVCommand = deviceContext->commandProvider->ProvideCreateViewCommand<D3D12_SHADER_RESOURCE_VIEW_DESC>();
+	auto createDSVCommand = deviceContext->commandProvider->ProvideCreateViewCommand<D3D12_DEPTH_STENCIL_VIEW_DESC>();
+	auto createUAVCommand = deviceContext->commandProvider->ProvideCreateUAVCommand();
+
+	struct IncrementSizeOfDescriptorHeaps
+	{
+		UINT rtv{};
+		UINT srv{};
+		UINT dsv{};
+		IncrementSizeOfDescriptorHeaps(UINT rtv_, UINT srv_, UINT dsv_) : rtv(rtv_), srv(srv_), dsv(dsv_) {}
+	};
+
+	//deviceContextからDescriptorHandleIncrementSizeを教えてもらう
+	IncrementSizeOfDescriptorHeaps sizeArray
+	(
+		deviceContext->CalcDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV),
+		deviceContext->CalcDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV),
+		deviceContext->CalcDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_DSV)
+	);
+
+	std::array<UINT,3> tmpSizeArray = { sizeArray.rtv ,sizeArray.srv,sizeArray.dsv };
+
+	//descriptorHeapContextクラスのインスタンス化
+	descriptorHeapContext.reset(new DescriptorHeapContext
+	(
+		DescriptorHeapContext::InstanceKey{},
+		createDescriptorHeapCommand,
+		createRTVCommand,
+		createSRVCommand,
+		createDSVCommand,
+		createUAVCommand,
+		tmpSizeArray
+	));
+
+	Logger::Log("Instantiate: descriptorHeapContext", fileName);
+}
+
+void Nexus::InitCommandContext()
+{
+	auto [cmdQueue, cmdAllocators, cmdList] = 
+		deviceContext->commandProvider->CreateCommandContextCoreParts(DeviceContext::InstanceKey{});
+
+	commandContext.reset(new CommandContext
+	(
+		CommandContext::InstanceKey{},
+		std::move(cmdQueue),
+		std::move(cmdAllocators),
+		std::move(cmdList))
+	);
+
+	Logger::Log("Instantiate: commandContext", fileName);
+}
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Nexus\Nexus.h ===
+========================================
+#pragma once
+
+class DeviceContext;
+class BufferContext;
+class WindowContext;
+class DescriptorHeapContext;
+class SwapChainContext;
+class CommandContext;
+
+
+class Nexus
+{
+public:
+
+	~Nexus();
+	Nexus();
+
+	Nexus(const Nexus&) = delete;
+	Nexus& operator=(const Nexus&) = delete;
+	Nexus(Nexus&&) = delete;
+	Nexus& operator=(Nexus&&) = delete;
+
+private:
+
+	//Nexusのインスタンスを1つに制限するためのシングルトンクラス
+	class InstanceLimiter;
+
+	//IDXGIFactory7、IDXGIAdapter4、ID3D12Device8を持っている。
+	std::unique_ptr<DeviceContext> deviceContext;
+	//ウィンドウを制御するもの
+	std::unique_ptr<WindowContext> windowContext;
+	//DescriptorHeapを作り、各種バッファのviewを生成するツールを持つ
+	std::unique_ptr<DescriptorHeapContext> descriptorHeapContext;
+	//GPUバッファを生成・管理
+	std::unique_ptr<BufferContext> bufferContext;
+	//コマンド関連のコアパーツの管理
+	std::unique_ptr<CommandContext> commandContext;
+	//SwapChain周りを制御するもの
+	std::unique_ptr<SwapChainContext> swapChainContext;
+
+
+	void InitCommandContext();
+	void InitSwapChainContext();
+	void InitDeviceContext();
+	void InitBufferContext();
+	void InitWindowContext();
+	void InitDescriptorHeapContext();
+
+};
+
+
+
+
+
+
+
+========================================
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Render\kara.h ===
 ========================================
 #pragma once
@@ -3520,7 +3978,7 @@ BufferContext::BufferContext
 	Logger::Entry("BufferContext: Constructor");
 
 	std::unique_ptr<ResourceCreator> resourceCreator(std::make_unique<ResourceCreator>(instanceKey_, createResourceCommand_));
-	auto* viewCreator = descriptorHeapContext_->ShareViewCreator(DescriptorHeapContext::ViewCreatorShareKey{});
+	auto* viewCreator = descriptorHeapContext_->GetViewCreator(DescriptorHeapContext::ViewCreatorGetKey{});
 
 	bufferAssembler.reset(new BufferAssembler(instanceKey_, std::move(resourceCreator), viewCreator));
 	Logger::Log("Create: bufferAssembler", fileName);
@@ -3541,7 +3999,7 @@ BufferContext::~BufferContext()
 ========================================
 #pragma once
 
-class WinApp;
+class Nexus;
 class DescriptorHeapContext;
 
 class BufferContext
@@ -3585,7 +4043,7 @@ struct BufferContext::InstanceKey
 {
 private:
 
-	friend class WinApp;
+	friend class Nexus;
 	explicit InstanceKey() = default;
 };
 
@@ -3612,6 +4070,44 @@ struct MeshShaderPipelineStateStream
 	CD3DX12_PIPELINE_STATE_STREAM_DEPTH_STENCIL_FORMAT DSVFormat;
 };
 
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Resource\ResourceBarrier.h ===
+========================================
+#pragma once
+
+namespace ResourceBarrier
+{
+	D3D12_RESOURCE_BARRIER Create
+	(
+		ID3D12Resource* dst_resource_,
+		D3D12_RESOURCE_BARRIER_TYPE Type,
+		D3D12_RESOURCE_BARRIER_FLAGS Flags,
+		D3D12_RESOURCE_STATES before_,
+		D3D12_RESOURCE_STATES after_,
+		UINT transitionSubResource_
+	)
+	{
+		D3D12_RESOURCE_BARRIER barrier{};
+
+		//バリアの設定
+		barrier.Type = Type;
+		barrier.Flags = Flags;
+
+		//バリアを張る対象のリソース。
+		barrier.Transition.pResource = dst_resource_;
+		barrier.Transition.Subresource = transitionSubResource_;
+
+		//バリアステートを遷移
+		barrier.Transition.StateBefore = before_;
+		barrier.Transition.StateAfter = after_;
+
+		return barrier;
+	}
+
+}
 
 
 
@@ -3707,7 +4203,7 @@ void BufferContext::BufferAssembler::AssembleView<ColorBuffer, ColorBufferDescri
 			D3D12_CPU_DESCRIPTOR_HANDLE srvCPU{};
 			D3D12_GPU_DESCRIPTOR_HANDLE srvGPU{};
 
-			std::tie(srvIndex, srvCPU, srvGPU) = viewCreator->CreateView(buffer_->GetResource(accessKey, i), srvDesc);
+			std::tie(srvIndex, srvCPU, srvGPU) = viewCreator->CreateView(buffer_->GetResource(accessKey, i), &srvDesc);
 			buffer_->OverrideHeapIndex<ViewType::kSRV>(instanceKey, srvIndex, i);
 			buffer_->OverrideHeapIndex<ViewType::kSRV>(instanceKey, srvCPU, i);
 			buffer_->OverrideHeapIndex<ViewType::kSRV>(instanceKey, srvGPU, i);
@@ -3717,7 +4213,7 @@ void BufferContext::BufferAssembler::AssembleView<ColorBuffer, ColorBufferDescri
 		{
 			D3D12_CPU_DESCRIPTOR_HANDLE rtvCPU{};
 
-			std::tie(std::ignore, rtvCPU, std::ignore) = viewCreator->CreateView(buffer_->GetResource(accessKey, i), rtvDesc);
+			std::tie(std::ignore, rtvCPU, std::ignore) = viewCreator->CreateView(buffer_->GetResource(accessKey, i), &rtvDesc);
 			buffer_->OverrideHeapIndex<ViewType::kRTV>(instanceKey, rtvCPU, i);
 		}
 	}
@@ -3838,13 +4334,17 @@ void BufferContext::BufferAssembler::AssembleView<ColorBuffer, ColorBufferDescri
 #include "PreCompileHeader.h"
 #include "BufferDescriptionBehavior.h"
 
-BufferDescriptionBehavior::BufferDescriptionBehavior(D3D12_RESOURCE_STATES initialState_) : initialState(initialState_)
+BufferDescriptionBehavior::BufferDescriptionBehavior(ResourceStates initialStates_) : initialStates(initialStates_)
 {
-	if (initialState == D3D12_RESOURCE_STATE_Error_Detection)
+	for (D3D12_RESOURCE_STATES state : initialStates)
 	{
-		ErrorMessageOutput::Assert::DetectError((initialState != D3D12_RESOURCE_STATE_Error_Detection),
-			"初期ステート未設定", "BufferDescriptionBehavior.cpp");
+		ErrorMessageOutput::Assert::DetectError
+		(
+			(state != D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_Error_Detection),
+			"リソースステートが初期化されていない", "BufferDescriptionBehavior.cpp"
+		);
 	}
+
 };
 
 
@@ -3876,7 +4376,8 @@ struct BufferDescriptionBehavior
 	virtual D3D12_RESOURCE_DESC CreateResourceDesc()const = 0;
 	virtual D3D12_HEAP_PROPERTIES CreateHeapProperties()const = 0;
 
-	D3D12_RESOURCE_STATES initialState = D3D12_RESOURCE_STATE_Error_Detection;
+	std::array<D3D12_RESOURCE_STATES, ProjectConfig::Render::kRequiredGPUBufferSum> initialStates =
+	{ D3D12_RESOURCE_STATE_Error_Detection };
 };
 
 
@@ -3922,8 +4423,8 @@ ColorBufferDescription::ColorBufferDescription
 	UINT height_,
 	D3D12_RESOURCE_FLAGS flag_,
 	DXGI_FORMAT format_,
-	D3D12_RESOURCE_STATES initialState_
-) : BufferDescriptionBehavior(initialState_)
+	ResourceStates initialStates_
+) : BufferDescriptionBehavior(initialStates_)
 {
 	for (int i = 0;i < 4;++i) param.clearColor[i] = clearColors_[i];
 	param.width = width_;
@@ -4092,8 +4593,11 @@ public:
 #include "PreCompileHeader.h"
 #include "ConstantBufferDescription.h"
 
-ConstantBufferDescription::ConstantBufferDescription(UINT sizeInByte_, D3D12_RESOURCE_STATES initialState_ )
-	:BufferDescriptionBehavior(initialState_)
+ConstantBufferDescription::ConstantBufferDescription
+(
+	UINT sizeInByte_, 
+	ResourceStates initialStates_
+):BufferDescriptionBehavior(initialStates_)
 {
 	param.sizeInByte = sizeInByte_;
 }
@@ -4156,7 +4660,11 @@ private:
 
 public:
 
-	ConstantBufferDescription(UINT sizeInByte_, D3D12_RESOURCE_STATES initialState_ = D3D12_RESOURCE_STATE_GENERIC_READ);
+	ConstantBufferDescription
+	(
+		UINT sizeInByte_, 
+		ResourceStates initialStates_ = { D3D12_RESOURCE_STATE_GENERIC_READ,D3D12_RESOURCE_STATE_GENERIC_READ }
+	);
 
 	//パラーメーターチェック
 	virtual void CheckRequirementsFilled() const override;
@@ -4512,14 +5020,20 @@ GPUBufferBehavior::GPUBufferBehavior
 (
 	const InstanceKey& instanceKey_,
 	std::string name_,
-	Microsoft::WRL::ComPtr<ID3D12Resource> resource1_, 
+	Microsoft::WRL::ComPtr<ID3D12Resource> resource1_,
 	Microsoft::WRL::ComPtr<ID3D12Resource> resource2_,
 	std::unique_ptr <BufferDescriptionBehavior>&& description_
-) : name(name_), resources{ {std::move(resource1_), std::move(resource2_)} }, description(std::move(description_))
+) : name(name_), description(std::move(description_))
 {
-	curState = description->initialState;
-}
+	buffers.at(0).resource = std::move(resource1_);
+	buffers.at(1).resource = std::move(resource2_);
 
+	for (size_t i = 0; i < buffers.size(); ++i)
+	{
+		buffers.at(i).curState = description->initialStates.at(i);
+	}
+
+}
 GPUBufferBehavior::~GPUBufferBehavior()
 {
 
@@ -4529,7 +5043,7 @@ GPUBufferBehavior::~GPUBufferBehavior()
 ID3D12Resource* GPUBufferBehavior::GetResource(BufferAccessKey bufferAccessKey_ ,int resourceNo_)
 {
 	std::string errorMsg = name + "は空です (GetResourceに失敗)";
-	ErrorMessageOutput::Assert::DetectError((resources[resourceNo_] != nullptr), errorMsg , fileName);
+	ErrorMessageOutput::Assert::DetectError((buffers.at(resourceNo_).resource != nullptr), errorMsg , fileName);
 
 	return resources[resourceNo_].Get();
 }
@@ -4628,14 +5142,19 @@ private:
 		D3D12_GPU_DESCRIPTOR_HANDLE gpu{};
 	};
 
+	struct Buffer
+	{
+		Microsoft::WRL::ComPtr<ID3D12Resource> resource;
+		std::unordered_map<ViewType, IndexSet> heapIndicesContainer;
+		D3D12_RESOURCE_STATES curState;
+	};
+
 	//生リソース
 	std::array<Microsoft::WRL::ComPtr<ID3D12Resource>, ProjectConfig::Render::kRequiredGPUBufferSum> resources;
 	//各ビューのインデックス
 	std::array< std::unordered_map<ViewType, IndexSet>, ProjectConfig::Render::kRequiredGPUBufferSum> heapIndicesContainer;
 	//なまえ
 	std::string name = "noName";
-	//現在リソースステート
-	D3D12_RESOURCE_STATES curState;
 };
 
 
@@ -4681,7 +5200,7 @@ ColorBuffer::ColorBuffer
 	std::unique_ptr <BufferDescriptionBehavior>&& description_
 ) : GPUBufferBehavior(instanceKey_, name_, std::move(resource1_), std::move(resource2_), std::move(description_))
 {
-	SetMatrix();
+
 }
 
 
@@ -4691,7 +5210,7 @@ const ColorBufferDescription& ColorBuffer::WatchDescription()
 }
 
 
-void ColorBuffer::SetMatrix()
+void ColorBuffer::AssembleMatrix()
 {
 	const auto& param = static_cast<ColorBufferDescription&>(*description.get()).WatchParam();
 
@@ -4708,7 +5227,6 @@ void ColorBuffer::SetMatrix()
 	scissorRect.bottom = static_cast<LONG>(param.height);
 	scissorRect.left = static_cast<LONG>(0.0f);
 	scissorRect.top = static_cast<LONG>(0.0f);
-
 }
 
 
@@ -4746,7 +5264,7 @@ private:
 	D3D12_RECT scissorRect;
 
 	//viewportとscissorRectをセット
-	void SetMatrix();
+	void AssembleMatrix();
 };
 
 
@@ -5045,220 +5563,6 @@ namespace StringConverter
 	std::string ConvertString(const std::wstring& str);
 	std::string ToUTF8(const std::wstring& value);
 }
-
-
-
-
-
-========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\WinApp\WinApp.cpp ===
-========================================
-#include "PreCompileHeader.h"
-#include "WinApp.h"
-#include "../Core/Device/DeviceContext.h"
-#include "../Core/Window/WindowContext.h"
-#include "../Core/DescriptorHeap/DescriptorHeapContext.h"
-#include "../Resource/BufferContext.h"
-#include "../Core/Device/DeviceContextCommandProvider/DeviceContextCommandProvider.h"
-#include "../Core/SwapChain/SwapChainContext.h"
-#include "../Core/CommandContext/CommandContext.h"
-
-namespace
-{
-	std::string const fileName = "WinApp.cpp";
-}
-
-//WinAppクラスのインスタンスを制御するクラス
-class WinApp::InstanceLimiter
-{
-public:
-	static bool CanInstantiate();
-
-	InstanceLimiter(const InstanceLimiter&) = delete;
-	InstanceLimiter& operator=(const InstanceLimiter&) = delete;
-	InstanceLimiter(InstanceLimiter&&) = delete;
-	InstanceLimiter& operator=(InstanceLimiter&&) = delete;
-
-private:
-	int instanceCnt{};
-
-	~InstanceLimiter() = default;
-	InstanceLimiter() = default;
-};
-
-WinApp::WinApp()
-{
-	Logger::Entry("WinApp: Constructor");
-
-	//自身のインスタンス制限
-	ErrorMessageOutput::Assert::DetectError(InstanceLimiter::CanInstantiate(), "WinAppクラスが複数具現化されてます", fileName);
-
-	InitDeviceContext();
-	InitWindowContext();
-	InitDescriptorHeapContext();
-	InitBufferContext();
-
-	Logger::End("WinApp: Constructor");
-}
-
-WinApp::~WinApp()
-{
-	windowContext->Finalize();
-}
-
-void WinApp::InitSwapChainContext()
-{
-	//swapChainContext.reset(new SwapChainContext())
-}
-
-//WinAppクラスのインスタンスを1つに制限する
-bool WinApp::InstanceLimiter::CanInstantiate()
-{
-	static InstanceLimiter instanceLimiter;
-
-	return (instanceLimiter.instanceCnt++ == 0);
-}
-
-void WinApp::InitDeviceContext()
-{
-	//deviceContextクラスのインスタンス化
-	deviceContext.reset(new DeviceContext(DeviceContext::InstanceKey{}));
-	Logger::Log("Instantiate: deviceContext", fileName);
-}
-
-void WinApp::InitBufferContext()
-{
-	//リソース生成コマンド
-	auto createResourceCommand = deviceContext->commandProvider->ProvideCreateResourceCommand();
-	Logger::Log("Set: CommandCreateResource", fileName);
-
-	bufferContext.reset(new BufferContext(BufferContext::InstanceKey{}, createResourceCommand,descriptorHeapContext.get()));
-	Logger::Log("Instantiate: bufferContext", fileName);
-}
-
-void WinApp::InitWindowContext()
-{
-	//windowContextのインスタンス化
-	windowContext.reset(new WindowContext(WindowContext::CraftKey{}));
-	Logger::Log("Instantiate: windowContext", fileName);
-
-}
-
-void WinApp::InitDescriptorHeapContext()
-{
-	//DescriptorHeap生成コマンド
-	auto createDescriptorHeapCommand = deviceContext->commandProvider->ProvideCreateDescriptorHeapCommand();
-	auto createRTVCommand = deviceContext->commandProvider->ProvideCreateViewCommand<D3D12_RENDER_TARGET_VIEW_DESC>();
-	auto createSRVCommand = deviceContext->commandProvider->ProvideCreateViewCommand<D3D12_SHADER_RESOURCE_VIEW_DESC>();
-	auto createDSVCommand = deviceContext->commandProvider->ProvideCreateViewCommand<D3D12_DEPTH_STENCIL_VIEW_DESC>();
-	auto createUAVCommand = deviceContext->commandProvider->ProvideCreateUAVCommand();
-
-	struct IncrementSizeOfDescriptorHeaps
-	{
-		UINT rtv{};
-		UINT srv{};
-		UINT dsv{};
-		IncrementSizeOfDescriptorHeaps(UINT rtv_, UINT srv_, UINT dsv_) : rtv(rtv_), srv(srv_), dsv(dsv_) {}
-	};
-
-	//deviceContextからDescriptorHandleIncrementSizeを教えてもらう
-	IncrementSizeOfDescriptorHeaps sizeArray
-	(
-		deviceContext->CalcDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV),
-		deviceContext->CalcDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV),
-		deviceContext->CalcDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_DSV)
-	);
-
-	std::array<UINT,3> tmpSizeArray = { sizeArray.rtv ,sizeArray.srv,sizeArray.dsv };
-
-	//descriptorHeapContextクラスのインスタンス化
-	descriptorHeapContext.reset(new DescriptorHeapContext
-	(
-		DescriptorHeapContext::InstanceKey{},
-		createDescriptorHeapCommand,
-		createRTVCommand,
-		createSRVCommand,
-		createDSVCommand,
-		createUAVCommand,
-		tmpSizeArray
-	));
-
-	Logger::Log("Instantiate: descriptorHeapContext", fileName);
-}
-
-void WinApp::InitCommandContext()
-{
-	auto [cmdQueue, cmdAllocators, cmdList] = 
-		deviceContext->commandProvider->CreateCommandContextCoreParts(DeviceContext::InstanceKey{});
-
-	commandContext.reset(new CommandContext
-	(
-		CommandContext::InstanceKey{},
-		std::move(cmdQueue),
-		std::move(cmdAllocators),
-		std::move(cmdList))
-	);
-
-	Logger::Log("Instantiate: commandContext", fileName);
-}
-
-
-
-
-========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\WinApp\WinApp.h ===
-========================================
-#pragma once
-
-class DeviceContext;
-class BufferContext;
-class WindowContext;
-class DescriptorHeapContext;
-class SwapChainContext;
-class CommandContext;
-
-
-class WinApp
-{
-public:
-
-	~WinApp();
-	WinApp();
-
-	WinApp(const WinApp&) = delete;
-	WinApp& operator=(const WinApp&) = delete;
-	WinApp(WinApp&&) = delete;
-	WinApp& operator=(WinApp&&) = delete;
-
-private:
-
-	//WinAppのインスタンスを1つに制限するためのシングルトンクラス
-	class InstanceLimiter;
-
-	//IDXGIFactory7、IDXGIAdapter4、ID3D12Device8を持っている。
-	std::unique_ptr<DeviceContext> deviceContext;
-	//ウィンドウを制御するもの
-	std::unique_ptr<WindowContext> windowContext;
-	//DescriptorHeapを作り、各種バッファのviewを生成するツールを持つ
-	std::unique_ptr<DescriptorHeapContext> descriptorHeapContext;
-	//GPUバッファを生成・管理
-	std::unique_ptr<BufferContext> bufferContext;
-	//コマンド関連のコアパーツの管理
-	std::unique_ptr<CommandContext> commandContext;
-	//SwapChain周りを制御するもの
-	std::unique_ptr<SwapChainContext> swapChainContext;
-
-
-	void InitCommandContext();
-	void InitSwapChainContext();
-	void InitDeviceContext();
-	void InitBufferContext();
-	void InitWindowContext();
-	void InitDescriptorHeapContext();
-
-};
-
-
 
 
 

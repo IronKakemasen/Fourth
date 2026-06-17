@@ -3,13 +3,14 @@
 #include "SwapChainColorBuffer/SwapChainColorBuffer.h"
 #include "../DescriptorHeap/ViewCreator/ViewCreator.h"
 #include "../CommandContext/CommandContext.h"
-//#include "../DescriptorHeap/DescriptorHeapContext.h"
-
+#include "Presenter/Presenter.h"
+#include "RenderPassMaterialProvider/RenderPassMaterialProvider.h"
 
 namespace
 {
 	std::string fileName = "SwapChainContext.cpp";
 }
+
 
 SwapChainContext::SwapChainContext
 (
@@ -27,9 +28,14 @@ SwapChainContext::SwapChainContext
 	//ビュークリエイターも一時的に借りる
 	auto& viewCreator = *descriptorHeapContext_->GetViewCreator(DescriptorHeapContext::ViewCreatorGetKey{});
 
-
 	//構築
 	Assemble(instanceKey_, viewCreator, cmdCreateSwapChain_, hWnd_, commandQueue);
+
+	presenter.reset(new Presenter(swapChain.Get()));
+	Logger::Log("Instantiate: Presenter", fileName);
+	renderPassMaterialProvider.reset(new RenderPassMaterialProvider(colorBuffer.get()));
+	Logger::Log("Instantiate: RenderPassMaterialProvider", fileName);
+
 
 	Logger::End("SwapChainContext: Constructor");
 
@@ -51,8 +57,46 @@ void SwapChainContext::CreateSwapChain
 
 	HRESULT hr = cmdCreateSwapChain_(commandQueue_, desc_, swapChain.GetAddressOf(), hWnd_);
 	ErrorMessageOutput::Assert::DetectError(SUCCEEDED(hr), "SwapChain生成失敗", fileName);
+}
 
-	Logger::Log("Create: SwapChain", fileName);
+void SwapChainContext::PullResourcesFromSwapChain(std::unique_ptr<Description>&& desc_)
+{
+	using namespace ProjectConfig::Render;
+
+	//生リソース
+	std::array<Microsoft::WRL::ComPtr<ID3D12Resource>, kRequiredGPUBufferSum > resources;
+
+
+	//スワップチェーンからリソースを引っ張る
+	HRESULT hr{};
+	for (int i = 0;i < kRequiredGPUBufferSum;++i)
+	{
+		hr = swapChain->GetBuffer(i, IID_PPV_ARGS(resources.at(i).GetAddressOf()));
+		ErrorMessageOutput::Assert::DetectError(SUCCEEDED(hr), "SwapChainのリソースを引っ張れなかった", fileName);
+	}
+
+	//バッファ生成
+	colorBuffer.reset(new SwapChainContext::ColorBuffer(std::move(desc_), std::move(resources)));
+
+	Logger::Log("Complete: Pull SwapChainResources", fileName);
+}
+
+void SwapChainContext::CreateRTV(InstanceKey instanceKey_ , const D3D12_RENDER_TARGET_VIEW_DESC& rtvDesc_, ViewCreator& viewCreator_)
+{
+	ResourceGetKey resourceGetKey;
+
+	for (int i = 0;i < ProjectConfig::Render::kRequiredGPUBufferSum;++i)
+	{
+		D3D12_CPU_DESCRIPTOR_HANDLE rtvCPU{};
+
+		//Rtvを作成
+		std::tie(std::ignore, rtvCPU, std::ignore) =
+			viewCreator_.CreateView(colorBuffer->GetResource(resourceGetKey, i), &rtvDesc_);
+
+		//インデックスを書き込む
+		colorBuffer->OverrideHeapIndex(instanceKey_,i, rtvCPU);
+	}
+
 }
 
 void SwapChainContext::Assemble
@@ -64,58 +108,24 @@ void SwapChainContext::Assemble
 	ID3D12CommandQueue* commandQueue_
 )
 {
-	using namespace ProjectConfig::Render;
 	using namespace ProjectConfig::Window;
 
-
 	//ディスクリプション
-	std::unique_ptr<SwapChainContext::ColorBuffer::Description> desc =
-		std::make_unique<SwapChainContext::ColorBuffer::Description>(kColor, kRtFormat);
-
-	//生リソース
-	std::array<Microsoft::WRL::ComPtr<ID3D12Resource>, kRequiredGPUBufferSum > resources;
+	std::unique_ptr<Description> bufferDesc = std::make_unique<Description>(kColor, kRtFormat);
 
 	//rtvDesc
-	auto rtvDesc = desc->CreateRTV_Desc();
+	auto rtvDesc = bufferDesc->CreateRTV_Desc();
+	//swapChainDesc
+	auto swapChainDesc = bufferDesc->CreateSwapChainDesc();
 
-	//スワップチェーン、生リソース生成
-	{
-		auto swapChainDesc = desc->CreateSwapChainDesc();
+	//スワップチェーン生成
+	CreateSwapChain(cmdCreateSwapChain_, swapChainDesc, hWnd_, commandQueue_);
+	Logger::Log("Create: SwapChain", fileName);
 
-		CreateSwapChain(cmdCreateSwapChain_, swapChainDesc, hWnd_, commandQueue_);
-		Logger::Log("Create: SwapChain", fileName);
-
-		//スワップチェーンからリソースを引っ張る
-		HRESULT hr{};
-		for (int i = 0;i < kRequiredGPUBufferSum;++i)
-		{
-			hr = swapChain->GetBuffer(i, IID_PPV_ARGS(resources.at(i).GetAddressOf()));
-			ErrorMessageOutput::Assert::DetectError(SUCCEEDED(hr), "SwapChainのリソースを引っ張れなかった", fileName);
-		}
-
-		Logger::Log("Complete: Pull SwapChainResources", fileName);
-	}
-
-	//バッファ生成
-	colorBuffer.reset(new SwapChainContext::ColorBuffer(std::move(desc), std::move(resources)));
+	//スワップチェーンからリソースを引っ張る
+	PullResourcesFromSwapChain(std::move(bufferDesc));
 
 	//ビュー生成
-	{
-		ResourceGetKey resourceGetKey;
-
-		for (int i = 0;i < ProjectConfig::Render::kRequiredGPUBufferSum;++i)
-		{
-			D3D12_CPU_DESCRIPTOR_HANDLE rtvCPU{};
-
-			//Rtvを作成
-			std::tie(std::ignore, rtvCPU, std::ignore) =
-				viewCreator_.CreateView(colorBuffer->GetResource(resourceGetKey, i), rtvDesc);
-
-			//インデックスを書き込む
-			colorBuffer->OverrideHeapIndex(i, rtvCPU);
-		}
-
-		Logger::Log("Create: SwapChainResourceRTV", fileName);
-	}
-
+	CreateRTV(instanceKey_,rtvDesc, viewCreator_);
+	Logger::Log("Create: SwapChainResourceRTV", fileName);
 }

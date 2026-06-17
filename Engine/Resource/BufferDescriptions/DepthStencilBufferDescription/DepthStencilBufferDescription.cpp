@@ -13,8 +13,8 @@ DepthStencilBufferDescription::DepthStencilBufferDescription
 	UINT height_,
 	FLOAT clearColor_,
 	DXGI_FORMAT format_,
-	D3D12_RESOURCE_STATES initialState_
-):BufferDescriptionBehavior(initialState_)
+	ResourceStates initialStates_
+):BufferDescriptionBehavior(initialStates_)
 {
 	param.width = width_;
 	param.height = height_;

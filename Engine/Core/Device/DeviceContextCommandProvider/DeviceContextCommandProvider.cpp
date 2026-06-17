@@ -20,11 +20,7 @@ DeviceContext::CommandProvider::CommandProvider
 	std::function< IDXGIFactory7* (DeviceContext::AccessKey)> dxgiFactoryGetter_
 ) : deviceGetter(deviceGetter_), dxgiFactoryGetter(dxgiFactoryGetter_)
 {
-	//コマンドの実体を生成
-	CreateCommand<CommandCreateGPUResource>(CommandType::kCreateGPUBuffer);
-	CreateCommand<CommandCreateDescriptorHeap>(CommandType::kCreateDescriptorHeap);
-	CreateCommand<CommandCreateView>(CommandType::kCreateResourceView);
-	CreateCommand<CommandStructureSwapChain>(CommandType::kStructureSwapChain);
+
 }
 
 using C_CreateRTV = std::function<void(ID3D12Resource* resource_, const D3D12_RENDER_TARGET_VIEW_DESC* desc_, D3D12_CPU_DESCRIPTOR_HANDLE descriptorHandleCPU_)>;
@@ -62,9 +58,9 @@ template<>
 	auto retFunc = [this](ID3D12Resource* resource_, const D3D12_RENDER_TARGET_VIEW_DESC* desc_, D3D12_CPU_DESCRIPTOR_HANDLE descriptorHandleCPU_)
 	{
 		auto* device = deviceGetter(DeviceContext::AccessKey{});
-		auto* command = static_cast<CommandCreateView*>(commandContainer[DeviceContext::CommandType::kCreateResourceView][0].get());
+		CommandCreateView command(GenerateKey{});
 
-		return command->CreateRTV(device, resource_, desc_, descriptorHandleCPU_);
+		return command.CreateRTV(device, resource_, desc_, descriptorHandleCPU_);
 	};
 
 	return retFunc;
@@ -75,9 +71,9 @@ template<>
 	auto retFunc = [this](ID3D12Resource* resource_, const D3D12_SHADER_RESOURCE_VIEW_DESC* desc_, D3D12_CPU_DESCRIPTOR_HANDLE descriptorHandleCPU_)
 	{
 		auto* device = deviceGetter(DeviceContext::AccessKey{});
-		auto* command = static_cast<CommandCreateView*>(commandContainer[DeviceContext::CommandType::kCreateResourceView][0].get());
+		CommandCreateView command(GenerateKey{});
 
-		return command->CreateSRV(device, resource_, desc_, descriptorHandleCPU_);
+		return command.CreateSRV(device, resource_, desc_, descriptorHandleCPU_);
 	};
 
 	return retFunc;
@@ -89,9 +85,9 @@ template<>
 	auto retFunc = [this](ID3D12Resource* resource_, const D3D12_DEPTH_STENCIL_VIEW_DESC* desc_, D3D12_CPU_DESCRIPTOR_HANDLE descriptorHandleCPU_)
 	{
 		auto* device = deviceGetter(DeviceContext::AccessKey{});
-		auto* command = static_cast<CommandCreateView*>(commandContainer[DeviceContext::CommandType::kCreateResourceView][0].get());
+		CommandCreateView command(GenerateKey{});
 
-		return command->CreateDSV(device, resource_, desc_, descriptorHandleCPU_);
+		return command.CreateDSV(device, resource_, desc_, descriptorHandleCPU_);
 	};
 
 	return retFunc;
@@ -102,9 +98,9 @@ template<>
 	auto retFunc = [this](ID3D12Resource* resource_, const D3D12_UNORDERED_ACCESS_VIEW_DESC* desc_, D3D12_CPU_DESCRIPTOR_HANDLE descriptorHandleCPU_, ID3D12Resource* CounterResource_)
 		{
 			auto* device = deviceGetter(DeviceContext::AccessKey{});
-			auto* command = static_cast<CommandCreateView*>(commandContainer[DeviceContext::CommandType::kCreateResourceView][0].get());
+			CommandCreateView command(GenerateKey{});
 
-			return command->CreateUAV(device, resource_, desc_, descriptorHandleCPU_, CounterResource_);
+			return command.CreateUAV(device, resource_, desc_, descriptorHandleCPU_, CounterResource_);
 		};
 
 	return retFunc;
@@ -130,9 +126,9 @@ template<>
 	)
 	{
 		auto* dxgiFactory = dxgiFactoryGetter(DeviceContext::AccessKey{});
-		auto* command = static_cast<CommandStructureSwapChain*>(commandContainer[DeviceContext::CommandType::kStructureSwapChain][0].get());
+		CommandStructureSwapChain command(GenerateKey{});
 
-		return command->CreateSwapChain(*dxgiFactory, commandQueue_,desc_, swapChainDoublePtr_, hWnd_);
+		return command.CreateSwapChain(*dxgiFactory, commandQueue_,desc_, swapChainDoublePtr_, hWnd_);
 	};
 
 	return retFunc;
@@ -153,9 +149,9 @@ template<>
 	auto retFunc = [this](D3D12_DESCRIPTOR_HEAP_TYPE heapType_, UINT numDescriptors_, bool shaderVisible_)
 	{
 		auto* device = deviceGetter(DeviceContext::AccessKey{});
-		auto* command = static_cast<CommandCreateDescriptorHeap*>(commandContainer[DeviceContext::CommandType::kCreateDescriptorHeap][0].get());
+		CommandCreateDescriptorHeap command(GenerateKey{});
 
-		return command->Create(device, heapType_,numDescriptors_, shaderVisible_);
+		return command.Create(device, heapType_,numDescriptors_, shaderVisible_);
 	};
 
 	return retFunc;
@@ -184,18 +180,18 @@ template<>
 		const std::string& name_
 	)
 	{
-			auto* device = deviceGetter(DeviceContext::AccessKey{});
-			CommandCreateGPUResource* command = static_cast<CommandCreateGPUResource*>(commandContainer[DeviceContext::CommandType::kCreateGPUBuffer][0].get());
+		auto* device = deviceGetter(DeviceContext::AccessKey{});
+		CommandCreateGPUResource command(GenerateKey{});
 
-			return command->CreateResource
-			(
-				device, 
-				resourceDesc_,
-				heapProperties_,
-				clearValue_,
-				initialState_,
-				name_
-			);
+		return command.CreateResource
+		(
+			device, 
+			resourceDesc_,
+			heapProperties_,
+			clearValue_,
+			initialState_,
+			name_
+		);
 	};
 
 	return retFunc;

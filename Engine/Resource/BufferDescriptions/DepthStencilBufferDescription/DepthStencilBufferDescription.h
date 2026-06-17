@@ -24,7 +24,7 @@ public:
 		UINT height_,
 		FLOAT clearColor_,
 		DXGI_FORMAT format_,
-		D3D12_RESOURCE_STATES initialState_ = D3D12_RESOURCE_STATE_DEPTH_WRITE
+		ResourceStates initialStates_
 	);
 
 	//要項チェック
