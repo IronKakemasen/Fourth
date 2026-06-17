@@ -5,7 +5,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 {
     // デバッガー。DebugLayer, PointerValidator, LeakChecker
     RuntimeDebugger runtimeDebugger;
-    // アプリケーションクラス
+    // エンジンの交易場
     Nexus nexus;
 
     MSG msg = {};

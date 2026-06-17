@@ -27,7 +27,7 @@ private:
 	D3D12_RECT scissorRect;
 
 	//viewportとscissorRectをセット
-	void SetMatrix();
+	void AssembleMatrix();
 };
 
 

@@ -227,6 +227,8 @@
     <ClCompile Include="Engine\Resource\BufferDescriptions\SRV_UAVBufferDescription\SRV_UAVBufferDescription.cpp" />
     <ClCompile Include="Engine\Core\SwapChain\SwapChainColorBuffer\SwapChainColorBuffer.cpp" />
     <ClCompile Include="Engine\Core\Device\Commands\StructureCommandContext\CommandStructureCommandContext.cpp" />
+    <ClCompile Include="Engine\Core\SwapChain\Presenter\Presenter.cpp" />
+    <ClCompile Include="Engine\Core\SwapChain\RenderPassMaterialProvider\RenderPassMaterialProvider.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Engine\Core\CommandContext\CommandContext.h" />
@@ -257,6 +259,7 @@
     <ClInclude Include="Engine\Render\kara.h" />
     <ClInclude Include="Engine\Resource\MeshShaderPipelineStateStream.h" />
     <ClInclude Include="Engine\Debug\ErrorMessageOutput\ErrorMessageOutput.h" />
+    <ClInclude Include="Engine\Resource\ResourceBarrier.h" />
     <ClInclude Include="External\Audio\SoundCommon.h" />
     <ClInclude Include="External\Audio\xaudio_player_core.h" />
     <ClInclude Include="External\Audio\xaudio_player_mf.h" />
@@ -293,6 +296,8 @@
     <ClInclude Include="Engine\Resource\BufferDescriptions\SRV_UAVBufferDescription\SRV_UAVBufferDescription.h" />
     <ClInclude Include="Engine\Core\SwapChain\SwapChainColorBuffer\SwapChainColorBuffer.h" />
     <ClInclude Include="Engine\Core\Device\Commands\StructureCommandContext\CommandStructureCommandContext.h" />
+    <ClInclude Include="Engine\Core\SwapChain\Presenter\Presenter.h" />
+    <ClInclude Include="Engine\Core\SwapChain\RenderPassMaterialProvider\RenderPassMaterialProvider.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
