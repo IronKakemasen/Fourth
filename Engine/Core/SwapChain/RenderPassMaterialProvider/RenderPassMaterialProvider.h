@@ -1,6 +1,7 @@
 #pragma once
 #include "../SwapChainColorBuffer/SwapChainColorBuffer.h"
 
+
 class DepthStencilBuffer;
 
 //描画パスを構築するのに必要な材料を渡す
@@ -14,11 +15,13 @@ class SwapChainContext::RenderPassMaterialProvider
 			D3D12_RESOURCE_BARRIER barrier;
 			D3D12_VIEWPORT* viewport;
 			D3D12_RECT* scissorRect;
+			std::array<FLOAT, 4> clearColor;
 		};
 
 		struct DepthStencilBuffer
 		{
 			D3D12_CPU_DESCRIPTOR_HANDLE dsvhandle{};
+			float clearColor{};
 		};
 
 		ColorBuffer colorBuffer;
@@ -30,7 +33,6 @@ class SwapChainContext::RenderPassMaterialProvider
 	};
 
 public:
-
 
 	RenderPassMaterialProvider(SwapChainContext::ColorBuffer* colorBuffer_, DepthStencilBuffer* depthStencilBuffer_);
 	

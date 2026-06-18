@@ -61,6 +61,9 @@ public:
 	>
 	CreateCommandContextCoreParts(DeviceContext::InstanceKey instanceKey_);
 
+	//Fenceオブジェの生成関数
+	[[nodiscard]] Microsoft::WRL::ComPtr<ID3D12Fence> CreateFence();
+
 
 private:
 

@@ -102,7 +102,7 @@ void BufferContext::BufferAssembler::AssembleView<ColorBuffer, ColorBufferDescri
 
 	for (int i = 0;i < ProjectConfig::Render::kRequiredGPUBufferSum;++i)
 	{
-		auto accessKey = ColorBuffer::BufferAccessKey{};
+		auto accessKey = ColorBuffer::ResourceAccessKey{};
 		auto instanceKey = ColorBuffer::InstanceKey{};
 
 		//srv生成
@@ -180,7 +180,7 @@ void BufferContext::BufferAssembler::AssembleView<DepthStencilBuffer, DepthStenc
 
 	for (int i = 0;i < ProjectConfig::Render::kRequiredGPUBufferSum;++i)
 	{
-		auto accessKey = ColorBuffer::BufferAccessKey{};
+		auto accessKey = ColorBuffer::ResourceAccessKey{};
 		auto instanceKey = ColorBuffer::InstanceKey{};
 
 		//srv生成
@@ -195,7 +195,7 @@ void BufferContext::BufferAssembler::AssembleView<DepthStencilBuffer, DepthStenc
 			buffer_->OverrideHeapIndex<ViewType::kSRV>(instanceKey, srvGPU, i);
 		}
 
-		//rtv生成
+		//DSV生成
 		{
 			D3D12_CPU_DESCRIPTOR_HANDLE dsvCPU{};
 
@@ -203,7 +203,6 @@ void BufferContext::BufferAssembler::AssembleView<DepthStencilBuffer, DepthStenc
 			buffer_->OverrideHeapIndex<ViewType::kDSV>(instanceKey, dsvCPU, i);
 		}
 	}
-
 }
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////

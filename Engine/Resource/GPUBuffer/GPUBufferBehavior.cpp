@@ -5,6 +5,7 @@
 #include "../ResourceBarrier.h"
 
 
+
 namespace
 {
 	std::string fileName = "GPUBufferBehavior.cpp";
@@ -50,7 +51,7 @@ GPUBufferBehavior::~GPUBufferBehavior()
 }
 
 
-ID3D12Resource* GPUBufferBehavior::GetResource(BufferAccessKey bufferAccessKey_ ,int resourceNo_)
+ID3D12Resource* GPUBufferBehavior::GetResource(ResourceAccessKey bufferAccessKey_ ,int resourceNo_)
 {
 	std::string errorMsg = name + "は空です (GetResourceに失敗)";
 
@@ -59,3 +60,8 @@ ID3D12Resource* GPUBufferBehavior::GetResource(BufferAccessKey bufferAccessKey_ 
 	return buffers.at(resourceNo_).resource.Get();
 }
 
+
+D3D12_RESOURCE_BARRIER GPUBufferBehavior::CreateBarrier(ExtracteMaterialKey key_, D3D12_RESOURCE_STATES after_ , uint8_t index_)
+{
+	return buffers.at(index_).CreateBarrier(after_);
+}

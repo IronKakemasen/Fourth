@@ -8,9 +8,9 @@ public:
 	Presenter(IDXGISwapChain4* swapChain_);
 
 	//現在のフレームインデックススを取得
-	UINT GetFrameIndex();
+	UINT GetFrameIndex()const;
 	//バックバッファインデックス入れ替え
-	void Present();
+	void Present()const;
 
 private:
 
