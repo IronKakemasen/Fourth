@@ -1,12 +1,11 @@
 #pragma once
 #include "../SwapChainColorBuffer/SwapChainColorBuffer.h"
 
+class DepthStencilBuffer;
 
 //描画パスを構築するのに必要な材料を渡す
 class SwapChainContext::RenderPassMaterialProvider
 {
-public:
-
 	struct Materials
 	{
 		struct ColorBuffer
@@ -26,17 +25,21 @@ public:
 		DepthStencilBuffer depthStencilBuffer;
 
 		Materials(ColorBuffer colorBuffer_, DepthStencilBuffer depthStencilBuffer_)
-			:colorBuffer(colorBuffer_), depthStencilBuffer(depthStencilBuffer_){}
+			:colorBuffer(colorBuffer_), depthStencilBuffer(depthStencilBuffer_) {}
 
 	};
 
+public:
 
-	RenderPassMaterialProvider(SwapChainContext::ColorBuffer* colorBuffer_);
+
+	RenderPassMaterialProvider(SwapChainContext::ColorBuffer* colorBuffer_, DepthStencilBuffer* depthStencilBuffer_);
 	
-	Materials Provide(UINT frameIndex_);
+	[[nodiscard]] Materials ProvideForBegine(UINT frameIndex_);
+	[[nodiscard]] D3D12_RESOURCE_BARRIER ProvideEnd(UINT frameIndex_);
 
 private:
 
 	SwapChainContext::ColorBuffer* colorBuffer;
+	DepthStencilBuffer* depthStencilBuffer;
 };
 

@@ -2,7 +2,7 @@
 
 namespace ResourceBarrier
 {
-	D3D12_RESOURCE_BARRIER Create
+	inline D3D12_RESOURCE_BARRIER Create
 	(
 		ID3D12Resource* dst_resource_,
 		D3D12_RESOURCE_BARRIER_TYPE Type,
@@ -17,6 +17,7 @@ namespace ResourceBarrier
 		//バリアの設定
 		barrier.Type = Type;
 		barrier.Flags = Flags;
+
 
 		//バリアを張る対象のリソース。
 		barrier.Transition.pResource = dst_resource_;

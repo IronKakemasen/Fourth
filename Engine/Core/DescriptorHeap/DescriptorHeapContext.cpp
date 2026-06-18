@@ -115,7 +115,7 @@ void DescriptorHeapContext::CreateDescriptorHeap(UINT numDescriptors_, bool shad
 
 std::string DescriptorHeapContext::GetDescriptorName(D3D12_DESCRIPTOR_HEAP_TYPE heapType_)
 {
-	ErrorMessageOutput::Assert::DetectError((heapType_ != D3D12_DESCRIPTOR_HEAP_TYPE_NUM_TYPES), "TypeError", fileName);
+	ErrorMessageOutput::Assert::DetectError((heapType_ < D3D12_DESCRIPTOR_HEAP_TYPE_NUM_TYPES), "TypeError: 要素外アクセス", fileName);
 
 	std::string descriptorHeap = "_descriptorHeap";
 

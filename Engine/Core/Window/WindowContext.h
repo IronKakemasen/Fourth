@@ -18,8 +18,8 @@ private:
 	{
 		HINSTANCE m_hInst;
 		HWND m_hWnd;
-		uint32_t m_width;
-		uint32_t m_height;
+		UINT m_width;
+		UINT m_height;
 		LPCWSTR m_windowName;
 	};
 

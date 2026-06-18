@@ -1,40 +1,46 @@
 #include "PreCompileHeader.h"
 #include "RenderPassMaterialProvider.h"
-#include "../../../Resource/ResourceBarrier.h"
+#include "../../../Resource/GPUBuffer/DepthStencilBuffer/DepthStencilBuffer.h"
 
 
-SwapChainContext::RenderPassMaterialProvider::RenderPassMaterialProvider(SwapChainContext::ColorBuffer* colorBuffer_)
-	:colorBuffer(colorBuffer_)
+SwapChainContext::RenderPassMaterialProvider::RenderPassMaterialProvider(SwapChainContext::ColorBuffer* colorBuffer_, DepthStencilBuffer* depthStencilBuffer_)
+	:colorBuffer(colorBuffer_),depthStencilBuffer(depthStencilBuffer_)
 {
 
 }
 
-SwapChainContext::RenderPassMaterialProvider::Materials SwapChainContext::RenderPassMaterialProvider::Provide(UINT frameIndex_)
+[[nodiscard]] SwapChainContext::RenderPassMaterialProvider::Materials SwapChainContext::RenderPassMaterialProvider::ProvideForBegine(UINT frameIndex_)
 {
 	
 	SwapChainContext::RenderPassMaterialProvider::Materials::ColorBuffer materialC;
 	SwapChainContext::RenderPassMaterialProvider::Materials::DepthStencilBuffer materialD;
 
+	//カラーバッファの提供材料
+	{
+		materialC.scissorRect = &colorBuffer->scissorRect;
+		materialC.viewport = &colorBuffer->viewport;
 
-	materialC.scissorRect = &colorBuffer->scissorRect;
-	materialC.viewport = &colorBuffer->viewport;
+		auto& dstBuffer = colorBuffer->buffers.at(frameIndex_);
+		materialC.handle = dstBuffer.cpuHandle;
 
-	auto& dstBuffer = colorBuffer->buffers.at(frameIndex_);
-	materialC.handle = dstBuffer.cpuHandle;
-
-	materialC.barrier = ResourceBarrier::Create
-	(
-		dstBuffer.resource.Get(),
-		D3D12_RESOURCE_BARRIER_TYPE_TRANSITION,
-		D3D12_RESOURCE_BARRIER_FLAG_NONE,
-		D3D12_RESOURCE_STATE_PRESENT,
-		D3D12_RESOURCE_STATE_RENDER_TARGET,
-		D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES
-	);
+		//今後もリソースステートの遷移は固定だと思うので決め打ち
+		D3D12_RESOURCE_STATES after = D3D12_RESOURCE_STATE_RENDER_TARGET;
+		materialC.barrier = dstBuffer.CreateBarrier(after);
+	}
 
 	return SwapChainContext::RenderPassMaterialProvider::Materials
 	(
 		materialC,
 		materialD
 	);
+}
+
+[[nodiscard]] D3D12_RESOURCE_BARRIER SwapChainContext::RenderPassMaterialProvider::ProvideEnd(UINT frameIndex_)
+{
+	auto& dstBuffer = colorBuffer->buffers.at(frameIndex_);
+
+	//今後もリソースステートの遷移は固定だと思うので決め打ち
+	D3D12_RESOURCE_STATES after = D3D12_RESOURCE_STATE_PRESENT;
+	
+	return dstBuffer.CreateBarrier(after);
 }

@@ -3,16 +3,20 @@
 
 
 //DepthStencilBuffer
-struct DepthStencilBufferDescription final : public BufferDescriptionBehavior, IDSV_Assembler
+struct DepthStencilBufferDescription final : public BufferDescriptionBehavior, IDSV_Assembler, ISRV_Assembler
 {
 private:
 
+	//フォーマットは基本これかな
+	//DXGI_FORMAT_D24_UNORM_S8_UINT
+	//DXGI_FORMAT_R24_UNORM_X8_TYPELESS
 	struct Param
 	{
 		UINT width{};
 		UINT height{};
 		FLOAT clearColor = -1.0f;
-		DXGI_FORMAT format = DXGI_FORMAT::DXGI_FORMAT_Error_Detection;
+		DXGI_FORMAT dsvFormat = DXGI_FORMAT::DXGI_FORMAT_Error_Detection;
+		DXGI_FORMAT srvFormat = DXGI_FORMAT::DXGI_FORMAT_Error_Detection;
 
 	}param;
 
@@ -23,7 +27,8 @@ public:
 		UINT width_,
 		UINT height_,
 		FLOAT clearColor_,
-		DXGI_FORMAT format_,
+		DXGI_FORMAT dsvFormat_,
+		DXGI_FORMAT srvFormat_,
 		ResourceStates initialStates_
 	);
 
@@ -36,6 +41,8 @@ public:
 
 	//DSV生成
 	virtual D3D12_DEPTH_STENCIL_VIEW_DESC CreateDSVDesc()const override;
+	//SRV生成
+	virtual D3D12_SHADER_RESOURCE_VIEW_DESC CreateSRV_Desc()const override;
 	//クリアバリュー
 	virtual D3D12_CLEAR_VALUE WatchClearValue() const override;
 
@@ -43,6 +50,10 @@ public:
 	{
 		return param;
 	}
+
+private:
+
+	DXGI_FORMAT ConductTypelessFormat()const;
 
 };
 

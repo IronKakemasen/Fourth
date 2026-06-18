@@ -25,7 +25,7 @@ public:
 
 	virtual ~GPUBufferBehavior();
 
-	//生英ソースを取得
+	//生リソースを取得
 	ID3D12Resource* GetResource( BufferAccessKey bufferAccessKey_ , int resourceNo_);
 	
 	//descriptorHeapIndexを書き込む
@@ -97,6 +97,9 @@ private:
 		std::unordered_map<ViewType, IndexSet> heapIndicesContainer;
 		//リソースステート
 		D3D12_RESOURCE_STATES curState;
+
+		//ステートを遷移するためのバリアを生成
+		D3D12_RESOURCE_BARRIER CreateBarrier(D3D12_RESOURCE_STATES after_);
 	};
 
 	//複数分用意する

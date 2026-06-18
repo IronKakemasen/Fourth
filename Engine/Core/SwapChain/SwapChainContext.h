@@ -4,6 +4,9 @@ class Nexus;
 class ViewCreator;
 class CommandContext;
 class DescriptorHeapContext;
+class DepthStencilBuffer;
+
+
 
 class SwapChainContext
 {
@@ -22,8 +25,6 @@ public:
 	struct InstanceKey;
 	//バッファの生リソースアドレスを取得キー
 	struct ResourceGetKey;
-	//マテリアルプロバイダーが情報を取得
-
 	//専用のカラーバッファ
 	class ColorBuffer;
 
@@ -33,7 +34,8 @@ public:
 		DescriptorHeapContext* descriptorHeapContext_,
 		CommandContext* commandContext_,
 		CommandCreateSwapChain cmdCreateSwapChain_,
-		const HWND hWnd_
+		const HWND hWnd_,
+		std::unique_ptr<DepthStencilBuffer> depthStencilBuffer_
 	);
 
 	~SwapChainContext();
@@ -76,6 +78,7 @@ private:
 	//スワップチェーン
 	Microsoft::WRL::ComPtr<IDXGISwapChain4> swapChain = nullptr;
 	std::unique_ptr<ColorBuffer> colorBuffer;
+	std::unique_ptr<DepthStencilBuffer> depthStencilBuffer;
 	std::unique_ptr<Presenter> presenter;
 	std::unique_ptr<RenderPassMaterialProvider> renderPassMaterialProvider;
 };

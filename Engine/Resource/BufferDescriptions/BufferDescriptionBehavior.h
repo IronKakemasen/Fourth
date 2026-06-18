@@ -13,10 +13,10 @@
 //バッファのディスクリプション共通
 struct BufferDescriptionBehavior
 {
-protected :
-	using ResourceStates = std::array<D3D12_RESOURCE_STATES, ProjectConfig::Render::kRequiredGPUBufferSum>;
 
 public:
+	using ResourceStates = std::array<D3D12_RESOURCE_STATES, ProjectConfig::Render::kRequiredGPUBufferSum>;
+
 	BufferDescriptionBehavior(ResourceStates initialStates_);
 
 	BufferDescriptionBehavior() = default;
@@ -31,7 +31,7 @@ public:
 
 
 //それぞれの固有のビュー生成インターフェース
-struct ISRBufferAssembler 
+struct ISRV_Assembler 
 {
 	virtual D3D12_SHADER_RESOURCE_VIEW_DESC CreateSRV_Desc()const = 0; 
 };

@@ -7,6 +7,9 @@
 #include "../Core/Device/DeviceContextCommandProvider/DeviceContextCommandProvider.h"
 #include "../Core/SwapChain/SwapChainContext.h"
 #include "../Core/CommandContext/CommandContext.h"
+#include "../Resource/BufferAssembler/BufferAssembler.h"
+#include "../Resource/BufferDescriptions/DepthStencilBufferDescription/DepthStencilBufferDescription.h"
+#include "../Resource/GPUBuffer/DepthStencilBuffer/DepthStencilBuffer.h"
 
 namespace
 {
@@ -55,8 +58,26 @@ Nexus::~Nexus()
 
 void Nexus::InitSwapChainContext()
 {
-	auto cmdCreateSwapChain = deviceContext->commandProvider->ProvideCreateSwapChainCommand();
+	using namespace ProjectConfig::Window;
+	BufferDescriptionBehavior::ResourceStates resourceStates = { D3D12_RESOURCE_STATE_DEPTH_WRITE ,D3D12_RESOURCE_STATE_DEPTH_WRITE };
+	
+	std::unique_ptr<DepthStencilBuffer> depthStencilBuffer;
 
+	//スワップチェーンが使用する深度ステンシルバッファをここでつくちゃう
+	{
+		DepthStencilBufferDescription desc
+		(
+			kWidth,
+			kHeight,
+			0.0f,
+			DXGI_FORMAT_D24_UNORM_S8_UINT,
+			DXGI_FORMAT_R24_UNORM_X8_TYPELESS,
+			resourceStates
+		);
+
+		depthStencilBuffer = std::move(bufferContext->bufferAssembler->Assemble<DepthStencilBuffer>(desc, "SwapChain_DB"));
+		Logger::Log("Create: SwapChainDepthStencilBuffer", fileName);
+	}
 
 	swapChainContext.reset
 	(
@@ -65,13 +86,13 @@ void Nexus::InitSwapChainContext()
 			SwapChainContext::InstanceKey{},
 			descriptorHeapContext.get(),
 			commandContext.get(),
-			cmdCreateSwapChain,
-			windowContext->WatchHWND()
+			deviceContext->commandProvider->ProvideCreateSwapChainCommand(),
+			windowContext->WatchHWND(),
+			std::move(depthStencilBuffer)
 		)
 	);
 
 	Logger::Log("Instantiate: swapChainContext", fileName);
-
 }
 
 //Nexusクラスのインスタンスを1つに制限する

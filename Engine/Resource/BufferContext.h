@@ -32,10 +32,11 @@ public:
 
 	~BufferContext();
 
-private:
-
 	//バッファ生成クラス
 	std::unique_ptr<BufferAssembler> bufferAssembler;
+
+private:
+
 
 };
 
