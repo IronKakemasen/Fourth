@@ -8,21 +8,6 @@ class DeviceContext
 {
 public:
 
-	enum CommandType
-	{
-		//GPUリソース生成
-		kCreateGPUBuffer,
-		//DescriptorHeapを作成
-		kCreateDescriptorHeap,
-		//Resourceのビューを作成
-		kCreateResourceView,
-		//SwapChain生成
-		kStructureSwapChain,
-
-
-		kCount
-	};
-
 	//生成キー。Nexusしか許さない
 	struct InstanceKey;
 	

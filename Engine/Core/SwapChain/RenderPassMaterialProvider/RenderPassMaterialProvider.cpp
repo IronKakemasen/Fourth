@@ -21,11 +21,20 @@ SwapChainContext::RenderPassMaterialProvider::RenderPassMaterialProvider(SwapCha
 		materialC.viewport = &colorBuffer->viewport;
 
 		auto& dstBuffer = colorBuffer->buffers.at(frameIndex_);
+		//ハンドル
 		materialC.handle = dstBuffer.cpuHandle;
+		//クリアカラー
+		materialC.clearColor = colorBuffer->desc->clearColor;
 
 		//今後もリソースステートの遷移は固定だと思うので決め打ち
 		D3D12_RESOURCE_STATES after = D3D12_RESOURCE_STATE_RENDER_TARGET;
 		materialC.barrier = dstBuffer.CreateBarrier(after);
+	}
+
+	//ディプスバッファの提供材料
+	{
+		auto cpuHandle = depthStencilBuffer->WatchIndex<ViewType::kDSV,D3D12_CPU_DESCRIPTOR_HANDLE>(DepthStencilBuffer::ExtracteMaterialKey{}, frameIndex_);
+		auto clearColor = depthStencilBuffer->WatchClearColor(DepthStencilBuffer::ExtracteMaterialKey{});
 	}
 
 	return SwapChainContext::RenderPassMaterialProvider::Materials

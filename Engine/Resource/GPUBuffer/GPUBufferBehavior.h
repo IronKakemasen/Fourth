@@ -1,18 +1,49 @@
 #pragma once
 #include "../BufferAssembler/BufferAssembler.h"
+#include "../../Core/SwapChain/RenderPassMaterialProvider/RenderPassMaterialProvider.h"
 
 
-class GPUBufferManager;
 struct BufferDescriptionBehavior;
 
 class GPUBufferBehavior
 {
+	//各desctiptorheapのインデックス
+	struct IndexSet
+	{
+		uint32_t uint{};
+		D3D12_CPU_DESCRIPTOR_HANDLE cpu{};
+		D3D12_GPU_DESCRIPTOR_HANDLE gpu{};
+	};
+
+	struct Buffer
+	{
+		//生リソース
+		Microsoft::WRL::ComPtr<ID3D12Resource> resource;
+		//各ビューのインデックス
+		std::unordered_map<ViewType, IndexSet> heapIndicesContainer;
+
+		//ステートを遷移するためのバリアを生成
+		D3D12_RESOURCE_BARRIER CreateBarrier(D3D12_RESOURCE_STATES after_);
+
+		//リソースステート
+		D3D12_RESOURCE_STATES curState;
+	};
+
+	//複数分用意する
+	std::array<Buffer, ProjectConfig::Render::kRequiredGPUBufferSum> buffers;
+
+	//なまえ
+	std::string name = "noName";
+
 public:
 
 	//生成キー
 	struct InstanceKey;
-	//アクセスキー
-	struct BufferAccessKey;
+	//生リソースアクセスキー
+	struct ResourceAccessKey;
+	//バッファから描画パスに必要な情報をもらうためのキー
+	struct ExtracteMaterialKey;
+
 
 	GPUBufferBehavior
 	(
@@ -26,7 +57,7 @@ public:
 	virtual ~GPUBufferBehavior();
 
 	//生リソースを取得
-	ID3D12Resource* GetResource( BufferAccessKey bufferAccessKey_ , int resourceNo_);
+	ID3D12Resource* GetResource(ResourceAccessKey bufferAccessKey_ , int resourceNo_);
 	
 	//descriptorHeapIndexを書き込む
 	template<ViewType type, typename Index>
@@ -50,9 +81,9 @@ public:
 
 	//各種ビューのインデックスを取得
 	template<ViewType type, typename Index>
-	Index WatchIndex(uint8_t resourceNo_)const 
+	Index WatchIndex(ExtracteMaterialKey key_ , uint8_t resourceNo_)const
 	{
-		const auto& dstHeapContainer = buffers.at(resourceNo_).heapIndicesContainer[type];
+		const auto& dstHeapContainer = buffers.at(resourceNo_).heapIndicesContainer.at(type);
 
 		if constexpr (std::is_same_v<Index, uint32_t>)
 		{
@@ -74,39 +105,16 @@ public:
 		return Index{};
 	}
 
+	//自身のバッファから「after_」の遷移するバリアを生成。このとき、curStateも変わる
+	D3D12_RESOURCE_BARRIER CreateBarrier(ExtracteMaterialKey key_, D3D12_RESOURCE_STATES after_, uint8_t index_);
+
+
 protected:
 
 	//自身を構成するディスクリプション
 	std::unique_ptr <BufferDescriptionBehavior> description;
 
-private:
 
-	//各desctiptorheapのインデックス
-	struct IndexSet
-	{
-		uint32_t uint{};
-		D3D12_CPU_DESCRIPTOR_HANDLE cpu{};
-		D3D12_GPU_DESCRIPTOR_HANDLE gpu{};
-	};
-
-	struct Buffer
-	{
-		////生リソース
-		Microsoft::WRL::ComPtr<ID3D12Resource> resource;
-		//各ビューのインデックス
-		std::unordered_map<ViewType, IndexSet> heapIndicesContainer;
-		//リソースステート
-		D3D12_RESOURCE_STATES curState;
-
-		//ステートを遷移するためのバリアを生成
-		D3D12_RESOURCE_BARRIER CreateBarrier(D3D12_RESOURCE_STATES after_);
-	};
-
-	//複数分用意する
-	std::array<Buffer, ProjectConfig::Render::kRequiredGPUBufferSum> buffers;
-	
-	//なまえ
-	std::string name = "noName";
 };
 
 
@@ -122,12 +130,21 @@ private:
 };
 
 
-struct GPUBufferBehavior::BufferAccessKey
+struct GPUBufferBehavior::ResourceAccessKey
 {
 private:
 	friend class BufferContext::BufferAssembler;
-	friend class GPUBufferManager;
 
-	explicit BufferAccessKey() = default;
+	explicit ResourceAccessKey() = default;
 };
 
+
+struct GPUBufferBehavior::ExtracteMaterialKey
+{
+private:
+	
+	friend class SwapChainContext::RenderPassMaterialProvider;
+
+	explicit ExtracteMaterialKey() = default;
+
+};

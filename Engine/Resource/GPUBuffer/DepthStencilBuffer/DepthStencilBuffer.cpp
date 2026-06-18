@@ -13,3 +13,8 @@ DepthStencilBuffer::DepthStencilBuffer
 {
 
 }
+
+float DepthStencilBuffer::WatchClearColor(ExtracteMaterialKey key_)
+{
+	return static_cast<DepthStencilBufferDescription*>(description.get())->WatchParam().clearColor;
+}

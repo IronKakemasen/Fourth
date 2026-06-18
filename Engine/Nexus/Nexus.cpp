@@ -175,13 +175,22 @@ void Nexus::InitCommandContext()
 	auto [cmdQueue, cmdAllocators, cmdList] = 
 		deviceContext->commandProvider->CreateCommandContextCoreParts(DeviceContext::InstanceKey{});
 
-	commandContext.reset(new CommandContext
+	commandContext.reset
 	(
-		CommandContext::InstanceKey{},
-		std::move(cmdQueue),
-		std::move(cmdAllocators),
-		std::move(cmdList))
+		new CommandContext
+		(
+			CommandContext::InstanceKey{},
+			std::move(cmdQueue),
+			std::move(cmdAllocators),
+			std::move(cmdList),
+			std::move(deviceContext->commandProvider->CreateFence())
+		)
 	);
 
 	Logger::Log("Instantiate: commandContext", fileName);
+}
+
+void Nexus::Run()
+{
+
 }

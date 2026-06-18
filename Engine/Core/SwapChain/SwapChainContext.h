@@ -27,6 +27,9 @@ public:
 	struct ResourceGetKey;
 	//専用のカラーバッファ
 	class ColorBuffer;
+	//描画パスに必要な情報を提供する
+	class RenderPassMaterialProvider;
+
 
 	SwapChainContext
 	(
@@ -47,8 +50,6 @@ private:
 	struct Description;
 	//画面の表示、バックバッファの切り替えを担う
 	class Presenter;
-	//描画パスに必要な情報を提供する
-	class RenderPassMaterialProvider;
 
 
 	//SwapChainとそのカラーバッファを構築

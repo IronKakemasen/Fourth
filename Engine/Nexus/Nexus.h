@@ -20,6 +20,8 @@ public:
 	Nexus(Nexus&&) = delete;
 	Nexus& operator=(Nexus&&) = delete;
 
+	void Run();
+
 private:
 
 	//Nexusのインスタンスを1つに制限するためのシングルトンクラス

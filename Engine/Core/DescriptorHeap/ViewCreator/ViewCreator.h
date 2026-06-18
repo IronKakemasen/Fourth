@@ -46,7 +46,7 @@ public:
 		else { type = kSRVUAV; }
 
 		//ヒープを取り出す
-		auto* targetHeap = descriptorHeap_map[type];
+		auto* targetHeap = descriptorHeap_map.at(type);
 
 		//view生成数に応じたハンドルを取得
 		uint32_t allocateIndex = targetHeap->GetHandle<uint32_t>();

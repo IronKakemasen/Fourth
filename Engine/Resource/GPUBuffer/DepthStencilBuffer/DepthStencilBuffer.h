@@ -16,5 +16,7 @@ public:
 		Microsoft::WRL::ComPtr<ID3D12Resource> resource2_,
 		std::unique_ptr <BufferDescriptionBehavior>&& description_
 	);
+
+	float WatchClearColor(ExtracteMaterialKey key_);
 };
 
