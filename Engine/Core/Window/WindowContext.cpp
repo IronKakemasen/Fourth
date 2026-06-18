@@ -59,8 +59,8 @@ WindowContext::WindowContext(InstacnceKey instanceKey_)
 	WNDCLASSEX wc = {};
 
 	setupParam.m_windowName = kTitle;
-	setupParam.m_width = (uint32_t)kWidth;
-	setupParam.m_height = (uint32_t)kHeight;
+	setupParam.m_width = kWidth;
+	setupParam.m_height = kHeight;
 
 	wc.cbSize = sizeof(WNDCLASSEX);
 	wc.style = CS_HREDRAW | CS_VREDRAW;
@@ -109,9 +109,6 @@ WindowContext::WindowContext(InstacnceKey instanceKey_)
 
 	//ウィンドウにフォーカスを設定
 	SetFocus(setupParam.m_hWnd);
-
-	//入力インターフェースの初期化
-	//inputInterface.Initialize(m_hInst, m_hWnd);
 
 	//誰も捕捉しなかった場合に(Unhandled)、補足する関数を登録
 	SetUnhandledExceptionFilter(ExportDump);

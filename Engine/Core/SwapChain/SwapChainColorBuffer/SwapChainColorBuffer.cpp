@@ -1,5 +1,6 @@
 #include "PreCompileHeader.h"
 #include "SwapChainColorBuffer.h"
+#include "../../../Resource/ResourceBarrier.h"
 
 
 SwapChainContext::ColorBuffer::ColorBuffer
@@ -89,3 +90,18 @@ DXGI_SWAP_CHAIN_DESC1 SwapChainContext::Description::CreateSwapChainDesc()const
 }
 
 
+D3D12_RESOURCE_BARRIER SwapChainContext::ColorBuffer::Buffer::CreateBarrier(D3D12_RESOURCE_STATES after_)
+{
+	auto buff = resourceState;
+	resourceState = after_;
+
+	return ResourceBarrier::Create
+	(
+		resource.Get(),
+		D3D12_RESOURCE_BARRIER_TYPE_TRANSITION,
+		D3D12_RESOURCE_BARRIER_FLAG_NONE,
+		buff,
+		after_,
+		D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES
+	);
+}

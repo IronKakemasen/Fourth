@@ -2,11 +2,28 @@
 #include "GPUBufferBehavior.h"
 #include "../../Utility/StringConnverter/StringConverter.h"
 #include "../BufferDescriptions/BufferDescriptionBehavior.h"
+#include "../ResourceBarrier.h"
 
 
 namespace
 {
 	std::string fileName = "GPUBufferBehavior.cpp";
+}
+
+D3D12_RESOURCE_BARRIER GPUBufferBehavior::Buffer::CreateBarrier(D3D12_RESOURCE_STATES after_)
+{
+	auto buff = curState;
+	curState = after_;
+
+	return ResourceBarrier::Create
+	(
+		resource.Get(),
+		D3D12_RESOURCE_BARRIER_TYPE_TRANSITION,
+		D3D12_RESOURCE_BARRIER_FLAG_NONE,
+		buff,
+		after_,
+		D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES
+	);
 }
 
 GPUBufferBehavior::GPUBufferBehavior

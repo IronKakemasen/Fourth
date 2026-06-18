@@ -31,7 +31,6 @@ public:
 	inline ID3D12Resource* GetResource(SwapChainContext::ResourceGetKey key_, int index_) { return buffers.at(index_).resource.Get(); }
 	//ヒープインデックスの上書き
 	void OverrideHeapIndex(SwapChainContext::InstanceKey instanceKey_, int index_, D3D12_CPU_DESCRIPTOR_HANDLE handle_);
-
 	//MaterialProviderが情報を欲する
 	friend class SwapChainContext::RenderPassMaterialProvider;
 
@@ -42,19 +41,17 @@ private:
 	struct Buffer
 	{
 		Microsoft::WRL::ComPtr <ID3D12Resource> resource;
-		D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle;
-		D3D12_RESOURCE_STATES state;
+		D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle{};
+		//初期化ステートはこれ以外無いと思うので決め打ち
+		D3D12_RESOURCE_STATES resourceState = D3D12_RESOURCE_STATE_COMMON;
+
+		D3D12_RESOURCE_BARRIER CreateBarrier(D3D12_RESOURCE_STATES after_);
 	};
 
 	std::array<Buffer, ProjectConfig::Render::kRequiredGPUBufferSum> buffers;
-
-	//std::array<Microsoft::WRL::ComPtr<ID3D12Resource>,ProjectConfig::Render::kRequiredGPUBufferSum> resources;
-	//std::array<D3D12_CPU_DESCRIPTOR_HANDLE, ProjectConfig::Render::kRequiredGPUBufferSum> cpuHandles;
-
 	std::unique_ptr<SwapChainContext::Description> desc;
 
 	D3D12_VIEWPORT viewport;
 	D3D12_RECT scissorRect;
-	D3D12_RESOURCE_STATES resourceState;
 };
 

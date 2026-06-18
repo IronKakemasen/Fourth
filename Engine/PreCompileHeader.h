@@ -61,17 +61,17 @@ namespace ProjectConfig
 	namespace Window
 	{
 		inline const LPCWSTR kTitle = L"Fourth";
-		constexpr float kWidth = 1280.0f;
-		constexpr float kHeight = 720.0f;
+		constexpr UINT kWidth = 1280;
+		constexpr UINT kHeight = 720;
 		constexpr float kDefaultFovY = 90.0f * 3.141592653589f / 180.0f;
-		constexpr std::array kColor = { 1.0f,0.0f,0.0f,1.0f };
+		constexpr std::array<float,4> kColor = { 1.0f,0.0f,0.0f,1.0f };
 		constexpr DXGI_FORMAT kRtFormat = DXGI_FORMAT_R16G16B16A16_FLOAT;
 	}
 
 	namespace Render
 	{
 		constexpr int kRequiredGPUBufferSum = 2;
-		constexpr D3D_SHADER_MODEL kMaximumShaderModel = D3D_SHADER_MODEL_6_6;
+		constexpr D3D_SHADER_MODEL kMaximumShaderModel = D3D_SHADER_MODEL_6_6;	
 	}
 
 
@@ -89,7 +89,7 @@ namespace ProjectConfig
 	namespace Core
 	{
 		constexpr uint32_t kNumDescriptorsRTVHeap = 16;
-		constexpr uint32_t kNumDescriptorSRVHeap = 256;
+		constexpr uint32_t kNumDescriptorSRVHeap = 1024;
 		constexpr uint32_t kNumDescriptorsDSVHeap = 16;
 	}
 }

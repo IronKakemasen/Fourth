@@ -90,3 +90,18 @@ std::unique_ptr<ColorBuffer> BufferContext::BufferAssembler::AssembleResource<Co
 template<>
 void BufferContext::BufferAssembler::AssembleView<ColorBuffer, ColorBufferDescription>
     (ColorBuffer* buffer_, const ColorBufferDescription& desc_);
+
+
+
+template<>
+std::unique_ptr<DepthStencilBuffer> BufferContext::BufferAssembler::AssembleResource<DepthStencilBuffer, DepthStencilBufferDescription>
+(
+    D3D12_RESOURCE_DESC resourceDesc_,
+    D3D12_HEAP_PROPERTIES heapProp_,
+    const std::string& name_,
+    const DepthStencilBufferDescription& desc_
+);
+
+template<>
+void BufferContext::BufferAssembler::AssembleView<DepthStencilBuffer, DepthStencilBufferDescription>
+(DepthStencilBuffer* buffer_, const DepthStencilBufferDescription& desc_);

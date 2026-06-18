@@ -3,7 +3,7 @@
 
 
 //StructuredBuffer（読み込み専用やRWStructuredBuffer（読み書き汎用）のDescription
-struct SRV_UAVBufferDescription final :public BufferDescriptionBehavior, ISRBufferAssembler, IUAV_Assembler
+struct SRV_UAVBufferDescription final :public BufferDescriptionBehavior, ISRV_Assembler, IUAV_Assembler
 {
 private:
 	struct Param
