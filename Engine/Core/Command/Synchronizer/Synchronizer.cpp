@@ -14,11 +14,15 @@ CommandContext::Synchronizer::Synchronizer
 
 }
 
-void CommandContext::Synchronizer::Synchronize(UINT frameIndex_)
+void CommandContext::Synchronizer::InsertSignal(UINT frameIndex_)
 {
 	auto currentValue = (*fenceCounters).at(frameIndex_);
-
 	commandQueue->Signal(fence, currentValue);
+}
+
+void CommandContext::Synchronizer::Wait(UINT frameIndex_)
+{
+	auto currentValue = (*fenceCounters).at(frameIndex_);
 
 	if (fence->GetCompletedValue() < currentValue)
 	{

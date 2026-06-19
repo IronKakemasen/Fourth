@@ -13,8 +13,8 @@ public:
 		HANDLE* fenceEvent_
 	);
 
-	void Synchronize(UINT frameIndex_);
-
+	void InsertSignal(UINT frameIndex_);
+	void Wait(UINT frameIndex_);
 
 private:
 	ID3D12CommandQueue* commandQueue;

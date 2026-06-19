@@ -1,5 +1,5 @@
 #pragma once
-#include "../DeviceContextCommandProvider/DeviceContextCommandProvider.h"
+#include "../DeviceContext.h"
 
 
 class DeviceContextCommandBehavior
@@ -7,7 +7,7 @@ class DeviceContextCommandBehavior
 public:
 
 
-	DeviceContextCommandBehavior(DeviceContext::CommandProvider::GenerateKey generateKey_);
+	DeviceContextCommandBehavior(DeviceContext::GenerateKey generateKey_);
 	~DeviceContextCommandBehavior();
 };
 

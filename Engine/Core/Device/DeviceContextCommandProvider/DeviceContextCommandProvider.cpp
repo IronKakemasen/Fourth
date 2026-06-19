@@ -6,23 +6,11 @@
 #include "../Commands/CreateDescriptorHeap/CommandCreateDescriptorHeap.h"
 #include "../Commands/CreateView/CommandCreateView.h"
 #include "../Commands/StructureSwapChain/CommandStructureSwapChain.h"
-#include "../Commands/StructureCommandContext/CommandStructureCommandContext.h"
-#include "../Commands/CreateFenceObject/CommandCreateFenceObject.h"
 
 
 namespace
 {
 	auto const fileName = "CommandProvider.cpp";
-}
-
-DeviceContext::CommandProvider::CommandProvider
-(
-	DeviceContext::InstanceKey instanceKey_,
-	std::function< ID3D12Device8* (DeviceContext::AccessKey)> deviceGetter_,
-	std::function< IDXGIFactory7* (DeviceContext::AccessKey)> dxgiFactoryGetter_
-) : deviceGetter(deviceGetter_), dxgiFactoryGetter(dxgiFactoryGetter_)
-{
-
 }
 
 using C_CreateRTV = std::function<void(ID3D12Resource* resource_, const D3D12_RENDER_TARGET_VIEW_DESC* desc_, D3D12_CPU_DESCRIPTOR_HANDLE descriptorHandleCPU_)>;
@@ -50,6 +38,21 @@ using C_CreateSwapChain = std::function< HRESULT
 )>;
 
 
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+DeviceContext::CommandProvider::CommandProvider
+(
+	DeviceContext::InstanceKey instanceKey_,
+	std::function< ID3D12Device8* (DeviceContext::AccessKey)> deviceGetter_,
+	std::function< IDXGIFactory7* (DeviceContext::AccessKey)> dxgiFactoryGetter_
+) : deviceGetter(deviceGetter_), dxgiFactoryGetter(dxgiFactoryGetter_)
+{
+
+}
+
+
 //CreateViewCommand
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -60,7 +63,7 @@ template<>
 	auto retFunc = [this](ID3D12Resource* resource_, const D3D12_RENDER_TARGET_VIEW_DESC* desc_, D3D12_CPU_DESCRIPTOR_HANDLE descriptorHandleCPU_)
 	{
 		auto* device = deviceGetter(DeviceContext::AccessKey{});
-		CommandCreateView command(GenerateKey{});
+		CommandCreateView command(DeviceContext::GenerateKey{});
 
 		return command.CreateRTV(device, resource_, desc_, descriptorHandleCPU_);
 	};
@@ -73,7 +76,7 @@ template<>
 	auto retFunc = [this](ID3D12Resource* resource_, const D3D12_SHADER_RESOURCE_VIEW_DESC* desc_, D3D12_CPU_DESCRIPTOR_HANDLE descriptorHandleCPU_)
 	{
 		auto* device = deviceGetter(DeviceContext::AccessKey{});
-		CommandCreateView command(GenerateKey{});
+		CommandCreateView command(DeviceContext::GenerateKey{});
 
 		return command.CreateSRV(device, resource_, desc_, descriptorHandleCPU_);
 	};
@@ -87,7 +90,7 @@ template<>
 	auto retFunc = [this](ID3D12Resource* resource_, const D3D12_DEPTH_STENCIL_VIEW_DESC* desc_, D3D12_CPU_DESCRIPTOR_HANDLE descriptorHandleCPU_)
 	{
 		auto* device = deviceGetter(DeviceContext::AccessKey{});
-		CommandCreateView command(GenerateKey{});
+		CommandCreateView command(DeviceContext::GenerateKey{});
 
 		return command.CreateDSV(device, resource_, desc_, descriptorHandleCPU_);
 	};
@@ -100,7 +103,7 @@ template<>
 	auto retFunc = [this](ID3D12Resource* resource_, const D3D12_UNORDERED_ACCESS_VIEW_DESC* desc_, D3D12_CPU_DESCRIPTOR_HANDLE descriptorHandleCPU_, ID3D12Resource* CounterResource_)
 		{
 			auto* device = deviceGetter(DeviceContext::AccessKey{});
-			CommandCreateView command(GenerateKey{});
+			CommandCreateView command(DeviceContext::GenerateKey{});
 
 			return command.CreateUAV(device, resource_, desc_, descriptorHandleCPU_, CounterResource_);
 		};
@@ -128,7 +131,7 @@ template<>
 	)
 	{
 		auto* dxgiFactory = dxgiFactoryGetter(DeviceContext::AccessKey{});
-		CommandStructureSwapChain command(GenerateKey{});
+		CommandStructureSwapChain command(DeviceContext::GenerateKey{});
 
 		return command.CreateSwapChain(*dxgiFactory, commandQueue_,desc_, swapChainDoublePtr_, hWnd_);
 	};
@@ -151,7 +154,7 @@ template<>
 	auto retFunc = [this](D3D12_DESCRIPTOR_HEAP_TYPE heapType_, UINT numDescriptors_, bool shaderVisible_)
 	{
 		auto* device = deviceGetter(DeviceContext::AccessKey{});
-		CommandCreateDescriptorHeap command(GenerateKey{});
+		CommandCreateDescriptorHeap command(DeviceContext::GenerateKey{});
 
 		return command.Create(device, heapType_,numDescriptors_, shaderVisible_);
 	};
@@ -183,7 +186,7 @@ template<>
 	)
 	{
 		auto* device = deviceGetter(DeviceContext::AccessKey{});
-		CommandCreateGPUResource command(GenerateKey{});
+		CommandCreateGPUResource command(DeviceContext::GenerateKey{});
 
 		return command.CreateResource
 		(
@@ -204,58 +207,3 @@ template<>
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
-//CommandContextのコアパーツ生成
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-[[nodiscard]] std::tuple
-<
-	Microsoft::WRL::ComPtr<ID3D12CommandQueue>,
-	std::array<Microsoft::WRL::ComPtr<ID3D12CommandAllocator>, ProjectConfig::Render::kRequiredGPUBufferSum>,
-	Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList6>
->
-DeviceContext::CommandProvider::CreateCommandContextCoreParts(DeviceContext::InstanceKey instanceKey_)
-{
-	using namespace  ProjectConfig::Render;
-
-	//コアパーツ生成ツール
-	CommandStructureCommandContext tool(GenerateKey{});
-	auto* device = deviceGetter(DeviceContext::AccessKey{});
-
-	Microsoft::WRL::ComPtr<ID3D12CommandQueue> cmdQueue;
-	std::array < Microsoft::WRL::ComPtr<ID3D12CommandAllocator>, kRequiredGPUBufferSum > cmdAllocators;
-	Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList6> cmdList;
-
-	//生成
-	cmdQueue = tool.CreateCommandQueue(device);
-	Logger::Log("Create: CommandQueue", fileName);
-
-	for (int i = 0;i < kRequiredGPUBufferSum;++i)
-	{
-		cmdAllocators.at(i) = tool.CreateCommandAllocator(device);
-	}
-	Logger::Log("Create: CommandAllocators", fileName);
-
-	cmdList = tool.CreateCommandList(device,cmdAllocators.at(0).Get());
-	Logger::Log("Create: CommandList", fileName);
-
-	return std::make_tuple(cmdQueue, cmdAllocators, cmdList);
-}
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-[[nodiscard]] Microsoft::WRL::ComPtr<ID3D12Fence> DeviceContext::CommandProvider::CreateFence()
-{
-	Microsoft::WRL::ComPtr<ID3D12Fence> fence;
-	auto* device = deviceGetter(DeviceContext::AccessKey{});
-
-	CommandCreateFenceObject command(GenerateKey{});
-	fence = std::move(command.CreateFenceObj(device));
-	Logger::Log("Create: Fence", fileName);
-
-	return fence;
-}
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

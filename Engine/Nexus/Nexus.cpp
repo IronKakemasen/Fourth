@@ -5,8 +5,9 @@
 #include "../Core/DescriptorHeap/DescriptorHeapContext.h"
 #include "../Resource/BufferContext.h"
 #include "../Core/Device/DeviceContextCommandProvider/DeviceContextCommandProvider.h"
+#include "../Core/Device/DeviceContextCommandExecutor/DeviceContextCommandExecutor.h"
 #include "../Core/SwapChain/SwapChainContext.h"
-#include "../Core/CommandContext/CommandContext.h"
+#include "../Core/Command/CommandContext.h"
 #include "../Resource/BufferAssembler/BufferAssembler.h"
 #include "../Resource/BufferDescriptions/DepthStencilBufferDescription/DepthStencilBufferDescription.h"
 #include "../Resource/GPUBuffer/DepthStencilBuffer/DepthStencilBuffer.h"
@@ -62,6 +63,7 @@ void Nexus::InitSwapChainContext()
 	BufferDescriptionBehavior::ResourceStates resourceStates = { D3D12_RESOURCE_STATE_DEPTH_WRITE ,D3D12_RESOURCE_STATE_DEPTH_WRITE };
 	
 	std::unique_ptr<DepthStencilBuffer> depthStencilBuffer;
+	auto* cmdProvider = deviceContext->commandProvider.get();
 
 	//スワップチェーンが使用する深度ステンシルバッファをここでつくちゃう
 	{
@@ -86,7 +88,7 @@ void Nexus::InitSwapChainContext()
 			SwapChainContext::InstanceKey{},
 			descriptorHeapContext.get(),
 			commandContext.get(),
-			deviceContext->commandProvider->ProvideCreateSwapChainCommand(),
+			cmdProvider->ProvideCreateSwapChainCommand(),
 			windowContext->WatchHWND(),
 			std::move(depthStencilBuffer)
 		)
@@ -112,8 +114,10 @@ void Nexus::InitDeviceContext()
 
 void Nexus::InitBufferContext()
 {
+	auto* cmdProvider = deviceContext->commandProvider.get();
+
 	//リソース生成コマンド
-	auto createResourceCommand = deviceContext->commandProvider->ProvideCreateResourceCommand();
+	auto createResourceCommand = cmdProvider->ProvideCreateResourceCommand();
 	Logger::Log("Set: CommandCreateResource", fileName);
 
 	bufferContext.reset(new BufferContext(BufferContext::InstanceKey{}, createResourceCommand,descriptorHeapContext.get()));
@@ -130,12 +134,15 @@ void Nexus::InitWindowContext()
 
 void Nexus::InitDescriptorHeapContext()
 {
+	auto* cmdProvider = deviceContext->commandProvider.get();
+	auto* cmdExecutor = deviceContext->commandExecutor.get();
+
 	//DescriptorHeap生成コマンド
-	auto createDescriptorHeapCommand = deviceContext->commandProvider->ProvideCreateDescriptorHeapCommand();
-	auto createRTVCommand = deviceContext->commandProvider->ProvideCreateViewCommand<D3D12_RENDER_TARGET_VIEW_DESC>();
-	auto createSRVCommand = deviceContext->commandProvider->ProvideCreateViewCommand<D3D12_SHADER_RESOURCE_VIEW_DESC>();
-	auto createDSVCommand = deviceContext->commandProvider->ProvideCreateViewCommand<D3D12_DEPTH_STENCIL_VIEW_DESC>();
-	auto createUAVCommand = deviceContext->commandProvider->ProvideCreateUAVCommand();
+	auto createDescriptorHeapCommand = cmdProvider->ProvideCreateDescriptorHeapCommand();
+	auto createRTVCommand = cmdProvider->ProvideCreateViewCommand<D3D12_RENDER_TARGET_VIEW_DESC>();
+	auto createSRVCommand = cmdProvider->ProvideCreateViewCommand<D3D12_SHADER_RESOURCE_VIEW_DESC>();
+	auto createDSVCommand = cmdProvider->ProvideCreateViewCommand<D3D12_DEPTH_STENCIL_VIEW_DESC>();
+	auto createUAVCommand = cmdProvider->ProvideCreateUAVCommand();
 
 	struct IncrementSizeOfDescriptorHeaps
 	{
@@ -148,9 +155,9 @@ void Nexus::InitDescriptorHeapContext()
 	//deviceContextからDescriptorHandleIncrementSizeを教えてもらう
 	IncrementSizeOfDescriptorHeaps sizeArray
 	(
-		deviceContext->CalcDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV),
-		deviceContext->CalcDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV),
-		deviceContext->CalcDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_DSV)
+		cmdExecutor->CalcDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV),
+		cmdExecutor->CalcDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV),
+		cmdExecutor->CalcDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_DSV)
 	);
 
 	std::array<UINT,3> tmpSizeArray = { sizeArray.rtv ,sizeArray.srv,sizeArray.dsv };
@@ -172,8 +179,15 @@ void Nexus::InitDescriptorHeapContext()
 
 void Nexus::InitCommandContext()
 {
+	auto* cmdExecutor = deviceContext->commandExecutor.get();
+
+	//メイン
 	auto [cmdQueue, cmdAllocators, cmdList] = 
-		deviceContext->commandProvider->CreateCommandContextCoreParts(DeviceContext::InstanceKey{});
+		cmdExecutor->CreateCommandContextCorePartsForRuntime(DeviceContext::InstanceKey{});
+	
+	//リソースアップロード用
+	auto[allocator_forUpload, cmdList_forUpload] = 
+		cmdExecutor->CreateCommandContextCorePartsForUpload(DeviceContext::InstanceKey{});
 
 	commandContext.reset
 	(
@@ -183,7 +197,9 @@ void Nexus::InitCommandContext()
 			std::move(cmdQueue),
 			std::move(cmdAllocators),
 			std::move(cmdList),
-			std::move(deviceContext->commandProvider->CreateFence())
+			std::move(cmdExecutor->CreateFence()),
+			std::move(allocator_forUpload),
+			std::move(cmdList_forUpload)
 		)
 	);
 

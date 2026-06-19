@@ -2,7 +2,7 @@
 
 class Nexus;
 class SwapChainContext;
-
+class ResourceUploader;
 
 class CommandContext
 {
@@ -18,20 +18,38 @@ public:
 		Microsoft::WRL::ComPtr<ID3D12CommandQueue> commandQueue_,
 		std::array<Microsoft::WRL::ComPtr<ID3D12CommandAllocator>, ProjectConfig::Render::kRequiredGPUBufferSum> commandAllocators_,
 		Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList6> commandList_,
-		Microsoft::WRL::ComPtr<ID3D12Fence> fence_
+		Microsoft::WRL::ComPtr<ID3D12Fence> fence_,
+		Microsoft::WRL::ComPtr<ID3D12CommandAllocator> allocator_forUpload_,
+		Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList6> cmdList_forUpload_
 	);
 
 	~CommandContext();
 
 	ID3D12CommandQueue* GetCommandQueue(CmdQueueGetKey accessKey_);
 
+	//コマンド記録スタート
+	void RecordingStart(UINT frameIndex_);
+	//コマンドを送り待つ
+	void ExecuteCommands(UINT frameIndex_);
+
+
 private:
 
 	//FenceでCPUとGPUを同期させる
 	class Synchronizer;
+	//コマンドを実行する
+	class CommandExecutor;
+	//コマンドリストの処理のラッパークラス
+	class RuntimeWrapper;
+	//リソースのアップロードを行う
+	class ResourceUploader;
+
 
 
 	std::unique_ptr<Synchronizer> synchronizer;
+	std::unique_ptr<CommandExecutor> commandExecutor;
+	std::unique_ptr<RuntimeWrapper> runtimeWrapper;
+
 
 	//コマンドキュー
 	Microsoft::WRL::ComPtr<ID3D12CommandQueue> commandQueue;

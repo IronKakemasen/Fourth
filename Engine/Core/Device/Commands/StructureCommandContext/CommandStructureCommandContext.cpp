@@ -6,7 +6,7 @@ namespace
 	std::string fileName = "CommandStructureCommandContext .cpp";
 }
 
-CommandStructureCommandContext::CommandStructureCommandContext (DeviceContext::CommandProvider::GenerateKey generateKey_) :DeviceContextCommandBehavior(generateKey_)
+CommandStructureCommandContext::CommandStructureCommandContext (DeviceContext::GenerateKey generateKey_) :DeviceContextCommandBehavior(generateKey_)
 {
 
 }
@@ -16,13 +16,17 @@ CommandStructureCommandContext::~CommandStructureCommandContext ()
 
 }
 
-[[nodiscard]] Microsoft::WRL::ComPtr <ID3D12CommandQueue> CommandStructureCommandContext::CreateCommandQueue(ID3D12Device* device_)
+[[nodiscard]] Microsoft::WRL::ComPtr <ID3D12CommandQueue> CommandStructureCommandContext::CreateCommandQueue
+(
+	ID3D12Device* device_,
+	D3D12_COMMAND_LIST_TYPE type_
+)
 {
 	Microsoft::WRL::ComPtr <ID3D12CommandQueue> cmdQueue;
 	
 	D3D12_COMMAND_QUEUE_DESC desc{};
 
-	desc.Type = D3D12_COMMAND_LIST_TYPE_DIRECT;
+	desc.Type = type_;
 	desc.Priority = D3D12_COMMAND_QUEUE_PRIORITY_NORMAL;
 	desc.Flags = D3D12_COMMAND_QUEUE_FLAG_NONE;
 	desc.NodeMask = 0;
@@ -38,13 +42,17 @@ CommandStructureCommandContext::~CommandStructureCommandContext ()
 	return cmdQueue;
 }
 
-[[nodiscard]] Microsoft::WRL::ComPtr<ID3D12CommandAllocator> CommandStructureCommandContext::CreateCommandAllocator(ID3D12Device* device_)
+[[nodiscard]] Microsoft::WRL::ComPtr<ID3D12CommandAllocator> CommandStructureCommandContext::CreateCommandAllocator
+(
+	ID3D12Device* device_,
+	D3D12_COMMAND_LIST_TYPE type_
+)
 {
 	Microsoft::WRL::ComPtr<ID3D12CommandAllocator> cmdAllocator;
 
 	HRESULT hr = device_->CreateCommandAllocator
 	(
-		D3D12_COMMAND_LIST_TYPE_DIRECT,
+		type_,
 		IID_PPV_ARGS(cmdAllocator.GetAddressOf())
 	);
 
@@ -56,7 +64,8 @@ CommandStructureCommandContext::~CommandStructureCommandContext ()
 [[nodiscard]] Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList6> CommandStructureCommandContext::CreateCommandList
 (
 	ID3D12Device* device_,
-	ID3D12CommandAllocator* cmdAllocator_
+	ID3D12CommandAllocator* cmdAllocator_,
+	D3D12_COMMAND_LIST_TYPE type_
 )
 {
 	Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList6> cmdList;
@@ -64,7 +73,7 @@ CommandStructureCommandContext::~CommandStructureCommandContext ()
 	HRESULT hr = device_->CreateCommandList
 	(
 		0,
-		D3D12_COMMAND_LIST_TYPE_DIRECT,
+		type_,
 		cmdAllocator_,
 		nullptr,
 		IID_PPV_ARGS(cmdList.GetAddressOf())

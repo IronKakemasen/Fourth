@@ -6,7 +6,7 @@
 //SwapChain周りを構築するためのコマンド
 struct CommandStructureSwapChain : public DeviceContextCommandBehavior
 {
-	CommandStructureSwapChain(DeviceContext::CommandProvider::GenerateKey generateKey_);
+	CommandStructureSwapChain(DeviceContext::GenerateKey generateKey_);
 	~CommandStructureSwapChain();
 
 	//スワップチェーンを生成する

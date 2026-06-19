@@ -4,7 +4,7 @@
 class DeviceContextCommandBehavior;
 
 //Deviceを使用する処理を、使用しない形にコマンド化して提供するクラス
-//初期化生成しか使用しないかつ引数がほぼない場合は、自らコマンドをたたく
+//初期化生成しか使用しないかつ引数がほぼない場合は、CommandExecutorが行う
 class DeviceContext::CommandProvider
 {
 public:
@@ -44,30 +44,22 @@ public:
 		ProvideCreateUAVCommand();
 	
 	//スワップチェーンを生成するためのコマンド
-	[[nodiscard]] std::function< HRESULT
-	(
-		ID3D12CommandQueue* commandQueue_,
-		DXGI_SWAP_CHAIN_DESC1 desc_,
-		IDXGISwapChain4** swapChainDoublePtr_,
-		const HWND hWnd_
-	)> ProvideCreateSwapChainCommand();
-
-	//CommandContextのコアパーツ生成関数
-	[[nodiscard]] std::tuple
-	<
-		Microsoft::WRL::ComPtr<ID3D12CommandQueue>,
-		std::array<Microsoft::WRL::ComPtr<ID3D12CommandAllocator>, ProjectConfig::Render::kRequiredGPUBufferSum>,
-		Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList6>
+	[[nodiscard]] std::function
+	< HRESULT
+		(
+			ID3D12CommandQueue* commandQueue_,
+			DXGI_SWAP_CHAIN_DESC1 desc_,
+			IDXGISwapChain4** swapChainDoublePtr_,
+			const HWND hWnd_
+		)
 	>
-	CreateCommandContextCoreParts(DeviceContext::InstanceKey instanceKey_);
+	ProvideCreateSwapChainCommand();
 
-	//Fenceオブジェの生成関数
-	[[nodiscard]] Microsoft::WRL::ComPtr<ID3D12Fence> CreateFence();
 
 
 private:
 
-	//デバイスにアクセスする関数
+	//デバイスコンテキストのコアパーツにアクセスする関数
 	std::function< ID3D12Device8* (DeviceContext::AccessKey)> deviceGetter;
 	std::function< IDXGIFactory7* (DeviceContext::AccessKey)> dxgiFactoryGetter;
 
@@ -75,12 +67,4 @@ private:
 
 
 
-
-struct DeviceContext::CommandProvider::GenerateKey
-{
-private:
-
-	friend class DeviceContext::CommandProvider;
-	explicit GenerateKey() = default;
-};
 

@@ -2,7 +2,7 @@
 #include "CommandCreateView.h"
 
 
-CommandCreateView::CommandCreateView(DeviceContext::CommandProvider::GenerateKey generateKey_) :DeviceContextCommandBehavior(generateKey_)
+CommandCreateView::CommandCreateView(DeviceContext::GenerateKey generateKey_) :DeviceContextCommandBehavior(generateKey_)
 {
 
 }
