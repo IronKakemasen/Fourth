@@ -2,7 +2,7 @@
 #include "SwapChainContext.h"
 #include "SwapChainColorBuffer/SwapChainColorBuffer.h"
 #include "../DescriptorHeap/ViewCreator/ViewCreator.h"
-#include "../CommandContext/CommandContext.h"
+#include "../Command/CommandContext.h"
 #include "Presenter/Presenter.h"
 #include "RenderPassMaterialProvider/RenderPassMaterialProvider.h"
 #include "../../Resource/GPUBuffer/DepthStencilBuffer/DepthStencilBuffer.h"
@@ -25,18 +25,25 @@ SwapChainContext::SwapChainContext
 {
 	Logger::Entry("SwapChainContext: Constructor");
 
-	//コマンドキューを一時的に借りる
-	auto* commandQueue = commandContext_->GetCommandQueue(CommandContext::CmdQueueGetKey{});
-	//ビュークリエイターも一時的に借りる
-	auto& viewCreator = *descriptorHeapContext_->GetViewCreator(DescriptorHeapContext::ViewCreatorGetKey{});
+	{
+		//コマンドキューを一時的に借りる
+		auto* commandQueue = commandContext_->GetCommandQueue(CommandContext::CmdQueueGetKey{});
+		//ビュークリエイターも一時的に借りる
+		auto& viewCreator = *descriptorHeapContext_->GetViewCreator(DescriptorHeapContext::ViewCreatorGetKey{});
+		//構築
+		Assemble(instanceKey_, viewCreator, cmdCreateSwapChain_, hWnd_, commandQueue);
+		Logger::Log("Assemble: core parts", fileName);
+	}
+	
+	{
+		presenter.reset(new Presenter(swapChain.Get()));
+		Logger::Log("Instantiate: Presenter", fileName);
+	}
 
-	//構築
-	Assemble(instanceKey_, viewCreator, cmdCreateSwapChain_, hWnd_, commandQueue);
-
-	presenter.reset(new Presenter(swapChain.Get()));
-	Logger::Log("Instantiate: Presenter", fileName);
-	renderPassMaterialProvider.reset(new RenderPassMaterialProvider(colorBuffer.get(),depthStencilBuffer.get()));
-	Logger::Log("Instantiate: RenderPassMaterialProvider", fileName);
+	{
+		renderPassMaterialProvider.reset(new RenderPassMaterialProvider(colorBuffer.get(), depthStencilBuffer.get()));
+		Logger::Log("Instantiate: RenderPassMaterialProvider", fileName);
+	}
 
 
 	Logger::End("SwapChainContext: Constructor");

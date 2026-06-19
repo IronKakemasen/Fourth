@@ -2,7 +2,7 @@
 #include "CommandCreateDescriptorHeap.h"
 
 
-CommandCreateDescriptorHeap::CommandCreateDescriptorHeap(DeviceContext::CommandProvider::GenerateKey generateKey_) :DeviceContextCommandBehavior(generateKey_)
+CommandCreateDescriptorHeap::CommandCreateDescriptorHeap(DeviceContext::GenerateKey generateKey_) :DeviceContextCommandBehavior(generateKey_)
 {
 
 }

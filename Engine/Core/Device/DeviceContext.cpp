@@ -3,6 +3,7 @@
 #include "Commands/DeviceContextCommandBehavior.h"
 #include "DeviceSetupper/DeviceContextSetupper.h"
 #include "DeviceContextCommandProvider/DeviceContextCommandProvider.h"
+#include "DeviceContextCommandExecutor/DeviceContextCommandExecutor.h"
 
 
 //コマンド
@@ -20,11 +21,20 @@ DeviceContext::DeviceContext(DeviceContext::InstanceKey instanceKey_)
 {
 	Logger::Entry("DeviceContext::Constructor");
 
-	TakeOverCoreParts(instanceKey_);
-	Logger::Log("Create: CoreParts", fileName);
+	{
+		TakeOverCoreParts(instanceKey_);
+		Logger::Log("Create: CoreParts", fileName);
+	}
 
-	CreateCommandProvider(instanceKey_);
-	Logger::Log("Create: CommandProvider", fileName);
+	{
+		CreateCommandProvider(instanceKey_);
+		Logger::Log("Create: CommandProvider", fileName);
+	}
+
+	{
+		CreateCommandExecutor(instanceKey_);
+		Logger::Log("Create: CommandExecutor", fileName);
+	}
 
 
 	Logger::End("DeviceContext::Constructor");
@@ -47,6 +57,17 @@ void DeviceContext::CreateCommandProvider(DeviceContext::InstanceKey instanceKey
 	commandProvider.reset(new CommandProvider(instanceKey_, deviceGetFunc, dxgiFactoryGetter));
 }
 
+void DeviceContext::CreateCommandExecutor(DeviceContext::InstanceKey instanceKey_)
+{
+	//デバイスにアクセスする関数オブジェ
+	auto deviceGetFunc = [this](DeviceContext::AccessKey key_) -> ID3D12Device8*
+	{
+		return device.Get();
+	};
+
+	commandExecutor.reset(new CommandExecutor(instanceKey_, deviceGetFunc));
+}
+
 void DeviceContext::TakeOverCoreParts(DeviceContext::InstanceKey instanceKey_)
 {
 	//コアパーツの生成
@@ -61,9 +82,3 @@ DeviceContext::~DeviceContext()
 {
 
 }
-
-UINT DeviceContext::CalcDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE type_)
-{
-	return device->GetDescriptorHandleIncrementSize(type_);
-}
-

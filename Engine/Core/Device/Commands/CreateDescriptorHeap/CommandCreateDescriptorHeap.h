@@ -6,7 +6,7 @@
 //DescriptorHeapを生成するコマンド
 struct CommandCreateDescriptorHeap  : public DeviceContextCommandBehavior
 {
-	CommandCreateDescriptorHeap(DeviceContext::CommandProvider::GenerateKey generateKey_);
+	CommandCreateDescriptorHeap(DeviceContext::GenerateKey generateKey_);
 	~CommandCreateDescriptorHeap();
 
 

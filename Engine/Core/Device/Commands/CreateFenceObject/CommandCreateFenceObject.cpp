@@ -1,7 +1,7 @@
 #include "PreCompileHeader.h"
 #include "CommandCreateFenceObject.h"
 
-CommandCreateFenceObject::CommandCreateFenceObject(DeviceContext::CommandProvider::GenerateKey generateKey_) :DeviceContextCommandBehavior(generateKey_)
+CommandCreateFenceObject::CommandCreateFenceObject(DeviceContext::GenerateKey generateKey_) :DeviceContextCommandBehavior(generateKey_)
 {
 
 }

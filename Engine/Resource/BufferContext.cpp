@@ -19,11 +19,14 @@ BufferContext::BufferContext
 {
 	Logger::Entry("BufferContext: Constructor");
 
-	std::unique_ptr<ResourceCreator> resourceCreator(std::make_unique<ResourceCreator>(instanceKey_, createResourceCommand_));
-	auto* viewCreator = descriptorHeapContext_->GetViewCreator(DescriptorHeapContext::ViewCreatorGetKey{});
+	{
+		auto* viewCreator = descriptorHeapContext_->GetViewCreator(DescriptorHeapContext::ViewCreatorGetKey{});
+		std::unique_ptr<ResourceCreator> resourceCreator(std::make_unique<ResourceCreator>(instanceKey_, createResourceCommand_));
+		Logger::Log("Create: resourceCreator", fileName);
 
-	bufferAssembler.reset(new BufferAssembler(instanceKey_, std::move(resourceCreator), viewCreator));
-	Logger::Log("Create: bufferAssembler", fileName);
+		bufferAssembler.reset(new BufferAssembler(instanceKey_, std::move(resourceCreator), viewCreator));
+		Logger::Log("Create: bufferAssembler", fileName);
+	}
 
 	Logger::End("BufferContext: Constructor");
 

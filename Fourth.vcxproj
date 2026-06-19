@@ -90,8 +90,10 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Engine\Core\Device\DeviceContextCommandExecutor\DeviceContextCommandExecutor.cpp" />
+    <ClCompile Include="Engine\Core\Command\CommandExecutor\CommandExecutor.cpp" />
     <ClCompile Include="Engine\Core\Device\Commands\CreateFenceObject\CommandCreateFenceObject.cpp" />
-    <ClCompile Include="Engine\Core\CommandContext\CommandContext.cpp" />
+    <ClCompile Include="Engine\Core\Command\CommandContext.cpp" />
     <ClCompile Include="Engine\Core\Device\Commands\StructureSwapChain\CommandStructureSwapChain.cpp" />
     <ClCompile Include="Engine\Resource\BufferAssembler\BufferAssembler.cpp" />
     <ClCompile Include="Engine\Resource\BufferDescriptions\BufferDescriptionBehavior.cpp" />
@@ -230,11 +232,15 @@
     <ClCompile Include="Engine\Core\Device\Commands\StructureCommandContext\CommandStructureCommandContext.cpp" />
     <ClCompile Include="Engine\Core\SwapChain\Presenter\Presenter.cpp" />
     <ClCompile Include="Engine\Core\SwapChain\RenderPassMaterialProvider\RenderPassMaterialProvider.cpp" />
-    <ClCompile Include="Engine\Core\CommandContext\Synchronizer\Synchronizer.cpp" />
+    <ClCompile Include="Engine\Core\Command\Synchronizer\Synchronizer.cpp" />
+    <ClCompile Include="Engine\Core\Command\RuntimeWrapper\RuntimeWrapper.cpp" />
+    <ClCompile Include="Engine\Core\Command\ResourceUploader\ResourceUploader.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Engine\Core\Device\DeviceContextCommandExecutor\DeviceContextCommandExecutor.h" />
+    <ClInclude Include="Engine\Core\Command\CommandExecutor\CommandExecutor.h" />
     <ClInclude Include="Engine\Core\Device\Commands\CreateFenceObject\CommandCreateFenceObject.h" />
-    <ClInclude Include="Engine\Core\CommandContext\CommandContext.h" />
+    <ClInclude Include="Engine\Core\Command\CommandContext.h" />
     <ClInclude Include="Engine\Core\Device\Commands\StructureSwapChain\CommandStructureSwapChain.h" />
     <ClInclude Include="Engine\Resource\BufferAssembler\BufferAssembler.h" />
     <ClInclude Include="Engine\Resource\GPUBuffer\DepthStencilBuffer\DepthStencilBuffer.h" />
@@ -301,7 +307,9 @@
     <ClInclude Include="Engine\Core\Device\Commands\StructureCommandContext\CommandStructureCommandContext.h" />
     <ClInclude Include="Engine\Core\SwapChain\Presenter\Presenter.h" />
     <ClInclude Include="Engine\Core\SwapChain\RenderPassMaterialProvider\RenderPassMaterialProvider.h" />
-    <ClInclude Include="Engine\Core\CommandContext\Synchronizer\Synchronizer.h" />
+    <ClInclude Include="Engine\Core\Command\Synchronizer\Synchronizer.h" />
+    <ClInclude Include="Engine\Core\Command\RuntimeWrapper\RuntimeWrapper.h" />
+    <ClInclude Include="Engine\Core\Command\ResourceUploader\ResourceUploader.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

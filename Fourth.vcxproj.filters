@@ -204,7 +204,7 @@
     <ClCompile Include="Engine\Core\SwapChain\SwapChainColorBuffer\SwapChainColorBuffer.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="Engine\Core\CommandContext\CommandContext.cpp">
+    <ClCompile Include="Engine\Core\Command\CommandContext.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
     <ClCompile Include="Engine\Core\Device\Commands\StructureCommandContext\CommandStructureCommandContext.cpp">
@@ -214,6 +214,24 @@
       <Filter>ソース ファイル</Filter>
     </ClCompile>
     <ClCompile Include="Engine\Core\SwapChain\RenderPassMaterialProvider\RenderPassMaterialProvider.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\Core\Command\CommandExecutor\CommandExecutor.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\Core\Device\Commands\CreateFenceObject\CommandCreateFenceObject.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\Core\Command\Synchronizer\Synchronizer.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\Core\Command\RuntimeWrapper\RuntimeWrapper.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\Core\Command\ResourceUploader\ResourceUploader.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\Core\Device\DeviceContextCommandExecutor\DeviceContextCommandExecutor.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
   </ItemGroup>
@@ -404,7 +422,7 @@
     <ClInclude Include="Engine\Core\SwapChain\SwapChainColorBuffer\SwapChainColorBuffer.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\Core\CommandContext\CommandContext.h">
+    <ClInclude Include="Engine\Core\Command\CommandContext.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
     <ClInclude Include="Engine\Core\Device\Commands\StructureCommandContext\CommandStructureCommandContext.h">
@@ -417,6 +435,24 @@
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
     <ClInclude Include="Engine\Resource\ResourceBarrier.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Core\Command\CommandExecutor\CommandExecutor.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Core\Device\Commands\CreateFenceObject\CommandCreateFenceObject.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Core\Command\Synchronizer\Synchronizer.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Core\Command\RuntimeWrapper\RuntimeWrapper.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Core\Command\ResourceUploader\ResourceUploader.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Core\Device\DeviceContextCommandExecutor\DeviceContextCommandExecutor.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
   </ItemGroup>

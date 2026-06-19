@@ -10,19 +10,21 @@ public:
 
 	//生成キー。Nexusしか許さない
 	struct InstanceKey;
-	
 	//コアパーツにアクセスするのを許可するキー
 	struct AccessKey;
+	struct GenerateKey;
 
-	//CommandProvider.他クラスにコアパーツを流用させないようにコマンドを生成して渡す
+	//他クラスにコアパーツを流用させないようにコマンドを生成して渡す
 	class CommandProvider;
+	//他クラスにコアパーツを流用させないようにコマンドを自ら実行する
+	class CommandExecutor;
+
 	std::unique_ptr<CommandProvider> commandProvider;
+	std::unique_ptr<CommandExecutor> commandExecutor;
+
 
 	DeviceContext(InstanceKey instanceKey);
 	~DeviceContext();
-
-	//DescriptorHeapのハンドルインクリメントサイズを返す関数
-	UINT CalcDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE type_);
 
 private:
 
@@ -37,6 +39,9 @@ private:
 	void TakeOverCoreParts(DeviceContext::InstanceKey instanceKey_);
 	//CommandProviderの生成
 	void CreateCommandProvider(DeviceContext::InstanceKey instanceKey_);
+	//CommandExecutorの生成
+	void CreateCommandExecutor(DeviceContext::InstanceKey instanceKey_);
+
 };
 
 
@@ -56,7 +61,19 @@ struct DeviceContext::AccessKey
 private:
 
 	friend class CommandProvider;
+	friend class CommandExecutor;
+
 	explicit AccessKey() = default;
+};
+
+struct DeviceContext::GenerateKey
+{
+private:
+
+	friend class DeviceContext::CommandProvider;
+	friend class DeviceContext::CommandExecutor;
+
+	explicit GenerateKey() = default;
 };
 
 
