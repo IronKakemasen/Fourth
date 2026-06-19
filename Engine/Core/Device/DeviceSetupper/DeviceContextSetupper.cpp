@@ -161,9 +161,13 @@ void DeviceContext::Setupper::CreateDevice()
 	//高い順に生成できるか試していく
 	for (size_t i = 0; i < _countof(featureLevels); ++i)
 	{
-		//採用したアダプタでデバイスを生成
-		HRESULT hr = D3D12CreateDevice(useAdapter.Get(), featureLevels[i], IID_PPV_ARGS(&device));
+		Microsoft::WRL::ComPtr<ID3D12Device> d3d12Device;
 
+		//採用したアダプタでデバイスを生成
+		HRESULT hr = D3D12CreateDevice(useAdapter.Get(), featureLevels[i], IID_PPV_ARGS(&d3d12Device));
+		//型変換
+		hr = d3d12Device.As(&device); 
+		
 		//指定した機能7レベルでデバイスが生成できたか確認
 		if (SUCCEEDED(hr))
 		{

@@ -33,8 +33,8 @@ SwapChainContext::RenderPassMaterialProvider::RenderPassMaterialProvider(SwapCha
 
 	//ディプスバッファの提供材料
 	{
-		auto cpuHandle = depthStencilBuffer->WatchIndex<ViewType::kDSV,D3D12_CPU_DESCRIPTOR_HANDLE>(DepthStencilBuffer::ExtracteMaterialKey{}, frameIndex_);
-		auto clearColor = depthStencilBuffer->WatchClearColor(DepthStencilBuffer::ExtracteMaterialKey{});
+		materialD.dsvhandle = depthStencilBuffer->WatchIndex<ViewType::kDSV,D3D12_CPU_DESCRIPTOR_HANDLE>(DepthStencilBuffer::ExtracteMaterialKey{}, frameIndex_);
+		materialD.clearColor = depthStencilBuffer->WatchClearColor(DepthStencilBuffer::ExtracteMaterialKey{});
 	}
 
 	return SwapChainContext::RenderPassMaterialProvider::Materials

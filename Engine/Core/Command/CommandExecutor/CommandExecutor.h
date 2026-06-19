@@ -16,8 +16,7 @@ public:
 	//コマンドを確定する
 	void Execute();
 
-
-
+	void Close(CommandContext::CloseKey key_);
 private:
 
 	ID3D12CommandQueue* commandQueue;

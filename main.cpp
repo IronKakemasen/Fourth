@@ -28,5 +28,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
         }
     }
 
+    //nexus.Finalize();
+
     return 0;
 }

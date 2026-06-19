@@ -3,6 +3,7 @@
 #include "Synchronizer/Synchronizer.h"
 #include "CommandExecutor/CommandExecutor.h"
 #include "RuntimeWrapper/RuntimeWrapper.h"
+#include "ResourceUploader/ResourceUploader.h"
 
 
 using namespace ProjectConfig::Render;
@@ -33,7 +34,7 @@ CommandContext::CommandContext
 	}
 
 	{
-		synchronizer.reset(new Synchronizer(commandQueue.Get(), fence.Get(), &fenceCounters, &fenceEvent));
+		synchronizer.reset(new Synchronizer(commandQueue.Get(), fence.Get(), &fenceCounters, &fenceEvent,&commonFenceValue));
 		Logger::Log("Instantiate: Synchronizer", fileName);
 	}
 
@@ -51,6 +52,12 @@ CommandContext::CommandContext
 		runtimeWrapper.reset(new RuntimeWrapper(commandList.Get()));
 		Logger::Log("Instantiate: RuntimeWrapper", fileName);
 	}
+
+	{
+		resourceUploader.reset(new ResourceUploader(std::move(allocator_forUpload_), std::move(cmdList_forUpload_), commandQueue.Get(), synchronizer.get()));
+		Logger::Log("Instantiate: ResourceUploader", fileName);
+	}
+
 
 	Logger::End("CommandContext: Constructor");
 }
@@ -77,5 +84,20 @@ void CommandContext::ExecuteCommands(UINT frameIndex_)
 	commandExecutor->Execute();
 	synchronizer->InsertSignal(frameIndex_);
 }
+
+void CommandContext::CloseBeforeRun(InstanceKey instanceKey_)
+{
+
+	commandExecutor->Close(CloseKey{});
+	resourceUploader->Close(CloseKey{});
+	Logger::Log("Close: CmdList", fileName);
+
+}
+
+void CommandContext::Finalize(InstanceKey instanceKey_)
+{
+	synchronizer->WaitDirectly();
+}
+
 
 

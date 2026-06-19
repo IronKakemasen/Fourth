@@ -1,28 +1,32 @@
 #include "PreCompileHeader.h"
 #include "Synchronizer.h"
 
-
-
 CommandContext::Synchronizer::Synchronizer
 (
 	ID3D12CommandQueue* commandQueue_,
 	ID3D12Fence* fence_,
 	std::array<uint64_t, ProjectConfig::Render::kRequiredGPUBufferSum>* fenceCounters_,
-	HANDLE* fenceEvent_
-):commandQueue(commandQueue_), fence(fence_), fenceCounters(fenceCounters_), fenceEvent(fenceEvent_)
+	HANDLE* fenceEvent_,
+	uint64_t* commonFenceValue_
+):commandQueue(commandQueue_), fence(fence_), fenceCounters(fenceCounters_), fenceEvent(fenceEvent_), commonFenceValue(commonFenceValue_)
 {
 
 }
 
 void CommandContext::Synchronizer::InsertSignal(UINT frameIndex_)
 {
-	auto currentValue = (*fenceCounters).at(frameIndex_);
-	commandQueue->Signal(fence, currentValue);
+	(*commonFenceValue)++;
+
+	commandQueue->Signal(fence, *commonFenceValue);
+
+	(*fenceCounters).at(frameIndex_) = *commonFenceValue;
 }
 
 void CommandContext::Synchronizer::Wait(UINT frameIndex_)
 {
 	auto currentValue = (*fenceCounters).at(frameIndex_);
+
+	if (currentValue == 0) return;
 
 	if (fence->GetCompletedValue() < currentValue)
 	{
@@ -32,7 +36,27 @@ void CommandContext::Synchronizer::Wait(UINT frameIndex_)
 		WaitForSingleObjectEx(*fenceEvent, INFINITE, FALSE);
 	}
 
-	// 次のフレームのフェンスカウンターを増やす
-	(*fenceCounters).at(frameIndex_) = currentValue + 1;
+}
+
+
+void CommandContext::Synchronizer::WaitDirectly()
+{
+	uint64_t targetValue = fence->GetCompletedValue() + 1;
+
+	commandQueue->Signal(fence, targetValue);
+
+	if (fence->GetCompletedValue() < targetValue)
+	{
+		fence->SetEventOnCompletion(targetValue, *fenceEvent);
+		WaitForSingleObjectEx(*fenceEvent, INFINITE, FALSE);
+	}
+
+	//ランタイムスタート値を同期させる
+	*commonFenceValue = targetValue;
+	(*fenceCounters).at(0) = targetValue;
+	(*fenceCounters).at(1) = targetValue;
+
+
 
 }
+

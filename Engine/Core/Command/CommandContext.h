@@ -11,6 +11,7 @@ public:
 	struct InstanceKey;
 	//コマンドキューのアドレス取得キー
 	struct CmdQueueGetKey;
+	struct CloseKey;
 
 	CommandContext
 	(
@@ -31,7 +32,10 @@ public:
 	void RecordingStart(UINT frameIndex_);
 	//コマンドを送り待つ
 	void ExecuteCommands(UINT frameIndex_);
+	//初期化処理終了時に強制的にコマンドを閉じる
+	void CloseBeforeRun(InstanceKey instanceKey_);
 
+	void Finalize(InstanceKey instanceKey_);
 
 private:
 
@@ -44,12 +48,10 @@ private:
 	//リソースのアップロードを行う
 	class ResourceUploader;
 
-
-
 	std::unique_ptr<Synchronizer> synchronizer;
 	std::unique_ptr<CommandExecutor> commandExecutor;
 	std::unique_ptr<RuntimeWrapper> runtimeWrapper;
-
+	std::unique_ptr<ResourceUploader> resourceUploader;
 
 	//コマンドキュー
 	Microsoft::WRL::ComPtr<ID3D12CommandQueue> commandQueue;
@@ -64,6 +66,7 @@ private:
 	std::array<uint64_t,ProjectConfig::Render::kRequiredGPUBufferSum> fenceCounters = { 0,0 };
 	//フェンスイベント
 	HANDLE fenceEvent = nullptr;
+	uint64_t commonFenceValue = 0;
 
 
 	void CreateFenceEvent();
@@ -85,5 +88,12 @@ private:
 	friend class Nexus;
 	friend class SwapChainContext;
 	explicit CmdQueueGetKey() = default;
+
+};
+
+struct CommandContext::CloseKey
+{
+	friend class CommandContext;
+	explicit CloseKey() = default;
 
 };

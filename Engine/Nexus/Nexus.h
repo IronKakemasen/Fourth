@@ -47,6 +47,7 @@ private:
 	void InitBufferContext();
 	void InitWindowContext();
 	void InitDescriptorHeapContext();
+	void Finalize();
 
 };
 
