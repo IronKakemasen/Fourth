@@ -151,6 +151,7 @@ private:
 #include "Synchronizer/Synchronizer.h"
 #include "CommandExecutor/CommandExecutor.h"
 #include "RuntimeWrapper/RuntimeWrapper.h"
+#include "ResourceUploader/ResourceUploader.h"
 
 
 using namespace ProjectConfig::Render;
@@ -181,7 +182,7 @@ CommandContext::CommandContext
 	}
 
 	{
-		synchronizer.reset(new Synchronizer(commandQueue.Get(), fence.Get(), &fenceCounters, &fenceEvent));
+		synchronizer.reset(new Synchronizer(commandQueue.Get(), fence.Get(), &fenceCounters, &fenceEvent,&commonFenceValue));
 		Logger::Log("Instantiate: Synchronizer", fileName);
 	}
 
@@ -199,6 +200,12 @@ CommandContext::CommandContext
 		runtimeWrapper.reset(new RuntimeWrapper(commandList.Get()));
 		Logger::Log("Instantiate: RuntimeWrapper", fileName);
 	}
+
+	{
+		resourceUploader.reset(new ResourceUploader(std::move(allocator_forUpload_), std::move(cmdList_forUpload_), commandQueue.Get(), synchronizer.get()));
+		Logger::Log("Instantiate: ResourceUploader", fileName);
+	}
+
 
 	Logger::End("CommandContext: Constructor");
 }
@@ -226,6 +233,21 @@ void CommandContext::ExecuteCommands(UINT frameIndex_)
 	synchronizer->InsertSignal(frameIndex_);
 }
 
+void CommandContext::CloseBeforeRun(InstanceKey instanceKey_)
+{
+
+	commandExecutor->Close(CloseKey{});
+	resourceUploader->Close(CloseKey{});
+	Logger::Log("Close: CmdList", fileName);
+
+}
+
+void CommandContext::Finalize(InstanceKey instanceKey_)
+{
+	synchronizer->WaitDirectly();
+}
+
+
 
 
 
@@ -247,6 +269,7 @@ public:
 	struct InstanceKey;
 	//コマンドキューのアドレス取得キー
 	struct CmdQueueGetKey;
+	struct CloseKey;
 
 	CommandContext
 	(
@@ -267,7 +290,10 @@ public:
 	void RecordingStart(UINT frameIndex_);
 	//コマンドを送り待つ
 	void ExecuteCommands(UINT frameIndex_);
+	//初期化処理終了時に強制的にコマンドを閉じる
+	void CloseBeforeRun(InstanceKey instanceKey_);
 
+	void Finalize(InstanceKey instanceKey_);
 
 private:
 
@@ -280,12 +306,10 @@ private:
 	//リソースのアップロードを行う
 	class ResourceUploader;
 
-
-
 	std::unique_ptr<Synchronizer> synchronizer;
 	std::unique_ptr<CommandExecutor> commandExecutor;
 	std::unique_ptr<RuntimeWrapper> runtimeWrapper;
-
+	std::unique_ptr<ResourceUploader> resourceUploader;
 
 	//コマンドキュー
 	Microsoft::WRL::ComPtr<ID3D12CommandQueue> commandQueue;
@@ -300,6 +324,7 @@ private:
 	std::array<uint64_t,ProjectConfig::Render::kRequiredGPUBufferSum> fenceCounters = { 0,0 };
 	//フェンスイベント
 	HANDLE fenceEvent = nullptr;
+	uint64_t commonFenceValue = 0;
 
 
 	void CreateFenceEvent();
@@ -321,6 +346,13 @@ private:
 	friend class Nexus;
 	friend class SwapChainContext;
 	explicit CmdQueueGetKey() = default;
+
+};
+
+struct CommandContext::CloseKey
+{
+	friend class CommandContext;
+	explicit CloseKey() = default;
 
 };
 
@@ -369,6 +401,12 @@ void CommandContext::CommandExecutor::Execute()
 	commandQueue->ExecuteCommandLists(1, commandLists);
 }
 
+void CommandContext::CommandExecutor::Close(CommandContext::CloseKey key_)
+{
+	commandList->Close();
+}
+
+
 
 
 
@@ -394,8 +432,7 @@ public:
 	//コマンドを確定する
 	void Execute();
 
-
-
+	void Close(CommandContext::CloseKey key_);
 private:
 
 	ID3D12CommandQueue* commandQueue;
@@ -414,18 +451,82 @@ private:
 #include "ResourceUploader.h"
 
 
+namespace
+{
+	auto fileName = "ResourceUploader.cpp";
+}
+
+CommandContext::ResourceUploader::ResourceUploader
+(
+	Microsoft::WRL::ComPtr<ID3D12CommandAllocator>&& allocator_forUpload_,
+	Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList6>&& cmdList_forUpload_,
+	ID3D12CommandQueue* commandQueue_,
+	Synchronizer* synchronizer_
+
+) :allocator(std::move(allocator_forUpload_)),commandList(std::move(cmdList_forUpload_)), commandQueue(commandQueue_), synchronizer(synchronizer_)
+{
+
+}
+
+void CommandContext::ResourceUploader::Wait()
+{
+	HRESULT hr = commandList->Close();
+	ErrorMessageOutput::Assert::DetectError(SUCCEEDED(hr), "コマンド確定できない", fileName);
+
+	ID3D12CommandList* commandLists[] = { commandList.Get()};
+	commandQueue->ExecuteCommandLists(1, commandLists);
+
+	synchronizer->WaitDirectly();
+}
+
+void CommandContext::ResourceUploader::RecordingStart()
+{
+	HRESULT hr = allocator->Reset();
+	ErrorMessageOutput::Assert::DetectError(SUCCEEDED(hr), "コマンドアロケーターのリセットに失敗", fileName);
+
+	hr = commandList->Reset(allocator.Get(), nullptr);
+	ErrorMessageOutput::Assert::DetectError(SUCCEEDED(hr), "コマンドリストのリセットに失敗", fileName);
+
+}
+
+
+void CommandContext::ResourceUploader::Close(CommandContext::CloseKey key_)
+{
+	commandList->Close();
+}
+
+
 
 
 ========================================
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Core\Command\ResourceUploader\ResourceUploader.h ===
 ========================================
 #pragma once
-#include "../CommandContext.h"
-
-
+#include "../Synchronizer/Synchronizer.h"
 
 class CommandContext::ResourceUploader
 {
+
+public:
+
+	ResourceUploader
+	(
+		Microsoft::WRL::ComPtr<ID3D12CommandAllocator>&& allocator_forUpload_,
+		Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList6>&& cmdList_forUpload_,
+		ID3D12CommandQueue* commandQueue_,
+		Synchronizer* synchronizer_
+	);
+
+	void RecordingStart();
+	void Wait();
+	void Close(CommandContext::CloseKey key_);
+
+private:
+
+	Microsoft::WRL::ComPtr<ID3D12CommandAllocator> allocator;
+	Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList6> commandList;
+	ID3D12CommandQueue* commandQueue;
+	Synchronizer* synchronizer;
 
 };
 
@@ -588,28 +689,32 @@ public:
 #include "PreCompileHeader.h"
 #include "Synchronizer.h"
 
-
-
 CommandContext::Synchronizer::Synchronizer
 (
 	ID3D12CommandQueue* commandQueue_,
 	ID3D12Fence* fence_,
 	std::array<uint64_t, ProjectConfig::Render::kRequiredGPUBufferSum>* fenceCounters_,
-	HANDLE* fenceEvent_
-):commandQueue(commandQueue_), fence(fence_), fenceCounters(fenceCounters_), fenceEvent(fenceEvent_)
+	HANDLE* fenceEvent_,
+	uint64_t* commonFenceValue_
+):commandQueue(commandQueue_), fence(fence_), fenceCounters(fenceCounters_), fenceEvent(fenceEvent_), commonFenceValue(commonFenceValue_)
 {
 
 }
 
 void CommandContext::Synchronizer::InsertSignal(UINT frameIndex_)
 {
-	auto currentValue = (*fenceCounters).at(frameIndex_);
-	commandQueue->Signal(fence, currentValue);
+	(*commonFenceValue)++;
+
+	commandQueue->Signal(fence, *commonFenceValue);
+
+	(*fenceCounters).at(frameIndex_) = *commonFenceValue;
 }
 
 void CommandContext::Synchronizer::Wait(UINT frameIndex_)
 {
 	auto currentValue = (*fenceCounters).at(frameIndex_);
+
+	if (currentValue == 0) return;
 
 	if (fence->GetCompletedValue() < currentValue)
 	{
@@ -619,10 +724,31 @@ void CommandContext::Synchronizer::Wait(UINT frameIndex_)
 		WaitForSingleObjectEx(*fenceEvent, INFINITE, FALSE);
 	}
 
-	// 次のフレームのフェンスカウンターを増やす
-	(*fenceCounters).at(frameIndex_) = currentValue + 1;
+}
+
+
+void CommandContext::Synchronizer::WaitDirectly()
+{
+	uint64_t targetValue = fence->GetCompletedValue() + 1;
+
+	commandQueue->Signal(fence, targetValue);
+
+	if (fence->GetCompletedValue() < targetValue)
+	{
+		fence->SetEventOnCompletion(targetValue, *fenceEvent);
+		WaitForSingleObjectEx(*fenceEvent, INFINITE, FALSE);
+	}
+
+	//ランタイムスタート値を同期させる
+	*commonFenceValue = targetValue;
+	(*fenceCounters).at(0) = targetValue;
+	(*fenceCounters).at(1) = targetValue;
+
+
 
 }
+
+
 
 
 
@@ -641,17 +767,21 @@ public:
 		ID3D12CommandQueue* commandQueue_,
 		ID3D12Fence* fence_,
 		std::array<uint64_t, ProjectConfig::Render::kRequiredGPUBufferSum>* fenceCounters_,
-		HANDLE* fenceEvent_
+		HANDLE* fenceEvent_,
+		uint64_t* commonFenceValue_
 	);
 
 	void InsertSignal(UINT frameIndex_);
 	void Wait(UINT frameIndex_);
+	void WaitDirectly();
 
 private:
 	ID3D12CommandQueue* commandQueue;
 	ID3D12Fence* fence;
 	std::array<uint64_t, ProjectConfig::Render::kRequiredGPUBufferSum>* fenceCounters;
 	HANDLE* fenceEvent;
+	uint64_t* commonFenceValue = 0;
+
 
 };
 
@@ -1238,6 +1368,7 @@ public:
 #include "Commands/DeviceContextCommandBehavior.h"
 #include "DeviceSetupper/DeviceContextSetupper.h"
 #include "DeviceContextCommandProvider/DeviceContextCommandProvider.h"
+#include "DeviceContextCommandExecutor/DeviceContextCommandExecutor.h"
 
 
 //コマンド
@@ -1265,6 +1396,11 @@ DeviceContext::DeviceContext(DeviceContext::InstanceKey instanceKey_)
 		Logger::Log("Create: CommandProvider", fileName);
 	}
 
+	{
+		CreateCommandExecutor(instanceKey_);
+		Logger::Log("Create: CommandExecutor", fileName);
+	}
+
 
 	Logger::End("DeviceContext::Constructor");
 }
@@ -1286,6 +1422,17 @@ void DeviceContext::CreateCommandProvider(DeviceContext::InstanceKey instanceKey
 	commandProvider.reset(new CommandProvider(instanceKey_, deviceGetFunc, dxgiFactoryGetter));
 }
 
+void DeviceContext::CreateCommandExecutor(DeviceContext::InstanceKey instanceKey_)
+{
+	//デバイスにアクセスする関数オブジェ
+	auto deviceGetFunc = [this](DeviceContext::AccessKey key_) -> ID3D12Device8*
+	{
+		return device.Get();
+	};
+
+	commandExecutor.reset(new CommandExecutor(instanceKey_, deviceGetFunc));
+}
+
 void DeviceContext::TakeOverCoreParts(DeviceContext::InstanceKey instanceKey_)
 {
 	//コアパーツの生成
@@ -1300,12 +1447,6 @@ DeviceContext::~DeviceContext()
 {
 
 }
-
-UINT DeviceContext::CalcDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE type_)
-{
-	return device->GetDescriptorHandleIncrementSize(type_);
-}
-
 
 
 
@@ -1325,19 +1466,21 @@ public:
 
 	//生成キー。Nexusしか許さない
 	struct InstanceKey;
-	
 	//コアパーツにアクセスするのを許可するキー
 	struct AccessKey;
+	struct GenerateKey;
 
-	//CommandProvider.他クラスにコアパーツを流用させないようにコマンドを生成して渡す
+	//他クラスにコアパーツを流用させないようにコマンドを生成して渡す
 	class CommandProvider;
+	//他クラスにコアパーツを流用させないようにコマンドを自ら実行する
+	class CommandExecutor;
+
 	std::unique_ptr<CommandProvider> commandProvider;
+	std::unique_ptr<CommandExecutor> commandExecutor;
+
 
 	DeviceContext(InstanceKey instanceKey);
 	~DeviceContext();
-
-	//DescriptorHeapのハンドルインクリメントサイズを返す関数
-	UINT CalcDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE type_);
 
 private:
 
@@ -1352,6 +1495,9 @@ private:
 	void TakeOverCoreParts(DeviceContext::InstanceKey instanceKey_);
 	//CommandProviderの生成
 	void CreateCommandProvider(DeviceContext::InstanceKey instanceKey_);
+	//CommandExecutorの生成
+	void CreateCommandExecutor(DeviceContext::InstanceKey instanceKey_);
+
 };
 
 
@@ -1371,7 +1517,19 @@ struct DeviceContext::AccessKey
 private:
 
 	friend class CommandProvider;
+	friend class CommandExecutor;
+
 	explicit AccessKey() = default;
+};
+
+struct DeviceContext::GenerateKey
+{
+private:
+
+	friend class DeviceContext::CommandProvider;
+	friend class DeviceContext::CommandExecutor;
+
+	explicit GenerateKey() = default;
 };
 
 
@@ -1386,7 +1544,7 @@ private:
 #include "PreCompileHeader.h"
 #include "DeviceContextCommandBehavior.h"
 
-DeviceContextCommandBehavior::DeviceContextCommandBehavior(DeviceContext::CommandProvider::GenerateKey generateKey_)
+DeviceContextCommandBehavior::DeviceContextCommandBehavior(DeviceContext::GenerateKey generateKey_)
 {
 
 }
@@ -1402,7 +1560,7 @@ DeviceContextCommandBehavior::~DeviceContextCommandBehavior()
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Core\Device\Commands\DeviceContextCommandBehavior.h ===
 ========================================
 #pragma once
-#include "../DeviceContextCommandProvider/DeviceContextCommandProvider.h"
+#include "../DeviceContext.h"
 
 
 class DeviceContextCommandBehavior
@@ -1410,7 +1568,7 @@ class DeviceContextCommandBehavior
 public:
 
 
-	DeviceContextCommandBehavior(DeviceContext::CommandProvider::GenerateKey generateKey_);
+	DeviceContextCommandBehavior(DeviceContext::GenerateKey generateKey_);
 	~DeviceContextCommandBehavior();
 };
 
@@ -1425,7 +1583,7 @@ public:
 #include "CommandCreateDescriptorHeap.h"
 
 
-CommandCreateDescriptorHeap::CommandCreateDescriptorHeap(DeviceContext::CommandProvider::GenerateKey generateKey_) :DeviceContextCommandBehavior(generateKey_)
+CommandCreateDescriptorHeap::CommandCreateDescriptorHeap(DeviceContext::GenerateKey generateKey_) :DeviceContextCommandBehavior(generateKey_)
 {
 
 }
@@ -1469,7 +1627,7 @@ Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> CommandCreateDescriptorHeap::Create
 //DescriptorHeapを生成するコマンド
 struct CommandCreateDescriptorHeap  : public DeviceContextCommandBehavior
 {
-	CommandCreateDescriptorHeap(DeviceContext::CommandProvider::GenerateKey generateKey_);
+	CommandCreateDescriptorHeap(DeviceContext::GenerateKey generateKey_);
 	~CommandCreateDescriptorHeap();
 
 
@@ -1487,7 +1645,7 @@ struct CommandCreateDescriptorHeap  : public DeviceContextCommandBehavior
 #include "PreCompileHeader.h"
 #include "CommandCreateFenceObject.h"
 
-CommandCreateFenceObject::CommandCreateFenceObject(DeviceContext::CommandProvider::GenerateKey generateKey_) :DeviceContextCommandBehavior(generateKey_)
+CommandCreateFenceObject::CommandCreateFenceObject(DeviceContext::GenerateKey generateKey_) :DeviceContextCommandBehavior(generateKey_)
 {
 
 }
@@ -1521,7 +1679,7 @@ CommandCreateFenceObject::~CommandCreateFenceObject()
 //DescriptorHeapを生成するコマンド
 struct CommandCreateFenceObject : public DeviceContextCommandBehavior
 {
-	CommandCreateFenceObject(DeviceContext::CommandProvider::GenerateKey generateKey_);
+	CommandCreateFenceObject(DeviceContext::GenerateKey generateKey_);
 	~CommandCreateFenceObject();
 
 	[[nodiscard]] Microsoft::WRL::ComPtr<ID3D12Fence> CreateFenceObj(ID3D12Device8* device_);
@@ -1538,7 +1696,7 @@ struct CommandCreateFenceObject : public DeviceContextCommandBehavior
 #include "CommandCreateView.h"
 
 
-CommandCreateView::CommandCreateView(DeviceContext::CommandProvider::GenerateKey generateKey_) :DeviceContextCommandBehavior(generateKey_)
+CommandCreateView::CommandCreateView(DeviceContext::GenerateKey generateKey_) :DeviceContextCommandBehavior(generateKey_)
 {
 
 }
@@ -1586,7 +1744,7 @@ void CommandCreateView::CreateDSV(ID3D12Device8* device_, ID3D12Resource* resour
 struct CommandCreateView : public DeviceContextCommandBehavior
 {
 	//DeviceContext::CommandProviderクラスのみ生成可能
-	CommandCreateView(DeviceContext::CommandProvider::GenerateKey generateKey_);
+	CommandCreateView(DeviceContext::GenerateKey generateKey_);
 	~CommandCreateView();
 
 	void CreateRTV(ID3D12Device8* device_, ID3D12Resource* resource_ , const D3D12_RENDER_TARGET_VIEW_DESC* desc_, D3D12_CPU_DESCRIPTOR_HANDLE descriptorHandleCPU_);
@@ -1662,7 +1820,7 @@ struct CommandCreateView : public DeviceContextCommandBehavior
 //}
 
 
-CommandCreateGPUResource::CommandCreateGPUResource(DeviceContext::CommandProvider::GenerateKey generateKey_) :DeviceContextCommandBehavior(generateKey_)
+CommandCreateGPUResource::CommandCreateGPUResource(DeviceContext::GenerateKey generateKey_) :DeviceContextCommandBehavior(generateKey_)
 {
 
 }
@@ -1684,7 +1842,7 @@ CommandCreateGPUResource::~CommandCreateGPUResource()
 struct CommandCreateGPUResource : public DeviceContextCommandBehavior
 {
 	//DeviceContext::CommandProviderクラスのみ生成可能
-	CommandCreateGPUResource(DeviceContext::CommandProvider::GenerateKey generateKey_);
+	CommandCreateGPUResource(DeviceContext::GenerateKey generateKey_);
 	~CommandCreateGPUResource();
 
 	[[nodiscard]] Microsoft::WRL::ComPtr<ID3D12Resource> CreateResource
@@ -1714,7 +1872,7 @@ namespace
 	std::string fileName = "CommandStructureCommandContext .cpp";
 }
 
-CommandStructureCommandContext::CommandStructureCommandContext (DeviceContext::CommandProvider::GenerateKey generateKey_) :DeviceContextCommandBehavior(generateKey_)
+CommandStructureCommandContext::CommandStructureCommandContext (DeviceContext::GenerateKey generateKey_) :DeviceContextCommandBehavior(generateKey_)
 {
 
 }
@@ -1724,13 +1882,17 @@ CommandStructureCommandContext::~CommandStructureCommandContext ()
 
 }
 
-[[nodiscard]] Microsoft::WRL::ComPtr <ID3D12CommandQueue> CommandStructureCommandContext::CreateCommandQueue(ID3D12Device* device_)
+[[nodiscard]] Microsoft::WRL::ComPtr <ID3D12CommandQueue> CommandStructureCommandContext::CreateCommandQueue
+(
+	ID3D12Device* device_,
+	D3D12_COMMAND_LIST_TYPE type_
+)
 {
 	Microsoft::WRL::ComPtr <ID3D12CommandQueue> cmdQueue;
 	
 	D3D12_COMMAND_QUEUE_DESC desc{};
 
-	desc.Type = D3D12_COMMAND_LIST_TYPE_DIRECT;
+	desc.Type = type_;
 	desc.Priority = D3D12_COMMAND_QUEUE_PRIORITY_NORMAL;
 	desc.Flags = D3D12_COMMAND_QUEUE_FLAG_NONE;
 	desc.NodeMask = 0;
@@ -1746,13 +1908,17 @@ CommandStructureCommandContext::~CommandStructureCommandContext ()
 	return cmdQueue;
 }
 
-[[nodiscard]] Microsoft::WRL::ComPtr<ID3D12CommandAllocator> CommandStructureCommandContext::CreateCommandAllocator(ID3D12Device* device_)
+[[nodiscard]] Microsoft::WRL::ComPtr<ID3D12CommandAllocator> CommandStructureCommandContext::CreateCommandAllocator
+(
+	ID3D12Device* device_,
+	D3D12_COMMAND_LIST_TYPE type_
+)
 {
 	Microsoft::WRL::ComPtr<ID3D12CommandAllocator> cmdAllocator;
 
 	HRESULT hr = device_->CreateCommandAllocator
 	(
-		D3D12_COMMAND_LIST_TYPE_DIRECT,
+		type_,
 		IID_PPV_ARGS(cmdAllocator.GetAddressOf())
 	);
 
@@ -1800,11 +1966,21 @@ CommandStructureCommandContext::~CommandStructureCommandContext ()
 //これは初期化字しか呼ばないかつ、引数がほぼないのでコマンドプロバイダーが叩くことにする
 struct CommandStructureCommandContext : public DeviceContextCommandBehavior
 {
-	CommandStructureCommandContext(DeviceContext::CommandProvider::GenerateKey generateKey_);
+	CommandStructureCommandContext(DeviceContext::GenerateKey generateKey_);
 	~CommandStructureCommandContext();
 
-	[[nodiscard]] Microsoft::WRL::ComPtr<ID3D12CommandQueue> CreateCommandQueue(ID3D12Device* device_);
-	[[nodiscard]] Microsoft::WRL::ComPtr<ID3D12CommandAllocator> CreateCommandAllocator(ID3D12Device* device_);
+	[[nodiscard]] Microsoft::WRL::ComPtr<ID3D12CommandQueue> CreateCommandQueue
+	(
+		ID3D12Device* device_,
+		D3D12_COMMAND_LIST_TYPE type_
+	);
+
+	[[nodiscard]] Microsoft::WRL::ComPtr<ID3D12CommandAllocator> CreateCommandAllocator
+	(
+		ID3D12Device* device_,
+		D3D12_COMMAND_LIST_TYPE type_
+	);
+
 	[[nodiscard]] Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList6> CreateCommandList
 	(
 		ID3D12Device* device_,
@@ -1824,7 +2000,7 @@ struct CommandStructureCommandContext : public DeviceContextCommandBehavior
 #include "PreCompileHeader.h"
 #include "CommandStructureSwapChain.h"
 
-CommandStructureSwapChain::CommandStructureSwapChain(DeviceContext::CommandProvider::GenerateKey generateKey_) :DeviceContextCommandBehavior(generateKey_)
+CommandStructureSwapChain::CommandStructureSwapChain(DeviceContext::GenerateKey generateKey_) :DeviceContextCommandBehavior(generateKey_)
 {
 
 }
@@ -1863,7 +2039,7 @@ HRESULT CommandStructureSwapChain::CreateSwapChain
 //SwapChain周りを構築するためのコマンド
 struct CommandStructureSwapChain : public DeviceContextCommandBehavior
 {
-	CommandStructureSwapChain(DeviceContext::CommandProvider::GenerateKey generateKey_);
+	CommandStructureSwapChain(DeviceContext::GenerateKey generateKey_);
 	~CommandStructureSwapChain();
 
 	//スワップチェーンを生成する
@@ -1883,6 +2059,202 @@ struct CommandStructureSwapChain : public DeviceContextCommandBehavior
 
 
 ========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Core\Device\DeviceContextCommandExecutor\DeviceContextCommandExecutor.cpp ===
+========================================
+#include "PreCompileHeader.h"
+#include "DeviceContextCommandExecutor.h"
+#include "../Commands/DeviceContextCommandBehavior.h"
+
+//コマンド群
+#include "../Commands/StructureCommandContext/CommandStructureCommandContext.h"
+#include "../Commands/CreateFenceObject/CommandCreateFenceObject.h"
+
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////////////////////
+using namespace  ProjectConfig::Render;
+
+using CommandContextCorePartsRuntime =
+std::tuple
+<
+	Microsoft::WRL::ComPtr<ID3D12CommandQueue>,
+	std::array<Microsoft::WRL::ComPtr<ID3D12CommandAllocator>, ProjectConfig::Render::kRequiredGPUBufferSum>,
+	Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList6>
+>;
+
+using CommandContextCorePartsUpload =
+std::tuple<Microsoft::WRL::ComPtr<ID3D12CommandAllocator>, Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList6>>;
+
+
+namespace
+{
+	auto fileName = "DeviceContextCommandExecutor.cpp";
+}
+/////////////////////////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+
+
+
+
+
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////////////////////
+UINT DeviceContext::CommandExecutor::CalcDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE type_)
+{
+	auto* device = deviceGetter(DeviceContext::AccessKey{});
+
+	return device->GetDescriptorHandleIncrementSize(type_);
+}
+/////////////////////////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////////////////////
+DeviceContext::CommandExecutor::CommandExecutor
+(
+	DeviceContext::InstanceKey instanceKey_,
+	std::function< ID3D12Device8* (DeviceContext::AccessKey)> deviceGetter_
+):deviceGetter(deviceGetter_)
+{
+
+}
+/////////////////////////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////////////////////
+[[nodiscard]] Microsoft::WRL::ComPtr<ID3D12Fence> DeviceContext::CommandExecutor::CreateFence()
+{
+	Microsoft::WRL::ComPtr<ID3D12Fence> fence;
+	auto* device = deviceGetter(DeviceContext::AccessKey{});
+
+	CommandCreateFenceObject command(DeviceContext::GenerateKey{});
+	fence = std::move(command.CreateFenceObj(device));
+	Logger::Log("Create: Fence", fileName);
+
+	return fence;
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////////////////////
+[[nodiscard]] CommandContextCorePartsRuntime
+DeviceContext::CommandExecutor::CreateCommandContextCorePartsForRuntime(DeviceContext::InstanceKey instanceKey_)
+{
+	//ランタイム用なので万能型
+	auto const cmdListType = D3D12_COMMAND_LIST_TYPE_DIRECT;
+
+	//コアパーツ生成ツール
+	CommandStructureCommandContext tool(DeviceContext::GenerateKey{});
+	auto* device = deviceGetter(DeviceContext::AccessKey{});
+
+	Microsoft::WRL::ComPtr<ID3D12CommandQueue> cmdQueue;
+	std::array < Microsoft::WRL::ComPtr<ID3D12CommandAllocator>, kRequiredGPUBufferSum > cmdAllocators;
+	Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList6> cmdList;
+
+	//生成
+	cmdQueue = tool.CreateCommandQueue(device, cmdListType);
+	Logger::Log("Create: CommandQueue", fileName);
+
+	for (int i = 0;i < kRequiredGPUBufferSum;++i)
+	{
+		cmdAllocators.at(i) = tool.CreateCommandAllocator(device, cmdListType);
+	}
+	Logger::Log("Create: CommandAllocators", fileName);
+
+	cmdList = tool.CreateCommandList(device, cmdAllocators.at(0).Get(), cmdListType);
+	Logger::Log("Create: CommandList", fileName);
+
+	return std::make_tuple(cmdQueue, cmdAllocators, cmdList);
+}
+
+[[nodiscard]] CommandContextCorePartsUpload
+DeviceContext::CommandExecutor::CreateCommandContextCorePartsForUpload(DeviceContext::InstanceKey instanceKey_)
+{
+	//コマンドリストのタイプはアップロードしかしないのでコピーだけでいい
+	auto const cmdListType = D3D12_COMMAND_LIST_TYPE_COPY;
+
+	//コアパーツ生成ツール
+	CommandStructureCommandContext tool(DeviceContext::GenerateKey{});
+	auto* device = deviceGetter(DeviceContext::AccessKey{});
+
+	Microsoft::WRL::ComPtr<ID3D12CommandAllocator> cmdAllocator;
+	Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList6> cmdList;
+
+	//生成
+	cmdAllocator = tool.CreateCommandAllocator(device, cmdListType);
+	Logger::Log("Create: CommandAllocators", fileName);
+
+	cmdList = tool.CreateCommandList(device, cmdAllocator.Get(), cmdListType);
+	Logger::Log("Create: CommandList", fileName);
+
+	return std::make_tuple(cmdAllocator, cmdList);
+
+}
+/////////////////////////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Core\Device\DeviceContextCommandExecutor\DeviceContextCommandExecutor.h ===
+========================================
+#pragma once
+#include "../DeviceContext.h"
+
+class DeviceContextCommandBehavior;
+
+//コマンドを実行するクラス
+class DeviceContext::CommandExecutor
+{
+public:
+
+	CommandExecutor
+	(
+		DeviceContext::InstanceKey instanceKey_,
+		std::function< ID3D12Device8* (DeviceContext::AccessKey)> deviceGetter_
+	);
+
+	//DescriptorHeapのハンドルインクリメントサイズを返す関数
+	UINT CalcDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE type_);
+
+	//フェンス生成
+	[[nodiscard]] Microsoft::WRL::ComPtr<ID3D12Fence> CreateFence();
+
+	//CommandContextのコアパーツ生成.ランタイム用
+	[[nodiscard]] std::tuple
+	<
+		Microsoft::WRL::ComPtr<ID3D12CommandQueue>,
+		std::array<Microsoft::WRL::ComPtr<ID3D12CommandAllocator>, ProjectConfig::Render::kRequiredGPUBufferSum>,
+		Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList6>
+	>
+	CreateCommandContextCorePartsForRuntime(DeviceContext::InstanceKey instanceKey_);
+
+	//リソースアップロード用
+	[[nodiscard]] std::tuple<Microsoft::WRL::ComPtr<ID3D12CommandAllocator>, Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList6>>
+	CreateCommandContextCorePartsForUpload(DeviceContext::InstanceKey instanceKey_);
+
+
+private:
+
+	//デバイスコンテキストのコアパーツにアクセスする関数
+	std::function< ID3D12Device8* (DeviceContext::AccessKey)> deviceGetter;
+};
+
+
+
+
+
+========================================
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Core\Device\DeviceContextCommandProvider\DeviceContextCommandProvider.cpp ===
 ========================================
 #include "PreCompileHeader.h"
@@ -1893,8 +2265,6 @@ struct CommandStructureSwapChain : public DeviceContextCommandBehavior
 #include "../Commands/CreateDescriptorHeap/CommandCreateDescriptorHeap.h"
 #include "../Commands/CreateView/CommandCreateView.h"
 #include "../Commands/StructureSwapChain/CommandStructureSwapChain.h"
-#include "../Commands/StructureCommandContext/CommandStructureCommandContext.h"
-#include "../Commands/CreateFenceObject/CommandCreateFenceObject.h"
 
 
 namespace
@@ -1952,7 +2322,7 @@ template<>
 	auto retFunc = [this](ID3D12Resource* resource_, const D3D12_RENDER_TARGET_VIEW_DESC* desc_, D3D12_CPU_DESCRIPTOR_HANDLE descriptorHandleCPU_)
 	{
 		auto* device = deviceGetter(DeviceContext::AccessKey{});
-		CommandCreateView command(GenerateKey{});
+		CommandCreateView command(DeviceContext::GenerateKey{});
 
 		return command.CreateRTV(device, resource_, desc_, descriptorHandleCPU_);
 	};
@@ -1965,7 +2335,7 @@ template<>
 	auto retFunc = [this](ID3D12Resource* resource_, const D3D12_SHADER_RESOURCE_VIEW_DESC* desc_, D3D12_CPU_DESCRIPTOR_HANDLE descriptorHandleCPU_)
 	{
 		auto* device = deviceGetter(DeviceContext::AccessKey{});
-		CommandCreateView command(GenerateKey{});
+		CommandCreateView command(DeviceContext::GenerateKey{});
 
 		return command.CreateSRV(device, resource_, desc_, descriptorHandleCPU_);
 	};
@@ -1979,7 +2349,7 @@ template<>
 	auto retFunc = [this](ID3D12Resource* resource_, const D3D12_DEPTH_STENCIL_VIEW_DESC* desc_, D3D12_CPU_DESCRIPTOR_HANDLE descriptorHandleCPU_)
 	{
 		auto* device = deviceGetter(DeviceContext::AccessKey{});
-		CommandCreateView command(GenerateKey{});
+		CommandCreateView command(DeviceContext::GenerateKey{});
 
 		return command.CreateDSV(device, resource_, desc_, descriptorHandleCPU_);
 	};
@@ -1992,7 +2362,7 @@ template<>
 	auto retFunc = [this](ID3D12Resource* resource_, const D3D12_UNORDERED_ACCESS_VIEW_DESC* desc_, D3D12_CPU_DESCRIPTOR_HANDLE descriptorHandleCPU_, ID3D12Resource* CounterResource_)
 		{
 			auto* device = deviceGetter(DeviceContext::AccessKey{});
-			CommandCreateView command(GenerateKey{});
+			CommandCreateView command(DeviceContext::GenerateKey{});
 
 			return command.CreateUAV(device, resource_, desc_, descriptorHandleCPU_, CounterResource_);
 		};
@@ -2020,7 +2390,7 @@ template<>
 	)
 	{
 		auto* dxgiFactory = dxgiFactoryGetter(DeviceContext::AccessKey{});
-		CommandStructureSwapChain command(GenerateKey{});
+		CommandStructureSwapChain command(DeviceContext::GenerateKey{});
 
 		return command.CreateSwapChain(*dxgiFactory, commandQueue_,desc_, swapChainDoublePtr_, hWnd_);
 	};
@@ -2043,7 +2413,7 @@ template<>
 	auto retFunc = [this](D3D12_DESCRIPTOR_HEAP_TYPE heapType_, UINT numDescriptors_, bool shaderVisible_)
 	{
 		auto* device = deviceGetter(DeviceContext::AccessKey{});
-		CommandCreateDescriptorHeap command(GenerateKey{});
+		CommandCreateDescriptorHeap command(DeviceContext::GenerateKey{});
 
 		return command.Create(device, heapType_,numDescriptors_, shaderVisible_);
 	};
@@ -2075,7 +2445,7 @@ template<>
 	)
 	{
 		auto* device = deviceGetter(DeviceContext::AccessKey{});
-		CommandCreateGPUResource command(GenerateKey{});
+		CommandCreateGPUResource command(DeviceContext::GenerateKey{});
 
 		return command.CreateResource
 		(
@@ -2096,61 +2466,6 @@ template<>
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
-//CommandContextのコアパーツ生成
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-[[nodiscard]] std::tuple
-<
-	Microsoft::WRL::ComPtr<ID3D12CommandQueue>,
-	std::array<Microsoft::WRL::ComPtr<ID3D12CommandAllocator>, ProjectConfig::Render::kRequiredGPUBufferSum>,
-	Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList6>
->
-DeviceContext::CommandProvider::CreateCommandContextCoreParts(DeviceContext::InstanceKey instanceKey_, D3D12_COMMAND_LIST_TYPE type_)
-{
-	using namespace  ProjectConfig::Render;
-
-	//コアパーツ生成ツール
-	CommandStructureCommandContext tool(GenerateKey{});
-	auto* device = deviceGetter(DeviceContext::AccessKey{});
-
-	Microsoft::WRL::ComPtr<ID3D12CommandQueue> cmdQueue;
-	std::array < Microsoft::WRL::ComPtr<ID3D12CommandAllocator>, kRequiredGPUBufferSum > cmdAllocators;
-	Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList6> cmdList;
-
-	//生成
-	cmdQueue = tool.CreateCommandQueue(device);
-	Logger::Log("Create: CommandQueue", fileName);
-
-	for (int i = 0;i < kRequiredGPUBufferSum;++i)
-	{
-		cmdAllocators.at(i) = tool.CreateCommandAllocator(device);
-	}
-	Logger::Log("Create: CommandAllocators", fileName);
-
-	cmdList = tool.CreateCommandList(device,cmdAllocators.at(0).Get(),type_);
-	Logger::Log("Create: CommandList", fileName);
-
-	return std::make_tuple(cmdQueue, cmdAllocators, cmdList);
-}
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-[[nodiscard]] Microsoft::WRL::ComPtr<ID3D12Fence> DeviceContext::CommandProvider::CreateFence()
-{
-	Microsoft::WRL::ComPtr<ID3D12Fence> fence;
-	auto* device = deviceGetter(DeviceContext::AccessKey{});
-
-	CommandCreateFenceObject command(GenerateKey{});
-	fence = std::move(command.CreateFenceObj(device));
-	Logger::Log("Create: Fence", fileName);
-
-	return fence;
-}
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
 
@@ -2164,7 +2479,7 @@ DeviceContext::CommandProvider::CreateCommandContextCoreParts(DeviceContext::Ins
 class DeviceContextCommandBehavior;
 
 //Deviceを使用する処理を、使用しない形にコマンド化して提供するクラス
-//初期化生成しか使用しないかつ引数がほぼない場合は、自らコマンドをたたく
+//初期化生成しか使用しないかつ引数がほぼない場合は、CommandExecutorが行う
 class DeviceContext::CommandProvider
 {
 public:
@@ -2204,30 +2519,22 @@ public:
 		ProvideCreateUAVCommand();
 	
 	//スワップチェーンを生成するためのコマンド
-	[[nodiscard]] std::function< HRESULT
-	(
-		ID3D12CommandQueue* commandQueue_,
-		DXGI_SWAP_CHAIN_DESC1 desc_,
-		IDXGISwapChain4** swapChainDoublePtr_,
-		const HWND hWnd_
-	)> ProvideCreateSwapChainCommand();
-
-	//CommandContextのコアパーツ生成関数
-	[[nodiscard]] std::tuple
-	<
-		Microsoft::WRL::ComPtr<ID3D12CommandQueue>,
-		std::array<Microsoft::WRL::ComPtr<ID3D12CommandAllocator>, ProjectConfig::Render::kRequiredGPUBufferSum>,
-		Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList6>
+	[[nodiscard]] std::function
+	< HRESULT
+		(
+			ID3D12CommandQueue* commandQueue_,
+			DXGI_SWAP_CHAIN_DESC1 desc_,
+			IDXGISwapChain4** swapChainDoublePtr_,
+			const HWND hWnd_
+		)
 	>
-	CreateCommandContextCoreParts(DeviceContext::InstanceKey instanceKey_, D3D12_COMMAND_LIST_TYPE type_);
+	ProvideCreateSwapChainCommand();
 
-	//Fenceオブジェの生成関数
-	[[nodiscard]] Microsoft::WRL::ComPtr<ID3D12Fence> CreateFence();
 
 
 private:
 
-	//デバイスにアクセスする関数
+	//デバイスコンテキストのコアパーツにアクセスする関数
 	std::function< ID3D12Device8* (DeviceContext::AccessKey)> deviceGetter;
 	std::function< IDXGIFactory7* (DeviceContext::AccessKey)> dxgiFactoryGetter;
 
@@ -2235,14 +2542,6 @@ private:
 
 
 
-
-struct DeviceContext::CommandProvider::GenerateKey
-{
-private:
-
-	friend class DeviceContext::CommandProvider;
-	explicit GenerateKey() = default;
-};
 
 
 
@@ -2414,9 +2713,13 @@ void DeviceContext::Setupper::CreateDevice()
 	//高い順に生成できるか試していく
 	for (size_t i = 0; i < _countof(featureLevels); ++i)
 	{
-		//採用したアダプタでデバイスを生成
-		HRESULT hr = D3D12CreateDevice(useAdapter.Get(), featureLevels[i], IID_PPV_ARGS(&device));
+		Microsoft::WRL::ComPtr<ID3D12Device> d3d12Device;
 
+		//採用したアダプタでデバイスを生成
+		HRESULT hr = D3D12CreateDevice(useAdapter.Get(), featureLevels[i], IID_PPV_ARGS(&d3d12Device));
+		//型変換
+		hr = d3d12Device.As(&device); 
+		
 		//指定した機能7レベルでデバイスが生成できたか確認
 		if (SUCCEEDED(hr))
 		{
@@ -2640,6 +2943,9 @@ class SwapChainContext
 		const HWND hWnd_
 	)>;
 
+	//画面の表示、バックバッファの切り替えを担う
+	class Presenter;
+
 public:
 
 	//Nexusのみ生成可能
@@ -2651,6 +2957,8 @@ public:
 	//描画パスに必要な情報を提供する
 	class RenderPassMaterialProvider;
 
+	std::unique_ptr<Presenter> presenter;
+	std::unique_ptr<RenderPassMaterialProvider> renderPassMaterialProvider;
 
 	SwapChainContext
 	(
@@ -2669,9 +2977,6 @@ private:
 
 	//そのディスクリプション
 	struct Description;
-	//画面の表示、バックバッファの切り替えを担う
-	class Presenter;
-
 
 	//SwapChainとそのカラーバッファを構築
 	void Assemble
@@ -2701,8 +3006,6 @@ private:
 	Microsoft::WRL::ComPtr<IDXGISwapChain4> swapChain = nullptr;
 	std::unique_ptr<ColorBuffer> colorBuffer;
 	std::unique_ptr<DepthStencilBuffer> depthStencilBuffer;
-	std::unique_ptr<Presenter> presenter;
-	std::unique_ptr<RenderPassMaterialProvider> renderPassMaterialProvider;
 };
 
 struct SwapChainContext::InstanceKey
@@ -4267,16 +4570,20 @@ inline Vector3 operator*(const float num_,Vector3 vec_)
 #include "../Core/DescriptorHeap/DescriptorHeapContext.h"
 #include "../Resource/BufferContext.h"
 #include "../Core/Device/DeviceContextCommandProvider/DeviceContextCommandProvider.h"
+#include "../Core/Device/DeviceContextCommandExecutor/DeviceContextCommandExecutor.h"
 #include "../Core/SwapChain/SwapChainContext.h"
 #include "../Core/Command/CommandContext.h"
 #include "../Resource/BufferAssembler/BufferAssembler.h"
 #include "../Resource/BufferDescriptions/DepthStencilBufferDescription/DepthStencilBufferDescription.h"
 #include "../Resource/GPUBuffer/DepthStencilBuffer/DepthStencilBuffer.h"
+#include "../Core/Command/Synchronizer/Synchronizer.h"
+
 
 namespace
 {
 	std::string const fileName = "Nexus.cpp";
 }
+
 
 //Nexusクラスのインスタンスを制御するクラス
 class Nexus::InstanceLimiter
@@ -4310,12 +4617,22 @@ Nexus::Nexus()
 	InitCommandContext();
 	InitSwapChainContext();
 
+	//コマンドリストを閉じる
+	commandContext->CloseBeforeRun(CommandContext::InstanceKey{});
+
 	Logger::End("Nexus: Constructor");
+}
+
+void Nexus::Finalize()
+{
+	commandContext->Finalize(CommandContext::InstanceKey{});
+	windowContext->Finalize();
 }
 
 Nexus::~Nexus()
 {
-	windowContext->Finalize();
+	Finalize();
+
 }
 
 void Nexus::InitSwapChainContext()
@@ -4324,6 +4641,7 @@ void Nexus::InitSwapChainContext()
 	BufferDescriptionBehavior::ResourceStates resourceStates = { D3D12_RESOURCE_STATE_DEPTH_WRITE ,D3D12_RESOURCE_STATE_DEPTH_WRITE };
 	
 	std::unique_ptr<DepthStencilBuffer> depthStencilBuffer;
+	auto* cmdProvider = deviceContext->commandProvider.get();
 
 	//スワップチェーンが使用する深度ステンシルバッファをここでつくちゃう
 	{
@@ -4348,7 +4666,7 @@ void Nexus::InitSwapChainContext()
 			SwapChainContext::InstanceKey{},
 			descriptorHeapContext.get(),
 			commandContext.get(),
-			deviceContext->commandProvider->ProvideCreateSwapChainCommand(),
+			cmdProvider->ProvideCreateSwapChainCommand(),
 			windowContext->WatchHWND(),
 			std::move(depthStencilBuffer)
 		)
@@ -4374,8 +4692,10 @@ void Nexus::InitDeviceContext()
 
 void Nexus::InitBufferContext()
 {
+	auto* cmdProvider = deviceContext->commandProvider.get();
+
 	//リソース生成コマンド
-	auto createResourceCommand = deviceContext->commandProvider->ProvideCreateResourceCommand();
+	auto createResourceCommand = cmdProvider->ProvideCreateResourceCommand();
 	Logger::Log("Set: CommandCreateResource", fileName);
 
 	bufferContext.reset(new BufferContext(BufferContext::InstanceKey{}, createResourceCommand,descriptorHeapContext.get()));
@@ -4392,12 +4712,15 @@ void Nexus::InitWindowContext()
 
 void Nexus::InitDescriptorHeapContext()
 {
+	auto* cmdProvider = deviceContext->commandProvider.get();
+	auto* cmdExecutor = deviceContext->commandExecutor.get();
+
 	//DescriptorHeap生成コマンド
-	auto createDescriptorHeapCommand = deviceContext->commandProvider->ProvideCreateDescriptorHeapCommand();
-	auto createRTVCommand = deviceContext->commandProvider->ProvideCreateViewCommand<D3D12_RENDER_TARGET_VIEW_DESC>();
-	auto createSRVCommand = deviceContext->commandProvider->ProvideCreateViewCommand<D3D12_SHADER_RESOURCE_VIEW_DESC>();
-	auto createDSVCommand = deviceContext->commandProvider->ProvideCreateViewCommand<D3D12_DEPTH_STENCIL_VIEW_DESC>();
-	auto createUAVCommand = deviceContext->commandProvider->ProvideCreateUAVCommand();
+	auto createDescriptorHeapCommand = cmdProvider->ProvideCreateDescriptorHeapCommand();
+	auto createRTVCommand = cmdProvider->ProvideCreateViewCommand<D3D12_RENDER_TARGET_VIEW_DESC>();
+	auto createSRVCommand = cmdProvider->ProvideCreateViewCommand<D3D12_SHADER_RESOURCE_VIEW_DESC>();
+	auto createDSVCommand = cmdProvider->ProvideCreateViewCommand<D3D12_DEPTH_STENCIL_VIEW_DESC>();
+	auto createUAVCommand = cmdProvider->ProvideCreateUAVCommand();
 
 	struct IncrementSizeOfDescriptorHeaps
 	{
@@ -4410,9 +4733,9 @@ void Nexus::InitDescriptorHeapContext()
 	//deviceContextからDescriptorHandleIncrementSizeを教えてもらう
 	IncrementSizeOfDescriptorHeaps sizeArray
 	(
-		deviceContext->CalcDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV),
-		deviceContext->CalcDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV),
-		deviceContext->CalcDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_DSV)
+		cmdExecutor->CalcDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV),
+		cmdExecutor->CalcDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV),
+		cmdExecutor->CalcDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_DSV)
 	);
 
 	std::array<UINT,3> tmpSizeArray = { sizeArray.rtv ,sizeArray.srv,sizeArray.dsv };
@@ -4434,13 +4757,15 @@ void Nexus::InitDescriptorHeapContext()
 
 void Nexus::InitCommandContext()
 {
+	auto* cmdExecutor = deviceContext->commandExecutor.get();
+
 	//メイン
 	auto [cmdQueue, cmdAllocators, cmdList] = 
-		deviceContext->commandProvider->CreateCommandContextCoreParts(DeviceContext::InstanceKey{}, D3D12_COMMAND_LIST_TYPE_DIRECT);
+		cmdExecutor->CreateCommandContextCorePartsForRuntime(DeviceContext::InstanceKey{});
 	
 	//リソースアップロード用
-	auto[commandQueue_tmp, allocator_forUpload, cmdList_forUpload] = 
-		deviceContext->commandProvider->CreateCommandContextCoreParts(DeviceContext::InstanceKey{}, D3D12_COMMAND_LIST_TYPE_COPY);
+	auto[allocator_forUpload, cmdList_forUpload] = 
+		cmdExecutor->CreateCommandContextCorePartsForUpload(DeviceContext::InstanceKey{});
 
 	commandContext.reset
 	(
@@ -4450,8 +4775,8 @@ void Nexus::InitCommandContext()
 			std::move(cmdQueue),
 			std::move(cmdAllocators),
 			std::move(cmdList),
-			std::move(deviceContext->commandProvider->CreateFence()),
-			std::move(allocator_forUpload.at(0)),
+			std::move(cmdExecutor->CreateFence()),
+			std::move(allocator_forUpload),
 			std::move(cmdList_forUpload)
 		)
 	);
@@ -4459,10 +4784,7 @@ void Nexus::InitCommandContext()
 	Logger::Log("Instantiate: commandContext", fileName);
 }
 
-void Nexus::Run()
-{
 
-}
 
 
 
@@ -4518,11 +4840,39 @@ private:
 	void InitBufferContext();
 	void InitWindowContext();
 	void InitDescriptorHeapContext();
+	void Finalize();
 
 };
 
 
 
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Nexus\NexusRun.cpp ===
+========================================
+#include "Nexus.h"
+#include "../Core/SwapChain/Presenter/Presenter.h"
+#include "../Core/Command/CommandExecutor/CommandExecutor.h"
+
+void Nexus::Run()
+{
+	auto const frameIndex = swapChainContext->presenter->GetFrameIndex();
+
+	//コマンドの記録開始
+	commandContext->RecordingStart(frameIndex);
+
+
+
+
+	//コマンドを送る
+	commandContext->ExecuteCommands(frameIndex);
+
+	//表示
+	swapChainContext->presenter->Present();
+}
 
 
 

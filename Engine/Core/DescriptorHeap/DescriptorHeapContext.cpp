@@ -124,7 +124,7 @@ std::string DescriptorHeapContext::GetDescriptorName(D3D12_DESCRIPTOR_HEAP_TYPE 
 
 	std::string descriptorHeap = "_descriptorHeap";
 
-	std::string nameTable[D3D12_DESCRIPTOR_HEAP_TYPE::D3D12_DESCRIPTOR_HEAP_TYPE_NUM_TYPES + 1] =
+	static const std::string nameTable[D3D12_DESCRIPTOR_HEAP_TYPE::D3D12_DESCRIPTOR_HEAP_TYPE_NUM_TYPES + 1] =
 	{
 		"SRV_UAV",
 		"Sampler",

@@ -11,11 +11,14 @@
 #include "../Resource/BufferAssembler/BufferAssembler.h"
 #include "../Resource/BufferDescriptions/DepthStencilBufferDescription/DepthStencilBufferDescription.h"
 #include "../Resource/GPUBuffer/DepthStencilBuffer/DepthStencilBuffer.h"
+#include "../Core/Command/Synchronizer/Synchronizer.h"
+
 
 namespace
 {
 	std::string const fileName = "Nexus.cpp";
 }
+
 
 //Nexusクラスのインスタンスを制御するクラス
 class Nexus::InstanceLimiter
@@ -49,12 +52,22 @@ Nexus::Nexus()
 	InitCommandContext();
 	InitSwapChainContext();
 
+	//コマンドリストを閉じる
+	commandContext->CloseBeforeRun(CommandContext::InstanceKey{});
+
 	Logger::End("Nexus: Constructor");
+}
+
+void Nexus::Finalize()
+{
+	commandContext->Finalize(CommandContext::InstanceKey{});
+	windowContext->Finalize();
 }
 
 Nexus::~Nexus()
 {
-	windowContext->Finalize();
+	Finalize();
+
 }
 
 void Nexus::InitSwapChainContext()
@@ -206,7 +219,3 @@ void Nexus::InitCommandContext()
 	Logger::Log("Instantiate: commandContext", fileName);
 }
 
-void Nexus::Run()
-{
-
-}

@@ -19,6 +19,9 @@ class SwapChainContext
 		const HWND hWnd_
 	)>;
 
+	//画面の表示、バックバッファの切り替えを担う
+	class Presenter;
+
 public:
 
 	//Nexusのみ生成可能
@@ -30,6 +33,8 @@ public:
 	//描画パスに必要な情報を提供する
 	class RenderPassMaterialProvider;
 
+	std::unique_ptr<Presenter> presenter;
+	std::unique_ptr<RenderPassMaterialProvider> renderPassMaterialProvider;
 
 	SwapChainContext
 	(
@@ -48,9 +53,6 @@ private:
 
 	//そのディスクリプション
 	struct Description;
-	//画面の表示、バックバッファの切り替えを担う
-	class Presenter;
-
 
 	//SwapChainとそのカラーバッファを構築
 	void Assemble
@@ -80,8 +82,6 @@ private:
 	Microsoft::WRL::ComPtr<IDXGISwapChain4> swapChain = nullptr;
 	std::unique_ptr<ColorBuffer> colorBuffer;
 	std::unique_ptr<DepthStencilBuffer> depthStencilBuffer;
-	std::unique_ptr<Presenter> presenter;
-	std::unique_ptr<RenderPassMaterialProvider> renderPassMaterialProvider;
 };
 
 struct SwapChainContext::InstanceKey

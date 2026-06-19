@@ -38,3 +38,9 @@ void CommandContext::CommandExecutor::Execute()
 	commandQueue->ExecuteCommandLists(1, commandLists);
 }
 
+void CommandContext::CommandExecutor::Close(CommandContext::CloseKey key_)
+{
+	commandList->Close();
+}
+
+
