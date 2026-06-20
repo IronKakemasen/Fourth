@@ -1,7 +1,7 @@
 #pragma once
 #include "../GPUBufferBehavior.h"
-#include "../../BufferDescriptions/ColorBufferDescription/ColorBufferDescription.h"
 
+struct ColorBufferDescription;
 
 //カラーバッファクラス
 class ColorBuffer final : public GPUBufferBehavior

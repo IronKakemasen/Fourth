@@ -28,8 +28,7 @@ public:
 		UINT height_,
 		FLOAT clearColor_,
 		DXGI_FORMAT dsvFormat_,
-		DXGI_FORMAT srvFormat_,
-		ResourceStates initialStates_
+		DXGI_FORMAT srvFormat_
 	);
 
 	//要項チェック

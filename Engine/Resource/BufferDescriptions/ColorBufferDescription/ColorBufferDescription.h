@@ -12,7 +12,6 @@ private:
 		float clearColor[4] = { 9,9,9,9 };
 		UINT width{};
 		UINT height{};
-		D3D12_RESOURCE_FLAGS flag = D3D12_RESOURCE_FLAG_Error_Detection;
 		DXGI_FORMAT format = DXGI_FORMAT_Error_Detection;
 
 	}param;
@@ -24,9 +23,7 @@ public:
 		float clearColors_[4],
 		UINT width_,
 		UINT height_,
-		D3D12_RESOURCE_FLAGS flag_,
-		DXGI_FORMAT format_,
-		ResourceStates initialStates_
+		DXGI_FORMAT format_
 	);
 	
 	//要項チェック
