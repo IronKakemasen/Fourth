@@ -14,3 +14,9 @@ ConstantBuffer::ConstantBuffer
 {
 
 }
+
+std::array<D3D12_RESOURCE_BARRIER, ProjectConfig::Render::kRequiredGPUBufferSum>
+ConstantBuffer::CreateNextStepBarriers(ExtractMaterialKey key_)
+{
+	return { D3D12_RESOURCE_BARRIER{}, D3D12_RESOURCE_BARRIER{} };
+}

@@ -4,7 +4,7 @@
 
 
 //カラーバッファクラス
-class ColorBuffer : public GPUBufferBehavior
+class ColorBuffer final : public GPUBufferBehavior
 {
 public:
 
@@ -19,6 +19,9 @@ public:
 
 	//リソースのディスクリプションを見る
 	const ColorBufferDescription& WatchDescription();
+
+	virtual std::array<D3D12_RESOURCE_BARRIER, ProjectConfig::Render::kRequiredGPUBufferSum>
+		CreateNextStepBarriers(ExtractMaterialKey key_)override;
 
 private:
 

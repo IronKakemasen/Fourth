@@ -26,11 +26,8 @@ class GPUBufferBehavior
 		D3D12_RESOURCE_BARRIER CreateBarrier(D3D12_RESOURCE_STATES after_);
 
 		//リソースステート
-		D3D12_RESOURCE_STATES curState;
+		D3D12_RESOURCE_STATES curResourceState;
 	};
-
-	//複数分用意する
-	std::array<Buffer, ProjectConfig::Render::kRequiredGPUBufferSum> buffers;
 
 	//なまえ
 	std::string name = "noName";
@@ -42,7 +39,7 @@ public:
 	//生リソースアクセスキー
 	struct ResourceAccessKey;
 	//バッファから描画パスに必要な情報をもらうためのキー
-	struct ExtracteMaterialKey;
+	struct ExtractMaterialKey;
 
 
 	GPUBufferBehavior
@@ -57,8 +54,13 @@ public:
 	virtual ~GPUBufferBehavior();
 
 	//生リソースを取得
-	ID3D12Resource* GetResource(ResourceAccessKey bufferAccessKey_ , int resourceNo_);
+	ID3D12Resource* GetResource(ResourceAccessKey resourceAccessKey_ , int resourceNo_);
 	
+	//各バッファが自身のバリアを適切に張るためのバリアを生成
+	virtual std::array<D3D12_RESOURCE_BARRIER, ProjectConfig::Render::kRequiredGPUBufferSum>
+		CreateNextStepBarriers(ExtractMaterialKey key_) = 0;
+
+
 	//descriptorHeapIndexを書き込む
 	template<ViewType type, typename Index>
 	void OverrideHeapIndex(InstanceKey instanceKey_, Index index_, uint8_t resourceNo_)
@@ -81,7 +83,7 @@ public:
 
 	//各種ビューのインデックスを取得
 	template<ViewType type, typename Index>
-	Index WatchIndex(ExtracteMaterialKey key_ , uint8_t resourceNo_)const
+	Index WatchIndex(uint8_t resourceNo_)const
 	{
 		const auto& dstHeapContainer = buffers.at(resourceNo_).heapIndicesContainer.at(type);
 
@@ -105,15 +107,15 @@ public:
 		return Index{};
 	}
 
-	//自身のバッファから「after_」の遷移するバリアを生成。このとき、curStateも変わる
-	D3D12_RESOURCE_BARRIER CreateBarrier(ExtracteMaterialKey key_, D3D12_RESOURCE_STATES after_, uint8_t index_);
 
-
+	
 protected:
 
 	//自身を構成するディスクリプション
 	std::unique_ptr <BufferDescriptionBehavior> description;
 
+	//複数分用意する
+	std::array<Buffer, ProjectConfig::Render::kRequiredGPUBufferSum> buffers;
 
 };
 
@@ -139,12 +141,12 @@ private:
 };
 
 
-struct GPUBufferBehavior::ExtracteMaterialKey
+struct GPUBufferBehavior::ExtractMaterialKey
 {
 private:
 	
 	friend class SwapChainContext::RenderPassMaterialProvider;
 
-	explicit ExtracteMaterialKey() = default;
+	explicit ExtractMaterialKey() = default;
 
 };

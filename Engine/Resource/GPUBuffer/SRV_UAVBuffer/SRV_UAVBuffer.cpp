@@ -14,3 +14,52 @@ SRV_UAVBuffer::SRV_UAVBuffer
 {
 
 }
+
+std::array<D3D12_RESOURCE_BARRIER, ProjectConfig::Render::kRequiredGPUBufferSum>
+SRV_UAVBuffer::CreateNextStepBarriers(ExtractMaterialKey key_)
+{
+	std::array<D3D12_RESOURCE_BARRIER, ProjectConfig::Render::kRequiredGPUBufferSum> barriers;
+
+	if (status == kUAV_SRV)
+	{
+		// 0 - > SRV , 1 -> UAV
+		barriers.at(0) = buffers[0].CreateBarrier(D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE | D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+		barriers.at(1) = buffers[1].CreateBarrier(D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
+	}
+	else
+	{
+		barriers.at(0) = buffers[0].CreateBarrier(D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
+		barriers.at(1) = buffers[1].CreateBarrier(D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE | D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+	}
+
+	Swap();
+
+	return barriers;
+}
+
+
+uint32_t SRV_UAVBuffer::CurrentSRVHeapIndex()
+{
+	uint32_t heapIndex{};
+
+	if (status == kSRV_UAV)heapIndex = WatchIndex<ViewType::kSRV,uint32_t>(0);
+	else heapIndex = WatchIndex<ViewType::kSRV, uint32_t>(1);
+
+	return heapIndex;
+}
+
+uint32_t SRV_UAVBuffer::CurrentUAVHeapIndex()
+{
+	uint32_t heapIndex{};
+
+	if (status == kUAV_SRV)heapIndex = WatchIndex<ViewType::kUAV, uint32_t>(0);
+	else heapIndex = WatchIndex<ViewType::kUAV, uint32_t>(1);
+
+	return heapIndex;
+}
+
+void SRV_UAVBuffer::Swap()
+{
+	if (status == kUAV_SRV) status = kSRV_UAV;
+	else status = kUAV_SRV;
+}

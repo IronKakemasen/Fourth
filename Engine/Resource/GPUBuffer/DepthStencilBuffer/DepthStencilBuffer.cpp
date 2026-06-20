@@ -14,7 +14,13 @@ DepthStencilBuffer::DepthStencilBuffer
 
 }
 
-float DepthStencilBuffer::WatchClearColor(ExtracteMaterialKey key_)
+float DepthStencilBuffer::WatchClearColor(ExtractMaterialKey key_)
 {
 	return static_cast<DepthStencilBufferDescription*>(description.get())->WatchParam().clearColor;
+}
+
+std::array<D3D12_RESOURCE_BARRIER, ProjectConfig::Render::kRequiredGPUBufferSum>
+DepthStencilBuffer::CreateNextStepBarriers(ExtractMaterialKey key_)
+{
+	return { D3D12_RESOURCE_BARRIER{}, D3D12_RESOURCE_BARRIER{} };
 }

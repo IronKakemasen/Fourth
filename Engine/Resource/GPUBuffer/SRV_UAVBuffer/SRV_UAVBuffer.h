@@ -5,8 +5,14 @@
 
 
 //StructuredBuffer（読み込み専用やRWStructuredBuffer（読み書き汎用）リソース
-class SRV_UAVBuffer : public GPUBufferBehavior
+class SRV_UAVBuffer final : public GPUBufferBehavior
 {
+	enum Status
+	{
+		kSRV_UAV,	//index0が読み込み用、index1が書き込み用
+		kUAV_SRV	//その逆
+	};
+
 public:
 
 	SRV_UAVBuffer
@@ -18,7 +24,16 @@ public:
 		std::unique_ptr <BufferDescriptionBehavior>&& description_
 	);
 
+	uint32_t CurrentSRVHeapIndex();
+	uint32_t CurrentUAVHeapIndex();
+
+	virtual std::array<D3D12_RESOURCE_BARRIER, ProjectConfig::Render::kRequiredGPUBufferSum>
+		CreateNextStepBarriers(ExtractMaterialKey key_)override;
+
 private:
+
+	Status status = kSRV_UAV;
+	void Swap();
 
 };
 
