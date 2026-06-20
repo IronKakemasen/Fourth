@@ -227,8 +227,8 @@
     <ClCompile Include="Engine\Debug\RuntimeDebugger\DebugSystems\RuntimeDebuggerBehavior.cpp" />
     <ClCompile Include="Engine\Debug\RuntimeDebugger\RuntimeDebugger.cpp" />
     <ClCompile Include="Engine\Core\DescriptorHeap\ViewCreator\ViewCreator.cpp" />
-    <ClCompile Include="Engine\Resource\GPUBuffer\SRV_UAVBuffer\SRV_UAVBuffer.cpp" />
-    <ClCompile Include="Engine\Resource\BufferDescriptions\SRV_UAVBufferDescription\SRV_UAVBufferDescription.cpp" />
+    <ClCompile Include="Engine\Resource\GPUBuffer\RWPingPongBuffer\RWPingPongBuffer.cpp" />
+    <ClCompile Include="Engine\Resource\BufferDescriptions\RWPingPongBufferDescription\RWPingPongBufferDescription.cpp" />
     <ClCompile Include="Engine\Core\SwapChain\SwapChainColorBuffer\SwapChainColorBuffer.cpp" />
     <ClCompile Include="Engine\Core\Device\Commands\StructureCommandContext\CommandStructureCommandContext.cpp" />
     <ClCompile Include="Engine\Core\SwapChain\Presenter\Presenter.cpp" />
@@ -236,6 +236,8 @@
     <ClCompile Include="Engine\Core\Command\Synchronizer\Synchronizer.cpp" />
     <ClCompile Include="Engine\Core\Command\RuntimeWrapper\RuntimeWrapper.cpp" />
     <ClCompile Include="Engine\Core\Command\ResourceUploader\ResourceUploader.cpp" />
+    <ClCompile Include="Engine\Resource\GPUBuffer\UploadStructuredBuffer\UploadStructuredBuffer.cpp" />
+    <ClCompile Include="Engine\Resource\BufferDescriptions\UploadStructuredBufferDescription\UploadStructuredBufferDescription.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Engine\Core\Device\DeviceContextCommandExecutor\DeviceContextCommandExecutor.h" />
@@ -302,8 +304,8 @@
     <ClInclude Include="Engine\Debug\RuntimeDebugger\DebugSystems\RuntimeDebuggerBehavior.h" />
     <ClInclude Include="Engine\Debug\RuntimeDebugger\RuntimeDebugger.h" />
     <ClInclude Include="Engine\Core\DescriptorHeap\ViewCreator\ViewCreator.h" />
-    <ClInclude Include="Engine\Resource\GPUBuffer\SRV_UAVBuffer\SRV_UAVBuffer.h" />
-    <ClInclude Include="Engine\Resource\BufferDescriptions\SRV_UAVBufferDescription\SRV_UAVBufferDescription.h" />
+    <ClInclude Include="Engine\Resource\GPUBuffer\RWPingPongBuffer\RWPingPongBuffer.h" />
+    <ClInclude Include="Engine\Resource\BufferDescriptions\RWPingPongBufferDescription\RWPingPongBufferDescription.h" />
     <ClInclude Include="Engine\Core\SwapChain\SwapChainColorBuffer\SwapChainColorBuffer.h" />
     <ClInclude Include="Engine\Core\Device\Commands\StructureCommandContext\CommandStructureCommandContext.h" />
     <ClInclude Include="Engine\Core\SwapChain\Presenter\Presenter.h" />
@@ -311,6 +313,8 @@
     <ClInclude Include="Engine\Core\Command\Synchronizer\Synchronizer.h" />
     <ClInclude Include="Engine\Core\Command\RuntimeWrapper\RuntimeWrapper.h" />
     <ClInclude Include="Engine\Core\Command\ResourceUploader\ResourceUploader.h" />
+    <ClInclude Include="Engine\Resource\GPUBuffer\UploadStructuredBuffer\UploadStructuredBuffer.h" />
+    <ClInclude Include="Engine\Resource\BufferDescriptions\UploadStructuredBufferDescription\UploadStructuredBufferDescription.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

@@ -1,11 +1,10 @@
 #pragma once
 #include "../GPUBufferBehavior.h"
-#include "../../BufferDescriptions/SRV_UAVBufferDescription/SRV_UAVBufferDescription.h"
+#include "../../BufferDescriptions/RWPingPongBufferDescription/RWPingPongBufferDescription.h"
 
 
-
-//StructuredBuffer（読み込み専用やRWStructuredBuffer（読み書き汎用）リソース
-class SRV_UAVBuffer final : public GPUBufferBehavior
+//読み書き
+class RWPingPongBuffer final : public GPUBufferBehavior
 {
 	enum Status
 	{
@@ -15,7 +14,7 @@ class SRV_UAVBuffer final : public GPUBufferBehavior
 
 public:
 
-	SRV_UAVBuffer
+	RWPingPongBuffer
 	(
 		const InstanceKey& instanceKey_, 
 		std::string name_,

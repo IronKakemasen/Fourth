@@ -1,9 +1,9 @@
 #include "PreCompileHeader.h"
-#include "SRV_UAVBuffer.h"
+#include "RWPingPongBuffer.h"
 #include "../../BufferDescriptions/BufferDescriptionBehavior.h"
 
 
-SRV_UAVBuffer::SRV_UAVBuffer
+RWPingPongBuffer::RWPingPongBuffer
 (
 	const InstanceKey& instanceKey_, 
 	std::string name_, 
@@ -16,7 +16,7 @@ SRV_UAVBuffer::SRV_UAVBuffer
 }
 
 std::array<D3D12_RESOURCE_BARRIER, ProjectConfig::Render::kRequiredGPUBufferSum>
-SRV_UAVBuffer::CreateNextStepBarriers(ExtractMaterialKey key_)
+RWPingPongBuffer::CreateNextStepBarriers(ExtractMaterialKey key_)
 {
 	std::array<D3D12_RESOURCE_BARRIER, ProjectConfig::Render::kRequiredGPUBufferSum> barriers;
 
@@ -38,7 +38,7 @@ SRV_UAVBuffer::CreateNextStepBarriers(ExtractMaterialKey key_)
 }
 
 
-uint32_t SRV_UAVBuffer::CurrentSRVHeapIndex()
+uint32_t RWPingPongBuffer::CurrentSRVHeapIndex()
 {
 	uint32_t heapIndex{};
 
@@ -48,7 +48,7 @@ uint32_t SRV_UAVBuffer::CurrentSRVHeapIndex()
 	return heapIndex;
 }
 
-uint32_t SRV_UAVBuffer::CurrentUAVHeapIndex()
+uint32_t RWPingPongBuffer::CurrentUAVHeapIndex()
 {
 	uint32_t heapIndex{};
 
@@ -58,7 +58,7 @@ uint32_t SRV_UAVBuffer::CurrentUAVHeapIndex()
 	return heapIndex;
 }
 
-void SRV_UAVBuffer::Swap()
+void RWPingPongBuffer::Swap()
 {
 	if (status == kUAV_SRV) status = kSRV_UAV;
 	else status = kUAV_SRV;

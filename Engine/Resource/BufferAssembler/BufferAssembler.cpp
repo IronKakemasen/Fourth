@@ -5,13 +5,13 @@
 #include "../GPUBuffer/ColorBuffer/ColorBuffer.h"
 #include "../GPUBuffer/ConstantBuffer/ConstantBuffer.h"
 #include "../GPUBuffer/DepthStencilBuffer/DepthStencilBuffer.h"
-#include "../GPUBuffer/SRV_UAVBuffer/SRV_UAVBuffer.h"
+#include "../GPUBuffer/RWPingPongBuffer/RWPingPongBuffer.h"
 
 //ディスクリプション
 #include "../BufferDescriptions/ColorBufferDescription/ColorBufferDescription.h"
 #include "../BufferDescriptions/ConstantBufferDescription/ConstantBufferDescription.h"
 #include "../BufferDescriptions/DepthStencilBufferDescription/DepthStencilBufferDescription.h"
-#include "../BufferDescriptions/SRV_UAVBufferDescription/SRV_UAVBufferDescription.h"
+#include "../BufferDescriptions/RWPingPongBufferDescription/RWPingPongBufferDescription.h"
 
 //ツール
 #include "../ResourceCreator/ResourceCreator.h"
