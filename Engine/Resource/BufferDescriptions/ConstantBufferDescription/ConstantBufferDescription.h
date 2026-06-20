@@ -16,8 +16,7 @@ public:
 
 	ConstantBufferDescription
 	(
-		UINT sizeInByte_, 
-		ResourceStates initialStates_ = { D3D12_RESOURCE_STATE_GENERIC_READ,D3D12_RESOURCE_STATE_GENERIC_READ }
+		UINT sizeInByte_
 	);
 
 	//パラーメーターチェック

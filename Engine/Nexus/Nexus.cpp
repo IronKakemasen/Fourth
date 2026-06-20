@@ -73,7 +73,6 @@ Nexus::~Nexus()
 void Nexus::InitSwapChainContext()
 {
 	using namespace ProjectConfig::Window;
-	BufferDescriptionBehavior::ResourceStates resourceStates = { D3D12_RESOURCE_STATE_DEPTH_WRITE ,D3D12_RESOURCE_STATE_DEPTH_WRITE };
 	
 	std::unique_ptr<DepthStencilBuffer> depthStencilBuffer;
 	auto* cmdProvider = deviceContext->commandProvider.get();
@@ -86,8 +85,7 @@ void Nexus::InitSwapChainContext()
 			kHeight,
 			0.0f,
 			DXGI_FORMAT_D24_UNORM_S8_UINT,
-			DXGI_FORMAT_R24_UNORM_X8_TYPELESS,
-			resourceStates
+			DXGI_FORMAT_R24_UNORM_X8_TYPELESS
 		);
 
 		depthStencilBuffer = std::move(bufferContext->bufferAssembler->Assemble<DepthStencilBuffer>(desc, "SwapChain_DB"));

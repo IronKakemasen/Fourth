@@ -3,11 +3,10 @@
 
 ConstantBufferDescription::ConstantBufferDescription
 (
-	UINT sizeInByte_, 
-	ResourceStates initialStates_
-):BufferDescriptionBehavior(initialStates_)
+	UINT sizeInByte_
+) :BufferDescriptionBehavior({ D3D12_RESOURCE_STATE_GENERIC_READ,D3D12_RESOURCE_STATE_GENERIC_READ })
 {
-	param.sizeInByte = sizeInByte_;
+	param.sizeInByte = (sizeInByte_ + 255) & ~255;
 }
 
 
@@ -25,8 +24,9 @@ D3D12_RESOURCE_DESC ConstantBufferDescription::CreateResourceDesc()const
 {
 	D3D12_RESOURCE_DESC resourceDesc = {};
 
+	resourceDesc.Width = param.sizeInByte;
+
 	resourceDesc.Dimension = D3D12_RESOURCE_DIMENSION_BUFFER;
-	resourceDesc.Width = (param.sizeInByte + 255) & ~255;;
 	resourceDesc.Height = 1;
 	resourceDesc.DepthOrArraySize = 1;
 	resourceDesc.MipLevels = 1;
