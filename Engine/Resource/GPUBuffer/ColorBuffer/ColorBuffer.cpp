@@ -15,6 +15,12 @@ ColorBuffer::ColorBuffer
 
 }
 
+std::array<D3D12_RESOURCE_BARRIER, ProjectConfig::Render::kRequiredGPUBufferSum>
+ColorBuffer::CreateNextStepBarriers(ExtractMaterialKey key_)
+{
+	return { D3D12_RESOURCE_BARRIER{}, D3D12_RESOURCE_BARRIER{} };
+}
+
 
 const ColorBufferDescription& ColorBuffer::WatchDescription() 
 {

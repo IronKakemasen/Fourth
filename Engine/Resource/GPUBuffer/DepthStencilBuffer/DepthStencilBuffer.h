@@ -4,7 +4,7 @@
 
 
 //定数バッファクラス
-class DepthStencilBuffer : public GPUBufferBehavior
+class DepthStencilBuffer final : public GPUBufferBehavior
 {
 public:
 
@@ -17,6 +17,10 @@ public:
 		std::unique_ptr <BufferDescriptionBehavior>&& description_
 	);
 
-	float WatchClearColor(ExtracteMaterialKey key_);
+	float WatchClearColor(ExtractMaterialKey key_);
+
+	virtual std::array<D3D12_RESOURCE_BARRIER, ProjectConfig::Render::kRequiredGPUBufferSum>
+		CreateNextStepBarriers(ExtractMaterialKey key_)override;
+
 };
 

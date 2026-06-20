@@ -2,8 +2,8 @@
 #include "../BufferDescriptionBehavior.h"
 
 
-//StructuredBuffer（読み込み専用やRWStructuredBuffer（読み書き汎用）のDescription
-struct SRV_UAVBufferDescription final :public BufferDescriptionBehavior, ISRV_Assembler, IUAV_Assembler
+//読み書き
+struct RWPingPongBufferDescription final :public BufferDescriptionBehavior, ISRV_Assembler, IUAV_Assembler
 {
 private:
 	struct Param
@@ -26,7 +26,7 @@ private:
 
 public:
 
-	SRV_UAVBufferDescription
+	RWPingPongBufferDescription
 	(
 		UINT structureByte_,
 		UINT numElements_,

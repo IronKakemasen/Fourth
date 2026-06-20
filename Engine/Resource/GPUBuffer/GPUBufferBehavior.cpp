@@ -13,8 +13,8 @@ namespace
 
 D3D12_RESOURCE_BARRIER GPUBufferBehavior::Buffer::CreateBarrier(D3D12_RESOURCE_STATES after_)
 {
-	auto buff = curState;
-	curState = after_;
+	auto buff = curResourceState;
+	curResourceState = after_;
 
 	return ResourceBarrier::Create
 	(
@@ -41,7 +41,7 @@ GPUBufferBehavior::GPUBufferBehavior
 
 	for (size_t i = 0; i < buffers.size(); ++i)
 	{
-		buffers.at(i).curState = description->initialStates.at(i);
+		buffers.at(i).curResourceState = description->initialStates.at(i);
 	}
 
 }
@@ -60,8 +60,3 @@ ID3D12Resource* GPUBufferBehavior::GetResource(ResourceAccessKey bufferAccessKey
 	return buffers.at(resourceNo_).resource.Get();
 }
 
-
-D3D12_RESOURCE_BARRIER GPUBufferBehavior::CreateBarrier(ExtracteMaterialKey key_, D3D12_RESOURCE_STATES after_ , uint8_t index_)
-{
-	return buffers.at(index_).CreateBarrier(after_);
-}
