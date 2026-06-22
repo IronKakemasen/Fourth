@@ -16,7 +16,6 @@ public:
 
 	void RecordingStart();
 	void Wait();
-	void Close(CommandContext::CloseKey key_);
 
 private:
 

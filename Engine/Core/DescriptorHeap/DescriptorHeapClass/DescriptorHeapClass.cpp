@@ -26,6 +26,8 @@ DescriptorHeapClass::DescriptorHeapClass
 	}
 }
 
+DescriptorHeapClass::~DescriptorHeapClass(){}
+
 template<>
 [[nodiscard]] D3D12_GPU_DESCRIPTOR_HANDLE DescriptorHeapClass::GetHandle(uint32_t index_)
 {

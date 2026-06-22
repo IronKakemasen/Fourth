@@ -6,10 +6,8 @@ class BufferContext::ResourceCreator
 
 public:
 
-	ResourceCreator(BufferContext::InstanceKey instanceKey_, BufferContext::CreateResourceCommand createResourceCommand_)
-		: createResourceCommand(createResourceCommand_) {}
-
-	~ResourceCreator() = default;
+	ResourceCreator(BufferContext::InstanceKey instanceKey_, BufferContext::CreateResourceCommand createResourceCommand_);
+	~ResourceCreator();
 
 	[[nodiscard]] std::pair<Microsoft::WRL::ComPtr<ID3D12Resource>, Microsoft::WRL::ComPtr<ID3D12Resource>> Create
 	(

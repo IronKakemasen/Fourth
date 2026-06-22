@@ -21,25 +21,21 @@ DeviceContext::DeviceContext(DeviceContext::InstanceKey instanceKey_)
 {
 	Logger::Entry("DeviceContext::Constructor");
 
-	{
-		TakeOverCoreParts(instanceKey_);
-		Logger::Log("Create: CoreParts", fileName);
-	}
-
-	{
-		CreateCommandProvider(instanceKey_);
-		Logger::Log("Create: CommandProvider", fileName);
-	}
-
-	{
-		CreateCommandExecutor(instanceKey_);
-		Logger::Log("Create: CommandExecutor", fileName);
-	}
-
+	TakeOverCoreParts(instanceKey_);
+	CreateCommandProvider(instanceKey_);
+	CreateCommandExecutor(instanceKey_);
 
 	Logger::End("DeviceContext::Constructor");
 }
 
+DeviceContext::~DeviceContext()
+{
+
+}
+
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 void DeviceContext::CreateCommandProvider(DeviceContext::InstanceKey instanceKey_)
 {
 	//デバイスにアクセスする関数オブジェ
@@ -55,8 +51,11 @@ void DeviceContext::CreateCommandProvider(DeviceContext::InstanceKey instanceKey
 	};
 
 	commandProvider.reset(new CommandProvider(instanceKey_, deviceGetFunc, dxgiFactoryGetter));
+	Logger::Log("Create: CommandProvider", fileName);
 }
-
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 void DeviceContext::CreateCommandExecutor(DeviceContext::InstanceKey instanceKey_)
 {
 	//デバイスにアクセスする関数オブジェ
@@ -66,19 +65,20 @@ void DeviceContext::CreateCommandExecutor(DeviceContext::InstanceKey instanceKey
 	};
 
 	commandExecutor.reset(new CommandExecutor(instanceKey_, deviceGetFunc));
-}
 
+	Logger::Log("Create: CommandExecutor", fileName);
+}
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 void DeviceContext::TakeOverCoreParts(DeviceContext::InstanceKey instanceKey_)
 {
 	//コアパーツの生成
-	std::unique_ptr<Setupper> setupper = std::make_unique<DeviceContext::Setupper>(instanceKey_);
+	Setupper setupper(instanceKey_);
+	Logger::Log("Create: CoreParts", fileName);
 
-	device = setupper->HandOverDevice(instanceKey_);
-	dxgiFactory = setupper->HandOverDxgiFactory(instanceKey_);
-	useAdapter = setupper->HandOverAdapter(instanceKey_);
-}
-
-DeviceContext::~DeviceContext()
-{
+	std::tie(useAdapter, device, dxgiFactory) = setupper.HandOver(instanceKey_);
+	Logger::Log("TakeOver: CoreParts", fileName);
 
 }
+

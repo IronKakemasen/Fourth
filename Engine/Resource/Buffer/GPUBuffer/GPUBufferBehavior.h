@@ -2,7 +2,6 @@
 #include "../BufferAssembler/BufferAssembler.h"
 #include "../../../Core/SwapChain/RenderPassMaterialProvider/RenderPassMaterialProvider.h"
 
-
 struct BufferDescriptionBehavior;
 
 class GPUBufferBehavior
@@ -56,11 +55,6 @@ public:
 	//生リソースを取得
 	ID3D12Resource* GetResource(ResourceAccessKey resourceAccessKey_ , int resourceNo_);
 	
-	//各バッファが自身のバリアを適切に張るためのバリアを生成
-	virtual std::array<D3D12_RESOURCE_BARRIER, ProjectConfig::Render::kRequiredGPUBufferSum>
-		CreateNextStepBarriers(ExtractMaterialKey key_) = 0;
-
-
 	//descriptorHeapIndexを書き込む
 	template<ViewType type, typename Index>
 	void OverrideHeapIndex(InstanceKey instanceKey_, Index index_, uint8_t resourceNo_)
@@ -80,6 +74,15 @@ public:
 			dstHeapContainer.gpu = index_;
 		}
 	}
+
+
+protected:
+
+	//自身を構成するディスクリプション
+	std::unique_ptr <BufferDescriptionBehavior> description;
+
+	//バッファ本体複数分
+	std::array<Buffer, ProjectConfig::Render::kRequiredGPUBufferSum> buffers;
 
 	//各種ビューのインデックスを取得
 	template<ViewType type, typename Index>
@@ -107,18 +110,16 @@ public:
 		return Index{};
 	}
 
-
-	
-protected:
-
-	//自身を構成するディスクリプション
-	std::unique_ptr <BufferDescriptionBehavior> description;
-
-	//複数分用意する
-	std::array<Buffer, ProjectConfig::Render::kRequiredGPUBufferSum> buffers;
-
 };
 
+
+//ピンポンバッファ専用
+struct IRWBuffer
+{
+	//各バッファが自身のバリアを適切に張るためのバリアを生成仮想関数
+	virtual std::array<D3D12_RESOURCE_BARRIER, ProjectConfig::Render::kRequiredGPUBufferSum>
+		CreateNextStepBarriers(GPUBufferBehavior::ExtractMaterialKey key_) = 0;
+};
 
 
 //生成できるのはBufferAssemblerのみ

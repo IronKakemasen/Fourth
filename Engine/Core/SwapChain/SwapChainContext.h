@@ -55,13 +55,13 @@ private:
 	struct Description;
 
 	//SwapChainとそのカラーバッファを構築
-	void Assemble
+	void AssembleCoreParts
 	(
 		InstanceKey instanceKey_,
-		ViewCreator& viewCreator_,
+		DescriptorHeapContext* descriptorHeapContext_,
+		CommandContext* commandContext_,
 		CommandCreateSwapChain cmdCreateSwapChain_,
-		const HWND hWnd_,
-		ID3D12CommandQueue* commandQueue_
+		const HWND hWnd_
 	);
 
 	//スワップチェーンの生成

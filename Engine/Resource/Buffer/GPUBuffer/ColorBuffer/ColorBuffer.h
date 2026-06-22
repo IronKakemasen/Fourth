@@ -4,7 +4,7 @@
 struct ColorBufferDescription;
 
 //カラーバッファクラス
-class ColorBuffer final : public GPUBufferBehavior
+class ColorBuffer final : public GPUBufferBehavior,IRWBuffer
 {
 public:
 
@@ -17,8 +17,14 @@ public:
 		std::unique_ptr <BufferDescriptionBehavior>&& description_
 	);
 
+
+	//テンプレ化予定
+	///+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/++/+
+	///+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/++/+
 	//リソースのディスクリプションを見る
 	const ColorBufferDescription& WatchDescription();
+	///+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/++/+
+	///+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/++/+
 
 	virtual std::array<D3D12_RESOURCE_BARRIER, ProjectConfig::Render::kRequiredGPUBufferSum>
 		CreateNextStepBarriers(ExtractMaterialKey key_)override;

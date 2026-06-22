@@ -1,20 +1,27 @@
 #include "Nexus.h"
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 #include "../Core/SwapChain/Presenter/Presenter.h"
-#include "../Core/Command/CommandExecutor/CommandExecutor.h"
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+#include "../Core/Command/RuntimeCommandControler/RuntimeCommandControler.h"
+
 
 void Nexus::Run()
 {
 	auto const frameIndex = swapChainContext->presenter->GetFrameIndex();
+	auto* runtimeCmdControler = commandContext->runtimeCommandControler.get();
+	auto* presenter = swapChainContext->presenter.get();
+
 
 	//コマンドの記録開始
-	commandContext->RecordingStart(frameIndex);
+	runtimeCmdControler->RecordingStart(frameIndex);
 
 
 
 
 	//コマンドを送る
-	commandContext->ExecuteCommands(frameIndex);
+	runtimeCmdControler->ExecuteCommands(frameIndex);
+
 
 	//表示
-	swapChainContext->presenter->Present();
+	presenter->Present();
 }

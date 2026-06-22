@@ -25,36 +25,27 @@ SwapChainContext::SwapChainContext
 {
 	Logger::Entry("SwapChainContext: Constructor");
 
-	{
-		//コマンドキューを一時的に借りる
-		auto* commandQueue = commandContext_->GetCommandQueue(CommandContext::CmdQueueGetKey{});
-		//ビュークリエイターも一時的に借りる
-		auto& viewCreator = *descriptorHeapContext_->GetViewCreator(DescriptorHeapContext::ViewCreatorGetKey{});
-		//構築
-		Assemble(instanceKey_, viewCreator, cmdCreateSwapChain_, hWnd_, commandQueue);
-		Logger::Log("Assemble: core parts", fileName);
-	}
-	
-	{
-		presenter.reset(new Presenter(swapChain.Get()));
-		Logger::Log("Instantiate: Presenter", fileName);
-	}
 
-	{
-		renderPassMaterialProvider.reset(new RenderPassMaterialProvider(colorBuffer.get(), depthStencilBuffer.get()));
-		Logger::Log("Instantiate: RenderPassMaterialProvider", fileName);
-	}
+	AssembleCoreParts(instanceKey_, descriptorHeapContext_, commandContext_, cmdCreateSwapChain_, hWnd_);
+	Logger::Log("Assemble: core parts", fileName);
+
+	presenter.reset(new Presenter(swapChain.Get()));
+	Logger::Log("Instantiate: Presenter", fileName);
+
+	renderPassMaterialProvider.reset(new RenderPassMaterialProvider(colorBuffer.get(), depthStencilBuffer.get()));
+	Logger::Log("Instantiate: RenderPassMaterialProvider", fileName);
 
 
 	Logger::End("SwapChainContext: Constructor");
-
 }
 
 SwapChainContext::~SwapChainContext()
 {
 
 }
-
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 void SwapChainContext::CreateSwapChain
 (
 	CommandCreateSwapChain cmdCreateSwapChain_,
@@ -66,15 +57,54 @@ void SwapChainContext::CreateSwapChain
 
 	HRESULT hr = cmdCreateSwapChain_(commandQueue_, desc_, swapChain.GetAddressOf(), hWnd_);
 	ErrorMessageOutput::Assert::DetectError(SUCCEEDED(hr), "SwapChain生成失敗", fileName);
-}
+	Logger::Log("Create: SwapChain", fileName);
 
+}
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+void SwapChainContext::AssembleCoreParts
+(
+	InstanceKey instanceKey_,
+	DescriptorHeapContext* descriptorHeapContext_,
+	CommandContext* commandContext_,
+	CommandCreateSwapChain cmdCreateSwapChain_,
+	const HWND hWnd_
+)
+{
+	using namespace ProjectConfig::Window;
+
+	//コマンドキューを一時的に借りる
+	auto* commandQueue = commandContext_->GetCommandQueue(CommandContext::CmdQueueGetKey{});
+	//ビュークリエイターも一時的に借りる
+	auto& viewCreator = *descriptorHeapContext_->GetViewCreator(DescriptorHeapContext::ViewCreatorGetKey{});
+
+	//ディスクリプション
+	std::unique_ptr<Description> bufferDesc = std::make_unique<Description>(kColor, kRtFormat);
+
+	//rtvDesc
+	auto rtvDesc = bufferDesc->CreateRTV_Desc();
+	//swapChainDesc
+	auto swapChainDesc = bufferDesc->CreateSwapChainDesc();
+
+	//スワップチェーン生成
+	CreateSwapChain(cmdCreateSwapChain_, swapChainDesc, hWnd_, commandQueue);
+
+	//スワップチェーンからリソースを引っ張る
+	PullResourcesFromSwapChain(std::move(bufferDesc));
+
+	//ビュー生成
+	CreateRTV(instanceKey_, rtvDesc, viewCreator);
+}
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 void SwapChainContext::PullResourcesFromSwapChain(std::unique_ptr<Description>&& desc_)
 {
 	using namespace ProjectConfig::Render;
 
 	//生リソース
 	std::array<Microsoft::WRL::ComPtr<ID3D12Resource>, kRequiredGPUBufferSum > resources;
-
 
 	//スワップチェーンからリソースを引っ張る
 	HRESULT hr{};
@@ -89,7 +119,9 @@ void SwapChainContext::PullResourcesFromSwapChain(std::unique_ptr<Description>&&
 
 	Logger::Log("Complete: Pull SwapChainResources", fileName);
 }
-
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 void SwapChainContext::CreateRTV(InstanceKey instanceKey_ , const D3D12_RENDER_TARGET_VIEW_DESC& rtvDesc_, ViewCreator& viewCreator_)
 {
 	ResourceGetKey resourceGetKey;
@@ -106,35 +138,6 @@ void SwapChainContext::CreateRTV(InstanceKey instanceKey_ , const D3D12_RENDER_T
 		colorBuffer->OverrideHeapIndex(instanceKey_,i, rtvCPU);
 	}
 
-}
-
-void SwapChainContext::Assemble
-(
-	InstanceKey instanceKey_,
-	ViewCreator& viewCreator_,
-	CommandCreateSwapChain cmdCreateSwapChain_,
-	const HWND hWnd_,
-	ID3D12CommandQueue* commandQueue_
-)
-{
-	using namespace ProjectConfig::Window;
-
-	//ディスクリプション
-	std::unique_ptr<Description> bufferDesc = std::make_unique<Description>(kColor, kRtFormat);
-
-	//rtvDesc
-	auto rtvDesc = bufferDesc->CreateRTV_Desc();
-	//swapChainDesc
-	auto swapChainDesc = bufferDesc->CreateSwapChainDesc();
-
-	//スワップチェーン生成
-	CreateSwapChain(cmdCreateSwapChain_, swapChainDesc, hWnd_, commandQueue_);
-	Logger::Log("Create: SwapChain", fileName);
-
-	//スワップチェーンからリソースを引っ張る
-	PullResourcesFromSwapChain(std::move(bufferDesc));
-
-	//ビュー生成
-	CreateRTV(instanceKey_,rtvDesc, viewCreator_);
 	Logger::Log("Create: SwapChainResourceRTV", fileName);
 }
+

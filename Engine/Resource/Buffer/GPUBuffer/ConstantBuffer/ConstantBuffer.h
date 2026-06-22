@@ -1,6 +1,5 @@
 #pragma once
 #include "../GPUBufferBehavior.h"
-#include "../../BufferDescriptions/ConstantBufferDescription/ConstantBufferDescription.h"
 
 
 
@@ -17,9 +16,6 @@ public:
 		Microsoft::WRL::ComPtr<ID3D12Resource> resource2_,
 		std::unique_ptr <BufferDescriptionBehavior>&& description_
 	);
-
-	virtual std::array<D3D12_RESOURCE_BARRIER, ProjectConfig::Render::kRequiredGPUBufferSum>
-		CreateNextStepBarriers(ExtractMaterialKey key_)override;
 
 };
 

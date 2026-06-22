@@ -3,7 +3,19 @@
 #include "../../../Utility/StringConnverter/StringConverter.h"
 
 
+BufferContext::ResourceCreator::ResourceCreator(BufferContext::InstanceKey instanceKey_, BufferContext::CreateResourceCommand createResourceCommand_)
+	: createResourceCommand(createResourceCommand_) 
+{
 
+}
+
+BufferContext::ResourceCreator::~ResourceCreator()
+{
+
+}
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 [[nodiscard]] std::pair<Microsoft::WRL::ComPtr<ID3D12Resource>, Microsoft::WRL::ComPtr<ID3D12Resource>> BufferContext::ResourceCreator::Create
 (
 	const D3D12_RESOURCE_DESC& resourceDesc_,

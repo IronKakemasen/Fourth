@@ -22,25 +22,18 @@ DescriptorHeapContext::DescriptorHeapContext
 {
 	Logger::Entry("DescriptorHeapContext: Constructor");
 
-	{
-		descriptorHeapCreator.reset(new DescriptorHeapCreator(instanceKey_));
-		Logger::Log("Create: DescriptorHeapCreator", fileName);
-	}
-	
-	{
-		descriptorHeapCreator->SetCommand(createDescriptor_);
-		Logger::Log("Set: commandCreateDescriptor", fileName);
-	}
 
-	{
-		CreateDescriptorHeaps(incrementSizeOfDH_.at(0), incrementSizeOfDH_.at(1), incrementSizeOfDH_.at(2));
-		Logger::Log("Create: DescriptorHeaps", fileName);
-	}
+	descriptorHeapCreator.reset(new DescriptorHeapCreator(instanceKey_));
+	Logger::Log("Instantiate: DescriptorHeapCreator", fileName);
 
-	{
-		SetCreateViewCommand(instanceKey_, createRtv_, createSrv_, createDsv_, createUav_);
-		Logger::Log("Set: commandCreateView", fileName);
-	}
+	descriptorHeapCreator->SetCommand(createDescriptor_);
+	Logger::Log("Set: commandCreateDescriptor", fileName);
+
+	CreateDescriptorHeaps(incrementSizeOfDH_.at(0), incrementSizeOfDH_.at(1), incrementSizeOfDH_.at(2));
+	Logger::Log("Create: DescriptorHeaps", fileName);
+
+	SetCreateViewCommand(instanceKey_, createRtv_, createSrv_, createDsv_, createUav_);
+	Logger::Log("Set: commandCreateView", fileName);
 
 
 	Logger::End("DescriptorHeapContext: Constructor");

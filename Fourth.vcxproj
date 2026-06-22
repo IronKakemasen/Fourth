@@ -90,6 +90,8 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Engine\Resource\Buffer\BufferCreator\BufferCreator.cpp" />
+    <ClCompile Include="Engine\Resource\Buffer\BufferCollector\BufferCollector.cpp" />
     <ClCompile Include="Engine\Resource\Buffer\BufferDeferredReleaser\BufferDeferredReleaser.cpp" />
     <ClCompile Include="Engine\Core\Device\DeviceContextCommandExecutor\DeviceContextCommandExecutor.cpp" />
     <ClCompile Include="Engine\Core\Command\CommandExecutor\CommandExecutor.cpp" />
@@ -241,8 +243,11 @@
     <ClCompile Include="Engine\Resource\Buffer\GPUBuffer\UploadStructuredBuffer\UploadStructuredBuffer.cpp" />
     <ClCompile Include="Engine\Resource\Buffer\BufferDescriptions\UploadStructuredBufferDescription\UploadStructuredBufferDescription.cpp" />
     <ClCompile Include="Engine\Resource\Buffer\RWResourceStateTracker\RWResourceStateTracker.cpp" />
+    <ClCompile Include="Engine\Core\Command\RuntimeCommandControler\RuntimeCommandControler.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Engine\Resource\Buffer\BufferCreator\BufferCreator.h" />
+    <ClInclude Include="Engine\Resource\Buffer\BufferCollector\BufferCollector.h" />
     <ClInclude Include="Engine\Resource\Buffer\BufferDeferredReleaser\BufferDeferredReleaser.h" />
     <ClInclude Include="Engine\Core\Device\DeviceContextCommandExecutor\DeviceContextCommandExecutor.h" />
     <ClInclude Include="Engine\Core\Command\CommandExecutor\CommandExecutor.h" />
@@ -321,6 +326,7 @@
     <ClInclude Include="Engine\Resource\Buffer\BufferDescriptions\UploadStructuredBufferDescription\UploadStructuredBufferDescription.h" />
     <ClInclude Include="Engine\Resource\Buffer\RWResourceStateTracker\RWResourceStateTracker.h" />
     <ClInclude Include="Engine\Resource\Buffer\FrameBufferedResourceController\FrameBufferedResourceController.h" />
+    <ClInclude Include="Engine\Core\Command\RuntimeCommandControler\RuntimeCommandControler.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
