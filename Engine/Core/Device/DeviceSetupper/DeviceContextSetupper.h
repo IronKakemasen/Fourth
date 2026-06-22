@@ -8,9 +8,9 @@ public:
 
 	Setupper(InstanceKey instanceKey_);
 
-	[[nodiscard]] Microsoft::WRL::ComPtr<IDXGIAdapter4> HandOverAdapter(DeviceContext::InstanceKey instanceKey_);
-	[[nodiscard]] Microsoft::WRL::ComPtr<ID3D12Device8> HandOverDevice(DeviceContext::InstanceKey instanceKey_);
-	[[nodiscard]] Microsoft::WRL::ComPtr<IDXGIFactory7> HandOverDxgiFactory(DeviceContext::InstanceKey instanceKey_);
+	//DeviceContextにコアパーツを渡す
+	[[nodiscard]] std::tuple<Microsoft::WRL::ComPtr<IDXGIAdapter4>, Microsoft::WRL::ComPtr<ID3D12Device8>, Microsoft::WRL::ComPtr<IDXGIFactory7>>
+		HandOver(DeviceContext::InstanceKey instanceKey_);
 
 private:
 

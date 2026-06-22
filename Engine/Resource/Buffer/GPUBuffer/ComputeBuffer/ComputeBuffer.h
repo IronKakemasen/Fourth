@@ -1,10 +1,9 @@
 #pragma once
 #include "../GPUBufferBehavior.h"
-#include "../../BufferDescriptions/ComputeBufferDescription/ComputeBufferDescription.h"
 
 
 //読み書き
-class ComputeBuffer final : public GPUBufferBehavior
+class ComputeBuffer final : public GPUBufferBehavior,IRWBuffer
 {
 	enum Status
 	{
@@ -23,8 +22,14 @@ public:
 		std::unique_ptr <BufferDescriptionBehavior>&& description_
 	);
 
+
+	///+/////////////////////////////////////////////////////////////
+	///+/////////////////////////////////////////////////////////////
+	///+抽象化予定
 	uint32_t CurrentSRVHeapIndex();
 	uint32_t CurrentUAVHeapIndex();
+	///+/////////////////////////////////////////////////////////////
+	///+/////////////////////////////////////////////////////////////
 
 	virtual std::array<D3D12_RESOURCE_BARRIER, ProjectConfig::Render::kRequiredGPUBufferSum>
 		CreateNextStepBarriers(ExtractMaterialKey key_)override;

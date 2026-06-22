@@ -16,7 +16,8 @@ CommandContext::ResourceUploader::ResourceUploader
 
 ) :allocator(std::move(allocator_forUpload_)),commandList(std::move(cmdList_forUpload_)), commandQueue(commandQueue_), synchronizer(synchronizer_)
 {
-
+	commandList->Close();
+	Logger::Log("Close: upload cmdList", fileName);
 }
 
 void CommandContext::ResourceUploader::Wait()
@@ -38,10 +39,4 @@ void CommandContext::ResourceUploader::RecordingStart()
 	hr = commandList->Reset(allocator.Get(), nullptr);
 	ErrorMessageOutput::Assert::DetectError(SUCCEEDED(hr), "コマンドリストのリセットに失敗", fileName);
 
-}
-
-
-void CommandContext::ResourceUploader::Close(CommandContext::CloseKey key_)
-{
-	commandList->Close();
 }

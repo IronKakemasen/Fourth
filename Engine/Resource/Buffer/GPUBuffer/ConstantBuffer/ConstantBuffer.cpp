@@ -1,6 +1,6 @@
 #include "PreCompileHeader.h"
 #include "ConstantBuffer.h"
-#include "../../BufferDescriptions/BufferDescriptionBehavior.h"
+#include "../../BufferDescriptions/ConstantBufferDescription/ConstantBufferDescription.h"
 
 
 ConstantBuffer::ConstantBuffer
@@ -14,9 +14,7 @@ ConstantBuffer::ConstantBuffer
 {
 
 }
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-std::array<D3D12_RESOURCE_BARRIER, ProjectConfig::Render::kRequiredGPUBufferSum>
-ConstantBuffer::CreateNextStepBarriers(ExtractMaterialKey key_)
-{
-	return { D3D12_RESOURCE_BARRIER{}, D3D12_RESOURCE_BARRIER{} };
-}

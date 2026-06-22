@@ -1,9 +1,19 @@
 #include "PreCompileHeader.h"
 #include "UploadStructuredBuffer.h"
+#include "../../BufferDescriptions/UploadStructuredBufferDescription/UploadStructuredBufferDescription.h"
 
 
-std::array<D3D12_RESOURCE_BARRIER, ProjectConfig::Render::kRequiredGPUBufferSum>
-UploadStructuredBuffer::CreateNextStepBarriers(ExtractMaterialKey key_)
+UploadStructuredBuffer::UploadStructuredBuffer
+(
+	const InstanceKey& instanceKey_,
+	std::string name_,
+	Microsoft::WRL::ComPtr<ID3D12Resource> resource1_,
+	Microsoft::WRL::ComPtr<ID3D12Resource> resource2_,
+	std::unique_ptr <BufferDescriptionBehavior>&& description_
+) : GPUBufferBehavior(instanceKey_, name_, std::move(resource1_), std::move(resource2_), std::move(description_))
 {
-	return { D3D12_RESOURCE_BARRIER {},D3D12_RESOURCE_BARRIER{} };
+
 }
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////

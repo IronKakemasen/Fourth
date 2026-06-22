@@ -41,12 +41,12 @@ private:
 	std::unique_ptr<SwapChainContext> swapChainContext;
 
 
-	void InitCommandContext();
-	void InitSwapChainContext();
-	void InitDeviceContext();
-	void InitBufferContext();
-	void InitWindowContext();
-	void InitDescriptorHeapContext();
+	void InstantiateCommandContext();
+	void InstantiateSwapChainContext();
+	void InstantiateDeviceContext();
+	void InstantiateBufferContext();
+	void InstantiateWindowContext();
+	void InstantiateDescriptorHeapContext();
 	void Finalize();
 
 };

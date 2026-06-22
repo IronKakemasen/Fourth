@@ -51,12 +51,9 @@ void CommandContext::Synchronizer::WaitDirectly()
 		WaitForSingleObjectEx(*fenceEvent, INFINITE, FALSE);
 	}
 
-	//ランタイムスタート値を同期させる
+	//ランタイムに入る前にスタート値を同期させる
 	*commonFenceValue = targetValue;
 	(*fenceCounters).at(0) = targetValue;
 	(*fenceCounters).at(1) = targetValue;
-
-
-
 }
 

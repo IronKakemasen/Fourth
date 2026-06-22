@@ -14,7 +14,8 @@ CommandContext::CommandExecutor::CommandExecutor
 	ID3D12GraphicsCommandList6* commandList_
 ):commandQueue(commandQueue_), commandAllocators(commandAllocators_), commandList(commandList_)
 {
-
+	commandList->Close();
+	Logger::Log("Close: Main CommandList", fileName);
 }
 
 
@@ -37,10 +38,4 @@ void CommandContext::CommandExecutor::Execute()
 	ID3D12CommandList* commandLists[] = { commandList };
 	commandQueue->ExecuteCommandLists(1, commandLists);
 }
-
-void CommandContext::CommandExecutor::Close(CommandContext::CloseKey key_)
-{
-	commandList->Close();
-}
-
 

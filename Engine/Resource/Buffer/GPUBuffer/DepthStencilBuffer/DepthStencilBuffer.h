@@ -1,10 +1,9 @@
 #pragma once
 #include "../GPUBufferBehavior.h"
-#include "../../BufferDescriptions/DepthStencilBufferDescription/DepthStencilBufferDescription.h"
 
 
 //定数バッファクラス
-class DepthStencilBuffer final : public GPUBufferBehavior
+class DepthStencilBuffer final : public GPUBufferBehavior, IRWBuffer
 {
 public:
 
@@ -17,10 +16,14 @@ public:
 		std::unique_ptr <BufferDescriptionBehavior>&& description_
 	);
 
+	//テンプレ化予定
+	///+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/++/+
+	///+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/++/+
 	float WatchClearColor(ExtractMaterialKey key_);
+	///+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/++/+
+	///+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/++/+
 
 	virtual std::array<D3D12_RESOURCE_BARRIER, ProjectConfig::Render::kRequiredGPUBufferSum>
 		CreateNextStepBarriers(ExtractMaterialKey key_)override;
-
 };
 

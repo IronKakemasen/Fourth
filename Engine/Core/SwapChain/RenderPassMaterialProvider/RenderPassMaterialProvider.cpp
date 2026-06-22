@@ -8,7 +8,9 @@ SwapChainContext::RenderPassMaterialProvider::RenderPassMaterialProvider(SwapCha
 {
 
 }
-
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 [[nodiscard]] SwapChainContext::RenderPassMaterialProvider::Materials SwapChainContext::RenderPassMaterialProvider::ProvideForBegine(UINT frameIndex_)
 {
 	
@@ -33,8 +35,9 @@ SwapChainContext::RenderPassMaterialProvider::RenderPassMaterialProvider(SwapCha
 
 	//ディプスバッファの提供材料
 	{
-		materialD.dsvhandle = depthStencilBuffer->WatchIndex<ViewType::kDSV,D3D12_CPU_DESCRIPTOR_HANDLE>(frameIndex_);
-		materialD.clearColor = depthStencilBuffer->WatchClearColor(DepthStencilBuffer::ExtractMaterialKey{});
+		///+////////////////書き換え予定
+		//materialD.dsvhandle = depthStencilBuffer->WatchIndex<ViewType::kDSV,D3D12_CPU_DESCRIPTOR_HANDLE>(frameIndex_);
+		//materialD.clearColor = depthStencilBuffer->WatchClearColor(DepthStencilBuffer::ExtractMaterialKey{});
 	}
 
 	return SwapChainContext::RenderPassMaterialProvider::Materials
@@ -43,7 +46,9 @@ SwapChainContext::RenderPassMaterialProvider::RenderPassMaterialProvider(SwapCha
 		materialD
 	);
 }
-
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 [[nodiscard]] D3D12_RESOURCE_BARRIER SwapChainContext::RenderPassMaterialProvider::ProvideEnd(UINT frameIndex_)
 {
 	auto& dstBuffer = colorBuffer->buffers.at(frameIndex_);

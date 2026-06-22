@@ -6,12 +6,16 @@ class DeviceContextCommandBehavior;
 
 class DeviceContext
 {
+	//コアパーツを生成する
+	class Setupper;
+
 public:
 
-	//生成キー。Nexusしか許さない
+	//自身の生成キー。Nexusしか許さない
 	struct InstanceKey;
 	//コアパーツにアクセスするのを許可するキー
 	struct AccessKey;
+	//コマンド生成キー
 	struct GenerateKey;
 
 	//他クラスにコアパーツを流用させないようにコマンドを生成して渡す
@@ -27,9 +31,6 @@ public:
 	~DeviceContext();
 
 private:
-
-	//コアパーツを生成する
-	class Setupper;
 
 	Microsoft::WRL::ComPtr<ID3D12Device8> device = nullptr;
 	Microsoft::WRL::ComPtr<IDXGIFactory7> dxgiFactory = nullptr;

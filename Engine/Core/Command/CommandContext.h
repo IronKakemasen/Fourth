@@ -6,12 +6,22 @@ class ResourceUploader;
 
 class CommandContext
 {
+	//ランタイムでのコマンド制御を行う
+	class RuntimeCommandControler;
+	//FenceでCPUとGPUを同期させる
+	class Synchronizer;
+	//コマンドを実行する
+	class CommandExecutor;
+	//コマンドリストの処理のラッパークラス
+	class RuntimeWrapper;
+	//リソースのアップロードを行う
+	class ResourceUploader;
+
 public:
 
 	struct InstanceKey;
 	//コマンドキューのアドレス取得キー
 	struct CmdQueueGetKey;
-	struct CloseKey;
 
 	CommandContext
 	(
@@ -26,30 +36,14 @@ public:
 
 	~CommandContext();
 
-	ID3D12CommandQueue* GetCommandQueue(CmdQueueGetKey accessKey_);
-
-	//コマンド記録スタート
-	void RecordingStart(UINT frameIndex_);
-	//コマンドを送り待つ
-	void ExecuteCommands(UINT frameIndex_);
-	//初期化処理終了時に強制的にコマンドを閉じる
-	void CloseBeforeRun(InstanceKey instanceKey_);
-
+	ID3D12CommandQueue* GetCommandQueue(CmdQueueGetKey key_);
 	void Finalize(InstanceKey instanceKey_);
+
+	std::unique_ptr<RuntimeCommandControler> runtimeCommandControler;
 
 private:
 
-	//FenceでCPUとGPUを同期させる
-	class Synchronizer;
-	//コマンドを実行する
-	class CommandExecutor;
-	//コマンドリストの処理のラッパークラス
-	class RuntimeWrapper;
-	//リソースのアップロードを行う
-	class ResourceUploader;
-
 	std::unique_ptr<Synchronizer> synchronizer;
-	std::unique_ptr<CommandExecutor> commandExecutor;
 	std::unique_ptr<RuntimeWrapper> runtimeWrapper;
 	std::unique_ptr<ResourceUploader> resourceUploader;
 
@@ -59,17 +53,18 @@ private:
 	std::array<Microsoft::WRL::ComPtr<ID3D12CommandAllocator>,ProjectConfig::Render::kRequiredGPUBufferSum> commandAllocators;
 	//コマンドリスト		
 	Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList6> commandList;
-
 	//フェンス
 	Microsoft::WRL::ComPtr<ID3D12Fence> fence = nullptr;
 	//カウンタ
+	uint64_t commonFenceValue = 0;
+	//それぞれのカウンタ
 	std::array<uint64_t,ProjectConfig::Render::kRequiredGPUBufferSum> fenceCounters = { 0,0 };
 	//フェンスイベント
 	HANDLE fenceEvent = nullptr;
-	uint64_t commonFenceValue = 0;
-
 
 	void CreateFenceEvent();
+	void InstantiateRuntimeCommandControler();
+
 };
 
 
@@ -88,12 +83,5 @@ private:
 	friend class Nexus;
 	friend class SwapChainContext;
 	explicit CmdQueueGetKey() = default;
-
-};
-
-struct CommandContext::CloseKey
-{
-	friend class CommandContext;
-	explicit CloseKey() = default;
 
 };
