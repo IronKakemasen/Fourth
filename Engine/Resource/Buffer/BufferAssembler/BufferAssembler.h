@@ -9,13 +9,13 @@ class ViewCreator;
 struct ColorBufferDescription;
 struct ConstantBufferDescription;
 struct DepthStencilBufferDescription;
-struct RWPingPongBufferDescription;
+struct ComputeBufferDescription;
 
 //バッファ
 class ColorBuffer;
 class ConstantBuffer;
 class DepthStencilBuffer;
-class RWPingPongBuffer;
+class ComputeBuffer;
 
 
 //バッファとディスクを特定のクラスに限定して組み立てる

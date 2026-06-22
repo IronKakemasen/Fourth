@@ -1,6 +1,6 @@
 #include "PreCompileHeader.h"
 #include "RenderPassMaterialProvider.h"
-#include "../../../Resource/GPUBuffer/DepthStencilBuffer/DepthStencilBuffer.h"
+#include "../../../Resource/Buffer/GPUBuffer/DepthStencilBuffer/DepthStencilBuffer.h"
 
 
 SwapChainContext::RenderPassMaterialProvider::RenderPassMaterialProvider(SwapChainContext::ColorBuffer* colorBuffer_, DepthStencilBuffer* depthStencilBuffer_)

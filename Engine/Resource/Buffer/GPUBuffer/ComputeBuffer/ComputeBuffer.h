@@ -1,10 +1,10 @@
 #pragma once
 #include "../GPUBufferBehavior.h"
-#include "../../BufferDescriptions/RWPingPongBufferDescription/RWPingPongBufferDescription.h"
+#include "../../BufferDescriptions/ComputeBufferDescription/ComputeBufferDescription.h"
 
 
 //読み書き
-class RWPingPongBuffer final : public GPUBufferBehavior
+class ComputeBuffer final : public GPUBufferBehavior
 {
 	enum Status
 	{
@@ -14,7 +14,7 @@ class RWPingPongBuffer final : public GPUBufferBehavior
 
 public:
 
-	RWPingPongBuffer
+	ComputeBuffer
 	(
 		const InstanceKey& instanceKey_, 
 		std::string name_,

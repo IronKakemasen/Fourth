@@ -1,6 +1,6 @@
 #include "PreCompileHeader.h"
 #include "SwapChainColorBuffer.h"
-#include "../../../Resource/ResourceBarrier.h"
+#include "../../../Resource/Buffer/ResourceBarrier.h"
 
 
 SwapChainContext::ColorBuffer::ColorBuffer

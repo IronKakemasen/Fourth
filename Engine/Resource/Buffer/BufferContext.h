@@ -37,6 +37,14 @@ public:
 
 private:
 
+	//生成したバッファの削除を担当
+	class BufferDeferredReleaser;
+	//2面性バッファのリソースステートの追跡を行い、Swapも行う	
+	class RWResourceStateTracker;
+	//１面性バッファの制御を行う。
+	class FrameBufferedResourceController;
+
+
 
 };
 
