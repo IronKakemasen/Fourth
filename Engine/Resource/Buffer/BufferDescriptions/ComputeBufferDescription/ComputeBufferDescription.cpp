@@ -1,8 +1,8 @@
 #include "PreCompileHeader.h"
-#include "RWPingPongBufferDescription.h"
+#include "ComputeBufferDescription.h"
 
 
-RWPingPongBufferDescription::RWPingPongBufferDescription
+ComputeBufferDescription::ComputeBufferDescription
 (
 	UINT structureByte_,
 	UINT numElements_,
@@ -17,7 +17,7 @@ RWPingPongBufferDescription::RWPingPongBufferDescription
 }
 
 
-void RWPingPongBufferDescription::CheckRequirementsFilled() const
+void ComputeBufferDescription::CheckRequirementsFilled() const
 {
 	std::string errorMess{};
 
@@ -26,10 +26,10 @@ void RWPingPongBufferDescription::CheckRequirementsFilled() const
 	if (param.firstElement == -1) errorMess += "[firstElement]";
 	if (param.uavCounterOffsetInBytes == -1) errorMess += "[uavCounterOffsetInBytes]";
 
-	ErrorMessageOutput::Assert::DetectError((errorMess.length() == 0), errorMess + "の情報が未設定です", "RWPingPongBufferDescription.cpp");
+	ErrorMessageOutput::Assert::DetectError((errorMess.length() == 0), errorMess + "の情報が未設定です", "ComputeBufferDescription.cpp");
 }
 
-D3D12_RESOURCE_DESC RWPingPongBufferDescription::CreateResourceDesc()const
+D3D12_RESOURCE_DESC ComputeBufferDescription::CreateResourceDesc()const
 {
 	D3D12_RESOURCE_DESC resourceDesc = {};
 
@@ -46,7 +46,7 @@ D3D12_RESOURCE_DESC RWPingPongBufferDescription::CreateResourceDesc()const
 	return resourceDesc;
 }
 
-D3D12_SHADER_RESOURCE_VIEW_DESC RWPingPongBufferDescription::CreateSRV_Desc()const
+D3D12_SHADER_RESOURCE_VIEW_DESC ComputeBufferDescription::CreateSRV_Desc()const
 {
 	D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
 
@@ -63,7 +63,7 @@ D3D12_SHADER_RESOURCE_VIEW_DESC RWPingPongBufferDescription::CreateSRV_Desc()con
 	return srvDesc;
 }
 
-D3D12_HEAP_PROPERTIES RWPingPongBufferDescription::CreateHeapProperties()const
+D3D12_HEAP_PROPERTIES ComputeBufferDescription::CreateHeapProperties()const
 {
 	D3D12_HEAP_PROPERTIES properties = {};
 
@@ -73,7 +73,7 @@ D3D12_HEAP_PROPERTIES RWPingPongBufferDescription::CreateHeapProperties()const
 }
 
 
-D3D12_UNORDERED_ACCESS_VIEW_DESC RWPingPongBufferDescription::CreateUAV_Desc()const
+D3D12_UNORDERED_ACCESS_VIEW_DESC ComputeBufferDescription::CreateUAV_Desc()const
 {
 	D3D12_UNORDERED_ACCESS_VIEW_DESC uavDesc = {};
 

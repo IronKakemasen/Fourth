@@ -23,7 +23,7 @@ void UploadStructuredBufferDescription::CheckRequirementsFilled() const
 	if (param.numElements == 0)errorMess += "[numElements]";
 	if (param.firstElement == -1) errorMess += "[firstElement]";
 
-	ErrorMessageOutput::Assert::DetectError((errorMess.length() == 0), errorMess + "の情報が未設定です", "RWPingPongBufferDescription.cpp");
+	ErrorMessageOutput::Assert::DetectError((errorMess.length() == 0), errorMess + "の情報が未設定です", "ComputeBufferDescription.cpp");
 }
 
 //リソースディスクの生成

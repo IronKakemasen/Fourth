@@ -3,7 +3,7 @@
 
 
 //読み書き
-struct RWPingPongBufferDescription final :public BufferDescriptionBehavior, ISRV_Assembler, IUAV_Assembler
+struct ComputeBufferDescription final :public BufferDescriptionBehavior, ISRV_Assembler, IUAV_Assembler
 {
 private:
 
@@ -17,7 +17,7 @@ private:
 
 public:
 
-	RWPingPongBufferDescription
+	ComputeBufferDescription
 	(
 		UINT structureByte_,
 		UINT numElements_,

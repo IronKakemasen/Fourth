@@ -45,13 +45,11 @@ public:
 		else if constexpr (std::is_same_v<ViewType, D3D12_DEPTH_STENCIL_VIEW_DESC>) { type = kDSV; }
 		else { type = kSRVUAV; }
 
-		//ヒープを取り出す
+		//ディスクリプタヒープを取り出す
 		auto* targetHeap = descriptorHeap_map.at(type);
 
-		//view生成数に応じたハンドルを取得
-		uint32_t allocateIndex = targetHeap->GetHandle<uint32_t>();
-		auto handleCPU = targetHeap->GetHandle<D3D12_CPU_DESCRIPTOR_HANDLE>();
-		auto handleGPU = targetHeap->GetHandle<D3D12_GPU_DESCRIPTOR_HANDLE>();
+		//空きヒープインデックスを割り当てる
+		auto[allocateIndex, handleCPU, handleGPU] = targetHeap->ProvideFreeHeapIndex(DescriptorHeapClass::CreateViewKey{});
 
 		//ビュー生成
 		if constexpr (std::is_same_v<ViewType, D3D12_RENDER_TARGET_VIEW_DESC>)
@@ -70,10 +68,6 @@ public:
 		{
 			uavCmd(resource_, viewDesc, handleCPU, counterResource_);
 		}
-
-		//ビュー生成数をインクリメント
-		targetHeap->Increment(DescriptorHeapClass::AccessKey{});
-
 
 		//uint、CPU・GPUのインデックスを返す
 		return std::make_tuple(allocateIndex, handleCPU, handleGPU);

@@ -90,31 +90,32 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Engine\Resource\Buffer\BufferDeferredReleaser\BufferDeferredReleaser.cpp" />
     <ClCompile Include="Engine\Core\Device\DeviceContextCommandExecutor\DeviceContextCommandExecutor.cpp" />
     <ClCompile Include="Engine\Core\Command\CommandExecutor\CommandExecutor.cpp" />
     <ClCompile Include="Engine\Core\Device\Commands\CreateFenceObject\CommandCreateFenceObject.cpp" />
     <ClCompile Include="Engine\Core\Command\CommandContext.cpp" />
     <ClCompile Include="Engine\Core\Device\Commands\StructureSwapChain\CommandStructureSwapChain.cpp" />
     <ClCompile Include="Engine\Nexus\NexusRun.cpp" />
-    <ClCompile Include="Engine\Resource\BufferAssembler\BufferAssembler.cpp" />
-    <ClCompile Include="Engine\Resource\BufferDescriptions\BufferDescriptionBehavior.cpp" />
-    <ClCompile Include="Engine\Resource\GPUBuffer\DepthStencilBuffer\DepthStencilBuffer.cpp" />
-    <ClCompile Include="Engine\Resource\BufferContext.cpp" />
-    <ClCompile Include="Engine\Resource\BufferDescriptions\DepthStencilBufferDescription\DepthStencilBufferDescription.cpp" />
+    <ClCompile Include="Engine\Resource\Buffer\BufferAssembler\BufferAssembler.cpp" />
+    <ClCompile Include="Engine\Resource\Buffer\BufferDescriptions\BufferDescriptionBehavior.cpp" />
+    <ClCompile Include="Engine\Resource\Buffer\GPUBuffer\DepthStencilBuffer\DepthStencilBuffer.cpp" />
+    <ClCompile Include="Engine\Resource\Buffer\BufferContext.cpp" />
+    <ClCompile Include="Engine\Resource\Buffer\BufferDescriptions\DepthStencilBufferDescription\DepthStencilBufferDescription.cpp" />
     <ClCompile Include="Engine\Core\Device\Commands\CreateView\CommandCreateView.cpp" />
     <ClCompile Include="Engine\Core\DescriptorHeap\DescriptorHeapClass\DescriptorHeapClass.cpp" />
     <ClCompile Include="Engine\Core\Device\Commands\CreateDescriptorHeap\CommandCreateDescriptorHeap.cpp" />
     <ClCompile Include="Engine\Core\DescriptorHeap\DescriptorHeapCreator\DescriptorHeapCreator.cpp" />
     <ClCompile Include="Engine\Core\DescriptorHeap\DescriptorHeapContext.cpp" />
-    <ClCompile Include="Engine\Resource\GPUBuffer\ColorBuffer\ColorBuffer.cpp" />
+    <ClCompile Include="Engine\Resource\Buffer\GPUBuffer\ColorBuffer\ColorBuffer.cpp" />
     <ClCompile Include="Engine\Core\Device\Commands\DeviceContextCommandBehavior.cpp" />
     <ClCompile Include="Engine\Core\Device\DeviceSetupper\DeviceContextSetupper.cpp" />
     <ClCompile Include="Engine\Core\Device\DeviceContextCommandProvider\DeviceContextCommandProvider.cpp" />
-    <ClCompile Include="Engine\Resource\BufferDescriptions\ColorBufferDescription\ColorBufferDescription.cpp" />
-    <ClCompile Include="Engine\Resource\BufferDescriptions\ConstantBufferDescription\ConstantBufferDescription.cpp" />
+    <ClCompile Include="Engine\Resource\Buffer\BufferDescriptions\ColorBufferDescription\ColorBufferDescription.cpp" />
+    <ClCompile Include="Engine\Resource\Buffer\BufferDescriptions\ConstantBufferDescription\ConstantBufferDescription.cpp" />
     <ClCompile Include="Engine\Core\Device\Commands\CreatGPUBuffer\CommandOfCreatingGPUBuffer.cpp" />
     <ClCompile Include="Engine\Debug\RuntimeDebugger\DebugSystems\DebugLayer\DebugLayer.cpp" />
-    <ClCompile Include="Engine\Resource\GPUBuffer\ConstantBuffer\ConstantBuffer.cpp" />
+    <ClCompile Include="Engine\Resource\Buffer\GPUBuffer\ConstantBuffer\ConstantBuffer.cpp" />
     <ClCompile Include="Engine\Core\Device\DeviceContext.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
@@ -210,9 +211,10 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="Engine\Debug\Logger\Logger.cpp" />
-    <ClCompile Include="Engine\Resource\ResourceCreator\ResourceCreator.cpp" />
-    <ClCompile Include="Engine\Resource\GPUBuffer\GPUBufferBehavior.cpp" />
+    <ClCompile Include="Engine\Resource\Buffer\ResourceCreator\ResourceCreator.cpp" />
+    <ClCompile Include="Engine\Resource\Buffer\GPUBuffer\GPUBufferBehavior.cpp" />
     <ClCompile Include="Engine\Debug\RuntimeDebugger\DebugSystems\LeakChecker\LeakChecker.cpp" />
+    <ClCompile Include="Engine\Resource\Buffer\FrameBufferedResourceController\FrameBufferedResourceController.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="Engine\Core\Window\WindowContext.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
@@ -227,8 +229,8 @@
     <ClCompile Include="Engine\Debug\RuntimeDebugger\DebugSystems\RuntimeDebuggerBehavior.cpp" />
     <ClCompile Include="Engine\Debug\RuntimeDebugger\RuntimeDebugger.cpp" />
     <ClCompile Include="Engine\Core\DescriptorHeap\ViewCreator\ViewCreator.cpp" />
-    <ClCompile Include="Engine\Resource\GPUBuffer\RWPingPongBuffer\RWPingPongBuffer.cpp" />
-    <ClCompile Include="Engine\Resource\BufferDescriptions\RWPingPongBufferDescription\RWPingPongBufferDescription.cpp" />
+    <ClCompile Include="Engine\Resource\Buffer\GPUBuffer\ComputeBuffer\ComputeBuffer.cpp" />
+    <ClCompile Include="Engine\Resource\Buffer\BufferDescriptions\ComputeBufferDescription\ComputeBufferDescription.cpp" />
     <ClCompile Include="Engine\Core\SwapChain\SwapChainColorBuffer\SwapChainColorBuffer.cpp" />
     <ClCompile Include="Engine\Core\Device\Commands\StructureCommandContext\CommandStructureCommandContext.cpp" />
     <ClCompile Include="Engine\Core\SwapChain\Presenter\Presenter.cpp" />
@@ -236,42 +238,44 @@
     <ClCompile Include="Engine\Core\Command\Synchronizer\Synchronizer.cpp" />
     <ClCompile Include="Engine\Core\Command\RuntimeWrapper\RuntimeWrapper.cpp" />
     <ClCompile Include="Engine\Core\Command\ResourceUploader\ResourceUploader.cpp" />
-    <ClCompile Include="Engine\Resource\GPUBuffer\UploadStructuredBuffer\UploadStructuredBuffer.cpp" />
-    <ClCompile Include="Engine\Resource\BufferDescriptions\UploadStructuredBufferDescription\UploadStructuredBufferDescription.cpp" />
+    <ClCompile Include="Engine\Resource\Buffer\GPUBuffer\UploadStructuredBuffer\UploadStructuredBuffer.cpp" />
+    <ClCompile Include="Engine\Resource\Buffer\BufferDescriptions\UploadStructuredBufferDescription\UploadStructuredBufferDescription.cpp" />
+    <ClCompile Include="Engine\Resource\Buffer\RWResourceStateTracker\RWResourceStateTracker.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Engine\Resource\Buffer\BufferDeferredReleaser\BufferDeferredReleaser.h" />
     <ClInclude Include="Engine\Core\Device\DeviceContextCommandExecutor\DeviceContextCommandExecutor.h" />
     <ClInclude Include="Engine\Core\Command\CommandExecutor\CommandExecutor.h" />
     <ClInclude Include="Engine\Core\Device\Commands\CreateFenceObject\CommandCreateFenceObject.h" />
     <ClInclude Include="Engine\Core\Command\CommandContext.h" />
     <ClInclude Include="Engine\Core\Device\Commands\StructureSwapChain\CommandStructureSwapChain.h" />
-    <ClInclude Include="Engine\Resource\BufferAssembler\BufferAssembler.h" />
-    <ClInclude Include="Engine\Resource\GPUBuffer\DepthStencilBuffer\DepthStencilBuffer.h" />
-    <ClInclude Include="Engine\Resource\BufferContext.h" />
-    <ClInclude Include="Engine\Resource\BufferDescriptions\DepthStencilBufferDescription\DepthStencilBufferDescription.h" />
+    <ClInclude Include="Engine\Resource\Buffer\BufferAssembler\BufferAssembler.h" />
+    <ClInclude Include="Engine\Resource\Buffer\GPUBuffer\DepthStencilBuffer\DepthStencilBuffer.h" />
+    <ClInclude Include="Engine\Resource\Buffer\BufferContext.h" />
+    <ClInclude Include="Engine\Resource\Buffer\BufferDescriptions\DepthStencilBufferDescription\DepthStencilBufferDescription.h" />
     <ClInclude Include="Engine\Core\Device\Commands\CreateView\CommandCreateView.h" />
     <ClInclude Include="Engine\Core\DescriptorHeap\DescriptorHeapClass\DescriptorHeapClass.h" />
     <ClInclude Include="Engine\Core\Device\Commands\CreateDescriptorHeap\CommandCreateDescriptorHeap.h" />
     <ClInclude Include="Engine\Core\DescriptorHeap\DescriptorHeapCreator\DescriptorHeapCreator.h" />
     <ClInclude Include="Engine\Core\DescriptorHeap\DescriptorHeapContext.h" />
-    <ClInclude Include="Engine\Resource\GPUBuffer\ColorBuffer\ColorBuffer.h" />
+    <ClInclude Include="Engine\Resource\Buffer\GPUBuffer\ColorBuffer\ColorBuffer.h" />
     <ClInclude Include="Engine\Core\Device\Commands\DeviceContextCommandBehavior.h" />
     <ClInclude Include="Engine\Core\Device\Commands\CreatGPUBuffer\CommandOfCreatingGPUBuffer.h" />
     <ClInclude Include="Engine\Core\Device\DeviceSetupper\DeviceContextSetupper.h" />
     <ClInclude Include="Engine\Core\Device\DeviceContextCommandProvider\DeviceContextCommandProvider.h" />
-    <ClInclude Include="Engine\Resource\BufferDescriptions\ColorBufferDescription\ColorBufferDescription.h" />
-    <ClInclude Include="Engine\Resource\BufferDescriptions\ConstantBufferDescription\ConstantBufferDescription.h" />
-    <ClInclude Include="Engine\Resource\BufferDescriptions\BufferDescriptionBehavior.h" />
+    <ClInclude Include="Engine\Resource\Buffer\BufferDescriptions\ColorBufferDescription\ColorBufferDescription.h" />
+    <ClInclude Include="Engine\Resource\Buffer\BufferDescriptions\ConstantBufferDescription\ConstantBufferDescription.h" />
+    <ClInclude Include="Engine\Resource\Buffer\BufferDescriptions\BufferDescriptionBehavior.h" />
     <ClInclude Include="Engine\Core\Window\DumpExporter.h" />
     <ClInclude Include="Engine\Debug\RuntimeDebugger\DebugSystems\DebugLayer\DebugLayer.h" />
-    <ClInclude Include="Engine\Resource\GPUBuffer\ConstantBuffer\ConstantBuffer.h" />
+    <ClInclude Include="Engine\Resource\Buffer\GPUBuffer\ConstantBuffer\ConstantBuffer.h" />
     <ClInclude Include="Engine\Core\Device\DeviceContext.h" />
     <ClInclude Include="Engine\Core\Window\WindowContext.h" />
     <ClInclude Include="Engine\Math\Matrix\Matrix4.h" />
     <ClInclude Include="Engine\Render\kara.h" />
-    <ClInclude Include="Engine\Resource\MeshShaderPipelineStateStream.h" />
+    <ClInclude Include="Engine\Resource\Buffer\MeshShaderPipelineStateStream.h" />
     <ClInclude Include="Engine\Debug\ErrorMessageOutput\ErrorMessageOutput.h" />
-    <ClInclude Include="Engine\Resource\ResourceBarrier.h" />
+    <ClInclude Include="Engine\Resource\Buffer\ResourceBarrier.h" />
     <ClInclude Include="External\Audio\SoundCommon.h" />
     <ClInclude Include="External\Audio\xaudio_player_core.h" />
     <ClInclude Include="External\Audio\xaudio_player_mf.h" />
@@ -297,15 +301,15 @@
     <ClInclude Include="Engine\Math\Quaternion\Quaternion.h" />
     <ClInclude Include="Engine\Math\Vector\Vector2.h" />
     <ClInclude Include="Engine\Core\SwapChain\SwapChainContext.h" />
-    <ClInclude Include="Engine\Resource\ResourceCreator\ResourceCreator.h" />
-    <ClInclude Include="Engine\Resource\GPUBuffer\GPUBufferBehavior.h" />
+    <ClInclude Include="Engine\Resource\Buffer\ResourceCreator\ResourceCreator.h" />
+    <ClInclude Include="Engine\Resource\Buffer\GPUBuffer\GPUBufferBehavior.h" />
     <ClInclude Include="Engine\Debug\RuntimeDebugger\DebugSystems\LeakChecker\LeakChecker.h" />
     <ClInclude Include="Engine\Debug\RuntimeDebugger\DebugSystems\PointerValidator\PointerValidator.h" />
     <ClInclude Include="Engine\Debug\RuntimeDebugger\DebugSystems\RuntimeDebuggerBehavior.h" />
     <ClInclude Include="Engine\Debug\RuntimeDebugger\RuntimeDebugger.h" />
     <ClInclude Include="Engine\Core\DescriptorHeap\ViewCreator\ViewCreator.h" />
-    <ClInclude Include="Engine\Resource\GPUBuffer\RWPingPongBuffer\RWPingPongBuffer.h" />
-    <ClInclude Include="Engine\Resource\BufferDescriptions\RWPingPongBufferDescription\RWPingPongBufferDescription.h" />
+    <ClInclude Include="Engine\Resource\Buffer\GPUBuffer\ComputeBuffer\ComputeBuffer.h" />
+    <ClInclude Include="Engine\Resource\Buffer\BufferDescriptions\ComputeBufferDescription\ComputeBufferDescription.h" />
     <ClInclude Include="Engine\Core\SwapChain\SwapChainColorBuffer\SwapChainColorBuffer.h" />
     <ClInclude Include="Engine\Core\Device\Commands\StructureCommandContext\CommandStructureCommandContext.h" />
     <ClInclude Include="Engine\Core\SwapChain\Presenter\Presenter.h" />
@@ -313,8 +317,10 @@
     <ClInclude Include="Engine\Core\Command\Synchronizer\Synchronizer.h" />
     <ClInclude Include="Engine\Core\Command\RuntimeWrapper\RuntimeWrapper.h" />
     <ClInclude Include="Engine\Core\Command\ResourceUploader\ResourceUploader.h" />
-    <ClInclude Include="Engine\Resource\GPUBuffer\UploadStructuredBuffer\UploadStructuredBuffer.h" />
-    <ClInclude Include="Engine\Resource\BufferDescriptions\UploadStructuredBufferDescription\UploadStructuredBufferDescription.h" />
+    <ClInclude Include="Engine\Resource\Buffer\GPUBuffer\UploadStructuredBuffer\UploadStructuredBuffer.h" />
+    <ClInclude Include="Engine\Resource\Buffer\BufferDescriptions\UploadStructuredBufferDescription\UploadStructuredBufferDescription.h" />
+    <ClInclude Include="Engine\Resource\Buffer\RWResourceStateTracker\RWResourceStateTracker.h" />
+    <ClInclude Include="Engine\Resource\Buffer\FrameBufferedResourceController\FrameBufferedResourceController.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

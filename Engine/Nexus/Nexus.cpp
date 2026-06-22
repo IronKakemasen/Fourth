@@ -3,14 +3,14 @@
 #include "../Core/Device/DeviceContext.h"
 #include "../Core/Window/WindowContext.h"
 #include "../Core/DescriptorHeap/DescriptorHeapContext.h"
-#include "../Resource/BufferContext.h"
+#include "../Resource/Buffer/BufferContext.h"
 #include "../Core/Device/DeviceContextCommandProvider/DeviceContextCommandProvider.h"
 #include "../Core/Device/DeviceContextCommandExecutor/DeviceContextCommandExecutor.h"
 #include "../Core/SwapChain/SwapChainContext.h"
 #include "../Core/Command/CommandContext.h"
-#include "../Resource/BufferAssembler/BufferAssembler.h"
-#include "../Resource/BufferDescriptions/DepthStencilBufferDescription/DepthStencilBufferDescription.h"
-#include "../Resource/GPUBuffer/DepthStencilBuffer/DepthStencilBuffer.h"
+#include "../Resource/Buffer/BufferAssembler/BufferAssembler.h"
+#include "../Resource/Buffer/BufferDescriptions/DepthStencilBufferDescription/DepthStencilBufferDescription.h"
+#include "../Resource/Buffer/GPUBuffer/DepthStencilBuffer/DepthStencilBuffer.h"
 #include "../Core/Command/Synchronizer/Synchronizer.h"
 
 

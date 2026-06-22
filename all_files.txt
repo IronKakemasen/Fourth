@@ -856,8 +856,8 @@ void DescriptorHeapContext::CreateDescriptorHeaps(UINT rtvDH_, UINT srvDH_, UINT
 
 	//RTV
 	CreateDescriptorHeap<D3D12_DESCRIPTOR_HEAP_TYPE_RTV>(kNumDescriptorsRTVHeap, false, rtvDH_);
-	//SRV
-	CreateDescriptorHeap<D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV>(kNumDescriptorSRVHeap, false, srvDH_);
+	//SRV/UAV
+	CreateDescriptorHeap<D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV>(kNumDescriptorSRVHeap, true, srvDH_);
 	//DSV
 	CreateDescriptorHeap<D3D12_DESCRIPTOR_HEAP_TYPE_DSV>(kNumDescriptorsDSVHeap, false, dsvDH_);
 
@@ -1078,39 +1078,60 @@ DescriptorHeapClass::DescriptorHeapClass
 	std::string log = "Instantiate: " + name_ + "[" + std::to_string(kMaxDescriptor_) + "]";
 	Logger::Log(log, fileName);
 
-}
-
-void DescriptorHeapClass::Increment(DescriptorHeapClass::AccessKey accessKey_)
-{
-	currentCreateNum++;
-}
-
-template<>
-[[nodiscard]] uint32_t DescriptorHeapClass::GetHandle()
-{
-	return currentCreateNum;
+	//フリーリストに空きインデックスを最大数まで登録
+	for (uint32_t i = 0u;i < kMaxDescriptor_;++i)
+	{
+		freeList.emplace_back(i);
+	}
 }
 
 template<>
-[[nodiscard]] D3D12_GPU_DESCRIPTOR_HANDLE DescriptorHeapClass::GetHandle()
+[[nodiscard]] D3D12_GPU_DESCRIPTOR_HANDLE DescriptorHeapClass::GetHandle(uint32_t index_)
 {
 	if (!shaderVisible) return D3D12_GPU_DESCRIPTOR_HANDLE{};
 
 	D3D12_GPU_DESCRIPTOR_HANDLE handleStartGPU = descriptorHeap->GetGPUDescriptorHandleForHeapStart();
 	D3D12_GPU_DESCRIPTOR_HANDLE next;
-	next.ptr = handleStartGPU.ptr + handleIncrementSize * currentCreateNum;
+	next.ptr = handleStartGPU.ptr + handleIncrementSize * index_;
 
 	return next;
 }
 
 template<>
-[[nodiscard]] D3D12_CPU_DESCRIPTOR_HANDLE DescriptorHeapClass::GetHandle()
+[[nodiscard]] D3D12_CPU_DESCRIPTOR_HANDLE DescriptorHeapClass::GetHandle(uint32_t index_)
 {
 	D3D12_CPU_DESCRIPTOR_HANDLE handleStartCPU = descriptorHeap->GetCPUDescriptorHandleForHeapStart();
 	D3D12_CPU_DESCRIPTOR_HANDLE next;
-	next.ptr = handleStartCPU.ptr + handleIncrementSize * currentCreateNum;
+	next.ptr = handleStartCPU.ptr + handleIncrementSize * index_;
 
 	return next;
+}
+
+std::tuple<uint32_t, D3D12_CPU_DESCRIPTOR_HANDLE, D3D12_GPU_DESCRIPTOR_HANDLE>
+DescriptorHeapClass::ProvideFreeHeapIndex(CreateViewKey accessKey_)
+{
+	ErrorMessageOutput::Assert::DetectError
+	(
+		!freeList.empty(),
+		name + " のヒープが枯渇",
+		fileName
+	);
+
+	uint32_t lastIndex = freeList.back();
+	freeList.pop_back();
+
+	return std::make_tuple
+	(
+		lastIndex, 
+		GetHandle<D3D12_CPU_DESCRIPTOR_HANDLE>(lastIndex),
+		GetHandle<D3D12_GPU_DESCRIPTOR_HANDLE>(lastIndex)
+	);
+}
+
+//空きヒープインデックスを回収
+void DescriptorHeapClass::CollectHeapIndex(uint32_t index_, CollectHeapIndexKey key_)
+{
+	freeList.emplace_back(index_);
 }
 
 
@@ -1127,20 +1148,27 @@ class ViewCreator;
 class DescriptorHeapClass
 {
 public:
+
+	//ビュークリエイターのみビュー生成可能
+	struct CreateViewKey;
+	//
+	struct CollectHeapIndexKey;
+
 	DescriptorHeapClass(Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> descriptorHeap_,
 		UINT handleIncrementSize_, uint32_t kMaxDescriptor_,bool shaderVisible_ ,std::string name_);
 
-	struct AccessKey;
 	
-	//CPU / GPU / 生成数を返す
-	template<typename HandleType>
-	[[nodiscard]] HandleType GetHandle();
+	//フリーヒープインデックスを提供
+	std::tuple<uint32_t, D3D12_CPU_DESCRIPTOR_HANDLE, D3D12_GPU_DESCRIPTOR_HANDLE>
+	ProvideFreeHeapIndex(CreateViewKey accessKey_);
 
-	//currentCreateNum(ビュー生成数)をインクリメントする
-	void Increment(AccessKey accessKey_);
+	//空きヒープインデックスを回収
+	void CollectHeapIndex(uint32_t index_, CollectHeapIndexKey key_);
 
 private:
 
+	//使用可能インデックスのリスト
+	std::vector<uint32_t> freeList;
 	Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> descriptorHeap;
 	//ハンドルのインクリメントサイズ
 	UINT handleIncrementSize{};
@@ -1152,26 +1180,38 @@ private:
 	bool shaderVisible{};
 	//名前
 	std::string name{};
+
+	//CPU / GPU ハンドルを返す
+	template<typename HandleType>
+	[[nodiscard]] HandleType GetHandle(uint32_t index_);
+
 };
 
 
 template<>
-[[nodiscard]] D3D12_CPU_DESCRIPTOR_HANDLE DescriptorHeapClass::GetHandle();
+[[nodiscard]] D3D12_CPU_DESCRIPTOR_HANDLE DescriptorHeapClass::GetHandle(uint32_t index_);
 
 template<>
-[[nodiscard]] D3D12_GPU_DESCRIPTOR_HANDLE DescriptorHeapClass::GetHandle();
+[[nodiscard]] D3D12_GPU_DESCRIPTOR_HANDLE DescriptorHeapClass::GetHandle(uint32_t index_);
 
-template<>
-[[nodiscard]] uint32_t DescriptorHeapClass::GetHandle();
-
-struct DescriptorHeapClass::AccessKey
+struct DescriptorHeapClass::CreateViewKey
 {
 private:
 
 	//アクセスできるのはビュークリエイターのみ
 	friend class ViewCreator;
-	explicit AccessKey() = default;
+	explicit CreateViewKey() = default;
 };
+
+
+struct DescriptorHeapClass::CollectHeapIndexKey
+{
+private:
+
+
+	explicit CollectHeapIndexKey() = default;
+};
+
 
 
 
@@ -1306,13 +1346,11 @@ public:
 		else if constexpr (std::is_same_v<ViewType, D3D12_DEPTH_STENCIL_VIEW_DESC>) { type = kDSV; }
 		else { type = kSRVUAV; }
 
-		//ヒープを取り出す
+		//ディスクリプタヒープを取り出す
 		auto* targetHeap = descriptorHeap_map.at(type);
 
-		//view生成数に応じたハンドルを取得
-		uint32_t allocateIndex = targetHeap->GetHandle<uint32_t>();
-		auto handleCPU = targetHeap->GetHandle<D3D12_CPU_DESCRIPTOR_HANDLE>();
-		auto handleGPU = targetHeap->GetHandle<D3D12_GPU_DESCRIPTOR_HANDLE>();
+		//空きヒープインデックスを割り当てる
+		auto[allocateIndex, handleCPU, handleGPU] = targetHeap->ProvideFreeHeapIndex(DescriptorHeapClass::CreateViewKey{});
 
 		//ビュー生成
 		if constexpr (std::is_same_v<ViewType, D3D12_RENDER_TARGET_VIEW_DESC>)
@@ -1331,10 +1369,6 @@ public:
 		{
 			uavCmd(resource_, viewDesc, handleCPU, counterResource_);
 		}
-
-		//ビュー生成数をインクリメント
-		targetHeap->Increment(DescriptorHeapClass::AccessKey{});
-
 
 		//uint、CPU・GPUのインデックスを返す
 		return std::make_tuple(allocateIndex, handleCPU, handleGPU);
@@ -3119,8 +3153,8 @@ SwapChainContext::RenderPassMaterialProvider::RenderPassMaterialProvider(SwapCha
 
 	//ディプスバッファの提供材料
 	{
-		materialD.dsvhandle = depthStencilBuffer->WatchIndex<ViewType::kDSV,D3D12_CPU_DESCRIPTOR_HANDLE>(DepthStencilBuffer::ExtracteMaterialKey{}, frameIndex_);
-		materialD.clearColor = depthStencilBuffer->WatchClearColor(DepthStencilBuffer::ExtracteMaterialKey{});
+		materialD.dsvhandle = depthStencilBuffer->WatchIndex<ViewType::kDSV,D3D12_CPU_DESCRIPTOR_HANDLE>(frameIndex_);
+		materialD.clearColor = depthStencilBuffer->WatchClearColor(DepthStencilBuffer::ExtractMaterialKey{});
 	}
 
 	return SwapChainContext::RenderPassMaterialProvider::Materials
@@ -4638,7 +4672,6 @@ Nexus::~Nexus()
 void Nexus::InitSwapChainContext()
 {
 	using namespace ProjectConfig::Window;
-	BufferDescriptionBehavior::ResourceStates resourceStates = { D3D12_RESOURCE_STATE_DEPTH_WRITE ,D3D12_RESOURCE_STATE_DEPTH_WRITE };
 	
 	std::unique_ptr<DepthStencilBuffer> depthStencilBuffer;
 	auto* cmdProvider = deviceContext->commandProvider.get();
@@ -4651,8 +4684,7 @@ void Nexus::InitSwapChainContext()
 			kHeight,
 			0.0f,
 			DXGI_FORMAT_D24_UNORM_S8_UINT,
-			DXGI_FORMAT_R24_UNORM_X8_TYPELESS,
-			resourceStates
+			DXGI_FORMAT_R24_UNORM_X8_TYPELESS
 		);
 
 		depthStencilBuffer = std::move(bufferContext->bufferAssembler->Assemble<DepthStencilBuffer>(desc, "SwapChain_DB"));
@@ -5058,13 +5090,13 @@ namespace ResourceBarrier
 #include "../GPUBuffer/ColorBuffer/ColorBuffer.h"
 #include "../GPUBuffer/ConstantBuffer/ConstantBuffer.h"
 #include "../GPUBuffer/DepthStencilBuffer/DepthStencilBuffer.h"
-#include "../GPUBuffer/SRV_UAVBuffer/SRV_UAVBuffer.h"
+#include "../GPUBuffer/RWPingPongBuffer/RWPingPongBuffer.h"
 
 //ディスクリプション
 #include "../BufferDescriptions/ColorBufferDescription/ColorBufferDescription.h"
 #include "../BufferDescriptions/ConstantBufferDescription/ConstantBufferDescription.h"
 #include "../BufferDescriptions/DepthStencilBufferDescription/DepthStencilBufferDescription.h"
-#include "../BufferDescriptions/SRV_UAVBufferDescription/SRV_UAVBufferDescription.h"
+#include "../BufferDescriptions/RWPingPongBufferDescription/RWPingPongBufferDescription.h"
 
 //ツール
 #include "../ResourceCreator/ResourceCreator.h"
@@ -5280,13 +5312,13 @@ class ViewCreator;
 struct ColorBufferDescription;
 struct ConstantBufferDescription;
 struct DepthStencilBufferDescription;
-struct SRV_UAVBufferDescription;
+struct RWPingPongBufferDescription;
 
 //バッファ
 class ColorBuffer;
 class ConstantBuffer;
 class DepthStencilBuffer;
-class SRV_UAVBuffer;
+class RWPingPongBuffer;
 
 
 //バッファとディスクを特定のクラスに限定して組み立てる
@@ -5477,37 +5509,23 @@ ColorBufferDescription::ColorBufferDescription
 	float clearColors_[4],
 	UINT width_,
 	UINT height_,
-	D3D12_RESOURCE_FLAGS flag_,
-	DXGI_FORMAT format_,
-	ResourceStates initialStates_
-) : BufferDescriptionBehavior(initialStates_)
+	DXGI_FORMAT format_
+) : BufferDescriptionBehavior({ D3D12_RESOURCE_STATE_RENDER_TARGET,D3D12_RESOURCE_STATE_RENDER_TARGET })
 {
 	for (int i = 0;i < 4;++i) param.clearColor[i] = clearColors_[i];
 	param.width = width_;
 	param.height = height_;
-	param.flag = flag_;
 	param.format = format_;
 }
-
 
 
 void ColorBufferDescription::CheckRequirementsFilled() const
 {
 	std::string errorMess{};
 
-	for (int i = 0;i < 4;++i)
-	{
-		if (param.clearColor[i] > 1)
-		{
-			errorMess += "[color]";
-			break;
-		}
-	}
-
 	if (param.width == 0)errorMess += "[width]";
 	if (param.height == 0)errorMess += "[height]";
 	if (param.format == DXGI_FORMAT_Error_Detection) errorMess += "[format]";
-	if (param.flag == D3D12_RESOURCE_FLAG_Error_Detection) errorMess += "[flag]";
 
 	ErrorMessageOutput::Assert::DetectError((errorMess.length() == 0), errorMess + "の情報が未設定です", "ColorBufferDescription.cpp");
 
@@ -5530,18 +5548,19 @@ D3D12_RESOURCE_DESC ColorBufferDescription::CreateResourceDesc()const
 	resourceDesc.Width = param.width;
 	//高さ
 	resourceDesc.Height = param.height;
+	//Textureのformat
+	resourceDesc.Format = param.format;
+
 	//mipmapの数
 	resourceDesc.MipLevels = 1;
 	//奥行orTextureの配列数
 	resourceDesc.DepthOrArraySize = 1;
-	//Textureのformat
-	resourceDesc.Format = param.format;
 	//サンプリングカウント。１固定
 	resourceDesc.SampleDesc.Count = 1;
 	//テクスチャの次元数。2
 	resourceDesc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
-	resourceDesc.Flags = param.flag;
 	resourceDesc.Layout = D3D12_TEXTURE_LAYOUT_UNKNOWN;
+	resourceDesc.Flags = D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET;
 
 	return resourceDesc;
 }
@@ -5560,6 +5579,7 @@ D3D12_RENDER_TARGET_VIEW_DESC ColorBufferDescription::CreateRTV_Desc()const
 
 	//出力結果をSRGBに変換する
 	rtvDesc.Format = param.format;
+	
 	//2Dテクスチャとして書き込む
 	rtvDesc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2D;
 	rtvDesc.Texture2D.PlaneSlice = 0;
@@ -5573,6 +5593,7 @@ D3D12_SHADER_RESOURCE_VIEW_DESC ColorBufferDescription::CreateSRV_Desc()const
 	D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
 
 	srvDesc.Format = param.format;
+	
 	srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
 	srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
 	srvDesc.Texture2D.MipLevels = UINT(1);
@@ -5600,7 +5621,6 @@ private:
 		float clearColor[4] = { 9,9,9,9 };
 		UINT width{};
 		UINT height{};
-		D3D12_RESOURCE_FLAGS flag = D3D12_RESOURCE_FLAG_Error_Detection;
 		DXGI_FORMAT format = DXGI_FORMAT_Error_Detection;
 
 	}param;
@@ -5612,9 +5632,7 @@ public:
 		float clearColors_[4],
 		UINT width_,
 		UINT height_,
-		D3D12_RESOURCE_FLAGS flag_,
-		DXGI_FORMAT format_,
-		ResourceStates initialStates_
+		DXGI_FORMAT format_
 	);
 	
 	//要項チェック
@@ -5650,11 +5668,10 @@ public:
 
 ConstantBufferDescription::ConstantBufferDescription
 (
-	UINT sizeInByte_, 
-	ResourceStates initialStates_
-):BufferDescriptionBehavior(initialStates_)
+	UINT sizeInByte_
+) :BufferDescriptionBehavior({ D3D12_RESOURCE_STATE_GENERIC_READ,D3D12_RESOURCE_STATE_GENERIC_READ })
 {
-	param.sizeInByte = sizeInByte_;
+	param.sizeInByte = (sizeInByte_ + 255) & ~255;
 }
 
 
@@ -5672,8 +5689,9 @@ D3D12_RESOURCE_DESC ConstantBufferDescription::CreateResourceDesc()const
 {
 	D3D12_RESOURCE_DESC resourceDesc = {};
 
+	resourceDesc.Width = param.sizeInByte;
+
 	resourceDesc.Dimension = D3D12_RESOURCE_DIMENSION_BUFFER;
-	resourceDesc.Width = (param.sizeInByte + 255) & ~255;;
 	resourceDesc.Height = 1;
 	resourceDesc.DepthOrArraySize = 1;
 	resourceDesc.MipLevels = 1;
@@ -5717,8 +5735,7 @@ public:
 
 	ConstantBufferDescription
 	(
-		UINT sizeInByte_, 
-		ResourceStates initialStates_ = { D3D12_RESOURCE_STATE_GENERIC_READ,D3D12_RESOURCE_STATE_GENERIC_READ }
+		UINT sizeInByte_
 	);
 
 	//パラーメーターチェック
@@ -5753,9 +5770,8 @@ DepthStencilBufferDescription::DepthStencilBufferDescription
 	UINT height_,
 	FLOAT clearColor_,
 	DXGI_FORMAT dsvFormat_,
-	DXGI_FORMAT srvFormat_,
-	ResourceStates initialStates_
-):BufferDescriptionBehavior(initialStates_)
+	DXGI_FORMAT srvFormat_
+):BufferDescriptionBehavior({ D3D12_RESOURCE_STATE_DEPTH_WRITE ,D3D12_RESOURCE_STATE_DEPTH_WRITE })
 {
 	param.width = width_;
 	param.height = height_;
@@ -5783,6 +5799,7 @@ D3D12_SHADER_RESOURCE_VIEW_DESC DepthStencilBufferDescription::CreateSRV_Desc()c
 	D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
 
 	srvDesc.Format = param.srvFormat;
+
 	srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
 	srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
 	srvDesc.Texture2D.MipLevels = UINT(1);
@@ -5797,6 +5814,7 @@ D3D12_RESOURCE_DESC DepthStencilBufferDescription::CreateResourceDesc()const
 
 	resourceDesc.Width = param.width;
 	resourceDesc.Height = param.height;
+	
 	resourceDesc.Alignment = 0;
 	//mipmapの数
 	resourceDesc.MipLevels = 1;
@@ -5821,6 +5839,7 @@ D3D12_DEPTH_STENCIL_VIEW_DESC DepthStencilBufferDescription::CreateDSVDesc()cons
 
 	//format。基本的にはリソースに合わせる
 	dsvDesc.Format = param.dsvFormat;
+	
 	//2DTexture
 	dsvDesc.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2D;
 	dsvDesc.Texture2D.MipSlice = 0;
@@ -5848,6 +5867,7 @@ D3D12_CLEAR_VALUE DepthStencilBufferDescription::WatchClearValue() const
 
 	clearValue.DepthStencil.Depth = param.clearColor;
 	clearValue.Format = param.dsvFormat;
+	clearValue.DepthStencil.Stencil = 0;
 
 	return clearValue;
 }
@@ -5905,8 +5925,7 @@ public:
 		UINT height_,
 		FLOAT clearColor_,
 		DXGI_FORMAT dsvFormat_,
-		DXGI_FORMAT srvFormat_,
-		ResourceStates initialStates_
+		DXGI_FORMAT srvFormat_
 	);
 
 	//要項チェック
@@ -5940,64 +5959,46 @@ private:
 
 
 ========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Resource\BufferDescriptions\SRV_UAVBufferDescription\SRV_UAVBufferDescription.cpp ===
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Resource\BufferDescriptions\RWPingPongBufferDescription\RWPingPongBufferDescription.cpp ===
 ========================================
 #include "PreCompileHeader.h"
-#include "SRV_UAVBufferDescription.h"
+#include "RWPingPongBufferDescription.h"
 
 
-SRV_UAVBufferDescription::SRV_UAVBufferDescription
+RWPingPongBufferDescription::RWPingPongBufferDescription
 (
 	UINT structureByte_,
 	UINT numElements_,
 	UINT firstElement_,
-	D3D12_RESOURCE_FLAGS resourceFlag_,
-	D3D12_HEAP_TYPE heapType_,
-	D3D12_BUFFER_SRV_FLAGS srvFlags_,
-	D3D12_BUFFER_UAV_FLAGS uavFlags_,
-	uint64_t uavCounterOffsetInBytes_,
-	ResourceStates initialStates_
-) :BufferDescriptionBehavior(initialStates_)
+	uint64_t uavCounterOffsetInBytes_
+) :BufferDescriptionBehavior({ D3D12_RESOURCE_STATE_COPY_DEST ,D3D12_RESOURCE_STATE_COPY_DEST })
 {
 	param.structureByte = structureByte_;
 	param.numElements = numElements_;
 	param.firstElement = firstElement_;
-	param.resourceFlag = resourceFlag_;
-	param.heapType = heapType_;
-	param.srvFlags = srvFlags_;
-	param.uavFlags = uavFlags_;
 	param.uavCounterOffsetInBytes = uavCounterOffsetInBytes_;
 }
 
 
-void SRV_UAVBufferDescription::CheckRequirementsFilled() const
+void RWPingPongBufferDescription::CheckRequirementsFilled() const
 {
 	std::string errorMess{};
 
 	if (param.structureByte == 0)errorMess += "[structureByte]";
 	if (param.numElements == 0)errorMess += "[numElements]";
 	if (param.firstElement == -1) errorMess += "[firstElement]";
-	if (param.srvFlags == D3D12_BUFFER_SRV_FLAG_notDefined) errorMess += "[srvFlags]";
-	if (param.resourceFlag == D3D12_RESOURCE_FLAG_Error_Detection) errorMess += "[resourceFlag]";
-	if (param.heapType == D3D12_HEAP_TYPE_notDefined) errorMess += "[heapType]";
+	if (param.uavCounterOffsetInBytes == -1) errorMess += "[uavCounterOffsetInBytes]";
 
-	//uav生成フラグがあるときはチェック
-	if ((param.resourceFlag & D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS) > 0 )
-	{
-		if (param.uavFlags == D3D12_BUFFER_UAV_FLAG_notDefined) errorMess += "[uavFlags]";
-		if (param.uavCounterOffsetInBytes == -1) errorMess += "[uavCounterOffsetInBytes]";
-	}
-
-	ErrorMessageOutput::Assert::DetectError((errorMess.length() == 0), errorMess + "の情報が未設定です", "SRV_UAVBufferDescription.cpp");
+	ErrorMessageOutput::Assert::DetectError((errorMess.length() == 0), errorMess + "の情報が未設定です", "RWPingPongBufferDescription.cpp");
 }
 
-D3D12_RESOURCE_DESC SRV_UAVBufferDescription::CreateResourceDesc()const
+D3D12_RESOURCE_DESC RWPingPongBufferDescription::CreateResourceDesc()const
 {
 	D3D12_RESOURCE_DESC resourceDesc = {};
 
 	resourceDesc.Width = param.numElements * param.structureByte;
-	resourceDesc.Flags = param.resourceFlag;
 
+	resourceDesc.Flags = D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
 	resourceDesc.Height = 1;
 	resourceDesc.DepthOrArraySize = 1;
 	resourceDesc.MipLevels = 1;
@@ -6008,15 +6009,16 @@ D3D12_RESOURCE_DESC SRV_UAVBufferDescription::CreateResourceDesc()const
 	return resourceDesc;
 }
 
-D3D12_SHADER_RESOURCE_VIEW_DESC SRV_UAVBufferDescription::CreateSRV_Desc()const
+D3D12_SHADER_RESOURCE_VIEW_DESC RWPingPongBufferDescription::CreateSRV_Desc()const
 {
 	D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
 
 	srvDesc.Buffer.NumElements = param.numElements;
 	srvDesc.Buffer.StructureByteStride = param.structureByte;
-	srvDesc.Buffer.Flags = param.srvFlags;
 	srvDesc.Buffer.FirstElement = param.firstElement;
 
+
+	srvDesc.Buffer.Flags = D3D12_BUFFER_SRV_FLAG_NONE;
 	srvDesc.Format = DXGI_FORMAT_UNKNOWN;
 	srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
 	srvDesc.ViewDimension = D3D12_SRV_DIMENSION_BUFFER;
@@ -6024,20 +6026,28 @@ D3D12_SHADER_RESOURCE_VIEW_DESC SRV_UAVBufferDescription::CreateSRV_Desc()const
 	return srvDesc;
 }
 
-D3D12_HEAP_PROPERTIES SRV_UAVBufferDescription::CreateHeapProperties()const
+D3D12_HEAP_PROPERTIES RWPingPongBufferDescription::CreateHeapProperties()const
 {
 	D3D12_HEAP_PROPERTIES properties = {};
 
-	properties.Type = param.heapType;
+	properties.Type = D3D12_HEAP_TYPE_DEFAULT;
 
 	return properties;
-
 }
 
 
-D3D12_UNORDERED_ACCESS_VIEW_DESC SRV_UAVBufferDescription::CreateUAV_Desc()const
+D3D12_UNORDERED_ACCESS_VIEW_DESC RWPingPongBufferDescription::CreateUAV_Desc()const
 {
 	D3D12_UNORDERED_ACCESS_VIEW_DESC uavDesc = {};
+
+	uavDesc.Buffer.NumElements = param.numElements;
+	uavDesc.Buffer.StructureByteStride = param.structureByte;
+	uavDesc.Buffer.FirstElement = param.firstElement;
+	uavDesc.Buffer.CounterOffsetInBytes = param.uavCounterOffsetInBytes;
+
+	uavDesc.Buffer.Flags = D3D12_BUFFER_UAV_FLAG_NONE; 
+	uavDesc.Format = DXGI_FORMAT_UNKNOWN;               
+	uavDesc.ViewDimension = D3D12_UAV_DIMENSION_BUFFER;
 
 	return uavDesc;
 }
@@ -6047,47 +6057,33 @@ D3D12_UNORDERED_ACCESS_VIEW_DESC SRV_UAVBufferDescription::CreateUAV_Desc()const
 
 
 ========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Resource\BufferDescriptions\SRV_UAVBufferDescription\SRV_UAVBufferDescription.h ===
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Resource\BufferDescriptions\RWPingPongBufferDescription\RWPingPongBufferDescription.h ===
 ========================================
 #pragma once
 #include "../BufferDescriptionBehavior.h"
 
 
-//StructuredBuffer（読み込み専用やRWStructuredBuffer（読み書き汎用）のDescription
-struct SRV_UAVBufferDescription final :public BufferDescriptionBehavior, ISRV_Assembler, IUAV_Assembler
+//読み書き
+struct RWPingPongBufferDescription final :public BufferDescriptionBehavior, ISRV_Assembler, IUAV_Assembler
 {
 private:
+
 	struct Param
 	{
-		//そのデータ型のサイズ
 		UINT structureByte{};
-		//要素数
 		UINT numElements{};
 		UINT firstElement = -1;
-
-		D3D12_RESOURCE_FLAGS resourceFlag = D3D12_RESOURCE_FLAG_Error_Detection;
-		D3D12_HEAP_TYPE heapType = D3D12_HEAP_TYPE_notDefined;
-
-		D3D12_BUFFER_SRV_FLAGS srvFlags = D3D12_BUFFER_SRV_FLAG_notDefined;
-		//UAVのビューを作るのであれば
-		D3D12_BUFFER_UAV_FLAGS uavFlags = D3D12_BUFFER_UAV_FLAG_notDefined;
-		// カウンターバッファ用のオフセット
 		uint64_t uavCounterOffsetInBytes = -1;
 	}param;
 
 public:
 
-	SRV_UAVBufferDescription
+	RWPingPongBufferDescription
 	(
 		UINT structureByte_,
 		UINT numElements_,
 		UINT firstElement_,
-		D3D12_RESOURCE_FLAGS resourceFlag_,
-		D3D12_HEAP_TYPE heapType_,
-		D3D12_BUFFER_SRV_FLAGS srvFlags_,
-		D3D12_BUFFER_UAV_FLAGS uavFlags_,
-		uint64_t uavCounterOffsetInBytes_,
-		ResourceStates initialStates_
+		uint64_t uavCounterOffsetInBytes_
 	);
 
 	//パラーメーターチェック
@@ -6102,6 +6098,134 @@ public:
 	virtual D3D12_UNORDERED_ACCESS_VIEW_DESC CreateUAV_Desc()const override;
 
 };
+
+
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Resource\BufferDescriptions\UploadStructuredBufferDescription\UploadStructuredBufferDescription.cpp ===
+========================================
+#include "PreCompileHeader.h"
+#include "UploadStructuredBufferDescription.h"
+
+
+UploadStructuredBufferDescription::UploadStructuredBufferDescription
+(
+	UINT structureByte_,
+	UINT numElements_,
+	UINT firstElement_
+) :BufferDescriptionBehavior({ D3D12_RESOURCE_STATE_GENERIC_READ ,D3D12_RESOURCE_STATE_GENERIC_READ })
+{
+	param.structureByte = structureByte_;
+	param.numElements = numElements_;
+	param.firstElement = firstElement_;
+}
+
+//パラーメーターチェック
+void UploadStructuredBufferDescription::CheckRequirementsFilled() const
+{
+	std::string errorMess{};
+
+	if (param.structureByte == 0)errorMess += "[structureByte]";
+	if (param.numElements == 0)errorMess += "[numElements]";
+	if (param.firstElement == -1) errorMess += "[firstElement]";
+
+	ErrorMessageOutput::Assert::DetectError((errorMess.length() == 0), errorMess + "の情報が未設定です", "RWPingPongBufferDescription.cpp");
+}
+
+//リソースディスクの生成
+D3D12_RESOURCE_DESC UploadStructuredBufferDescription::CreateResourceDesc()const
+{
+	D3D12_RESOURCE_DESC resourceDesc = {};
+
+	resourceDesc.Width = param.numElements * param.structureByte;
+	
+	//以下固定
+	resourceDesc.Flags = D3D12_RESOURCE_FLAG_NONE;
+	resourceDesc.Height = 1;
+	resourceDesc.DepthOrArraySize = 1;
+	resourceDesc.MipLevels = 1;
+	resourceDesc.SampleDesc.Count = 1;
+	resourceDesc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
+	resourceDesc.Dimension = D3D12_RESOURCE_DIMENSION_BUFFER;
+
+	return resourceDesc;
+}
+
+//ヒーププロパティの生成
+D3D12_HEAP_PROPERTIES UploadStructuredBufferDescription::CreateHeapProperties()const
+{
+	D3D12_HEAP_PROPERTIES properties = {};
+
+	//アップロード固定
+	properties.Type = D3D12_HEAP_TYPE_UPLOAD;
+
+	return properties;
+}
+
+//SRV生成
+D3D12_SHADER_RESOURCE_VIEW_DESC UploadStructuredBufferDescription::CreateSRV_Desc()const
+{
+	D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
+
+	srvDesc.Buffer.NumElements = param.numElements;
+	srvDesc.Buffer.StructureByteStride = param.structureByte;
+	srvDesc.Buffer.FirstElement = param.firstElement;
+
+
+	srvDesc.Buffer.Flags = D3D12_BUFFER_SRV_FLAG_NONE;
+	srvDesc.Format = DXGI_FORMAT_UNKNOWN;
+	srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+	srvDesc.ViewDimension = D3D12_SRV_DIMENSION_BUFFER;
+
+	return srvDesc;
+
+}
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Resource\BufferDescriptions\UploadStructuredBufferDescription\UploadStructuredBufferDescription.h ===
+========================================
+#pragma once
+#include "../BufferDescriptionBehavior.h"
+
+
+//読み書き
+struct UploadStructuredBufferDescription final :public BufferDescriptionBehavior, ISRV_Assembler
+{
+private:
+	struct Param
+	{
+		UINT structureByte{};
+		UINT numElements{};
+		UINT firstElement = -1;
+
+	}param;
+
+public:
+
+	UploadStructuredBufferDescription
+	(
+		UINT structureByte_,
+		UINT numElements_,
+		UINT firstElement_
+	);
+
+	//パラーメーターチェック
+	virtual void CheckRequirementsFilled() const override;
+	//リソースディスクの生成
+	virtual D3D12_RESOURCE_DESC CreateResourceDesc()const override;
+	//ヒーププロパティの生成
+	virtual D3D12_HEAP_PROPERTIES CreateHeapProperties()const override;
+	//View生成
+	virtual D3D12_SHADER_RESOURCE_VIEW_DESC CreateSRV_Desc()const override;
+
+};
+
 
 
 
@@ -6126,8 +6250,8 @@ namespace
 
 D3D12_RESOURCE_BARRIER GPUBufferBehavior::Buffer::CreateBarrier(D3D12_RESOURCE_STATES after_)
 {
-	auto buff = curState;
-	curState = after_;
+	auto buff = curResourceState;
+	curResourceState = after_;
 
 	return ResourceBarrier::Create
 	(
@@ -6154,7 +6278,7 @@ GPUBufferBehavior::GPUBufferBehavior
 
 	for (size_t i = 0; i < buffers.size(); ++i)
 	{
-		buffers.at(i).curState = description->initialStates.at(i);
+		buffers.at(i).curResourceState = description->initialStates.at(i);
 	}
 
 }
@@ -6174,10 +6298,6 @@ ID3D12Resource* GPUBufferBehavior::GetResource(ResourceAccessKey bufferAccessKey
 }
 
 
-D3D12_RESOURCE_BARRIER GPUBufferBehavior::CreateBarrier(ExtracteMaterialKey key_, D3D12_RESOURCE_STATES after_ , uint8_t index_)
-{
-	return buffers.at(index_).CreateBarrier(after_);
-}
 
 
 
@@ -6212,11 +6332,8 @@ class GPUBufferBehavior
 		D3D12_RESOURCE_BARRIER CreateBarrier(D3D12_RESOURCE_STATES after_);
 
 		//リソースステート
-		D3D12_RESOURCE_STATES curState;
+		D3D12_RESOURCE_STATES curResourceState;
 	};
-
-	//複数分用意する
-	std::array<Buffer, ProjectConfig::Render::kRequiredGPUBufferSum> buffers;
 
 	//なまえ
 	std::string name = "noName";
@@ -6228,7 +6345,7 @@ public:
 	//生リソースアクセスキー
 	struct ResourceAccessKey;
 	//バッファから描画パスに必要な情報をもらうためのキー
-	struct ExtracteMaterialKey;
+	struct ExtractMaterialKey;
 
 
 	GPUBufferBehavior
@@ -6243,8 +6360,13 @@ public:
 	virtual ~GPUBufferBehavior();
 
 	//生リソースを取得
-	ID3D12Resource* GetResource(ResourceAccessKey bufferAccessKey_ , int resourceNo_);
+	ID3D12Resource* GetResource(ResourceAccessKey resourceAccessKey_ , int resourceNo_);
 	
+	//各バッファが自身のバリアを適切に張るためのバリアを生成
+	virtual std::array<D3D12_RESOURCE_BARRIER, ProjectConfig::Render::kRequiredGPUBufferSum>
+		CreateNextStepBarriers(ExtractMaterialKey key_) = 0;
+
+
 	//descriptorHeapIndexを書き込む
 	template<ViewType type, typename Index>
 	void OverrideHeapIndex(InstanceKey instanceKey_, Index index_, uint8_t resourceNo_)
@@ -6267,7 +6389,7 @@ public:
 
 	//各種ビューのインデックスを取得
 	template<ViewType type, typename Index>
-	Index WatchIndex(ExtracteMaterialKey key_ , uint8_t resourceNo_)const
+	Index WatchIndex(uint8_t resourceNo_)const
 	{
 		const auto& dstHeapContainer = buffers.at(resourceNo_).heapIndicesContainer.at(type);
 
@@ -6291,15 +6413,15 @@ public:
 		return Index{};
 	}
 
-	//自身のバッファから「after_」の遷移するバリアを生成。このとき、curStateも変わる
-	D3D12_RESOURCE_BARRIER CreateBarrier(ExtracteMaterialKey key_, D3D12_RESOURCE_STATES after_, uint8_t index_);
 
-
+	
 protected:
 
 	//自身を構成するディスクリプション
 	std::unique_ptr <BufferDescriptionBehavior> description;
 
+	//複数分用意する
+	std::array<Buffer, ProjectConfig::Render::kRequiredGPUBufferSum> buffers;
 
 };
 
@@ -6325,13 +6447,13 @@ private:
 };
 
 
-struct GPUBufferBehavior::ExtracteMaterialKey
+struct GPUBufferBehavior::ExtractMaterialKey
 {
 private:
 	
 	friend class SwapChainContext::RenderPassMaterialProvider;
 
-	explicit ExtracteMaterialKey() = default;
+	explicit ExtractMaterialKey() = default;
 
 };
 
@@ -6355,6 +6477,12 @@ ColorBuffer::ColorBuffer
 ) : GPUBufferBehavior(instanceKey_, name_, std::move(resource1_), std::move(resource2_), std::move(description_))
 {
 
+}
+
+std::array<D3D12_RESOURCE_BARRIER, ProjectConfig::Render::kRequiredGPUBufferSum>
+ColorBuffer::CreateNextStepBarriers(ExtractMaterialKey key_)
+{
+	return { D3D12_RESOURCE_BARRIER{}, D3D12_RESOURCE_BARRIER{} };
 }
 
 
@@ -6391,11 +6519,11 @@ void ColorBuffer::AssembleMatrix()
 ========================================
 #pragma once
 #include "../GPUBufferBehavior.h"
-#include "../../BufferDescriptions/ColorBufferDescription/ColorBufferDescription.h"
 
+struct ColorBufferDescription;
 
 //カラーバッファクラス
-class ColorBuffer : public GPUBufferBehavior
+class ColorBuffer final : public GPUBufferBehavior
 {
 public:
 
@@ -6410,6 +6538,9 @@ public:
 
 	//リソースのディスクリプションを見る
 	const ColorBufferDescription& WatchDescription();
+
+	virtual std::array<D3D12_RESOURCE_BARRIER, ProjectConfig::Render::kRequiredGPUBufferSum>
+		CreateNextStepBarriers(ExtractMaterialKey key_)override;
 
 private:
 
@@ -6447,6 +6578,13 @@ ConstantBuffer::ConstantBuffer
 
 }
 
+std::array<D3D12_RESOURCE_BARRIER, ProjectConfig::Render::kRequiredGPUBufferSum>
+ConstantBuffer::CreateNextStepBarriers(ExtractMaterialKey key_)
+{
+	return { D3D12_RESOURCE_BARRIER{}, D3D12_RESOURCE_BARRIER{} };
+}
+
+
 
 
 ========================================
@@ -6459,7 +6597,7 @@ ConstantBuffer::ConstantBuffer
 
 
 //定数バッファクラス
-class ConstantBuffer : public GPUBufferBehavior
+class ConstantBuffer final : public GPUBufferBehavior
 {
 public:
 
@@ -6471,6 +6609,9 @@ public:
 		Microsoft::WRL::ComPtr<ID3D12Resource> resource2_,
 		std::unique_ptr <BufferDescriptionBehavior>&& description_
 	);
+
+	virtual std::array<D3D12_RESOURCE_BARRIER, ProjectConfig::Render::kRequiredGPUBufferSum>
+		CreateNextStepBarriers(ExtractMaterialKey key_)override;
 
 };
 
@@ -6497,10 +6638,17 @@ DepthStencilBuffer::DepthStencilBuffer
 
 }
 
-float DepthStencilBuffer::WatchClearColor(ExtracteMaterialKey key_)
+float DepthStencilBuffer::WatchClearColor(ExtractMaterialKey key_)
 {
 	return static_cast<DepthStencilBufferDescription*>(description.get())->WatchParam().clearColor;
 }
+
+std::array<D3D12_RESOURCE_BARRIER, ProjectConfig::Render::kRequiredGPUBufferSum>
+DepthStencilBuffer::CreateNextStepBarriers(ExtractMaterialKey key_)
+{
+	return { D3D12_RESOURCE_BARRIER{}, D3D12_RESOURCE_BARRIER{} };
+}
+
 
 
 
@@ -6513,7 +6661,7 @@ float DepthStencilBuffer::WatchClearColor(ExtracteMaterialKey key_)
 
 
 //定数バッファクラス
-class DepthStencilBuffer : public GPUBufferBehavior
+class DepthStencilBuffer final : public GPUBufferBehavior
 {
 public:
 
@@ -6526,7 +6674,11 @@ public:
 		std::unique_ptr <BufferDescriptionBehavior>&& description_
 	);
 
-	float WatchClearColor(ExtracteMaterialKey key_);
+	float WatchClearColor(ExtractMaterialKey key_);
+
+	virtual std::array<D3D12_RESOURCE_BARRIER, ProjectConfig::Render::kRequiredGPUBufferSum>
+		CreateNextStepBarriers(ExtractMaterialKey key_)override;
+
 };
 
 
@@ -6534,14 +6686,14 @@ public:
 
 
 ========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Resource\GPUBuffer\SRV_UAVBuffer\SRV_UAVBuffer.cpp ===
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Resource\GPUBuffer\RWPingPongBuffer\RWPingPongBuffer.cpp ===
 ========================================
 #include "PreCompileHeader.h"
-#include "SRV_UAVBuffer.h"
+#include "RWPingPongBuffer.h"
 #include "../../BufferDescriptions/BufferDescriptionBehavior.h"
 
 
-SRV_UAVBuffer::SRV_UAVBuffer
+RWPingPongBuffer::RWPingPongBuffer
 (
 	const InstanceKey& instanceKey_, 
 	std::string name_, 
@@ -6553,24 +6705,78 @@ SRV_UAVBuffer::SRV_UAVBuffer
 
 }
 
+std::array<D3D12_RESOURCE_BARRIER, ProjectConfig::Render::kRequiredGPUBufferSum>
+RWPingPongBuffer::CreateNextStepBarriers(ExtractMaterialKey key_)
+{
+	std::array<D3D12_RESOURCE_BARRIER, ProjectConfig::Render::kRequiredGPUBufferSum> barriers;
+
+	if (status == kUAV_SRV)
+	{
+		// 0 - > SRV , 1 -> UAV
+		barriers.at(0) = buffers[0].CreateBarrier(D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE | D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+		barriers.at(1) = buffers[1].CreateBarrier(D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
+	}
+	else
+	{
+		barriers.at(0) = buffers[0].CreateBarrier(D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
+		barriers.at(1) = buffers[1].CreateBarrier(D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE | D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+	}
+
+	Swap();
+
+	return barriers;
+}
+
+
+uint32_t RWPingPongBuffer::CurrentSRVHeapIndex()
+{
+	uint32_t heapIndex{};
+
+	if (status == kSRV_UAV)heapIndex = WatchIndex<ViewType::kSRV,uint32_t>(0);
+	else heapIndex = WatchIndex<ViewType::kSRV, uint32_t>(1);
+
+	return heapIndex;
+}
+
+uint32_t RWPingPongBuffer::CurrentUAVHeapIndex()
+{
+	uint32_t heapIndex{};
+
+	if (status == kUAV_SRV)heapIndex = WatchIndex<ViewType::kUAV, uint32_t>(0);
+	else heapIndex = WatchIndex<ViewType::kUAV, uint32_t>(1);
+
+	return heapIndex;
+}
+
+void RWPingPongBuffer::Swap()
+{
+	if (status == kUAV_SRV) status = kSRV_UAV;
+	else status = kUAV_SRV;
+}
+
 
 
 
 ========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Resource\GPUBuffer\SRV_UAVBuffer\SRV_UAVBuffer.h ===
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Resource\GPUBuffer\RWPingPongBuffer\RWPingPongBuffer.h ===
 ========================================
 #pragma once
 #include "../GPUBufferBehavior.h"
-#include "../../BufferDescriptions/SRV_UAVBufferDescription/SRV_UAVBufferDescription.h"
+#include "../../BufferDescriptions/RWPingPongBufferDescription/RWPingPongBufferDescription.h"
 
 
-
-//StructuredBuffer（読み込み専用やRWStructuredBuffer（読み書き汎用）リソース
-class SRV_UAVBuffer : public GPUBufferBehavior
+//読み書き
+class RWPingPongBuffer final : public GPUBufferBehavior
 {
+	enum Status
+	{
+		kSRV_UAV,	//index0が読み込み用、index1が書き込み用
+		kUAV_SRV	//その逆
+	};
+
 public:
 
-	SRV_UAVBuffer
+	RWPingPongBuffer
 	(
 		const InstanceKey& instanceKey_, 
 		std::string name_,
@@ -6579,7 +6785,68 @@ public:
 		std::unique_ptr <BufferDescriptionBehavior>&& description_
 	);
 
+	uint32_t CurrentSRVHeapIndex();
+	uint32_t CurrentUAVHeapIndex();
+
+	virtual std::array<D3D12_RESOURCE_BARRIER, ProjectConfig::Render::kRequiredGPUBufferSum>
+		CreateNextStepBarriers(ExtractMaterialKey key_)override;
+
 private:
+
+	Status status = kSRV_UAV;
+	void Swap();
+
+};
+
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Resource\GPUBuffer\UploadStructuredBuffer\UploadStructuredBuffer.cpp ===
+========================================
+#include "PreCompileHeader.h"
+#include "UploadStructuredBuffer.h"
+
+
+std::array<D3D12_RESOURCE_BARRIER, ProjectConfig::Render::kRequiredGPUBufferSum>
+UploadStructuredBuffer::CreateNextStepBarriers(ExtractMaterialKey key_)
+{
+	return { D3D12_RESOURCE_BARRIER {},D3D12_RESOURCE_BARRIER{} };
+}
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Resource\GPUBuffer\UploadStructuredBuffer\UploadStructuredBuffer.h ===
+========================================
+#pragma once 
+#include "../GPUBufferBehavior.h"
+#include "../../BufferDescriptions/UploadStructuredBufferDescription/UploadStructuredBufferDescription.h"
+
+struct UploadStructuredBufferDescription;
+
+//読み書きStructuredBuffer
+class UploadStructuredBuffer final : public GPUBufferBehavior
+{
+
+public:
+
+	UploadStructuredBuffer
+	(
+		const InstanceKey& instanceKey_,
+		std::string name_,
+		Microsoft::WRL::ComPtr<ID3D12Resource> resource1_,
+		Microsoft::WRL::ComPtr<ID3D12Resource> resource2_,
+		std::unique_ptr <BufferDescriptionBehavior>&& description_
+	);
+
+	virtual std::array<D3D12_RESOURCE_BARRIER, ProjectConfig::Render::kRequiredGPUBufferSum>
+		CreateNextStepBarriers(ExtractMaterialKey key_)override;
+
+private:
+
 
 };
 

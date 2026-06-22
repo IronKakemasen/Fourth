@@ -2,8 +2,8 @@
 #include "BufferContext.h"
 #include "ResourceCreator/ResourceCreator.h"
 #include "BufferAssembler/BufferAssembler.h"
-#include "../Core/DescriptorHeap/DescriptorHeapContext.h"
-#include "../Core/DescriptorHeap/ViewCreator/ViewCreator.h"
+#include "../../Core/DescriptorHeap/DescriptorHeapContext.h"
+#include "../../Core/DescriptorHeap/ViewCreator/ViewCreator.h"
 
 
 namespace

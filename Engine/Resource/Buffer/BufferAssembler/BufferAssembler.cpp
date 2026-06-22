@@ -5,17 +5,17 @@
 #include "../GPUBuffer/ColorBuffer/ColorBuffer.h"
 #include "../GPUBuffer/ConstantBuffer/ConstantBuffer.h"
 #include "../GPUBuffer/DepthStencilBuffer/DepthStencilBuffer.h"
-#include "../GPUBuffer/RWPingPongBuffer/RWPingPongBuffer.h"
+#include "../GPUBuffer/ComputeBuffer/ComputeBuffer.h"
 
 //ディスクリプション
 #include "../BufferDescriptions/ColorBufferDescription/ColorBufferDescription.h"
 #include "../BufferDescriptions/ConstantBufferDescription/ConstantBufferDescription.h"
 #include "../BufferDescriptions/DepthStencilBufferDescription/DepthStencilBufferDescription.h"
-#include "../BufferDescriptions/RWPingPongBufferDescription/RWPingPongBufferDescription.h"
+#include "../BufferDescriptions/ComputeBufferDescription/ComputeBufferDescription.h"
 
 //ツール
 #include "../ResourceCreator/ResourceCreator.h"
-#include "../../Core/DescriptorHeap/ViewCreator/ViewCreator.h"
+#include "../../../Core/DescriptorHeap/ViewCreator/ViewCreator.h"
 
 
 using DoubleResource = std::pair<Microsoft::WRL::ComPtr<ID3D12Resource>, Microsoft::WRL::ComPtr<ID3D12Resource>>;
