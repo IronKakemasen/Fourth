@@ -1,22 +1,22 @@
 #include "PreCompileHeader.h"
 #include "Nexus.h"
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-#include "../Core/Device/DeviceContext.h"
-#include "../Core/Device/DeviceContextCommandProvider/DeviceContextCommandProvider.h"
-#include "../Core/Device/DeviceContextCommandExecutor/DeviceContextCommandExecutor.h"
+#include "Core/Device/DeviceContext.h"
+#include "Core/Device/DeviceContextCommandProvider/DeviceContextCommandProvider.h"
+#include "Core/Device/DeviceContextCommandExecutor/DeviceContextCommandExecutor.h"
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-#include "../Resource/Buffer/BufferContext.h"
-#include "../Resource/Buffer/BufferCreator/BufferCreator.h"
-#include "../Resource/Buffer/BufferDescriptions/DepthStencilBufferDescription/DepthStencilBufferDescription.h"
-#include "../Resource/Buffer/GPUBuffer/DepthStencilBuffer/DepthStencilBuffer.h"
+#include "Resource/Buffer/BufferContext.h"
+#include "Resource/Buffer/BufferCreator/BufferCreator.h"
+#include "Resource/Buffer/BufferDescriptions/DepthStencilBufferDescription/DepthStencilBufferDescription.h"
+#include "Resource/Buffer/GPUBuffer/DepthStencilBuffer/DepthStencilBuffer.h"
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-#include "../Core/DescriptorHeap/DescriptorHeapContext.h"
+#include "Core/DescriptorHeap/DescriptorHeapContext.h"
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-#include "../Core/Window/WindowContext.h"
+#include "Core/Window/WindowContext.h"
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-#include "../Core/SwapChain/SwapChainContext.h"
+#include "Core/SwapChain/SwapChainContext.h"
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-#include "../Core/Command/CommandContext.h"
+#include "Core/Command/CommandContext.h"
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 

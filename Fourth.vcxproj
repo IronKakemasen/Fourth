@@ -98,7 +98,7 @@
     <ClCompile Include="Engine\Core\Device\Commands\CreateFenceObject\CommandCreateFenceObject.cpp" />
     <ClCompile Include="Engine\Core\Command\CommandContext.cpp" />
     <ClCompile Include="Engine\Core\Device\Commands\StructureSwapChain\CommandStructureSwapChain.cpp" />
-    <ClCompile Include="Engine\Nexus\NexusRun.cpp" />
+    <ClCompile Include="Engine\NexusRun.cpp" />
     <ClCompile Include="Engine\Resource\Buffer\BufferAssembler\BufferAssembler.cpp" />
     <ClCompile Include="Engine\Resource\Buffer\BufferDescriptions\BufferDescriptionBehavior.cpp" />
     <ClCompile Include="Engine\Resource\Buffer\GPUBuffer\DepthStencilBuffer\DepthStencilBuffer.cpp" />
@@ -223,7 +223,7 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="Engine\Utility\StringConnverter\StringConverter.cpp" />
-    <ClCompile Include="Engine\Nexus\Nexus.cpp" />
+    <ClCompile Include="Engine\Nexus.cpp" />
     <ClCompile Include="Engine\Math\Quaternion\Quaternion.cpp" />
     <ClCompile Include="Engine\Math\Vector\Vector2.cpp" />
     <ClCompile Include="Engine\Core\SwapChain\SwapChainContext.cpp" />
@@ -278,7 +278,7 @@
     <ClInclude Include="Engine\Core\Window\WindowContext.h" />
     <ClInclude Include="Engine\Math\Matrix\Matrix4.h" />
     <ClInclude Include="Engine\Render\kara.h" />
-    <ClInclude Include="Engine\Resource\Buffer\MeshShaderPipelineStateStream.h" />
+    <ClInclude Include="Engine\Resource\PSO\MeshShaderPipelineStateStream.h" />
     <ClInclude Include="Engine\Debug\ErrorMessageOutput\ErrorMessageOutput.h" />
     <ClInclude Include="Engine\Resource\Buffer\ResourceBarrier.h" />
     <ClInclude Include="External\Audio\SoundCommon.h" />
@@ -301,7 +301,7 @@
     <ClInclude Include="Engine\PreCompileHeader.h" />
     <ClInclude Include="Engine\Debug\Logger\Logger.h" />
     <ClInclude Include="Engine\Utility\StringConnverter\StringConverter.h" />
-    <ClInclude Include="Engine\Nexus\Nexus.h" />
+    <ClInclude Include="Engine\Nexus.h" />
     <ClInclude Include="Engine\Math\Vector\Vector3.h" />
     <ClInclude Include="Engine\Math\Quaternion\Quaternion.h" />
     <ClInclude Include="Engine\Math\Vector\Vector2.h" />

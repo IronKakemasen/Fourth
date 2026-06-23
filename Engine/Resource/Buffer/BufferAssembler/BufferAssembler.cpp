@@ -6,19 +6,20 @@
 #include "../GPUBuffer/ConstantBuffer/ConstantBuffer.h"
 #include "../GPUBuffer/DepthStencilBuffer/DepthStencilBuffer.h"
 #include "../GPUBuffer/ComputeBuffer/ComputeBuffer.h"
+#include "../GPUBuffer/UploadStructuredBuffer/UploadStructuredBuffer.h"
 
 //ディスクリプション
 #include "../BufferDescriptions/ColorBufferDescription/ColorBufferDescription.h"
 #include "../BufferDescriptions/ConstantBufferDescription/ConstantBufferDescription.h"
 #include "../BufferDescriptions/DepthStencilBufferDescription/DepthStencilBufferDescription.h"
 #include "../BufferDescriptions/ComputeBufferDescription/ComputeBufferDescription.h"
+#include "../BufferDescriptions/UploadStructuredBufferDescription/UploadStructuredBufferDescription.h"
 
 //ツール
 #include "../ResourceCreator/ResourceCreator.h"
 #include "../../../Core/DescriptorHeap/ViewCreator/ViewCreator.h"
 
 
-using DoubleResource = std::pair<Microsoft::WRL::ComPtr<ID3D12Resource>, Microsoft::WRL::ComPtr<ID3D12Resource>>;
 
 BufferContext::BufferAssembler::BufferAssembler
 (
@@ -44,157 +45,223 @@ std::pair<D3D12_RESOURCE_DESC, D3D12_HEAP_PROPERTIES> BufferContext::BufferAssem
 	
 	return std::make_pair(resourceDesc, heapProp);
 }
-///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-std::string BufferContext::BufferAssembler::ConvertName(const std::string& srcName_, const std::string& attach_)
-{
-	return attach_ + "[ " + srcName_ + " ] ";
-}
+
+
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 template<>
-std::unique_ptr<ColorBuffer> BufferContext::BufferAssembler::AssembleResource<ColorBuffer, ColorBufferDescription>
-(
-	D3D12_RESOURCE_DESC resourceDesc_,
-	D3D12_HEAP_PROPERTIES heapProp_,
-	const std::string& name_,
-	const ColorBufferDescription& desc_
-)
+std::optional<D3D12_CLEAR_VALUE> BufferContext::BufferAssembler::GetClearValue(const ColorBufferDescription& desc_)
 {
-	
-	//名前変換
-	std::string nameCnv = ConvertName(name_, "ColorBuffer");
+	return desc_.WatchClearValue();
+}
 
-	//クリアバリュー必要
-	auto clearValue = desc_.WatchClearValue();
-	//リソース生成
-	DoubleResource doubleResource = resourceCreator->Create
-	(
-		resourceDesc_, 
-		heapProp_, 
-		&clearValue,
-		desc_.initialStates,
-		nameCnv
-	);
-
+template<>
+std::unique_ptr<ColorBuffer> BufferContext::BufferAssembler::AssembleBuffer<ColorBuffer, ColorBufferDescription>
+(DoubleResource doubleResource_, const ColorBufferDescription& desc_, std::string nameCnv_)
+{
 	//バッファ生成
 	return std::make_unique<ColorBuffer>
 	(
-		ColorBuffer::InstanceKey{},
-		nameCnv,
-		std::move(doubleResource.first), std::move(doubleResource.second),
-		std::make_unique<ColorBufferDescription>(desc_)
+	    ColorBuffer::InstanceKey{},
+	    nameCnv_,
+	    std::move(doubleResource_.first), std::move(doubleResource_.second),
+	    std::make_unique<ColorBufferDescription>(desc_)
 	);
 }
 
 template<>
-void BufferContext::BufferAssembler::AssembleView<ColorBuffer, ColorBufferDescription>(ColorBuffer* buffer_, const ColorBufferDescription& desc_)
+void BufferContext::BufferAssembler::AssembleView<ColorBuffer, ColorBufferDescription>
+(ColorBuffer* buffer_, const ColorBufferDescription& desc_, GPUBufferBehavior::ResourceAccessKey accessKey_, GPUBufferBehavior::InstanceKey instanceKey_)
 {
 	auto srvDesc = desc_.CreateSRV_Desc();
 	auto rtvDesc = desc_.CreateRTV_Desc();
 
 	for (int i = 0;i < ProjectConfig::Render::kRequiredGPUBufferSum;++i)
 	{
-		auto accessKey = ColorBuffer::ResourceAccessKey{};
-		auto instanceKey = ColorBuffer::InstanceKey{};
-
-		//srv生成
-		{
-			uint32_t srvIndex{};
-			D3D12_CPU_DESCRIPTOR_HANDLE srvCPU{};
-			D3D12_GPU_DESCRIPTOR_HANDLE srvGPU{};
-
-			std::tie(srvIndex, srvCPU, srvGPU) = viewCreator->CreateView(buffer_->GetResource(accessKey, i), &srvDesc);
-			buffer_->OverrideHeapIndex<ViewType::kSRV>(instanceKey, srvIndex, i);
-			buffer_->OverrideHeapIndex<ViewType::kSRV>(instanceKey, srvCPU, i);
-			buffer_->OverrideHeapIndex<ViewType::kSRV>(instanceKey, srvGPU, i);
-		}
-
-		//rtv生成
-		{
-			D3D12_CPU_DESCRIPTOR_HANDLE rtvCPU{};
-
-			std::tie(std::ignore, rtvCPU, std::ignore) = viewCreator->CreateView(buffer_->GetResource(accessKey, i), &rtvDesc);
-			buffer_->OverrideHeapIndex<ViewType::kRTV>(instanceKey, rtvCPU, i);
-		}
+		//srv作成
+		CreateView(buffer_, srvDesc, i, accessKey_, instanceKey_);
+		//UAV生成
+		CreateView(buffer_, rtvDesc, i, accessKey_, instanceKey_);
 	}
 }
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
 template<>
-std::unique_ptr<DepthStencilBuffer> BufferContext::BufferAssembler::AssembleResource<DepthStencilBuffer, DepthStencilBufferDescription>
-(
-	D3D12_RESOURCE_DESC resourceDesc_,
-	D3D12_HEAP_PROPERTIES heapProp_,
-	const std::string& name_,
-	const DepthStencilBufferDescription& desc_
-)
+std::optional<D3D12_CLEAR_VALUE> BufferContext::BufferAssembler::GetClearValue(const DepthStencilBufferDescription& desc_)
 {
-	//名前変換
-	std::string nameCnv = ConvertName(name_, "DepthStencilBuffer");
+	return desc_.WatchClearValue();
+}
 
-	//クリアバリュー必要
-	auto clearValue = desc_.WatchClearValue();
-	
-	//リソース生成
-	DoubleResource doubleResource = resourceCreator->Create
-	(
-		resourceDesc_,
-		heapProp_,
-		&clearValue,
-		desc_.initialStates,
-		nameCnv
-	);
-
+template<>
+std::unique_ptr<DepthStencilBuffer> BufferContext::BufferAssembler::AssembleBuffer<DepthStencilBuffer, DepthStencilBufferDescription>
+(DoubleResource doubleResource_, const DepthStencilBufferDescription& desc_, std::string nameCnv_)
+{
 	//バッファ生成
 	return std::make_unique<DepthStencilBuffer>
 	(
 		DepthStencilBuffer::InstanceKey{},
-		nameCnv,
-		std::move(doubleResource.first), std::move(doubleResource.second),
+		nameCnv_,
+		std::move(doubleResource_.first), std::move(doubleResource_.second),
 		std::make_unique<DepthStencilBufferDescription>(desc_)
 	);
-
 }
 
 template<>
 void BufferContext::BufferAssembler::AssembleView<DepthStencilBuffer, DepthStencilBufferDescription>
-(DepthStencilBuffer* buffer_, const DepthStencilBufferDescription& desc_)
+(DepthStencilBuffer* buffer_, const DepthStencilBufferDescription& desc_, GPUBufferBehavior::ResourceAccessKey accessKey_, GPUBufferBehavior::InstanceKey instanceKey_)
 {
 	auto srvDesc = desc_.CreateSRV_Desc();
 	auto dsvDesc = desc_.CreateDSVDesc();
 
 	for (int i = 0;i < ProjectConfig::Render::kRequiredGPUBufferSum;++i)
 	{
-		auto accessKey = ColorBuffer::ResourceAccessKey{};
-		auto instanceKey = ColorBuffer::InstanceKey{};
-
-		//srv生成
-		{
-			uint32_t srvIndex{};
-			D3D12_CPU_DESCRIPTOR_HANDLE srvCPU{};
-			D3D12_GPU_DESCRIPTOR_HANDLE srvGPU{};
-
-			std::tie(srvIndex, srvCPU, srvGPU) = viewCreator->CreateView(buffer_->GetResource(accessKey, i), &srvDesc);
-			buffer_->OverrideHeapIndex<ViewType::kSRV>(instanceKey, srvIndex, i);
-			buffer_->OverrideHeapIndex<ViewType::kSRV>(instanceKey, srvCPU, i);
-			buffer_->OverrideHeapIndex<ViewType::kSRV>(instanceKey, srvGPU, i);
-		}
-
+		//srv作成
+		CreateView(buffer_, srvDesc, i, accessKey_, instanceKey_);
 		//DSV生成
-		{
-			D3D12_CPU_DESCRIPTOR_HANDLE dsvCPU{};
-
-			std::tie(std::ignore, dsvCPU, std::ignore) = viewCreator->CreateView(buffer_->GetResource(accessKey, i), &dsvDesc);
-			buffer_->OverrideHeapIndex<ViewType::kDSV>(instanceKey, dsvCPU, i);
-		}
+		CreateView(buffer_, dsvDesc, i, accessKey_, instanceKey_);
 	}
 }
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+template<>
+std::optional<D3D12_CLEAR_VALUE> BufferContext::BufferAssembler::GetClearValue(const ConstantBufferDescription& desc_)
+{
+	return std::nullopt;
+}
+	
+template<>
+std::unique_ptr<ConstantBuffer> BufferContext::BufferAssembler::AssembleBuffer<ConstantBuffer, ConstantBufferDescription>
+(DoubleResource doubleResource_, const ConstantBufferDescription& desc_, std::string nameCnv_)
+{
+	//バッファ生成
+	return std::make_unique<ConstantBuffer>
+	(
+		ConstantBuffer::InstanceKey{},
+		nameCnv_,
+		std::move(doubleResource_.first), std::move(doubleResource_.second),
+		std::make_unique<ConstantBufferDescription>(desc_)
+	);
+}
 
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+template<>
+std::optional<D3D12_CLEAR_VALUE> BufferContext::BufferAssembler::GetClearValue(const ComputeBufferDescription& desc_)
+{
+	return std::nullopt;
+}
 
+template<>
+std::unique_ptr<ComputeBuffer> BufferContext::BufferAssembler::AssembleBuffer<ComputeBuffer, ComputeBufferDescription>
+(DoubleResource doubleResource_, const ComputeBufferDescription& desc_, std::string nameCnv_)
+{
+	//バッファ生成
+	return std::make_unique<ComputeBuffer>
+	(
+		ComputeBuffer::InstanceKey{},
+		nameCnv_,
+		std::move(doubleResource_.first), std::move(doubleResource_.second),
+		std::make_unique<ComputeBufferDescription>(desc_)
+	);
+}
+
+template<>
+void BufferContext::BufferAssembler::AssembleView<ComputeBuffer, ComputeBufferDescription>
+(ComputeBuffer* buffer_, const ComputeBufferDescription& desc_, GPUBufferBehavior::ResourceAccessKey accessKey_, GPUBufferBehavior::InstanceKey instanceKey_)
+{
+	auto srvDesc = desc_.CreateSRV_Desc();
+	auto uavDesc = desc_.CreateUAV_Desc();
+
+	for (int i = 0;i < ProjectConfig::Render::kRequiredGPUBufferSum;++i)
+	{
+		//srv作成
+		CreateView(buffer_, srvDesc, i, accessKey_, instanceKey_);
+		//UAV生成
+		CreateView(buffer_, uavDesc, i, accessKey_, instanceKey_);
+	}
+
+}
+
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+template<>
+void BufferContext::BufferAssembler::CreateView
+(
+	GPUBufferBehavior* buffer_,
+	const D3D12_RENDER_TARGET_VIEW_DESC& desc_,
+	uint8_t index_,
+	GPUBufferBehavior::ResourceAccessKey accessKey_,
+	GPUBufferBehavior::InstanceKey instanceKey_
+)
+{
+	D3D12_CPU_DESCRIPTOR_HANDLE rtvCPU{};
+
+	std::tie(std::ignore, rtvCPU, std::ignore) = viewCreator->CreateView(buffer_->GetResource(accessKey_, index_), &desc_);
+	buffer_->OverrideHeapIndex<ViewType::kRTV>(instanceKey_, rtvCPU, index_);
+}
+
+template<>
+void BufferContext::BufferAssembler::CreateView
+(
+	GPUBufferBehavior* buffer_,
+	const D3D12_DEPTH_STENCIL_VIEW_DESC& desc_,
+	uint8_t index_,
+	GPUBufferBehavior::ResourceAccessKey accessKey_,
+	GPUBufferBehavior::InstanceKey instanceKey_
+)
+{
+	D3D12_CPU_DESCRIPTOR_HANDLE dsvCPU{};
+
+	std::tie(std::ignore, dsvCPU, std::ignore) = viewCreator->CreateView(buffer_->GetResource(accessKey_, index_), &desc_);
+	buffer_->OverrideHeapIndex<ViewType::kDSV>(instanceKey_, dsvCPU, index_);
+}
+
+template<>
+void BufferContext::BufferAssembler::CreateView
+(
+	GPUBufferBehavior* buffer_,
+	const D3D12_SHADER_RESOURCE_VIEW_DESC& desc_,
+	uint8_t index_,
+	GPUBufferBehavior::ResourceAccessKey accessKey_,
+	GPUBufferBehavior::InstanceKey instanceKey_
+)
+{
+
+	uint32_t srvIndex{};
+	D3D12_CPU_DESCRIPTOR_HANDLE srvCPU{};
+	D3D12_GPU_DESCRIPTOR_HANDLE srvGPU{};
+
+	std::tie(srvIndex, srvCPU, srvGPU) = viewCreator->CreateView(buffer_->GetResource(accessKey_, index_), &desc_);
+	buffer_->OverrideHeapIndex<ViewType::kSRV>(instanceKey_, srvIndex, index_);
+	buffer_->OverrideHeapIndex<ViewType::kSRV>(instanceKey_, srvCPU, index_);
+	buffer_->OverrideHeapIndex<ViewType::kSRV>(instanceKey_, srvGPU, index_);
+}
+
+template<>
+void BufferContext::BufferAssembler::CreateView
+(
+	GPUBufferBehavior* buffer_,
+	const D3D12_UNORDERED_ACCESS_VIEW_DESC& desc_,
+	uint8_t index_,
+	GPUBufferBehavior::ResourceAccessKey accessKey_,
+	GPUBufferBehavior::InstanceKey instanceKey_
+)
+{
+	uint32_t srvIndex{};
+	D3D12_CPU_DESCRIPTOR_HANDLE srvCPU{};
+	D3D12_GPU_DESCRIPTOR_HANDLE srvGPU{};
+
+	std::tie(srvIndex, srvCPU, srvGPU) = viewCreator->CreateView(buffer_->GetResource(accessKey_, index_), &desc_);
+	buffer_->OverrideHeapIndex<ViewType::kUAV>(instanceKey_, srvIndex, index_);
+	buffer_->OverrideHeapIndex<ViewType::kUAV>(instanceKey_, srvCPU, index_);
+	buffer_->OverrideHeapIndex<ViewType::kUAV>(instanceKey_, srvGPU, index_);
+}
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
