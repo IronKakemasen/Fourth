@@ -58,15 +58,14 @@ private:
 	{
 		RegisterType type = RegisterType::kPingPong;
 
-		if constexpr (std::is_same_v<BufferType, UploadStructuredBuffer>)
+		if constexpr 
+		(
+			std::is_same_v<BufferType, UploadStructuredBuffer> ||
+			std::is_same_v<BufferType, ConstantBuffer>
+		)
 		{
 			type = RegisterType::kFrameBuffer;
 		}
-		else if constexpr (std::is_same_v<BufferType, ConstantBuffer>)
-		{
-			type = RegisterType::kFrameBuffer;
-		}
-	
 		return type;
 	}
 };
