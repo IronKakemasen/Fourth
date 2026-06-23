@@ -45,13 +45,6 @@ private:
 
 };
 
-
-template<>
-[[nodiscard]] D3D12_CPU_DESCRIPTOR_HANDLE DescriptorHeapClass::GetHandle(uint32_t index_);
-
-template<>
-[[nodiscard]] D3D12_GPU_DESCRIPTOR_HANDLE DescriptorHeapClass::GetHandle(uint32_t index_);
-
 struct DescriptorHeapClass::CreateViewKey
 {
 private:
@@ -70,3 +63,8 @@ private:
 	explicit CollectHeapIndexKey() = default;
 };
 
+template<>
+[[nodiscard]] D3D12_CPU_DESCRIPTOR_HANDLE DescriptorHeapClass::GetHandle(uint32_t index_);
+
+template<>
+[[nodiscard]] D3D12_GPU_DESCRIPTOR_HANDLE DescriptorHeapClass::GetHandle(uint32_t index_);

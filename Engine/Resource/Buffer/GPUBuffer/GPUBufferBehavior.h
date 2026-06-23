@@ -1,6 +1,6 @@
 #pragma once
-#include "../BufferAssembler/BufferAssembler.h"
-#include "../../../Core/SwapChain/RenderPassMaterialProvider/RenderPassMaterialProvider.h"
+#include "../BufferContext.h"
+#include "../../../Core/SwapChain/SwapChainContext.h"
 
 struct BufferDescriptionBehavior;
 

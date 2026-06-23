@@ -1,5 +1,5 @@
 #include "Engine/Debug/RuntimeDebugger/RuntimeDebugger.h"
-#include "Engine/Nexus/Nexus.h"
+#include "Engine/Nexus.h"
 
 int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 {

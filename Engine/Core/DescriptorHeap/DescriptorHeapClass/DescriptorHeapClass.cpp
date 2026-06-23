@@ -34,7 +34,7 @@ DescriptorHeapClass::~DescriptorHeapClass(){}
 template<>
 [[nodiscard]] D3D12_GPU_DESCRIPTOR_HANDLE DescriptorHeapClass::GetHandle(uint32_t index_)
 {
-	ErrorMessageOutput::Assert::DetectError(shaderVisible, "shaderVisibleがファルスだからだめ", fileName);
+	if (!shaderVisible) return D3D12_GPU_DESCRIPTOR_HANDLE{};
 
 	D3D12_GPU_DESCRIPTOR_HANDLE handleStartGPU = descriptorHeap->GetGPUDescriptorHandleForHeapStart();
 	D3D12_GPU_DESCRIPTOR_HANDLE next;
