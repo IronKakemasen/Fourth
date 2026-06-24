@@ -46,8 +46,6 @@ public:
 
 	//ビュークリエイターをシェアする。
 	ViewCreator* GetViewCreator(ViewCreatorGetKey key_);
-	//各種ディスクリプターヒープの作成
-	void CreateDescriptorHeaps(UINT rtvDH_, UINT srvDH_, UINT dsvDH_);
 
 private:
 
@@ -64,6 +62,8 @@ private:
 	//DescriptorHeapの作成
 	template<D3D12_DESCRIPTOR_HEAP_TYPE HeapType>
 	void CreateDescriptorHeap(UINT numDescriptors_, bool shaderVisible_, UINT handleIncSize_);
+	//各種ディスクリプターヒープの作成
+	void CreateDescriptorHeaps(UINT rtvDH_, UINT srvDH_, UINT dsvDH_);
 
 	//DescriptorHeapの名前を取得（初期化用）
 	std::string GetDescriptorName(D3D12_DESCRIPTOR_HEAP_TYPE heapType_);

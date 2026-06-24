@@ -54,7 +54,7 @@ public:
         DoubleResource doubleResource =
             AssembleResource(resourceDescAndHeapProp.first, resourceDescAndHeapProp.second, nameCnv, desc_);
 
-        //実体生成
+        //バッファの実体生成
         std::unique_ptr<BufferType> buffer = std::move
         (
             AssembleBuffer<BufferType>(doubleResource, desc_, nameCnv)
@@ -75,7 +75,7 @@ public:
 
 private:
 
-    //バッファ生成、中身のリソースも生成
+    //生リソース生成
     template<typename DescType>
     DoubleResource AssembleResource
     (
@@ -129,6 +129,7 @@ private:
     //生リソース生成に必要な情報を組み立てる
     std::pair<D3D12_RESOURCE_DESC, D3D12_HEAP_PROPERTIES> AssembleResourceCreateRequirements(const BufferDescriptionBehavior& desc_);
 
+    //ビュー生成
     template<typename DescType>
     void CreateView
     (

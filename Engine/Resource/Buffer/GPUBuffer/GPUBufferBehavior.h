@@ -20,10 +20,8 @@ class GPUBufferBehavior
 		Microsoft::WRL::ComPtr<ID3D12Resource> resource;
 		//各ビューのインデックス
 		std::unordered_map<ViewType, IndexSet> heapIndicesContainer;
-
 		//ステートを遷移するためのバリアを生成
 		D3D12_RESOURCE_BARRIER CreateBarrier(D3D12_RESOURCE_STATES after_);
-
 		//リソースステート
 		D3D12_RESOURCE_STATES curResourceState;
 	};
@@ -112,14 +110,6 @@ protected:
 
 };
 
-
-//ピンポンバッファ専用
-struct IRWBuffer
-{
-	//各バッファが自身のバリアを適切に張るためのバリアを生成仮想関数
-	virtual std::array<D3D12_RESOURCE_BARRIER, ProjectConfig::Render::kRequiredGPUBufferSum>
-		CreateNextStepBarriers(GPUBufferBehavior::ExtractMaterialKey key_) = 0;
-};
 
 
 //生成できるのはBufferAssemblerのみ

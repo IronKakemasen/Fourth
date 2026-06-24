@@ -1,10 +1,16 @@
 #pragma once
-#include "../GPUBufferBehavior.h"
+#include "../BufferInterface.h"
 
 
 //定数バッファクラス
 class DepthStencilBuffer final : public GPUBufferBehavior, IRWBuffer
 {
+	enum Status
+	{
+		kDSV_SRV,
+		kSRV_DSV
+	};
+
 public:
 
 	DepthStencilBuffer
@@ -25,5 +31,11 @@ public:
 
 	virtual std::array<D3D12_RESOURCE_BARRIER, ProjectConfig::Render::kRequiredGPUBufferSum>
 		CreateNextStepBarriers(ExtractMaterialKey key_)override;
+
+	virtual void Swap()override;
+
+
+private:
+	Status status = kDSV_SRV;
 };
 

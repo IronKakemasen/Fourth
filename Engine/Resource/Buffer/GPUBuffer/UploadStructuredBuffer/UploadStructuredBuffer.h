@@ -1,5 +1,5 @@
 #pragma once 
-#include "../GPUBufferBehavior.h"
+#include "../BufferInterface.h"
 
 struct UploadStructuredBufferDescription;
 

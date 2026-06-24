@@ -26,7 +26,7 @@ public:
 	virtual D3D12_HEAP_PROPERTIES CreateHeapProperties()const = 0;
 
 	std::array<D3D12_RESOURCE_STATES, ProjectConfig::Render::kRequiredGPUBufferSum> initialStates =
-	{ D3D12_RESOURCE_STATE_Error_Detection };
+	{ D3D12_RESOURCE_STATE_Error_Detection,D3D12_RESOURCE_STATE_Error_Detection };
 };
 
 

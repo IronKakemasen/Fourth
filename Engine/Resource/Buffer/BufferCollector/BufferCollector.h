@@ -3,7 +3,6 @@
 
 
 class GPUBufferBehavior;
-
 class ColorBuffer;
 class ConstantBuffer;
 class DepthStencilBuffer;

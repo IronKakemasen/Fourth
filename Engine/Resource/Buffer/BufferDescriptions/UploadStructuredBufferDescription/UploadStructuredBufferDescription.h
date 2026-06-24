@@ -29,7 +29,7 @@ public:
 	virtual D3D12_RESOURCE_DESC CreateResourceDesc()const override;
 	//ヒーププロパティの生成
 	virtual D3D12_HEAP_PROPERTIES CreateHeapProperties()const override;
-	//View生成
+	//SRVDesc生成
 	virtual D3D12_SHADER_RESOURCE_VIEW_DESC CreateSRV_Desc()const override;
 
 };

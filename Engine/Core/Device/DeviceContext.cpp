@@ -1,15 +1,10 @@
 #include "PreCompileHeader.h"
 #include "DeviceContext.h"
-#include "Commands/DeviceContextCommandBehavior.h"
 #include "DeviceSetupper/DeviceContextSetupper.h"
+
+//コマンド窓口
 #include "DeviceContextCommandProvider/DeviceContextCommandProvider.h"
 #include "DeviceContextCommandExecutor/DeviceContextCommandExecutor.h"
-
-
-//コマンド
-#include "Commands/CreateDescriptorHeap/CommandCreateDescriptorHeap.h"
-#include "Commands/CreatGPUBuffer/CommandOfCreatingGPUBuffer.h"
-#include "Commands/CreateView/CommandCreateView.h"
 
 
 namespace

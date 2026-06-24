@@ -1,5 +1,5 @@
 #pragma once
-#include "../GPUBufferBehavior.h"
+#include "../BufferInterface.h"
 
 
 //読み書き
@@ -32,12 +32,13 @@ public:
 	///+/////////////////////////////////////////////////////////////
 
 	virtual std::array<D3D12_RESOURCE_BARRIER, ProjectConfig::Render::kRequiredGPUBufferSum>
-		CreateNextStepBarriers(ExtractMaterialKey key_)override;
+		CreateNextStepBarriers(ExtractMaterialKey key_) override;
+
+	virtual void Swap()override;
 
 private:
 
 	Status status = kSRV_UAV;
-	void Swap();
 
 };
 

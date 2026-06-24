@@ -258,7 +258,7 @@ class DescriptorHeapContext;
 class SwapChainContext;
 class CommandContext;
 
-
+//交易場
 class Nexus
 {
 public:
@@ -290,7 +290,6 @@ private:
 	std::unique_ptr<CommandContext> commandContext;
 	//SwapChain周りを制御するもの
 	std::unique_ptr<SwapChainContext> swapChainContext;
-
 
 	void InstantiateCommandContext();
 	void InstantiateSwapChainContext();
@@ -1278,10 +1277,10 @@ void DescriptorHeapContext::CreateDescriptorHeap(UINT numDescriptors_, bool shad
 		shaderVisible_,
 		GetDescriptorName(HeapType)
 	);
-
 }
-
-
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 std::string DescriptorHeapContext::GetDescriptorName(D3D12_DESCRIPTOR_HEAP_TYPE heapType_)
 {
 	ErrorMessageOutput::Assert::DetectError((heapType_ < D3D12_DESCRIPTOR_HEAP_TYPE_NUM_TYPES), "TypeError: 要素外アクセス", fileName);
@@ -1361,8 +1360,6 @@ public:
 
 	//ビュークリエイターをシェアする。
 	ViewCreator* GetViewCreator(ViewCreatorGetKey key_);
-	//各種ディスクリプターヒープの作成
-	void CreateDescriptorHeaps(UINT rtvDH_, UINT srvDH_, UINT dsvDH_);
 
 private:
 
@@ -1379,6 +1376,8 @@ private:
 	//DescriptorHeapの作成
 	template<D3D12_DESCRIPTOR_HEAP_TYPE HeapType>
 	void CreateDescriptorHeap(UINT numDescriptors_, bool shaderVisible_, UINT handleIncSize_);
+	//各種ディスクリプターヒープの作成
+	void CreateDescriptorHeaps(UINT rtvDH_, UINT srvDH_, UINT dsvDH_);
 
 	//DescriptorHeapの名前を取得（初期化用）
 	std::string GetDescriptorName(D3D12_DESCRIPTOR_HEAP_TYPE heapType_);
@@ -1534,7 +1533,7 @@ public:
 
 	//ビュークリエイターのみビュー生成可能
 	struct CreateViewKey;
-	//
+	//ヒープインデックスを触るための許可証
 	struct CollectHeapIndexKey;
 
 	DescriptorHeapClass(Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> descriptorHeap_,
@@ -1545,7 +1544,7 @@ public:
 	std::tuple<uint32_t, D3D12_CPU_DESCRIPTOR_HANDLE, D3D12_GPU_DESCRIPTOR_HANDLE>
 	ProvideFreeHeapIndex(CreateViewKey accessKey_);
 
-	//空きヒープインデックスを回収
+	//ヒープインデックスを回収
 	void CollectHeapIndex(uint32_t index_, CollectHeapIndexKey key_);
 
 private:
@@ -1580,6 +1579,7 @@ private:
 };
 
 
+///未定
 struct DescriptorHeapClass::CollectHeapIndexKey
 {
 private:
@@ -1783,16 +1783,11 @@ public:
 ========================================
 #include "PreCompileHeader.h"
 #include "DeviceContext.h"
-#include "Commands/DeviceContextCommandBehavior.h"
 #include "DeviceSetupper/DeviceContextSetupper.h"
+
+//コマンド窓口
 #include "DeviceContextCommandProvider/DeviceContextCommandProvider.h"
 #include "DeviceContextCommandExecutor/DeviceContextCommandExecutor.h"
-
-
-//コマンド
-#include "Commands/CreateDescriptorHeap/CommandCreateDescriptorHeap.h"
-#include "Commands/CreatGPUBuffer/CommandOfCreatingGPUBuffer.h"
-#include "Commands/CreateView/CommandCreateView.h"
 
 
 namespace
@@ -1900,7 +1895,6 @@ public:
 	std::unique_ptr<CommandProvider> commandProvider;
 	std::unique_ptr<CommandExecutor> commandExecutor;
 
-
 	DeviceContext(InstanceKey instanceKey);
 	~DeviceContext();
 
@@ -1916,7 +1910,6 @@ private:
 	void CreateCommandProvider(DeviceContext::InstanceKey instanceKey_);
 	//CommandExecutorの生成
 	void CreateCommandExecutor(DeviceContext::InstanceKey instanceKey_);
-
 };
 
 
@@ -2671,6 +2664,7 @@ namespace
 	auto const fileName = "CommandProvider.cpp";
 }
 
+///+/ C_ = Command
 using C_CreateRTV = std::function<void(ID3D12Resource* resource_, const D3D12_RENDER_TARGET_VIEW_DESC* desc_, D3D12_CPU_DESCRIPTOR_HANDLE descriptorHandleCPU_)>;
 using C_CreateSRV = std::function<void(ID3D12Resource* resource_, const D3D12_SHADER_RESOURCE_VIEW_DESC* desc_, D3D12_CPU_DESCRIPTOR_HANDLE descriptorHandleCPU_)>;
 using C_CreateUAV = std::function<void(ID3D12Resource* resource_, const D3D12_UNORDERED_ACCESS_VIEW_DESC* desc_, D3D12_CPU_DESCRIPTOR_HANDLE descriptorHandleCPU_, ID3D12Resource* CounterResource_)>;
@@ -2694,15 +2688,7 @@ using C_CreateSwapChain = std::function< HRESULT
 	IDXGISwapChain4** swapChainDoublePtr_,
 	const HWND hWnd_
 )>;
-///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-
-
-///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 DeviceContext::CommandProvider::CommandProvider
 (
 	DeviceContext::InstanceKey instanceKey_,
@@ -5126,11 +5112,10 @@ public:
 
 	~BufferContext();
 
-	//バッファ生成クラス（本丸）
+	///+/バッファ生成クラス（本丸）
 	std::unique_ptr<BufferCreator> bufferCreator;
 
 private:
-
 
 	//全バッファのユニークコンテナ
 	std::vector<std::unique_ptr<GPUBufferBehavior>> bufferContainer;
@@ -5220,7 +5205,6 @@ namespace ResourceBarrier
 #include "../BufferDescriptions/UploadStructuredBufferDescription/UploadStructuredBufferDescription.h"
 
 //ツール
-#include "../ResourceCreator/ResourceCreator.h"
 #include "../../../Core/DescriptorHeap/ViewCreator/ViewCreator.h"
 
 
@@ -5532,7 +5516,7 @@ public:
         DoubleResource doubleResource =
             AssembleResource(resourceDescAndHeapProp.first, resourceDescAndHeapProp.second, nameCnv, desc_);
 
-        //実体生成
+        //バッファの実体生成
         std::unique_ptr<BufferType> buffer = std::move
         (
             AssembleBuffer<BufferType>(doubleResource, desc_, nameCnv)
@@ -5553,7 +5537,7 @@ public:
 
 private:
 
-    //バッファ生成、中身のリソースも生成
+    //生リソース生成
     template<typename DescType>
     DoubleResource AssembleResource
     (
@@ -5607,6 +5591,7 @@ private:
     //生リソース生成に必要な情報を組み立てる
     std::pair<D3D12_RESOURCE_DESC, D3D12_HEAP_PROPERTIES> AssembleResourceCreateRequirements(const BufferDescriptionBehavior& desc_);
 
+    //ビュー生成
     template<typename DescType>
     void CreateView
     (
@@ -5785,7 +5770,6 @@ void BufferContext::BufferCollector::Distribute()
 
 
 class GPUBufferBehavior;
-
 class ColorBuffer;
 class ConstantBuffer;
 class DepthStencilBuffer;
@@ -5910,6 +5894,7 @@ public:
 	void Create(const DescType& desc_, const std::string& name_)
 	{
 		std::unique_ptr<BufferType> buffer = assembler->Assemble<BufferType>(desc_, name_);
+
 		collector->Register(std::move(buffer));
 	}
 
@@ -6007,7 +5992,7 @@ public:
 	virtual D3D12_HEAP_PROPERTIES CreateHeapProperties()const = 0;
 
 	std::array<D3D12_RESOURCE_STATES, ProjectConfig::Render::kRequiredGPUBufferSum> initialStates =
-	{ D3D12_RESOURCE_STATE_Error_Detection };
+	{ D3D12_RESOURCE_STATE_Error_Detection,D3D12_RESOURCE_STATE_Error_Detection };
 };
 
 
@@ -6183,9 +6168,9 @@ public:
 	virtual D3D12_RESOURCE_DESC CreateResourceDesc()const override;
 	//ヒーププロパティの生成
 	virtual D3D12_HEAP_PROPERTIES CreateHeapProperties()const override;
-	//RTV生成
+	//RTVDesc生成
 	virtual D3D12_RENDER_TARGET_VIEW_DESC CreateRTV_Desc()const override;
-	//SRV生成
+	//SRVDesc生成
 	virtual D3D12_SHADER_RESOURCE_VIEW_DESC CreateSRV_Desc()const override;
 	//クリアバリュー
 	virtual D3D12_CLEAR_VALUE WatchClearValue() const override;
@@ -6337,8 +6322,9 @@ public:
 	//ヒーププロパティの生成
 	virtual D3D12_HEAP_PROPERTIES CreateHeapProperties()const override;
 
-	//View生成
+	//SRVDesc生成
 	virtual D3D12_SHADER_RESOURCE_VIEW_DESC CreateSRV_Desc()const override;
+	//UAVDesc生成
 	virtual D3D12_UNORDERED_ACCESS_VIEW_DESC CreateUAV_Desc()const override;
 
 };
@@ -6623,9 +6609,9 @@ public:
 	//ヒーププロパティの生成
 	virtual D3D12_HEAP_PROPERTIES CreateHeapProperties()const override;
 
-	//DSV生成
+	//DSVDesc生成
 	virtual D3D12_DEPTH_STENCIL_VIEW_DESC CreateDSVDesc()const override;
-	//SRV生成
+	//SRVDesc生成
 	virtual D3D12_SHADER_RESOURCE_VIEW_DESC CreateSRV_Desc()const override;
 	//クリアバリュー
 	virtual D3D12_CLEAR_VALUE WatchClearValue() const override;
@@ -6763,7 +6749,7 @@ public:
 	virtual D3D12_RESOURCE_DESC CreateResourceDesc()const override;
 	//ヒーププロパティの生成
 	virtual D3D12_HEAP_PROPERTIES CreateHeapProperties()const override;
-	//View生成
+	//SRVDesc生成
 	virtual D3D12_SHADER_RESOURCE_VIEW_DESC CreateSRV_Desc()const override;
 
 };
@@ -6896,10 +6882,8 @@ class GPUBufferBehavior
 		Microsoft::WRL::ComPtr<ID3D12Resource> resource;
 		//各ビューのインデックス
 		std::unordered_map<ViewType, IndexSet> heapIndicesContainer;
-
 		//ステートを遷移するためのバリアを生成
 		D3D12_RESOURCE_BARRIER CreateBarrier(D3D12_RESOURCE_STATES after_);
-
 		//リソースステート
 		D3D12_RESOURCE_STATES curResourceState;
 	};
@@ -7419,6 +7403,7 @@ UploadStructuredBuffer::UploadStructuredBuffer
 {
 
 }
+
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////

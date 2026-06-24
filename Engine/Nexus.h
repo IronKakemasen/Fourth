@@ -7,7 +7,7 @@ class DescriptorHeapContext;
 class SwapChainContext;
 class CommandContext;
 
-
+//交易場
 class Nexus
 {
 public:
@@ -39,7 +39,6 @@ private:
 	std::unique_ptr<CommandContext> commandContext;
 	//SwapChain周りを制御するもの
 	std::unique_ptr<SwapChainContext> swapChainContext;
-
 
 	void InstantiateCommandContext();
 	void InstantiateSwapChainContext();
