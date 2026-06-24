@@ -9,7 +9,7 @@ public:
 
 	//ビュークリエイターのみビュー生成可能
 	struct CreateViewKey;
-	//
+	//ヒープインデックスを触るための許可証
 	struct CollectHeapIndexKey;
 
 	DescriptorHeapClass(Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> descriptorHeap_,
@@ -20,7 +20,7 @@ public:
 	std::tuple<uint32_t, D3D12_CPU_DESCRIPTOR_HANDLE, D3D12_GPU_DESCRIPTOR_HANDLE>
 	ProvideFreeHeapIndex(CreateViewKey accessKey_);
 
-	//空きヒープインデックスを回収
+	//ヒープインデックスを回収
 	void CollectHeapIndex(uint32_t index_, CollectHeapIndexKey key_);
 
 private:
@@ -55,6 +55,7 @@ private:
 };
 
 
+///未定
 struct DescriptorHeapClass::CollectHeapIndexKey
 {
 private:

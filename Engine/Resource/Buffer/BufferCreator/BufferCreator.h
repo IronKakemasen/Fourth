@@ -20,6 +20,7 @@ public:
 	void Create(const DescType& desc_, const std::string& name_)
 	{
 		std::unique_ptr<BufferType> buffer = assembler->Assemble<BufferType>(desc_, name_);
+
 		collector->Register(std::move(buffer));
 	}
 

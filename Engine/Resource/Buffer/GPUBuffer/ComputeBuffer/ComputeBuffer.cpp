@@ -64,6 +64,11 @@ uint32_t ComputeBuffer::CurrentUAVHeapIndex()
 
 void ComputeBuffer::Swap()
 {
-	if (status == kUAV_SRV) status = kSRV_UAV;
-	else status = kUAV_SRV;
+	static Status nextTable[2]
+	{
+		kUAV_SRV,
+		kSRV_UAV
+	};
+
+	status = nextTable[status];
 }

@@ -101,6 +101,7 @@
     <ClCompile Include="Engine\NexusRun.cpp" />
     <ClCompile Include="Engine\Resource\Buffer\BufferAssembler\BufferAssembler.cpp" />
     <ClCompile Include="Engine\Resource\Buffer\BufferDescriptions\BufferDescriptionBehavior.cpp" />
+    <ClCompile Include="Engine\Resource\Buffer\GPUBuffer\BufferInterface.cpp" />
     <ClCompile Include="Engine\Resource\Buffer\GPUBuffer\DepthStencilBuffer\DepthStencilBuffer.cpp" />
     <ClCompile Include="Engine\Resource\Buffer\BufferContext.cpp" />
     <ClCompile Include="Engine\Resource\Buffer\BufferDescriptions\DepthStencilBufferDescription\DepthStencilBufferDescription.cpp" />
@@ -246,6 +247,7 @@
     <ClCompile Include="Engine\Core\Command\RuntimeCommandControler\RuntimeCommandControler.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Engine\Resource\Buffer\GPUBuffer\BufferInterface.h" />
     <ClInclude Include="Engine\Resource\Buffer\BufferCreator\BufferCreator.h" />
     <ClInclude Include="Engine\Resource\Buffer\BufferCollector\BufferCollector.h" />
     <ClInclude Include="Engine\Resource\Buffer\BufferDeferredReleaser\BufferDeferredReleaser.h" />

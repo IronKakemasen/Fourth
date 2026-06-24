@@ -26,7 +26,6 @@ public:
 	std::unique_ptr<CommandProvider> commandProvider;
 	std::unique_ptr<CommandExecutor> commandExecutor;
 
-
 	DeviceContext(InstanceKey instanceKey);
 	~DeviceContext();
 
@@ -42,7 +41,6 @@ private:
 	void CreateCommandProvider(DeviceContext::InstanceKey instanceKey_);
 	//CommandExecutorの生成
 	void CreateCommandExecutor(DeviceContext::InstanceKey instanceKey_);
-
 };
 
 

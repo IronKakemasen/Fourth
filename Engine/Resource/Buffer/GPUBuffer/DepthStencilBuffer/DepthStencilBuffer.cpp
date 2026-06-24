@@ -28,3 +28,14 @@ DepthStencilBuffer::CreateNextStepBarriers(ExtractMaterialKey key_)
 {
 	return { D3D12_RESOURCE_BARRIER{}, D3D12_RESOURCE_BARRIER{} };
 }
+
+void DepthStencilBuffer::Swap()
+{
+	static Status nextTable[2]
+	{
+		kSRV_DSV,
+		kDSV_SRV
+	};
+
+	status = nextTable[status];
+}

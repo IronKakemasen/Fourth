@@ -1,11 +1,17 @@
 #pragma once
-#include "../GPUBufferBehavior.h"
+#include "../BufferInterface.h"
 
 struct ColorBufferDescription;
 
 //カラーバッファクラス
-class ColorBuffer final : public GPUBufferBehavior,IRWBuffer
+class ColorBuffer final : public GPUBufferBehavior,IRWBuffer,IColorBuffer
 {
+	enum Status
+	{
+		kRTV_SRV,
+		kSRV_RTV
+	};
+
 public:
 
 	ColorBuffer
@@ -22,21 +28,19 @@ public:
 	///+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/++/+
 	///+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/++/+
 	//リソースのディスクリプションを見る
-	const ColorBufferDescription& WatchDescription();
+	//const ColorBufferDescription& WatchDescription();
 	///+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/++/+
 	///+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/++/+
 
 	virtual std::array<D3D12_RESOURCE_BARRIER, ProjectConfig::Render::kRequiredGPUBufferSum>
 		CreateNextStepBarriers(ExtractMaterialKey key_)override;
 
+	virtual void Swap()override;
+
 private:
 
-	//行列
-	D3D12_VIEWPORT viewport;
-	D3D12_RECT scissorRect;
+	Status status = kRTV_SRV;
 
-	//viewportとscissorRectをセット
-	void AssembleMatrix();
 };
 
 

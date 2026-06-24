@@ -32,9 +32,9 @@ public:
 	virtual D3D12_RESOURCE_DESC CreateResourceDesc()const override;
 	//ヒーププロパティの生成
 	virtual D3D12_HEAP_PROPERTIES CreateHeapProperties()const override;
-	//RTV生成
+	//RTVDesc生成
 	virtual D3D12_RENDER_TARGET_VIEW_DESC CreateRTV_Desc()const override;
-	//SRV生成
+	//SRVDesc生成
 	virtual D3D12_SHADER_RESOURCE_VIEW_DESC CreateSRV_Desc()const override;
 	//クリアバリュー
 	virtual D3D12_CLEAR_VALUE WatchClearValue() const override;
