@@ -1,16 +1,16 @@
 #include "PreCompileHeader.h"
 #include "BufferContext.h"
-#include "GPUBuffer/GPUBufferBehavior.h"
+#include "BufferDefinition/GPUBuffer/GPUBufferBehavior.h"
 
 //外部
 #include "../../Core/DescriptorHeap/DescriptorHeapContext.h"
 #include "../../Core/DescriptorHeap/ViewCreator/ViewCreator.h"
 
 //バッファ作成ツール
-#include "ResourceCreator/ResourceCreator.h"
-#include "BufferAssembler/BufferAssembler.h"
-#include "BufferCollector/BufferCollector.h"
-#include "BufferCreator/BufferCreator.h"
+#include "BufferCreationSystems/ResourceCreator/ResourceCreator.h"
+#include "BufferCreationSystems/BufferAssembler/BufferAssembler.h"
+#include "BufferCreationSystems/BufferCollector/BufferCollector.h"
+#include "BufferCreationSystems/BufferCreator/BufferCreator.h"
 
 namespace
 {

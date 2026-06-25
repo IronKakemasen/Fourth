@@ -10,10 +10,16 @@ class BufferContext
 	class BufferCollector;
 	//生成したバッファの削除を担当
 	class BufferDeferredReleaser;
-	//2面性バッファのリソースステートの追跡を行い、Swapも行う	
-	class RWResourceStateTracker;
-	//１面性バッファの制御を行う。
-	class FrameBufferedResourceController;
+	//レンダーターゲット系バッファの描画パス構築に必要な情報の抽出とそのリソースのSwapを行う
+	class RenderTargetBufferInfoExtractor;
+	//フレームバッファ系バッファの描画パス構築に必要な情報の抽出を行う
+	class FrameBufferedBufferInfoExtractor;
+	//コンピュートバッファ系のパス構築に必要な情報の抽出とそのリソースのSwapを行う
+	class ComputeBufferInfoExtractor;
+
+
+
+
 	//生リソース生成
 	class ResourceCreator;
 	//BufferAssemblerとBufferCollectorをつかってバッファを作成する

@@ -1,6 +1,6 @@
 #include "PreCompileHeader.h"
 #include "BufferCollector.h"
-#include "../GPUBuffer/GPUBufferBehavior.h"
+#include "../../BufferDefinition/GPUBuffer/GPUBufferBehavior.h"
 
 
 

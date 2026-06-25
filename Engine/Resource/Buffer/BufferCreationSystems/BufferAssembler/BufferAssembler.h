@@ -1,6 +1,6 @@
 #pragma once
-#include "../BufferContext.h"
-#include "../GPUBuffer/GPUBufferBehavior.h"
+#include "../../BufferContext.h"
+#include "../../BufferDefinition/GPUBuffer/GPUBufferBehavior.h"
 //ツール
 #include "../ResourceCreator/ResourceCreator.h"
 

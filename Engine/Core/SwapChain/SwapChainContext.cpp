@@ -5,7 +5,7 @@
 #include "../Command/CommandContext.h"
 #include "Presenter/Presenter.h"
 #include "RenderPassMaterialProvider/RenderPassMaterialProvider.h"
-#include "../../Resource/Buffer/GPUBuffer/DepthStencilBuffer/DepthStencilBuffer.h"
+#include "../../Resource/Buffer/BufferDefinition/GPUBuffer/DepthStencilBuffer/DepthStencilBuffer.h"
 
 
 namespace

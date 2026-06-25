@@ -6,9 +6,9 @@
 #include "Core/Device/DeviceContextCommandExecutor/DeviceContextCommandExecutor.h"
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 #include "Resource/Buffer/BufferContext.h"
-#include "Resource/Buffer/BufferCreator/BufferCreator.h"
-#include "Resource/Buffer/BufferDescriptions/DepthStencilBufferDescription/DepthStencilBufferDescription.h"
-#include "Resource/Buffer/GPUBuffer/DepthStencilBuffer/DepthStencilBuffer.h"
+#include "Resource/Buffer/BufferCreationSystems/BufferCreator/BufferCreator.h"
+#include "Resource/Buffer/BufferDefinition/BufferDescriptions/DepthStencilBufferDescription/DepthStencilBufferDescription.h"
+#include "Resource/Buffer/BufferDefinition/GPUBuffer/DepthStencilBuffer/DepthStencilBuffer.h"
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 #include "Core/DescriptorHeap/DescriptorHeapContext.h"
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////

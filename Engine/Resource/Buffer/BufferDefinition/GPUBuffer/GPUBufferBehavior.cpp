@@ -1,8 +1,8 @@
 #include "PreCompileHeader.h"
 #include "GPUBufferBehavior.h"
-#include "../../../Utility/StringConnverter/StringConverter.h"
+#include "../../../../Utility/StringConnverter/StringConverter.h"
 #include "../BufferDescriptions/BufferDescriptionBehavior.h"
-#include "../ResourceBarrier.h"
+#include "../../ResourceBarrier.h"
 
 
 
