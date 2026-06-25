@@ -31,6 +31,14 @@ class BufferContext
 
 public:
 
+	//登録先識別用
+	enum class RegisterType
+	{
+		kRenderTarget,
+		kFrameBuffer,
+		kComputeBuffer,
+		kCount
+	};
 
 	//自身のインスタンス化キー
 	struct InstanceKey;
@@ -49,14 +57,21 @@ public:
 	///+/バッファ生成クラス（本丸）
 	std::unique_ptr<BufferCreator> bufferCreator;
 
+	//バッファのユニークID
+	using BufferUniqueID = uint32_t;
+
+
 private:
 
-	//全バッファのユニークコンテナ
-	std::vector<std::unique_ptr<GPUBufferBehavior>> bufferContainer;
-	//ピンポンバッファのアドレスコンテナ
-	std::vector<GPUBufferBehavior*> pingPongBufferPtrContainer;
-	//１面性バッファのアドレスコンテナ
-	std::vector<GPUBufferBehavior*> frameBufferPtrContainer;
+	//ColorBufferやDepthStencilBufferなどレンダーターゲットなバッファのコンテナ
+	std::vector<std::unique_ptr<GPUBufferBehavior>> renderTargetBufferContainer;
+	//computeBufferのような、コンピュートシェーダをかませるバッファのコンテナ
+	std::vector<std::unique_ptr<GPUBufferBehavior>> computeBufferContainer;
+	//ConstantBufferやUploadStructuredBufferのようなフレームバッファのコンテナ
+	std::vector<std::unique_ptr<GPUBufferBehavior>> frameBufferContainer;
+
+	//ユニークIDがどこのバッファコンテナの何番目のバッファを指しているのか示すマップコンテナ
+	std::unordered_map<BufferContext::BufferUniqueID, std::pair<RegisterType, uint32_t>> bufferLocationMap;
 
 	void InstantiateBufferCreator
 	(

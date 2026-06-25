@@ -5052,8 +5052,10 @@ void BufferContext::InstantiateBufferCreator
 	Logger::Log("Create: ResourceCreator", fileName);
 	std::unique_ptr<BufferAssembler> bufferAssembler(std::make_unique<BufferAssembler>(instanceKey_, std::move(resourceCreator), viewCreator));
 	Logger::Log("Create: bufferAssembler", fileName);
-	std::unique_ptr<BufferCollector> bufferCollector(std::make_unique<BufferCollector>(instanceKey_, &bufferContainer, &pingPongBufferPtrContainer, &frameBufferPtrContainer));
+	std::unique_ptr<BufferCollector> bufferCollector(std::make_unique<BufferCollector>(instanceKey_, &renderTargetBufferContainer, &computeBufferContainer, &frameBufferContainer));
 	Logger::Log("Create: bufferCollector", fileName);
+
+
 
 	bufferCreator.reset(new BufferCreator(std::move(bufferAssembler), std::move(bufferCollector)));
 	Logger::Log("Instantiate: BufferCreator", fileName);
@@ -5097,7 +5099,6 @@ class BufferContext
 
 public:
 
-
 	//自身のインスタンス化キー
 	struct InstanceKey;
 	//ResourceCreatorとViewCreatorでバッファを生成
@@ -5115,14 +5116,25 @@ public:
 	///+/バッファ生成クラス（本丸）
 	std::unique_ptr<BufferCreator> bufferCreator;
 
+	//バッファのユニークID
+	struct BufferUniqueID { uint32_t id{}; };
+	//レンダーターゲットコンテナ上のID
+	struct RenderTargetBufferID { uint32_t id{}; };
+	//コンピュートバッファコンテナ上のID
+	struct ComputeBufferID { uint32_t id{}; };
+	//フレームバッファコンテナ上のID
+	struct FrameBufferID { uint32_t id{}; };
+
 private:
 
-	//全バッファのユニークコンテナ
-	std::vector<std::unique_ptr<GPUBufferBehavior>> bufferContainer;
-	//ピンポンバッファのアドレスコンテナ
-	std::vector<GPUBufferBehavior*> pingPongBufferPtrContainer;
-	//１面性バッファのアドレスコンテナ
-	std::vector<GPUBufferBehavior*> frameBufferPtrContainer;
+	////全バッファのユニークコンテナ
+	//std::unordered_map<BufferUniqueID,std::unique_ptr<GPUBufferBehavior>> bufferContainer;
+	//ColorBufferやDepthStencilBufferなどレンダーターゲットなバッファのコンテナ
+	std::vector<std::unique_ptr<GPUBufferBehavior>> renderTargetBufferContainer;
+	//computeBufferのような、コンピュートシェーダをかませるバッファのコンテナ
+	std::vector<std::unique_ptr<GPUBufferBehavior>> computeBufferContainer;
+	//ConstantBufferやUploadStructuredBufferのようなフレームバッファのコンテナ
+	std::vector<std::unique_ptr<GPUBufferBehavior>> frameBufferContainer;
 
 	void InstantiateBufferCreator
 	(
@@ -5484,6 +5496,7 @@ class ComputeBuffer;
 class UploadStructuredBuffer;
 
 
+
 //バッファとディスクを特定のクラスに限定して組み立てる
 class BufferContext::BufferAssembler
 {
@@ -5714,11 +5727,10 @@ std::unique_ptr<ComputeBuffer> BufferContext::BufferAssembler::AssembleBuffer<Co
 BufferContext::BufferCollector::BufferCollector
 (
 	BufferContext::InstanceKey key_,
-	std::vector<std::unique_ptr<GPUBufferBehavior>>* bufferContainer_,
-	std::vector<GPUBufferBehavior*>* pingPongBufferPtrContainer_,
-	std::vector<GPUBufferBehavior*>* frameBufferPtrContainer_
-)
-	:bufferContainer(bufferContainer_), pingPongBufferPtrContainer(pingPongBufferPtrContainer_), frameBufferPtrContainer(frameBufferPtrContainer_)
+	std::vector<std::unique_ptr<GPUBufferBehavior>>* renderTargetBufferContainer_,
+	std::vector<std::unique_ptr<GPUBufferBehavior>>* computeBufferContainer_,
+	std::vector<std::unique_ptr<GPUBufferBehavior>>* frameBufferContainer_
+):renderTargetBufferContainer(renderTargetBufferContainer_), computeBufferContainer(computeBufferContainer_), frameBufferContainer(frameBufferContainer_)
 {
 
 }
@@ -5738,17 +5750,21 @@ void BufferContext::BufferCollector::Distribute()
 	for (auto itr = tmp_bufferContainer.begin();itr != tmp_bufferContainer.end();++itr)
 	{
 		//分別
-		if ((*itr).first == RegisterType::kFrameBuffer)
+		if ((*itr).type == RegisterType::kFrameBuffer)
 		{
-			frameBufferPtrContainer->emplace_back((*itr).second.get());
+			frameBufferContainer->emplace_back(std::move((*itr).buffer));
+			distributeRecord.sumFrameBuffer++;
+		}
+		else if((*itr).type == RegisterType::kRenderTarget)
+		{
+			renderTargetBufferContainer->emplace_back(std::move((*itr).buffer));
+			distributeRecord.sumRenderTargetBuffer++;
 		}
 		else
 		{
-			pingPongBufferPtrContainer->emplace_back((*itr).second.get());
+			computeBufferContainer->emplace_back(std::move((*itr).buffer));
+			distributeRecord.sumComputeBuffer++;
 		}
-
-		//大本へ渡す
-		bufferContainer->emplace_back(std::move((*itr).second));
 	}
 
 	tmp_bufferContainer.clear();
@@ -5781,8 +5797,9 @@ class BufferContext::BufferCollector
 	//登録先識別用
 	enum class RegisterType
 	{
-		kPingPong,
+		kRenderTarget,
 		kFrameBuffer,
+		kComputeBuffer
 	};
 
 public:
@@ -5790,48 +5807,80 @@ public:
 	BufferCollector
 	(
 		BufferContext::InstanceKey key_,
-		std::vector<std::unique_ptr<GPUBufferBehavior>>* bufferContainer_,
-		std::vector<GPUBufferBehavior*>* pingPongBufferPtrContainer_,
-		std::vector<GPUBufferBehavior*>* frameBufferPtrContainer_
+		std::vector<std::unique_ptr<GPUBufferBehavior>>* renderTargetBufferContainer_,
+		std::vector<std::unique_ptr<GPUBufferBehavior>>* computeBufferContainer_,
+		std::vector<std::unique_ptr<GPUBufferBehavior>>* frameBufferContainer_
 	);
 
 	~BufferCollector();
 	
 	//作成されたバッファを一時保管場所へ移動
 	template<typename BufferType>
-	void Register(std::unique_ptr<BufferType> buffer_)
+	void Register(std::unique_ptr<BufferType> buffer_,BufferContext::BufferUniqueID id_)
 	{
 		auto registerType = Identify<BufferType>();
-		tmp_bufferContainer.emplace_back(registerType, std::move(buffer_));
+
+		TempSaveFormat tmpSaveFormat;
+		tmpSaveFormat.type = registerType;
+		tmpSaveFormat.buffer = std::move(buffer_);
+
+		tmp_bufferContainer.emplace_back(std::move(tmpSaveFormat));
 	}
 
-	//分別先へ分配する
+	//分配先へ分別する
 	void Distribute();
 
 private:
 
-	//一時保管用
-	std::vector<std::pair<RegisterType,std::unique_ptr<GPUBufferBehavior>>> tmp_bufferContainer;
+	struct TempSaveFormat
+	{
+		RegisterType type;
+		std::unique_ptr<GPUBufferBehavior> buffer;
+	};
 
+	//分配数記録
+	struct DistributionRecord
+	{
+		uint32_t sumRenderTargetBuffer{};
+		uint32_t sumComputeBuffer{};
+		uint32_t sumFrameBuffer{};
+	};
+
+
+	DistributionRecord distributeRecord;
+
+	//一時保管用
+	std::vector<TempSaveFormat> tmp_bufferContainer;
 	//分別先
-	std::vector<std::unique_ptr<GPUBufferBehavior>>* bufferContainer;
-	std::vector<GPUBufferBehavior*>* pingPongBufferPtrContainer;
-	std::vector<GPUBufferBehavior*>* frameBufferPtrContainer;
+	std::vector<std::unique_ptr<GPUBufferBehavior>>* renderTargetBufferContainer;
+	std::vector<std::unique_ptr<GPUBufferBehavior>>* computeBufferContainer;
+	std::vector<std::unique_ptr<GPUBufferBehavior>>* frameBufferContainer;
+
+
 
 	//バッファのデータ型に応じて登録先識別用のタイプを返す
 	template<typename BufferType>
 	RegisterType Identify()
 	{
-		RegisterType type = RegisterType::kPingPong;
+		RegisterType type = RegisterType::kComputeBuffer;
 
 		if constexpr 
 		(
-			std::is_same_v<BufferType, UploadStructuredBuffer> ||
+			std::is_same_v<BufferType, UploadStructuredBuffer>  ||
 			std::is_same_v<BufferType, ConstantBuffer>
 		)
 		{
 			type = RegisterType::kFrameBuffer;
 		}
+		else if constexpr
+		(
+			std::is_same_v<BufferType, ColorBuffer>				||
+			std::is_same_v<BufferType, DepthStencilBuffer>		
+		)
+		{
+			type = RegisterType::kRenderTarget;
+		}
+
 		return type;
 	}
 };
@@ -5873,7 +5922,6 @@ BufferContext::BufferCreator::~BufferCreator()
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Resource\Buffer\BufferCreator\BufferCreator.h ===
 ========================================
 #pragma once
-
 #include "../BufferCollector/BufferCollector.h"
 #include "../BufferAssembler/BufferAssembler.h"
 
@@ -5891,21 +5939,27 @@ public:
 
 	//生成したバッファの管理を請け負います
 	template<typename BufferType, typename DescType>
-	void Create(const DescType& desc_, const std::string& name_)
+	[[nodiscard]] BufferContext::BufferUniqueID Create(const DescType& desc_, const std::string& name_)
 	{
 		std::unique_ptr<BufferType> buffer = assembler->Assemble<BufferType>(desc_, name_);
 
 		collector->Register(std::move(buffer));
+
+		//バッファユニークIDを返す
+		return BufferContext::BufferUniqueID(generateBufferSum++);
 	}
 
-	//生成したバッファの管理はしません
+	//生成したバッファの管理はしません。あとは任せました状態
 	template<typename BufferType, typename DescType>
-	std::unique_ptr<BufferType> CreateBeyondMyJurisdiction(const DescType& desc_, const std::string& name_)
+	[[nodiscard]] std::unique_ptr<BufferType> CreateBeyondMyJurisdiction(const DescType& desc_, const std::string& name_)
 	{
 		return assembler->Assemble<BufferType>(desc_, name_);
 	}
 
 private:
+
+	//バッファを生成した合計数。ユニークIDとして使用する
+	uint32_t generateBufferSum{};
 	std::unique_ptr<BufferContext::BufferAssembler> assembler;
 	std::unique_ptr<BufferContext::BufferCollector> collector;
 };
@@ -6033,13 +6087,13 @@ struct IDSV_Assembler
 
 ColorBufferDescription::ColorBufferDescription
 (
-	float clearColors_[4],
+	std::array<float, 4> clearColor_,
 	UINT width_,
 	UINT height_,
 	DXGI_FORMAT format_
 ) : BufferDescriptionBehavior({ D3D12_RESOURCE_STATE_RENDER_TARGET,D3D12_RESOURCE_STATE_RENDER_TARGET })
 {
-	for (int i = 0;i < 4;++i) param.clearColor[i] = clearColors_[i];
+	param.clearColor = clearColor_;
 	param.width = width_;
 	param.height = height_;
 	param.format = format_;
@@ -6145,7 +6199,7 @@ private:
 
 	struct Param
 	{
-		float clearColor[4] = { 9,9,9,9 };
+		std::array<float, 4> clearColor = { 9,9,9,9 };
 		UINT width{};
 		UINT height{};
 		DXGI_FORMAT format = DXGI_FORMAT_Error_Detection;
@@ -6156,7 +6210,7 @@ public:
 
 	ColorBufferDescription
 	(
-		float clearColors_[4],
+		std::array<float, 4> clearColor_,
 		UINT width_,
 		UINT height_,
 		DXGI_FORMAT format_
@@ -6786,6 +6840,103 @@ class FrameBufferedResourceController
 
 
 ========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Resource\Buffer\GPUBuffer\BufferInterface.cpp ===
+========================================
+#include "BufferInterface.h"
+
+
+std::pair<D3D12_VIEWPORT, D3D12_RECT> IColorBuffer::OutMatrix()const
+{
+	return { viewport ,scissorRect };
+}
+
+void IColorBuffer::AssembleMatrix(UINT width_, UINT height_)
+{
+	//クライアント領域と一緒のサイズにして画面全体に表示
+	viewport.Width = static_cast<FLOAT>(width_);
+	viewport.Height = static_cast<FLOAT>(height_);
+	viewport.TopLeftX = 0.0f;
+	viewport.TopLeftY = 0.0f;
+	viewport.MinDepth = 0.0f;
+	viewport.MaxDepth = 1.0f;
+
+	//シザー矩形
+	scissorRect.right = static_cast<LONG>(width_);
+	scissorRect.bottom = static_cast<LONG>(height_);
+	scissorRect.left = static_cast<LONG>(0.0f);
+	scissorRect.top = static_cast<LONG>(0.0f);
+
+	Logger::Log("Structure:  Matrix", "BufferInterface.cpp");
+}
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Resource\Buffer\GPUBuffer\BufferInterface.h ===
+========================================
+#pragma once
+#include "GPUBufferBehavior.h"
+
+//ピンポンバッファ専用
+struct IRWBuffer
+{
+	virtual ~IRWBuffer() = default;
+
+	//各バッファが自身のバリアを適切に張るためのバリアを生成仮想関数
+	virtual std::array<D3D12_RESOURCE_BARRIER, ProjectConfig::Render::kRequiredGPUBufferSum>
+		CreateNextStepBarriers(GPUBufferBehavior::ExtractMaterialKey key_) = 0;
+	//内部の役割をスワップさせる
+	virtual void Swap() = 0;
+};
+
+//読み込みバッファのインターフェース
+struct IShaderBuffer
+{
+	virtual ~IShaderBuffer() = default;
+
+	//ダブルバッファのうち適切な方のバッファからインデックスを出す
+	virtual uint32_t OutProperSRV_UAVHeapIndex()const = 0;
+	//適切な方のバッファからFormat出す(テクスチャとして利用する場合)
+	virtual DXGI_FORMAT OutProperSRVFormat()const = 0;
+
+};
+
+//カラーバッファやディプスバッファなどのテクスチャに対して書き込みを行うもの
+struct IRenderTargetBuffer
+{
+	virtual ~IRenderTargetBuffer() = default;
+	//ダブルバッファのうち適切な方のバッファからCPUインデックスを出す
+	virtual D3D12_CPU_DESCRIPTOR_HANDLE OutProperCPUHandle()const = 0;
+	//適切な方のバッファからFormat出す
+	virtual DXGI_FORMAT OutProperRenderTargetFormat()const = 0;
+	//適切な方のバッファからClearColor出す
+	virtual std::array<float, 4> OutProperClearColor()const = 0;
+};
+
+
+//ほぼカラーバッファ専用インターフェース
+struct IColorBuffer
+{
+	virtual ~IColorBuffer() = default;
+	//描画パイプラインに必要な行列を出す
+	std::pair<D3D12_VIEWPORT, D3D12_RECT> OutMatrix()const;
+	//行列を組み立てる
+	void AssembleMatrix(UINT width_, UINT height_);
+
+protected:
+
+	//ビューポート行列
+	D3D12_VIEWPORT viewport;
+	//シザーレクト行列
+	D3D12_RECT scissorRect;
+
+};
+
+
+
+
+========================================
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Resource\Buffer\GPUBuffer\GPUBufferBehavior.cpp ===
 ========================================
 #include "PreCompileHeader.h"
@@ -6973,14 +7124,6 @@ protected:
 };
 
 
-//ピンポンバッファ専用
-struct IRWBuffer
-{
-	//各バッファが自身のバリアを適切に張るためのバリアを生成仮想関数
-	virtual std::array<D3D12_RESOURCE_BARRIER, ProjectConfig::Render::kRequiredGPUBufferSum>
-		CreateNextStepBarriers(GPUBufferBehavior::ExtractMaterialKey key_) = 0;
-};
-
 
 //生成できるのはBufferAssemblerのみ
 struct GPUBufferBehavior::InstanceKey
@@ -7021,7 +7164,6 @@ private:
 #include "ColorBuffer.h"
 #include "../../BufferDescriptions/ColorBufferDescription/ColorBufferDescription.h"
 
-
 namespace
 {
 	auto fileName = "ColorBuffer.cpp";
@@ -7036,7 +7178,8 @@ ColorBuffer::ColorBuffer
 	std::unique_ptr <BufferDescriptionBehavior>&& description_
 ) : GPUBufferBehavior(instanceKey_, name_, std::move(resource1_), std::move(resource2_), std::move(description_))
 {
-	AssembleMatrix();
+	const auto& param = static_cast<ColorBufferDescription&>(*description.get()).WatchParam();
+	AssembleMatrix(param.width, param.height);
 }
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -7044,39 +7187,71 @@ ColorBuffer::ColorBuffer
 std::array<D3D12_RESOURCE_BARRIER, ProjectConfig::Render::kRequiredGPUBufferSum>
 ColorBuffer::CreateNextStepBarriers(ExtractMaterialKey key_)
 {
-	return { D3D12_RESOURCE_BARRIER{}, D3D12_RESOURCE_BARRIER{} };
+	std::array<D3D12_RESOURCE_BARRIER, ProjectConfig::Render::kRequiredGPUBufferSum> barriers;
+	
+	//次はSRV_RTVになる
+	if (status == kRTV_SRV)
+	{
+		barriers =
+		{
+			buffers.at(0).CreateBarrier(D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE),
+			buffers.at(1).CreateBarrier(D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_RENDER_TARGET)
+		};
+	}
+	else
+	{
+		barriers =
+		{
+			buffers.at(0).CreateBarrier(D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_RENDER_TARGET),
+			buffers.at(1).CreateBarrier(D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE)
+		};
+	}
+
+	return barriers;
 }
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-const ColorBufferDescription& ColorBuffer::WatchDescription() 
+D3D12_CPU_DESCRIPTOR_HANDLE ColorBuffer::OutProperCPUHandle()const	
 {
-	return static_cast<ColorBufferDescription&>(*description.get());
+	D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle;
+
+	//1枚目が書き込み用であれば
+	if (status == kRTV_SRV) cpuHandle = WatchIndex<ViewType::kRTV,D3D12_CPU_DESCRIPTOR_HANDLE >(0);
+	else cpuHandle = WatchIndex<ViewType::kRTV, D3D12_CPU_DESCRIPTOR_HANDLE >(1);
+
+	return cpuHandle;
 }
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-void ColorBuffer::AssembleMatrix()
+
+//SRV,RTVともにフォーマットは共通
+DXGI_FORMAT ColorBuffer::OutProperRenderTargetFormat()const
 {
-	const auto& param = static_cast<ColorBufferDescription&>(*description.get()).WatchParam();
-
-	//クライアント領域と一緒のサイズにして画面全体に表示
-	viewport.Width = static_cast<FLOAT>(param.width);
-	viewport.Height = static_cast<FLOAT>(param.height);
-	viewport.TopLeftX = 0.0f;
-	viewport.TopLeftY = 0.0f;
-	viewport.MinDepth = 0.0f;
-	viewport.MaxDepth = 1.0f;
-
-	//しざー矩形
-	scissorRect.right = static_cast<LONG>(param.width);
-	scissorRect.bottom = static_cast<LONG>(param.height);
-	scissorRect.left = static_cast<LONG>(0.0f);
-	scissorRect.top = static_cast<LONG>(0.0f);
-
-	Logger::Log("Structure:  Matrix", fileName);
+	return static_cast<ColorBufferDescription*>(description.get())->WatchParam().format;
 }
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//ClearColor
+std::array<float, 4> ColorBuffer::OutProperClearColor()const
+{
+	return static_cast<ColorBufferDescription*>(description.get())->WatchParam().clearColor;
+}
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+void ColorBuffer::Swap()
+{
+	static Status nextTable[2]
+	{
+		kSRV_RTV,
+		kRTV_SRV
+	};
 
+	status = nextTable[status];
+}
 
 
 
@@ -7084,13 +7259,19 @@ void ColorBuffer::AssembleMatrix()
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Resource\Buffer\GPUBuffer\ColorBuffer\ColorBuffer.h ===
 ========================================
 #pragma once
-#include "../GPUBufferBehavior.h"
+#include "../BufferInterface.h"
 
 struct ColorBufferDescription;
 
 //カラーバッファクラス
-class ColorBuffer final : public GPUBufferBehavior,IRWBuffer
+class ColorBuffer final : public GPUBufferBehavior,IRWBuffer,IColorBuffer, IRenderTargetBuffer
 {
+	enum Status
+	{
+		kRTV_SRV,
+		kSRV_RTV
+	};
+
 public:
 
 	ColorBuffer
@@ -7102,26 +7283,23 @@ public:
 		std::unique_ptr <BufferDescriptionBehavior>&& description_
 	);
 
-
-	//テンプレ化予定
-	///+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/++/+
-	///+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/++/+
-	//リソースのディスクリプションを見る
-	const ColorBufferDescription& WatchDescription();
-	///+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/++/+
-	///+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/++/+
-
+	//ダブルバッファのうち適切な方のバッファからCPUインデックスを出す
+	virtual D3D12_CPU_DESCRIPTOR_HANDLE OutProperCPUHandle()const override;
+	//適切な方のバッファからテクスチャのFormat出す。まあ今ケースの場合はFormatは共通なんだけども
+	virtual DXGI_FORMAT OutProperRenderTargetFormat()const override;
+	//適切な方のバッファからClearColor出す
+	virtual std::array<float, 4> OutProperClearColor()const override;
+	//自身のステートに応じて、それぞれのバッファのバリアを生成する
 	virtual std::array<D3D12_RESOURCE_BARRIER, ProjectConfig::Render::kRequiredGPUBufferSum>
 		CreateNextStepBarriers(ExtractMaterialKey key_)override;
 
+	//役割を入れ替える
+	virtual void Swap()override;
+
 private:
 
-	//行列
-	D3D12_VIEWPORT viewport;
-	D3D12_RECT scissorRect;
+	Status status = kRTV_SRV;
 
-	//viewportとscissorRectをセット
-	void AssembleMatrix();
 };
 
 
@@ -7171,8 +7349,6 @@ ComputeBuffer::CreateNextStepBarriers(ExtractMaterialKey key_)
 		barriers.at(1) = buffers[1].CreateBarrier(D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE | D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
 	}
 
-	Swap();
-
 	return barriers;
 }
 
@@ -7199,8 +7375,13 @@ uint32_t ComputeBuffer::CurrentUAVHeapIndex()
 
 void ComputeBuffer::Swap()
 {
-	if (status == kUAV_SRV) status = kSRV_UAV;
-	else status = kUAV_SRV;
+	static Status nextTable[2]
+	{
+		kUAV_SRV,
+		kSRV_UAV
+	};
+
+	status = nextTable[status];
 }
 
 
@@ -7210,7 +7391,7 @@ void ComputeBuffer::Swap()
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Resource\Buffer\GPUBuffer\ComputeBuffer\ComputeBuffer.h ===
 ========================================
 #pragma once
-#include "../GPUBufferBehavior.h"
+#include "../BufferInterface.h"
 
 
 //読み書き
@@ -7243,12 +7424,13 @@ public:
 	///+/////////////////////////////////////////////////////////////
 
 	virtual std::array<D3D12_RESOURCE_BARRIER, ProjectConfig::Render::kRequiredGPUBufferSum>
-		CreateNextStepBarriers(ExtractMaterialKey key_)override;
+		CreateNextStepBarriers(ExtractMaterialKey key_) override;
+
+	virtual void Swap()override;
 
 private:
 
 	Status status = kSRV_UAV;
-	void Swap();
 
 };
 
@@ -7287,7 +7469,7 @@ ConstantBuffer::ConstantBuffer
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Resource\Buffer\GPUBuffer\ConstantBuffer\ConstantBuffer.h ===
 ========================================
 #pragma once
-#include "../GPUBufferBehavior.h"
+#include "../BufferInterface.h"
 
 
 
@@ -7345,6 +7527,17 @@ DepthStencilBuffer::CreateNextStepBarriers(ExtractMaterialKey key_)
 	return { D3D12_RESOURCE_BARRIER{}, D3D12_RESOURCE_BARRIER{} };
 }
 
+void DepthStencilBuffer::Swap()
+{
+	static Status nextTable[2]
+	{
+		kSRV_DSV,
+		kDSV_SRV
+	};
+
+	status = nextTable[status];
+}
+
 
 
 
@@ -7352,12 +7545,18 @@ DepthStencilBuffer::CreateNextStepBarriers(ExtractMaterialKey key_)
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Resource\Buffer\GPUBuffer\DepthStencilBuffer\DepthStencilBuffer.h ===
 ========================================
 #pragma once
-#include "../GPUBufferBehavior.h"
+#include "../BufferInterface.h"
 
 
 //定数バッファクラス
 class DepthStencilBuffer final : public GPUBufferBehavior, IRWBuffer
 {
+	enum Status
+	{
+		kDSV_SRV,
+		kSRV_DSV
+	};
+
 public:
 
 	DepthStencilBuffer
@@ -7378,6 +7577,12 @@ public:
 
 	virtual std::array<D3D12_RESOURCE_BARRIER, ProjectConfig::Render::kRequiredGPUBufferSum>
 		CreateNextStepBarriers(ExtractMaterialKey key_)override;
+
+	virtual void Swap()override;
+
+
+private:
+	Status status = kDSV_SRV;
 };
 
 
@@ -7415,7 +7620,7 @@ UploadStructuredBuffer::UploadStructuredBuffer
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Resource\Buffer\GPUBuffer\UploadStructuredBuffer\UploadStructuredBuffer.h ===
 ========================================
 #pragma once 
-#include "../GPUBufferBehavior.h"
+#include "../BufferInterface.h"
 
 struct UploadStructuredBufferDescription;
 

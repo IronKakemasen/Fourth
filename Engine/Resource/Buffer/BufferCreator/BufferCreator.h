@@ -1,5 +1,4 @@
 #pragma once
-
 #include "../BufferCollector/BufferCollector.h"
 #include "../BufferAssembler/BufferAssembler.h"
 
@@ -17,21 +16,27 @@ public:
 
 	//生成したバッファの管理を請け負います
 	template<typename BufferType, typename DescType>
-	void Create(const DescType& desc_, const std::string& name_)
+	[[nodiscard]] BufferContext::BufferUniqueID Create(const DescType& desc_, const std::string& name_)
 	{
 		std::unique_ptr<BufferType> buffer = assembler->Assemble<BufferType>(desc_, name_);
 
 		collector->Register(std::move(buffer));
+
+		//バッファユニークIDを返す
+		return BufferContext::BufferUniqueID(generateBufferSum++);
 	}
 
-	//生成したバッファの管理はしません
+	//生成したバッファの管理はしません。あとは任せました状態
 	template<typename BufferType, typename DescType>
-	std::unique_ptr<BufferType> CreateBeyondMyJurisdiction(const DescType& desc_, const std::string& name_)
+	[[nodiscard]] std::unique_ptr<BufferType> CreateBeyondMyJurisdiction(const DescType& desc_, const std::string& name_)
 	{
 		return assembler->Assemble<BufferType>(desc_, name_);
 	}
 
 private:
+
+	//バッファを生成した合計数。ユニークIDとして使用する
+	uint32_t generateBufferSum{};
 	std::unique_ptr<BufferContext::BufferAssembler> assembler;
 	std::unique_ptr<BufferContext::BufferCollector> collector;
 };

@@ -53,7 +53,18 @@ void BufferContext::InstantiateBufferCreator
 	Logger::Log("Create: ResourceCreator", fileName);
 	std::unique_ptr<BufferAssembler> bufferAssembler(std::make_unique<BufferAssembler>(instanceKey_, std::move(resourceCreator), viewCreator));
 	Logger::Log("Create: bufferAssembler", fileName);
-	std::unique_ptr<BufferCollector> bufferCollector(std::make_unique<BufferCollector>(instanceKey_, &bufferContainer, &pingPongBufferPtrContainer, &frameBufferPtrContainer));
+	std::unique_ptr<BufferCollector> bufferCollector
+	(
+		std::make_unique<BufferCollector>
+		(
+			instanceKey_, 
+			&renderTargetBufferContainer, 
+			&computeBufferContainer,
+			&frameBufferContainer,
+			&bufferLocationMap
+		)
+	);
+
 	Logger::Log("Create: bufferCollector", fileName);
 
 	bufferCreator.reset(new BufferCreator(std::move(bufferAssembler), std::move(bufferCollector)));

@@ -22,6 +22,7 @@ class ComputeBuffer;
 class UploadStructuredBuffer;
 
 
+
 //バッファとディスクを特定のクラスに限定して組み立てる
 class BufferContext::BufferAssembler
 {

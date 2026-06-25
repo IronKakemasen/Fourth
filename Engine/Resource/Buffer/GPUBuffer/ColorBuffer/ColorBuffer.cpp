@@ -16,7 +16,6 @@ ColorBuffer::ColorBuffer
 	std::unique_ptr <BufferDescriptionBehavior>&& description_
 ) : GPUBufferBehavior(instanceKey_, name_, std::move(resource1_), std::move(resource2_), std::move(description_))
 {
-
 	const auto& param = static_cast<ColorBufferDescription&>(*description.get()).WatchParam();
 	AssembleMatrix(param.width, param.height);
 }
@@ -26,15 +25,58 @@ ColorBuffer::ColorBuffer
 std::array<D3D12_RESOURCE_BARRIER, ProjectConfig::Render::kRequiredGPUBufferSum>
 ColorBuffer::CreateNextStepBarriers(ExtractMaterialKey key_)
 {
-	return { D3D12_RESOURCE_BARRIER{}, D3D12_RESOURCE_BARRIER{} };
+	std::array<D3D12_RESOURCE_BARRIER, ProjectConfig::Render::kRequiredGPUBufferSum> barriers;
+	
+	//次はSRV_RTVになる
+	if (status == kRTV_SRV)
+	{
+		barriers =
+		{
+			buffers.at(0).CreateBarrier(D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE),
+			buffers.at(1).CreateBarrier(D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_RENDER_TARGET)
+		};
+	}
+	else
+	{
+		barriers =
+		{
+			buffers.at(0).CreateBarrier(D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_RENDER_TARGET),
+			buffers.at(1).CreateBarrier(D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE)
+		};
+	}
+
+	return barriers;
 }
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//const ColorBufferDescription& ColorBuffer::WatchDescription() 
-//{
-//	return static_cast<ColorBufferDescription&>(*description.get());
-//}
+D3D12_CPU_DESCRIPTOR_HANDLE ColorBuffer::OutProperCPUHandle()const	
+{
+	D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle;
+
+	//1枚目が書き込み用であれば
+	if (status == kRTV_SRV) cpuHandle = WatchIndex<ViewType::kRTV,D3D12_CPU_DESCRIPTOR_HANDLE >(0);
+	else cpuHandle = WatchIndex<ViewType::kRTV, D3D12_CPU_DESCRIPTOR_HANDLE >(1);
+
+	return cpuHandle;
+}
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+//SRV,RTVともにフォーマットは共通
+DXGI_FORMAT ColorBuffer::OutProperRenderTargetFormat()const
+{
+	return static_cast<ColorBufferDescription*>(description.get())->WatchParam().format;
+}
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//ClearColor
+std::array<float, 4> ColorBuffer::OutProperClearColor()const
+{
+	return static_cast<ColorBufferDescription*>(description.get())->WatchParam().clearColor;
+}
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
