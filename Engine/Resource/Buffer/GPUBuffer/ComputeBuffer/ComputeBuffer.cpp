@@ -36,8 +36,6 @@ ComputeBuffer::CreateNextStepBarriers(ExtractMaterialKey key_)
 		barriers.at(1) = buffers[1].CreateBarrier(D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE | D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
 	}
 
-	Swap();
-
 	return barriers;
 }
 

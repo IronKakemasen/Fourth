@@ -3,13 +3,13 @@
 
 ColorBufferDescription::ColorBufferDescription
 (
-	float clearColors_[4],
+	std::array<float, 4> clearColor_,
 	UINT width_,
 	UINT height_,
 	DXGI_FORMAT format_
 ) : BufferDescriptionBehavior({ D3D12_RESOURCE_STATE_RENDER_TARGET,D3D12_RESOURCE_STATE_RENDER_TARGET })
 {
-	for (int i = 0;i < 4;++i) param.clearColor[i] = clearColors_[i];
+	param.clearColor = clearColor_;
 	param.width = width_;
 	param.height = height_;
 	param.format = format_;
