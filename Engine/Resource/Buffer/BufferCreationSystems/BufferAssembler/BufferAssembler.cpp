@@ -2,21 +2,21 @@
 #include "BufferAssembler.h"
 
 //バッファ
-#include "../GPUBuffer/ColorBuffer/ColorBuffer.h"
-#include "../GPUBuffer/ConstantBuffer/ConstantBuffer.h"
-#include "../GPUBuffer/DepthStencilBuffer/DepthStencilBuffer.h"
-#include "../GPUBuffer/ComputeBuffer/ComputeBuffer.h"
-#include "../GPUBuffer/UploadStructuredBuffer/UploadStructuredBuffer.h"
+#include "../../BufferDefinition/GPUBuffer/ColorBuffer/ColorBuffer.h"
+#include "../../BufferDefinition/GPUBuffer/ConstantBuffer/ConstantBuffer.h"
+#include "../../BufferDefinition/GPUBuffer/DepthStencilBuffer/DepthStencilBuffer.h"
+#include "../../BufferDefinition/GPUBuffer/ComputeBuffer/ComputeBuffer.h"
+#include "../../BufferDefinition/GPUBuffer/UploadStructuredBuffer/UploadStructuredBuffer.h"
 
 //ディスクリプション
-#include "../BufferDescriptions/ColorBufferDescription/ColorBufferDescription.h"
-#include "../BufferDescriptions/ConstantBufferDescription/ConstantBufferDescription.h"
-#include "../BufferDescriptions/DepthStencilBufferDescription/DepthStencilBufferDescription.h"
-#include "../BufferDescriptions/ComputeBufferDescription/ComputeBufferDescription.h"
-#include "../BufferDescriptions/UploadStructuredBufferDescription/UploadStructuredBufferDescription.h"
+#include "../../BufferDefinition/BufferDescriptions/ColorBufferDescription/ColorBufferDescription.h"
+#include "../../BufferDefinition/BufferDescriptions/ConstantBufferDescription/ConstantBufferDescription.h"
+#include "../../BufferDefinition/BufferDescriptions/DepthStencilBufferDescription/DepthStencilBufferDescription.h"
+#include "../../BufferDefinition/BufferDescriptions/ComputeBufferDescription/ComputeBufferDescription.h"
+#include "../../BufferDefinition/BufferDescriptions/UploadStructuredBufferDescription/UploadStructuredBufferDescription.h"
 
 //ツール
-#include "../../../Core/DescriptorHeap/ViewCreator/ViewCreator.h"
+#include "../../../../Core/DescriptorHeap/ViewCreator/ViewCreator.h"
 
 
 
