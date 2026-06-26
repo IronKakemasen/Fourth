@@ -16,8 +16,7 @@ ColorBuffer::ColorBuffer
 	std::unique_ptr <BufferDescriptionBehavior>&& description_
 ) : GPUBufferBehavior(instanceKey_, name_, std::move(resource1_), std::move(resource2_), std::move(description_))
 {
-	const auto& param = static_cast<ColorBufferDescription&>(*description.get()).WatchParam();
-	AssembleMatrix(param.width, param.height);
+
 }
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -89,4 +88,11 @@ void ColorBuffer::Swap()
 	};
 
 	status = nextTable[status];
+}
+
+std::pair<uint32_t, uint32_t> ColorBuffer::OutWidthAndHeight()const
+{
+	const auto& param = static_cast<ColorBufferDescription&>(*description.get()).WatchParam();
+
+	return { param.width,param.height };
 }

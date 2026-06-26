@@ -27,11 +27,13 @@ public:
 	virtual D3D12_CPU_DESCRIPTOR_HANDLE OutProperCPUHandle()const override;
 	//適切な方のバッファからテクスチャのFormat出す。まあ今ケースの場合はFormatは共通なんだけども
 	virtual DXGI_FORMAT OutProperRenderTargetFormat()const override;
-	//適切な方のバッファからClearColor出す
+	//ClearColor出す
 	virtual std::array<float, 4> OutProperClearColor()const override;
 	//自身のステートに応じて、それぞれのバッファのバリアを生成する
 	virtual std::array<D3D12_RESOURCE_BARRIER, ProjectConfig::Render::kRequiredGPUBufferSum>
 		CreateNextStepBarriers(ExtractMaterialKey key_)override;
+	//立幅横幅を出力
+	virtual std::pair<uint32_t, uint32_t> OutWidthAndHeight()const override;
 
 	//役割を入れ替える
 	virtual void Swap()override;

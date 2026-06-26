@@ -1,5 +1,5 @@
 	#pragma once
-	#include "../Matrix/Matrix4.h"
+	#include "../Matrix/Matrix4x4.h"
 
 
 	struct Quaternion
@@ -13,11 +13,11 @@
 
 		inline Quaternion(float x_, float y_, float z_, float w_) : data(x_, y_, z_, w_) {};
 
-		inline Matrix4 GetRotateMatrix() const
+		inline Matrix4x4 GetRotateMatrix() const
 		{
 			DirectX::XMVECTOR q = DirectX::XMLoadFloat4(&data);
 
-			Matrix4 result;
+			Matrix4x4 result;
 
 			DirectX::XMStoreFloat4x4(&result.data, DirectX::XMMatrixRotationQuaternion(q));
 			return result;

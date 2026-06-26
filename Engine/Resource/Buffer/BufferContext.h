@@ -16,10 +16,6 @@ class BufferContext
 	class FrameBufferedBufferInfoExtractor;
 	//コンピュートバッファ系のパス構築に必要な情報の抽出とそのリソースのSwapを行う
 	class ComputeBufferInfoExtractor;
-
-
-
-
 	//生リソース生成
 	class ResourceCreator;
 	//BufferAssemblerとBufferCollectorをつかってバッファを作成する
@@ -37,6 +33,14 @@ class BufferContext
 
 public:
 
+	//バッファのユニークID
+	using BufferUniqueID = uint32_t;
+
+	//自身のインスタンス化キー
+	struct InstanceKey;
+	//ResourceCreatorとViewCreatorでバッファを生成
+	class BufferAssembler;
+
 	//登録先識別用
 	enum class RegisterType
 	{
@@ -45,11 +49,6 @@ public:
 		kComputeBuffer,
 		kCount
 	};
-
-	//自身のインスタンス化キー
-	struct InstanceKey;
-	//ResourceCreatorとViewCreatorでバッファを生成
-	class BufferAssembler;
 
 	BufferContext
 	(
@@ -62,10 +61,6 @@ public:
 
 	///+/バッファ生成クラス（本丸）
 	std::unique_ptr<BufferCreator> bufferCreator;
-
-	//バッファのユニークID
-	using BufferUniqueID = uint32_t;
-
 
 private:
 
