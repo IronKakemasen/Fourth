@@ -8,8 +8,9 @@ DepthStencilBufferDescription::DepthStencilBufferDescription
 	UINT height_,
 	FLOAT clearColor_,
 	DXGI_FORMAT dsvFormat_,
-	DXGI_FORMAT srvFormat_
-):BufferDescriptionBehavior({ D3D12_RESOURCE_STATE_DEPTH_WRITE ,D3D12_RESOURCE_STATE_DEPTH_WRITE })
+	DXGI_FORMAT srvFormat_,
+	ProjectConfig::Render::NumBuffer numBuffer_
+):BufferDescriptionBehavior(D3D12_RESOURCE_STATE_DEPTH_WRITE, numBuffer_)
 {
 	param.width = width_;
 	param.height = height_;

@@ -15,19 +15,19 @@ GPUBufferBehavior::GPUBufferBehavior
 (
 	const InstanceKey& instanceKey_,
 	std::string name_,
-	Microsoft::WRL::ComPtr<ID3D12Resource> resource1_,
-	Microsoft::WRL::ComPtr<ID3D12Resource> resource2_,
+	std::vector<Microsoft::WRL::ComPtr<ID3D12Resource>> resourceContainer_,
 	std::unique_ptr <BufferDescriptionBehavior>&& description_
 ) : name(name_), description(std::move(description_))
 {
-	buffers.at(0).resource = std::move(resource1_);
-	buffers.at(1).resource = std::move(resource2_);
+	size_t const bufferSize = resourceContainer_.size();
 
-	for (size_t i = 0; i < buffers.size(); ++i)
+	buffers.resize(bufferSize);
+
+	for (size_t i = 0;i < bufferSize;++i)
 	{
-		buffers.at(i).curResourceState = description->initialStates.at(i);
+		buffers[i].resource = std::move(resourceContainer_[i]);
+		buffers.at(i).curResourceState = description->initialState;
 	}
-
 }
 GPUBufferBehavior::~GPUBufferBehavior()
 {

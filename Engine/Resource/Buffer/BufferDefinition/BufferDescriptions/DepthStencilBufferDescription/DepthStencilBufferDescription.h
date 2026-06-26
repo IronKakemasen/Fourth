@@ -28,7 +28,8 @@ public:
 		UINT height_,
 		FLOAT clearColor_,
 		DXGI_FORMAT dsvFormat_,
-		DXGI_FORMAT srvFormat_
+		DXGI_FORMAT srvFormat_,
+		ProjectConfig::Render::NumBuffer numBuffer_ = ProjectConfig::Render::NumBuffer::kSingleBuffer
 	);
 
 	//要項チェック

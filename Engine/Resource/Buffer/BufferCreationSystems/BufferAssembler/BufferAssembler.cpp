@@ -57,14 +57,14 @@ std::optional<D3D12_CLEAR_VALUE> BufferContext::BufferAssembler::GetClearValue(c
 
 template<>
 std::unique_ptr<ColorBuffer> BufferContext::BufferAssembler::AssembleBuffer<ColorBuffer, ColorBufferDescription>
-(DoubleResource doubleResource_, const ColorBufferDescription& desc_, std::string nameCnv_)
+(ResourceContainer resourceContainer_, const ColorBufferDescription& desc_, std::string nameCnv_)
 {
 	//バッファ生成
 	return std::make_unique<ColorBuffer>
 	(
 	    ColorBuffer::InstanceKey{},
 	    nameCnv_,
-	    std::move(doubleResource_.first), std::move(doubleResource_.second),
+	    std::move(resourceContainer_),
 	    std::make_unique<ColorBufferDescription>(desc_)
 	);
 }
@@ -76,7 +76,7 @@ void BufferContext::BufferAssembler::AssembleView<ColorBuffer, ColorBufferDescri
 	auto srvDesc = desc_.CreateSRV_Desc();
 	auto rtvDesc = desc_.CreateRTV_Desc();
 
-	for (int i = 0;i < ProjectConfig::Render::kRequiredGPUBufferSum;++i)
+	for (int i = 0;i < desc_.numBuffer;++i)
 	{
 		//srv作成
 		CreateView(buffer_, srvDesc, i, accessKey_, instanceKey_);
@@ -96,14 +96,14 @@ std::optional<D3D12_CLEAR_VALUE> BufferContext::BufferAssembler::GetClearValue(c
 
 template<>
 std::unique_ptr<DepthStencilBuffer> BufferContext::BufferAssembler::AssembleBuffer<DepthStencilBuffer, DepthStencilBufferDescription>
-(DoubleResource doubleResource_, const DepthStencilBufferDescription& desc_, std::string nameCnv_)
+(ResourceContainer resourceContainer_, const DepthStencilBufferDescription& desc_, std::string nameCnv_)
 {
 	//バッファ生成
 	return std::make_unique<DepthStencilBuffer>
 	(
 		DepthStencilBuffer::InstanceKey{},
 		nameCnv_,
-		std::move(doubleResource_.first), std::move(doubleResource_.second),
+		std::move(resourceContainer_),
 		std::make_unique<DepthStencilBufferDescription>(desc_)
 	);
 }
@@ -115,7 +115,7 @@ void BufferContext::BufferAssembler::AssembleView<DepthStencilBuffer, DepthStenc
 	auto srvDesc = desc_.CreateSRV_Desc();
 	auto dsvDesc = desc_.CreateDSVDesc();
 
-	for (int i = 0;i < ProjectConfig::Render::kRequiredGPUBufferSum;++i)
+	for (int i = 0;i < desc_.numBuffer;++i)
 	{
 		//srv作成
 		CreateView(buffer_, srvDesc, i, accessKey_, instanceKey_);
@@ -134,14 +134,14 @@ std::optional<D3D12_CLEAR_VALUE> BufferContext::BufferAssembler::GetClearValue(c
 	
 template<>
 std::unique_ptr<ConstantBuffer> BufferContext::BufferAssembler::AssembleBuffer<ConstantBuffer, ConstantBufferDescription>
-(DoubleResource doubleResource_, const ConstantBufferDescription& desc_, std::string nameCnv_)
+(ResourceContainer resourceContainer_, const ConstantBufferDescription& desc_, std::string nameCnv_)
 {
 	//バッファ生成
 	return std::make_unique<ConstantBuffer>
 	(
 		ConstantBuffer::InstanceKey{},
 		nameCnv_,
-		std::move(doubleResource_.first), std::move(doubleResource_.second),
+		std::move(resourceContainer_),
 		std::make_unique<ConstantBufferDescription>(desc_)
 	);
 }
@@ -157,14 +157,14 @@ std::optional<D3D12_CLEAR_VALUE> BufferContext::BufferAssembler::GetClearValue(c
 
 template<>
 std::unique_ptr<ComputeBuffer> BufferContext::BufferAssembler::AssembleBuffer<ComputeBuffer, ComputeBufferDescription>
-(DoubleResource doubleResource_, const ComputeBufferDescription& desc_, std::string nameCnv_)
+(ResourceContainer resourceContainer_, const ComputeBufferDescription& desc_, std::string nameCnv_)
 {
 	//バッファ生成
 	return std::make_unique<ComputeBuffer>
 	(
 		ComputeBuffer::InstanceKey{},
 		nameCnv_,
-		std::move(doubleResource_.first), std::move(doubleResource_.second),
+		std::move(resourceContainer_),
 		std::make_unique<ComputeBufferDescription>(desc_)
 	);
 }
@@ -176,7 +176,7 @@ void BufferContext::BufferAssembler::AssembleView<ComputeBuffer, ComputeBufferDe
 	auto srvDesc = desc_.CreateSRV_Desc();
 	auto uavDesc = desc_.CreateUAV_Desc();
 
-	for (int i = 0;i < ProjectConfig::Render::kRequiredGPUBufferSum;++i)
+	for (int i = 0;i < desc_.numBuffer;++i)
 	{
 		//srv作成
 		CreateView(buffer_, srvDesc, i, accessKey_, instanceKey_);

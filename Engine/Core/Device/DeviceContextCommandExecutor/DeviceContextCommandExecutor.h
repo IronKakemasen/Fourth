@@ -24,7 +24,7 @@ public:
 	[[nodiscard]] std::tuple
 	<
 		Microsoft::WRL::ComPtr<ID3D12CommandQueue>,
-		std::array<Microsoft::WRL::ComPtr<ID3D12CommandAllocator>, ProjectConfig::Render::kRequiredGPUBufferSum>,
+		std::array<Microsoft::WRL::ComPtr<ID3D12CommandAllocator>, ProjectConfig::Render::kDoubleBuffer>,
 		Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList6>
 	>
 	CreateCommandContextCorePartsForRuntime(DeviceContext::InstanceKey instanceKey_);

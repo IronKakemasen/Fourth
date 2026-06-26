@@ -22,7 +22,7 @@ CommandContext::CommandContext
 (
 	InstanceKey instanceKey_,
 	Microsoft::WRL::ComPtr<ID3D12CommandQueue> commandQueue_,
-	std::array<Microsoft::WRL::ComPtr<ID3D12CommandAllocator>, kRequiredGPUBufferSum> commandAllocators_,
+	std::array<Microsoft::WRL::ComPtr<ID3D12CommandAllocator>, kDoubleBuffer> commandAllocators_,
 	Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList6> commandList_,
 	Microsoft::WRL::ComPtr<ID3D12Fence> fence_,
 	Microsoft::WRL::ComPtr<ID3D12CommandAllocator> allocator_forUpload_,
@@ -63,9 +63,9 @@ void CommandContext::CreateFenceEvent()
 
 void CommandContext::InstantiateRuntimeCommandControler()
 {
-	std::array<ID3D12CommandAllocator*, kRequiredGPUBufferSum> cmdAllocators;
+	std::array<ID3D12CommandAllocator*, kDoubleBuffer> cmdAllocators;
 	
-	for (int i = 0;i < kRequiredGPUBufferSum;++i)
+	for (int i = 0;i < kDoubleBuffer;++i)
 	{
 		cmdAllocators.at(i) = commandAllocators.at(i).Get();
 	}
