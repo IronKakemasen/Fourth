@@ -1,7 +1,7 @@
 #include "Vector3.h"
-#include "../Matrix/Matrix4.h"
+#include "../Matrix/Matrix4x4.h"
 
-Vector3 Vector3::GetMultiply(Matrix4 const& other) const
+Vector3 Vector3::GetMultiply(Matrix4x4 const& other) const
 {
 	DirectX::XMVECTOR v = DirectX::XMLoadFloat3(&data);
 	DirectX::XMMATRIX m = DirectX::XMLoadFloat4x4(&other.data);

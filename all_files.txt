@@ -9,9 +9,9 @@
 #include "Core/Device/DeviceContextCommandExecutor/DeviceContextCommandExecutor.h"
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 #include "Resource/Buffer/BufferContext.h"
-#include "Resource/Buffer/BufferCreator/BufferCreator.h"
-#include "Resource/Buffer/BufferDescriptions/DepthStencilBufferDescription/DepthStencilBufferDescription.h"
-#include "Resource/Buffer/GPUBuffer/DepthStencilBuffer/DepthStencilBuffer.h"
+#include "Resource/Buffer/BufferCreationSystems/BufferCreator/BufferCreator.h"
+#include "Resource/Buffer/BufferDefinition/BufferDescriptions/DepthStencilBufferDescription/DepthStencilBufferDescription.h"
+#include "Resource/Buffer/BufferDefinition/GPUBuffer/DepthStencilBuffer/DepthStencilBuffer.h"
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 #include "Core/DescriptorHeap/DescriptorHeapContext.h"
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -3146,7 +3146,7 @@ private:
 #include "../Command/CommandContext.h"
 #include "Presenter/Presenter.h"
 #include "RenderPassMaterialProvider/RenderPassMaterialProvider.h"
-#include "../../Resource/Buffer/GPUBuffer/DepthStencilBuffer/DepthStencilBuffer.h"
+#include "../../Resource/Buffer/BufferDefinition/GPUBuffer/DepthStencilBuffer/DepthStencilBuffer.h"
 
 
 namespace
@@ -3456,7 +3456,7 @@ private:
 ========================================
 #include "PreCompileHeader.h"
 #include "RenderPassMaterialProvider.h"
-#include "../../../Resource/Buffer/GPUBuffer/DepthStencilBuffer/DepthStencilBuffer.h"
+#include "../../../Resource/Buffer/BufferDefinition/GPUBuffer/DepthStencilBuffer/DepthStencilBuffer.h"
 
 
 SwapChainContext::RenderPassMaterialProvider::RenderPassMaterialProvider(SwapChainContext::ColorBuffer* colorBuffer_, DepthStencilBuffer* depthStencilBuffer_)
@@ -4427,21 +4427,21 @@ public:
 
 
 ========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Math\Matrix\Matrix4.h ===
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Math\Matrix\Matrix4x4.h ===
 ========================================
 #pragma once
 #include "../Vector/Vector3.h"
 
-struct Matrix4
+struct Matrix4x4
 {
 	DirectX::XMFLOAT4X4 data;
 
-	inline Matrix4()
+	inline Matrix4x4()
 	{
 		DirectX::XMStoreFloat4x4(&data, DirectX::XMMatrixIdentity());
 	}
 
-	inline Matrix4
+	inline Matrix4x4
 	(
 		float m00, float m01, float m02, float m03,
 		float m10, float m11, float m12, float m13,
@@ -4459,44 +4459,44 @@ struct Matrix4
 	}
 
 
-	inline static Matrix4 CreateScale(float x_, float y_ , float z_)
+	inline static Matrix4x4 CreateScale(float x_, float y_ , float z_)
 	{
-		Matrix4 scaleMat;
+		Matrix4x4 scaleMat;
 		DirectX::XMStoreFloat4x4(&scaleMat.data, DirectX::XMMatrixScaling(x_, y_, z_));
 		
 		return scaleMat;
 	}
 
-	inline static Matrix4 CreateScale(const Vector3 scale_ )
+	inline static Matrix4x4 CreateScale(const Vector3 scale_ )
 	{
-		Matrix4 scaleMat;
+		Matrix4x4 scaleMat;
 		DirectX::XMStoreFloat4x4(&scaleMat.data, DirectX::XMMatrixScaling(scale_.data.x, scale_.data.y, scale_.data.z));
 
 		return scaleMat;
 	}
 
-	inline static Matrix4 CreateTranslation(float x_, float y_, float z_)
+	inline static Matrix4x4 CreateTranslation(float x_, float y_, float z_)
 	{
-		Matrix4 translationMat;
+		Matrix4x4 translationMat;
 		DirectX::XMStoreFloat4x4(&translationMat.data, DirectX::XMMatrixTranslation(x_, y_, z_));
 
 		return translationMat;
 	}
 
-	inline static Matrix4 CreateTranslation(const Vector3 translation_)
+	inline static Matrix4x4 CreateTranslation(const Vector3 translation_)
 	{
-		Matrix4 translationMat;
+		Matrix4x4 translationMat;
 		DirectX::XMStoreFloat4x4(&translationMat.data, DirectX::XMMatrixTranslation(translation_.data.x, translation_.data.y, translation_.data.z));
 
 		return translationMat;
 	}
 
-	Matrix4 GetMultiply(Matrix4 const& other) const
+	Matrix4x4 GetMultiply(Matrix4x4 const& other) const
 	{
 		DirectX::XMMATRIX m1 = DirectX::XMLoadFloat4x4(&data);
 		DirectX::XMMATRIX m2 = DirectX::XMLoadFloat4x4(&other.data);
 
-		Matrix4 result;
+		Matrix4x4 result;
 		DirectX::XMStoreFloat4x4(&result.data, DirectX::XMMatrixMultiply(m1, m2));
 
 		return result;
@@ -4509,27 +4509,27 @@ struct Matrix4
 		return DirectX::XMVectorGetX(DirectX::XMMatrixDeterminant(m));
 	}
 
-	inline Matrix4 GetInversed() const
+	inline Matrix4x4 GetInversed() const
 	{
 		DirectX::XMMATRIX m = DirectX::XMLoadFloat4x4(&data);
 		DirectX::XMVECTOR determinant = DirectX::XMMatrixDeterminant(m);
 
 		if (DirectX::XMVector4Equal(determinant, DirectX::XMVectorZero()))
 		{
-			return Matrix4(); 
+			return Matrix4x4(); 
 		}
 
-		Matrix4 result;
+		Matrix4x4 result;
 
 		DirectX::XMStoreFloat4x4(&result.data, DirectX::XMMatrixInverse(&determinant, m));
 		return result;
 	}
 
-	inline Matrix4 Transpose() const
+	inline Matrix4x4 Transpose() const
 	{
 		DirectX::XMMATRIX m = DirectX::XMLoadFloat4x4(&data);
 
-		Matrix4 result;
+		Matrix4x4 result;
 		
 		DirectX::XMStoreFloat4x4(&result.data, DirectX::XMMatrixTranspose(m));
 		return result;
@@ -4553,7 +4553,7 @@ struct Matrix4
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Math\Quaternion\Quaternion.h ===
 ========================================
 	#pragma once
-	#include "../Matrix/Matrix4.h"
+	#include "../Matrix/Matrix4x4.h"
 
 
 	struct Quaternion
@@ -4567,11 +4567,11 @@ struct Matrix4
 
 		inline Quaternion(float x_, float y_, float z_, float w_) : data(x_, y_, z_, w_) {};
 
-		inline Matrix4 GetRotateMatrix() const
+		inline Matrix4x4 GetRotateMatrix() const
 		{
 			DirectX::XMVECTOR q = DirectX::XMLoadFloat4(&data);
 
-			Matrix4 result;
+			Matrix4x4 result;
 
 			DirectX::XMStoreFloat4x4(&result.data, DirectX::XMMatrixRotationQuaternion(q));
 			return result;
@@ -4760,9 +4760,9 @@ struct Vector2
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Math\Vector\Vector3.cpp ===
 ========================================
 #include "Vector3.h"
-#include "../Matrix/Matrix4.h"
+#include "../Matrix/Matrix4x4.h"
 
-Vector3 Vector3::GetMultiply(Matrix4 const& other) const
+Vector3 Vector3::GetMultiply(Matrix4x4 const& other) const
 {
 	DirectX::XMVECTOR v = DirectX::XMLoadFloat3(&data);
 	DirectX::XMMATRIX m = DirectX::XMLoadFloat4x4(&other.data);
@@ -4783,7 +4783,7 @@ Vector3 Vector3::GetMultiply(Matrix4 const& other) const
 ========================================
 #pragma once
 
-struct Matrix4;
+struct Matrix4x4;
 
 struct Vector3
 {
@@ -4973,7 +4973,7 @@ struct Vector3
 	///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-	Vector3 GetMultiply(Matrix4 const& other) const;
+	Vector3 GetMultiply(Matrix4x4 const& other) const;
 
 };
 
@@ -4987,9 +4987,105 @@ inline Vector3 operator*(const float num_,Vector3 vec_)
 
 
 ========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Render\kara.h ===
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Render\RenderContext.cpp ===
+========================================
+#include "PreCompileHeader.h"
+#include "RenderContext.h"
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Render\RenderContext.h ===
 ========================================
 #pragma once
+
+
+class RenderContext
+{
+	//モデルの描画情報を収集して整理する
+	//どのレンダーターゲットなのかなど
+	class ModelRenderingInfoOrganizer;
+
+};
+
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Render\RuntimeRenderingManagementSystems\RequiredRenderingInfo.h ===
+========================================
+#pragma once
+
+
+//描画パスを構築するのに必要な情報をまとめたディスクリプション
+struct RequiredRenderingInfo
+{
+	struct ColorBuffer
+	{
+		//ディスクリプタヒープ上のインデックス
+		D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle;
+		///PSOを決定するため...？
+		DXGI_FORMAT format;	
+		//レンダーターゲットをクリアするため
+		std::array<float, 4> clearColor;
+		//バリアを張るため
+		std::array<D3D12_RESOURCE_BARRIER, ProjectConfig::Render::kRequiredGPUBufferSum> barriers;
+		//横幅
+		uint32_t width{};
+		//立幅
+		uint32_t height{};
+	};
+};
+
+
+//void IColorBuffer::AssembleMatrix(UINT width_, UINT height_)
+//{
+//	//クライアント領域と一緒のサイズにして画面全体に表示
+//	viewport.Width = static_cast<FLOAT>(width_);
+//	viewport.Height = static_cast<FLOAT>(height_);
+//	viewport.TopLeftX = 0.0f;
+//	viewport.TopLeftY = 0.0f;
+//	viewport.MinDepth = 0.0f;
+//	viewport.MaxDepth = 1.0f;
+//
+//	//シザー矩形
+//	scissorRect.right = static_cast<LONG>(width_);
+//	scissorRect.bottom = static_cast<LONG>(height_);
+//	scissorRect.left = static_cast<LONG>(0.0f);
+//	scissorRect.top = static_cast<LONG>(0.0f);
+//
+//	Logger::Log("Structure:  Matrix", "BufferInterface.cpp");
+//}
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Render\RuntimeRenderingManagementSystems\ModelRenderingInfoOrganizer\ModelRenderingInfoOrganizer.cpp ===
+========================================
+#include "PreCompileHeader.h"
+#include "ModelRenderingInfoOrganizer.h"
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Render\RuntimeRenderingManagementSystems\ModelRenderingInfoOrganizer\ModelRenderingInfoOrganizer.h ===
+========================================
+#pragma once
+#include "../../RenderContext.h"
+
+
+class RenderContext::ModelRenderingInfoOrganizer
+{
+public:
+
+
+
+};
+
 
 
 
@@ -4999,17 +5095,17 @@ inline Vector3 operator*(const float num_,Vector3 vec_)
 ========================================
 #include "PreCompileHeader.h"
 #include "BufferContext.h"
-#include "GPUBuffer/GPUBufferBehavior.h"
+#include "BufferDefinition/GPUBuffer/GPUBufferBehavior.h"
 
 //外部
 #include "../../Core/DescriptorHeap/DescriptorHeapContext.h"
 #include "../../Core/DescriptorHeap/ViewCreator/ViewCreator.h"
 
 //バッファ作成ツール
-#include "ResourceCreator/ResourceCreator.h"
-#include "BufferAssembler/BufferAssembler.h"
-#include "BufferCollector/BufferCollector.h"
-#include "BufferCreator/BufferCreator.h"
+#include "BufferCreationSystems/ResourceCreator/ResourceCreator.h"
+#include "BufferCreationSystems/BufferAssembler/BufferAssembler.h"
+#include "BufferCreationSystems/BufferCollector/BufferCollector.h"
+#include "BufferCreationSystems/BufferCreator/BufferCreator.h"
 
 namespace
 {
@@ -5052,10 +5148,19 @@ void BufferContext::InstantiateBufferCreator
 	Logger::Log("Create: ResourceCreator", fileName);
 	std::unique_ptr<BufferAssembler> bufferAssembler(std::make_unique<BufferAssembler>(instanceKey_, std::move(resourceCreator), viewCreator));
 	Logger::Log("Create: bufferAssembler", fileName);
-	std::unique_ptr<BufferCollector> bufferCollector(std::make_unique<BufferCollector>(instanceKey_, &renderTargetBufferContainer, &computeBufferContainer, &frameBufferContainer));
+	std::unique_ptr<BufferCollector> bufferCollector
+	(
+		std::make_unique<BufferCollector>
+		(
+			instanceKey_, 
+			&renderTargetBufferContainer, 
+			&computeBufferContainer,
+			&frameBufferContainer,
+			&bufferLocationMap
+		)
+	);
+
 	Logger::Log("Create: bufferCollector", fileName);
-
-
 
 	bufferCreator.reset(new BufferCreator(std::move(bufferAssembler), std::move(bufferCollector)));
 	Logger::Log("Instantiate: BufferCreator", fileName);
@@ -5078,10 +5183,12 @@ class BufferContext
 	class BufferCollector;
 	//生成したバッファの削除を担当
 	class BufferDeferredReleaser;
-	//2面性バッファのリソースステートの追跡を行い、Swapも行う	
-	class RWResourceStateTracker;
-	//１面性バッファの制御を行う。
-	class FrameBufferedResourceController;
+	//レンダーターゲット系バッファの描画パス構築に必要な情報の抽出とそのリソースのSwapを行う
+	class RenderTargetBufferInfoExtractor;
+	//フレームバッファ系バッファの描画パス構築に必要な情報の抽出を行う
+	class FrameBufferedBufferInfoExtractor;
+	//コンピュートバッファ系のパス構築に必要な情報の抽出とそのリソースのSwapを行う
+	class ComputeBufferInfoExtractor;
 	//生リソース生成
 	class ResourceCreator;
 	//BufferAssemblerとBufferCollectorをつかってバッファを作成する
@@ -5099,10 +5206,22 @@ class BufferContext
 
 public:
 
+	//バッファのユニークID
+	using BufferUniqueID = uint32_t;
+
 	//自身のインスタンス化キー
 	struct InstanceKey;
 	//ResourceCreatorとViewCreatorでバッファを生成
 	class BufferAssembler;
+
+	//登録先識別用
+	enum class RegisterType
+	{
+		kRenderTarget,
+		kFrameBuffer,
+		kComputeBuffer,
+		kCount
+	};
 
 	BufferContext
 	(
@@ -5116,25 +5235,17 @@ public:
 	///+/バッファ生成クラス（本丸）
 	std::unique_ptr<BufferCreator> bufferCreator;
 
-	//バッファのユニークID
-	struct BufferUniqueID { uint32_t id{}; };
-	//レンダーターゲットコンテナ上のID
-	struct RenderTargetBufferID { uint32_t id{}; };
-	//コンピュートバッファコンテナ上のID
-	struct ComputeBufferID { uint32_t id{}; };
-	//フレームバッファコンテナ上のID
-	struct FrameBufferID { uint32_t id{}; };
-
 private:
 
-	////全バッファのユニークコンテナ
-	//std::unordered_map<BufferUniqueID,std::unique_ptr<GPUBufferBehavior>> bufferContainer;
 	//ColorBufferやDepthStencilBufferなどレンダーターゲットなバッファのコンテナ
 	std::vector<std::unique_ptr<GPUBufferBehavior>> renderTargetBufferContainer;
 	//computeBufferのような、コンピュートシェーダをかませるバッファのコンテナ
 	std::vector<std::unique_ptr<GPUBufferBehavior>> computeBufferContainer;
 	//ConstantBufferやUploadStructuredBufferのようなフレームバッファのコンテナ
 	std::vector<std::unique_ptr<GPUBufferBehavior>> frameBufferContainer;
+
+	//ユニークIDがどこのバッファコンテナの何番目のバッファを指しているのか示すマップコンテナ
+	std::unordered_map<BufferContext::BufferUniqueID, std::pair<RegisterType, uint32_t>> bufferLocationMap;
 
 	void InstantiateBufferCreator
 	(
@@ -5197,27 +5308,27 @@ namespace ResourceBarrier
 
 
 ========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Resource\Buffer\BufferAssembler\BufferAssembler.cpp ===
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Resource\Buffer\BufferCreationSystems\BufferAssembler\BufferAssembler.cpp ===
 ========================================
 #include "PreCompileHeader.h"
 #include "BufferAssembler.h"
 
 //バッファ
-#include "../GPUBuffer/ColorBuffer/ColorBuffer.h"
-#include "../GPUBuffer/ConstantBuffer/ConstantBuffer.h"
-#include "../GPUBuffer/DepthStencilBuffer/DepthStencilBuffer.h"
-#include "../GPUBuffer/ComputeBuffer/ComputeBuffer.h"
-#include "../GPUBuffer/UploadStructuredBuffer/UploadStructuredBuffer.h"
+#include "../../BufferDefinition/GPUBuffer/ColorBuffer/ColorBuffer.h"
+#include "../../BufferDefinition/GPUBuffer/ConstantBuffer/ConstantBuffer.h"
+#include "../../BufferDefinition/GPUBuffer/DepthStencilBuffer/DepthStencilBuffer.h"
+#include "../../BufferDefinition/GPUBuffer/ComputeBuffer/ComputeBuffer.h"
+#include "../../BufferDefinition/GPUBuffer/UploadStructuredBuffer/UploadStructuredBuffer.h"
 
 //ディスクリプション
-#include "../BufferDescriptions/ColorBufferDescription/ColorBufferDescription.h"
-#include "../BufferDescriptions/ConstantBufferDescription/ConstantBufferDescription.h"
-#include "../BufferDescriptions/DepthStencilBufferDescription/DepthStencilBufferDescription.h"
-#include "../BufferDescriptions/ComputeBufferDescription/ComputeBufferDescription.h"
-#include "../BufferDescriptions/UploadStructuredBufferDescription/UploadStructuredBufferDescription.h"
+#include "../../BufferDefinition/BufferDescriptions/ColorBufferDescription/ColorBufferDescription.h"
+#include "../../BufferDefinition/BufferDescriptions/ConstantBufferDescription/ConstantBufferDescription.h"
+#include "../../BufferDefinition/BufferDescriptions/DepthStencilBufferDescription/DepthStencilBufferDescription.h"
+#include "../../BufferDefinition/BufferDescriptions/ComputeBufferDescription/ComputeBufferDescription.h"
+#include "../../BufferDefinition/BufferDescriptions/UploadStructuredBufferDescription/UploadStructuredBufferDescription.h"
 
 //ツール
-#include "../../../Core/DescriptorHeap/ViewCreator/ViewCreator.h"
+#include "../../../../Core/DescriptorHeap/ViewCreator/ViewCreator.h"
 
 
 
@@ -5470,11 +5581,11 @@ void BufferContext::BufferAssembler::CreateView
 
 
 ========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Resource\Buffer\BufferAssembler\BufferAssembler.h ===
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Resource\Buffer\BufferCreationSystems\BufferAssembler\BufferAssembler.h ===
 ========================================
 #pragma once
-#include "../BufferContext.h"
-#include "../GPUBuffer/GPUBufferBehavior.h"
+#include "../../BufferContext.h"
+#include "../../BufferDefinition/GPUBuffer/GPUBufferBehavior.h"
 //ツール
 #include "../ResourceCreator/ResourceCreator.h"
 
@@ -5716,11 +5827,11 @@ std::unique_ptr<ComputeBuffer> BufferContext::BufferAssembler::AssembleBuffer<Co
 
 
 ========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Resource\Buffer\BufferCollector\BufferCollector.cpp ===
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Resource\Buffer\BufferCreationSystems\BufferCollector\BufferCollector.cpp ===
 ========================================
 #include "PreCompileHeader.h"
 #include "BufferCollector.h"
-#include "../GPUBuffer/GPUBufferBehavior.h"
+#include "../../BufferDefinition/GPUBuffer/GPUBufferBehavior.h"
 
 
 
@@ -5729,8 +5840,9 @@ BufferContext::BufferCollector::BufferCollector
 	BufferContext::InstanceKey key_,
 	std::vector<std::unique_ptr<GPUBufferBehavior>>* renderTargetBufferContainer_,
 	std::vector<std::unique_ptr<GPUBufferBehavior>>* computeBufferContainer_,
-	std::vector<std::unique_ptr<GPUBufferBehavior>>* frameBufferContainer_
-):renderTargetBufferContainer(renderTargetBufferContainer_), computeBufferContainer(computeBufferContainer_), frameBufferContainer(frameBufferContainer_)
+	std::vector<std::unique_ptr<GPUBufferBehavior>>* frameBufferContainer_,
+	std::unordered_map<BufferContext::BufferUniqueID, std::pair<RegisterType, uint32_t>>* bufferLocationMap_
+):renderTargetBufferContainer(renderTargetBufferContainer_), computeBufferContainer(computeBufferContainer_), frameBufferContainer(frameBufferContainer_), bufferLocationMap(bufferLocationMap_)
 {
 
 }
@@ -5746,29 +5858,61 @@ void BufferContext::BufferCollector::Distribute()
 {
 	if (tmp_bufferContainer.size() == 0) return;
 
-	//読み書きバッファコンテナへアドレスを配る
-	for (auto itr = tmp_bufferContainer.begin();itr != tmp_bufferContainer.end();++itr)
+	//適切なバッファコンテナへ実体を渡す
+	for (auto itrSrcContainer = tmp_bufferContainer.begin();itrSrcContainer != tmp_bufferContainer.end();++itrSrcContainer)
 	{
-		//分別
-		if ((*itr).type == RegisterType::kFrameBuffer)
+		//コンテナ取得
+		auto* dstContainer = ContainerTable((*itrSrcContainer).type);
+
+		//空きスロットを検索
+		auto itrDstConatiner = FindFreeSlot(dstContainer);
+
+		//空きスロットに入れる
+		if (itrDstConatiner != dstContainer->end())
 		{
-			frameBufferContainer->emplace_back(std::move((*itr).buffer));
-			distributeRecord.sumFrameBuffer++;
+			//そのイテレーターをリセットする
+			itrDstConatiner->reset();
+
+			(*itrDstConatiner) = std::move((*itrSrcContainer).buffer);
+			//該当の空きインデックス
+			uint32_t freeIndex = uint32_t(itrDstConatiner - dstContainer->begin());
+			//ユニークIDとコンテナ上のIDを紐づける 
+			(*bufferLocationMap)[(*itrSrcContainer).id] = std::make_pair((*itrSrcContainer).type, freeIndex);
 		}
-		else if((*itr).type == RegisterType::kRenderTarget)
-		{
-			renderTargetBufferContainer->emplace_back(std::move((*itr).buffer));
-			distributeRecord.sumRenderTargetBuffer++;
-		}
+		//空きスロットが無ければ尻尾に追加
 		else
 		{
-			computeBufferContainer->emplace_back(std::move((*itr).buffer));
-			distributeRecord.sumComputeBuffer++;
+			dstContainer->emplace_back(std::move((*itrSrcContainer).buffer));
+			//ユニークIDとコンテナ上のIDを紐づける 
+			(*bufferLocationMap)[(*itrSrcContainer).id] = std::make_pair((*itrSrcContainer).type, uint32_t(dstContainer->size() - 1 ));
+
 		}
 	}
 
 	tmp_bufferContainer.clear();
 	tmp_bufferContainer.shrink_to_fit();
+}
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+std::vector<std::unique_ptr<GPUBufferBehavior>>* BufferContext::BufferCollector::ContainerTable(BufferContext::RegisterType type_)
+{
+	static std::vector<std::unique_ptr<GPUBufferBehavior>>* table[(int)BufferContext::RegisterType::kCount]
+	{
+		renderTargetBufferContainer,
+		frameBufferContainer,
+		computeBufferContainer
+	};
+
+	return table[(int)type_];
+}
+
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+std::vector<std::unique_ptr<GPUBufferBehavior>>::iterator BufferContext::BufferCollector::FindFreeSlot(std::vector<std::unique_ptr<GPUBufferBehavior>>* container_)
+{
+	return std::find(container_->begin(), container_->end(), nullptr);
 }
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -5779,10 +5923,11 @@ void BufferContext::BufferCollector::Distribute()
 
 
 ========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Resource\Buffer\BufferCollector\BufferCollector.h ===
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Resource\Buffer\BufferCreationSystems\BufferCollector\BufferCollector.h ===
 ========================================
 #pragma once
-#include "../BufferContext.h"
+#include "../../BufferContext.h"
+
 
 
 class GPUBufferBehavior;
@@ -5794,14 +5939,6 @@ class UploadStructuredBuffer;
 
 class BufferContext::BufferCollector
 {
-	//登録先識別用
-	enum class RegisterType
-	{
-		kRenderTarget,
-		kFrameBuffer,
-		kComputeBuffer
-	};
-
 public:
 
 	BufferCollector
@@ -5809,7 +5946,8 @@ public:
 		BufferContext::InstanceKey key_,
 		std::vector<std::unique_ptr<GPUBufferBehavior>>* renderTargetBufferContainer_,
 		std::vector<std::unique_ptr<GPUBufferBehavior>>* computeBufferContainer_,
-		std::vector<std::unique_ptr<GPUBufferBehavior>>* frameBufferContainer_
+		std::vector<std::unique_ptr<GPUBufferBehavior>>* frameBufferContainer_,
+		std::unordered_map<BufferContext::BufferUniqueID, std::pair<RegisterType, uint32_t>>* bufferLocationMap_
 	);
 
 	~BufferCollector();
@@ -5823,11 +5961,12 @@ public:
 		TempSaveFormat tmpSaveFormat;
 		tmpSaveFormat.type = registerType;
 		tmpSaveFormat.buffer = std::move(buffer_);
+		tmpSaveFormat.id = id_;
 
 		tmp_bufferContainer.emplace_back(std::move(tmpSaveFormat));
 	}
 
-	//分配先へ分別する
+	//実体を目的のコンテナに分配する
 	void Distribute();
 
 private:
@@ -5836,27 +5975,20 @@ private:
 	{
 		RegisterType type;
 		std::unique_ptr<GPUBufferBehavior> buffer;
+		BufferContext::BufferUniqueID id;
 	};
 
-	//分配数記録
-	struct DistributionRecord
-	{
-		uint32_t sumRenderTargetBuffer{};
-		uint32_t sumComputeBuffer{};
-		uint32_t sumFrameBuffer{};
-	};
-
-
-	DistributionRecord distributeRecord;
 
 	//一時保管用
 	std::vector<TempSaveFormat> tmp_bufferContainer;
+
 	//分別先
 	std::vector<std::unique_ptr<GPUBufferBehavior>>* renderTargetBufferContainer;
 	std::vector<std::unique_ptr<GPUBufferBehavior>>* computeBufferContainer;
 	std::vector<std::unique_ptr<GPUBufferBehavior>>* frameBufferContainer;
 
-
+	//ユニークIDがどこのバッファコンテナの何番目のバッファを指しているのか示すマップコンテナ
+	std::unordered_map<BufferContext::BufferUniqueID, std::pair<RegisterType, uint32_t>>* bufferLocationMap;
 
 	//バッファのデータ型に応じて登録先識別用のタイプを返す
 	template<typename BufferType>
@@ -5883,6 +6015,12 @@ private:
 
 		return type;
 	}
+
+	//目的のコンテナのイテレーターを返す
+	std::vector<std::unique_ptr<GPUBufferBehavior>>::iterator FindFreeSlot(std::vector<std::unique_ptr<GPUBufferBehavior>>* container_);
+	//コンテナテーブル
+	std::vector<std::unique_ptr<GPUBufferBehavior>>* ContainerTable(BufferContext::RegisterType type_);
+
 };
 
 
@@ -5890,7 +6028,7 @@ private:
 
 
 ========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Resource\Buffer\BufferCreator\BufferCreator.cpp ===
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Resource\Buffer\BufferCreationSystems\BufferCreator\BufferCreator.cpp ===
 ========================================
 #include "PreCompileHeader.h"
 #include "BufferCreator.h"
@@ -5919,7 +6057,7 @@ BufferContext::BufferCreator::~BufferCreator()
 
 
 ========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Resource\Buffer\BufferCreator\BufferCreator.h ===
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Resource\Buffer\BufferCreationSystems\BufferCreator\BufferCreator.h ===
 ========================================
 #pragma once
 #include "../BufferCollector/BufferCollector.h"
@@ -5969,32 +6107,83 @@ private:
 
 
 ========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Resource\Buffer\BufferDeferredReleaser\BufferDeferredReleaser.cpp ===
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Resource\Buffer\BufferCreationSystems\ResourceCreator\ResourceCreator.cpp ===
 ========================================
 #include "PreCompileHeader.h"
-#include "BufferDeferredReleaser.h"
+#include "ResourceCreator.h"
+#include "../../../../Utility/StringConnverter/StringConverter.h"
+
+
+BufferContext::ResourceCreator::ResourceCreator(BufferContext::InstanceKey instanceKey_, BufferContext::CreateResourceCommand createResourceCommand_)
+	: createResourceCommand(createResourceCommand_) 
+{
+
+}
+
+BufferContext::ResourceCreator::~ResourceCreator()
+{
+
+}
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+[[nodiscard]] std::pair<Microsoft::WRL::ComPtr<ID3D12Resource>, Microsoft::WRL::ComPtr<ID3D12Resource>> BufferContext::ResourceCreator::Create
+(
+	const D3D12_RESOURCE_DESC& resourceDesc_,
+	const D3D12_HEAP_PROPERTIES& heapProperties_,
+	const D3D12_CLEAR_VALUE* clearValuePtr_,
+	std::array<D3D12_RESOURCE_STATES, ProjectConfig::Render::kRequiredGPUBufferSum> initialStates_,
+	const std::string& name_
+)
+{
+	auto resource1 = createResourceCommand(resourceDesc_, heapProperties_, clearValuePtr_, initialStates_.at(0), name_);
+	auto resource2 = createResourceCommand(resourceDesc_, heapProperties_, clearValuePtr_, initialStates_.at(1),name_);
+
+	//命名
+	resource1->SetName(StringConverter::ConvertString(name_ + "[0]").c_str());
+	resource2->SetName(StringConverter::ConvertString(name_ + "[1]").c_str());
+
+	return { std::move(resource1), std::move(resource2) };
+}
 
 
 
 
 ========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Resource\Buffer\BufferDeferredReleaser\BufferDeferredReleaser.h ===
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Resource\Buffer\BufferCreationSystems\ResourceCreator\ResourceCreator.h ===
 ========================================
 #pragma once
-#include "../BufferContext.h"
+#include "../../BufferContext.h"
 
-
-class BufferDeferredReleaser
+class BufferContext::ResourceCreator
 {
+
+public:
+
+	ResourceCreator(BufferContext::InstanceKey instanceKey_, BufferContext::CreateResourceCommand createResourceCommand_);
+	~ResourceCreator();
+
+	[[nodiscard]] std::pair<Microsoft::WRL::ComPtr<ID3D12Resource>, Microsoft::WRL::ComPtr<ID3D12Resource>> Create
+	(
+		const D3D12_RESOURCE_DESC& resourceDesc_,
+		const D3D12_HEAP_PROPERTIES& heapProperties_,
+		const D3D12_CLEAR_VALUE* clearValuePtr_, 
+		std::array<D3D12_RESOURCE_STATES, ProjectConfig::Render::kRequiredGPUBufferSum> initialStates_,
+		const std::string& name_
+	);
+
+private:
+
+	//リソース生成コマンド
+	BufferContext::CreateResourceCommand createResourceCommand;
+
 
 };
 
 
 
-
-
 ========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Resource\Buffer\BufferDescriptions\BufferDescriptionBehavior.cpp ===
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Resource\Buffer\BufferDefinition\BufferDescriptions\BufferDescriptionBehavior.cpp ===
 ========================================
 #include "PreCompileHeader.h"
 #include "BufferDescriptionBehavior.h"
@@ -6016,7 +6205,7 @@ BufferDescriptionBehavior::BufferDescriptionBehavior(ResourceStates initialState
 
 
 ========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Resource\Buffer\BufferDescriptions\BufferDescriptionBehavior.h ===
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Resource\Buffer\BufferDefinition\BufferDescriptions\BufferDescriptionBehavior.h ===
 ========================================
 #pragma once
 
@@ -6080,7 +6269,7 @@ struct IDSV_Assembler
 
 
 ========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Resource\Buffer\BufferDescriptions\ColorBufferDescription\ColorBufferDescription.cpp ===
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Resource\Buffer\BufferDefinition\BufferDescriptions\ColorBufferDescription\ColorBufferDescription.cpp ===
 ========================================
 #include "PreCompileHeader.h"
 #include "ColorBufferDescription.h"
@@ -6186,7 +6375,7 @@ D3D12_SHADER_RESOURCE_VIEW_DESC ColorBufferDescription::CreateSRV_Desc()const
 
 
 ========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Resource\Buffer\BufferDescriptions\ColorBufferDescription\ColorBufferDescription.h ===
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Resource\Buffer\BufferDefinition\BufferDescriptions\ColorBufferDescription\ColorBufferDescription.h ===
 ========================================
 #pragma once
 #include "../BufferDescriptionBehavior.h"
@@ -6242,7 +6431,7 @@ public:
 
 
 ========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Resource\Buffer\BufferDescriptions\ComputeBufferDescription\ComputeBufferDescription.cpp ===
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Resource\Buffer\BufferDefinition\BufferDescriptions\ComputeBufferDescription\ComputeBufferDescription.cpp ===
 ========================================
 #include "PreCompileHeader.h"
 #include "ComputeBufferDescription.h"
@@ -6340,7 +6529,7 @@ D3D12_UNORDERED_ACCESS_VIEW_DESC ComputeBufferDescription::CreateUAV_Desc()const
 
 
 ========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Resource\Buffer\BufferDescriptions\ComputeBufferDescription\ComputeBufferDescription.h ===
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Resource\Buffer\BufferDefinition\BufferDescriptions\ComputeBufferDescription\ComputeBufferDescription.h ===
 ========================================
 #pragma once
 #include "../BufferDescriptionBehavior.h"
@@ -6389,7 +6578,7 @@ public:
 
 
 ========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Resource\Buffer\BufferDescriptions\ConstantBufferDescription\ConstantBufferDescription.cpp ===
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Resource\Buffer\BufferDefinition\BufferDescriptions\ConstantBufferDescription\ConstantBufferDescription.cpp ===
 ========================================
 #include "PreCompileHeader.h"
 #include "ConstantBufferDescription.h"
@@ -6443,7 +6632,7 @@ D3D12_HEAP_PROPERTIES ConstantBufferDescription::CreateHeapProperties()const
 
 
 ========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Resource\Buffer\BufferDescriptions\ConstantBufferDescription\ConstantBufferDescription.h ===
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Resource\Buffer\BufferDefinition\BufferDescriptions\ConstantBufferDescription\ConstantBufferDescription.h ===
 ========================================
 #pragma once
 #include "../BufferDescriptionBehavior.h"
@@ -6486,7 +6675,7 @@ public:
 
 
 ========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Resource\Buffer\BufferDescriptions\DepthStencilBufferDescription\DepthStencilBufferDescription.cpp ===
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Resource\Buffer\BufferDefinition\BufferDescriptions\DepthStencilBufferDescription\DepthStencilBufferDescription.cpp ===
 ========================================
 #include "PreCompileHeader.h"
 #include "DepthStencilBufferDescription.h"
@@ -6621,7 +6810,7 @@ DXGI_FORMAT DepthStencilBufferDescription::ConductTypelessFormat()const
 
 
 ========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Resource\Buffer\BufferDescriptions\DepthStencilBufferDescription\DepthStencilBufferDescription.h ===
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Resource\Buffer\BufferDefinition\BufferDescriptions\DepthStencilBufferDescription\DepthStencilBufferDescription.h ===
 ========================================
 #pragma once
 #include "../BufferDescriptionBehavior.h"
@@ -6687,7 +6876,7 @@ private:
 
 
 ========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Resource\Buffer\BufferDescriptions\UploadStructuredBufferDescription\UploadStructuredBufferDescription.cpp ===
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Resource\Buffer\BufferDefinition\BufferDescriptions\UploadStructuredBufferDescription\UploadStructuredBufferDescription.cpp ===
 ========================================
 #include "PreCompileHeader.h"
 #include "UploadStructuredBufferDescription.h"
@@ -6770,7 +6959,7 @@ D3D12_SHADER_RESOURCE_VIEW_DESC UploadStructuredBufferDescription::CreateSRV_Des
 
 
 ========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Resource\Buffer\BufferDescriptions\UploadStructuredBufferDescription\UploadStructuredBufferDescription.h ===
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Resource\Buffer\BufferDefinition\BufferDescriptions\UploadStructuredBufferDescription\UploadStructuredBufferDescription.h ===
 ========================================
 #pragma once
 #include "../BufferDescriptionBehavior.h"
@@ -6815,65 +7004,17 @@ public:
 
 
 ========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Resource\Buffer\FrameBufferedResourceController\FrameBufferedResourceController.cpp ===
-========================================
-#include "PreCompileHeader.h"
-#include "FrameBufferedResourceController.h"
-
-
-
-
-========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Resource\Buffer\FrameBufferedResourceController\FrameBufferedResourceController.h ===
-========================================
-#pragma once
-#include "../BufferContext.h"
-
-
-class FrameBufferedResourceController
-{
-
-};
-
-
-
-
-
-========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Resource\Buffer\GPUBuffer\BufferInterface.cpp ===
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Resource\Buffer\BufferDefinition\GPUBuffer\BufferInterface.cpp ===
 ========================================
 #include "BufferInterface.h"
 
 
-std::pair<D3D12_VIEWPORT, D3D12_RECT> IColorBuffer::OutMatrix()const
-{
-	return { viewport ,scissorRect };
-}
-
-void IColorBuffer::AssembleMatrix(UINT width_, UINT height_)
-{
-	//クライアント領域と一緒のサイズにして画面全体に表示
-	viewport.Width = static_cast<FLOAT>(width_);
-	viewport.Height = static_cast<FLOAT>(height_);
-	viewport.TopLeftX = 0.0f;
-	viewport.TopLeftY = 0.0f;
-	viewport.MinDepth = 0.0f;
-	viewport.MaxDepth = 1.0f;
-
-	//シザー矩形
-	scissorRect.right = static_cast<LONG>(width_);
-	scissorRect.bottom = static_cast<LONG>(height_);
-	scissorRect.left = static_cast<LONG>(0.0f);
-	scissorRect.top = static_cast<LONG>(0.0f);
-
-	Logger::Log("Structure:  Matrix", "BufferInterface.cpp");
-}
 
 
 
 
 ========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Resource\Buffer\GPUBuffer\BufferInterface.h ===
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Resource\Buffer\BufferDefinition\GPUBuffer\BufferInterface.h ===
 ========================================
 #pragma once
 #include "GPUBufferBehavior.h"
@@ -6890,7 +7031,7 @@ struct IRWBuffer
 	virtual void Swap() = 0;
 };
 
-//読み込みバッファのインターフェース
+//CPU書き込みGPU読み込みバッファのインターフェース
 struct IShaderBuffer
 {
 	virtual ~IShaderBuffer() = default;
@@ -6920,16 +7061,7 @@ struct IColorBuffer
 {
 	virtual ~IColorBuffer() = default;
 	//描画パイプラインに必要な行列を出す
-	std::pair<D3D12_VIEWPORT, D3D12_RECT> OutMatrix()const;
-	//行列を組み立てる
-	void AssembleMatrix(UINT width_, UINT height_);
-
-protected:
-
-	//ビューポート行列
-	D3D12_VIEWPORT viewport;
-	//シザーレクト行列
-	D3D12_RECT scissorRect;
+	virtual std::pair<uint32_t, uint32_t> OutWidthAndHeight()const = 0;
 
 };
 
@@ -6937,13 +7069,13 @@ protected:
 
 
 ========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Resource\Buffer\GPUBuffer\GPUBufferBehavior.cpp ===
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Resource\Buffer\BufferDefinition\GPUBuffer\GPUBufferBehavior.cpp ===
 ========================================
 #include "PreCompileHeader.h"
 #include "GPUBufferBehavior.h"
-#include "../../../Utility/StringConnverter/StringConverter.h"
+#include "../../../../Utility/StringConnverter/StringConverter.h"
 #include "../BufferDescriptions/BufferDescriptionBehavior.h"
-#include "../ResourceBarrier.h"
+#include "../../ResourceBarrier.h"
 
 
 
@@ -7009,11 +7141,11 @@ ID3D12Resource* GPUBufferBehavior::GetResource(ResourceAccessKey bufferAccessKey
 
 
 ========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Resource\Buffer\GPUBuffer\GPUBufferBehavior.h ===
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Resource\Buffer\BufferDefinition\GPUBuffer\GPUBufferBehavior.h ===
 ========================================
 #pragma once
-#include "../BufferContext.h"
-#include "../../../Core/SwapChain/SwapChainContext.h"
+#include "../../BufferContext.h"
+#include "../../../../Core/SwapChain/SwapChainContext.h"
 
 struct BufferDescriptionBehavior;
 
@@ -7158,7 +7290,7 @@ private:
 
 
 ========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Resource\Buffer\GPUBuffer\ColorBuffer\ColorBuffer.cpp ===
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Resource\Buffer\BufferDefinition\GPUBuffer\ColorBuffer\ColorBuffer.cpp ===
 ========================================
 #include "PreCompileHeader.h"
 #include "ColorBuffer.h"
@@ -7178,8 +7310,7 @@ ColorBuffer::ColorBuffer
 	std::unique_ptr <BufferDescriptionBehavior>&& description_
 ) : GPUBufferBehavior(instanceKey_, name_, std::move(resource1_), std::move(resource2_), std::move(description_))
 {
-	const auto& param = static_cast<ColorBufferDescription&>(*description.get()).WatchParam();
-	AssembleMatrix(param.width, param.height);
+
 }
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -7253,10 +7384,17 @@ void ColorBuffer::Swap()
 	status = nextTable[status];
 }
 
+std::pair<uint32_t, uint32_t> ColorBuffer::OutWidthAndHeight()const
+{
+	const auto& param = static_cast<ColorBufferDescription&>(*description.get()).WatchParam();
+
+	return { param.width,param.height };
+}
+
 
 
 ========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Resource\Buffer\GPUBuffer\ColorBuffer\ColorBuffer.h ===
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Resource\Buffer\BufferDefinition\GPUBuffer\ColorBuffer\ColorBuffer.h ===
 ========================================
 #pragma once
 #include "../BufferInterface.h"
@@ -7287,11 +7425,13 @@ public:
 	virtual D3D12_CPU_DESCRIPTOR_HANDLE OutProperCPUHandle()const override;
 	//適切な方のバッファからテクスチャのFormat出す。まあ今ケースの場合はFormatは共通なんだけども
 	virtual DXGI_FORMAT OutProperRenderTargetFormat()const override;
-	//適切な方のバッファからClearColor出す
+	//ClearColor出す
 	virtual std::array<float, 4> OutProperClearColor()const override;
 	//自身のステートに応じて、それぞれのバッファのバリアを生成する
 	virtual std::array<D3D12_RESOURCE_BARRIER, ProjectConfig::Render::kRequiredGPUBufferSum>
 		CreateNextStepBarriers(ExtractMaterialKey key_)override;
+	//立幅横幅を出力
+	virtual std::pair<uint32_t, uint32_t> OutWidthAndHeight()const override;
 
 	//役割を入れ替える
 	virtual void Swap()override;
@@ -7309,7 +7449,7 @@ private:
 
 
 ========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Resource\Buffer\GPUBuffer\ComputeBuffer\ComputeBuffer.cpp ===
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Resource\Buffer\BufferDefinition\GPUBuffer\ComputeBuffer\ComputeBuffer.cpp ===
 ========================================
 #include "PreCompileHeader.h"
 #include "ComputeBuffer.h"
@@ -7388,7 +7528,7 @@ void ComputeBuffer::Swap()
 
 
 ========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Resource\Buffer\GPUBuffer\ComputeBuffer\ComputeBuffer.h ===
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Resource\Buffer\BufferDefinition\GPUBuffer\ComputeBuffer\ComputeBuffer.h ===
 ========================================
 #pragma once
 #include "../BufferInterface.h"
@@ -7439,7 +7579,7 @@ private:
 
 
 ========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Resource\Buffer\GPUBuffer\ConstantBuffer\ConstantBuffer.cpp ===
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Resource\Buffer\BufferDefinition\GPUBuffer\ConstantBuffer\ConstantBuffer.cpp ===
 ========================================
 #include "PreCompileHeader.h"
 #include "ConstantBuffer.h"
@@ -7466,7 +7606,7 @@ ConstantBuffer::ConstantBuffer
 
 
 ========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Resource\Buffer\GPUBuffer\ConstantBuffer\ConstantBuffer.h ===
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Resource\Buffer\BufferDefinition\GPUBuffer\ConstantBuffer\ConstantBuffer.h ===
 ========================================
 #pragma once
 #include "../BufferInterface.h"
@@ -7494,7 +7634,7 @@ public:
 
 
 ========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Resource\Buffer\GPUBuffer\DepthStencilBuffer\DepthStencilBuffer.cpp ===
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Resource\Buffer\BufferDefinition\GPUBuffer\DepthStencilBuffer\DepthStencilBuffer.cpp ===
 ========================================
 #include "PreCompileHeader.h"
 #include "DepthStencilBuffer.h"
@@ -7516,16 +7656,28 @@ DepthStencilBuffer::DepthStencilBuffer
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-float DepthStencilBuffer::WatchClearColor(ExtractMaterialKey key_)
-{
-	return static_cast<DepthStencilBufferDescription*>(description.get())->WatchParam().clearColor;
-}
-
 std::array<D3D12_RESOURCE_BARRIER, ProjectConfig::Render::kRequiredGPUBufferSum>
 DepthStencilBuffer::CreateNextStepBarriers(ExtractMaterialKey key_)
 {
-	return { D3D12_RESOURCE_BARRIER{}, D3D12_RESOURCE_BARRIER{} };
+	std::array<D3D12_RESOURCE_BARRIER, ProjectConfig::Render::kRequiredGPUBufferSum> barriers;
+
+	//nextStateはSRV_DSVになるように
+	if (status == kDSV_SRV)
+	{
+		//１枚目は読み取り用へ
+		barriers.at(0) = buffers.at(0).CreateBarrier(D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+	}
+	else
+	{
+		//2枚目は書き込み用へ
+		barriers.at(1) = buffers.at(1).CreateBarrier(D3D12_RESOURCE_STATE_DEPTH_WRITE);
+	}
+
+	return barriers;
 }
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 void DepthStencilBuffer::Swap()
 {
@@ -7537,19 +7689,57 @@ void DepthStencilBuffer::Swap()
 
 	status = nextTable[status];
 }
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//ダブルバッファのうち適切な方のバッファからCPUインデックスを出す
+D3D12_CPU_DESCRIPTOR_HANDLE DepthStencilBuffer::OutProperCPUHandle()const
+{
+	D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle;
+
+	//１枚目がDSVだった場合はそれのCPUhandleを出す
+	if (status == kDSV_SRV)
+	{
+		cpuHandle = WatchIndex<ViewType::kDSV, D3D12_CPU_DESCRIPTOR_HANDLE>(0);
+	}
+	else
+	{
+		cpuHandle = WatchIndex<ViewType::kDSV, D3D12_CPU_DESCRIPTOR_HANDLE>(0);
+	}
+
+	return cpuHandle;
+}
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//dsvFormat出す
+DXGI_FORMAT DepthStencilBuffer::OutProperRenderTargetFormat()const
+{
+	return static_cast<DepthStencilBufferDescription*>(description.get())->WatchParam().dsvFormat;
+}
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//適切な方のバッファからClearColor出す。[0]番目にカラーの値が入っている
+std::array<float, 4> DepthStencilBuffer::OutProperClearColor()const
+{
+	std::array<float, 4> clearColor = { static_cast<DepthStencilBufferDescription*>(description.get())->WatchParam().clearColor,0,0,0 };
+
+	return clearColor;
+}
 
 
 
 
 ========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Resource\Buffer\GPUBuffer\DepthStencilBuffer\DepthStencilBuffer.h ===
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Resource\Buffer\BufferDefinition\GPUBuffer\DepthStencilBuffer\DepthStencilBuffer.h ===
 ========================================
 #pragma once
 #include "../BufferInterface.h"
 
 
 //定数バッファクラス
-class DepthStencilBuffer final : public GPUBufferBehavior, IRWBuffer
+class DepthStencilBuffer final : public GPUBufferBehavior, IRWBuffer, IRenderTargetBuffer
 {
 	enum Status
 	{
@@ -7568,17 +7758,17 @@ public:
 		std::unique_ptr <BufferDescriptionBehavior>&& description_
 	);
 
-	//テンプレ化予定
-	///+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/++/+
-	///+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/++/+
-	float WatchClearColor(ExtractMaterialKey key_);
-	///+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/++/+
-	///+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/+/++/+
-
+	//自身の状態をもとに貼るべきバリアを生成する
 	virtual std::array<D3D12_RESOURCE_BARRIER, ProjectConfig::Render::kRequiredGPUBufferSum>
 		CreateNextStepBarriers(ExtractMaterialKey key_)override;
-
+	//役割をスワップする
 	virtual void Swap()override;
+	//ダブルバッファのうち適切な方のバッファからCPUインデックスを出す
+	virtual D3D12_CPU_DESCRIPTOR_HANDLE OutProperCPUHandle()const override;
+	//DSVFormat出す
+	virtual DXGI_FORMAT OutProperRenderTargetFormat()const override;
+	//ClearColor出す
+	virtual std::array<float, 4> OutProperClearColor()const override;
 
 
 private:
@@ -7590,7 +7780,7 @@ private:
 
 
 ========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Resource\Buffer\GPUBuffer\UploadStructuredBuffer\UploadStructuredBuffer.cpp ===
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Resource\Buffer\BufferDefinition\GPUBuffer\UploadStructuredBuffer\UploadStructuredBuffer.cpp ===
 ========================================
 #include "PreCompileHeader.h"
 #include "UploadStructuredBuffer.h"
@@ -7617,7 +7807,7 @@ UploadStructuredBuffer::UploadStructuredBuffer
 
 
 ========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Resource\Buffer\GPUBuffer\UploadStructuredBuffer\UploadStructuredBuffer.h ===
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Resource\Buffer\BufferDefinition\GPUBuffer\UploadStructuredBuffer\UploadStructuredBuffer.h ===
 ========================================
 #pragma once 
 #include "../BufferInterface.h"
@@ -7649,99 +7839,99 @@ private:
 
 
 ========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Resource\Buffer\ResourceCreator\ResourceCreator.cpp ===
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Resource\Buffer\RuntimeBufferManagementSystems\BufferDeferredReleaser\BufferDeferredReleaser.cpp ===
 ========================================
 #include "PreCompileHeader.h"
-#include "ResourceCreator.h"
-#include "../../../Utility/StringConnverter/StringConverter.h"
-
-
-BufferContext::ResourceCreator::ResourceCreator(BufferContext::InstanceKey instanceKey_, BufferContext::CreateResourceCommand createResourceCommand_)
-	: createResourceCommand(createResourceCommand_) 
-{
-
-}
-
-BufferContext::ResourceCreator::~ResourceCreator()
-{
-
-}
-///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-[[nodiscard]] std::pair<Microsoft::WRL::ComPtr<ID3D12Resource>, Microsoft::WRL::ComPtr<ID3D12Resource>> BufferContext::ResourceCreator::Create
-(
-	const D3D12_RESOURCE_DESC& resourceDesc_,
-	const D3D12_HEAP_PROPERTIES& heapProperties_,
-	const D3D12_CLEAR_VALUE* clearValuePtr_,
-	std::array<D3D12_RESOURCE_STATES, ProjectConfig::Render::kRequiredGPUBufferSum> initialStates_,
-	const std::string& name_
-)
-{
-	auto resource1 = createResourceCommand(resourceDesc_, heapProperties_, clearValuePtr_, initialStates_.at(0), name_);
-	auto resource2 = createResourceCommand(resourceDesc_, heapProperties_, clearValuePtr_, initialStates_.at(1),name_);
-
-	//命名
-	resource1->SetName(StringConverter::ConvertString(name_ + "[0]").c_str());
-	resource2->SetName(StringConverter::ConvertString(name_ + "[1]").c_str());
-
-	return { std::move(resource1), std::move(resource2) };
-}
+#include "BufferDeferredReleaser.h"
 
 
 
 
 ========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Resource\Buffer\ResourceCreator\ResourceCreator.h ===
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Resource\Buffer\RuntimeBufferManagementSystems\BufferDeferredReleaser\BufferDeferredReleaser.h ===
 ========================================
 #pragma once
-#include "../BufferContext.h"
+#include "../../BufferContext.h"
 
-class BufferContext::ResourceCreator
+
+class BufferDeferredReleaser
 {
-
-public:
-
-	ResourceCreator(BufferContext::InstanceKey instanceKey_, BufferContext::CreateResourceCommand createResourceCommand_);
-	~ResourceCreator();
-
-	[[nodiscard]] std::pair<Microsoft::WRL::ComPtr<ID3D12Resource>, Microsoft::WRL::ComPtr<ID3D12Resource>> Create
-	(
-		const D3D12_RESOURCE_DESC& resourceDesc_,
-		const D3D12_HEAP_PROPERTIES& heapProperties_,
-		const D3D12_CLEAR_VALUE* clearValuePtr_, 
-		std::array<D3D12_RESOURCE_STATES, ProjectConfig::Render::kRequiredGPUBufferSum> initialStates_,
-		const std::string& name_
-	);
-
-private:
-
-	//リソース生成コマンド
-	BufferContext::CreateResourceCommand createResourceCommand;
-
 
 };
 
 
 
+
+
 ========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Resource\Buffer\RWResourceStateTracker\RWResourceStateTracker.cpp ===
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Resource\Buffer\RuntimeBufferManagementSystems\BufferInfoExtractors\ComputeBufferInfoExtractor\ComputeBufferInfoExtractor.cpp ===
 ========================================
 #include "PreCompileHeader.h"
-#include "RWResourceStateTracker.h"
+#include "ComputeBufferInfoExtractor.h"
 
 
 
 
 ========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Resource\Buffer\RWResourceStateTracker\RWResourceStateTracker.h ===
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Resource\Buffer\RuntimeBufferManagementSystems\BufferInfoExtractors\ComputeBufferInfoExtractor\ComputeBufferInfoExtractor.h ===
 ========================================
 #pragma once
-#include "../BufferContext.h"
+#include "../../../BufferContext.h"
 
 
-class RWResourceStateTracker
+class BufferContext::ComputeBufferInfoExtractor
 {
+
+};
+
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Resource\Buffer\RuntimeBufferManagementSystems\BufferInfoExtractors\FrameBufferedBufferInfoExtractor\FrameBufferedBufferInfoExtractor.cpp ===
+========================================
+#include "PreCompileHeader.h"
+#include "FrameBufferedBufferInfoExtractor.h"
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Resource\Buffer\RuntimeBufferManagementSystems\BufferInfoExtractors\FrameBufferedBufferInfoExtractor\FrameBufferedBufferInfoExtractor.h ===
+========================================
+#pragma once
+#include "../../../BufferContext.h"
+
+
+class BufferContext::FrameBufferedBufferInfoExtractor
+{
+
+};
+
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Resource\Buffer\RuntimeBufferManagementSystems\BufferInfoExtractors\RenderTargetBufferInfoExtractor\RenderTargetBufferInfoExtractor.cpp ===
+========================================
+#include "PreCompileHeader.h"
+#include "RenderTargetBufferInfoExtractor.h"
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Resource\Buffer\RuntimeBufferManagementSystems\BufferInfoExtractors\RenderTargetBufferInfoExtractor\RenderTargetBufferInfoExtractor.h ===
+========================================
+#pragma once
+#include "../../../BufferContext.h"
+#include "../../../../../Render/RuntimeRenderingManagementSystems/RequiredRenderingInfo.h"
+
+class BufferContext::RenderTargetBufferInfoExtractor
+{
+
 };
 
 

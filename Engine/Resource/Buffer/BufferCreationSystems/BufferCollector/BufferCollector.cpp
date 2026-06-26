@@ -39,6 +39,9 @@ void BufferContext::BufferCollector::Distribute()
 		//空きスロットに入れる
 		if (itrDstConatiner != dstContainer->end())
 		{
+			//そのイテレーターをリセットする
+			itrDstConatiner->reset();
+
 			(*itrDstConatiner) = std::move((*itrSrcContainer).buffer);
 			//該当の空きインデックス
 			uint32_t freeIndex = uint32_t(itrDstConatiner - dstContainer->begin());

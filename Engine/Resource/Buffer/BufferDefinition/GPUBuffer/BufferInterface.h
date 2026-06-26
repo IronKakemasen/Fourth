@@ -13,7 +13,7 @@ struct IRWBuffer
 	virtual void Swap() = 0;
 };
 
-//読み込みバッファのインターフェース
+//CPU書き込みGPU読み込みバッファのインターフェース
 struct IShaderBuffer
 {
 	virtual ~IShaderBuffer() = default;
@@ -43,15 +43,6 @@ struct IColorBuffer
 {
 	virtual ~IColorBuffer() = default;
 	//描画パイプラインに必要な行列を出す
-	std::pair<D3D12_VIEWPORT, D3D12_RECT> OutMatrix()const;
-	//行列を組み立てる
-	void AssembleMatrix(UINT width_, UINT height_);
-
-protected:
-
-	//ビューポート行列
-	D3D12_VIEWPORT viewport;
-	//シザーレクト行列
-	D3D12_RECT scissorRect;
+	virtual std::pair<uint32_t, uint32_t> OutWidthAndHeight()const = 0;
 
 };

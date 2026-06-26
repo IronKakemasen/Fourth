@@ -237,15 +237,6 @@
     <ClCompile Include="Engine\Resource\Buffer\BufferDefinition\BufferDescriptions\UploadStructuredBufferDescription\UploadStructuredBufferDescription.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="Engine\Resource\Buffer\BufferRuntimeManageSystems\BufferDeferredReleaser\BufferDeferredReleaser.cpp">
-      <Filter>ソース ファイル</Filter>
-    </ClCompile>
-    <ClCompile Include="Engine\Resource\Buffer\BufferRuntimeManageSystems\RenderTargetBufferInfoExtractor\RenderTargetBufferInfoExtractor.cpp">
-      <Filter>ソース ファイル</Filter>
-    </ClCompile>
-    <ClCompile Include="Engine\Resource\Buffer\BufferRuntimeManageSystems\FrameBufferedBufferInfoExtractor\FrameBufferedBufferInfoExtractor.cpp">
-      <Filter>ソース ファイル</Filter>
-    </ClCompile>
     <ClCompile Include="Engine\Resource\Buffer\BufferCreationSystems\BufferCreator\BufferCreator.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
@@ -264,7 +255,22 @@
     <ClCompile Include="Engine\Resource\Buffer\BufferDefinition\GPUBuffer\BufferInterface.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="Engine\Resource\Buffer\BufferRuntimeManageSystems\ComputeBufferInfoExtractor\ComputeBufferInfoExtractor.cpp">
+    <ClCompile Include="Engine\Resource\Buffer\RuntimeBufferManagementSystems\BufferInfoExtractors\ComputeBufferInfoExtractor\ComputeBufferInfoExtractor.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\Resource\Buffer\RuntimeBufferManagementSystems\BufferDeferredReleaser\BufferDeferredReleaser.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\Resource\Buffer\RuntimeBufferManagementSystems\BufferInfoExtractors\FrameBufferedBufferInfoExtractor\FrameBufferedBufferInfoExtractor.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\Resource\Buffer\RuntimeBufferManagementSystems\BufferInfoExtractors\RenderTargetBufferInfoExtractor\RenderTargetBufferInfoExtractor.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\Render\RenderContext.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\Render\RuntimeRenderingManagementSystems\ModelRenderingInfoOrganizer\ModelRenderingInfoOrganizer.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
   </ItemGroup>
@@ -336,12 +342,6 @@
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
     <ClInclude Include="Engine\Math\Vector\Vector3.h">
-      <Filter>ヘッダー ファイル</Filter>
-    </ClInclude>
-    <ClInclude Include="Engine\Render\kara.h">
-      <Filter>ヘッダー ファイル</Filter>
-    </ClInclude>
-    <ClInclude Include="Engine\Math\Matrix\Matrix4.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
     <ClInclude Include="Engine\Math\Quaternion\Quaternion.h">
@@ -488,15 +488,6 @@
     <ClInclude Include="Engine\Resource\Buffer\BufferDefinition\BufferDescriptions\UploadStructuredBufferDescription\UploadStructuredBufferDescription.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\Resource\Buffer\BufferRuntimeManageSystems\BufferDeferredReleaser\BufferDeferredReleaser.h">
-      <Filter>ヘッダー ファイル</Filter>
-    </ClInclude>
-    <ClInclude Include="Engine\Resource\Buffer\BufferRuntimeManageSystems\RenderTargetBufferInfoExtractor\RenderTargetBufferInfoExtractor.h">
-      <Filter>ヘッダー ファイル</Filter>
-    </ClInclude>
-    <ClInclude Include="Engine\Resource\Buffer\BufferRuntimeManageSystems\FrameBufferedBufferInfoExtractor\FrameBufferedBufferInfoExtractor.h">
-      <Filter>ヘッダー ファイル</Filter>
-    </ClInclude>
     <ClInclude Include="Engine\Resource\Buffer\BufferCreationSystems\BufferCreator\BufferCreator.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
@@ -515,7 +506,28 @@
     <ClInclude Include="Engine\Resource\Buffer\BufferDefinition\GPUBuffer\BufferInterface.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\Resource\Buffer\BufferRuntimeManageSystems\ComputeBufferInfoExtractor\ComputeBufferInfoExtractor.h">
+    <ClInclude Include="Engine\Resource\Buffer\RuntimeBufferManagementSystems\BufferInfoExtractors\ComputeBufferInfoExtractor\ComputeBufferInfoExtractor.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Resource\Buffer\RuntimeBufferManagementSystems\BufferDeferredReleaser\BufferDeferredReleaser.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Math\Matrix\Matrix4x4.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Resource\Buffer\RuntimeBufferManagementSystems\BufferInfoExtractors\RenderTargetBufferInfoExtractor\RenderTargetBufferInfoExtractor.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Resource\Buffer\RuntimeBufferManagementSystems\BufferInfoExtractors\FrameBufferedBufferInfoExtractor\FrameBufferedBufferInfoExtractor.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Render\RenderContext.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Render\RuntimeRenderingManagementSystems\ModelRenderingInfoOrganizer\ModelRenderingInfoOrganizer.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Render\RuntimeRenderingManagementSystems\RequiredRenderingInfo.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
   </ItemGroup>
