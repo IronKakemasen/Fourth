@@ -16,21 +16,25 @@ BufferContext::ResourceCreator::~ResourceCreator()
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-[[nodiscard]] std::pair<Microsoft::WRL::ComPtr<ID3D12Resource>, Microsoft::WRL::ComPtr<ID3D12Resource>> BufferContext::ResourceCreator::Create
+[[nodiscard]] BufferContext::ResourceCreator::ResourceContainer BufferContext::ResourceCreator::Create
 (
 	const D3D12_RESOURCE_DESC& resourceDesc_,
 	const D3D12_HEAP_PROPERTIES& heapProperties_,
 	const D3D12_CLEAR_VALUE* clearValuePtr_,
-	std::array<D3D12_RESOURCE_STATES, ProjectConfig::Render::kRequiredGPUBufferSum> initialStates_,
-	const std::string& name_
+	D3D12_RESOURCE_STATES initialState_,
+	const std::string& name_,
+	int numResource_
 )
 {
-	auto resource1 = createResourceCommand(resourceDesc_, heapProperties_, clearValuePtr_, initialStates_.at(0), name_);
-	auto resource2 = createResourceCommand(resourceDesc_, heapProperties_, clearValuePtr_, initialStates_.at(1),name_);
+	ResourceContainer resourceContainer;
 
-	//命名
-	resource1->SetName(StringConverter::ConvertString(name_ + "[0]").c_str());
-	resource2->SetName(StringConverter::ConvertString(name_ + "[1]").c_str());
+	for (int i = 0; i < numResource_; ++i)
+	{
+		//生リソース生成
+		auto& resource = resourceContainer.emplace_back(createResourceCommand(resourceDesc_, heapProperties_, clearValuePtr_, initialState_, name_));
+		//生リソースに名を刻む
+		resource->SetName(StringConverter::ConvertString(name_ + "[ " + std::to_string(i) + "]").c_str());
+	}
 
-	return { std::move(resource1), std::move(resource2) };
+	return std::move(resourceContainer);
 }

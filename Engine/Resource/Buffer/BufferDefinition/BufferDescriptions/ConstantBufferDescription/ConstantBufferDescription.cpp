@@ -4,7 +4,7 @@
 ConstantBufferDescription::ConstantBufferDescription
 (
 	UINT sizeInByte_
-) :BufferDescriptionBehavior({ D3D12_RESOURCE_STATE_GENERIC_READ,D3D12_RESOURCE_STATE_GENERIC_READ })
+) :BufferDescriptionBehavior(D3D12_RESOURCE_STATE_GENERIC_READ, ProjectConfig::Render::NumBuffer::kDoubleBuffer)
 {
 	param.sizeInByte = (sizeInByte_ + 255) & ~255;
 }

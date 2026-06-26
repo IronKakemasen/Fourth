@@ -26,7 +26,7 @@ class UploadStructuredBuffer;
 //バッファとディスクを特定のクラスに限定して組み立てる
 class BufferContext::BufferAssembler
 {
-    using DoubleResource = std::pair<Microsoft::WRL::ComPtr<ID3D12Resource>, Microsoft::WRL::ComPtr<ID3D12Resource>>;
+    using ResourceContainer = std::vector<Microsoft::WRL::ComPtr<ID3D12Resource>>;
 
     //ツール
     std::unique_ptr<BufferContext::ResourceCreator> resourceCreator;
@@ -52,13 +52,13 @@ public:
         std::string nameCnv = ConvertName<BufferType>(name_);
 
         //生リソース生成
-        DoubleResource doubleResource =
-            AssembleResource(resourceDescAndHeapProp.first, resourceDescAndHeapProp.second, nameCnv, desc_);
+        ResourceContainer resourceContainer =
+            std::move(AssembleResource(resourceDescAndHeapProp.first, resourceDescAndHeapProp.second, nameCnv, desc_));
 
         //バッファの実体生成
         std::unique_ptr<BufferType> buffer = std::move
         (
-            AssembleBuffer<BufferType>(doubleResource, desc_, nameCnv)
+            AssembleBuffer<BufferType>(std::move(resourceContainer), desc_, nameCnv)
         );
 
         //ビュー生成。ConstantBuffer以外
@@ -78,7 +78,7 @@ private:
 
     //生リソース生成
     template<typename DescType>
-    DoubleResource AssembleResource
+    ResourceContainer AssembleResource
     (
         D3D12_RESOURCE_DESC resourceDesc_,
         D3D12_HEAP_PROPERTIES heapProp_,
@@ -95,8 +95,10 @@ private:
             resourceDesc_,
             heapProp_,
             clearValueOpt ? &clearValueOpt.value() : nullptr,
-            desc_.initialStates,
-            nameCnv_
+            desc_.initialState,
+            nameCnv_,
+            desc_.numBuffer
+
         );
     }
    
@@ -120,7 +122,7 @@ private:
 
     //バッファ生成
     template<typename BufferType, typename DescType>
-    std::unique_ptr<BufferType> AssembleBuffer(DoubleResource doubleResource_, const DescType& desc_, std::string nameCnv_);
+    std::unique_ptr<BufferType> AssembleBuffer(ResourceContainer resourceContainer_, const DescType& desc_, std::string nameCnv_);
     
     //ビュー生成
     template<typename BufferType, typename DescType>
@@ -197,7 +199,7 @@ void BufferContext::BufferAssembler::AssembleView<ColorBuffer, ColorBufferDescri
 
 template<>
 std::unique_ptr<ColorBuffer> BufferContext::BufferAssembler::AssembleBuffer<ColorBuffer, ColorBufferDescription>
-(DoubleResource doubleResource_, const ColorBufferDescription& desc_, std::string nameCnv_);
+(ResourceContainer resourceContainer_, const ColorBufferDescription& desc_, std::string nameCnv_);
 
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -211,7 +213,7 @@ void BufferContext::BufferAssembler::AssembleView<DepthStencilBuffer, DepthStenc
 
 template<>
 std::unique_ptr<DepthStencilBuffer> BufferContext::BufferAssembler::AssembleBuffer<DepthStencilBuffer, DepthStencilBufferDescription>
-(DoubleResource doubleResource_, const DepthStencilBufferDescription& desc_, std::string nameCnv_);
+(ResourceContainer resourceContainer_, const DepthStencilBufferDescription& desc_, std::string nameCnv_);
 
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -221,7 +223,7 @@ std::optional<D3D12_CLEAR_VALUE> BufferContext::BufferAssembler::GetClearValue(c
 
 template<>
 std::unique_ptr<ConstantBuffer> BufferContext::BufferAssembler::AssembleBuffer<ConstantBuffer, ConstantBufferDescription>
-(DoubleResource doubleResource_, const ConstantBufferDescription& desc_, std::string nameCnv_);
+(ResourceContainer resourceContainer_, const ConstantBufferDescription& desc_, std::string nameCnv_);
 
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -235,5 +237,5 @@ void BufferContext::BufferAssembler::AssembleView<ComputeBuffer, ComputeBufferDe
 
 template<>
 std::unique_ptr<ComputeBuffer> BufferContext::BufferAssembler::AssembleBuffer<ComputeBuffer, ComputeBufferDescription>
-(DoubleResource doubleResource_, const ComputeBufferDescription& desc_, std::string nameCnv_);
+(ResourceContainer resourceContainer_, const ComputeBufferDescription& desc_, std::string nameCnv_);
 

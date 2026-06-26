@@ -104,11 +104,11 @@ void SwapChainContext::PullResourcesFromSwapChain(std::unique_ptr<Description>&&
 	using namespace ProjectConfig::Render;
 
 	//生リソース
-	std::array<Microsoft::WRL::ComPtr<ID3D12Resource>, kRequiredGPUBufferSum > resources;
+	std::array<Microsoft::WRL::ComPtr<ID3D12Resource>, kDoubleBuffer > resources;
 
 	//スワップチェーンからリソースを引っ張る
 	HRESULT hr{};
-	for (int i = 0;i < kRequiredGPUBufferSum;++i)
+	for (int i = 0;i < kDoubleBuffer;++i)
 	{
 		hr = swapChain->GetBuffer(i, IID_PPV_ARGS(resources.at(i).GetAddressOf()));
 		ErrorMessageOutput::Assert::DetectError(SUCCEEDED(hr), "SwapChainのリソースを引っ張れなかった", fileName);
@@ -126,7 +126,7 @@ void SwapChainContext::CreateRTV(InstanceKey instanceKey_ , const D3D12_RENDER_T
 {
 	ResourceGetKey resourceGetKey;
 
-	for (int i = 0;i < ProjectConfig::Render::kRequiredGPUBufferSum;++i)
+	for (int i = 0;i < ProjectConfig::Render::kDoubleBuffer;++i)
 	{
 		D3D12_CPU_DESCRIPTOR_HANDLE rtvCPU{};
 

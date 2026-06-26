@@ -13,8 +13,8 @@ struct RequiredRenderingInfo
 			D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle;
 			//レンダーターゲットをクリアするため
 			std::array<float, 4> clearColor;
-			//バリアを張るため
-			std::array<D3D12_RESOURCE_BARRIER, ProjectConfig::Render::kRequiredGPUBufferSum> barriers;
+			////バリアを張るため
+			//std::array<D3D12_RESOURCE_BARRIER, ProjectConfig::Render::kRequiredGPUBufferSum> barriers;
 			//横幅
 			uint32_t width{};
 			//立幅
@@ -51,8 +51,8 @@ struct RequiredRenderingInfo
 			//クリアするため
 			float clearDepth;
 			UINT8 clearStencil;			
-			//バリアを張るため
-			std::array<D3D12_RESOURCE_BARRIER, ProjectConfig::Render::kRequiredGPUBufferSum> barriers;
+			////バリアを張るため
+			//std::array<D3D12_RESOURCE_BARRIER, ProjectConfig::Render::kRequiredGPUBufferSum> barriers;
 
 		};
 

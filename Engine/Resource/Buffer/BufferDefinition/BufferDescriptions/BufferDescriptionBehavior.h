@@ -15,9 +15,11 @@ struct BufferDescriptionBehavior
 {
 
 public:
-	using ResourceStates = std::array<D3D12_RESOURCE_STATES, ProjectConfig::Render::kRequiredGPUBufferSum>;
-
-	BufferDescriptionBehavior(ResourceStates initialStates_);
+	BufferDescriptionBehavior
+	(
+		D3D12_RESOURCE_STATES initialState_, 
+		ProjectConfig::Render::NumBuffer numBuffer_
+	);
 
 	BufferDescriptionBehavior() = default;
 
@@ -25,8 +27,8 @@ public:
 	virtual D3D12_RESOURCE_DESC CreateResourceDesc()const = 0;
 	virtual D3D12_HEAP_PROPERTIES CreateHeapProperties()const = 0;
 
-	std::array<D3D12_RESOURCE_STATES, ProjectConfig::Render::kRequiredGPUBufferSum> initialStates =
-	{ D3D12_RESOURCE_STATE_Error_Detection,D3D12_RESOURCE_STATE_Error_Detection };
+	D3D12_RESOURCE_STATES initialState;
+	ProjectConfig::Render::NumBuffer numBuffer;
 };
 
 

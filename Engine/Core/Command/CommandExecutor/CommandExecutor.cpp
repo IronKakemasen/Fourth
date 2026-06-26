@@ -10,7 +10,7 @@ namespace
 CommandContext::CommandExecutor::CommandExecutor
 (
 	ID3D12CommandQueue* commandQueue_,
-	std::array<ID3D12CommandAllocator*, ProjectConfig::Render::kRequiredGPUBufferSum> commandAllocators_,
+	std::array<ID3D12CommandAllocator*, ProjectConfig::Render::kDoubleBuffer> commandAllocators_,
 	ID3D12GraphicsCommandList6* commandList_
 ):commandQueue(commandQueue_), commandAllocators(commandAllocators_), commandList(commandList_)
 {

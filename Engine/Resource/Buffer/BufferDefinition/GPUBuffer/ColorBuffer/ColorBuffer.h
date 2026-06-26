@@ -18,8 +18,7 @@ public:
 	(
 		const InstanceKey& instanceKey_,
 		std::string name_,
-		Microsoft::WRL::ComPtr<ID3D12Resource> resource1_,
-		Microsoft::WRL::ComPtr<ID3D12Resource> resource2_,
+		std::vector<Microsoft::WRL::ComPtr<ID3D12Resource>> resourceContainer_,
 		std::unique_ptr <BufferDescriptionBehavior>&& description_
 	);
 
@@ -30,8 +29,8 @@ public:
 	//ClearColor出す
 	virtual std::array<float, 4> OutProperClearColor()const override;
 	//自身のステートに応じて、それぞれのバッファのバリアを生成する
-	virtual std::array<D3D12_RESOURCE_BARRIER, ProjectConfig::Render::kRequiredGPUBufferSum>
-		CreateNextStepBarriers(ExtractMaterialKey key_)override;
+	//virtual std::array<D3D12_RESOURCE_BARRIER, ProjectConfig::Render::kRequiredGPUBufferSum>
+	//	CreateNextStepBarriers(ExtractMaterialKey key_)override;
 	//立幅横幅を出力
 	virtual std::pair<uint32_t, uint32_t> OutWidthAndHeight()const override;
 

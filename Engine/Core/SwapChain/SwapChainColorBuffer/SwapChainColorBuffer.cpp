@@ -6,13 +6,13 @@
 SwapChainContext::ColorBuffer::ColorBuffer
 (
 	std::unique_ptr<Description> desc_,
-	std::array<Microsoft::WRL::ComPtr<ID3D12Resource>, ProjectConfig::Render::kRequiredGPUBufferSum> resources_
+	std::array<Microsoft::WRL::ComPtr<ID3D12Resource>, ProjectConfig::Render::kDoubleBuffer> resources_
 ) : desc(std::move(desc_))
 {
 	//行列2種を構築
 	AssembleMatrix();
 
-	for (int i = 0;i < ProjectConfig::Render::kRequiredGPUBufferSum;++i)
+	for (int i = 0;i < ProjectConfig::Render::kDoubleBuffer;++i)
 	{
 		buffers.at(i).resource = std::move(resources_.at(i));
 	}
@@ -85,7 +85,7 @@ DXGI_SWAP_CHAIN_DESC1 SwapChainContext::Description::CreateSwapChainDesc()const
 	//描画のターゲットとして利用する
 	swapChainDesc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
 	//ダブルバッファ
-	swapChainDesc.BufferCount = ProjectConfig::Render::kRequiredGPUBufferSum;
+	swapChainDesc.BufferCount = ProjectConfig::Render::kDoubleBuffer;
 	//モニタに移したら中身を破棄
 	swapChainDesc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD;
 

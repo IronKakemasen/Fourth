@@ -1,8 +1,6 @@
 #pragma once
 #include "../../BufferContext.h"
 
-
-
 class GPUBufferBehavior;
 class ColorBuffer;
 class ConstantBuffer;

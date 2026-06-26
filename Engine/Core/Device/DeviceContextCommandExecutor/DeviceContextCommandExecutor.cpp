@@ -13,7 +13,7 @@ using CommandContextCorePartsRuntime =
 std::tuple
 <
 	Microsoft::WRL::ComPtr<ID3D12CommandQueue>,
-	std::array<Microsoft::WRL::ComPtr<ID3D12CommandAllocator>, ProjectConfig::Render::kRequiredGPUBufferSum>,
+	std::array<Microsoft::WRL::ComPtr<ID3D12CommandAllocator>, ProjectConfig::Render::kDoubleBuffer>,
 	Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList6>
 >;
 
@@ -73,14 +73,14 @@ DeviceContext::CommandExecutor::CreateCommandContextCorePartsForRuntime(DeviceCo
 	auto* device = deviceGetter(DeviceContext::AccessKey{});
 
 	Microsoft::WRL::ComPtr<ID3D12CommandQueue> cmdQueue;
-	std::array < Microsoft::WRL::ComPtr<ID3D12CommandAllocator>, kRequiredGPUBufferSum > cmdAllocators;
+	std::array < Microsoft::WRL::ComPtr<ID3D12CommandAllocator>, kDoubleBuffer > cmdAllocators;
 	Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList6> cmdList;
 
 	//生成
 	cmdQueue = tool.CreateCommandQueue(device, cmdListType);
 	Logger::Log("Create: CommandQueue", fileName);
 
-	for (int i = 0;i < kRequiredGPUBufferSum;++i)
+	for (int i = 0;i < kDoubleBuffer;++i)
 	{
 		cmdAllocators.at(i) = tool.CreateCommandAllocator(device, cmdListType);
 	}

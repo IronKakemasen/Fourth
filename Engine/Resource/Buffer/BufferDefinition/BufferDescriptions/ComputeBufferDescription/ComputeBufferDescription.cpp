@@ -8,7 +8,7 @@ ComputeBufferDescription::ComputeBufferDescription
 	UINT numElements_,
 	UINT firstElement_,
 	uint64_t uavCounterOffsetInBytes_
-) :BufferDescriptionBehavior({ D3D12_RESOURCE_STATE_COPY_DEST ,D3D12_RESOURCE_STATE_COPY_DEST })
+) :BufferDescriptionBehavior(D3D12_RESOURCE_STATE_COPY_DEST, ProjectConfig::Render::NumBuffer::kDoubleBuffer)
 {
 	param.structureByte = structureByte_;
 	param.numElements = numElements_;

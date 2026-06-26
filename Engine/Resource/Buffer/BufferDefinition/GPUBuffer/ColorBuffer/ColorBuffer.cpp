@@ -11,41 +11,40 @@ ColorBuffer::ColorBuffer
 (
 	const InstanceKey& instanceKey_,
 	std::string name_,
-	Microsoft::WRL::ComPtr<ID3D12Resource> resource1_,
-	Microsoft::WRL::ComPtr<ID3D12Resource> resource2_,
+	std::vector<Microsoft::WRL::ComPtr<ID3D12Resource>> resourceContainer_,
 	std::unique_ptr <BufferDescriptionBehavior>&& description_
-) : GPUBufferBehavior(instanceKey_, name_, std::move(resource1_), std::move(resource2_), std::move(description_))
+) : GPUBufferBehavior(instanceKey_, name_, std::move(resourceContainer_), std::move(description_))
 {
 
 }
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-std::array<D3D12_RESOURCE_BARRIER, ProjectConfig::Render::kRequiredGPUBufferSum>
-ColorBuffer::CreateNextStepBarriers(ExtractMaterialKey key_)
-{
-	std::array<D3D12_RESOURCE_BARRIER, ProjectConfig::Render::kRequiredGPUBufferSum> barriers;
-	
-	//次はSRV_RTVになる
-	if (status == kRTV_SRV)
-	{
-		barriers =
-		{
-			buffers.at(0).CreateBarrier(D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE),
-			buffers.at(1).CreateBarrier(D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_RENDER_TARGET)
-		};
-	}
-	else
-	{
-		barriers =
-		{
-			buffers.at(0).CreateBarrier(D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_RENDER_TARGET),
-			buffers.at(1).CreateBarrier(D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE)
-		};
-	}
-
-	return barriers;
-}
+//std::array<D3D12_RESOURCE_BARRIER, ProjectConfig::Render::kRequiredGPUBufferSum>
+//ColorBuffer::CreateNextStepBarriers(ExtractMaterialKey key_)
+//{
+//	std::array<D3D12_RESOURCE_BARRIER, ProjectConfig::Render::kRequiredGPUBufferSum> barriers;
+//	
+//	//次はSRV_RTVになる
+//	if (status == kRTV_SRV)
+//	{
+//		barriers =
+//		{
+//			buffers.at(0).CreateBarrier(D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE),
+//			buffers.at(1).CreateBarrier(D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_RENDER_TARGET)
+//		};
+//	}
+//	else
+//	{
+//		barriers =
+//		{
+//			buffers.at(0).CreateBarrier(D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_RENDER_TARGET),
+//			buffers.at(1).CreateBarrier(D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE)
+//		};
+//	}
+//
+//	return barriers;
+//}
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////

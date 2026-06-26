@@ -6,9 +6,9 @@ struct IRWBuffer
 {
 	virtual ~IRWBuffer() = default;
 
-	//各バッファが自身のバリアを適切に張るためのバリアを生成仮想関数
-	virtual std::array<D3D12_RESOURCE_BARRIER, ProjectConfig::Render::kRequiredGPUBufferSum>
-		CreateNextStepBarriers(GPUBufferBehavior::ExtractMaterialKey key_) = 0;
+	////各バッファが自身のバリアを適切に張るためのバリアを生成仮想関数
+	//virtual std::array<D3D12_RESOURCE_BARRIER, ProjectConfig::Render::kRequiredGPUBufferSum>
+	//	CreateNextStepBarriers(GPUBufferBehavior::ExtractMaterialKey key_) = 0;
 	//内部の役割をスワップさせる
 	virtual void Swap() = 0;
 };

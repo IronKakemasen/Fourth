@@ -7,7 +7,7 @@ public:
 	CommandExecutor
 	(
 		ID3D12CommandQueue* commandQueue_,
-		std::array<ID3D12CommandAllocator*, ProjectConfig::Render::kRequiredGPUBufferSum> commandAllocators_,
+		std::array<ID3D12CommandAllocator*, ProjectConfig::Render::kDoubleBuffer> commandAllocators_,
 		ID3D12GraphicsCommandList6* commandList_
 	);
 
@@ -19,7 +19,7 @@ public:
 private:
 
 	ID3D12CommandQueue* commandQueue;
-	std::array<ID3D12CommandAllocator*, ProjectConfig::Render::kRequiredGPUBufferSum> commandAllocators;
+	std::array<ID3D12CommandAllocator*, ProjectConfig::Render::kDoubleBuffer> commandAllocators;
 	ID3D12GraphicsCommandList6* commandList;
 };
 

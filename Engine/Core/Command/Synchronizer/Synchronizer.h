@@ -9,7 +9,7 @@ public:
 	(
 		ID3D12CommandQueue* commandQueue_,
 		ID3D12Fence* fence_,
-		std::array<uint64_t, ProjectConfig::Render::kRequiredGPUBufferSum>* fenceCounters_,
+		std::array<uint64_t, ProjectConfig::Render::kDoubleBuffer>* fenceCounters_,
 		HANDLE* fenceEvent_,
 		uint64_t* commonFenceValue_
 	);
@@ -21,7 +21,7 @@ public:
 private:
 	ID3D12CommandQueue* commandQueue;
 	ID3D12Fence* fence;
-	std::array<uint64_t, ProjectConfig::Render::kRequiredGPUBufferSum>* fenceCounters;
+	std::array<uint64_t, ProjectConfig::Render::kDoubleBuffer>* fenceCounters;
 	HANDLE* fenceEvent;
 	uint64_t* commonFenceValue = 0;
 

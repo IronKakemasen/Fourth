@@ -6,8 +6,9 @@ ColorBufferDescription::ColorBufferDescription
 	std::array<float, 4> clearColor_,
 	UINT width_,
 	UINT height_,
-	DXGI_FORMAT format_
-) : BufferDescriptionBehavior({ D3D12_RESOURCE_STATE_RENDER_TARGET,D3D12_RESOURCE_STATE_RENDER_TARGET })
+	DXGI_FORMAT format_,
+	ProjectConfig::Render::NumBuffer numBuffer_
+) : BufferDescriptionBehavior(D3D12_RESOURCE_STATE_RENDER_TARGET, numBuffer_)
 {
 	param.clearColor = clearColor_;
 	param.width = width_;

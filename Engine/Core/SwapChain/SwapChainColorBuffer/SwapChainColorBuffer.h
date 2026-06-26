@@ -24,7 +24,7 @@ public:
 	(
 		std::unique_ptr<SwapChainContext::Description> desc_,
 		std::array<Microsoft::WRL::ComPtr<ID3D12Resource>, 
-		ProjectConfig::Render::kRequiredGPUBufferSum> resources_
+		ProjectConfig::Render::kDoubleBuffer> resources_
 	);
 
 	//リソース取得
@@ -48,7 +48,7 @@ private:
 		D3D12_RESOURCE_BARRIER CreateBarrier(D3D12_RESOURCE_STATES after_);
 	};
 
-	std::array<Buffer, ProjectConfig::Render::kRequiredGPUBufferSum> buffers;
+	std::array<Buffer, ProjectConfig::Render::kDoubleBuffer> buffers;
 	std::unique_ptr<SwapChainContext::Description> desc;
 
 	D3D12_VIEWPORT viewport;

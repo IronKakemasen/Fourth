@@ -38,13 +38,11 @@ public:
 	//バッファから描画パスに必要な情報をもらうためのキー
 	struct ExtractMaterialKey;
 
-
 	GPUBufferBehavior
 	(
 		const InstanceKey& instanceKey_, 
-		std::string name_, 
-		Microsoft::WRL::ComPtr<ID3D12Resource> resource1_, 
-		Microsoft::WRL::ComPtr<ID3D12Resource> resource2_,
+		std::string name_,
+		std::vector<Microsoft::WRL::ComPtr<ID3D12Resource>> resourceContainer_,
 		std::unique_ptr <BufferDescriptionBehavior>&& description_
 	);
 
@@ -79,8 +77,8 @@ protected:
 	//自身を構成するディスクリプション
 	std::unique_ptr <BufferDescriptionBehavior> description;
 
-	//バッファ本体複数分
-	std::array<Buffer, ProjectConfig::Render::kRequiredGPUBufferSum> buffers;
+	//バッファ本体
+	std::vector<Buffer> buffers;
 
 	//各種ビューのインデックスを取得
 	template<ViewType type, typename Index>

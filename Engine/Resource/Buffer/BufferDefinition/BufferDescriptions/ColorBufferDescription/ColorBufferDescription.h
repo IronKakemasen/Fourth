@@ -23,7 +23,8 @@ public:
 		std::array<float, 4> clearColor_,
 		UINT width_,
 		UINT height_,
-		DXGI_FORMAT format_
+		DXGI_FORMAT format_,
+		ProjectConfig::Render::NumBuffer numBuffer_ = ProjectConfig::Render::NumBuffer::kSingleBuffer
 	);
 	
 	//要項チェック

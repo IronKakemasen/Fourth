@@ -5,7 +5,7 @@ CommandContext::Synchronizer::Synchronizer
 (
 	ID3D12CommandQueue* commandQueue_,
 	ID3D12Fence* fence_,
-	std::array<uint64_t, ProjectConfig::Render::kRequiredGPUBufferSum>* fenceCounters_,
+	std::array<uint64_t, ProjectConfig::Render::kDoubleBuffer>* fenceCounters_,
 	HANDLE* fenceEvent_,
 	uint64_t* commonFenceValue_
 ):commandQueue(commandQueue_), fence(fence_), fenceCounters(fenceCounters_), fenceEvent(fenceEvent_), commonFenceValue(commonFenceValue_)
