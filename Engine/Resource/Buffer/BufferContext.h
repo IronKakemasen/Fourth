@@ -59,7 +59,7 @@ public:
 
 	~BufferContext();
 
-	///+/バッファ生成クラス（本丸）
+	///バッファ生成クラス（本丸）
 	std::unique_ptr<BufferCreator> bufferCreator;
 
 private:

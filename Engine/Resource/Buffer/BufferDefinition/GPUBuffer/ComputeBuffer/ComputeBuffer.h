@@ -3,12 +3,13 @@
 
 
 //読み書き
-class ComputeBuffer final : public GPUBufferBehavior,IRWBuffer
+class ComputeBuffer final : public GPUBufferBehavior
 {
 	enum Status
 	{
 		kSRV_UAV,	//index0が読み込み用、index1が書き込み用
-		kUAV_SRV	//その逆
+		kUAV_SRV,	//その逆
+		kSingle
 	};
 
 public:
@@ -32,8 +33,6 @@ public:
 
 	//virtual std::array<D3D12_RESOURCE_BARRIER, ProjectConfig::Render::kRequiredGPUBufferSum>
 	//	CreateNextStepBarriers(ExtractMaterialKey key_) override;
-
-	virtual void Swap()override;
 
 private:
 

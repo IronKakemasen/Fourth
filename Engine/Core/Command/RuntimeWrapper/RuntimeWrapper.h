@@ -122,6 +122,35 @@ public:
 			cmdList->ResourceBarrier(numBarriers_, pBarriers_);
 		}
 	}
+
+	__forceinline void SetComputeRootSignature(ID3D12RootSignature* rootSignature_)
+	{
+		cmdList->SetComputeRootSignature(rootSignature_);
+	}
+
+	__forceinline void SetComputeRootDescriptorTable(UINT rootParameterIndex_, D3D12_GPU_DESCRIPTOR_HANDLE baseDescriptor_)
+	{
+		cmdList->SetComputeRootDescriptorTable(rootParameterIndex_, baseDescriptor_);
+	}
+
+	__forceinline void SetComputeRootConstantBufferView(UINT rootParameterIndex_, D3D12_GPU_VIRTUAL_ADDRESS bufferLocation_)
+	{
+		cmdList->SetComputeRootConstantBufferView(rootParameterIndex_, bufferLocation_);
+	}
+
+	__forceinline void Dispatch(UINT threadGroupCountX_, UINT threadGroupCountY_, UINT threadGroupCountZ_)
+	{
+		cmdList->Dispatch(threadGroupCountX_, threadGroupCountY_, threadGroupCountZ_);
+	}
+
+	__forceinline void SetGraphicsRootDescriptorTable
+	(
+		_In_ UINT rootParameterIndex_,
+		_In_ D3D12_GPU_DESCRIPTOR_HANDLE baseDescriptor_
+	)
+	{
+		cmdList->SetGraphicsRootDescriptorTable(rootParameterIndex_, baseDescriptor_);
+	}
 };
 
 
