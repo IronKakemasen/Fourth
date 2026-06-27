@@ -3,14 +3,8 @@
 
 
 //定数バッファクラス
-class DepthStencilBuffer final : public GPUBufferBehavior, IRWBuffer, IRenderTargetBuffer
+class DepthStencilBuffer final : public GPUBufferBehavior, IRenderTargetBuffer,IShaderBuffer,IDepthBuffer
 {
-	enum Status
-	{
-		kDSV_SRV,
-		kSRV_DSV
-	};
-
 public:
 
 	DepthStencilBuffer
@@ -21,20 +15,16 @@ public:
 		std::unique_ptr <BufferDescriptionBehavior>&& description_
 	);
 
-	////自身の状態をもとに貼るべきバリアを生成する
-	//virtual std::array<D3D12_RESOURCE_BARRIER, ProjectConfig::Render::kRequiredGPUBufferSum>
-	//	CreateNextStepBarriers(ExtractMaterialKey key_)override;
-	//役割をスワップする
-	virtual void Swap()override;
-	//ダブルバッファのうち適切な方のバッファからCPUインデックスを出す
-	virtual D3D12_CPU_DESCRIPTOR_HANDLE OutProperCPUHandle()const override;
+	//バリアを張る
+	virtual D3D12_RESOURCE_BARRIER CreateBarrier(Usage usage_) override;
+	//適切なCPUインデックスを出す
+	virtual D3D12_CPU_DESCRIPTOR_HANDLE OutProperDSVHeapHandle()const override;
+	//適切なsrvHeapインデックスを渡す
+	virtual uint32_t OutProperSRVHeapIndex()const override;
 	//DSVFormat出す
-	virtual DXGI_FORMAT OutProperRenderTargetFormat()const override;
+	virtual DXGI_FORMAT OutProperDSVFormat()const override;
 	//ClearColor出す
 	virtual std::array<float, 4> OutProperClearColor()const override;
 
-
-private:
-	Status status = kDSV_SRV;
 };
 

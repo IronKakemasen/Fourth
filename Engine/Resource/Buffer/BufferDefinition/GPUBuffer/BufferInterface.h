@@ -1,48 +1,138 @@
 #pragma once
 #include "GPUBufferBehavior.h"
 
-//ピンポンバッファ専用
-struct IRWBuffer
-{
-	virtual ~IRWBuffer() = default;
 
-	////各バッファが自身のバリアを適切に張るためのバリアを生成仮想関数
-	//virtual std::array<D3D12_RESOURCE_BARRIER, ProjectConfig::Render::kRequiredGPUBufferSum>
-	//	CreateNextStepBarriers(GPUBufferBehavior::ExtractMaterialKey key_) = 0;
+//使用目的
+enum class Usage
+{
+	kRead,
+	kWrite
+};
+
+
+//ピンポンバッファインターフェース
+struct IPingPongBuffer
+{
+	virtual ~IPingPongBuffer() = default;
+
 	//内部の役割をスワップさせる
 	virtual void Swap() = 0;
+	//ステートを同期させる
+	virtual void SynchronizeStatus(ProjectConfig::Render::NumBuffer numBuffer_) = 0;
+	//バリアを生成仮想関数
+	virtual D3D12_RESOURCE_BARRIER CreateBarrier(Usage usage_) = 0;
+
+protected:
+
+	//ステータスに応じて適切な求められたバッファのインデックスを返す
+	virtual int ProperBufferIndex(ViewType viewType_)const = 0;
+	virtual int ProperBufferIndex(Usage usage_)const = 0;
 };
 
-//CPU書き込みGPU読み込みバッファのインターフェース
+struct IDualRole
+{
+	virtual D3D12_RESOURCE_STATES ResourceStateTable(Usage usage_)const = 0;
+};
+
+//シェーダーバッファのインターフェース
 struct IShaderBuffer
 {
-	virtual ~IShaderBuffer() = default;
-
-	//ダブルバッファのうち適切な方のバッファからインデックスを出す
-	virtual uint32_t OutProperSRV_UAVHeapIndex()const = 0;
-	//適切な方のバッファからFormat出す(テクスチャとして利用する場合)
-	virtual DXGI_FORMAT OutProperSRVFormat()const = 0;
-
+	virtual uint32_t OutProperSRVHeapIndex()const = 0;
 };
 
-//カラーバッファやディプスバッファなどのテクスチャに対して書き込みを行うもの
-struct IRenderTargetBuffer
+//CSバッファのインターフェース
+struct IRWStructuredBuffer:IDualRole
 {
-	virtual ~IRenderTargetBuffer() = default;
-	//ダブルバッファのうち適切な方のバッファからCPUインデックスを出す
-	virtual D3D12_CPU_DESCRIPTOR_HANDLE OutProperCPUHandle()const = 0;
-	//適切な方のバッファからFormat出す
-	virtual DXGI_FORMAT OutProperRenderTargetFormat()const = 0;
-	//適切な方のバッファからClearColor出す
-	virtual std::array<float, 4> OutProperClearColor()const = 0;
+	virtual uint32_t OutProperUAVHeapIndex()const = 0;
+	virtual DXGI_FORMAT OutProperUAVFormat()const = 0;
+
+protected:
+	virtual D3D12_RESOURCE_STATES ResourceStateTable(Usage usage_)const override;
 };
 
 
-//ほぼカラーバッファ専用インターフェース
-struct IColorBuffer
+//ディプスバッファのインターフェース
+struct IDepthBuffer:IDualRole
+{
+	virtual D3D12_CPU_DESCRIPTOR_HANDLE OutProperDSVHeapHandle()const = 0;
+	virtual DXGI_FORMAT OutProperDSVFormat()const = 0;
+protected:
+	virtual D3D12_RESOURCE_STATES ResourceStateTable(Usage usage_)const override;;
+
+};
+
+//カラーバッファインターフェース
+struct IColorBuffer:IDualRole
 {
 	virtual ~IColorBuffer() = default;
-	//描画パイプラインに必要な行列を出す
 	virtual std::pair<uint32_t, uint32_t> OutWidthAndHeight()const = 0;
+	virtual D3D12_CPU_DESCRIPTOR_HANDLE OutProperRTVHeapHandle()const = 0;
+	virtual DXGI_FORMAT OutProperRTVFormat()const = 0;
+protected:
+	virtual D3D12_RESOURCE_STATES ResourceStateTable(Usage usage_)const override;
+};
+
+
+
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////
+///コンピュートバッファ専用のインターフェース
+struct IComputeBuffer:IPingPongBuffer
+{
+private:
+
+	//内部ステータス
+	enum Status
+	{
+		kComputeResource_ShaderResource,
+		kShaderResource_ComputeResource,
+		kSingle
+	}status = kComputeResource_ShaderResource;
+
+public:
+
+	virtual ~IComputeBuffer() = default;
+	virtual void Swap()override;
+	virtual D3D12_RESOURCE_BARRIER CreateBarrier(Usage usage_) = 0;
+
+protected:
+
+	virtual int ProperBufferIndex(ViewType viewType_)const override;
+	virtual int ProperBufferIndex(Usage usage_)const override;
+	virtual void SynchronizeStatus(ProjectConfig::Render::NumBuffer numBuffer_)override;
 
 };
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////
+///カラーバッファやディプスバッファなどのテクスチャに対して書き込みを行うもの
+struct IRenderTargetBuffer:IPingPongBuffer
+{
+private:
+
+	//内部ステータス
+	enum Status
+	{
+		kRenderTarget_ShaderResource,
+		kShaderResource_RenderTarget,
+		kSingle
+	}status = kSingle;
+
+public:
+
+	virtual ~IRenderTargetBuffer() = default;
+
+	//適切なClearColor出す
+	virtual std::array<float, 4> OutProperClearColor()const = 0;
+	virtual D3D12_RESOURCE_BARRIER CreateBarrier(Usage usage_) = 0;
+	virtual void Swap()override;
+
+protected:
+
+	virtual int ProperBufferIndex(ViewType viewType_)const override;
+	virtual int ProperBufferIndex(Usage usage_)const override;
+	virtual void SynchronizeStatus(ProjectConfig::Render::NumBuffer numBuffer_)override;
+};
+
+

@@ -428,7 +428,12 @@ namespace ProjectConfig
 
 	namespace Render
 	{
-		constexpr int kRequiredGPUBufferSum = 2;
+		enum NumBuffer
+		{
+			kSingleBuffer = 1,
+			kDoubleBuffer = 2
+		};
+
 		constexpr D3D_SHADER_MODEL kMaximumShaderModel = D3D_SHADER_MODEL_6_6;	
 	}
 
@@ -518,7 +523,7 @@ CommandContext::CommandContext
 (
 	InstanceKey instanceKey_,
 	Microsoft::WRL::ComPtr<ID3D12CommandQueue> commandQueue_,
-	std::array<Microsoft::WRL::ComPtr<ID3D12CommandAllocator>, kRequiredGPUBufferSum> commandAllocators_,
+	std::array<Microsoft::WRL::ComPtr<ID3D12CommandAllocator>, kDoubleBuffer> commandAllocators_,
 	Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList6> commandList_,
 	Microsoft::WRL::ComPtr<ID3D12Fence> fence_,
 	Microsoft::WRL::ComPtr<ID3D12CommandAllocator> allocator_forUpload_,
@@ -559,9 +564,9 @@ void CommandContext::CreateFenceEvent()
 
 void CommandContext::InstantiateRuntimeCommandControler()
 {
-	std::array<ID3D12CommandAllocator*, kRequiredGPUBufferSum> cmdAllocators;
+	std::array<ID3D12CommandAllocator*, kDoubleBuffer> cmdAllocators;
 	
-	for (int i = 0;i < kRequiredGPUBufferSum;++i)
+	for (int i = 0;i < kDoubleBuffer;++i)
 	{
 		cmdAllocators.at(i) = commandAllocators.at(i).Get();
 	}
@@ -619,7 +624,7 @@ public:
 	(
 		InstanceKey instanceKey_,
 		Microsoft::WRL::ComPtr<ID3D12CommandQueue> commandQueue_,
-		std::array<Microsoft::WRL::ComPtr<ID3D12CommandAllocator>, ProjectConfig::Render::kRequiredGPUBufferSum> commandAllocators_,
+		std::array<Microsoft::WRL::ComPtr<ID3D12CommandAllocator>, ProjectConfig::Render::kDoubleBuffer> commandAllocators_,
 		Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList6> commandList_,
 		Microsoft::WRL::ComPtr<ID3D12Fence> fence_,
 		Microsoft::WRL::ComPtr<ID3D12CommandAllocator> allocator_forUpload_,
@@ -642,7 +647,7 @@ private:
 	//コマンドキュー
 	Microsoft::WRL::ComPtr<ID3D12CommandQueue> commandQueue;
 	//コマンドアローケータ
-	std::array<Microsoft::WRL::ComPtr<ID3D12CommandAllocator>,ProjectConfig::Render::kRequiredGPUBufferSum> commandAllocators;
+	std::array<Microsoft::WRL::ComPtr<ID3D12CommandAllocator>,ProjectConfig::Render::kDoubleBuffer> commandAllocators;
 	//コマンドリスト		
 	Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList6> commandList;
 	//フェンス
@@ -650,7 +655,7 @@ private:
 	//カウンタ
 	uint64_t commonFenceValue = 0;
 	//それぞれのカウンタ
-	std::array<uint64_t,ProjectConfig::Render::kRequiredGPUBufferSum> fenceCounters = { 0,0 };
+	std::array<uint64_t,ProjectConfig::Render::kDoubleBuffer> fenceCounters = { 0,0 };
 	//フェンスイベント
 	HANDLE fenceEvent = nullptr;
 
@@ -696,7 +701,7 @@ namespace
 CommandContext::CommandExecutor::CommandExecutor
 (
 	ID3D12CommandQueue* commandQueue_,
-	std::array<ID3D12CommandAllocator*, ProjectConfig::Render::kRequiredGPUBufferSum> commandAllocators_,
+	std::array<ID3D12CommandAllocator*, ProjectConfig::Render::kDoubleBuffer> commandAllocators_,
 	ID3D12GraphicsCommandList6* commandList_
 ):commandQueue(commandQueue_), commandAllocators(commandAllocators_), commandList(commandList_)
 {
@@ -741,7 +746,7 @@ public:
 	CommandExecutor
 	(
 		ID3D12CommandQueue* commandQueue_,
-		std::array<ID3D12CommandAllocator*, ProjectConfig::Render::kRequiredGPUBufferSum> commandAllocators_,
+		std::array<ID3D12CommandAllocator*, ProjectConfig::Render::kDoubleBuffer> commandAllocators_,
 		ID3D12GraphicsCommandList6* commandList_
 	);
 
@@ -753,7 +758,7 @@ public:
 private:
 
 	ID3D12CommandQueue* commandQueue;
-	std::array<ID3D12CommandAllocator*, ProjectConfig::Render::kRequiredGPUBufferSum> commandAllocators;
+	std::array<ID3D12CommandAllocator*, ProjectConfig::Render::kDoubleBuffer> commandAllocators;
 	ID3D12GraphicsCommandList6* commandList;
 };
 
@@ -1046,6 +1051,35 @@ public:
 			cmdList->ResourceBarrier(numBarriers_, pBarriers_);
 		}
 	}
+
+	__forceinline void SetComputeRootSignature(ID3D12RootSignature* rootSignature_)
+	{
+		cmdList->SetComputeRootSignature(rootSignature_);
+	}
+
+	__forceinline void SetComputeRootDescriptorTable(UINT rootParameterIndex_, D3D12_GPU_DESCRIPTOR_HANDLE baseDescriptor_)
+	{
+		cmdList->SetComputeRootDescriptorTable(rootParameterIndex_, baseDescriptor_);
+	}
+
+	__forceinline void SetComputeRootConstantBufferView(UINT rootParameterIndex_, D3D12_GPU_VIRTUAL_ADDRESS bufferLocation_)
+	{
+		cmdList->SetComputeRootConstantBufferView(rootParameterIndex_, bufferLocation_);
+	}
+
+	__forceinline void Dispatch(UINT threadGroupCountX_, UINT threadGroupCountY_, UINT threadGroupCountZ_)
+	{
+		cmdList->Dispatch(threadGroupCountX_, threadGroupCountY_, threadGroupCountZ_);
+	}
+
+	__forceinline void SetGraphicsRootDescriptorTable
+	(
+		_In_ UINT rootParameterIndex_,
+		_In_ D3D12_GPU_DESCRIPTOR_HANDLE baseDescriptor_
+	)
+	{
+		cmdList->SetGraphicsRootDescriptorTable(rootParameterIndex_, baseDescriptor_);
+	}
 };
 
 
@@ -1063,7 +1097,7 @@ CommandContext::Synchronizer::Synchronizer
 (
 	ID3D12CommandQueue* commandQueue_,
 	ID3D12Fence* fence_,
-	std::array<uint64_t, ProjectConfig::Render::kRequiredGPUBufferSum>* fenceCounters_,
+	std::array<uint64_t, ProjectConfig::Render::kDoubleBuffer>* fenceCounters_,
 	HANDLE* fenceEvent_,
 	uint64_t* commonFenceValue_
 ):commandQueue(commandQueue_), fence(fence_), fenceCounters(fenceCounters_), fenceEvent(fenceEvent_), commonFenceValue(commonFenceValue_)
@@ -1133,7 +1167,7 @@ public:
 	(
 		ID3D12CommandQueue* commandQueue_,
 		ID3D12Fence* fence_,
-		std::array<uint64_t, ProjectConfig::Render::kRequiredGPUBufferSum>* fenceCounters_,
+		std::array<uint64_t, ProjectConfig::Render::kDoubleBuffer>* fenceCounters_,
 		HANDLE* fenceEvent_,
 		uint64_t* commonFenceValue_
 	);
@@ -1145,7 +1179,7 @@ public:
 private:
 	ID3D12CommandQueue* commandQueue;
 	ID3D12Fence* fence;
-	std::array<uint64_t, ProjectConfig::Render::kRequiredGPUBufferSum>* fenceCounters;
+	std::array<uint64_t, ProjectConfig::Render::kDoubleBuffer>* fenceCounters;
 	HANDLE* fenceEvent;
 	uint64_t* commonFenceValue = 0;
 
@@ -2488,7 +2522,7 @@ using CommandContextCorePartsRuntime =
 std::tuple
 <
 	Microsoft::WRL::ComPtr<ID3D12CommandQueue>,
-	std::array<Microsoft::WRL::ComPtr<ID3D12CommandAllocator>, ProjectConfig::Render::kRequiredGPUBufferSum>,
+	std::array<Microsoft::WRL::ComPtr<ID3D12CommandAllocator>, ProjectConfig::Render::kDoubleBuffer>,
 	Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList6>
 >;
 
@@ -2548,14 +2582,14 @@ DeviceContext::CommandExecutor::CreateCommandContextCorePartsForRuntime(DeviceCo
 	auto* device = deviceGetter(DeviceContext::AccessKey{});
 
 	Microsoft::WRL::ComPtr<ID3D12CommandQueue> cmdQueue;
-	std::array < Microsoft::WRL::ComPtr<ID3D12CommandAllocator>, kRequiredGPUBufferSum > cmdAllocators;
+	std::array < Microsoft::WRL::ComPtr<ID3D12CommandAllocator>, kDoubleBuffer > cmdAllocators;
 	Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList6> cmdList;
 
 	//生成
 	cmdQueue = tool.CreateCommandQueue(device, cmdListType);
 	Logger::Log("Create: CommandQueue", fileName);
 
-	for (int i = 0;i < kRequiredGPUBufferSum;++i)
+	for (int i = 0;i < kDoubleBuffer;++i)
 	{
 		cmdAllocators.at(i) = tool.CreateCommandAllocator(device, cmdListType);
 	}
@@ -2626,7 +2660,7 @@ public:
 	[[nodiscard]] std::tuple
 	<
 		Microsoft::WRL::ComPtr<ID3D12CommandQueue>,
-		std::array<Microsoft::WRL::ComPtr<ID3D12CommandAllocator>, ProjectConfig::Render::kRequiredGPUBufferSum>,
+		std::array<Microsoft::WRL::ComPtr<ID3D12CommandAllocator>, ProjectConfig::Render::kDoubleBuffer>,
 		Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList6>
 	>
 	CreateCommandContextCorePartsForRuntime(DeviceContext::InstanceKey instanceKey_);
@@ -3245,11 +3279,11 @@ void SwapChainContext::PullResourcesFromSwapChain(std::unique_ptr<Description>&&
 	using namespace ProjectConfig::Render;
 
 	//生リソース
-	std::array<Microsoft::WRL::ComPtr<ID3D12Resource>, kRequiredGPUBufferSum > resources;
+	std::array<Microsoft::WRL::ComPtr<ID3D12Resource>, kDoubleBuffer > resources;
 
 	//スワップチェーンからリソースを引っ張る
 	HRESULT hr{};
-	for (int i = 0;i < kRequiredGPUBufferSum;++i)
+	for (int i = 0;i < kDoubleBuffer;++i)
 	{
 		hr = swapChain->GetBuffer(i, IID_PPV_ARGS(resources.at(i).GetAddressOf()));
 		ErrorMessageOutput::Assert::DetectError(SUCCEEDED(hr), "SwapChainのリソースを引っ張れなかった", fileName);
@@ -3267,7 +3301,7 @@ void SwapChainContext::CreateRTV(InstanceKey instanceKey_ , const D3D12_RENDER_T
 {
 	ResourceGetKey resourceGetKey;
 
-	for (int i = 0;i < ProjectConfig::Render::kRequiredGPUBufferSum;++i)
+	for (int i = 0;i < ProjectConfig::Render::kDoubleBuffer;++i)
 	{
 		D3D12_CPU_DESCRIPTOR_HANDLE rtvCPU{};
 
@@ -3583,13 +3617,13 @@ private:
 SwapChainContext::ColorBuffer::ColorBuffer
 (
 	std::unique_ptr<Description> desc_,
-	std::array<Microsoft::WRL::ComPtr<ID3D12Resource>, ProjectConfig::Render::kRequiredGPUBufferSum> resources_
+	std::array<Microsoft::WRL::ComPtr<ID3D12Resource>, ProjectConfig::Render::kDoubleBuffer> resources_
 ) : desc(std::move(desc_))
 {
 	//行列2種を構築
 	AssembleMatrix();
 
-	for (int i = 0;i < ProjectConfig::Render::kRequiredGPUBufferSum;++i)
+	for (int i = 0;i < ProjectConfig::Render::kDoubleBuffer;++i)
 	{
 		buffers.at(i).resource = std::move(resources_.at(i));
 	}
@@ -3662,7 +3696,7 @@ DXGI_SWAP_CHAIN_DESC1 SwapChainContext::Description::CreateSwapChainDesc()const
 	//描画のターゲットとして利用する
 	swapChainDesc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
 	//ダブルバッファ
-	swapChainDesc.BufferCount = ProjectConfig::Render::kRequiredGPUBufferSum;
+	swapChainDesc.BufferCount = ProjectConfig::Render::kDoubleBuffer;
 	//モニタに移したら中身を破棄
 	swapChainDesc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD;
 
@@ -3718,7 +3752,7 @@ public:
 	(
 		std::unique_ptr<SwapChainContext::Description> desc_,
 		std::array<Microsoft::WRL::ComPtr<ID3D12Resource>, 
-		ProjectConfig::Render::kRequiredGPUBufferSum> resources_
+		ProjectConfig::Render::kDoubleBuffer> resources_
 	);
 
 	//リソース取得
@@ -3742,7 +3776,7 @@ private:
 		D3D12_RESOURCE_BARRIER CreateBarrier(D3D12_RESOURCE_STATES after_);
 	};
 
-	std::array<Buffer, ProjectConfig::Render::kRequiredGPUBufferSum> buffers;
+	std::array<Buffer, ProjectConfig::Render::kDoubleBuffer> buffers;
 	std::unique_ptr<SwapChainContext::Description> desc;
 
 	D3D12_VIEWPORT viewport;
@@ -5024,19 +5058,71 @@ struct RequiredRenderingInfo
 {
 	struct ColorBuffer
 	{
-		//ディスクリプタヒープ上のインデックス
-		D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle;
-		///PSOを決定するため...？
-		DXGI_FORMAT format;	
-		//レンダーターゲットをクリアするため
-		std::array<float, 4> clearColor;
-		//バリアを張るため
-		std::array<D3D12_RESOURCE_BARRIER, ProjectConfig::Render::kRequiredGPUBufferSum> barriers;
-		//横幅
-		uint32_t width{};
-		//立幅
-		uint32_t height{};
+		///描画先として書き込むときに必要
+		struct AsWiring
+		{
+			//RTVヒープ上のインデックス
+			D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle;
+			//レンダーターゲットをクリアするため
+			std::array<float, 4> clearColor;
+			////バリアを張るため
+			//std::array<D3D12_RESOURCE_BARRIER, ProjectConfig::Render::kRequiredGPUBufferSum> barriers;
+			//横幅
+			uint32_t width{};
+			//立幅
+			uint32_t height{};
+
+		};
+
+		///テクスチャとして読むときに必要
+		struct AsReading
+		{
+			//SRVヒープ上のインデックス
+			uint32_t srvHeapIndex;
+		};
+
+		///PSOを構築するときに必要
+		struct AsAssemblingPSO
+		{
+			DXGI_FORMAT format;
+		};
 	};
+
+///+//////////////////////////////////////////////////////////////////////////////////////////////////////////////
+	struct DepthBuffer
+	{
+		///描画先として書き込むときに必要
+		struct AsWriting
+		{
+			//DSVヒープ上のインデックス
+			D3D12_CPU_DESCRIPTOR_HANDLE dsvCpuHandle;
+			//横幅
+			uint32_t width{};
+			//立幅
+			uint32_t height{};
+			//クリアするため
+			float clearDepth;
+			UINT8 clearStencil;			
+			////バリアを張るため
+			//std::array<D3D12_RESOURCE_BARRIER, ProjectConfig::Render::kRequiredGPUBufferSum> barriers;
+
+		};
+
+		///テクスチャとして読むときに必要
+		struct AsReading
+		{
+			//SRVヒープ上のインデックス
+			uint32_t srvHeapIndex;
+		};
+
+		///PSOを構築するときに必要
+		struct AsAssemblingPSO
+		{
+			DXGI_FORMAT dsvFormat;
+		};
+	};
+///+//////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
 };
 
 
@@ -5232,7 +5318,7 @@ public:
 
 	~BufferContext();
 
-	///+/バッファ生成クラス（本丸）
+	///バッファ生成クラス（本丸）
 	std::unique_ptr<BufferCreator> bufferCreator;
 
 private:
@@ -5369,14 +5455,14 @@ std::optional<D3D12_CLEAR_VALUE> BufferContext::BufferAssembler::GetClearValue(c
 
 template<>
 std::unique_ptr<ColorBuffer> BufferContext::BufferAssembler::AssembleBuffer<ColorBuffer, ColorBufferDescription>
-(DoubleResource doubleResource_, const ColorBufferDescription& desc_, std::string nameCnv_)
+(ResourceContainer resourceContainer_, const ColorBufferDescription& desc_, std::string nameCnv_)
 {
 	//バッファ生成
 	return std::make_unique<ColorBuffer>
 	(
 	    ColorBuffer::InstanceKey{},
 	    nameCnv_,
-	    std::move(doubleResource_.first), std::move(doubleResource_.second),
+	    std::move(resourceContainer_),
 	    std::make_unique<ColorBufferDescription>(desc_)
 	);
 }
@@ -5388,7 +5474,7 @@ void BufferContext::BufferAssembler::AssembleView<ColorBuffer, ColorBufferDescri
 	auto srvDesc = desc_.CreateSRV_Desc();
 	auto rtvDesc = desc_.CreateRTV_Desc();
 
-	for (int i = 0;i < ProjectConfig::Render::kRequiredGPUBufferSum;++i)
+	for (int i = 0;i < desc_.numBuffer;++i)
 	{
 		//srv作成
 		CreateView(buffer_, srvDesc, i, accessKey_, instanceKey_);
@@ -5408,14 +5494,14 @@ std::optional<D3D12_CLEAR_VALUE> BufferContext::BufferAssembler::GetClearValue(c
 
 template<>
 std::unique_ptr<DepthStencilBuffer> BufferContext::BufferAssembler::AssembleBuffer<DepthStencilBuffer, DepthStencilBufferDescription>
-(DoubleResource doubleResource_, const DepthStencilBufferDescription& desc_, std::string nameCnv_)
+(ResourceContainer resourceContainer_, const DepthStencilBufferDescription& desc_, std::string nameCnv_)
 {
 	//バッファ生成
 	return std::make_unique<DepthStencilBuffer>
 	(
 		DepthStencilBuffer::InstanceKey{},
 		nameCnv_,
-		std::move(doubleResource_.first), std::move(doubleResource_.second),
+		std::move(resourceContainer_),
 		std::make_unique<DepthStencilBufferDescription>(desc_)
 	);
 }
@@ -5427,7 +5513,7 @@ void BufferContext::BufferAssembler::AssembleView<DepthStencilBuffer, DepthStenc
 	auto srvDesc = desc_.CreateSRV_Desc();
 	auto dsvDesc = desc_.CreateDSVDesc();
 
-	for (int i = 0;i < ProjectConfig::Render::kRequiredGPUBufferSum;++i)
+	for (int i = 0;i < desc_.numBuffer;++i)
 	{
 		//srv作成
 		CreateView(buffer_, srvDesc, i, accessKey_, instanceKey_);
@@ -5446,14 +5532,14 @@ std::optional<D3D12_CLEAR_VALUE> BufferContext::BufferAssembler::GetClearValue(c
 	
 template<>
 std::unique_ptr<ConstantBuffer> BufferContext::BufferAssembler::AssembleBuffer<ConstantBuffer, ConstantBufferDescription>
-(DoubleResource doubleResource_, const ConstantBufferDescription& desc_, std::string nameCnv_)
+(ResourceContainer resourceContainer_, const ConstantBufferDescription& desc_, std::string nameCnv_)
 {
 	//バッファ生成
 	return std::make_unique<ConstantBuffer>
 	(
 		ConstantBuffer::InstanceKey{},
 		nameCnv_,
-		std::move(doubleResource_.first), std::move(doubleResource_.second),
+		std::move(resourceContainer_),
 		std::make_unique<ConstantBufferDescription>(desc_)
 	);
 }
@@ -5469,14 +5555,14 @@ std::optional<D3D12_CLEAR_VALUE> BufferContext::BufferAssembler::GetClearValue(c
 
 template<>
 std::unique_ptr<ComputeBuffer> BufferContext::BufferAssembler::AssembleBuffer<ComputeBuffer, ComputeBufferDescription>
-(DoubleResource doubleResource_, const ComputeBufferDescription& desc_, std::string nameCnv_)
+(ResourceContainer resourceContainer_, const ComputeBufferDescription& desc_, std::string nameCnv_)
 {
 	//バッファ生成
 	return std::make_unique<ComputeBuffer>
 	(
 		ComputeBuffer::InstanceKey{},
 		nameCnv_,
-		std::move(doubleResource_.first), std::move(doubleResource_.second),
+		std::move(resourceContainer_),
 		std::make_unique<ComputeBufferDescription>(desc_)
 	);
 }
@@ -5488,7 +5574,7 @@ void BufferContext::BufferAssembler::AssembleView<ComputeBuffer, ComputeBufferDe
 	auto srvDesc = desc_.CreateSRV_Desc();
 	auto uavDesc = desc_.CreateUAV_Desc();
 
-	for (int i = 0;i < ProjectConfig::Render::kRequiredGPUBufferSum;++i)
+	for (int i = 0;i < desc_.numBuffer;++i)
 	{
 		//srv作成
 		CreateView(buffer_, srvDesc, i, accessKey_, instanceKey_);
@@ -5611,7 +5697,7 @@ class UploadStructuredBuffer;
 //バッファとディスクを特定のクラスに限定して組み立てる
 class BufferContext::BufferAssembler
 {
-    using DoubleResource = std::pair<Microsoft::WRL::ComPtr<ID3D12Resource>, Microsoft::WRL::ComPtr<ID3D12Resource>>;
+    using ResourceContainer = std::vector<Microsoft::WRL::ComPtr<ID3D12Resource>>;
 
     //ツール
     std::unique_ptr<BufferContext::ResourceCreator> resourceCreator;
@@ -5637,13 +5723,13 @@ public:
         std::string nameCnv = ConvertName<BufferType>(name_);
 
         //生リソース生成
-        DoubleResource doubleResource =
-            AssembleResource(resourceDescAndHeapProp.first, resourceDescAndHeapProp.second, nameCnv, desc_);
+        ResourceContainer resourceContainer =
+            std::move(AssembleResource(resourceDescAndHeapProp.first, resourceDescAndHeapProp.second, nameCnv, desc_));
 
         //バッファの実体生成
         std::unique_ptr<BufferType> buffer = std::move
         (
-            AssembleBuffer<BufferType>(doubleResource, desc_, nameCnv)
+            AssembleBuffer<BufferType>(std::move(resourceContainer), desc_, nameCnv)
         );
 
         //ビュー生成。ConstantBuffer以外
@@ -5663,7 +5749,7 @@ private:
 
     //生リソース生成
     template<typename DescType>
-    DoubleResource AssembleResource
+    ResourceContainer AssembleResource
     (
         D3D12_RESOURCE_DESC resourceDesc_,
         D3D12_HEAP_PROPERTIES heapProp_,
@@ -5680,8 +5766,10 @@ private:
             resourceDesc_,
             heapProp_,
             clearValueOpt ? &clearValueOpt.value() : nullptr,
-            desc_.initialStates,
-            nameCnv_
+            desc_.initialState,
+            nameCnv_,
+            desc_.numBuffer
+
         );
     }
    
@@ -5705,7 +5793,7 @@ private:
 
     //バッファ生成
     template<typename BufferType, typename DescType>
-    std::unique_ptr<BufferType> AssembleBuffer(DoubleResource doubleResource_, const DescType& desc_, std::string nameCnv_);
+    std::unique_ptr<BufferType> AssembleBuffer(ResourceContainer resourceContainer_, const DescType& desc_, std::string nameCnv_);
     
     //ビュー生成
     template<typename BufferType, typename DescType>
@@ -5782,7 +5870,7 @@ void BufferContext::BufferAssembler::AssembleView<ColorBuffer, ColorBufferDescri
 
 template<>
 std::unique_ptr<ColorBuffer> BufferContext::BufferAssembler::AssembleBuffer<ColorBuffer, ColorBufferDescription>
-(DoubleResource doubleResource_, const ColorBufferDescription& desc_, std::string nameCnv_);
+(ResourceContainer resourceContainer_, const ColorBufferDescription& desc_, std::string nameCnv_);
 
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -5796,7 +5884,7 @@ void BufferContext::BufferAssembler::AssembleView<DepthStencilBuffer, DepthStenc
 
 template<>
 std::unique_ptr<DepthStencilBuffer> BufferContext::BufferAssembler::AssembleBuffer<DepthStencilBuffer, DepthStencilBufferDescription>
-(DoubleResource doubleResource_, const DepthStencilBufferDescription& desc_, std::string nameCnv_);
+(ResourceContainer resourceContainer_, const DepthStencilBufferDescription& desc_, std::string nameCnv_);
 
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -5806,7 +5894,7 @@ std::optional<D3D12_CLEAR_VALUE> BufferContext::BufferAssembler::GetClearValue(c
 
 template<>
 std::unique_ptr<ConstantBuffer> BufferContext::BufferAssembler::AssembleBuffer<ConstantBuffer, ConstantBufferDescription>
-(DoubleResource doubleResource_, const ConstantBufferDescription& desc_, std::string nameCnv_);
+(ResourceContainer resourceContainer_, const ConstantBufferDescription& desc_, std::string nameCnv_);
 
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -5820,7 +5908,7 @@ void BufferContext::BufferAssembler::AssembleView<ComputeBuffer, ComputeBufferDe
 
 template<>
 std::unique_ptr<ComputeBuffer> BufferContext::BufferAssembler::AssembleBuffer<ComputeBuffer, ComputeBufferDescription>
-(DoubleResource doubleResource_, const ComputeBufferDescription& desc_, std::string nameCnv_);
+(ResourceContainer resourceContainer_, const ComputeBufferDescription& desc_, std::string nameCnv_);
 
 
 
@@ -5927,8 +6015,6 @@ std::vector<std::unique_ptr<GPUBufferBehavior>>::iterator BufferContext::BufferC
 ========================================
 #pragma once
 #include "../../BufferContext.h"
-
-
 
 class GPUBufferBehavior;
 class ColorBuffer;
@@ -6127,23 +6213,27 @@ BufferContext::ResourceCreator::~ResourceCreator()
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-[[nodiscard]] std::pair<Microsoft::WRL::ComPtr<ID3D12Resource>, Microsoft::WRL::ComPtr<ID3D12Resource>> BufferContext::ResourceCreator::Create
+[[nodiscard]] BufferContext::ResourceCreator::ResourceContainer BufferContext::ResourceCreator::Create
 (
 	const D3D12_RESOURCE_DESC& resourceDesc_,
 	const D3D12_HEAP_PROPERTIES& heapProperties_,
 	const D3D12_CLEAR_VALUE* clearValuePtr_,
-	std::array<D3D12_RESOURCE_STATES, ProjectConfig::Render::kRequiredGPUBufferSum> initialStates_,
-	const std::string& name_
+	D3D12_RESOURCE_STATES initialState_,
+	const std::string& name_,
+	int numResource_
 )
 {
-	auto resource1 = createResourceCommand(resourceDesc_, heapProperties_, clearValuePtr_, initialStates_.at(0), name_);
-	auto resource2 = createResourceCommand(resourceDesc_, heapProperties_, clearValuePtr_, initialStates_.at(1),name_);
+	ResourceContainer resourceContainer;
 
-	//命名
-	resource1->SetName(StringConverter::ConvertString(name_ + "[0]").c_str());
-	resource2->SetName(StringConverter::ConvertString(name_ + "[1]").c_str());
+	for (int i = 0; i < numResource_; ++i)
+	{
+		//生リソース生成
+		auto& resource = resourceContainer.emplace_back(createResourceCommand(resourceDesc_, heapProperties_, clearValuePtr_, initialState_, name_));
+		//生リソースに名を刻む
+		resource->SetName(StringConverter::ConvertString(name_ + "[ " + std::to_string(i) + "]").c_str());
+	}
 
-	return { std::move(resource1), std::move(resource2) };
+	return std::move(resourceContainer);
 }
 
 
@@ -6157,19 +6247,20 @@ BufferContext::ResourceCreator::~ResourceCreator()
 
 class BufferContext::ResourceCreator
 {
-
+	using ResourceContainer = std::vector<Microsoft::WRL::ComPtr<ID3D12Resource>>;
 public:
 
 	ResourceCreator(BufferContext::InstanceKey instanceKey_, BufferContext::CreateResourceCommand createResourceCommand_);
 	~ResourceCreator();
 
-	[[nodiscard]] std::pair<Microsoft::WRL::ComPtr<ID3D12Resource>, Microsoft::WRL::ComPtr<ID3D12Resource>> Create
+	[[nodiscard]] ResourceContainer Create
 	(
 		const D3D12_RESOURCE_DESC& resourceDesc_,
 		const D3D12_HEAP_PROPERTIES& heapProperties_,
 		const D3D12_CLEAR_VALUE* clearValuePtr_, 
-		std::array<D3D12_RESOURCE_STATES, ProjectConfig::Render::kRequiredGPUBufferSum> initialStates_,
-		const std::string& name_
+		D3D12_RESOURCE_STATES initialState_,
+		const std::string& name_,
+		int numResource_
 	);
 
 private:
@@ -6188,17 +6279,17 @@ private:
 #include "PreCompileHeader.h"
 #include "BufferDescriptionBehavior.h"
 
-BufferDescriptionBehavior::BufferDescriptionBehavior(ResourceStates initialStates_) : initialStates(initialStates_)
+BufferDescriptionBehavior::BufferDescriptionBehavior
+(
+	D3D12_RESOURCE_STATES initialState_,
+	ProjectConfig::Render::NumBuffer numBuffer_ = ProjectConfig::Render::NumBuffer::kSingleBuffer
+):initialState(initialState_), numBuffer(numBuffer_)
 {
-	for (D3D12_RESOURCE_STATES state : initialStates)
-	{
-		ErrorMessageOutput::Assert::DetectError
-		(
-			(state != D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_Error_Detection),
-			"リソースステートが初期化されていない", "BufferDescriptionBehavior.cpp"
-		);
-	}
-
+	ErrorMessageOutput::Assert::DetectError
+	(
+		(initialState != D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_Error_Detection),
+		"リソースステートが初期化されていない", "BufferDescriptionBehavior.cpp"
+	);
 };
 
 
@@ -6224,9 +6315,11 @@ struct BufferDescriptionBehavior
 {
 
 public:
-	using ResourceStates = std::array<D3D12_RESOURCE_STATES, ProjectConfig::Render::kRequiredGPUBufferSum>;
-
-	BufferDescriptionBehavior(ResourceStates initialStates_);
+	BufferDescriptionBehavior
+	(
+		D3D12_RESOURCE_STATES initialState_, 
+		ProjectConfig::Render::NumBuffer numBuffer_
+	);
 
 	BufferDescriptionBehavior() = default;
 
@@ -6234,8 +6327,8 @@ public:
 	virtual D3D12_RESOURCE_DESC CreateResourceDesc()const = 0;
 	virtual D3D12_HEAP_PROPERTIES CreateHeapProperties()const = 0;
 
-	std::array<D3D12_RESOURCE_STATES, ProjectConfig::Render::kRequiredGPUBufferSum> initialStates =
-	{ D3D12_RESOURCE_STATE_Error_Detection,D3D12_RESOURCE_STATE_Error_Detection };
+	D3D12_RESOURCE_STATES initialState;
+	ProjectConfig::Render::NumBuffer numBuffer;
 };
 
 
@@ -6279,8 +6372,9 @@ ColorBufferDescription::ColorBufferDescription
 	std::array<float, 4> clearColor_,
 	UINT width_,
 	UINT height_,
-	DXGI_FORMAT format_
-) : BufferDescriptionBehavior({ D3D12_RESOURCE_STATE_RENDER_TARGET,D3D12_RESOURCE_STATE_RENDER_TARGET })
+	DXGI_FORMAT format_,
+	ProjectConfig::Render::NumBuffer numBuffer_
+) : BufferDescriptionBehavior(D3D12_RESOURCE_STATE_RENDER_TARGET, numBuffer_)
 {
 	param.clearColor = clearColor_;
 	param.width = width_;
@@ -6402,7 +6496,8 @@ public:
 		std::array<float, 4> clearColor_,
 		UINT width_,
 		UINT height_,
-		DXGI_FORMAT format_
+		DXGI_FORMAT format_,
+		ProjectConfig::Render::NumBuffer numBuffer_ = ProjectConfig::Render::NumBuffer::kSingleBuffer
 	);
 	
 	//要項チェック
@@ -6443,7 +6538,7 @@ ComputeBufferDescription::ComputeBufferDescription
 	UINT numElements_,
 	UINT firstElement_,
 	uint64_t uavCounterOffsetInBytes_
-) :BufferDescriptionBehavior({ D3D12_RESOURCE_STATE_COPY_DEST ,D3D12_RESOURCE_STATE_COPY_DEST })
+) :BufferDescriptionBehavior(D3D12_RESOURCE_STATE_COPY_DEST, ProjectConfig::Render::NumBuffer::kDoubleBuffer)
 {
 	param.structureByte = structureByte_;
 	param.numElements = numElements_;
@@ -6586,7 +6681,7 @@ public:
 ConstantBufferDescription::ConstantBufferDescription
 (
 	UINT sizeInByte_
-) :BufferDescriptionBehavior({ D3D12_RESOURCE_STATE_GENERIC_READ,D3D12_RESOURCE_STATE_GENERIC_READ })
+) :BufferDescriptionBehavior(D3D12_RESOURCE_STATE_GENERIC_READ, ProjectConfig::Render::NumBuffer::kDoubleBuffer)
 {
 	param.sizeInByte = (sizeInByte_ + 255) & ~255;
 }
@@ -6687,8 +6782,9 @@ DepthStencilBufferDescription::DepthStencilBufferDescription
 	UINT height_,
 	FLOAT clearColor_,
 	DXGI_FORMAT dsvFormat_,
-	DXGI_FORMAT srvFormat_
-):BufferDescriptionBehavior({ D3D12_RESOURCE_STATE_DEPTH_WRITE ,D3D12_RESOURCE_STATE_DEPTH_WRITE })
+	DXGI_FORMAT srvFormat_,
+	ProjectConfig::Render::NumBuffer numBuffer_
+):BufferDescriptionBehavior(D3D12_RESOURCE_STATE_DEPTH_WRITE, numBuffer_)
 {
 	param.width = width_;
 	param.height = height_;
@@ -6842,7 +6938,8 @@ public:
 		UINT height_,
 		FLOAT clearColor_,
 		DXGI_FORMAT dsvFormat_,
-		DXGI_FORMAT srvFormat_
+		DXGI_FORMAT srvFormat_,
+		ProjectConfig::Render::NumBuffer numBuffer_ = ProjectConfig::Render::NumBuffer::kSingleBuffer
 	);
 
 	//要項チェック
@@ -6887,7 +6984,7 @@ UploadStructuredBufferDescription::UploadStructuredBufferDescription
 	UINT structureByte_,
 	UINT numElements_,
 	UINT firstElement_
-) :BufferDescriptionBehavior({ D3D12_RESOURCE_STATE_GENERIC_READ ,D3D12_RESOURCE_STATE_GENERIC_READ })
+) :BufferDescriptionBehavior(D3D12_RESOURCE_STATE_GENERIC_READ, ProjectConfig::Render::NumBuffer::kDoubleBuffer)
 {
 	param.structureByte = structureByte_;
 	param.numElements = numElements_;
@@ -7024,9 +7121,9 @@ struct IRWBuffer
 {
 	virtual ~IRWBuffer() = default;
 
-	//各バッファが自身のバリアを適切に張るためのバリアを生成仮想関数
-	virtual std::array<D3D12_RESOURCE_BARRIER, ProjectConfig::Render::kRequiredGPUBufferSum>
-		CreateNextStepBarriers(GPUBufferBehavior::ExtractMaterialKey key_) = 0;
+	////各バッファが自身のバリアを適切に張るためのバリアを生成仮想関数
+	//virtual std::array<D3D12_RESOURCE_BARRIER, ProjectConfig::Render::kRequiredGPUBufferSum>
+	//	CreateNextStepBarriers(GPUBufferBehavior::ExtractMaterialKey key_) = 0;
 	//内部の役割をスワップさせる
 	virtual void Swap() = 0;
 };
@@ -7088,19 +7185,19 @@ GPUBufferBehavior::GPUBufferBehavior
 (
 	const InstanceKey& instanceKey_,
 	std::string name_,
-	Microsoft::WRL::ComPtr<ID3D12Resource> resource1_,
-	Microsoft::WRL::ComPtr<ID3D12Resource> resource2_,
+	std::vector<Microsoft::WRL::ComPtr<ID3D12Resource>> resourceContainer_,
 	std::unique_ptr <BufferDescriptionBehavior>&& description_
 ) : name(name_), description(std::move(description_))
 {
-	buffers.at(0).resource = std::move(resource1_);
-	buffers.at(1).resource = std::move(resource2_);
+	size_t const bufferSize = resourceContainer_.size();
 
-	for (size_t i = 0; i < buffers.size(); ++i)
+	buffers.resize(bufferSize);
+
+	for (size_t i = 0;i < bufferSize;++i)
 	{
-		buffers.at(i).curResourceState = description->initialStates.at(i);
+		buffers[i].resource = std::move(resourceContainer_[i]);
+		buffers.at(i).curResourceState = description->initialState;
 	}
-
 }
 GPUBufferBehavior::~GPUBufferBehavior()
 {
@@ -7183,13 +7280,11 @@ public:
 	//バッファから描画パスに必要な情報をもらうためのキー
 	struct ExtractMaterialKey;
 
-
 	GPUBufferBehavior
 	(
 		const InstanceKey& instanceKey_, 
-		std::string name_, 
-		Microsoft::WRL::ComPtr<ID3D12Resource> resource1_, 
-		Microsoft::WRL::ComPtr<ID3D12Resource> resource2_,
+		std::string name_,
+		std::vector<Microsoft::WRL::ComPtr<ID3D12Resource>> resourceContainer_,
 		std::unique_ptr <BufferDescriptionBehavior>&& description_
 	);
 
@@ -7224,8 +7319,8 @@ protected:
 	//自身を構成するディスクリプション
 	std::unique_ptr <BufferDescriptionBehavior> description;
 
-	//バッファ本体複数分
-	std::array<Buffer, ProjectConfig::Render::kRequiredGPUBufferSum> buffers;
+	//バッファ本体
+	std::vector<Buffer> buffers;
 
 	//各種ビューのインデックスを取得
 	template<ViewType type, typename Index>
@@ -7305,41 +7400,40 @@ ColorBuffer::ColorBuffer
 (
 	const InstanceKey& instanceKey_,
 	std::string name_,
-	Microsoft::WRL::ComPtr<ID3D12Resource> resource1_,
-	Microsoft::WRL::ComPtr<ID3D12Resource> resource2_,
+	std::vector<Microsoft::WRL::ComPtr<ID3D12Resource>> resourceContainer_,
 	std::unique_ptr <BufferDescriptionBehavior>&& description_
-) : GPUBufferBehavior(instanceKey_, name_, std::move(resource1_), std::move(resource2_), std::move(description_))
+) : GPUBufferBehavior(instanceKey_, name_, std::move(resourceContainer_), std::move(description_))
 {
 
 }
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-std::array<D3D12_RESOURCE_BARRIER, ProjectConfig::Render::kRequiredGPUBufferSum>
-ColorBuffer::CreateNextStepBarriers(ExtractMaterialKey key_)
-{
-	std::array<D3D12_RESOURCE_BARRIER, ProjectConfig::Render::kRequiredGPUBufferSum> barriers;
-	
-	//次はSRV_RTVになる
-	if (status == kRTV_SRV)
-	{
-		barriers =
-		{
-			buffers.at(0).CreateBarrier(D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE),
-			buffers.at(1).CreateBarrier(D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_RENDER_TARGET)
-		};
-	}
-	else
-	{
-		barriers =
-		{
-			buffers.at(0).CreateBarrier(D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_RENDER_TARGET),
-			buffers.at(1).CreateBarrier(D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE)
-		};
-	}
-
-	return barriers;
-}
+//std::array<D3D12_RESOURCE_BARRIER, ProjectConfig::Render::kRequiredGPUBufferSum>
+//ColorBuffer::CreateNextStepBarriers(ExtractMaterialKey key_)
+//{
+//	std::array<D3D12_RESOURCE_BARRIER, ProjectConfig::Render::kRequiredGPUBufferSum> barriers;
+//	
+//	//次はSRV_RTVになる
+//	if (status == kRTV_SRV)
+//	{
+//		barriers =
+//		{
+//			buffers.at(0).CreateBarrier(D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE),
+//			buffers.at(1).CreateBarrier(D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_RENDER_TARGET)
+//		};
+//	}
+//	else
+//	{
+//		barriers =
+//		{
+//			buffers.at(0).CreateBarrier(D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_RENDER_TARGET),
+//			buffers.at(1).CreateBarrier(D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE)
+//		};
+//	}
+//
+//	return barriers;
+//}
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -7416,8 +7510,7 @@ public:
 	(
 		const InstanceKey& instanceKey_,
 		std::string name_,
-		Microsoft::WRL::ComPtr<ID3D12Resource> resource1_,
-		Microsoft::WRL::ComPtr<ID3D12Resource> resource2_,
+		std::vector<Microsoft::WRL::ComPtr<ID3D12Resource>> resourceContainer_,
 		std::unique_ptr <BufferDescriptionBehavior>&& description_
 	);
 
@@ -7428,8 +7521,8 @@ public:
 	//ClearColor出す
 	virtual std::array<float, 4> OutProperClearColor()const override;
 	//自身のステートに応じて、それぞれのバッファのバリアを生成する
-	virtual std::array<D3D12_RESOURCE_BARRIER, ProjectConfig::Render::kRequiredGPUBufferSum>
-		CreateNextStepBarriers(ExtractMaterialKey key_)override;
+	//virtual std::array<D3D12_RESOURCE_BARRIER, ProjectConfig::Render::kRequiredGPUBufferSum>
+	//	CreateNextStepBarriers(ExtractMaterialKey key_)override;
 	//立幅横幅を出力
 	virtual std::pair<uint32_t, uint32_t> OutWidthAndHeight()const override;
 
@@ -7458,12 +7551,11 @@ private:
 
 ComputeBuffer::ComputeBuffer
 (
-	const InstanceKey& instanceKey_, 
-	std::string name_, 
-	Microsoft::WRL::ComPtr<ID3D12Resource> resource1_, 
-	Microsoft::WRL::ComPtr<ID3D12Resource> resource2_, 
+	const InstanceKey& instanceKey_,
+	std::string name_,
+	std::vector<Microsoft::WRL::ComPtr<ID3D12Resource>> resourceContainer_,
 	std::unique_ptr <BufferDescriptionBehavior>&& description_
-) : GPUBufferBehavior(instanceKey_, name_, std::move(resource1_), std::move(resource2_), std::move(description_))
+) : GPUBufferBehavior(instanceKey_, name_, std::move(resourceContainer_), std::move(description_))
 {
 
 }
@@ -7472,25 +7564,25 @@ ComputeBuffer::ComputeBuffer
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
-std::array<D3D12_RESOURCE_BARRIER, ProjectConfig::Render::kRequiredGPUBufferSum>
-ComputeBuffer::CreateNextStepBarriers(ExtractMaterialKey key_)
-{
-	std::array<D3D12_RESOURCE_BARRIER, ProjectConfig::Render::kRequiredGPUBufferSum> barriers;
-
-	if (status == kUAV_SRV)
-	{
-		// 0 - > SRV , 1 -> UAV
-		barriers.at(0) = buffers[0].CreateBarrier(D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE | D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
-		barriers.at(1) = buffers[1].CreateBarrier(D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
-	}
-	else
-	{
-		barriers.at(0) = buffers[0].CreateBarrier(D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
-		barriers.at(1) = buffers[1].CreateBarrier(D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE | D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
-	}
-
-	return barriers;
-}
+//std::array<D3D12_RESOURCE_BARRIER, ProjectConfig::Render::kRequiredGPUBufferSum>
+//ComputeBuffer::CreateNextStepBarriers(ExtractMaterialKey key_)
+//{
+//	std::array<D3D12_RESOURCE_BARRIER, ProjectConfig::Render::kRequiredGPUBufferSum> barriers;
+//
+//	if (status == kUAV_SRV)
+//	{
+//		// 0 - > SRV , 1 -> UAV
+//		barriers.at(0) = buffers[0].CreateBarrier(D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE | D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+//		barriers.at(1) = buffers[1].CreateBarrier(D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
+//	}
+//	else
+//	{
+//		barriers.at(0) = buffers[0].CreateBarrier(D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
+//		barriers.at(1) = buffers[1].CreateBarrier(D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE | D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+//	}
+//
+//	return barriers;
+//}
 
 
 uint32_t ComputeBuffer::CurrentSRVHeapIndex()
@@ -7549,8 +7641,7 @@ public:
 	(
 		const InstanceKey& instanceKey_, 
 		std::string name_,
-		Microsoft::WRL::ComPtr<ID3D12Resource> resource1_, 
-		Microsoft::WRL::ComPtr<ID3D12Resource> resource2_, 
+		std::vector<Microsoft::WRL::ComPtr<ID3D12Resource>> resourceContainer_,
 		std::unique_ptr <BufferDescriptionBehavior>&& description_
 	);
 
@@ -7563,8 +7654,8 @@ public:
 	///+/////////////////////////////////////////////////////////////
 	///+/////////////////////////////////////////////////////////////
 
-	virtual std::array<D3D12_RESOURCE_BARRIER, ProjectConfig::Render::kRequiredGPUBufferSum>
-		CreateNextStepBarriers(ExtractMaterialKey key_) override;
+	//virtual std::array<D3D12_RESOURCE_BARRIER, ProjectConfig::Render::kRequiredGPUBufferSum>
+	//	CreateNextStepBarriers(ExtractMaterialKey key_) override;
 
 	virtual void Swap()override;
 
@@ -7590,10 +7681,9 @@ ConstantBuffer::ConstantBuffer
 (
 	const InstanceKey& instanceKey_,
 	std::string name_,
-	Microsoft::WRL::ComPtr<ID3D12Resource> resource1_,
-	Microsoft::WRL::ComPtr<ID3D12Resource> resource2_,
+	std::vector<Microsoft::WRL::ComPtr<ID3D12Resource>> resourceContainer_,
 	std::unique_ptr <BufferDescriptionBehavior>&& description_
-) : GPUBufferBehavior(instanceKey_, name_, std::move(resource1_), std::move(resource2_), std::move(description_))
+) : GPUBufferBehavior(instanceKey_, name_, std::move(resourceContainer_), std::move(description_))
 {
 
 }
@@ -7622,8 +7712,7 @@ public:
 	(
 		const InstanceKey& instanceKey_,
 		std::string name_,
-		Microsoft::WRL::ComPtr<ID3D12Resource> resource1_,
-		Microsoft::WRL::ComPtr<ID3D12Resource> resource2_,
+		std::vector<Microsoft::WRL::ComPtr<ID3D12Resource>> resourceContainer_,
 		std::unique_ptr <BufferDescriptionBehavior>&& description_
 	);
 
@@ -7645,10 +7734,9 @@ DepthStencilBuffer::DepthStencilBuffer
 (
 	const InstanceKey& instanceKey_,
 	std::string name_,
-	Microsoft::WRL::ComPtr<ID3D12Resource> resource1_,
-	Microsoft::WRL::ComPtr<ID3D12Resource> resource2_,
+	std::vector<Microsoft::WRL::ComPtr<ID3D12Resource>> resourceContainer_,
 	std::unique_ptr <BufferDescriptionBehavior>&& description_
-) : GPUBufferBehavior(instanceKey_, name_, std::move(resource1_), std::move(resource2_), std::move(description_))
+) : GPUBufferBehavior(instanceKey_, name_, std::move(resourceContainer_), std::move(description_))
 {
 
 }
@@ -7656,25 +7744,25 @@ DepthStencilBuffer::DepthStencilBuffer
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-std::array<D3D12_RESOURCE_BARRIER, ProjectConfig::Render::kRequiredGPUBufferSum>
-DepthStencilBuffer::CreateNextStepBarriers(ExtractMaterialKey key_)
-{
-	std::array<D3D12_RESOURCE_BARRIER, ProjectConfig::Render::kRequiredGPUBufferSum> barriers;
-
-	//nextStateはSRV_DSVになるように
-	if (status == kDSV_SRV)
-	{
-		//１枚目は読み取り用へ
-		barriers.at(0) = buffers.at(0).CreateBarrier(D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
-	}
-	else
-	{
-		//2枚目は書き込み用へ
-		barriers.at(1) = buffers.at(1).CreateBarrier(D3D12_RESOURCE_STATE_DEPTH_WRITE);
-	}
-
-	return barriers;
-}
+//std::array<D3D12_RESOURCE_BARRIER, ProjectConfig::Render::kRequiredGPUBufferSum>
+//DepthStencilBuffer::CreateNextStepBarriers(ExtractMaterialKey key_)
+//{
+//	std::array<D3D12_RESOURCE_BARRIER, ProjectConfig::Render::kRequiredGPUBufferSum> barriers;
+//
+//	//nextStateはSRV_DSVになるように
+//	if (status == kDSV_SRV)
+//	{
+//		//１枚目は読み取り用へ
+//		barriers.at(0) = buffers.at(0).CreateBarrier(D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+//	}
+//	else
+//	{
+//		//2枚目は書き込み用へ
+//		barriers.at(1) = buffers.at(1).CreateBarrier(D3D12_RESOURCE_STATE_DEPTH_WRITE);
+//	}
+//
+//	return barriers;
+//}
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -7753,14 +7841,13 @@ public:
 	(
 		const InstanceKey& instanceKey_,
 		std::string name_,
-		Microsoft::WRL::ComPtr<ID3D12Resource> resource1_,
-		Microsoft::WRL::ComPtr<ID3D12Resource> resource2_,
+		std::vector<Microsoft::WRL::ComPtr<ID3D12Resource>> resourceContainer_,
 		std::unique_ptr <BufferDescriptionBehavior>&& description_
 	);
 
-	//自身の状態をもとに貼るべきバリアを生成する
-	virtual std::array<D3D12_RESOURCE_BARRIER, ProjectConfig::Render::kRequiredGPUBufferSum>
-		CreateNextStepBarriers(ExtractMaterialKey key_)override;
+	////自身の状態をもとに貼るべきバリアを生成する
+	//virtual std::array<D3D12_RESOURCE_BARRIER, ProjectConfig::Render::kRequiredGPUBufferSum>
+	//	CreateNextStepBarriers(ExtractMaterialKey key_)override;
 	//役割をスワップする
 	virtual void Swap()override;
 	//ダブルバッファのうち適切な方のバッファからCPUインデックスを出す
@@ -7791,10 +7878,9 @@ UploadStructuredBuffer::UploadStructuredBuffer
 (
 	const InstanceKey& instanceKey_,
 	std::string name_,
-	Microsoft::WRL::ComPtr<ID3D12Resource> resource1_,
-	Microsoft::WRL::ComPtr<ID3D12Resource> resource2_,
+	std::vector<Microsoft::WRL::ComPtr<ID3D12Resource>> resourceContainer_,
 	std::unique_ptr <BufferDescriptionBehavior>&& description_
-) : GPUBufferBehavior(instanceKey_, name_, std::move(resource1_), std::move(resource2_), std::move(description_))
+) : GPUBufferBehavior(instanceKey_, name_, std::move(resourceContainer_), std::move(description_))
 {
 
 }
@@ -7824,8 +7910,7 @@ public:
 	(
 		const InstanceKey& instanceKey_,
 		std::string name_,
-		Microsoft::WRL::ComPtr<ID3D12Resource> resource1_,
-		Microsoft::WRL::ComPtr<ID3D12Resource> resource2_,
+		std::vector<Microsoft::WRL::ComPtr<ID3D12Resource>> resourceContainer_,
 		std::unique_ptr <BufferDescriptionBehavior>&& description_
 	);
 
@@ -7932,7 +8017,17 @@ class BufferContext::FrameBufferedBufferInfoExtractor
 class BufferContext::RenderTargetBufferInfoExtractor
 {
 
+	//ユニークIDをもとに該当のバッファから描画パス構築に必要な情報を抽出する
+	template<typename InfoType>
+	InfoType Exstract(BufferContext::BufferUniqueID id_);
+
 };
+
+template<>
+RequiredRenderingInfo::ColorBuffer BufferContext::RenderTargetBufferInfoExtractor::Exstract(BufferContext::BufferUniqueID id_);
+
+template<>
+RequiredRenderingInfo::ColorBuffer BufferContext::RenderTargetBufferInfoExtractor::Exstract(BufferContext::BufferUniqueID id_);
 
 
 

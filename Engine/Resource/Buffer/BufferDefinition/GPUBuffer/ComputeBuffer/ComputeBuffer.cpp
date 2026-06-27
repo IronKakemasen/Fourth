@@ -11,7 +11,8 @@ ComputeBuffer::ComputeBuffer
 	std::unique_ptr <BufferDescriptionBehavior>&& description_
 ) : GPUBufferBehavior(instanceKey_, name_, std::move(resourceContainer_), std::move(description_))
 {
-
+	//ステータスを同期
+	//SynchronizeStatus(description->numBuffer);
 }
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -57,15 +58,4 @@ uint32_t ComputeBuffer::CurrentUAVHeapIndex()
 	else heapIndex = WatchIndex<ViewType::kUAV, uint32_t>(1);
 
 	return heapIndex;
-}
-
-void ComputeBuffer::Swap()
-{
-	static Status nextTable[2]
-	{
-		kUAV_SRV,
-		kSRV_UAV
-	};
-
-	status = nextTable[status];
 }
