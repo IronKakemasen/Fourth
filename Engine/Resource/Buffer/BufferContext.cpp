@@ -12,6 +12,13 @@
 #include "BufferCreationSystems/BufferCollector/BufferCollector.h"
 #include "BufferCreationSystems/BufferCreator/BufferCreator.h"
 
+//ランタイム処理ツール
+#include "RuntimeBufferManagementSystems/BufferDispatcher/BufferDispatcher.h"
+#include "RuntimeBufferManagementSystems/BufferInfoExtractors/RenderTargetBufferInfoExtractor/RenderTargetBufferInfoExtractor.h"
+
+
+//ランライム
+
 namespace
 {
 	std::string fileName = "BufferContext.cpp";

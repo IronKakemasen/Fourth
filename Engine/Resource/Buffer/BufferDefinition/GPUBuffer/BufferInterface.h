@@ -65,7 +65,6 @@ protected:
 struct IColorBuffer:IDualRole
 {
 	virtual ~IColorBuffer() = default;
-	virtual std::pair<uint32_t, uint32_t> OutWidthAndHeight()const = 0;
 	virtual D3D12_CPU_DESCRIPTOR_HANDLE OutProperRTVHeapHandle()const = 0;
 	virtual DXGI_FORMAT OutProperRTVFormat()const = 0;
 protected:
@@ -126,6 +125,7 @@ public:
 	//適切なClearColor出す
 	virtual std::array<float, 4> OutProperClearColor()const = 0;
 	virtual D3D12_RESOURCE_BARRIER CreateBarrier(Usage usage_) = 0;
+	virtual std::pair<uint32_t, uint32_t> OutWidthAndHeight()const = 0;
 	virtual void Swap()override;
 
 protected:

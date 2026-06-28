@@ -5,6 +5,8 @@
 //定数バッファクラス
 class DepthStencilBuffer final : public GPUBufferBehavior, IRenderTargetBuffer,IShaderBuffer,IDepthBuffer
 {
+	friend class BufferContext::RenderTargetBufferInfoExtractor;
+
 public:
 
 	DepthStencilBuffer
@@ -14,6 +16,8 @@ public:
 		std::vector<Microsoft::WRL::ComPtr<ID3D12Resource>> resourceContainer_,
 		std::unique_ptr <BufferDescriptionBehavior>&& description_
 	);
+
+private:
 
 	//バリアを張る
 	virtual D3D12_RESOURCE_BARRIER CreateBarrier(Usage usage_) override;
@@ -25,6 +29,9 @@ public:
 	virtual DXGI_FORMAT OutProperDSVFormat()const override;
 	//ClearColor出す
 	virtual std::array<float, 4> OutProperClearColor()const override;
+	//横幅立幅
+	virtual std::pair<uint32_t, uint32_t> OutWidthAndHeight()const override;
+
 
 };
 

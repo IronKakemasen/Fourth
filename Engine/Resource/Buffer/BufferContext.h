@@ -10,8 +10,6 @@ class BufferContext
 	class BufferCollector;
 	//生成したバッファの削除を担当
 	class BufferDeferredReleaser;
-	//レンダーターゲット系バッファの描画パス構築に必要な情報の抽出とそのリソースのSwapを行う
-	class RenderTargetBufferInfoExtractor;
 	//フレームバッファ系バッファの描画パス構築に必要な情報の抽出を行う
 	class FrameBufferedBufferInfoExtractor;
 	//コンピュートバッファ系のパス構築に必要な情報の抽出とそのリソースのSwapを行う
@@ -20,6 +18,8 @@ class BufferContext
 	class ResourceCreator;
 	//BufferAssemblerとBufferCollectorをつかってバッファを作成する
 	class BufferCreator;
+	//BufferUniqueIDから該当のバッファのアドレスをキャストして渡す
+	class BufferDispatcher;
 
 	//リソース生成コマンド
 	using CreateResourceCommand = std::function<Microsoft::WRL::ComPtr<ID3D12Resource>
@@ -35,11 +35,15 @@ public:
 
 	//バッファのユニークID
 	using BufferUniqueID = uint32_t;
-
 	//自身のインスタンス化キー
 	struct InstanceKey;
+	//バッファのポインタを扱うものの証
+	struct BufferAccessKey;
+
 	//ResourceCreatorとViewCreatorでバッファを生成
 	class BufferAssembler;
+	//レンダーターゲット系バッファの描画パス構築に必要な情報の抽出とそのリソースのSwapを行う
+	class RenderTargetBufferInfoExtractor;
 
 	//登録先識別用
 	enum class RegisterType
@@ -61,6 +65,10 @@ public:
 
 	///バッファ生成クラス（本丸）
 	std::unique_ptr<BufferCreator> bufferCreator;
+	//ディスパッチャー
+	std::unique_ptr<BufferDispatcher> bufferDispatcher;
+	//Extractors
+	std::unique_ptr<RenderTargetBufferInfoExtractor> renderTargetBufferInfoExtractor;
 
 private:
 
@@ -91,3 +99,12 @@ private:
 	friend class Nexus;
 	explicit InstanceKey() = default;
 };
+
+struct BufferContext::BufferAccessKey
+{
+private:
+
+	friend class RenderTargetBufferInfoExtractor;
+	explicit BufferAccessKey() = default;
+};
+
