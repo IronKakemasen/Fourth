@@ -1,11 +1,11 @@
 #pragma once
 #include "../BufferInterface.h"
 
-struct ColorBufferDescription;
-
 //カラーバッファクラス
 class ColorBuffer final : public GPUBufferBehavior,IColorBuffer,IRenderTargetBuffer,IShaderBuffer
 {
+	friend class BufferContext::RenderTargetBufferInfoExtractor;
+
 public:
 
 	ColorBuffer
@@ -16,6 +16,9 @@ public:
 		std::unique_ptr <BufferDescriptionBehavior>&& description_
 	);
 
+	inline int tinpo() { return 3; }
+
+private:
 	//バリア生成
 	virtual D3D12_RESOURCE_BARRIER CreateBarrier(Usage usage_) override;
 	//適切なRTVヒープインデックスを出す
@@ -28,6 +31,7 @@ public:
 	virtual DXGI_FORMAT OutProperRTVFormat()const override;
 	//ClearColor出す
 	virtual std::array<float, 4> OutProperClearColor()const override;
+
 };
 
 

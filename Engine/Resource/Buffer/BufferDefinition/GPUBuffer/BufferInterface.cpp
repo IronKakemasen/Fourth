@@ -41,8 +41,6 @@ D3D12_RESOURCE_STATES IRWStructuredBuffer::ResourceStateTable(Usage usage_)const
 ///+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 void IRenderTargetBuffer::Swap()
 {
-	ErrorMessageOutput::Assert::DetectError((status != kSingle), "シングルバッファなのにスワップしている: RTB", "BufferInterface.cpp");
-
 	static IRenderTargetBuffer::Status nextTable[3]
 	{
 		kShaderResource_RenderTarget,
@@ -107,8 +105,6 @@ void IRenderTargetBuffer::SynchronizeStatus(ProjectConfig::Render::NumBuffer num
 ///+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 void IComputeBuffer::Swap()
 {
-	ErrorMessageOutput::Assert::DetectError((status != kSingle), "シングルバッファなのにスワップしている: COMB", "BufferInterface.cpp");
-
 	static IComputeBuffer::Status nextTable[3]
 	{
 		kShaderResource_ComputeResource,

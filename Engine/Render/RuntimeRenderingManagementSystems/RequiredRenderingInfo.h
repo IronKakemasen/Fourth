@@ -4,73 +4,52 @@
 //描画パスを構築するのに必要な情報をまとめたディスクリプション
 struct RequiredRenderingInfo
 {
+	///PSOを構築するときに必要
+	struct Format
+	{
+		DXGI_FORMAT format;
+
+	};
+
+	///テクスチャとして読む	ときに必要
+	struct Texture
+	{
+		//SRVヒープ上のインデックス
+		uint32_t srvHeapIndex;
+		//バリアを張るため
+		D3D12_RESOURCE_BARRIER barrier;
+	};
+
+	///描画先として書き込むときに必要
 	struct ColorBuffer
 	{
-		///描画先として書き込むときに必要
-		struct AsWiring
-		{
-			//RTVヒープ上のインデックス
-			D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle;
-			//レンダーターゲットをクリアするため
-			std::array<float, 4> clearColor;
-			////バリアを張るため
-			//std::array<D3D12_RESOURCE_BARRIER, ProjectConfig::Render::kRequiredGPUBufferSum> barriers;
-			//横幅
-			uint32_t width{};
-			//立幅
-			uint32_t height{};
-
-		};
-
-		///テクスチャとして読むときに必要
-		struct AsReading
-		{
-			//SRVヒープ上のインデックス
-			uint32_t srvHeapIndex;
-		};
-
-		///PSOを構築するときに必要
-		struct AsAssemblingPSO
-		{
-			DXGI_FORMAT format;
-		};
+		//RTVヒープ上のインデックス
+		D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle;
+		//レンダーターゲットをクリアするため
+		std::array<float, 4> clearColor;
+		//バリアを張るため
+		D3D12_RESOURCE_BARRIER barrier;
+		//横幅
+		uint32_t width{};
+		//立幅
+		uint32_t height{};
 	};
 
-///+//////////////////////////////////////////////////////////////////////////////////////////////////////////////
+	///描画先として書き込むときに必要
 	struct DepthBuffer
 	{
-		///描画先として書き込むときに必要
-		struct AsWriting
-		{
-			//DSVヒープ上のインデックス
-			D3D12_CPU_DESCRIPTOR_HANDLE dsvCpuHandle;
-			//横幅
-			uint32_t width{};
-			//立幅
-			uint32_t height{};
-			//クリアするため
-			float clearDepth;
-			UINT8 clearStencil;			
-			////バリアを張るため
-			//std::array<D3D12_RESOURCE_BARRIER, ProjectConfig::Render::kRequiredGPUBufferSum> barriers;
-
-		};
-
-		///テクスチャとして読むときに必要
-		struct AsReading
-		{
-			//SRVヒープ上のインデックス
-			uint32_t srvHeapIndex;
-		};
-
-		///PSOを構築するときに必要
-		struct AsAssemblingPSO
-		{
-			DXGI_FORMAT dsvFormat;
-		};
+		//DSVヒープ上のインデックス
+		D3D12_CPU_DESCRIPTOR_HANDLE dsvCpuHandle;
+		//横幅
+		uint32_t width{};
+		//立幅
+		uint32_t height{};
+		//クリアするため
+		float clearDepth;
+		UINT8 clearStencil;
+		//バリアを張るため
+		D3D12_RESOURCE_BARRIER barrier;
 	};
-///+//////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
 };
 
 
