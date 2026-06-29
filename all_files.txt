@@ -476,6 +476,7 @@ enum class ViewType
 
 
 
+
 ========================================
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\template.txt ===
 ========================================
@@ -5056,73 +5057,52 @@ class RenderContext
 //描画パスを構築するのに必要な情報をまとめたディスクリプション
 struct RequiredRenderingInfo
 {
+	///PSOを構築するときに必要
+	struct Format
+	{
+		DXGI_FORMAT format;
+
+	};
+
+	///テクスチャとして読む	ときに必要
+	struct Texture
+	{
+		//SRVヒープ上のインデックス
+		uint32_t srvHeapIndex;
+		//バリアを張るため
+		D3D12_RESOURCE_BARRIER barrier;
+	};
+
+	///描画先として書き込むときに必要
 	struct ColorBuffer
 	{
-		///描画先として書き込むときに必要
-		struct AsWiring
-		{
-			//RTVヒープ上のインデックス
-			D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle;
-			//レンダーターゲットをクリアするため
-			std::array<float, 4> clearColor;
-			////バリアを張るため
-			//std::array<D3D12_RESOURCE_BARRIER, ProjectConfig::Render::kRequiredGPUBufferSum> barriers;
-			//横幅
-			uint32_t width{};
-			//立幅
-			uint32_t height{};
-
-		};
-
-		///テクスチャとして読むときに必要
-		struct AsReading
-		{
-			//SRVヒープ上のインデックス
-			uint32_t srvHeapIndex;
-		};
-
-		///PSOを構築するときに必要
-		struct AsAssemblingPSO
-		{
-			DXGI_FORMAT format;
-		};
+		//RTVヒープ上のインデックス
+		D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle;
+		//レンダーターゲットをクリアするため
+		std::array<float, 4> clearColor;
+		//バリアを張るため
+		D3D12_RESOURCE_BARRIER barrier;
+		//横幅
+		uint32_t width{};
+		//立幅
+		uint32_t height{};
 	};
 
-///+//////////////////////////////////////////////////////////////////////////////////////////////////////////////
+	///描画先として書き込むときに必要
 	struct DepthBuffer
 	{
-		///描画先として書き込むときに必要
-		struct AsWriting
-		{
-			//DSVヒープ上のインデックス
-			D3D12_CPU_DESCRIPTOR_HANDLE dsvCpuHandle;
-			//横幅
-			uint32_t width{};
-			//立幅
-			uint32_t height{};
-			//クリアするため
-			float clearDepth;
-			UINT8 clearStencil;			
-			////バリアを張るため
-			//std::array<D3D12_RESOURCE_BARRIER, ProjectConfig::Render::kRequiredGPUBufferSum> barriers;
-
-		};
-
-		///テクスチャとして読むときに必要
-		struct AsReading
-		{
-			//SRVヒープ上のインデックス
-			uint32_t srvHeapIndex;
-		};
-
-		///PSOを構築するときに必要
-		struct AsAssemblingPSO
-		{
-			DXGI_FORMAT dsvFormat;
-		};
+		//DSVヒープ上のインデックス
+		D3D12_CPU_DESCRIPTOR_HANDLE dsvCpuHandle;
+		//横幅
+		uint32_t width{};
+		//立幅
+		uint32_t height{};
+		//クリアするため
+		float clearDepth;
+		UINT8 clearStencil;
+		//バリアを張るため
+		D3D12_RESOURCE_BARRIER barrier;
 	};
-///+//////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
 };
 
 
@@ -5192,6 +5172,13 @@ public:
 #include "BufferCreationSystems/BufferAssembler/BufferAssembler.h"
 #include "BufferCreationSystems/BufferCollector/BufferCollector.h"
 #include "BufferCreationSystems/BufferCreator/BufferCreator.h"
+
+//ランタイム処理ツール
+#include "RuntimeBufferManagementSystems/BufferDispatcher/BufferDispatcher.h"
+#include "RuntimeBufferManagementSystems/BufferInfoExtractors/RenderTargetBufferInfoExtractor/RenderTargetBufferInfoExtractor.h"
+
+
+//ランライム
 
 namespace
 {
@@ -5269,8 +5256,6 @@ class BufferContext
 	class BufferCollector;
 	//生成したバッファの削除を担当
 	class BufferDeferredReleaser;
-	//レンダーターゲット系バッファの描画パス構築に必要な情報の抽出とそのリソースのSwapを行う
-	class RenderTargetBufferInfoExtractor;
 	//フレームバッファ系バッファの描画パス構築に必要な情報の抽出を行う
 	class FrameBufferedBufferInfoExtractor;
 	//コンピュートバッファ系のパス構築に必要な情報の抽出とそのリソースのSwapを行う
@@ -5279,6 +5264,8 @@ class BufferContext
 	class ResourceCreator;
 	//BufferAssemblerとBufferCollectorをつかってバッファを作成する
 	class BufferCreator;
+	//BufferUniqueIDから該当のバッファのアドレスをキャストして渡す
+	class BufferDispatcher;
 
 	//リソース生成コマンド
 	using CreateResourceCommand = std::function<Microsoft::WRL::ComPtr<ID3D12Resource>
@@ -5294,11 +5281,15 @@ public:
 
 	//バッファのユニークID
 	using BufferUniqueID = uint32_t;
-
 	//自身のインスタンス化キー
 	struct InstanceKey;
+	//バッファのポインタを扱うものの証
+	struct BufferAccessKey;
+
 	//ResourceCreatorとViewCreatorでバッファを生成
 	class BufferAssembler;
+	//レンダーターゲット系バッファの描画パス構築に必要な情報の抽出とそのリソースのSwapを行う
+	class RenderTargetBufferInfoExtractor;
 
 	//登録先識別用
 	enum class RegisterType
@@ -5320,6 +5311,10 @@ public:
 
 	///バッファ生成クラス（本丸）
 	std::unique_ptr<BufferCreator> bufferCreator;
+	//ディスパッチャー
+	std::unique_ptr<BufferDispatcher> bufferDispatcher;
+	//Extractors
+	std::unique_ptr<RenderTargetBufferInfoExtractor> renderTargetBufferInfoExtractor;
 
 private:
 
@@ -5350,6 +5345,15 @@ private:
 	friend class Nexus;
 	explicit InstanceKey() = default;
 };
+
+struct BufferContext::BufferAccessKey
+{
+private:
+
+	friend class RenderTargetBufferInfoExtractor;
+	explicit BufferAccessKey() = default;
+};
+
 
 
 
@@ -6033,7 +6037,7 @@ public:
 		std::vector<std::unique_ptr<GPUBufferBehavior>>* renderTargetBufferContainer_,
 		std::vector<std::unique_ptr<GPUBufferBehavior>>* computeBufferContainer_,
 		std::vector<std::unique_ptr<GPUBufferBehavior>>* frameBufferContainer_,
-		std::unordered_map<BufferContext::BufferUniqueID, std::pair<RegisterType, uint32_t>>* bufferLocationMap_
+		std::unordered_map<BufferContext::BufferUniqueID, std::pair<BufferContext::RegisterType, uint32_t>>* bufferLocationMap_
 	);
 
 	~BufferCollector();
@@ -7105,7 +7109,172 @@ public:
 ========================================
 #include "BufferInterface.h"
 
+D3D12_RESOURCE_STATES IColorBuffer::ResourceStateTable(Usage usage_)const
+{
+	static D3D12_RESOURCE_STATES resourceStatetable[2]
+	{
+		D3D12_RESOURCE_STATE_ALL_SHADER_RESOURCE,
+		D3D12_RESOURCE_STATE_RENDER_TARGET
+	};
 
+	return resourceStatetable[(int)usage_];
+}
+///+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+D3D12_RESOURCE_STATES IDepthBuffer::ResourceStateTable(Usage usage_)const
+{
+	static D3D12_RESOURCE_STATES resourceStatetable[2]
+	{
+		D3D12_RESOURCE_STATE_DEPTH_READ | D3D12_RESOURCE_STATE_ALL_SHADER_RESOURCE,
+		D3D12_RESOURCE_STATE_DEPTH_WRITE
+	};
+
+	return resourceStatetable[(int)usage_];
+}
+///+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+D3D12_RESOURCE_STATES IRWStructuredBuffer::ResourceStateTable(Usage usage_)const
+{
+	static D3D12_RESOURCE_STATES resourceStatetable[2]
+	{
+		D3D12_RESOURCE_STATE_ALL_SHADER_RESOURCE,
+		D3D12_RESOURCE_STATE_UNORDERED_ACCESS
+	};
+
+	return resourceStatetable[(int)usage_];
+}
+///+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+void IRenderTargetBuffer::Swap()
+{
+	static IRenderTargetBuffer::Status nextTable[3]
+	{
+		kShaderResource_RenderTarget,
+		kRenderTarget_ShaderResource,
+		kSingle
+	};
+
+	status = nextTable[status];
+}
+
+int IRenderTargetBuffer::ProperBufferIndex(ViewType viewType_)const
+{
+	//シングルバッファは問答無用
+	if (status == kSingle) return 0;
+
+	int dstBufferIndex{};
+
+	if (viewType_ == ViewType::kSRV)
+	{
+		//2番目がシェーダーリソース
+		if (status == kRenderTarget_ShaderResource) dstBufferIndex = 1;
+	}
+	//kRTV
+	else
+	{
+		//2番目がレンダーターゲット
+		if (status == kShaderResource_RenderTarget) dstBufferIndex = 1;
+	}
+
+	return dstBufferIndex;
+}
+
+int IRenderTargetBuffer::ProperBufferIndex(Usage usage_)const
+{
+	//シングルバッファは問答無用
+	if (status == kSingle) return 0;
+
+	int dstBufferIndex{};
+
+	//使用目的が読み込みの場合
+	if (usage_ == Usage::kRead)
+	{
+		//2番目がシェーダーリソース
+		if (status == kRenderTarget_ShaderResource) dstBufferIndex = 1;
+	}
+	//使用目的が書き込みの場合
+	else
+	{
+		//2番目がレンダーターゲット
+		if (status == kShaderResource_RenderTarget) dstBufferIndex = 1;
+	}
+
+	return dstBufferIndex;
+}
+
+void IRenderTargetBuffer::SynchronizeStatus(ProjectConfig::Render::NumBuffer numBuffer_)
+{
+	(numBuffer_ == 1) ? status = kSingle : status = kRenderTarget_ShaderResource;
+}
+///+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+void IComputeBuffer::Swap()
+{
+	static IComputeBuffer::Status nextTable[3]
+	{
+		kShaderResource_ComputeResource,
+		kComputeResource_ShaderResource,
+		kSingle
+	};
+
+	status = nextTable[status];
+
+}
+
+int IComputeBuffer::ProperBufferIndex(ViewType viewType_)const
+{
+	//シングルバッファは問答無用
+	if (status == kSingle) return 0;
+
+	int dstBufferIndex{};
+
+	if (viewType_ == ViewType::kSRV)
+	{
+		//2番目がシェーダーリソース
+		if (status == kComputeResource_ShaderResource) dstBufferIndex = 1;
+	}
+	//kUAV
+	else
+	{
+		//2番目が計算リソース
+		if (status == kShaderResource_ComputeResource) dstBufferIndex = 1;
+	}
+
+	return dstBufferIndex;
+
+}
+
+int IComputeBuffer::ProperBufferIndex(Usage usage_)const
+{
+	//シングルバッファは問答無用
+	if (status == kSingle) return 0;
+
+	int dstBufferIndex{};
+
+	//使用目的が読み込みの場合
+	if (usage_ == Usage::kRead)
+	{
+		//2番目がシェーダーリソース
+		if (status == kComputeResource_ShaderResource) dstBufferIndex = 1;
+	}
+	//使用目的が書き込みの場合
+	else
+	{
+		//2番目が計算リソース
+		if (status == kShaderResource_ComputeResource) dstBufferIndex = 1;
+	}
+
+	return dstBufferIndex;
+}
+
+void IComputeBuffer::SynchronizeStatus(ProjectConfig::Render::NumBuffer numBuffer_)
+{
+	(numBuffer_ == 1) ? status = kSingle : status = kComputeResource_ShaderResource;
+}
 
 
 
@@ -7116,51 +7285,141 @@ public:
 #pragma once
 #include "GPUBufferBehavior.h"
 
-//ピンポンバッファ専用
-struct IRWBuffer
-{
-	virtual ~IRWBuffer() = default;
 
-	////各バッファが自身のバリアを適切に張るためのバリアを生成仮想関数
-	//virtual std::array<D3D12_RESOURCE_BARRIER, ProjectConfig::Render::kRequiredGPUBufferSum>
-	//	CreateNextStepBarriers(GPUBufferBehavior::ExtractMaterialKey key_) = 0;
+//使用目的
+enum class Usage
+{
+	kRead,
+	kWrite
+};
+
+
+//ピンポンバッファインターフェース
+struct IPingPongBuffer
+{
+	virtual ~IPingPongBuffer() = default;
+
 	//内部の役割をスワップさせる
 	virtual void Swap() = 0;
+	//ステートを同期させる
+	virtual void SynchronizeStatus(ProjectConfig::Render::NumBuffer numBuffer_) = 0;
+	//バリアを生成仮想関数
+	virtual D3D12_RESOURCE_BARRIER CreateBarrier(Usage usage_) = 0;
+
+protected:
+
+	//ステータスに応じて適切な求められたバッファのインデックスを返す
+	virtual int ProperBufferIndex(ViewType viewType_)const = 0;
+	virtual int ProperBufferIndex(Usage usage_)const = 0;
 };
 
-//CPU書き込みGPU読み込みバッファのインターフェース
+struct IDualRole
+{
+	virtual D3D12_RESOURCE_STATES ResourceStateTable(Usage usage_)const = 0;
+};
+
+//シェーダーバッファのインターフェース
 struct IShaderBuffer
 {
-	virtual ~IShaderBuffer() = default;
-
-	//ダブルバッファのうち適切な方のバッファからインデックスを出す
-	virtual uint32_t OutProperSRV_UAVHeapIndex()const = 0;
-	//適切な方のバッファからFormat出す(テクスチャとして利用する場合)
-	virtual DXGI_FORMAT OutProperSRVFormat()const = 0;
-
+	virtual uint32_t OutProperSRVHeapIndex()const = 0;
 };
 
-//カラーバッファやディプスバッファなどのテクスチャに対して書き込みを行うもの
-struct IRenderTargetBuffer
+//CSバッファのインターフェース
+struct IRWStructuredBuffer:IDualRole
 {
-	virtual ~IRenderTargetBuffer() = default;
-	//ダブルバッファのうち適切な方のバッファからCPUインデックスを出す
-	virtual D3D12_CPU_DESCRIPTOR_HANDLE OutProperCPUHandle()const = 0;
-	//適切な方のバッファからFormat出す
-	virtual DXGI_FORMAT OutProperRenderTargetFormat()const = 0;
-	//適切な方のバッファからClearColor出す
-	virtual std::array<float, 4> OutProperClearColor()const = 0;
+	virtual uint32_t OutProperUAVHeapIndex()const = 0;
+	virtual DXGI_FORMAT OutProperUAVFormat()const = 0;
+
+protected:
+	virtual D3D12_RESOURCE_STATES ResourceStateTable(Usage usage_)const override;
 };
 
 
-//ほぼカラーバッファ専用インターフェース
-struct IColorBuffer
+//ディプスバッファのインターフェース
+struct IDepthBuffer:IDualRole
+{
+	virtual D3D12_CPU_DESCRIPTOR_HANDLE OutProperDSVHeapHandle()const = 0;
+	virtual DXGI_FORMAT OutProperDSVFormat()const = 0;
+protected:
+	virtual D3D12_RESOURCE_STATES ResourceStateTable(Usage usage_)const override;;
+
+};
+
+//カラーバッファインターフェース
+struct IColorBuffer:IDualRole
 {
 	virtual ~IColorBuffer() = default;
-	//描画パイプラインに必要な行列を出す
-	virtual std::pair<uint32_t, uint32_t> OutWidthAndHeight()const = 0;
+	virtual D3D12_CPU_DESCRIPTOR_HANDLE OutProperRTVHeapHandle()const = 0;
+	virtual DXGI_FORMAT OutProperRTVFormat()const = 0;
+protected:
+	virtual D3D12_RESOURCE_STATES ResourceStateTable(Usage usage_)const override;
+};
+
+
+
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////
+///コンピュートバッファ専用のインターフェース
+struct IComputeBuffer:IPingPongBuffer
+{
+private:
+
+	//内部ステータス
+	enum Status
+	{
+		kComputeResource_ShaderResource,
+		kShaderResource_ComputeResource,
+		kSingle
+	}status = kComputeResource_ShaderResource;
+
+public:
+
+	virtual ~IComputeBuffer() = default;
+	virtual void Swap()override;
+	virtual D3D12_RESOURCE_BARRIER CreateBarrier(Usage usage_) = 0;
+
+protected:
+
+	virtual int ProperBufferIndex(ViewType viewType_)const override;
+	virtual int ProperBufferIndex(Usage usage_)const override;
+	virtual void SynchronizeStatus(ProjectConfig::Render::NumBuffer numBuffer_)override;
 
 };
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////
+///カラーバッファやディプスバッファなどのテクスチャに対して書き込みを行うもの
+struct IRenderTargetBuffer:IPingPongBuffer
+{
+private:
+
+	//内部ステータス
+	enum Status
+	{
+		kRenderTarget_ShaderResource,
+		kShaderResource_RenderTarget,
+		kSingle
+	}status = kSingle;
+
+public:
+
+	virtual ~IRenderTargetBuffer() = default;
+
+	//適切なClearColor出す
+	virtual std::array<float, 4> OutProperClearColor()const = 0;
+	virtual D3D12_RESOURCE_BARRIER CreateBarrier(Usage usage_) = 0;
+	virtual std::pair<uint32_t, uint32_t> OutWidthAndHeight()const = 0;
+	virtual void Swap()override;
+
+protected:
+
+	virtual int ProperBufferIndex(ViewType viewType_)const override;
+	virtual int ProperBufferIndex(Usage usage_)const override;
+	virtual void SynchronizeStatus(ProjectConfig::Render::NumBuffer numBuffer_)override;
+};
+
+
 
 
 
@@ -7404,55 +7663,40 @@ ColorBuffer::ColorBuffer
 	std::unique_ptr <BufferDescriptionBehavior>&& description_
 ) : GPUBufferBehavior(instanceKey_, name_, std::move(resourceContainer_), std::move(description_))
 {
-
+	//ステータスを同期
+	SynchronizeStatus(description->numBuffer);
 }
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//std::array<D3D12_RESOURCE_BARRIER, ProjectConfig::Render::kRequiredGPUBufferSum>
-//ColorBuffer::CreateNextStepBarriers(ExtractMaterialKey key_)
-//{
-//	std::array<D3D12_RESOURCE_BARRIER, ProjectConfig::Render::kRequiredGPUBufferSum> barriers;
-//	
-//	//次はSRV_RTVになる
-//	if (status == kRTV_SRV)
-//	{
-//		barriers =
-//		{
-//			buffers.at(0).CreateBarrier(D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE),
-//			buffers.at(1).CreateBarrier(D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_RENDER_TARGET)
-//		};
-//	}
-//	else
-//	{
-//		barriers =
-//		{
-//			buffers.at(0).CreateBarrier(D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_RENDER_TARGET),
-//			buffers.at(1).CreateBarrier(D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE)
-//		};
-//	}
-//
-//	return barriers;
-//}
-///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-D3D12_CPU_DESCRIPTOR_HANDLE ColorBuffer::OutProperCPUHandle()const	
+D3D12_RESOURCE_BARRIER ColorBuffer::CreateBarrier(Usage usage_)
 {
-	D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle;
+	int dstBufferIndex = ProperBufferIndex(usage_);
 
-	//1枚目が書き込み用であれば
-	if (status == kRTV_SRV) cpuHandle = WatchIndex<ViewType::kRTV,D3D12_CPU_DESCRIPTOR_HANDLE >(0);
-	else cpuHandle = WatchIndex<ViewType::kRTV, D3D12_CPU_DESCRIPTOR_HANDLE >(1);
-
-	return cpuHandle;
+	return buffers.at(dstBufferIndex).CreateBarrier(ResourceStateTable(usage_));
 }
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+D3D12_CPU_DESCRIPTOR_HANDLE ColorBuffer::OutProperRTVHeapHandle()const
+{
+	int dstBufferIndex = ProperBufferIndex(ViewType::kRTV);
 
-//SRV,RTVともにフォーマットは共通
-DXGI_FORMAT ColorBuffer::OutProperRenderTargetFormat()const
+	return WatchIndex<ViewType::kRTV, D3D12_CPU_DESCRIPTOR_HANDLE >(dstBufferIndex);
+}
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+uint32_t ColorBuffer::OutProperSRVHeapIndex()const
+{
+	int dstBufferIndex = ProperBufferIndex(ViewType::kSRV);
+
+	return WatchIndex<ViewType::kSRV, uint32_t >(dstBufferIndex);
+}
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+DXGI_FORMAT ColorBuffer::OutProperRTVFormat()const
 {
 	return static_cast<ColorBufferDescription*>(description.get())->WatchParam().format;
 }
@@ -7467,17 +7711,6 @@ std::array<float, 4> ColorBuffer::OutProperClearColor()const
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-void ColorBuffer::Swap()
-{
-	static Status nextTable[2]
-	{
-		kSRV_RTV,
-		kRTV_SRV
-	};
-
-	status = nextTable[status];
-}
-
 std::pair<uint32_t, uint32_t> ColorBuffer::OutWidthAndHeight()const
 {
 	const auto& param = static_cast<ColorBufferDescription&>(*description.get()).WatchParam();
@@ -7493,16 +7726,10 @@ std::pair<uint32_t, uint32_t> ColorBuffer::OutWidthAndHeight()const
 #pragma once
 #include "../BufferInterface.h"
 
-struct ColorBufferDescription;
-
 //カラーバッファクラス
-class ColorBuffer final : public GPUBufferBehavior,IRWBuffer,IColorBuffer, IRenderTargetBuffer
+class ColorBuffer final : public GPUBufferBehavior,IColorBuffer,IRenderTargetBuffer,IShaderBuffer
 {
-	enum Status
-	{
-		kRTV_SRV,
-		kSRV_RTV
-	};
+	friend class BufferContext::RenderTargetBufferInfoExtractor;
 
 public:
 
@@ -7514,24 +7741,21 @@ public:
 		std::unique_ptr <BufferDescriptionBehavior>&& description_
 	);
 
-	//ダブルバッファのうち適切な方のバッファからCPUインデックスを出す
-	virtual D3D12_CPU_DESCRIPTOR_HANDLE OutProperCPUHandle()const override;
-	//適切な方のバッファからテクスチャのFormat出す。まあ今ケースの場合はFormatは共通なんだけども
-	virtual DXGI_FORMAT OutProperRenderTargetFormat()const override;
-	//ClearColor出す
-	virtual std::array<float, 4> OutProperClearColor()const override;
-	//自身のステートに応じて、それぞれのバッファのバリアを生成する
-	//virtual std::array<D3D12_RESOURCE_BARRIER, ProjectConfig::Render::kRequiredGPUBufferSum>
-	//	CreateNextStepBarriers(ExtractMaterialKey key_)override;
-	//立幅横幅を出力
-	virtual std::pair<uint32_t, uint32_t> OutWidthAndHeight()const override;
-
-	//役割を入れ替える
-	virtual void Swap()override;
+	inline int tinpo() { return 3; }
 
 private:
-
-	Status status = kRTV_SRV;
+	//バリア生成
+	virtual D3D12_RESOURCE_BARRIER CreateBarrier(Usage usage_) override;
+	//適切なRTVヒープインデックスを出す
+	virtual D3D12_CPU_DESCRIPTOR_HANDLE OutProperRTVHeapHandle()const override;
+	//適切なSRVヒープインデックスを出す
+	virtual uint32_t OutProperSRVHeapIndex()const override;
+	//横幅立幅
+	virtual std::pair<uint32_t, uint32_t> OutWidthAndHeight()const override;
+	//RTVFormat出す
+	virtual DXGI_FORMAT OutProperRTVFormat()const override;
+	//ClearColor出す
+	virtual std::array<float, 4> OutProperClearColor()const override;
 
 };
 
@@ -7557,7 +7781,8 @@ ComputeBuffer::ComputeBuffer
 	std::unique_ptr <BufferDescriptionBehavior>&& description_
 ) : GPUBufferBehavior(instanceKey_, name_, std::move(resourceContainer_), std::move(description_))
 {
-
+	//ステータスを同期
+	//SynchronizeStatus(description->numBuffer);
 }
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -7605,17 +7830,6 @@ uint32_t ComputeBuffer::CurrentUAVHeapIndex()
 	return heapIndex;
 }
 
-void ComputeBuffer::Swap()
-{
-	static Status nextTable[2]
-	{
-		kUAV_SRV,
-		kSRV_UAV
-	};
-
-	status = nextTable[status];
-}
-
 
 
 
@@ -7627,12 +7841,13 @@ void ComputeBuffer::Swap()
 
 
 //読み書き
-class ComputeBuffer final : public GPUBufferBehavior,IRWBuffer
+class ComputeBuffer final : public GPUBufferBehavior
 {
 	enum Status
 	{
 		kSRV_UAV,	//index0が読み込み用、index1が書き込み用
-		kUAV_SRV	//その逆
+		kUAV_SRV,	//その逆
+		kSingle
 	};
 
 public:
@@ -7656,8 +7871,6 @@ public:
 
 	//virtual std::array<D3D12_RESOURCE_BARRIER, ProjectConfig::Render::kRequiredGPUBufferSum>
 	//	CreateNextStepBarriers(ExtractMaterialKey key_) override;
-
-	virtual void Swap()override;
 
 private:
 
@@ -7729,6 +7942,11 @@ public:
 #include "DepthStencilBuffer.h"
 #include "../../BufferDescriptions/DepthStencilBufferDescription/DepthStencilBufferDescription.h"
 
+namespace
+{
+	auto fileName = "DepthStencilBuffer.cpp";
+}
+
 
 DepthStencilBuffer::DepthStencilBuffer
 (
@@ -7738,84 +7956,62 @@ DepthStencilBuffer::DepthStencilBuffer
 	std::unique_ptr <BufferDescriptionBehavior>&& description_
 ) : GPUBufferBehavior(instanceKey_, name_, std::move(resourceContainer_), std::move(description_))
 {
-
+	//ステータスを同期
+	SynchronizeStatus(description->numBuffer);
 }
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-//std::array<D3D12_RESOURCE_BARRIER, ProjectConfig::Render::kRequiredGPUBufferSum>
-//DepthStencilBuffer::CreateNextStepBarriers(ExtractMaterialKey key_)
-//{
-//	std::array<D3D12_RESOURCE_BARRIER, ProjectConfig::Render::kRequiredGPUBufferSum> barriers;
-//
-//	//nextStateはSRV_DSVになるように
-//	if (status == kDSV_SRV)
-//	{
-//		//１枚目は読み取り用へ
-//		barriers.at(0) = buffers.at(0).CreateBarrier(D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
-//	}
-//	else
-//	{
-//		//2枚目は書き込み用へ
-//		barriers.at(1) = buffers.at(1).CreateBarrier(D3D12_RESOURCE_STATE_DEPTH_WRITE);
-//	}
-//
-//	return barriers;
-//}
-///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-void DepthStencilBuffer::Swap()
+D3D12_RESOURCE_BARRIER DepthStencilBuffer::CreateBarrier(Usage usage_)
 {
-	static Status nextTable[2]
-	{
-		kSRV_DSV,
-		kDSV_SRV
-	};
+	int dstBufferIndex = ProperBufferIndex(usage_);
 
-	status = nextTable[status];
+	return buffers.at(dstBufferIndex).CreateBarrier(ResourceStateTable(usage_));
 }
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//ダブルバッファのうち適切な方のバッファからCPUインデックスを出す
-D3D12_CPU_DESCRIPTOR_HANDLE DepthStencilBuffer::OutProperCPUHandle()const
+
+D3D12_CPU_DESCRIPTOR_HANDLE DepthStencilBuffer::OutProperDSVHeapHandle()const
 {
-	D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle;
+	int dstBufferIndex = ProperBufferIndex(ViewType::kDSV);
 
-	//１枚目がDSVだった場合はそれのCPUhandleを出す
-	if (status == kDSV_SRV)
-	{
-		cpuHandle = WatchIndex<ViewType::kDSV, D3D12_CPU_DESCRIPTOR_HANDLE>(0);
-	}
-	else
-	{
-		cpuHandle = WatchIndex<ViewType::kDSV, D3D12_CPU_DESCRIPTOR_HANDLE>(0);
-	}
-
-	return cpuHandle;
+	return WatchIndex<ViewType::kDSV, D3D12_CPU_DESCRIPTOR_HANDLE >(dstBufferIndex);
 }
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//dsvFormat出す
-DXGI_FORMAT DepthStencilBuffer::OutProperRenderTargetFormat()const
+uint32_t DepthStencilBuffer::OutProperSRVHeapIndex()const
+{
+	int dstBufferIndex = ProperBufferIndex(ViewType::kSRV);
+
+	return WatchIndex<ViewType::kSRV, uint32_t >(dstBufferIndex);
+}
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+DXGI_FORMAT DepthStencilBuffer::OutProperDSVFormat()const
 {
 	return static_cast<DepthStencilBufferDescription*>(description.get())->WatchParam().dsvFormat;
 }
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//適切な方のバッファからClearColor出す。[0]番目にカラーの値が入っている
 std::array<float, 4> DepthStencilBuffer::OutProperClearColor()const
 {
 	std::array<float, 4> clearColor = { static_cast<DepthStencilBufferDescription*>(description.get())->WatchParam().clearColor,0,0,0 };
 
 	return clearColor;
 }
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+std::pair<uint32_t, uint32_t> DepthStencilBuffer::OutWidthAndHeight()const
+{
+	const auto& param = static_cast<DepthStencilBufferDescription&>(*description.get()).WatchParam();
 
+	return { param.width,param.height };
+}
 
 
 
@@ -7827,13 +8023,9 @@ std::array<float, 4> DepthStencilBuffer::OutProperClearColor()const
 
 
 //定数バッファクラス
-class DepthStencilBuffer final : public GPUBufferBehavior, IRWBuffer, IRenderTargetBuffer
+class DepthStencilBuffer final : public GPUBufferBehavior, IRenderTargetBuffer,IShaderBuffer,IDepthBuffer
 {
-	enum Status
-	{
-		kDSV_SRV,
-		kSRV_DSV
-	};
+	friend class BufferContext::RenderTargetBufferInfoExtractor;
 
 public:
 
@@ -7845,21 +8037,22 @@ public:
 		std::unique_ptr <BufferDescriptionBehavior>&& description_
 	);
 
-	////自身の状態をもとに貼るべきバリアを生成する
-	//virtual std::array<D3D12_RESOURCE_BARRIER, ProjectConfig::Render::kRequiredGPUBufferSum>
-	//	CreateNextStepBarriers(ExtractMaterialKey key_)override;
-	//役割をスワップする
-	virtual void Swap()override;
-	//ダブルバッファのうち適切な方のバッファからCPUインデックスを出す
-	virtual D3D12_CPU_DESCRIPTOR_HANDLE OutProperCPUHandle()const override;
+private:
+
+	//バリアを張る
+	virtual D3D12_RESOURCE_BARRIER CreateBarrier(Usage usage_) override;
+	//適切なCPUインデックスを出す
+	virtual D3D12_CPU_DESCRIPTOR_HANDLE OutProperDSVHeapHandle()const override;
+	//適切なsrvHeapインデックスを渡す
+	virtual uint32_t OutProperSRVHeapIndex()const override;
 	//DSVFormat出す
-	virtual DXGI_FORMAT OutProperRenderTargetFormat()const override;
+	virtual DXGI_FORMAT OutProperDSVFormat()const override;
 	//ClearColor出す
 	virtual std::array<float, 4> OutProperClearColor()const override;
+	//横幅立幅
+	virtual std::pair<uint32_t, uint32_t> OutWidthAndHeight()const override;
 
 
-private:
-	Status status = kDSV_SRV;
 };
 
 
@@ -7949,6 +8142,90 @@ class BufferDeferredReleaser
 
 
 ========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Resource\Buffer\RuntimeBufferManagementSystems\BufferDispatcher\BufferDispatcher.cpp ===
+========================================
+#include "PreCompileHeader.h"
+#include "BufferDispatcher.h"
+
+
+BufferContext::BufferDispatcher::BufferDispatcher
+(
+	BufferContext::InstanceKey key_,
+	std::vector<std::unique_ptr<GPUBufferBehavior>>* renderTargetBufferContainer_,
+	std::vector<std::unique_ptr<GPUBufferBehavior>>* computeBufferContainer_,
+	std::vector<std::unique_ptr<GPUBufferBehavior>>* frameBufferContainer_,
+	std::unordered_map<BufferContext::BufferUniqueID, std::pair<BufferContext::RegisterType, uint32_t>>* bufferLocationMap_
+) :renderTargetBufferContainer(renderTargetBufferContainer_), computeBufferContainer(computeBufferContainer_), frameBufferContainer(frameBufferContainer_), bufferLocationMap(bufferLocationMap_)
+{
+
+}
+
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Resource\Buffer\RuntimeBufferManagementSystems\BufferDispatcher\BufferDispatcher.h ===
+========================================
+#pragma once
+#include "../../BufferContext.h"
+
+
+class GPUBufferBehavior;
+
+class BufferContext::BufferDispatcher
+{
+
+	//テーブル
+	inline std::vector<std::unique_ptr<GPUBufferBehavior>>* ContainerTable(BufferContext::RegisterType type_)
+	{
+		static std::vector<std::unique_ptr<GPUBufferBehavior>>* table[(int)RegisterType::kCount]
+		{
+			renderTargetBufferContainer,
+			frameBufferContainer,
+			computeBufferContainer
+		};
+
+		return table[(int)type_];
+	}
+
+public:
+
+	BufferDispatcher
+	(
+		BufferContext::InstanceKey key_,
+		std::vector<std::unique_ptr<GPUBufferBehavior>>* renderTargetBufferContainer_,
+		std::vector<std::unique_ptr<GPUBufferBehavior>>* computeBufferContainer_,
+		std::vector<std::unique_ptr<GPUBufferBehavior>>* frameBufferContainer_,
+		std::unordered_map<BufferContext::BufferUniqueID, std::pair<RegisterType, uint32_t>>* bufferLocationMap_
+	);
+
+	///ユニークIDからバッファを渡します
+	inline GPUBufferBehavior* Dispatch(BufferContext::BufferUniqueID bufferID_)
+	{
+		auto& tmp = (*bufferLocationMap)[bufferID_];
+
+		BufferContext::RegisterType registerType = tmp.first;
+		uint32_t dstIndex = tmp.second;
+
+		return ContainerTable(registerType)->at(dstIndex).get();
+	}
+
+private:
+
+	//検索先
+	std::vector<std::unique_ptr<GPUBufferBehavior>>* renderTargetBufferContainer;
+	std::vector<std::unique_ptr<GPUBufferBehavior>>* frameBufferContainer;
+	std::vector<std::unique_ptr<GPUBufferBehavior>>* computeBufferContainer;
+	//ユニークIDがどこのバッファコンテナの何番目のバッファを指しているのか示すマップコンテナ
+	std::unordered_map<BufferContext::BufferUniqueID, std::pair<RegisterType, uint32_t>>* bufferLocationMap;
+
+};
+
+
+
+
+========================================
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Resource\Buffer\RuntimeBufferManagementSystems\BufferInfoExtractors\ComputeBufferInfoExtractor\ComputeBufferInfoExtractor.cpp ===
 ========================================
 #include "PreCompileHeader.h"
@@ -8004,6 +8281,109 @@ class BufferContext::FrameBufferedBufferInfoExtractor
 #include "PreCompileHeader.h"
 #include "RenderTargetBufferInfoExtractor.h"
 
+#include "../../../BufferDefinition/GPUBuffer/ColorBuffer/ColorBuffer.h"
+#include "../../../BufferDefinition/GPUBuffer/DepthStencilBuffer/DepthStencilBuffer.h"
+
+
+BufferContext::RenderTargetBufferInfoExtractor::RenderTargetBufferInfoExtractor()
+{
+	tmpBufferContainer.reserve(kBufferContainerSize);
+}
+
+void BufferContext::RenderTargetBufferInfoExtractor::SwapApplicableBuffer()
+{
+	for (auto itr = tmpBufferContainer.begin();itr != tmpBufferContainer.end();++itr)
+	{
+		if ((*itr) == nullptr) continue;
+
+		auto* rtBuffer = dynamic_cast<IRenderTargetBuffer*>(*itr);
+		//全てスワップ。シングルバッファは影響なし
+		rtBuffer->Swap();
+	}
+
+	tmpBufferContainer.clear();
+}
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////
+template<>
+RequiredRenderingInfo::ColorBuffer BufferContext::RenderTargetBufferInfoExtractor::Exstract(ColorBuffer* buffer_)
+{
+	RequiredRenderingInfo::ColorBuffer info;
+
+	info.width = buffer_->OutWidthAndHeight().first;
+	info.height = buffer_->OutWidthAndHeight().second;
+	info.cpuHandle = buffer_->OutProperRTVHeapHandle();
+	info.clearColor = buffer_->OutProperClearColor();
+	info.barrier = buffer_->CreateBarrier(Usage::kWrite);
+
+	return info;
+
+}
+
+template<>
+RequiredRenderingInfo::Texture BufferContext::RenderTargetBufferInfoExtractor::Exstract(ColorBuffer* buffer_)
+{
+	RequiredRenderingInfo::Texture info;
+
+	info.srvHeapIndex = buffer_->OutProperSRVHeapIndex();
+	info.barrier = buffer_->CreateBarrier(Usage::kRead);
+
+	return info;
+}
+
+template<>
+RequiredRenderingInfo::Format BufferContext::RenderTargetBufferInfoExtractor::Exstract(ColorBuffer* buffer_)
+{
+	RequiredRenderingInfo::Format info;
+
+	info.format = buffer_->OutProperRTVFormat();
+	return info;
+}
+
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////
+template<>
+RequiredRenderingInfo::DepthBuffer BufferContext::RenderTargetBufferInfoExtractor::Exstract(DepthStencilBuffer* buffer_)
+{
+	RequiredRenderingInfo::DepthBuffer info;
+
+	info.clearDepth = buffer_->OutProperClearColor().at(0);
+	//一旦
+	info.clearStencil = 0;
+	info.dsvCpuHandle = buffer_->OutProperDSVHeapHandle();
+	info.width = buffer_->OutWidthAndHeight().first;
+	info.height = buffer_->OutWidthAndHeight().second;
+	info.barrier = buffer_->CreateBarrier(Usage::kWrite);
+
+	return info;
+
+}
+
+template<>
+RequiredRenderingInfo::Format BufferContext::RenderTargetBufferInfoExtractor::Exstract(DepthStencilBuffer* buffer_)
+{
+	RequiredRenderingInfo::Format info;
+
+	info.format = buffer_->OutProperDSVFormat();
+	return info;
+
+}
+
+template<>
+RequiredRenderingInfo::Texture BufferContext::RenderTargetBufferInfoExtractor::Exstract(DepthStencilBuffer* buffer_)
+{
+	RequiredRenderingInfo::Texture info;
+
+	info.srvHeapIndex = buffer_->OutProperSRVHeapIndex();
+	info.barrier = buffer_->CreateBarrier(Usage::kRead);
+
+	return info;
+}
+
+
+
 
 
 
@@ -8014,21 +8394,54 @@ class BufferContext::FrameBufferedBufferInfoExtractor
 #include "../../../BufferContext.h"
 #include "../../../../../Render/RuntimeRenderingManagementSystems/RequiredRenderingInfo.h"
 
+class DepthStencilBuffer;
+class ColorBuffer;
+struct IRenderTargetBuffer;
+
 class BufferContext::RenderTargetBufferInfoExtractor
 {
+public:
 
-	//ユニークIDをもとに該当のバッファから描画パス構築に必要な情報を抽出する
-	template<typename InfoType>
-	InfoType Exstract(BufferContext::BufferUniqueID id_);
+	RenderTargetBufferInfoExtractor();
 
+	//該当のバッファから描画パス構築に必要な情報を抽出する
+	template<typename InfoType,typename BufferType>
+	InfoType Exstract(BufferType* buffer_);
+
+	//ダブルバッファを全てSwapさせる
+	void SwapApplicableBuffer();
+
+private:
+
+	//フレームの最後にスワップ対象のバッファを同時に処理するため
+	std::vector<GPUBufferBehavior*> tmpBufferContainer;
+	int const kBufferContainerSize = 64;
 };
 
+
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////
 template<>
-RequiredRenderingInfo::ColorBuffer BufferContext::RenderTargetBufferInfoExtractor::Exstract(BufferContext::BufferUniqueID id_);
+RequiredRenderingInfo::ColorBuffer BufferContext::RenderTargetBufferInfoExtractor::Exstract(ColorBuffer* buffer_);
 
 template<>
-RequiredRenderingInfo::ColorBuffer BufferContext::RenderTargetBufferInfoExtractor::Exstract(BufferContext::BufferUniqueID id_);
+RequiredRenderingInfo::Texture BufferContext::RenderTargetBufferInfoExtractor::Exstract(ColorBuffer* buffer_);
 
+template<>
+RequiredRenderingInfo::Format BufferContext::RenderTargetBufferInfoExtractor::Exstract(ColorBuffer* buffer_);
+
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////
+template<>
+RequiredRenderingInfo::DepthBuffer BufferContext::RenderTargetBufferInfoExtractor::Exstract(DepthStencilBuffer* buffer_);
+
+template<>
+RequiredRenderingInfo::Format BufferContext::RenderTargetBufferInfoExtractor::Exstract(DepthStencilBuffer* buffer_);
+
+template<>
+RequiredRenderingInfo::Texture BufferContext::RenderTargetBufferInfoExtractor::Exstract(DepthStencilBuffer* buffer_);
 
 
 

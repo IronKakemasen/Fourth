@@ -6,6 +6,9 @@ class WindowContext;
 class DescriptorHeapContext;
 class SwapChainContext;
 class CommandContext;
+class ShaderContext;
+
+
 
 //交易場
 class Nexus
@@ -39,6 +42,9 @@ private:
 	std::unique_ptr<CommandContext> commandContext;
 	//SwapChain周りを制御するもの
 	std::unique_ptr<SwapChainContext> swapChainContext;
+	//シェーダのコンパイル、そのバイナリデータの管理
+	std::unique_ptr<ShaderContext> shaderContext;
+
 
 	void InstantiateCommandContext();
 	void InstantiateSwapChainContext();
@@ -46,6 +52,7 @@ private:
 	void InstantiateBufferContext();
 	void InstantiateWindowContext();
 	void InstantiateDescriptorHeapContext();
+	void InstantiateShaderContext();
 	void Finalize();
 
 };

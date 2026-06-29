@@ -12,6 +12,7 @@
 #include <dbghelp.h>
 #include <wrl/client.h>
 #include <directXMath.h>
+#include <dxcapi.h>
 
 #include "../External/d3dx12/d3dx12.h"
 #include "../External/imgui/imgui.h"
@@ -37,7 +38,6 @@
 #include "Debug/ErrorMessageOutput/ErrorMessageOutput.h"
 //出力ウィンドウとログファイルにログを出力
 #include "Debug/Logger/Logger.h"
-
 
 #pragma comment(lib,"d3d12.lib")
 #pragma comment(lib,"dxgi.lib")
@@ -83,7 +83,6 @@ namespace ProjectConfig
 		constexpr D3D_SHADER_MODEL kMaximumShaderModel = D3D_SHADER_MODEL_6_6;	
 	}
 
-
 	namespace Debug
 	{
 		//DebugLayer
@@ -116,6 +115,11 @@ enum class ViewType
 	kCount
 };
 
+enum class MeshType
+{
+	kStatic
+
+};
 
 
 
