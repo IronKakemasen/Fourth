@@ -249,6 +249,9 @@
     <ClCompile Include="Engine\Core\Command\RuntimeCommandControler\RuntimeCommandControler.cpp" />
     <ClCompile Include="Engine\Render\RenderContext.cpp" />
     <ClCompile Include="Engine\Render\RuntimeRenderingManagementSystems\ModelRenderingInfoOrganizer\ModelRenderingInfoOrganizer.cpp" />
+    <ClCompile Include="Engine\Resource\Shader\ShaderContext.cpp" />
+    <ClCompile Include="Engine\Resource\Shader\ShaderCompiler\ShaderCompiler.cpp" />
+    <ClCompile Include="Engine\Resource\Shader\ShaderLibrary\ShaderLibrary.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Engine\Resource\Buffer\RuntimeBufferManagementSystems\BufferDispatcher\BufferDispatcher.h" />
@@ -288,6 +291,7 @@
     <ClInclude Include="Engine\Resource\PSO\MeshShaderPipelineStateStream.h" />
     <ClInclude Include="Engine\Debug\ErrorMessageOutput\ErrorMessageOutput.h" />
     <ClInclude Include="Engine\Resource\Buffer\ResourceBarrier.h" />
+    <ClInclude Include="Engine\Resource\Shader\ShaderLibrary\ShaderKey.h" />
     <ClInclude Include="External\Audio\SoundCommon.h" />
     <ClInclude Include="External\Audio\xaudio_player_core.h" />
     <ClInclude Include="External\Audio\xaudio_player_mf.h" />
@@ -337,6 +341,9 @@
     <ClInclude Include="Engine\Render\RenderContext.h" />
     <ClInclude Include="Engine\Render\RuntimeRenderingManagementSystems\ModelRenderingInfoOrganizer\ModelRenderingInfoOrganizer.h" />
     <ClInclude Include="Engine\Render\RuntimeRenderingManagementSystems\RequiredRenderingInfo.h" />
+    <ClInclude Include="Engine\Resource\Shader\ShaderContext.h" />
+    <ClInclude Include="Engine\Resource\Shader\ShaderCompiler\ShaderCompiler.h" />
+    <ClInclude Include="Engine\Resource\Shader\ShaderLibrary\ShaderLibrary.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
