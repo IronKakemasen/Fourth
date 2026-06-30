@@ -21,7 +21,9 @@
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 #include "Core/Command/CommandContext.h"
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
+#include "Resource/Shader/ShaderContext.h"
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+#include "Resource/PSO/PSO_Context.h"
 
 namespace
 {
@@ -68,6 +70,7 @@ Nexus::Nexus()
 	InstantiateBufferContext();
 	InstantiateCommandContext();
 	InstantiateSwapChainContext();
+	InstantiateShaderContext();
 
 	Logger::End("Nexus: Constructor");
 }
@@ -241,7 +244,19 @@ void Nexus::InstantiateCommandContext()
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
+void Nexus::InstantiateShaderContext()
+{
+	shaderContext.reset(new ShaderContext(ShaderContext::InstanceKey{}));
+	Logger::Log("Instantiate: ShaderContext", fileName);
+}
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+void Nexus::InstantiatePSO_Context()
+{
+	pso_context.reset(new PSO_Context(PSO_Context::InstanceKey{}, *shaderContext.get()));
+	Logger::Log("Instantiate: PSO_Context", fileName);
+}
 
 
 
@@ -257,6 +272,9 @@ class WindowContext;
 class DescriptorHeapContext;
 class SwapChainContext;
 class CommandContext;
+class ShaderContext;
+class PSO_Context;
+
 
 //交易場
 class Nexus
@@ -290,6 +308,10 @@ private:
 	std::unique_ptr<CommandContext> commandContext;
 	//SwapChain周りを制御するもの
 	std::unique_ptr<SwapChainContext> swapChainContext;
+	//シェーダのコンパイル、そのバイナリデータの管理
+	std::unique_ptr<ShaderContext> shaderContext;
+	//PSOの構築
+	std::unique_ptr<PSO_Context> pso_context;
 
 	void InstantiateCommandContext();
 	void InstantiateSwapChainContext();
@@ -297,6 +319,8 @@ private:
 	void InstantiateBufferContext();
 	void InstantiateWindowContext();
 	void InstantiateDescriptorHeapContext();
+	void InstantiateShaderContext();
+	void InstantiatePSO_Context();
 	void Finalize();
 
 };
@@ -366,6 +390,7 @@ void Nexus::Run()
 #include <dbghelp.h>
 #include <wrl/client.h>
 #include <directXMath.h>
+#include <dxcapi.h>
 
 #include "../External/d3dx12/d3dx12.h"
 #include "../External/imgui/imgui.h"
@@ -391,7 +416,6 @@ void Nexus::Run()
 #include "Debug/ErrorMessageOutput/ErrorMessageOutput.h"
 //出力ウィンドウとログファイルにログを出力
 #include "Debug/Logger/Logger.h"
-
 
 #pragma comment(lib,"d3d12.lib")
 #pragma comment(lib,"dxgi.lib")
@@ -437,7 +461,6 @@ namespace ProjectConfig
 		constexpr D3D_SHADER_MODEL kMaximumShaderModel = D3D_SHADER_MODEL_6_6;	
 	}
 
-
 	namespace Debug
 	{
 		//DebugLayer
@@ -470,6 +493,11 @@ enum class ViewType
 	kCount
 };
 
+enum class MeshType
+{
+	kStatic
+
+};
 
 
 
@@ -8465,6 +8493,683 @@ struct MeshShaderPipelineStateStream
 	CD3DX12_PIPELINE_STATE_STREAM_RENDER_TARGET_FORMATS RTVFormats;
 	CD3DX12_PIPELINE_STATE_STREAM_DEPTH_STENCIL_FORMAT DSVFormat;
 };
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Resource\PSO\PSO_Context.cpp ===
+========================================
+#include "PreCompileHeader.h"
+#include "PSO_Context.h"
+
+
+//外部
+#include "../Shader/ShaderLibrary/ShaderLibrary.h"
+#include "../Shader/ShaderContext.h"
+
+
+PSO_Context::PSO_Context(InstanceKey key_, ShaderContext& shaderContext_)
+{
+	//PSO構築のためにshaderLibraryにアクセスさせてもらう
+	auto& shaderLibrary = shaderContext_.AllowAccessToLibrary(ShaderContext::ShaderLibraryAccessKey{});
+	
+	
+}
+
+PSO_Context::~PSO_Context()
+{
+
+}
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Resource\PSO\PSO_Context.h ===
+========================================
+#pragma once
+
+class Nexus;
+class ShaderContext;
+
+
+class PSO_Context
+{
+
+public:
+
+	//PSOを構築するもの
+	class Assembler;
+
+	struct InstanceKey;
+
+	PSO_Context(InstanceKey key_, ShaderContext& shaderContext_);
+	~PSO_Context();
+};
+
+
+struct PSO_Context::InstanceKey
+{
+private:
+
+	friend class Nexus;
+	explicit InstanceKey() = default;
+};
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Resource\PSO\ShaderComponent.h ===
+========================================
+#pragma once
+
+namespace ShaderComponent
+{
+	enum class MeshType
+	{
+		kStatic,
+		kCount
+	};
+
+	enum class MaterialType
+	{
+		kStandard,
+		kCount
+	};
+
+	enum class Renderpath
+	{
+		kStandard,
+		kCount
+	};
+
+};
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Resource\PSO\PSO_Assembler\PSO_Assembler.cpp ===
+========================================
+#include "PreCompileHeader.h"
+#include "PSO_Assembler.h"
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Resource\PSO\PSO_Assembler\PSO_Assembler.h ===
+========================================
+#pragma once
+#include "../PSO_Context.h"
+
+
+class PSO_Context::Assembler
+{
+
+};
+
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Resource\Shader\ShaderContext.cpp ===
+========================================
+#include "PreCompileHeader.h"
+#include "ShaderContext.h"
+
+#include "ShaderLibrary/ShaderLibrary.h"
+
+//ツール
+#include "ShaderCompiler/ShaderCompiler.h"
+
+
+namespace
+{
+	auto fileName = "ShaderContext.cpp";
+}
+
+
+ShaderContext::ShaderContext(InstanceKey instanceKey_)
+{
+	Logger::Entry("ShaderContext: Constructor");
+
+	compiler.reset(new Compiler(instanceKey_));
+	Logger::Log("Instantiate: shaderCompiler", fileName);
+
+	shaderLibrary.reset(new ShaderLibrary(ShaderLibrary::ImportKey{}));
+	Logger::Log("Instantiate: ShaderLibrary", fileName);
+
+
+	CompileAllShaders();
+
+	Logger::End("ShaderContext: Constructor");
+}
+
+ShaderContext::~ShaderContext()
+{
+
+}
+
+ShaderLibrary& ShaderContext::AllowAccessToLibrary(ShaderLibraryAccessKey accessKey_)
+{
+	return *shaderLibrary.get();
+}
+
+
+
+void ShaderContext::CompileAllShaders()
+{
+	std::string const commonFolderPath = "./Assets/Shader/";
+	auto const psProfile = L"ps_6_5";
+	auto const msProfile = L"ms_6_5";
+	ShaderLibrary::ImportKey importKey;
+
+	shaderLibrary->Import
+	(
+		importKey,
+		std::move(compiler->CompileShader(commonFolderPath, "Test.MS", msProfile)),
+		ShaderLibrary::MS::kStatic_Basic
+	);
+
+	shaderLibrary->Import
+	(
+		importKey,
+		std::move(compiler->CompileShader(commonFolderPath, "Test.PS", psProfile)),
+		ShaderLibrary::PS::kStandard_kBasic
+	);
+
+
+	Logger::Log("Complete: Loading all shaders", fileName);
+}
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Resource\Shader\ShaderContext.h ===
+========================================
+#pragma once
+
+class Nexus;
+class ShaderLibrary;
+class PSO_Context;
+
+class ShaderContext
+{
+	class Compiler;
+
+public:
+
+	//自身のインスタンス化キー
+	struct InstanceKey;
+	//シェーダーライブラリを貸し出し許可キー
+	struct ShaderLibraryAccessKey;
+
+
+	//シェーダーライブラリを貸し出し
+	ShaderLibrary& AllowAccessToLibrary(ShaderLibraryAccessKey accessKey_);
+	
+	ShaderContext(InstanceKey instanceKey_);
+	~ShaderContext();
+
+private:
+
+	//コンパイラー
+	std::unique_ptr<Compiler> compiler;
+	//シェーダーのデータがすべてここに
+	std::unique_ptr<ShaderLibrary> shaderLibrary;
+
+	//全てのシェーダーをコンパイルしてライブラリーに突っ込む
+	void CompileAllShaders();
+};
+
+
+struct ShaderContext::InstanceKey
+{
+private:
+
+	friend class Nexus;
+	explicit InstanceKey() = default;
+};
+
+struct ShaderContext::ShaderLibraryAccessKey
+{
+private:
+
+	friend class PSO_Context;
+	explicit ShaderLibraryAccessKey() = default;
+};
+
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Resource\Shader\ShaderCompiler\ShaderCompiler.cpp ===
+========================================
+#include "PreCompileHeader.h"
+#include "ShaderCompiler.h"
+#include "../../../Utility/StringConnverter/StringConverter.h"
+
+namespace
+{
+	auto fileName = "ShaderCompiler.cpp";
+}
+
+
+ShaderContext::Compiler::Compiler(ShaderContext::InstanceKey key_)
+{
+	InstantiateCorePatrts();
+}
+///+/////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+/////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+/////////////////////////////////////////////////////////////////////////////////////////////////////////
+[[nodiscard]] Microsoft::WRL::ComPtr<IDxcBlob> ShaderContext::Compiler::CompileShader
+(
+	std::string const& folderPath,
+	std::string const& fileName_,
+	const wchar_t* profile_,
+	std::vector<std::wstring> const& extraArguments_
+)
+{
+	Logger::Entry("Compile: " + fileName_);
+
+	Microsoft::WRL::ComPtr<IDxcBlobEncoding> shaderSource = nullptr;
+
+	//完成パス
+	std::wstring cnvFilePath = AssembleFilePath(folderPath, fileName_);
+
+	//ファイルを読み込む	
+	DxcBuffer shaderSourceBuffer = LoadFile(cnvFilePath, shaderSource.Get());
+
+	//コンパイルする
+	Microsoft::WRL::ComPtr<IDxcResult> result = Compile(shaderSourceBuffer, cnvFilePath, profile_, extraArguments_);
+
+	//コンパイル結果が問題ないかチェックし、バイナリーデータを返す
+	Microsoft::WRL::ComPtr<IDxcBlob> shaderBlob = CheckResult(result.Get());
+
+	Logger::End("Compile: " + fileName_);
+
+	//実行用のバイナリをリターン
+	return shaderBlob;
+}
+///+/////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+/////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+/////////////////////////////////////////////////////////////////////////////////////////////////////////
+Microsoft::WRL::ComPtr<IDxcResult> ShaderContext::Compiler::Compile
+(
+	DxcBuffer& shaderSourceBuffer_,
+	std::wstring const& cnvFilePath_,
+	const wchar_t* profile_,
+	std::vector<std::wstring> const& extraArguments_
+)
+{
+	std::vector<const wchar_t*> arguments;
+
+	//ターゲットファイル名とプロファイルの設定
+	arguments.emplace_back(cnvFilePath_.c_str());
+	arguments.emplace_back(L"-E");
+	arguments.emplace_back(L"main");
+	arguments.emplace_back(L"-T");
+	//後で書き換えるための一時登録
+	arguments.emplace_back(profile_);
+
+	// 3. 共通となる基本フラグ（デバッグ情報や警告の扱い）の登録
+#ifdef _DEBUG
+	arguments.emplace_back(DXC_ARG_DEBUG);
+	arguments.emplace_back(DXC_ARG_SKIP_OPTIMIZATIONS);
+#else
+	arguments.emplace_back(DXC_ARG_OPTIMIZATION_LEVEL3);
+#endif
+	arguments.emplace_back(DXC_ARG_WARNINGS_ARE_ERRORS);
+
+	//リソースのエイリアスを許可
+	arguments.emplace_back(L"-res-may-alias");
+	//すべてのリソースがバインド済みとして最適化
+	arguments.emplace_back(L"-all-resources-bound");
+
+	//外部から渡されたマクロや追加引数を合流させる
+	for (auto const& arg : extraArguments_)
+	{
+		arguments.push_back(arg.c_str());
+	}
+
+	//argumentsをログに出力
+	std::string argString = "< arguments >----------------------------------------\n";
+	for (size_t i = 1;i < arguments.size();++i)
+	{
+		argString += StringConverter::ConvertString(arguments.at(i)) + " , ";
+		if (i % 4 == 0)argString += "\n";
+	}
+	argString += "\n-----------------------------------------------------";
+	Logger::Log(argString);
+
+
+	Microsoft::WRL::ComPtr<IDxcResult> shaderResult = nullptr;
+	HRESULT hr = dxcCompiler.Get()->Compile
+	(
+		//読み込んだファイル
+		&shaderSourceBuffer_,
+		//コンパイルオプション
+		arguments.data(),
+		//コンパイルオプションの数
+		UINT32(arguments.size()),
+		//includeが含まれたもろもろ
+		includeHandler.Get(),
+		IID_PPV_ARGS(shaderResult.GetAddressOf())
+	);
+
+	//dxcが起動できないなどの致命的な状況
+	ErrorMessageOutput::Assert::DetectError(SUCCEEDED(hr), "Crit Error(DxCompiler)", fileName);
+	
+	Logger::Log("Complete: compile");
+
+	return shaderResult;
+}
+///+/////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+/////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+/////////////////////////////////////////////////////////////////////////////////////////////////////////
+std::wstring ShaderContext::Compiler::AssembleFilePath
+(
+	std::string const& folderPath,
+	std::string const& fileName_
+)
+{
+	std::string const fileType = ".hlsl";
+	std::string compositePath = folderPath + fileName_ + fileType;
+	
+	Logger::Log("FilePath: " + compositePath, fileName);
+
+	//完成パス
+	return StringConverter::ConvertString(compositePath);
+}
+///+/////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+/////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+/////////////////////////////////////////////////////////////////////////////////////////////////////////
+Microsoft::WRL::ComPtr<IDxcBlob> ShaderContext::Compiler::CheckResult(IDxcResult* shaderResult_)
+{
+	//警告エラーが出てたらログに出して止める
+	Microsoft::WRL::ComPtr<IDxcBlobUtf8> shaderError = nullptr;
+	
+	shaderResult_->GetOutput(DXC_OUT_ERRORS, IID_PPV_ARGS(shaderError.GetAddressOf()), nullptr);
+
+	if (shaderError != nullptr && shaderError->GetStringLength() > 0)
+	{
+		// OutputDebugStringを使って、Visual Studioの「出力」ウィンドウにエラーを流す
+		Logger::Log((const char*)shaderError->GetStringPointer());
+	}
+
+	ErrorMessageOutput::Assert::DetectError
+	(
+		((shaderError == nullptr) || (shaderError->GetStringLength() == 0)),
+		"シェーダーのエラーがあります", fileName
+	);
+
+	//コンパイル結果から実行用のバイナリ部分を受け取る
+	Microsoft::WRL::ComPtr<IDxcBlob> shaderBlob = nullptr;
+	
+	HRESULT hr = shaderResult_->GetOutput(DXC_OUT_OBJECT, IID_PPV_ARGS(&shaderBlob), nullptr);
+	ErrorMessageOutput::Assert::DetectError(SUCCEEDED(hr), "shaderBlobの生成失敗", fileName);
+
+	Logger::Log("Create: ShaderBlob");
+
+	return shaderBlob;
+}
+///+/////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+/////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+/////////////////////////////////////////////////////////////////////////////////////////////////////////
+DxcBuffer ShaderContext::Compiler::LoadFile(std::wstring const& cnvFilePath_, IDxcBlobEncoding* shaderSource_)
+{
+	HRESULT hr = dxcUtils.Get()->LoadFile(cnvFilePath_.c_str(), nullptr, &shaderSource_);
+	ErrorMessageOutput::Assert::DetectError(SUCCEEDED(hr), "シェーダーファイルを読み込めません", fileName);
+
+	//読み込んだファイルの内容を設定する
+	DxcBuffer shaderSourceBuffer;
+	shaderSourceBuffer.Ptr = shaderSource_->GetBufferPointer();
+	shaderSourceBuffer.Size = shaderSource_->GetBufferSize();
+	//UTF-8であることを通知
+	shaderSourceBuffer.Encoding = DXC_CP_UTF8;
+
+	Logger::Log("Complete:  loading shader");
+
+	return shaderSourceBuffer;
+}
+///+/////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+/////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+/////////////////////////////////////////////////////////////////////////////////////////////////////////
+void ShaderContext::Compiler::InstantiateCorePatrts()
+{
+	HRESULT hr = DxcCreateInstance(CLSID_DxcUtils, IID_PPV_ARGS(&dxcUtils));
+	ErrorMessageOutput::Assert::DetectError(SUCCEEDED(hr), "dxcUtilsの生成失敗", fileName);
+	
+	hr = DxcCreateInstance(CLSID_DxcCompiler, IID_PPV_ARGS(&dxcCompiler));
+	ErrorMessageOutput::Assert::DetectError(SUCCEEDED(hr), "dxcCompilerの生成失敗", fileName);
+	
+	hr = dxcUtils->CreateDefaultIncludeHandler(&includeHandler);
+	ErrorMessageOutput::Assert::DetectError(SUCCEEDED(hr), "includeHandlerの生成失敗", fileName);
+
+	Logger::Log("Create: CoreParts", fileName);
+}
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Resource\Shader\ShaderCompiler\ShaderCompiler.h ===
+========================================
+#pragma once
+#include "../ShaderContext.h"
+
+class ShaderContext::Compiler
+{
+public:
+
+	Compiler(ShaderContext::InstanceKey key_);
+
+	[[nodiscard]] Microsoft::WRL::ComPtr<IDxcBlob> CompileShader
+	(
+		std::string const& folderPath,
+		std::string const& fileName_,
+		const wchar_t* profile_,
+		std::vector<std::wstring> const& extraArguments_ = {}
+	);
+	
+
+private:
+
+	Microsoft::WRL::ComPtr<IDxcUtils> dxcUtils = nullptr;
+	Microsoft::WRL::ComPtr<IDxcCompiler3> dxcCompiler = nullptr;
+	Microsoft::WRL::ComPtr<IDxcIncludeHandler> includeHandler = nullptr;
+
+	//コアパーツのインスタンス化
+	void InstantiateCorePatrts();
+	//ファイルパスにする
+	std::wstring AssembleFilePath(std::string const& folderPath, std::string const& fileName_);
+	//シェーダーファイルを読み込む
+	DxcBuffer LoadFile(std::wstring const& cnvFilePath_, IDxcBlobEncoding* shaderSource_);
+	//コンパイルする
+	Microsoft::WRL::ComPtr<IDxcResult> Compile
+	(
+		DxcBuffer& shaderSourceBuffer_, 
+		std::wstring const& cnvFilePath_, 
+		const wchar_t* profile_,
+		std::vector<std::wstring> const& extraArguments_
+	);
+	//コンパイル結果が問題ないかチェックし、バイナリーデータを返す
+	Microsoft::WRL::ComPtr<IDxcBlob> CheckResult(IDxcResult* shaderResult_);
+
+};
+
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Resource\Shader\ShaderLibrary\ShaderLibrary.cpp ===
+========================================
+#include "PreCompileHeader.h"
+#include "ShaderLibrary.h"
+
+
+ShaderLibrary::ShaderLibrary(ImportKey importKey_)
+{
+
+}
+
+
+template<>
+void ShaderLibrary::Import
+(
+	ImportKey key_,
+	Microsoft::WRL::ComPtr<IDxcBlob>&& data_,
+	MS type_
+)
+{
+	meshShaderData[(int)type_] = std::move(data_);
+}
+
+template<>
+void ShaderLibrary::Import
+(
+	ImportKey key_,
+	Microsoft::WRL::ComPtr<IDxcBlob>&& data_,
+	PS type_
+)
+{
+	pixelShaderData[(int)type_] = std::move(data_);
+}
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////
+template<>
+IDxcBlob* ShaderLibrary::Export
+(
+	GetDataKey key_,
+	MS meshType_
+)
+{
+	return meshShaderData[(int)meshType_].Get();
+}
+
+template<>
+IDxcBlob* ShaderLibrary::Export
+(
+	GetDataKey key_,
+	PS meshType_
+)
+{
+	return pixelShaderData[(int)meshType_].Get();
+}
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Resource\Shader\ShaderLibrary\ShaderLibrary.h ===
+========================================
+#pragma once
+#include "../../PSO/PSO_Context.h"
+
+class ShaderContext;
+
+
+class ShaderLibrary
+{
+public:
+
+	enum class MS
+	{
+		kStatic_Basic			//特別な頂点処理なし、用途:基本
+
+
+
+		,kCount
+	};
+
+	enum class PS
+	{
+		kStandard_kBasic		//特別なピクセル処理なし。用途：基本
+
+		, kCount
+	};
+
+	struct ImportKey;
+	struct GetDataKey;
+
+	ShaderLibrary(ImportKey importKey_);
+
+	//生成したシェーダーのバイナリオブジェを輸入
+	template<typename ShaderType>
+	void Import
+	(
+		ImportKey key_,
+		Microsoft::WRL::ComPtr<IDxcBlob>&& data_,
+		ShaderType type_
+	);
+
+	//シェーダーバイナリオブジェのポインタを輸出
+	template<typename ShaderType>
+	IDxcBlob* Export
+	(
+		GetDataKey key_,
+		ShaderType meshType_
+	);
+
+
+private:
+	Microsoft::WRL::ComPtr<IDxcBlob> meshShaderData[(int)MS::kCount];
+	Microsoft::WRL::ComPtr<IDxcBlob> pixelShaderData[(int)PS::kCount];
+
+};
+
+
+struct ShaderLibrary::ImportKey
+{
+private:
+
+	friend class ShaderContext;
+	explicit ImportKey() = default;
+};
+
+struct ShaderLibrary::GetDataKey
+{
+private:
+	friend class PSO_Context::Assembler;
+	explicit GetDataKey() = default;
+};
+
+
+template<>
+void ShaderLibrary::Import
+(
+	ImportKey key_,
+	Microsoft::WRL::ComPtr<IDxcBlob>&& data_,
+	MS type_
+);
+
+template<>
+void ShaderLibrary::Import
+(
+	ImportKey key_,
+	Microsoft::WRL::ComPtr<IDxcBlob>&& data_,
+	PS type_
+);
+
+template<>
+IDxcBlob* ShaderLibrary::Export
+(
+	GetDataKey key_,
+	MS meshType_
+);
+
+template<>
+IDxcBlob* ShaderLibrary::Export
+(
+	GetDataKey key_,
+	PS meshType_
+);
 
 
 

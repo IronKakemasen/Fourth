@@ -7,7 +7,7 @@ class DescriptorHeapContext;
 class SwapChainContext;
 class CommandContext;
 class ShaderContext;
-
+class PSO_Context;
 
 
 //交易場
@@ -44,7 +44,8 @@ private:
 	std::unique_ptr<SwapChainContext> swapChainContext;
 	//シェーダのコンパイル、そのバイナリデータの管理
 	std::unique_ptr<ShaderContext> shaderContext;
-
+	//PSOの構築
+	std::unique_ptr<PSO_Context> pso_context;
 
 	void InstantiateCommandContext();
 	void InstantiateSwapChainContext();
@@ -53,6 +54,7 @@ private:
 	void InstantiateWindowContext();
 	void InstantiateDescriptorHeapContext();
 	void InstantiateShaderContext();
+	void InstantiatePSO_Context();
 	void Finalize();
 
 };

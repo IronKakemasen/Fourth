@@ -17,7 +17,14 @@ ShaderContext::ShaderContext(InstanceKey instanceKey_)
 {
 	Logger::Entry("ShaderContext: Constructor");
 
-	CompileAllShaders(instanceKey_);
+	compiler.reset(new Compiler(instanceKey_));
+	Logger::Log("Instantiate: shaderCompiler", fileName);
+
+	shaderLibrary.reset(new ShaderLibrary(ShaderLibrary::ImportKey{}));
+	Logger::Log("Instantiate: ShaderLibrary", fileName);
+
+
+	CompileAllShaders();
 
 	Logger::End("ShaderContext: Constructor");
 }
@@ -27,32 +34,33 @@ ShaderContext::~ShaderContext()
 
 }
 
-void ShaderContext::CompileAllShaders(InstanceKey instanceKey_)
+ShaderLibrary* ShaderContext::AllowAccessToLibrary(ShaderLibraryAccessKey accessKey_)
 {
-	compiler.reset(new Compiler(instanceKey_));
-	Logger::Log("Instantiate: shaderCompiler", fileName);
-	
-	shaderLibrary.reset(new ShaderLibrary(ShaderLibrary::ImportKey{}));
-	Logger::Log("Instantiate: ShaderLibrary", fileName);
+	return shaderLibrary.get();
+}
+///+//////////////////////////////////////////////////////////////////////////////////////////////////////
+///+//////////////////////////////////////////////////////////////////////////////////////////////////////
+///+//////////////////////////////////////////////////////////////////////////////////////////////////////
 
+void ShaderContext::CompileAllShaders()
+{
 	std::string const commonFolderPath = "./Assets/Shader/";
 	auto const psProfile = L"ps_6_5";
 	auto const msProfile = L"ms_6_5";
 	ShaderLibrary::ImportKey importKey;
 
+	shaderLibrary->Import
+	(
+		importKey,
+		std::move(compiler->CompileShader(commonFolderPath, "Test.MS", msProfile)),
+		ShaderLibrary::MS::kStatic_Basic
+	);
 
-	shaderLibrary->ImportPixelShaderData
+	shaderLibrary->Import
 	(
 		importKey,
 		std::move(compiler->CompileShader(commonFolderPath, "Test.PS", psProfile)),
-		ShaderKey::MaterialType::kStandard, ShaderKey::Renderpath::kStandard
-	);
-
-	shaderLibrary->ImportMeshShaderData
-	(
-		importKey, 
-		std::move(compiler->CompileShader(commonFolderPath, "Test.MS", msProfile)),
-		ShaderKey::MeshType::kStatic, ShaderKey::Renderpath::kStandard
+		ShaderLibrary::PS::kStandard_kBasic
 	);
 
 

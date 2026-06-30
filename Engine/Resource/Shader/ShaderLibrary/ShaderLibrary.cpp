@@ -6,48 +6,49 @@ ShaderLibrary::ShaderLibrary(ImportKey importKey_)
 {
 
 }
-
-
-void ShaderLibrary::ImportMeshShaderData
+///+//////////////////////////////////////////////////////////////////////////////////////////////////////
+///+//////////////////////////////////////////////////////////////////////////////////////////////////////
+///+//////////////////////////////////////////////////////////////////////////////////////////////////////
+template<>
+void ShaderLibrary::Import
 (
 	ImportKey key_,
 	Microsoft::WRL::ComPtr<IDxcBlob>&& data_,
-	ShaderKey::MeshType meshType_,
-	ShaderKey::Renderpath renderPath_
+	MS type_
 )
 {
-	meshShaderData[(int)meshType_][(int)renderPath_] = std::move(data_);
+	meshShaderData[(int)type_] = std::move(data_);
 }
 
-void ShaderLibrary::ImportPixelShaderData
+template<>
+void ShaderLibrary::Import
 (
 	ImportKey key_,
 	Microsoft::WRL::ComPtr<IDxcBlob>&& data_,
-	ShaderKey::MaterialType materialType_,
-	ShaderKey::Renderpath renderPath_
+	PS type_
 )
 {
-	pixelShaderData[(int)materialType_][(int)renderPath_] = std::move(data_);
+	pixelShaderData[(int)type_] = std::move(data_);
 }
-
-
-IDxcBlob* ShaderLibrary::GetMeshShaderData
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////
+template<>
+IDxcBlob* ShaderLibrary::Export
 (
 	GetDataKey key_,
-	ShaderKey::MeshType meshType_,
-	ShaderKey::Renderpath renderPath_
+	MS meshType_
 )
 {
-	return meshShaderData[(int)meshType_][(int)renderPath_].Get();
+	return meshShaderData[(int)meshType_].Get();
 }
 
-IDxcBlob* ShaderLibrary::GetPixelShaderData
+template<>
+IDxcBlob* ShaderLibrary::Export
 (
 	GetDataKey key_,
-	ShaderKey::MaterialType materialType_,
-	ShaderKey::Renderpath renderPath_
+	PS meshType_
 )
 {
-	return pixelShaderData[(int)materialType_][(int)renderPath_].Get();
+	return pixelShaderData[(int)meshType_].Get();
 }
-

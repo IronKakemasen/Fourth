@@ -32,7 +32,6 @@ ShaderContext::Compiler::Compiler(ShaderContext::InstanceKey key_)
 
 	//ファイルを読み込む	
 	DxcBuffer shaderSourceBuffer = LoadFile(cnvFilePath, shaderSource.Get());
-	Logger::Log("Complete:  loading shader", fileName);
 
 	//コンパイルする
 	Microsoft::WRL::ComPtr<IDxcResult> result = Compile(shaderSourceBuffer, cnvFilePath, profile_, extraArguments_);
@@ -58,37 +57,56 @@ Microsoft::WRL::ComPtr<IDxcResult> ShaderContext::Compiler::Compile
 {
 	std::vector<const wchar_t*> arguments;
 
-	//ターゲットファイル名とプロファイルの設定
-	arguments.emplace_back(cnvFilePath_.c_str());
-	arguments.emplace_back(L"-E");
-	arguments.emplace_back(L"main");
-	arguments.emplace_back(L"-T");
-	//後で書き換えるための一時登録
-	arguments.emplace_back(profile_);
-
-	// 3. 共通となる基本フラグ（デバッグ情報や警告の扱い）の登録
-#ifdef _DEBUG
-	arguments.emplace_back(DXC_ARG_DEBUG);
-	arguments.emplace_back(DXC_ARG_SKIP_OPTIMIZATIONS);
-#else
-	arguments.emplace_back(DXC_ARG_OPTIMIZATION_LEVEL3);
-#endif
-	arguments.emplace_back(DXC_ARG_WARNINGS_ARE_ERRORS);
-
-	//リソースのエイリアスを許可
-	arguments.emplace_back(L"-res-may-alias");
-	//すべてのリソースがバインド済みとして最適化
-	arguments.emplace_back(L"-all-resources-bound");
-
-	//外部から渡されたマクロや追加引数を合流させる
-	for (auto const& arg : extraArguments_)
+	//argmentsを構築
 	{
-		arguments.push_back(arg.c_str());
+		//ターゲットファイル名とプロファイルの設定
+		arguments.emplace_back(cnvFilePath_.c_str());
+		arguments.emplace_back(L"-E");
+		arguments.emplace_back(L"main");
+		arguments.emplace_back(L"-T");
+		//後で書き換えるための一時登録
+		arguments.emplace_back(profile_);
+
+		//基本フラグ（デバッグ情報や警告の扱い）の登録
+#ifdef _DEBUG
+		arguments.emplace_back(DXC_ARG_DEBUG);
+		arguments.emplace_back(DXC_ARG_SKIP_OPTIMIZATIONS);
+#else
+		arguments.emplace_back(DXC_ARG_OPTIMIZATION_LEVEL3);
+#endif
+		arguments.emplace_back(DXC_ARG_WARNINGS_ARE_ERRORS);
+
+		//リソースのエイリアスを許可
+		arguments.emplace_back(L"-res-may-alias");
+		//すべてのリソースがバインド済みとして最適化
+		arguments.emplace_back(L"-all-resources-bound");
+
+		//外部から渡されたマクロや追加引数を合流させる
+		for (auto const& arg : extraArguments_)
+		{
+			arguments.push_back(arg.c_str());
+		}
 	}
 
+	//argumentsをログに出力
+	{
+		std::string argString = "< arguments >----------------------------------------\n";
+		size_t const argumentSize = arguments.size();
+		for (size_t i = 1;i < argumentSize;++i)
+		{
+			argString += StringConverter::ConvertString(arguments.at(i));
+
+			if (i + 1 < argumentSize)argString += " , ";
+
+			if (i % 4 == 0)argString += "\n";
+		}
+		argString += "\n-----------------------------------------------------";
+		Logger::Log(argString);
+	}
 
 	Microsoft::WRL::ComPtr<IDxcResult> shaderResult = nullptr;
-	HRESULT hr = dxcCompiler.Get()->Compile(
+	HRESULT hr = dxcCompiler.Get()->Compile
+	(
 		//読み込んだファイル
 		&shaderSourceBuffer_,
 		//コンパイルオプション
@@ -102,7 +120,8 @@ Microsoft::WRL::ComPtr<IDxcResult> ShaderContext::Compiler::Compile
 
 	//dxcが起動できないなどの致命的な状況
 	ErrorMessageOutput::Assert::DetectError(SUCCEEDED(hr), "Crit Error(DxCompiler)", fileName);
-	Logger::Log("Complete: compile", fileName);
+	
+	Logger::Log("Complete: compile");
 
 	return shaderResult;
 }
@@ -118,6 +137,8 @@ std::wstring ShaderContext::Compiler::AssembleFilePath
 	std::string const fileType = ".hlsl";
 	std::string compositePath = folderPath + fileName_ + fileType;
 	
+	Logger::Log("FilePath: " + compositePath, fileName);
+
 	//完成パス
 	return StringConverter::ConvertString(compositePath);
 }
@@ -134,9 +155,8 @@ Microsoft::WRL::ComPtr<IDxcBlob> ShaderContext::Compiler::CheckResult(IDxcResult
 	if (shaderError != nullptr && shaderError->GetStringLength() > 0)
 	{
 		// OutputDebugStringを使って、Visual Studioの「出力」ウィンドウにエラーを流す
-		OutputDebugStringA((const char*)shaderError->GetStringPointer());
+		Logger::Log((const char*)shaderError->GetStringPointer());
 	}
-
 
 	ErrorMessageOutput::Assert::DetectError
 	(
@@ -148,8 +168,9 @@ Microsoft::WRL::ComPtr<IDxcBlob> ShaderContext::Compiler::CheckResult(IDxcResult
 	Microsoft::WRL::ComPtr<IDxcBlob> shaderBlob = nullptr;
 	
 	HRESULT hr = shaderResult_->GetOutput(DXC_OUT_OBJECT, IID_PPV_ARGS(&shaderBlob), nullptr);
-	assert(SUCCEEDED(hr));
+	ErrorMessageOutput::Assert::DetectError(SUCCEEDED(hr), "shaderBlobの生成失敗", fileName);
 
+	Logger::Log("Create: ShaderBlob");
 
 	return shaderBlob;
 }
@@ -168,6 +189,8 @@ DxcBuffer ShaderContext::Compiler::LoadFile(std::wstring const& cnvFilePath_, ID
 	//UTF-8であることを通知
 	shaderSourceBuffer.Encoding = DXC_CP_UTF8;
 
+	Logger::Log("Complete:  loading shader");
+
 	return shaderSourceBuffer;
 }
 ///+/////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -177,12 +200,15 @@ void ShaderContext::Compiler::InstantiateCorePatrts()
 {
 	HRESULT hr = DxcCreateInstance(CLSID_DxcUtils, IID_PPV_ARGS(&dxcUtils));
 	ErrorMessageOutput::Assert::DetectError(SUCCEEDED(hr), "dxcUtilsの生成失敗", fileName);
-	
+	Logger::Log("Create: dxcUtils", fileName);
+
 	hr = DxcCreateInstance(CLSID_DxcCompiler, IID_PPV_ARGS(&dxcCompiler));
 	ErrorMessageOutput::Assert::DetectError(SUCCEEDED(hr), "dxcCompilerの生成失敗", fileName);
-	
+	Logger::Log("Create: dxcCompiler", fileName);
+
 	hr = dxcUtils->CreateDefaultIncludeHandler(&includeHandler);
 	ErrorMessageOutput::Assert::DetectError(SUCCEEDED(hr), "includeHandlerの生成失敗", fileName);
+	Logger::Log("Create: includeHandler", fileName);
 
-	Logger::Log("Create: CoreParts", fileName);
+	Logger::Log("Complete: CreatingCoreParts", fileName);
 }
