@@ -1,6 +1,6 @@
 #pragma once
 
-namespace ShaderKey
+namespace ShaderComponent
 {
 	enum class MeshType
 	{

@@ -285,6 +285,15 @@
     <ClCompile Include="Engine\Resource\Shader\ShaderLibrary\ShaderLibrary.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
+    <ClCompile Include="Engine\Resource\PSO\PSO_Context.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\Resource\PSO\PSO_Assembler\PSO_Assembler.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\Resource\PSO\PSO_Assembler\CommandPSOCreate\CommandCreateBlendDesc\BlendDescCreator.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Engine\Core\Window\WindowContext.h">
@@ -509,7 +518,7 @@
     <ClInclude Include="Engine\Core\Command\RuntimeCommandControler\RuntimeCommandControler.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\Resource\PSO\MeshShaderPipelineStateStream.h">
+    <ClInclude Include="Engine\Resource\PSO\PSO_Assembler\MeshShaderPipelineStateStream.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
     <ClInclude Include="Engine\Nexus.h">
@@ -554,7 +563,19 @@
     <ClInclude Include="Engine\Resource\Shader\ShaderLibrary\ShaderLibrary.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\Resource\Shader\ShaderLibrary\ShaderKey.h">
+    <ClInclude Include="Engine\Resource\PSO\ShaderComponent.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Resource\PSO\PSO_Context.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Resource\PSO\PSO_Assembler\PSO_Assembler.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Resource\PSO\PSO_Assembler\CommandPSOCreate\CommandCreateBlendDesc\BlendDescCreator.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Resource\PSO\RenderState.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
   </ItemGroup>

@@ -90,6 +90,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Engine\Resource\PSO\PSO_Assembler\CommandPSOCreate\CommandCreateBlendDesc\BlendDescCreator.cpp" />
     <ClCompile Include="Engine\Resource\Buffer\RuntimeBufferManagementSystems\BufferDispatcher\BufferDispatcher.cpp" />
     <ClCompile Include="Engine\Resource\Buffer\RuntimeBufferManagementSystems\BufferInfoExtractors\ComputeBufferInfoExtractor\ComputeBufferInfoExtractor.cpp" />
     <ClCompile Include="Engine\Resource\Buffer\BufferCreationSystems\BufferCreator\BufferCreator.cpp" />
@@ -252,8 +253,11 @@
     <ClCompile Include="Engine\Resource\Shader\ShaderContext.cpp" />
     <ClCompile Include="Engine\Resource\Shader\ShaderCompiler\ShaderCompiler.cpp" />
     <ClCompile Include="Engine\Resource\Shader\ShaderLibrary\ShaderLibrary.cpp" />
+    <ClCompile Include="Engine\Resource\PSO\PSO_Context.cpp" />
+    <ClCompile Include="Engine\Resource\PSO\PSO_Assembler\PSO_Assembler.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Engine\Resource\PSO\PSO_Assembler\CommandPSOCreate\CommandCreateBlendDesc\BlendDescCreator.h" />
     <ClInclude Include="Engine\Resource\Buffer\RuntimeBufferManagementSystems\BufferDispatcher\BufferDispatcher.h" />
     <ClInclude Include="Engine\Resource\Buffer\RuntimeBufferManagementSystems\BufferInfoExtractors\ComputeBufferInfoExtractor\ComputeBufferInfoExtractor.h" />
     <ClInclude Include="Engine\Resource\Buffer\BufferDefinition\GPUBuffer\BufferInterface.h" />
@@ -288,10 +292,11 @@
     <ClInclude Include="Engine\Core\Device\DeviceContext.h" />
     <ClInclude Include="Engine\Core\Window\WindowContext.h" />
     <ClInclude Include="Engine\Math\Matrix\Matrix4x4.h" />
-    <ClInclude Include="Engine\Resource\PSO\MeshShaderPipelineStateStream.h" />
+    <ClInclude Include="Engine\Resource\PSO\PSO_Assembler\MeshShaderPipelineStateStream.h" />
     <ClInclude Include="Engine\Debug\ErrorMessageOutput\ErrorMessageOutput.h" />
     <ClInclude Include="Engine\Resource\Buffer\ResourceBarrier.h" />
-    <ClInclude Include="Engine\Resource\Shader\ShaderLibrary\ShaderKey.h" />
+    <ClInclude Include="Engine\Resource\PSO\RenderState.h" />
+    <ClInclude Include="Engine\Resource\PSO\ShaderComponent.h" />
     <ClInclude Include="External\Audio\SoundCommon.h" />
     <ClInclude Include="External\Audio\xaudio_player_core.h" />
     <ClInclude Include="External\Audio\xaudio_player_mf.h" />
@@ -344,6 +349,8 @@
     <ClInclude Include="Engine\Resource\Shader\ShaderContext.h" />
     <ClInclude Include="Engine\Resource\Shader\ShaderCompiler\ShaderCompiler.h" />
     <ClInclude Include="Engine\Resource\Shader\ShaderLibrary\ShaderLibrary.h" />
+    <ClInclude Include="Engine\Resource\PSO\PSO_Context.h" />
+    <ClInclude Include="Engine\Resource\PSO\PSO_Assembler\PSO_Assembler.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
