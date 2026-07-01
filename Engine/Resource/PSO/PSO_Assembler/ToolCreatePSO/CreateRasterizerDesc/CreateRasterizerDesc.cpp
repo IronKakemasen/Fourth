@@ -2,27 +2,38 @@
 #include "CreateRasterizerDesc.h"
 
 
-CD3DX12_RASTERIZER_DESC CreateRasterizerDesc::Create(const PipelineStateDesc::RasterizerDesc& desc_)
+CD3DX12_RASTERIZER_DESC CreateRasterizerDesc::Create(const PipelineStateDesc::RasterizerDesc& srcDesc_)
 {
 	CD3DX12_RASTERIZER_DESC rasterizerDesc{};
 
-	//カルモード
-	rasterizerDesc.CullMode = D3D12_CULL_MODE(desc_.cullMode);
-	//三角形の中身を塗りつぶすかどうか
-	rasterizerDesc.FillMode = D3D12_FILL_MODE(desc_.fillMode);
-
-	rasterizerDesc.FrontCounterClockwise = FALSE;
-
-	rasterizerDesc.DepthBias = desc_.depthBias;
-	rasterizerDesc.DepthBiasClamp = desc_.depthBiasClamp;
-	rasterizerDesc.SlopeScaledDepthBias = desc_.slopeScaledDepthBias;
-
-	rasterizerDesc.DepthClipEnable = TRUE;
-	rasterizerDesc.MultisampleEnable = FALSE;
-	rasterizerDesc.AntialiasedLineEnable = FALSE;
-	rasterizerDesc.ForcedSampleCount = 0;
-	rasterizerDesc.ConservativeRaster = D3D12_CONSERVATIVE_RASTERIZATION_MODE_OFF;
+	SetCommonDetails(&rasterizerDesc);
+	SetDetailsDirectly(&rasterizerDesc, srcDesc_);
 
 	return rasterizerDesc;
+
+}
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+void CreateRasterizerDesc::SetCommonDetails(CD3DX12_RASTERIZER_DESC* desc_)
+{
+	desc_->FrontCounterClockwise = FALSE;
+	desc_->DepthClipEnable = TRUE;
+	desc_->MultisampleEnable = FALSE;
+	desc_->AntialiasedLineEnable = FALSE;
+	desc_->ForcedSampleCount = 0;
+	desc_->ConservativeRaster = D3D12_CONSERVATIVE_RASTERIZATION_MODE_OFF;
+
+}
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+void CreateRasterizerDesc::SetDetailsDirectly(CD3DX12_RASTERIZER_DESC* desc_, const PipelineStateDesc::RasterizerDesc& srcDesc_)
+{
+	desc_->CullMode = D3D12_CULL_MODE(srcDesc_.cullMode);
+	desc_->FillMode = D3D12_FILL_MODE(srcDesc_.fillMode);
+	desc_->DepthBias = srcDesc_.depthBias;
+	desc_->DepthBiasClamp = srcDesc_.depthBiasClamp;
+	desc_->SlopeScaledDepthBias = srcDesc_.slopeScaledDepthBias;
 
 }

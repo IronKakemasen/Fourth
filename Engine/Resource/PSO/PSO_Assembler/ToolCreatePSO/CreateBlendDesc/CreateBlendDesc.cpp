@@ -2,25 +2,26 @@
 #include "CreateBlendDesc.h"
 
 
-CD3DX12_BLEND_DESC CreateBlendDesc::Create(const PipelineStateDesc::RenderTargetDesc& desc_)
+CD3DX12_BLEND_DESC CreateBlendDesc::Create(const PipelineStateDesc::RenderTargetDesc& srcDesc_)
 {
 	CD3DX12_BLEND_DESC blendDesc;
 
 	blendDesc.IndependentBlendEnable = TRUE;
 	blendDesc.AlphaToCoverageEnable = FALSE;
 
-	for (size_t i = 0;i < desc_.blendModeContainer.size();++i)
+	for (size_t i = 0;i < srcDesc_.blendModeContainer.size();++i)
 	{
 		//共通設定
 		SetCommonDetails(&blendDesc.RenderTarget[i]);
 		//ブレンドモードごとの設定
-		SetSpecificDetails(&blendDesc.RenderTarget[i], desc_.blendModeContainer[i]);
+		SetBranchedDetails(&blendDesc.RenderTarget[i], srcDesc_.blendModeContainer[i]);
 	}
 
 	return blendDesc;
 }
-
-
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 void CreateBlendDesc::SetCommonDetails(D3D12_RENDER_TARGET_BLEND_DESC* desc_)
 {
 	desc_->RenderTargetWriteMask = D3D12_COLOR_WRITE_ENABLE_ALL;
@@ -29,8 +30,10 @@ void CreateBlendDesc::SetCommonDetails(D3D12_RENDER_TARGET_BLEND_DESC* desc_)
 	desc_->BlendOpAlpha = D3D12_BLEND_OP_ADD;
 	desc_->DestBlendAlpha = D3D12_BLEND_ZERO;
 }
-
-void CreateBlendDesc::SetSpecificDetails(D3D12_RENDER_TARGET_BLEND_DESC* desc_, RenderStateComponent::BlendMode blendMode_)
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+void CreateBlendDesc::SetBranchedDetails(D3D12_RENDER_TARGET_BLEND_DESC* desc_, RenderStateComponent::BlendMode blendMode_)
 {
 	switch (blendMode_)
 	{

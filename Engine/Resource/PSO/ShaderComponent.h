@@ -14,7 +14,7 @@ namespace ShaderComponent
 		kCount
 	};
 
-	enum class Renderpath
+	enum class RenderPath
 	{
 		kStandard,
 		kCount

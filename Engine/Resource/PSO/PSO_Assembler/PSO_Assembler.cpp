@@ -148,15 +148,19 @@ Microsoft::WRL::ComPtr<ID3D12PipelineState> PSO_Context::Assembler::AssembleGrap
 
 	return pipelineState;
 }
-
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 void PSO_Context::Assembler::Check(const PipelineStateDesc::ShaderSet& shaderSet_, const PipelineStateDesc::RenderTargetDesc& renderTargetDesc_)const
 {
-	ErrorMessageOutput::Assert::DetectError((shaderSet_.meshShader), "MeshSHaderがぬるぽ", fileName);
-	ErrorMessageOutput::Assert::DetectError
-	(
-		renderTargetDesc_.blendModeContainer.size() == renderTargetDesc_.rtvFormatContainer.size(),
-		"renderTargetDescの不備",
-		fileName
-	);
+	std::string errorMsg{};
+
+	if (!shaderSet_.meshShader) errorMsg += "[MeshShaderがぬるぽ]";
+	
+	if(renderTargetDesc_.blendModeContainer.size() != renderTargetDesc_.rtvFormatContainer.size())
+		errorMsg += "[renderTargetDescの不備]";
+
+
+	ErrorMessageOutput::Assert::DetectError(errorMsg.size() == 0, errorMsg, fileName);
 
 }

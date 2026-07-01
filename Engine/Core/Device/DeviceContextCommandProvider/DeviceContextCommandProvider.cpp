@@ -7,6 +7,8 @@
 #include "../Commands/CreateView/CommandCreateView.h"
 #include "../Commands/StructureSwapChain/CommandStructureSwapChain.h"
 #include "../Commands/CreatePSO/CommandCreatePSO.h"
+#include "../Commands/CreateRootSignature/CommandCreateRootSignature.h"
+
 
 namespace
 {
@@ -197,6 +199,27 @@ DeviceContext::CommandProvider::ProvideCreatePSOCommand()
 		CommandCreatePSO command(DeviceContext::GenerateKey{});
 
 		command.CreateGraphicsPipelineState(device, doublePtr_pipelineState_, descType_);
+	};
+
+	return retFunc;
+}
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+std::function<void
+(
+	UINT nodeMask_,
+	Microsoft::WRL::ComPtr<ID3DBlob>& signatureBlob_,
+	ID3D12RootSignature** doublePtr_rootSignature_
+)>
+DeviceContext::CommandProvider::ProvideCommandCreateRootSignature()
+{
+	auto retFunc = [this](UINT nodeMask_,Microsoft::WRL::ComPtr<ID3DBlob>& signatureBlob_,ID3D12RootSignature** doublePtr_rootSignature_)
+	{
+		auto* device = deviceGetter(DeviceContext::AccessKey{});
+		CommandCreateRootSignature command(DeviceContext::GenerateKey{});
+
+		command.CreateRootSignature(device, nodeMask_, signatureBlob_, doublePtr_rootSignature_);
 	};
 
 	return retFunc;

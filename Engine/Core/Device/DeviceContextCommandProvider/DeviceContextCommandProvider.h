@@ -44,21 +44,28 @@ public:
 		ProvideCreateUAVCommand();
 	
 	//スワップチェーンを生成するためのコマンド
-	[[nodiscard]] std::function
-	< void
-		(
-			ID3D12CommandQueue* commandQueue_,
-			DXGI_SWAP_CHAIN_DESC1 desc_,
-			IDXGISwapChain4** swapChainDoublePtr_,
-			const HWND hWnd_
-		)
-	>
+	[[nodiscard]] std::function<void
+	(
+		ID3D12CommandQueue* commandQueue_,
+		DXGI_SWAP_CHAIN_DESC1 desc_,
+		IDXGISwapChain4** swapChainDoublePtr_,
+		const HWND hWnd_
+	)>
 	ProvideCreateSwapChainCommand();
 
 	//PSOを生成するコマンド
 	template<typename PSO_DescType>
 	std::function<void(ID3D12PipelineState** doublePtr_pipelineState_, PSO_DescType* descType_)>
 		ProvideCreatePSOCommand();
+
+	//ルートシグネチャを生成するコマンド
+	std::function<void
+	(
+		UINT nodeMask_,
+		Microsoft::WRL::ComPtr<ID3DBlob>& signatureBlob_,
+		ID3D12RootSignature** doublePtr_rootSignature_
+	)>
+	ProvideCommandCreateRootSignature();
 
 
 

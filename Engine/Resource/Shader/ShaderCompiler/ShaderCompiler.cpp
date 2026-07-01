@@ -152,13 +152,7 @@ Microsoft::WRL::ComPtr<IDxcBlob> ShaderContext::Compiler::CheckResult(IDxcResult
 	
 	shaderResult_->GetOutput(DXC_OUT_ERRORS, IID_PPV_ARGS(shaderError.GetAddressOf()), nullptr);
 
-	if (shaderError != nullptr && shaderError->GetStringLength() > 0)
-	{
-		// OutputDebugStringを使って、Visual Studioの「出力」ウィンドウにエラーを流す
-		Logger::Log((const char*)shaderError->GetStringPointer());
-	}
-
-	ErrorMessageOutput::Assert::DetectError
+	ErrorMessageOutput::Abort::DetectError
 	(
 		((shaderError == nullptr) || (shaderError->GetStringLength() == 0)),
 		"シェーダーのエラーがあります", fileName
@@ -168,7 +162,7 @@ Microsoft::WRL::ComPtr<IDxcBlob> ShaderContext::Compiler::CheckResult(IDxcResult
 	Microsoft::WRL::ComPtr<IDxcBlob> shaderBlob = nullptr;
 	
 	HRESULT hr = shaderResult_->GetOutput(DXC_OUT_OBJECT, IID_PPV_ARGS(&shaderBlob), nullptr);
-	ErrorMessageOutput::Assert::DetectError(SUCCEEDED(hr), "shaderBlobの生成失敗", fileName);
+	ErrorMessageOutput::Abort::DetectError(SUCCEEDED(hr), "shaderBlobの生成失敗", fileName);
 
 	Logger::Log("Create: ShaderBlob");
 

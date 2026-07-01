@@ -2,12 +2,24 @@
 #include "CreateDepthStencilDesc.h"
 
 
-CD3DX12_DEPTH_STENCIL_DESC CreateDepthStencilDesc::Create(const PipelineStateDesc::DepthStencilDesc& desc_)
+CD3DX12_DEPTH_STENCIL_DESC CreateDepthStencilDesc::Create(const PipelineStateDesc::DepthStencilDesc& srcDesc_)
 {
 	CD3DX12_DEPTH_STENCIL_DESC depthStencilDesc{};
 	
+	SetBranchedDetails(&depthStencilDesc, srcDesc_);
+	SetDetailsDirectly(&depthStencilDesc, srcDesc_);
+
+	return depthStencilDesc;
+
+}
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+void CreateDepthStencilDesc::SetBranchedDetails(CD3DX12_DEPTH_STENCIL_DESC* desc_, const PipelineStateDesc::DepthStencilDesc& srcDesc_)
+{
 	D3D12_DEPTH_WRITE_MASK depthWriteMask{};
-	switch (desc_.blendMode)
+
+	switch (srcDesc_.blendMode)
 	{
 
 	case RenderStateComponent::BlendMode::kOpaque:
@@ -23,10 +35,14 @@ CD3DX12_DEPTH_STENCIL_DESC CreateDepthStencilDesc::Create(const PipelineStateDes
 		break;
 	}
 
-	depthStencilDesc.DepthEnable = BOOL(desc_.depthWrite);
-	depthStencilDesc.DepthFunc = (D3D12_COMPARISON_FUNC)desc_.depthTest;
-	depthStencilDesc.DepthWriteMask = depthWriteMask;
+	desc_->DepthWriteMask = depthWriteMask;
 
-	return depthStencilDesc;
-
+}
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+void CreateDepthStencilDesc::SetDetailsDirectly(CD3DX12_DEPTH_STENCIL_DESC* desc_, const PipelineStateDesc::DepthStencilDesc& srcDesc_)
+{
+	desc_->DepthEnable = BOOL(srcDesc_.depthWrite);
+	desc_->DepthFunc = (D3D12_COMPARISON_FUNC)srcDesc_.depthTest;
 }
