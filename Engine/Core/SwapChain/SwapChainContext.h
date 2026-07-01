@@ -11,7 +11,7 @@ class DepthStencilBuffer;
 class SwapChainContext
 {
 	//swapChain生成コマンド
-	using CommandCreateSwapChain = std::function< HRESULT
+	using CommandCreateSwapChain = std::function< void
 	(
 		ID3D12CommandQueue* commandQueue_,
 		DXGI_SWAP_CHAIN_DESC1 desc_,

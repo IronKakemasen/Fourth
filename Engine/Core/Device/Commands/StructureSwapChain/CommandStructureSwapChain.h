@@ -10,7 +10,7 @@ struct CommandStructureSwapChain : public DeviceContextCommandBehavior
 	~CommandStructureSwapChain();
 
 	//スワップチェーンを生成する
-	HRESULT CreateSwapChain
+	void CreateSwapChain
 	(
 		IDXGIFactory7& dxgiFactory_,
 		ID3D12CommandQueue* commandQueue_,

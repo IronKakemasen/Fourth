@@ -28,7 +28,7 @@ void DepthStencilBufferDescription::CheckRequirementsFilled() const
 	if (param.height == 0)errorMess += "[height]";
 	if (param.srvFormat == DXGI_FORMAT_Error_Detection) errorMess += "[SRVformat]";
 	if (param.dsvFormat == DXGI_FORMAT_Error_Detection) errorMess += "[DSVformat]";
-	if (param.clearColor == -1 ) errorMess += "[clearColor]";
+	if ((param.clearColor != 1.0f) && (param.clearColor != 0.0f)) errorMess += "[clearColor]";
 
 	ErrorMessageOutput::Assert::DetectError((errorMess.length() == 0), errorMess + "の情報が未設定です", "DepthStencilBufferDescription.cpp");
 }

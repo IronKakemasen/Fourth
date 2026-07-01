@@ -6,7 +6,7 @@
 #include "../Commands/CreateDescriptorHeap/CommandCreateDescriptorHeap.h"
 #include "../Commands/CreateView/CommandCreateView.h"
 #include "../Commands/StructureSwapChain/CommandStructureSwapChain.h"
-
+#include "../Commands/CreatePSO/CommandCreatePSO.h"
 
 namespace
 {
@@ -30,7 +30,7 @@ using C_CreateResource = std::function<Microsoft::WRL::ComPtr<ID3D12Resource>
 	const std::string& name_
 )>;
 
-using C_CreateSwapChain = std::function< HRESULT
+using C_CreateSwapChain = std::function< void
 (
 	ID3D12CommandQueue* commandQueue_,
 	DXGI_SWAP_CHAIN_DESC1 desc_,
@@ -119,7 +119,7 @@ template<>
 		auto* dxgiFactory = dxgiFactoryGetter(DeviceContext::AccessKey{});
 		CommandStructureSwapChain command(DeviceContext::GenerateKey{});
 
-		return command.CreateSwapChain(*dxgiFactory, commandQueue_,desc_, swapChainDoublePtr_, hWnd_);
+		command.CreateSwapChain(*dxgiFactory, commandQueue_,desc_, swapChainDoublePtr_, hWnd_);
 	};
 
 	return retFunc;
@@ -165,6 +165,38 @@ template<>
 			initialState_,
 			name_
 		);
+	};
+
+	return retFunc;
+}
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+template<>
+std::function<void(ID3D12PipelineState** doublePtr_pipelineState_, D3D12_COMPUTE_PIPELINE_STATE_DESC* descType_)>
+DeviceContext::CommandProvider::ProvideCreatePSOCommand()
+{
+	auto retFunc = [this](ID3D12PipelineState** doublePtr_pipelineState_, D3D12_COMPUTE_PIPELINE_STATE_DESC* descType_)
+	{
+		auto* device = deviceGetter(DeviceContext::AccessKey{});
+		CommandCreatePSO command(DeviceContext::GenerateKey{});
+
+		command.CreateComputePipelineState(device, doublePtr_pipelineState_, descType_);
+	};
+
+	return retFunc;
+}
+
+template<>
+std::function<void(ID3D12PipelineState** doublePtr_pipelineState_, D3D12_PIPELINE_STATE_STREAM_DESC* descType_)>
+DeviceContext::CommandProvider::ProvideCreatePSOCommand()
+{
+	auto retFunc = [this](ID3D12PipelineState** doublePtr_pipelineState_, D3D12_PIPELINE_STATE_STREAM_DESC* descType_)
+	{
+		auto* device = deviceGetter(DeviceContext::AccessKey{});
+		CommandCreatePSO command(DeviceContext::GenerateKey{});
+
+		command.CreateGraphicsPipelineState(device, doublePtr_pipelineState_, descType_);
 	};
 
 	return retFunc;

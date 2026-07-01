@@ -17,6 +17,7 @@ CommandCreateFenceObject::~CommandCreateFenceObject()
 
 	HRESULT hr = device_->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(fence.GetAddressOf()));
 	ErrorMessageOutput::Assert::DetectError(SUCCEEDED(hr), "フェンスの生成失敗", "CommandCreateFenceObject.cpp");
+	Logger::Log("Create: FenceObject", "CommandCreateFenceObject.cpp");
 
 	return fence;
 }

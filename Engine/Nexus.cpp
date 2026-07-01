@@ -252,6 +252,18 @@ void Nexus::InstantiateShaderContext()
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 void Nexus::InstantiatePSO_Context()
 {
-	pso_context.reset(new PSO_Context(PSO_Context::InstanceKey{}, *shaderContext.get()));
+	auto cmdCreateGraphicsPSO = deviceContext->commandProvider->ProvideCreatePSOCommand<D3D12_PIPELINE_STATE_STREAM_DESC>();
+	auto cmdCreateComputePSO = deviceContext->commandProvider->ProvideCreatePSOCommand<D3D12_COMPUTE_PIPELINE_STATE_DESC>();
+
+	pso_context.reset
+	(
+		new PSO_Context
+		(
+			PSO_Context::InstanceKey{},
+			*shaderContext.get(),
+			cmdCreateGraphicsPSO,
+			cmdCreateComputePSO
+		)
+	);
 	Logger::Log("Instantiate: PSO_Context", fileName);
 }

@@ -115,11 +115,4 @@ enum class ViewType
 	kCount
 };
 
-enum class MeshType
-{
-	kStatic
-
-};
-
-
 

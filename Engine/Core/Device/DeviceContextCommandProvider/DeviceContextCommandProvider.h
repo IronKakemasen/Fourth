@@ -45,7 +45,7 @@ public:
 	
 	//スワップチェーンを生成するためのコマンド
 	[[nodiscard]] std::function
-	< HRESULT
+	< void
 		(
 			ID3D12CommandQueue* commandQueue_,
 			DXGI_SWAP_CHAIN_DESC1 desc_,
@@ -54,6 +54,11 @@ public:
 		)
 	>
 	ProvideCreateSwapChainCommand();
+
+	//PSOを生成するコマンド
+	template<typename PSO_DescType>
+	std::function<void(ID3D12PipelineState** doublePtr_pipelineState_, PSO_DescType* descType_)>
+		ProvideCreatePSOCommand();
 
 
 
@@ -64,6 +69,20 @@ private:
 	std::function< IDXGIFactory7* (DeviceContext::AccessKey)> dxgiFactoryGetter;
 
 };
+
+
+
+///+/////////////////////////////////////////////////////////////////////////////////////////////////////////
+template<>
+std::function<void(ID3D12PipelineState** doublePtr_pipelineState_, D3D12_COMPUTE_PIPELINE_STATE_DESC* descType_)>
+DeviceContext::CommandProvider::ProvideCreatePSOCommand();
+
+template<>
+std::function<void(ID3D12PipelineState** doublePtr_pipelineState_, D3D12_PIPELINE_STATE_STREAM_DESC* descType_)>
+DeviceContext::CommandProvider::ProvideCreatePSOCommand();
+///+/////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
 
 
 
