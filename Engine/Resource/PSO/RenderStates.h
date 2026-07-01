@@ -4,7 +4,7 @@
 
 struct RenderState
 {
-    RenderStateComponent::BlendMode blendMode = RenderStateComponent::BlendMode::kNormal;
+    RenderStateComponent::BlendMode blendMode = RenderStateComponent::BlendMode::kOpaque;
     RenderStateComponent::CullMode cullMode = RenderStateComponent::CullMode::kBack;
     RenderStateComponent::FillMode fillMode = RenderStateComponent::FillMode::kSolid;
     RenderStateComponent::DepthWrite depthWrite = RenderStateComponent::DepthWrite::kEnable;

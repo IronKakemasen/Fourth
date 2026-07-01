@@ -34,7 +34,7 @@ CommandCreateGPUResource::~CommandCreateGPUResource()
 		clearValue_,
 		IID_PPV_ARGS(&resource));
 
-	ErrorMessageOutput::Assert::DetectError(SUCCEEDED(hr), name_ + ": リソース生成失敗", "CommandOfCreatingGPUBuffer.cpp");
+	ErrorMessageOutput::Abort::DetectError(SUCCEEDED(hr), name_ + ": リソース生成失敗", "CommandOfCreatingGPUBuffer.cpp");
 
 	return resource;
 }

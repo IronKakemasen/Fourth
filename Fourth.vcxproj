@@ -90,6 +90,8 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Engine\Resource\RootSignature\RootSignatureAssembler\ToolCreateRootSignature\CreateStaticSamplerDesc\CreateStaticSamplerDesc.cpp" />
+    <ClCompile Include="Engine\Core\Device\Commands\CreateRootSignature\CommandCreateRootSignature.cpp" />
     <ClCompile Include="Engine\Core\Device\Commands\CreatePSO\CommandCreatePSO.cpp" />
     <ClCompile Include="Engine\Resource\PSO\PSO_Assembler\ToolCreatePSO\CreateSampleDesc\CreateSampleDesc.cpp" />
     <ClCompile Include="Engine\Resource\PSO\PSO_Assembler\ToolCreatePSO\CreateRasterizerDesc\CreateRasterizerDesc.cpp" />
@@ -259,8 +261,12 @@
     <ClCompile Include="Engine\Resource\Shader\ShaderLibrary\ShaderLibrary.cpp" />
     <ClCompile Include="Engine\Resource\PSO\PSO_Context.cpp" />
     <ClCompile Include="Engine\Resource\PSO\PSO_Assembler\PSO_Assembler.cpp" />
+    <ClCompile Include="Engine\Resource\RootSignature\RootSignatureContext.cpp" />
+    <ClCompile Include="Engine\Resource\RootSignature\RootSignatureAssembler\RootSignatureAssembler.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Engine\Resource\RootSignature\RootSignatureAssembler\ToolCreateRootSignature\CreateStaticSamplerDesc\CreateStaticSamplerDesc.h" />
+    <ClInclude Include="Engine\Core\Device\Commands\CreateRootSignature\CommandCreateRootSignature.h" />
     <ClInclude Include="Engine\Core\Device\Commands\CreatePSO\CommandCreatePSO.h" />
     <ClInclude Include="Engine\Resource\PSO\PSO_Assembler\ToolCreatePSO\CreateSampleDesc\CreateSampleDesc.h" />
     <ClInclude Include="Engine\Resource\PSO\PSO_Assembler\ToolCreatePSO\CreateRasterizerDesc\CreateRasterizerDesc.h" />
@@ -306,6 +312,7 @@
     <ClInclude Include="Engine\Resource\PSO\RenderStateComponent.h" />
     <ClInclude Include="Engine\Resource\PSO\RenderStates.h" />
     <ClInclude Include="Engine\Resource\PSO\ShaderComponent.h" />
+    <ClInclude Include="Engine\Resource\RootSignature\RootSignatureAssembler\RootSignatureLayoutComponent.h" />
     <ClInclude Include="External\Audio\SoundCommon.h" />
     <ClInclude Include="External\Audio\xaudio_player_core.h" />
     <ClInclude Include="External\Audio\xaudio_player_mf.h" />
@@ -360,6 +367,8 @@
     <ClInclude Include="Engine\Resource\Shader\ShaderLibrary\ShaderLibrary.h" />
     <ClInclude Include="Engine\Resource\PSO\PSO_Context.h" />
     <ClInclude Include="Engine\Resource\PSO\PSO_Assembler\PSO_Assembler.h" />
+    <ClInclude Include="Engine\Resource\RootSignature\RootSignatureContext.h" />
+    <ClInclude Include="Engine\Resource\RootSignature\RootSignatureAssembler\RootSignatureAssembler.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

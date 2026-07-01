@@ -5,11 +5,6 @@
 #include "Core/Device/DeviceContextCommandProvider/DeviceContextCommandProvider.h"
 #include "Core/Device/DeviceContextCommandExecutor/DeviceContextCommandExecutor.h"
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-#include "Resource/Buffer/BufferContext.h"
-#include "Resource/Buffer/BufferCreationSystems/BufferCreator/BufferCreator.h"
-#include "Resource/Buffer/BufferDefinition/BufferDescriptions/DepthStencilBufferDescription/DepthStencilBufferDescription.h"
-#include "Resource/Buffer/BufferDefinition/GPUBuffer/DepthStencilBuffer/DepthStencilBuffer.h"
-///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 #include "Core/DescriptorHeap/DescriptorHeapContext.h"
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 #include "Core/Window/WindowContext.h"
@@ -20,7 +15,15 @@
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 #include "Resource/Shader/ShaderContext.h"
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+#include "Resource/Buffer/BufferContext.h"
+#include "Resource/Buffer/BufferCreationSystems/BufferCreator/BufferCreator.h"
+#include "Resource/Buffer/BufferDefinition/BufferDescriptions/DepthStencilBufferDescription/DepthStencilBufferDescription.h"
+#include "Resource/Buffer/BufferDefinition/GPUBuffer/DepthStencilBuffer/DepthStencilBuffer.h"
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 #include "Resource/PSO/PSO_Context.h"
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+#include "Resource/RootSignature/RootSignatureContext.h"
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 namespace
 {
@@ -252,8 +255,10 @@ void Nexus::InstantiateShaderContext()
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 void Nexus::InstantiatePSO_Context()
 {
-	auto cmdCreateGraphicsPSO = deviceContext->commandProvider->ProvideCreatePSOCommand<D3D12_PIPELINE_STATE_STREAM_DESC>();
-	auto cmdCreateComputePSO = deviceContext->commandProvider->ProvideCreatePSOCommand<D3D12_COMPUTE_PIPELINE_STATE_DESC>();
+	auto* cmdProvider = deviceContext->commandProvider.get();
+
+	auto cmdCreateGraphicsPSO = cmdProvider->ProvideCreatePSOCommand<D3D12_PIPELINE_STATE_STREAM_DESC>();
+	auto cmdCreateComputePSO = cmdProvider->ProvideCreatePSOCommand<D3D12_COMPUTE_PIPELINE_STATE_DESC>();
 
 	pso_context.reset
 	(
@@ -266,4 +271,24 @@ void Nexus::InstantiatePSO_Context()
 		)
 	);
 	Logger::Log("Instantiate: PSO_Context", fileName);
+}
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+void Nexus::InstantiateRootSignatureContext()
+{
+	auto* cmdProvider = deviceContext->commandProvider.get();
+
+	auto cmdCreateRootSIgnature = cmdProvider->ProvideCommandCreateRootSignature();
+
+	rootSignatureContext.reset
+	(
+		new RootSignatureContext
+		(
+			RootSignatureContext::InstanceKey{},
+			cmdCreateRootSIgnature
+		)
+	);
+
+	Logger::Log("Instantiate: RootSignatureContext", fileName);
 }

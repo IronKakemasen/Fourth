@@ -110,7 +110,7 @@ void DeviceContext::Setupper::IsMeshShaderSupported()
 	ErrorMessageOutput::Abort::DetectError
 	(
 		positiveResult,
-		"ShaderModelがサポートされていません。", 
+		"MeshShaderがサポートされていません。", 
 		fileName
 	);
 	Logger::Log("Check: MeshShaderSupported");
@@ -182,7 +182,9 @@ void DeviceContext::Setupper::CreateDevice()
 		HRESULT hr = D3D12CreateDevice(useAdapter.Get(), featureLevels[i], IID_PPV_ARGS(&d3d12Device));
 		//型変換
 		hr = d3d12Device.As(&device); 
-		
+		if (FAILED(hr)) continue;
+
+
 		//指定した機能7レベルでデバイスが生成できたか確認
 		if (SUCCEEDED(hr))
 		{
@@ -194,7 +196,7 @@ void DeviceContext::Setupper::CreateDevice()
 	}
 
 	//デバイスの生成が上手くいかなかったので起動できない
-	ErrorMessageOutput::Abort::DetectError(device != nullptr, "でバイスの生成が上手くいかなかったので起動できない", fileName);
+	ErrorMessageOutput::Abort::DetectError(device != nullptr, "デバイスの生成が上手くいかなかったので起動できない", fileName);
 	Logger::Log("Create: Device");
 
 }

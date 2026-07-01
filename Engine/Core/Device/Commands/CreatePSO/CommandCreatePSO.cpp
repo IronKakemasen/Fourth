@@ -26,7 +26,7 @@ void CommandCreatePSO::CreateComputePipelineState
 )
 {
 	HRESULT hr = device_->CreateComputePipelineState(computeDesc_, IID_PPV_ARGS(doublePtr_pso_));
-	ErrorMessageOutput::Assert::DetectError(SUCCEEDED(hr), "Compute用のPSO生成失敗", fileName);
+	ErrorMessageOutput::Abort::DetectError(SUCCEEDED(hr), "Compute用のPSO生成失敗", fileName);
 }
 
 void CommandCreatePSO::CreateGraphicsPipelineState
@@ -37,5 +37,5 @@ void CommandCreatePSO::CreateGraphicsPipelineState
 )
 {
 	HRESULT hr = device_->CreatePipelineState(streamDesc_,IID_PPV_ARGS(doublePtr_pso_));
-	ErrorMessageOutput::Assert::DetectError(SUCCEEDED(hr), "Graphics用のPSO生成失敗", fileName);
+	ErrorMessageOutput::Abort::DetectError(SUCCEEDED(hr), "Graphics用のPSO生成失敗", fileName);
 }
