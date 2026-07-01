@@ -65,7 +65,7 @@ private:
 struct ShaderLibrary::GetDataKey
 {
 private:
-	friend class PSO_Context::Assembler;
+	//friend class PSO_Context::Assembler;
 	explicit GetDataKey() = default;
 };
 

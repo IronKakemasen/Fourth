@@ -55,10 +55,7 @@ void SwapChainContext::CreateSwapChain
 )
 {
 
-	HRESULT hr = cmdCreateSwapChain_(commandQueue_, desc_, swapChain.GetAddressOf(), hWnd_);
-	ErrorMessageOutput::Assert::DetectError(SUCCEEDED(hr), "SwapChain生成失敗", fileName);
-	Logger::Log("Create: SwapChain", fileName);
-
+	cmdCreateSwapChain_(commandQueue_, desc_, swapChain.GetAddressOf(), hWnd_);
 }
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////

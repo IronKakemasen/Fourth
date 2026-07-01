@@ -55,7 +55,6 @@ UINT DeviceContext::CommandExecutor::CalcDescriptorHandleIncrementSize(D3D12_DES
 
 	CommandCreateFenceObject command(DeviceContext::GenerateKey{});
 	fence = std::move(command.CreateFenceObj(device));
-	Logger::Log("Create: Fence", fileName);
 
 	return fence;
 }
@@ -77,17 +76,16 @@ DeviceContext::CommandExecutor::CreateCommandContextCorePartsForRuntime(DeviceCo
 	Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList6> cmdList;
 
 	//生成
-	cmdQueue = tool.CreateCommandQueue(device, cmdListType);
-	Logger::Log("Create: CommandQueue", fileName);
-
-	for (int i = 0;i < kDoubleBuffer;++i)
 	{
-		cmdAllocators.at(i) = tool.CreateCommandAllocator(device, cmdListType);
-	}
-	Logger::Log("Create: CommandAllocators", fileName);
+		cmdQueue = tool.CreateCommandQueue(device, cmdListType);
 
-	cmdList = tool.CreateCommandList(device, cmdAllocators.at(0).Get(), cmdListType);
-	Logger::Log("Create: CommandList", fileName);
+		for (int i = 0;i < kDoubleBuffer;++i)
+		{
+			cmdAllocators.at(i) = tool.CreateCommandAllocator(device, cmdListType);
+		}
+
+		cmdList = tool.CreateCommandList(device, cmdAllocators.at(0).Get(), cmdListType);
+	}
 
 	return std::make_tuple(cmdQueue, cmdAllocators, cmdList);
 }
@@ -106,11 +104,10 @@ DeviceContext::CommandExecutor::CreateCommandContextCorePartsForUpload(DeviceCon
 	Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList6> cmdList;
 
 	//生成
-	cmdAllocator = tool.CreateCommandAllocator(device, cmdListType);
-	Logger::Log("Create: CommandAllocators", fileName);
-
-	cmdList = tool.CreateCommandList(device, cmdAllocator.Get(), cmdListType);
-	Logger::Log("Create: CommandList", fileName);
+	{
+		cmdAllocator = tool.CreateCommandAllocator(device, cmdListType);
+		cmdList = tool.CreateCommandList(device, cmdAllocator.Get(), cmdListType);
+	}
 
 	return std::make_tuple(cmdAllocator, cmdList);
 

@@ -15,11 +15,20 @@ namespace
 }
 
 
-PSO_Context::PSO_Context(InstanceKey key_, ShaderContext& shaderContext_)
+PSO_Context::PSO_Context
+(
+	InstanceKey key_,
+	ShaderContext& shaderContext_,
+	CommandCreateGraphicsPSO cmdCreateGraphicsPSO_,
+	CommandCreateComputePSO cmdCreateComputePSO_
+)
 {
 	Logger::Entry("PSO_Context: Constructor");
 	
-	InstantiatePSO_Assembler(key_, shaderContext_);
+	//PSO構築のためにshaderLibraryにアクセスさせてもらう
+	//auto* shaderLibrary = shaderContext_.AllowAccessToLibrary(ShaderContext::ShaderLibraryAccessKey{});
+
+	InstantiatePSO_Assembler(key_, cmdCreateGraphicsPSO_, cmdCreateComputePSO_);
 
 	Logger::End("PSO_Context: Constructor");
 
@@ -32,11 +41,13 @@ PSO_Context::~PSO_Context()
 ///+//////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+//////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+//////////////////////////////////////////////////////////////////////////////////////////////////////
-void PSO_Context::InstantiatePSO_Assembler(InstanceKey key_, ShaderContext& shaderContext_)
+void PSO_Context::InstantiatePSO_Assembler
+(
+	InstanceKey key_,
+	CommandCreateGraphicsPSO cmdCreateGraphicsPSO_,
+	CommandCreateComputePSO cmdCreateComputePSO_
+)
 {
-	//PSO構築のためにshaderLibraryにアクセスさせてもらう
-	auto* shaderLibrary = shaderContext_.AllowAccessToLibrary(ShaderContext::ShaderLibraryAccessKey{});
-
-	assembler.reset(new Assembler(key_, shaderLibrary));
+	assembler.reset(new Assembler(key_, cmdCreateGraphicsPSO_, cmdCreateComputePSO_));
 	Logger::Log("Instantiate: psoAssembler");
 }

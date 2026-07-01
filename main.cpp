@@ -1,6 +1,8 @@
 #include "Engine/Debug/RuntimeDebugger/RuntimeDebugger.h"
 #include "Engine/Nexus.h"
 
+void Update(Nexus& nexus_);
+
 int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 {
     // デバッガー。DebugLayer, PointerValidator, LeakChecker
@@ -8,6 +10,13 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
     // エンジンの交易場
     Nexus nexus;
 
+    Update(nexus);
+
+    return 0;
+}
+
+void Update(Nexus& nexus_)
+{
     MSG msg = {};
 
     while (true)
@@ -24,11 +33,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
         }
         else
         {
-            nexus.Run();
+            nexus_.Run();
         }
     }
-
-    //nexus.Finalize();
-
-    return 0;
 }
+

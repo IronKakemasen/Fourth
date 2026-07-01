@@ -11,23 +11,18 @@ DeviceContext::Setupper::Setupper(InstanceKey instanceKey_)
 {
 	//dxgiFactoryの生成
 	CreateDXGI_Factory();
-	Logger::Log("Create: DXGI_Factory");
 
 	//アダプターを取得
 	FetchAdapter();
-	Logger::Log("Fetch: Adapter");
 
 	//デバイスの生成
 	CreateDevice();
-	Logger::Log("Create: Device");
 
 	//シェーダーモデルサポートチェック
 	ShaderModelChack(ProjectConfig::Render::kMaximumShaderModel);
-	Logger::Log("Check: ShaderModelMaximum");
 
 	//メッシュシェーダーをサポートしているかチェック
 	IsMeshShaderSupported();
-	Logger::Log("Check: MeshShaderSupported");
 
 	//デバッグレイヤーのフィルターを設定
 	SetDebugLayerFilter();
@@ -91,8 +86,15 @@ void DeviceContext::Setupper::ShaderModelChack(D3D_SHADER_MODEL shaderModel_)
 
 	HRESULT hr = device->CheckFeatureSupport(D3D12_FEATURE_SHADER_MODEL, &shaderModel, sizeof(shaderModel));
 
-	ErrorMessageOutput::Abort::DetectError((SUCCEEDED(hr)) || shaderModel.HighestShaderModel >= D3D_SHADER_MODEL_6_5,
-		"ShaderModelが6_5以上を対応していません。", fileName);
+	bool positiveResult = (SUCCEEDED(hr)) * (shaderModel.HighestShaderModel >= D3D_SHADER_MODEL_6_5);
+	ErrorMessageOutput::Abort::DetectError
+	(
+		positiveResult,
+		"ShaderModelが6_5以上を対応していません。", 
+		fileName
+	);
+
+	Logger::Log("Check: ShaderModelMaximum");
 }
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -104,8 +106,15 @@ void DeviceContext::Setupper::IsMeshShaderSupported()
 
 	HRESULT hr = device->CheckFeatureSupport(D3D12_FEATURE_D3D12_OPTIONS7, &features, sizeof(features));
 
-	ErrorMessageOutput::Abort::DetectError((SUCCEEDED(hr)) || features.MeshShaderTier == D3D12_MESH_SHADER_TIER_NOT_SUPPORTED,
-		"ShaderModelがサポートされていません。", fileName);
+	bool positiveResult = (SUCCEEDED(hr)) * (features.MeshShaderTier != D3D12_MESH_SHADER_TIER_NOT_SUPPORTED);
+	ErrorMessageOutput::Abort::DetectError
+	(
+		positiveResult,
+		"ShaderModelがサポートされていません。", 
+		fileName
+	);
+	Logger::Log("Check: MeshShaderSupported");
+
 }
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -135,6 +144,7 @@ void DeviceContext::Setupper::FetchAdapter()
 
 	//適切なアダプタが見つからなかった場合は起動できない
 	ErrorMessageOutput::Abort::DetectError((useAdapter != nullptr), "適切なアダプタが見つからなかった", fileName);
+	Logger::Log("Fetch: Adapter");
 }
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -145,6 +155,7 @@ void DeviceContext::Setupper::CreateDXGI_Factory()
 	//初期化の根本的な部分でエラーが出た場合はプログラムが間違っているか、
 	//どうにもできない場合が多いのでassertにしておく
 	ErrorMessageOutput::Abort::DetectError(SUCCEEDED(hr), "DXGIFactoryの生成に失敗しました", fileName);
+	Logger::Log("Create: DXGI_Factory");
 
 }
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -184,4 +195,6 @@ void DeviceContext::Setupper::CreateDevice()
 
 	//デバイスの生成が上手くいかなかったので起動できない
 	ErrorMessageOutput::Abort::DetectError(device != nullptr, "でバイスの生成が上手くいかなかったので起動できない", fileName);
+	Logger::Log("Create: Device");
+
 }

@@ -12,7 +12,7 @@ CommandStructureSwapChain::~CommandStructureSwapChain()
 }
 
 
-HRESULT CommandStructureSwapChain::CreateSwapChain
+void CommandStructureSwapChain::CreateSwapChain
 (
 	IDXGIFactory7& dxgiFactory_,
 	ID3D12CommandQueue* commandQueue_,
@@ -22,6 +22,9 @@ HRESULT CommandStructureSwapChain::CreateSwapChain
 	
 )
 {
-	return dxgiFactory_.CreateSwapChainForHwnd(commandQueue_, hWnd_, &desc_,
+	HRESULT hr = dxgiFactory_.CreateSwapChainForHwnd(commandQueue_, hWnd_, &desc_,
 		nullptr, nullptr, reinterpret_cast<IDXGISwapChain1**>(swapChainDoublePtr_));
+
+	ErrorMessageOutput::Assert::DetectError(SUCCEEDED(hr), "スワップチェーン生成失敗", "CommandStructureSwapChain.cpp");
+	Logger::Log("Create: SwapChain", "CommandStructureSwapChain.cpp");
 }

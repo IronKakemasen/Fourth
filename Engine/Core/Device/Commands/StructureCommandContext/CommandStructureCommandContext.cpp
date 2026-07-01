@@ -3,7 +3,7 @@
 
 namespace
 {
-	std::string fileName = "CommandStructureCommandContext .cpp";
+	std::string fileName = "CommandStructureCommandContext.cpp";
 }
 
 CommandStructureCommandContext::CommandStructureCommandContext (DeviceContext::GenerateKey generateKey_) :DeviceContextCommandBehavior(generateKey_)
@@ -37,7 +37,8 @@ CommandStructureCommandContext::~CommandStructureCommandContext ()
 		IID_PPV_ARGS(cmdQueue.GetAddressOf())
 	);
 
-	ErrorMessageOutput::Assert::DetectError(SUCCEEDED(hr), "Create: CommandQueue", fileName);
+	ErrorMessageOutput::Assert::DetectError(SUCCEEDED(hr), "CommandQueue生成失敗", fileName);
+	Logger::Log("Create: CommandQueue", fileName);
 
 	return cmdQueue;
 }
@@ -56,7 +57,8 @@ CommandStructureCommandContext::~CommandStructureCommandContext ()
 		IID_PPV_ARGS(cmdAllocator.GetAddressOf())
 	);
 
-	ErrorMessageOutput::Assert::DetectError(SUCCEEDED(hr), "Create: CommandAllocator", fileName);
+	ErrorMessageOutput::Assert::DetectError(SUCCEEDED(hr), "CommandAllocator生成失敗", fileName);
+	Logger::Log("Create: CommandAllocator", fileName);
 
 	return cmdAllocator;
 }
@@ -79,7 +81,8 @@ CommandStructureCommandContext::~CommandStructureCommandContext ()
 		IID_PPV_ARGS(cmdList.GetAddressOf())
 	);
 
-	ErrorMessageOutput::Assert::DetectError(SUCCEEDED(hr), "Create: CommandList", fileName);
+	ErrorMessageOutput::Assert::DetectError(SUCCEEDED(hr), "CommandList生成失敗", fileName);
+	Logger::Log("Create: CommandList", fileName);
 
 	return cmdList;
 }
