@@ -23,6 +23,7 @@ private:
 	void CreateDevice();
 	void ShaderModelChack(D3D_SHADER_MODEL shaderModel_);
 	void IsMeshShaderSupported();
+	void ResourceBindingTierCheck();
 	void SetDebugLayerFilter();
 };
 

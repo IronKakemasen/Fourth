@@ -8,6 +8,9 @@ namespace PipelineStateDesc
     {
         IDxcBlob* meshShader;
         IDxcBlob* pixelShader;
+        std::string meshShaderName;
+        std::string pixelShaderName;
+
     };
 
     struct RasterizerDesc
@@ -24,6 +27,8 @@ namespace PipelineStateDesc
     {
         std::vector<DXGI_FORMAT> rtvFormatContainer;
         std::vector<RenderStateComponent::BlendMode> blendModeContainer;
+        std::vector<std::string> bufferNameContainer;
+
     };
 
     struct DepthStencilDesc
@@ -33,11 +38,21 @@ namespace PipelineStateDesc
         RenderStateComponent::DepthWrite depthWrite = RenderStateComponent::DepthWrite::kEnable;
         RenderStateComponent::DepthTest depthTest = RenderStateComponent::DepthTest::kGreaterEqual;
         float clearDepth = 0.0f;
+        std::string bufferName;
     };
 
     struct SampleDesc
     {
         ///一旦空
+    };
+
+    struct Graphics
+    {
+        ShaderSet shaderSet;
+        RasterizerDesc rasterizerDesc;
+        RenderTargetDesc renderTargetDesc;
+        DepthStencilDesc depthStencilDesc;
+        SampleDesc sampleDesc;
     };
 
     struct MeshShaderPipelineStateStreamDesc

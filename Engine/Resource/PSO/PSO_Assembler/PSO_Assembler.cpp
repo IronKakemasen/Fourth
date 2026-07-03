@@ -7,7 +7,7 @@
 #include "ToolCreatePSO/CreateDepthStencilDesc/CreateDepthStencilDesc.h"
 #include "ToolCreatePSO/CreateRasterizerDesc/CreateRasterizerDesc.h"
 #include "ToolCreatePSO/CreateSampleDesc/CreateSampleDesc.h"
-
+#include "ToolCreatePSO/PSO_InfoOutputter/PSO_InfoOutputter.h"
 
 namespace
 {
@@ -21,113 +21,83 @@ PSO_Context::Assembler::Assembler
 	CommandCreateComputePSO cmdCreateComputePSO_
 ):cmdCreateGraphicsPSO(cmdCreateGraphicsPSO_), cmdCreateComputePSO(cmdCreateComputePSO_)
 {
-	
+
 }
+
+PSO_Context::Assembler::~Assembler(){}
+
 ///+//////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+//////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+//////////////////////////////////////////////////////////////////////////////////////////////////////
 
 Microsoft::WRL::ComPtr<ID3D12PipelineState> PSO_Context::Assembler::AssembleGraphicsPSO
 (
-	PipelineStateDesc::ShaderSet shaderSet_,
-	PipelineStateDesc::RenderTargetDesc renderTargetDesc_,
-	PipelineStateDesc::RasterizerDesc rasterizerDesc_,
-	PipelineStateDesc::DepthStencilDesc depthStencilDesc_,
-	PipelineStateDesc::SampleDesc sampleDesc_,
-	ID3D12RootSignature* rootSignature_
+	PipelineStateDesc::Graphics& srcDesc_,	
+	ID3D12RootSignature* rootSignature_,
+	std::string debugName_
 )
 {
+	Logger::Entry("assembling: " + debugName_);
+
 	Microsoft::WRL::ComPtr<ID3D12PipelineState> pipelineState;
 
+	//情報をデバッグ出力
+	PSO_InfoOutputter outputter;
+	outputter.OutputGraphicsPSOInfo
+	(
+		srcDesc_,	
+		debugName_
+	);
+
+
 	//要項チェック
-	Check(shaderSet_, renderTargetDesc_);
+	Check(srcDesc_.shaderSet, srcDesc_.renderTargetDesc, debugName_);
 
-
-	///==========================================================================================================
 	//使用するレンダーターゲットの数とそのフォーマットを入力
-	CD3DX12_RT_FORMAT_ARRAY renderTargetFormatArray = {};
-	{
-		size_t const kNumRenderTargets = renderTargetDesc_.rtvFormatContainer.size();
-		renderTargetFormatArray.NumRenderTargets = (UINT)renderTargetDesc_.rtvFormatContainer.size();
-		for (size_t i = 0;i < kNumRenderTargets;++i) renderTargetFormatArray.RTFormats[i] = renderTargetDesc_.rtvFormatContainer[i];
-	}
-	///==========================================================================================================
+	CD3DX12_RT_FORMAT_ARRAY renderTargetFormatArray{};
+	renderTargetFormatArray = SummarizeRenderTargetFormatInfo(srcDesc_.renderTargetDesc);
 
+	//シェーダーバイトコードの生成
+	MS_PS ms_ps = CreateShaderByteCode(srcDesc_.shaderSet);
 
-	///==========================================================================================================
-	//シェーダーのセット
-	CD3DX12_SHADER_BYTECODE ms{};
-	CD3DX12_SHADER_BYTECODE ps{};
-	{
-		ms = 
-		{
-			shaderSet_.meshShader->GetBufferPointer(),
-			shaderSet_.meshShader->GetBufferSize()
-		};
-
-		if (shaderSet_.pixelShader)
-		{
-			ps =
-			{
-				shaderSet_.pixelShader->GetBufferPointer(),
-				shaderSet_.pixelShader->GetBufferSize()
-			};
-		}
-	}
-	///==========================================================================================================
-
-
-	///==========================================================================================================
 	//ラスタライザー
 	CD3DX12_RASTERIZER_DESC rasterizerDesc{};	
 	{
 		CreateRasterizerDesc creator;
-		rasterizerDesc = creator.Create(rasterizerDesc_);
+		rasterizerDesc = creator.Create(srcDesc_.rasterizerDesc);
 	}
-	///==========================================================================================================
 
-
-	///==========================================================================================================
 	//ブレンドディスク
 	CD3DX12_BLEND_DESC blendDesc{};
 	{
 		CreateBlendDesc creator;
-		blendDesc = creator.Create(renderTargetDesc_);
+		blendDesc = creator.Create(srcDesc_.renderTargetDesc);
 	}
-	///==========================================================================================================
 
-
-	///==========================================================================================================
 	//ディプスステンシルディスク
 	CD3DX12_DEPTH_STENCIL_DESC depthStencilDesc{};
 	{
 		CreateDepthStencilDesc creator;
-		depthStencilDesc = creator.Create(depthStencilDesc_);
+		depthStencilDesc = creator.Create(srcDesc_.depthStencilDesc);
 	}
-	///==========================================================================================================
 
-
-	///==========================================================================================================
 	//サンプラーの設定
 	DXGI_SAMPLE_DESC sampleDesc{};
 	{
 		CreateSampleDesc creator;
-		sampleDesc = creator.Create(sampleDesc_);
+		sampleDesc = creator.Create(srcDesc_.sampleDesc);
 	}
-	///==========================================================================================================
 
-
-	///==========================================================================================================
 	PipelineStateDesc::MeshShaderPipelineStateStreamDesc pipelineDesc = {};
 	D3D12_PIPELINE_STATE_STREAM_DESC streamDesc{};
 	///集約
 	{
 		pipelineDesc.RTVFormats = renderTargetFormatArray;
-		pipelineDesc.MS = ms;
-		pipelineDesc.PS = ps;
+		pipelineDesc.MS = ms_ps.first;
+		if (ms_ps.second != std::nullopt)pipelineDesc.PS = *ms_ps.second;
 		pipelineDesc.BlendState = blendDesc;
 		pipelineDesc.DepthStencilState = depthStencilDesc;
-		pipelineDesc.DSVFormat = depthStencilDesc_.dsvFormat;
+		pipelineDesc.DSVFormat = srcDesc_.depthStencilDesc.dsvFormat;
 		pipelineDesc.RasterizerState = rasterizerDesc;
 		pipelineDesc.SampleDesc = sampleDesc;
 		pipelineDesc.SampleMask = UINT_MAX;
@@ -137,7 +107,6 @@ Microsoft::WRL::ComPtr<ID3D12PipelineState> PSO_Context::Assembler::AssembleGrap
 		streamDesc.pPipelineStateSubobjectStream = &pipelineDesc;
 		streamDesc.SizeInBytes = sizeof(pipelineDesc);
 	}
-	///==========================================================================================================
 
 
 	//コマンドで生成
@@ -145,15 +114,21 @@ Microsoft::WRL::ComPtr<ID3D12PipelineState> PSO_Context::Assembler::AssembleGrap
 		cmdCreateGraphicsPSO(pipelineState.GetAddressOf(), &streamDesc);
 	}
 
+	Logger::End("assembling: " + debugName_);
 
 	return pipelineState;
 }
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-void PSO_Context::Assembler::Check(const PipelineStateDesc::ShaderSet& shaderSet_, const PipelineStateDesc::RenderTargetDesc& renderTargetDesc_)const
+void PSO_Context::Assembler::Check
+(
+	const PipelineStateDesc::ShaderSet& shaderSet_,
+	const PipelineStateDesc::RenderTargetDesc& renderTargetDesc_,
+	const std::string debugName_
+)const
 {
-	std::string errorMsg{};
+	std::string errorMsg = debugName_ + "\n";
 
 	if (!shaderSet_.meshShader) errorMsg += "[MeshShaderがぬるぽ]";
 	
@@ -162,5 +137,49 @@ void PSO_Context::Assembler::Check(const PipelineStateDesc::ShaderSet& shaderSet
 
 
 	ErrorMessageOutput::Assert::DetectError(errorMsg.size() == 0, errorMsg, fileName);
+}
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+CD3DX12_RT_FORMAT_ARRAY PSO_Context::Assembler::SummarizeRenderTargetFormatInfo(const PipelineStateDesc::RenderTargetDesc& renderTargetDesc_)const
+{
+	CD3DX12_RT_FORMAT_ARRAY renderTargetFormatArray = {};
+	
+	size_t const kNumRenderTargets = renderTargetDesc_.rtvFormatContainer.size();
+	renderTargetFormatArray.NumRenderTargets = (UINT)renderTargetDesc_.rtvFormatContainer.size();
+
+	for (size_t i = 0;i < kNumRenderTargets;++i) renderTargetFormatArray.RTFormats[i] = renderTargetDesc_.rtvFormatContainer[i];
+
+
+	return renderTargetFormatArray;
+}
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+PSO_Context::Assembler::MS_PS PSO_Context::Assembler::CreateShaderByteCode(PipelineStateDesc::ShaderSet& shaderSet_)
+{
+	MS_PS pair_byteCode;
+
+	pair_byteCode.first =
+	{
+		shaderSet_.meshShader->GetBufferPointer(),
+		shaderSet_.meshShader->GetBufferSize()
+	};
+
+	if (shaderSet_.pixelShader)
+	{
+		pair_byteCode.second =
+		{
+			shaderSet_.pixelShader->GetBufferPointer(),
+			shaderSet_.pixelShader->GetBufferSize()
+		};
+	}
+	else
+	{
+		pair_byteCode.second = std::nullopt;
+	}
+
+	return pair_byteCode;
 
 }
+

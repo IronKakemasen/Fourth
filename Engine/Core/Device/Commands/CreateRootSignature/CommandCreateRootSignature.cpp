@@ -34,6 +34,6 @@ void CommandCreateRootSignature::CreateRootSignature
 		IID_PPV_ARGS(doublePtr_rootSignature_)
 	);
 
-	ErrorMessageOutput::Assert::DetectError(SUCCEEDED(hr), "RootSignatureの生成失敗", fileName);
+	ErrorMessageOutput::Abort::DetectError(SUCCEEDED(hr), "RootSignatureの生成失敗", fileName);
 	Logger::Log("Create: rootSignature", fileName);
 }

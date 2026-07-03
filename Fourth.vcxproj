@@ -90,6 +90,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Engine\Resource\RootSignature\RootSignatureAssembler\ToolCreateRootSignature\CreateRootParam\CreateRootParam.cpp" />
     <ClCompile Include="Engine\Resource\RootSignature\RootSignatureAssembler\ToolCreateRootSignature\CreateStaticSamplerDesc\CreateStaticSamplerDesc.cpp" />
     <ClCompile Include="Engine\Core\Device\Commands\CreateRootSignature\CommandCreateRootSignature.cpp" />
     <ClCompile Include="Engine\Core\Device\Commands\CreatePSO\CommandCreatePSO.cpp" />
@@ -263,8 +264,12 @@
     <ClCompile Include="Engine\Resource\PSO\PSO_Assembler\PSO_Assembler.cpp" />
     <ClCompile Include="Engine\Resource\RootSignature\RootSignatureContext.cpp" />
     <ClCompile Include="Engine\Resource\RootSignature\RootSignatureAssembler\RootSignatureAssembler.cpp" />
+    <ClCompile Include="Engine\Resource\PSO\PSO_Assembler\ToolCreatePSO\PSO_InfoOutputter\PSO_InfoOutputter.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Engine\Resource\RootSignature\RootSignatureAssembler\RootSignatureDesc.h" />
+    <ClInclude Include="Engine\Resource\RootSignature\RootSignatureAssembler\ToolCreateRootSignature\CreateRootParam\CreateRootParam.h" />
+    <ClInclude Include="Engine\Resource\Mesh\kara.h" />
     <ClInclude Include="Engine\Resource\RootSignature\RootSignatureAssembler\ToolCreateRootSignature\CreateStaticSamplerDesc\CreateStaticSamplerDesc.h" />
     <ClInclude Include="Engine\Core\Device\Commands\CreateRootSignature\CommandCreateRootSignature.h" />
     <ClInclude Include="Engine\Core\Device\Commands\CreatePSO\CommandCreatePSO.h" />
@@ -369,6 +374,7 @@
     <ClInclude Include="Engine\Resource\PSO\PSO_Assembler\PSO_Assembler.h" />
     <ClInclude Include="Engine\Resource\RootSignature\RootSignatureContext.h" />
     <ClInclude Include="Engine\Resource\RootSignature\RootSignatureAssembler\RootSignatureAssembler.h" />
+    <ClInclude Include="Engine\Resource\PSO\PSO_Assembler\ToolCreatePSO\PSO_InfoOutputter\PSO_InfoOutputter.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

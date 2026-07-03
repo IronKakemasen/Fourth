@@ -4,20 +4,21 @@
 
 using namespace RootSignatureLayoutComponent;
 
-D3D12_STATIC_SAMPLER_DESC CreateStaticSamplerDesc::Create
-(
-	ShaderStage shaderStage_,
-	uint32_t registerNum_,
-	SamplerState state_
-)
+std::vector<D3D12_STATIC_SAMPLER_DESC> CreateStaticSamplerDesc::Create(const RootSignatureDesc::Graphics& srcDesc_)
 {
-	D3D12_STATIC_SAMPLER_DESC desc;
+	std::vector<D3D12_STATIC_SAMPLER_DESC> descContainer;
+	auto const sizeEntry = srcDesc_.pair_shaderStageSamplerStateContainer.size();
 
-	SetCommonDetails(&desc);
-	SetBranchedDetails(&desc, state_);
-	SetDetailsDirectly(&desc, shaderStage_, registerNum_);
+	descContainer.resize(sizeEntry);
 
-	return desc;
+	for (int i = 0;i < sizeEntry;++i)
+	{
+		SetCommonDetails(&descContainer[i]);
+		SetBranchedDetails(&descContainer[i], srcDesc_.pair_shaderStageSamplerStateContainer[i].second);
+		SetDetailsDirectly(&descContainer[i], srcDesc_.pair_shaderStageSamplerStateContainer[i].first, i);
+	}
+
+	return descContainer;
 }
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -26,7 +27,7 @@ void CreateStaticSamplerDesc::SetBranchedDetails(D3D12_STATIC_SAMPLER_DESC* desc
 {
 	switch (state_)
 	{
-	case SamplerState::PointWrap:
+	case SamplerState::kPointWrap:
 	{
 		desc_->Filter = D3D12_FILTER_MIN_MAG_MIP_POINT;
 		desc_->AddressU = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
@@ -35,7 +36,7 @@ void CreateStaticSamplerDesc::SetBranchedDetails(D3D12_STATIC_SAMPLER_DESC* desc
 	}
 	break;
 
-	case SamplerState::PointClamp:
+	case SamplerState::kPointClamp:
 	{
 		desc_->Filter = D3D12_FILTER_MIN_MAG_MIP_POINT;
 		desc_->AddressU = D3D12_TEXTURE_ADDRESS_MODE_CLAMP;
@@ -44,7 +45,7 @@ void CreateStaticSamplerDesc::SetBranchedDetails(D3D12_STATIC_SAMPLER_DESC* desc
 	}
 	break;
 
-	case SamplerState::LinearWrap:
+	case SamplerState::kLinearWrap:
 	{
 		desc_->Filter = D3D12_FILTER_MIN_MAG_MIP_LINEAR;
 		desc_->AddressU = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
@@ -53,7 +54,7 @@ void CreateStaticSamplerDesc::SetBranchedDetails(D3D12_STATIC_SAMPLER_DESC* desc
 	}
 	break;
 
-	case SamplerState::LinearClamp:
+	case SamplerState::kLinearClamp:
 	{
 		desc_->Filter = D3D12_FILTER_MIN_MAG_MIP_LINEAR;
 		desc_->AddressU = D3D12_TEXTURE_ADDRESS_MODE_CLAMP;
@@ -62,7 +63,7 @@ void CreateStaticSamplerDesc::SetBranchedDetails(D3D12_STATIC_SAMPLER_DESC* desc
 	}
 	break;
 
-	case SamplerState::AnisotropicWrap:
+	case SamplerState::kAnisotropicWrap:
 	{
 		desc_->Filter = D3D12_FILTER_ANISOTROPIC;
 		desc_->AddressU = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
@@ -72,7 +73,7 @@ void CreateStaticSamplerDesc::SetBranchedDetails(D3D12_STATIC_SAMPLER_DESC* desc
 	}
 	break;
 
-	case SamplerState::AnisotropicClamp:
+	case SamplerState::kAnisotropicClamp:
 	{
 		desc_->Filter = D3D12_FILTER_ANISOTROPIC;
 		desc_->AddressU = D3D12_TEXTURE_ADDRESS_MODE_CLAMP;
@@ -97,6 +98,9 @@ void CreateStaticSamplerDesc::SetCommonDetails(D3D12_STATIC_SAMPLER_DESC* desc_)
 	desc_->RegisterSpace = 0;
 
 }
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 void CreateStaticSamplerDesc::SetDetailsDirectly
 (
@@ -106,5 +110,5 @@ void CreateStaticSamplerDesc::SetDetailsDirectly
 )
 {
 	desc_->ShaderRegister = registerNum_;
-	desc_->ShaderVisibility = D3D12_SHADER_VISIBILITY((int)shaderStage_);
+	desc_->ShaderVisibility = D3D12_SHADER_VISIBILITY(RootSignatureLayoutComponent::Convert(shaderStage_));
 }

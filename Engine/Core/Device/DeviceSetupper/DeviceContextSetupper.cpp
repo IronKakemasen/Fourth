@@ -24,6 +24,9 @@ DeviceContext::Setupper::Setupper(InstanceKey instanceKey_)
 	//メッシュシェーダーをサポートしているかチェック
 	IsMeshShaderSupported();
 
+	//ResourceBindingTierが必要値を満たしているか
+	ResourceBindingTierCheck();
+
 	//デバッグレイヤーのフィルターを設定
 	SetDebugLayerFilter();
 }
@@ -81,20 +84,19 @@ void DeviceContext::Setupper::SetDebugLayerFilter()
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 void DeviceContext::Setupper::ShaderModelChack(D3D_SHADER_MODEL shaderModel_)
 {
-
 	D3D12_FEATURE_DATA_SHADER_MODEL shaderModel = { shaderModel_ };
 
 	HRESULT hr = device->CheckFeatureSupport(D3D12_FEATURE_SHADER_MODEL, &shaderModel, sizeof(shaderModel));
 
-	bool positiveResult = (SUCCEEDED(hr)) * (shaderModel.HighestShaderModel >= D3D_SHADER_MODEL_6_5);
+	bool positiveResult = (SUCCEEDED(hr)) * (shaderModel.HighestShaderModel >= shaderModel_);
 	ErrorMessageOutput::Abort::DetectError
 	(
 		positiveResult,
-		"ShaderModelが6_5以上を対応していません。", 
+		"ShaderModelが必要値に対応していない", 
 		fileName
 	);
 
-	Logger::Log("Check: ShaderModelMaximum");
+	Logger::Log("ShaderModel Maximum Checked");
 }
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -113,7 +115,7 @@ void DeviceContext::Setupper::IsMeshShaderSupported()
 		"MeshShaderがサポートされていません。", 
 		fileName
 	);
-	Logger::Log("Check: MeshShaderSupported");
+	Logger::Log("MeshShader is Supported");
 
 }
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -198,5 +200,23 @@ void DeviceContext::Setupper::CreateDevice()
 	//デバイスの生成が上手くいかなかったので起動できない
 	ErrorMessageOutput::Abort::DetectError(device != nullptr, "デバイスの生成が上手くいかなかったので起動できない", fileName);
 	Logger::Log("Create: Device");
+}
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+void DeviceContext::Setupper::ResourceBindingTierCheck()
+{
+	//メッシュシェーダがサポートされているかどうか
+	D3D12_FEATURE_DATA_D3D12_OPTIONS features = {};
 
+	HRESULT hr = device->CheckFeatureSupport(D3D12_FEATURE_D3D12_OPTIONS, &features, sizeof(features));
+
+	bool positiveResult = (SUCCEEDED(hr)) * (features.ResourceBindingTier >= D3D12_RESOURCE_BINDING_TIER_3);
+	ErrorMessageOutput::Abort::DetectError
+	(
+		positiveResult,
+		"RESOURCE_BINDING_TIERが3以上じゃない",
+		fileName
+	);
+	Logger::Log("RESOURCE_BINDING_TIER is 3 or more");
 }

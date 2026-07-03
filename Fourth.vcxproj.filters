@@ -318,6 +318,12 @@
     <ClCompile Include="Engine\Resource\RootSignature\RootSignatureAssembler\ToolCreateRootSignature\CreateStaticSamplerDesc\CreateStaticSamplerDesc.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
+    <ClCompile Include="Engine\Resource\RootSignature\RootSignatureAssembler\ToolCreateRootSignature\CreateRootParam\CreateRootParam.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\Resource\PSO\PSO_Assembler\ToolCreatePSO\PSO_InfoOutputter\PSO_InfoOutputter.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Engine\Core\Window\WindowContext.h">
@@ -630,6 +636,18 @@
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
     <ClInclude Include="Engine\Resource\RootSignature\RootSignatureAssembler\ToolCreateRootSignature\CreateStaticSamplerDesc\CreateStaticSamplerDesc.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Resource\Mesh\kara.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Resource\RootSignature\RootSignatureAssembler\ToolCreateRootSignature\CreateRootParam\CreateRootParam.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Resource\PSO\PSO_Assembler\ToolCreatePSO\PSO_InfoOutputter\PSO_InfoOutputter.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Resource\RootSignature\RootSignatureAssembler\RootSignatureDesc.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
   </ItemGroup>

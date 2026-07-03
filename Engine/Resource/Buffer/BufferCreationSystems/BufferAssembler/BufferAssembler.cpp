@@ -252,14 +252,14 @@ void BufferContext::BufferAssembler::CreateView
 	GPUBufferBehavior::InstanceKey instanceKey_
 )
 {
-	uint32_t srvIndex{};
-	D3D12_CPU_DESCRIPTOR_HANDLE srvCPU{};
-	D3D12_GPU_DESCRIPTOR_HANDLE srvGPU{};
+	uint32_t uavIndex{};
+	D3D12_CPU_DESCRIPTOR_HANDLE uavCPU{};
+	D3D12_GPU_DESCRIPTOR_HANDLE uavGPU{};
 
-	std::tie(srvIndex, srvCPU, srvGPU) = viewCreator->CreateView(buffer_->GetResource(accessKey_, index_), &desc_);
-	buffer_->OverrideHeapIndex<ViewType::kUAV>(instanceKey_, srvIndex, index_);
-	buffer_->OverrideHeapIndex<ViewType::kUAV>(instanceKey_, srvCPU, index_);
-	buffer_->OverrideHeapIndex<ViewType::kUAV>(instanceKey_, srvGPU, index_);
+	std::tie(uavIndex, uavCPU, uavGPU) = viewCreator->CreateView(buffer_->GetResource(accessKey_, index_), &desc_);
+	buffer_->OverrideHeapIndex<ViewType::kUAV>(instanceKey_, uavIndex, index_);
+	buffer_->OverrideHeapIndex<ViewType::kUAV>(instanceKey_, uavCPU, index_);
+	buffer_->OverrideHeapIndex<ViewType::kUAV>(instanceKey_, uavGPU, index_);
 }
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////

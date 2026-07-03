@@ -4,7 +4,7 @@
 BufferDescriptionBehavior::BufferDescriptionBehavior
 (
 	D3D12_RESOURCE_STATES initialState_,
-	ProjectConfig::Render::NumBuffer numBuffer_ = ProjectConfig::Render::NumBuffer::kSingleBuffer
+	ProjectConfig::Render::NumBuffer numBuffer_ 
 ):initialState(initialState_), numBuffer(numBuffer_)
 {
 	ErrorMessageOutput::Assert::DetectError
