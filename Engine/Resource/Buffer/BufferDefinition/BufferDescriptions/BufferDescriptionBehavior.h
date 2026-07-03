@@ -18,7 +18,7 @@ public:
 	BufferDescriptionBehavior
 	(
 		D3D12_RESOURCE_STATES initialState_, 
-		ProjectConfig::Render::NumBuffer numBuffer_
+		ProjectConfig::Render::NumBuffer numBuffer_ = ProjectConfig::Render::NumBuffer::kSingleBuffer
 	);
 
 	BufferDescriptionBehavior() = default;

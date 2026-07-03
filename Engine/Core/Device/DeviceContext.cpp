@@ -70,10 +70,9 @@ void DeviceContext::TakeOverCoreParts(DeviceContext::InstanceKey instanceKey_)
 {
 	//コアパーツの生成
 	Setupper setupper(instanceKey_);
-	Logger::Log("Create: CoreParts", fileName);
 
 	std::tie(useAdapter, device, dxgiFactory) = setupper.HandOver(instanceKey_);
-	Logger::Log("TakeOver: CoreParts", fileName);
+	Logger::Log("take over CoreParts", fileName);
 
 }
 

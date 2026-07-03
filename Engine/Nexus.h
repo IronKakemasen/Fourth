@@ -44,9 +44,9 @@ private:
 	std::unique_ptr<SwapChainContext> swapChainContext;
 	//シェーダのコンパイル、データの保持
 	std::unique_ptr<ShaderContext> shaderContext;
-	//PSOの生成、データの保持
+	//PSOの生成
 	std::unique_ptr<PSO_Context> pso_context;
-	//ルートシグネチャの生成、データの保持
+	//ルートシグネチャの生成
 	std::unique_ptr<RootSignatureContext> rootSignatureContext;
 
 	

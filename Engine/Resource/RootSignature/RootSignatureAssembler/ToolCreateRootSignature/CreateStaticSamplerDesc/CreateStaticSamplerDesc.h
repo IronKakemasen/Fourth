@@ -1,22 +1,16 @@
 #pragma once
-#include "../../RootSignatureLayoutComponent.h"
+#include "../../RootSignatureDesc.h"
+
 
 
 struct CreateStaticSamplerDesc
 {
-	D3D12_STATIC_SAMPLER_DESC Create
-	(
-		RootSignatureLayoutComponent::ShaderStage shaderStage_,
-		uint32_t registerNum_,
-		RootSignatureLayoutComponent::SamplerState state_
-	);
+	std::vector<D3D12_STATIC_SAMPLER_DESC> Create(const RootSignatureDesc::Graphics& srcDesc_);
 
 private:
 
 	void SetBranchedDetails(D3D12_STATIC_SAMPLER_DESC* desc_, RootSignatureLayoutComponent::SamplerState state_);
-	
 	void SetCommonDetails(D3D12_STATIC_SAMPLER_DESC* desc_);
-
 	void SetDetailsDirectly
 	(
 		D3D12_STATIC_SAMPLER_DESC* desc_,

@@ -2,7 +2,6 @@
 #include "../PSO_Context.h"
 #include "PipelineStateDesc.h"
 
-class ShaderLibrary;
 
 class PSO_Context::Assembler
 {
@@ -16,23 +15,38 @@ public:
 		CommandCreateComputePSO cmdCreateComputePSO_
 	);
 
+	~Assembler();
+
 	Microsoft::WRL::ComPtr<ID3D12PipelineState> AssembleGraphicsPSO
 	(
-		PipelineStateDesc::ShaderSet shaderSet_,
-		PipelineStateDesc::RenderTargetDesc renderTargetDesc_,
-		PipelineStateDesc::RasterizerDesc rasterizerDesc_,
-		PipelineStateDesc::DepthStencilDesc depthStencilDesc_,
-		PipelineStateDesc::SampleDesc sampleDesc_,
-		ID3D12RootSignature* rootSignature_
+		PipelineStateDesc::Graphics& srcDesc_,
+		ID3D12RootSignature* rootSignature_,
+		std::string debugName_
 	);
 
+
 private:
+
+	using MS_PS = std::pair<CD3DX12_SHADER_BYTECODE, std::optional<CD3DX12_SHADER_BYTECODE>>;
+
 
 	//PSO生成コマンド
 	CommandCreateGraphicsPSO cmdCreateGraphicsPSO;
 	CommandCreateComputePSO cmdCreateComputePSO;
 
+
 	//要項チェック
-	void Check(const PipelineStateDesc::ShaderSet& shaderSet_,const PipelineStateDesc::RenderTargetDesc& renderTargetDesc_)const;
+	void Check
+	(
+		const PipelineStateDesc::ShaderSet& shaderSet_,
+		const PipelineStateDesc::RenderTargetDesc& renderTargetDesc_,
+		const std::string debugName_
+	)const;
+
+	//レンダーターゲットのフォーマットと総数の情報をまとめる
+	CD3DX12_RT_FORMAT_ARRAY SummarizeRenderTargetFormatInfo(const PipelineStateDesc::RenderTargetDesc& renderTargetDesc_)const;
+	//シェーダーバイトコード作成
+	MS_PS CreateShaderByteCode(PipelineStateDesc::ShaderSet& shaderSet_);
+
 };
 
