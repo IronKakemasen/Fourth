@@ -1,9 +1,6 @@
 #pragma once
 
-
-
 class Nexus;
-class ShaderContext;
 
 class PSO_Context
 {
@@ -23,7 +20,6 @@ public:
 	PSO_Context
 	(
 		InstanceKey key_,
-		ShaderContext& shaderContext_,
 		CommandCreateGraphicsPSO cmdCreateGraphicsPSO_,
 		CommandCreateComputePSO cmdCreateComputePSO_
 	);

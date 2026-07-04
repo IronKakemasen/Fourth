@@ -28,6 +28,6 @@ std::string RenderPathBluePrint::ShaderTable::Watch
 template<>
 std::string RenderPathBluePrint::ShaderTable::Watch
 (
-	RenderPathComponent::MeshType meshType_,
+	RenderPathComponent::MaterialType meshType_,
 	RenderPathComponent::Base baseType_
 );
