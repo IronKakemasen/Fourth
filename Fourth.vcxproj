@@ -90,6 +90,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Engine\Render\RenderPathStructure\RenderPathBluePrint.cpp" />
     <ClCompile Include="Engine\Resource\RootSignature\RootSignatureAssembler\ToolCreateRootSignature\CreateRootParam\CreateRootParam.cpp" />
     <ClCompile Include="Engine\Resource\RootSignature\RootSignatureAssembler\ToolCreateRootSignature\CreateStaticSamplerDesc\CreateStaticSamplerDesc.cpp" />
     <ClCompile Include="Engine\Core\Device\Commands\CreateRootSignature\CommandCreateRootSignature.cpp" />
@@ -265,8 +266,12 @@
     <ClCompile Include="Engine\Resource\RootSignature\RootSignatureContext.cpp" />
     <ClCompile Include="Engine\Resource\RootSignature\RootSignatureAssembler\RootSignatureAssembler.cpp" />
     <ClCompile Include="Engine\Resource\PSO\PSO_Assembler\ToolCreatePSO\PSO_InfoOutputter\PSO_InfoOutputter.cpp" />
+    <ClCompile Include="Engine\Render\RenderPathStructure\RenderPathComposer\RenderPathComposer.cpp" />
+    <ClCompile Include="Engine\Render\RenderPathStructure\RenderPathComposer\ShaderCombiner\ShaderCombiner.cpp" />
+    <ClCompile Include="Engine\Render\RenderPathStructure\RenderPath.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Engine\Render\RenderPathStructure\RenderPathDesc.h" />
     <ClInclude Include="Engine\Resource\RootSignature\RootSignatureAssembler\RootSignatureDesc.h" />
     <ClInclude Include="Engine\Resource\RootSignature\RootSignatureAssembler\ToolCreateRootSignature\CreateRootParam\CreateRootParam.h" />
     <ClInclude Include="Engine\Resource\Mesh\kara.h" />
@@ -316,7 +321,7 @@
     <ClInclude Include="Engine\Resource\Buffer\ResourceBarrier.h" />
     <ClInclude Include="Engine\Resource\PSO\RenderStateComponent.h" />
     <ClInclude Include="Engine\Resource\PSO\RenderStates.h" />
-    <ClInclude Include="Engine\Resource\PSO\ShaderComponent.h" />
+    <ClInclude Include="Engine\Render\RenderPathStructure\RenderPathComponent.h" />
     <ClInclude Include="Engine\Resource\RootSignature\RootSignatureAssembler\RootSignatureLayoutComponent.h" />
     <ClInclude Include="External\Audio\SoundCommon.h" />
     <ClInclude Include="External\Audio\xaudio_player_core.h" />
@@ -366,7 +371,7 @@
     <ClInclude Include="Engine\Core\Command\RuntimeCommandControler\RuntimeCommandControler.h" />
     <ClInclude Include="Engine\Render\RenderContext.h" />
     <ClInclude Include="Engine\Render\RuntimeRenderingManagementSystems\ModelRenderingInfoOrganizer\ModelRenderingInfoOrganizer.h" />
-    <ClInclude Include="Engine\Render\RuntimeRenderingManagementSystems\RequiredRenderingInfo.h" />
+    <ClInclude Include="Engine\Render\RequiredRenderingInfo.h" />
     <ClInclude Include="Engine\Resource\Shader\ShaderContext.h" />
     <ClInclude Include="Engine\Resource\Shader\ShaderCompiler\ShaderCompiler.h" />
     <ClInclude Include="Engine\Resource\Shader\ShaderLibrary\ShaderLibrary.h" />
@@ -375,6 +380,10 @@
     <ClInclude Include="Engine\Resource\RootSignature\RootSignatureContext.h" />
     <ClInclude Include="Engine\Resource\RootSignature\RootSignatureAssembler\RootSignatureAssembler.h" />
     <ClInclude Include="Engine\Resource\PSO\PSO_Assembler\ToolCreatePSO\PSO_InfoOutputter\PSO_InfoOutputter.h" />
+    <ClInclude Include="Engine\Render\RenderPathStructure\RenderPathComposer\RenderPathComposer.h" />
+    <ClInclude Include="Engine\Render\RenderPathStructure\RenderPathComposer\ShaderCombiner\ShaderCombiner.h" />
+    <ClInclude Include="Engine\Render\RenderPathStructure\RenderPath.h" />
+    <ClInclude Include="Engine\Render\RenderPathStructure\RenderPathBluePrint.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

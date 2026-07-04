@@ -1,6 +1,7 @@
 #pragma once
 
-namespace ShaderComponent
+
+namespace RenderPathComponent
 {
 	enum class MeshType
 	{
@@ -14,9 +15,9 @@ namespace ShaderComponent
 		kCount
 	};
 
-	enum class RenderPath
+	enum class Base
 	{
-		kStandard,
+		kBasic,
 		kCount
 	};
 

@@ -20,11 +20,9 @@ ShaderContext::ShaderContext(InstanceKey instanceKey_)
 	compiler.reset(new Compiler(instanceKey_));
 	Logger::Log("Instantiate: shaderCompiler", fileName);
 
-	shaderLibrary.reset(new ShaderLibrary(ShaderLibrary::ImportKey{}));
+	shaderLibrary.reset(new ShaderLibrary(ShaderLibrary::InstanceKey{}, compiler.get()));
 	Logger::Log("Instantiate: ShaderLibrary", fileName);
 
-
-	CompileAllShaders();
 
 	Logger::End("ShaderContext: Constructor");
 }
@@ -41,28 +39,3 @@ ShaderLibrary* ShaderContext::AllowAccessToLibrary(ShaderLibraryAccessKey access
 ///+//////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+//////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+//////////////////////////////////////////////////////////////////////////////////////////////////////
-
-void ShaderContext::CompileAllShaders()
-{
-	std::string const commonFolderPath = "./Assets/Shader/";
-	auto const psProfile = L"ps_6_5";
-	auto const msProfile = L"ms_6_5";
-	ShaderLibrary::ImportKey importKey;
-
-	shaderLibrary->Import
-	(
-		importKey,
-		std::move(compiler->CompileShader(commonFolderPath, "Test.MS", msProfile)),
-		ShaderLibrary::MS::kStatic_Basic
-	);
-
-	shaderLibrary->Import
-	(
-		importKey,
-		std::move(compiler->CompileShader(commonFolderPath, "Test.PS", psProfile)),
-		ShaderLibrary::PS::kStandard_kBasic
-	);
-
-
-	Logger::Log("Complete: Loading all shaders", fileName);
-}

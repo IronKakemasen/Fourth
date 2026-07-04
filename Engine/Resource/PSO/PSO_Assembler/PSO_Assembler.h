@@ -29,7 +29,6 @@ private:
 
 	using MS_PS = std::pair<CD3DX12_SHADER_BYTECODE, std::optional<CD3DX12_SHADER_BYTECODE>>;
 
-
 	//PSO生成コマンド
 	CommandCreateGraphicsPSO cmdCreateGraphicsPSO;
 	CommandCreateComputePSO cmdCreateComputePSO;

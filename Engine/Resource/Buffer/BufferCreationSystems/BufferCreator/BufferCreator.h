@@ -16,14 +16,14 @@ public:
 
 	//生成したバッファの管理を請け負います
 	template<typename BufferType, typename DescType>
-	[[nodiscard]] BufferContext::BufferUniqueID Create(const DescType& desc_, const std::string& name_)
+	[[nodiscard]] BufferUniqueID Create(const DescType& desc_, const std::string& name_)
 	{
 		std::unique_ptr<BufferType> buffer = assembler->Assemble<BufferType>(desc_, name_);
 
 		collector->Register(std::move(buffer));
 
 		//バッファユニークIDを返す
-		return BufferContext::BufferUniqueID(generateBufferSum++);
+		return BufferUniqueID(generateBufferSum++);
 	}
 
 	//生成したバッファの管理はしません。あとは任せました状態
