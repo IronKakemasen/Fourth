@@ -1,101 +1,47 @@
 #pragma once
-#include "../../PSO/PSO_Context.h"
+#include "../ShaderContext.h"
 
-class ShaderContext;
 
+//外部
+#include "../../../Render/RenderPathStructure/RenderPathComposer/RenderPathComposer.h"
+
+struct RenderPath::PathComposer::ShaderCombiner;
 
 class ShaderLibrary
 {
 public:
 
-	enum class MS
-	{
-		kStatic_Basic			//特別な頂点処理なし、用途:基本
-
-
-
-		,kCount
-	};
-
-	enum class PS
-	{
-		kStandard_kBasic		//特別なピクセル処理なし。用途：基本
-
-		, kCount
-	};
-
-	struct ImportKey;
+	struct InstanceKey;
 	struct GetDataKey;
 
-	ShaderLibrary(ImportKey importKey_);
+	ShaderLibrary(InstanceKey key_, ShaderContext::Compiler* compiler_);
 
-	//生成したシェーダーのバイナリオブジェを輸入
-	template<typename ShaderType>
-	void Import
-	(
-		ImportKey key_,
-		Microsoft::WRL::ComPtr<IDxcBlob>&& data_,
-		ShaderType type_
-	);
-
-	//シェーダーバイナリオブジェのポインタを輸出
-	template<typename ShaderType>
-	IDxcBlob* Export
-	(
-		GetDataKey key_,
-		ShaderType meshType_
-	);
+	///シェーダーバイナリオブジェのポインタを輸出
+	IDxcBlob* Export(GetDataKey key_, const std::string& fileName_);
 
 
 private:
-	Microsoft::WRL::ComPtr<IDxcBlob> meshShaderData[(int)MS::kCount];
-	Microsoft::WRL::ComPtr<IDxcBlob> pixelShaderData[(int)PS::kCount];
+	///本元データ
+	std::unordered_map<std::string, Microsoft::WRL::ComPtr<IDxcBlob>> data;
 
+	//シェーダー登録ファイルから何が登録されているか読み込む
+	std::unordered_map<std::string, std::string> LoadShaderRegistry(const std::string& filePath);
+	//コンパイルする
+	void CompileAllShaderFiles(ShaderContext::Compiler* compiler_);
 };
 
 
-struct ShaderLibrary::ImportKey
+struct ShaderLibrary::InstanceKey
 {
 private:
 
 	friend class ShaderContext;
-	explicit ImportKey() = default;
+	explicit InstanceKey() = default;
 };
 
 struct ShaderLibrary::GetDataKey
 {
 private:
-	//friend class PSO_Context::Assembler;
+	friend struct RenderPath::PathComposer::ShaderCombiner;
 	explicit GetDataKey() = default;
 };
-
-
-template<>
-void ShaderLibrary::Import
-(
-	ImportKey key_,
-	Microsoft::WRL::ComPtr<IDxcBlob>&& data_,
-	MS type_
-);
-
-template<>
-void ShaderLibrary::Import
-(
-	ImportKey key_,
-	Microsoft::WRL::ComPtr<IDxcBlob>&& data_,
-	PS type_
-);
-
-template<>
-IDxcBlob* ShaderLibrary::Export
-(
-	GetDataKey key_,
-	MS meshType_
-);
-
-template<>
-IDxcBlob* ShaderLibrary::Export
-(
-	GetDataKey key_,
-	PS meshType_
-);

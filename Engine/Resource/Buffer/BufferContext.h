@@ -4,6 +4,7 @@ class Nexus;
 class DescriptorHeapContext;
 class GPUBufferBehavior;
 
+
 class BufferContext
 {
 	//生成したバッファを回収し分別する
@@ -33,8 +34,6 @@ class BufferContext
 
 public:
 
-	//バッファのユニークID
-	using BufferUniqueID = uint32_t;
 	//自身のインスタンス化キー
 	struct InstanceKey;
 	//バッファのポインタを扱うものの証
@@ -44,15 +43,6 @@ public:
 	class BufferAssembler;
 	//レンダーターゲット系バッファの描画パス構築に必要な情報の抽出とそのリソースのSwapを行う
 	class RenderTargetBufferInfoExtractor;
-
-	//登録先識別用
-	enum class RegisterType
-	{
-		kRenderTarget,
-		kFrameBuffer,
-		kComputeBuffer,
-		kCount
-	};
 
 	BufferContext
 	(
@@ -70,6 +60,18 @@ public:
 	//Extractors
 	std::unique_ptr<RenderTargetBufferInfoExtractor> renderTargetBufferInfoExtractor;
 
+protected:
+
+
+	//登録先識別用
+	enum class RegisterType
+	{
+		kRenderTarget,
+		kFrameBuffer,
+		kComputeBuffer,
+		kCount
+	};
+
 private:
 
 	//ColorBufferやDepthStencilBufferなどレンダーターゲットなバッファのコンテナ
@@ -80,7 +82,7 @@ private:
 	std::vector<std::unique_ptr<GPUBufferBehavior>> frameBufferContainer;
 
 	//ユニークIDがどこのバッファコンテナの何番目のバッファを指しているのか示すマップコンテナ
-	std::unordered_map<BufferContext::BufferUniqueID, std::pair<RegisterType, uint32_t>> bufferLocationMap;
+	std::unordered_map<BufferUniqueID, std::pair<RegisterType, uint32_t>> bufferLocationMap;
 
 	void InstantiateBufferCreator
 	(

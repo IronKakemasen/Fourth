@@ -4,10 +4,21 @@
 
 struct RenderState
 {
-    RenderStateComponent::BlendMode blendMode = RenderStateComponent::BlendMode::kOpaque;
-    RenderStateComponent::CullMode cullMode = RenderStateComponent::CullMode::kBack;
-    RenderStateComponent::FillMode fillMode = RenderStateComponent::FillMode::kSolid;
-    RenderStateComponent::DepthWrite depthWrite = RenderStateComponent::DepthWrite::kEnable;
-    RenderStateComponent::DepthTest depthTest = RenderStateComponent::DepthTest::kGreaterEqual;
+    inline RenderState
+    (
+        RenderStateComponent::Uniqued uniqued_,
+        const std::vector<RenderStateComponent::Flexible>& flexible_
+    ): uniqued(uniqued_) , flexible(flexible_)
+    {
+        ErrorMessageOutput::Assert::DetectError(flexible_.size() > 0, "flexible_が未定義", "RenderState.h");
+    }
 
+private:
+
+    //モデルのレンダーステートをもとにPSOを構築するクラスをフレンドクラスに
+    //friend class 
+
+    RenderStateComponent::Uniqued uniqued;
+    std::vector<RenderStateComponent::Flexible> flexible;
 };
+

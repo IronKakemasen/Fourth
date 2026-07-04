@@ -15,7 +15,6 @@ public:
 		std::vector<std::wstring> const& extraArguments_ = {}
 	);
 	
-
 private:
 
 	Microsoft::WRL::ComPtr<IDxcUtils> dxcUtils = nullptr;

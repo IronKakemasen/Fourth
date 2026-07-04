@@ -6,14 +6,14 @@ class PSO_Context;
 
 class ShaderContext
 {
-	class Compiler;
-
 public:
 
 	//自身のインスタンス化キー
 	struct InstanceKey;
 	//シェーダーライブラリを貸し出し許可キー
 	struct ShaderLibraryAccessKey;
+	//コンパイラー
+	class Compiler;
 
 
 	//シェーダーライブラリを貸し出し
@@ -24,13 +24,9 @@ public:
 
 private:
 
-	//コンパイラー
 	std::unique_ptr<Compiler> compiler;
 	//シェーダーのデータがすべてここに
 	std::unique_ptr<ShaderLibrary> shaderLibrary;
-
-	//全てのシェーダーをコンパイルしてライブラリーに突っ込む
-	void CompileAllShaders();
 };
 
 

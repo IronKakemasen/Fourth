@@ -18,14 +18,14 @@ public:
 		std::vector<std::unique_ptr<GPUBufferBehavior>>* renderTargetBufferContainer_,
 		std::vector<std::unique_ptr<GPUBufferBehavior>>* computeBufferContainer_,
 		std::vector<std::unique_ptr<GPUBufferBehavior>>* frameBufferContainer_,
-		std::unordered_map<BufferContext::BufferUniqueID, std::pair<BufferContext::RegisterType, uint32_t>>* bufferLocationMap_
+		std::unordered_map<BufferUniqueID, std::pair<BufferContext::RegisterType, uint32_t>>* bufferLocationMap_
 	);
 
 	~BufferCollector();
 	
 	//作成されたバッファを一時保管場所へ移動
 	template<typename BufferType>
-	void Register(std::unique_ptr<BufferType> buffer_,BufferContext::BufferUniqueID id_)
+	void Register(std::unique_ptr<BufferType> buffer_,BufferUniqueID id_)
 	{
 		auto registerType = Identify<BufferType>();
 
@@ -46,7 +46,7 @@ private:
 	{
 		RegisterType type;
 		std::unique_ptr<GPUBufferBehavior> buffer;
-		BufferContext::BufferUniqueID id;
+		BufferUniqueID id;
 	};
 
 
@@ -59,7 +59,7 @@ private:
 	std::vector<std::unique_ptr<GPUBufferBehavior>>* frameBufferContainer;
 
 	//ユニークIDがどこのバッファコンテナの何番目のバッファを指しているのか示すマップコンテナ
-	std::unordered_map<BufferContext::BufferUniqueID, std::pair<RegisterType, uint32_t>>* bufferLocationMap;
+	std::unordered_map<BufferUniqueID, std::pair<RegisterType, uint32_t>>* bufferLocationMap;
 
 	//バッファのデータ型に応じて登録先識別用のタイプを返す
 	template<typename BufferType>

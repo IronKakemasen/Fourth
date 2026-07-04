@@ -28,11 +28,11 @@ public:
 		std::vector<std::unique_ptr<GPUBufferBehavior>>* renderTargetBufferContainer_,
 		std::vector<std::unique_ptr<GPUBufferBehavior>>* computeBufferContainer_,
 		std::vector<std::unique_ptr<GPUBufferBehavior>>* frameBufferContainer_,
-		std::unordered_map<BufferContext::BufferUniqueID, std::pair<RegisterType, uint32_t>>* bufferLocationMap_
+		std::unordered_map<BufferUniqueID, std::pair<RegisterType, uint32_t>>* bufferLocationMap_
 	);
 
 	///ユニークIDからバッファを渡します
-	inline GPUBufferBehavior* Dispatch(BufferContext::BufferUniqueID bufferID_)
+	inline GPUBufferBehavior* Dispatch(BufferUniqueID bufferID_)
 	{
 		auto& tmp = (*bufferLocationMap)[bufferID_];
 
@@ -49,6 +49,6 @@ private:
 	std::vector<std::unique_ptr<GPUBufferBehavior>>* frameBufferContainer;
 	std::vector<std::unique_ptr<GPUBufferBehavior>>* computeBufferContainer;
 	//ユニークIDがどこのバッファコンテナの何番目のバッファを指しているのか示すマップコンテナ
-	std::unordered_map<BufferContext::BufferUniqueID, std::pair<RegisterType, uint32_t>>* bufferLocationMap;
+	std::unordered_map<BufferUniqueID, std::pair<RegisterType, uint32_t>>* bufferLocationMap;
 
 };

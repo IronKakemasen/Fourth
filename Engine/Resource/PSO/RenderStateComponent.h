@@ -33,5 +33,20 @@ namespace RenderStateComponent
         kLessEqual = 4,
         kGreaterEqual = 7
     };
+
+    //モデル一つにつき１定義のみ
+    struct Uniqued
+    {
+        RenderStateComponent::CullMode cullMode = RenderStateComponent::CullMode::kBack;
+        RenderStateComponent::DepthWrite depthWrite = RenderStateComponent::DepthWrite::kEnable;
+        RenderStateComponent::DepthTest depthTest = RenderStateComponent::DepthTest::kGreaterEqual;
+    };
+
+    //複数定義可能
+    struct Flexible
+    {
+        RenderStateComponent::BlendMode blendMode = RenderStateComponent::BlendMode::kOpaque;
+    };
+
 }
 
