@@ -19,7 +19,7 @@ DeviceContext::Setupper::Setupper(InstanceKey instanceKey_)
 	CreateDevice();
 
 	//シェーダーモデルサポートチェック
-	ShaderModelChack(ProjectConfig::Render::kMaximumShaderModel);
+	ShaderModelChack(ProjectConfig::Render::kRequiredShaderModel);
 
 	//メッシュシェーダーをサポートしているかチェック
 	IsMeshShaderSupported();

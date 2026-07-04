@@ -5,7 +5,6 @@
 #include <regex>
 #include <iostream>
 
-
 namespace
 {
     std::string const fileName = "ShaderLibrary.cpp";
@@ -17,7 +16,7 @@ ShaderLibrary::ShaderLibrary(InstanceKey key_, ShaderContext::Compiler* compiler
 
     CompileAllShaderFiles(compiler_);
 
-    Logger::Entry("ShaderLibrary: Constructor");
+    Logger::End("ShaderLibrary: Constructor");
 
 }
 
@@ -25,18 +24,32 @@ ShaderLibrary::ShaderLibrary(InstanceKey key_, ShaderContext::Compiler* compiler
 ///+//////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+//////////////////////////////////////////////////////////////////////////////////////////////////////
 IDxcBlob* ShaderLibrary::Export(GetDataKey key_, const std::string& fileName_)
-{
-    return data[fileName_].Get();
+{   
+    ErrorMessageOutput::Assert::DetectError
+    (
+        data.find(fileName_) != data.end(),
+        fileName_ + "このキーがそもそも存在しない", 
+        fileName
+    );
+
+    ErrorMessageOutput::Assert::DetectError
+    (
+        data.at(fileName_),
+        fileName_ + "このキーの中身がない",
+        fileName
+    );
+
+    return data.at(fileName_).Get();
 }
 ///+//////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+//////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+//////////////////////////////////////////////////////////////////////////////////////////////////////
 void ShaderLibrary::CompileAllShaderFiles(ShaderContext::Compiler* compiler_)
 {
-    auto const psProfile = L"ps_6_5";
-    auto const msProfile = L"ms_6_5";
-    auto const shaderRegistryFilePath_MS = "Assets/MSFiles.txt";
-    auto const shaderRegistryFilePath_PS = "Assets/PSFiles.txt";
+    auto const psProfile = L"ps_6_6";
+    auto const msProfile = L"ms_6_6";
+    auto const shaderRegistryFilePath_MS = "Assets/Registry/MSFiles.txt";
+    auto const shaderRegistryFilePath_PS = "Assets/Registry/PSFiles.txt";
 
     std::unordered_map<std::string, std::string> shaderRegistryMS;
     std::unordered_map<std::string, std::string> shaderRegistryPS;
@@ -63,11 +76,7 @@ std::unordered_map<std::string, std::string> ShaderLibrary::LoadShaderRegistry(c
     std::unordered_map<std::string, std::string> registry;
 
     std::ifstream file(filePath);
-    if (!file.is_open()) 
-    {
-        std::cerr << "Warning: Failed to open registry file: " << filePath << std::endl;
-        return registry; 
-    }
+    ErrorMessageOutput::Abort::DetectError(file.is_open(), "Registryフォルダの中のファイルが読み込めない", fileName);
 
     std::regex pattern("key:\\s*\"([^\"]*)\"\\s*,\\s*value:\\s*\"([^\"]*)\"");
     std::string line;

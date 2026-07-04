@@ -265,7 +265,6 @@ void Nexus::InstantiatePSO_Context()
 		new PSO_Context
 		(
 			PSO_Context::InstanceKey{},
-			*shaderContext.get(),
 			cmdCreateGraphicsPSO,
 			cmdCreateComputePSO
 		)

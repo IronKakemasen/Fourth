@@ -85,7 +85,7 @@ namespace ProjectConfig
 			kDoubleBuffer = 2
 		};
 
-		constexpr D3D_SHADER_MODEL kMaximumShaderModel = D3D_SHADER_MODEL_6_6;	
+		constexpr D3D_SHADER_MODEL kRequiredShaderModel = D3D_SHADER_MODEL_6_6;	
 	}
 
 	namespace Debug
