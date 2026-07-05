@@ -67,7 +67,7 @@ void BufferContext::InstantiateBufferCreator
 			instanceKey_, 
 			&renderTargetBufferPool, 
 			&computeBufferPool,
-			&frameBufferpool,
+			&frameBufferPool,
 			&bufferLocationMap
 		)
 	);

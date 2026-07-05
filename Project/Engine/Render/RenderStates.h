@@ -1,5 +1,5 @@
 #pragma once
-#include "RenderStateComponent.h"
+#include "RenderPathStructure/RenderStateComponent.h"
 
 
 struct RenderState

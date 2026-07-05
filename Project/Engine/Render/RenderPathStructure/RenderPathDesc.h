@@ -3,9 +3,9 @@
 
 struct RenderPath::Desc
 {
-	//RenderPathComponent::MeshType meshType;
-	//RenderPathComponent::MaterialType materialType;
-	//RenderPathComponent::Base Base;
+	//ShaderPathComponent::MeshType meshType;
+	//ShaderPathComponent::MaterialType materialType;
+	//ShaderPathComponent::Base Base;
 
 	//std::vector<BufferUniqueID> colorBufferIDContainer;
 	//BufferUniqueID depthBufferID;

@@ -10,7 +10,7 @@ class RenderPath::PathComposer
 
 public:
 
-	//使用するシェーダーのセットをRenderPathComponentから組み合わせる
+	//使用するシェーダーのセットをShaderPathComponentから組み合わせる
 	struct ShaderCombiner;
 
 

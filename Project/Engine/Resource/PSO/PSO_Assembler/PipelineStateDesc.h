@@ -1,5 +1,5 @@
 #pragma once
-#include "../RenderStateComponent.h"
+#include "../../../Render/RenderPathStructure/RenderStateComponent.h"
 #include "../../../../External/d3dx12/d3dx12.h"
 
 namespace PipelineStateDesc

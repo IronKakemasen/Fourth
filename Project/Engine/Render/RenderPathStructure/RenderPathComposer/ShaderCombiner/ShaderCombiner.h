@@ -1,6 +1,6 @@
 #pragma once
 #include "../RenderPathComposer.h"
-#include "../../RenderPathComponent.h"
+#include "../../ShaderPathComponent.h"
 
 struct RenderPath::PathComposer::ShaderCombiner
 {
