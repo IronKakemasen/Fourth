@@ -37,6 +37,9 @@ private:
 		CommandCreateGraphicsPSO cmdCreateGraphicsPSO_,
 		CommandCreateComputePSO cmdCreateComputePSO_
 	);
+
+	//ただのpsoのコンテナ
+	std::vector<Microsoft::WRL::ComPtr<ID3D12PipelineState>> psoContainer;
 };
 
 

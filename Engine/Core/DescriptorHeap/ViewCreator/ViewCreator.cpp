@@ -5,18 +5,18 @@
 ViewCreator::ViewCreator
 (
 	DescriptorHeapContext::InstanceKey instanceKey_,
-	DescriptorHeapClass* RTVdescriptorHeapClass_,
-	DescriptorHeapClass* SRVUAVdescriptorHeapClass_,
-	DescriptorHeapClass* DSVdescriptorHeapClass_,
+	DescriptorHeapPool* RTVdescriptorHeapPool_,
+	DescriptorHeapPool* SRVUAVdescriptorHeapPool_,
+	DescriptorHeapPool* DSVdescriptorHeapPool_,
 	DescriptorHeapContext::CreateRTVCommand rtvCmd_,
 	DescriptorHeapContext::CreateSRVCommand srvCmd_,
 	DescriptorHeapContext::CreateDSVCommand dsvCmd_,
 	DescriptorHeapContext::CreateUAVCommand uavCmd_
 ) :rtvCmd(rtvCmd_), srvCmd(srvCmd_), dsvCmd(dsvCmd_), uavCmd(uavCmd_)
 {
-	descriptorHeap_map[kRTV] = RTVdescriptorHeapClass_;
-	descriptorHeap_map[kSRVUAV] = SRVUAVdescriptorHeapClass_;
-	descriptorHeap_map[kDSV] = DSVdescriptorHeapClass_;	
+	DescriptorHeapPool_Library[kRTV] = RTVdescriptorHeapPool_;
+	DescriptorHeapPool_Library[kSRVUAV] = SRVUAVdescriptorHeapPool_;
+	DescriptorHeapPool_Library[kDSV] = DSVdescriptorHeapPool_;
 }
 
 

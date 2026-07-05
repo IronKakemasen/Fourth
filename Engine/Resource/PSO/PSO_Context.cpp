@@ -40,6 +40,6 @@ void PSO_Context::InstantiatePSO_Assembler
 	CommandCreateComputePSO cmdCreateComputePSO_
 )
 {
-	assembler.reset(new Assembler(key_, cmdCreateGraphicsPSO_, cmdCreateComputePSO_));
+	assembler.reset(new Assembler(key_, cmdCreateGraphicsPSO_, cmdCreateComputePSO_,&psoContainer));
 	Logger::Log("Instantiate: psoAssembler");
 }

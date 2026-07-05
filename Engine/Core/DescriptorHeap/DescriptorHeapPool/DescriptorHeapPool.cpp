@@ -1,13 +1,13 @@
 #include "PreCompileHeader.h"
-#include "DescriptorHeapClass.h"
+#include "DescriptorHeapPool.h"
 
 namespace
 {
-	std::string fileName = "DescriptorHeapClass.cpp";
+	std::string fileName = "DescriptorHeapPool.cpp";
 }
 
 
-DescriptorHeapClass::DescriptorHeapClass
+DescriptorHeapPool::DescriptorHeapPool
 (
 	Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> descriptorHeap_,
 	UINT handleIncrementSize_, 
@@ -26,13 +26,13 @@ DescriptorHeapClass::DescriptorHeapClass
 	}
 }
 
-DescriptorHeapClass::~DescriptorHeapClass(){}
+DescriptorHeapPool::~DescriptorHeapPool(){}
 
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 template<>
-[[nodiscard]] D3D12_GPU_DESCRIPTOR_HANDLE DescriptorHeapClass::GetHandle(uint32_t index_)
+[[nodiscard]] D3D12_GPU_DESCRIPTOR_HANDLE DescriptorHeapPool::GetHandle(uint32_t index_)
 {
 	if (!shaderVisible) return D3D12_GPU_DESCRIPTOR_HANDLE{};
 
@@ -44,7 +44,7 @@ template<>
 }
 
 template<>
-[[nodiscard]] D3D12_CPU_DESCRIPTOR_HANDLE DescriptorHeapClass::GetHandle(uint32_t index_)
+[[nodiscard]] D3D12_CPU_DESCRIPTOR_HANDLE DescriptorHeapPool::GetHandle(uint32_t index_)
 {
 	D3D12_CPU_DESCRIPTOR_HANDLE handleStartCPU = descriptorHeap->GetCPUDescriptorHandleForHeapStart();
 	D3D12_CPU_DESCRIPTOR_HANDLE next;
@@ -56,7 +56,7 @@ template<>
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 std::tuple<uint32_t, D3D12_CPU_DESCRIPTOR_HANDLE, D3D12_GPU_DESCRIPTOR_HANDLE>
-DescriptorHeapClass::ProvideFreeHeapIndex(CreateViewKey accessKey_)
+DescriptorHeapPool::ProvideFreeHeapIndex(CreateViewKey accessKey_)
 {
 	ErrorMessageOutput::Assert::DetectError
 	(
@@ -80,7 +80,7 @@ DescriptorHeapClass::ProvideFreeHeapIndex(CreateViewKey accessKey_)
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //空きヒープインデックスを回収
-void DescriptorHeapClass::CollectHeapIndex(uint32_t index_, CollectHeapIndexKey key_)
+void DescriptorHeapPool::CollectHeapIndex(uint32_t index_, CollectHeapIndexKey key_)
 {
 	freeList.emplace_back(index_);
 }

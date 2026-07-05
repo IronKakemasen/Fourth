@@ -1,6 +1,6 @@
 #pragma once
 #include "../DescriptorHeapContext.h"
-#include "../DescriptorHeapClass/DescriptorHeapClass.h"
+#include "../DescriptorHeapPool/DescriptorHeapPool.h"
 
 class GPUBufferBehavior;
 
@@ -13,8 +13,8 @@ class ViewCreator
 		kDSV
 	};
 
-	//DescriptorHeapClassのアドレス
-	std::unordered_map<HeapType, DescriptorHeapClass*> descriptorHeap_map;
+	//DescriptorHeapPoolのアドレス
+	std::unordered_map<HeapType, DescriptorHeapPool*> DescriptorHeapPool_Library;
 
 	//コマンド
 	DescriptorHeapContext::CreateRTVCommand rtvCmd;
@@ -26,9 +26,9 @@ public:
 	ViewCreator
 	(
 		DescriptorHeapContext::InstanceKey instanceKey_,
-		DescriptorHeapClass* RTVdescriptorHeapClass_,
-		DescriptorHeapClass* SRVUAVdescriptorHeapClass_,
-		DescriptorHeapClass* DSVdescriptorHeapClass_,
+		DescriptorHeapPool* RTVdescriptorHeapPool_,
+		DescriptorHeapPool* SRVUAVdescriptorHeapPool_,
+		DescriptorHeapPool* DSVdescriptorHeapPool_,
 		DescriptorHeapContext::CreateRTVCommand rtvCmd_,
 		DescriptorHeapContext::CreateSRVCommand srvCmd_,
 		DescriptorHeapContext::CreateDSVCommand dsvCmd_,
@@ -46,10 +46,10 @@ public:
 		else { type = kSRVUAV; }
 
 		//ディスクリプタヒープを取り出す
-		auto* targetHeap = descriptorHeap_map.at(type);
+		auto* targetHeap = DescriptorHeapPool_Library.at(type);
 
 		//空きヒープインデックスを割り当てる
-		auto[allocateIndex, handleCPU, handleGPU] = targetHeap->ProvideFreeHeapIndex(DescriptorHeapClass::CreateViewKey{});
+		auto[allocateIndex, handleCPU, handleGPU] = targetHeap->ProvideFreeHeapIndex(DescriptorHeapPool::CreateViewKey{});
 
 		//ビュー生成
 		if constexpr (std::is_same_v<ViewType, D3D12_RENDER_TARGET_VIEW_DESC>)

@@ -26,8 +26,6 @@ RootSignatureContext::Assembler::~Assembler() {};
 template<>
 Microsoft::WRL::ComPtr<ID3D12RootSignature> RootSignatureContext::Assembler::Create(const RootSignatureDesc::Graphics& srcDesc_)
 {
-	Microsoft::WRL::ComPtr<ID3D12RootSignature> rootSignature;
-
 	//ルートパラメーターの生成
 	std::vector<D3D12_ROOT_PARAMETER> tmpRootParam;
 	{
@@ -60,13 +58,26 @@ Microsoft::WRL::ComPtr<ID3D12RootSignature> RootSignatureContext::Assembler::Cre
 			D3D12_ROOT_SIGNATURE_FLAG_SAMPLER_HEAP_DIRECTLY_INDEXED;
 	}
 
+	Microsoft::WRL::ComPtr<ID3D12RootSignature> rootSignature = CreateRootSignature(&desc);
+
+	Logger::Log("Create: GraphicsRootSig", fileName);
+
+	return rootSignature;
+}
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+Microsoft::WRL::ComPtr<ID3D12RootSignature> RootSignatureContext::Assembler::CreateRootSignature(D3D12_ROOT_SIGNATURE_DESC* desc_)
+{
+	Microsoft::WRL::ComPtr<ID3D12RootSignature> rootSignature;
+
 	//シリアライズしてバイナリにする
 	Microsoft::WRL::ComPtr<ID3DBlob> signatureBlob = nullptr;
 	Microsoft::WRL::ComPtr<ID3DBlob> errorBlob = nullptr;
 	{
 		HRESULT hr = D3D12SerializeRootSignature
 		(
-			&desc,
+			desc_,
 			D3D_ROOT_SIGNATURE_VERSION_1,
 			&signatureBlob,
 			&errorBlob
@@ -75,9 +86,13 @@ Microsoft::WRL::ComPtr<ID3D12RootSignature> RootSignatureContext::Assembler::Cre
 		ErrorMessageOutput::Abort::DetectError
 		(
 			SUCCEEDED(hr),
-			(errorBlob) ? reinterpret_cast<char*>(errorBlob->GetBufferPointer()): " ",
+			(errorBlob) ? reinterpret_cast<char*>(errorBlob->GetBufferPointer()) : " ",
 			fileName
 		);
+
+		Logger::Log("Complete: Serializing RootSignature", fileName);
+
+		return rootSignature;
 	}
 
 	//バイナリをもとにrootSignatureを作成
@@ -89,11 +104,4 @@ Microsoft::WRL::ComPtr<ID3D12RootSignature> RootSignatureContext::Assembler::Cre
 			rootSignature.GetAddressOf()
 		);
 	}
-
-
-	return rootSignature;
 }
-///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-

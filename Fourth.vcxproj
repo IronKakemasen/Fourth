@@ -117,7 +117,7 @@
     <ClCompile Include="Engine\Resource\Buffer\BufferContext.cpp" />
     <ClCompile Include="Engine\Resource\Buffer\BufferDefinition\BufferDescriptions\DepthStencilBufferDescription\DepthStencilBufferDescription.cpp" />
     <ClCompile Include="Engine\Core\Device\Commands\CreateView\CommandCreateView.cpp" />
-    <ClCompile Include="Engine\Core\DescriptorHeap\DescriptorHeapClass\DescriptorHeapClass.cpp" />
+    <ClCompile Include="Engine\Core\DescriptorHeap\DescriptorHeapPool\DescriptorHeapPool.cpp" />
     <ClCompile Include="Engine\Core\Device\Commands\CreateDescriptorHeap\CommandCreateDescriptorHeap.cpp" />
     <ClCompile Include="Engine\Core\DescriptorHeap\DescriptorHeapCreator\DescriptorHeapCreator.cpp" />
     <ClCompile Include="Engine\Core\DescriptorHeap\DescriptorHeapContext.cpp" />
@@ -269,8 +269,11 @@
     <ClCompile Include="Engine\Render\RenderPathStructure\RenderPathComposer\RenderPathComposer.cpp" />
     <ClCompile Include="Engine\Render\RenderPathStructure\RenderPathComposer\ShaderCombiner\ShaderCombiner.cpp" />
     <ClCompile Include="Engine\Render\RenderPathStructure\RenderPath.cpp" />
+    <ClCompile Include="Engine\Resource\RootSignature\RootSignatureLibrary\RootSignatureLibrary.cpp" />
+    <ClCompile Include="Engine\Render\PSO_PoolDispatcher\PSO_PoolDispatcher.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Assets\Shared\ConstantBuffers.h" />
     <ClInclude Include="Engine\Render\RenderPathStructure\RenderPathDesc.h" />
     <ClInclude Include="Engine\Resource\RootSignature\RootSignatureAssembler\RootSignatureDesc.h" />
     <ClInclude Include="Engine\Resource\RootSignature\RootSignatureAssembler\ToolCreateRootSignature\CreateRootParam\CreateRootParam.h" />
@@ -298,7 +301,7 @@
     <ClInclude Include="Engine\Resource\Buffer\BufferContext.h" />
     <ClInclude Include="Engine\Resource\Buffer\BufferDefinition\BufferDescriptions\DepthStencilBufferDescription\DepthStencilBufferDescription.h" />
     <ClInclude Include="Engine\Core\Device\Commands\CreateView\CommandCreateView.h" />
-    <ClInclude Include="Engine\Core\DescriptorHeap\DescriptorHeapClass\DescriptorHeapClass.h" />
+    <ClInclude Include="Engine\Core\DescriptorHeap\DescriptorHeapPool\DescriptorHeapPool.h" />
     <ClInclude Include="Engine\Core\Device\Commands\CreateDescriptorHeap\CommandCreateDescriptorHeap.h" />
     <ClInclude Include="Engine\Core\DescriptorHeap\DescriptorHeapCreator\DescriptorHeapCreator.h" />
     <ClInclude Include="Engine\Core\DescriptorHeap\DescriptorHeapContext.h" />
@@ -384,6 +387,8 @@
     <ClInclude Include="Engine\Render\RenderPathStructure\RenderPathComposer\ShaderCombiner\ShaderCombiner.h" />
     <ClInclude Include="Engine\Render\RenderPathStructure\RenderPath.h" />
     <ClInclude Include="Engine\Render\RenderPathStructure\RenderPathBluePrint.h" />
+    <ClInclude Include="Engine\Resource\RootSignature\RootSignatureLibrary\RootSignatureLibrary.h" />
+    <ClInclude Include="Engine\Render\PSO_PoolDispatcher\PSO_PoolDispatcher.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

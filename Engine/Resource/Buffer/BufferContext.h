@@ -75,11 +75,11 @@ protected:
 private:
 
 	//ColorBufferやDepthStencilBufferなどレンダーターゲットなバッファのコンテナ
-	std::vector<std::unique_ptr<GPUBufferBehavior>> renderTargetBufferContainer;
+	std::vector<std::unique_ptr<GPUBufferBehavior>> renderTargetBufferPool;
 	//computeBufferのような、コンピュートシェーダをかませるバッファのコンテナ
-	std::vector<std::unique_ptr<GPUBufferBehavior>> computeBufferContainer;
+	std::vector<std::unique_ptr<GPUBufferBehavior>> computeBufferPool;
 	//ConstantBufferやUploadStructuredBufferのようなフレームバッファのコンテナ
-	std::vector<std::unique_ptr<GPUBufferBehavior>> frameBufferContainer;
+	std::vector<std::unique_ptr<GPUBufferBehavior>> frameBufferpool;
 
 	//ユニークIDがどこのバッファコンテナの何番目のバッファを指しているのか示すマップコンテナ
 	std::unordered_map<BufferUniqueID, std::pair<RegisterType, uint32_t>> bufferLocationMap;

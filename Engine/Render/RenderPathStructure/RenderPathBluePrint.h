@@ -9,7 +9,7 @@ namespace RenderPathBluePrint
 	struct ShaderTable
 	{
 		template<typename ShaderComponent>
-		std::string Watch(ShaderComponent shaderComponent_, RenderPathComponent::Base baseType_);
+		std::string Watch(ShaderComponent shaderComponent_, RenderPathComponent::PathType pathType_);
 
 	};
 
@@ -22,12 +22,12 @@ template<>
 std::string RenderPathBluePrint::ShaderTable::Watch
 (
 	RenderPathComponent::MeshType meshType_,
-	RenderPathComponent::Base baseType_
+	RenderPathComponent::PathType pathType_
 );
 
 template<>
 std::string RenderPathBluePrint::ShaderTable::Watch
 (
-	RenderPathComponent::MaterialType meshType_,
-	RenderPathComponent::Base baseType_
+	RenderPathComponent::MaterialType materialType_,
+	RenderPathComponent::PathType pathType_
 );

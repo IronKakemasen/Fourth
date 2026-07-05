@@ -3,7 +3,7 @@
 
 class ViewCreator;
 
-class DescriptorHeapClass
+class DescriptorHeapPool
 {
 public:
 
@@ -12,9 +12,9 @@ public:
 	//ヒープインデックスを触るための許可証
 	struct CollectHeapIndexKey;
 
-	DescriptorHeapClass(Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> descriptorHeap_,
+	DescriptorHeapPool(Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> descriptorHeap_,
 		UINT handleIncrementSize_, uint32_t kMaxDescriptor_,bool shaderVisible_ ,std::string name_);
-	~DescriptorHeapClass();
+	~DescriptorHeapPool();
 	
 	//フリーヒープインデックスを提供
 	std::tuple<uint32_t, D3D12_CPU_DESCRIPTOR_HANDLE, D3D12_GPU_DESCRIPTOR_HANDLE>
@@ -45,7 +45,7 @@ private:
 
 };
 
-struct DescriptorHeapClass::CreateViewKey
+struct DescriptorHeapPool::CreateViewKey
 {
 private:
 
@@ -56,7 +56,7 @@ private:
 
 
 ///未定
-struct DescriptorHeapClass::CollectHeapIndexKey
+struct DescriptorHeapPool::CollectHeapIndexKey
 {
 private:
 
@@ -65,7 +65,7 @@ private:
 };
 
 template<>
-[[nodiscard]] D3D12_CPU_DESCRIPTOR_HANDLE DescriptorHeapClass::GetHandle(uint32_t index_);
+[[nodiscard]] D3D12_CPU_DESCRIPTOR_HANDLE DescriptorHeapPool::GetHandle(uint32_t index_);
 
 template<>
-[[nodiscard]] D3D12_GPU_DESCRIPTOR_HANDLE DescriptorHeapClass::GetHandle(uint32_t index_);
+[[nodiscard]] D3D12_GPU_DESCRIPTOR_HANDLE DescriptorHeapPool::GetHandle(uint32_t index_);

@@ -18,8 +18,9 @@ PSO_Context::Assembler::Assembler
 (
 	PSO_Context::InstanceKey key_,
 	CommandCreateGraphicsPSO cmdCreateGraphicsPSO_,
-	CommandCreateComputePSO cmdCreateComputePSO_
-):cmdCreateGraphicsPSO(cmdCreateGraphicsPSO_), cmdCreateComputePSO(cmdCreateComputePSO_)
+	CommandCreateComputePSO cmdCreateComputePSO_,
+	std::vector<Microsoft::WRL::ComPtr<ID3D12PipelineState>>* psoContainer_
+):cmdCreateGraphicsPSO(cmdCreateGraphicsPSO_), cmdCreateComputePSO(cmdCreateComputePSO_), psoContainer(psoContainer_)
 {
 
 }
@@ -30,7 +31,7 @@ PSO_Context::Assembler::~Assembler(){}
 ///+//////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+//////////////////////////////////////////////////////////////////////////////////////////////////////
 
-Microsoft::WRL::ComPtr<ID3D12PipelineState> PSO_Context::Assembler::AssembleGraphicsPSO
+ID3D12PipelineState* PSO_Context::Assembler::AssembleGraphicsPSO
 (
 	PipelineStateDesc::Graphics& srcDesc_,	
 	ID3D12RootSignature* rootSignature_,
@@ -116,7 +117,9 @@ Microsoft::WRL::ComPtr<ID3D12PipelineState> PSO_Context::Assembler::AssembleGrap
 
 	Logger::End("assembling: " + debugName_);
 
-	return pipelineState;
+	auto& dstPso = psoContainer->emplace_back(std::move(pipelineState));
+
+	return dstPso.Get();
 }
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

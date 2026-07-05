@@ -12,12 +12,13 @@ public:
 	(
 		PSO_Context::InstanceKey key_,
 		CommandCreateGraphicsPSO cmdCreateGraphicsPSO_,
-		CommandCreateComputePSO cmdCreateComputePSO_
+		CommandCreateComputePSO cmdCreateComputePSO_,
+		std::vector<Microsoft::WRL::ComPtr<ID3D12PipelineState>>* psoContainer_
 	);
 
 	~Assembler();
 
-	Microsoft::WRL::ComPtr<ID3D12PipelineState> AssembleGraphicsPSO
+	ID3D12PipelineState* AssembleGraphicsPSO
 	(
 		PipelineStateDesc::Graphics& srcDesc_,
 		ID3D12RootSignature* rootSignature_,
@@ -33,7 +34,6 @@ private:
 	CommandCreateGraphicsPSO cmdCreateGraphicsPSO;
 	CommandCreateComputePSO cmdCreateComputePSO;
 
-
 	//要項チェック
 	void Check
 	(
@@ -46,6 +46,8 @@ private:
 	CD3DX12_RT_FORMAT_ARRAY SummarizeRenderTargetFormatInfo(const PipelineStateDesc::RenderTargetDesc& renderTargetDesc_)const;
 	//シェーダーバイトコード作成
 	MS_PS CreateShaderByteCode(PipelineStateDesc::ShaderSet& shaderSet_);
+
+	std::vector<Microsoft::WRL::ComPtr<ID3D12PipelineState>>* psoContainer;
 
 };
 
