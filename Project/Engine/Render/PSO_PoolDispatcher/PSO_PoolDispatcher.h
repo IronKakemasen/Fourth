@@ -12,6 +12,9 @@ public:
 		std::vector<ID3D12PipelineState*>* graphicsPSO_pool_
 	);
 	
+	//psoを渡す
+
+
 
 private:
 	std::vector<ID3D12PipelineState*>* graphicsPSO_pool;

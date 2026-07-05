@@ -6,21 +6,21 @@ namespace
 }
 
 using namespace RenderPathBluePrint;
-using namespace RenderPathComponent;
+using namespace ShaderPathComponent;
 
 
 template<>
 std::string ShaderTable::Watch
 (
 	MeshType meshType_,
-	PathType pathType_
+	Pass pathType_
 )
 {
 	std::string shaderKey{};
 
 	switch (pathType_)
 	{
-	case PathType::kBasic:
+	case Pass::kBasic:
 
 		if (meshType_ == MeshType::kTest) shaderKey = "TestMS";
 
@@ -41,14 +41,14 @@ template<>
 std::string ShaderTable::Watch
 (
 	MaterialType materialType_,
-	PathType pathType_
+	Pass pathType_
 )
 {
 	std::string shaderKey{};
 
 	switch (pathType_)
 	{
-	case PathType::kBasic:
+	case Pass::kBasic:
 
 		if (materialType_ == MaterialType::kTest) shaderKey = "TestPS";
 

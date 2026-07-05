@@ -1,7 +1,7 @@
 #pragma once
 
 
-namespace RenderPathComponent
+namespace ShaderPathComponent
 {
 	enum class MeshType
 	{
@@ -15,7 +15,7 @@ namespace RenderPathComponent
 		kStandard,
 	};
 
-	enum class PathType
+	enum class Pass
 	{
 		kBasic,
 

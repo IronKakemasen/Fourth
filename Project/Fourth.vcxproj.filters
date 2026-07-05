@@ -333,13 +333,13 @@
     <ClCompile Include="Engine\Render\RenderPathStructure\RenderPath.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="Engine\Render\RenderPathStructure\RenderPathBluePrint.cpp">
-      <Filter>ソース ファイル</Filter>
-    </ClCompile>
     <ClCompile Include="Engine\Resource\RootSignature\RootSignatureLibrary\RootSignatureLibrary.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
     <ClCompile Include="Engine\Render\PSO_PoolDispatcher\PSO_PoolDispatcher.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\Render\RenderPathStructure\RenderPathBluePrint\RenderPathBluePrint.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
   </ItemGroup>
@@ -608,16 +608,10 @@
     <ClInclude Include="Engine\Resource\Shader\ShaderLibrary\ShaderLibrary.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\Render\RenderPathStructure\RenderPathComponent.h">
-      <Filter>ヘッダー ファイル</Filter>
-    </ClInclude>
     <ClInclude Include="Engine\Resource\PSO\PSO_Context.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
     <ClInclude Include="Engine\Resource\PSO\PSO_Assembler\PSO_Assembler.h">
-      <Filter>ヘッダー ファイル</Filter>
-    </ClInclude>
-    <ClInclude Include="Engine\Resource\PSO\RenderStateComponent.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
     <ClInclude Include="Engine\Resource\PSO\PSO_Assembler\ToolCreatePSO\CreateDepthStencilDesc\CreateDepthStencilDesc.h">
@@ -630,9 +624,6 @@
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
     <ClInclude Include="Engine\Resource\PSO\PSO_Assembler\PipelineStateDesc.h">
-      <Filter>ヘッダー ファイル</Filter>
-    </ClInclude>
-    <ClInclude Include="Engine\Resource\PSO\RenderStates.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
     <ClInclude Include="Engine\Core\Device\Commands\CreatePSO\CommandCreatePSO.h">
@@ -680,9 +671,6 @@
     <ClInclude Include="Engine\Render\RenderPathStructure\RenderPathDesc.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\Render\RenderPathStructure\RenderPathBluePrint.h">
-      <Filter>ヘッダー ファイル</Filter>
-    </ClInclude>
     <ClInclude Include="Engine\Resource\RootSignature\RootSignatureLibrary\RootSignatureLibrary.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
@@ -690,6 +678,18 @@
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
     <ClInclude Include="Engine\Render\PSO_PoolDispatcher\PSO_PoolDispatcher.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Render\RenderPathStructure\RenderStateComponent.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Render\RenderStates.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Render\RenderPathStructure\ShaderPathComponent.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Render\RenderPathStructure\RenderPathBluePrint\RenderPathBluePrint.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
   </ItemGroup>

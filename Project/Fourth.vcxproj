@@ -44,6 +44,14 @@
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <IntDir>$(SolutionDir)..\Generated\obj\$(ProjectName)\$(Configuration)\</IntDir>
+    <OutDir>$(SolutionDir)..\Generated\outputs\$(Configuration)\</OutDir>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <IntDir>$(SolutionDir)..\Generated\obj\$(ProjectName)\$(Configuration)\</IntDir>
+    <OutDir>$(SolutionDir)..\Generated\outputs\$(Configuration)\</OutDir>
+  </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
@@ -90,7 +98,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="Engine\Render\RenderPathStructure\RenderPathBluePrint.cpp" />
+    <ClCompile Include="Engine\Render\RenderPathStructure\RenderPathBluePrint\RenderPathBluePrint.cpp" />
     <ClCompile Include="Engine\Resource\RootSignature\RootSignatureAssembler\ToolCreateRootSignature\CreateRootParam\CreateRootParam.cpp" />
     <ClCompile Include="Engine\Resource\RootSignature\RootSignatureAssembler\ToolCreateRootSignature\CreateStaticSamplerDesc\CreateStaticSamplerDesc.cpp" />
     <ClCompile Include="Engine\Core\Device\Commands\CreateRootSignature\CommandCreateRootSignature.cpp" />
@@ -322,9 +330,9 @@
     <ClInclude Include="Engine\Resource\PSO\PSO_Assembler\PipelineStateDesc.h" />
     <ClInclude Include="Engine\Debug\ErrorMessageOutput\ErrorMessageOutput.h" />
     <ClInclude Include="Engine\Resource\Buffer\ResourceBarrier.h" />
-    <ClInclude Include="Engine\Resource\PSO\RenderStateComponent.h" />
-    <ClInclude Include="Engine\Resource\PSO\RenderStates.h" />
-    <ClInclude Include="Engine\Render\RenderPathStructure\RenderPathComponent.h" />
+    <ClInclude Include="Engine\Render\RenderPathStructure\RenderStateComponent.h" />
+    <ClInclude Include="Engine\Render\RenderStates.h" />
+    <ClInclude Include="Engine\Render\RenderPathStructure\ShaderPathComponent.h" />
     <ClInclude Include="Engine\Resource\RootSignature\RootSignatureAssembler\RootSignatureLayoutComponent.h" />
     <ClInclude Include="External\Audio\SoundCommon.h" />
     <ClInclude Include="External\Audio\xaudio_player_core.h" />
@@ -386,7 +394,7 @@
     <ClInclude Include="Engine\Render\RenderPathStructure\RenderPathComposer\RenderPathComposer.h" />
     <ClInclude Include="Engine\Render\RenderPathStructure\RenderPathComposer\ShaderCombiner\ShaderCombiner.h" />
     <ClInclude Include="Engine\Render\RenderPathStructure\RenderPath.h" />
-    <ClInclude Include="Engine\Render\RenderPathStructure\RenderPathBluePrint.h" />
+    <ClInclude Include="Engine\Render\RenderPathStructure\RenderPathBluePrint\RenderPathBluePrint.h" />
     <ClInclude Include="Engine\Resource\RootSignature\RootSignatureLibrary\RootSignatureLibrary.h" />
     <ClInclude Include="Engine\Render\PSO_PoolDispatcher\PSO_PoolDispatcher.h" />
   </ItemGroup>

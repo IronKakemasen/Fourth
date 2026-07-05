@@ -1,5 +1,5 @@
 #pragma once
-#include "RenderPathComponent.h"
+#include "../ShaderPathComponent.h"
 
 
 ///レンダーパスの設計図
@@ -9,7 +9,7 @@ namespace RenderPathBluePrint
 	struct ShaderTable
 	{
 		template<typename ShaderComponent>
-		std::string Watch(ShaderComponent shaderComponent_, RenderPathComponent::PathType pathType_);
+		std::string Watch(ShaderComponent shaderComponent_, ShaderPathComponent::Pass pathType_);
 
 	};
 
@@ -21,13 +21,13 @@ namespace RenderPathBluePrint
 template<>
 std::string RenderPathBluePrint::ShaderTable::Watch
 (
-	RenderPathComponent::MeshType meshType_,
-	RenderPathComponent::PathType pathType_
+	ShaderPathComponent::MeshType meshType_,
+	ShaderPathComponent::Pass pathType_
 );
 
 template<>
 std::string RenderPathBluePrint::ShaderTable::Watch
 (
-	RenderPathComponent::MaterialType materialType_,
-	RenderPathComponent::PathType pathType_
+	ShaderPathComponent::MaterialType materialType_,
+	ShaderPathComponent::Pass pathType_
 );
