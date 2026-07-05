@@ -18,7 +18,7 @@
     <ClCompile Include="main.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="Engine\Core\Window\WindowContext.cpp">
+    <ClCompile Include="Engine\LowerLayer\Core\Window\WindowContext.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
     <ClCompile Include="External\MeshOptimizer\allocator.cpp">
@@ -84,13 +84,13 @@
     <ClCompile Include="External\Audio\xaudio_player_mf.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="Engine\PreCompileHeader.cpp">
+    <ClCompile Include="Engine\PreCompileHeader\PreCompileHeader.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="Engine\Core\Device\DeviceContext.cpp">
+    <ClCompile Include="Engine\LowerLayer\Core\Device\DeviceContext.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="Engine\Debug\Logger\Logger.cpp">
+    <ClCompile Include="Engine\LowerLayer\Debug\Logger\Logger.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
     <ClCompile Include="Engine\Utility\StringConnverter\StringConverter.cpp">
@@ -105,145 +105,145 @@
     <ClCompile Include="Engine\Math\Vector\Vector2.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="Engine\Resource\Buffer\BufferDefinition\GPUBuffer\ConstantBuffer\ConstantBuffer.cpp">
+    <ClCompile Include="Engine\LowerLayer\Resource\Buffer\BufferDefinition\GPUBuffer\ConstantBuffer\ConstantBuffer.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="Engine\Debug\ErrorMessageOutput\ErrorMessageOutput.cpp">
+    <ClCompile Include="Engine\LowerLayer\Debug\ErrorMessageOutput\ErrorMessageOutput.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="Engine\Resource\Buffer\BufferCreationSystems\ResourceCreator\ResourceCreator.cpp">
+    <ClCompile Include="Engine\LowerLayer\Resource\Buffer\BufferCreationSystems\ResourceCreator\ResourceCreator.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="Engine\Resource\Buffer\BufferDefinition\GPUBuffer\GPUBufferBehavior.cpp">
+    <ClCompile Include="Engine\LowerLayer\Resource\Buffer\BufferDefinition\GPUBuffer\GPUBufferBehavior.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="Engine\Core\SwapChain\SwapChainContext.cpp">
+    <ClCompile Include="Engine\LowerLayer\Core\SwapChain\SwapChainContext.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="Engine\Debug\RuntimeDebugger\DebugSystems\LeakChecker\LeakChecker.cpp">
+    <ClCompile Include="Engine\LowerLayer\Debug\RuntimeDebugger\DebugSystems\LeakChecker\LeakChecker.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="Engine\Debug\RuntimeDebugger\DebugSystems\PointerValidator\PointerValidator.cpp">
+    <ClCompile Include="Engine\LowerLayer\Debug\RuntimeDebugger\DebugSystems\PointerValidator\PointerValidator.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="Engine\Debug\RuntimeDebugger\DebugSystems\RuntimeDebuggerBehavior.cpp">
+    <ClCompile Include="Engine\LowerLayer\Debug\RuntimeDebugger\DebugSystems\RuntimeDebuggerBehavior.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="Engine\Debug\RuntimeDebugger\DebugSystems\DebugLayer\DebugLayer.cpp">
+    <ClCompile Include="Engine\LowerLayer\Debug\RuntimeDebugger\DebugSystems\DebugLayer\DebugLayer.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="Engine\Debug\RuntimeDebugger\RuntimeDebugger.cpp">
+    <ClCompile Include="Engine\LowerLayer\Debug\RuntimeDebugger\RuntimeDebugger.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="Engine\Core\Device\Commands\CreatGPUBuffer\CommandOfCreatingGPUBuffer.cpp">
+    <ClCompile Include="Engine\LowerLayer\Core\Device\Commands\CreatGPUBuffer\CommandOfCreatingGPUBuffer.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="Engine\Resource\Buffer\BufferDefinition\BufferDescriptions\ConstantBufferDescription\ConstantBufferDescription.cpp">
+    <ClCompile Include="Engine\LowerLayer\Resource\Buffer\BufferDefinition\BufferDescriptions\ConstantBufferDescription\ConstantBufferDescription.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="Engine\Resource\Buffer\BufferDefinition\BufferDescriptions\ColorBufferDescription\ColorBufferDescription.cpp">
+    <ClCompile Include="Engine\LowerLayer\Resource\Buffer\BufferDefinition\BufferDescriptions\ColorBufferDescription\ColorBufferDescription.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="Engine\Core\Device\DeviceContextCommandProvider\DeviceContextCommandProvider.cpp">
+    <ClCompile Include="Engine\LowerLayer\Core\Device\DeviceContextCommandProvider\DeviceContextCommandProvider.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="Engine\Core\Device\DeviceSetupper\DeviceContextSetupper.cpp">
+    <ClCompile Include="Engine\LowerLayer\Core\Device\DeviceSetupper\DeviceContextSetupper.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="Engine\Core\Device\Commands\DeviceContextCommandBehavior.cpp">
+    <ClCompile Include="Engine\LowerLayer\Core\Device\Commands\DeviceContextCommandBehavior.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="Engine\Resource\Buffer\BufferDefinition\GPUBuffer\ColorBuffer\ColorBuffer.cpp">
+    <ClCompile Include="Engine\LowerLayer\Resource\Buffer\BufferDefinition\GPUBuffer\ColorBuffer\ColorBuffer.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="Engine\Core\DescriptorHeap\DescriptorHeapContext.cpp">
+    <ClCompile Include="Engine\LowerLayer\Core\DescriptorHeap\DescriptorHeapContext.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="Engine\Core\DescriptorHeap\ViewCreator\ViewCreator.cpp">
+    <ClCompile Include="Engine\LowerLayer\Core\DescriptorHeap\ViewCreator\ViewCreator.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="Engine\Core\DescriptorHeap\DescriptorHeapCreator\DescriptorHeapCreator.cpp">
+    <ClCompile Include="Engine\LowerLayer\Core\DescriptorHeap\DescriptorHeapCreator\DescriptorHeapCreator.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="Engine\Core\Device\Commands\CreateDescriptorHeap\CommandCreateDescriptorHeap.cpp">
+    <ClCompile Include="Engine\LowerLayer\Core\Device\Commands\CreateDescriptorHeap\CommandCreateDescriptorHeap.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="Engine\Core\DescriptorHeap\DescriptorHeapPool\DescriptorHeapPool.cpp">
+    <ClCompile Include="Engine\LowerLayer\Core\DescriptorHeap\DescriptorHeapPool\DescriptorHeapPool.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="Engine\Core\Device\Commands\CreateView\CommandCreateView.cpp">
+    <ClCompile Include="Engine\LowerLayer\Core\Device\Commands\CreateView\CommandCreateView.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="Engine\Resource\Buffer\BufferDefinition\GPUBuffer\ComputeBuffer\ComputeBuffer.cpp">
+    <ClCompile Include="Engine\LowerLayer\Resource\Buffer\BufferDefinition\GPUBuffer\ComputeBuffer\ComputeBuffer.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="Engine\Resource\Buffer\BufferDefinition\BufferDescriptions\ComputeBufferDescription\ComputeBufferDescription.cpp">
+    <ClCompile Include="Engine\LowerLayer\Resource\Buffer\BufferDefinition\BufferDescriptions\ComputeBufferDescription\ComputeBufferDescription.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="Engine\Resource\Buffer\BufferDefinition\BufferDescriptions\DepthStencilBufferDescription\DepthStencilBufferDescription.cpp">
+    <ClCompile Include="Engine\LowerLayer\Resource\Buffer\BufferDefinition\BufferDescriptions\DepthStencilBufferDescription\DepthStencilBufferDescription.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="Engine\Resource\Buffer\BufferContext.cpp">
+    <ClCompile Include="Engine\LowerLayer\Resource\Buffer\BufferContext.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="Engine\Resource\Buffer\BufferDefinition\GPUBuffer\DepthStencilBuffer\DepthStencilBuffer.cpp">
+    <ClCompile Include="Engine\LowerLayer\Resource\Buffer\BufferDefinition\GPUBuffer\DepthStencilBuffer\DepthStencilBuffer.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="Engine\Resource\Buffer\BufferCreationSystems\BufferAssembler\BufferAssembler.cpp">
+    <ClCompile Include="Engine\LowerLayer\Resource\Buffer\BufferCreationSystems\BufferAssembler\BufferAssembler.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="Engine\Resource\Buffer\BufferDefinition\BufferDescriptions\BufferDescriptionBehavior.cpp">
+    <ClCompile Include="Engine\LowerLayer\Resource\Buffer\BufferDefinition\BufferDescriptions\BufferDescriptionBehavior.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="Engine\Core\Device\Commands\StructureSwapChain\CommandStructureSwapChain.cpp">
+    <ClCompile Include="Engine\LowerLayer\Core\Device\Commands\StructureSwapChain\CommandStructureSwapChain.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="Engine\Core\SwapChain\SwapChainColorBuffer\SwapChainColorBuffer.cpp">
+    <ClCompile Include="Engine\LowerLayer\Core\SwapChain\SwapChainColorBuffer\SwapChainColorBuffer.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="Engine\Core\Command\CommandContext.cpp">
+    <ClCompile Include="Engine\LowerLayer\Core\Command\CommandContext.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="Engine\Core\Device\Commands\StructureCommandContext\CommandStructureCommandContext.cpp">
+    <ClCompile Include="Engine\LowerLayer\Core\Device\Commands\StructureCommandContext\CommandStructureCommandContext.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="Engine\Core\SwapChain\Presenter\Presenter.cpp">
+    <ClCompile Include="Engine\LowerLayer\Core\SwapChain\Presenter\Presenter.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="Engine\Core\SwapChain\RenderPassMaterialProvider\RenderPassMaterialProvider.cpp">
+    <ClCompile Include="Engine\LowerLayer\Core\SwapChain\RenderPassMaterialProvider\RenderPassMaterialProvider.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="Engine\Core\Command\CommandExecutor\CommandExecutor.cpp">
+    <ClCompile Include="Engine\LowerLayer\Core\Command\CommandExecutor\CommandExecutor.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="Engine\Core\Device\Commands\CreateFenceObject\CommandCreateFenceObject.cpp">
+    <ClCompile Include="Engine\LowerLayer\Core\Device\Commands\CreateFenceObject\CommandCreateFenceObject.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="Engine\Core\Command\Synchronizer\Synchronizer.cpp">
+    <ClCompile Include="Engine\LowerLayer\Core\Command\Synchronizer\Synchronizer.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="Engine\Core\Command\RuntimeWrapper\RuntimeWrapper.cpp">
+    <ClCompile Include="Engine\LowerLayer\Core\Command\RuntimeWrapper\RuntimeWrapper.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="Engine\Core\Command\ResourceUploader\ResourceUploader.cpp">
+    <ClCompile Include="Engine\LowerLayer\Core\Command\ResourceUploader\ResourceUploader.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="Engine\Core\Device\DeviceContextCommandExecutor\DeviceContextCommandExecutor.cpp">
+    <ClCompile Include="Engine\LowerLayer\Core\Device\DeviceContextCommandExecutor\DeviceContextCommandExecutor.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="Engine\Resource\Buffer\BufferDefinition\GPUBuffer\UploadStructuredBuffer\UploadStructuredBuffer.cpp">
+    <ClCompile Include="Engine\LowerLayer\Resource\Buffer\BufferDefinition\GPUBuffer\UploadStructuredBuffer\UploadStructuredBuffer.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="Engine\Resource\Buffer\BufferDefinition\BufferDescriptions\UploadStructuredBufferDescription\UploadStructuredBufferDescription.cpp">
+    <ClCompile Include="Engine\LowerLayer\Resource\Buffer\BufferDefinition\BufferDescriptions\UploadStructuredBufferDescription\UploadStructuredBufferDescription.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="Engine\Resource\Buffer\BufferCreationSystems\BufferCreator\BufferCreator.cpp">
+    <ClCompile Include="Engine\LowerLayer\Resource\Buffer\BufferCreationSystems\BufferCreator\BufferCreator.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="Engine\Resource\Buffer\BufferCreationSystems\BufferCollector\BufferCollector.cpp">
+    <ClCompile Include="Engine\LowerLayer\Resource\Buffer\BufferCreationSystems\BufferCollector\BufferCollector.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="Engine\Core\Command\RuntimeCommandControler\RuntimeCommandControler.cpp">
+    <ClCompile Include="Engine\LowerLayer\Core\Command\RuntimeCommandControler\RuntimeCommandControler.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
     <ClCompile Include="Engine\NexusRun.cpp">
@@ -252,99 +252,99 @@
     <ClCompile Include="Engine\Nexus.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="Engine\Resource\Buffer\BufferDefinition\GPUBuffer\BufferInterface.cpp">
+    <ClCompile Include="Engine\LowerLayer\Resource\Buffer\BufferDefinition\GPUBuffer\BufferInterface.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="Engine\Resource\Buffer\RuntimeBufferManagementSystems\BufferInfoExtractors\ComputeBufferInfoExtractor\ComputeBufferInfoExtractor.cpp">
+    <ClCompile Include="Engine\LowerLayer\Resource\Buffer\RuntimeBufferManagementSystems\BufferInfoExtractors\ComputeBufferInfoExtractor\ComputeBufferInfoExtractor.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="Engine\Resource\Buffer\RuntimeBufferManagementSystems\BufferDeferredReleaser\BufferDeferredReleaser.cpp">
+    <ClCompile Include="Engine\LowerLayer\Resource\Buffer\RuntimeBufferManagementSystems\BufferDeferredReleaser\BufferDeferredReleaser.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="Engine\Resource\Buffer\RuntimeBufferManagementSystems\BufferInfoExtractors\FrameBufferedBufferInfoExtractor\FrameBufferedBufferInfoExtractor.cpp">
+    <ClCompile Include="Engine\LowerLayer\Resource\Buffer\RuntimeBufferManagementSystems\BufferInfoExtractors\FrameBufferedBufferInfoExtractor\FrameBufferedBufferInfoExtractor.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="Engine\Resource\Buffer\RuntimeBufferManagementSystems\BufferInfoExtractors\RenderTargetBufferInfoExtractor\RenderTargetBufferInfoExtractor.cpp">
+    <ClCompile Include="Engine\LowerLayer\Resource\Buffer\RuntimeBufferManagementSystems\BufferInfoExtractors\RenderTargetBufferInfoExtractor\RenderTargetBufferInfoExtractor.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="Engine\Render\RenderContext.cpp">
+    <ClCompile Include="Engine\LowerLayer\Render\RenderContext.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="Engine\Render\RuntimeRenderingManagementSystems\ModelRenderingInfoOrganizer\ModelRenderingInfoOrganizer.cpp">
+    <ClCompile Include="Engine\LowerLayer\Render\RuntimeRenderingManagementSystems\ModelRenderingInfoOrganizer\ModelRenderingInfoOrganizer.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="Engine\Resource\Buffer\RuntimeBufferManagementSystems\BufferDispatcher\BufferDispatcher.cpp">
+    <ClCompile Include="Engine\LowerLayer\Resource\Buffer\RuntimeBufferManagementSystems\BufferDispatcher\BufferDispatcher.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="Engine\Resource\Shader\ShaderContext.cpp">
+    <ClCompile Include="Engine\LowerLayer\Resource\Shader\ShaderContext.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="Engine\Resource\Shader\ShaderCompiler\ShaderCompiler.cpp">
+    <ClCompile Include="Engine\LowerLayer\Resource\Shader\ShaderCompiler\ShaderCompiler.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="Engine\Resource\Shader\ShaderLibrary\ShaderLibrary.cpp">
+    <ClCompile Include="Engine\LowerLayer\Resource\Shader\ShaderLibrary\ShaderLibrary.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="Engine\Resource\PSO\PSO_Context.cpp">
+    <ClCompile Include="Engine\LowerLayer\Resource\PSO\PSO_Context.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="Engine\Resource\PSO\PSO_Assembler\PSO_Assembler.cpp">
+    <ClCompile Include="Engine\LowerLayer\Resource\PSO\PSO_Assembler\PSO_Assembler.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="Engine\Resource\PSO\PSO_Assembler\ToolCreatePSO\CreateDepthStencilDesc\CreateDepthStencilDesc.cpp">
+    <ClCompile Include="Engine\LowerLayer\Resource\PSO\PSO_Assembler\ToolCreatePSO\CreateDepthStencilDesc\CreateDepthStencilDesc.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="Engine\Resource\PSO\PSO_Assembler\ToolCreatePSO\CreateBlendDesc\CreateBlendDesc.cpp">
+    <ClCompile Include="Engine\LowerLayer\Resource\PSO\PSO_Assembler\ToolCreatePSO\CreateBlendDesc\CreateBlendDesc.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="Engine\Resource\PSO\PSO_Assembler\ToolCreatePSO\CreateRasterizerDesc\CreateRasterizerDesc.cpp">
+    <ClCompile Include="Engine\LowerLayer\Resource\PSO\PSO_Assembler\ToolCreatePSO\CreateRasterizerDesc\CreateRasterizerDesc.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="Engine\Core\Device\Commands\CreatePSO\CommandCreatePSO.cpp">
+    <ClCompile Include="Engine\LowerLayer\Core\Device\Commands\CreatePSO\CommandCreatePSO.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="Engine\Resource\PSO\PSO_Assembler\ToolCreatePSO\CreateSampleDesc\CreateSampleDesc.cpp">
+    <ClCompile Include="Engine\LowerLayer\Resource\PSO\PSO_Assembler\ToolCreatePSO\CreateSampleDesc\CreateSampleDesc.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="Engine\Core\Device\Commands\CreateRootSignature\CommandCreateRootSignature.cpp">
+    <ClCompile Include="Engine\LowerLayer\Core\Device\Commands\CreateRootSignature\CommandCreateRootSignature.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="Engine\Resource\RootSignature\RootSignatureContext.cpp">
+    <ClCompile Include="Engine\LowerLayer\Resource\RootSignature\RootSignatureContext.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="Engine\Resource\RootSignature\RootSignatureAssembler\RootSignatureAssembler.cpp">
+    <ClCompile Include="Engine\LowerLayer\Resource\RootSignature\RootSignatureAssembler\RootSignatureAssembler.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="Engine\Resource\RootSignature\RootSignatureAssembler\ToolCreateRootSignature\CreateStaticSamplerDesc\CreateStaticSamplerDesc.cpp">
+    <ClCompile Include="Engine\LowerLayer\Resource\RootSignature\RootSignatureAssembler\ToolCreateRootSignature\CreateStaticSamplerDesc\CreateStaticSamplerDesc.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="Engine\Resource\RootSignature\RootSignatureAssembler\ToolCreateRootSignature\CreateRootParam\CreateRootParam.cpp">
+    <ClCompile Include="Engine\LowerLayer\Resource\RootSignature\RootSignatureAssembler\ToolCreateRootSignature\CreateRootParam\CreateRootParam.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="Engine\Resource\PSO\PSO_Assembler\ToolCreatePSO\PSO_InfoOutputter\PSO_InfoOutputter.cpp">
+    <ClCompile Include="Engine\LowerLayer\Resource\PSO\PSO_Assembler\ToolCreatePSO\PSO_InfoOutputter\PSO_InfoOutputter.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="Engine\Render\RenderPathStructure\RenderPathComposer\RenderPathComposer.cpp">
+    <ClCompile Include="Engine\LowerLayer\Render\RenderPathStructure\RenderPathComposer\RenderPathComposer.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="Engine\Render\RenderPathStructure\RenderPathComposer\ShaderCombiner\ShaderCombiner.cpp">
+    <ClCompile Include="Engine\LowerLayer\Render\RenderPathStructure\RenderPathComposer\ShaderCombiner\ShaderCombiner.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="Engine\Render\RenderPathStructure\RenderPath.cpp">
+    <ClCompile Include="Engine\LowerLayer\Render\RenderPathStructure\RenderPath.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="Engine\Resource\RootSignature\RootSignatureLibrary\RootSignatureLibrary.cpp">
+    <ClCompile Include="Engine\LowerLayer\Resource\RootSignature\RootSignatureLibrary\RootSignatureLibrary.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="Engine\Render\PSO_PoolDispatcher\PSO_PoolDispatcher.cpp">
+    <ClCompile Include="Engine\LowerLayer\Render\PSO_PoolDispatcher\PSO_PoolDispatcher.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="Engine\Render\RenderPathStructure\RenderPathBluePrint\RenderPathBluePrint.cpp">
+    <ClCompile Include="Engine\LowerLayer\Render\RenderPathStructure\RenderPathBluePrint\RenderPathBluePrint.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Engine\Core\Window\WindowContext.h">
+    <ClInclude Include="Engine\LowerLayer\Core\Window\WindowContext.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
     <ClInclude Include="External\MeshOptimizer\meshoptimizer.h">
@@ -365,7 +365,7 @@
     <ClInclude Include="External\nlohmann\json_fwd.hpp">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\PreCompileHeader.h">
+    <ClInclude Include="Engine\PreCompileHeader\PreCompileHeader.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
     <ClInclude Include="External\d3dx12\d3dx12.h">
@@ -401,10 +401,10 @@
     <ClInclude Include="External\d3dx12\d3dx12_state_object.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\Core\Device\DeviceContext.h">
+    <ClInclude Include="Engine\LowerLayer\Core\Device\DeviceContext.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\Debug\Logger\Logger.h">
+    <ClInclude Include="Engine\LowerLayer\Debug\Logger\Logger.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
     <ClInclude Include="Engine\Utility\StringConnverter\StringConverter.h">
@@ -419,277 +419,283 @@
     <ClInclude Include="Engine\Math\Vector\Vector2.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\Resource\Buffer\BufferDefinition\GPUBuffer\ConstantBuffer\ConstantBuffer.h">
+    <ClInclude Include="Engine\LowerLayer\Resource\Buffer\BufferDefinition\GPUBuffer\ConstantBuffer\ConstantBuffer.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\Debug\ErrorMessageOutput\ErrorMessageOutput.h">
+    <ClInclude Include="Engine\LowerLayer\Debug\ErrorMessageOutput\ErrorMessageOutput.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\Core\SwapChain\SwapChainContext.h">
+    <ClInclude Include="Engine\LowerLayer\Core\SwapChain\SwapChainContext.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\Resource\Buffer\BufferCreationSystems\ResourceCreator\ResourceCreator.h">
+    <ClInclude Include="Engine\LowerLayer\Resource\Buffer\BufferCreationSystems\ResourceCreator\ResourceCreator.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\Resource\Buffer\BufferDefinition\GPUBuffer\GPUBufferBehavior.h">
+    <ClInclude Include="Engine\LowerLayer\Resource\Buffer\BufferDefinition\GPUBuffer\GPUBufferBehavior.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\Debug\RuntimeDebugger\DebugSystems\LeakChecker\LeakChecker.h">
+    <ClInclude Include="Engine\LowerLayer\Debug\RuntimeDebugger\DebugSystems\LeakChecker\LeakChecker.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\Debug\RuntimeDebugger\DebugSystems\PointerValidator\PointerValidator.h">
+    <ClInclude Include="Engine\LowerLayer\Debug\RuntimeDebugger\DebugSystems\PointerValidator\PointerValidator.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\Debug\RuntimeDebugger\DebugSystems\RuntimeDebuggerBehavior.h">
+    <ClInclude Include="Engine\LowerLayer\Debug\RuntimeDebugger\DebugSystems\RuntimeDebuggerBehavior.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\Debug\RuntimeDebugger\DebugSystems\DebugLayer\DebugLayer.h">
+    <ClInclude Include="Engine\LowerLayer\Debug\RuntimeDebugger\DebugSystems\DebugLayer\DebugLayer.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\Debug\RuntimeDebugger\RuntimeDebugger.h">
+    <ClInclude Include="Engine\LowerLayer\Debug\RuntimeDebugger\RuntimeDebugger.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\Core\Window\DumpExporter.h">
+    <ClInclude Include="Engine\LowerLayer\Core\Window\DumpExporter.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\Resource\Buffer\BufferDefinition\BufferDescriptions\BufferDescriptionBehavior.h">
+    <ClInclude Include="Engine\LowerLayer\Resource\Buffer\BufferDefinition\BufferDescriptions\BufferDescriptionBehavior.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\Resource\Buffer\BufferDefinition\BufferDescriptions\ConstantBufferDescription\ConstantBufferDescription.h">
+    <ClInclude Include="Engine\LowerLayer\Resource\Buffer\BufferDefinition\BufferDescriptions\ConstantBufferDescription\ConstantBufferDescription.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\Resource\Buffer\BufferDefinition\BufferDescriptions\ColorBufferDescription\ColorBufferDescription.h">
+    <ClInclude Include="Engine\LowerLayer\Resource\Buffer\BufferDefinition\BufferDescriptions\ColorBufferDescription\ColorBufferDescription.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\Core\Device\DeviceContextCommandProvider\DeviceContextCommandProvider.h">
+    <ClInclude Include="Engine\LowerLayer\Core\Device\DeviceContextCommandProvider\DeviceContextCommandProvider.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\Core\Device\DeviceSetupper\DeviceContextSetupper.h">
+    <ClInclude Include="Engine\LowerLayer\Core\Device\DeviceSetupper\DeviceContextSetupper.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\Core\Device\Commands\CreatGPUBuffer\CommandOfCreatingGPUBuffer.h">
+    <ClInclude Include="Engine\LowerLayer\Core\Device\Commands\CreatGPUBuffer\CommandOfCreatingGPUBuffer.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\Core\Device\Commands\DeviceContextCommandBehavior.h">
+    <ClInclude Include="Engine\LowerLayer\Core\Device\Commands\DeviceContextCommandBehavior.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\Resource\Buffer\BufferDefinition\GPUBuffer\ColorBuffer\ColorBuffer.h">
+    <ClInclude Include="Engine\LowerLayer\Resource\Buffer\BufferDefinition\GPUBuffer\ColorBuffer\ColorBuffer.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\Core\DescriptorHeap\DescriptorHeapContext.h">
+    <ClInclude Include="Engine\LowerLayer\Core\DescriptorHeap\DescriptorHeapContext.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\Core\DescriptorHeap\ViewCreator\ViewCreator.h">
+    <ClInclude Include="Engine\LowerLayer\Core\DescriptorHeap\ViewCreator\ViewCreator.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\Core\DescriptorHeap\DescriptorHeapCreator\DescriptorHeapCreator.h">
+    <ClInclude Include="Engine\LowerLayer\Core\DescriptorHeap\DescriptorHeapCreator\DescriptorHeapCreator.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\Core\Device\Commands\CreateDescriptorHeap\CommandCreateDescriptorHeap.h">
+    <ClInclude Include="Engine\LowerLayer\Core\Device\Commands\CreateDescriptorHeap\CommandCreateDescriptorHeap.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\Core\DescriptorHeap\DescriptorHeapPool\DescriptorHeapPool.h">
+    <ClInclude Include="Engine\LowerLayer\Core\DescriptorHeap\DescriptorHeapPool\DescriptorHeapPool.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\Core\Device\Commands\CreateView\CommandCreateView.h">
+    <ClInclude Include="Engine\LowerLayer\Core\Device\Commands\CreateView\CommandCreateView.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\Resource\Buffer\BufferDefinition\GPUBuffer\ComputeBuffer\ComputeBuffer.h">
+    <ClInclude Include="Engine\LowerLayer\Resource\Buffer\BufferDefinition\GPUBuffer\ComputeBuffer\ComputeBuffer.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\Resource\Buffer\BufferDefinition\BufferDescriptions\ComputeBufferDescription\ComputeBufferDescription.h">
+    <ClInclude Include="Engine\LowerLayer\Resource\Buffer\BufferDefinition\BufferDescriptions\ComputeBufferDescription\ComputeBufferDescription.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\Resource\Buffer\BufferDefinition\BufferDescriptions\DepthStencilBufferDescription\DepthStencilBufferDescription.h">
+    <ClInclude Include="Engine\LowerLayer\Resource\Buffer\BufferDefinition\BufferDescriptions\DepthStencilBufferDescription\DepthStencilBufferDescription.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\Resource\Buffer\BufferContext.h">
+    <ClInclude Include="Engine\LowerLayer\Resource\Buffer\BufferContext.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\Resource\Buffer\BufferDefinition\GPUBuffer\DepthStencilBuffer\DepthStencilBuffer.h">
+    <ClInclude Include="Engine\LowerLayer\Resource\Buffer\BufferDefinition\GPUBuffer\DepthStencilBuffer\DepthStencilBuffer.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\Resource\Buffer\BufferCreationSystems\BufferAssembler\BufferAssembler.h">
+    <ClInclude Include="Engine\LowerLayer\Resource\Buffer\BufferCreationSystems\BufferAssembler\BufferAssembler.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\Core\Device\Commands\StructureSwapChain\CommandStructureSwapChain.h">
+    <ClInclude Include="Engine\LowerLayer\Core\Device\Commands\StructureSwapChain\CommandStructureSwapChain.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\Core\SwapChain\SwapChainColorBuffer\SwapChainColorBuffer.h">
+    <ClInclude Include="Engine\LowerLayer\Core\SwapChain\SwapChainColorBuffer\SwapChainColorBuffer.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\Core\Command\CommandContext.h">
+    <ClInclude Include="Engine\LowerLayer\Core\Command\CommandContext.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\Core\Device\Commands\StructureCommandContext\CommandStructureCommandContext.h">
+    <ClInclude Include="Engine\LowerLayer\Core\Device\Commands\StructureCommandContext\CommandStructureCommandContext.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\Core\SwapChain\Presenter\Presenter.h">
+    <ClInclude Include="Engine\LowerLayer\Core\SwapChain\Presenter\Presenter.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\Core\SwapChain\RenderPassMaterialProvider\RenderPassMaterialProvider.h">
+    <ClInclude Include="Engine\LowerLayer\Core\SwapChain\RenderPassMaterialProvider\RenderPassMaterialProvider.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\Resource\Buffer\ResourceBarrier.h">
+    <ClInclude Include="Engine\LowerLayer\Resource\Buffer\ResourceBarrier.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\Core\Command\CommandExecutor\CommandExecutor.h">
+    <ClInclude Include="Engine\LowerLayer\Core\Command\CommandExecutor\CommandExecutor.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\Core\Device\Commands\CreateFenceObject\CommandCreateFenceObject.h">
+    <ClInclude Include="Engine\LowerLayer\Core\Device\Commands\CreateFenceObject\CommandCreateFenceObject.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\Core\Command\Synchronizer\Synchronizer.h">
+    <ClInclude Include="Engine\LowerLayer\Core\Command\Synchronizer\Synchronizer.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\Core\Command\RuntimeWrapper\RuntimeWrapper.h">
+    <ClInclude Include="Engine\LowerLayer\Core\Command\RuntimeWrapper\RuntimeWrapper.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\Core\Command\ResourceUploader\ResourceUploader.h">
+    <ClInclude Include="Engine\LowerLayer\Core\Command\ResourceUploader\ResourceUploader.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\Core\Device\DeviceContextCommandExecutor\DeviceContextCommandExecutor.h">
+    <ClInclude Include="Engine\LowerLayer\Core\Device\DeviceContextCommandExecutor\DeviceContextCommandExecutor.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\Resource\Buffer\BufferDefinition\GPUBuffer\UploadStructuredBuffer\UploadStructuredBuffer.h">
+    <ClInclude Include="Engine\LowerLayer\Resource\Buffer\BufferDefinition\GPUBuffer\UploadStructuredBuffer\UploadStructuredBuffer.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\Resource\Buffer\BufferDefinition\BufferDescriptions\UploadStructuredBufferDescription\UploadStructuredBufferDescription.h">
+    <ClInclude Include="Engine\LowerLayer\Resource\Buffer\BufferDefinition\BufferDescriptions\UploadStructuredBufferDescription\UploadStructuredBufferDescription.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\Resource\Buffer\BufferCreationSystems\BufferCreator\BufferCreator.h">
+    <ClInclude Include="Engine\LowerLayer\Resource\Buffer\BufferCreationSystems\BufferCreator\BufferCreator.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\Resource\Buffer\BufferCreationSystems\BufferCollector\BufferCollector.h">
+    <ClInclude Include="Engine\LowerLayer\Resource\Buffer\BufferCreationSystems\BufferCollector\BufferCollector.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\Core\Command\RuntimeCommandControler\RuntimeCommandControler.h">
+    <ClInclude Include="Engine\LowerLayer\Core\Command\RuntimeCommandControler\RuntimeCommandControler.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
     <ClInclude Include="Engine\Nexus.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\Resource\Buffer\BufferDefinition\GPUBuffer\BufferInterface.h">
+    <ClInclude Include="Engine\LowerLayer\Resource\Buffer\BufferDefinition\GPUBuffer\BufferInterface.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\Resource\Buffer\RuntimeBufferManagementSystems\BufferInfoExtractors\ComputeBufferInfoExtractor\ComputeBufferInfoExtractor.h">
+    <ClInclude Include="Engine\LowerLayer\Resource\Buffer\RuntimeBufferManagementSystems\BufferInfoExtractors\ComputeBufferInfoExtractor\ComputeBufferInfoExtractor.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\Resource\Buffer\RuntimeBufferManagementSystems\BufferDeferredReleaser\BufferDeferredReleaser.h">
+    <ClInclude Include="Engine\LowerLayer\Resource\Buffer\RuntimeBufferManagementSystems\BufferDeferredReleaser\BufferDeferredReleaser.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
     <ClInclude Include="Engine\Math\Matrix\Matrix4x4.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\Resource\Buffer\RuntimeBufferManagementSystems\BufferInfoExtractors\RenderTargetBufferInfoExtractor\RenderTargetBufferInfoExtractor.h">
+    <ClInclude Include="Engine\LowerLayer\Resource\Buffer\RuntimeBufferManagementSystems\BufferInfoExtractors\RenderTargetBufferInfoExtractor\RenderTargetBufferInfoExtractor.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\Resource\Buffer\RuntimeBufferManagementSystems\BufferInfoExtractors\FrameBufferedBufferInfoExtractor\FrameBufferedBufferInfoExtractor.h">
+    <ClInclude Include="Engine\LowerLayer\Resource\Buffer\RuntimeBufferManagementSystems\BufferInfoExtractors\FrameBufferedBufferInfoExtractor\FrameBufferedBufferInfoExtractor.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\Render\RenderContext.h">
+    <ClInclude Include="Engine\LowerLayer\Render\RenderContext.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\Render\RuntimeRenderingManagementSystems\ModelRenderingInfoOrganizer\ModelRenderingInfoOrganizer.h">
+    <ClInclude Include="Engine\LowerLayer\Render\RuntimeRenderingManagementSystems\ModelRenderingInfoOrganizer\ModelRenderingInfoOrganizer.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\Render\RequiredRenderingInfo.h">
+    <ClInclude Include="Engine\LowerLayer\Render\RequiredRenderingInfo.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\Resource\Buffer\RuntimeBufferManagementSystems\BufferDispatcher\BufferDispatcher.h">
+    <ClInclude Include="Engine\LowerLayer\Resource\Buffer\RuntimeBufferManagementSystems\BufferDispatcher\BufferDispatcher.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\Resource\Shader\ShaderContext.h">
+    <ClInclude Include="Engine\LowerLayer\Resource\Shader\ShaderContext.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\Resource\Shader\ShaderCompiler\ShaderCompiler.h">
+    <ClInclude Include="Engine\LowerLayer\Resource\Shader\ShaderCompiler\ShaderCompiler.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\Resource\Shader\ShaderLibrary\ShaderLibrary.h">
+    <ClInclude Include="Engine\LowerLayer\Resource\Shader\ShaderLibrary\ShaderLibrary.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\Resource\PSO\PSO_Context.h">
+    <ClInclude Include="Engine\LowerLayer\Resource\PSO\PSO_Context.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\Resource\PSO\PSO_Assembler\PSO_Assembler.h">
+    <ClInclude Include="Engine\LowerLayer\Resource\PSO\PSO_Assembler\PSO_Assembler.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\Resource\PSO\PSO_Assembler\ToolCreatePSO\CreateDepthStencilDesc\CreateDepthStencilDesc.h">
+    <ClInclude Include="Engine\LowerLayer\Resource\PSO\PSO_Assembler\ToolCreatePSO\CreateDepthStencilDesc\CreateDepthStencilDesc.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\Resource\PSO\PSO_Assembler\ToolCreatePSO\CreateBlendDesc\CreateBlendDesc.h">
+    <ClInclude Include="Engine\LowerLayer\Resource\PSO\PSO_Assembler\ToolCreatePSO\CreateBlendDesc\CreateBlendDesc.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\Resource\PSO\PSO_Assembler\ToolCreatePSO\CreateRasterizerDesc\CreateRasterizerDesc.h">
+    <ClInclude Include="Engine\LowerLayer\Resource\PSO\PSO_Assembler\ToolCreatePSO\CreateRasterizerDesc\CreateRasterizerDesc.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\Resource\PSO\PSO_Assembler\PipelineStateDesc.h">
+    <ClInclude Include="Engine\LowerLayer\Resource\PSO\PSO_Assembler\PipelineStateDesc.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\Core\Device\Commands\CreatePSO\CommandCreatePSO.h">
+    <ClInclude Include="Engine\LowerLayer\Core\Device\Commands\CreatePSO\CommandCreatePSO.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\Resource\PSO\PSO_Assembler\ToolCreatePSO\CreateSampleDesc\CreateSampleDesc.h">
+    <ClInclude Include="Engine\LowerLayer\Resource\PSO\PSO_Assembler\ToolCreatePSO\CreateSampleDesc\CreateSampleDesc.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\Core\Device\Commands\CreateRootSignature\CommandCreateRootSignature.h">
+    <ClInclude Include="Engine\LowerLayer\Core\Device\Commands\CreateRootSignature\CommandCreateRootSignature.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\Resource\RootSignature\RootSignatureContext.h">
+    <ClInclude Include="Engine\LowerLayer\Resource\RootSignature\RootSignatureContext.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\Resource\RootSignature\RootSignatureAssembler\RootSignatureAssembler.h">
+    <ClInclude Include="Engine\LowerLayer\Resource\RootSignature\RootSignatureAssembler\RootSignatureAssembler.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\Resource\RootSignature\RootSignatureAssembler\RootSignatureLayoutComponent.h">
+    <ClInclude Include="Engine\LowerLayer\Resource\RootSignature\RootSignatureAssembler\RootSignatureLayoutComponent.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\Resource\RootSignature\RootSignatureAssembler\ToolCreateRootSignature\CreateStaticSamplerDesc\CreateStaticSamplerDesc.h">
+    <ClInclude Include="Engine\LowerLayer\Resource\RootSignature\RootSignatureAssembler\ToolCreateRootSignature\CreateStaticSamplerDesc\CreateStaticSamplerDesc.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\Resource\Mesh\kara.h">
+    <ClInclude Include="Engine\LowerLayer\Resource\Mesh\kara.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\Resource\RootSignature\RootSignatureAssembler\ToolCreateRootSignature\CreateRootParam\CreateRootParam.h">
+    <ClInclude Include="Engine\LowerLayer\Resource\RootSignature\RootSignatureAssembler\ToolCreateRootSignature\CreateRootParam\CreateRootParam.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\Resource\PSO\PSO_Assembler\ToolCreatePSO\PSO_InfoOutputter\PSO_InfoOutputter.h">
+    <ClInclude Include="Engine\LowerLayer\Resource\PSO\PSO_Assembler\ToolCreatePSO\PSO_InfoOutputter\PSO_InfoOutputter.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\Resource\RootSignature\RootSignatureAssembler\RootSignatureDesc.h">
+    <ClInclude Include="Engine\LowerLayer\Resource\RootSignature\RootSignatureAssembler\RootSignatureDesc.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\Render\RenderPathStructure\RenderPathComposer\RenderPathComposer.h">
+    <ClInclude Include="Engine\LowerLayer\Render\RenderPathStructure\RenderPathComposer\RenderPathComposer.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\Render\RenderPathStructure\RenderPathComposer\ShaderCombiner\ShaderCombiner.h">
+    <ClInclude Include="Engine\LowerLayer\Render\RenderPathStructure\RenderPathComposer\ShaderCombiner\ShaderCombiner.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\Render\RenderPathStructure\RenderPath.h">
+    <ClInclude Include="Engine\LowerLayer\Render\RenderPathStructure\RenderPath.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\Render\RenderPathStructure\RenderPathDesc.h">
+    <ClInclude Include="Engine\LowerLayer\Render\RenderPathStructure\RenderPathDesc.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\Resource\RootSignature\RootSignatureLibrary\RootSignatureLibrary.h">
+    <ClInclude Include="Engine\LowerLayer\Resource\RootSignature\RootSignatureLibrary\RootSignatureLibrary.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
     <ClInclude Include="Assets\Shared\ConstantBuffers.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\Render\PSO_PoolDispatcher\PSO_PoolDispatcher.h">
+    <ClInclude Include="Engine\LowerLayer\Render\PSO_PoolDispatcher\PSO_PoolDispatcher.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\Render\RenderPathStructure\RenderStateComponent.h">
+    <ClInclude Include="Engine\LowerLayer\Render\RenderPathStructure\RenderStateComponent.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\Render\RenderStates.h">
+    <ClInclude Include="Engine\LowerLayer\Render\RenderStates.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\Render\RenderPathStructure\ShaderPathComponent.h">
+    <ClInclude Include="Engine\LowerLayer\Render\RenderPathStructure\ShaderPathComponent.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\Render\RenderPathStructure\RenderPathBluePrint\RenderPathBluePrint.h">
+    <ClInclude Include="Engine\LowerLayer\Render\RenderPathStructure\RenderPathBluePrint\RenderPathBluePrint.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\ProjectConfig.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\MiddleLayer\kara.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
   </ItemGroup>

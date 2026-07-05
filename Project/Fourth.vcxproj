@@ -65,7 +65,7 @@
       <TreatWarningAsError>true</TreatWarningAsError>
       <PrecompiledHeader>Use</PrecompiledHeader>
       <PrecompiledHeaderFile>PreCompileHeader.h</PrecompiledHeaderFile>
-      <AdditionalIncludeDirectories>$(ProjectDir)\Engine;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)\Engine\PreCompileHeader;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <ForcedIncludeFiles>PreCompileHeader.h;%(ForcedIncludeFiles)</ForcedIncludeFiles>
     </ClCompile>
     <Link>
@@ -89,7 +89,7 @@
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <PrecompiledHeader>Use</PrecompiledHeader>
       <PrecompiledHeaderFile>PreCompileHeader.h</PrecompiledHeaderFile>
-      <AdditionalIncludeDirectories>$(ProjectDir)\Engine;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)\Engine\PreCompileHeader;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <ForcedIncludeFiles>PreCompileHeader.h;%(ForcedIncludeFiles)</ForcedIncludeFiles>
     </ClCompile>
     <Link>
@@ -98,56 +98,56 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="Engine\Render\RenderPathStructure\RenderPathBluePrint\RenderPathBluePrint.cpp" />
-    <ClCompile Include="Engine\Resource\RootSignature\RootSignatureAssembler\ToolCreateRootSignature\CreateRootParam\CreateRootParam.cpp" />
-    <ClCompile Include="Engine\Resource\RootSignature\RootSignatureAssembler\ToolCreateRootSignature\CreateStaticSamplerDesc\CreateStaticSamplerDesc.cpp" />
-    <ClCompile Include="Engine\Core\Device\Commands\CreateRootSignature\CommandCreateRootSignature.cpp" />
-    <ClCompile Include="Engine\Core\Device\Commands\CreatePSO\CommandCreatePSO.cpp" />
-    <ClCompile Include="Engine\Resource\PSO\PSO_Assembler\ToolCreatePSO\CreateSampleDesc\CreateSampleDesc.cpp" />
-    <ClCompile Include="Engine\Resource\PSO\PSO_Assembler\ToolCreatePSO\CreateRasterizerDesc\CreateRasterizerDesc.cpp" />
-    <ClCompile Include="Engine\Resource\PSO\PSO_Assembler\ToolCreatePSO\CreateDepthStencilDesc\CreateDepthStencilDesc.cpp" />
-    <ClCompile Include="Engine\Resource\PSO\PSO_Assembler\ToolCreatePSO\CreateBlendDesc\CreateBlendDesc.cpp" />
-    <ClCompile Include="Engine\Resource\Buffer\RuntimeBufferManagementSystems\BufferDispatcher\BufferDispatcher.cpp" />
-    <ClCompile Include="Engine\Resource\Buffer\RuntimeBufferManagementSystems\BufferInfoExtractors\ComputeBufferInfoExtractor\ComputeBufferInfoExtractor.cpp" />
-    <ClCompile Include="Engine\Resource\Buffer\BufferCreationSystems\BufferCreator\BufferCreator.cpp" />
-    <ClCompile Include="Engine\Resource\Buffer\BufferCreationSystems\BufferCollector\BufferCollector.cpp" />
-    <ClCompile Include="Engine\Resource\Buffer\RuntimeBufferManagementSystems\BufferDeferredReleaser\BufferDeferredReleaser.cpp" />
-    <ClCompile Include="Engine\Core\Device\DeviceContextCommandExecutor\DeviceContextCommandExecutor.cpp" />
-    <ClCompile Include="Engine\Core\Command\CommandExecutor\CommandExecutor.cpp" />
-    <ClCompile Include="Engine\Core\Device\Commands\CreateFenceObject\CommandCreateFenceObject.cpp" />
-    <ClCompile Include="Engine\Core\Command\CommandContext.cpp" />
-    <ClCompile Include="Engine\Core\Device\Commands\StructureSwapChain\CommandStructureSwapChain.cpp" />
+    <ClCompile Include="Engine\LowerLayer\Render\RenderPathStructure\RenderPathBluePrint\RenderPathBluePrint.cpp" />
+    <ClCompile Include="Engine\LowerLayer\Resource\RootSignature\RootSignatureAssembler\ToolCreateRootSignature\CreateRootParam\CreateRootParam.cpp" />
+    <ClCompile Include="Engine\LowerLayer\Resource\RootSignature\RootSignatureAssembler\ToolCreateRootSignature\CreateStaticSamplerDesc\CreateStaticSamplerDesc.cpp" />
+    <ClCompile Include="Engine\LowerLayer\Core\Device\Commands\CreateRootSignature\CommandCreateRootSignature.cpp" />
+    <ClCompile Include="Engine\LowerLayer\Core\Device\Commands\CreatePSO\CommandCreatePSO.cpp" />
+    <ClCompile Include="Engine\LowerLayer\Resource\PSO\PSO_Assembler\ToolCreatePSO\CreateSampleDesc\CreateSampleDesc.cpp" />
+    <ClCompile Include="Engine\LowerLayer\Resource\PSO\PSO_Assembler\ToolCreatePSO\CreateRasterizerDesc\CreateRasterizerDesc.cpp" />
+    <ClCompile Include="Engine\LowerLayer\Resource\PSO\PSO_Assembler\ToolCreatePSO\CreateDepthStencilDesc\CreateDepthStencilDesc.cpp" />
+    <ClCompile Include="Engine\LowerLayer\Resource\PSO\PSO_Assembler\ToolCreatePSO\CreateBlendDesc\CreateBlendDesc.cpp" />
+    <ClCompile Include="Engine\LowerLayer\Resource\Buffer\RuntimeBufferManagementSystems\BufferDispatcher\BufferDispatcher.cpp" />
+    <ClCompile Include="Engine\LowerLayer\Resource\Buffer\RuntimeBufferManagementSystems\BufferInfoExtractors\ComputeBufferInfoExtractor\ComputeBufferInfoExtractor.cpp" />
+    <ClCompile Include="Engine\LowerLayer\Resource\Buffer\BufferCreationSystems\BufferCreator\BufferCreator.cpp" />
+    <ClCompile Include="Engine\LowerLayer\Resource\Buffer\BufferCreationSystems\BufferCollector\BufferCollector.cpp" />
+    <ClCompile Include="Engine\LowerLayer\Resource\Buffer\RuntimeBufferManagementSystems\BufferDeferredReleaser\BufferDeferredReleaser.cpp" />
+    <ClCompile Include="Engine\LowerLayer\Core\Device\DeviceContextCommandExecutor\DeviceContextCommandExecutor.cpp" />
+    <ClCompile Include="Engine\LowerLayer\Core\Command\CommandExecutor\CommandExecutor.cpp" />
+    <ClCompile Include="Engine\LowerLayer\Core\Device\Commands\CreateFenceObject\CommandCreateFenceObject.cpp" />
+    <ClCompile Include="Engine\LowerLayer\Core\Command\CommandContext.cpp" />
+    <ClCompile Include="Engine\LowerLayer\Core\Device\Commands\StructureSwapChain\CommandStructureSwapChain.cpp" />
     <ClCompile Include="Engine\NexusRun.cpp" />
-    <ClCompile Include="Engine\Resource\Buffer\BufferCreationSystems\BufferAssembler\BufferAssembler.cpp" />
-    <ClCompile Include="Engine\Resource\Buffer\BufferDefinition\BufferDescriptions\BufferDescriptionBehavior.cpp" />
-    <ClCompile Include="Engine\Resource\Buffer\BufferDefinition\GPUBuffer\BufferInterface.cpp" />
-    <ClCompile Include="Engine\Resource\Buffer\BufferDefinition\GPUBuffer\DepthStencilBuffer\DepthStencilBuffer.cpp" />
-    <ClCompile Include="Engine\Resource\Buffer\BufferContext.cpp" />
-    <ClCompile Include="Engine\Resource\Buffer\BufferDefinition\BufferDescriptions\DepthStencilBufferDescription\DepthStencilBufferDescription.cpp" />
-    <ClCompile Include="Engine\Core\Device\Commands\CreateView\CommandCreateView.cpp" />
-    <ClCompile Include="Engine\Core\DescriptorHeap\DescriptorHeapPool\DescriptorHeapPool.cpp" />
-    <ClCompile Include="Engine\Core\Device\Commands\CreateDescriptorHeap\CommandCreateDescriptorHeap.cpp" />
-    <ClCompile Include="Engine\Core\DescriptorHeap\DescriptorHeapCreator\DescriptorHeapCreator.cpp" />
-    <ClCompile Include="Engine\Core\DescriptorHeap\DescriptorHeapContext.cpp" />
-    <ClCompile Include="Engine\Resource\Buffer\BufferDefinition\GPUBuffer\ColorBuffer\ColorBuffer.cpp" />
-    <ClCompile Include="Engine\Core\Device\Commands\DeviceContextCommandBehavior.cpp" />
-    <ClCompile Include="Engine\Core\Device\DeviceSetupper\DeviceContextSetupper.cpp" />
-    <ClCompile Include="Engine\Core\Device\DeviceContextCommandProvider\DeviceContextCommandProvider.cpp" />
-    <ClCompile Include="Engine\Resource\Buffer\BufferDefinition\BufferDescriptions\ColorBufferDescription\ColorBufferDescription.cpp" />
-    <ClCompile Include="Engine\Resource\Buffer\BufferDefinition\BufferDescriptions\ConstantBufferDescription\ConstantBufferDescription.cpp" />
-    <ClCompile Include="Engine\Core\Device\Commands\CreatGPUBuffer\CommandOfCreatingGPUBuffer.cpp" />
-    <ClCompile Include="Engine\Debug\RuntimeDebugger\DebugSystems\DebugLayer\DebugLayer.cpp" />
-    <ClCompile Include="Engine\Resource\Buffer\BufferDefinition\GPUBuffer\ConstantBuffer\ConstantBuffer.cpp" />
-    <ClCompile Include="Engine\Core\Device\DeviceContext.cpp">
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
+    <ClCompile Include="Engine\LowerLayer\Resource\Buffer\BufferCreationSystems\BufferAssembler\BufferAssembler.cpp" />
+    <ClCompile Include="Engine\LowerLayer\Resource\Buffer\BufferDefinition\BufferDescriptions\BufferDescriptionBehavior.cpp" />
+    <ClCompile Include="Engine\LowerLayer\Resource\Buffer\BufferDefinition\GPUBuffer\BufferInterface.cpp" />
+    <ClCompile Include="Engine\LowerLayer\Resource\Buffer\BufferDefinition\GPUBuffer\DepthStencilBuffer\DepthStencilBuffer.cpp" />
+    <ClCompile Include="Engine\LowerLayer\Resource\Buffer\BufferContext.cpp" />
+    <ClCompile Include="Engine\LowerLayer\Resource\Buffer\BufferDefinition\BufferDescriptions\DepthStencilBufferDescription\DepthStencilBufferDescription.cpp" />
+    <ClCompile Include="Engine\LowerLayer\Core\Device\Commands\CreateView\CommandCreateView.cpp" />
+    <ClCompile Include="Engine\LowerLayer\Core\DescriptorHeap\DescriptorHeapPool\DescriptorHeapPool.cpp" />
+    <ClCompile Include="Engine\LowerLayer\Core\Device\Commands\CreateDescriptorHeap\CommandCreateDescriptorHeap.cpp" />
+    <ClCompile Include="Engine\LowerLayer\Core\DescriptorHeap\DescriptorHeapCreator\DescriptorHeapCreator.cpp" />
+    <ClCompile Include="Engine\LowerLayer\Core\DescriptorHeap\DescriptorHeapContext.cpp" />
+    <ClCompile Include="Engine\LowerLayer\Resource\Buffer\BufferDefinition\GPUBuffer\ColorBuffer\ColorBuffer.cpp" />
+    <ClCompile Include="Engine\LowerLayer\Core\Device\Commands\DeviceContextCommandBehavior.cpp" />
+    <ClCompile Include="Engine\LowerLayer\Core\Device\DeviceSetupper\DeviceContextSetupper.cpp" />
+    <ClCompile Include="Engine\LowerLayer\Core\Device\DeviceContextCommandProvider\DeviceContextCommandProvider.cpp" />
+    <ClCompile Include="Engine\LowerLayer\Resource\Buffer\BufferDefinition\BufferDescriptions\ColorBufferDescription\ColorBufferDescription.cpp" />
+    <ClCompile Include="Engine\LowerLayer\Resource\Buffer\BufferDefinition\BufferDescriptions\ConstantBufferDescription\ConstantBufferDescription.cpp" />
+    <ClCompile Include="Engine\LowerLayer\Core\Device\Commands\CreatGPUBuffer\CommandOfCreatingGPUBuffer.cpp" />
+    <ClCompile Include="Engine\LowerLayer\Debug\RuntimeDebugger\DebugSystems\DebugLayer\DebugLayer.cpp" />
+    <ClCompile Include="Engine\LowerLayer\Resource\Buffer\BufferDefinition\GPUBuffer\ConstantBuffer\ConstantBuffer.cpp" />
+    <ClCompile Include="Engine\LowerLayer\Core\Device\DeviceContext.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Use</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Use</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="Engine\Math\Vector\Vector3.cpp" />
-    <ClCompile Include="Engine\PreCompileHeader.cpp">
+    <ClCompile Include="Engine\PreCompileHeader\PreCompileHeader.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
     </ClCompile>
-    <ClCompile Include="Engine\Debug\ErrorMessageOutput\ErrorMessageOutput.cpp" />
+    <ClCompile Include="Engine\LowerLayer\Debug\ErrorMessageOutput\ErrorMessageOutput.cpp" />
     <ClCompile Include="External\Audio\xaudio_player_mf.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
@@ -155,10 +155,22 @@
     <ClCompile Include="External\MeshOptimizer\allocator.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+      </PrecompiledHeaderFile>
+      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+      </PrecompiledHeaderFile>
     </ClCompile>
     <ClCompile Include="External\MeshOptimizer\clusterizer.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+      </PrecompiledHeaderFile>
+      <PrecompiledHeaderOutputFile Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+      </PrecompiledHeaderOutputFile>
+      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+      </PrecompiledHeaderFile>
+      <PrecompiledHeaderOutputFile Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+      </PrecompiledHeaderOutputFile>
     </ClCompile>
     <ClCompile Include="External\MeshOptimizer\indexanalyzer.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
@@ -232,108 +244,110 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
     </ClCompile>
-    <ClCompile Include="Engine\Debug\Logger\Logger.cpp" />
-    <ClCompile Include="Engine\Resource\Buffer\BufferCreationSystems\ResourceCreator\ResourceCreator.cpp" />
-    <ClCompile Include="Engine\Resource\Buffer\BufferDefinition\GPUBuffer\GPUBufferBehavior.cpp" />
-    <ClCompile Include="Engine\Debug\RuntimeDebugger\DebugSystems\LeakChecker\LeakChecker.cpp" />
-    <ClCompile Include="Engine\Resource\Buffer\RuntimeBufferManagementSystems\BufferInfoExtractors\FrameBufferedBufferInfoExtractor\FrameBufferedBufferInfoExtractor.cpp" />
+    <ClCompile Include="Engine\LowerLayer\Debug\Logger\Logger.cpp" />
+    <ClCompile Include="Engine\LowerLayer\Resource\Buffer\BufferCreationSystems\ResourceCreator\ResourceCreator.cpp" />
+    <ClCompile Include="Engine\LowerLayer\Resource\Buffer\BufferDefinition\GPUBuffer\GPUBufferBehavior.cpp" />
+    <ClCompile Include="Engine\LowerLayer\Debug\RuntimeDebugger\DebugSystems\LeakChecker\LeakChecker.cpp" />
+    <ClCompile Include="Engine\LowerLayer\Resource\Buffer\RuntimeBufferManagementSystems\BufferInfoExtractors\FrameBufferedBufferInfoExtractor\FrameBufferedBufferInfoExtractor.cpp" />
     <ClCompile Include="main.cpp" />
-    <ClCompile Include="Engine\Core\Window\WindowContext.cpp">
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
+    <ClCompile Include="Engine\LowerLayer\Core\Window\WindowContext.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Use</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Use</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="Engine\Utility\StringConnverter\StringConverter.cpp" />
     <ClCompile Include="Engine\Nexus.cpp" />
     <ClCompile Include="Engine\Math\Quaternion\Quaternion.cpp" />
     <ClCompile Include="Engine\Math\Vector\Vector2.cpp" />
-    <ClCompile Include="Engine\Core\SwapChain\SwapChainContext.cpp" />
-    <ClCompile Include="Engine\Debug\RuntimeDebugger\DebugSystems\PointerValidator\PointerValidator.cpp" />
-    <ClCompile Include="Engine\Debug\RuntimeDebugger\DebugSystems\RuntimeDebuggerBehavior.cpp" />
-    <ClCompile Include="Engine\Debug\RuntimeDebugger\RuntimeDebugger.cpp" />
-    <ClCompile Include="Engine\Core\DescriptorHeap\ViewCreator\ViewCreator.cpp" />
-    <ClCompile Include="Engine\Resource\Buffer\BufferDefinition\GPUBuffer\ComputeBuffer\ComputeBuffer.cpp" />
-    <ClCompile Include="Engine\Resource\Buffer\BufferDefinition\BufferDescriptions\ComputeBufferDescription\ComputeBufferDescription.cpp" />
-    <ClCompile Include="Engine\Core\SwapChain\SwapChainColorBuffer\SwapChainColorBuffer.cpp" />
-    <ClCompile Include="Engine\Core\Device\Commands\StructureCommandContext\CommandStructureCommandContext.cpp" />
-    <ClCompile Include="Engine\Core\SwapChain\Presenter\Presenter.cpp" />
-    <ClCompile Include="Engine\Core\SwapChain\RenderPassMaterialProvider\RenderPassMaterialProvider.cpp" />
-    <ClCompile Include="Engine\Core\Command\Synchronizer\Synchronizer.cpp" />
-    <ClCompile Include="Engine\Core\Command\RuntimeWrapper\RuntimeWrapper.cpp" />
-    <ClCompile Include="Engine\Core\Command\ResourceUploader\ResourceUploader.cpp" />
-    <ClCompile Include="Engine\Resource\Buffer\BufferDefinition\GPUBuffer\UploadStructuredBuffer\UploadStructuredBuffer.cpp" />
-    <ClCompile Include="Engine\Resource\Buffer\BufferDefinition\BufferDescriptions\UploadStructuredBufferDescription\UploadStructuredBufferDescription.cpp" />
-    <ClCompile Include="Engine\Resource\Buffer\RuntimeBufferManagementSystems\BufferInfoExtractors\RenderTargetBufferInfoExtractor\RenderTargetBufferInfoExtractor.cpp" />
-    <ClCompile Include="Engine\Core\Command\RuntimeCommandControler\RuntimeCommandControler.cpp" />
-    <ClCompile Include="Engine\Render\RenderContext.cpp" />
-    <ClCompile Include="Engine\Render\RuntimeRenderingManagementSystems\ModelRenderingInfoOrganizer\ModelRenderingInfoOrganizer.cpp" />
-    <ClCompile Include="Engine\Resource\Shader\ShaderContext.cpp" />
-    <ClCompile Include="Engine\Resource\Shader\ShaderCompiler\ShaderCompiler.cpp" />
-    <ClCompile Include="Engine\Resource\Shader\ShaderLibrary\ShaderLibrary.cpp" />
-    <ClCompile Include="Engine\Resource\PSO\PSO_Context.cpp" />
-    <ClCompile Include="Engine\Resource\PSO\PSO_Assembler\PSO_Assembler.cpp" />
-    <ClCompile Include="Engine\Resource\RootSignature\RootSignatureContext.cpp" />
-    <ClCompile Include="Engine\Resource\RootSignature\RootSignatureAssembler\RootSignatureAssembler.cpp" />
-    <ClCompile Include="Engine\Resource\PSO\PSO_Assembler\ToolCreatePSO\PSO_InfoOutputter\PSO_InfoOutputter.cpp" />
-    <ClCompile Include="Engine\Render\RenderPathStructure\RenderPathComposer\RenderPathComposer.cpp" />
-    <ClCompile Include="Engine\Render\RenderPathStructure\RenderPathComposer\ShaderCombiner\ShaderCombiner.cpp" />
-    <ClCompile Include="Engine\Render\RenderPathStructure\RenderPath.cpp" />
-    <ClCompile Include="Engine\Resource\RootSignature\RootSignatureLibrary\RootSignatureLibrary.cpp" />
-    <ClCompile Include="Engine\Render\PSO_PoolDispatcher\PSO_PoolDispatcher.cpp" />
+    <ClCompile Include="Engine\LowerLayer\Core\SwapChain\SwapChainContext.cpp" />
+    <ClCompile Include="Engine\LowerLayer\Debug\RuntimeDebugger\DebugSystems\PointerValidator\PointerValidator.cpp" />
+    <ClCompile Include="Engine\LowerLayer\Debug\RuntimeDebugger\DebugSystems\RuntimeDebuggerBehavior.cpp" />
+    <ClCompile Include="Engine\LowerLayer\Debug\RuntimeDebugger\RuntimeDebugger.cpp" />
+    <ClCompile Include="Engine\LowerLayer\Core\DescriptorHeap\ViewCreator\ViewCreator.cpp" />
+    <ClCompile Include="Engine\LowerLayer\Resource\Buffer\BufferDefinition\GPUBuffer\ComputeBuffer\ComputeBuffer.cpp" />
+    <ClCompile Include="Engine\LowerLayer\Resource\Buffer\BufferDefinition\BufferDescriptions\ComputeBufferDescription\ComputeBufferDescription.cpp" />
+    <ClCompile Include="Engine\LowerLayer\Core\SwapChain\SwapChainColorBuffer\SwapChainColorBuffer.cpp" />
+    <ClCompile Include="Engine\LowerLayer\Core\Device\Commands\StructureCommandContext\CommandStructureCommandContext.cpp" />
+    <ClCompile Include="Engine\LowerLayer\Core\SwapChain\Presenter\Presenter.cpp" />
+    <ClCompile Include="Engine\LowerLayer\Core\SwapChain\RenderPassMaterialProvider\RenderPassMaterialProvider.cpp" />
+    <ClCompile Include="Engine\LowerLayer\Core\Command\Synchronizer\Synchronizer.cpp" />
+    <ClCompile Include="Engine\LowerLayer\Core\Command\RuntimeWrapper\RuntimeWrapper.cpp" />
+    <ClCompile Include="Engine\LowerLayer\Core\Command\ResourceUploader\ResourceUploader.cpp" />
+    <ClCompile Include="Engine\LowerLayer\Resource\Buffer\BufferDefinition\GPUBuffer\UploadStructuredBuffer\UploadStructuredBuffer.cpp" />
+    <ClCompile Include="Engine\LowerLayer\Resource\Buffer\BufferDefinition\BufferDescriptions\UploadStructuredBufferDescription\UploadStructuredBufferDescription.cpp" />
+    <ClCompile Include="Engine\LowerLayer\Resource\Buffer\RuntimeBufferManagementSystems\BufferInfoExtractors\RenderTargetBufferInfoExtractor\RenderTargetBufferInfoExtractor.cpp" />
+    <ClCompile Include="Engine\LowerLayer\Core\Command\RuntimeCommandControler\RuntimeCommandControler.cpp" />
+    <ClCompile Include="Engine\LowerLayer\Render\RenderContext.cpp" />
+    <ClCompile Include="Engine\LowerLayer\Render\RuntimeRenderingManagementSystems\ModelRenderingInfoOrganizer\ModelRenderingInfoOrganizer.cpp" />
+    <ClCompile Include="Engine\LowerLayer\Resource\Shader\ShaderContext.cpp" />
+    <ClCompile Include="Engine\LowerLayer\Resource\Shader\ShaderCompiler\ShaderCompiler.cpp" />
+    <ClCompile Include="Engine\LowerLayer\Resource\Shader\ShaderLibrary\ShaderLibrary.cpp" />
+    <ClCompile Include="Engine\LowerLayer\Resource\PSO\PSO_Context.cpp" />
+    <ClCompile Include="Engine\LowerLayer\Resource\PSO\PSO_Assembler\PSO_Assembler.cpp" />
+    <ClCompile Include="Engine\LowerLayer\Resource\RootSignature\RootSignatureContext.cpp" />
+    <ClCompile Include="Engine\LowerLayer\Resource\RootSignature\RootSignatureAssembler\RootSignatureAssembler.cpp" />
+    <ClCompile Include="Engine\LowerLayer\Resource\PSO\PSO_Assembler\ToolCreatePSO\PSO_InfoOutputter\PSO_InfoOutputter.cpp" />
+    <ClCompile Include="Engine\LowerLayer\Render\RenderPathStructure\RenderPathComposer\RenderPathComposer.cpp" />
+    <ClCompile Include="Engine\LowerLayer\Render\RenderPathStructure\RenderPathComposer\ShaderCombiner\ShaderCombiner.cpp" />
+    <ClCompile Include="Engine\LowerLayer\Render\RenderPathStructure\RenderPath.cpp" />
+    <ClCompile Include="Engine\LowerLayer\Resource\RootSignature\RootSignatureLibrary\RootSignatureLibrary.cpp" />
+    <ClCompile Include="Engine\LowerLayer\Render\PSO_PoolDispatcher\PSO_PoolDispatcher.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Assets\Shared\ConstantBuffers.h" />
-    <ClInclude Include="Engine\Render\RenderPathStructure\RenderPathDesc.h" />
-    <ClInclude Include="Engine\Resource\RootSignature\RootSignatureAssembler\RootSignatureDesc.h" />
-    <ClInclude Include="Engine\Resource\RootSignature\RootSignatureAssembler\ToolCreateRootSignature\CreateRootParam\CreateRootParam.h" />
-    <ClInclude Include="Engine\Resource\Mesh\kara.h" />
-    <ClInclude Include="Engine\Resource\RootSignature\RootSignatureAssembler\ToolCreateRootSignature\CreateStaticSamplerDesc\CreateStaticSamplerDesc.h" />
-    <ClInclude Include="Engine\Core\Device\Commands\CreateRootSignature\CommandCreateRootSignature.h" />
-    <ClInclude Include="Engine\Core\Device\Commands\CreatePSO\CommandCreatePSO.h" />
-    <ClInclude Include="Engine\Resource\PSO\PSO_Assembler\ToolCreatePSO\CreateSampleDesc\CreateSampleDesc.h" />
-    <ClInclude Include="Engine\Resource\PSO\PSO_Assembler\ToolCreatePSO\CreateRasterizerDesc\CreateRasterizerDesc.h" />
-    <ClInclude Include="Engine\Resource\PSO\PSO_Assembler\ToolCreatePSO\CreateDepthStencilDesc\CreateDepthStencilDesc.h" />
-    <ClInclude Include="Engine\Resource\PSO\PSO_Assembler\ToolCreatePSO\CreateBlendDesc\CreateBlendDesc.h" />
-    <ClInclude Include="Engine\Resource\Buffer\RuntimeBufferManagementSystems\BufferDispatcher\BufferDispatcher.h" />
-    <ClInclude Include="Engine\Resource\Buffer\RuntimeBufferManagementSystems\BufferInfoExtractors\ComputeBufferInfoExtractor\ComputeBufferInfoExtractor.h" />
-    <ClInclude Include="Engine\Resource\Buffer\BufferDefinition\GPUBuffer\BufferInterface.h" />
-    <ClInclude Include="Engine\Resource\Buffer\BufferCreationSystems\BufferCreator\BufferCreator.h" />
-    <ClInclude Include="Engine\Resource\Buffer\BufferCreationSystems\BufferCollector\BufferCollector.h" />
-    <ClInclude Include="Engine\Resource\Buffer\RuntimeBufferManagementSystems\BufferDeferredReleaser\BufferDeferredReleaser.h" />
-    <ClInclude Include="Engine\Core\Device\DeviceContextCommandExecutor\DeviceContextCommandExecutor.h" />
-    <ClInclude Include="Engine\Core\Command\CommandExecutor\CommandExecutor.h" />
-    <ClInclude Include="Engine\Core\Device\Commands\CreateFenceObject\CommandCreateFenceObject.h" />
-    <ClInclude Include="Engine\Core\Command\CommandContext.h" />
-    <ClInclude Include="Engine\Core\Device\Commands\StructureSwapChain\CommandStructureSwapChain.h" />
-    <ClInclude Include="Engine\Resource\Buffer\BufferCreationSystems\BufferAssembler\BufferAssembler.h" />
-    <ClInclude Include="Engine\Resource\Buffer\BufferDefinition\GPUBuffer\DepthStencilBuffer\DepthStencilBuffer.h" />
-    <ClInclude Include="Engine\Resource\Buffer\BufferContext.h" />
-    <ClInclude Include="Engine\Resource\Buffer\BufferDefinition\BufferDescriptions\DepthStencilBufferDescription\DepthStencilBufferDescription.h" />
-    <ClInclude Include="Engine\Core\Device\Commands\CreateView\CommandCreateView.h" />
-    <ClInclude Include="Engine\Core\DescriptorHeap\DescriptorHeapPool\DescriptorHeapPool.h" />
-    <ClInclude Include="Engine\Core\Device\Commands\CreateDescriptorHeap\CommandCreateDescriptorHeap.h" />
-    <ClInclude Include="Engine\Core\DescriptorHeap\DescriptorHeapCreator\DescriptorHeapCreator.h" />
-    <ClInclude Include="Engine\Core\DescriptorHeap\DescriptorHeapContext.h" />
-    <ClInclude Include="Engine\Resource\Buffer\BufferDefinition\GPUBuffer\ColorBuffer\ColorBuffer.h" />
-    <ClInclude Include="Engine\Core\Device\Commands\DeviceContextCommandBehavior.h" />
-    <ClInclude Include="Engine\Core\Device\Commands\CreatGPUBuffer\CommandOfCreatingGPUBuffer.h" />
-    <ClInclude Include="Engine\Core\Device\DeviceSetupper\DeviceContextSetupper.h" />
-    <ClInclude Include="Engine\Core\Device\DeviceContextCommandProvider\DeviceContextCommandProvider.h" />
-    <ClInclude Include="Engine\Resource\Buffer\BufferDefinition\BufferDescriptions\ColorBufferDescription\ColorBufferDescription.h" />
-    <ClInclude Include="Engine\Resource\Buffer\BufferDefinition\BufferDescriptions\ConstantBufferDescription\ConstantBufferDescription.h" />
-    <ClInclude Include="Engine\Resource\Buffer\BufferDefinition\BufferDescriptions\BufferDescriptionBehavior.h" />
-    <ClInclude Include="Engine\Core\Window\DumpExporter.h" />
-    <ClInclude Include="Engine\Debug\RuntimeDebugger\DebugSystems\DebugLayer\DebugLayer.h" />
-    <ClInclude Include="Engine\Resource\Buffer\BufferDefinition\GPUBuffer\ConstantBuffer\ConstantBuffer.h" />
-    <ClInclude Include="Engine\Core\Device\DeviceContext.h" />
-    <ClInclude Include="Engine\Core\Window\WindowContext.h" />
+    <ClInclude Include="Engine\LowerLayer\Render\RenderPathStructure\RenderPathDesc.h" />
+    <ClInclude Include="Engine\LowerLayer\Resource\RootSignature\RootSignatureAssembler\RootSignatureDesc.h" />
+    <ClInclude Include="Engine\LowerLayer\Resource\RootSignature\RootSignatureAssembler\ToolCreateRootSignature\CreateRootParam\CreateRootParam.h" />
+    <ClInclude Include="Engine\LowerLayer\Resource\Mesh\kara.h" />
+    <ClInclude Include="Engine\LowerLayer\Resource\RootSignature\RootSignatureAssembler\ToolCreateRootSignature\CreateStaticSamplerDesc\CreateStaticSamplerDesc.h" />
+    <ClInclude Include="Engine\LowerLayer\Core\Device\Commands\CreateRootSignature\CommandCreateRootSignature.h" />
+    <ClInclude Include="Engine\LowerLayer\Core\Device\Commands\CreatePSO\CommandCreatePSO.h" />
+    <ClInclude Include="Engine\LowerLayer\Resource\PSO\PSO_Assembler\ToolCreatePSO\CreateSampleDesc\CreateSampleDesc.h" />
+    <ClInclude Include="Engine\LowerLayer\Resource\PSO\PSO_Assembler\ToolCreatePSO\CreateRasterizerDesc\CreateRasterizerDesc.h" />
+    <ClInclude Include="Engine\LowerLayer\Resource\PSO\PSO_Assembler\ToolCreatePSO\CreateDepthStencilDesc\CreateDepthStencilDesc.h" />
+    <ClInclude Include="Engine\LowerLayer\Resource\PSO\PSO_Assembler\ToolCreatePSO\CreateBlendDesc\CreateBlendDesc.h" />
+    <ClInclude Include="Engine\LowerLayer\Resource\Buffer\RuntimeBufferManagementSystems\BufferDispatcher\BufferDispatcher.h" />
+    <ClInclude Include="Engine\LowerLayer\Resource\Buffer\RuntimeBufferManagementSystems\BufferInfoExtractors\ComputeBufferInfoExtractor\ComputeBufferInfoExtractor.h" />
+    <ClInclude Include="Engine\LowerLayer\Resource\Buffer\BufferDefinition\GPUBuffer\BufferInterface.h" />
+    <ClInclude Include="Engine\LowerLayer\Resource\Buffer\BufferCreationSystems\BufferCreator\BufferCreator.h" />
+    <ClInclude Include="Engine\LowerLayer\Resource\Buffer\BufferCreationSystems\BufferCollector\BufferCollector.h" />
+    <ClInclude Include="Engine\LowerLayer\Resource\Buffer\RuntimeBufferManagementSystems\BufferDeferredReleaser\BufferDeferredReleaser.h" />
+    <ClInclude Include="Engine\LowerLayer\Core\Device\DeviceContextCommandExecutor\DeviceContextCommandExecutor.h" />
+    <ClInclude Include="Engine\LowerLayer\Core\Command\CommandExecutor\CommandExecutor.h" />
+    <ClInclude Include="Engine\LowerLayer\Core\Device\Commands\CreateFenceObject\CommandCreateFenceObject.h" />
+    <ClInclude Include="Engine\LowerLayer\Core\Command\CommandContext.h" />
+    <ClInclude Include="Engine\LowerLayer\Core\Device\Commands\StructureSwapChain\CommandStructureSwapChain.h" />
+    <ClInclude Include="Engine\LowerLayer\Resource\Buffer\BufferCreationSystems\BufferAssembler\BufferAssembler.h" />
+    <ClInclude Include="Engine\LowerLayer\Resource\Buffer\BufferDefinition\GPUBuffer\DepthStencilBuffer\DepthStencilBuffer.h" />
+    <ClInclude Include="Engine\LowerLayer\Resource\Buffer\BufferContext.h" />
+    <ClInclude Include="Engine\LowerLayer\Resource\Buffer\BufferDefinition\BufferDescriptions\DepthStencilBufferDescription\DepthStencilBufferDescription.h" />
+    <ClInclude Include="Engine\LowerLayer\Core\Device\Commands\CreateView\CommandCreateView.h" />
+    <ClInclude Include="Engine\LowerLayer\Core\DescriptorHeap\DescriptorHeapPool\DescriptorHeapPool.h" />
+    <ClInclude Include="Engine\LowerLayer\Core\Device\Commands\CreateDescriptorHeap\CommandCreateDescriptorHeap.h" />
+    <ClInclude Include="Engine\LowerLayer\Core\DescriptorHeap\DescriptorHeapCreator\DescriptorHeapCreator.h" />
+    <ClInclude Include="Engine\LowerLayer\Core\DescriptorHeap\DescriptorHeapContext.h" />
+    <ClInclude Include="Engine\LowerLayer\Resource\Buffer\BufferDefinition\GPUBuffer\ColorBuffer\ColorBuffer.h" />
+    <ClInclude Include="Engine\LowerLayer\Core\Device\Commands\DeviceContextCommandBehavior.h" />
+    <ClInclude Include="Engine\LowerLayer\Core\Device\Commands\CreatGPUBuffer\CommandOfCreatingGPUBuffer.h" />
+    <ClInclude Include="Engine\LowerLayer\Core\Device\DeviceSetupper\DeviceContextSetupper.h" />
+    <ClInclude Include="Engine\LowerLayer\Core\Device\DeviceContextCommandProvider\DeviceContextCommandProvider.h" />
+    <ClInclude Include="Engine\LowerLayer\Resource\Buffer\BufferDefinition\BufferDescriptions\ColorBufferDescription\ColorBufferDescription.h" />
+    <ClInclude Include="Engine\LowerLayer\Resource\Buffer\BufferDefinition\BufferDescriptions\ConstantBufferDescription\ConstantBufferDescription.h" />
+    <ClInclude Include="Engine\LowerLayer\Resource\Buffer\BufferDefinition\BufferDescriptions\BufferDescriptionBehavior.h" />
+    <ClInclude Include="Engine\LowerLayer\Core\Window\DumpExporter.h" />
+    <ClInclude Include="Engine\LowerLayer\Debug\RuntimeDebugger\DebugSystems\DebugLayer\DebugLayer.h" />
+    <ClInclude Include="Engine\LowerLayer\Resource\Buffer\BufferDefinition\GPUBuffer\ConstantBuffer\ConstantBuffer.h" />
+    <ClInclude Include="Engine\LowerLayer\Core\Device\DeviceContext.h" />
+    <ClInclude Include="Engine\LowerLayer\Core\Window\WindowContext.h" />
     <ClInclude Include="Engine\Math\Matrix\Matrix4x4.h" />
-    <ClInclude Include="Engine\Resource\PSO\PSO_Assembler\PipelineStateDesc.h" />
-    <ClInclude Include="Engine\Debug\ErrorMessageOutput\ErrorMessageOutput.h" />
-    <ClInclude Include="Engine\Resource\Buffer\ResourceBarrier.h" />
-    <ClInclude Include="Engine\Render\RenderPathStructure\RenderStateComponent.h" />
-    <ClInclude Include="Engine\Render\RenderStates.h" />
-    <ClInclude Include="Engine\Render\RenderPathStructure\ShaderPathComponent.h" />
-    <ClInclude Include="Engine\Resource\RootSignature\RootSignatureAssembler\RootSignatureLayoutComponent.h" />
+    <ClInclude Include="Engine\LowerLayer\Resource\PSO\PSO_Assembler\PipelineStateDesc.h" />
+    <ClInclude Include="Engine\LowerLayer\Debug\ErrorMessageOutput\ErrorMessageOutput.h" />
+    <ClInclude Include="Engine\LowerLayer\Resource\Buffer\ResourceBarrier.h" />
+    <ClInclude Include="Engine\LowerLayer\Render\RenderPathStructure\RenderStateComponent.h" />
+    <ClInclude Include="Engine\LowerLayer\Render\RenderStates.h" />
+    <ClInclude Include="Engine\LowerLayer\Render\RenderPathStructure\ShaderPathComponent.h" />
+    <ClInclude Include="Engine\LowerLayer\Resource\RootSignature\RootSignatureAssembler\RootSignatureLayoutComponent.h" />
+    <ClInclude Include="Engine\MiddleLayer\kara.h" />
+    <ClInclude Include="Engine\ProjectConfig.h" />
     <ClInclude Include="External\Audio\SoundCommon.h" />
     <ClInclude Include="External\Audio\xaudio_player_core.h" />
     <ClInclude Include="External\Audio\xaudio_player_mf.h" />
@@ -351,52 +365,52 @@
     <ClInclude Include="External\MeshOptimizer\meshoptimizer.h" />
     <ClInclude Include="External\nlohmann\json.hpp" />
     <ClInclude Include="External\nlohmann\json_fwd.hpp" />
-    <ClInclude Include="Engine\PreCompileHeader.h" />
-    <ClInclude Include="Engine\Debug\Logger\Logger.h" />
+    <ClInclude Include="Engine\PreCompileHeader\PreCompileHeader.h" />
+    <ClInclude Include="Engine\LowerLayer\Debug\Logger\Logger.h" />
     <ClInclude Include="Engine\Utility\StringConnverter\StringConverter.h" />
     <ClInclude Include="Engine\Nexus.h" />
     <ClInclude Include="Engine\Math\Vector\Vector3.h" />
     <ClInclude Include="Engine\Math\Quaternion\Quaternion.h" />
     <ClInclude Include="Engine\Math\Vector\Vector2.h" />
-    <ClInclude Include="Engine\Core\SwapChain\SwapChainContext.h" />
-    <ClInclude Include="Engine\Resource\Buffer\BufferCreationSystems\ResourceCreator\ResourceCreator.h" />
-    <ClInclude Include="Engine\Resource\Buffer\BufferDefinition\GPUBuffer\GPUBufferBehavior.h" />
-    <ClInclude Include="Engine\Debug\RuntimeDebugger\DebugSystems\LeakChecker\LeakChecker.h" />
-    <ClInclude Include="Engine\Debug\RuntimeDebugger\DebugSystems\PointerValidator\PointerValidator.h" />
-    <ClInclude Include="Engine\Debug\RuntimeDebugger\DebugSystems\RuntimeDebuggerBehavior.h" />
-    <ClInclude Include="Engine\Debug\RuntimeDebugger\RuntimeDebugger.h" />
-    <ClInclude Include="Engine\Core\DescriptorHeap\ViewCreator\ViewCreator.h" />
-    <ClInclude Include="Engine\Resource\Buffer\BufferDefinition\GPUBuffer\ComputeBuffer\ComputeBuffer.h" />
-    <ClInclude Include="Engine\Resource\Buffer\BufferDefinition\BufferDescriptions\ComputeBufferDescription\ComputeBufferDescription.h" />
-    <ClInclude Include="Engine\Core\SwapChain\SwapChainColorBuffer\SwapChainColorBuffer.h" />
-    <ClInclude Include="Engine\Core\Device\Commands\StructureCommandContext\CommandStructureCommandContext.h" />
-    <ClInclude Include="Engine\Core\SwapChain\Presenter\Presenter.h" />
-    <ClInclude Include="Engine\Core\SwapChain\RenderPassMaterialProvider\RenderPassMaterialProvider.h" />
-    <ClInclude Include="Engine\Core\Command\Synchronizer\Synchronizer.h" />
-    <ClInclude Include="Engine\Core\Command\RuntimeWrapper\RuntimeWrapper.h" />
-    <ClInclude Include="Engine\Core\Command\ResourceUploader\ResourceUploader.h" />
-    <ClInclude Include="Engine\Resource\Buffer\BufferDefinition\GPUBuffer\UploadStructuredBuffer\UploadStructuredBuffer.h" />
-    <ClInclude Include="Engine\Resource\Buffer\BufferDefinition\BufferDescriptions\UploadStructuredBufferDescription\UploadStructuredBufferDescription.h" />
-    <ClInclude Include="Engine\Resource\Buffer\RuntimeBufferManagementSystems\BufferInfoExtractors\RenderTargetBufferInfoExtractor\RenderTargetBufferInfoExtractor.h" />
-    <ClInclude Include="Engine\Resource\Buffer\RuntimeBufferManagementSystems\BufferInfoExtractors\FrameBufferedBufferInfoExtractor\FrameBufferedBufferInfoExtractor.h" />
-    <ClInclude Include="Engine\Core\Command\RuntimeCommandControler\RuntimeCommandControler.h" />
-    <ClInclude Include="Engine\Render\RenderContext.h" />
-    <ClInclude Include="Engine\Render\RuntimeRenderingManagementSystems\ModelRenderingInfoOrganizer\ModelRenderingInfoOrganizer.h" />
-    <ClInclude Include="Engine\Render\RequiredRenderingInfo.h" />
-    <ClInclude Include="Engine\Resource\Shader\ShaderContext.h" />
-    <ClInclude Include="Engine\Resource\Shader\ShaderCompiler\ShaderCompiler.h" />
-    <ClInclude Include="Engine\Resource\Shader\ShaderLibrary\ShaderLibrary.h" />
-    <ClInclude Include="Engine\Resource\PSO\PSO_Context.h" />
-    <ClInclude Include="Engine\Resource\PSO\PSO_Assembler\PSO_Assembler.h" />
-    <ClInclude Include="Engine\Resource\RootSignature\RootSignatureContext.h" />
-    <ClInclude Include="Engine\Resource\RootSignature\RootSignatureAssembler\RootSignatureAssembler.h" />
-    <ClInclude Include="Engine\Resource\PSO\PSO_Assembler\ToolCreatePSO\PSO_InfoOutputter\PSO_InfoOutputter.h" />
-    <ClInclude Include="Engine\Render\RenderPathStructure\RenderPathComposer\RenderPathComposer.h" />
-    <ClInclude Include="Engine\Render\RenderPathStructure\RenderPathComposer\ShaderCombiner\ShaderCombiner.h" />
-    <ClInclude Include="Engine\Render\RenderPathStructure\RenderPath.h" />
-    <ClInclude Include="Engine\Render\RenderPathStructure\RenderPathBluePrint\RenderPathBluePrint.h" />
-    <ClInclude Include="Engine\Resource\RootSignature\RootSignatureLibrary\RootSignatureLibrary.h" />
-    <ClInclude Include="Engine\Render\PSO_PoolDispatcher\PSO_PoolDispatcher.h" />
+    <ClInclude Include="Engine\LowerLayer\Core\SwapChain\SwapChainContext.h" />
+    <ClInclude Include="Engine\LowerLayer\Resource\Buffer\BufferCreationSystems\ResourceCreator\ResourceCreator.h" />
+    <ClInclude Include="Engine\LowerLayer\Resource\Buffer\BufferDefinition\GPUBuffer\GPUBufferBehavior.h" />
+    <ClInclude Include="Engine\LowerLayer\Debug\RuntimeDebugger\DebugSystems\LeakChecker\LeakChecker.h" />
+    <ClInclude Include="Engine\LowerLayer\Debug\RuntimeDebugger\DebugSystems\PointerValidator\PointerValidator.h" />
+    <ClInclude Include="Engine\LowerLayer\Debug\RuntimeDebugger\DebugSystems\RuntimeDebuggerBehavior.h" />
+    <ClInclude Include="Engine\LowerLayer\Debug\RuntimeDebugger\RuntimeDebugger.h" />
+    <ClInclude Include="Engine\LowerLayer\Core\DescriptorHeap\ViewCreator\ViewCreator.h" />
+    <ClInclude Include="Engine\LowerLayer\Resource\Buffer\BufferDefinition\GPUBuffer\ComputeBuffer\ComputeBuffer.h" />
+    <ClInclude Include="Engine\LowerLayer\Resource\Buffer\BufferDefinition\BufferDescriptions\ComputeBufferDescription\ComputeBufferDescription.h" />
+    <ClInclude Include="Engine\LowerLayer\Core\SwapChain\SwapChainColorBuffer\SwapChainColorBuffer.h" />
+    <ClInclude Include="Engine\LowerLayer\Core\Device\Commands\StructureCommandContext\CommandStructureCommandContext.h" />
+    <ClInclude Include="Engine\LowerLayer\Core\SwapChain\Presenter\Presenter.h" />
+    <ClInclude Include="Engine\LowerLayer\Core\SwapChain\RenderPassMaterialProvider\RenderPassMaterialProvider.h" />
+    <ClInclude Include="Engine\LowerLayer\Core\Command\Synchronizer\Synchronizer.h" />
+    <ClInclude Include="Engine\LowerLayer\Core\Command\RuntimeWrapper\RuntimeWrapper.h" />
+    <ClInclude Include="Engine\LowerLayer\Core\Command\ResourceUploader\ResourceUploader.h" />
+    <ClInclude Include="Engine\LowerLayer\Resource\Buffer\BufferDefinition\GPUBuffer\UploadStructuredBuffer\UploadStructuredBuffer.h" />
+    <ClInclude Include="Engine\LowerLayer\Resource\Buffer\BufferDefinition\BufferDescriptions\UploadStructuredBufferDescription\UploadStructuredBufferDescription.h" />
+    <ClInclude Include="Engine\LowerLayer\Resource\Buffer\RuntimeBufferManagementSystems\BufferInfoExtractors\RenderTargetBufferInfoExtractor\RenderTargetBufferInfoExtractor.h" />
+    <ClInclude Include="Engine\LowerLayer\Resource\Buffer\RuntimeBufferManagementSystems\BufferInfoExtractors\FrameBufferedBufferInfoExtractor\FrameBufferedBufferInfoExtractor.h" />
+    <ClInclude Include="Engine\LowerLayer\Core\Command\RuntimeCommandControler\RuntimeCommandControler.h" />
+    <ClInclude Include="Engine\LowerLayer\Render\RenderContext.h" />
+    <ClInclude Include="Engine\LowerLayer\Render\RuntimeRenderingManagementSystems\ModelRenderingInfoOrganizer\ModelRenderingInfoOrganizer.h" />
+    <ClInclude Include="Engine\LowerLayer\Render\RequiredRenderingInfo.h" />
+    <ClInclude Include="Engine\LowerLayer\Resource\Shader\ShaderContext.h" />
+    <ClInclude Include="Engine\LowerLayer\Resource\Shader\ShaderCompiler\ShaderCompiler.h" />
+    <ClInclude Include="Engine\LowerLayer\Resource\Shader\ShaderLibrary\ShaderLibrary.h" />
+    <ClInclude Include="Engine\LowerLayer\Resource\PSO\PSO_Context.h" />
+    <ClInclude Include="Engine\LowerLayer\Resource\PSO\PSO_Assembler\PSO_Assembler.h" />
+    <ClInclude Include="Engine\LowerLayer\Resource\RootSignature\RootSignatureContext.h" />
+    <ClInclude Include="Engine\LowerLayer\Resource\RootSignature\RootSignatureAssembler\RootSignatureAssembler.h" />
+    <ClInclude Include="Engine\LowerLayer\Resource\PSO\PSO_Assembler\ToolCreatePSO\PSO_InfoOutputter\PSO_InfoOutputter.h" />
+    <ClInclude Include="Engine\LowerLayer\Render\RenderPathStructure\RenderPathComposer\RenderPathComposer.h" />
+    <ClInclude Include="Engine\LowerLayer\Render\RenderPathStructure\RenderPathComposer\ShaderCombiner\ShaderCombiner.h" />
+    <ClInclude Include="Engine\LowerLayer\Render\RenderPathStructure\RenderPath.h" />
+    <ClInclude Include="Engine\LowerLayer\Render\RenderPathStructure\RenderPathBluePrint\RenderPathBluePrint.h" />
+    <ClInclude Include="Engine\LowerLayer\Resource\RootSignature\RootSignatureLibrary\RootSignatureLibrary.h" />
+    <ClInclude Include="Engine\LowerLayer\Render\PSO_PoolDispatcher\PSO_PoolDispatcher.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

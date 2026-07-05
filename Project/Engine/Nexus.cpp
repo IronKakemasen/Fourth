@@ -1,30 +1,29 @@
-#include "PreCompileHeader.h"
 #include "Nexus.h"
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-#include "Core/Device/DeviceContext.h"
-#include "Core/Device/DeviceContextCommandProvider/DeviceContextCommandProvider.h"
-#include "Core/Device/DeviceContextCommandExecutor/DeviceContextCommandExecutor.h"
+#include "LowerLayer/Core/Device/DeviceContext.h"
+#include "LowerLayer/Core/Device/DeviceContextCommandProvider/DeviceContextCommandProvider.h"
+#include "LowerLayer/Core/Device/DeviceContextCommandExecutor/DeviceContextCommandExecutor.h"
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-#include "Core/DescriptorHeap/DescriptorHeapContext.h"
+#include "LowerLayer/Core/DescriptorHeap/DescriptorHeapContext.h"
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-#include "Core/Window/WindowContext.h"
+#include "LowerLayer/Core/Window/WindowContext.h"
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-#include "Core/SwapChain/SwapChainContext.h"
+#include "LowerLayer/Core/SwapChain/SwapChainContext.h"
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-#include "Core/Command/CommandContext.h"
+#include "LowerLayer/Core/Command/CommandContext.h"
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-#include "Resource/Shader/ShaderContext.h"
+#include "LowerLayer/Resource/Shader/ShaderContext.h"
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-#include "Resource/Buffer/BufferContext.h"
-#include "Resource/Buffer/BufferCreationSystems/BufferCreator/BufferCreator.h"
-#include "Resource/Buffer/BufferDefinition/BufferDescriptions/DepthStencilBufferDescription/DepthStencilBufferDescription.h"
-#include "Resource/Buffer/BufferDefinition/GPUBuffer/DepthStencilBuffer/DepthStencilBuffer.h"
+#include "LowerLayer/Resource/Buffer/BufferContext.h"
+#include "LowerLayer/Resource/Buffer/BufferCreationSystems/BufferCreator/BufferCreator.h"
+#include "LowerLayer/Resource/Buffer/BufferDefinition/BufferDescriptions/DepthStencilBufferDescription/DepthStencilBufferDescription.h"
+#include "LowerLayer/Resource/Buffer/BufferDefinition/GPUBuffer/DepthStencilBuffer/DepthStencilBuffer.h"
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-#include "Resource/PSO/PSO_Context.h"
+#include "LowerLayer/Resource/PSO/PSO_Context.h"
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-#include "Resource/RootSignature/RootSignatureContext.h"
+#include "LowerLayer/Resource/RootSignature/RootSignatureContext.h"
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-#include "Render/RenderContext.h"
+#include "LowerLayer/Render/RenderContext.h"
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 namespace
