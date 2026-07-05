@@ -19,7 +19,6 @@ public:
 	///シェーダーバイナリオブジェのポインタを輸出
 	IDxcBlob* Export(GetDataKey key_, const std::string& fileName_);
 
-
 private:
 	///本元データ
 	std::unordered_map<std::string, Microsoft::WRL::ComPtr<IDxcBlob>> data;

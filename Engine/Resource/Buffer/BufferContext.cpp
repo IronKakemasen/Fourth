@@ -65,9 +65,9 @@ void BufferContext::InstantiateBufferCreator
 		std::make_unique<BufferCollector>
 		(
 			instanceKey_, 
-			&renderTargetBufferContainer, 
-			&computeBufferContainer,
-			&frameBufferContainer,
+			&renderTargetBufferPool, 
+			&computeBufferPool,
+			&frameBufferpool,
 			&bufferLocationMap
 		)
 	);

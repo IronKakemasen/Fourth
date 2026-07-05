@@ -12,9 +12,9 @@ class BufferContext::BufferDispatcher
 	{
 		static std::vector<std::unique_ptr<GPUBufferBehavior>>* table[(int)RegisterType::kCount]
 		{
-			renderTargetBufferContainer,
-			frameBufferContainer,
-			computeBufferContainer
+			renderTargetBufferPool,
+			frameBufferpool,
+			computeBufferPool
 		};
 
 		return table[(int)type_];
@@ -45,9 +45,9 @@ public:
 private:
 
 	//検索先
-	std::vector<std::unique_ptr<GPUBufferBehavior>>* renderTargetBufferContainer;
-	std::vector<std::unique_ptr<GPUBufferBehavior>>* frameBufferContainer;
-	std::vector<std::unique_ptr<GPUBufferBehavior>>* computeBufferContainer;
+	std::vector<std::unique_ptr<GPUBufferBehavior>>* renderTargetBufferPool;
+	std::vector<std::unique_ptr<GPUBufferBehavior>>* frameBufferpool;
+	std::vector<std::unique_ptr<GPUBufferBehavior>>* computeBufferPool;
 	//ユニークIDがどこのバッファコンテナの何番目のバッファを指しているのか示すマップコンテナ
 	std::unordered_map<BufferUniqueID, std::pair<RegisterType, uint32_t>>* bufferLocationMap;
 

@@ -1,6 +1,8 @@
 #pragma once
 
 class Nexus;
+class RootSignatureLibrary;
+
 
 class RootSignatureContext
 {
@@ -11,6 +13,8 @@ protected:
 
 public:
 
+	//rootSignatureを組み立てる
+	class Assembler;
 	struct InstanceKey;
 
 	RootSignatureContext(InstanceKey key_, CommandCreateRootSignature cmdCreateRootSignature_);
@@ -18,11 +22,9 @@ public:
 
 private:
 
-	//rootSignatureを組み立てる
-	class Assembler;
-
 	std::unique_ptr<Assembler> assembler;
-	
+	std::unique_ptr<RootSignatureLibrary> rootSignatureLibrary;
+
 };
 
 struct RootSignatureContext::InstanceKey

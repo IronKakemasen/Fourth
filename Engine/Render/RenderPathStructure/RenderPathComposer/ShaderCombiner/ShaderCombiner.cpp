@@ -4,34 +4,12 @@
 //外部
 #include "../../../../Resource/Shader/ShaderLibrary/ShaderLibrary.h"
 
-
-template<>
-RenderPath::MS_PS RenderPath::PathComposer::ShaderCombiner::Combine
-(
-	ShaderLibrary* lib_, 
-	RenderPathComponent::MeshType type_, 
-	RenderPathComponent::Base base_
-)
+RenderPath::MS_PS RenderPath::PathComposer::ShaderCombiner::Combine(ShaderLibrary* lib_, std::string const msKey_, std::string const psKey_)
 {
-	RenderPath::MS_PS ms_ps;
-
-	//ms_ps.first = lib_->Export(ShaderLibrary::GetDataKey{},)
-
-	return ms_ps;
+	return
+	{
+		lib_->Export(ShaderLibrary::GetDataKey{}, msKey_) ,
+		(psKey_.size() > 0) ? lib_->Export(ShaderLibrary::GetDataKey{}, psKey_) : nullptr
+	};
 }
 
-template<>
-RenderPath::MS_PS RenderPath::PathComposer::ShaderCombiner::Combine
-(
-	ShaderLibrary* lib_, 
-	RenderPathComponent::MaterialType type_,
-	RenderPathComponent::Base base_
-)
-{
-	RenderPath::MS_PS ms_ps;
-
-	//ms_ps.first = lib_->Export(ShaderLibrary::GetDataKey{},)
-
-	return ms_ps;
-
-}

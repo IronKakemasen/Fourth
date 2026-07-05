@@ -15,9 +15,9 @@ public:
 	BufferCollector
 	(
 		BufferContext::InstanceKey key_,
-		std::vector<std::unique_ptr<GPUBufferBehavior>>* renderTargetBufferContainer_,
-		std::vector<std::unique_ptr<GPUBufferBehavior>>* computeBufferContainer_,
-		std::vector<std::unique_ptr<GPUBufferBehavior>>* frameBufferContainer_,
+		std::vector<std::unique_ptr<GPUBufferBehavior>>* renderTargetBufferPool_,
+		std::vector<std::unique_ptr<GPUBufferBehavior>>* computeBufferPool_,
+		std::vector<std::unique_ptr<GPUBufferBehavior>>* frameBufferPool_,
 		std::unordered_map<BufferUniqueID, std::pair<BufferContext::RegisterType, uint32_t>>* bufferLocationMap_
 	);
 
@@ -54,9 +54,9 @@ private:
 	std::vector<TempSaveFormat> tmp_bufferContainer;
 
 	//分別先
-	std::vector<std::unique_ptr<GPUBufferBehavior>>* renderTargetBufferContainer;
-	std::vector<std::unique_ptr<GPUBufferBehavior>>* computeBufferContainer;
-	std::vector<std::unique_ptr<GPUBufferBehavior>>* frameBufferContainer;
+	std::vector<std::unique_ptr<GPUBufferBehavior>>* renderTargetBufferPool;
+	std::vector<std::unique_ptr<GPUBufferBehavior>>* computeBufferPool;
+	std::vector<std::unique_ptr<GPUBufferBehavior>>* frameBufferpool;
 
 	//ユニークIDがどこのバッファコンテナの何番目のバッファを指しているのか示すマップコンテナ
 	std::unordered_map<BufferUniqueID, std::pair<RegisterType, uint32_t>>* bufferLocationMap;

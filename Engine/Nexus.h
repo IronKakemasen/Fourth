@@ -9,6 +9,8 @@ class CommandContext;
 class ShaderContext;
 class PSO_Context;
 class RootSignatureContext;
+class RenderContext;
+
 
 //交易場
 class Nexus
@@ -44,10 +46,14 @@ private:
 	std::unique_ptr<SwapChainContext> swapChainContext;
 	//シェーダのコンパイル、データの保持
 	std::unique_ptr<ShaderContext> shaderContext;
-	//PSOの生成
+	//PSOの生成とデータの保持
 	std::unique_ptr<PSO_Context> pso_context;
-	//ルートシグネチャの生成
+	//ルートシグネチャの生成とデータの保持
 	std::unique_ptr<RootSignatureContext> rootSignatureContext;
+	//PSOの管理、描画パスの構築
+	std::unique_ptr<RenderContext> renderContext;
+
+
 
 	
 	void InstantiateCommandContext();
@@ -59,6 +65,7 @@ private:
 	void InstantiateShaderContext();
 	void InstantiatePSO_Context();
 	void InstantiateRootSignatureContext();
+	void InstantiateRenderContext();
 
 	void Finalize();
 

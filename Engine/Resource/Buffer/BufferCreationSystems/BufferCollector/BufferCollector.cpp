@@ -7,11 +7,11 @@
 BufferContext::BufferCollector::BufferCollector
 (
 	BufferContext::InstanceKey key_,
-	std::vector<std::unique_ptr<GPUBufferBehavior>>* renderTargetBufferContainer_,
-	std::vector<std::unique_ptr<GPUBufferBehavior>>* computeBufferContainer_,
-	std::vector<std::unique_ptr<GPUBufferBehavior>>* frameBufferContainer_,
+	std::vector<std::unique_ptr<GPUBufferBehavior>>* renderTargetBufferPool_,
+	std::vector<std::unique_ptr<GPUBufferBehavior>>* computeBufferPool_,
+	std::vector<std::unique_ptr<GPUBufferBehavior>>* frameBufferPool_,
 	std::unordered_map<BufferUniqueID, std::pair<RegisterType, uint32_t>>* bufferLocationMap_
-):renderTargetBufferContainer(renderTargetBufferContainer_), computeBufferContainer(computeBufferContainer_), frameBufferContainer(frameBufferContainer_), bufferLocationMap(bufferLocationMap_)
+):renderTargetBufferPool(renderTargetBufferPool_), computeBufferPool(computeBufferPool_), frameBufferpool(frameBufferPool_), bufferLocationMap(bufferLocationMap_)
 {
 
 }
@@ -68,9 +68,9 @@ std::vector<std::unique_ptr<GPUBufferBehavior>>* BufferContext::BufferCollector:
 {
 	static std::vector<std::unique_ptr<GPUBufferBehavior>>* table[(int)BufferContext::RegisterType::kCount]
 	{
-		renderTargetBufferContainer,
-		frameBufferContainer,
-		computeBufferContainer
+		renderTargetBufferPool,
+		frameBufferpool,
+		computeBufferPool
 	};
 
 	return table[(int)type_];

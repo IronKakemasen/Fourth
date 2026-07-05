@@ -1,21 +1,64 @@
 #include "RenderPathBluePrint.h"
 
-template<>
-std::string RenderPathBluePrint::ShaderTable::Watch
-(
-	RenderPathComponent::MeshType meshType_,
-	RenderPathComponent::Base baseType_
-)
+namespace
 {
-	return {};
+	auto const fileName = "RenderPathBluePrint.cpp";
 }
 
+using namespace RenderPathBluePrint;
+using namespace RenderPathComponent;
+
+
 template<>
-std::string RenderPathBluePrint::ShaderTable::Watch
+std::string ShaderTable::Watch
 (
-	RenderPathComponent::MaterialType meshType_,
-	RenderPathComponent::Base baseType_
+	MeshType meshType_,
+	PathType pathType_
 )
 {
-	return {};
+	std::string shaderKey{};
+
+	switch (pathType_)
+	{
+	case PathType::kBasic:
+
+		if (meshType_ == MeshType::kTest) shaderKey = "TestMS";
+
+		break;
+
+	default:
+		ErrorMessageOutput::Assert::OutputError("シェーダーテーブルのパターンとして定義されていない(MS)", fileName);
+
+		break;
+	}
+
+	return shaderKey;
+}
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+template<>
+std::string ShaderTable::Watch
+(
+	MaterialType materialType_,
+	PathType pathType_
+)
+{
+	std::string shaderKey{};
+
+	switch (pathType_)
+	{
+	case PathType::kBasic:
+
+		if (materialType_ == MaterialType::kTest) shaderKey = "TestPS";
+
+		break;
+
+	default:
+		ErrorMessageOutput::Assert::OutputError("シェーダーテーブルのパターンとして定義されていない(PS)", fileName);
+
+		break;
+	}
+
+	return shaderKey;
 }

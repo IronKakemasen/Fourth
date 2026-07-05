@@ -5,20 +5,20 @@ namespace RenderPathComponent
 {
 	enum class MeshType
 	{
+		kTest,
 		kStatic,
-		kCount
 	};
 
 	enum class MaterialType
 	{
+		kTest,
 		kStandard,
-		kCount
 	};
 
-	enum class Base
+	enum class PathType
 	{
 		kBasic,
-		kCount
+
 	};
 
 };

@@ -12,12 +12,13 @@ public:
 
 	//生成関数
 	template<typename DescType>
-	Microsoft::WRL::ComPtr<ID3D12RootSignature> Create(DescType descType_);
+	Microsoft::WRL::ComPtr<ID3D12RootSignature> Create(const DescType& descType_);
 
 private:
 
-
 	RootSignatureContext::CommandCreateRootSignature cmdCreaterootSignature;
+
+	Microsoft::WRL::ComPtr<ID3D12RootSignature> CreateRootSignature(D3D12_ROOT_SIGNATURE_DESC* desc_);
 };
 
 

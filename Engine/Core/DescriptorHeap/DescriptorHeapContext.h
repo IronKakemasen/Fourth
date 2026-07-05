@@ -1,7 +1,7 @@
 #pragma once
 
 class Nexus;
-class DescriptorHeapClass;
+class DescriptorHeapPool;
 class ViewCreator;
 class BufferContext;
 class SwapChainContext;
@@ -53,8 +53,8 @@ private:
 	class DescriptorHeapCreator;
 	std::unique_ptr<DescriptorHeapCreator> descriptorHeapCreator;
 
-	//DescriptorHeapClassのコンテナ
-	std::unordered_map < D3D12_DESCRIPTOR_HEAP_TYPE, std::unique_ptr<DescriptorHeapClass>> descriptorHeapContainer;
+	//DescriptorHeapPoolのコンテナ
+	std::unordered_map < D3D12_DESCRIPTOR_HEAP_TYPE, std::unique_ptr<DescriptorHeapPool>> descriptorHeapContainer;
 
 	//ビュー生成機関
 	std::unique_ptr<ViewCreator> viewCreator;
@@ -62,6 +62,7 @@ private:
 	//DescriptorHeapの作成
 	template<D3D12_DESCRIPTOR_HEAP_TYPE HeapType>
 	void CreateDescriptorHeap(UINT numDescriptors_, bool shaderVisible_, UINT handleIncSize_);
+	
 	//各種ディスクリプターヒープの作成
 	void CreateDescriptorHeaps(UINT rtvDH_, UINT srvDH_, UINT dsvDH_);
 
