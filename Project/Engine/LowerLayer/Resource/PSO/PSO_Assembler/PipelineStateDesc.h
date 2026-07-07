@@ -1,5 +1,6 @@
 #pragma once
 #include "../../../Render/RenderPathStructure/RenderStateComponent.h"
+#include "../../../Render/RenderPathStructure/RenderPathComponent.h"
 #include "../../../../External/d3dx12/d3dx12.h"
 
 namespace PipelineStateDesc
@@ -35,8 +36,8 @@ namespace PipelineStateDesc
     {
         DXGI_FORMAT dsvFormat;
         RenderStateComponent::BlendMode blendMode = RenderStateComponent::BlendMode::kOpaque;
-        RenderStateComponent::DepthEnable depthEnable = RenderStateComponent::DepthEnable::kEnable;
-        RenderStateComponent::DepthTest depthTest = RenderStateComponent::DepthTest::kGreaterEqual;
+        RenderPathComponent::DepthEnable depthEnable = RenderPathComponent::DepthEnable::kEnable;
+        RenderPathComponent::DepthTest depthTest = RenderPathComponent::DepthTest::kGreaterEqual;
         float clearDepth = 0.0f;
         std::string bufferName;
     };

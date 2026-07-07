@@ -5,7 +5,7 @@
 #include "CommandExecutor/CommandExecutor.h"
 #include "RuntimeWrapper/RuntimeWrapper.h"
 #include "ResourceUploader/ResourceUploader.h"
-#include "RuntimeCommandControler/RuntimeCommandControler.h"
+#include "RuntimeCommandController/RuntimeCommandController.h"
 
 
 using namespace ProjectConfig::Render;
@@ -72,7 +72,7 @@ void CommandContext::InstantiateRuntimeCommandControler()
 	std::unique_ptr<CommandExecutor> commandExecutor(std::make_unique<CommandExecutor>(commandQueue.Get(), cmdAllocators, commandList.Get()));
 	Logger::Log("Create: commandExecutor", fileName);
 
-	runtimeCommandControler.reset(new RuntimeCommandControler(std::move(commandExecutor), synchronizer.get()));
+	runtimeCommandController.reset(new RuntimeCommandController(std::move(commandExecutor), synchronizer.get()));
 	Logger::Log("Instantiate: RuntimeCommandControler", fileName);
 }
 

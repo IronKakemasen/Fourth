@@ -4,6 +4,7 @@
 
 
 using namespace RenderStateComponent;
+using namespace RenderPathComponent;
 
 void PSO_InfoOutputter::OutputGraphicsPSOInfo
 (

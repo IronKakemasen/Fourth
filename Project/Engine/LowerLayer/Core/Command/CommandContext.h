@@ -7,7 +7,7 @@ class ResourceUploader;
 class CommandContext
 {
 	//ランタイムでのコマンド制御を行う
-	class RuntimeCommandControler;
+	class RuntimeCommandController;
 	//FenceでCPUとGPUを同期させる
 	class Synchronizer;
 	//コマンドを実行する
@@ -39,7 +39,7 @@ public:
 	ID3D12CommandQueue* GetCommandQueue(CmdQueueGetKey key_);
 	void Finalize(InstanceKey instanceKey_);
 
-	std::unique_ptr<RuntimeCommandControler> runtimeCommandControler;
+	std::unique_ptr<RuntimeCommandController> runtimeCommandController;
 
 private:
 

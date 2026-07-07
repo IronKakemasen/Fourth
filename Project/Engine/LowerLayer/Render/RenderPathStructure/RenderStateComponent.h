@@ -7,6 +7,7 @@ namespace RenderStateComponent
         kOpaque,
         kAlphaBlend,
         kAdditive
+        ,kCount
     };
 
     enum class FillMode
@@ -25,19 +26,6 @@ namespace RenderStateComponent
     };
 
 
-    enum class DepthEnable
-    {
-        kDisable, 
-        kEnable
-        ,kCount
-    };
-
-    enum class DepthTest
-    {
-        kLessEqual,
-        kGreaterEqual
-        ,kCount
-    };
 
     //モデル一つにつき１定義のみ
     struct Uniqued
@@ -68,11 +56,5 @@ namespace RenderStateComponent
         return cullMode;
     }
 
-    inline D3D12_COMPARISON_FUNC Convert(DepthTest depthTest_)
-    {
-        D3D12_COMPARISON_FUNC comparisonFunc = D3D12_COMPARISON_FUNC_GREATER_EQUAL;
-
-        return (depthTest_ == DepthTest::kGreaterEqual) ? D3D12_COMPARISON_FUNC_GREATER_EQUAL : D3D12_COMPARISON_FUNC_LESS_EQUAL;
-    }
 }
 

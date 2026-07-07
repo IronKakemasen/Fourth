@@ -4937,6 +4937,46 @@ struct RequiredRenderingInfo
 
 
 ========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Render\PSO_PoolDispatcher\PSO_Key.h ===
+========================================
+#pragma once
+#include "../RenderPathStructure/RenderStateComponent.h"
+#include "../RenderPathStructure/ShaderPathComponent.h"
+#include "../RenderPathStructure/RenderPathComponent.h"
+
+struct PSO_Key
+{
+private:
+    int const kInvalid = -1;
+
+public:
+
+    ///意味あるか分からんが、いちおうシーケンスを明示しとく
+    enum Sequence
+    {
+        kPass,
+        kDepthEnable,
+        kDepthtest,
+        kMeshType,
+        kMaterialType,
+        kBlendMode,
+        KFillMode,
+        kCullMode
+    };
+
+     RenderPathComponent::Pass pass = RenderPathComponent::Pass(kInvalid);
+     RenderPathComponent::DepthEnable depthEnable = RenderPathComponent::DepthEnable(kInvalid);
+     RenderPathComponent::DepthTest depthTest = RenderPathComponent::DepthTest(kInvalid);
+     ShaderPathComponent::MeshType mesh = ShaderPathComponent::MeshType(kInvalid);
+     ShaderPathComponent::MaterialType material = ShaderPathComponent::MaterialType(kInvalid);
+     RenderStateComponent::BlendMode blend = RenderStateComponent::BlendMode(kInvalid);
+     RenderStateComponent::FillMode fill = RenderStateComponent::FillMode(kInvalid);
+     RenderStateComponent::CullMode cull = RenderStateComponent::CullMode(kInvalid);
+};
+
+
+
+========================================
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Render\PSO_PoolDispatcher\PSO_PoolDispatcher.cpp ===
 ========================================
 
@@ -4962,12 +5002,13 @@ RenderContext::PSO_PoolDispatcher::PSO_PoolDispatcher
 ========================================
 #pragma once
 #include "../RenderContext.h"
-
+#include "PSO_Key.h"
 
 
 class RenderContext::PSO_PoolDispatcher
 {
 public:
+
 	PSO_PoolDispatcher
 	(
 		RenderContext::InstacnceKey key_ , 
@@ -4978,12 +5019,273 @@ public:
 
 
 
+	//psoのアドレスを挿入
+
+
 private:
+
+	//PSOキーをuint32_tに詰める
+	struct PSO_KeyPackager;
+	//オープンアドレッシング・ハッシュテーブル法で、より高速にPSOを検索するためのツール
+	//poolの中のP目的のPSOのインデックスを取得する
+	class PSO_Index;
+
+
 	std::vector<ID3D12PipelineState*>* graphicsPSO_pool;
 
 };
 
 
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Render\PSO_PoolDispatcher\Tool\PSO_Index\PSO_Index.cpp ===
+========================================
+#include "PreCompileHeader.h"
+#include "PSO_Index.h"
+
+
+namespace
+{
+    auto const fileName = "PSO_Index.cpp";
+}
+
+
+RenderContext::PSO_PoolDispatcher::PSO_Index::PSO_Index()
+{
+    Initialize();
+}
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+void RenderContext::PSO_PoolDispatcher::PSO_Index::Initialize()
+{
+    ErrorMessageOutput::Assert::DetectError(kSizeOfSlots >= 2, "kSizeOfSlots < 2", fileName);
+    ErrorMessageOutput::Assert::DetectError
+    (
+        (kSizeOfSlots & (kSizeOfSlots - 1)) == 0, 
+        "マスクの値が不適切になってしまう", 
+        fileName
+    );
+
+    mask = kSizeOfSlots - 1;
+    slots.resize(kSizeOfSlots);
+}
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+void RenderContext::PSO_PoolDispatcher::PSO_Index::Insert(uint32_t packedKey_, uint32_t pipelineIndex)
+{
+    uint32_t index = Hash(packedKey_) & mask;
+
+    uint32_t loopNum{};
+
+    while (true)
+    {
+        Slot& slot = slots[index];
+
+        //空席であれば
+        if (slot.packedKey == InvalidKey)
+        {
+            slot.packedKey = packedKey_;
+            slot.psoIndex = pipelineIndex;
+            return;
+        }
+
+        //書き換え
+        if (slot.packedKey == packedKey_)
+        {
+            slot.psoIndex = pipelineIndex;
+            return;
+        }
+
+        //次の席へ
+        index = NextSlot(index);
+
+        //無限ループ制限
+        ErrorMessageOutput::Assert::DetectError
+        (
+            (++loopNum < kSizeOfSlots),
+            "スロットオーバーです",
+            fileName
+        );
+    }
+}
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Render\PSO_PoolDispatcher\Tool\PSO_Index\PSO_Index.h ===
+========================================
+#pragma once
+#include "../../PSO_PoolDispatcher.h"
+
+
+class RenderContext::PSO_PoolDispatcher::PSO_Index
+{
+    static constexpr uint32_t InvalidKey = 0xffffffff;
+    static constexpr uint32_t InvalidIndex = 0xffffffff;
+
+    struct Slot
+    {
+        uint32_t packedKey = InvalidKey;
+        uint32_t psoIndex = InvalidIndex;
+    };
+
+    inline uint32_t Hash(uint32_t packedkey_)const
+    {
+        packedkey_ ^= packedkey_ >> 16;
+        packedkey_ *= 0x7feb352d;
+        packedkey_ ^= packedkey_ >> 15;
+        packedkey_ *= 0x846ca68b;
+        packedkey_ ^= packedkey_ >> 16;
+
+        return packedkey_;
+    }
+
+    inline uint32_t NextSlot(uint32_t curSlotIndex_) const 
+    {
+        //インデックスがオーバーしてる場合は巡回する
+        return (curSlotIndex_ + 1) & mask;
+    }
+
+public:
+
+    PSO_Index();
+
+    ///検索
+    inline uint32_t Find(uint32_t packedKey_) const
+    {
+        uint32_t index = Hash(packedKey_) & mask;
+
+        while (true)
+        {
+            const Slot& entry = slots[index];
+
+            if (entry.packedKey == InvalidKey)
+            {
+                ErrorMessageOutput::Assert::DetectError(entry.packedKey != InvalidKey, "無効な読み取りです", "PSO_Cache.h");
+                return InvalidIndex;
+            }
+
+            //発見
+            if (entry.packedKey == packedKey_)
+            {
+                return entry.psoIndex;
+            }
+
+            index = NextSlot(index);
+        }
+    }
+
+    ///挿入
+    void Insert(uint32_t packedKey_, uint32_t pipelineIndex);
+
+private:
+
+    uint32_t const kSizeOfSlots = 2048;
+    std::vector<Slot> slots;
+    uint32_t mask{};
+
+    void Initialize();
+
+};
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Render\PSO_PoolDispatcher\Tool\PSO_KeyPackager\PSO_KeyPackager.cpp ===
+========================================
+#include "PreCompileHeader.h"
+#include "PSO_KeyPackager.h"
+
+using namespace RenderPathComponent;
+using namespace RenderStateComponent;
+using namespace ShaderPathComponent;
+
+
+RenderContext::PSO_PoolDispatcher::PSO_KeyPackager::PSO_KeyPackager()
+{
+    renderPassBL.Init((uint32_t)Pass::kCount, 0);
+    depthEnableBL.Init((uint32_t)DepthEnable::kCount, renderPassBL.EndLocation());
+    depthTestBL.Init((uint32_t)DepthTest::kCount, depthEnableBL.EndLocation());
+    meshTypeBL.Init((uint32_t)MeshType::kCount, depthTestBL.EndLocation());
+    materialTypeBL.Init((uint32_t)MaterialType::kCount, meshTypeBL.EndLocation());
+    blendModeBL.Init((uint32_t)BlendMode::kCount, materialTypeBL.EndLocation());
+    fillModeBL.Init((uint32_t)FillMode::kCount, blendModeBL.EndLocation());
+    cullModeBL.Init((uint32_t)CullMode::kCount, fillModeBL.EndLocation());
+}
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Render\PSO_PoolDispatcher\Tool\PSO_KeyPackager\PSO_KeyPackager.h ===
+========================================
+#pragma once
+#include "../../PSO_PoolDispatcher.h"
+
+
+struct RenderContext::PSO_PoolDispatcher::PSO_KeyPackager
+{
+private:
+
+
+    ///以下BL(ふざけてるわけではない)
+    struct BitAndLocation
+    {
+        uint32_t shift{};
+
+        inline void Init(uint32_t count_, uint32_t shift_)
+        {
+            //必要ビット数を計算
+            CalcBitWidth(count_);
+            //スタート地点を記録
+            CalcShitNum(shift_);
+
+            ErrorMessageOutput::Assert::DetectError((EndLocation() <= 32), "PSO_Keyのサイズ超過", "PSO_KeyPackager.h");
+        }
+
+        uint32_t EndLocation() { return shift + bits; }
+
+    private:
+
+        uint32_t bits{};
+
+        inline void CalcBitWidth(uint32_t count_) { bits = count_ <= 1 ? 1 : std::bit_width(count_ - 1); }
+        inline void CalcShitNum(uint32_t shift_) { shift = shift_; }
+    };
+
+    static inline BitAndLocation renderPassBL;
+    static inline BitAndLocation depthEnableBL;
+    static inline BitAndLocation depthTestBL;
+    static inline BitAndLocation meshTypeBL;
+    static inline BitAndLocation materialTypeBL;
+    static inline BitAndLocation blendModeBL;
+    static inline BitAndLocation fillModeBL;
+    static inline BitAndLocation cullModeBL;
+
+public:
+
+    PSO_KeyPackager();
+
+    [[nodiscard]] static inline uint32_t CreateKey(PSO_Key key_)
+    {
+        uint32_t packedKey =
+              (uint32_t(key_.pass)          << renderPassBL.shift)
+            | (uint32_t(key_.mesh)          << meshTypeBL.shift)
+            | (uint32_t(key_.material)      << materialTypeBL.shift)
+            | (uint32_t(key_.blend)         << blendModeBL.shift)
+            | (uint32_t(key_.fill)          << fillModeBL.shift)
+            | (uint32_t(key_.cull)          << cullModeBL.shift)
+            | (uint32_t(key_.depthEnable)   << depthEnableBL.shift)
+            | (uint32_t(key_.depthTest)     << depthTestBL.shift);
+
+        return packedKey;
+    }
+
+};
 
 
 
@@ -5036,10 +5338,30 @@ namespace RenderPathComponent
 		kCreateSceneTexture,
 
 		
-		
-		kFinal,
+		kFinal
+		,kCount
 
 	};
+
+    enum class DepthEnable
+    {
+        kDisable,
+        kEnable
+        , kCount
+    };
+
+    enum class DepthTest
+    {
+        kLessEqual,
+        kGreaterEqual
+        , kCount
+    };
+
+    inline D3D12_COMPARISON_FUNC Convert(DepthTest depthTest_)
+    {
+        return (depthTest_ == DepthTest::kGreaterEqual) ? D3D12_COMPARISON_FUNC_GREATER_EQUAL : D3D12_COMPARISON_FUNC_LESS_EQUAL;
+    }
+
 }
 
 
@@ -5074,39 +5396,30 @@ namespace RenderStateComponent
         kOpaque,
         kAlphaBlend,
         kAdditive
+        ,kCount
     };
 
     enum class FillMode
     {
-        kWireFrame = 2,
-        kSolid = 3
+        kWireFrame,
+        kSolid
+        ,kCount
     };
 
     enum class CullMode
     {
-        kNone = 1,
-        kFront = 2,
-        kBack = 3
+        kNone,
+        kFront,
+        kBack
+        ,kCount
     };
 
-    enum class DepthWrite
-    {
-        kDisable = 0, 
-        kEnable = 1
-    };
 
-    enum class DepthTest
-    {
-        kLessEqual = 4,
-        kGreaterEqual = 7
-    };
 
     //モデル一つにつき１定義のみ
     struct Uniqued
     {
         RenderStateComponent::CullMode cullMode = RenderStateComponent::CullMode::kBack;
-        RenderStateComponent::DepthWrite depthWrite = RenderStateComponent::DepthWrite::kEnable;
-        RenderStateComponent::DepthTest depthTest = RenderStateComponent::DepthTest::kGreaterEqual;
     };
 
     //複数定義可能
@@ -5114,6 +5427,23 @@ namespace RenderStateComponent
     {
         RenderStateComponent::BlendMode blendMode = RenderStateComponent::BlendMode::kOpaque;
     };
+
+
+
+    inline D3D12_FILL_MODE Convert(FillMode fillMode_)
+    {
+        return (fillMode_ == FillMode::kSolid) ? D3D12_FILL_MODE_SOLID : D3D12_FILL_MODE_WIREFRAME;
+    }
+
+    inline D3D12_CULL_MODE Convert(CullMode cullMode_)
+    {
+        D3D12_CULL_MODE cullMode = D3D12_CULL_MODE_BACK;
+
+        if (cullMode_ == CullMode::kFront) cullMode = D3D12_CULL_MODE_FRONT;
+        else if(cullMode_ == CullMode::kNone) cullMode = D3D12_CULL_MODE_NONE;
+
+        return cullMode;
+    }
 
 }
 
@@ -5132,13 +5462,17 @@ namespace ShaderPathComponent
 	enum class MeshType
 	{
 		kTest,
-		kStatic,
+		kStatic
+
+		,kCount
 	};
 
 	enum class MaterialType
 	{
 		kTest,
-		kStandard,
+		kStandard
+
+		,kCount
 	};
 
 };
@@ -8812,6 +9146,7 @@ private:
 ========================================
 #pragma once
 #include "../../../Render/RenderPathStructure/RenderStateComponent.h"
+#include "../../../Render/RenderPathStructure/RenderPathComponent.h"
 #include "../../../../External/d3dx12/d3dx12.h"
 
 namespace PipelineStateDesc
@@ -8847,8 +9182,8 @@ namespace PipelineStateDesc
     {
         DXGI_FORMAT dsvFormat;
         RenderStateComponent::BlendMode blendMode = RenderStateComponent::BlendMode::kOpaque;
-        RenderStateComponent::DepthWrite depthWrite = RenderStateComponent::DepthWrite::kEnable;
-        RenderStateComponent::DepthTest depthTest = RenderStateComponent::DepthTest::kGreaterEqual;
+        RenderPathComponent::DepthEnable depthEnable = RenderPathComponent::DepthEnable::kEnable;
+        RenderPathComponent::DepthTest depthTest = RenderPathComponent::DepthTest::kGreaterEqual;
         float clearDepth = 0.0f;
         std::string bufferName;
     };
@@ -9246,7 +9581,6 @@ private:
 ========================================
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\PSO\PSO_Assembler\ToolCreatePSO\CreateDepthStencilDesc\CreateDepthStencilDesc.cpp ===
 ========================================
-
 #include "CreateDepthStencilDesc.h"
 
 
@@ -9276,12 +9610,14 @@ void CreateDepthStencilDesc::SetBranchedDetails(CD3DX12_DEPTH_STENCIL_DESC* desc
 
 		break;
 
+	//kOpaque以外は全て深度書き込み無効とする
 	default:
 
 		depthWriteMask = D3D12_DEPTH_WRITE_MASK_ZERO;
 
 		break;
 	}
+
 
 	desc_->DepthWriteMask = depthWriteMask;
 
@@ -9291,8 +9627,8 @@ void CreateDepthStencilDesc::SetBranchedDetails(CD3DX12_DEPTH_STENCIL_DESC* desc
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 void CreateDepthStencilDesc::SetDetailsDirectly(CD3DX12_DEPTH_STENCIL_DESC* desc_, const PipelineStateDesc::DepthStencilDesc& srcDesc_)
 {
-	desc_->DepthEnable = BOOL(srcDesc_.depthWrite);
-	desc_->DepthFunc = (D3D12_COMPARISON_FUNC)srcDesc_.depthTest;
+	desc_->DepthEnable = BOOL(srcDesc_.depthEnable);
+	desc_->DepthFunc = RenderPathComponent::Convert(srcDesc_.depthTest);
 }
 
 
@@ -9353,8 +9689,8 @@ void CreateRasterizerDesc::SetCommonDetails(CD3DX12_RASTERIZER_DESC* desc_)
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 void CreateRasterizerDesc::SetDetailsDirectly(CD3DX12_RASTERIZER_DESC* desc_, const PipelineStateDesc::RasterizerDesc& srcDesc_)
 {
-	desc_->CullMode = D3D12_CULL_MODE(srcDesc_.cullMode);
-	desc_->FillMode = D3D12_FILL_MODE(srcDesc_.fillMode);
+	desc_->CullMode = RenderStateComponent::Convert(srcDesc_.cullMode);
+	desc_->FillMode = RenderStateComponent::Convert(srcDesc_.fillMode);
 	desc_->DepthBias = srcDesc_.depthBias;
 	desc_->DepthBiasClamp = srcDesc_.depthBiasClamp;
 	desc_->SlopeScaledDepthBias = srcDesc_.slopeScaledDepthBias;
@@ -9429,6 +9765,7 @@ struct CreateSampleDesc
 
 
 using namespace RenderStateComponent;
+using namespace RenderPathComponent;
 
 void PSO_InfoOutputter::OutputGraphicsPSOInfo
 (
@@ -9460,7 +9797,7 @@ void PSO_InfoOutputter::OutputGraphicsPSOInfo
 		debugText += "[ " + srcDesc_.depthStencilDesc.bufferName + " ]\n";
 		(srcDesc_.depthStencilDesc.blendMode == BlendMode::kOpaque) ? debugText += "DepthWriteMask: MASK_ALL" : debugText += "DepthWriteMask: MASK_ZERO";
 		debugText += "DepthStencilFormat: " + DebugTextTable(srcDesc_.depthStencilDesc.dsvFormat) + "\n";
-		debugText += "DepthWrite: " + DebugTextTable(srcDesc_.depthStencilDesc.depthWrite) + "\n";
+		debugText += "DepthEnable: " + DebugTextTable(srcDesc_.depthStencilDesc.depthEnable) + "\n";
 		debugText += "DepthTest: " + DebugTextTable(srcDesc_.depthStencilDesc.depthTest) + "\n";
 	}
 
@@ -9562,12 +9899,12 @@ std::string const PSO_InfoOutputter::DebugTextTable(CullMode mode_) const
 	}
 }
 
-std::string const PSO_InfoOutputter::DebugTextTable(DepthWrite write_) const
+std::string const PSO_InfoOutputter::DebugTextTable(DepthEnable write_) const
 {
 	switch (write_)
 	{
-	case DepthWrite::kDisable: return "Disable";
-	case DepthWrite::kEnable:  return "Enable";
+	case DepthEnable::kDisable: return "Disable";
+	case DepthEnable::kEnable:  return "Enable";
 	default:                   return "UNKNOWN_DEPTH_WRITE";
 	}
 }
@@ -9611,8 +9948,8 @@ private:
 	std::string const DebugTextTable(RenderStateComponent::BlendMode mode_) const;
 	std::string const DebugTextTable(RenderStateComponent::FillMode mode_) const;
 	std::string const DebugTextTable(RenderStateComponent::CullMode mode_) const;
-	std::string const DebugTextTable(RenderStateComponent::DepthWrite write_) const;
-	std::string const DebugTextTable(RenderStateComponent::DepthTest test_) const;
+	std::string const DebugTextTable(RenderPathComponent::DepthEnable write_) const;
+	std::string const DebugTextTable(RenderPathComponent::DepthTest test_) const;
 
 };
 
@@ -11434,6 +11771,8 @@ inline Vector3 operator*(const float num_,Vector3 vec_)
 #include <mutex>
 #include <variant>
 #include <type_traits> 
+#include <bit>
+#include <cstdint>
 
 //abort()やassert()でエラーを吐いて文字列を出力する
 #include "../LowerLayer/Debug/ErrorMessageOutput/ErrorMessageOutput.h"

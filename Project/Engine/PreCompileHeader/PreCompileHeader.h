@@ -33,6 +33,8 @@
 #include <mutex>
 #include <variant>
 #include <type_traits> 
+#include <bit>
+#include <cstdint>
 
 //abort()やassert()でエラーを吐いて文字列を出力する
 #include "../LowerLayer/Debug/ErrorMessageOutput/ErrorMessageOutput.h"
