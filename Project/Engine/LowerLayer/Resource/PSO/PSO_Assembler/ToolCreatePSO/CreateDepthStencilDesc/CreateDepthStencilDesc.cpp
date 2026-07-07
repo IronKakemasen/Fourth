@@ -28,12 +28,14 @@ void CreateDepthStencilDesc::SetBranchedDetails(CD3DX12_DEPTH_STENCIL_DESC* desc
 
 		break;
 
+	//kOpaque以外は全て深度書き込み無効とする
 	default:
 
 		depthWriteMask = D3D12_DEPTH_WRITE_MASK_ZERO;
 
 		break;
 	}
+
 
 	desc_->DepthWriteMask = depthWriteMask;
 
@@ -43,6 +45,6 @@ void CreateDepthStencilDesc::SetBranchedDetails(CD3DX12_DEPTH_STENCIL_DESC* desc
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 void CreateDepthStencilDesc::SetDetailsDirectly(CD3DX12_DEPTH_STENCIL_DESC* desc_, const PipelineStateDesc::DepthStencilDesc& srcDesc_)
 {
-	desc_->DepthEnable = BOOL(srcDesc_.depthWrite);
-	desc_->DepthFunc = (D3D12_COMPARISON_FUNC)srcDesc_.depthTest;
+	desc_->DepthEnable = BOOL(srcDesc_.depthEnable);
+	desc_->DepthFunc = RenderStateComponent::Convert(srcDesc_.depthTest);
 }

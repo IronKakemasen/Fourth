@@ -6,19 +6,17 @@ namespace ShaderPathComponent
 	enum class MeshType
 	{
 		kTest,
-		kStatic,
+		kStatic
+
+		,kCount
 	};
 
 	enum class MaterialType
 	{
 		kTest,
-		kStandard,
-	};
+		kStandard
 
-	enum class Pass
-	{
-		kBasic,
-
+		,kCount
 	};
 
 };

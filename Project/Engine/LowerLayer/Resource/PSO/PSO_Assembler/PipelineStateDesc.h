@@ -35,7 +35,7 @@ namespace PipelineStateDesc
     {
         DXGI_FORMAT dsvFormat;
         RenderStateComponent::BlendMode blendMode = RenderStateComponent::BlendMode::kOpaque;
-        RenderStateComponent::DepthWrite depthWrite = RenderStateComponent::DepthWrite::kEnable;
+        RenderStateComponent::DepthEnable depthEnable = RenderStateComponent::DepthEnable::kEnable;
         RenderStateComponent::DepthTest depthTest = RenderStateComponent::DepthTest::kGreaterEqual;
         float clearDepth = 0.0f;
         std::string bufferName;

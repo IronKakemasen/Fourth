@@ -35,7 +35,7 @@ public:
 		DescriptorHeapContext::CreateUAVCommand uavCmd_
 	);
 
-	//VIEWを生成し、インデックスまたはハンドルを返す。
+	//VIEWを生成し、インデックスやハンドルを返す。
 	template<typename ViewType>
 	std::tuple<uint32_t, D3D12_CPU_DESCRIPTOR_HANDLE, D3D12_GPU_DESCRIPTOR_HANDLE> CreateView(ID3D12Resource* resource_, const ViewType* viewDesc, ID3D12Resource* counterResource_ = nullptr)
 	{
