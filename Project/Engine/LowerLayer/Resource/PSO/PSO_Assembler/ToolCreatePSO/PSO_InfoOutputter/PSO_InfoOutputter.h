@@ -22,7 +22,7 @@ private:
 	std::string const DebugTextTable(RenderStateComponent::BlendMode mode_) const;
 	std::string const DebugTextTable(RenderStateComponent::FillMode mode_) const;
 	std::string const DebugTextTable(RenderStateComponent::CullMode mode_) const;
-	std::string const DebugTextTable(RenderStateComponent::DepthWrite write_) const;
+	std::string const DebugTextTable(RenderStateComponent::DepthEnable write_) const;
 	std::string const DebugTextTable(RenderStateComponent::DepthTest test_) const;
 
 };

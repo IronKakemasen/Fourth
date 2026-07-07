@@ -30,8 +30,8 @@ void CreateRasterizerDesc::SetCommonDetails(CD3DX12_RASTERIZER_DESC* desc_)
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 void CreateRasterizerDesc::SetDetailsDirectly(CD3DX12_RASTERIZER_DESC* desc_, const PipelineStateDesc::RasterizerDesc& srcDesc_)
 {
-	desc_->CullMode = D3D12_CULL_MODE(srcDesc_.cullMode);
-	desc_->FillMode = D3D12_FILL_MODE(srcDesc_.fillMode);
+	desc_->CullMode = RenderStateComponent::Convert(srcDesc_.cullMode);
+	desc_->FillMode = RenderStateComponent::Convert(srcDesc_.fillMode);
 	desc_->DepthBias = srcDesc_.depthBias;
 	desc_->DepthBiasClamp = srcDesc_.depthBiasClamp;
 	desc_->SlopeScaledDepthBias = srcDesc_.slopeScaledDepthBias;

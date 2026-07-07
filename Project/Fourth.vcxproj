@@ -291,9 +291,11 @@
     <ClCompile Include="Engine\LowerLayer\Render\RenderPathStructure\RenderPath.cpp" />
     <ClCompile Include="Engine\LowerLayer\Resource\RootSignature\RootSignatureLibrary\RootSignatureLibrary.cpp" />
     <ClCompile Include="Engine\LowerLayer\Render\PSO_PoolDispatcher\PSO_PoolDispatcher.cpp" />
+    <ClCompile Include="Engine\LowerLayer\Render\RenderPathStructure\RenderPathBluePrint\ShaderTable\ShaderTable.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Assets\Shared\ConstantBuffers.h" />
+    <ClInclude Include="Engine\LowerLayer\Render\RenderPathStructure\RenderPathComponent.h" />
     <ClInclude Include="Engine\LowerLayer\Render\RenderPathStructure\RenderPathDesc.h" />
     <ClInclude Include="Engine\LowerLayer\Resource\RootSignature\RootSignatureAssembler\RootSignatureDesc.h" />
     <ClInclude Include="Engine\LowerLayer\Resource\RootSignature\RootSignatureAssembler\ToolCreateRootSignature\CreateRootParam\CreateRootParam.h" />
@@ -411,6 +413,7 @@
     <ClInclude Include="Engine\LowerLayer\Render\RenderPathStructure\RenderPathBluePrint\RenderPathBluePrint.h" />
     <ClInclude Include="Engine\LowerLayer\Resource\RootSignature\RootSignatureLibrary\RootSignatureLibrary.h" />
     <ClInclude Include="Engine\LowerLayer\Render\PSO_PoolDispatcher\PSO_PoolDispatcher.h" />
+    <ClInclude Include="Engine\LowerLayer\Render\RenderPathStructure\RenderPathBluePrint\ShaderTable\ShaderTable.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

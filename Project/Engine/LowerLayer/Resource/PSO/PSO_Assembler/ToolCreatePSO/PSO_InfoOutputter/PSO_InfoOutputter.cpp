@@ -35,7 +35,7 @@ void PSO_InfoOutputter::OutputGraphicsPSOInfo
 		debugText += "[ " + srcDesc_.depthStencilDesc.bufferName + " ]\n";
 		(srcDesc_.depthStencilDesc.blendMode == BlendMode::kOpaque) ? debugText += "DepthWriteMask: MASK_ALL" : debugText += "DepthWriteMask: MASK_ZERO";
 		debugText += "DepthStencilFormat: " + DebugTextTable(srcDesc_.depthStencilDesc.dsvFormat) + "\n";
-		debugText += "DepthWrite: " + DebugTextTable(srcDesc_.depthStencilDesc.depthWrite) + "\n";
+		debugText += "DepthEnable: " + DebugTextTable(srcDesc_.depthStencilDesc.depthEnable) + "\n";
 		debugText += "DepthTest: " + DebugTextTable(srcDesc_.depthStencilDesc.depthTest) + "\n";
 	}
 
@@ -137,12 +137,12 @@ std::string const PSO_InfoOutputter::DebugTextTable(CullMode mode_) const
 	}
 }
 
-std::string const PSO_InfoOutputter::DebugTextTable(DepthWrite write_) const
+std::string const PSO_InfoOutputter::DebugTextTable(DepthEnable write_) const
 {
 	switch (write_)
 	{
-	case DepthWrite::kDisable: return "Disable";
-	case DepthWrite::kEnable:  return "Enable";
+	case DepthEnable::kDisable: return "Disable";
+	case DepthEnable::kEnable:  return "Enable";
 	default:                   return "UNKNOWN_DEPTH_WRITE";
 	}
 }
