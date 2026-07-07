@@ -243,7 +243,7 @@
     <ClCompile Include="Engine\LowerLayer\Resource\Buffer\BufferCreationSystems\BufferCollector\BufferCollector.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="Engine\LowerLayer\Core\Command\RuntimeCommandControler\RuntimeCommandControler.cpp">
+    <ClCompile Include="Engine\LowerLayer\Core\Command\RuntimeCommandController\RuntimeCommandController.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
     <ClCompile Include="Engine\NexusRun.cpp">
@@ -343,6 +343,12 @@
       <Filter>ソース ファイル</Filter>
     </ClCompile>
     <ClCompile Include="Engine\LowerLayer\Render\RenderPathStructure\RenderPathBluePrint\ShaderTable\ShaderTable.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\LowerLayer\Render\PSO_PoolDispatcher\Tool\GraphicsPSO_KeyPackager\GraphicsPSO_KeyPackager.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\LowerLayer\Render\PSO_PoolDispatcher\Tool\GraphicsPSO_Index\GraphicsPSO_Index.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
   </ItemGroup>
@@ -566,7 +572,7 @@
     <ClInclude Include="Engine\LowerLayer\Resource\Buffer\BufferCreationSystems\BufferCollector\BufferCollector.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\LowerLayer\Core\Command\RuntimeCommandControler\RuntimeCommandControler.h">
+    <ClInclude Include="Engine\LowerLayer\Core\Command\RuntimeCommandController\RuntimeCommandController.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
     <ClInclude Include="Engine\Nexus.h">
@@ -705,6 +711,15 @@
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
     <ClInclude Include="Engine\LowerLayer\Render\RenderPathStructure\RenderPathComponent.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\LowerLayer\Render\PSO_PoolDispatcher\GraphicsPSO_Key.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\LowerLayer\Render\PSO_PoolDispatcher\Tool\GraphicsPSO_KeyPackager\GraphicsPSO_KeyPackager.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\LowerLayer\Render\PSO_PoolDispatcher\Tool\GraphicsPSO_Index\GraphicsPSO_Index.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
   </ItemGroup>

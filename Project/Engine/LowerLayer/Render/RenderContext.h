@@ -20,15 +20,13 @@ public:
 
 private:
 
-	//適切なpsoを渡す
+	//グラフィックス専用のpsoのプール、配布
 	class PSO_PoolDispatcher;
-
+	//PSO_Assemblerを使ってグラフィックス用のPSOを生成
+	class PSO_Creator;
 
 
 	std::unique_ptr<PSO_PoolDispatcher> pso_PoolDispatcher;
-	//PSOのプール
-	std::vector<ID3D12PipelineState*> graphicsPSO_pool;
-
 };
 
 

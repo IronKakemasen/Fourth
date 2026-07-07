@@ -275,7 +275,7 @@
     <ClCompile Include="Engine\LowerLayer\Resource\Buffer\BufferDefinition\GPUBuffer\UploadStructuredBuffer\UploadStructuredBuffer.cpp" />
     <ClCompile Include="Engine\LowerLayer\Resource\Buffer\BufferDefinition\BufferDescriptions\UploadStructuredBufferDescription\UploadStructuredBufferDescription.cpp" />
     <ClCompile Include="Engine\LowerLayer\Resource\Buffer\RuntimeBufferManagementSystems\BufferInfoExtractors\RenderTargetBufferInfoExtractor\RenderTargetBufferInfoExtractor.cpp" />
-    <ClCompile Include="Engine\LowerLayer\Core\Command\RuntimeCommandControler\RuntimeCommandControler.cpp" />
+    <ClCompile Include="Engine\LowerLayer\Core\Command\RuntimeCommandController\RuntimeCommandController.cpp" />
     <ClCompile Include="Engine\LowerLayer\Render\RenderContext.cpp" />
     <ClCompile Include="Engine\LowerLayer\Render\RuntimeRenderingManagementSystems\ModelRenderingInfoOrganizer\ModelRenderingInfoOrganizer.cpp" />
     <ClCompile Include="Engine\LowerLayer\Resource\Shader\ShaderContext.cpp" />
@@ -292,9 +292,12 @@
     <ClCompile Include="Engine\LowerLayer\Resource\RootSignature\RootSignatureLibrary\RootSignatureLibrary.cpp" />
     <ClCompile Include="Engine\LowerLayer\Render\PSO_PoolDispatcher\PSO_PoolDispatcher.cpp" />
     <ClCompile Include="Engine\LowerLayer\Render\RenderPathStructure\RenderPathBluePrint\ShaderTable\ShaderTable.cpp" />
+    <ClCompile Include="Engine\LowerLayer\Render\PSO_PoolDispatcher\Tool\GraphicsPSO_KeyPackager\GraphicsPSO_KeyPackager.cpp" />
+    <ClCompile Include="Engine\LowerLayer\Render\PSO_PoolDispatcher\Tool\GraphicsPSO_Index\GraphicsPSO_Index.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Assets\Shared\ConstantBuffers.h" />
+    <ClInclude Include="Engine\LowerLayer\Render\PSO_PoolDispatcher\GraphicsPSO_Key.h" />
     <ClInclude Include="Engine\LowerLayer\Render\RenderPathStructure\RenderPathComponent.h" />
     <ClInclude Include="Engine\LowerLayer\Render\RenderPathStructure\RenderPathDesc.h" />
     <ClInclude Include="Engine\LowerLayer\Resource\RootSignature\RootSignatureAssembler\RootSignatureDesc.h" />
@@ -395,7 +398,7 @@
     <ClInclude Include="Engine\LowerLayer\Resource\Buffer\BufferDefinition\BufferDescriptions\UploadStructuredBufferDescription\UploadStructuredBufferDescription.h" />
     <ClInclude Include="Engine\LowerLayer\Resource\Buffer\RuntimeBufferManagementSystems\BufferInfoExtractors\RenderTargetBufferInfoExtractor\RenderTargetBufferInfoExtractor.h" />
     <ClInclude Include="Engine\LowerLayer\Resource\Buffer\RuntimeBufferManagementSystems\BufferInfoExtractors\FrameBufferedBufferInfoExtractor\FrameBufferedBufferInfoExtractor.h" />
-    <ClInclude Include="Engine\LowerLayer\Core\Command\RuntimeCommandControler\RuntimeCommandControler.h" />
+    <ClInclude Include="Engine\LowerLayer\Core\Command\RuntimeCommandController\RuntimeCommandController.h" />
     <ClInclude Include="Engine\LowerLayer\Render\RenderContext.h" />
     <ClInclude Include="Engine\LowerLayer\Render\RuntimeRenderingManagementSystems\ModelRenderingInfoOrganizer\ModelRenderingInfoOrganizer.h" />
     <ClInclude Include="Engine\LowerLayer\Render\RequiredRenderingInfo.h" />
@@ -414,6 +417,8 @@
     <ClInclude Include="Engine\LowerLayer\Resource\RootSignature\RootSignatureLibrary\RootSignatureLibrary.h" />
     <ClInclude Include="Engine\LowerLayer\Render\PSO_PoolDispatcher\PSO_PoolDispatcher.h" />
     <ClInclude Include="Engine\LowerLayer\Render\RenderPathStructure\RenderPathBluePrint\ShaderTable\ShaderTable.h" />
+    <ClInclude Include="Engine\LowerLayer\Render\PSO_PoolDispatcher\Tool\GraphicsPSO_KeyPackager\GraphicsPSO_KeyPackager.h" />
+    <ClInclude Include="Engine\LowerLayer\Render\PSO_PoolDispatcher\Tool\GraphicsPSO_Index\GraphicsPSO_Index.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

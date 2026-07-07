@@ -12,7 +12,7 @@ RenderContext::RenderContext(InstacnceKey key_)
 {
 	Logger::Entry("RenderContext: Constructor");
 
-	pso_PoolDispatcher.reset(new PSO_PoolDispatcher(key_, &graphicsPSO_pool));
+	pso_PoolDispatcher.reset(new PSO_PoolDispatcher(key_));
 	Logger::Log("Instantiate: PSO_PoolDispatcher", fileName);
 
 

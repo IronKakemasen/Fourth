@@ -1,4 +1,3 @@
-
 #include "CreateDepthStencilDesc.h"
 
 
@@ -46,5 +45,5 @@ void CreateDepthStencilDesc::SetBranchedDetails(CD3DX12_DEPTH_STENCIL_DESC* desc
 void CreateDepthStencilDesc::SetDetailsDirectly(CD3DX12_DEPTH_STENCIL_DESC* desc_, const PipelineStateDesc::DepthStencilDesc& srcDesc_)
 {
 	desc_->DepthEnable = BOOL(srcDesc_.depthEnable);
-	desc_->DepthFunc = RenderStateComponent::Convert(srcDesc_.depthTest);
+	desc_->DepthFunc = RenderPathComponent::Convert(srcDesc_.depthTest);
 }
