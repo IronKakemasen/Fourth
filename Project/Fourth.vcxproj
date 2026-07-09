@@ -292,6 +292,7 @@
     <ClCompile Include="Engine\LowerLayer\Resource\RootSignature\RootSignatureLibrary\RootSignatureLibrary.cpp" />
     <ClCompile Include="Engine\LowerLayer\Render\PSO_PoolDispatcher\PSO_PoolDispatcher.cpp" />
     <ClCompile Include="Engine\LowerLayer\Render\RenderPathStructure\RenderPathBluePrint\ShaderTable\ShaderTable.cpp" />
+    <ClCompile Include="Engine\LowerLayer\Render\PSO_Creator\PSO_Creator.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Assets\Shared\ConstantBuffers.h" />
@@ -417,6 +418,7 @@
     <ClInclude Include="Engine\LowerLayer\Render\PSO_PoolDispatcher\PSO_PoolDispatcher.h" />
     <ClInclude Include="Engine\LowerLayer\Render\RenderPathStructure\RenderPathBluePrint\ShaderTable\ShaderTable.h" />
     <ClInclude Include="Engine\Utility\KeyPackager\KeyPackager.h" />
+    <ClInclude Include="Engine\LowerLayer\Render\PSO_Creator\PSO_Creator.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

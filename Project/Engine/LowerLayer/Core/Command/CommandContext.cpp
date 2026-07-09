@@ -82,6 +82,8 @@ void CommandContext::InstantiateRuntimeCommandControler()
 void CommandContext::Finalize(InstanceKey instanceKey_)
 {
 	synchronizer->WaitDirectly();
+	CloseHandle(fenceEvent);
+
 }
 
 

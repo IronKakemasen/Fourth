@@ -6,9 +6,9 @@ class WindowContext
 {
 public:
 
-	struct InstacnceKey;
+	struct InstanceKey;
 
-	WindowContext(InstacnceKey instanceKey_);
+	WindowContext(InstanceKey instanceKey_);
 	void Finalize();
 	HWND WatchHWND();
 
@@ -28,9 +28,9 @@ private:
 };
 
 
-struct WindowContext::InstacnceKey
+struct WindowContext::InstanceKey
 {
 private:
 	friend class Nexus;
-	explicit InstacnceKey() = default;
+	explicit InstanceKey() = default;
 };

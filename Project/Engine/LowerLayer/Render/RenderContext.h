@@ -9,9 +9,9 @@ class RenderContext
 {
 public:
 
-	struct InstacnceKey;
+	struct InstanceKey;
 
-	RenderContext(InstacnceKey key_);
+	RenderContext(InstanceKey key_);
 	~RenderContext();
 
 	//モデルの描画情報を収集して整理する
@@ -30,9 +30,9 @@ private:
 };
 
 
-struct RenderContext::InstacnceKey
+struct RenderContext::InstanceKey
 {
 private:
 	friend class Nexus;
-	explicit InstacnceKey() = default;
+	explicit InstanceKey() = default;
 };

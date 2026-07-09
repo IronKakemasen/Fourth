@@ -8,7 +8,7 @@ namespace
 
 
 
-RenderPath::PathComposer::PathComposer(RenderContext::InstacnceKey key_, ShaderLibrary* shaderLibrary_)
+RenderPath::PathComposer::PathComposer(RenderContext::InstanceKey key_, ShaderLibrary* shaderLibrary_)
 {
 
 }
