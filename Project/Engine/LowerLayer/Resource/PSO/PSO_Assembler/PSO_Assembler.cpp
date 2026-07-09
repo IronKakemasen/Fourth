@@ -95,7 +95,7 @@ ID3D12PipelineState* PSO_Context::Assembler::AssembleGraphicsPSO
 	{
 		pipelineDesc.RTVFormats = renderTargetFormatArray;
 		pipelineDesc.MS = ms_ps.first;
-		if (ms_ps.second != std::nullopt)pipelineDesc.PS = *ms_ps.second;
+		if (ms_ps.second)pipelineDesc.PS = *ms_ps.second;			///PSは存在する場合のみ
 		pipelineDesc.BlendState = blendDesc;
 		pipelineDesc.DepthStencilState = depthStencilDesc;
 		pipelineDesc.DSVFormat = srcDesc_.depthStencilDesc.dsvFormat;
