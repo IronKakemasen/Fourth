@@ -8,7 +8,7 @@ namespace
 }
 
 
-RenderContext::RenderContext(InstacnceKey key_)
+RenderContext::RenderContext(InstanceKey key_)
 {
 	Logger::Entry("RenderContext: Constructor");
 

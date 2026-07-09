@@ -5,7 +5,7 @@ class ShaderLibrary;
 
 class RenderPath::PathComposer
 {
-	PathComposer(RenderContext::InstacnceKey key_, ShaderLibrary* shaderLibrary_);
+	PathComposer(RenderContext::InstanceKey key_, ShaderLibrary* shaderLibrary_);
 
 
 public:

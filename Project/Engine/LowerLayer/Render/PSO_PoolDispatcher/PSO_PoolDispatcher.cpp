@@ -9,7 +9,7 @@ namespace
 
 RenderContext::PSO_PoolDispatcher::PSO_PoolDispatcher
 (
-	RenderContext::InstacnceKey key_
+	RenderContext::InstanceKey key_
 )
 {
 	DefinePackageLayout();

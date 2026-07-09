@@ -16,8 +16,6 @@ struct GraphicsPSO_Key
         kBlendMode,
         KFillMode,
         kCullMode
-
-        , kCount
     };
 
 private:
@@ -84,16 +82,6 @@ public:
      static constexpr UINT Count() 
      {
          return (UINT)SequenceToType<sequence>::kCount;
-
-
-         //if      constexpr (sequence == kPass)         return RenderPathComponent::Pass::kCount;
-         //else if constexpr (sequence == kDepthEnable)  return RenderPathComponent::DepthEnable::kCount;
-         //else if constexpr (sequence == kDepthTest)    return RenderPathComponent::DepthTest::kCount;
-         //else if constexpr (sequence == kMeshType)     return ShaderPathComponent::MeshType::kCount;
-         //else if constexpr (sequence == kMaterialType) return ShaderPathComponent::MaterialType::kCount;
-         //else if constexpr (sequence == kBlendMode)    return RenderStateComponent::BlendMode::kCount;
-         //else if constexpr (sequence == KFillMode)     return RenderStateComponent::FillMode::kCount;
-         //else if constexpr (sequence == kCullMode)     return RenderStateComponent::CullMode::kCount;
      }
 
 
