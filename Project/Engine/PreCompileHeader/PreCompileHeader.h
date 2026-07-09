@@ -40,7 +40,10 @@
 #include "../LowerLayer/Debug/ErrorMessageOutput/ErrorMessageOutput.h"
 //出力ウィンドウとログファイルにログを出力
 #include "../LowerLayer/Debug/Logger/Logger.h"
+//プロジェクト設定
 #include "../ProjectConfig.h"
+
+
 
 
 #pragma comment(lib,"d3d12.lib")

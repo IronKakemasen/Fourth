@@ -1,8 +1,10 @@
 #include "PSO_PoolDispatcher.h"
 
-//ツール
-#include "Tool/GraphicsPSO_KeyPackager/GraphicsPSO_KeyPackager.h"
-#include "Tool/GraphicsPSO_Index/GraphicsPSO_Index.h"
+
+namespace
+{
+	auto const fileName = "PSO_PoolDispatcher.cpp";
+}
 
 
 RenderContext::PSO_PoolDispatcher::PSO_PoolDispatcher
@@ -10,9 +12,9 @@ RenderContext::PSO_PoolDispatcher::PSO_PoolDispatcher
 	RenderContext::InstacnceKey key_
 )
 {
-	graphicsPSO_Index.reset(new GraphicsPSO_Index);
-	graphicsPSO_KeyPackager.reset(new GraphicsPSO_KeyPackager);
-
+	DefinePackageLayout();
+	closedHashMap.reset(new ClosedHashMap<uint32_t>(kHashMapCapacity));
+	
 }
 
 RenderContext::PSO_PoolDispatcher::~PSO_PoolDispatcher()
@@ -22,29 +24,85 @@ RenderContext::PSO_PoolDispatcher::~PSO_PoolDispatcher()
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-ID3D12PipelineState* RenderContext::PSO_PoolDispatcher::AccessGraphicsPSO(DataAccessLicense license_ ,GraphicsPSO_Key key_)
+void RenderContext::PSO_PoolDispatcher::DefinePackageLayout()
 {
-	auto packedKey = graphicsPSO_KeyPackager->CreateKey(key_);
-	uint32_t const index = graphicsPSO_Index->FindIndex(packedKey);
+	keyPackager.reset
+	(
+		new KeyPackager
+		(
+			GraphicsPSO_Key::Count<GraphicsPSO_Key::Sequence::kPass>(),
+			GraphicsPSO_Key::Count<GraphicsPSO_Key::Sequence::kDepthEnable>(),
+			GraphicsPSO_Key::Count<GraphicsPSO_Key::Sequence::kDepthTest>(),
+			GraphicsPSO_Key::Count<GraphicsPSO_Key::Sequence::kMeshType>(),
+			GraphicsPSO_Key::Count<GraphicsPSO_Key::Sequence::kMaterialType>(),
+			GraphicsPSO_Key::Count<GraphicsPSO_Key::Sequence::kBlendMode>(),
+			GraphicsPSO_Key::Count<GraphicsPSO_Key::Sequence::KFillMode>(),
+			GraphicsPSO_Key::Count<GraphicsPSO_Key::Sequence::kCullMode>()
+		)
+	);
 
-	return graphicsPSO_pool.at(index);
 }
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-void RenderContext::PSO_PoolDispatcher::Register(RegisterLicense license_, GraphicsPSO_Key key_, ID3D12PipelineState* graphicsPSO_)
+[[nodiscard]] std::optional<uint32_t> RenderContext::PSO_PoolDispatcher::CheckDuplication(const GraphicsPSO_Key& psoKey_)
 {
-	auto packedKey = graphicsPSO_KeyPackager->CreateKey(key_);
-	uint32_t const index = graphicsPSO_Index->FindIndex(packedKey);
+	uint32_t const packedKey = PackKey(psoKey_);
 
-	///既に登録済みか確認
-	if (index == GraphicsPSO_Index::InvalidIndex) return;
+	//今回はpsoPoolIndexは利用しない
+	///dstMapIndexに実体があれば新しくPSOをHashMapのここに生成してねという値
+	std::pair<std::optional<uint32_t>, std::optional<uint32_t>> psoPoolIndex_dstMapIndex =
+		closedHashMap->CheckDuplication(packedKey);
 
-	///プールに登録
+	///dstMapIndexチェックしてPSOを生成するか分岐
+	return psoPoolIndex_dstMapIndex.second;
+}
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///psoのアドレスを格納
+void RenderContext::PSO_PoolDispatcher::Register
+(
+	RegisterLicense license_, 
+	uint32_t dstMapIndex_,
+	uint32_t packedKey_ ,
+	ID3D12PipelineState* graphicsPSO_
+)
+{
+	ErrorMessageOutput::Assert::DetectError(graphicsPSO_, "psoがヌルです", fileName);
+
 	graphicsPSO_pool.emplace_back(graphicsPSO_);
 
-	//プールの次のインデックスを取得
-	size_t const nextPoolIndex = graphicsPSO_pool.size();
+	uint32_t const insertedIndex = uint32_t(graphicsPSO_pool.size() - 1);
+	
+	///insertedIndexを検索用マップに追加
+	closedHashMap->Insert(dstMapIndex_, packedKey_, insertedIndex);
 
-	graphicsPSO_Index->Insert(packedKey, uint32_t(nextPoolIndex));
 }
+
+
+
+
+
+
+
+
+
+
+//void RenderContext::PSO_PoolDispatcher::Register(RegisterLicense license_, GraphicsPSO_Key key_, ID3D12PipelineState* graphicsPSO_)
+//{
+//	//auto packedKey = graphicsPSO_KeyPackager->CreateKey(key_);
+//	//uint32_t const index = graphicsPSO_Index->FindIndex(packedKey);
+//
+//	/////既に登録済みか確認
+//	//if (index == GraphicsPSO_Index::InvalidIndex) return;
+//
+//	/////プールに登録
+//	//graphicsPSO_pool.emplace_back(graphicsPSO_);
+//
+//	////プールの次のインデックスを取得
+//	//size_t const nextPoolIndex = graphicsPSO_pool.size();
+//
+//	//graphicsPSO_Index->Insert(packedKey, uint32_t(nextPoolIndex));
+//}
+//

@@ -5,23 +5,52 @@
 
 struct GraphicsPSO_Key
 {
-private:
-    int const kInvalid = -1;
-
-public:
-
-    ///意味あるか分からんが、いちおうシーケンスを明示しとく
+    ///シーケンス
     enum Sequence
     {
         kPass,
         kDepthEnable,
-        kDepthtest,
+        kDepthTest,
         kMeshType,
         kMaterialType,
         kBlendMode,
         KFillMode,
         kCullMode
+
+        , kCount
     };
+
+private:
+
+    int const kInvalid = -1;
+
+    RenderPathComponent::Pass pass =                RenderPathComponent::Pass(kInvalid);
+    RenderPathComponent::DepthEnable depthEnable =  RenderPathComponent::DepthEnable(kInvalid);
+    RenderPathComponent::DepthTest depthTest =      RenderPathComponent::DepthTest(kInvalid);
+    ShaderPathComponent::MeshType mesh =            ShaderPathComponent::MeshType(kInvalid);
+    ShaderPathComponent::MaterialType material =    ShaderPathComponent::MaterialType(kInvalid);
+    RenderStateComponent::BlendMode blend =         RenderStateComponent::BlendMode(kInvalid);
+    RenderStateComponent::FillMode fill =           RenderStateComponent::FillMode(kInvalid);
+    RenderStateComponent::CullMode cull =           RenderStateComponent::CullMode(kInvalid);
+
+    template <Sequence sequence>
+    static constexpr auto sequenceToType()
+    {
+        if      constexpr (sequence == kPass)         return RenderPathComponent::Pass{};
+        else if constexpr (sequence == kDepthEnable)  return RenderPathComponent::DepthEnable{};
+        else if constexpr (sequence == kDepthTest)    return RenderPathComponent::DepthTest{};
+        else if constexpr (sequence == kMeshType)     return ShaderPathComponent::MeshType{};
+        else if constexpr (sequence == kMaterialType) return ShaderPathComponent::MaterialType{};
+        else if constexpr (sequence == kBlendMode)    return RenderStateComponent::BlendMode{};
+        else if constexpr (sequence == KFillMode)     return RenderStateComponent::FillMode{};
+        else if constexpr (sequence == kCullMode)     return RenderStateComponent::CullMode{};
+    }
+
+public:
+
+    template <Sequence sequence>
+    using SequenceToType = decltype(sequenceToType<sequence>());
+
 
     GraphicsPSO_Key
     (
@@ -38,12 +67,35 @@ public:
 
     }
 
-     RenderPathComponent::Pass pass = RenderPathComponent::Pass(kInvalid);
-     RenderPathComponent::DepthEnable depthEnable = RenderPathComponent::DepthEnable(kInvalid);
-     RenderPathComponent::DepthTest depthTest = RenderPathComponent::DepthTest(kInvalid);
-     ShaderPathComponent::MeshType mesh = ShaderPathComponent::MeshType(kInvalid);
-     ShaderPathComponent::MaterialType material = ShaderPathComponent::MaterialType(kInvalid);
-     RenderStateComponent::BlendMode blend = RenderStateComponent::BlendMode(kInvalid);
-     RenderStateComponent::FillMode fill = RenderStateComponent::FillMode(kInvalid);
-     RenderStateComponent::CullMode cull = RenderStateComponent::CullMode(kInvalid);
+     template<Sequence sequence>
+     constexpr auto Get() const
+     {
+         if      constexpr (sequence == kPass)         return pass;
+         else if constexpr (sequence == kDepthEnable)  return depthEnable;
+         else if constexpr (sequence == kDepthTest)    return depthTest;
+         else if constexpr (sequence == kMeshType)     return mesh;
+         else if constexpr (sequence == kMaterialType) return material;
+         else if constexpr (sequence == kBlendMode)    return blend;
+         else if constexpr (sequence == KFillMode)     return fill;
+         else if constexpr (sequence == kCullMode)     return cull;
+     }
+
+     template<Sequence sequence>
+     static constexpr UINT Count() 
+     {
+         return (UINT)SequenceToType<sequence>::kCount;
+
+
+         //if      constexpr (sequence == kPass)         return RenderPathComponent::Pass::kCount;
+         //else if constexpr (sequence == kDepthEnable)  return RenderPathComponent::DepthEnable::kCount;
+         //else if constexpr (sequence == kDepthTest)    return RenderPathComponent::DepthTest::kCount;
+         //else if constexpr (sequence == kMeshType)     return ShaderPathComponent::MeshType::kCount;
+         //else if constexpr (sequence == kMaterialType) return ShaderPathComponent::MaterialType::kCount;
+         //else if constexpr (sequence == kBlendMode)    return RenderStateComponent::BlendMode::kCount;
+         //else if constexpr (sequence == KFillMode)     return RenderStateComponent::FillMode::kCount;
+         //else if constexpr (sequence == kCullMode)     return RenderStateComponent::CullMode::kCount;
+     }
+
+
+
 };
