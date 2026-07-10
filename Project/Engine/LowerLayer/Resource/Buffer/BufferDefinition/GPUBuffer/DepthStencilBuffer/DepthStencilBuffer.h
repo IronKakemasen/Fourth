@@ -25,13 +25,5 @@ private:
 	virtual D3D12_CPU_DESCRIPTOR_HANDLE OutProperDSVHeapHandle()const override;
 	//適切なsrvHeapインデックスを渡す
 	virtual uint32_t OutProperSRVHeapIndex()const override;
-	//DSVFormat出す
-	virtual DXGI_FORMAT OutProperDSVFormat()const override;
-	//ClearColor出す
-	virtual std::array<float, 4> OutProperClearColor()const override;
-	//横幅立幅
-	virtual std::pair<uint32_t, uint32_t> OutWidthAndHeight()const override;
-
-
 };
 

@@ -24,8 +24,7 @@ struct IPingPongBuffer
 
 protected:
 
-	//ステータスに応じて適切な求められたバッファのインデックスを返す
-	virtual int ProperBufferIndex(ViewType viewType_)const = 0;
+	//使用法に応じて、適切にバッファのインデックスを出す
 	virtual int ProperBufferIndex(Usage usage_)const = 0;
 };
 
@@ -44,7 +43,6 @@ struct IShaderBuffer
 struct IRWStructuredBuffer:IDualRole
 {
 	virtual uint32_t OutProperUAVHeapIndex()const = 0;
-	virtual DXGI_FORMAT OutProperUAVFormat()const = 0;
 
 protected:
 	virtual D3D12_RESOURCE_STATES ResourceStateTable(Usage usage_)const override;
@@ -55,9 +53,8 @@ protected:
 struct IDepthBuffer:IDualRole
 {
 	virtual D3D12_CPU_DESCRIPTOR_HANDLE OutProperDSVHeapHandle()const = 0;
-	virtual DXGI_FORMAT OutProperDSVFormat()const = 0;
 protected:
-	virtual D3D12_RESOURCE_STATES ResourceStateTable(Usage usage_)const override;;
+	virtual D3D12_RESOURCE_STATES ResourceStateTable(Usage usage_)const override;
 
 };
 
@@ -66,7 +63,6 @@ struct IColorBuffer:IDualRole
 {
 	virtual ~IColorBuffer() = default;
 	virtual D3D12_CPU_DESCRIPTOR_HANDLE OutProperRTVHeapHandle()const = 0;
-	virtual DXGI_FORMAT OutProperRTVFormat()const = 0;
 protected:
 	virtual D3D12_RESOURCE_STATES ResourceStateTable(Usage usage_)const override;
 };
@@ -97,7 +93,6 @@ public:
 
 protected:
 
-	virtual int ProperBufferIndex(ViewType viewType_)const override;
 	virtual int ProperBufferIndex(Usage usage_)const override;
 	virtual void SynchronizeStatus(ProjectConfig::Render::NumBuffer numBuffer_)override;
 
@@ -123,14 +118,11 @@ public:
 	virtual ~IRenderTargetBuffer() = default;
 
 	//適切なClearColor出す
-	virtual std::array<float, 4> OutProperClearColor()const = 0;
 	virtual D3D12_RESOURCE_BARRIER CreateBarrier(Usage usage_) = 0;
-	virtual std::pair<uint32_t, uint32_t> OutWidthAndHeight()const = 0;
 	virtual void Swap()override;
 
 protected:
 
-	virtual int ProperBufferIndex(ViewType viewType_)const override;
 	virtual int ProperBufferIndex(Usage usage_)const override;
 	virtual void SynchronizeStatus(ProjectConfig::Render::NumBuffer numBuffer_)override;
 };

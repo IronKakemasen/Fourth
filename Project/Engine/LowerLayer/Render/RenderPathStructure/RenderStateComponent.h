@@ -25,8 +25,6 @@ namespace RenderStateComponent
         ,kCount
     };
 
-
-
     //モデル一つにつき１定義のみ
     struct Uniqued
     {

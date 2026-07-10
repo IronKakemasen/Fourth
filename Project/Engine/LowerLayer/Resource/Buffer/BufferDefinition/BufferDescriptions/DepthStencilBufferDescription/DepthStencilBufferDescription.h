@@ -3,7 +3,7 @@
 
 
 //DepthStencilBuffer
-struct DepthStencilBufferDescription final : public BufferDescriptionBehavior, IDSV_Assembler, ISRV_Assembler
+struct DepthStencilBufferDescription final : public BufferDescriptionBehavior, IAssembleDepthStencilBuffer, IAssembleShaderResource
 {
 private:
 
