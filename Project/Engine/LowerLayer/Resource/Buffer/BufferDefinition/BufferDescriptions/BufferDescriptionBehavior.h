@@ -33,24 +33,24 @@ public:
 
 
 //それぞれの固有のビュー生成インターフェース
-struct ISRV_Assembler 
+struct IAssembleShaderResource 
 {
 	virtual D3D12_SHADER_RESOURCE_VIEW_DESC CreateSRV_Desc()const = 0; 
 };
 
-struct IUAV_Assembler 
+struct IAssembleComputeBuffer 
 {
 	virtual D3D12_UNORDERED_ACCESS_VIEW_DESC CreateUAV_Desc()const = 0; 
 
 };
 
-struct IRTBufferAssembler 
+struct IAssembleColorBuffer 
 {
 	virtual D3D12_RENDER_TARGET_VIEW_DESC CreateRTV_Desc()const = 0; 
 	virtual D3D12_CLEAR_VALUE WatchClearValue() const = 0;
 };
 
-struct IDSV_Assembler 
+struct IAssembleDepthStencilBuffer 
 {
 	virtual D3D12_DEPTH_STENCIL_VIEW_DESC CreateDSVDesc()const = 0; 
 	virtual D3D12_CLEAR_VALUE WatchClearValue() const = 0;

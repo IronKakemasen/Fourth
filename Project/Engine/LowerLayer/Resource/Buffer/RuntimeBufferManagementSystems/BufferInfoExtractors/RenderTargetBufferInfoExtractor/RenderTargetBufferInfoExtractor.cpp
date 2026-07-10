@@ -31,14 +31,10 @@ RequiredRenderingInfo::ColorBuffer BufferContext::RenderTargetBufferInfoExtracto
 {
 	RequiredRenderingInfo::ColorBuffer info;
 
-	info.width = buffer_->OutWidthAndHeight().first;
-	info.height = buffer_->OutWidthAndHeight().second;
 	info.cpuHandle = buffer_->OutProperRTVHeapHandle();
-	info.clearColor = buffer_->OutProperClearColor();
 	info.barrier = buffer_->CreateBarrier(Usage::kWrite);
 
 	return info;
-
 }
 
 template<>
@@ -52,15 +48,6 @@ RequiredRenderingInfo::Texture BufferContext::RenderTargetBufferInfoExtractor::E
 	return info;
 }
 
-template<>
-RequiredRenderingInfo::Format BufferContext::RenderTargetBufferInfoExtractor::Exstract(ColorBuffer* buffer_)
-{
-	RequiredRenderingInfo::Format info;
-
-	info.format = buffer_->OutProperRTVFormat();
-	return info;
-}
-
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -68,25 +55,9 @@ template<>
 RequiredRenderingInfo::DepthBuffer BufferContext::RenderTargetBufferInfoExtractor::Exstract(DepthStencilBuffer* buffer_)
 {
 	RequiredRenderingInfo::DepthBuffer info;
-
-	info.clearDepth = buffer_->OutProperClearColor().at(0);
-	//一旦
-	info.clearStencil = 0;
 	info.dsvCpuHandle = buffer_->OutProperDSVHeapHandle();
-	info.width = buffer_->OutWidthAndHeight().first;
-	info.height = buffer_->OutWidthAndHeight().second;
 	info.barrier = buffer_->CreateBarrier(Usage::kWrite);
 
-	return info;
-
-}
-
-template<>
-RequiredRenderingInfo::Format BufferContext::RenderTargetBufferInfoExtractor::Exstract(DepthStencilBuffer* buffer_)
-{
-	RequiredRenderingInfo::Format info;
-
-	info.format = buffer_->OutProperDSVFormat();
 	return info;
 
 }

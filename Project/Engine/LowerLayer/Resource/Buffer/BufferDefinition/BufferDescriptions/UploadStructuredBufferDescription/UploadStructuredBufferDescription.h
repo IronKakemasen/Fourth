@@ -3,7 +3,7 @@
 
 
 //読み書き
-struct UploadStructuredBufferDescription final :public BufferDescriptionBehavior, ISRV_Assembler
+struct UploadStructuredBufferDescription final :public BufferDescriptionBehavior, IAssembleShaderResource
 {
 private:
 	struct Param

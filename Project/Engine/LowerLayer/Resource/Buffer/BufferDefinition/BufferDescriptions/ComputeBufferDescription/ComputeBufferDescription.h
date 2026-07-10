@@ -3,7 +3,7 @@
 
 
 //読み書き
-struct ComputeBufferDescription final :public BufferDescriptionBehavior, ISRV_Assembler, IUAV_Assembler
+struct ComputeBufferDescription final :public BufferDescriptionBehavior, IAssembleShaderResource, IAssembleComputeBuffer
 {
 private:
 

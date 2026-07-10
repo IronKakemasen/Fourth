@@ -15,26 +15,26 @@ D3D12_RESOURCE_STATES IColorBuffer::ResourceStateTable(Usage usage_)const
 ///+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 D3D12_RESOURCE_STATES IDepthBuffer::ResourceStateTable(Usage usage_)const
 {
-	static D3D12_RESOURCE_STATES resourceStatetable[2]
+	static D3D12_RESOURCE_STATES resourceStateTable[2]
 	{
 		D3D12_RESOURCE_STATE_DEPTH_READ | D3D12_RESOURCE_STATE_ALL_SHADER_RESOURCE,
 		D3D12_RESOURCE_STATE_DEPTH_WRITE
 	};
 
-	return resourceStatetable[(int)usage_];
+	return resourceStateTable[(int)usage_];
 }
 ///+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 D3D12_RESOURCE_STATES IRWStructuredBuffer::ResourceStateTable(Usage usage_)const
 {
-	static D3D12_RESOURCE_STATES resourceStatetable[2]
+	static D3D12_RESOURCE_STATES resourceStateTable[2]
 	{
 		D3D12_RESOURCE_STATE_ALL_SHADER_RESOURCE,
 		D3D12_RESOURCE_STATE_UNORDERED_ACCESS
 	};
 
-	return resourceStatetable[(int)usage_];
+	return resourceStateTable[(int)usage_];
 }
 ///+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -49,28 +49,6 @@ void IRenderTargetBuffer::Swap()
 	};
 
 	status = nextTable[status];
-}
-
-int IRenderTargetBuffer::ProperBufferIndex(ViewType viewType_)const
-{
-	//シングルバッファは問答無用
-	if (status == kSingle) return 0;
-
-	int dstBufferIndex{};
-
-	if (viewType_ == ViewType::kSRV)
-	{
-		//2番目がシェーダーリソース
-		if (status == kRenderTarget_ShaderResource) dstBufferIndex = 1;
-	}
-	//kRTV
-	else
-	{
-		//2番目がレンダーターゲット
-		if (status == kShaderResource_RenderTarget) dstBufferIndex = 1;
-	}
-
-	return dstBufferIndex;
 }
 
 int IRenderTargetBuffer::ProperBufferIndex(Usage usage_)const
@@ -113,29 +91,6 @@ void IComputeBuffer::Swap()
 	};
 
 	status = nextTable[status];
-
-}
-
-int IComputeBuffer::ProperBufferIndex(ViewType viewType_)const
-{
-	//シングルバッファは問答無用
-	if (status == kSingle) return 0;
-
-	int dstBufferIndex{};
-
-	if (viewType_ == ViewType::kSRV)
-	{
-		//2番目がシェーダーリソース
-		if (status == kComputeResource_ShaderResource) dstBufferIndex = 1;
-	}
-	//kUAV
-	else
-	{
-		//2番目が計算リソース
-		if (status == kShaderResource_ComputeResource) dstBufferIndex = 1;
-	}
-
-	return dstBufferIndex;
 
 }
 

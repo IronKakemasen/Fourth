@@ -36,17 +36,11 @@ RequiredRenderingInfo::ColorBuffer BufferContext::RenderTargetBufferInfoExtracto
 template<>
 RequiredRenderingInfo::Texture BufferContext::RenderTargetBufferInfoExtractor::Exstract(ColorBuffer* buffer_);
 
-template<>
-RequiredRenderingInfo::Format BufferContext::RenderTargetBufferInfoExtractor::Exstract(ColorBuffer* buffer_);
-
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////
 template<>
 RequiredRenderingInfo::DepthBuffer BufferContext::RenderTargetBufferInfoExtractor::Exstract(DepthStencilBuffer* buffer_);
-
-template<>
-RequiredRenderingInfo::Format BufferContext::RenderTargetBufferInfoExtractor::Exstract(DepthStencilBuffer* buffer_);
 
 template<>
 RequiredRenderingInfo::Texture BufferContext::RenderTargetBufferInfoExtractor::Exstract(DepthStencilBuffer* buffer_);

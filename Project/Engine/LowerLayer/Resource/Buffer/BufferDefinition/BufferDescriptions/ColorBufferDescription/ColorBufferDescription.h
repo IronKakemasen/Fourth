@@ -3,7 +3,7 @@
 
 
 //Colorバッファ
-struct ColorBufferDescription final : public BufferDescriptionBehavior,IRTBufferAssembler, ISRV_Assembler
+struct ColorBufferDescription final : public BufferDescriptionBehavior,IAssembleColorBuffer, IAssembleShaderResource
 {
 private:
 
