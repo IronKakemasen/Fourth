@@ -6,9 +6,10 @@
 ///レンダーパスの設計図
 namespace RenderPathBluePrint
 {
-	//使用するシェーダーの名前をテーブルから読み取ります
+	//テーブルから、使用するシェーダーの名前(キー)をShaderComponentをもとに定める
 	struct ShaderTable;
-
+	//テーブルから、使用するカラーバッファ、ディプスバッファを定める
+	struct BufferTable;
 
 };
 

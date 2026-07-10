@@ -30,14 +30,15 @@ void PSO_InfoOutputter::OutputGraphicsPSOInfo
 	}
 
 	//ディプスバッファ関連
+	if(srcDesc_.depthStencilDesc)
 	{
 		debugText += "---DepthStencilBuffer---";
 
-		debugText += "[ " + srcDesc_.depthStencilDesc.bufferName + " ]\n";
-		(srcDesc_.depthStencilDesc.blendMode == BlendMode::kOpaque) ? debugText += "DepthWriteMask: MASK_ALL" : debugText += "DepthWriteMask: MASK_ZERO";
-		debugText += "DepthStencilFormat: " + DebugTextTable(srcDesc_.depthStencilDesc.dsvFormat) + "\n";
-		debugText += "DepthEnable: " + DebugTextTable(srcDesc_.depthStencilDesc.depthEnable) + "\n";
-		debugText += "DepthTest: " + DebugTextTable(srcDesc_.depthStencilDesc.depthTest) + "\n";
+		debugText += "[ " + srcDesc_.depthStencilDesc->bufferName + " ]\n";
+		(srcDesc_.depthStencilDesc->blendMode == BlendMode::kOpaque) ? debugText += "DepthWriteMask: MASK_ALL" : debugText += "DepthWriteMask: MASK_ZERO";
+		debugText += "DepthStencilFormat: " + DebugTextTable(srcDesc_.depthStencilDesc->dsvFormat) + "\n";
+		debugText += "DepthEnable: " + DebugTextTable(srcDesc_.depthStencilDesc->depthEnable) + "\n";
+		debugText += "DepthTest: " + DebugTextTable(srcDesc_.depthStencilDesc->depthTest) + "\n";
 	}
 
 	//シェーダー
