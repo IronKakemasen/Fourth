@@ -339,10 +339,13 @@
     <ClCompile Include="Engine\LowerLayer\Render\PSO_PoolDispatcher\PSO_PoolDispatcher.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="Engine\LowerLayer\Render\RenderPathStructure\RenderPathBluePrint\RenderPathBluePrint.cpp">
+    <ClCompile Include="Engine\LowerLayer\Render\RenderPathStructure\RenderPathBluePrint\ShaderTable\ShaderTable.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="Engine\LowerLayer\Render\RenderPathStructure\RenderPathBluePrint\ShaderTable\ShaderTable.cpp">
+    <ClCompile Include="Engine\LowerLayer\Render\PSO_Creator\PSO_Creator.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\LowerLayer\Render\RenderPathStructure\RenderPathBluePrint\BufferTable\RenderPassBufferTable.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
   </ItemGroup>
@@ -714,6 +717,12 @@
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
     <ClInclude Include="Engine\Utility\ClosedHashMap\ClosedHashMap.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\LowerLayer\Render\PSO_Creator\PSO_Creator.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\LowerLayer\Render\RenderPathStructure\RenderPathBluePrint\BufferTable\RenderPassBufferTable.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
   </ItemGroup>

@@ -4944,13 +4944,6 @@ private:
 //描画パスを構築するのに必要な情報をまとめたディスクリプション
 struct RequiredRenderingInfo
 {
-	///PSOを構築するときに必要
-	struct Format
-	{
-		DXGI_FORMAT format;
-
-	};
-
 	///テクスチャとして読む	ときに必要
 	struct Texture
 	{
@@ -4964,15 +4957,9 @@ struct RequiredRenderingInfo
 	struct ColorBuffer
 	{
 		//RTVヒープ上のインデックス
-		D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle;
-		//レンダーターゲットをクリアするため
-		std::array<float, 4> clearColor;
+		D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle{};
 		//バリアを張るため
-		D3D12_RESOURCE_BARRIER barrier;
-		//横幅
-		uint32_t width{};
-		//立幅
-		uint32_t height{};
+		D3D12_RESOURCE_BARRIER barrier{};
 	};
 
 	///描画先として書き込むときに必要
@@ -4980,13 +4967,6 @@ struct RequiredRenderingInfo
 	{
 		//DSVヒープ上のインデックス
 		D3D12_CPU_DESCRIPTOR_HANDLE dsvCpuHandle;
-		//横幅
-		uint32_t width{};
-		//立幅
-		uint32_t height{};
-		//クリアするため
-		float clearDepth;
-		UINT8 clearStencil;
 		//バリアを張るため
 		D3D12_RESOURCE_BARRIER barrier;
 	};
@@ -5431,14 +5411,33 @@ namespace RenderPathComponent
 #pragma once
 #include "RenderPath.h"
 
+#include "ShaderPathComponent.h"
+#include "RenderStateComponent.h"
+#include "RenderPathComponent.h"
+
+
 struct RenderPath::Desc
 {
-	//ShaderPathComponent::MeshType meshType;
-	//ShaderPathComponent::MaterialType materialType;
-	//ShaderPathComponent::Base Base;
+	Desc
+	(
+		ShaderPathComponent::MeshType meshType_,
+		ShaderPathComponent::MaterialType materialType_,
+		RenderStateComponent::BlendMode blendMode_,
+		RenderStateComponent::CullMode cullMode_,
+		RenderStateComponent::FillMode fillMode_,
+		RenderPathComponent::Pass pass_
+	) :meshType(meshType_), materialType(materialType_), blendMode(blendMode_), cullMode(cullMode_), fillMode(fillMode_), pass(pass_)
+	{
 
-	//std::vector<BufferUniqueID> colorBufferIDContainer;
-	//BufferUniqueID depthBufferID;
+	}
+
+	ShaderPathComponent::MeshType meshType;
+	ShaderPathComponent::MaterialType materialType;
+	RenderStateComponent::BlendMode blendMode;
+	RenderStateComponent::CullMode cullMode;
+	RenderStateComponent::FillMode fillMode;
+	RenderPathComponent::Pass pass;
+
 };
 
 
@@ -5472,8 +5471,6 @@ namespace RenderStateComponent
         kBack
         ,kCount
     };
-
-
 
     //モデル一つにつき１定義のみ
     struct Uniqued
@@ -5557,12 +5554,168 @@ namespace ShaderPathComponent
 ///レンダーパスの設計図
 namespace RenderPathBluePrint
 {
-	//使用するシェーダーの名前をテーブルから読み取ります
+	//テーブルから、使用するシェーダーの名前(キー)をShaderComponentをもとに定める
 	struct ShaderTable;
-
+	//テーブルから、使用するカラーバッファ、ディプスバッファを定める
+	struct BufferTable;
 
 };
 
+
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Render\RenderPathStructure\RenderPathBluePrint\BufferTable\RenderPassBufferTable.cpp ===
+========================================
+#include "PreCompileHeader.h"
+#include "RenderPassBufferTable.h"
+
+
+RenderPathBluePrint::BufferTable::RequiredBufferInfo RenderPathBluePrint::BufferTable::BufferInfoTable(RenderPathComponent::Pass pass_)
+{
+	RenderPathBluePrint::BufferTable::RequiredBufferInfo info;
+
+	switch (pass_)
+	{
+	case RenderPathComponent::Pass::kCreateSceneTexture:
+		
+		info.Add
+		(
+			DXGI_FORMAT_R8G8B8A8_UNORM_SRGB,
+			{ 0.0f,0.0f, 0.0f, 0.0f },
+			ProjectConfig::Window::kWidth,
+			ProjectConfig::Window::kHeight
+		);
+
+		info.Add
+		(
+			DXGI_FORMAT_D24_UNORM_S8_UINT,
+			DXGI_FORMAT_R24_UNORM_X8_TYPELESS,
+			0.0f,
+			0.0f
+		);
+
+		break;
+
+	case RenderPathComponent::Pass::kFinal:
+		///FinalPassは特にすることないかな
+
+		break;
+	
+	default:
+
+		ErrorMessageOutput::Assert::OutputError("不明なPassです", "RequiredBufferInfo.cpp");
+
+		break;
+	}
+
+	return info;
+}
+
+
+
+void RenderPathBluePrint::BufferTable::RequiredBufferInfo::Add
+(
+	DXGI_FORMAT format_,
+	std::array<float, 4> clearColor_,
+	uint32_t width_,
+	uint32_t height_
+)
+{
+	colorBuffers.emplace_back(format_, clearColor_, width_, height_);
+}
+
+void RenderPathBluePrint::BufferTable::RequiredBufferInfo::Add
+(
+	DXGI_FORMAT dsvFormat_,
+	DXGI_FORMAT srvFormat_,
+	float clearDepth_,
+	float clearStencil_
+)
+{
+	depthStencilBuffer.emplace(dsvFormat_, srvFormat_, clearDepth_, clearStencil_);
+
+}
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Render\RenderPathStructure\RenderPathBluePrint\BufferTable\RenderPassBufferTable.h ===
+========================================
+#pragma once
+#include "../RenderPathBluePrint.h"
+
+
+struct RenderPathBluePrint::BufferTable
+{
+	///そのパスで使用するバッファの情報をまとめたもの
+	struct RequiredBufferInfo
+	{
+		struct ColorBuffer
+		{
+			DXGI_FORMAT format;
+			std::array<float, 4> clearColor{};
+			uint32_t width{};
+			uint32_t height{};
+
+			ColorBuffer
+			(
+				DXGI_FORMAT format_,
+				std::array<float, 4> clearColor_,
+				uint32_t width_,
+				uint32_t height_
+			):format(format_), clearColor(clearColor_), width(width_), height(height_)
+			{
+
+			}
+		};
+
+		struct DepthStencilBuffer
+		{
+			DepthStencilBuffer
+			(
+				DXGI_FORMAT dsvFormat_,
+				DXGI_FORMAT srvFormat_,
+				float clearDepth_,
+				float clearStencil_
+			):dsvFormat(dsvFormat_), srvFormat(srvFormat_), clearDepth(clearDepth_), clearStencil(clearStencil_)
+			{
+
+			}
+			DXGI_FORMAT dsvFormat;
+			DXGI_FORMAT srvFormat;
+			float clearDepth{};
+			float clearStencil{};
+		};
+
+		std::vector<ColorBuffer> colorBuffers;
+		std::optional<DepthStencilBuffer> depthStencilBuffer;
+
+		void Add
+		(
+			DXGI_FORMAT format_,
+			std::array<float, 4> clearColor_,
+			uint32_t width_,
+			uint32_t height_
+		);
+
+		void Add
+		(
+			DXGI_FORMAT dsvFormat_,
+			DXGI_FORMAT srvFormat_,
+			float clearDepth_,
+			float clearStencil_
+		);
+
+
+	};
+
+	RequiredBufferInfo BufferInfoTable(RenderPathComponent::Pass pass_);
+
+};
 
 
 
@@ -6973,24 +7126,24 @@ public:
 
 
 //それぞれの固有のビュー生成インターフェース
-struct ISRV_Assembler 
+struct IAssembleShaderResource 
 {
 	virtual D3D12_SHADER_RESOURCE_VIEW_DESC CreateSRV_Desc()const = 0; 
 };
 
-struct IUAV_Assembler 
+struct IAssembleComputeBuffer 
 {
 	virtual D3D12_UNORDERED_ACCESS_VIEW_DESC CreateUAV_Desc()const = 0; 
 
 };
 
-struct IRTBufferAssembler 
+struct IAssembleColorBuffer 
 {
 	virtual D3D12_RENDER_TARGET_VIEW_DESC CreateRTV_Desc()const = 0; 
 	virtual D3D12_CLEAR_VALUE WatchClearValue() const = 0;
 };
 
-struct IDSV_Assembler 
+struct IAssembleDepthStencilBuffer 
 {
 	virtual D3D12_DEPTH_STENCIL_VIEW_DESC CreateDSVDesc()const = 0; 
 	virtual D3D12_CLEAR_VALUE WatchClearValue() const = 0;
@@ -7116,7 +7269,7 @@ D3D12_SHADER_RESOURCE_VIEW_DESC ColorBufferDescription::CreateSRV_Desc()const
 
 
 //Colorバッファ
-struct ColorBufferDescription final : public BufferDescriptionBehavior,IRTBufferAssembler, ISRV_Assembler
+struct ColorBufferDescription final : public BufferDescriptionBehavior,IAssembleColorBuffer, IAssembleShaderResource
 {
 private:
 
@@ -7271,7 +7424,7 @@ D3D12_UNORDERED_ACCESS_VIEW_DESC ComputeBufferDescription::CreateUAV_Desc()const
 
 
 //読み書き
-struct ComputeBufferDescription final :public BufferDescriptionBehavior, ISRV_Assembler, IUAV_Assembler
+struct ComputeBufferDescription final :public BufferDescriptionBehavior, IAssembleShaderResource, IAssembleComputeBuffer
 {
 private:
 
@@ -7553,7 +7706,7 @@ DXGI_FORMAT DepthStencilBufferDescription::ConductTypelessFormat()const
 
 
 //DepthStencilBuffer
-struct DepthStencilBufferDescription final : public BufferDescriptionBehavior, IDSV_Assembler, ISRV_Assembler
+struct DepthStencilBufferDescription final : public BufferDescriptionBehavior, IAssembleDepthStencilBuffer, IAssembleShaderResource
 {
 private:
 
@@ -7703,7 +7856,7 @@ D3D12_SHADER_RESOURCE_VIEW_DESC UploadStructuredBufferDescription::CreateSRV_Des
 
 
 //読み書き
-struct UploadStructuredBufferDescription final :public BufferDescriptionBehavior, ISRV_Assembler
+struct UploadStructuredBufferDescription final :public BufferDescriptionBehavior, IAssembleShaderResource
 {
 private:
 	struct Param
@@ -7760,26 +7913,26 @@ D3D12_RESOURCE_STATES IColorBuffer::ResourceStateTable(Usage usage_)const
 ///+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 D3D12_RESOURCE_STATES IDepthBuffer::ResourceStateTable(Usage usage_)const
 {
-	static D3D12_RESOURCE_STATES resourceStatetable[2]
+	static D3D12_RESOURCE_STATES resourceStateTable[2]
 	{
 		D3D12_RESOURCE_STATE_DEPTH_READ | D3D12_RESOURCE_STATE_ALL_SHADER_RESOURCE,
 		D3D12_RESOURCE_STATE_DEPTH_WRITE
 	};
 
-	return resourceStatetable[(int)usage_];
+	return resourceStateTable[(int)usage_];
 }
 ///+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 D3D12_RESOURCE_STATES IRWStructuredBuffer::ResourceStateTable(Usage usage_)const
 {
-	static D3D12_RESOURCE_STATES resourceStatetable[2]
+	static D3D12_RESOURCE_STATES resourceStateTable[2]
 	{
 		D3D12_RESOURCE_STATE_ALL_SHADER_RESOURCE,
 		D3D12_RESOURCE_STATE_UNORDERED_ACCESS
 	};
 
-	return resourceStatetable[(int)usage_];
+	return resourceStateTable[(int)usage_];
 }
 ///+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -7794,28 +7947,6 @@ void IRenderTargetBuffer::Swap()
 	};
 
 	status = nextTable[status];
-}
-
-int IRenderTargetBuffer::ProperBufferIndex(ViewType viewType_)const
-{
-	//シングルバッファは問答無用
-	if (status == kSingle) return 0;
-
-	int dstBufferIndex{};
-
-	if (viewType_ == ViewType::kSRV)
-	{
-		//2番目がシェーダーリソース
-		if (status == kRenderTarget_ShaderResource) dstBufferIndex = 1;
-	}
-	//kRTV
-	else
-	{
-		//2番目がレンダーターゲット
-		if (status == kShaderResource_RenderTarget) dstBufferIndex = 1;
-	}
-
-	return dstBufferIndex;
 }
 
 int IRenderTargetBuffer::ProperBufferIndex(Usage usage_)const
@@ -7858,29 +7989,6 @@ void IComputeBuffer::Swap()
 	};
 
 	status = nextTable[status];
-
-}
-
-int IComputeBuffer::ProperBufferIndex(ViewType viewType_)const
-{
-	//シングルバッファは問答無用
-	if (status == kSingle) return 0;
-
-	int dstBufferIndex{};
-
-	if (viewType_ == ViewType::kSRV)
-	{
-		//2番目がシェーダーリソース
-		if (status == kComputeResource_ShaderResource) dstBufferIndex = 1;
-	}
-	//kUAV
-	else
-	{
-		//2番目が計算リソース
-		if (status == kShaderResource_ComputeResource) dstBufferIndex = 1;
-	}
-
-	return dstBufferIndex;
 
 }
 
@@ -7944,8 +8052,7 @@ struct IPingPongBuffer
 
 protected:
 
-	//ステータスに応じて適切な求められたバッファのインデックスを返す
-	virtual int ProperBufferIndex(ViewType viewType_)const = 0;
+	//使用法に応じて、適切にバッファのインデックスを出す
 	virtual int ProperBufferIndex(Usage usage_)const = 0;
 };
 
@@ -7964,7 +8071,6 @@ struct IShaderBuffer
 struct IRWStructuredBuffer:IDualRole
 {
 	virtual uint32_t OutProperUAVHeapIndex()const = 0;
-	virtual DXGI_FORMAT OutProperUAVFormat()const = 0;
 
 protected:
 	virtual D3D12_RESOURCE_STATES ResourceStateTable(Usage usage_)const override;
@@ -7975,9 +8081,8 @@ protected:
 struct IDepthBuffer:IDualRole
 {
 	virtual D3D12_CPU_DESCRIPTOR_HANDLE OutProperDSVHeapHandle()const = 0;
-	virtual DXGI_FORMAT OutProperDSVFormat()const = 0;
 protected:
-	virtual D3D12_RESOURCE_STATES ResourceStateTable(Usage usage_)const override;;
+	virtual D3D12_RESOURCE_STATES ResourceStateTable(Usage usage_)const override;
 
 };
 
@@ -7986,7 +8091,6 @@ struct IColorBuffer:IDualRole
 {
 	virtual ~IColorBuffer() = default;
 	virtual D3D12_CPU_DESCRIPTOR_HANDLE OutProperRTVHeapHandle()const = 0;
-	virtual DXGI_FORMAT OutProperRTVFormat()const = 0;
 protected:
 	virtual D3D12_RESOURCE_STATES ResourceStateTable(Usage usage_)const override;
 };
@@ -8017,7 +8121,6 @@ public:
 
 protected:
 
-	virtual int ProperBufferIndex(ViewType viewType_)const override;
 	virtual int ProperBufferIndex(Usage usage_)const override;
 	virtual void SynchronizeStatus(ProjectConfig::Render::NumBuffer numBuffer_)override;
 
@@ -8043,14 +8146,11 @@ public:
 	virtual ~IRenderTargetBuffer() = default;
 
 	//適切なClearColor出す
-	virtual std::array<float, 4> OutProperClearColor()const = 0;
 	virtual D3D12_RESOURCE_BARRIER CreateBarrier(Usage usage_) = 0;
-	virtual std::pair<uint32_t, uint32_t> OutWidthAndHeight()const = 0;
 	virtual void Swap()override;
 
 protected:
 
-	virtual int ProperBufferIndex(ViewType viewType_)const override;
 	virtual int ProperBufferIndex(Usage usage_)const override;
 	virtual void SynchronizeStatus(ProjectConfig::Render::NumBuffer numBuffer_)override;
 };
@@ -8316,7 +8416,7 @@ D3D12_RESOURCE_BARRIER ColorBuffer::CreateBarrier(Usage usage_)
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 D3D12_CPU_DESCRIPTOR_HANDLE ColorBuffer::OutProperRTVHeapHandle()const
 {
-	int dstBufferIndex = ProperBufferIndex(ViewType::kRTV);
+	int dstBufferIndex = ProperBufferIndex(Usage::kWrite);
 
 	return WatchIndex<ViewType::kRTV, D3D12_CPU_DESCRIPTOR_HANDLE >(dstBufferIndex);
 }
@@ -8325,34 +8425,14 @@ D3D12_CPU_DESCRIPTOR_HANDLE ColorBuffer::OutProperRTVHeapHandle()const
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 uint32_t ColorBuffer::OutProperSRVHeapIndex()const
 {
-	int dstBufferIndex = ProperBufferIndex(ViewType::kSRV);
+	int dstBufferIndex = ProperBufferIndex(Usage::kRead);
 
 	return WatchIndex<ViewType::kSRV, uint32_t >(dstBufferIndex);
 }
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-DXGI_FORMAT ColorBuffer::OutProperRTVFormat()const
-{
-	return static_cast<ColorBufferDescription*>(description.get())->WatchParam().format;
-}
-///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//ClearColor
-std::array<float, 4> ColorBuffer::OutProperClearColor()const
-{
-	return static_cast<ColorBufferDescription*>(description.get())->WatchParam().clearColor;
-}
-///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-std::pair<uint32_t, uint32_t> ColorBuffer::OutWidthAndHeight()const
-{
-	const auto& param = static_cast<ColorBufferDescription&>(*description.get()).WatchParam();
 
-	return { param.width,param.height };
-}
 
 
 
@@ -8377,7 +8457,6 @@ public:
 		std::unique_ptr <BufferDescriptionBehavior>&& description_
 	);
 
-	inline int tinpo() { return 3; }
 
 private:
 	//バリア生成
@@ -8386,13 +8465,6 @@ private:
 	virtual D3D12_CPU_DESCRIPTOR_HANDLE OutProperRTVHeapHandle()const override;
 	//適切なSRVヒープインデックスを出す
 	virtual uint32_t OutProperSRVHeapIndex()const override;
-	//横幅立幅
-	virtual std::pair<uint32_t, uint32_t> OutWidthAndHeight()const override;
-	//RTVFormat出す
-	virtual DXGI_FORMAT OutProperRTVFormat()const override;
-	//ClearColor出す
-	virtual std::array<float, 4> OutProperClearColor()const override;
-
 };
 
 
@@ -8610,7 +8682,7 @@ D3D12_RESOURCE_BARRIER DepthStencilBuffer::CreateBarrier(Usage usage_)
 
 D3D12_CPU_DESCRIPTOR_HANDLE DepthStencilBuffer::OutProperDSVHeapHandle()const
 {
-	int dstBufferIndex = ProperBufferIndex(ViewType::kDSV);
+	int dstBufferIndex = ProperBufferIndex(Usage::kWrite);
 
 	return WatchIndex<ViewType::kDSV, D3D12_CPU_DESCRIPTOR_HANDLE >(dstBufferIndex);
 }
@@ -8619,35 +8691,14 @@ D3D12_CPU_DESCRIPTOR_HANDLE DepthStencilBuffer::OutProperDSVHeapHandle()const
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 uint32_t DepthStencilBuffer::OutProperSRVHeapIndex()const
 {
-	int dstBufferIndex = ProperBufferIndex(ViewType::kSRV);
+	int dstBufferIndex = ProperBufferIndex(Usage::kRead);
 
 	return WatchIndex<ViewType::kSRV, uint32_t >(dstBufferIndex);
 }
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-DXGI_FORMAT DepthStencilBuffer::OutProperDSVFormat()const
-{
-	return static_cast<DepthStencilBufferDescription*>(description.get())->WatchParam().dsvFormat;
-}
-///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-std::array<float, 4> DepthStencilBuffer::OutProperClearColor()const
-{
-	std::array<float, 4> clearColor = { static_cast<DepthStencilBufferDescription*>(description.get())->WatchParam().clearColor,0,0,0 };
 
-	return clearColor;
-}
-///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-std::pair<uint32_t, uint32_t> DepthStencilBuffer::OutWidthAndHeight()const
-{
-	const auto& param = static_cast<DepthStencilBufferDescription&>(*description.get()).WatchParam();
-
-	return { param.width,param.height };
-}
 
 
 
@@ -8681,14 +8732,6 @@ private:
 	virtual D3D12_CPU_DESCRIPTOR_HANDLE OutProperDSVHeapHandle()const override;
 	//適切なsrvHeapインデックスを渡す
 	virtual uint32_t OutProperSRVHeapIndex()const override;
-	//DSVFormat出す
-	virtual DXGI_FORMAT OutProperDSVFormat()const override;
-	//ClearColor出す
-	virtual std::array<float, 4> OutProperClearColor()const override;
-	//横幅立幅
-	virtual std::pair<uint32_t, uint32_t> OutWidthAndHeight()const override;
-
-
 };
 
 
@@ -8947,14 +8990,10 @@ RequiredRenderingInfo::ColorBuffer BufferContext::RenderTargetBufferInfoExtracto
 {
 	RequiredRenderingInfo::ColorBuffer info;
 
-	info.width = buffer_->OutWidthAndHeight().first;
-	info.height = buffer_->OutWidthAndHeight().second;
 	info.cpuHandle = buffer_->OutProperRTVHeapHandle();
-	info.clearColor = buffer_->OutProperClearColor();
 	info.barrier = buffer_->CreateBarrier(Usage::kWrite);
 
 	return info;
-
 }
 
 template<>
@@ -8968,15 +9007,6 @@ RequiredRenderingInfo::Texture BufferContext::RenderTargetBufferInfoExtractor::E
 	return info;
 }
 
-template<>
-RequiredRenderingInfo::Format BufferContext::RenderTargetBufferInfoExtractor::Exstract(ColorBuffer* buffer_)
-{
-	RequiredRenderingInfo::Format info;
-
-	info.format = buffer_->OutProperRTVFormat();
-	return info;
-}
-
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -8984,25 +9014,9 @@ template<>
 RequiredRenderingInfo::DepthBuffer BufferContext::RenderTargetBufferInfoExtractor::Exstract(DepthStencilBuffer* buffer_)
 {
 	RequiredRenderingInfo::DepthBuffer info;
-
-	info.clearDepth = buffer_->OutProperClearColor().at(0);
-	//一旦
-	info.clearStencil = 0;
 	info.dsvCpuHandle = buffer_->OutProperDSVHeapHandle();
-	info.width = buffer_->OutWidthAndHeight().first;
-	info.height = buffer_->OutWidthAndHeight().second;
 	info.barrier = buffer_->CreateBarrier(Usage::kWrite);
 
-	return info;
-
-}
-
-template<>
-RequiredRenderingInfo::Format BufferContext::RenderTargetBufferInfoExtractor::Exstract(DepthStencilBuffer* buffer_)
-{
-	RequiredRenderingInfo::Format info;
-
-	info.format = buffer_->OutProperDSVFormat();
 	return info;
 
 }
@@ -9064,17 +9078,11 @@ RequiredRenderingInfo::ColorBuffer BufferContext::RenderTargetBufferInfoExtracto
 template<>
 RequiredRenderingInfo::Texture BufferContext::RenderTargetBufferInfoExtractor::Exstract(ColorBuffer* buffer_);
 
-template<>
-RequiredRenderingInfo::Format BufferContext::RenderTargetBufferInfoExtractor::Exstract(ColorBuffer* buffer_);
-
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////
 template<>
 RequiredRenderingInfo::DepthBuffer BufferContext::RenderTargetBufferInfoExtractor::Exstract(DepthStencilBuffer* buffer_);
-
-template<>
-RequiredRenderingInfo::Format BufferContext::RenderTargetBufferInfoExtractor::Exstract(DepthStencilBuffer* buffer_);
 
 template<>
 RequiredRenderingInfo::Texture BufferContext::RenderTargetBufferInfoExtractor::Exstract(DepthStencilBuffer* buffer_);
@@ -9257,7 +9265,7 @@ namespace PipelineStateDesc
         ShaderSet shaderSet;
         RasterizerDesc rasterizerDesc;
         RenderTargetDesc renderTargetDesc;
-        DepthStencilDesc depthStencilDesc;
+        std::optional<DepthStencilDesc> depthStencilDesc;
         SampleDesc sampleDesc;
     };
 
@@ -9384,7 +9392,7 @@ ID3D12PipelineState* PSO_Context::Assembler::AssembleGraphicsPSO
 		if (ms_ps.second)pipelineDesc.PS = *ms_ps.second;			///PSは存在する場合のみ
 		pipelineDesc.BlendState = blendDesc;
 		pipelineDesc.DepthStencilState = depthStencilDesc;
-		pipelineDesc.DSVFormat = srcDesc_.depthStencilDesc.dsvFormat;
+		pipelineDesc.DSVFormat = (srcDesc_.depthStencilDesc) ? srcDesc_.depthStencilDesc->dsvFormat : DXGI_FORMAT_UNKNOWN;
 		pipelineDesc.RasterizerState = rasterizerDesc;
 		pipelineDesc.SampleDesc = sampleDesc;
 		pipelineDesc.SampleMask = UINT_MAX;
@@ -9643,12 +9651,20 @@ private:
 #include "CreateDepthStencilDesc.h"
 
 
-CD3DX12_DEPTH_STENCIL_DESC CreateDepthStencilDesc::Create(const PipelineStateDesc::DepthStencilDesc& srcDesc_)
+CD3DX12_DEPTH_STENCIL_DESC CreateDepthStencilDesc::Create(const std::optional<PipelineStateDesc::DepthStencilDesc> srcDesc_)
 {
 	CD3DX12_DEPTH_STENCIL_DESC depthStencilDesc{};
 	
-	SetBranchedDetails(&depthStencilDesc, srcDesc_);
-	SetDetailsDirectly(&depthStencilDesc, srcDesc_);
+	if (srcDesc_)
+	{
+		SetBranchedDetails(&depthStencilDesc, *srcDesc_);
+		SetDetailsDirectly(&depthStencilDesc, *srcDesc_);
+	}
+	//ディプスバッファ使わんのなら
+	else
+	{
+		depthStencilDesc.DepthEnable = FALSE;
+	}
 
 	return depthStencilDesc;
 
@@ -9702,7 +9718,7 @@ void CreateDepthStencilDesc::SetDetailsDirectly(CD3DX12_DEPTH_STENCIL_DESC* desc
 //DepthStencilDescを生成
 struct CreateDepthStencilDesc
 {
-	CD3DX12_DEPTH_STENCIL_DESC Create(const PipelineStateDesc::DepthStencilDesc& srcDesc_);
+	CD3DX12_DEPTH_STENCIL_DESC Create(const std::optional<PipelineStateDesc::DepthStencilDesc> srcDesc_);
 
 private:
 	void SetBranchedDetails(CD3DX12_DEPTH_STENCIL_DESC* desc_, const PipelineStateDesc::DepthStencilDesc& srcDesc_);
@@ -9850,14 +9866,15 @@ void PSO_InfoOutputter::OutputGraphicsPSOInfo
 	}
 
 	//ディプスバッファ関連
+	if(srcDesc_.depthStencilDesc)
 	{
 		debugText += "---DepthStencilBuffer---";
 
-		debugText += "[ " + srcDesc_.depthStencilDesc.bufferName + " ]\n";
-		(srcDesc_.depthStencilDesc.blendMode == BlendMode::kOpaque) ? debugText += "DepthWriteMask: MASK_ALL" : debugText += "DepthWriteMask: MASK_ZERO";
-		debugText += "DepthStencilFormat: " + DebugTextTable(srcDesc_.depthStencilDesc.dsvFormat) + "\n";
-		debugText += "DepthEnable: " + DebugTextTable(srcDesc_.depthStencilDesc.depthEnable) + "\n";
-		debugText += "DepthTest: " + DebugTextTable(srcDesc_.depthStencilDesc.depthTest) + "\n";
+		debugText += "[ " + srcDesc_.depthStencilDesc->bufferName + " ]\n";
+		(srcDesc_.depthStencilDesc->blendMode == BlendMode::kOpaque) ? debugText += "DepthWriteMask: MASK_ALL" : debugText += "DepthWriteMask: MASK_ZERO";
+		debugText += "DepthStencilFormat: " + DebugTextTable(srcDesc_.depthStencilDesc->dsvFormat) + "\n";
+		debugText += "DepthEnable: " + DebugTextTable(srcDesc_.depthStencilDesc->depthEnable) + "\n";
+		debugText += "DepthTest: " + DebugTextTable(srcDesc_.depthStencilDesc->depthTest) + "\n";
 	}
 
 	//シェーダー

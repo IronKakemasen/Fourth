@@ -1,12 +1,20 @@
 #include "CreateDepthStencilDesc.h"
 
 
-CD3DX12_DEPTH_STENCIL_DESC CreateDepthStencilDesc::Create(const PipelineStateDesc::DepthStencilDesc& srcDesc_)
+CD3DX12_DEPTH_STENCIL_DESC CreateDepthStencilDesc::Create(const std::optional<PipelineStateDesc::DepthStencilDesc> srcDesc_)
 {
 	CD3DX12_DEPTH_STENCIL_DESC depthStencilDesc{};
 	
-	SetBranchedDetails(&depthStencilDesc, srcDesc_);
-	SetDetailsDirectly(&depthStencilDesc, srcDesc_);
+	if (srcDesc_)
+	{
+		SetBranchedDetails(&depthStencilDesc, *srcDesc_);
+		SetDetailsDirectly(&depthStencilDesc, *srcDesc_);
+	}
+	//ディプスバッファ使わんのなら
+	else
+	{
+		depthStencilDesc.DepthEnable = FALSE;
+	}
 
 	return depthStencilDesc;
 

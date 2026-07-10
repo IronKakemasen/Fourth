@@ -52,7 +52,7 @@ namespace PipelineStateDesc
         ShaderSet shaderSet;
         RasterizerDesc rasterizerDesc;
         RenderTargetDesc renderTargetDesc;
-        DepthStencilDesc depthStencilDesc;
+        std::optional<DepthStencilDesc> depthStencilDesc;
         SampleDesc sampleDesc;
     };
 

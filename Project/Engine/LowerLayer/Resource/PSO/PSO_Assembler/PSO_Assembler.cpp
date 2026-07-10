@@ -98,7 +98,7 @@ ID3D12PipelineState* PSO_Context::Assembler::AssembleGraphicsPSO
 		if (ms_ps.second)pipelineDesc.PS = *ms_ps.second;			///PSは存在する場合のみ
 		pipelineDesc.BlendState = blendDesc;
 		pipelineDesc.DepthStencilState = depthStencilDesc;
-		pipelineDesc.DSVFormat = srcDesc_.depthStencilDesc.dsvFormat;
+		pipelineDesc.DSVFormat = (srcDesc_.depthStencilDesc) ? srcDesc_.depthStencilDesc->dsvFormat : DXGI_FORMAT_UNKNOWN;
 		pipelineDesc.RasterizerState = rasterizerDesc;
 		pipelineDesc.SampleDesc = sampleDesc;
 		pipelineDesc.SampleMask = UINT_MAX;
