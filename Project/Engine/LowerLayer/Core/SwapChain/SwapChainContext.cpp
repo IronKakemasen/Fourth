@@ -19,8 +19,7 @@ SwapChainContext::SwapChainContext
 	DescriptorHeapContext* descriptorHeapContext_,
 	CommandContext* commandContext_,
 	CommandCreateSwapChain cmdCreateSwapChain_,
-	const HWND hWnd_,
-	std::unique_ptr<DepthStencilBuffer> depthStencilBuffer_
+	const HWND hWnd_
 )
 {
 	Logger::Entry("SwapChainContext: Constructor");
@@ -32,7 +31,7 @@ SwapChainContext::SwapChainContext
 	presenter.reset(new Presenter(swapChain.Get()));
 	Logger::Log("Instantiate: Presenter", fileName);
 
-	renderPassMaterialProvider.reset(new RenderPassMaterialProvider(colorBuffer.get(), depthStencilBuffer.get()));
+	renderPassMaterialProvider.reset(new RenderPassMaterialProvider(colorBuffer.get()));
 	Logger::Log("Instantiate: RenderPassMaterialProvider", fileName);
 
 

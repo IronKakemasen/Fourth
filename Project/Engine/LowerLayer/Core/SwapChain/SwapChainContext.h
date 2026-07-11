@@ -4,7 +4,6 @@ class Nexus;
 class ViewCreator;
 class CommandContext;
 class DescriptorHeapContext;
-class DepthStencilBuffer;
 
 
 
@@ -42,8 +41,7 @@ public:
 		DescriptorHeapContext* descriptorHeapContext_,
 		CommandContext* commandContext_,
 		CommandCreateSwapChain cmdCreateSwapChain_,
-		const HWND hWnd_,
-		std::unique_ptr<DepthStencilBuffer> depthStencilBuffer_
+		const HWND hWnd_
 	);
 
 	~SwapChainContext();
@@ -81,7 +79,6 @@ private:
 	//スワップチェーン
 	Microsoft::WRL::ComPtr<IDXGISwapChain4> swapChain = nullptr;
 	std::unique_ptr<ColorBuffer> colorBuffer;
-	std::unique_ptr<DepthStencilBuffer> depthStencilBuffer;
 };
 
 struct SwapChainContext::InstanceKey
