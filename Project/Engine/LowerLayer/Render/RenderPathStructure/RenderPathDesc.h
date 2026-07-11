@@ -3,7 +3,7 @@
 
 #include "ShaderPathComponent.h"
 #include "RenderStateComponent.h"
-#include "RenderPathComponent.h"
+#include "RenderPassComponent .h"
 
 
 struct RenderPath::Desc
@@ -15,7 +15,7 @@ struct RenderPath::Desc
 		RenderStateComponent::BlendMode blendMode_,
 		RenderStateComponent::CullMode cullMode_,
 		RenderStateComponent::FillMode fillMode_,
-		RenderPathComponent::Pass pass_
+		RenderPassComponent ::Pass pass_
 	) :meshType(meshType_), materialType(materialType_), blendMode(blendMode_), cullMode(cullMode_), fillMode(fillMode_), pass(pass_)
 	{
 
@@ -26,6 +26,6 @@ struct RenderPath::Desc
 	RenderStateComponent::BlendMode blendMode;
 	RenderStateComponent::CullMode cullMode;
 	RenderStateComponent::FillMode fillMode;
-	RenderPathComponent::Pass pass;
+	RenderPassComponent ::Pass pass;
 
 };

@@ -213,25 +213,7 @@ void Nexus::Instantiate<Nexus::InitSequence::kCommandContext>()
 template<>
 void Nexus::Instantiate<Nexus::InitSequence::kSwapChainContext>()
 {
-	std::unique_ptr<DepthStencilBuffer> depthStencilBuffer;
 	auto* cmdProvider = deviceContext->commandProvider.get();
-
-	//スワップチェーンが使用する深度ステンシルバッファをここでつくちゃう
-	{
-		DepthStencilBufferDescription desc
-		(
-			kWidth,
-			kHeight,
-			0.0f,
-			DXGI_FORMAT_D24_UNORM_S8_UINT,
-			DXGI_FORMAT_R24_UNORM_X8_TYPELESS
-		);
-
-		auto* bufferCreator = bufferContext->bufferCreator.get();
-
-		depthStencilBuffer = std::move(bufferCreator->CreateBeyondMyJurisdiction<DepthStencilBuffer>(desc, "SwapChain_DB"));
-		Logger::Log("Create: SwapChainDepthStencilBuffer", fileName);
-	}
 
 	swapChainContext.reset
 	(
@@ -241,8 +223,7 @@ void Nexus::Instantiate<Nexus::InitSequence::kSwapChainContext>()
 			descriptorHeapContext.get(),
 			commandContext.get(),
 			cmdProvider->ProvideCreateSwapChainCommand(),
-			windowContext->WatchHWND(),
-			std::move(depthStencilBuffer)
+			windowContext->WatchHWND()
 		)
 	);
 

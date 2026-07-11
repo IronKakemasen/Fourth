@@ -10,6 +10,8 @@ class RenderPath
 public:
 	//レンダーパスを構成します
 	class PathComposer;
+	///Pathを構成するPass
+	struct Pass;
 
 protected:
 

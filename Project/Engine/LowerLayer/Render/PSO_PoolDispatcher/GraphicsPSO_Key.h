@@ -1,7 +1,7 @@
 #pragma once
 #include "../RenderPathStructure/RenderStateComponent.h"
 #include "../RenderPathStructure/ShaderPathComponent.h"
-#include "../RenderPathStructure/RenderPathComponent.h"
+#include "../RenderPathStructure/RenderPassComponent.h"
 
 struct GraphicsPSO_Key
 {
@@ -22,9 +22,9 @@ private:
 
     int const kInvalid = -1;
 
-    RenderPathComponent::Pass pass =                RenderPathComponent::Pass(kInvalid);
-    RenderPathComponent::DepthEnable depthEnable =  RenderPathComponent::DepthEnable(kInvalid);
-    RenderPathComponent::DepthTest depthTest =      RenderPathComponent::DepthTest(kInvalid);
+    RenderPassComponent::Pass pass =                RenderPassComponent::Pass(kInvalid);
+    RenderPassComponent::DepthEnable depthEnable =  RenderPassComponent::DepthEnable(kInvalid);
+    RenderPassComponent::DepthTest depthTest =      RenderPassComponent::DepthTest(kInvalid);
     ShaderPathComponent::MeshType mesh =            ShaderPathComponent::MeshType(kInvalid);
     ShaderPathComponent::MaterialType material =    ShaderPathComponent::MaterialType(kInvalid);
     RenderStateComponent::BlendMode blend =         RenderStateComponent::BlendMode(kInvalid);
@@ -34,9 +34,9 @@ private:
     template <Sequence sequence>
     static constexpr auto sequenceToType()
     {
-        if      constexpr (sequence == kPass)         return RenderPathComponent::Pass{};
-        else if constexpr (sequence == kDepthEnable)  return RenderPathComponent::DepthEnable{};
-        else if constexpr (sequence == kDepthTest)    return RenderPathComponent::DepthTest{};
+        if      constexpr (sequence == kPass)         return RenderPassComponent::Pass{};
+        else if constexpr (sequence == kDepthEnable)  return RenderPassComponent::DepthEnable{};
+        else if constexpr (sequence == kDepthTest)    return RenderPassComponent::DepthTest{};
         else if constexpr (sequence == kMeshType)     return ShaderPathComponent::MeshType{};
         else if constexpr (sequence == kMaterialType) return ShaderPathComponent::MaterialType{};
         else if constexpr (sequence == kBlendMode)    return RenderStateComponent::BlendMode{};
@@ -52,9 +52,9 @@ public:
 
     GraphicsPSO_Key
     (
-        RenderPathComponent::Pass pass_,
-        RenderPathComponent::DepthEnable depthEnable_,
-        RenderPathComponent::DepthTest depthTest_,
+        RenderPassComponent::Pass pass_,
+        RenderPassComponent::DepthEnable depthEnable_,
+        RenderPassComponent::DepthTest depthTest_,
         ShaderPathComponent::MeshType mesh_,
         ShaderPathComponent::MaterialType material_,
         RenderStateComponent::BlendMode blend_,

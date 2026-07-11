@@ -5352,6 +5352,8 @@ class RenderPath
 public:
 	//レンダーパスを構成します
 	class PathComposer;
+	///Pathを構成するPass
+	struct Pass;
 
 protected:
 
@@ -5536,15 +5538,156 @@ namespace ShaderPathComponent
 
 
 ========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Render\RenderPathStructure\RenderPathBluePrint\RenderPathBluePrint.cpp ===
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Render\RenderPathStructure\RenderPass\RenderPass.cpp ===
 ========================================
-#include "RenderPathBluePrint.h"
+#include "PreCompileHeader.h"
+#include "RenderPass.h"
+
+//Pass構築情報群
+#include "RequiredInfo/BufferRequiredInfo/BufferRequiredInfo.h"
+
+
+RenderPath::Pass::Pass()
+{
+
+}
+
+RenderPath::Pass::~Pass()
+{
+
+}
 
 
 
 
 ========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Render\RenderPathStructure\RenderPathBluePrint\RenderPathBluePrint.h ===
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Render\RenderPathStructure\RenderPass\RenderPass.h ===
+========================================
+#pragma once
+#include "../RenderPath.h"
+
+struct RenderPath::Pass
+{
+	Pass();
+	~Pass();
+
+	///そのパスで使用するバッファの情報をまとめたもの
+	struct RequiredBufferInfo;
+
+	std::unique_ptr<RequiredBufferInfo> requiredBufferInfo;
+};
+
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Render\RenderPathStructure\RenderPass\RequiredInfo\BufferRequiredInfo\BufferRequiredInfo.cpp ===
+========================================
+#include "PreCompileHeader.h"
+#include "BufferRequiredInfo.h"
+
+
+void RenderPath::Pass::RequiredBufferInfo::Add
+(
+	DXGI_FORMAT format_,
+	std::array<float, 4> clearColor_,
+	uint32_t width_,
+	uint32_t height_
+)
+{
+	colorBuffers.emplace_back(format_, clearColor_, width_, height_);
+}
+
+void RenderPath::Pass::RequiredBufferInfo::Add
+(
+	DXGI_FORMAT dsvFormat_,
+	DXGI_FORMAT srvFormat_,
+	float clearDepth_,
+	float clearStencil_
+)
+{
+	depthStencilBuffer.emplace(dsvFormat_, srvFormat_, clearDepth_, clearStencil_);
+
+}
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Render\RenderPathStructure\RenderPass\RequiredInfo\BufferRequiredInfo\BufferRequiredInfo.h ===
+========================================
+#pragma once
+#include "../../RenderPass.h"
+
+
+///そのパスで使用するバッファの情報をまとめたもの
+struct RenderPath::Pass::RequiredBufferInfo
+{
+	struct ColorBuffer
+	{
+		DXGI_FORMAT format;
+		std::array<float, 4> clearColor{};
+		uint32_t width{};
+		uint32_t height{};
+		//Pass間でバインドするときに使用
+		std::string name = "";
+
+		ColorBuffer
+		(
+			DXGI_FORMAT format_,
+			std::array<float, 4> clearColor_,
+			uint32_t width_,
+			uint32_t height_
+		) :format(format_), clearColor(clearColor_), width(width_), height(height_)
+		{
+
+		}
+	};
+
+	struct DepthStencilBuffer
+	{
+		DepthStencilBuffer
+		(
+			DXGI_FORMAT dsvFormat_,
+			DXGI_FORMAT srvFormat_,
+			float clearDepth_,
+			float clearStencil_
+		) :dsvFormat(dsvFormat_), srvFormat(srvFormat_), clearDepth(clearDepth_), clearStencil(clearStencil_)
+		{
+
+		}
+		DXGI_FORMAT dsvFormat;
+		DXGI_FORMAT srvFormat;
+		float clearDepth{};
+		float clearStencil{};
+	};
+
+	std::vector<ColorBuffer> colorBuffers;
+	std::optional<DepthStencilBuffer> depthStencilBuffer;
+
+	void Add
+	(
+		DXGI_FORMAT format_,
+		std::array<float, 4> clearColor_,
+		uint32_t width_,
+		uint32_t height_
+	);
+
+	void Add
+	(
+		DXGI_FORMAT dsvFormat_,
+		DXGI_FORMAT srvFormat_,
+		float clearDepth_,
+		float clearStencil_
+	);
+};
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Render\RenderPathStructure\RenderPathBluePrint\RenderPassBluePrint.h ===
 ========================================
 #pragma once
 #include "../ShaderPathComponent.h"
@@ -5552,7 +5695,7 @@ namespace ShaderPathComponent
 
 
 ///レンダーパスの設計図
-namespace RenderPathBluePrint
+namespace RenderPassBluePrint
 {
 	//テーブルから、使用するシェーダーの名前(キー)をShaderComponentをもとに定める
 	struct ShaderTable;
@@ -5573,15 +5716,15 @@ namespace RenderPathBluePrint
 #include "RenderPassBufferTable.h"
 
 
-RenderPathBluePrint::BufferTable::RequiredBufferInfo RenderPathBluePrint::BufferTable::BufferInfoTable(RenderPathComponent::Pass pass_)
+std::unique_ptr<RenderPath::Pass::RequiredBufferInfo> RenderPassBluePrint::BufferTable::BufferInfoTable(RenderPathComponent::Pass pass_)
 {
-	RenderPathBluePrint::BufferTable::RequiredBufferInfo info;
+	std::unique_ptr<RenderPath::Pass::RequiredBufferInfo> info(new RenderPath::Pass::RequiredBufferInfo);
 
 	switch (pass_)
 	{
 	case RenderPathComponent::Pass::kCreateSceneTexture:
 		
-		info.Add
+		info->Add
 		(
 			DXGI_FORMAT_R8G8B8A8_UNORM_SRGB,
 			{ 0.0f,0.0f, 0.0f, 0.0f },
@@ -5589,7 +5732,7 @@ RenderPathBluePrint::BufferTable::RequiredBufferInfo RenderPathBluePrint::Buffer
 			ProjectConfig::Window::kHeight
 		);
 
-		info.Add
+		info->Add
 		(
 			DXGI_FORMAT_D24_UNORM_S8_UINT,
 			DXGI_FORMAT_R24_UNORM_X8_TYPELESS,
@@ -5611,33 +5754,11 @@ RenderPathBluePrint::BufferTable::RequiredBufferInfo RenderPathBluePrint::Buffer
 		break;
 	}
 
-	return info;
+	return std::move(info);
 }
 
 
 
-void RenderPathBluePrint::BufferTable::RequiredBufferInfo::Add
-(
-	DXGI_FORMAT format_,
-	std::array<float, 4> clearColor_,
-	uint32_t width_,
-	uint32_t height_
-)
-{
-	colorBuffers.emplace_back(format_, clearColor_, width_, height_);
-}
-
-void RenderPathBluePrint::BufferTable::RequiredBufferInfo::Add
-(
-	DXGI_FORMAT dsvFormat_,
-	DXGI_FORMAT srvFormat_,
-	float clearDepth_,
-	float clearStencil_
-)
-{
-	depthStencilBuffer.emplace(dsvFormat_, srvFormat_, clearDepth_, clearStencil_);
-
-}
 
 
 
@@ -5646,74 +5767,12 @@ void RenderPathBluePrint::BufferTable::RequiredBufferInfo::Add
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Render\RenderPathStructure\RenderPathBluePrint\BufferTable\RenderPassBufferTable.h ===
 ========================================
 #pragma once
-#include "../RenderPathBluePrint.h"
+#include "../RenderPassBluePrint.h"
+#include "../../RenderPass/RequiredInfo/BufferRequiredInfo/BufferRequiredInfo.h"
 
-
-struct RenderPathBluePrint::BufferTable
+struct RenderPassBluePrint::BufferTable
 {
-	///そのパスで使用するバッファの情報をまとめたもの
-	struct RequiredBufferInfo
-	{
-		struct ColorBuffer
-		{
-			DXGI_FORMAT format;
-			std::array<float, 4> clearColor{};
-			uint32_t width{};
-			uint32_t height{};
-
-			ColorBuffer
-			(
-				DXGI_FORMAT format_,
-				std::array<float, 4> clearColor_,
-				uint32_t width_,
-				uint32_t height_
-			):format(format_), clearColor(clearColor_), width(width_), height(height_)
-			{
-
-			}
-		};
-
-		struct DepthStencilBuffer
-		{
-			DepthStencilBuffer
-			(
-				DXGI_FORMAT dsvFormat_,
-				DXGI_FORMAT srvFormat_,
-				float clearDepth_,
-				float clearStencil_
-			):dsvFormat(dsvFormat_), srvFormat(srvFormat_), clearDepth(clearDepth_), clearStencil(clearStencil_)
-			{
-
-			}
-			DXGI_FORMAT dsvFormat;
-			DXGI_FORMAT srvFormat;
-			float clearDepth{};
-			float clearStencil{};
-		};
-
-		std::vector<ColorBuffer> colorBuffers;
-		std::optional<DepthStencilBuffer> depthStencilBuffer;
-
-		void Add
-		(
-			DXGI_FORMAT format_,
-			std::array<float, 4> clearColor_,
-			uint32_t width_,
-			uint32_t height_
-		);
-
-		void Add
-		(
-			DXGI_FORMAT dsvFormat_,
-			DXGI_FORMAT srvFormat_,
-			float clearDepth_,
-			float clearStencil_
-		);
-
-
-	};
-
-	RequiredBufferInfo BufferInfoTable(RenderPathComponent::Pass pass_);
+	std::unique_ptr<RenderPath::Pass::RequiredBufferInfo> BufferInfoTable(RenderPathComponent::Pass pass_);
 
 };
 
@@ -5730,10 +5789,10 @@ struct RenderPathBluePrint::BufferTable
 
 namespace
 {
-	auto const fileName = "RenderPathBluePrint.cpp";
+	auto const fileName = "RenderPassBluePrint.cpp";
 }
 
-using namespace RenderPathBluePrint;
+using namespace RenderPassBluePrint;
 using namespace ShaderPathComponent;
 using namespace RenderPathComponent;
 
@@ -5799,12 +5858,12 @@ std::string ShaderTable::Watch
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Render\RenderPathStructure\RenderPathBluePrint\ShaderTable\ShaderTable.h ===
 ========================================
 #pragma once
-#include "../RenderPathBluePrint.h"
+#include "../RenderPassBluePrint.h"
 #
 
 
 //使用するシェーダーの名前をテーブルから読み取ります
-struct RenderPathBluePrint::ShaderTable
+struct RenderPassBluePrint::ShaderTable
 {
 	template<typename ShaderComponent>
 	std::string Watch(ShaderComponent shaderComponent_, RenderPathComponent::Pass passType_);
@@ -5812,14 +5871,14 @@ struct RenderPathBluePrint::ShaderTable
 };
 
 template<>
-std::string RenderPathBluePrint::ShaderTable::Watch
+std::string RenderPassBluePrint::ShaderTable::Watch
 (
 	ShaderPathComponent::MeshType meshType_,
 	RenderPathComponent::Pass passType_
 );
 
 template<>
-std::string RenderPathBluePrint::ShaderTable::Watch
+std::string RenderPassBluePrint::ShaderTable::Watch
 (
 	ShaderPathComponent::MaterialType materialType_,
 	RenderPathComponent::Pass passType_
@@ -5866,9 +5925,6 @@ public:
 
 	//使用するシェーダーのセットをShaderPathComponentから組み合わせる
 	struct ShaderCombiner;
-
-
-
 
 
 };

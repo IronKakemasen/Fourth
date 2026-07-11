@@ -4,12 +4,12 @@
 
 namespace
 {
-	auto const fileName = "RenderPathBluePrint.cpp";
+	auto const fileName = "RenderPassBluePrint.cpp";
 }
 
-using namespace RenderPathBluePrint;
+using namespace RenderPassBluePrint;
 using namespace ShaderPathComponent;
-using namespace RenderPathComponent;
+using namespace RenderPassComponent ;
 
 
 template<>

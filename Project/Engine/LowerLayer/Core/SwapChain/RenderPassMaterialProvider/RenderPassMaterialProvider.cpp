@@ -1,10 +1,9 @@
 
 #include "RenderPassMaterialProvider.h"
-#include "../../../Resource/Buffer/BufferDefinition/GPUBuffer/DepthStencilBuffer/DepthStencilBuffer.h"
 
 
-SwapChainContext::RenderPassMaterialProvider::RenderPassMaterialProvider(SwapChainContext::ColorBuffer* colorBuffer_, DepthStencilBuffer* depthStencilBuffer_)
-	:colorBuffer(colorBuffer_),depthStencilBuffer(depthStencilBuffer_)
+SwapChainContext::RenderPassMaterialProvider::RenderPassMaterialProvider(SwapChainContext::ColorBuffer* colorBuffer_)
+	:colorBuffer(colorBuffer_)
 {
 
 }
@@ -15,7 +14,6 @@ SwapChainContext::RenderPassMaterialProvider::RenderPassMaterialProvider(SwapCha
 {
 	
 	SwapChainContext::RenderPassMaterialProvider::Materials::ColorBuffer materialC;
-	SwapChainContext::RenderPassMaterialProvider::Materials::DepthStencilBuffer materialD;
 
 	//カラーバッファの提供材料
 	{
@@ -33,17 +31,9 @@ SwapChainContext::RenderPassMaterialProvider::RenderPassMaterialProvider(SwapCha
 		materialC.barrier = dstBuffer.CreateBarrier(after);
 	}
 
-	//ディプスバッファの提供材料
-	{
-		///+////////////////書き換え予定
-		//materialD.dsvhandle = depthStencilBuffer->WatchIndex<ViewType::kDSV,D3D12_CPU_DESCRIPTOR_HANDLE>(frameIndex_);
-		//materialD.clearColor = depthStencilBuffer->WatchClearColor(DepthStencilBuffer::ExtractMaterialKey{});
-	}
-
 	return SwapChainContext::RenderPassMaterialProvider::Materials
 	(
-		materialC,
-		materialD
+		materialC
 	);
 }
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////

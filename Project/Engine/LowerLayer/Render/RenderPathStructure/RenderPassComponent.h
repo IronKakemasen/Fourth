@@ -1,6 +1,6 @@
 #pragma once
 
-namespace RenderPathComponent 
+namespace RenderPassComponent  
 {
 	///RenderPathを構成する各ステージ
 	enum class Pass
@@ -33,3 +33,10 @@ namespace RenderPathComponent
     }
 
 }
+
+struct RenderPassState
+{
+    RenderPassComponent::Pass pass;
+    RenderPassComponent::DepthTest depthTest;
+    RenderPassComponent::DepthEnable depthEnable;
+};
