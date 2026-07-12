@@ -4,7 +4,7 @@
 //カラーバッファクラス
 class ColorBuffer final : public GPUBufferBehavior,IColorBuffer,IRenderTargetBuffer,IShaderBuffer
 {
-	friend class BufferContext::RenderTargetBufferInfoExtractor;
+	friend class BufferContext::BufferInfoExtractor;
 
 public:
 

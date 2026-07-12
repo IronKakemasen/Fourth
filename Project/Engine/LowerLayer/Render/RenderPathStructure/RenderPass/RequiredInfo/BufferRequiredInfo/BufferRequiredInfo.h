@@ -50,6 +50,24 @@ struct RenderPath::Pass::RequiredBufferInfo
 
 	};
 
+	///テクスチャとして読む	ときに必要
+	struct Texture
+	{
+		//SRVヒープ上のインデックス
+		uint32_t srvHeapIndex{};
+		//バリアを張るため
+		D3D12_RESOURCE_BARRIER barrier{};
+	};
+
+	///描画先として書き込むときに必要
+	struct RenderTarget
+	{
+		//RTVヒープ上のインデックス
+		D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle{};
+		//バリアを張るため
+		D3D12_RESOURCE_BARRIER barrier{};
+	};
+
 	std::vector<ColorBuffer> colorBuffers;
 	std::optional<DepthStencilBuffer> depthStencilBuffer;
 

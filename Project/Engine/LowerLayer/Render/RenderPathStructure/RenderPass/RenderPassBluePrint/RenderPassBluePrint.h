@@ -11,7 +11,7 @@ namespace RenderPassBluePrint
 	//使用するカラーバッファ、ディプスバッファの情報を定める
 	struct BufferTable;
 	//DepthEnable、DepthTestを定める
-	struct DepthTable;
+	struct RenderPassSettingTable;
 
 };
 

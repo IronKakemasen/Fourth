@@ -98,7 +98,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="Engine\LowerLayer\Render\RenderPathStructure\RenderPass\RenderPassBluePrint\DepthTable\DepthConfigTable.cpp" />
+    <ClCompile Include="Engine\LowerLayer\Render\RenderPathStructure\RenderPass\RenderPassBluePrint\RenderPassSettingTable\RenderPassSettingTable.cpp" />
     <ClCompile Include="Engine\LowerLayer\Render\RenderPathStructure\RenderPass\RequiredInfo\BufferRequiredInfo\BufferRequiredInfo.cpp" />
     <ClCompile Include="Engine\LowerLayer\Resource\RootSignature\RootSignatureAssembler\ToolCreateRootSignature\CreateRootParam\CreateRootParam.cpp" />
     <ClCompile Include="Engine\LowerLayer\Resource\RootSignature\RootSignatureAssembler\ToolCreateRootSignature\CreateStaticSamplerDesc\CreateStaticSamplerDesc.cpp" />
@@ -109,7 +109,6 @@
     <ClCompile Include="Engine\LowerLayer\Resource\PSO\PSO_Assembler\ToolCreatePSO\CreateDepthStencilDesc\CreateDepthStencilDesc.cpp" />
     <ClCompile Include="Engine\LowerLayer\Resource\PSO\PSO_Assembler\ToolCreatePSO\CreateBlendDesc\CreateBlendDesc.cpp" />
     <ClCompile Include="Engine\LowerLayer\Resource\Buffer\RuntimeBufferManagementSystems\BufferDispatcher\BufferDispatcher.cpp" />
-    <ClCompile Include="Engine\LowerLayer\Resource\Buffer\RuntimeBufferManagementSystems\BufferInfoExtractors\ComputeBufferInfoExtractor\ComputeBufferInfoExtractor.cpp" />
     <ClCompile Include="Engine\LowerLayer\Resource\Buffer\BufferCreationSystems\BufferCreator\BufferCreator.cpp" />
     <ClCompile Include="Engine\LowerLayer\Resource\Buffer\BufferCreationSystems\BufferCollector\BufferCollector.cpp" />
     <ClCompile Include="Engine\LowerLayer\Resource\Buffer\RuntimeBufferManagementSystems\BufferDeferredReleaser\BufferDeferredReleaser.cpp" />
@@ -249,7 +248,6 @@
     <ClCompile Include="Engine\LowerLayer\Resource\Buffer\BufferCreationSystems\ResourceCreator\ResourceCreator.cpp" />
     <ClCompile Include="Engine\LowerLayer\Resource\Buffer\BufferDefinition\GPUBuffer\GPUBufferBehavior.cpp" />
     <ClCompile Include="Engine\LowerLayer\Debug\RuntimeDebugger\DebugSystems\LeakChecker\LeakChecker.cpp" />
-    <ClCompile Include="Engine\LowerLayer\Resource\Buffer\RuntimeBufferManagementSystems\BufferInfoExtractors\FrameBufferedBufferInfoExtractor\FrameBufferedBufferInfoExtractor.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="Engine\LowerLayer\Core\Window\WindowContext.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Use</PrecompiledHeader>
@@ -275,7 +273,7 @@
     <ClCompile Include="Engine\LowerLayer\Core\Command\ResourceUploader\ResourceUploader.cpp" />
     <ClCompile Include="Engine\LowerLayer\Resource\Buffer\BufferDefinition\GPUBuffer\UploadStructuredBuffer\UploadStructuredBuffer.cpp" />
     <ClCompile Include="Engine\LowerLayer\Resource\Buffer\BufferDefinition\BufferDescriptions\UploadStructuredBufferDescription\UploadStructuredBufferDescription.cpp" />
-    <ClCompile Include="Engine\LowerLayer\Resource\Buffer\RuntimeBufferManagementSystems\BufferInfoExtractors\RenderTargetBufferInfoExtractor\RenderTargetBufferInfoExtractor.cpp" />
+    <ClCompile Include="Engine\LowerLayer\Resource\Buffer\RuntimeBufferManagementSystems\BufferInfoExtractor\BufferInfoExtractor.cpp" />
     <ClCompile Include="Engine\LowerLayer\Core\Command\RuntimeCommandController\RuntimeCommandController.cpp" />
     <ClCompile Include="Engine\LowerLayer\Render\RenderContext.cpp" />
     <ClCompile Include="Engine\LowerLayer\Render\RuntimeRenderingManagementSystems\ModelRenderingInfoOrganizer\ModelRenderingInfoOrganizer.cpp" />
@@ -296,11 +294,13 @@
     <ClCompile Include="Engine\LowerLayer\Render\PSO_Creator\PSO_Creator.cpp" />
     <ClCompile Include="Engine\LowerLayer\Render\RenderPathStructure\RenderPass\RenderPassBluePrint\BufferTable\RenderPassBufferTable.cpp" />
     <ClCompile Include="Engine\LowerLayer\Render\RenderPathStructure\RenderPass\RenderPass.cpp" />
+    <ClCompile Include="Engine\LowerLayer\Render\PassAssembler\PassAssembler.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Assets\Shared\ConstantBuffers.h" />
-    <ClInclude Include="Engine\LowerLayer\Render\RenderPathStructure\RenderPass\RenderPassBluePrint\DepthTable\DepthConfigTable.h" />
+    <ClInclude Include="Engine\LowerLayer\Render\RenderPathStructure\RenderPass\RenderPassBluePrint\RenderPassSettingTable\RenderPassSettingTable.h" />
     <ClInclude Include="Engine\LowerLayer\Render\RenderPathStructure\RenderPass\RequiredInfo\BufferRequiredInfo\BufferRequiredInfo.h" />
+    <ClInclude Include="Engine\LowerLayer\Render\RenderPathStructure\RenderPass\RequiredInfo\PassSettings\PassSettings.h" />
     <ClInclude Include="Engine\Utility\ClosedHashMap\ClosedHashMap.h" />
     <ClInclude Include="Engine\LowerLayer\Render\PSO_PoolDispatcher\GraphicsPSO_Key.h" />
     <ClInclude Include="Engine\LowerLayer\Render\RenderPathStructure\RenderPassComponent.h" />
@@ -316,7 +316,6 @@
     <ClInclude Include="Engine\LowerLayer\Resource\PSO\PSO_Assembler\ToolCreatePSO\CreateDepthStencilDesc\CreateDepthStencilDesc.h" />
     <ClInclude Include="Engine\LowerLayer\Resource\PSO\PSO_Assembler\ToolCreatePSO\CreateBlendDesc\CreateBlendDesc.h" />
     <ClInclude Include="Engine\LowerLayer\Resource\Buffer\RuntimeBufferManagementSystems\BufferDispatcher\BufferDispatcher.h" />
-    <ClInclude Include="Engine\LowerLayer\Resource\Buffer\RuntimeBufferManagementSystems\BufferInfoExtractors\ComputeBufferInfoExtractor\ComputeBufferInfoExtractor.h" />
     <ClInclude Include="Engine\LowerLayer\Resource\Buffer\BufferDefinition\GPUBuffer\BufferInterface.h" />
     <ClInclude Include="Engine\LowerLayer\Resource\Buffer\BufferCreationSystems\BufferCreator\BufferCreator.h" />
     <ClInclude Include="Engine\LowerLayer\Resource\Buffer\BufferCreationSystems\BufferCollector\BufferCollector.h" />
@@ -401,8 +400,7 @@
     <ClInclude Include="Engine\LowerLayer\Core\Command\ResourceUploader\ResourceUploader.h" />
     <ClInclude Include="Engine\LowerLayer\Resource\Buffer\BufferDefinition\GPUBuffer\UploadStructuredBuffer\UploadStructuredBuffer.h" />
     <ClInclude Include="Engine\LowerLayer\Resource\Buffer\BufferDefinition\BufferDescriptions\UploadStructuredBufferDescription\UploadStructuredBufferDescription.h" />
-    <ClInclude Include="Engine\LowerLayer\Resource\Buffer\RuntimeBufferManagementSystems\BufferInfoExtractors\RenderTargetBufferInfoExtractor\RenderTargetBufferInfoExtractor.h" />
-    <ClInclude Include="Engine\LowerLayer\Resource\Buffer\RuntimeBufferManagementSystems\BufferInfoExtractors\FrameBufferedBufferInfoExtractor\FrameBufferedBufferInfoExtractor.h" />
+    <ClInclude Include="Engine\LowerLayer\Resource\Buffer\RuntimeBufferManagementSystems\BufferInfoExtractor\BufferInfoExtractor.h" />
     <ClInclude Include="Engine\LowerLayer\Core\Command\RuntimeCommandController\RuntimeCommandController.h" />
     <ClInclude Include="Engine\LowerLayer\Render\RenderContext.h" />
     <ClInclude Include="Engine\LowerLayer\Render\RuntimeRenderingManagementSystems\ModelRenderingInfoOrganizer\ModelRenderingInfoOrganizer.h" />
@@ -426,6 +424,7 @@
     <ClInclude Include="Engine\LowerLayer\Render\PSO_Creator\PSO_Creator.h" />
     <ClInclude Include="Engine\LowerLayer\Render\RenderPathStructure\RenderPass\RenderPassBluePrint\BufferTable\RenderPassBufferTable.h" />
     <ClInclude Include="Engine\LowerLayer\Render\RenderPathStructure\RenderPass\RenderPass.h" />
+    <ClInclude Include="Engine\LowerLayer\Render\PassAssembler\PassAssembler.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

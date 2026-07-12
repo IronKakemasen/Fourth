@@ -34,9 +34,3 @@ namespace RenderPassComponent
 
 }
 
-struct RenderPassState
-{
-    RenderPassComponent::Pass pass;
-    RenderPassComponent::DepthTest depthTest;
-    RenderPassComponent::DepthEnable depthEnable;
-};

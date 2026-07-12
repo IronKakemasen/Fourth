@@ -3,6 +3,7 @@
 
 //Pass構築情報群
 #include "RequiredInfo/BufferRequiredInfo/BufferRequiredInfo.h"
+#include "RequiredInfo/PassSettings/PassSettings.h"
 
 
 RenderPath::Pass::Pass()
