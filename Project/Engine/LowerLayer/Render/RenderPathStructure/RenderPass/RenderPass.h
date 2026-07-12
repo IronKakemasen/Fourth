@@ -7,11 +7,12 @@ struct RenderPath::Pass
 {
 	///そのパスで使用するバッファの情報をまとめたもの
 	struct RequiredBufferInfo;
+	struct PassSettings;
 
 	Pass();
 	~Pass();
 
-	RenderPassState renderPassState;
+	std::unique_ptr<PassSettings> passSettings;
 	std::unique_ptr<RequiredBufferInfo> requiredBufferInfo;
 };
 

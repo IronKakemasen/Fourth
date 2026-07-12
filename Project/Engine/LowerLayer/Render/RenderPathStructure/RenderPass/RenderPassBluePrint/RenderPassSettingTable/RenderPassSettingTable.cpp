@@ -1,19 +1,19 @@
 #include "PreCompileHeader.h"
-#include "DepthConfigTable.h"
+#include "RenderPassSettingTable.h"
 
 
-RenderPassBluePrint::DepthTable::DepthConfig RenderPassBluePrint::DepthTable::DepthConfigTable(RenderPassComponent::Pass pass_)
+RenderPath::Pass::PassSettings RenderPassBluePrint::RenderPassSettingTable::SettingTable(RenderPassComponent::Pass pass_)
 {
-	DepthConfig depthConfig;
+	RenderPath::Pass::PassSettings settings;
 
 	switch (pass_)
 	{
 	case RenderPassComponent::Pass::kCreateSceneTexture:
 
 		//当然
-		depthConfig.depthEnable = RenderPassComponent::DepthEnable::kEnable;
+		settings.depthEnable = RenderPassComponent::DepthEnable::kEnable;
 		//基本reverseZなんで
-		depthConfig.depthTest = RenderPassComponent::DepthTest::kGreaterEqual;
+		settings.depthTest = RenderPassComponent::DepthTest::kGreaterEqual;
 
 		break;
 
@@ -30,5 +30,5 @@ RenderPassBluePrint::DepthTable::DepthConfig RenderPassBluePrint::DepthTable::De
 
 	}
 
-	return depthConfig;
+	return settings;
 }

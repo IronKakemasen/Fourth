@@ -52,8 +52,8 @@ public:
 
 	//ResourceCreatorとViewCreatorでバッファを生成
 	class BufferAssembler;
-	//レンダーターゲット系バッファの描画パス構築に必要な情報の抽出とそのリソースのSwapを行う
-	class RenderTargetBufferInfoExtractor;
+	//ランタイムパス構築に必要な情報の抽出とそのリソースのSwapを行う
+	class BufferInfoExtractor;
 
 	BufferContext
 	(
@@ -69,7 +69,7 @@ public:
 	//ディスパッチャー
 	std::unique_ptr<BufferDispatcher> bufferDispatcher;
 	//Extractors
-	std::unique_ptr<RenderTargetBufferInfoExtractor> renderTargetBufferInfoExtractor;
+	std::unique_ptr<BufferInfoExtractor> BufferInfoExtractor;
 
 private:
 
@@ -105,7 +105,7 @@ struct BufferContext::BufferAccessKey
 {
 private:
 
-	friend class RenderTargetBufferInfoExtractor;
+	friend class BufferInfoExtractor;
 	explicit BufferAccessKey() = default;
 };
 

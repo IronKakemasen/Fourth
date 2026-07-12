@@ -5,7 +5,7 @@
 //定数バッファクラス
 class DepthStencilBuffer final : public GPUBufferBehavior, IRenderTargetBuffer,IShaderBuffer,IDepthBuffer
 {
-	friend class BufferContext::RenderTargetBufferInfoExtractor;
+	friend class BufferContext::BufferInfoExtractor;
 
 public:
 
