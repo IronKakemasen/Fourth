@@ -291,23 +291,30 @@
     <ClCompile Include="Engine\LowerLayer\Resource\RootSignature\RootSignatureLibrary\RootSignatureLibrary.cpp" />
     <ClCompile Include="Engine\LowerLayer\Render\PSO_PoolDispatcher\PSO_PoolDispatcher.cpp" />
     <ClCompile Include="Engine\LowerLayer\Render\RenderPathStructure\RenderPass\RenderPassBluePrint\ShaderTable\ShaderTable.cpp" />
-    <ClCompile Include="Engine\LowerLayer\Render\PSO_Creator\PSO_Creator.cpp" />
+    <ClCompile Include="Engine\LowerLayer\Render\GraphicsPSO_Creator\GraphicsPSO_Creator.cpp" />
     <ClCompile Include="Engine\LowerLayer\Render\RenderPathStructure\RenderPass\RenderPassBluePrint\BufferTable\RenderPassBufferTable.cpp" />
     <ClCompile Include="Engine\LowerLayer\Render\RenderPathStructure\RenderPass\RenderPass.cpp" />
     <ClCompile Include="Engine\LowerLayer\Render\PassAssembler\PassAssembler.cpp" />
+    <ClCompile Include="Engine\LowerLayer\Resource\Mesh\MeshContext.cpp" />
+    <ClCompile Include="Engine\LowerLayer\Resource\Mesh\ModelStructure\ResourceMesh\ResourceMesh.cpp" />
+    <ClCompile Include="Engine\LowerLayer\Resource\Mesh\CreateModelTools\ModelDataLoader\ModelDataCache\ModelDataCache.cpp" />
+    <ClCompile Include="Engine\LowerLayer\Resource\Mesh\CreateModelTools\ModelDataLoader\ModelDataLoader.cpp" />
+    <ClCompile Include="Engine\LowerLayer\Resource\Mesh\CreateModelTools\ModelCreator\ModelCreator.cpp" />
+    <ClCompile Include="Engine\LowerLayer\Resource\Mesh\ModelStructure\Model.cpp" />
+    <ClCompile Include="Engine\LowerLayer\Resource\Mesh\ModelStructure\ResourceMaterial\ResourceMaterial.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Assets\Shared\ConstantBuffers.h" />
     <ClInclude Include="Engine\LowerLayer\Render\RenderPathStructure\RenderPass\RenderPassBluePrint\RenderPassSettingTable\RenderPassSettingTable.h" />
     <ClInclude Include="Engine\LowerLayer\Render\RenderPathStructure\RenderPass\RequiredInfo\BufferRequiredInfo\BufferRequiredInfo.h" />
     <ClInclude Include="Engine\LowerLayer\Render\RenderPathStructure\RenderPass\RequiredInfo\PassSettings\PassSettings.h" />
+    <ClInclude Include="Engine\LowerLayer\Resource\Mesh\ModelStructure\ResourceMesh\Meshlet\Meshlet.h" />
     <ClInclude Include="Engine\Utility\ClosedHashMap\ClosedHashMap.h" />
     <ClInclude Include="Engine\LowerLayer\Render\PSO_PoolDispatcher\GraphicsPSO_Key.h" />
     <ClInclude Include="Engine\LowerLayer\Render\RenderPathStructure\RenderPassComponent.h" />
     <ClInclude Include="Engine\LowerLayer\Render\RenderPathStructure\RenderPathDesc.h" />
     <ClInclude Include="Engine\LowerLayer\Resource\RootSignature\RootSignatureAssembler\RootSignatureDesc.h" />
     <ClInclude Include="Engine\LowerLayer\Resource\RootSignature\RootSignatureAssembler\ToolCreateRootSignature\CreateRootParam\CreateRootParam.h" />
-    <ClInclude Include="Engine\LowerLayer\Resource\Mesh\kara.h" />
     <ClInclude Include="Engine\LowerLayer\Resource\RootSignature\RootSignatureAssembler\ToolCreateRootSignature\CreateStaticSamplerDesc\CreateStaticSamplerDesc.h" />
     <ClInclude Include="Engine\LowerLayer\Core\Device\Commands\CreateRootSignature\CommandCreateRootSignature.h" />
     <ClInclude Include="Engine\LowerLayer\Core\Device\Commands\CreatePSO\CommandCreatePSO.h" />
@@ -421,10 +428,20 @@
     <ClInclude Include="Engine\LowerLayer\Render\PSO_PoolDispatcher\PSO_PoolDispatcher.h" />
     <ClInclude Include="Engine\LowerLayer\Render\RenderPathStructure\RenderPass\RenderPassBluePrint\ShaderTable\ShaderTable.h" />
     <ClInclude Include="Engine\Utility\KeyPackager\KeyPackager.h" />
-    <ClInclude Include="Engine\LowerLayer\Render\PSO_Creator\PSO_Creator.h" />
+    <ClInclude Include="Engine\LowerLayer\Render\GraphicsPSO_Creator\GraphicsPSO_Creator.h" />
     <ClInclude Include="Engine\LowerLayer\Render\RenderPathStructure\RenderPass\RenderPassBluePrint\BufferTable\RenderPassBufferTable.h" />
     <ClInclude Include="Engine\LowerLayer\Render\RenderPathStructure\RenderPass\RenderPass.h" />
     <ClInclude Include="Engine\LowerLayer\Render\PassAssembler\PassAssembler.h" />
+    <ClInclude Include="Engine\LowerLayer\Resource\Mesh\MeshContext.h" />
+    <ClInclude Include="Engine\LowerLayer\Resource\Mesh\ModelStructure\ResourceMesh\ResourceMesh.h" />
+    <ClInclude Include="Engine\LowerLayer\Resource\Mesh\CreateModelTools\ModelDataLoader\ModelDataCache\ModelDataCache.h" />
+    <ClInclude Include="Engine\LowerLayer\Resource\Mesh\CreateModelTools\ModelDataLoader\ModelDataLoader.h" />
+    <ClInclude Include="Engine\LowerLayer\Resource\Mesh\CreateModelTools\ModelCreator\ModelCreator.h" />
+    <ClInclude Include="Engine\LowerLayer\Resource\Mesh\ModelStructure\ResourceMesh\Vertex\StandardVertex.h" />
+    <ClInclude Include="Engine\LowerLayer\Resource\Mesh\ModelStructure\ResourceMesh\TransformMatrix\TransformMatrix.h" />
+    <ClInclude Include="Engine\LowerLayer\Resource\Mesh\ModelStructure\ResourceMaterial\Material\Material.h" />
+    <ClInclude Include="Engine\LowerLayer\Resource\Mesh\ModelStructure\Model.h" />
+    <ClInclude Include="Engine\LowerLayer\Resource\Mesh\ModelStructure\ResourceMaterial\ResourceMaterial.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

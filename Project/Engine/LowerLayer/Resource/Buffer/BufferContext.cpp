@@ -14,7 +14,7 @@
 
 //ランタイム処理ツール
 #include "RuntimeBufferManagementSystems/BufferDispatcher/BufferDispatcher.h"
-#include "RuntimeBufferManagementSystems/BufferInfoExtractors/BufferInfoExtractor/BufferInfoExtractor.h"
+#include "RuntimeBufferManagementSystems/BufferInfoExtractor/BufferInfoExtractor.h"
 
 
 //ランライム
