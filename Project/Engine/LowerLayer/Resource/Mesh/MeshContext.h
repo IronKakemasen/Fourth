@@ -13,7 +13,7 @@ public:
 
 
 private:
-	//MeshLoaderを使ってモデルを生成する。
+	//モデルを生成する。
 	class ModelCreator;
 
 	std::unique_ptr<ModelCreator> modelCreator;

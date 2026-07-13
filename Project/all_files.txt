@@ -18,16 +18,16 @@
 #include "LowerLayer/Resource/Shader/ShaderContext.h"
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 #include "LowerLayer/Resource/Buffer/BufferContext.h"
-#include "LowerLayer/Resource/Buffer/BufferCreationSystems/BufferCreator/BufferCreator.h"
-#include "LowerLayer/Resource/Buffer/BufferDefinition/BufferDescriptions/DepthStencilBufferDescription/DepthStencilBufferDescription.h"
-#include "LowerLayer/Resource/Buffer/BufferDefinition/GPUBuffer/DepthStencilBuffer/DepthStencilBuffer.h"
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 #include "LowerLayer/Resource/PSO/PSO_Context.h"
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 #include "LowerLayer/Resource/RootSignature/RootSignatureContext.h"
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+#include "LowerLayer/Resource/Mesh/MeshContext.h"
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 #include "LowerLayer/Render/RenderContext.h"
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
 
 namespace
 {
@@ -78,6 +78,7 @@ Nexus::Nexus()
 	InstantiateInSequence<InitSequence::kShaderContext>();
 	InstantiateInSequence<InitSequence::kPSO_Context>();
 	InstantiateInSequence<InitSequence::kRootSignatureContext>();
+	InstantiateInSequence<InitSequence::kMeshContext>();
 	InstantiateInSequence<InitSequence::kRenderContext>();
 
 	ErrorMessageOutput::Assert::DetectError(next == InitSequence::kEnd, "初期化が正常に行われていない可能性がある", fileName);
@@ -298,6 +299,15 @@ void Nexus::Instantiate<Nexus::InitSequence::kRenderContext>()
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+template<>
+void Nexus::Instantiate<Nexus::InitSequence::kMeshContext>()
+{
+	meshContext.reset(new MeshContext(MeshContext::InstanceKey{}));
+	Logger::Log("Instantiate: MeshContext", fileName);
+}
+
+
+
 
 
 template
@@ -328,7 +338,11 @@ template
 void Nexus::Instantiate<Nexus::InitSequence::kRootSignatureContext>();
 
 template
+void Nexus::Instantiate<Nexus::InitSequence::kMeshContext>();
+
+template
 void Nexus::Instantiate<Nexus::InitSequence::kRenderContext>();
+
 
 
 
@@ -359,6 +373,7 @@ class ShaderContext;
 class PSO_Context;
 class RootSignatureContext;
 class RenderContext;
+class MeshContext;
 
 
 //交易場
@@ -376,6 +391,7 @@ class Nexus
 		kShaderContext,
 		kPSO_Context,
 		kRootSignatureContext,
+		kMeshContext,
 		kRenderContext
 
 
@@ -400,7 +416,7 @@ private:
 	class InstanceLimiter;
 
 
-	//IDXGIFactory7、IDXGIAdapter4、ID3D12Device8を持っている。
+	//IDXGIFactory7、IDXGIAdapter4、ID3D12Device8を持ち、コアパーツによるコマンドを提供したりする
 	std::unique_ptr<DeviceContext> deviceContext;
 	//ウィンドウを制御するもの
 	std::unique_ptr<WindowContext> windowContext;
@@ -420,8 +436,10 @@ private:
 	std::unique_ptr<RootSignatureContext> rootSignatureContext;
 	//PSOの管理、描画パスの構築
 	std::unique_ptr<RenderContext> renderContext;
-	
+	//モデルクラスの生成、管理
+	std::unique_ptr<MeshContext> meshContext;
 
+	
 	//各Contextクラスの具現化、初期化を行う
 	template<InitSequence initSequence>
 	void Instantiate();
@@ -894,7 +912,9 @@ CommandContext::ResourceUploader::ResourceUploader
 	commandList->Close();
 	Logger::Log("Close: upload cmdList", fileName);
 }
-
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 void CommandContext::ResourceUploader::Wait()
 {
 	HRESULT hr = commandList->Close();
@@ -905,7 +925,9 @@ void CommandContext::ResourceUploader::Wait()
 
 	synchronizer->WaitDirectly();
 }
-
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 void CommandContext::ResourceUploader::RecordingStart()
 {
 	HRESULT hr = allocator->Reset();
@@ -970,14 +992,17 @@ CommandContext::RuntimeCommandController::~RuntimeCommandController()
 {
 
 }
-
-
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 void CommandContext::RuntimeCommandController::RecordingStart(UINT frameIndex_)
 {
 	synchronizer->Wait(frameIndex_);
 	commandExecutor->PrepareForRecording(frameIndex_);
 }
-
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 void CommandContext::RuntimeCommandController::ExecuteCommands(UINT frameIndex_)
 {
 	commandExecutor->Execute();
@@ -1208,7 +1233,9 @@ CommandContext::Synchronizer::Synchronizer
 {
 
 }
-
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 void CommandContext::Synchronizer::InsertSignal(UINT frameIndex_)
 {
 	(*commonFenceValue)++;
@@ -1217,7 +1244,9 @@ void CommandContext::Synchronizer::InsertSignal(UINT frameIndex_)
 
 	(*fenceCounters).at(frameIndex_) = *commonFenceValue;
 }
-
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 void CommandContext::Synchronizer::Wait(UINT frameIndex_)
 {
 	auto currentValue = (*fenceCounters).at(frameIndex_);
@@ -1233,8 +1262,9 @@ void CommandContext::Synchronizer::Wait(UINT frameIndex_)
 	}
 
 }
-
-
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 void CommandContext::Synchronizer::WaitDirectly()
 {
 	uint64_t targetValue = fence->GetCompletedValue() + 1;
@@ -1399,7 +1429,7 @@ void DescriptorHeapContext::SetCreateViewCommand
 		)
 	);
 
-	Logger::Log("Create: ViewCreator", fileName);
+	Logger::Log("Instantiate: ViewCreator", fileName);
 }
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -4558,7 +4588,9 @@ RuntimeDebugger::RuntimeDebugger()
 	if (kEnableLeakChecker) leakChecker.Init();
 
 }
-
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //RuntimeDebuggerクラスのインスタンスを1つに制限する
 bool RuntimeDebugger::InstanceLimiter::CanInstantiate()
 {
@@ -4816,6 +4848,9 @@ RenderContext::~RenderContext()
 {
 
 }
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
 
@@ -5540,7 +5575,9 @@ RenderPath::Pass::~Pass()
 {
 
 }
-
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
 
@@ -5695,7 +5732,7 @@ RenderPath::Pass::PassSettings RenderPassBluePrint::RenderPassSettingTable::Sett
 		break;
 
 	default:
-		ErrorMessageOutput::Assert::OutputError("無効なPassです", "DepthConfigTable.cpp");
+		ErrorMessageOutput::Assert::OutputError("無効なPassです", "RenderPassSettingTable.cpp");
 
 		break;
 
@@ -6156,9 +6193,9 @@ void BufferContext::InstantiateBufferCreator
 	auto* viewCreator = descriptorHeapContext_->GetViewCreator(DescriptorHeapContext::ViewCreatorGetKey{});
 	
 	std::unique_ptr<ResourceCreator> resourceCreator(std::make_unique<ResourceCreator>(instanceKey_, createResourceCommand_));
-	Logger::Log("Create: ResourceCreator", fileName);
+	Logger::Log("Instantiate: ResourceCreator", fileName);
 	std::unique_ptr<BufferAssembler> bufferAssembler(std::make_unique<BufferAssembler>(instanceKey_, std::move(resourceCreator), viewCreator));
-	Logger::Log("Create: bufferAssembler", fileName);
+	Logger::Log("Instantiate: bufferAssembler", fileName);
 	std::unique_ptr<BufferCollector> bufferCollector
 	(
 		std::make_unique<BufferCollector>
@@ -6171,7 +6208,7 @@ void BufferContext::InstantiateBufferCreator
 		)
 	);
 
-	Logger::Log("Create: bufferCollector", fileName);
+	Logger::Log("Instantiate: bufferCollector", fileName);
 
 	bufferCreator.reset(new BufferCreator(std::move(bufferAssembler), std::move(bufferCollector)));
 	Logger::Log("Instantiate: BufferCreator", fileName);
@@ -7933,7 +7970,9 @@ UploadStructuredBufferDescription::UploadStructuredBufferDescription
 	param.numElements = numElements_;
 	param.firstElement = firstElement_;
 }
-
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //パラーメーターチェック
 void UploadStructuredBufferDescription::CheckRequirementsFilled() const
 {
@@ -7945,7 +7984,9 @@ void UploadStructuredBufferDescription::CheckRequirementsFilled() const
 
 	ErrorMessageOutput::Assert::DetectError((errorMess.length() == 0), errorMess + "の情報が未設定です", "ComputeBufferDescription.cpp");
 }
-
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //リソースディスクの生成
 D3D12_RESOURCE_DESC UploadStructuredBufferDescription::CreateResourceDesc()const
 {
@@ -7964,7 +8005,9 @@ D3D12_RESOURCE_DESC UploadStructuredBufferDescription::CreateResourceDesc()const
 
 	return resourceDesc;
 }
-
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //ヒーププロパティの生成
 D3D12_HEAP_PROPERTIES UploadStructuredBufferDescription::CreateHeapProperties()const
 {
@@ -7975,7 +8018,9 @@ D3D12_HEAP_PROPERTIES UploadStructuredBufferDescription::CreateHeapProperties()c
 
 	return properties;
 }
-
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //SRV生成
 D3D12_SHADER_RESOURCE_VIEW_DESC UploadStructuredBufferDescription::CreateSRV_Desc()const
 {
@@ -9188,6 +9233,30 @@ RenderPath::Pass::RequiredBufferInfo::RenderTarget BufferContext::BufferInfoExtr
 ========================================
 #include "PreCompileHeader.h"
 #include "MeshContext.h"
+#include "CreateModelTools/ModelCreator.h"
+
+namespace
+{
+	auto const fileName = "MeshContext.cpp";
+}
+
+
+MeshContext::MeshContext(const InstanceKey& key_)
+{
+	Logger::Entry("MeshContext: Constructor");
+
+	modelCreator.reset(new ModelCreator(key_));
+	Logger::Log("Instantiate: modelCreator", fileName);
+
+
+	Logger::End("MeshContext: Constructor");
+
+}
+
+MeshContext::~MeshContext()
+{
+
+}
 
 
 
@@ -9201,17 +9270,19 @@ class Nexus;
 
 class MeshContext
 {
-protected:
-
-	//ファイルからメッシュ情報を読み込む
-	class ModelDataLoader;
-
 public:
 
 	struct InstanceKey;
-	//MeshLoaderを使ってモデルを生成する。
+
+	MeshContext(const InstanceKey& key_);
+	~MeshContext();
+
+
+private:
+	//モデルを生成する。
 	class ModelCreator;
 
+	std::unique_ptr<ModelCreator> modelCreator;
 };
 
 struct MeshContext::InstanceKey
@@ -9226,24 +9297,63 @@ private:
 
 
 ========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Mesh\CreateModelTools\ModelCreator\ModelCreator.cpp ===
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Mesh\CreateModelTools\ModelCreator.cpp ===
 ========================================
 #include "PreCompileHeader.h"
 #include "ModelCreator.h"
 
+//ツール
+#include "ModelDataLoader/ModelDataLoader.h"
+
+namespace
+{
+	auto const fileName = "ModelCreator.cpp";
+}
+
+
+MeshContext::ModelCreator::ModelCreator(MeshContext::InstanceKey key_)
+{
+	Logger::Entry("ModelCreator: Constructor");
+
+
+
+	modelDataLoader.reset(new ModelDataLoader(key_));
+	Logger::Log("Instantiate: ModelDataLoader", fileName);
+
+
+
+	Logger::End("ModelCreator: Constructor");
+}
+
+MeshContext::ModelCreator::~ModelCreator()
+{
+
+}
+
 
 
 
 ========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Mesh\CreateModelTools\ModelCreator\ModelCreator.h ===
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Mesh\CreateModelTools\ModelCreator.h ===
 ========================================
 #pragma once
-#include "../../MeshContext.h"
+#include "../MeshContext.h"
 
 
 class MeshContext::ModelCreator
 {
 
+public:
+
+	//モデルファイルからメッシュ情報を読み込む
+	class ModelDataLoader;
+
+	ModelCreator(MeshContext::InstanceKey key_);
+	~ModelCreator();
+
+
+private:
+	std::unique_ptr<ModelDataLoader> modelDataLoader;
 };
 
 
@@ -9256,6 +9366,475 @@ class MeshContext::ModelCreator
 #include "PreCompileHeader.h"
 #include "ModelDataLoader.h"
 
+#include "ModelDataCache/ModelDataCache.h"
+#include "../../../../../../External/MeshOptimizer/meshoptimizer.h"
+#include "../../../../../Utility/StringConnverter/StringConverter.h"
+
+
+namespace
+{
+    auto const fileName = "ModelDataLoader.cpp";
+}
+
+MeshContext::ModelCreator::ModelDataLoader::ModelDataLoader(MeshContext::InstanceKey key_)
+{
+    Logger::Entry("ModelDataLoader: Constructor");
+
+    std::string const registryFilePath = "Assets/Registry/ModelFiles.txt";
+
+    LoadModelRegistry(registryFilePath);
+    Logger::Log("Load: " + registryFilePath, fileName);
+
+	modelDataCache.reset(new ModelDataCache(key_));
+    Logger::Log("Instantiate: ModelDataCache",fileName);
+
+    Logger::End("ModelDataLoader: Constructor");
+}
+
+MeshContext::ModelCreator::ModelDataLoader::~ModelDataLoader()
+{
+
+}
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+void MeshContext::ModelCreator::ModelDataLoader::Load
+(
+	std::string fileName_,
+	std::vector<ResourceMesh>& meshes_,
+	std::vector<ResourceMaterial>& materials_
+)
+{
+    //チェック
+    ErrorMessageOutput::Assert::DetectError
+    (
+        modelFileName_pathLib.contains(fileName_),
+        fileName_ + "こんなファイルは存在しないぜ",
+        fileName
+    );
+
+	//キャッシュにあるか確認
+	std::optional<ModelData> cachedModelData = modelDataCache->FindDuplication(ModelDataCache::AccessKey{},fileName_);
+	if (cachedModelData)
+	{
+		meshes_ = cachedModelData->resourceMesh;
+		materials_ = cachedModelData->resourceMaterial;
+
+		return;
+	}
+
+    // wchar_t から char型(UTF-8)に変換
+    auto path = StringConverter::ToUTF8(StringConverter::ConvertString(fileName_));
+
+    Assimp::Importer importer;
+    unsigned int flag = 0;
+    flag |= aiProcess_Triangulate;
+    flag |= aiProcess_PreTransformVertices;
+    flag |= aiProcess_GenSmoothNormals;
+    flag |= aiProcess_GenUVCoords;
+    flag |= aiProcess_RemoveRedundantMaterials;
+    flag |= aiProcess_OptimizeMeshes;
+    flag |= aiProcess_FlipWindingOrder;
+    flag |= aiProcess_MakeLeftHanded;
+    flag |= aiProcess_FixInfacingNormals;
+
+    // ファイルを読み込み.
+    scene = importer.ReadFile(path, flag);
+    ErrorMessageOutput::Abort::DetectError(scene, "シーンデータが無い", fileName);
+
+    //メッシュのメモリを確保
+    meshes_.clear();
+    meshes_.resize(scene ->mNumMeshes);
+
+    // メッシュデータを変換.
+    for (size_t i = 0; i < meshes_.size(); ++i)
+    {
+        const auto pMesh = scene ->mMeshes[i];
+        ParseMesh(meshes_[i], pMesh);
+    }
+
+    //マテリアルのメモリを確保
+    materials_.clear();
+    materials_.resize(scene ->mNumMaterials);
+
+    //マテリアルデータを変換
+    for (size_t i = 0; i < materials_.size(); ++i)
+    {
+        const auto pMaterial = scene ->mMaterials[i];
+        ParseMaterial(materials_[i], pMaterial);
+    }
+
+    //不要になったのでクリア
+    importer.FreeScene();
+    scene  = nullptr;
+
+}
+
+
+
+void MeshContext::ModelCreator::ModelDataLoader::ParseMesh(ResourceMesh& dstMesh_, const aiMesh* pSrcMesh_)
+{
+    //マテリアル番号を設定
+    //dstMesh.materialId = pSrcMesh->mMaterialIndex;
+
+    aiVector3D zero3D(0.0f, 0.0f, 0.0f);
+    std::vector<uint32_t> originalIndices;
+
+    //頂点データのメモリを確保
+    dstMesh_.vertices.resize(pSrcMesh_->mNumVertices);
+
+    for (auto i = 0u; i < pSrcMesh_->mNumVertices; ++i)
+    {
+        auto pPosition = &(pSrcMesh_->mVertices[i]);
+        auto pNormal = &(pSrcMesh_->mNormals[i]);
+        auto pTexCoord = (pSrcMesh_->HasTextureCoords(0)) ? &(pSrcMesh_->mTextureCoords[0][i]) : &zero3D;
+        auto pTangent = (pSrcMesh_->HasTangentsAndBitangents()) ? &(pSrcMesh_->mTangents[i]) : &zero3D;
+
+        dstMesh_.vertices[i] = StandardVertex
+        (
+            Vector3(pPosition->x, pPosition->y, pPosition->z),
+            Vector3(pNormal->x, pNormal->y, pNormal->z),
+            Vector3(pTangent->x, pTangent->y, pTangent->z),
+            Vector2(pTexCoord->x, 1.0f - pTexCoord->y)
+
+        );
+    }
+
+
+    //頂点インデックスのメモリを確保
+    originalIndices.resize(pSrcMesh_->mNumFaces * 3);
+
+    for (auto i = 0u; i < pSrcMesh_->mNumFaces; ++i)
+    {
+        const auto& face = pSrcMesh_->mFaces[i];
+        assert(face.mNumIndices == 3);
+
+        originalIndices[i * 3 + 0] = face.mIndices[0];
+        originalIndices[i * 3 + 1] = face.mIndices[1];
+        originalIndices[i * 3 + 2] = face.mIndices[2];
+    }
+
+    //最適化
+    {
+        std::vector<uint32_t> remapIndices(originalIndices.size());
+
+        //重複データを再マップするための再マッピング用インデックスを生成
+        auto vertexCnt = meshopt_generateVertexRemap
+        (
+            remapIndices.data(),
+            originalIndices.data(),
+            originalIndices.size(),
+            dstMesh_.vertices.data(),
+            dstMesh_.vertices.size(),
+            sizeof(StandardVertex)
+        );
+
+        std::vector<StandardVertex> vertices(vertexCnt);
+        std::vector<uint32_t> indicesBuf(originalIndices.size());
+
+
+        //頂点インデックスを再マッピング
+        meshopt_remapIndexBuffer(
+            indicesBuf.data(),
+            originalIndices.data(),
+            originalIndices.size(),
+            remapIndices.data()
+        );
+
+        //頂点データを再マッピング
+        meshopt_remapVertexBuffer(
+            vertices.data(),
+            dstMesh_.vertices.data(),
+            dstMesh_.vertices.size(),
+            sizeof(StandardVertex),
+            remapIndices.data());
+
+
+        //最適化したサイズにメモリ量を減らす
+        dstMesh_.vertices.resize(vertices.size());
+        originalIndices = std::move(indicesBuf);
+
+        //頂点キャッシュ最適化
+        meshopt_optimizeVertexCache
+        (
+            originalIndices.data(),
+            originalIndices.data(),
+            originalIndices.size(),
+            vertexCnt
+        );
+
+        //頂点フェッチ最適化
+        size_t optimizedVertexCount = meshopt_optimizeVertexFetch
+(
+            dstMesh_.vertices.data(),
+            originalIndices.data(),
+            originalIndices.size(),
+            vertices.data(),
+            vertices.size(),
+            sizeof(StandardVertex)
+        );
+
+        //頂点フェッチ最適化後の実際の頂点数へ縮小
+        dstMesh_.vertices.resize(optimizedVertexCount);
+    }
+
+    //メッシュレット生成
+    //メッシュレットの自動分割と10bitパッキング
+    {
+        //ハードウェア（Mesh Shader）の制約条件。
+        //一般的な現代のGPUアーキテクチャに最適化するため、
+        ///1つのメッシュレットに含まれる最大頂点数を「64」、最大三角形数を「124〜126」に設定
+        const size_t kMaxVertices = 64;
+        const size_t kMaxPrimitives = 126;
+        const float  kConeWeight = 0.0f; //カリング用のコーン計算の重み（今回は不使用なので0）
+
+        //分割後に生成されるメッシュレットの「理論上の最大上限数」をあらかじめ計算
+        size_t max_meshlets = meshopt_buildMeshletsBound(originalIndices.size(), kMaxVertices, kMaxPrimitives);
+
+        //テンポラリ出力バッファ
+        std::vector<meshopt_Meshlet> temp_meshlets(max_meshlets);
+        std::vector<unsigned int>    temp_meshlet_vertices(max_meshlets * kMaxVertices);
+        std::vector<unsigned char>   temp_meshlet_triangles(max_meshlets * kMaxPrimitives * 3);
+
+        //メッシュレット分割
+        //最適化済みの頂点バッファverticesから、座標データの先頭ポインタとバイトサイズを渡すことで、
+        //空間的な局所性を考慮したクラスター分割アルゴリズムが実行される
+        size_t meshletCount = meshopt_buildMeshlets
+        (
+            temp_meshlets.data(),
+            temp_meshlet_vertices.data(),
+            temp_meshlet_triangles.data(),
+            originalIndices.data(),
+            originalIndices.size(),
+            &dstMesh_.vertices[0].localPos.data.x, //頂点データの座標ポインタの先頭
+            dstMesh_.vertices.size(),
+            sizeof(StandardVertex),                //頂点構造体1つあたりのバイトサイズ
+            kMaxVertices,
+            kMaxPrimitives,
+            kConeWeight
+        );
+
+        ErrorMessageOutput::Assert::DetectError(meshletCount > 0, "meshletCountがおかしいです", fileName);
+
+        //実際に生成された確定数に合わせてメタデータ配列をリサイズ
+        temp_meshlets.resize(meshletCount);
+
+        //最後のメッシュレットのオフセットを参照することで実際に使われた正確な要素数が割り出せる
+        const meshopt_Meshlet& last_meshlet = temp_meshlets.back();
+        size_t total_unique_vertices = last_meshlet.vertex_offset + last_meshlet.vertex_count;
+        size_t total_primitive_triangles = last_meshlet.triangle_offset + last_meshlet.triangle_count;
+
+        dstMesh_.meshlets.resize(meshletCount);
+        dstMesh_.uniqueVertexIndices.reserve(total_unique_vertices);
+        dstMesh_.primitiveIndices.reserve(total_primitive_triangles);
+
+
+        //ResourceMeshに詰める
+        for (size_t i = 0; i < meshletCount; ++i)
+        {
+            const meshopt_Meshlet& src = temp_meshlets[i];
+            Meshlet& dstMeshlet = dstMesh_.meshlets[i];
+
+            //各スレッドグループが担当する箇所を算出
+            dstMeshlet.vertexOffset = static_cast<uint32_t>(dstMesh_.uniqueVertexIndices.size());
+            dstMeshlet.vertexCnt = src.vertex_count;
+            dstMeshlet.primitiveOffset = static_cast<uint32_t>(dstMesh_.primitiveIndices.size());
+            dstMeshlet.primitiveCnt = src.triangle_count;
+
+            //インデックスを0～に対応付ける
+            for (unsigned int v = 0; v < src.vertex_count; ++v)
+            {
+                uint32_t global_vertex_idx = temp_meshlet_vertices[src.vertex_offset + v];
+                dstMesh_.uniqueVertexIndices.emplace_back(UniqueVertexIndex(global_vertex_idx));
+            }
+
+            //ポリゴン頂点情報をパッキング
+            for (unsigned int t = 0; t < src.triangle_count; ++t)
+            {
+                size_t prim_base_idx = src.triangle_offset + t * 3;
+
+                PrimitiveIndex tris = {};
+
+                tris.index2 = temp_meshlet_triangles[prim_base_idx + 0];
+                tris.index0 = temp_meshlet_triangles[prim_base_idx + 1];
+                tris.index1 = temp_meshlet_triangles[prim_base_idx + 2];
+                tris.reserved = 0;
+
+                dstMesh_.primitiveIndices.push_back(tris);
+            }
+        }
+
+        //最終メモリの最適化
+        dstMesh_.uniqueVertexIndices.shrink_to_fit();
+        dstMesh_.primitiveIndices.shrink_to_fit();
+        dstMesh_.meshlets.shrink_to_fit();
+
+    }
+}
+
+void MeshContext::ModelCreator::ModelDataLoader::ParseMaterial(ResourceMaterial& dstMaterial_, const aiMaterial* pSrcMaterial_)
+{
+    // 拡散反射成分
+    {
+        aiColor3D color(0.0f, 0.0f, 0.0f);
+
+        if (pSrcMaterial_->Get(AI_MATKEY_COLOR_DIFFUSE, color) == AI_SUCCESS)
+        {
+            dstMaterial_.standardMaterial.diffuse.data.x = color.r;
+            dstMaterial_.standardMaterial.diffuse.data.y = color.g;
+            dstMaterial_.standardMaterial.diffuse.data.z = color.b;
+        }
+    }
+
+    // 鏡面反射成分
+    {
+        aiColor3D color(0.0f, 0.0f, 0.0f);
+
+        if (pSrcMaterial_->Get(AI_MATKEY_COLOR_SPECULAR, color) == AI_SUCCESS)
+        {
+            dstMaterial_.standardMaterial.specular = { color.r,color.g,color.b };
+        }
+    }
+
+    // 鏡面反射強度
+    {
+        auto shininess = 0.0f;
+        if (pSrcMaterial_->Get(AI_MATKEY_SHININESS, shininess) == AI_SUCCESS)
+        {
+            dstMaterial_.standardMaterial.shininess = shininess;
+        }
+    }
+
+    // colorマップ
+    {
+        aiString path;
+        if (pSrcMaterial_->Get(AI_MATKEY_TEXTURE_DIFFUSE(0), path) == AI_SUCCESS)
+        {
+            dstMaterial_.standardMaterial.colorMap = StringConverter::ConvertString(Convert(path));
+        }
+    }
+
+    // スペキュラーマップ
+    {
+        aiString path;
+        if (pSrcMaterial_->Get(AI_MATKEY_TEXTURE_SPECULAR(0), path) == AI_SUCCESS)
+        {
+            dstMaterial_.standardMaterial.specularMap = StringConverter::ConvertString(Convert(path));
+        }
+    }
+
+    // シャイネスマップ
+    {
+        aiString path;
+
+        if (pSrcMaterial_->Get(AI_MATKEY_TEXTURE_SHININESS(0), path) == AI_SUCCESS)
+        {
+            dstMaterial_.standardMaterial.shininessMap = StringConverter::ConvertString(Convert(path));
+        }
+    }
+
+    // 法線マップ
+    {
+        aiString path;
+        if (pSrcMaterial_->Get(AI_MATKEY_TEXTURE_NORMALS(0), path) == AI_SUCCESS)
+        {
+            dstMaterial_.standardMaterial.normalMap = StringConverter::ConvertString(Convert(path));
+        }
+        else
+        {
+            if (pSrcMaterial_->Get(AI_MATKEY_TEXTURE_HEIGHT(0), path) == AI_SUCCESS)
+            {
+                dstMaterial_.standardMaterial.normalMap = StringConverter::ConvertString(Convert(path));
+            }
+            else
+            {
+                dstMaterial_.standardMaterial.normalMap.clear();
+            }
+        }
+    }
+}
+
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+std::wstring MeshContext::ModelCreator::ModelDataLoader::Convert(const aiString& path)
+{
+    wchar_t temp[256] = {};
+    size_t  size;
+    mbstowcs_s(&size, temp, path.C_Str(), 256);
+    return std::wstring(temp);
+}
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+void MeshContext::ModelCreator::ModelDataLoader::LoadModelRegistry(std::string const registryFilePath_)
+{
+    std::ifstream file(registryFilePath_);
+    ErrorMessageOutput::Abort::DetectError
+    (
+        file.is_open(),
+        registryFilePath_ + "このパス無くない？",
+        fileName
+    );
+
+    std::string line;
+
+    while (std::getline(file, line))
+    {
+        constexpr std::string_view keyToken = "key: \"";
+        constexpr std::string_view valueToken = "value: \"";
+
+        auto keyStart = line.find(keyToken);
+        if (keyStart == std::string::npos)
+        {
+            continue;
+        }
+
+
+        keyStart += keyToken.size();
+
+        auto keyEnd = line.find("\"", keyStart);
+        if (keyEnd == std::string::npos)
+        {
+            continue;
+        }
+
+
+        std::string key = line.substr
+        (
+            keyStart,
+            keyEnd - keyStart
+        );
+
+
+        auto valueStart = line.find(valueToken);
+        if (valueStart == std::string::npos)
+        {
+            continue;
+        }
+
+
+        valueStart += valueToken.size();
+
+        auto valueEnd = line.find("\"", valueStart);
+        if (valueEnd == std::string::npos)
+        {
+            continue;
+        }
+
+
+        std::string value = line.substr
+        (
+            valueStart,
+            valueEnd - valueStart
+        );
+
+
+        modelFileName_pathLib.emplace(key,value);
+    }
+
+}
+
 
 
 
@@ -9263,13 +9842,49 @@ class MeshContext::ModelCreator
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Mesh\CreateModelTools\ModelDataLoader\ModelDataLoader.h ===
 ========================================
 #pragma once
-#include "../../MeshContext.h"
+#include "../ModelCreator.h"
 
 
-class MeshContext::ModelDataLoader
+#include "../../.././../../External/assimp/include/assimp/Importer.hpp"
+#include "../../.././../../External/assimp/include/assimp/scene.h"
+#include "../../.././../../External/assimp/include/assimp/postprocess.h"
+#include "../../.././../../External/assimp/include/assimp/cimport.h"
+
+
+
+struct ResourceMesh;
+struct ResourceMaterial;
+
+
+class MeshContext::ModelCreator::ModelDataLoader
 {
+public:
+
+	ModelDataLoader(MeshContext::InstanceKey key_);
+	~ModelDataLoader();
+
+	void Load
+	(
+		std::string fileName_,
+		std::vector<ResourceMesh>& meshes_,
+		std::vector<ResourceMaterial>& materials_
+	);
+
+private:
+
 	class ModelDataCache;
 
+	std::unique_ptr<ModelDataCache> modelDataCache;
+	std::unordered_map<std::string, std::string > modelFileName_pathLib;
+	//シーンデータ
+	const aiScene* scene = nullptr;   
+
+	//モデル登録ファイルから何が登録されているか読み込む
+	void LoadModelRegistry(std::string const registryFilePath_);
+	std::wstring Convert(const aiString& path);
+
+	void ParseMesh(ResourceMesh& dstMesh_, const aiMesh* pSrcMesh_);
+	void ParseMaterial(ResourceMaterial& dstMaterial_, const aiMaterial* pSrcMaterial_);
 
 
 };
@@ -9285,6 +9900,29 @@ class MeshContext::ModelDataLoader
 #include "ModelDataCache.h"
 
 
+MeshContext::ModelCreator::ModelDataLoader::ModelDataCache::ModelDataCache(MeshContext::InstanceKey key_)
+{
+
+}
+
+std::optional<ModelData> MeshContext::ModelCreator::ModelDataLoader::ModelDataCache::FindDuplication(AccessKey key_, std::string fileName_)
+{
+	if (modelDataCache.find(fileName_) == modelDataCache.end())
+	{
+		Logger::Log("Regieter: " + fileName_, "ModelDataCache.cpp");
+				
+		return modelDataCache.at(fileName_);
+	}
+
+	return std::nullopt;
+}
+
+void MeshContext::ModelCreator::ModelDataLoader::ModelDataCache::Register(AccessKey key_, std::string fileName_, const ModelData& data_)
+{
+	modelDataCache[fileName_] = data_;
+}
+
+
 
 
 ========================================
@@ -9294,14 +9932,27 @@ class MeshContext::ModelDataLoader
 #include "../ModelDataLoader.h"
 #include "../../../ModelStructure/ModelData/ModelData.h"
 
-class MeshContext::ModelDataLoader::ModelDataCache
+class MeshContext::ModelCreator::ModelDataLoader::ModelDataCache
 {
 public:
 
+	struct AccessKey;
+
+	ModelDataCache(MeshContext::InstanceKey key_);
+
+	std::optional<ModelData> FindDuplication(AccessKey key_, std::string fileName_);
+	void Register(AccessKey key_, std::string fileName_, const ModelData& data_);
 
 private:
 
-	std::unordered_map<std::string, std::unique_ptr<ModelData>> modelDataCache;
+	std::unordered_map<std::string, ModelData> modelDataCache;
+};
+
+struct MeshContext::ModelCreator::ModelDataLoader::ModelDataCache::AccessKey
+{
+private:
+	friend class MeshContext::ModelCreator::ModelDataLoader;
+	explicit AccessKey() = default;
 };
 
 
@@ -9379,8 +10030,13 @@ struct ModelData
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Mesh\ModelStructure\ModelData\ResourceMaterial\ResourceMaterial.h ===
 ========================================
 #pragma once
-class ResourceMaterial
+#include "StandardMaterial.h"
+
+
+
+struct ResourceMaterial
 {
+	StandardMaterial standardMaterial;
 };
 
 
@@ -9388,14 +10044,24 @@ class ResourceMaterial
 
 
 ========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Mesh\ModelStructure\ModelData\ResourceMaterial\Material\Material.h ===
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Mesh\ModelStructure\ModelData\ResourceMaterial\StandardMaterial.h ===
 ========================================
 #pragma once
-class Material
+#include "../../../../../../Math/Vector/Vector3.h"
+
+
+struct StandardMaterial
 {
+    Vector3 diffuse = { 0.5f,0.5f, 0.5f };
+    Vector3 specular;
+    float alpha{};
+    float shininess{};
+    std::string colorMap;
+    std::string specularMap;
+    std::string shininessMap;
+    std::string normalMap;
+
 };
-
-
 
 
 
@@ -9413,15 +10079,13 @@ class Material
 ========================================
 #pragma once
 #include "../../../../../../../Assets/Shared/StructuredBuffer.h"
+#include "StandardVertex.h"
 
 
 struct ResourceMesh
 {
     //頂点情報の原本
 	std::vector<StandardVertex> vertices;
-	
-    std::vector<uint32_t> indices;
-
     ///元の頂点番号への対応表
     std::vector<UniqueVertexIndex> uniqueVertexIndices;
     //1スレッドグループが処理する頂点・三角形の範囲情報
@@ -9432,6 +10096,33 @@ struct ResourceMesh
 };
 
 
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Mesh\ModelStructure\ModelData\ResourceMesh\StandardVertex.h ===
+========================================
+#pragma once
+#include "../../../../../../Math/Vector/Vector2.h"
+#include "../../../../../../Math/Vector/Vector3.h"
+
+struct StandardVertex
+{
+	StandardVertex() {};
+
+	StandardVertex
+	(
+		Vector3 localPos_,
+		Vector3 normal_,
+		Vector3 tangent_,
+		Vector2 texcoord_
+	) :localPos(localPos_), normal(normal_), tangent(tangent_), texcoord(texcoord_) {}
+
+	Vector3 localPos;
+	Vector3 normal;
+	Vector3 tangent;
+	Vector2 texcoord;
+};
 
 
 
@@ -11082,7 +11773,9 @@ ShaderContext::~ShaderContext()
 {
 
 }
-
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ShaderLibrary* ShaderContext::AllowAccessToLibrary(ShaderLibraryAccessKey accessKey_)
 {
 	return shaderLibrary.get();
@@ -11113,7 +11806,6 @@ public:
 	struct ShaderLibraryAccessKey;
 	//コンパイラー
 	class Compiler;
-
 
 	//シェーダーライブラリを貸し出し
 	ShaderLibrary* AllowAccessToLibrary(ShaderLibraryAccessKey accessKey_);
@@ -11466,15 +12158,16 @@ void ShaderLibrary::CompileAllShaderFiles(ShaderContext::Compiler* compiler_)
 {
     auto const psProfile = L"ps_6_6";
     auto const msProfile = L"ms_6_6";
-    auto const shaderRegistryFilePath_MS = "Assets/Registry/MSFiles.txt";
-    auto const shaderRegistryFilePath_PS = "Assets/Registry/PSFiles.txt";
+    std::string const shaderRegistryFilePath_MS = "Assets/Registry/MSFiles.txt";
+    std::string const shaderRegistryFilePath_PS = "Assets/Registry/PSFiles.txt";
 
     std::unordered_map<std::string, std::string> shaderRegistryMS;
     std::unordered_map<std::string, std::string> shaderRegistryPS;
 
     shaderRegistryMS = LoadShaderRegistry(shaderRegistryFilePath_MS);
+    Logger::Log("Load: " + shaderRegistryFilePath_MS, fileName);
     shaderRegistryPS = LoadShaderRegistry(shaderRegistryFilePath_PS);
-    Logger::Log("Complete Loading ShaderRegistryFile");
+    Logger::Log("Load: " + shaderRegistryFilePath_PS, fileName);
 
     for (const auto& [key, value] : shaderRegistryMS)
     {
@@ -11506,7 +12199,7 @@ std::unordered_map<std::string, std::string> ShaderLibrary::LoadShaderRegistry(c
         {
             std::string key = match[1].str();
             std::string value = match[2].str();
-
+                
             registry[key] = value;
         }
     }
@@ -11680,15 +12373,6 @@ struct Matrix4x4
 	}
 
 };
-
-
-
-
-========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Math\Quaternion\Quaternion.cpp ===
-========================================
-
-#include "Quaternion.h"
 
 
 
@@ -12555,6 +13239,8 @@ std::string StringConverter::ToUTF8(const std::wstring& value)
 
 	return result;
 }
+
+
 
 
 

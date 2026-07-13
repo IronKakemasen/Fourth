@@ -13,14 +13,6 @@ std::optional<ModelData> MeshContext::ModelCreator::ModelDataLoader::ModelDataCa
 	{
 		Logger::Log("Regieter: " + fileName_, "ModelDataCache.cpp");
 				
-		//いちおうここでもチェック
-		ErrorMessageOutput::Assert::DetectError
-		(
-			modelDataCache.contains(fileName_),
-			fileName_ + "こんなファイルは存在しないぜ",
-			"ModelDataCache.cpp"
-		);
-
 		return modelDataCache.at(fileName_);
 	}
 

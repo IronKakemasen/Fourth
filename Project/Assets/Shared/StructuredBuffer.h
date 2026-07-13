@@ -5,18 +5,12 @@
 #ifdef __cplusplus
 
 //標準的な頂点情報
-struct StandardVertex
+struct StandardVertexForTransmission
 {
     Vector4<float> localPos;
     Vector4<float> normal;
     Vector4<float> tangent;
     Vector4<float> texcoord;
-};
-
-//インデックスの原本
-struct OriginalIndex
-{
-    uint32_t index;
 };
 
 struct Meshlet
@@ -41,7 +35,11 @@ struct PrimitiveIndex
 
 struct UniqueVertexIndex
 {
+    UniqueVertexIndex(uint32_t index_)
+    : index(index_){}
+
     uint32_t index;
+
 };
 
 struct TransformMatrix
