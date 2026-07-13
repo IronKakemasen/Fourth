@@ -1,16 +1,12 @@
 #pragma once
-#include "../../MeshContext.h"
+#include "../ModelCreator.h"
 
 struct ResourceMesh;
 struct ResourceMaterial;
 
 
-class MeshContext::ModelDataLoader
+class MeshContext::ModelCreator::ModelDataLoader
 {
-	class ModelDataCache;
-
-	std::unique_ptr<ModelDataCache> modelDataCache;
-
 public:
 
 	ModelDataLoader(MeshContext::InstanceKey key_);
@@ -23,6 +19,15 @@ public:
 		std::vector<ResourceMaterial>& materials_
 	);
 
+private:
+
+	class ModelDataCache;
+
+	std::unique_ptr<ModelDataCache> modelDataCache;
+	std::unordered_map<std::string, std::string > modelFileName_pathLib;
+
+	//モデル登録ファイルから何が登録されているか読み込む
+	void LoadModelRegistry(std::string const registryFilePath_);
 
 };
 

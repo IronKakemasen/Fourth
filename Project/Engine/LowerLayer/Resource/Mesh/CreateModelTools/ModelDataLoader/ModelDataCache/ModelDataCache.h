@@ -2,7 +2,7 @@
 #include "../ModelDataLoader.h"
 #include "../../../ModelStructure/ModelData/ModelData.h"
 
-class MeshContext::ModelDataLoader::ModelDataCache
+class MeshContext::ModelCreator::ModelDataLoader::ModelDataCache
 {
 public:
 
@@ -18,10 +18,10 @@ private:
 	std::unordered_map<std::string, ModelData> modelDataCache;
 };
 
-struct MeshContext::ModelDataLoader::ModelDataCache::AccessKey
+struct MeshContext::ModelCreator::ModelDataLoader::ModelDataCache::AccessKey
 {
 private:
-	friend class MeshContext::ModelDataLoader;
+	friend class MeshContext::ModelCreator::ModelDataLoader;
 	explicit AccessKey() = default;
 };
 
