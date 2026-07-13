@@ -110,7 +110,7 @@ struct Vector3
 
 	inline Vector3(float x_, float y_, float z_) : data(x_, y_, z_) {}
 
-	inline Vector3(float entries_[3]) :data(entries_[0], entries_[1], entries_[2]) {}
+	inline Vector3(std::array<float , 3> entries_) : data(entries_[0], entries_[1], entries_[2]) {}
 
 	inline Vector3 operator+(const Vector3 other_)
 	{
