@@ -15,7 +15,6 @@ public:
 	//コンパイラー
 	class Compiler;
 
-
 	//シェーダーライブラリを貸し出し
 	ShaderLibrary* AllowAccessToLibrary(ShaderLibraryAccessKey accessKey_);
 	

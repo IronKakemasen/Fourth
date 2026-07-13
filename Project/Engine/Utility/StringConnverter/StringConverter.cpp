@@ -51,3 +51,4 @@ std::string StringConverter::ToUTF8(const std::wstring& value)
 
 	return result;
 }
+
