@@ -296,19 +296,21 @@
     <ClCompile Include="Engine\LowerLayer\Render\RenderPathStructure\RenderPass\RenderPass.cpp" />
     <ClCompile Include="Engine\LowerLayer\Render\PassAssembler\PassAssembler.cpp" />
     <ClCompile Include="Engine\LowerLayer\Resource\Mesh\MeshContext.cpp" />
-    <ClCompile Include="Engine\LowerLayer\Resource\Mesh\ModelStructure\ResourceMesh\ResourceMesh.cpp" />
+    <ClCompile Include="Engine\LowerLayer\Resource\Mesh\ModelStructure\ModelData\ResourceMesh\ResourceMesh.cpp" />
     <ClCompile Include="Engine\LowerLayer\Resource\Mesh\CreateModelTools\ModelDataLoader\ModelDataCache\ModelDataCache.cpp" />
     <ClCompile Include="Engine\LowerLayer\Resource\Mesh\CreateModelTools\ModelDataLoader\ModelDataLoader.cpp" />
     <ClCompile Include="Engine\LowerLayer\Resource\Mesh\CreateModelTools\ModelCreator\ModelCreator.cpp" />
     <ClCompile Include="Engine\LowerLayer\Resource\Mesh\ModelStructure\Model.cpp" />
-    <ClCompile Include="Engine\LowerLayer\Resource\Mesh\ModelStructure\ResourceMaterial\ResourceMaterial.cpp" />
+    <ClCompile Include="Engine\LowerLayer\Resource\Mesh\ModelStructure\ModelData\ResourceMaterial\ResourceMaterial.cpp" />
+    <ClCompile Include="Engine\LowerLayer\Resource\Mesh\ModelStructure\ModelData\ModelData.cpp" />
+    <ClCompile Include="Engine\Math\Vector\Vector4.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Assets\Shared\ConstantBuffers.h" />
+    <ClInclude Include="Assets\Shared\StructuredBuffer.h" />
     <ClInclude Include="Engine\LowerLayer\Render\RenderPathStructure\RenderPass\RenderPassBluePrint\RenderPassSettingTable\RenderPassSettingTable.h" />
     <ClInclude Include="Engine\LowerLayer\Render\RenderPathStructure\RenderPass\RequiredInfo\BufferRequiredInfo\BufferRequiredInfo.h" />
     <ClInclude Include="Engine\LowerLayer\Render\RenderPathStructure\RenderPass\RequiredInfo\PassSettings\PassSettings.h" />
-    <ClInclude Include="Engine\LowerLayer\Resource\Mesh\ModelStructure\ResourceMesh\Meshlet\Meshlet.h" />
     <ClInclude Include="Engine\Utility\ClosedHashMap\ClosedHashMap.h" />
     <ClInclude Include="Engine\LowerLayer\Render\PSO_PoolDispatcher\GraphicsPSO_Key.h" />
     <ClInclude Include="Engine\LowerLayer\Render\RenderPathStructure\RenderPassComponent.h" />
@@ -433,15 +435,14 @@
     <ClInclude Include="Engine\LowerLayer\Render\RenderPathStructure\RenderPass\RenderPass.h" />
     <ClInclude Include="Engine\LowerLayer\Render\PassAssembler\PassAssembler.h" />
     <ClInclude Include="Engine\LowerLayer\Resource\Mesh\MeshContext.h" />
-    <ClInclude Include="Engine\LowerLayer\Resource\Mesh\ModelStructure\ResourceMesh\ResourceMesh.h" />
+    <ClInclude Include="Engine\LowerLayer\Resource\Mesh\ModelStructure\ModelData\ResourceMesh\ResourceMesh.h" />
     <ClInclude Include="Engine\LowerLayer\Resource\Mesh\CreateModelTools\ModelDataLoader\ModelDataCache\ModelDataCache.h" />
     <ClInclude Include="Engine\LowerLayer\Resource\Mesh\CreateModelTools\ModelDataLoader\ModelDataLoader.h" />
     <ClInclude Include="Engine\LowerLayer\Resource\Mesh\CreateModelTools\ModelCreator\ModelCreator.h" />
-    <ClInclude Include="Engine\LowerLayer\Resource\Mesh\ModelStructure\ResourceMesh\Vertex\StandardVertex.h" />
-    <ClInclude Include="Engine\LowerLayer\Resource\Mesh\ModelStructure\ResourceMesh\TransformMatrix\TransformMatrix.h" />
-    <ClInclude Include="Engine\LowerLayer\Resource\Mesh\ModelStructure\ResourceMaterial\Material\Material.h" />
     <ClInclude Include="Engine\LowerLayer\Resource\Mesh\ModelStructure\Model.h" />
-    <ClInclude Include="Engine\LowerLayer\Resource\Mesh\ModelStructure\ResourceMaterial\ResourceMaterial.h" />
+    <ClInclude Include="Engine\LowerLayer\Resource\Mesh\ModelStructure\ModelData\ResourceMaterial\ResourceMaterial.h" />
+    <ClInclude Include="Engine\LowerLayer\Resource\Mesh\ModelStructure\ModelData\ModelData.h" />
+    <ClInclude Include="Engine\Math\Vector\Vector4.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

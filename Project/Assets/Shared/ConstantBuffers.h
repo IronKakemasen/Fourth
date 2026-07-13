@@ -1,5 +1,5 @@
-
 #pragma once
+#include "../../Engine/Math/Vector/Vector4.h"
 
 #ifdef __cplusplus
 
@@ -7,11 +7,10 @@ constexpr int kNumConstantBufferTypes = 1;
 
 struct SceneCB
 {
-    float passedTime;
-    float pad0[3];
+    //経過時間
+    Vector4<float> passedTime;
 };
 
-static_assert(sizeof(SceneCB) == 16);
 
 #else
 

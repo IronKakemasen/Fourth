@@ -216,25 +216,7 @@ void Nexus::Instantiate<Nexus::InitSequence::kCommandContext>()
 template<>
 void Nexus::Instantiate<Nexus::InitSequence::kSwapChainContext>()
 {
-	std::unique_ptr<DepthStencilBuffer> depthStencilBuffer;
 	auto* cmdProvider = deviceContext->commandProvider.get();
-
-	//スワップチェーンが使用する深度ステンシルバッファをここでつくちゃう
-	{
-		DepthStencilBufferDescription desc
-		(
-			kWidth,
-			kHeight,
-			0.0f,
-			DXGI_FORMAT_D24_UNORM_S8_UINT,
-			DXGI_FORMAT_R24_UNORM_X8_TYPELESS
-		);
-
-		auto* bufferCreator = bufferContext->bufferCreator.get();
-
-		depthStencilBuffer = std::move(bufferCreator->CreateBeyondMyJurisdiction<DepthStencilBuffer>(desc, "SwapChain_DB"));
-		Logger::Log("Create: SwapChainDepthStencilBuffer", fileName);
-	}
 
 	swapChainContext.reset
 	(
@@ -244,8 +226,7 @@ void Nexus::Instantiate<Nexus::InitSequence::kSwapChainContext>()
 			descriptorHeapContext.get(),
 			commandContext.get(),
 			cmdProvider->ProvideCreateSwapChainCommand(),
-			windowContext->WatchHWND(),
-			std::move(depthStencilBuffer)
+			windowContext->WatchHWND()
 		)
 	);
 
@@ -514,6 +495,10 @@ void Nexus::Run()
 
 //バッファのユニークID
 using BufferUniqueID = uint32_t;
+//メッシュのユニークID
+using MeshUniqueID = uint32_t;
+//マテリアルのユニークID
+using MaterialUniqueID = uint32_t;
 
 
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -3561,8 +3546,7 @@ SwapChainContext::SwapChainContext
 	DescriptorHeapContext* descriptorHeapContext_,
 	CommandContext* commandContext_,
 	CommandCreateSwapChain cmdCreateSwapChain_,
-	const HWND hWnd_,
-	std::unique_ptr<DepthStencilBuffer> depthStencilBuffer_
+	const HWND hWnd_
 )
 {
 	Logger::Entry("SwapChainContext: Constructor");
@@ -3574,7 +3558,7 @@ SwapChainContext::SwapChainContext
 	presenter.reset(new Presenter(swapChain.Get()));
 	Logger::Log("Instantiate: Presenter", fileName);
 
-	renderPassMaterialProvider.reset(new RenderPassMaterialProvider(colorBuffer.get(), depthStencilBuffer.get()));
+	renderPassMaterialProvider.reset(new RenderPassMaterialProvider(colorBuffer.get()));
 	Logger::Log("Instantiate: RenderPassMaterialProvider", fileName);
 
 
@@ -3693,7 +3677,6 @@ class Nexus;
 class ViewCreator;
 class CommandContext;
 class DescriptorHeapContext;
-class DepthStencilBuffer;
 
 
 
@@ -3731,8 +3714,7 @@ public:
 		DescriptorHeapContext* descriptorHeapContext_,
 		CommandContext* commandContext_,
 		CommandCreateSwapChain cmdCreateSwapChain_,
-		const HWND hWnd_,
-		std::unique_ptr<DepthStencilBuffer> depthStencilBuffer_
+		const HWND hWnd_
 	);
 
 	~SwapChainContext();
@@ -3770,7 +3752,6 @@ private:
 	//スワップチェーン
 	Microsoft::WRL::ComPtr<IDXGISwapChain4> swapChain = nullptr;
 	std::unique_ptr<ColorBuffer> colorBuffer;
-	std::unique_ptr<DepthStencilBuffer> depthStencilBuffer;
 };
 
 struct SwapChainContext::InstanceKey
@@ -3854,11 +3835,10 @@ private:
 ========================================
 
 #include "RenderPassMaterialProvider.h"
-#include "../../../Resource/Buffer/BufferDefinition/GPUBuffer/DepthStencilBuffer/DepthStencilBuffer.h"
 
 
-SwapChainContext::RenderPassMaterialProvider::RenderPassMaterialProvider(SwapChainContext::ColorBuffer* colorBuffer_, DepthStencilBuffer* depthStencilBuffer_)
-	:colorBuffer(colorBuffer_),depthStencilBuffer(depthStencilBuffer_)
+SwapChainContext::RenderPassMaterialProvider::RenderPassMaterialProvider(SwapChainContext::ColorBuffer* colorBuffer_)
+	:colorBuffer(colorBuffer_)
 {
 
 }
@@ -3869,7 +3849,6 @@ SwapChainContext::RenderPassMaterialProvider::RenderPassMaterialProvider(SwapCha
 {
 	
 	SwapChainContext::RenderPassMaterialProvider::Materials::ColorBuffer materialC;
-	SwapChainContext::RenderPassMaterialProvider::Materials::DepthStencilBuffer materialD;
 
 	//カラーバッファの提供材料
 	{
@@ -3887,17 +3866,9 @@ SwapChainContext::RenderPassMaterialProvider::RenderPassMaterialProvider(SwapCha
 		materialC.barrier = dstBuffer.CreateBarrier(after);
 	}
 
-	//ディプスバッファの提供材料
-	{
-		///+////////////////書き換え予定
-		//materialD.dsvhandle = depthStencilBuffer->WatchIndex<ViewType::kDSV,D3D12_CPU_DESCRIPTOR_HANDLE>(frameIndex_);
-		//materialD.clearColor = depthStencilBuffer->WatchClearColor(DepthStencilBuffer::ExtractMaterialKey{});
-	}
-
 	return SwapChainContext::RenderPassMaterialProvider::Materials
 	(
-		materialC,
-		materialD
+		materialC
 	);
 }
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -3923,8 +3894,6 @@ SwapChainContext::RenderPassMaterialProvider::RenderPassMaterialProvider(SwapCha
 #include "../SwapChainColorBuffer/SwapChainColorBuffer.h"
 
 
-class DepthStencilBuffer;
-
 //描画パスを構築するのに必要な材料を渡す
 class SwapChainContext::RenderPassMaterialProvider
 {
@@ -3939,23 +3908,15 @@ class SwapChainContext::RenderPassMaterialProvider
 			std::array<FLOAT, 4> clearColor;
 		};
 
-		struct DepthStencilBuffer
-		{
-			D3D12_CPU_DESCRIPTOR_HANDLE dsvhandle{};
-			float clearColor{};
-		};
-
 		ColorBuffer colorBuffer;
-		DepthStencilBuffer depthStencilBuffer;
 
-		Materials(ColorBuffer colorBuffer_, DepthStencilBuffer depthStencilBuffer_)
-			:colorBuffer(colorBuffer_), depthStencilBuffer(depthStencilBuffer_) {}
+		Materials(ColorBuffer colorBuffer_):colorBuffer(colorBuffer_) {}
 
 	};
 
 public:
 
-	RenderPassMaterialProvider(SwapChainContext::ColorBuffer* colorBuffer_, DepthStencilBuffer* depthStencilBuffer_);
+	RenderPassMaterialProvider(SwapChainContext::ColorBuffer* colorBuffer_);
 	
 	[[nodiscard]] Materials ProvideForBegine(UINT frameIndex_);
 	[[nodiscard]] D3D12_RESOURCE_BARRIER ProvideEnd(UINT frameIndex_);
@@ -3963,7 +3924,6 @@ public:
 private:
 
 	SwapChainContext::ColorBuffer* colorBuffer;
-	DepthStencilBuffer* depthStencilBuffer;
 };
 
 
@@ -4996,16 +4956,16 @@ struct RequiredRenderingInfo
 
 
 ========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Render\PSO_Creator\PSO_Creator.cpp ===
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Render\GraphicsPSO_Creator\GraphicsPSO_Creator.cpp ===
 ========================================
 #include "PreCompileHeader.h"
-#include "PSO_Creator.h"
+#include "GraphicsPSO_Creator.h"
 
 
 
 
 ========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Render\PSO_Creator\PSO_Creator.h ===
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Render\GraphicsPSO_Creator\GraphicsPSO_Creator.h ===
 ========================================
 #pragma once
 #include "../RenderContext.h"
@@ -5020,12 +4980,33 @@ class RenderContext::PSO_Creator
 
 
 ========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Render\PassAssembler\PassAssembler.cpp ===
+========================================
+#include "PreCompileHeader.h"
+#include "PassAssembler.h"
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Render\PassAssembler\PassAssembler.h ===
+========================================
+#pragma once
+class PassAssembler
+{
+};
+
+
+
+
+
+========================================
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Render\PSO_PoolDispatcher\GraphicsPSO_Key.h ===
 ========================================
 #pragma once
 #include "../RenderPathStructure/RenderStateComponent.h"
 #include "../RenderPathStructure/ShaderPathComponent.h"
-#include "../RenderPathStructure/RenderPathComponent.h"
+#include "../RenderPathStructure/RenderPassComponent.h"
 
 struct GraphicsPSO_Key
 {
@@ -5046,9 +5027,9 @@ private:
 
     int const kInvalid = -1;
 
-    RenderPathComponent::Pass pass =                RenderPathComponent::Pass(kInvalid);
-    RenderPathComponent::DepthEnable depthEnable =  RenderPathComponent::DepthEnable(kInvalid);
-    RenderPathComponent::DepthTest depthTest =      RenderPathComponent::DepthTest(kInvalid);
+    RenderPassComponent::Pass pass =                RenderPassComponent::Pass(kInvalid);
+    RenderPassComponent::DepthEnable depthEnable =  RenderPassComponent::DepthEnable(kInvalid);
+    RenderPassComponent::DepthTest depthTest =      RenderPassComponent::DepthTest(kInvalid);
     ShaderPathComponent::MeshType mesh =            ShaderPathComponent::MeshType(kInvalid);
     ShaderPathComponent::MaterialType material =    ShaderPathComponent::MaterialType(kInvalid);
     RenderStateComponent::BlendMode blend =         RenderStateComponent::BlendMode(kInvalid);
@@ -5058,9 +5039,9 @@ private:
     template <Sequence sequence>
     static constexpr auto sequenceToType()
     {
-        if      constexpr (sequence == kPass)         return RenderPathComponent::Pass{};
-        else if constexpr (sequence == kDepthEnable)  return RenderPathComponent::DepthEnable{};
-        else if constexpr (sequence == kDepthTest)    return RenderPathComponent::DepthTest{};
+        if      constexpr (sequence == kPass)         return RenderPassComponent::Pass{};
+        else if constexpr (sequence == kDepthEnable)  return RenderPassComponent::DepthEnable{};
+        else if constexpr (sequence == kDepthTest)    return RenderPassComponent::DepthTest{};
         else if constexpr (sequence == kMeshType)     return ShaderPathComponent::MeshType{};
         else if constexpr (sequence == kMaterialType) return ShaderPathComponent::MaterialType{};
         else if constexpr (sequence == kBlendMode)    return RenderStateComponent::BlendMode{};
@@ -5076,9 +5057,9 @@ public:
 
     GraphicsPSO_Key
     (
-        RenderPathComponent::Pass pass_,
-        RenderPathComponent::DepthEnable depthEnable_,
-        RenderPathComponent::DepthTest depthTest_,
+        RenderPassComponent::Pass pass_,
+        RenderPassComponent::DepthEnable depthEnable_,
+        RenderPassComponent::DepthTest depthTest_,
         ShaderPathComponent::MeshType mesh_,
         ShaderPathComponent::MaterialType material_,
         RenderStateComponent::BlendMode blend_,
@@ -5329,6 +5310,49 @@ private:
 
 
 ========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Render\RenderPathStructure\RenderPassComponent.h ===
+========================================
+#pragma once
+
+namespace RenderPassComponent  
+{
+	///RenderPathを構成する各ステージ
+	enum class Pass
+	{
+		kCreateSceneTexture,
+
+		
+		kFinal
+		,kCount
+
+	};
+
+    enum class DepthEnable
+    {
+        kDisable,
+        kEnable
+        , kCount
+    };
+
+    enum class DepthTest
+    {
+        kLessEqual,
+        kGreaterEqual
+        , kCount
+    };
+
+    inline D3D12_COMPARISON_FUNC Convert(DepthTest depthTest_)
+    {
+        return (depthTest_ == DepthTest::kGreaterEqual) ? D3D12_COMPARISON_FUNC_GREATER_EQUAL : D3D12_COMPARISON_FUNC_LESS_EQUAL;
+    }
+
+}
+
+
+
+
+
+========================================
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Render\RenderPathStructure\RenderPath.cpp ===
 ========================================
 
@@ -5367,47 +5391,6 @@ protected:
 
 
 ========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Render\RenderPathStructure\RenderPathComponent.h ===
-========================================
-#pragma once
-
-namespace RenderPathComponent 
-{
-	///RenderPathを構成する各ステージ
-	enum class Pass
-	{
-		kCreateSceneTexture,
-
-		
-		kFinal
-		,kCount
-
-	};
-
-    enum class DepthEnable
-    {
-        kDisable,
-        kEnable
-        , kCount
-    };
-
-    enum class DepthTest
-    {
-        kLessEqual,
-        kGreaterEqual
-        , kCount
-    };
-
-    inline D3D12_COMPARISON_FUNC Convert(DepthTest depthTest_)
-    {
-        return (depthTest_ == DepthTest::kGreaterEqual) ? D3D12_COMPARISON_FUNC_GREATER_EQUAL : D3D12_COMPARISON_FUNC_LESS_EQUAL;
-    }
-
-}
-
-
-
-========================================
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Render\RenderPathStructure\RenderPathDesc.h ===
 ========================================
 #pragma once
@@ -5415,7 +5398,7 @@ namespace RenderPathComponent
 
 #include "ShaderPathComponent.h"
 #include "RenderStateComponent.h"
-#include "RenderPathComponent.h"
+#include "RenderPassComponent.h"
 
 
 struct RenderPath::Desc
@@ -5427,7 +5410,7 @@ struct RenderPath::Desc
 		RenderStateComponent::BlendMode blendMode_,
 		RenderStateComponent::CullMode cullMode_,
 		RenderStateComponent::FillMode fillMode_,
-		RenderPathComponent::Pass pass_
+		RenderPassComponent::Pass pass_
 	) :meshType(meshType_), materialType(materialType_), blendMode(blendMode_), cullMode(cullMode_), fillMode(fillMode_), pass(pass_)
 	{
 
@@ -5438,7 +5421,7 @@ struct RenderPath::Desc
 	RenderStateComponent::BlendMode blendMode;
 	RenderStateComponent::CullMode cullMode;
 	RenderStateComponent::FillMode fillMode;
-	RenderPathComponent::Pass pass;
+	RenderPassComponent::Pass pass;
 
 };
 
@@ -5545,6 +5528,7 @@ namespace ShaderPathComponent
 
 //Pass構築情報群
 #include "RequiredInfo/BufferRequiredInfo/BufferRequiredInfo.h"
+#include "RequiredInfo/PassSettings/PassSettings.h"
 
 
 RenderPath::Pass::Pass()
@@ -5565,6 +5549,8 @@ RenderPath::Pass::~Pass()
 ========================================
 #pragma once
 #include "../RenderPath.h"
+#include "../RenderPassComponent.h"
+
 
 struct RenderPath::Pass
 {
@@ -5573,7 +5559,9 @@ struct RenderPath::Pass
 
 	///そのパスで使用するバッファの情報をまとめたもの
 	struct RequiredBufferInfo;
+	struct PassSettings;
 
+	std::unique_ptr<PassSettings> passSettings;
 	std::unique_ptr<RequiredBufferInfo> requiredBufferInfo;
 };
 
@@ -5582,125 +5570,22 @@ struct RenderPath::Pass
 
 
 ========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Render\RenderPathStructure\RenderPass\RequiredInfo\BufferRequiredInfo\BufferRequiredInfo.cpp ===
-========================================
-#include "PreCompileHeader.h"
-#include "BufferRequiredInfo.h"
-
-
-void RenderPath::Pass::RequiredBufferInfo::Add
-(
-	DXGI_FORMAT format_,
-	std::array<float, 4> clearColor_,
-	uint32_t width_,
-	uint32_t height_
-)
-{
-	colorBuffers.emplace_back(format_, clearColor_, width_, height_);
-}
-
-void RenderPath::Pass::RequiredBufferInfo::Add
-(
-	DXGI_FORMAT dsvFormat_,
-	DXGI_FORMAT srvFormat_,
-	float clearDepth_,
-	float clearStencil_
-)
-{
-	depthStencilBuffer.emplace(dsvFormat_, srvFormat_, clearDepth_, clearStencil_);
-
-}
-
-
-
-
-========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Render\RenderPathStructure\RenderPass\RequiredInfo\BufferRequiredInfo\BufferRequiredInfo.h ===
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Render\RenderPathStructure\RenderPass\RenderPassBluePrint\RenderPassBluePrint.h ===
 ========================================
 #pragma once
-#include "../../RenderPass.h"
+#include "../../ShaderPathComponent.h"
+#include "../../RenderPassComponent.h"
 
 
-///そのパスで使用するバッファの情報をまとめたもの
-struct RenderPath::Pass::RequiredBufferInfo
-{
-	struct ColorBuffer
-	{
-		DXGI_FORMAT format;
-		std::array<float, 4> clearColor{};
-		uint32_t width{};
-		uint32_t height{};
-		//Pass間でバインドするときに使用
-		std::string name = "";
-
-		ColorBuffer
-		(
-			DXGI_FORMAT format_,
-			std::array<float, 4> clearColor_,
-			uint32_t width_,
-			uint32_t height_
-		) :format(format_), clearColor(clearColor_), width(width_), height(height_)
-		{
-
-		}
-	};
-
-	struct DepthStencilBuffer
-	{
-		DepthStencilBuffer
-		(
-			DXGI_FORMAT dsvFormat_,
-			DXGI_FORMAT srvFormat_,
-			float clearDepth_,
-			float clearStencil_
-		) :dsvFormat(dsvFormat_), srvFormat(srvFormat_), clearDepth(clearDepth_), clearStencil(clearStencil_)
-		{
-
-		}
-		DXGI_FORMAT dsvFormat;
-		DXGI_FORMAT srvFormat;
-		float clearDepth{};
-		float clearStencil{};
-	};
-
-	std::vector<ColorBuffer> colorBuffers;
-	std::optional<DepthStencilBuffer> depthStencilBuffer;
-
-	void Add
-	(
-		DXGI_FORMAT format_,
-		std::array<float, 4> clearColor_,
-		uint32_t width_,
-		uint32_t height_
-	);
-
-	void Add
-	(
-		DXGI_FORMAT dsvFormat_,
-		DXGI_FORMAT srvFormat_,
-		float clearDepth_,
-		float clearStencil_
-	);
-};
-
-
-
-
-========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Render\RenderPathStructure\RenderPathBluePrint\RenderPassBluePrint.h ===
-========================================
-#pragma once
-#include "../ShaderPathComponent.h"
-#include "../RenderPathComponent.h"
-
-
-///レンダーパスの設計図
+///レンダーPassの設計図
 namespace RenderPassBluePrint
 {
-	//テーブルから、使用するシェーダーの名前(キー)をShaderComponentをもとに定める
+	//使用するシェーダーの名前(キー)をShaderComponentをもとに定める
 	struct ShaderTable;
-	//テーブルから、使用するカラーバッファ、ディプスバッファを定める
+	//使用するカラーバッファ、ディプスバッファの情報を定める
 	struct BufferTable;
+	//DepthEnable、DepthTestを定める
+	struct RenderPassSettingTable;
 
 };
 
@@ -5708,28 +5593,28 @@ namespace RenderPassBluePrint
 
 
 
-
 ========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Render\RenderPathStructure\RenderPathBluePrint\BufferTable\RenderPassBufferTable.cpp ===
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Render\RenderPathStructure\RenderPass\RenderPassBluePrint\BufferTable\RenderPassBufferTable.cpp ===
 ========================================
 #include "PreCompileHeader.h"
 #include "RenderPassBufferTable.h"
 
 
-std::unique_ptr<RenderPath::Pass::RequiredBufferInfo> RenderPassBluePrint::BufferTable::BufferInfoTable(RenderPathComponent::Pass pass_)
+std::unique_ptr<RenderPath::Pass::RequiredBufferInfo> RenderPassBluePrint::BufferTable::BufferInfoTable(RenderPassComponent ::Pass pass_)
 {
 	std::unique_ptr<RenderPath::Pass::RequiredBufferInfo> info(new RenderPath::Pass::RequiredBufferInfo);
 
 	switch (pass_)
 	{
-	case RenderPathComponent::Pass::kCreateSceneTexture:
+	case RenderPassComponent ::Pass::kCreateSceneTexture:
 		
 		info->Add
 		(
 			DXGI_FORMAT_R8G8B8A8_UNORM_SRGB,
 			{ 0.0f,0.0f, 0.0f, 0.0f },
 			ProjectConfig::Window::kWidth,
-			ProjectConfig::Window::kHeight
+			ProjectConfig::Window::kHeight,
+			"scene"
 		);
 
 		info->Add
@@ -5737,12 +5622,13 @@ std::unique_ptr<RenderPath::Pass::RequiredBufferInfo> RenderPassBluePrint::Buffe
 			DXGI_FORMAT_D24_UNORM_S8_UINT,
 			DXGI_FORMAT_R24_UNORM_X8_TYPELESS,
 			0.0f,
-			0.0f
+			0.0f,
+			"scene"
 		);
 
 		break;
 
-	case RenderPathComponent::Pass::kFinal:
+	case RenderPassComponent ::Pass::kFinal:
 		///FinalPassは特にすることないかな
 
 		break;
@@ -5764,15 +5650,15 @@ std::unique_ptr<RenderPath::Pass::RequiredBufferInfo> RenderPassBluePrint::Buffe
 
 
 ========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Render\RenderPathStructure\RenderPathBluePrint\BufferTable\RenderPassBufferTable.h ===
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Render\RenderPathStructure\RenderPass\RenderPassBluePrint\BufferTable\RenderPassBufferTable.h ===
 ========================================
 #pragma once
 #include "../RenderPassBluePrint.h"
-#include "../../RenderPass/RequiredInfo/BufferRequiredInfo/BufferRequiredInfo.h"
+#include "../../RequiredInfo/BufferRequiredInfo/BufferRequiredInfo.h"
 
 struct RenderPassBluePrint::BufferTable
 {
-	std::unique_ptr<RenderPath::Pass::RequiredBufferInfo> BufferInfoTable(RenderPathComponent::Pass pass_);
+	std::unique_ptr<RenderPath::Pass::RequiredBufferInfo> BufferInfoTable(RenderPassComponent ::Pass pass_);
 
 };
 
@@ -5781,7 +5667,65 @@ struct RenderPassBluePrint::BufferTable
 
 
 ========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Render\RenderPathStructure\RenderPathBluePrint\ShaderTable\ShaderTable.cpp ===
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Render\RenderPathStructure\RenderPass\RenderPassBluePrint\RenderPassSettingTable\RenderPassSettingTable.cpp ===
+========================================
+#include "PreCompileHeader.h"
+#include "RenderPassSettingTable.h"
+
+
+RenderPath::Pass::PassSettings RenderPassBluePrint::RenderPassSettingTable::SettingTable(RenderPassComponent::Pass pass_)
+{
+	RenderPath::Pass::PassSettings settings;
+
+	switch (pass_)
+	{
+	case RenderPassComponent::Pass::kCreateSceneTexture:
+
+		//当然
+		settings.depthEnable = RenderPassComponent::DepthEnable::kEnable;
+		//基本reverseZなんで
+		settings.depthTest = RenderPassComponent::DepthTest::kGreaterEqual;
+
+		break;
+
+	case RenderPassComponent::Pass::kFinal:
+		///ファイナルの責務はrenderContextではないので消す可能性が高い
+
+
+		break;
+
+	default:
+		ErrorMessageOutput::Assert::OutputError("無効なPassです", "DepthConfigTable.cpp");
+
+		break;
+
+	}
+
+	return settings;
+}
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Render\RenderPathStructure\RenderPass\RenderPassBluePrint\RenderPassSettingTable\RenderPassSettingTable.h ===
+========================================
+#pragma once
+#include "../RenderPassBluePrint.h"
+#include "../../RequiredInfo/PassSettings/PassSettings.h"
+
+
+struct RenderPassBluePrint::RenderPassSettingTable
+{
+
+	RenderPath::Pass::PassSettings SettingTable(RenderPassComponent::Pass pass_);
+};
+
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Render\RenderPathStructure\RenderPass\RenderPassBluePrint\ShaderTable\ShaderTable.cpp ===
 ========================================
 #include "PreCompileHeader.h"
 #include "ShaderTable.h"
@@ -5794,7 +5738,7 @@ namespace
 
 using namespace RenderPassBluePrint;
 using namespace ShaderPathComponent;
-using namespace RenderPathComponent;
+using namespace RenderPassComponent ;
 
 
 template<>
@@ -5855,7 +5799,7 @@ std::string ShaderTable::Watch
 
 
 ========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Render\RenderPathStructure\RenderPathBluePrint\ShaderTable\ShaderTable.h ===
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Render\RenderPathStructure\RenderPass\RenderPassBluePrint\ShaderTable\ShaderTable.h ===
 ========================================
 #pragma once
 #include "../RenderPassBluePrint.h"
@@ -5866,7 +5810,7 @@ std::string ShaderTable::Watch
 struct RenderPassBluePrint::ShaderTable
 {
 	template<typename ShaderComponent>
-	std::string Watch(ShaderComponent shaderComponent_, RenderPathComponent::Pass passType_);
+	std::string Watch(ShaderComponent shaderComponent_, RenderPassComponent ::Pass passType_);
 
 };
 
@@ -5874,16 +5818,166 @@ template<>
 std::string RenderPassBluePrint::ShaderTable::Watch
 (
 	ShaderPathComponent::MeshType meshType_,
-	RenderPathComponent::Pass passType_
+	RenderPassComponent ::Pass passType_
 );
 
 template<>
 std::string RenderPassBluePrint::ShaderTable::Watch
 (
 	ShaderPathComponent::MaterialType materialType_,
-	RenderPathComponent::Pass passType_
+	RenderPassComponent ::Pass passType_
 );
 
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Render\RenderPathStructure\RenderPass\RequiredInfo\BufferRequiredInfo\BufferRequiredInfo.cpp ===
+========================================
+#include "PreCompileHeader.h"
+#include "BufferRequiredInfo.h"
+
+
+void RenderPath::Pass::RequiredBufferInfo::Add
+(
+	DXGI_FORMAT format_,
+	std::array<float, 4> clearColor_,
+	uint32_t width_,
+	uint32_t height_,
+	std::string name_
+)
+{
+	name_ += "Texture";
+	colorBuffers.emplace_back(format_, clearColor_, width_, height_, name_);
+}
+
+void RenderPath::Pass::RequiredBufferInfo::Add
+(
+	DXGI_FORMAT dsvFormat_,
+	DXGI_FORMAT srvFormat_,
+	float clearDepth_,
+	float clearStencil_,
+	std::string name_
+
+)
+{
+	name_ += "DepthStencilTexture";
+	depthStencilBuffer.emplace(dsvFormat_, srvFormat_, clearDepth_, clearStencil_, name_);
+
+}
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Render\RenderPathStructure\RenderPass\RequiredInfo\BufferRequiredInfo\BufferRequiredInfo.h ===
+========================================
+#pragma once
+#include "../../RenderPass.h"
+
+
+///そのパスで使用するバッファの情報をまとめたもの
+struct RenderPath::Pass::RequiredBufferInfo
+{
+	struct ColorBuffer
+	{
+		DXGI_FORMAT format;
+		std::array<float, 4> clearColor{};
+		uint32_t width{};
+		uint32_t height{};
+		//Pass間でバインドするときに使用
+		std::string name = "";
+		BufferUniqueID bufferID;
+
+		ColorBuffer
+		(
+			DXGI_FORMAT format_,
+			std::array<float, 4> clearColor_,
+			uint32_t width_,
+			uint32_t height_,
+			std::string name_
+		) :format(format_), clearColor(clearColor_), width(width_), height(height_), name(name_)
+		{
+
+		}
+	};
+
+	struct DepthStencilBuffer
+	{
+		DepthStencilBuffer
+		(
+			DXGI_FORMAT dsvFormat_,
+			DXGI_FORMAT srvFormat_,
+			float clearDepth_,
+			float clearStencil_,
+			std::string name_
+		) :dsvFormat(dsvFormat_), srvFormat(srvFormat_), clearDepth(clearDepth_), clearStencil(clearStencil_), name(name_)
+		{
+
+		}
+		DXGI_FORMAT dsvFormat;
+		DXGI_FORMAT srvFormat;
+		float clearDepth{};
+		float clearStencil{};
+		std::string name = "";
+		BufferUniqueID bufferID;
+
+	};
+
+	///テクスチャとして読む	ときに必要
+	struct Texture
+	{
+		//SRVヒープ上のインデックス
+		uint32_t srvHeapIndex{};
+		//バリアを張るため
+		D3D12_RESOURCE_BARRIER barrier{};
+	};
+
+	///描画先として書き込むときに必要
+	struct RenderTarget
+	{
+		//RTVヒープ上のインデックス
+		D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle{};
+		//バリアを張るため
+		D3D12_RESOURCE_BARRIER barrier{};
+	};
+
+	std::vector<ColorBuffer> colorBuffers;
+	std::optional<DepthStencilBuffer> depthStencilBuffer;
+
+	void Add
+	(
+		DXGI_FORMAT format_,
+		std::array<float, 4> clearColor_,
+		uint32_t width_,
+		uint32_t height_,
+		std::string name_
+	);
+
+	void Add
+	(
+		DXGI_FORMAT dsvFormat_,
+		DXGI_FORMAT srvFormat_,
+		float clearDepth_,
+		float clearStencil_,
+		std::string name_
+	);
+};
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Render\RenderPathStructure\RenderPass\RequiredInfo\PassSettings\PassSettings.h ===
+========================================
+#pragma once
+#include "../../RenderPass.h"
+
+struct RenderPath::Pass::PassSettings
+{
+    RenderPassComponent::DepthTest depthTest;
+    RenderPassComponent::DepthEnable depthEnable;
+};
 
 
 
@@ -6019,7 +6113,7 @@ public:
 
 //ランタイム処理ツール
 #include "RuntimeBufferManagementSystems/BufferDispatcher/BufferDispatcher.h"
-#include "RuntimeBufferManagementSystems/BufferInfoExtractors/RenderTargetBufferInfoExtractor/RenderTargetBufferInfoExtractor.h"
+#include "RuntimeBufferManagementSystems/BufferInfoExtractor/BufferInfoExtractor.h"
 
 
 //ランライム
@@ -6142,8 +6236,8 @@ public:
 
 	//ResourceCreatorとViewCreatorでバッファを生成
 	class BufferAssembler;
-	//レンダーターゲット系バッファの描画パス構築に必要な情報の抽出とそのリソースのSwapを行う
-	class RenderTargetBufferInfoExtractor;
+	//ランタイムパス構築に必要な情報の抽出とそのリソースのSwapを行う
+	class BufferInfoExtractor;
 
 	BufferContext
 	(
@@ -6159,7 +6253,7 @@ public:
 	//ディスパッチャー
 	std::unique_ptr<BufferDispatcher> bufferDispatcher;
 	//Extractors
-	std::unique_ptr<RenderTargetBufferInfoExtractor> renderTargetBufferInfoExtractor;
+	std::unique_ptr<BufferInfoExtractor> BufferInfoExtractor;
 
 private:
 
@@ -6195,7 +6289,7 @@ struct BufferContext::BufferAccessKey
 {
 private:
 
-	friend class RenderTargetBufferInfoExtractor;
+	friend class BufferInfoExtractor;
 	explicit BufferAccessKey() = default;
 };
 
@@ -8501,7 +8595,7 @@ uint32_t ColorBuffer::OutProperSRVHeapIndex()const
 //カラーバッファクラス
 class ColorBuffer final : public GPUBufferBehavior,IColorBuffer,IRenderTargetBuffer,IShaderBuffer
 {
-	friend class BufferContext::RenderTargetBufferInfoExtractor;
+	friend class BufferContext::BufferInfoExtractor;
 
 public:
 
@@ -8768,7 +8862,7 @@ uint32_t DepthStencilBuffer::OutProperSRVHeapIndex()const
 //定数バッファクラス
 class DepthStencilBuffer final : public GPUBufferBehavior, IRenderTargetBuffer,IShaderBuffer,IDepthBuffer
 {
-	friend class BufferContext::RenderTargetBufferInfoExtractor;
+	friend class BufferContext::BufferInfoExtractor;
 
 public:
 
@@ -8961,71 +9055,21 @@ private:
 
 
 ========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Buffer\RuntimeBufferManagementSystems\BufferInfoExtractors\ComputeBufferInfoExtractor\ComputeBufferInfoExtractor.cpp ===
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Buffer\RuntimeBufferManagementSystems\BufferInfoExtractor\BufferInfoExtractor.cpp ===
 ========================================
 
-#include "ComputeBufferInfoExtractor.h"
+#include "BufferInfoExtractor.h"
+
+#include "../../BufferDefinition/GPUBuffer/ColorBuffer/ColorBuffer.h"
+#include "../../BufferDefinition/GPUBuffer/DepthStencilBuffer/DepthStencilBuffer.h"
 
 
-
-
-========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Buffer\RuntimeBufferManagementSystems\BufferInfoExtractors\ComputeBufferInfoExtractor\ComputeBufferInfoExtractor.h ===
-========================================
-#pragma once
-#include "../../../BufferContext.h"
-
-
-class BufferContext::ComputeBufferInfoExtractor
-{
-
-};
-
-
-
-
-
-========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Buffer\RuntimeBufferManagementSystems\BufferInfoExtractors\FrameBufferedBufferInfoExtractor\FrameBufferedBufferInfoExtractor.cpp ===
-========================================
-
-#include "FrameBufferedBufferInfoExtractor.h"
-
-
-
-
-========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Buffer\RuntimeBufferManagementSystems\BufferInfoExtractors\FrameBufferedBufferInfoExtractor\FrameBufferedBufferInfoExtractor.h ===
-========================================
-#pragma once
-#include "../../../BufferContext.h"
-
-
-class BufferContext::FrameBufferedBufferInfoExtractor
-{
-
-};
-
-
-
-
-
-========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Buffer\RuntimeBufferManagementSystems\BufferInfoExtractors\RenderTargetBufferInfoExtractor\RenderTargetBufferInfoExtractor.cpp ===
-========================================
-
-#include "RenderTargetBufferInfoExtractor.h"
-
-#include "../../../BufferDefinition/GPUBuffer/ColorBuffer/ColorBuffer.h"
-#include "../../../BufferDefinition/GPUBuffer/DepthStencilBuffer/DepthStencilBuffer.h"
-
-
-BufferContext::RenderTargetBufferInfoExtractor::RenderTargetBufferInfoExtractor()
+BufferContext::BufferInfoExtractor::BufferInfoExtractor()
 {
 	tmpBufferContainer.reserve(kBufferContainerSize);
 }
 
-void BufferContext::RenderTargetBufferInfoExtractor::SwapApplicableBuffer()
+void BufferContext::BufferInfoExtractor::SwapApplicableBuffer()
 {
 	for (auto itr = tmpBufferContainer.begin();itr != tmpBufferContainer.end();++itr)
 	{
@@ -9038,77 +9082,72 @@ void BufferContext::RenderTargetBufferInfoExtractor::SwapApplicableBuffer()
 
 	tmpBufferContainer.clear();
 }
-///+///////////////////////////////////////////////////////////////////////////////////////////////////////
-///+///////////////////////////////////////////////////////////////////////////////////////////////////////
-///+///////////////////////////////////////////////////////////////////////////////////////////////////////
-template<>
-RequiredRenderingInfo::ColorBuffer BufferContext::RenderTargetBufferInfoExtractor::Exstract(ColorBuffer* buffer_)
-{
-	RequiredRenderingInfo::ColorBuffer info;
 
+template<>
+RenderPath::Pass::RequiredBufferInfo::Texture BufferContext::BufferInfoExtractor::Exstract(ColorBuffer* buffer_)
+{
+	RenderPath::Pass::RequiredBufferInfo::Texture info;
+
+	info.barrier = buffer_->CreateBarrier(Usage::kRead);
+	info.srvHeapIndex = buffer_->OutProperSRVHeapIndex();
+
+	return info;
+}
+
+template<>
+RenderPath::Pass::RequiredBufferInfo::RenderTarget BufferContext::BufferInfoExtractor::Exstract(ColorBuffer* buffer_)
+{
+	RenderPath::Pass::RequiredBufferInfo::RenderTarget info;
+
+	info.barrier = buffer_->CreateBarrier(Usage::kWrite);
 	info.cpuHandle = buffer_->OutProperRTVHeapHandle();
-	info.barrier = buffer_->CreateBarrier(Usage::kWrite);
 
 	return info;
 }
 
-template<>
-RequiredRenderingInfo::Texture BufferContext::RenderTargetBufferInfoExtractor::Exstract(ColorBuffer* buffer_)
-{
-	RequiredRenderingInfo::Texture info;
 
-	info.srvHeapIndex = buffer_->OutProperSRVHeapIndex();
+template<>
+RenderPath::Pass::RequiredBufferInfo::Texture BufferContext::BufferInfoExtractor::Exstract(DepthStencilBuffer* buffer_)
+{
+	RenderPath::Pass::RequiredBufferInfo::Texture info;
+
 	info.barrier = buffer_->CreateBarrier(Usage::kRead);
-
-	return info;
-}
-
-///+///////////////////////////////////////////////////////////////////////////////////////////////////////
-///+///////////////////////////////////////////////////////////////////////////////////////////////////////
-///+///////////////////////////////////////////////////////////////////////////////////////////////////////
-template<>
-RequiredRenderingInfo::DepthBuffer BufferContext::RenderTargetBufferInfoExtractor::Exstract(DepthStencilBuffer* buffer_)
-{
-	RequiredRenderingInfo::DepthBuffer info;
-	info.dsvCpuHandle = buffer_->OutProperDSVHeapHandle();
-	info.barrier = buffer_->CreateBarrier(Usage::kWrite);
-
-	return info;
-
-}
-
-template<>
-RequiredRenderingInfo::Texture BufferContext::RenderTargetBufferInfoExtractor::Exstract(DepthStencilBuffer* buffer_)
-{
-	RequiredRenderingInfo::Texture info;
-
 	info.srvHeapIndex = buffer_->OutProperSRVHeapIndex();
-	info.barrier = buffer_->CreateBarrier(Usage::kRead);
+
+	return info;
+
+}
+
+template<>
+RenderPath::Pass::RequiredBufferInfo::RenderTarget BufferContext::BufferInfoExtractor::Exstract(DepthStencilBuffer* buffer_)
+{
+	RenderPath::Pass::RequiredBufferInfo::RenderTarget info;
+
+	info.barrier = buffer_->CreateBarrier(Usage::kWrite);
+	info.cpuHandle = buffer_->OutProperDSVHeapHandle();
 
 	return info;
 }
-
-
 
 
 
 
 ========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Buffer\RuntimeBufferManagementSystems\BufferInfoExtractors\RenderTargetBufferInfoExtractor\RenderTargetBufferInfoExtractor.h ===
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Buffer\RuntimeBufferManagementSystems\BufferInfoExtractor\BufferInfoExtractor.h ===
 ========================================
 #pragma once
-#include "../../../BufferContext.h"
-#include "../../../../../Render/RequiredRenderingInfo.h"
+#include "../../BufferContext.h"
+#include "../../../../Render/RenderPathStructure/RenderPass/RequiredInfo/BufferRequiredInfo/BufferRequiredInfo.h"
 
 class DepthStencilBuffer;
 class ColorBuffer;
 struct IRenderTargetBuffer;
 
-class BufferContext::RenderTargetBufferInfoExtractor
+class BufferContext::BufferInfoExtractor
 {
 public:
 
-	RenderTargetBufferInfoExtractor();
+	BufferInfoExtractor();
 
 	//該当のバッファから描画パス構築に必要な情報を抽出する
 	template<typename InfoType,typename BufferType>
@@ -9129,27 +9168,269 @@ private:
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////
 template<>
-RequiredRenderingInfo::ColorBuffer BufferContext::RenderTargetBufferInfoExtractor::Exstract(ColorBuffer* buffer_);
+RenderPath::Pass::RequiredBufferInfo::Texture BufferContext::BufferInfoExtractor::Exstract(ColorBuffer* buffer_);
 
 template<>
-RequiredRenderingInfo::Texture BufferContext::RenderTargetBufferInfoExtractor::Exstract(ColorBuffer* buffer_);
+RenderPath::Pass::RequiredBufferInfo::RenderTarget BufferContext::BufferInfoExtractor::Exstract(ColorBuffer* buffer_);
 
-///+///////////////////////////////////////////////////////////////////////////////////////////////////////
-///+///////////////////////////////////////////////////////////////////////////////////////////////////////
-///+///////////////////////////////////////////////////////////////////////////////////////////////////////
-template<>
-RequiredRenderingInfo::DepthBuffer BufferContext::RenderTargetBufferInfoExtractor::Exstract(DepthStencilBuffer* buffer_);
 
 template<>
-RequiredRenderingInfo::Texture BufferContext::RenderTargetBufferInfoExtractor::Exstract(DepthStencilBuffer* buffer_);
+RenderPath::Pass::RequiredBufferInfo::Texture BufferContext::BufferInfoExtractor::Exstract(DepthStencilBuffer* buffer_);
+
+template<>
+RenderPath::Pass::RequiredBufferInfo::RenderTarget BufferContext::BufferInfoExtractor::Exstract(DepthStencilBuffer* buffer_);
 
 
 
 
 ========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Mesh\kara.h ===
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Mesh\MeshContext.cpp ===
+========================================
+#include "PreCompileHeader.h"
+#include "MeshContext.h"
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Mesh\MeshContext.h ===
 ========================================
 #pragma once
+
+class Nexus;
+
+class MeshContext
+{
+protected:
+
+	//ファイルからメッシュ情報を読み込む
+	class ModelDataLoader;
+
+public:
+
+	struct InstanceKey;
+	//MeshLoaderを使ってモデルを生成する。
+	class ModelCreator;
+
+};
+
+struct MeshContext::InstanceKey
+{
+private:
+
+	friend class Nexus;
+	explicit InstanceKey() = default;
+};
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Mesh\CreateModelTools\ModelCreator\ModelCreator.cpp ===
+========================================
+#include "PreCompileHeader.h"
+#include "ModelCreator.h"
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Mesh\CreateModelTools\ModelCreator\ModelCreator.h ===
+========================================
+#pragma once
+#include "../../MeshContext.h"
+
+
+class MeshContext::ModelCreator
+{
+
+};
+
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Mesh\CreateModelTools\ModelDataLoader\ModelDataLoader.cpp ===
+========================================
+#include "PreCompileHeader.h"
+#include "ModelDataLoader.h"
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Mesh\CreateModelTools\ModelDataLoader\ModelDataLoader.h ===
+========================================
+#pragma once
+#include "../../MeshContext.h"
+
+
+class MeshContext::ModelDataLoader
+{
+	class ModelDataCache;
+
+
+
+};
+
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Mesh\CreateModelTools\ModelDataLoader\ModelDataCache\ModelDataCache.cpp ===
+========================================
+#include "PreCompileHeader.h"
+#include "ModelDataCache.h"
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Mesh\CreateModelTools\ModelDataLoader\ModelDataCache\ModelDataCache.h ===
+========================================
+#pragma once
+#include "../ModelDataLoader.h"
+#include "../../../ModelStructure/ModelData/ModelData.h"
+
+class MeshContext::ModelDataLoader::ModelDataCache
+{
+public:
+
+
+private:
+
+	std::unordered_map<std::string, std::unique_ptr<ModelData>> modelDataCache;
+};
+
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Mesh\ModelStructure\Model.cpp ===
+========================================
+#include "PreCompileHeader.h"
+#include "Model.h"
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Mesh\ModelStructure\Model.h ===
+========================================
+#pragma once
+
+struct Model
+{
+private:
+
+	static constexpr MeshUniqueID kInvalidID = -1;
+
+public:
+
+	MeshUniqueID meshID = kInvalidID;
+	MaterialUniqueID materialID = kInvalidID;
+};
+
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Mesh\ModelStructure\ModelData\ModelData.cpp ===
+========================================
+#include "PreCompileHeader.h"
+#include "ModelData.h"
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Mesh\ModelStructure\ModelData\ModelData.h ===
+========================================
+#pragma once
+#include "ResourceMesh/ResourceMesh.h"
+#include "ResourceMaterial/ResourceMaterial.h"
+
+
+struct ModelData
+{
+	std::vector<ResourceMesh> resourceMesh;
+	std::vector<ResourceMaterial> resourceMaterial;
+
+};
+
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Mesh\ModelStructure\ModelData\ResourceMaterial\ResourceMaterial.cpp ===
+========================================
+#include "PreCompileHeader.h"
+#include "ResourceMaterial.h"
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Mesh\ModelStructure\ModelData\ResourceMaterial\ResourceMaterial.h ===
+========================================
+#pragma once
+class ResourceMaterial
+{
+};
+
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Mesh\ModelStructure\ModelData\ResourceMaterial\Material\Material.h ===
+========================================
+#pragma once
+class Material
+{
+};
+
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Mesh\ModelStructure\ModelData\ResourceMesh\ResourceMesh.cpp ===
+========================================
+#include "PreCompileHeader.h"
+#include "ResourceMesh.h"
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Mesh\ModelStructure\ModelData\ResourceMesh\ResourceMesh.h ===
+========================================
+#pragma once
+#include "../../../../../../../Assets/Shared/StructuredBuffer.h"
+
+
+struct ResourceMesh
+{
+    //頂点情報の原本
+	std::vector<StandardVertex> vertices;
+	
+    std::vector<uint32_t> indices;
+
+    ///元の頂点番号への対応表
+    std::vector<UniqueVertexIndex> uniqueVertexIndices;
+    //1スレッドグループが処理する頂点・三角形の範囲情報
+    std::vector<Meshlet> meshlets;
+    ///3つのローカル頂点番号を保持する三角形インデックス。パッキングされている
+    std::vector<PrimitiveIndex> primitiveIndices;
+
+};
+
 
 
 
@@ -9269,7 +9550,7 @@ private:
 ========================================
 #pragma once
 #include "../../../Render/RenderPathStructure/RenderStateComponent.h"
-#include "../../../Render/RenderPathStructure/RenderPathComponent.h"
+#include "../../../Render/RenderPathStructure/RenderPassComponent.h"
 #include "../../../../External/d3dx12/d3dx12.h"
 
 namespace PipelineStateDesc
@@ -9305,8 +9586,8 @@ namespace PipelineStateDesc
     {
         DXGI_FORMAT dsvFormat;
         RenderStateComponent::BlendMode blendMode = RenderStateComponent::BlendMode::kOpaque;
-        RenderPathComponent::DepthEnable depthEnable = RenderPathComponent::DepthEnable::kEnable;
-        RenderPathComponent::DepthTest depthTest = RenderPathComponent::DepthTest::kGreaterEqual;
+        RenderPassComponent::DepthEnable depthEnable = RenderPassComponent::DepthEnable::kEnable;
+        RenderPassComponent::DepthTest depthTest = RenderPassComponent::DepthTest::kGreaterEqual;
         float clearDepth = 0.0f;
         std::string bufferName;
     };
@@ -9759,7 +10040,7 @@ void CreateDepthStencilDesc::SetBranchedDetails(CD3DX12_DEPTH_STENCIL_DESC* desc
 void CreateDepthStencilDesc::SetDetailsDirectly(CD3DX12_DEPTH_STENCIL_DESC* desc_, const PipelineStateDesc::DepthStencilDesc& srcDesc_)
 {
 	desc_->DepthEnable = BOOL(srcDesc_.depthEnable);
-	desc_->DepthFunc = RenderPathComponent::Convert(srcDesc_.depthTest);
+	desc_->DepthFunc = RenderPassComponent ::Convert(srcDesc_.depthTest);
 }
 
 
@@ -9896,7 +10177,7 @@ struct CreateSampleDesc
 
 
 using namespace RenderStateComponent;
-using namespace RenderPathComponent;
+using namespace RenderPassComponent ;
 
 void PSO_InfoOutputter::OutputGraphicsPSOInfo
 (
@@ -10080,8 +10361,8 @@ private:
 	std::string const DebugTextTable(RenderStateComponent::BlendMode mode_) const;
 	std::string const DebugTextTable(RenderStateComponent::FillMode mode_) const;
 	std::string const DebugTextTable(RenderStateComponent::CullMode mode_) const;
-	std::string const DebugTextTable(RenderPathComponent::DepthEnable write_) const;
-	std::string const DebugTextTable(RenderPathComponent::DepthTest test_) const;
+	std::string const DebugTextTable(RenderPassComponent ::DepthEnable write_) const;
+	std::string const DebugTextTable(RenderPassComponent ::DepthTest test_) const;
 
 };
 
@@ -11602,11 +11883,11 @@ Vector2 operator*(Vector2 const& dst_vec_, float const multipleNum)
 
 struct Vector2
 {
-	float x = 0.0f;
-	float y = 0.0f;
+	float x{};
+	float y{};
 
-	Vector2(float entries[2]) : x(entries[0]), y(entries[1]) {}
-	Vector2(float u_, float v_) : x(u_), y(v_) {}
+	Vector2(std::array<float,2> entries_) : x(entries_[0]), y(entries_[1]) {}
+	Vector2(float x_, float y_) : x(x_), y(y_) {}
 	Vector2() {};
 	float GetMagnitutde();
 	Vector2 GetNormalized();
@@ -11756,7 +12037,7 @@ struct Vector3
 
 	inline Vector3(float x_, float y_, float z_) : data(x_, y_, z_) {}
 
-	inline Vector3(float entries_[3]) :data(entries_[0], entries_[1], entries_[2]) {}
+	inline Vector3(std::array<float , 3> entries_) : data(entries_[0], entries_[1], entries_[2]) {}
 
 	inline Vector3 operator+(const Vector3 other_)
 	{
@@ -11844,6 +12125,41 @@ inline Vector3 operator*(const float num_,Vector3 vec_)
 {
 	return vec_ * num_;
 }
+
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Math\Vector\Vector4.cpp ===
+========================================
+#include "PreCompileHeader.h"
+#include "Vector4.h"
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Math\Vector\Vector4.h ===
+========================================
+#pragma once
+
+
+///CPU⇔GPUデータ間のやり取りで使う
+///データアライメント揃えるの汚いしバグの温床なんで
+template<typename T>
+struct Vector4
+{
+	T x{};
+	T y{};
+	T z{};
+	T w{};
+
+	Vector4(std::array<T,4> entries) : x(entries[0]), y(entries[1]), z(entries[2]), w(entries[3]) {}
+	Vector4(T x_, T y_, T z_, T w_) : x(x_), y(y_), z(z_), w(w_) {}
+	Vector4() {}
+
+};
 
 
 

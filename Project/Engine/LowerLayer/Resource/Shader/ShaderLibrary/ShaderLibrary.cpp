@@ -88,7 +88,7 @@ std::unordered_map<std::string, std::string> ShaderLibrary::LoadShaderRegistry(c
         {
             std::string key = match[1].str();
             std::string value = match[2].str();
-
+                
             registry[key] = value;
         }
     }

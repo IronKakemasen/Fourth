@@ -24,7 +24,7 @@ RenderPath::Pass::PassSettings RenderPassBluePrint::RenderPassSettingTable::Sett
 		break;
 
 	default:
-		ErrorMessageOutput::Assert::OutputError("無効なPassです", "DepthConfigTable.cpp");
+		ErrorMessageOutput::Assert::OutputError("無効なPassです", "RenderPassSettingTable.cpp");
 
 		break;
 
