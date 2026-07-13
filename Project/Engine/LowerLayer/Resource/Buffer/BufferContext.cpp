@@ -57,9 +57,9 @@ void BufferContext::InstantiateBufferCreator
 	auto* viewCreator = descriptorHeapContext_->GetViewCreator(DescriptorHeapContext::ViewCreatorGetKey{});
 	
 	std::unique_ptr<ResourceCreator> resourceCreator(std::make_unique<ResourceCreator>(instanceKey_, createResourceCommand_));
-	Logger::Log("Create: ResourceCreator", fileName);
+	Logger::Log("Instantiate: ResourceCreator", fileName);
 	std::unique_ptr<BufferAssembler> bufferAssembler(std::make_unique<BufferAssembler>(instanceKey_, std::move(resourceCreator), viewCreator));
-	Logger::Log("Create: bufferAssembler", fileName);
+	Logger::Log("Instantiate: bufferAssembler", fileName);
 	std::unique_ptr<BufferCollector> bufferCollector
 	(
 		std::make_unique<BufferCollector>
@@ -72,7 +72,7 @@ void BufferContext::InstantiateBufferCreator
 		)
 	);
 
-	Logger::Log("Create: bufferCollector", fileName);
+	Logger::Log("Instantiate: bufferCollector", fileName);
 
 	bufferCreator.reset(new BufferCreator(std::move(bufferAssembler), std::move(bufferCollector)));
 	Logger::Log("Instantiate: BufferCreator", fileName);

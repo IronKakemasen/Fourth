@@ -10,6 +10,7 @@ class ShaderContext;
 class PSO_Context;
 class RootSignatureContext;
 class RenderContext;
+class MeshContext;
 
 
 //交易場
@@ -27,6 +28,7 @@ class Nexus
 		kShaderContext,
 		kPSO_Context,
 		kRootSignatureContext,
+		kMeshContext,
 		kRenderContext
 
 
@@ -51,7 +53,7 @@ private:
 	class InstanceLimiter;
 
 
-	//IDXGIFactory7、IDXGIAdapter4、ID3D12Device8を持っている。
+	//IDXGIFactory7、IDXGIAdapter4、ID3D12Device8を持ち、コアパーツによるコマンドを提供したりする
 	std::unique_ptr<DeviceContext> deviceContext;
 	//ウィンドウを制御するもの
 	std::unique_ptr<WindowContext> windowContext;
@@ -71,8 +73,10 @@ private:
 	std::unique_ptr<RootSignatureContext> rootSignatureContext;
 	//PSOの管理、描画パスの構築
 	std::unique_ptr<RenderContext> renderContext;
-	
+	//モデルクラスの生成、管理
+	std::unique_ptr<MeshContext> meshContext;
 
+	
 	//各Contextクラスの具現化、初期化を行う
 	template<InitSequence initSequence>
 	void Instantiate();

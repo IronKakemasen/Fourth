@@ -4,17 +4,19 @@ class Nexus;
 
 class MeshContext
 {
-protected:
-
-	//ファイルからメッシュ情報を読み込む
-	class ModelDataLoader;
-
 public:
 
 	struct InstanceKey;
+
+	MeshContext(const InstanceKey& key_);
+	~MeshContext();
+
+
+private:
 	//MeshLoaderを使ってモデルを生成する。
 	class ModelCreator;
 
+	std::unique_ptr<ModelCreator> modelCreator;
 };
 
 struct MeshContext::InstanceKey

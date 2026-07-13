@@ -255,7 +255,6 @@
     </ClCompile>
     <ClCompile Include="Engine\Utility\StringConnverter\StringConverter.cpp" />
     <ClCompile Include="Engine\Nexus.cpp" />
-    <ClCompile Include="Engine\Math\Quaternion\Quaternion.cpp" />
     <ClCompile Include="Engine\Math\Vector\Vector2.cpp" />
     <ClCompile Include="Engine\LowerLayer\Core\SwapChain\SwapChainContext.cpp" />
     <ClCompile Include="Engine\LowerLayer\Debug\RuntimeDebugger\DebugSystems\PointerValidator\PointerValidator.cpp" />
@@ -299,7 +298,7 @@
     <ClCompile Include="Engine\LowerLayer\Resource\Mesh\ModelStructure\ModelData\ResourceMesh\ResourceMesh.cpp" />
     <ClCompile Include="Engine\LowerLayer\Resource\Mesh\CreateModelTools\ModelDataLoader\ModelDataCache\ModelDataCache.cpp" />
     <ClCompile Include="Engine\LowerLayer\Resource\Mesh\CreateModelTools\ModelDataLoader\ModelDataLoader.cpp" />
-    <ClCompile Include="Engine\LowerLayer\Resource\Mesh\CreateModelTools\ModelCreator\ModelCreator.cpp" />
+    <ClCompile Include="Engine\LowerLayer\Resource\Mesh\CreateModelTools\ModelCreator.cpp" />
     <ClCompile Include="Engine\LowerLayer\Resource\Mesh\ModelStructure\Model.cpp" />
     <ClCompile Include="Engine\LowerLayer\Resource\Mesh\ModelStructure\ModelData\ResourceMaterial\ResourceMaterial.cpp" />
     <ClCompile Include="Engine\LowerLayer\Resource\Mesh\ModelStructure\ModelData\ModelData.cpp" />
@@ -438,7 +437,7 @@
     <ClInclude Include="Engine\LowerLayer\Resource\Mesh\ModelStructure\ModelData\ResourceMesh\ResourceMesh.h" />
     <ClInclude Include="Engine\LowerLayer\Resource\Mesh\CreateModelTools\ModelDataLoader\ModelDataCache\ModelDataCache.h" />
     <ClInclude Include="Engine\LowerLayer\Resource\Mesh\CreateModelTools\ModelDataLoader\ModelDataLoader.h" />
-    <ClInclude Include="Engine\LowerLayer\Resource\Mesh\CreateModelTools\ModelCreator\ModelCreator.h" />
+    <ClInclude Include="Engine\LowerLayer\Resource\Mesh\CreateModelTools\ModelCreator.h" />
     <ClInclude Include="Engine\LowerLayer\Resource\Mesh\ModelStructure\Model.h" />
     <ClInclude Include="Engine\LowerLayer\Resource\Mesh\ModelStructure\ModelData\ResourceMaterial\ResourceMaterial.h" />
     <ClInclude Include="Engine\LowerLayer\Resource\Mesh\ModelStructure\ModelData\ModelData.h" />

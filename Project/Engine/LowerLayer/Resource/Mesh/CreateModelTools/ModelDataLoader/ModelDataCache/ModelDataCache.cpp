@@ -2,12 +2,12 @@
 #include "ModelDataCache.h"
 
 
-MeshContext::ModelDataLoader::ModelDataCache::ModelDataCache(MeshContext::InstanceKey key_)
+MeshContext::ModelCreator::ModelDataLoader::ModelDataCache::ModelDataCache(MeshContext::InstanceKey key_)
 {
 
 }
 
-std::optional<ModelData> MeshContext::ModelDataLoader::ModelDataCache::FindDuplication(AccessKey key_, std::string fileName_)
+std::optional<ModelData> MeshContext::ModelCreator::ModelDataLoader::ModelDataCache::FindDuplication(AccessKey key_, std::string fileName_)
 {
 	if (modelDataCache.find(fileName_) == modelDataCache.end())
 	{
@@ -27,7 +27,7 @@ std::optional<ModelData> MeshContext::ModelDataLoader::ModelDataCache::FindDupli
 	return std::nullopt;
 }
 
-void MeshContext::ModelDataLoader::ModelDataCache::Register(AccessKey key_, std::string fileName_, const ModelData& data_)
+void MeshContext::ModelCreator::ModelDataLoader::ModelDataCache::Register(AccessKey key_, std::string fileName_, const ModelData& data_)
 {
 	modelDataCache[fileName_] = data_;
 }

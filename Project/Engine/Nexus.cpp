@@ -15,16 +15,16 @@
 #include "LowerLayer/Resource/Shader/ShaderContext.h"
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 #include "LowerLayer/Resource/Buffer/BufferContext.h"
-#include "LowerLayer/Resource/Buffer/BufferCreationSystems/BufferCreator/BufferCreator.h"
-#include "LowerLayer/Resource/Buffer/BufferDefinition/BufferDescriptions/DepthStencilBufferDescription/DepthStencilBufferDescription.h"
-#include "LowerLayer/Resource/Buffer/BufferDefinition/GPUBuffer/DepthStencilBuffer/DepthStencilBuffer.h"
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 #include "LowerLayer/Resource/PSO/PSO_Context.h"
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 #include "LowerLayer/Resource/RootSignature/RootSignatureContext.h"
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+#include "LowerLayer/Resource/Mesh/MeshContext.h"
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 #include "LowerLayer/Render/RenderContext.h"
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
 
 namespace
 {
@@ -75,6 +75,7 @@ Nexus::Nexus()
 	InstantiateInSequence<InitSequence::kShaderContext>();
 	InstantiateInSequence<InitSequence::kPSO_Context>();
 	InstantiateInSequence<InitSequence::kRootSignatureContext>();
+	InstantiateInSequence<InitSequence::kMeshContext>();
 	InstantiateInSequence<InitSequence::kRenderContext>();
 
 	ErrorMessageOutput::Assert::DetectError(next == InitSequence::kEnd, "初期化が正常に行われていない可能性がある", fileName);
@@ -295,6 +296,15 @@ void Nexus::Instantiate<Nexus::InitSequence::kRenderContext>()
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+template<>
+void Nexus::Instantiate<Nexus::InitSequence::kMeshContext>()
+{
+	meshContext.reset(new MeshContext(MeshContext::InstanceKey{}));
+	Logger::Log("Instantiate: MeshContext", fileName);
+}
+
+
+
 
 
 template
@@ -325,7 +335,11 @@ template
 void Nexus::Instantiate<Nexus::InitSequence::kRootSignatureContext>();
 
 template
+void Nexus::Instantiate<Nexus::InitSequence::kMeshContext>();
+
+template
 void Nexus::Instantiate<Nexus::InitSequence::kRenderContext>();
+
 
 
 

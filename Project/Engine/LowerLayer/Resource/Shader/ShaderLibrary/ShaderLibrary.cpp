@@ -48,15 +48,16 @@ void ShaderLibrary::CompileAllShaderFiles(ShaderContext::Compiler* compiler_)
 {
     auto const psProfile = L"ps_6_6";
     auto const msProfile = L"ms_6_6";
-    auto const shaderRegistryFilePath_MS = "Assets/Registry/MSFiles.txt";
-    auto const shaderRegistryFilePath_PS = "Assets/Registry/PSFiles.txt";
+    std::string const shaderRegistryFilePath_MS = "Assets/Registry/MSFiles.txt";
+    std::string const shaderRegistryFilePath_PS = "Assets/Registry/PSFiles.txt";
 
     std::unordered_map<std::string, std::string> shaderRegistryMS;
     std::unordered_map<std::string, std::string> shaderRegistryPS;
 
     shaderRegistryMS = LoadShaderRegistry(shaderRegistryFilePath_MS);
+    Logger::Log("Load: " + shaderRegistryFilePath_MS, fileName);
     shaderRegistryPS = LoadShaderRegistry(shaderRegistryFilePath_PS);
-    Logger::Log("Complete Loading ShaderRegistryFile");
+    Logger::Log("Load: " + shaderRegistryFilePath_PS, fileName);
 
     for (const auto& [key, value] : shaderRegistryMS)
     {
