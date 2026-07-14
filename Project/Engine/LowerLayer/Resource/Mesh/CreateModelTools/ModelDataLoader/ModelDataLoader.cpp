@@ -49,7 +49,7 @@ void MeshContext::ModelCreator::ModelDataLoader::Load
     );
 
 	//キャッシュにあるか確認
-	std::optional<ModelData> cachedModelData = modelDataCache->FindDuplication(ModelDataCache::AccessKey{},fileName_);
+	std::optional<ModelDataAggregate> cachedModelData = modelDataCache->FindDuplication(ModelDataCache::AccessKey{},fileName_);
 	if (cachedModelData)
 	{
 		meshes_ = cachedModelData->resourceMesh;
@@ -59,7 +59,7 @@ void MeshContext::ModelCreator::ModelDataLoader::Load
 	}
 
     // wchar_t から char型(UTF-8)に変換
-    auto path = StringConverter::ToUTF8(StringConverter::ConvertString(fileName_));
+    auto path = StringConverter::ToUTF8(StringConverter::ConvertString(modelFileName_pathLib[fileName_]));
 
     Assimp::Importer importer;
     unsigned int flag = 0;
@@ -98,6 +98,12 @@ void MeshContext::ModelCreator::ModelDataLoader::Load
         const auto pMaterial = scene ->mMaterials[i];
         ParseMaterial(materials_[i], pMaterial);
     }
+
+    //キャッシュデータに登録
+    ModelDataAggregate data;
+    data.resourceMesh = meshes_;
+    data.resourceMaterial = materials_;
+    modelDataCache->Register(MeshContext::ModelCreator::ModelDataLoader::ModelDataCache::AccessKey{}, fileName_, data);
 
     //不要になったのでクリア
     importer.FreeScene();
@@ -142,7 +148,7 @@ void MeshContext::ModelCreator::ModelDataLoader::ParseMesh(ResourceMesh& dstMesh
     for (auto i = 0u; i < pSrcMesh_->mNumFaces; ++i)
     {
         const auto& face = pSrcMesh_->mFaces[i];
-        assert(face.mNumIndices == 3);
+        ErrorMessageOutput::Assert::DetectError(face.mNumIndices == 3, "頂点が3じゃない", fileName);
 
         originalIndices[i * 3 + 0] = face.mIndices[0];
         originalIndices[i * 3 + 1] = face.mIndices[1];

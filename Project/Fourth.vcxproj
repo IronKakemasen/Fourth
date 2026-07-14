@@ -305,7 +305,7 @@
     <ClCompile Include="Engine\LowerLayer\Resource\Mesh\CreateModelTools\ModelCreator.cpp" />
     <ClCompile Include="Engine\LowerLayer\Resource\Mesh\ModelStructure\Model.cpp" />
     <ClCompile Include="Engine\LowerLayer\Resource\Mesh\ModelStructure\ModelData\ResourceMaterial\ResourceMaterial.cpp" />
-    <ClCompile Include="Engine\LowerLayer\Resource\Mesh\ModelStructure\ModelData\ModelData.cpp" />
+    <ClCompile Include="Engine\LowerLayer\Resource\Mesh\ModelStructure\ModelData\ModelDataAggregate.cpp" />
     <ClCompile Include="Engine\Math\Vector\Vector4.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -446,8 +446,9 @@
     <ClInclude Include="Engine\LowerLayer\Resource\Mesh\CreateModelTools\ModelCreator.h" />
     <ClInclude Include="Engine\LowerLayer\Resource\Mesh\ModelStructure\Model.h" />
     <ClInclude Include="Engine\LowerLayer\Resource\Mesh\ModelStructure\ModelData\ResourceMaterial\ResourceMaterial.h" />
-    <ClInclude Include="Engine\LowerLayer\Resource\Mesh\ModelStructure\ModelData\ModelData.h" />
+    <ClInclude Include="Engine\LowerLayer\Resource\Mesh\ModelStructure\ModelData\ModelDataAggregate.h" />
     <ClInclude Include="Engine\Math\Vector\Vector4.h" />
+    <ClInclude Include="Engine\Utility\Transform\Transform.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
