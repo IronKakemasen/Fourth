@@ -3,7 +3,7 @@
 #include "ResourceMaterial/ResourceMaterial.h"
 
 
-struct ModelData
+struct ModelDataAggregate
 {
 	std::vector<ResourceMesh> resourceMesh;
 	std::vector<ResourceMaterial> resourceMaterial;

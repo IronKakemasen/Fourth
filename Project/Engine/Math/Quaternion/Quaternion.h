@@ -13,6 +13,11 @@
 
 		inline Quaternion(float x_, float y_, float z_, float w_) : data(x_, y_, z_, w_) {};
 
+		inline void Identity()
+		{
+			DirectX::XMStoreFloat4(&data, DirectX::XMQuaternionIdentity());
+		}
+
 		inline Matrix4x4 GetRotateMatrix() const
 		{
 			DirectX::XMVECTOR q = DirectX::XMLoadFloat4(&data);
@@ -93,6 +98,15 @@
 			DirectX::XMStoreFloat4(&result.data, DirectX::XMQuaternionSlerp(startQ, endQ, t_));
 
 			return result;
+		}
+
+		inline bool NearlyEquals(const Quaternion& rQuaternion_, float epsilon_ = 1e-6f) const
+		{
+			return
+			fabsf(data.x - rQuaternion_.data.x) <= epsilon_		&&
+			fabsf(data.y - rQuaternion_.data.y) <= epsilon_		&&
+			fabsf(data.z - rQuaternion_.data.z) <= epsilon_		&&
+			fabsf(data.w - rQuaternion_.data.w) <= epsilon_;
 		}
 
 	};
