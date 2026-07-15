@@ -16,16 +16,12 @@ public:
 	BufferCollector
 	(
 		BufferContext::InstanceKey key_,
-		std::vector<std::unique_ptr<GPUBufferBehavior>>* renderTargetBufferPool_,
-		std::vector<std::unique_ptr<GPUBufferBehavior>>* computeBufferPool_,
-		std::vector<std::unique_ptr<GPUBufferBehavior>>* frameBufferPool_,
-		std::vector<std::unique_ptr<GPUBufferBehavior>>* staticStructuredBufferPool_,
-		std::unordered_map<BufferUniqueID, std::pair<BufferContext::RegisterType, uint32_t>>* bufferLocationMap_
+		BufferContext::BufferPoolSet* bufferPoolSet_
 	);
 
 	~BufferCollector();
 	
-	//作成されたバッファを一時保管場所へ移動
+	///作成されたバッファを一時保管場所へ移動
 	template<typename BufferType>
 	void Register(std::unique_ptr<BufferType> buffer_,BufferUniqueID id_)
 	{
@@ -55,14 +51,8 @@ private:
 	//一時保管用
 	std::vector<TempSaveFormat> tmp_bufferContainer;
 
-	//分別先
-	std::vector<std::unique_ptr<GPUBufferBehavior>>* renderTargetBufferPool;
-	std::vector<std::unique_ptr<GPUBufferBehavior>>* computeBufferPool;
-	std::vector<std::unique_ptr<GPUBufferBehavior>>* frameBufferpool;
-	std::vector<std::unique_ptr<GPUBufferBehavior>>* readOnlyBufferPool;
-
-	//ユニークIDがどこのバッファコンテナの何番目のバッファを指しているのか示すマップコンテナ
-	std::unordered_map<BufferUniqueID, std::pair<RegisterType, uint32_t>>* bufferLocationMap;
+	///分別先
+	BufferContext::BufferPoolSet* bufferPoolSet;
 
 	//バッファのデータ型に応じて登録先識別用のタイプを返す
 	template<typename BufferType>
@@ -97,10 +87,8 @@ private:
 		return type;
 	}
 
+
 	//目的のコンテナのイテレーターを返す
 	std::vector<std::unique_ptr<GPUBufferBehavior>>::iterator FindFreeSlot(std::vector<std::unique_ptr<GPUBufferBehavior>>* container_);
-	//コンテナテーブル
-	std::vector<std::unique_ptr<GPUBufferBehavior>>* ContainerTable(BufferContext::RegisterType type_);
-
 };
 

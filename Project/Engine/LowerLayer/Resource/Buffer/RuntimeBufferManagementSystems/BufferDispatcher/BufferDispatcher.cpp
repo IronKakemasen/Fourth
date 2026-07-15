@@ -5,11 +5,8 @@
 BufferContext::BufferDispatcher::BufferDispatcher
 (
 	BufferContext::InstanceKey key_,
-	std::vector<std::unique_ptr<GPUBufferBehavior>>* renderTargetBufferContainer_,
-	std::vector<std::unique_ptr<GPUBufferBehavior>>* computeBufferContainer_,
-	std::vector<std::unique_ptr<GPUBufferBehavior>>* frameBufferContainer_,
-	std::unordered_map<BufferUniqueID, std::pair<BufferContext::RegisterType, uint32_t>>* bufferLocationMap_
-) :renderTargetBufferPool(renderTargetBufferContainer_), computeBufferPool(computeBufferContainer_), frameBufferpool(frameBufferContainer_), bufferLocationMap(bufferLocationMap_)
+	BufferContext::BufferPoolSet* bufferPoolSet_
+) :bufferPoolSet(bufferPoolSet_)
 {
 
 }

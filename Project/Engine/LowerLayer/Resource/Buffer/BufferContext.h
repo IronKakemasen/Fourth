@@ -40,6 +40,24 @@ protected:
 		kCount
 	};
 
+	struct BufferPoolSet
+	{
+		//ColorBufferやDepthStencilBufferなどレンダーターゲットなバッファプール
+		std::vector<std::unique_ptr<GPUBufferBehavior>> renderTargetBufferPool;
+		//computeBufferのような、コンピュートシェーダをかませるバッファのプール
+		std::vector<std::unique_ptr<GPUBufferBehavior>> computeBufferPool;
+		//ConstantBufferやUploadStructuredBufferのようなフレームバッファのプール
+		std::vector<std::unique_ptr<GPUBufferBehavior>> frameBufferPool;
+		//staticStructuredBufferやtextureBufferのような、読みしかしない確定のシングルバッファのプール
+		std::vector<std::unique_ptr<GPUBufferBehavior>> readOnlyBufferPool;
+
+		//ユニークIDがどこのバッファコンテナの何番目のバッファを指しているのか示すマップコンテナ
+		std::unordered_map<BufferUniqueID, std::pair<RegisterType, uint32_t>> bufferLocationMap;
+
+		//RegisterTypeがキーのテーブル
+		std::vector<std::unique_ptr<GPUBufferBehavior>>* ContainerTable(BufferContext::RegisterType type_);
+	};
+
 public:
 
 	//自身のインスタンス化キー
@@ -70,18 +88,9 @@ public:
 
 private:
 
-	//ColorBufferやDepthStencilBufferなどレンダーターゲットなバッファプール
-	std::vector<std::unique_ptr<GPUBufferBehavior>> renderTargetBufferPool;
-	//computeBufferのような、コンピュートシェーダをかませるバッファのプール
-	std::vector<std::unique_ptr<GPUBufferBehavior>> computeBufferPool;
-	//ConstantBufferやUploadStructuredBufferのようなフレームバッファのプール
-	std::vector<std::unique_ptr<GPUBufferBehavior>> frameBufferPool;
-	//staticStructuredBufferやtextureBufferのような、読みしかしない確定のシングルバッファのプール
-	std::vector<std::unique_ptr<GPUBufferBehavior>> readOnlyBufferPool;
+	//複数のバッファのプールが定義されている
+	BufferPoolSet bufferPoolSet;
 
-	
-	//ユニークIDがどこのバッファコンテナの何番目のバッファを指しているのか示すマップコンテナ
-	std::unordered_map<BufferUniqueID, std::pair<RegisterType, uint32_t>> bufferLocationMap;
 
 	void InstantiateBufferCreator
 	(

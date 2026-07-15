@@ -6,49 +6,27 @@ class GPUBufferBehavior;
 
 class BufferContext::BufferDispatcher
 {
-
-	//テーブル
-	inline std::vector<std::unique_ptr<GPUBufferBehavior>>* ContainerTable(BufferContext::RegisterType type_)
-	{
-		static std::vector<std::unique_ptr<GPUBufferBehavior>>* table[(int)RegisterType::kCount]
-		{
-			renderTargetBufferPool,
-			frameBufferpool,
-			computeBufferPool
-		};
-
-		return table[(int)type_];
-	}
-
 public:
 
 	BufferDispatcher
 	(
 		BufferContext::InstanceKey key_,
-		std::vector<std::unique_ptr<GPUBufferBehavior>>* renderTargetBufferContainer_,
-		std::vector<std::unique_ptr<GPUBufferBehavior>>* computeBufferContainer_,
-		std::vector<std::unique_ptr<GPUBufferBehavior>>* frameBufferContainer_,
-		std::unordered_map<BufferUniqueID, std::pair<RegisterType, uint32_t>>* bufferLocationMap_
+		BufferContext::BufferPoolSet* bufferPoolSet_
 	);
 
-	///ユニークIDからバッファを渡します
-	inline GPUBufferBehavior* Dispatch(BufferUniqueID bufferID_)
+	///ユニークIDをもとに目的のバッファを倉庫から渡します
+	[[nodiscard]] inline GPUBufferBehavior* Dispatch(BufferUniqueID bufferID_)
 	{
-		auto& tmp = (*bufferLocationMap)[bufferID_];
+		auto& idToType_location = bufferPoolSet->bufferLocationMap[bufferID_];
 
-		BufferContext::RegisterType registerType = tmp.first;
-		uint32_t dstIndex = tmp.second;
+		BufferContext::RegisterType dstRegisterType = idToType_location.first;
+		uint32_t dstPoolIndex = idToType_location.second;
 
-		return ContainerTable(registerType)->at(dstIndex).get();
+		return bufferPoolSet->ContainerTable(dstRegisterType)->at(dstPoolIndex).get();
 	}
 
 private:
 
-	//検索先
-	std::vector<std::unique_ptr<GPUBufferBehavior>>* renderTargetBufferPool;
-	std::vector<std::unique_ptr<GPUBufferBehavior>>* frameBufferpool;
-	std::vector<std::unique_ptr<GPUBufferBehavior>>* computeBufferPool;
-	//ユニークIDがどこのバッファコンテナの何番目のバッファを指しているのか示すマップコンテナ
-	std::unordered_map<BufferUniqueID, std::pair<RegisterType, uint32_t>>* bufferLocationMap;
-
+	///倉庫
+	BufferContext::BufferPoolSet* bufferPoolSet;
 };
