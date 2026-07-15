@@ -33,13 +33,10 @@ MeshContext::ModelCreator::ModelDataLoader::~ModelDataLoader()
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-void MeshContext::ModelCreator::ModelDataLoader::Load
-(
-	std::string fileName_,
-	std::vector<ResourceMesh>& meshes_,
-	std::vector<ResourceMaterial>& materials_
-)
+std::shared_ptr<ModelDataAggregate> MeshContext::ModelCreator::ModelDataLoader::Load(std::string fileName_)
 {
+    std::shared_ptr<ModelDataAggregate> shareData = std::make_shared<ModelDataAggregate>();
+
     //チェック
     ErrorMessageOutput::Assert::DetectError
     (
@@ -48,15 +45,9 @@ void MeshContext::ModelCreator::ModelDataLoader::Load
         fileName
     );
 
-	//キャッシュにあるか確認
-	std::optional<ModelDataAggregate> cachedModelData = modelDataCache->FindDuplication(ModelDataCache::AccessKey{},fileName_);
-	if (cachedModelData)
-	{
-		meshes_ = cachedModelData->resourceMesh;
-		materials_ = cachedModelData->resourceMaterial;
-
-		return;
-	}
+	///キャッシュにあるか確認
+	std::shared_ptr<ModelDataAggregate> cachedModelData = modelDataCache->FindDuplication(ModelDataCache::AccessKey{},fileName_);
+	if (cachedModelData) return cachedModelData;
 
     // wchar_t から char型(UTF-8)に変換
     auto path = StringConverter::ToUTF8(StringConverter::ConvertString(modelFileName_pathLib[fileName_]));
@@ -78,37 +69,35 @@ void MeshContext::ModelCreator::ModelDataLoader::Load
     ErrorMessageOutput::Abort::DetectError(scene, "シーンデータが無い", fileName);
 
     //メッシュのメモリを確保
-    meshes_.clear();
-    meshes_.resize(scene ->mNumMeshes);
+    shareData->resourceMesh.clear();
+    if(scene) shareData->resourceMesh.resize(scene ->mNumMeshes);
 
     // メッシュデータを変換.
-    for (size_t i = 0; i < meshes_.size(); ++i)
+    for (size_t i = 0; i < shareData->resourceMesh.size(); ++i)
     {
-        const auto pMesh = scene ->mMeshes[i];
-        ParseMesh(meshes_[i], pMesh);
+        const auto pMesh = scene->mMeshes[i];
+        ParseMesh(shareData->resourceMesh[i], pMesh);
     }
 
     //マテリアルのメモリを確保
-    materials_.clear();
-    materials_.resize(scene ->mNumMaterials);
+    shareData->resourceMaterial.clear();
+    shareData->resourceMaterial.resize(scene ->mNumMaterials);
 
     //マテリアルデータを変換
-    for (size_t i = 0; i < materials_.size(); ++i)
+    for (size_t i = 0; i < shareData->resourceMaterial.size(); ++i)
     {
         const auto pMaterial = scene ->mMaterials[i];
-        ParseMaterial(materials_[i], pMaterial);
+        ParseMaterial(shareData->resourceMaterial[i], pMaterial);
     }
 
     //キャッシュデータに登録
-    ModelDataAggregate data;
-    data.resourceMesh = meshes_;
-    data.resourceMaterial = materials_;
-    modelDataCache->Register(MeshContext::ModelCreator::ModelDataLoader::ModelDataCache::AccessKey{}, fileName_, data);
+    modelDataCache->Register(MeshContext::ModelCreator::ModelDataLoader::ModelDataCache::AccessKey{}, fileName_, shareData);
 
     //不要になったのでクリア
     importer.FreeScene();
     scene  = nullptr;
 
+    return shareData;
 }
 
 

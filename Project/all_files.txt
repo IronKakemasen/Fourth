@@ -7953,6 +7953,137 @@ private:
 
 
 ========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Buffer\BufferDefinition\BufferDescriptions\StaticStructuredBufferDescription\StaticStructuredBufferDescription.cpp ===
+========================================
+#include "PreCompileHeader.h"
+#include "StaticStructuredBufferDescription.h"
+
+StaticStructuredBufferDescription::StaticStructuredBufferDescription
+(
+	UINT structureByte_,
+	UINT numElements_,
+	UINT firstElement_
+) :BufferDescriptionBehavior(D3D12_RESOURCE_STATE_COPY_DEST, ProjectConfig::Render::NumBuffer::kSingleBuffer)
+{
+	param.structureByte = structureByte_;
+	param.numElements = numElements_;
+	param.firstElement = firstElement_;
+}
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//パラーメーターチェック
+void StaticStructuredBufferDescription::CheckRequirementsFilled() const
+{
+	std::string errorMess{};
+
+	if (param.structureByte == 0)errorMess += "[structureByte]";
+	if (param.numElements == 0)errorMess += "[numElements]";
+	if (param.firstElement == -1) errorMess += "[firstElement]";
+
+	ErrorMessageOutput::Assert::DetectError((errorMess.length() == 0), errorMess + "の情報が未設定です", "StaticStructuredBufferDescription.cpp");
+}
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//リソースディスクの生成
+D3D12_RESOURCE_DESC StaticStructuredBufferDescription::CreateResourceDesc()const
+{
+	D3D12_RESOURCE_DESC resourceDesc = {};
+
+	resourceDesc.Width = param.numElements * param.structureByte;
+
+	//以下固定
+	resourceDesc.Flags = D3D12_RESOURCE_FLAG_NONE;
+	resourceDesc.Height = 1;
+	resourceDesc.DepthOrArraySize = 1;
+	resourceDesc.MipLevels = 1;
+	resourceDesc.SampleDesc.Count = 1;
+	resourceDesc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
+	resourceDesc.Dimension = D3D12_RESOURCE_DIMENSION_BUFFER;
+
+	return resourceDesc;
+}
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//ヒーププロパティの生成
+D3D12_HEAP_PROPERTIES StaticStructuredBufferDescription::CreateHeapProperties()const
+{
+	D3D12_HEAP_PROPERTIES properties = {};
+
+	//アップロード固定
+	properties.Type = D3D12_HEAP_TYPE_DEFAULT;
+
+	return properties;
+}
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//SRV生成
+D3D12_SHADER_RESOURCE_VIEW_DESC StaticStructuredBufferDescription::CreateSRV_Desc()const
+{
+	D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
+
+	srvDesc.Buffer.NumElements = param.numElements;
+	srvDesc.Buffer.StructureByteStride = param.structureByte;
+	srvDesc.Buffer.FirstElement = param.firstElement;
+
+
+	srvDesc.Buffer.Flags = D3D12_BUFFER_SRV_FLAG_NONE;
+	srvDesc.Format = DXGI_FORMAT_UNKNOWN;
+	srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+	srvDesc.ViewDimension = D3D12_SRV_DIMENSION_BUFFER;
+
+	return srvDesc;
+
+}
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Buffer\BufferDefinition\BufferDescriptions\StaticStructuredBufferDescription\StaticStructuredBufferDescription.h ===
+========================================
+#pragma once
+#include "../BufferDescriptionBehavior.h"
+
+
+//読み専用
+struct StaticStructuredBufferDescription final :public BufferDescriptionBehavior, IAssembleShaderResource
+{
+private:
+	struct Param
+	{
+		UINT structureByte{};
+		UINT numElements{};
+		UINT firstElement = -1;
+	}param;
+
+public:
+
+	StaticStructuredBufferDescription
+	(
+		UINT structureByte_,
+		UINT numElements_,
+		UINT firstElement_
+	);
+
+	//パラーメーターチェック
+	virtual void CheckRequirementsFilled() const override;
+	//リソースディスクの生成
+	virtual D3D12_RESOURCE_DESC CreateResourceDesc()const override;
+	//ヒーププロパティの生成
+	virtual D3D12_HEAP_PROPERTIES CreateHeapProperties()const override;
+	//SRVDesc生成
+	virtual D3D12_SHADER_RESOURCE_VIEW_DESC CreateSRV_Desc()const override;
+
+};
+
+
+
+
+========================================
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Buffer\BufferDefinition\BufferDescriptions\UploadStructuredBufferDescription\UploadStructuredBufferDescription.cpp ===
 ========================================
 
@@ -7982,7 +8113,7 @@ void UploadStructuredBufferDescription::CheckRequirementsFilled() const
 	if (param.numElements == 0)errorMess += "[numElements]";
 	if (param.firstElement == -1) errorMess += "[firstElement]";
 
-	ErrorMessageOutput::Assert::DetectError((errorMess.length() == 0), errorMess + "の情報が未設定です", "ComputeBufferDescription.cpp");
+	ErrorMessageOutput::Assert::DetectError((errorMess.length() == 0), errorMess + "の情報が未設定です", "UploadStructuredBufferDescription.cpp");
 }
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -8259,7 +8390,7 @@ struct IDualRole
 //シェーダーバッファのインターフェース
 struct IShaderBuffer
 {
-	virtual uint32_t OutProperSRVHeapIndex()const = 0;
+	virtual uint32_t OutProperSRVHeapIndex(int frameIndex_ = 0)const = 0;
 };
 
 //CSバッファのインターフェース
@@ -8379,7 +8510,14 @@ GPUBufferBehavior::GPUBufferBehavior
 	std::unique_ptr <BufferDescriptionBehavior>&& description_
 ) : name(name_), description(std::move(description_))
 {
-	size_t const bufferSize = resourceContainer_.size();
+	size_t const bufferSize = description->numBuffer;
+	ErrorMessageOutput::Assert::DetectError
+	(
+		resourceContainer_.size() == bufferSize,
+		name_ + "バッファの生リソースの数があってない",
+		fileName
+	);
+
 
 	buffers.resize(bufferSize);
 
@@ -8618,7 +8756,7 @@ D3D12_CPU_DESCRIPTOR_HANDLE ColorBuffer::OutProperRTVHeapHandle()const
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-uint32_t ColorBuffer::OutProperSRVHeapIndex()const
+uint32_t ColorBuffer::OutProperSRVHeapIndex(int frameIndex_)const
 {
 	int dstBufferIndex = ProperBufferIndex(Usage::kRead);
 
@@ -8659,7 +8797,7 @@ private:
 	//適切なRTVヒープインデックスを出す
 	virtual D3D12_CPU_DESCRIPTOR_HANDLE OutProperRTVHeapHandle()const override;
 	//適切なSRVヒープインデックスを出す
-	virtual uint32_t OutProperSRVHeapIndex()const override;
+	virtual uint32_t OutProperSRVHeapIndex(int frameIndex_ = 0)const override;
 };
 
 
@@ -8884,7 +9022,7 @@ D3D12_CPU_DESCRIPTOR_HANDLE DepthStencilBuffer::OutProperDSVHeapHandle()const
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-uint32_t DepthStencilBuffer::OutProperSRVHeapIndex()const
+uint32_t DepthStencilBuffer::OutProperSRVHeapIndex(int frameIndex_)const
 {
 	int dstBufferIndex = ProperBufferIndex(Usage::kRead);
 
@@ -8926,7 +9064,69 @@ private:
 	//適切なCPUインデックスを出す
 	virtual D3D12_CPU_DESCRIPTOR_HANDLE OutProperDSVHeapHandle()const override;
 	//適切なsrvHeapインデックスを渡す
-	virtual uint32_t OutProperSRVHeapIndex()const override;
+	virtual uint32_t OutProperSRVHeapIndex(int frameIndex_ = 0)const override;
+};
+
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Buffer\BufferDefinition\GPUBuffer\StaticStructuredBuffer\StaticStructuredBuffer.cpp ===
+========================================
+#include "PreCompileHeader.h"
+#include "StaticStructuredBuffer.h"
+#include "../../BufferDescriptions/StaticStructuredBufferDescription/StaticStructuredBufferDescription.h"
+
+
+StaticStructuredBuffer::StaticStructuredBuffer
+(
+	const InstanceKey& instanceKey_,
+	std::string name_,
+	std::vector<Microsoft::WRL::ComPtr<ID3D12Resource>> resourceContainer_,
+	std::unique_ptr <BufferDescriptionBehavior>&& description_
+) : GPUBufferBehavior(instanceKey_, name_, std::move(resourceContainer_), std::move(description_))
+{
+
+}
+
+
+
+uint32_t StaticStructuredBuffer::OutProperSRVHeapIndex(int frameIndex_)const
+{
+	return WatchIndex<ViewType::kSRV, uint32_t >(0);
+}
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Buffer\BufferDefinition\GPUBuffer\StaticStructuredBuffer\StaticStructuredBuffer.h ===
+========================================
+#pragma once
+#include "../BufferInterface.h"
+
+struct StaticStructuredBufferDescription;
+
+//読み込み専用StructuredBuffer
+class StaticStructuredBuffer final : public GPUBufferBehavior, IShaderBuffer
+{
+
+public:
+
+	StaticStructuredBuffer
+	(
+		const InstanceKey& instanceKey_,
+		std::string name_,
+		std::vector<Microsoft::WRL::ComPtr<ID3D12Resource>> resourceContainer_,
+		std::unique_ptr <BufferDescriptionBehavior>&& description_
+	);
+
+	uint32_t OutProperSRVHeapIndex(int frameIndex_ = 0)const override;
+
+private:
+
+
 };
 
 
@@ -8955,6 +9155,10 @@ UploadStructuredBuffer::UploadStructuredBuffer
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+uint32_t UploadStructuredBuffer::OutProperSRVHeapIndex(int frameIndex_)const
+{
+	return WatchIndex<ViewType::kSRV, uint32_t >(frameIndex_);
+}
 
 
 
@@ -8968,7 +9172,7 @@ UploadStructuredBuffer::UploadStructuredBuffer
 struct UploadStructuredBufferDescription;
 
 //読み書きStructuredBuffer
-class UploadStructuredBuffer final : public GPUBufferBehavior
+class UploadStructuredBuffer final : public GPUBufferBehavior, IShaderBuffer
 {
 
 public:
@@ -8980,6 +9184,8 @@ public:
 		std::vector<Microsoft::WRL::ComPtr<ID3D12Resource>> resourceContainer_,
 		std::unique_ptr <BufferDescriptionBehavior>&& description_
 	);
+
+	virtual uint32_t OutProperSRVHeapIndex(int frameIndex_ = 0)const override;
 
 private:
 
@@ -9398,13 +9604,10 @@ MeshContext::ModelCreator::ModelDataLoader::~ModelDataLoader()
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-void MeshContext::ModelCreator::ModelDataLoader::Load
-(
-	std::string fileName_,
-	std::vector<ResourceMesh>& meshes_,
-	std::vector<ResourceMaterial>& materials_
-)
+std::shared_ptr<ModelDataAggregate> MeshContext::ModelCreator::ModelDataLoader::Load(std::string fileName_)
 {
+    std::shared_ptr<ModelDataAggregate> shareData = std::make_shared<ModelDataAggregate>();
+
     //チェック
     ErrorMessageOutput::Assert::DetectError
     (
@@ -9413,15 +9616,9 @@ void MeshContext::ModelCreator::ModelDataLoader::Load
         fileName
     );
 
-	//キャッシュにあるか確認
-	std::optional<ModelDataAggregate> cachedModelData = modelDataCache->FindDuplication(ModelDataCache::AccessKey{},fileName_);
-	if (cachedModelData)
-	{
-		meshes_ = cachedModelData->resourceMesh;
-		materials_ = cachedModelData->resourceMaterial;
-
-		return;
-	}
+	///キャッシュにあるか確認
+	std::shared_ptr<ModelDataAggregate> cachedModelData = modelDataCache->FindDuplication(ModelDataCache::AccessKey{},fileName_);
+	if (cachedModelData) return cachedModelData;
 
     // wchar_t から char型(UTF-8)に変換
     auto path = StringConverter::ToUTF8(StringConverter::ConvertString(modelFileName_pathLib[fileName_]));
@@ -9443,37 +9640,35 @@ void MeshContext::ModelCreator::ModelDataLoader::Load
     ErrorMessageOutput::Abort::DetectError(scene, "シーンデータが無い", fileName);
 
     //メッシュのメモリを確保
-    meshes_.clear();
-    meshes_.resize(scene ->mNumMeshes);
+    shareData->resourceMesh.clear();
+    if(scene) shareData->resourceMesh.resize(scene ->mNumMeshes);
 
     // メッシュデータを変換.
-    for (size_t i = 0; i < meshes_.size(); ++i)
+    for (size_t i = 0; i < shareData->resourceMesh.size(); ++i)
     {
-        const auto pMesh = scene ->mMeshes[i];
-        ParseMesh(meshes_[i], pMesh);
+        const auto pMesh = scene->mMeshes[i];
+        ParseMesh(shareData->resourceMesh[i], pMesh);
     }
 
     //マテリアルのメモリを確保
-    materials_.clear();
-    materials_.resize(scene ->mNumMaterials);
+    shareData->resourceMaterial.clear();
+    shareData->resourceMaterial.resize(scene ->mNumMaterials);
 
     //マテリアルデータを変換
-    for (size_t i = 0; i < materials_.size(); ++i)
+    for (size_t i = 0; i < shareData->resourceMaterial.size(); ++i)
     {
         const auto pMaterial = scene ->mMaterials[i];
-        ParseMaterial(materials_[i], pMaterial);
+        ParseMaterial(shareData->resourceMaterial[i], pMaterial);
     }
 
     //キャッシュデータに登録
-    ModelDataAggregate data;
-    data.resourceMesh = meshes_;
-    data.resourceMaterial = materials_;
-    modelDataCache->Register(MeshContext::ModelCreator::ModelDataLoader::ModelDataCache::AccessKey{}, fileName_, data);
+    modelDataCache->Register(MeshContext::ModelCreator::ModelDataLoader::ModelDataCache::AccessKey{}, fileName_, shareData);
 
     //不要になったのでクリア
     importer.FreeScene();
     scene  = nullptr;
 
+    return shareData;
 }
 
 
@@ -9857,9 +10052,9 @@ void MeshContext::ModelCreator::ModelDataLoader::LoadModelRegistry(std::string c
 #include "../../.././../../External/assimp/include/assimp/cimport.h"
 
 
-
 struct ResourceMesh;
 struct ResourceMaterial;
+struct ModelDataAggregate;
 
 
 class MeshContext::ModelCreator::ModelDataLoader
@@ -9869,12 +10064,7 @@ public:
 	ModelDataLoader(MeshContext::InstanceKey key_);
 	~ModelDataLoader();
 
-	void Load
-	(
-		std::string fileName_,
-		std::vector<ResourceMesh>& meshes_,
-		std::vector<ResourceMaterial>& materials_
-	);
+	std::shared_ptr<ModelDataAggregate> Load(std::string fileName_);
 
 private:
 
@@ -9911,17 +10101,17 @@ MeshContext::ModelCreator::ModelDataLoader::ModelDataCache::ModelDataCache(MeshC
 
 }
 
-std::optional<ModelDataAggregate> MeshContext::ModelCreator::ModelDataLoader::ModelDataCache::FindDuplication(AccessKey key_, std::string fileName_)
+std::shared_ptr<ModelDataAggregate> MeshContext::ModelCreator::ModelDataLoader::ModelDataCache::FindDuplication(AccessKey key_, std::string fileName_)
 {
 	if (modelDataCache.find(fileName_) != modelDataCache.end())
 	{				
 		return modelDataCache.at(fileName_);
 	}
 
-	return std::nullopt;
+	return nullptr;
 }
 
-void MeshContext::ModelCreator::ModelDataLoader::ModelDataCache::Register(AccessKey key_, std::string fileName_, const ModelDataAggregate& data_)
+void MeshContext::ModelCreator::ModelDataLoader::ModelDataCache::Register(AccessKey key_, std::string fileName_, std::shared_ptr<ModelDataAggregate> data_)
 {
 	Logger::Log("Regieter: " + fileName_, "ModelDataCache.cpp");
 
@@ -9946,12 +10136,12 @@ public:
 
 	ModelDataCache(MeshContext::InstanceKey key_);
 
-	std::optional<ModelDataAggregate> FindDuplication(AccessKey key_, std::string fileName_);
-	void Register(AccessKey key_, std::string fileName_, const ModelDataAggregate& data_);
+	std::shared_ptr<ModelDataAggregate> FindDuplication(AccessKey key_, std::string fileName_);
+	void Register(AccessKey key_, std::string fileName_, std::shared_ptr<ModelDataAggregate> data_);
 
 private:
 
-	std::unordered_map<std::string, ModelDataAggregate> modelDataCache;
+	std::unordered_map<std::string, std::shared_ptr<ModelDataAggregate>> modelDataCache;
 };
 
 struct MeshContext::ModelCreator::ModelDataLoader::ModelDataCache::AccessKey
@@ -13291,8 +13481,8 @@ namespace StringConverter
 
 class Transform
 {
-	static inline const Vector3 kUp = { 0.0f,1.0f,0.0f };
 	static inline const Vector3 kRight = { 1.0f,0.0f,0.0f };
+	static inline const Vector3 kUp = { 0.0f,1.0f,0.0f };
 	static inline const Vector3 kBeyond = { 0.0f,0.0f,1.0f};
 
 	Vector3 worldPos;					//ワールド座標

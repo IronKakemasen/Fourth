@@ -19,7 +19,14 @@ GPUBufferBehavior::GPUBufferBehavior
 	std::unique_ptr <BufferDescriptionBehavior>&& description_
 ) : name(name_), description(std::move(description_))
 {
-	size_t const bufferSize = resourceContainer_.size();
+	size_t const bufferSize = description->numBuffer;
+	ErrorMessageOutput::Assert::DetectError
+	(
+		resourceContainer_.size() == bufferSize,
+		name_ + "バッファの生リソースの数があってない",
+		fileName
+	);
+
 
 	buffers.resize(bufferSize);
 

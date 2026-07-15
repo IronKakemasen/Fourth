@@ -1,13 +1,12 @@
+#include "PreCompileHeader.h"
+#include "StaticStructuredBufferDescription.h"
 
-#include "UploadStructuredBufferDescription.h"
-
-
-UploadStructuredBufferDescription::UploadStructuredBufferDescription
+StaticStructuredBufferDescription::StaticStructuredBufferDescription
 (
 	UINT structureByte_,
 	UINT numElements_,
 	UINT firstElement_
-) :BufferDescriptionBehavior(D3D12_RESOURCE_STATE_GENERIC_READ, ProjectConfig::Render::NumBuffer::kDoubleBuffer)
+) :BufferDescriptionBehavior(D3D12_RESOURCE_STATE_COPY_DEST, ProjectConfig::Render::NumBuffer::kSingleBuffer)
 {
 	param.structureByte = structureByte_;
 	param.numElements = numElements_;
@@ -17,7 +16,7 @@ UploadStructuredBufferDescription::UploadStructuredBufferDescription
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //パラーメーターチェック
-void UploadStructuredBufferDescription::CheckRequirementsFilled() const
+void StaticStructuredBufferDescription::CheckRequirementsFilled() const
 {
 	std::string errorMess{};
 
@@ -25,18 +24,18 @@ void UploadStructuredBufferDescription::CheckRequirementsFilled() const
 	if (param.numElements == 0)errorMess += "[numElements]";
 	if (param.firstElement == -1) errorMess += "[firstElement]";
 
-	ErrorMessageOutput::Assert::DetectError((errorMess.length() == 0), errorMess + "の情報が未設定です", "UploadStructuredBufferDescription.cpp");
+	ErrorMessageOutput::Assert::DetectError((errorMess.length() == 0), errorMess + "の情報が未設定です", "StaticStructuredBufferDescription.cpp");
 }
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //リソースディスクの生成
-D3D12_RESOURCE_DESC UploadStructuredBufferDescription::CreateResourceDesc()const
+D3D12_RESOURCE_DESC StaticStructuredBufferDescription::CreateResourceDesc()const
 {
 	D3D12_RESOURCE_DESC resourceDesc = {};
 
 	resourceDesc.Width = param.numElements * param.structureByte;
-	
+
 	//以下固定
 	resourceDesc.Flags = D3D12_RESOURCE_FLAG_NONE;
 	resourceDesc.Height = 1;
@@ -52,12 +51,12 @@ D3D12_RESOURCE_DESC UploadStructuredBufferDescription::CreateResourceDesc()const
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //ヒーププロパティの生成
-D3D12_HEAP_PROPERTIES UploadStructuredBufferDescription::CreateHeapProperties()const
+D3D12_HEAP_PROPERTIES StaticStructuredBufferDescription::CreateHeapProperties()const
 {
 	D3D12_HEAP_PROPERTIES properties = {};
 
 	//アップロード固定
-	properties.Type = D3D12_HEAP_TYPE_UPLOAD;
+	properties.Type = D3D12_HEAP_TYPE_DEFAULT;
 
 	return properties;
 }
@@ -65,7 +64,7 @@ D3D12_HEAP_PROPERTIES UploadStructuredBufferDescription::CreateHeapProperties()c
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //SRV生成
-D3D12_SHADER_RESOURCE_VIEW_DESC UploadStructuredBufferDescription::CreateSRV_Desc()const
+D3D12_SHADER_RESOURCE_VIEW_DESC StaticStructuredBufferDescription::CreateSRV_Desc()const
 {
 	D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
 

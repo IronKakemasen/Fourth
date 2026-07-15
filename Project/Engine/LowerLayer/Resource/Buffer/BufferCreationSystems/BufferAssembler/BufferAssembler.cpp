@@ -7,6 +7,7 @@
 #include "../../BufferDefinition/GPUBuffer/DepthStencilBuffer/DepthStencilBuffer.h"
 #include "../../BufferDefinition/GPUBuffer/ComputeBuffer/ComputeBuffer.h"
 #include "../../BufferDefinition/GPUBuffer/UploadStructuredBuffer/UploadStructuredBuffer.h"
+#include"../../BufferDefinition/GPUBuffer/StaticStructuredBuffer/StaticStructuredBuffer.h"
 
 //ディスクリプション
 #include "../../BufferDefinition/BufferDescriptions/ColorBufferDescription/ColorBufferDescription.h"
@@ -14,6 +15,7 @@
 #include "../../BufferDefinition/BufferDescriptions/DepthStencilBufferDescription/DepthStencilBufferDescription.h"
 #include "../../BufferDefinition/BufferDescriptions/ComputeBufferDescription/ComputeBufferDescription.h"
 #include "../../BufferDefinition/BufferDescriptions/UploadStructuredBufferDescription/UploadStructuredBufferDescription.h"
+#include "../../BufferDefinition/BufferDescriptions/StaticStructuredBufferDescription/StaticStructuredBufferDescription.h"
 
 //ツール
 #include "../../../../Core/DescriptorHeap/ViewCreator/ViewCreator.h"
@@ -186,6 +188,75 @@ void BufferContext::BufferAssembler::AssembleView<ComputeBuffer, ComputeBufferDe
 
 }
 
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+template<>
+std::optional<D3D12_CLEAR_VALUE> BufferContext::BufferAssembler::GetClearValue(const StaticStructuredBufferDescription& desc_)
+{
+	return std::nullopt;
+}
+
+template<>
+void BufferContext::BufferAssembler::AssembleView<StaticStructuredBuffer, StaticStructuredBufferDescription>
+(StaticStructuredBuffer* buffer_, const StaticStructuredBufferDescription& desc_, GPUBufferBehavior::ResourceAccessKey accessKey_, GPUBufferBehavior::InstanceKey instanceKey_)
+{
+	auto srvDesc = desc_.CreateSRV_Desc();
+
+	//srv作成
+	CreateView(buffer_, srvDesc, 0, accessKey_, instanceKey_);
+}
+
+template<>
+std::unique_ptr<StaticStructuredBuffer> BufferContext::BufferAssembler::AssembleBuffer<StaticStructuredBuffer, StaticStructuredBufferDescription>
+(ResourceContainer resourceContainer_, const StaticStructuredBufferDescription& desc_, std::string nameCnv_)
+{
+	//バッファ生成
+	return std::make_unique<StaticStructuredBuffer>
+	(
+		StaticStructuredBuffer::InstanceKey{},
+		nameCnv_,
+		std::move(resourceContainer_),
+		std::make_unique<StaticStructuredBufferDescription>(desc_)
+	);
+
+}
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+template<>
+std::optional<D3D12_CLEAR_VALUE> BufferContext::BufferAssembler::GetClearValue(const UploadStructuredBufferDescription& desc_)
+{
+	return std::nullopt;
+
+}
+
+template<>
+void BufferContext::BufferAssembler::AssembleView<UploadStructuredBuffer, UploadStructuredBufferDescription>
+(UploadStructuredBuffer* buffer_, const UploadStructuredBufferDescription& desc_, GPUBufferBehavior::ResourceAccessKey accessKey_, GPUBufferBehavior::InstanceKey instanceKey_)
+{
+	auto srvDesc = desc_.CreateSRV_Desc();
+
+	//srv作成
+	CreateView(buffer_, srvDesc, 0, accessKey_, instanceKey_);
+	//srv生成
+	CreateView(buffer_, srvDesc, 1, accessKey_, instanceKey_);
+}
+
+template<>
+std::unique_ptr<UploadStructuredBuffer> BufferContext::BufferAssembler::AssembleBuffer<UploadStructuredBuffer, UploadStructuredBufferDescription>
+(ResourceContainer resourceContainer_, const UploadStructuredBufferDescription& desc_, std::string nameCnv_)
+{
+	//バッファ生成
+	return std::make_unique<UploadStructuredBuffer>
+	(
+		UploadStructuredBuffer::InstanceKey{},
+		nameCnv_,
+		std::move(resourceContainer_),
+		std::make_unique<UploadStructuredBufferDescription>(desc_)
+	);
+
+}
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////

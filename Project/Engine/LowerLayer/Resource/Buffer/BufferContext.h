@@ -11,10 +11,6 @@ class BufferContext
 	class BufferCollector;
 	//生成したバッファの削除を担当
 	class BufferDeferredReleaser;
-	//フレームバッファ系バッファの描画パス構築に必要な情報の抽出を行う
-	class FrameBufferedBufferInfoExtractor;
-	//コンピュートバッファ系のパス構築に必要な情報の抽出とそのリソースのSwapを行う
-	class ComputeBufferInfoExtractor;
 	//生リソース生成
 	class ResourceCreator;
 	//BufferAssemblerとBufferCollectorをつかってバッファを作成する
@@ -26,13 +22,13 @@ protected:
 
 	//リソース生成コマンド
 	using CreateResourceCommand = std::function<Microsoft::WRL::ComPtr<ID3D12Resource>
-		(
-			const D3D12_RESOURCE_DESC& resourceDesc_,
-			const D3D12_HEAP_PROPERTIES& heapProperties_,
-			const D3D12_CLEAR_VALUE* clearValue_,
-			D3D12_RESOURCE_STATES initialState_,
-			const std::string& name_
-		)>;
+	(
+		const D3D12_RESOURCE_DESC& resourceDesc_,
+		const D3D12_HEAP_PROPERTIES& heapProperties_,
+		const D3D12_CLEAR_VALUE* clearValue_,
+		D3D12_RESOURCE_STATES initialState_,
+		const std::string& name_
+	)>;
 
 	//登録先識別用
 	enum class RegisterType
@@ -40,6 +36,7 @@ protected:
 		kRenderTarget,
 		kFrameBuffer,
 		kComputeBuffer,
+		kReadOnlyBuffer,
 		kCount
 	};
 
@@ -73,13 +70,16 @@ public:
 
 private:
 
-	//ColorBufferやDepthStencilBufferなどレンダーターゲットなバッファのコンテナ
+	//ColorBufferやDepthStencilBufferなどレンダーターゲットなバッファプール
 	std::vector<std::unique_ptr<GPUBufferBehavior>> renderTargetBufferPool;
-	//computeBufferのような、コンピュートシェーダをかませるバッファのコンテナ
+	//computeBufferのような、コンピュートシェーダをかませるバッファのプール
 	std::vector<std::unique_ptr<GPUBufferBehavior>> computeBufferPool;
-	//ConstantBufferやUploadStructuredBufferのようなフレームバッファのコンテナ
+	//ConstantBufferやUploadStructuredBufferのようなフレームバッファのプール
 	std::vector<std::unique_ptr<GPUBufferBehavior>> frameBufferPool;
+	//staticStructuredBufferやtextureBufferのような、読みしかしない確定のシングルバッファのプール
+	std::vector<std::unique_ptr<GPUBufferBehavior>> readOnlyBufferPool;
 
+	
 	//ユニークIDがどこのバッファコンテナの何番目のバッファを指しているのか示すマップコンテナ
 	std::unordered_map<BufferUniqueID, std::pair<RegisterType, uint32_t>> bufferLocationMap;
 

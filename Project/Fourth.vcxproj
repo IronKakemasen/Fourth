@@ -307,6 +307,8 @@
     <ClCompile Include="Engine\LowerLayer\Resource\Mesh\ModelStructure\ModelData\ResourceMaterial\ResourceMaterial.cpp" />
     <ClCompile Include="Engine\LowerLayer\Resource\Mesh\ModelStructure\ModelData\ModelDataAggregate.cpp" />
     <ClCompile Include="Engine\Math\Vector\Vector4.cpp" />
+    <ClCompile Include="Engine\LowerLayer\Resource\Buffer\BufferDefinition\BufferDescriptions\StaticStructuredBufferDescription\StaticStructuredBufferDescription.cpp" />
+    <ClCompile Include="Engine\LowerLayer\Resource\Buffer\BufferDefinition\GPUBuffer\StaticStructuredBuffer\StaticStructuredBuffer.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Assets\Shared\ConstantBuffers.h" />
@@ -449,6 +451,8 @@
     <ClInclude Include="Engine\LowerLayer\Resource\Mesh\ModelStructure\ModelData\ModelDataAggregate.h" />
     <ClInclude Include="Engine\Math\Vector\Vector4.h" />
     <ClInclude Include="Engine\Utility\Transform\Transform.h" />
+    <ClInclude Include="Engine\LowerLayer\Resource\Buffer\BufferDefinition\BufferDescriptions\StaticStructuredBufferDescription\StaticStructuredBufferDescription.h" />
+    <ClInclude Include="Engine\LowerLayer\Resource\Buffer\BufferDefinition\GPUBuffer\StaticStructuredBuffer\StaticStructuredBuffer.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
