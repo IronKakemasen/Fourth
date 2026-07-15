@@ -7,12 +7,8 @@
 BufferContext::BufferCollector::BufferCollector
 (
 	BufferContext::InstanceKey key_,
-	std::vector<std::unique_ptr<GPUBufferBehavior>>* renderTargetBufferPool_,
-	std::vector<std::unique_ptr<GPUBufferBehavior>>* computeBufferPool_,
-	std::vector<std::unique_ptr<GPUBufferBehavior>>* frameBufferPool_,
-	std::vector<std::unique_ptr<GPUBufferBehavior>>* staticStructuredBufferPool_,
-	std::unordered_map<BufferUniqueID, std::pair<RegisterType, uint32_t>>* bufferLocationMap_
-):renderTargetBufferPool(renderTargetBufferPool_), computeBufferPool(computeBufferPool_), frameBufferpool(frameBufferPool_), bufferLocationMap(bufferLocationMap_), readOnlyBufferPool(staticStructuredBufferPool_)
+	BufferContext::BufferPoolSet* bufferPoolSet_
+):bufferPoolSet(bufferPoolSet_)
 {
 
 }
@@ -32,7 +28,7 @@ void BufferContext::BufferCollector::Distribute()
 	for (auto itrSrcContainer = tmp_bufferContainer.begin();itrSrcContainer != tmp_bufferContainer.end();++itrSrcContainer)
 	{
 		//コンテナ取得
-		auto* dstContainer = ContainerTable((*itrSrcContainer).type);
+		auto* dstContainer = bufferPoolSet->ContainerTable((*itrSrcContainer).type);
 
 		//空きスロットを検索
 		auto itrDstConatiner = FindFreeSlot(dstContainer);
@@ -47,14 +43,14 @@ void BufferContext::BufferCollector::Distribute()
 			//該当の空きインデックス
 			uint32_t freeIndex = uint32_t(itrDstConatiner - dstContainer->begin());
 			//ユニークIDとコンテナ上のIDを紐づける 
-			(*bufferLocationMap)[(*itrSrcContainer).id] = std::make_pair((*itrSrcContainer).type, freeIndex);
+			bufferPoolSet->bufferLocationMap[(*itrSrcContainer).id] = std::make_pair((*itrSrcContainer).type, freeIndex);
 		}
 		//空きスロットが無ければ尻尾に追加
 		else
 		{
 			dstContainer->emplace_back(std::move((*itrSrcContainer).buffer));
 			//ユニークIDとコンテナ上のIDを紐づける 
-			(*bufferLocationMap)[(*itrSrcContainer).id] = std::make_pair((*itrSrcContainer).type, uint32_t(dstContainer->size() - 1 ));
+			bufferPoolSet->bufferLocationMap[(*itrSrcContainer).id] = std::make_pair((*itrSrcContainer).type, uint32_t(dstContainer->size() - 1 ));
 
 		}
 	}
@@ -62,22 +58,6 @@ void BufferContext::BufferCollector::Distribute()
 	tmp_bufferContainer.clear();
 	tmp_bufferContainer.shrink_to_fit();
 }
-///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-std::vector<std::unique_ptr<GPUBufferBehavior>>* BufferContext::BufferCollector::ContainerTable(BufferContext::RegisterType type_)
-{
-	static std::vector<std::unique_ptr<GPUBufferBehavior>>* table[(int)BufferContext::RegisterType::kCount]
-	{
-		renderTargetBufferPool,
-		frameBufferpool,
-		computeBufferPool,
-		readOnlyBufferPool
-	};
-
-	return table[(int)type_];
-}
-
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////

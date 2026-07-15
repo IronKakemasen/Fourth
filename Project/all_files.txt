@@ -6204,6 +6204,7 @@ void BufferContext::InstantiateBufferCreator
 			&renderTargetBufferPool, 
 			&computeBufferPool,
 			&frameBufferPool,
+			&readOnlyBufferPool,
 			&bufferLocationMap
 		)
 	);
@@ -6232,10 +6233,6 @@ class BufferContext
 	class BufferCollector;
 	//生成したバッファの削除を担当
 	class BufferDeferredReleaser;
-	//フレームバッファ系バッファの描画パス構築に必要な情報の抽出を行う
-	class FrameBufferedBufferInfoExtractor;
-	//コンピュートバッファ系のパス構築に必要な情報の抽出とそのリソースのSwapを行う
-	class ComputeBufferInfoExtractor;
 	//生リソース生成
 	class ResourceCreator;
 	//BufferAssemblerとBufferCollectorをつかってバッファを作成する
@@ -6247,13 +6244,13 @@ protected:
 
 	//リソース生成コマンド
 	using CreateResourceCommand = std::function<Microsoft::WRL::ComPtr<ID3D12Resource>
-		(
-			const D3D12_RESOURCE_DESC& resourceDesc_,
-			const D3D12_HEAP_PROPERTIES& heapProperties_,
-			const D3D12_CLEAR_VALUE* clearValue_,
-			D3D12_RESOURCE_STATES initialState_,
-			const std::string& name_
-		)>;
+	(
+		const D3D12_RESOURCE_DESC& resourceDesc_,
+		const D3D12_HEAP_PROPERTIES& heapProperties_,
+		const D3D12_CLEAR_VALUE* clearValue_,
+		D3D12_RESOURCE_STATES initialState_,
+		const std::string& name_
+	)>;
 
 	//登録先識別用
 	enum class RegisterType
@@ -6261,6 +6258,7 @@ protected:
 		kRenderTarget,
 		kFrameBuffer,
 		kComputeBuffer,
+		kReadOnlyBuffer,
 		kCount
 	};
 
@@ -6294,13 +6292,16 @@ public:
 
 private:
 
-	//ColorBufferやDepthStencilBufferなどレンダーターゲットなバッファのコンテナ
+	//ColorBufferやDepthStencilBufferなどレンダーターゲットなバッファプール
 	std::vector<std::unique_ptr<GPUBufferBehavior>> renderTargetBufferPool;
-	//computeBufferのような、コンピュートシェーダをかませるバッファのコンテナ
+	//computeBufferのような、コンピュートシェーダをかませるバッファのプール
 	std::vector<std::unique_ptr<GPUBufferBehavior>> computeBufferPool;
-	//ConstantBufferやUploadStructuredBufferのようなフレームバッファのコンテナ
+	//ConstantBufferやUploadStructuredBufferのようなフレームバッファのプール
 	std::vector<std::unique_ptr<GPUBufferBehavior>> frameBufferPool;
+	//staticStructuredBufferやtextureBufferのような、読みしかしない確定のシングルバッファのプール
+	std::vector<std::unique_ptr<GPUBufferBehavior>> readOnlyBufferPool;
 
+	
 	//ユニークIDがどこのバッファコンテナの何番目のバッファを指しているのか示すマップコンテナ
 	std::unordered_map<BufferUniqueID, std::pair<RegisterType, uint32_t>> bufferLocationMap;
 
@@ -6385,6 +6386,7 @@ namespace ResourceBarrier
 #include "../../BufferDefinition/GPUBuffer/DepthStencilBuffer/DepthStencilBuffer.h"
 #include "../../BufferDefinition/GPUBuffer/ComputeBuffer/ComputeBuffer.h"
 #include "../../BufferDefinition/GPUBuffer/UploadStructuredBuffer/UploadStructuredBuffer.h"
+#include"../../BufferDefinition/GPUBuffer/StaticStructuredBuffer/StaticStructuredBuffer.h"
 
 //ディスクリプション
 #include "../../BufferDefinition/BufferDescriptions/ColorBufferDescription/ColorBufferDescription.h"
@@ -6392,6 +6394,7 @@ namespace ResourceBarrier
 #include "../../BufferDefinition/BufferDescriptions/DepthStencilBufferDescription/DepthStencilBufferDescription.h"
 #include "../../BufferDefinition/BufferDescriptions/ComputeBufferDescription/ComputeBufferDescription.h"
 #include "../../BufferDefinition/BufferDescriptions/UploadStructuredBufferDescription/UploadStructuredBufferDescription.h"
+#include "../../BufferDefinition/BufferDescriptions/StaticStructuredBufferDescription/StaticStructuredBufferDescription.h"
 
 //ツール
 #include "../../../../Core/DescriptorHeap/ViewCreator/ViewCreator.h"
@@ -6568,6 +6571,75 @@ void BufferContext::BufferAssembler::AssembleView<ComputeBuffer, ComputeBufferDe
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 template<>
+std::optional<D3D12_CLEAR_VALUE> BufferContext::BufferAssembler::GetClearValue(const StaticStructuredBufferDescription& desc_)
+{
+	return std::nullopt;
+}
+
+template<>
+void BufferContext::BufferAssembler::AssembleView<StaticStructuredBuffer, StaticStructuredBufferDescription>
+(StaticStructuredBuffer* buffer_, const StaticStructuredBufferDescription& desc_, GPUBufferBehavior::ResourceAccessKey accessKey_, GPUBufferBehavior::InstanceKey instanceKey_)
+{
+	auto srvDesc = desc_.CreateSRV_Desc();
+
+	//srv作成
+	CreateView(buffer_, srvDesc, 0, accessKey_, instanceKey_);
+}
+
+template<>
+std::unique_ptr<StaticStructuredBuffer> BufferContext::BufferAssembler::AssembleBuffer<StaticStructuredBuffer, StaticStructuredBufferDescription>
+(ResourceContainer resourceContainer_, const StaticStructuredBufferDescription& desc_, std::string nameCnv_)
+{
+	//バッファ生成
+	return std::make_unique<StaticStructuredBuffer>
+	(
+		StaticStructuredBuffer::InstanceKey{},
+		nameCnv_,
+		std::move(resourceContainer_),
+		std::make_unique<StaticStructuredBufferDescription>(desc_)
+	);
+
+}
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+template<>
+std::optional<D3D12_CLEAR_VALUE> BufferContext::BufferAssembler::GetClearValue(const UploadStructuredBufferDescription& desc_)
+{
+	return std::nullopt;
+
+}
+
+template<>
+void BufferContext::BufferAssembler::AssembleView<UploadStructuredBuffer, UploadStructuredBufferDescription>
+(UploadStructuredBuffer* buffer_, const UploadStructuredBufferDescription& desc_, GPUBufferBehavior::ResourceAccessKey accessKey_, GPUBufferBehavior::InstanceKey instanceKey_)
+{
+	auto srvDesc = desc_.CreateSRV_Desc();
+
+	//srv作成
+	CreateView(buffer_, srvDesc, 0, accessKey_, instanceKey_);
+	//srv生成
+	CreateView(buffer_, srvDesc, 1, accessKey_, instanceKey_);
+}
+
+template<>
+std::unique_ptr<UploadStructuredBuffer> BufferContext::BufferAssembler::AssembleBuffer<UploadStructuredBuffer, UploadStructuredBufferDescription>
+(ResourceContainer resourceContainer_, const UploadStructuredBufferDescription& desc_, std::string nameCnv_)
+{
+	//バッファ生成
+	return std::make_unique<UploadStructuredBuffer>
+	(
+		UploadStructuredBuffer::InstanceKey{},
+		nameCnv_,
+		std::move(resourceContainer_),
+		std::make_unique<UploadStructuredBufferDescription>(desc_)
+	);
+
+}
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+template<>
 void BufferContext::BufferAssembler::CreateView
 (
 	GPUBufferBehavior* buffer_,
@@ -6664,6 +6736,8 @@ struct ConstantBufferDescription;
 struct DepthStencilBufferDescription;
 struct ComputeBufferDescription;
 struct UploadStructuredBufferDescription;
+struct StaticStructuredBufferDescription;
+
 
 //バッファ
 class ColorBuffer;
@@ -6671,6 +6745,7 @@ class ConstantBuffer;
 class DepthStencilBuffer;
 class ComputeBuffer;
 class UploadStructuredBuffer;
+class StaticStructuredBuffer;
 
 
 
@@ -6758,12 +6833,14 @@ private:
     std::string ConvertName(const std::string& srcName_)
     {
         std::string attach;
-        if constexpr (std::is_same_v<BufferType, ConstantBuffer>)attach = "Constant";
-        else if constexpr (std::is_same_v<BufferType, ColorBuffer>)attach = "Color";
-        else if constexpr (std::is_same_v<BufferType, DepthStencilBuffer>)attach = "DepthStencil";
-        else if constexpr (std::is_same_v<BufferType, ComputeBuffer>)attach = "Compute";
-        else if constexpr (std::is_same_v<BufferType, UploadStructuredBuffer>)attach = "UploadStructured";
-       
+
+        if constexpr (std::is_same_v<BufferType, ConstantBuffer>)               attach  = "Constant";
+        else if constexpr (std::is_same_v<BufferType, ColorBuffer>)             attach  = "Color";
+        else if constexpr (std::is_same_v<BufferType, DepthStencilBuffer>)      attach  = "DepthStencil";
+        else if constexpr (std::is_same_v<BufferType, ComputeBuffer>)           attach  = "Compute";
+        else if constexpr (std::is_same_v<BufferType, UploadStructuredBuffer>)  attach  = "UploadStructured";
+        else if constexpr (std::is_same_v<BufferType, StaticStructuredBuffer>)  attach  = "StaticStructuredBuffer";
+
         return attach + "Buffer" + "[ " + srcName_ + " ] ";
     }
 
@@ -6889,7 +6966,32 @@ void BufferContext::BufferAssembler::AssembleView<ComputeBuffer, ComputeBufferDe
 template<>
 std::unique_ptr<ComputeBuffer> BufferContext::BufferAssembler::AssembleBuffer<ComputeBuffer, ComputeBufferDescription>
 (ResourceContainer resourceContainer_, const ComputeBufferDescription& desc_, std::string nameCnv_);
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+template<>
+std::optional<D3D12_CLEAR_VALUE> BufferContext::BufferAssembler::GetClearValue(const StaticStructuredBufferDescription& desc_);
 
+template<>
+void BufferContext::BufferAssembler::AssembleView<StaticStructuredBuffer, StaticStructuredBufferDescription>
+(StaticStructuredBuffer* buffer_, const StaticStructuredBufferDescription& desc_, GPUBufferBehavior::ResourceAccessKey accessKey_, GPUBufferBehavior::InstanceKey instanceKey_);
+
+template<>
+std::unique_ptr<StaticStructuredBuffer> BufferContext::BufferAssembler::AssembleBuffer<StaticStructuredBuffer, StaticStructuredBufferDescription>
+(ResourceContainer resourceContainer_, const StaticStructuredBufferDescription& desc_, std::string nameCnv_);
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+template<>
+std::optional<D3D12_CLEAR_VALUE> BufferContext::BufferAssembler::GetClearValue(const UploadStructuredBufferDescription& desc_);
+
+template<>
+void BufferContext::BufferAssembler::AssembleView<UploadStructuredBuffer, UploadStructuredBufferDescription>
+(UploadStructuredBuffer* buffer_, const UploadStructuredBufferDescription& desc_, GPUBufferBehavior::ResourceAccessKey accessKey_, GPUBufferBehavior::InstanceKey instanceKey_);
+
+template<>
+std::unique_ptr<UploadStructuredBuffer> BufferContext::BufferAssembler::AssembleBuffer<UploadStructuredBuffer, UploadStructuredBufferDescription>
+(ResourceContainer resourceContainer_, const UploadStructuredBufferDescription& desc_, std::string nameCnv_);
 
 
 
@@ -6909,8 +7011,9 @@ BufferContext::BufferCollector::BufferCollector
 	std::vector<std::unique_ptr<GPUBufferBehavior>>* renderTargetBufferPool_,
 	std::vector<std::unique_ptr<GPUBufferBehavior>>* computeBufferPool_,
 	std::vector<std::unique_ptr<GPUBufferBehavior>>* frameBufferPool_,
+	std::vector<std::unique_ptr<GPUBufferBehavior>>* staticStructuredBufferPool_,
 	std::unordered_map<BufferUniqueID, std::pair<RegisterType, uint32_t>>* bufferLocationMap_
-):renderTargetBufferPool(renderTargetBufferPool_), computeBufferPool(computeBufferPool_), frameBufferpool(frameBufferPool_), bufferLocationMap(bufferLocationMap_)
+):renderTargetBufferPool(renderTargetBufferPool_), computeBufferPool(computeBufferPool_), frameBufferpool(frameBufferPool_), bufferLocationMap(bufferLocationMap_), readOnlyBufferPool(staticStructuredBufferPool_)
 {
 
 }
@@ -6969,7 +7072,8 @@ std::vector<std::unique_ptr<GPUBufferBehavior>>* BufferContext::BufferCollector:
 	{
 		renderTargetBufferPool,
 		frameBufferpool,
-		computeBufferPool
+		computeBufferPool,
+		readOnlyBufferPool
 	};
 
 	return table[(int)type_];
@@ -7002,6 +7106,7 @@ class ConstantBuffer;
 class DepthStencilBuffer;
 class ComputeBuffer;
 class UploadStructuredBuffer;
+class StaticStructuredBuffer;
 
 class BufferContext::BufferCollector
 {
@@ -7013,6 +7118,7 @@ public:
 		std::vector<std::unique_ptr<GPUBufferBehavior>>* renderTargetBufferPool_,
 		std::vector<std::unique_ptr<GPUBufferBehavior>>* computeBufferPool_,
 		std::vector<std::unique_ptr<GPUBufferBehavior>>* frameBufferPool_,
+		std::vector<std::unique_ptr<GPUBufferBehavior>>* staticStructuredBufferPool_,
 		std::unordered_map<BufferUniqueID, std::pair<BufferContext::RegisterType, uint32_t>>* bufferLocationMap_
 	);
 
@@ -7052,6 +7158,7 @@ private:
 	std::vector<std::unique_ptr<GPUBufferBehavior>>* renderTargetBufferPool;
 	std::vector<std::unique_ptr<GPUBufferBehavior>>* computeBufferPool;
 	std::vector<std::unique_ptr<GPUBufferBehavior>>* frameBufferpool;
+	std::vector<std::unique_ptr<GPUBufferBehavior>>* readOnlyBufferPool;
 
 	//ユニークIDがどこのバッファコンテナの何番目のバッファを指しているのか示すマップコンテナ
 	std::unordered_map<BufferUniqueID, std::pair<RegisterType, uint32_t>>* bufferLocationMap;
@@ -7077,6 +7184,13 @@ private:
 		)
 		{
 			type = RegisterType::kRenderTarget;
+		}
+		else if constexpr
+		(
+			std::is_same_v<BufferType, StaticStructuredBuffer> 
+		)
+		{
+			type = RegisterType::kReadOnlyBuffer;
 		}
 
 		return type;

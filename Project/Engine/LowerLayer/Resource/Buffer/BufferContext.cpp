@@ -65,11 +65,7 @@ void BufferContext::InstantiateBufferCreator
 		std::make_unique<BufferCollector>
 		(
 			instanceKey_, 
-			&renderTargetBufferPool, 
-			&computeBufferPool,
-			&frameBufferPool,
-			&readOnlyBufferPool,
-			&bufferLocationMap
+			&bufferPoolSet 
 		)
 	);
 
@@ -78,3 +74,19 @@ void BufferContext::InstantiateBufferCreator
 	bufferCreator.reset(new BufferCreator(std::move(bufferAssembler), std::move(bufferCollector)));
 	Logger::Log("Instantiate: BufferCreator", fileName);
 }
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+std::vector<std::unique_ptr<GPUBufferBehavior>>* BufferContext::BufferPoolSet::ContainerTable(BufferContext::RegisterType type_)
+{
+	static std::vector<std::unique_ptr<GPUBufferBehavior>>* table[(int)BufferContext::RegisterType::kCount]
+	{
+		&renderTargetBufferPool,
+		&frameBufferPool,
+		&computeBufferPool,
+		&readOnlyBufferPool
+	};
+
+	return table[(int)type_];
+}
+
