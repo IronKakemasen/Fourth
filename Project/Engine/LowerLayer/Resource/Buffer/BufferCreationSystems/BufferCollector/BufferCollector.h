@@ -7,6 +7,7 @@ class ConstantBuffer;
 class DepthStencilBuffer;
 class ComputeBuffer;
 class UploadStructuredBuffer;
+class StaticStructuredBuffer;
 
 class BufferContext::BufferCollector
 {
@@ -18,6 +19,7 @@ public:
 		std::vector<std::unique_ptr<GPUBufferBehavior>>* renderTargetBufferPool_,
 		std::vector<std::unique_ptr<GPUBufferBehavior>>* computeBufferPool_,
 		std::vector<std::unique_ptr<GPUBufferBehavior>>* frameBufferPool_,
+		std::vector<std::unique_ptr<GPUBufferBehavior>>* staticStructuredBufferPool_,
 		std::unordered_map<BufferUniqueID, std::pair<BufferContext::RegisterType, uint32_t>>* bufferLocationMap_
 	);
 
@@ -57,6 +59,7 @@ private:
 	std::vector<std::unique_ptr<GPUBufferBehavior>>* renderTargetBufferPool;
 	std::vector<std::unique_ptr<GPUBufferBehavior>>* computeBufferPool;
 	std::vector<std::unique_ptr<GPUBufferBehavior>>* frameBufferpool;
+	std::vector<std::unique_ptr<GPUBufferBehavior>>* readOnlyBufferPool;
 
 	//ユニークIDがどこのバッファコンテナの何番目のバッファを指しているのか示すマップコンテナ
 	std::unordered_map<BufferUniqueID, std::pair<RegisterType, uint32_t>>* bufferLocationMap;
@@ -82,6 +85,13 @@ private:
 		)
 		{
 			type = RegisterType::kRenderTarget;
+		}
+		else if constexpr
+		(
+			std::is_same_v<BufferType, StaticStructuredBuffer> 
+		)
+		{
+			type = RegisterType::kReadOnlyBuffer;
 		}
 
 		return type;

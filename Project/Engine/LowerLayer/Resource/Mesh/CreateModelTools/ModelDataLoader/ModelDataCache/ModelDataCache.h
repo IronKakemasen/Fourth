@@ -10,12 +10,12 @@ public:
 
 	ModelDataCache(MeshContext::InstanceKey key_);
 
-	std::optional<ModelDataAggregate> FindDuplication(AccessKey key_, std::string fileName_);
-	void Register(AccessKey key_, std::string fileName_, const ModelDataAggregate& data_);
+	std::shared_ptr<ModelDataAggregate> FindDuplication(AccessKey key_, std::string fileName_);
+	void Register(AccessKey key_, std::string fileName_, std::shared_ptr<ModelDataAggregate> data_);
 
 private:
 
-	std::unordered_map<std::string, ModelDataAggregate> modelDataCache;
+	std::unordered_map<std::string, std::shared_ptr<ModelDataAggregate>> modelDataCache;
 };
 
 struct MeshContext::ModelCreator::ModelDataLoader::ModelDataCache::AccessKey

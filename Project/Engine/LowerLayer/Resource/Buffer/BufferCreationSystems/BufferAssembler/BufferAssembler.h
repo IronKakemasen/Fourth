@@ -13,6 +13,8 @@ struct ConstantBufferDescription;
 struct DepthStencilBufferDescription;
 struct ComputeBufferDescription;
 struct UploadStructuredBufferDescription;
+struct StaticStructuredBufferDescription;
+
 
 //バッファ
 class ColorBuffer;
@@ -20,6 +22,7 @@ class ConstantBuffer;
 class DepthStencilBuffer;
 class ComputeBuffer;
 class UploadStructuredBuffer;
+class StaticStructuredBuffer;
 
 
 
@@ -107,12 +110,14 @@ private:
     std::string ConvertName(const std::string& srcName_)
     {
         std::string attach;
-        if constexpr (std::is_same_v<BufferType, ConstantBuffer>)attach = "Constant";
-        else if constexpr (std::is_same_v<BufferType, ColorBuffer>)attach = "Color";
-        else if constexpr (std::is_same_v<BufferType, DepthStencilBuffer>)attach = "DepthStencil";
-        else if constexpr (std::is_same_v<BufferType, ComputeBuffer>)attach = "Compute";
-        else if constexpr (std::is_same_v<BufferType, UploadStructuredBuffer>)attach = "UploadStructured";
-       
+
+        if constexpr (std::is_same_v<BufferType, ConstantBuffer>)               attach  = "Constant";
+        else if constexpr (std::is_same_v<BufferType, ColorBuffer>)             attach  = "Color";
+        else if constexpr (std::is_same_v<BufferType, DepthStencilBuffer>)      attach  = "DepthStencil";
+        else if constexpr (std::is_same_v<BufferType, ComputeBuffer>)           attach  = "Compute";
+        else if constexpr (std::is_same_v<BufferType, UploadStructuredBuffer>)  attach  = "UploadStructured";
+        else if constexpr (std::is_same_v<BufferType, StaticStructuredBuffer>)  attach  = "StaticStructuredBuffer";
+
         return attach + "Buffer" + "[ " + srcName_ + " ] ";
     }
 
@@ -238,4 +243,29 @@ void BufferContext::BufferAssembler::AssembleView<ComputeBuffer, ComputeBufferDe
 template<>
 std::unique_ptr<ComputeBuffer> BufferContext::BufferAssembler::AssembleBuffer<ComputeBuffer, ComputeBufferDescription>
 (ResourceContainer resourceContainer_, const ComputeBufferDescription& desc_, std::string nameCnv_);
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+template<>
+std::optional<D3D12_CLEAR_VALUE> BufferContext::BufferAssembler::GetClearValue(const StaticStructuredBufferDescription& desc_);
 
+template<>
+void BufferContext::BufferAssembler::AssembleView<StaticStructuredBuffer, StaticStructuredBufferDescription>
+(StaticStructuredBuffer* buffer_, const StaticStructuredBufferDescription& desc_, GPUBufferBehavior::ResourceAccessKey accessKey_, GPUBufferBehavior::InstanceKey instanceKey_);
+
+template<>
+std::unique_ptr<StaticStructuredBuffer> BufferContext::BufferAssembler::AssembleBuffer<StaticStructuredBuffer, StaticStructuredBufferDescription>
+(ResourceContainer resourceContainer_, const StaticStructuredBufferDescription& desc_, std::string nameCnv_);
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+template<>
+std::optional<D3D12_CLEAR_VALUE> BufferContext::BufferAssembler::GetClearValue(const UploadStructuredBufferDescription& desc_);
+
+template<>
+void BufferContext::BufferAssembler::AssembleView<UploadStructuredBuffer, UploadStructuredBufferDescription>
+(UploadStructuredBuffer* buffer_, const UploadStructuredBufferDescription& desc_, GPUBufferBehavior::ResourceAccessKey accessKey_, GPUBufferBehavior::InstanceKey instanceKey_);
+
+template<>
+std::unique_ptr<UploadStructuredBuffer> BufferContext::BufferAssembler::AssembleBuffer<UploadStructuredBuffer, UploadStructuredBufferDescription>
+(ResourceContainer resourceContainer_, const UploadStructuredBufferDescription& desc_, std::string nameCnv_);

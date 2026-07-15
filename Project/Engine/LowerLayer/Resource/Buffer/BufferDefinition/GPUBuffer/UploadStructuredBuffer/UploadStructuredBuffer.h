@@ -4,7 +4,7 @@
 struct UploadStructuredBufferDescription;
 
 //読み書きStructuredBuffer
-class UploadStructuredBuffer final : public GPUBufferBehavior
+class UploadStructuredBuffer final : public GPUBufferBehavior, IShaderBuffer
 {
 
 public:
@@ -16,6 +16,8 @@ public:
 		std::vector<Microsoft::WRL::ComPtr<ID3D12Resource>> resourceContainer_,
 		std::unique_ptr <BufferDescriptionBehavior>&& description_
 	);
+
+	virtual uint32_t OutProperSRVHeapIndex(int frameIndex_ = 0)const override;
 
 private:
 

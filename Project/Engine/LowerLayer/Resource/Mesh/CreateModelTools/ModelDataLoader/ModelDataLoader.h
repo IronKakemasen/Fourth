@@ -8,9 +8,9 @@
 #include "../../.././../../External/assimp/include/assimp/cimport.h"
 
 
-
 struct ResourceMesh;
 struct ResourceMaterial;
+struct ModelDataAggregate;
 
 
 class MeshContext::ModelCreator::ModelDataLoader
@@ -20,12 +20,7 @@ public:
 	ModelDataLoader(MeshContext::InstanceKey key_);
 	~ModelDataLoader();
 
-	void Load
-	(
-		std::string fileName_,
-		std::vector<ResourceMesh>& meshes_,
-		std::vector<ResourceMaterial>& materials_
-	);
+	std::shared_ptr<ModelDataAggregate> Load(std::string fileName_);
 
 private:
 

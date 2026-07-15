@@ -10,8 +10,9 @@ BufferContext::BufferCollector::BufferCollector
 	std::vector<std::unique_ptr<GPUBufferBehavior>>* renderTargetBufferPool_,
 	std::vector<std::unique_ptr<GPUBufferBehavior>>* computeBufferPool_,
 	std::vector<std::unique_ptr<GPUBufferBehavior>>* frameBufferPool_,
+	std::vector<std::unique_ptr<GPUBufferBehavior>>* staticStructuredBufferPool_,
 	std::unordered_map<BufferUniqueID, std::pair<RegisterType, uint32_t>>* bufferLocationMap_
-):renderTargetBufferPool(renderTargetBufferPool_), computeBufferPool(computeBufferPool_), frameBufferpool(frameBufferPool_), bufferLocationMap(bufferLocationMap_)
+):renderTargetBufferPool(renderTargetBufferPool_), computeBufferPool(computeBufferPool_), frameBufferpool(frameBufferPool_), bufferLocationMap(bufferLocationMap_), readOnlyBufferPool(staticStructuredBufferPool_)
 {
 
 }
@@ -70,7 +71,8 @@ std::vector<std::unique_ptr<GPUBufferBehavior>>* BufferContext::BufferCollector:
 	{
 		renderTargetBufferPool,
 		frameBufferpool,
-		computeBufferPool
+		computeBufferPool,
+		readOnlyBufferPool
 	};
 
 	return table[(int)type_];
