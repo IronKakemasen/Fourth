@@ -53,6 +53,11 @@ ID3D12CommandQueue* CommandContext::GetCommandQueue(CmdQueueGetKey key_)
 	return commandQueue.Get();
 }
 
+CommandContext::ResourceUploader* CommandContext::GetResourceUploader()
+{
+	return resourceUploader.get();
+}
+
 void CommandContext::CreateFenceEvent()
 {
 	fenceEvent = CreateEvent(NULL, FALSE, FALSE, NULL);

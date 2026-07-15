@@ -11,12 +11,13 @@ class BufferContext
 	class BufferCollector;
 	//生成したバッファの削除を担当
 	class BufferDeferredReleaser;
-	//生リソース生成
-	class ResourceCreator;
-	//BufferAssemblerとBufferCollectorをつかってバッファを作成する
-	class BufferCreator;
 	//BufferUniqueIDから該当のバッファのアドレスをキャストして渡す
 	class BufferDispatcher;
+	//生リソース生成
+	class ResourceCreator;
+
+	//アップロードする必要なバッファをまとめて処理する
+	
 
 protected:
 
@@ -64,8 +65,9 @@ public:
 	struct InstanceKey;
 	//バッファのポインタを扱うものの証
 	struct BufferAccessKey;
-
-	//ResourceCreatorとViewCreatorでバッファを生成
+	//BufferAssemblerとBufferCollectorをつかってバッファを作成する
+	class BufferCreator;
+	//BufferDescriptionをもとにバッファを組み立てる
 	class BufferAssembler;
 	//ランタイムパス構築に必要な情報の抽出とそのリソースのSwapを行う
 	class BufferInfoExtractor;
@@ -90,7 +92,6 @@ private:
 
 	//複数のバッファのプールが定義されている
 	BufferPoolSet bufferPoolSet;
-
 
 	void InstantiateBufferCreator
 	(

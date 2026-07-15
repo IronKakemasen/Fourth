@@ -1,15 +1,22 @@
 #pragma once
-#include "../BufferCollector/BufferCollector.h"
-#include "../BufferAssembler/BufferAssembler.h"
+#include "../BufferContext.h"
+#include "BufferCollector/BufferCollector.h"
+#include "BufferAssembler/BufferAssembler.h"
 
+//ビュー生成ツール
+class ViewCreator;
 
 class BufferContext::BufferCreator
 {
+
 public:
+
 	BufferCreator
 	(
-		std::unique_ptr<BufferContext::BufferAssembler>&& assembler_, 
-		std::unique_ptr<BufferContext::BufferCollector>&& collector_
+		BufferContext::InstanceKey instancekey_,
+		CreateResourceCommand createResourceCommand_,
+		ViewCreator* viewCreator_,
+		BufferPoolSet* bufferPoolSet_
 	);
 
 	~BufferCreator();
@@ -32,6 +39,7 @@ public:
 	{
 		return assembler->Assemble<BufferType>(desc_, name_);
 	}
+
 
 private:
 
