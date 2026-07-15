@@ -9,7 +9,7 @@ BufferContext::ResourceCreator::ResourceCreator(BufferContext::InstanceKey insta
 
 }
 
-BufferContext::ResourceCreator::~ResourceCreator()
+BufferContext::ResourceCreator::ResourceCreator::~ResourceCreator()
 {
 
 }

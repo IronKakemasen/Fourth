@@ -1,10 +1,9 @@
 #pragma once
 #include "../../BufferContext.h"
 #include "../../BufferDefinition/GPUBuffer/GPUBufferBehavior.h"
-//ツール
 #include "../ResourceCreator/ResourceCreator.h"
 
-//ツール
+//ビュー生成ツール
 class ViewCreator;
 
 //ディスクリプション
@@ -40,7 +39,7 @@ public:
     BufferAssembler
     (
         BufferContext::InstanceKey instancekey_, 
-        std::unique_ptr<BufferContext::ResourceCreator> resourceCreator_, 
+        CreateResourceCommand createResourceCommand_,
         ViewCreator* viewCreator_
     );
 
@@ -48,11 +47,14 @@ public:
     template<typename BufferType, typename DescType>
     [[nodiscard]] std::unique_ptr<BufferType> Assemble(const DescType& desc_, const std::string& name_)
     {
+        //名前変換
+        std::string nameCnv = ConvertName<BufferType>(name_);
+
+        Logger::Entry("AssemblingStart:" + nameCnv);
+
         //リソース生成に必要な情報を組み立てる
         std::pair<D3D12_RESOURCE_DESC, D3D12_HEAP_PROPERTIES> resourceDescAndHeapProp  = AssembleResourceCreateRequirements(desc_);
 
-        //名前変換
-        std::string nameCnv = ConvertName<BufferType>(name_);
 
         //生リソース生成
         ResourceContainer resourceContainer =
@@ -72,6 +74,8 @@ public:
 
             AssembleView<BufferType>(buffer.get(), desc_, reourceAccessKey, instanceKey);
         }
+
+        Logger::End("AssemblingComplete:" + nameCnv);
 
         return buffer;
     }

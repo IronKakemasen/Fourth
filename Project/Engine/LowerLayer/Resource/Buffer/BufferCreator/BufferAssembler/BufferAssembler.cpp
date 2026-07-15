@@ -20,16 +20,22 @@
 //ツール
 #include "../../../../Core/DescriptorHeap/ViewCreator/ViewCreator.h"
 
+namespace
+{
+	auto const fileName = "BufferAssembler.cpp";
+}
 
 
 BufferContext::BufferAssembler::BufferAssembler
 (
 	BufferContext::InstanceKey instancekey_, 
-	std::unique_ptr<BufferContext::ResourceCreator> resourceCreator_, 
+	CreateResourceCommand createResourceCommand_,
 	ViewCreator* viewCreator_
 )
-	:resourceCreator(std::move(resourceCreator_)), viewCreator(viewCreator_)
+	:viewCreator(viewCreator_)
 {
+	resourceCreator.reset(new BufferContext::ResourceCreator(instancekey_, createResourceCommand_));
+	Logger::Log("Instantiate: BufferAssembler", fileName);
 
 }
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -40,10 +46,14 @@ std::pair<D3D12_RESOURCE_DESC, D3D12_HEAP_PROPERTIES> BufferContext::BufferAssem
 {
 	//要項チェック
 	desc_.CheckRequirementsFilled();
+	Logger::Log("Check: RequirementsFilled", fileName);
 
 	D3D12_HEAP_PROPERTIES heapProp = desc_.CreateHeapProperties();
+	Logger::Log("Create: heapProp", fileName);
+
 	D3D12_RESOURCE_DESC resourceDesc = desc_.CreateResourceDesc();
-	
+	Logger::Log("Create: resourceDesc", fileName);
+
 	return std::make_pair(resourceDesc, heapProp);
 }
 
@@ -82,8 +92,11 @@ void BufferContext::BufferAssembler::AssembleView<ColorBuffer, ColorBufferDescri
 	{
 		//srv作成
 		CreateView(buffer_, srvDesc, i, accessKey_, instanceKey_);
+		Logger::Log("Create: srv", fileName);
 		//UAV生成
 		CreateView(buffer_, rtvDesc, i, accessKey_, instanceKey_);
+		Logger::Log("Create: rtv", fileName);
+
 	}
 }
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -121,8 +134,11 @@ void BufferContext::BufferAssembler::AssembleView<DepthStencilBuffer, DepthStenc
 	{
 		//srv作成
 		CreateView(buffer_, srvDesc, i, accessKey_, instanceKey_);
+		Logger::Log("Create: srv", fileName);
 		//DSV生成
 		CreateView(buffer_, dsvDesc, i, accessKey_, instanceKey_);
+		Logger::Log("Create: dsv", fileName);
+
 	}
 }
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -182,8 +198,10 @@ void BufferContext::BufferAssembler::AssembleView<ComputeBuffer, ComputeBufferDe
 	{
 		//srv作成
 		CreateView(buffer_, srvDesc, i, accessKey_, instanceKey_);
+		Logger::Log("Create: srv", fileName);
 		//UAV生成
 		CreateView(buffer_, uavDesc, i, accessKey_, instanceKey_);
+		Logger::Log("Create: uav", fileName);
 	}
 
 }
@@ -205,6 +223,8 @@ void BufferContext::BufferAssembler::AssembleView<StaticStructuredBuffer, Static
 
 	//srv作成
 	CreateView(buffer_, srvDesc, 0, accessKey_, instanceKey_);
+	Logger::Log("Create: srv", fileName);
+
 }
 
 template<>
@@ -239,8 +259,10 @@ void BufferContext::BufferAssembler::AssembleView<UploadStructuredBuffer, Upload
 
 	//srv作成
 	CreateView(buffer_, srvDesc, 0, accessKey_, instanceKey_);
+	Logger::Log("Create: srv", fileName);
 	//srv生成
 	CreateView(buffer_, srvDesc, 1, accessKey_, instanceKey_);
+	Logger::Log("Create: srv", fileName);
 }
 
 template<>

@@ -7,10 +7,7 @@
 #include "../../Core/DescriptorHeap/ViewCreator/ViewCreator.h"
 
 //バッファ作成ツール
-#include "BufferCreationSystems/ResourceCreator/ResourceCreator.h"
-#include "BufferCreationSystems/BufferAssembler/BufferAssembler.h"
-#include "BufferCreationSystems/BufferCollector/BufferCollector.h"
-#include "BufferCreationSystems/BufferCreator/BufferCreator.h"
+#include "BufferCreator/BufferCreator.h"
 
 //ランタイム処理ツール
 #include "RuntimeBufferManagementSystems/BufferDispatcher/BufferDispatcher.h"
@@ -56,22 +53,7 @@ void BufferContext::InstantiateBufferCreator
 {
 	auto* viewCreator = descriptorHeapContext_->GetViewCreator(DescriptorHeapContext::ViewCreatorGetKey{});
 	
-	std::unique_ptr<ResourceCreator> resourceCreator(std::make_unique<ResourceCreator>(instanceKey_, createResourceCommand_));
-	Logger::Log("Instantiate: ResourceCreator", fileName);
-	std::unique_ptr<BufferAssembler> bufferAssembler(std::make_unique<BufferAssembler>(instanceKey_, std::move(resourceCreator), viewCreator));
-	Logger::Log("Instantiate: bufferAssembler", fileName);
-	std::unique_ptr<BufferCollector> bufferCollector
-	(
-		std::make_unique<BufferCollector>
-		(
-			instanceKey_, 
-			&bufferPoolSet 
-		)
-	);
-
-	Logger::Log("Instantiate: bufferCollector", fileName);
-
-	bufferCreator.reset(new BufferCreator(std::move(bufferAssembler), std::move(bufferCollector)));
+	bufferCreator.reset(new BufferCreator(instanceKey_, createResourceCommand_,viewCreator,&bufferPoolSet));
 	Logger::Log("Instantiate: BufferCreator", fileName);
 }
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////

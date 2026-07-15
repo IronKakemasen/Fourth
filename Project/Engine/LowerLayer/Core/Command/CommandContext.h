@@ -2,7 +2,6 @@
 
 class Nexus;
 class SwapChainContext;
-class ResourceUploader;
 
 class CommandContext
 {
@@ -22,6 +21,8 @@ public:
 	struct InstanceKey;
 	//コマンドキューのアドレス取得キー
 	struct CmdQueueGetKey;
+	//ResourceUploaderの利用許可
+	struct UsesResourceUploaderPermission;
 
 	CommandContext
 	(
@@ -37,6 +38,8 @@ public:
 	~CommandContext();
 
 	ID3D12CommandQueue* GetCommandQueue(CmdQueueGetKey key_);
+	ResourceUploader* GetResourceUploader();
+
 	void Finalize(InstanceKey instanceKey_);
 
 	std::unique_ptr<RuntimeCommandController> runtimeCommandController;
@@ -85,3 +88,12 @@ private:
 	explicit CmdQueueGetKey() = default;
 
 };
+
+struct CommandContext::UsesResourceUploaderPermission
+{
+private:
+
+
+	explicit UsesResourceUploaderPermission() = default;
+};
+
