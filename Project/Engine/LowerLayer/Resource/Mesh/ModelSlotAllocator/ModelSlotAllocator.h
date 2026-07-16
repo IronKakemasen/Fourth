@@ -1,6 +1,6 @@
 #pragma once
 #include "../MeshContext.h"
-#include "../../../../../Assets/Shared/StructuredBuffer.h"
+#include "SimpleFreeList/SimpleFreeList.h"
 
 class MeshContext::ModelSlotAllocator
 {
@@ -13,7 +13,7 @@ public:
 
 private:
 
-
+	SimpleFreeList 
 
 };
 

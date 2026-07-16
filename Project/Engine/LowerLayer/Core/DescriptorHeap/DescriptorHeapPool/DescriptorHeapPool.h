@@ -31,8 +31,6 @@ private:
 	UINT handleIncrementSize{};
 	//最大領域分割数
 	uint32_t kMaxDescriptor{};
-	//現在のviewの生成数
-	uint32_t currentCreateNum{};
 	//SRVかどうか
 	bool shaderVisible{};
 	//名前

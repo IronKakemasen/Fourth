@@ -513,10 +513,8 @@ void Nexus::Run()
 
 //バッファのユニークID
 using BufferUniqueID = uint32_t;
-//メッシュのユニークID
-using MeshUniqueID = uint32_t;
-//マテリアルのユニークID
-using MaterialUniqueID = uint32_t;
+//srv/uavディスクリプタヒープ上のインデックス
+using SRVHeapIndex = uint32_t;
 
 
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -547,10 +545,17 @@ namespace ProjectConfig
 
 	namespace Render
 	{
-		enum NumBuffer
+		enum class NumBuffer
 		{
 			kSingleBuffer = 1,
 			kDoubleBuffer = 2
+		};
+
+		enum class GlobalBufferTableSetting
+		{
+			//TransformMatrixBufferの同時存在最大数
+			kSizeOfTransformMatrixBufferArray = 100,
+
 		};
 
 		constexpr D3D_SHADER_MODEL kRequiredShaderModel = D3D_SHADER_MODEL_6_6;
@@ -644,7 +649,7 @@ CommandContext::CommandContext
 (
 	InstanceKey instanceKey_,
 	Microsoft::WRL::ComPtr<ID3D12CommandQueue> commandQueue_,
-	std::array<Microsoft::WRL::ComPtr<ID3D12CommandAllocator>, kDoubleBuffer> commandAllocators_,
+	std::array<Microsoft::WRL::ComPtr<ID3D12CommandAllocator>, (UINT)NumBuffer::kDoubleBuffer> commandAllocators_,
 	Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList6> commandList_,
 	Microsoft::WRL::ComPtr<ID3D12Fence> fence_,
 	Microsoft::WRL::ComPtr<ID3D12CommandAllocator> allocator_forUpload_,
@@ -690,9 +695,9 @@ void CommandContext::CreateFenceEvent()
 
 void CommandContext::InstantiateRuntimeCommandControler()
 {
-	std::array<ID3D12CommandAllocator*, kDoubleBuffer> cmdAllocators;
+	std::array<ID3D12CommandAllocator*, (UINT)NumBuffer::kDoubleBuffer> cmdAllocators;
 	
-	for (int i = 0;i < kDoubleBuffer;++i)
+	for (int i = 0;i < (UINT)NumBuffer::kDoubleBuffer;++i)
 	{
 		cmdAllocators.at(i) = commandAllocators.at(i).Get();
 	}
@@ -755,7 +760,7 @@ public:
 	(
 		InstanceKey instanceKey_,
 		Microsoft::WRL::ComPtr<ID3D12CommandQueue> commandQueue_,
-		std::array<Microsoft::WRL::ComPtr<ID3D12CommandAllocator>, ProjectConfig::Render::kDoubleBuffer> commandAllocators_,
+		std::array<Microsoft::WRL::ComPtr<ID3D12CommandAllocator>, (UINT)ProjectConfig::Render::NumBuffer::kDoubleBuffer> commandAllocators_,
 		Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList6> commandList_,
 		Microsoft::WRL::ComPtr<ID3D12Fence> fence_,
 		Microsoft::WRL::ComPtr<ID3D12CommandAllocator> allocator_forUpload_,
@@ -780,7 +785,7 @@ private:
 	//コマンドキュー
 	Microsoft::WRL::ComPtr<ID3D12CommandQueue> commandQueue;
 	//コマンドアローケータ
-	std::array<Microsoft::WRL::ComPtr<ID3D12CommandAllocator>,ProjectConfig::Render::kDoubleBuffer> commandAllocators;
+	std::array<Microsoft::WRL::ComPtr<ID3D12CommandAllocator>, (UINT)ProjectConfig::Render::NumBuffer::kDoubleBuffer> commandAllocators;
 	//コマンドリスト		
 	Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList6> commandList;
 	//フェンス
@@ -788,7 +793,7 @@ private:
 	//カウンタ
 	uint64_t commonFenceValue = 0;
 	//それぞれのカウンタ
-	std::array<uint64_t,ProjectConfig::Render::kDoubleBuffer> fenceCounters = { 0,0 };
+	std::array<uint64_t,(UINT)ProjectConfig::Render::NumBuffer::kDoubleBuffer> fenceCounters = { 0,0 };
 	//フェンスイベント
 	HANDLE fenceEvent = nullptr;
 
@@ -937,7 +942,7 @@ private:
 CommandContext::RuntimeCommandController::RuntimeCommandController
 (
 	ID3D12CommandQueue* commandQueue_,
-	std::array<ID3D12CommandAllocator*, ProjectConfig::Render::kDoubleBuffer> commandAllocators_,
+	std::array<ID3D12CommandAllocator*, (UINT)ProjectConfig::Render::NumBuffer::kDoubleBuffer> commandAllocators_,
 	ID3D12GraphicsCommandList6* commandList_,
 	Synchronizer* synchronizer_
 )
@@ -991,7 +996,7 @@ public:
 	RuntimeCommandController
 	(
 		ID3D12CommandQueue* commandQueue_,
-		std::array<ID3D12CommandAllocator*, ProjectConfig::Render::kDoubleBuffer> commandAllocators_,
+		std::array<ID3D12CommandAllocator*, (UINT)ProjectConfig::Render::NumBuffer::kDoubleBuffer> commandAllocators_,
 		ID3D12GraphicsCommandList6* commandList_,
 		Synchronizer* synchronizer_
 	);
@@ -1024,7 +1029,7 @@ namespace
 CommandContext::RuntimeCommandController::CommandExecutor::CommandExecutor
 (
 	ID3D12CommandQueue* commandQueue_,
-	std::array<ID3D12CommandAllocator*, ProjectConfig::Render::kDoubleBuffer> commandAllocators_,
+	std::array<ID3D12CommandAllocator*, (UINT)ProjectConfig::Render::NumBuffer::kDoubleBuffer> commandAllocators_,
 	ID3D12GraphicsCommandList6* commandList_
 ):commandQueue(commandQueue_), commandAllocators(commandAllocators_), commandList(commandList_)
 {
@@ -1069,7 +1074,7 @@ public:
 	CommandExecutor
 	(
 		ID3D12CommandQueue* commandQueue_,
-		std::array<ID3D12CommandAllocator*, ProjectConfig::Render::kDoubleBuffer> commandAllocators_,
+		std::array<ID3D12CommandAllocator*, (UINT)ProjectConfig::Render::NumBuffer::kDoubleBuffer> commandAllocators_,
 		ID3D12GraphicsCommandList6* commandList_
 	);
 
@@ -1081,7 +1086,7 @@ public:
 private:
 
 	ID3D12CommandQueue* commandQueue;
-	std::array<ID3D12CommandAllocator*, ProjectConfig::Render::kDoubleBuffer> commandAllocators;
+	std::array<ID3D12CommandAllocator*, (UINT)ProjectConfig::Render::NumBuffer::kDoubleBuffer> commandAllocators;
 	ID3D12GraphicsCommandList6* commandList;
 };
 
@@ -1277,7 +1282,7 @@ CommandContext::Synchronizer::Synchronizer
 (
 	ID3D12CommandQueue* commandQueue_,
 	ID3D12Fence* fence_,
-	std::array<uint64_t, ProjectConfig::Render::kDoubleBuffer>* fenceCounters_,
+	std::array<uint64_t, (UINT)ProjectConfig::Render::NumBuffer::kDoubleBuffer>* fenceCounters_,
 	HANDLE* fenceEvent_,
 	uint64_t* commonFenceValue_
 ):commandQueue(commandQueue_), fence(fence_), fenceCounters(fenceCounters_), fenceEvent(fenceEvent_), commonFenceValue(commonFenceValue_)
@@ -1352,7 +1357,7 @@ public:
 	(
 		ID3D12CommandQueue* commandQueue_,
 		ID3D12Fence* fence_,
-		std::array<uint64_t, ProjectConfig::Render::kDoubleBuffer>* fenceCounters_,
+		std::array<uint64_t, (UINT)ProjectConfig::Render::NumBuffer::kDoubleBuffer>* fenceCounters_,
 		HANDLE* fenceEvent_,
 		uint64_t* commonFenceValue_
 	);
@@ -1364,7 +1369,7 @@ public:
 private:
 	ID3D12CommandQueue* commandQueue;
 	ID3D12Fence* fence;
-	std::array<uint64_t, ProjectConfig::Render::kDoubleBuffer>* fenceCounters;
+	std::array<uint64_t, (UINT)ProjectConfig::Render::NumBuffer::kDoubleBuffer>* fenceCounters;
 	HANDLE* fenceEvent;
 	uint64_t* commonFenceValue = 0;
 
@@ -1727,7 +1732,7 @@ DescriptorHeapPool::DescriptorHeapPool
 	//フリーリストに空きインデックスを最大数まで登録
 	for (uint32_t i = 0u;i < kMaxDescriptor_;++i)
 	{
-		freeList.emplace_back(i);
+		freeList.Add(i);
 	}
 }
 
@@ -1763,16 +1768,7 @@ template<>
 std::tuple<uint32_t, D3D12_CPU_DESCRIPTOR_HANDLE, D3D12_GPU_DESCRIPTOR_HANDLE>
 DescriptorHeapPool::ProvideFreeHeapIndex(CreateViewKey accessKey_)
 {
-	ErrorMessageOutput::Assert::DetectError
-	(
-		!freeList.empty(),
-		name + " のヒープが枯渇",
-		fileName
-	);
-
-	uint32_t lastIndex = freeList.back();
-	freeList.pop_back();
-
+	uint32_t lastIndex = freeList.Distribute();
 	return std::make_tuple
 	(
 		lastIndex, 
@@ -1787,7 +1783,7 @@ DescriptorHeapPool::ProvideFreeHeapIndex(CreateViewKey accessKey_)
 //空きヒープインデックスを回収
 void DescriptorHeapPool::CollectHeapIndex(uint32_t index_, CollectHeapIndexKey key_)
 {
-	freeList.emplace_back(index_);
+	freeList.Add(index_);
 }
 
 
@@ -1798,6 +1794,7 @@ void DescriptorHeapPool::CollectHeapIndex(uint32_t index_, CollectHeapIndexKey k
 ========================================
 #pragma once
 #include "../DescriptorHeapContext.h"
+#include "../../../../Utility/SimpleFreeList/SimpleFreeList.h"
 
 class ViewCreator;
 
@@ -1823,8 +1820,6 @@ public:
 
 private:
 
-	//使用可能インデックスのリスト
-	std::vector<uint32_t> freeList;
 	Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> descriptorHeap;
 	//ハンドルのインクリメントサイズ
 	UINT handleIncrementSize{};
@@ -1836,6 +1831,8 @@ private:
 	bool shaderVisible{};
 	//名前
 	std::string name{};
+	//使用可能インデックスのリスト
+	SimpleFreeList freeList;
 
 	//CPU / GPU ハンドルを返す
 	template<typename HandleType>
@@ -2879,7 +2876,7 @@ using CommandContextCorePartsRuntime =
 std::tuple
 <
 	Microsoft::WRL::ComPtr<ID3D12CommandQueue>,
-	std::array<Microsoft::WRL::ComPtr<ID3D12CommandAllocator>, ProjectConfig::Render::kDoubleBuffer>,
+	std::array<Microsoft::WRL::ComPtr<ID3D12CommandAllocator>, (UINT)ProjectConfig::Render::NumBuffer::kDoubleBuffer>,
 	Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList6>
 >;
 
@@ -2938,14 +2935,14 @@ DeviceContext::CommandExecutor::CreateCommandContextCorePartsForRuntime(DeviceCo
 	auto* device = deviceGetter(DeviceContext::AccessKey{});
 
 	Microsoft::WRL::ComPtr<ID3D12CommandQueue> cmdQueue;
-	std::array < Microsoft::WRL::ComPtr<ID3D12CommandAllocator>, kDoubleBuffer > cmdAllocators;
+	std::array < Microsoft::WRL::ComPtr<ID3D12CommandAllocator>, (UINT)NumBuffer::kDoubleBuffer > cmdAllocators;
 	Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList6> cmdList;
 
 	//生成
 	{
 		cmdQueue = tool.CreateCommandQueue(device, cmdListType);
 
-		for (int i = 0;i < kDoubleBuffer;++i)
+		for (int i = 0;i < (UINT)NumBuffer::kDoubleBuffer;++i)
 		{
 			cmdAllocators.at(i) = tool.CreateCommandAllocator(device, cmdListType);
 		}
@@ -3014,7 +3011,7 @@ public:
 	[[nodiscard]] std::tuple
 	<
 		Microsoft::WRL::ComPtr<ID3D12CommandQueue>,
-		std::array<Microsoft::WRL::ComPtr<ID3D12CommandAllocator>, ProjectConfig::Render::kDoubleBuffer>,
+		std::array<Microsoft::WRL::ComPtr<ID3D12CommandAllocator>, (UINT)ProjectConfig::Render::NumBuffer::kDoubleBuffer>,
 		Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList6>
 	>
 	CreateCommandContextCorePartsForRuntime(DeviceContext::InstanceKey instanceKey_);
@@ -3654,6 +3651,7 @@ private:
 #include "RenderPassMaterialProvider/RenderPassMaterialProvider.h"
 #include "../../Resource/Buffer/BufferDefinition/GPUBuffer/DepthStencilBuffer/DepthStencilBuffer.h"
 
+using namespace ProjectConfig::Render;
 
 namespace
 {
@@ -3744,14 +3742,13 @@ void SwapChainContext::AssembleCoreParts
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 void SwapChainContext::PullResourcesFromSwapChain(std::unique_ptr<Description>&& desc_)
 {
-	using namespace ProjectConfig::Render;
 
 	//生リソース
-	std::array<Microsoft::WRL::ComPtr<ID3D12Resource>, kDoubleBuffer > resources;
+	std::array<Microsoft::WRL::ComPtr<ID3D12Resource>, (UINT)NumBuffer::kDoubleBuffer > resources;
 
 	//スワップチェーンからリソースを引っ張る
 	HRESULT hr{};
-	for (int i = 0;i < kDoubleBuffer;++i)
+	for (int i = 0;i < (int)NumBuffer::kDoubleBuffer;++i)
 	{
 		hr = swapChain->GetBuffer(i, IID_PPV_ARGS(resources.at(i).GetAddressOf()));
 		ErrorMessageOutput::Assert::DetectError(SUCCEEDED(hr), "SwapChainのリソースを引っ張れなかった", fileName);
@@ -3769,7 +3766,7 @@ void SwapChainContext::CreateRTV(InstanceKey instanceKey_ , const D3D12_RENDER_T
 {
 	ResourceGetKey resourceGetKey;
 
-	for (int i = 0;i < ProjectConfig::Render::kDoubleBuffer;++i)
+	for (int i = 0;i < (int)NumBuffer::kDoubleBuffer;++i)
 	{
 		D3D12_CPU_DESCRIPTOR_HANDLE rtvCPU{};
 
@@ -4061,13 +4058,13 @@ private:
 SwapChainContext::ColorBuffer::ColorBuffer
 (
 	std::unique_ptr<Description> desc_,
-	std::array<Microsoft::WRL::ComPtr<ID3D12Resource>, ProjectConfig::Render::kDoubleBuffer> resources_
+	std::array<Microsoft::WRL::ComPtr<ID3D12Resource>, (UINT)ProjectConfig::Render::NumBuffer::kDoubleBuffer> resources_
 ) : desc(std::move(desc_))
 {
 	//行列2種を構築
 	AssembleMatrix();
 
-	for (int i = 0;i < ProjectConfig::Render::kDoubleBuffer;++i)
+	for (int i = 0;i < (UINT)ProjectConfig::Render::NumBuffer::kDoubleBuffer;++i)
 	{
 		buffers.at(i).resource = std::move(resources_.at(i));
 	}
@@ -4140,7 +4137,7 @@ DXGI_SWAP_CHAIN_DESC1 SwapChainContext::Description::CreateSwapChainDesc()const
 	//描画のターゲットとして利用する
 	swapChainDesc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
 	//ダブルバッファ
-	swapChainDesc.BufferCount = ProjectConfig::Render::kDoubleBuffer;
+	swapChainDesc.BufferCount = (UINT)ProjectConfig::Render::NumBuffer::kDoubleBuffer;
 	//モニタに移したら中身を破棄
 	swapChainDesc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD;
 
@@ -4195,8 +4192,7 @@ public:
 	ColorBuffer
 	(
 		std::unique_ptr<SwapChainContext::Description> desc_,
-		std::array<Microsoft::WRL::ComPtr<ID3D12Resource>, 
-		ProjectConfig::Render::kDoubleBuffer> resources_
+		std::array<Microsoft::WRL::ComPtr<ID3D12Resource>, (UINT)ProjectConfig::Render::NumBuffer::kDoubleBuffer> resources_
 	);
 
 	//リソース取得
@@ -4220,7 +4216,7 @@ private:
 		D3D12_RESOURCE_BARRIER CreateBarrier(D3D12_RESOURCE_STATES after_);
 	};
 
-	std::array<Buffer, ProjectConfig::Render::kDoubleBuffer> buffers;
+	std::array<Buffer, (UINT)ProjectConfig::Render::NumBuffer::kDoubleBuffer> buffers;
 	std::unique_ptr<SwapChainContext::Description> desc;
 
 	D3D12_VIEWPORT viewport;
@@ -4985,6 +4981,24 @@ private:
 	friend class Nexus;
 	explicit InstanceKey() = default;
 };
+//void IColorBuffer::AssembleMatrix(UINT width_, UINT height_)
+//{
+//	//クライアント領域と一緒のサイズにして画面全体に表示
+//	viewport.Width = static_cast<FLOAT>(width_);
+//	viewport.Height = static_cast<FLOAT>(height_);
+//	viewport.TopLeftX = 0.0f;
+//	viewport.TopLeftY = 0.0f;
+//	viewport.MinDepth = 0.0f;
+//	viewport.MaxDepth = 1.0f;
+//
+//	//シザー矩形
+//	scissorRect.right = static_cast<LONG>(width_);
+//	scissorRect.bottom = static_cast<LONG>(height_);
+//	scissorRect.left = static_cast<LONG>(0.0f);
+//	scissorRect.top = static_cast<LONG>(0.0f);
+//
+//	Logger::Log("Structure:  Matrix", "BufferInterface.cpp");
+//}
 
 
 
@@ -5016,66 +5030,6 @@ private:
     std::vector<RenderStateComponent::Flexible> flexible;
 };
 
-
-
-
-
-========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Render\RequiredRenderingInfo.h ===
-========================================
-#pragma once
-
-
-//描画パスを構築するのに必要な情報をまとめたディスクリプション
-struct RequiredRenderingInfo
-{
-	///テクスチャとして読む	ときに必要
-	struct Texture
-	{
-		//SRVヒープ上のインデックス
-		uint32_t srvHeapIndex;
-		//バリアを張るため
-		D3D12_RESOURCE_BARRIER barrier;
-	};
-
-	///描画先として書き込むときに必要
-	struct ColorBuffer
-	{
-		//RTVヒープ上のインデックス
-		D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle{};
-		//バリアを張るため
-		D3D12_RESOURCE_BARRIER barrier{};
-	};
-
-	///描画先として書き込むときに必要
-	struct DepthBuffer
-	{
-		//DSVヒープ上のインデックス
-		D3D12_CPU_DESCRIPTOR_HANDLE dsvCpuHandle;
-		//バリアを張るため
-		D3D12_RESOURCE_BARRIER barrier;
-	};
-};
-
-
-//void IColorBuffer::AssembleMatrix(UINT width_, UINT height_)
-//{
-//	//クライアント領域と一緒のサイズにして画面全体に表示
-//	viewport.Width = static_cast<FLOAT>(width_);
-//	viewport.Height = static_cast<FLOAT>(height_);
-//	viewport.TopLeftX = 0.0f;
-//	viewport.TopLeftY = 0.0f;
-//	viewport.MinDepth = 0.0f;
-//	viewport.MaxDepth = 1.0f;
-//
-//	//シザー矩形
-//	scissorRect.right = static_cast<LONG>(width_);
-//	scissorRect.bottom = static_cast<LONG>(height_);
-//	scissorRect.left = static_cast<LONG>(0.0f);
-//	scissorRect.top = static_cast<LONG>(0.0f);
-//
-//	Logger::Log("Structure:  Matrix", "BufferInterface.cpp");
-//}
 
 
 
@@ -6055,7 +6009,7 @@ struct RenderPath::Pass::RequiredBufferInfo
 	struct Texture
 	{
 		//SRVヒープ上のインデックス
-		uint32_t srvHeapIndex{};
+		SRVHeapIndex srvHeapIndex{};
 		//バリアを張るため
 		D3D12_RESOURCE_BARRIER barrier{};
 	};
@@ -6322,8 +6276,6 @@ class BufferContext
 	class BufferDispatcher;
 	//生リソース生成
 	class ResourceCreator;
-
-	//アップロードする必要なバッファをまとめて処理する
 	
 
 protected:
@@ -6622,7 +6574,7 @@ void BufferContext::BufferAssembler::AssembleView<ColorBuffer, ColorBufferDescri
 	auto srvDesc = desc_.CreateSRV_Desc();
 	auto rtvDesc = desc_.CreateRTV_Desc();
 
-	for (int i = 0;i < desc_.numBuffer;++i)
+	for (int i = 0;i < (int)desc_.numBuffer;++i)
 	{
 		//srv作成
 		CreateView(buffer_, srvDesc, i, accessKey_, instanceKey_);
@@ -6664,7 +6616,7 @@ void BufferContext::BufferAssembler::AssembleView<DepthStencilBuffer, DepthStenc
 	auto srvDesc = desc_.CreateSRV_Desc();
 	auto dsvDesc = desc_.CreateDSVDesc();
 
-	for (int i = 0;i < desc_.numBuffer;++i)
+	for (int i = 0;i < (int)desc_.numBuffer;++i)
 	{
 		//srv作成
 		CreateView(buffer_, srvDesc, i, accessKey_, instanceKey_);
@@ -6728,7 +6680,7 @@ void BufferContext::BufferAssembler::AssembleView<ComputeBuffer, ComputeBufferDe
 	auto srvDesc = desc_.CreateSRV_Desc();
 	auto uavDesc = desc_.CreateUAV_Desc();
 
-	for (int i = 0;i < desc_.numBuffer;++i)
+	for (int i = 0;i < (int)desc_.numBuffer;++i)
 	{
 		//srv作成
 		CreateView(buffer_, srvDesc, i, accessKey_, instanceKey_);
@@ -6859,7 +6811,7 @@ void BufferContext::BufferAssembler::CreateView
 )
 {
 
-	uint32_t srvIndex{};
+	SRVHeapIndex srvIndex{};
 	D3D12_CPU_DESCRIPTOR_HANDLE srvCPU{};
 	D3D12_GPU_DESCRIPTOR_HANDLE srvGPU{};
 
@@ -6879,7 +6831,7 @@ void BufferContext::BufferAssembler::CreateView
 	GPUBufferBehavior::InstanceKey instanceKey_
 )
 {
-	uint32_t uavIndex{};
+	SRVHeapIndex uavIndex{};
 	D3D12_CPU_DESCRIPTOR_HANDLE uavCPU{};
 	D3D12_GPU_DESCRIPTOR_HANDLE uavGPU{};
 
@@ -8523,7 +8475,7 @@ int IRenderTargetBuffer::ProperBufferIndex(Usage usage_)const
 
 void IRenderTargetBuffer::SynchronizeStatus(ProjectConfig::Render::NumBuffer numBuffer_)
 {
-	(numBuffer_ == 1) ? status = kSingle : status = kRenderTarget_ShaderResource;
+	(numBuffer_ == ProjectConfig::Render::NumBuffer::kSingleBuffer) ? status = kSingle : status = kRenderTarget_ShaderResource;
 }
 ///+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -8566,7 +8518,7 @@ int IComputeBuffer::ProperBufferIndex(Usage usage_)const
 
 void IComputeBuffer::SynchronizeStatus(ProjectConfig::Render::NumBuffer numBuffer_)
 {
-	(numBuffer_ == 1) ? status = kSingle : status = kComputeResource_ShaderResource;
+	(numBuffer_ == ProjectConfig::Render::NumBuffer::kSingleBuffer) ? status = kSingle : status = kComputeResource_ShaderResource;
 }
 
 
@@ -8613,7 +8565,7 @@ struct IDualRole
 //シェーダーバッファのインターフェース
 struct IShaderBuffer
 {
-	virtual uint32_t OutProperSRVHeapIndex(int frameIndex_ = 0)const = 0;
+	virtual SRVHeapIndex OutProperSRVHeapIndex(int frameIndex_ = 0)const = 0;
 };
 
 //CSバッファのインターフェース
@@ -8733,7 +8685,7 @@ GPUBufferBehavior::GPUBufferBehavior
 	std::unique_ptr <BufferDescriptionBehavior>&& description_
 ) : name(name_), description(std::move(description_))
 {
-	size_t const bufferSize = description->numBuffer;
+	size_t const bufferSize = (size_t)description->numBuffer;
 	ErrorMessageOutput::Assert::DetectError
 	(
 		resourceContainer_.size() == bufferSize,
@@ -8979,11 +8931,11 @@ D3D12_CPU_DESCRIPTOR_HANDLE ColorBuffer::OutProperRTVHeapHandle()const
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-uint32_t ColorBuffer::OutProperSRVHeapIndex(int frameIndex_)const
+SRVHeapIndex ColorBuffer::OutProperSRVHeapIndex(int frameIndex_)const
 {
 	int dstBufferIndex = ProperBufferIndex(Usage::kRead);
 
-	return WatchIndex<ViewType::kSRV, uint32_t >(dstBufferIndex);
+	return WatchIndex<ViewType::kSRV, SRVHeapIndex >(dstBufferIndex);
 }
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -9020,7 +8972,7 @@ private:
 	//適切なRTVヒープインデックスを出す
 	virtual D3D12_CPU_DESCRIPTOR_HANDLE OutProperRTVHeapHandle()const override;
 	//適切なSRVヒープインデックスを出す
-	virtual uint32_t OutProperSRVHeapIndex(int frameIndex_ = 0)const override;
+	virtual SRVHeapIndex OutProperSRVHeapIndex(int frameIndex_ = 0)const override;
 };
 
 
@@ -9245,11 +9197,11 @@ D3D12_CPU_DESCRIPTOR_HANDLE DepthStencilBuffer::OutProperDSVHeapHandle()const
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-uint32_t DepthStencilBuffer::OutProperSRVHeapIndex(int frameIndex_)const
+SRVHeapIndex DepthStencilBuffer::OutProperSRVHeapIndex(int frameIndex_)const
 {
 	int dstBufferIndex = ProperBufferIndex(Usage::kRead);
 
-	return WatchIndex<ViewType::kSRV, uint32_t >(dstBufferIndex);
+	return WatchIndex<ViewType::kSRV, SRVHeapIndex >(dstBufferIndex);
 }
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -9287,7 +9239,7 @@ private:
 	//適切なCPUインデックスを出す
 	virtual D3D12_CPU_DESCRIPTOR_HANDLE OutProperDSVHeapHandle()const override;
 	//適切なsrvHeapインデックスを渡す
-	virtual uint32_t OutProperSRVHeapIndex(int frameIndex_ = 0)const override;
+	virtual SRVHeapIndex OutProperSRVHeapIndex(int frameIndex_ = 0)const override;
 };
 
 
@@ -9315,9 +9267,9 @@ StaticStructuredBuffer::StaticStructuredBuffer
 
 
 
-uint32_t StaticStructuredBuffer::OutProperSRVHeapIndex(int frameIndex_)const
+SRVHeapIndex StaticStructuredBuffer::OutProperSRVHeapIndex(int frameIndex_)const
 {
-	return WatchIndex<ViewType::kSRV, uint32_t >(0);
+	return WatchIndex<ViewType::kSRV, SRVHeapIndex >(0);
 }
 
 
@@ -9345,7 +9297,7 @@ public:
 		std::unique_ptr <BufferDescriptionBehavior>&& description_
 	);
 
-	uint32_t OutProperSRVHeapIndex(int frameIndex_ = 0)const override;
+	SRVHeapIndex OutProperSRVHeapIndex(int frameIndex_ = 0)const override;
 
 private:
 
@@ -9378,9 +9330,9 @@ UploadStructuredBuffer::UploadStructuredBuffer
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-uint32_t UploadStructuredBuffer::OutProperSRVHeapIndex(int frameIndex_)const
+SRVHeapIndex UploadStructuredBuffer::OutProperSRVHeapIndex(int frameIndex_)const
 {
-	return WatchIndex<ViewType::kSRV, uint32_t >(frameIndex_);
+	return WatchIndex<ViewType::kSRV, SRVHeapIndex >(frameIndex_);
 }
 
 
@@ -9408,7 +9360,7 @@ public:
 		std::unique_ptr <BufferDescriptionBehavior>&& description_
 	);
 
-	virtual uint32_t OutProperSRVHeapIndex(int frameIndex_ = 0)const override;
+	virtual SRVHeapIndex OutProperSRVHeapIndex(int frameIndex_ = 0)const override;
 
 private:
 
@@ -9685,6 +9637,8 @@ public:
 private:
 	//モデルを生成する。
 	class ModelCreator;
+	class ModelSlotAllocator;
+
 
 	std::unique_ptr<ModelCreator> modelCreator;
 };
@@ -9705,6 +9659,7 @@ private:
 ========================================
 #include "PreCompileHeader.h"
 #include "ModelCreator.h"
+#include "../ModelStructure/ModelData/ModelDataAggregate.h"
 
 //ツール
 #include "ModelDataLoader/ModelDataLoader.h"
@@ -9717,16 +9672,12 @@ namespace
 
 MeshContext::ModelCreator::ModelCreator(MeshContext::InstanceKey key_)
 {
-    std::string const registryFilePath = "Assets/Registry/ModelFiles.txt";
-
 	Logger::Entry("ModelCreator: Constructor");
 
     modelDataLoader.reset(new ModelDataLoader(key_));
     Logger::Log("Instantiate: ModelDataLoader", fileName);
 
-	LoadModelRegistry(registryFilePath);
-
-    LoadAllModelFiles();
+    std::unordered_map<std::string, ModelDataAggregate*> tmpModelDataLib = LoadAllModelFiles();
 
 	Logger::End("ModelCreator: Constructor");
 }
@@ -9738,8 +9689,14 @@ MeshContext::ModelCreator::~ModelCreator()
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-void MeshContext::ModelCreator::LoadAllModelFiles()
+std::unordered_map<std::string , ModelDataAggregate*> MeshContext::ModelCreator::LoadAllModelFiles()
 {
+    std::string const registryFilePath = "Assets/Registry/ModelFiles.txt";
+
+    std::unordered_map<std::string, ModelDataAggregate*> modelDataLib;
+
+    auto modelFileName_pathLib = LoadModelRegistry(registryFilePath);
+
     for (const auto& [key, value] : modelFileName_pathLib)
     {
         //チェック
@@ -9750,14 +9707,17 @@ void MeshContext::ModelCreator::LoadAllModelFiles()
             fileName
         );
 
-        modelDataLoader->Load(key, value);
+        modelDataLib[key] = modelDataLoader->Load(key, value);
     }
+
+    return modelDataLib;
 }
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-void MeshContext::ModelCreator::LoadModelRegistry(std::string const registryFilePath_)
+std::unordered_map<std::string, std::string > MeshContext::ModelCreator::LoadModelRegistry(std::string const registryFilePath_)
 {
+    std::unordered_map<std::string, std::string > modelFileName_pathLib;
     std::ifstream file(registryFilePath_);
     ErrorMessageOutput::Abort::DetectError
     (
@@ -9823,6 +9783,8 @@ void MeshContext::ModelCreator::LoadModelRegistry(std::string const registryFile
     }
 
     Logger::Log("Load: " + registryFilePath_, fileName);
+    return modelFileName_pathLib;
+
 }
 
 
@@ -9834,6 +9796,7 @@ void MeshContext::ModelCreator::LoadModelRegistry(std::string const registryFile
 #pragma once
 #include "../MeshContext.h"
 
+struct ModelDataAggregate;
 
 class MeshContext::ModelCreator
 {
@@ -9842,6 +9805,10 @@ public:
 
 	//モデルファイルからメッシュ情報を読み込む
 	class ModelDataLoader;
+	//モデルデータ管理クラス
+	
+	//
+
 
 	ModelCreator(MeshContext::InstanceKey key_);
 	~ModelCreator();
@@ -9851,13 +9818,13 @@ private:
 
 	//モデルファイルからメッシュデータを読み込む
 	std::unique_ptr<ModelDataLoader> modelDataLoader;
-	//モデルファイルが登録されているファイルから、ファイル名をキーとしてファイルパスを保存する
-	std::unordered_map<std::string, std::string > modelFileName_pathLib;
 
-	//モデル登録ファイルから何が登録されているか読み込む
-	void LoadModelRegistry(std::string const registryFilePath_);
+	//モデルファイルが登録されているファイルから、ファイル名をキーとしてファイルパスを保存する
+	std::unordered_map<std::string, std::string > LoadModelRegistry(std::string const registryFilePath_);
 	//全モデルファイルを読み込む
-	void LoadAllModelFiles();
+	std::unordered_map<std::string, ModelDataAggregate*> LoadAllModelFiles();
+	//モデルデータのバッファを作成する
+
 };
 
 
@@ -9898,12 +9865,12 @@ MeshContext::ModelCreator::ModelDataLoader::~ModelDataLoader()
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-std::shared_ptr<ModelDataAggregate> MeshContext::ModelCreator::ModelDataLoader::Load(std::string fileName_ , std::string filePath_)
+ModelDataAggregate* MeshContext::ModelCreator::ModelDataLoader::Load(std::string fileName_ , std::string filePath_)
 {
-    std::shared_ptr<ModelDataAggregate> shareData = std::make_shared<ModelDataAggregate>();
+    std::unique_ptr<ModelDataAggregate> modelDataAggregate = std::make_unique<ModelDataAggregate>();
 
 	///キャッシュにあるか確認
-	std::shared_ptr<ModelDataAggregate> cachedModelData = modelDataCache->FindDuplication(ModelDataCache::AccessKey{},fileName_);
+	ModelDataAggregate* cachedModelData = modelDataCache->FindDuplication(ModelDataCache::AccessKey{},fileName_);
     if (cachedModelData)
     {
         Logger::Log("Cache Hit: " + fileName_, fileName);
@@ -9929,29 +9896,30 @@ std::shared_ptr<ModelDataAggregate> MeshContext::ModelCreator::ModelDataLoader::
     ErrorMessageOutput::Abort::DetectError(scene, "シーンデータが無い", fileName);
 
     //メッシュのメモリを確保
-    shareData->resourceMesh.clear();
-    if(scene) shareData->resourceMesh.resize(scene->mNumMeshes);
+    modelDataAggregate->resourceMesh.clear();
+    if(scene) modelDataAggregate->resourceMesh.resize(scene->mNumMeshes);
 
     // メッシュデータを変換.
-    for (size_t i = 0; i < shareData->resourceMesh.size(); ++i)
+    for (size_t i = 0; i < modelDataAggregate->resourceMesh.size(); ++i)
     {
         const auto pMesh = scene->mMeshes[i];
-        ParseMesh(shareData->resourceMesh[i], pMesh);
+        ParseMesh(modelDataAggregate->resourceMesh[i], pMesh);
     }
 
     //マテリアルのメモリを確保
-    shareData->resourceMaterial.clear();
-    if(scene)shareData->resourceMaterial.resize(scene->mNumMaterials);
+    modelDataAggregate->resourceMaterial.clear();
+    if(scene)modelDataAggregate->resourceMaterial.resize(scene->mNumMaterials);
 
     //マテリアルデータを変換
-    for (size_t i = 0; i < shareData->resourceMaterial.size(); ++i)
+    for (size_t i = 0; i < modelDataAggregate->resourceMaterial.size(); ++i)
     {
         const auto pMaterial = scene->mMaterials[i];
-        ParseMaterial(shareData->resourceMaterial[i], pMaterial);
+        ParseMaterial(modelDataAggregate->resourceMaterial[i], pMaterial);
     }
 
     //キャッシュデータに登録
-    modelDataCache->Register(MeshContext::ModelCreator::ModelDataLoader::ModelDataCache::AccessKey{}, fileName_, shareData);
+    auto returnPtr = modelDataAggregate.get();
+    modelDataCache->Register(MeshContext::ModelCreator::ModelDataLoader::ModelDataCache::AccessKey{}, fileName_, std::move(modelDataAggregate));
 
     //不要になったのでクリア
     importer.FreeScene();
@@ -9959,7 +9927,7 @@ std::shared_ptr<ModelDataAggregate> MeshContext::ModelCreator::ModelDataLoader::
 
     Logger::Log("Complete: Loading " + fileName_, fileName);
 
-    return shareData;
+    return returnPtr;
 }
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -10125,7 +10093,7 @@ void MeshContext::ModelCreator::ModelDataLoader::ParseMesh(ResourceMesh& dstMesh
         for (size_t i = 0; i < meshletCount; ++i)
         {
             const meshopt_Meshlet& src = temp_meshlets[i];
-            Meshlet& dstMeshlet = dstMesh_.meshlets[i];
+            StructuredBufferDataDefinition::MeshletCPUGPU& dstMeshlet = dstMesh_.meshlets[i];
 
             //各スレッドグループが担当する箇所を算出
             dstMeshlet.vertexOffset = static_cast<uint32_t>(dstMesh_.uniqueVertexIndices.size());
@@ -10137,7 +10105,7 @@ void MeshContext::ModelCreator::ModelDataLoader::ParseMesh(ResourceMesh& dstMesh
             for (unsigned int v = 0; v < src.vertex_count; ++v)
             {
                 uint32_t global_vertex_idx = temp_meshlet_vertices[src.vertex_offset + v];
-                dstMesh_.uniqueVertexIndices.emplace_back(UniqueVertexIndex(global_vertex_idx));
+                dstMesh_.uniqueVertexIndices.emplace_back(StructuredBufferDataDefinition::UniqueVertexIndexCPUGPU(global_vertex_idx));
             }
 
             //ポリゴン頂点情報をパッキング
@@ -10145,7 +10113,7 @@ void MeshContext::ModelCreator::ModelDataLoader::ParseMesh(ResourceMesh& dstMesh
             {
                 size_t prim_base_idx = src.triangle_offset + t * 3;
 
-                PrimitiveIndex tris = {};
+                StructuredBufferDataDefinition::PrimitiveIndexCPUGPU tris = {};
 
                 tris.index2 = temp_meshlet_triangles[prim_base_idx + 0];
                 tris.index0 = temp_meshlet_triangles[prim_base_idx + 1];
@@ -10291,7 +10259,7 @@ public:
 	~ModelDataLoader();
 
 	///ファイルの名前から実メッシュデータを生成
-	std::shared_ptr<ModelDataAggregate> Load(std::string fileName_ , std::string filePath_);
+	ModelDataAggregate* Load(std::string fileName_ , std::string filePath_);
 
 private:
 
@@ -10325,21 +10293,21 @@ MeshContext::ModelCreator::ModelDataLoader::ModelDataCache::ModelDataCache(MeshC
 
 }
 
-std::shared_ptr<ModelDataAggregate> MeshContext::ModelCreator::ModelDataLoader::ModelDataCache::FindDuplication(AccessKey key_, std::string fileName_)
+ModelDataAggregate* MeshContext::ModelCreator::ModelDataLoader::ModelDataCache::FindDuplication(AccessKey key_, std::string fileName_)
 {
 	if (modelDataCache.find(fileName_) != modelDataCache.end())
 	{				
-		return modelDataCache.at(fileName_);
+		return modelDataCache.at(fileName_).get();
 	}
 
 	return nullptr;
 }
 
-void MeshContext::ModelCreator::ModelDataLoader::ModelDataCache::Register(AccessKey key_, std::string fileName_, std::shared_ptr<ModelDataAggregate> data_)
+void MeshContext::ModelCreator::ModelDataLoader::ModelDataCache::Register(AccessKey key_, std::string fileName_, std::unique_ptr<ModelDataAggregate>&& data_)
 {
 	Logger::Log("Regieter: " + fileName_, "ModelDataCache.cpp");
 
-	modelDataCache[fileName_] = data_;
+	modelDataCache[fileName_] = std::move(data_);
 }
 
 
@@ -10360,12 +10328,12 @@ public:
 
 	ModelDataCache(MeshContext::InstanceKey key_);
 
-	std::shared_ptr<ModelDataAggregate> FindDuplication(AccessKey key_, std::string fileName_);
-	void Register(AccessKey key_, std::string fileName_, std::shared_ptr<ModelDataAggregate> data_);
+	ModelDataAggregate* FindDuplication(AccessKey key_, std::string fileName_);
+	void Register(AccessKey key_, std::string fileName_, std::unique_ptr<ModelDataAggregate>&& data_);
 
 private:
 
-	std::unordered_map<std::string, std::shared_ptr<ModelDataAggregate>> modelDataCache;
+	std::unordered_map<std::string, std::unique_ptr<ModelDataAggregate>> modelDataCache;
 };
 
 struct MeshContext::ModelCreator::ModelDataLoader::ModelDataCache::AccessKey
@@ -10373,6 +10341,53 @@ struct MeshContext::ModelCreator::ModelDataLoader::ModelDataCache::AccessKey
 private:
 	friend class MeshContext::ModelCreator::ModelDataLoader;
 	explicit AccessKey() = default;
+};
+
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Mesh\ModelSlotAllocator\ModelSlotAllocator.cpp ===
+========================================
+#include "PreCompileHeader.h"
+#include "ModelSlotAllocator.h"
+
+
+
+MeshContext::ModelSlotAllocator::ModelSlotAllocator(MeshContext::InstanceKey key_)
+{
+
+}
+
+MeshContext::ModelSlotAllocator::~ModelSlotAllocator()
+{
+
+}
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Mesh\ModelSlotAllocator\ModelSlotAllocator.h ===
+========================================
+#pragma once
+#include "../MeshContext.h"
+#include "../../../../../Assets/Shared/StructuredBuffer.h"
+
+class MeshContext::ModelSlotAllocator
+{
+
+
+public:
+
+	ModelSlotAllocator(MeshContext::InstanceKey key_);
+	~ModelSlotAllocator();
+
+private:
+
+
+
 };
 
 
@@ -10397,12 +10412,12 @@ struct Model
 {
 private:
 
-	static constexpr MeshUniqueID kInvalidID = -1;
+	//static constexpr MeshUniqueID kInvalidID = -1;
 
 public:
 
-	MeshUniqueID meshID = kInvalidID;
-	MaterialUniqueID materialID = kInvalidID;
+	//MeshUniqueID meshID = kInvalidID;
+	//MaterialUniqueID materialID = kInvalidID;
 };
 
 
@@ -10507,11 +10522,11 @@ struct ResourceMesh
     //頂点情報の原本
 	std::vector<StandardVertex> vertices;
     ///元の頂点番号への対応表
-    std::vector<UniqueVertexIndex> uniqueVertexIndices;
+    std::vector<StructuredBufferDataDefinition::UniqueVertexIndexCPUGPU> uniqueVertexIndices;
     //1スレッドグループが処理する頂点・三角形の範囲情報
-    std::vector<Meshlet> meshlets;
+    std::vector<StructuredBufferDataDefinition::MeshletCPUGPU> meshlets;
     ///3つのローカル頂点番号を保持する三角形インデックス。パッキングされている
-    std::vector<PrimitiveIndex> primitiveIndices;
+    std::vector<StructuredBufferDataDefinition::PrimitiveIndexCPUGPU> primitiveIndices;
 
 };
 
@@ -13614,6 +13629,38 @@ public:
 
 
 };
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Utility\SimpleFreeList\SimpleFreeList.h ===
+========================================
+#pragma once
+
+class SimpleFreeList
+{
+public:
+
+	inline uint32_t Distribute()
+	{
+		ErrorMessageOutput::Assert::DetectError(!freeList.empty(), " もうすかすかだぜ", "SimpleFreeList.h");
+
+		uint32_t lastIndex = freeList.back();
+		freeList.pop_back();
+
+		return lastIndex;
+	}
+
+	inline void Add(uint32_t dst_)
+	{
+		freeList.emplace_back(dst_);
+	}
+
+private:
+	std::vector<uint32_t> freeList;
+};
+
+
 
 
 

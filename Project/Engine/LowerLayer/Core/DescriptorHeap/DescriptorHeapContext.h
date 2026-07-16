@@ -67,7 +67,7 @@ private:
 	void CreateDescriptorHeaps(UINT rtvDH_, UINT srvDH_, UINT dsvDH_);
 
 	//DescriptorHeapの名前を取得（初期化用）
-	std::string GetDescriptorName(D3D12_DESCRIPTOR_HEAP_TYPE heapType_);
+	std::string GetDescriptorName(D3D12_DESCRIPTOR_HEAP_TYPE heapType_)const;
 
 	//コマンドのセット
 	void SetCreateDescriptorHeapCommand(DescriptorCreateCommand createDescriptor);
