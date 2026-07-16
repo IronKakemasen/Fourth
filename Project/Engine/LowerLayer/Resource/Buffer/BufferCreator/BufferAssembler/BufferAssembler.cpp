@@ -88,7 +88,7 @@ void BufferContext::BufferAssembler::AssembleView<ColorBuffer, ColorBufferDescri
 	auto srvDesc = desc_.CreateSRV_Desc();
 	auto rtvDesc = desc_.CreateRTV_Desc();
 
-	for (int i = 0;i < desc_.numBuffer;++i)
+	for (int i = 0;i < (int)desc_.numBuffer;++i)
 	{
 		//srv作成
 		CreateView(buffer_, srvDesc, i, accessKey_, instanceKey_);
@@ -130,7 +130,7 @@ void BufferContext::BufferAssembler::AssembleView<DepthStencilBuffer, DepthStenc
 	auto srvDesc = desc_.CreateSRV_Desc();
 	auto dsvDesc = desc_.CreateDSVDesc();
 
-	for (int i = 0;i < desc_.numBuffer;++i)
+	for (int i = 0;i < (int)desc_.numBuffer;++i)
 	{
 		//srv作成
 		CreateView(buffer_, srvDesc, i, accessKey_, instanceKey_);
@@ -194,7 +194,7 @@ void BufferContext::BufferAssembler::AssembleView<ComputeBuffer, ComputeBufferDe
 	auto srvDesc = desc_.CreateSRV_Desc();
 	auto uavDesc = desc_.CreateUAV_Desc();
 
-	for (int i = 0;i < desc_.numBuffer;++i)
+	for (int i = 0;i < (int)desc_.numBuffer;++i)
 	{
 		//srv作成
 		CreateView(buffer_, srvDesc, i, accessKey_, instanceKey_);
@@ -325,7 +325,7 @@ void BufferContext::BufferAssembler::CreateView
 )
 {
 
-	uint32_t srvIndex{};
+	SRVHeapIndex srvIndex{};
 	D3D12_CPU_DESCRIPTOR_HANDLE srvCPU{};
 	D3D12_GPU_DESCRIPTOR_HANDLE srvGPU{};
 
@@ -345,7 +345,7 @@ void BufferContext::BufferAssembler::CreateView
 	GPUBufferBehavior::InstanceKey instanceKey_
 )
 {
-	uint32_t uavIndex{};
+	SRVHeapIndex uavIndex{};
 	D3D12_CPU_DESCRIPTOR_HANDLE uavCPU{};
 	D3D12_GPU_DESCRIPTOR_HANDLE uavGPU{};
 

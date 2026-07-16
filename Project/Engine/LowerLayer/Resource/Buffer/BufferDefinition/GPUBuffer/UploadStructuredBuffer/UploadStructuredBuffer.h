@@ -17,7 +17,7 @@ public:
 		std::unique_ptr <BufferDescriptionBehavior>&& description_
 	);
 
-	virtual uint32_t OutProperSRVHeapIndex(int frameIndex_ = 0)const override;
+	virtual SRVHeapIndex OutProperSRVHeapIndex(int frameIndex_ = 0)const override;
 
 private:
 

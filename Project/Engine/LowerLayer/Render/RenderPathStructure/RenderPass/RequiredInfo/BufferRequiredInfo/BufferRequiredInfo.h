@@ -54,7 +54,7 @@ struct RenderPath::Pass::RequiredBufferInfo
 	struct Texture
 	{
 		//SRVヒープ上のインデックス
-		uint32_t srvHeapIndex{};
+		SRVHeapIndex srvHeapIndex{};
 		//バリアを張るため
 		D3D12_RESOURCE_BARRIER barrier{};
 	};

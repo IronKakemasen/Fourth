@@ -15,8 +15,6 @@ class BufferContext
 	class BufferDispatcher;
 	//生リソース生成
 	class ResourceCreator;
-
-	//アップロードする必要なバッファをまとめて処理する
 	
 
 protected:

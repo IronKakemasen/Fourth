@@ -16,7 +16,7 @@ StaticStructuredBuffer::StaticStructuredBuffer
 
 
 
-uint32_t StaticStructuredBuffer::OutProperSRVHeapIndex(int frameIndex_)const
+SRVHeapIndex StaticStructuredBuffer::OutProperSRVHeapIndex(int frameIndex_)const
 {
-	return WatchIndex<ViewType::kSRV, uint32_t >(0);
+	return WatchIndex<ViewType::kSRV, SRVHeapIndex >(0);
 }

@@ -24,6 +24,6 @@ private:
 	//適切なCPUインデックスを出す
 	virtual D3D12_CPU_DESCRIPTOR_HANDLE OutProperDSVHeapHandle()const override;
 	//適切なsrvHeapインデックスを渡す
-	virtual uint32_t OutProperSRVHeapIndex(int frameIndex_ = 0)const override;
+	virtual SRVHeapIndex OutProperSRVHeapIndex(int frameIndex_ = 0)const override;
 };
 

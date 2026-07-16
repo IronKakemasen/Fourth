@@ -21,7 +21,7 @@ public:
 	~ModelDataLoader();
 
 	///ファイルの名前から実メッシュデータを生成
-	std::shared_ptr<ModelDataAggregate> Load(std::string fileName_ , std::string filePath_);
+	ModelDataAggregate* Load(std::string fileName_ , std::string filePath_);
 
 private:
 

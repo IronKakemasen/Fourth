@@ -1,5 +1,6 @@
 #include "PreCompileHeader.h"
 #include "ModelCreator.h"
+#include "../ModelStructure/ModelData/ModelDataAggregate.h"
 
 //ツール
 #include "ModelDataLoader/ModelDataLoader.h"
@@ -12,16 +13,12 @@ namespace
 
 MeshContext::ModelCreator::ModelCreator(MeshContext::InstanceKey key_)
 {
-    std::string const registryFilePath = "Assets/Registry/ModelFiles.txt";
-
 	Logger::Entry("ModelCreator: Constructor");
 
     modelDataLoader.reset(new ModelDataLoader(key_));
     Logger::Log("Instantiate: ModelDataLoader", fileName);
 
-	LoadModelRegistry(registryFilePath);
-
-    LoadAllModelFiles();
+    std::unordered_map<std::string, ModelDataAggregate*> tmpModelDataLib = LoadAllModelFiles();
 
 	Logger::End("ModelCreator: Constructor");
 }
@@ -33,8 +30,14 @@ MeshContext::ModelCreator::~ModelCreator()
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-void MeshContext::ModelCreator::LoadAllModelFiles()
+std::unordered_map<std::string , ModelDataAggregate*> MeshContext::ModelCreator::LoadAllModelFiles()
 {
+    std::string const registryFilePath = "Assets/Registry/ModelFiles.txt";
+
+    std::unordered_map<std::string, ModelDataAggregate*> modelDataLib;
+
+    auto modelFileName_pathLib = LoadModelRegistry(registryFilePath);
+
     for (const auto& [key, value] : modelFileName_pathLib)
     {
         //チェック
@@ -45,14 +48,17 @@ void MeshContext::ModelCreator::LoadAllModelFiles()
             fileName
         );
 
-        modelDataLoader->Load(key, value);
+        modelDataLib[key] = modelDataLoader->Load(key, value);
     }
+
+    return modelDataLib;
 }
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-void MeshContext::ModelCreator::LoadModelRegistry(std::string const registryFilePath_)
+std::unordered_map<std::string, std::string > MeshContext::ModelCreator::LoadModelRegistry(std::string const registryFilePath_)
 {
+    std::unordered_map<std::string, std::string > modelFileName_pathLib;
     std::ifstream file(registryFilePath_);
     ErrorMessageOutput::Abort::DetectError
     (
@@ -118,4 +124,6 @@ void MeshContext::ModelCreator::LoadModelRegistry(std::string const registryFile
     }
 
     Logger::Log("Load: " + registryFilePath_, fileName);
+    return modelFileName_pathLib;
+
 }

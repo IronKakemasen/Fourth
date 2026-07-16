@@ -23,7 +23,7 @@ private:
 	//適切なRTVヒープインデックスを出す
 	virtual D3D12_CPU_DESCRIPTOR_HANDLE OutProperRTVHeapHandle()const override;
 	//適切なSRVヒープインデックスを出す
-	virtual uint32_t OutProperSRVHeapIndex(int frameIndex_ = 0)const override;
+	virtual SRVHeapIndex OutProperSRVHeapIndex(int frameIndex_ = 0)const override;
 };
 
 

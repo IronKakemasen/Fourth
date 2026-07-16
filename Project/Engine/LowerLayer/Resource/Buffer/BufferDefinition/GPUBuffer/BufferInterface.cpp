@@ -76,7 +76,7 @@ int IRenderTargetBuffer::ProperBufferIndex(Usage usage_)const
 
 void IRenderTargetBuffer::SynchronizeStatus(ProjectConfig::Render::NumBuffer numBuffer_)
 {
-	(numBuffer_ == 1) ? status = kSingle : status = kRenderTarget_ShaderResource;
+	(numBuffer_ == ProjectConfig::Render::NumBuffer::kSingleBuffer) ? status = kSingle : status = kRenderTarget_ShaderResource;
 }
 ///+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -119,5 +119,5 @@ int IComputeBuffer::ProperBufferIndex(Usage usage_)const
 
 void IComputeBuffer::SynchronizeStatus(ProjectConfig::Render::NumBuffer numBuffer_)
 {
-	(numBuffer_ == 1) ? status = kSingle : status = kComputeResource_ShaderResource;
+	(numBuffer_ == ProjectConfig::Render::NumBuffer::kSingleBuffer) ? status = kSingle : status = kComputeResource_ShaderResource;
 }

@@ -310,6 +310,7 @@
     <ClCompile Include="Engine\Math\Vector\Vector4.cpp" />
     <ClCompile Include="Engine\LowerLayer\Resource\Buffer\BufferDefinition\BufferDescriptions\StaticStructuredBufferDescription\StaticStructuredBufferDescription.cpp" />
     <ClCompile Include="Engine\LowerLayer\Resource\Buffer\BufferDefinition\GPUBuffer\StaticStructuredBuffer\StaticStructuredBuffer.cpp" />
+    <ClCompile Include="Engine\LowerLayer\Resource\Mesh\ModelSlotAllocator\ModelSlotAllocator.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Assets\Shared\ConstantBuffers.h" />
@@ -422,7 +423,6 @@
     <ClInclude Include="Engine\LowerLayer\Core\Command\RuntimeCommandController\RuntimeCommandController.h" />
     <ClInclude Include="Engine\LowerLayer\Render\RenderContext.h" />
     <ClInclude Include="Engine\LowerLayer\Render\RuntimeRenderingManagementSystems\ModelRenderingInfoOrganizer\ModelRenderingInfoOrganizer.h" />
-    <ClInclude Include="Engine\LowerLayer\Render\RequiredRenderingInfo.h" />
     <ClInclude Include="Engine\LowerLayer\Resource\Shader\ShaderContext.h" />
     <ClInclude Include="Engine\LowerLayer\Resource\Shader\ShaderCompiler\ShaderCompiler.h" />
     <ClInclude Include="Engine\LowerLayer\Resource\Shader\ShaderLibrary\ShaderLibrary.h" />
@@ -455,6 +455,8 @@
     <ClInclude Include="Engine\Utility\Transform\Transform.h" />
     <ClInclude Include="Engine\LowerLayer\Resource\Buffer\BufferDefinition\BufferDescriptions\StaticStructuredBufferDescription\StaticStructuredBufferDescription.h" />
     <ClInclude Include="Engine\LowerLayer\Resource\Buffer\BufferDefinition\GPUBuffer\StaticStructuredBuffer\StaticStructuredBuffer.h" />
+    <ClInclude Include="Engine\LowerLayer\Resource\Mesh\ModelSlotAllocator\ModelSlotAllocator.h" />
+    <ClInclude Include="Engine\Utility\SimpleFreeList\SimpleFreeList.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

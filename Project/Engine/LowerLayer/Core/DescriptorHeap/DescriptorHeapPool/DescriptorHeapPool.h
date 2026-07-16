@@ -1,5 +1,6 @@
 #pragma once
 #include "../DescriptorHeapContext.h"
+#include "../../../../Utility/SimpleFreeList/SimpleFreeList.h"
 
 class ViewCreator;
 
@@ -25,8 +26,6 @@ public:
 
 private:
 
-	//使用可能インデックスのリスト
-	std::vector<uint32_t> freeList;
 	Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> descriptorHeap;
 	//ハンドルのインクリメントサイズ
 	UINT handleIncrementSize{};
@@ -38,6 +37,8 @@ private:
 	bool shaderVisible{};
 	//名前
 	std::string name{};
+	//使用可能インデックスのリスト
+	SimpleFreeList freeList;
 
 	//CPU / GPU ハンドルを返す
 	template<typename HandleType>
