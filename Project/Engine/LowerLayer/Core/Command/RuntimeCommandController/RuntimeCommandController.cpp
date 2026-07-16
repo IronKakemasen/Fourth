@@ -1,9 +1,19 @@
-
 #include "RuntimeCommandController.h"
+#include"CommandExecutor/CommandExecutor.h"
 
-CommandContext::RuntimeCommandController::RuntimeCommandController(std::unique_ptr<CommandExecutor>&& commandExecutor_, Synchronizer* synchronizer_)
-	:commandExecutor(std::move(commandExecutor_)), synchronizer(synchronizer_)
+CommandContext::RuntimeCommandController::RuntimeCommandController
+(
+	ID3D12CommandQueue* commandQueue_,
+	std::array<ID3D12CommandAllocator*, ProjectConfig::Render::kDoubleBuffer> commandAllocators_,
+	ID3D12GraphicsCommandList6* commandList_,
+	Synchronizer* synchronizer_
+)
+	:synchronizer(synchronizer_)
 {
+
+	commandExecutor.reset(new CommandExecutor(commandQueue_, commandAllocators_, commandList_));
+	Logger::Log("Create: commandExecutor", "RuntimeCommandController.cpp");
+
 
 }
 

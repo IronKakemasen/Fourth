@@ -118,7 +118,7 @@
     <ClCompile Include="Engine\LowerLayer\Resource\Buffer\BufferCreator\BufferCollector\BufferCollector.cpp" />
     <ClCompile Include="Engine\LowerLayer\Resource\Buffer\RuntimeBufferManagementSystems\BufferDeferredReleaser\BufferDeferredReleaser.cpp" />
     <ClCompile Include="Engine\LowerLayer\Core\Device\DeviceContextCommandExecutor\DeviceContextCommandExecutor.cpp" />
-    <ClCompile Include="Engine\LowerLayer\Core\Command\CommandExecutor\CommandExecutor.cpp" />
+    <ClCompile Include="Engine\LowerLayer\Core\Command\RuntimeCommandController\CommandExecutor\CommandExecutor.cpp" />
     <ClCompile Include="Engine\LowerLayer\Core\Device\Commands\CreateFenceObject\CommandCreateFenceObject.cpp" />
     <ClCompile Include="Engine\LowerLayer\Core\Command\CommandContext.cpp" />
     <ClCompile Include="Engine\LowerLayer\Core\Device\Commands\StructureSwapChain\CommandStructureSwapChain.cpp" />
@@ -339,7 +339,7 @@
     <ClInclude Include="Engine\LowerLayer\Resource\Buffer\BufferCreator\BufferCollector\BufferCollector.h" />
     <ClInclude Include="Engine\LowerLayer\Resource\Buffer\RuntimeBufferManagementSystems\BufferDeferredReleaser\BufferDeferredReleaser.h" />
     <ClInclude Include="Engine\LowerLayer\Core\Device\DeviceContextCommandExecutor\DeviceContextCommandExecutor.h" />
-    <ClInclude Include="Engine\LowerLayer\Core\Command\CommandExecutor\CommandExecutor.h" />
+    <ClInclude Include="Engine\LowerLayer\Core\Command\RuntimeCommandController\CommandExecutor\CommandExecutor.h" />
     <ClInclude Include="Engine\LowerLayer\Core\Device\Commands\CreateFenceObject\CommandCreateFenceObject.h" />
     <ClInclude Include="Engine\LowerLayer\Core\Command\CommandContext.h" />
     <ClInclude Include="Engine\LowerLayer\Core\Device\Commands\StructureSwapChain\CommandStructureSwapChain.h" />
@@ -368,7 +368,7 @@
     <ClInclude Include="Engine\Math\Matrix\Matrix4x4.h" />
     <ClInclude Include="Engine\LowerLayer\Resource\PSO\PSO_Assembler\PipelineStateDesc.h" />
     <ClInclude Include="Engine\LowerLayer\Debug\ErrorMessageOutput\ErrorMessageOutput.h" />
-    <ClInclude Include="Engine\LowerLayer\Resource\Buffer\ResourceBarrier.h" />
+    <ClInclude Include="Engine\LowerLayer\Resource\Buffer\BufferDefinition\ResourceBarrier.h" />
     <ClInclude Include="Engine\LowerLayer\Render\RenderPathStructure\RenderStateComponent.h" />
     <ClInclude Include="Engine\LowerLayer\Render\RenderStates.h" />
     <ClInclude Include="Engine\LowerLayer\Render\RenderPathStructure\ShaderPathComponent.h" />

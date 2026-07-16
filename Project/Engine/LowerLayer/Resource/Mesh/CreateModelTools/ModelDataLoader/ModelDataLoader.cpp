@@ -15,10 +15,6 @@ MeshContext::ModelCreator::ModelDataLoader::ModelDataLoader(MeshContext::Instanc
 {
     Logger::Entry("ModelDataLoader: Constructor");
 
-    std::string const registryFilePath = "Assets/Registry/ModelFiles.txt";
-
-    LoadModelRegistry(registryFilePath);
-    Logger::Log("Load: " + registryFilePath, fileName);
 
 	modelDataCache.reset(new ModelDataCache(key_));
     Logger::Log("Instantiate: ModelDataCache",fileName);
@@ -33,24 +29,19 @@ MeshContext::ModelCreator::ModelDataLoader::~ModelDataLoader()
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-std::shared_ptr<ModelDataAggregate> MeshContext::ModelCreator::ModelDataLoader::Load(std::string fileName_)
+std::shared_ptr<ModelDataAggregate> MeshContext::ModelCreator::ModelDataLoader::Load(std::string fileName_ , std::string filePath_)
 {
     std::shared_ptr<ModelDataAggregate> shareData = std::make_shared<ModelDataAggregate>();
 
-    //チェック
-    ErrorMessageOutput::Assert::DetectError
-    (
-        modelFileName_pathLib.contains(fileName_),
-        fileName_ + "こんなファイルは存在しないぜ",
-        fileName
-    );
-
 	///キャッシュにあるか確認
 	std::shared_ptr<ModelDataAggregate> cachedModelData = modelDataCache->FindDuplication(ModelDataCache::AccessKey{},fileName_);
-	if (cachedModelData) return cachedModelData;
-
+    if (cachedModelData)
+    {
+        Logger::Log("Cache Hit: " + fileName_, fileName);
+        return cachedModelData;
+    }
     // wchar_t から char型(UTF-8)に変換
-    auto path = StringConverter::ToUTF8(StringConverter::ConvertString(modelFileName_pathLib[fileName_]));
+    auto path = StringConverter::ToUTF8(StringConverter::ConvertString(filePath_));
 
     Assimp::Importer importer;
     unsigned int flag = 0;
@@ -70,7 +61,7 @@ std::shared_ptr<ModelDataAggregate> MeshContext::ModelCreator::ModelDataLoader::
 
     //メッシュのメモリを確保
     shareData->resourceMesh.clear();
-    if(scene) shareData->resourceMesh.resize(scene ->mNumMeshes);
+    if(scene) shareData->resourceMesh.resize(scene->mNumMeshes);
 
     // メッシュデータを変換.
     for (size_t i = 0; i < shareData->resourceMesh.size(); ++i)
@@ -81,12 +72,12 @@ std::shared_ptr<ModelDataAggregate> MeshContext::ModelCreator::ModelDataLoader::
 
     //マテリアルのメモリを確保
     shareData->resourceMaterial.clear();
-    shareData->resourceMaterial.resize(scene ->mNumMaterials);
+    if(scene)shareData->resourceMaterial.resize(scene->mNumMaterials);
 
     //マテリアルデータを変換
     for (size_t i = 0; i < shareData->resourceMaterial.size(); ++i)
     {
-        const auto pMaterial = scene ->mMaterials[i];
+        const auto pMaterial = scene->mMaterials[i];
         ParseMaterial(shareData->resourceMaterial[i], pMaterial);
     }
 
@@ -97,11 +88,13 @@ std::shared_ptr<ModelDataAggregate> MeshContext::ModelCreator::ModelDataLoader::
     importer.FreeScene();
     scene  = nullptr;
 
+    Logger::Log("Complete: Loading " + fileName_, fileName);
+
     return shareData;
 }
-
-
-
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 void MeshContext::ModelCreator::ModelDataLoader::ParseMesh(ResourceMesh& dstMesh_, const aiMesh* pSrcMesh_)
 {
     //マテリアル番号を設定
@@ -301,7 +294,9 @@ void MeshContext::ModelCreator::ModelDataLoader::ParseMesh(ResourceMesh& dstMesh
 
     }
 }
-
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 void MeshContext::ModelCreator::ModelDataLoader::ParseMaterial(ResourceMaterial& dstMaterial_, const aiMaterial* pSrcMaterial_)
 {
     // 拡散反射成分
@@ -397,70 +392,3 @@ std::wstring MeshContext::ModelCreator::ModelDataLoader::Convert(const aiString&
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-void MeshContext::ModelCreator::ModelDataLoader::LoadModelRegistry(std::string const registryFilePath_)
-{
-    std::ifstream file(registryFilePath_);
-    ErrorMessageOutput::Abort::DetectError
-    (
-        file.is_open(),
-        registryFilePath_ + "このパス無くない？",
-        fileName
-    );
-
-    std::string line;
-
-    while (std::getline(file, line))
-    {
-        constexpr std::string_view keyToken = "key: \"";
-        constexpr std::string_view valueToken = "value: \"";
-
-        auto keyStart = line.find(keyToken);
-        if (keyStart == std::string::npos)
-        {
-            continue;
-        }
-
-
-        keyStart += keyToken.size();
-
-        auto keyEnd = line.find("\"", keyStart);
-        if (keyEnd == std::string::npos)
-        {
-            continue;
-        }
-
-
-        std::string key = line.substr
-        (
-            keyStart,
-            keyEnd - keyStart
-        );
-
-
-        auto valueStart = line.find(valueToken);
-        if (valueStart == std::string::npos)
-        {
-            continue;
-        }
-
-
-        valueStart += valueToken.size();
-
-        auto valueEnd = line.find("\"", valueStart);
-        if (valueEnd == std::string::npos)
-        {
-            continue;
-        }
-
-
-        std::string value = line.substr
-        (
-            valueStart,
-            valueEnd - valueStart
-        );
-
-
-        modelFileName_pathLib.emplace(key,value);
-    }
-
-}

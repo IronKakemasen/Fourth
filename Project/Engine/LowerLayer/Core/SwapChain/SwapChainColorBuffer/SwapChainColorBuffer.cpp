@@ -1,6 +1,6 @@
 
 #include "SwapChainColorBuffer.h"
-#include "../../../Resource/Buffer/ResourceBarrier.h"
+#include "../../../Resource/Buffer/BufferDefinition/ResourceBarrier.h"
 
 
 SwapChainContext::ColorBuffer::ColorBuffer

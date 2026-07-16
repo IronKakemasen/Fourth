@@ -1,7 +1,7 @@
 #pragma once
-#include "../CommandContext.h"
+#include "../RuntimeCommandController.h"
 
-class CommandContext::CommandExecutor
+class CommandContext::RuntimeCommandController::CommandExecutor
 {
 public:
 	CommandExecutor
