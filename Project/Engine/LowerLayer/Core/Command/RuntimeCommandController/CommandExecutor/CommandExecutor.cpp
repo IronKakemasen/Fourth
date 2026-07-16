@@ -6,7 +6,7 @@ namespace
 }
 
 
-CommandContext::CommandExecutor::CommandExecutor
+CommandContext::RuntimeCommandController::CommandExecutor::CommandExecutor
 (
 	ID3D12CommandQueue* commandQueue_,
 	std::array<ID3D12CommandAllocator*, ProjectConfig::Render::kDoubleBuffer> commandAllocators_,
@@ -18,7 +18,7 @@ CommandContext::CommandExecutor::CommandExecutor
 }
 
 
-void CommandContext::CommandExecutor::PrepareForRecording(UINT frameIndex_)
+void CommandContext::RuntimeCommandController::CommandExecutor::PrepareForRecording(UINT frameIndex_)
 {
 	HRESULT hr = commandAllocators[frameIndex_]->Reset();
 	ErrorMessageOutput::Assert::DetectError(SUCCEEDED(hr), "コマンドアロケーターのリセットに失敗", fileName);
@@ -28,7 +28,7 @@ void CommandContext::CommandExecutor::PrepareForRecording(UINT frameIndex_)
 
 }
 
-void CommandContext::CommandExecutor::Execute()
+void CommandContext::RuntimeCommandController::CommandExecutor::Execute()
 {
 	//コマンドリストの内容を確定させる
 	HRESULT hr = commandList->Close();

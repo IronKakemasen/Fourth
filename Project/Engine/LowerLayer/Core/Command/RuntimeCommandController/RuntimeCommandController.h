@@ -1,12 +1,22 @@
 #pragma once
 #include "../Synchronizer/Synchronizer.h"
-#include "../CommandExecutor/CommandExecutor.h"
+
 
 class CommandContext::RuntimeCommandController
 {
+	//コマンドを実行する
+	class CommandExecutor;
+
 public:
 
-	RuntimeCommandController(std::unique_ptr<CommandExecutor>&& commandExecutor_, Synchronizer* synchronizer_);
+	RuntimeCommandController
+	(
+		ID3D12CommandQueue* commandQueue_,
+		std::array<ID3D12CommandAllocator*, ProjectConfig::Render::kDoubleBuffer> commandAllocators_,
+		ID3D12GraphicsCommandList6* commandList_,
+		Synchronizer* synchronizer_
+	);
+
 	~RuntimeCommandController();
 
 	void RecordingStart(UINT frameIndex_);

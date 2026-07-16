@@ -2,7 +2,6 @@
 
 //ツール
 #include "Synchronizer/Synchronizer.h"
-#include "CommandExecutor/CommandExecutor.h"
 #include "RuntimeWrapper/RuntimeWrapper.h"
 #include "ResourceUploader/ResourceUploader.h"
 #include "RuntimeCommandController/RuntimeCommandController.h"
@@ -74,14 +73,18 @@ void CommandContext::InstantiateRuntimeCommandControler()
 		cmdAllocators.at(i) = commandAllocators.at(i).Get();
 	}
 
-	std::unique_ptr<CommandExecutor> commandExecutor(std::make_unique<CommandExecutor>(commandQueue.Get(), cmdAllocators, commandList.Get()));
-	Logger::Log("Create: commandExecutor", fileName);
-
-	runtimeCommandController.reset(new RuntimeCommandController(std::move(commandExecutor), synchronizer.get()));
+	runtimeCommandController.reset
+	(
+		new RuntimeCommandController
+		(
+			commandQueue.Get(),
+			cmdAllocators,
+			commandList.Get(),
+			synchronizer.get()
+		)
+	);
 	Logger::Log("Instantiate: RuntimeCommandControler", fileName);
 }
-
-
 
 
 void CommandContext::Finalize(InstanceKey instanceKey_)

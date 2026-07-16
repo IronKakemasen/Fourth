@@ -1,2 +1,2 @@
-key: "BlockGltf" , value: "Assets/Model/Block/Block.gltf"
-key: "BlockObj" , value: "Assets/Model/Block/Block.obj"
+key: "CubeGltf" , value: "Assets/Model/Cube/Cube.gltf"
+key: "PlayerObj" , value: "Assets/Model/Player/Player.obj"

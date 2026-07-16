@@ -9,8 +9,6 @@ class CommandContext
 	class RuntimeCommandController;
 	//FenceでCPUとGPUを同期させる
 	class Synchronizer;
-	//コマンドを実行する
-	class CommandExecutor;
 	//コマンドリストの処理のラッパークラス
 	class RuntimeWrapper;
 	//リソースのアップロードを行う

@@ -20,19 +20,17 @@ public:
 	ModelDataLoader(MeshContext::InstanceKey key_);
 	~ModelDataLoader();
 
-	std::shared_ptr<ModelDataAggregate> Load(std::string fileName_);
+	///ファイルの名前から実メッシュデータを生成
+	std::shared_ptr<ModelDataAggregate> Load(std::string fileName_ , std::string filePath_);
 
 private:
 
 	class ModelDataCache;
 
 	std::unique_ptr<ModelDataCache> modelDataCache;
-	std::unordered_map<std::string, std::string > modelFileName_pathLib;
 	//シーンデータ
 	const aiScene* scene = nullptr;   
 
-	//モデル登録ファイルから何が登録されているか読み込む
-	void LoadModelRegistry(std::string const registryFilePath_);
 	std::wstring Convert(const aiString& path);
 
 	void ParseMesh(ResourceMesh& dstMesh_, const aiMesh* pSrcMesh_);

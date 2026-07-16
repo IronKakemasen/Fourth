@@ -210,7 +210,7 @@
     <ClCompile Include="Engine\LowerLayer\Core\SwapChain\RenderPassMaterialProvider\RenderPassMaterialProvider.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="Engine\LowerLayer\Core\Command\CommandExecutor\CommandExecutor.cpp">
+    <ClCompile Include="Engine\LowerLayer\Core\Command\RuntimeCommandController\CommandExecutor\CommandExecutor.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
     <ClCompile Include="Engine\LowerLayer\Core\Device\Commands\CreateFenceObject\CommandCreateFenceObject.cpp">
@@ -575,10 +575,10 @@
     <ClInclude Include="Engine\LowerLayer\Core\SwapChain\RenderPassMaterialProvider\RenderPassMaterialProvider.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\LowerLayer\Resource\Buffer\ResourceBarrier.h">
+    <ClInclude Include="Engine\LowerLayer\Resource\Buffer\BufferDefinition\ResourceBarrier.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\LowerLayer\Core\Command\CommandExecutor\CommandExecutor.h">
+    <ClInclude Include="Engine\LowerLayer\Core\Command\RuntimeCommandController\CommandExecutor\CommandExecutor.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
     <ClInclude Include="Engine\LowerLayer\Core\Device\Commands\CreateFenceObject\CommandCreateFenceObject.h">
