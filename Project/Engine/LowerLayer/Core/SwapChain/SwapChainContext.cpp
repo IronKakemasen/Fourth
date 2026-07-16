@@ -7,6 +7,7 @@
 #include "RenderPassMaterialProvider/RenderPassMaterialProvider.h"
 #include "../../Resource/Buffer/BufferDefinition/GPUBuffer/DepthStencilBuffer/DepthStencilBuffer.h"
 
+using namespace ProjectConfig::Render;
 
 namespace
 {
@@ -97,14 +98,13 @@ void SwapChainContext::AssembleCoreParts
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 void SwapChainContext::PullResourcesFromSwapChain(std::unique_ptr<Description>&& desc_)
 {
-	using namespace ProjectConfig::Render;
 
 	//生リソース
-	std::array<Microsoft::WRL::ComPtr<ID3D12Resource>, kDoubleBuffer > resources;
+	std::array<Microsoft::WRL::ComPtr<ID3D12Resource>, (UINT)NumBuffer::kDoubleBuffer > resources;
 
 	//スワップチェーンからリソースを引っ張る
 	HRESULT hr{};
-	for (int i = 0;i < kDoubleBuffer;++i)
+	for (int i = 0;i < (int)NumBuffer::kDoubleBuffer;++i)
 	{
 		hr = swapChain->GetBuffer(i, IID_PPV_ARGS(resources.at(i).GetAddressOf()));
 		ErrorMessageOutput::Assert::DetectError(SUCCEEDED(hr), "SwapChainのリソースを引っ張れなかった", fileName);
@@ -122,7 +122,7 @@ void SwapChainContext::CreateRTV(InstanceKey instanceKey_ , const D3D12_RENDER_T
 {
 	ResourceGetKey resourceGetKey;
 
-	for (int i = 0;i < ProjectConfig::Render::kDoubleBuffer;++i)
+	for (int i = 0;i < (int)NumBuffer::kDoubleBuffer;++i)
 	{
 		D3D12_CPU_DESCRIPTOR_HANDLE rtvCPU{};
 

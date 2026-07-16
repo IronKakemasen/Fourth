@@ -19,7 +19,7 @@ GPUBufferBehavior::GPUBufferBehavior
 	std::unique_ptr <BufferDescriptionBehavior>&& description_
 ) : name(name_), description(std::move(description_))
 {
-	size_t const bufferSize = description->numBuffer;
+	size_t const bufferSize = (size_t)description->numBuffer;
 	ErrorMessageOutput::Assert::DetectError
 	(
 		resourceContainer_.size() == bufferSize,

@@ -29,12 +29,12 @@ MeshContext::ModelCreator::ModelDataLoader::~ModelDataLoader()
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-std::shared_ptr<ModelDataAggregate> MeshContext::ModelCreator::ModelDataLoader::Load(std::string fileName_ , std::string filePath_)
+ModelDataAggregate* MeshContext::ModelCreator::ModelDataLoader::Load(std::string fileName_ , std::string filePath_)
 {
-    std::shared_ptr<ModelDataAggregate> shareData = std::make_shared<ModelDataAggregate>();
+    std::unique_ptr<ModelDataAggregate> modelDataAggregate = std::make_unique<ModelDataAggregate>();
 
 	///キャッシュにあるか確認
-	std::shared_ptr<ModelDataAggregate> cachedModelData = modelDataCache->FindDuplication(ModelDataCache::AccessKey{},fileName_);
+	ModelDataAggregate* cachedModelData = modelDataCache->FindDuplication(ModelDataCache::AccessKey{},fileName_);
     if (cachedModelData)
     {
         Logger::Log("Cache Hit: " + fileName_, fileName);
@@ -60,29 +60,30 @@ std::shared_ptr<ModelDataAggregate> MeshContext::ModelCreator::ModelDataLoader::
     ErrorMessageOutput::Abort::DetectError(scene, "シーンデータが無い", fileName);
 
     //メッシュのメモリを確保
-    shareData->resourceMesh.clear();
-    if(scene) shareData->resourceMesh.resize(scene->mNumMeshes);
+    modelDataAggregate->resourceMesh.clear();
+    if(scene) modelDataAggregate->resourceMesh.resize(scene->mNumMeshes);
 
     // メッシュデータを変換.
-    for (size_t i = 0; i < shareData->resourceMesh.size(); ++i)
+    for (size_t i = 0; i < modelDataAggregate->resourceMesh.size(); ++i)
     {
         const auto pMesh = scene->mMeshes[i];
-        ParseMesh(shareData->resourceMesh[i], pMesh);
+        ParseMesh(modelDataAggregate->resourceMesh[i], pMesh);
     }
 
     //マテリアルのメモリを確保
-    shareData->resourceMaterial.clear();
-    if(scene)shareData->resourceMaterial.resize(scene->mNumMaterials);
+    modelDataAggregate->resourceMaterial.clear();
+    if(scene)modelDataAggregate->resourceMaterial.resize(scene->mNumMaterials);
 
     //マテリアルデータを変換
-    for (size_t i = 0; i < shareData->resourceMaterial.size(); ++i)
+    for (size_t i = 0; i < modelDataAggregate->resourceMaterial.size(); ++i)
     {
         const auto pMaterial = scene->mMaterials[i];
-        ParseMaterial(shareData->resourceMaterial[i], pMaterial);
+        ParseMaterial(modelDataAggregate->resourceMaterial[i], pMaterial);
     }
 
     //キャッシュデータに登録
-    modelDataCache->Register(MeshContext::ModelCreator::ModelDataLoader::ModelDataCache::AccessKey{}, fileName_, shareData);
+    auto returnPtr = modelDataAggregate.get();
+    modelDataCache->Register(MeshContext::ModelCreator::ModelDataLoader::ModelDataCache::AccessKey{}, fileName_, std::move(modelDataAggregate));
 
     //不要になったのでクリア
     importer.FreeScene();
@@ -90,7 +91,7 @@ std::shared_ptr<ModelDataAggregate> MeshContext::ModelCreator::ModelDataLoader::
 
     Logger::Log("Complete: Loading " + fileName_, fileName);
 
-    return shareData;
+    return returnPtr;
 }
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -256,7 +257,7 @@ void MeshContext::ModelCreator::ModelDataLoader::ParseMesh(ResourceMesh& dstMesh
         for (size_t i = 0; i < meshletCount; ++i)
         {
             const meshopt_Meshlet& src = temp_meshlets[i];
-            Meshlet& dstMeshlet = dstMesh_.meshlets[i];
+            StructuredBufferDataDefinition::MeshletCPUGPU& dstMeshlet = dstMesh_.meshlets[i];
 
             //各スレッドグループが担当する箇所を算出
             dstMeshlet.vertexOffset = static_cast<uint32_t>(dstMesh_.uniqueVertexIndices.size());
@@ -268,7 +269,7 @@ void MeshContext::ModelCreator::ModelDataLoader::ParseMesh(ResourceMesh& dstMesh
             for (unsigned int v = 0; v < src.vertex_count; ++v)
             {
                 uint32_t global_vertex_idx = temp_meshlet_vertices[src.vertex_offset + v];
-                dstMesh_.uniqueVertexIndices.emplace_back(UniqueVertexIndex(global_vertex_idx));
+                dstMesh_.uniqueVertexIndices.emplace_back(StructuredBufferDataDefinition::UniqueVertexIndexCPUGPU(global_vertex_idx));
             }
 
             //ポリゴン頂点情報をパッキング
@@ -276,7 +277,7 @@ void MeshContext::ModelCreator::ModelDataLoader::ParseMesh(ResourceMesh& dstMesh
             {
                 size_t prim_base_idx = src.triangle_offset + t * 3;
 
-                PrimitiveIndex tris = {};
+                StructuredBufferDataDefinition::PrimitiveIndexCPUGPU tris = {};
 
                 tris.index2 = temp_meshlet_triangles[prim_base_idx + 0];
                 tris.index0 = temp_meshlet_triangles[prim_base_idx + 1];

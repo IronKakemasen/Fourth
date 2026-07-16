@@ -2,10 +2,8 @@
 
 //バッファのユニークID
 using BufferUniqueID = uint32_t;
-//メッシュのユニークID
-using MeshUniqueID = uint32_t;
-//マテリアルのユニークID
-using MaterialUniqueID = uint32_t;
+//srv/uavディスクリプタヒープ上のインデックス
+using SRVHeapIndex = uint32_t;
 
 
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -36,10 +34,17 @@ namespace ProjectConfig
 
 	namespace Render
 	{
-		enum NumBuffer
+		enum class NumBuffer
 		{
 			kSingleBuffer = 1,
 			kDoubleBuffer = 2
+		};
+
+		enum class GlobalBufferTableSetting
+		{
+			//TransformMatrixBufferの同時存在最大数
+			kSizeOfTransformMatrixBufferArray = 100,
+
 		};
 
 		constexpr D3D_SHADER_MODEL kRequiredShaderModel = D3D_SHADER_MODEL_6_6;

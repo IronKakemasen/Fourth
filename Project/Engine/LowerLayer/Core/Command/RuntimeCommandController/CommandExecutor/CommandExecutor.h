@@ -7,7 +7,7 @@ public:
 	CommandExecutor
 	(
 		ID3D12CommandQueue* commandQueue_,
-		std::array<ID3D12CommandAllocator*, ProjectConfig::Render::kDoubleBuffer> commandAllocators_,
+		std::array<ID3D12CommandAllocator*, (UINT)ProjectConfig::Render::NumBuffer::kDoubleBuffer> commandAllocators_,
 		ID3D12GraphicsCommandList6* commandList_
 	);
 
@@ -19,7 +19,7 @@ public:
 private:
 
 	ID3D12CommandQueue* commandQueue;
-	std::array<ID3D12CommandAllocator*, ProjectConfig::Render::kDoubleBuffer> commandAllocators;
+	std::array<ID3D12CommandAllocator*, (UINT)ProjectConfig::Render::NumBuffer::kDoubleBuffer> commandAllocators;
 	ID3D12GraphicsCommandList6* commandList;
 };
 

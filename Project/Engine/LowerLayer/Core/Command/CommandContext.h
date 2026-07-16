@@ -26,7 +26,7 @@ public:
 	(
 		InstanceKey instanceKey_,
 		Microsoft::WRL::ComPtr<ID3D12CommandQueue> commandQueue_,
-		std::array<Microsoft::WRL::ComPtr<ID3D12CommandAllocator>, ProjectConfig::Render::kDoubleBuffer> commandAllocators_,
+		std::array<Microsoft::WRL::ComPtr<ID3D12CommandAllocator>, (UINT)ProjectConfig::Render::NumBuffer::kDoubleBuffer> commandAllocators_,
 		Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList6> commandList_,
 		Microsoft::WRL::ComPtr<ID3D12Fence> fence_,
 		Microsoft::WRL::ComPtr<ID3D12CommandAllocator> allocator_forUpload_,
@@ -51,7 +51,7 @@ private:
 	//コマンドキュー
 	Microsoft::WRL::ComPtr<ID3D12CommandQueue> commandQueue;
 	//コマンドアローケータ
-	std::array<Microsoft::WRL::ComPtr<ID3D12CommandAllocator>,ProjectConfig::Render::kDoubleBuffer> commandAllocators;
+	std::array<Microsoft::WRL::ComPtr<ID3D12CommandAllocator>, (UINT)ProjectConfig::Render::NumBuffer::kDoubleBuffer> commandAllocators;
 	//コマンドリスト		
 	Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList6> commandList;
 	//フェンス
@@ -59,7 +59,7 @@ private:
 	//カウンタ
 	uint64_t commonFenceValue = 0;
 	//それぞれのカウンタ
-	std::array<uint64_t,ProjectConfig::Render::kDoubleBuffer> fenceCounters = { 0,0 };
+	std::array<uint64_t,(UINT)ProjectConfig::Render::NumBuffer::kDoubleBuffer> fenceCounters = { 0,0 };
 	//フェンスイベント
 	HANDLE fenceEvent = nullptr;
 

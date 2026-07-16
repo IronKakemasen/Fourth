@@ -36,7 +36,7 @@ struct IDualRole
 //シェーダーバッファのインターフェース
 struct IShaderBuffer
 {
-	virtual uint32_t OutProperSRVHeapIndex(int frameIndex_ = 0)const = 0;
+	virtual SRVHeapIndex OutProperSRVHeapIndex(int frameIndex_ = 0)const = 0;
 };
 
 //CSバッファのインターフェース

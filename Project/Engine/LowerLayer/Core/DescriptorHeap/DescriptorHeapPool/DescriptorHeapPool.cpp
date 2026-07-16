@@ -22,7 +22,7 @@ DescriptorHeapPool::DescriptorHeapPool
 	//フリーリストに空きインデックスを最大数まで登録
 	for (uint32_t i = 0u;i < kMaxDescriptor_;++i)
 	{
-		freeList.emplace_back(i);
+		freeList.Add(i);
 	}
 }
 
@@ -58,16 +58,7 @@ template<>
 std::tuple<uint32_t, D3D12_CPU_DESCRIPTOR_HANDLE, D3D12_GPU_DESCRIPTOR_HANDLE>
 DescriptorHeapPool::ProvideFreeHeapIndex(CreateViewKey accessKey_)
 {
-	ErrorMessageOutput::Assert::DetectError
-	(
-		!freeList.empty(),
-		name + " のヒープが枯渇",
-		fileName
-	);
-
-	uint32_t lastIndex = freeList.back();
-	freeList.pop_back();
-
+	uint32_t lastIndex = freeList.Distribute();
 	return std::make_tuple
 	(
 		lastIndex, 
@@ -82,5 +73,5 @@ DescriptorHeapPool::ProvideFreeHeapIndex(CreateViewKey accessKey_)
 //空きヒープインデックスを回収
 void DescriptorHeapPool::CollectHeapIndex(uint32_t index_, CollectHeapIndexKey key_)
 {
-	freeList.emplace_back(index_);
+	freeList.Add(index_);
 }

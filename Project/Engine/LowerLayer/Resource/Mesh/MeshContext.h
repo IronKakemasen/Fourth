@@ -15,6 +15,8 @@ public:
 private:
 	//モデルを生成する。
 	class ModelCreator;
+	class ModelSlotAllocator;
+
 
 	std::unique_ptr<ModelCreator> modelCreator;
 };
