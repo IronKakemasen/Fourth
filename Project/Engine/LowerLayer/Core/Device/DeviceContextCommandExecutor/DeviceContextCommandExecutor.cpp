@@ -93,8 +93,9 @@ DeviceContext::CommandExecutor::CreateCommandContextCorePartsForRuntime(DeviceCo
 [[nodiscard]] CommandContextCorePartsUpload
 DeviceContext::CommandExecutor::CreateCommandContextCorePartsForUpload(DeviceContext::InstanceKey instanceKey_)
 {
-	//コマンドリストのタイプはアップロードしかしないのでコピーだけでいい
-	auto const cmdListType = D3D12_COMMAND_LIST_TYPE_COPY;
+	//コマンドリストのタイプはアップロードしかしないのでコピーだけでいいんだけど、
+	//ちょいめんどいのでいったん
+	auto const cmdListType = D3D12_COMMAND_LIST_TYPE_DIRECT;
 
 	//コアパーツ生成ツール
 	CommandStructureCommandContext tool(DeviceContext::GenerateKey{});

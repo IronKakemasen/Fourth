@@ -6,28 +6,22 @@ class CommandContext::ResourceUploader
 
 public:
 
+	//Nexusにコマンドのキックと同期処理＆コマンド閉じをしてもらう
+	struct WaitAndKickLicence;
 
 	ResourceUploader
 	(
+		CommandContext::InstanceKey key_,
 		Microsoft::WRL::ComPtr<ID3D12CommandAllocator>&& allocator_forUpload_,
 		Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList6>&& cmdList_forUpload_,
 		ID3D12CommandQueue* commandQueue_,
 		Synchronizer* synchronizer_
 	);
 
-	void RecordingStart(const UsesResourceUploaderPermission& permission_);
-	void WaitAndKick(const UsesResourceUploaderPermission& permission_);
-	inline void Upload
-	(
-		const UsesResourceUploaderPermission& permission_,
-		ID3D12Resource* dstResource_, 
-		ID3D12Resource* intermediateResource_,
-		const D3D12_SUBRESOURCE_DATA* subeResource_,
-		UINT subResourceCount_
-	)
-	{
-		UpdateSubresources(commandList.Get(), dstResource_, intermediateResource_, 0, 0, subResourceCount_, subeResource_);
-	}
+	//コマンドコンテキスとに呼び出してもらう
+	void WaitAndKick(const WaitAndKickLicence& licence_);
+	///commandListをラップしたアップロードコマンド
+	UploadCommand ProvideUploadCommand();
 
 private:
 
@@ -35,6 +29,19 @@ private:
 	Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList6> commandList;
 	ID3D12CommandQueue* commandQueue;
 	Synchronizer* synchronizer;
+
+	//リソースのアップロードのコマンドの記録開始
+	void RecordingStart();
+
 };
+
+struct CommandContext::ResourceUploader::WaitAndKickLicence
+{
+private:
+
+	friend class Nexus;
+	explicit WaitAndKickLicence() = default;
+};
+
 
 

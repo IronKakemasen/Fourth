@@ -11,6 +11,7 @@
 #include "LowerLayer/Core/SwapChain/SwapChainContext.h"
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 #include "LowerLayer/Core/Command/CommandContext.h"
+#include "LowerLayer/Core/Command/ResourceUploader/ResourceUploader.h"
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 #include "LowerLayer/Resource/Shader/ShaderContext.h"
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -79,6 +80,10 @@ Nexus::Nexus()
 	InstantiateInSequence<InitSequence::kRenderContext>();
 
 	ErrorMessageOutput::Assert::DetectError(next == InitSequence::kEnd, "初期化が正常に行われていない可能性がある", fileName);
+
+	//溜まったリソースアップロードのコマンドをキックして同期し、コマンドを閉じる
+	commandContext->resourceUploader->WaitAndKick(CommandContext::ResourceUploader::WaitAndKickLicence{});
+
 	Logger::End("Nexus: Constructor");
 }
 

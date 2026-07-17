@@ -56,7 +56,7 @@ public:
 	//PSOを生成するコマンド
 	template<typename PSO_DescType>
 	std::function<void(ID3D12PipelineState** doublePtr_pipelineState_, PSO_DescType* descType_)>
-		ProvideCreatePSOCommand();
+	ProvideCreatePSOCommand();
 
 	//ルートシグネチャを生成するコマンド
 	std::function<void
