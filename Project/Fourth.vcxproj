@@ -123,7 +123,9 @@
     <ClCompile Include="Engine\LowerLayer\Core\Device\Commands\CreateFenceObject\CommandCreateFenceObject.cpp" />
     <ClCompile Include="Engine\LowerLayer\Core\Command\CommandContext.cpp" />
     <ClCompile Include="Engine\LowerLayer\Core\Device\Commands\StructureSwapChain\CommandStructureSwapChain.cpp" />
-    <ClCompile Include="Engine\NexusRun.cpp" />
+    <ClCompile Include="Engine\Nexus\NexusFinalization.cpp" />
+    <ClCompile Include="Engine\Nexus\NexusInitialization.cpp" />
+    <ClCompile Include="Engine\Nexus\NexusRun.cpp" />
     <ClCompile Include="Engine\LowerLayer\Resource\Buffer\BufferCreator\BufferAssembler\BufferAssembler.cpp" />
     <ClCompile Include="Engine\LowerLayer\Resource\Buffer\BufferDefinition\BufferDescriptions\BufferDescriptionBehavior.cpp" />
     <ClCompile Include="Engine\LowerLayer\Resource\Buffer\BufferDefinition\GPUBuffer\BufferInterface.cpp" />
@@ -148,7 +150,7 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Use</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Use</PrecompiledHeader>
     </ClCompile>
-    <ClCompile Include="Engine\Math\Vector\Vector3.cpp" />
+    <ClCompile Include="Engine\MiddleLayer\Math\Vector\Vector3.cpp" />
     <ClCompile Include="Engine\PreCompileHeader\PreCompileHeader.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
@@ -254,14 +256,14 @@
     <ClCompile Include="Engine\LowerLayer\Resource\Buffer\BufferCreator\ResourceCreator\ResourceCreator.cpp" />
     <ClCompile Include="Engine\LowerLayer\Resource\Buffer\BufferDefinition\GPUBuffer\GPUBufferBehavior.cpp" />
     <ClCompile Include="Engine\LowerLayer\Debug\RuntimeDebugger\DebugSystems\LeakChecker\LeakChecker.cpp" />
-    <ClCompile Include="main.cpp" />
+    <ClCompile Include="Engine\main.cpp" />
     <ClCompile Include="Engine\LowerLayer\Core\Window\WindowContext.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Use</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Use</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="Engine\Utility\StringConnverter\StringConverter.cpp" />
-    <ClCompile Include="Engine\Nexus.cpp" />
-    <ClCompile Include="Engine\Math\Vector\Vector2.cpp" />
+    <ClCompile Include="Engine\Nexus\Nexus.cpp" />
+    <ClCompile Include="Engine\MiddleLayer\Math\Vector\Vector2.cpp" />
     <ClCompile Include="Engine\LowerLayer\Core\SwapChain\SwapChainContext.cpp" />
     <ClCompile Include="Engine\LowerLayer\Debug\RuntimeDebugger\DebugSystems\PointerValidator\PointerValidator.cpp" />
     <ClCompile Include="Engine\LowerLayer\Debug\RuntimeDebugger\DebugSystems\RuntimeDebuggerBehavior.cpp" />
@@ -308,7 +310,7 @@
     <ClCompile Include="Engine\LowerLayer\Resource\Mesh\ModelStructure\Model.cpp" />
     <ClCompile Include="Engine\LowerLayer\Resource\Mesh\ModelStructure\ModelData\ResourceMaterial\ResourceMaterial.cpp" />
     <ClCompile Include="Engine\LowerLayer\Resource\Mesh\ModelStructure\ModelData\ModelDataAggregate.cpp" />
-    <ClCompile Include="Engine\Math\Vector\Vector4.cpp" />
+    <ClCompile Include="Engine\MiddleLayer\Math\Vector\Vector4.cpp" />
     <ClCompile Include="Engine\LowerLayer\Resource\Buffer\BufferDefinition\BufferDescriptions\StaticStructuredBufferDescription\StaticStructuredBufferDescription.cpp" />
     <ClCompile Include="Engine\LowerLayer\Resource\Buffer\BufferDefinition\GPUBuffer\StaticStructuredBuffer\StaticStructuredBuffer.cpp" />
     <ClCompile Include="Engine\LowerLayer\Resource\Mesh\CreateModelTools\ModelSlotAllocator\ModelSlotAllocator.cpp" />
@@ -369,7 +371,7 @@
     <ClInclude Include="Engine\LowerLayer\Resource\Buffer\BufferDefinition\GPUBuffer\ConstantBuffer\ConstantBuffer.h" />
     <ClInclude Include="Engine\LowerLayer\Core\Device\DeviceContext.h" />
     <ClInclude Include="Engine\LowerLayer\Core\Window\WindowContext.h" />
-    <ClInclude Include="Engine\Math\Matrix\Matrix4x4.h" />
+    <ClInclude Include="Engine\MiddleLayer\Math\Matrix\Matrix4x4.h" />
     <ClInclude Include="Engine\LowerLayer\Resource\PSO\PSO_Assembler\PipelineStateDesc.h" />
     <ClInclude Include="Engine\LowerLayer\Debug\ErrorMessageOutput\ErrorMessageOutput.h" />
     <ClInclude Include="Engine\LowerLayer\Resource\Buffer\BufferDefinition\ResourceBarrier.h" />
@@ -399,10 +401,10 @@
     <ClInclude Include="Engine\PreCompileHeader\PreCompileHeader.h" />
     <ClInclude Include="Engine\LowerLayer\Debug\Logger\Logger.h" />
     <ClInclude Include="Engine\Utility\StringConnverter\StringConverter.h" />
-    <ClInclude Include="Engine\Nexus.h" />
-    <ClInclude Include="Engine\Math\Vector\Vector3.h" />
-    <ClInclude Include="Engine\Math\Quaternion\Quaternion.h" />
-    <ClInclude Include="Engine\Math\Vector\Vector2.h" />
+    <ClInclude Include="Engine\Nexus\Nexus.h" />
+    <ClInclude Include="Engine\MiddleLayer\Math\Vector\Vector3.h" />
+    <ClInclude Include="Engine\MiddleLayer\Math\Quaternion\Quaternion.h" />
+    <ClInclude Include="Engine\MiddleLayer\Math\Vector\Vector2.h" />
     <ClInclude Include="Engine\LowerLayer\Core\SwapChain\SwapChainContext.h" />
     <ClInclude Include="Engine\LowerLayer\Resource\Buffer\BufferCreator\ResourceCreator\ResourceCreator.h" />
     <ClInclude Include="Engine\LowerLayer\Resource\Buffer\BufferDefinition\GPUBuffer\GPUBufferBehavior.h" />
@@ -454,7 +456,7 @@
     <ClInclude Include="Engine\LowerLayer\Resource\Mesh\ModelStructure\Model.h" />
     <ClInclude Include="Engine\LowerLayer\Resource\Mesh\ModelStructure\ModelData\ResourceMaterial\ResourceMaterial.h" />
     <ClInclude Include="Engine\LowerLayer\Resource\Mesh\ModelStructure\ModelData\ModelDataAggregate.h" />
-    <ClInclude Include="Engine\Math\Vector\Vector4.h" />
+    <ClInclude Include="Engine\MiddleLayer\Math\Vector\Vector4.h" />
     <ClInclude Include="Engine\Utility\Transform\Transform.h" />
     <ClInclude Include="Engine\LowerLayer\Resource\Buffer\BufferDefinition\BufferDescriptions\StaticStructuredBufferDescription\StaticStructuredBufferDescription.h" />
     <ClInclude Include="Engine\LowerLayer\Resource\Buffer\BufferDefinition\GPUBuffer\StaticStructuredBuffer\StaticStructuredBuffer.h" />

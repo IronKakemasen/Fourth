@@ -1,6 +1,6 @@
 #pragma once
-#include "../../../../../../Math/Vector/Vector2.h"
-#include "../../../../../../Math/Vector/Vector3.h"
+#include "../../../../../../MiddleLayer/Math/Vector/Vector2.h"
+#include "../../../../../../MiddleLayer/Math/Vector/Vector3.h"
 
 struct StandardVertex
 {
