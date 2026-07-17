@@ -13,6 +13,8 @@
 #include "RuntimeBufferManagementSystems/BufferDispatcher/BufferDispatcher.h"
 #include "RuntimeBufferManagementSystems/BufferInfoExtractor/BufferInfoExtractor.h"
 
+#include "ClosedHashMap/ClosedHashMap.h" 
+
 
 //ランライム
 
@@ -71,4 +73,10 @@ std::vector<std::unique_ptr<GPUBufferBehavior>>* BufferContext::BufferPoolSet::C
 
 	return table[(int)type_];
 }
-
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+BufferContext::BufferPoolSet::BufferPoolSet()
+{
+	bufferLocationClosedHashedMap.reset(new ClosedHashMap<std::pair<RegisterType, uint32_t>>(kHashedMapSize));
+}

@@ -6,6 +6,9 @@ class MeshContext
 {
 public:
 
+	//モデルを生成する。
+	class ModelDataCreator;
+	//自身の生成キー
 	struct InstanceKey;
 
 	MeshContext(const InstanceKey& key_);
@@ -13,12 +16,10 @@ public:
 
 
 private:
-	//モデルを生成する。
-	class ModelCreator;
 	class ModelSlotAllocator;
 
 
-	std::unique_ptr<ModelCreator> modelCreator;
+	std::unique_ptr<ModelDataCreator> modelDataCreator;
 };
 
 struct MeshContext::InstanceKey

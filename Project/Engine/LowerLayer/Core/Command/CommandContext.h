@@ -1,7 +1,9 @@
 #pragma once
 
+
 class Nexus;
 class SwapChainContext;
+class BufferUploader;
 
 class CommandContext
 {
@@ -91,7 +93,7 @@ struct CommandContext::UsesResourceUploaderPermission
 {
 private:
 
-
+	friend class BufferUploader;
 	explicit UsesResourceUploaderPermission() = default;
 };
 

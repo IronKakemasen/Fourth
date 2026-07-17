@@ -1,14 +1,26 @@
 #pragma once
+#include "../MeshContext.h"
 
-struct Model
+struct ModelDescription;
+
+class Model
+{
+	struct CreateKey;
+
+	Model(std::unique_ptr<ModelDescription>&& desc_);
+
+
+private:
+	std::unique_ptr<ModelDescription> desc;
+
+};
+
+struct Model::CreateKey
 {
 private:
 
-	//static constexpr MeshUniqueID kInvalidID = -1;
-
-public:
-
-	//MeshUniqueID meshID = kInvalidID;
-	//MaterialUniqueID materialID = kInvalidID;
+	friend class MeshContext::ModelDataCreator;
+	explicit CreateKey() = default;
 };
+
 

@@ -18,7 +18,7 @@ private:
             kOccupied
         }status = kEmpty;
 
-        uint32_t packedKey = InvalidKey;
+        uint32_t key = InvalidKey;
         ValueType value;
     };
 
@@ -68,7 +68,7 @@ public:
             const Slot& slot = slots[index];
 
             //発見
-            if (slot.packedKey == key_)
+            if (slot.key == key_)
             {
                 value = slot.value;
                 break;
@@ -98,11 +98,12 @@ public:
     }
 
     ///挿入
-    void Insert(uint32_t slotIndex_, uint32_t key_,ValueType value_)
+    ///先にCheckDuplicationで空きスロットを探してください
+    void Insert(uint32_t dstFreeSlotIndex_, uint32_t key_,ValueType value_)
     {
         //CheckDuplication()で空きスロットのインデックスは特定されているのでそこに入れる
-        Slot& slot = slots[slotIndex_];
-        slot.packedKey = key_;
+        Slot& slot = slots[dstFreeSlotIndex_];
+        slot.key = key_;
         slot.value = value_;
         slot.status = Slot::kOccupied;
     }
@@ -122,7 +123,7 @@ public:
             const Slot& slot = slots[index];
 
             //発見
-            if (slot.packedKey == key_ )
+            if (slot.key == key_ )
             {
                 value_index.first = slot.value;
                 break;

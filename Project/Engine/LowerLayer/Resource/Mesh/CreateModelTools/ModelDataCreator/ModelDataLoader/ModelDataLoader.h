@@ -1,5 +1,5 @@
 #pragma once
-#include "../ModelCreator.h"
+#include "../ModelDataCreator.h"
 
 
 #include "../../.././../../External/assimp/include/assimp/Importer.hpp"
@@ -13,14 +13,15 @@ struct ResourceMaterial;
 struct ModelDataAggregate;
 
 
-class MeshContext::ModelCreator::ModelDataLoader
+class MeshContext::ModelDataCreator::ModelDataLoader
 {
 public:
 
 	ModelDataLoader(MeshContext::InstanceKey key_);
 	~ModelDataLoader();
 
-	///ファイルの名前から実メッシュデータを生成
+	///ファイルの名前から実メッシュデータのアドレスを生成
+	///既に読み込み済みの場合はぬるぽを返す
 	ModelDataAggregate* Load(std::string fileName_ , std::string filePath_);
 
 private:

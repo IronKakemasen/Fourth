@@ -43,7 +43,7 @@ public:
 		const InstanceKey& instanceKey_, 
 		std::string name_,
 		std::vector<Microsoft::WRL::ComPtr<ID3D12Resource>> resourceContainer_,
-		std::unique_ptr <BufferDescriptionBehavior>&& description_
+		const BufferDescriptionBehavior& description_
 	);
 
 	virtual ~GPUBufferBehavior();
@@ -74,8 +74,8 @@ public:
 
 protected:
 
-	//自身を構成するディスクリプション
-	std::unique_ptr <BufferDescriptionBehavior> description;
+	//シングルかダブルか
+	ProjectConfig::Render::NumBuffer numBuffer;
 
 	//バッファ本体
 	std::vector<Buffer> buffers;

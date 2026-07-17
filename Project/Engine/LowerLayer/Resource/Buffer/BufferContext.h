@@ -3,7 +3,7 @@
 class Nexus;
 class DescriptorHeapContext;
 class GPUBufferBehavior;
-
+template<typename ValueType> class ClosedHashMap;
 
 class BufferContext
 {
@@ -41,6 +41,8 @@ protected:
 
 	struct BufferPoolSet
 	{
+		BufferPoolSet();
+
 		//ColorBufferやDepthStencilBufferなどレンダーターゲットなバッファプール
 		std::vector<std::unique_ptr<GPUBufferBehavior>> renderTargetBufferPool;
 		//computeBufferのような、コンピュートシェーダをかませるバッファのプール
@@ -51,10 +53,14 @@ protected:
 		std::vector<std::unique_ptr<GPUBufferBehavior>> readOnlyBufferPool;
 
 		//ユニークIDがどこのバッファコンテナの何番目のバッファを指しているのか示すマップコンテナ
-		std::unordered_map<BufferUniqueID, std::pair<RegisterType, uint32_t>> bufferLocationMap;
-
+		//std::unordered_map<BufferUniqueID, std::pair<RegisterType, uint32_t>> bufferLocationMap;
+		std::unique_ptr<ClosedHashMap<std::pair<RegisterType, uint32_t>>> bufferLocationClosedHashedMap;
 		//RegisterTypeがキーのテーブル
 		std::vector<std::unique_ptr<GPUBufferBehavior>>* ContainerTable(BufferContext::RegisterType type_);
+
+	private:
+		//bufferLocationClosedHashedMapのサイズ
+		static constexpr int kHashedMapSize = 16384;
 	};
 
 public:
@@ -69,6 +75,9 @@ public:
 	class BufferAssembler;
 	//ランタイムパス構築に必要な情報の抽出とそのリソースのSwapを行う
 	class BufferInfoExtractor;
+	//バッファをアップロードする
+	class BufferUploader;
+
 
 	BufferContext
 	(

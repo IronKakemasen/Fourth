@@ -1,7 +1,6 @@
-
 #include "BufferCollector.h"
 #include "../../BufferDefinition/GPUBuffer/GPUBufferBehavior.h"
-
+#include "ClosedHashMap/ClosedHashMap.h" 
 
 
 BufferContext::BufferCollector::BufferCollector
@@ -31,28 +30,18 @@ void BufferContext::BufferCollector::Distribute()
 		auto* dstContainer = bufferPoolSet->ContainerTable((*itrSrcContainer).type);
 
 		//空きスロットを検索
-		auto itrDstConatiner = FindFreeSlot(dstContainer);
+		//auto itrDstConatiner = FindFreeSlot(dstContainer);
 
-		//空きスロットに入れる
-		if (itrDstConatiner != dstContainer->end())
-		{
-			//そのイテレーターをリセットする
-			itrDstConatiner->reset();
+		///バッファは削除しない、使いまわさない条約が決定したので全部けつに突っ込む
+		dstContainer->emplace_back(std::move((*itrSrcContainer).buffer));
+		//ユニークIDとコンテナ上のIDを紐づける 
+		///bufferLocationClosedHashedMapの開いてる場所
+		auto freeIndex = bufferPoolSet->bufferLocationClosedHashedMap->CheckDuplication((*itrSrcContainer).id).second.value();
+		//bufferContainerのけつのインデックス
+		uint32_t lastIndex = int32_t(dstContainer->size() - 1);
+		bufferPoolSet->bufferLocationClosedHashedMap->Insert(freeIndex, (*itrSrcContainer).id, { (*itrSrcContainer).type ,lastIndex });
 
-			(*itrDstConatiner) = std::move((*itrSrcContainer).buffer);
-			//該当の空きインデックス
-			uint32_t freeIndex = uint32_t(itrDstConatiner - dstContainer->begin());
-			//ユニークIDとコンテナ上のIDを紐づける 
-			bufferPoolSet->bufferLocationMap[(*itrSrcContainer).id] = std::make_pair((*itrSrcContainer).type, freeIndex);
-		}
-		//空きスロットが無ければ尻尾に追加
-		else
-		{
-			dstContainer->emplace_back(std::move((*itrSrcContainer).buffer));
-			//ユニークIDとコンテナ上のIDを紐づける 
-			bufferPoolSet->bufferLocationMap[(*itrSrcContainer).id] = std::make_pair((*itrSrcContainer).type, uint32_t(dstContainer->size() - 1 ));
 
-		}
 	}
 
 	tmp_bufferContainer.clear();
@@ -61,11 +50,3 @@ void BufferContext::BufferCollector::Distribute()
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-std::vector<std::unique_ptr<GPUBufferBehavior>>::iterator BufferContext::BufferCollector::FindFreeSlot(std::vector<std::unique_ptr<GPUBufferBehavior>>* container_)
-{
-	return std::find(container_->begin(), container_->end(), nullptr);
-}
-///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-

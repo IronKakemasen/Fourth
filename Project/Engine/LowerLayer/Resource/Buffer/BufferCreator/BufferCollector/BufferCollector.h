@@ -87,8 +87,5 @@ private:
 		return type;
 	}
 
-
-	//目的のコンテナのイテレーターを返す
-	std::vector<std::unique_ptr<GPUBufferBehavior>>::iterator FindFreeSlot(std::vector<std::unique_ptr<GPUBufferBehavior>>* container_);
 };
 

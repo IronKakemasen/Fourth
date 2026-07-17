@@ -3,7 +3,7 @@
 
 #include "ModelDataCache/ModelDataCache.h"
 #include "../../../../../../External/MeshOptimizer/meshoptimizer.h"
-#include "../../../../../Utility/StringConnverter/StringConverter.h"
+#include "../../../../../../Utility/StringConnverter/StringConverter.h"
 
 
 namespace
@@ -11,7 +11,7 @@ namespace
     auto const fileName = "ModelDataLoader.cpp";
 }
 
-MeshContext::ModelCreator::ModelDataLoader::ModelDataLoader(MeshContext::InstanceKey key_)
+MeshContext::ModelDataCreator::ModelDataLoader::ModelDataLoader(MeshContext::InstanceKey key_)
 {
     Logger::Entry("ModelDataLoader: Constructor");
 
@@ -22,24 +22,21 @@ MeshContext::ModelCreator::ModelDataLoader::ModelDataLoader(MeshContext::Instanc
     Logger::End("ModelDataLoader: Constructor");
 }
 
-MeshContext::ModelCreator::ModelDataLoader::~ModelDataLoader()
+MeshContext::ModelDataCreator::ModelDataLoader::~ModelDataLoader()
 {
 
 }
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-ModelDataAggregate* MeshContext::ModelCreator::ModelDataLoader::Load(std::string fileName_ , std::string filePath_)
+ModelDataAggregate* MeshContext::ModelDataCreator::ModelDataLoader::Load(std::string fileName_ , std::string filePath_)
 {
     std::unique_ptr<ModelDataAggregate> modelDataAggregate = std::make_unique<ModelDataAggregate>();
 
-	///キャッシュにあるか確認
+	///同じモデルファイルを読み込んでいる場合は何かおかしいのでアサート
 	ModelDataAggregate* cachedModelData = modelDataCache->FindDuplication(ModelDataCache::AccessKey{},fileName_);
-    if (cachedModelData)
-    {
-        Logger::Log("Cache Hit: " + fileName_, fileName);
-        return cachedModelData;
-    }
+    ErrorMessageOutput::Assert::DetectError(!cachedModelData, "ファイルを重複読み込みしている", fileName);
+
     // wchar_t から char型(UTF-8)に変換
     auto path = StringConverter::ToUTF8(StringConverter::ConvertString(filePath_));
 
@@ -83,7 +80,7 @@ ModelDataAggregate* MeshContext::ModelCreator::ModelDataLoader::Load(std::string
 
     //キャッシュデータに登録
     auto returnPtr = modelDataAggregate.get();
-    modelDataCache->Register(MeshContext::ModelCreator::ModelDataLoader::ModelDataCache::AccessKey{}, fileName_, std::move(modelDataAggregate));
+    modelDataCache->Register(MeshContext::ModelDataCreator::ModelDataLoader::ModelDataCache::AccessKey{}, fileName_, std::move(modelDataAggregate));
 
     //不要になったのでクリア
     importer.FreeScene();
@@ -96,7 +93,7 @@ ModelDataAggregate* MeshContext::ModelCreator::ModelDataLoader::Load(std::string
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-void MeshContext::ModelCreator::ModelDataLoader::ParseMesh(ResourceMesh& dstMesh_, const aiMesh* pSrcMesh_)
+void MeshContext::ModelDataCreator::ModelDataLoader::ParseMesh(ResourceMesh& dstMesh_, const aiMesh* pSrcMesh_)
 {
     //マテリアル番号を設定
     //dstMesh.materialId = pSrcMesh->mMaterialIndex;
@@ -298,7 +295,7 @@ void MeshContext::ModelCreator::ModelDataLoader::ParseMesh(ResourceMesh& dstMesh
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-void MeshContext::ModelCreator::ModelDataLoader::ParseMaterial(ResourceMaterial& dstMaterial_, const aiMaterial* pSrcMaterial_)
+void MeshContext::ModelDataCreator::ModelDataLoader::ParseMaterial(ResourceMaterial& dstMaterial_, const aiMaterial* pSrcMaterial_)
 {
     // 拡散反射成分
     {
@@ -383,7 +380,7 @@ void MeshContext::ModelCreator::ModelDataLoader::ParseMaterial(ResourceMaterial&
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-std::wstring MeshContext::ModelCreator::ModelDataLoader::Convert(const aiString& path)
+std::wstring MeshContext::ModelDataCreator::ModelDataLoader::Convert(const aiString& path)
 {
     wchar_t temp[256] = {};
     size_t  size;
