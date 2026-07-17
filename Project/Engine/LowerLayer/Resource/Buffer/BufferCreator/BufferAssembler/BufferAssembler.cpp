@@ -77,7 +77,7 @@ std::unique_ptr<ColorBuffer> BufferContext::BufferAssembler::AssembleBuffer<Colo
 	    ColorBuffer::InstanceKey{},
 	    nameCnv_,
 	    std::move(resourceContainer_),
-	    std::make_unique<ColorBufferDescription>(desc_)
+	    desc_
 	);
 }
 
@@ -119,7 +119,7 @@ std::unique_ptr<DepthStencilBuffer> BufferContext::BufferAssembler::AssembleBuff
 		DepthStencilBuffer::InstanceKey{},
 		nameCnv_,
 		std::move(resourceContainer_),
-		std::make_unique<DepthStencilBufferDescription>(desc_)
+		desc_
 	);
 }
 
@@ -160,7 +160,7 @@ std::unique_ptr<ConstantBuffer> BufferContext::BufferAssembler::AssembleBuffer<C
 		ConstantBuffer::InstanceKey{},
 		nameCnv_,
 		std::move(resourceContainer_),
-		std::make_unique<ConstantBufferDescription>(desc_)
+		desc_
 	);
 }
 
@@ -183,7 +183,7 @@ std::unique_ptr<ComputeBuffer> BufferContext::BufferAssembler::AssembleBuffer<Co
 		ComputeBuffer::InstanceKey{},
 		nameCnv_,
 		std::move(resourceContainer_),
-		std::make_unique<ComputeBufferDescription>(desc_)
+		desc_
 	);
 }
 
@@ -237,7 +237,7 @@ std::unique_ptr<StaticStructuredBuffer> BufferContext::BufferAssembler::Assemble
 		StaticStructuredBuffer::InstanceKey{},
 		nameCnv_,
 		std::move(resourceContainer_),
-		std::make_unique<StaticStructuredBufferDescription>(desc_)
+		desc_
 	);
 
 }
@@ -275,7 +275,7 @@ std::unique_ptr<UploadStructuredBuffer> BufferContext::BufferAssembler::Assemble
 		UploadStructuredBuffer::InstanceKey{},
 		nameCnv_,
 		std::move(resourceContainer_),
-		std::make_unique<UploadStructuredBufferDescription>(desc_)
+		desc_
 	);
 
 }

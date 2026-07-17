@@ -35,7 +35,6 @@ private:
 	Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList6> commandList;
 	ID3D12CommandQueue* commandQueue;
 	Synchronizer* synchronizer;
-
 };
 
 

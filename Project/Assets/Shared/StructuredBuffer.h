@@ -51,7 +51,7 @@ namespace StructuredBufferDataDefinition
     };
 
     ///メッシュデータのバッファのSRVHeapIndexをひとまとまりにしたもの
-    struct MeshDataSRVHeapIndexGroupGPU
+    struct MeshDataSRVHeapIndexGroupGPUCPU
     {
         SRVHeapIndex vertices{};
         SRVHeapIndex uniqueVertexIndices{};

@@ -1,36 +1,65 @@
 #include "PreCompileHeader.h"
-#include "ModelCreator.h"
-#include "../ModelStructure/ModelData/ModelDataAggregate.h"
+#include "ModelDataCreator.h"
+#include "../../ModelStructure/ModelData/ModelDataAggregate.h"
 
 //ツール
 #include "ModelDataLoader/ModelDataLoader.h"
+#include "../ModelSlotAllocator/ModelSlotAllocator.h"
 
 namespace
 {
-	auto const fileName = "ModelCreator.cpp";
+	auto const fileName = "ModelDataCreator.cpp";
 }
 
 
-MeshContext::ModelCreator::ModelCreator(MeshContext::InstanceKey key_)
+MeshContext::ModelDataCreator::ModelDataCreator(MeshContext::InstanceKey key_)
 {
-	Logger::Entry("ModelCreator: Constructor");
+	Logger::Entry("ModelDataCreator: Constructor");
 
     modelDataLoader.reset(new ModelDataLoader(key_));
     Logger::Log("Instantiate: ModelDataLoader", fileName);
 
-    std::unordered_map<std::string, ModelDataAggregate*> tmpModelDataLib = LoadAllModelFiles();
 
-	Logger::End("ModelCreator: Constructor");
+	Logger::End("ModelDataCreator: Constructor");
 }
 
-MeshContext::ModelCreator::~ModelCreator()
+MeshContext::ModelDataCreator::~ModelDataCreator()
 {
 
 }
+
+
+void MeshContext::ModelDataCreator::CreateAllModelData(MeshContext::ModelSlotAllocator* allocator_)
+{
+    std::unordered_map<std::string, ModelDataAggregate*> tmpModelDataLib = LoadAllModelFiles();
+
+
+    ///メッシュIDとファイル名を紐づける
+    UINT meshID{};
+    {
+        for (const auto& [key, value] : tmpModelDataLib)
+        {
+            meshDataIDLib[key] = MeshDetaID(meshID);
+        }
+    }
+
+    //モデルの種類の数
+    UINT numModelTypes = meshID + 1;
+
+
+
+}
+
+void MeshContext::ModelDataCreator::CreateMeshDataBuffer(const ResourceMesh& data_)
+{
+    //data_.meshlets
+}
+
+
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-std::unordered_map<std::string , ModelDataAggregate*> MeshContext::ModelCreator::LoadAllModelFiles()
+std::unordered_map<std::string , ModelDataAggregate*> MeshContext::ModelDataCreator::LoadAllModelFiles()
 {
     std::string const registryFilePath = "Assets/Registry/ModelFiles.txt";
 
@@ -56,7 +85,7 @@ std::unordered_map<std::string , ModelDataAggregate*> MeshContext::ModelCreator:
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-std::unordered_map<std::string, std::string > MeshContext::ModelCreator::LoadModelRegistry(std::string const registryFilePath_)
+std::unordered_map<std::string, std::string > MeshContext::ModelDataCreator::LoadModelRegistry(std::string const registryFilePath_)
 {
     std::unordered_map<std::string, std::string > modelFileName_pathLib;
     std::ifstream file(registryFilePath_);

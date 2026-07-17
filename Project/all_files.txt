@@ -1505,7 +1505,7 @@ void DescriptorHeapContext::CreateDescriptorHeap(UINT numDescriptors_, bool shad
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-std::string DescriptorHeapContext::GetDescriptorName(D3D12_DESCRIPTOR_HEAP_TYPE heapType_)
+std::string DescriptorHeapContext::GetDescriptorName(D3D12_DESCRIPTOR_HEAP_TYPE heapType_)const
 {
 	ErrorMessageOutput::Assert::DetectError((heapType_ < D3D12_DESCRIPTOR_HEAP_TYPE_NUM_TYPES), "TypeError: 要素外アクセス", fileName);
 
@@ -1605,7 +1605,7 @@ private:
 	void CreateDescriptorHeaps(UINT rtvDH_, UINT srvDH_, UINT dsvDH_);
 
 	//DescriptorHeapの名前を取得（初期化用）
-	std::string GetDescriptorName(D3D12_DESCRIPTOR_HEAP_TYPE heapType_);
+	std::string GetDescriptorName(D3D12_DESCRIPTOR_HEAP_TYPE heapType_)const;
 
 	//コマンドのセット
 	void SetCreateDescriptorHeapCommand(DescriptorCreateCommand createDescriptor);
@@ -1825,8 +1825,6 @@ private:
 	UINT handleIncrementSize{};
 	//最大領域分割数
 	uint32_t kMaxDescriptor{};
-	//現在のviewの生成数
-	uint32_t currentCreateNum{};
 	//SRVかどうか
 	bool shaderVisible{};
 	//名前
@@ -6193,6 +6191,8 @@ public:
 #include "RuntimeBufferManagementSystems/BufferDispatcher/BufferDispatcher.h"
 #include "RuntimeBufferManagementSystems/BufferInfoExtractor/BufferInfoExtractor.h"
 
+#include "ClosedHashMap/ClosedHashMap.h" 
+
 
 //ランライム
 
@@ -6251,8 +6251,13 @@ std::vector<std::unique_ptr<GPUBufferBehavior>>* BufferContext::BufferPoolSet::C
 
 	return table[(int)type_];
 }
-
-
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+BufferContext::BufferPoolSet::BufferPoolSet()
+{
+	bufferLocationClosedHashedMap.reset(new ClosedHashMap<std::pair<RegisterType, uint32_t>>(kHashedMapSize));
+}
 
 
 
@@ -6264,7 +6269,7 @@ std::vector<std::unique_ptr<GPUBufferBehavior>>* BufferContext::BufferPoolSet::C
 class Nexus;
 class DescriptorHeapContext;
 class GPUBufferBehavior;
-
+template<typename ValueType> class ClosedHashMap;
 
 class BufferContext
 {
@@ -6302,6 +6307,8 @@ protected:
 
 	struct BufferPoolSet
 	{
+		BufferPoolSet();
+
 		//ColorBufferやDepthStencilBufferなどレンダーターゲットなバッファプール
 		std::vector<std::unique_ptr<GPUBufferBehavior>> renderTargetBufferPool;
 		//computeBufferのような、コンピュートシェーダをかませるバッファのプール
@@ -6312,10 +6319,14 @@ protected:
 		std::vector<std::unique_ptr<GPUBufferBehavior>> readOnlyBufferPool;
 
 		//ユニークIDがどこのバッファコンテナの何番目のバッファを指しているのか示すマップコンテナ
-		std::unordered_map<BufferUniqueID, std::pair<RegisterType, uint32_t>> bufferLocationMap;
-
+		//std::unordered_map<BufferUniqueID, std::pair<RegisterType, uint32_t>> bufferLocationMap;
+		std::unique_ptr<ClosedHashMap<std::pair<RegisterType, uint32_t>>> bufferLocationClosedHashedMap;
 		//RegisterTypeがキーのテーブル
 		std::vector<std::unique_ptr<GPUBufferBehavior>>* ContainerTable(BufferContext::RegisterType type_);
+
+	private:
+		//bufferLocationClosedHashedMapのサイズ
+		static constexpr int kHashedMapSize = 16384;
 	};
 
 public:
@@ -7132,10 +7143,9 @@ std::unique_ptr<UploadStructuredBuffer> BufferContext::BufferAssembler::Assemble
 ========================================
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Buffer\BufferCreator\BufferCollector\BufferCollector.cpp ===
 ========================================
-
 #include "BufferCollector.h"
 #include "../../BufferDefinition/GPUBuffer/GPUBufferBehavior.h"
-
+#include "ClosedHashMap/ClosedHashMap.h" 
 
 
 BufferContext::BufferCollector::BufferCollector
@@ -7165,28 +7175,18 @@ void BufferContext::BufferCollector::Distribute()
 		auto* dstContainer = bufferPoolSet->ContainerTable((*itrSrcContainer).type);
 
 		//空きスロットを検索
-		auto itrDstConatiner = FindFreeSlot(dstContainer);
+		//auto itrDstConatiner = FindFreeSlot(dstContainer);
 
-		//空きスロットに入れる
-		if (itrDstConatiner != dstContainer->end())
-		{
-			//そのイテレーターをリセットする
-			itrDstConatiner->reset();
+		///バッファは削除しない、使いまわさない条約が決定したので全部けつに突っ込む
+		dstContainer->emplace_back(std::move((*itrSrcContainer).buffer));
+		//ユニークIDとコンテナ上のIDを紐づける 
+		///bufferLocationClosedHashedMapの開いてる場所
+		auto freeIndex = bufferPoolSet->bufferLocationClosedHashedMap->CheckDuplication((*itrSrcContainer).id).second.value();
+		//bufferContainerのけつのインデックス
+		uint32_t lastIndex = int32_t(dstContainer->size() - 1);
+		bufferPoolSet->bufferLocationClosedHashedMap->Insert(freeIndex, (*itrSrcContainer).id, { (*itrSrcContainer).type ,lastIndex });
 
-			(*itrDstConatiner) = std::move((*itrSrcContainer).buffer);
-			//該当の空きインデックス
-			uint32_t freeIndex = uint32_t(itrDstConatiner - dstContainer->begin());
-			//ユニークIDとコンテナ上のIDを紐づける 
-			bufferPoolSet->bufferLocationMap[(*itrSrcContainer).id] = std::make_pair((*itrSrcContainer).type, freeIndex);
-		}
-		//空きスロットが無ければ尻尾に追加
-		else
-		{
-			dstContainer->emplace_back(std::move((*itrSrcContainer).buffer));
-			//ユニークIDとコンテナ上のIDを紐づける 
-			bufferPoolSet->bufferLocationMap[(*itrSrcContainer).id] = std::make_pair((*itrSrcContainer).type, uint32_t(dstContainer->size() - 1 ));
 
-		}
 	}
 
 	tmp_bufferContainer.clear();
@@ -7195,14 +7195,6 @@ void BufferContext::BufferCollector::Distribute()
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-std::vector<std::unique_ptr<GPUBufferBehavior>>::iterator BufferContext::BufferCollector::FindFreeSlot(std::vector<std::unique_ptr<GPUBufferBehavior>>* container_)
-{
-	return std::find(container_->begin(), container_->end(), nullptr);
-}
-///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
 
 
 
@@ -7299,9 +7291,6 @@ private:
 		return type;
 	}
 
-
-	//目的のコンテナのイテレーターを返す
-	std::vector<std::unique_ptr<GPUBufferBehavior>>::iterator FindFreeSlot(std::vector<std::unique_ptr<GPUBufferBehavior>>* container_);
 };
 
 
@@ -9421,6 +9410,7 @@ BufferContext::BufferDispatcher::BufferDispatcher
 ========================================
 #pragma once
 #include "../../BufferContext.h"
+#include "ClosedHashMap/ClosedHashMap.h" 
 
 
 class GPUBufferBehavior;
@@ -9438,7 +9428,7 @@ public:
 	///ユニークIDをもとに目的のバッファを倉庫から渡します
 	[[nodiscard]] inline GPUBufferBehavior* Dispatch(BufferUniqueID bufferID_)
 	{
-		auto& idToType_location = bufferPoolSet->bufferLocationMap[bufferID_];
+		auto idToType_location = bufferPoolSet->bufferLocationClosedHashedMap->FindValueFast(bufferID_);
 
 		BufferContext::RegisterType dstRegisterType = idToType_location.first;
 		uint32_t dstPoolIndex = idToType_location.second;
@@ -10373,7 +10363,7 @@ MeshContext::ModelSlotAllocator::~ModelSlotAllocator()
 ========================================
 #pragma once
 #include "../MeshContext.h"
-#include "../../../../../Assets/Shared/StructuredBuffer.h"
+#include "SimpleFreeList/SimpleFreeList.h"
 
 class MeshContext::ModelSlotAllocator
 {
@@ -10386,7 +10376,7 @@ public:
 
 private:
 
-
+	//SimpleFreeList 
 
 };
 
@@ -12175,7 +12165,6 @@ private:
 ========================================
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Shader\ShaderContext.cpp ===
 ========================================
-
 #include "ShaderContext.h"
 
 #include "ShaderLibrary/ShaderLibrary.h"
@@ -13404,7 +13393,7 @@ private:
             kOccupied
         }status = kEmpty;
 
-        uint32_t packedKey = InvalidKey;
+        uint32_t key = InvalidKey;
         ValueType value;
     };
 
@@ -13454,7 +13443,7 @@ public:
             const Slot& slot = slots[index];
 
             //発見
-            if (slot.packedKey == key_)
+            if (slot.key == key_)
             {
                 value = slot.value;
                 break;
@@ -13484,11 +13473,12 @@ public:
     }
 
     ///挿入
-    void Insert(uint32_t slotIndex_, uint32_t key_,ValueType value_)
+    ///先にCheckDuplicationで空きスロットを探してください
+    void Insert(uint32_t dstFreeSlotIndex_, uint32_t key_,ValueType value_)
     {
         //CheckDuplication()で空きスロットのインデックスは特定されているのでそこに入れる
-        Slot& slot = slots[slotIndex_];
-        slot.packedKey = key_;
+        Slot& slot = slots[dstFreeSlotIndex_];
+        slot.key = key_;
         slot.value = value_;
         slot.status = Slot::kOccupied;
     }
@@ -13508,7 +13498,7 @@ public:
             const Slot& slot = slots[index];
 
             //発見
-            if (slot.packedKey == key_ )
+            if (slot.key == key_ )
             {
                 value_index.first = slot.value;
                 break;

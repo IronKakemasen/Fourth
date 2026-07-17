@@ -1,6 +1,6 @@
 #include "PreCompileHeader.h"
 #include "MeshContext.h"
-#include "CreateModelTools/ModelCreator.h"
+#include "CreateModelTools/ModelDataCreator/ModelDataCreator.h"
 
 namespace
 {
@@ -12,8 +12,8 @@ MeshContext::MeshContext(const InstanceKey& key_)
 {
 	Logger::Entry("MeshContext: Constructor");
 
-	modelCreator.reset(new ModelCreator(key_));
-	Logger::Log("Instantiate: modelCreator", fileName);
+	modelDataCreator.reset(new ModelDataCreator(key_));
+	Logger::Log("Instantiate: ModelDataCreator", fileName);
 
 
 	Logger::End("MeshContext: Constructor");

@@ -354,10 +354,10 @@
     <ClCompile Include="Engine\LowerLayer\Resource\Mesh\MeshContext.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="Engine\LowerLayer\Resource\Mesh\CreateModelTools\ModelDataLoader\ModelDataCache\ModelDataCache.cpp">
+    <ClCompile Include="Engine\LowerLayer\Resource\Mesh\CreateModelTools\ModelDataCreator\ModelDataLoader\ModelDataCache\ModelDataCache.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="Engine\LowerLayer\Resource\Mesh\CreateModelTools\ModelDataLoader\ModelDataLoader.cpp">
+    <ClCompile Include="Engine\LowerLayer\Resource\Mesh\CreateModelTools\ModelDataCreator\ModelDataLoader\ModelDataLoader.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
     <ClCompile Include="Engine\LowerLayer\Resource\Mesh\ModelStructure\Model.cpp">
@@ -375,7 +375,7 @@
     <ClCompile Include="Engine\Math\Vector\Vector4.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="Engine\LowerLayer\Resource\Mesh\CreateModelTools\ModelCreator.cpp">
+    <ClCompile Include="Engine\LowerLayer\Resource\Mesh\CreateModelTools\ModelDataCreator\ModelDataCreator.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
     <ClCompile Include="Engine\LowerLayer\Resource\Buffer\BufferDefinition\BufferDescriptions\StaticStructuredBufferDescription\StaticStructuredBufferDescription.cpp">
@@ -387,7 +387,10 @@
     <ClCompile Include="Engine\LowerLayer\Core\Device\Commands\UploadResource\CommandUploadResource.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="Engine\LowerLayer\Resource\Mesh\ModelSlotAllocator\ModelSlotAllocator.cpp">
+    <ClCompile Include="Engine\LowerLayer\Resource\Mesh\CreateModelTools\ModelSlotAllocator\ModelSlotAllocator.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\LowerLayer\Resource\Buffer\BufferCreator\BufferUploader\BufferUploader.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
   </ItemGroup>
@@ -773,10 +776,10 @@
     <ClInclude Include="Engine\LowerLayer\Resource\Mesh\MeshContext.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\LowerLayer\Resource\Mesh\CreateModelTools\ModelDataLoader\ModelDataCache\ModelDataCache.h">
+    <ClInclude Include="Engine\LowerLayer\Resource\Mesh\CreateModelTools\ModelDataCreator\ModelDataLoader\ModelDataCache\ModelDataCache.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\LowerLayer\Resource\Mesh\CreateModelTools\ModelDataLoader\ModelDataLoader.h">
+    <ClInclude Include="Engine\LowerLayer\Resource\Mesh\CreateModelTools\ModelDataCreator\ModelDataLoader\ModelDataLoader.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
     <ClInclude Include="Engine\LowerLayer\Resource\Mesh\ModelStructure\Model.h">
@@ -803,7 +806,7 @@
     <ClInclude Include="Engine\LowerLayer\Resource\Mesh\ModelStructure\ModelData\ResourceMesh\StandardVertex.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\LowerLayer\Resource\Mesh\CreateModelTools\ModelCreator.h">
+    <ClInclude Include="Engine\LowerLayer\Resource\Mesh\CreateModelTools\ModelDataCreator\ModelDataCreator.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
     <ClInclude Include="Engine\Utility\Transform\Transform.h">
@@ -818,10 +821,16 @@
     <ClInclude Include="Engine\LowerLayer\Core\Device\Commands\UploadResource\CommandUploadResource.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\LowerLayer\Resource\Mesh\ModelSlotAllocator\ModelSlotAllocator.h">
+    <ClInclude Include="Engine\LowerLayer\Resource\Mesh\CreateModelTools\ModelSlotAllocator\ModelSlotAllocator.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
     <ClInclude Include="Engine\Utility\SimpleFreeList\SimpleFreeList.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\LowerLayer\Resource\Mesh\ModelStructure\ModelDescription.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\LowerLayer\Resource\Buffer\BufferCreator\BufferUploader\BufferUploader.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
   </ItemGroup>

@@ -1,5 +1,6 @@
 #include "BufferInterface.h"
 
+
 D3D12_RESOURCE_STATES IColorBuffer::ResourceStateTable(Usage usage_)const
 {
 	static D3D12_RESOURCE_STATES resourceStatetable[2]
@@ -19,19 +20,6 @@ D3D12_RESOURCE_STATES IDepthBuffer::ResourceStateTable(Usage usage_)const
 	{
 		D3D12_RESOURCE_STATE_DEPTH_READ | D3D12_RESOURCE_STATE_ALL_SHADER_RESOURCE,
 		D3D12_RESOURCE_STATE_DEPTH_WRITE
-	};
-
-	return resourceStateTable[(int)usage_];
-}
-///+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-///+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-///+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-D3D12_RESOURCE_STATES IRWStructuredBuffer::ResourceStateTable(Usage usage_)const
-{
-	static D3D12_RESOURCE_STATES resourceStateTable[2]
-	{
-		D3D12_RESOURCE_STATE_ALL_SHADER_RESOURCE,
-		D3D12_RESOURCE_STATE_UNORDERED_ACCESS
 	};
 
 	return resourceStateTable[(int)usage_];
@@ -120,4 +108,15 @@ int IComputeBuffer::ProperBufferIndex(Usage usage_)const
 void IComputeBuffer::SynchronizeStatus(ProjectConfig::Render::NumBuffer numBuffer_)
 {
 	(numBuffer_ == ProjectConfig::Render::NumBuffer::kSingleBuffer) ? status = kSingle : status = kComputeResource_ShaderResource;
+}
+
+D3D12_RESOURCE_STATES IComputeBuffer::ResourceStateTable(Usage usage_)const
+{
+	static D3D12_RESOURCE_STATES resourceStateTable[2]
+	{
+		D3D12_RESOURCE_STATE_ALL_SHADER_RESOURCE,
+		D3D12_RESOURCE_STATE_UNORDERED_ACCESS
+	};
+
+	return resourceStateTable[(int)usage_];
 }

@@ -16,10 +16,11 @@ GPUBufferBehavior::GPUBufferBehavior
 	const InstanceKey& instanceKey_,
 	std::string name_,
 	std::vector<Microsoft::WRL::ComPtr<ID3D12Resource>> resourceContainer_,
-	std::unique_ptr <BufferDescriptionBehavior>&& description_
-) : name(name_), description(std::move(description_))
+	const BufferDescriptionBehavior& description_
+
+) : name(name_)
 {
-	size_t const bufferSize = (size_t)description->numBuffer;
+	size_t const bufferSize = (size_t)numBuffer;
 	ErrorMessageOutput::Assert::DetectError
 	(
 		resourceContainer_.size() == bufferSize,
@@ -33,7 +34,7 @@ GPUBufferBehavior::GPUBufferBehavior
 	for (size_t i = 0;i < bufferSize;++i)
 	{
 		buffers[i].resource = std::move(resourceContainer_[i]);
-		buffers.at(i).curResourceState = description->initialState;
+		buffers.at(i).curResourceState = description_.initialState;
 	}
 }
 GPUBufferBehavior::~GPUBufferBehavior()

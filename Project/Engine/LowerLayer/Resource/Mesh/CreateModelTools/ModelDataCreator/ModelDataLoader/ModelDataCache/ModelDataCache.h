@@ -1,8 +1,8 @@
 #pragma once
 #include "../ModelDataLoader.h"
-#include "../../../ModelStructure/ModelData/ModelDataAggregate.h"
+#include "../../../../ModelStructure/ModelData/ModelDataAggregate.h"
 
-class MeshContext::ModelCreator::ModelDataLoader::ModelDataCache
+class MeshContext::ModelDataCreator::ModelDataLoader::ModelDataCache
 {
 public:
 
@@ -18,10 +18,10 @@ private:
 	std::unordered_map<std::string, std::unique_ptr<ModelDataAggregate>> modelDataCache;
 };
 
-struct MeshContext::ModelCreator::ModelDataLoader::ModelDataCache::AccessKey
+struct MeshContext::ModelDataCreator::ModelDataLoader::ModelDataCache::AccessKey
 {
 private:
-	friend class MeshContext::ModelCreator::ModelDataLoader;
+	friend class MeshContext::ModelDataCreator::ModelDataLoader;
 	explicit AccessKey() = default;
 };
 

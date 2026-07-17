@@ -2,7 +2,7 @@
 #include "../BufferInterface.h"
 
 //カラーバッファクラス
-class ColorBuffer final : public GPUBufferBehavior,IColorBuffer,IRenderTargetBuffer,IShaderBuffer
+class ColorBuffer final : public GPUBufferBehavior,IColorBuffer,IRenderTargetBuffer,IReadable
 {
 	friend class BufferContext::BufferInfoExtractor;
 
@@ -13,7 +13,7 @@ public:
 		const InstanceKey& instanceKey_,
 		std::string name_,
 		std::vector<Microsoft::WRL::ComPtr<ID3D12Resource>> resourceContainer_,
-		std::unique_ptr <BufferDescriptionBehavior>&& description_
+		const BufferDescriptionBehavior& description_
 	);
 
 

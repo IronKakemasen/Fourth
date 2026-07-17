@@ -11,9 +11,9 @@ enum class Usage
 
 
 //ピンポンバッファインターフェース
-struct IPingPongBuffer
+struct IPingPong
 {
-	virtual ~IPingPongBuffer() = default;
+	virtual ~IPingPong() = default;
 
 	//内部の役割をスワップさせる
 	virtual void Swap() = 0;
@@ -34,20 +34,16 @@ struct IDualRole
 };
 
 //シェーダーバッファのインターフェース
-struct IShaderBuffer
+struct IReadable
 {
 	virtual SRVHeapIndex OutProperSRVHeapIndex(int frameIndex_ = 0)const = 0;
 };
 
-//CSバッファのインターフェース
-struct IRWStructuredBuffer:IDualRole
+//リードオンリーバッファのインターフェース
+struct IReadOnly
 {
-	virtual uint32_t OutProperUAVHeapIndex()const = 0;
-
-protected:
-	virtual D3D12_RESOURCE_STATES ResourceStateTable(Usage usage_)const override;
+	virtual D3D12_RESOURCE_BARRIER CreateBarrierAsReading() = 0;
 };
-
 
 //ディプスバッファのインターフェース
 struct IDepthBuffer:IDualRole
@@ -68,12 +64,11 @@ protected:
 };
 
 
-
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///コンピュートバッファ専用のインターフェース
-struct IComputeBuffer:IPingPongBuffer
+struct IComputeBuffer:IPingPong, IDualRole
 {
 private:
 
@@ -93,15 +88,18 @@ public:
 
 protected:
 
+	///いつかそのひがきたら
+	//virtual uint32_t OutProperUAVHeapIndex()const = 0;
 	virtual int ProperBufferIndex(Usage usage_)const override;
 	virtual void SynchronizeStatus(ProjectConfig::Render::NumBuffer numBuffer_)override;
+	virtual D3D12_RESOURCE_STATES ResourceStateTable(Usage usage_)const override;
 
 };
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///カラーバッファやディプスバッファなどのテクスチャに対して書き込みを行うもの
-struct IRenderTargetBuffer:IPingPongBuffer
+struct IRenderTargetBuffer:IPingPong
 {
 private:
 
