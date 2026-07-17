@@ -2,7 +2,7 @@
 #include "ViewCreator.h"
 
 
-ViewCreator::ViewCreator
+DescriptorHeapContext::ViewCreator::ViewCreator
 (
 	DescriptorHeapContext::InstanceKey instanceKey_,
 	DescriptorHeapPool* RTVdescriptorHeapPool_,

@@ -3,8 +3,10 @@
 #include "../../BufferDefinition/GPUBuffer/GPUBufferBehavior.h"
 #include "../ResourceCreator/ResourceCreator.h"
 
+#include "../../../../Core/DescriptorHeap/DescriptorHeapContext.h"
+
 //ビュー生成ツール
-class ViewCreator;
+class DescriptorHeapContext::ViewCreator;
 
 //ディスクリプション
 struct ColorBufferDescription;
@@ -32,7 +34,7 @@ class BufferContext::BufferAssembler
 
     //ツール
     std::unique_ptr<BufferContext::ResourceCreator> resourceCreator;
-    ViewCreator* viewCreator;
+    DescriptorHeapContext::ViewCreator* viewCreator;
 
 public:
 
@@ -40,7 +42,7 @@ public:
     (
         BufferContext::InstanceKey instancekey_, 
         CreateResourceCommand createResourceCommand_,
-        ViewCreator* viewCreator_
+        DescriptorHeapContext::ViewCreator* viewCreator_
     );
 
     ///☆☆☆バッファ生成関数（本丸）☆☆☆

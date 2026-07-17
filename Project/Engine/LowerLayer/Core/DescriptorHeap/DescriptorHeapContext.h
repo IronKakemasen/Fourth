@@ -30,6 +30,8 @@ public:
 	struct InstanceKey;
 	//ViewCreatorポインター取得を許可するキー
 	struct ViewCreatorGetKey;
+	//view生成
+	class ViewCreator;
 
 	DescriptorHeapContext
 	(

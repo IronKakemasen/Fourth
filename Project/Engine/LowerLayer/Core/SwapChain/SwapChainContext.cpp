@@ -1,11 +1,10 @@
-
 #include "SwapChainContext.h"
 #include "SwapChainColorBuffer/SwapChainColorBuffer.h"
-#include "../DescriptorHeap/ViewCreator/ViewCreator.h"
-#include "../Command/CommandContext.h"
 #include "Presenter/Presenter.h"
 #include "RenderPassMaterialProvider/RenderPassMaterialProvider.h"
-#include "../../Resource/Buffer/BufferDefinition/GPUBuffer/DepthStencilBuffer/DepthStencilBuffer.h"
+
+#include "../Command/CommandContext.h"
+#include "../DescriptorHeap/ViewCreator/ViewCreator.h"
 
 using namespace ProjectConfig::Render;
 
@@ -118,7 +117,7 @@ void SwapChainContext::PullResourcesFromSwapChain(std::unique_ptr<Description>&&
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-void SwapChainContext::CreateRTV(InstanceKey instanceKey_ , const D3D12_RENDER_TARGET_VIEW_DESC& rtvDesc_, ViewCreator& viewCreator_)
+void SwapChainContext::CreateRTV(InstanceKey instanceKey_ , const D3D12_RENDER_TARGET_VIEW_DESC& rtvDesc_, DescriptorHeapContext::ViewCreator& viewCreator_)
 {
 	ResourceGetKey resourceGetKey;
 

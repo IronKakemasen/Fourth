@@ -3,8 +3,6 @@
 #include "BufferCollector/BufferCollector.h"
 #include "BufferAssembler/BufferAssembler.h"
 
-//ビュー生成ツール
-class ViewCreator;
 
 class BufferContext::BufferCreator
 {
@@ -15,7 +13,7 @@ public:
 	(
 		BufferContext::InstanceKey instancekey_,
 		CreateResourceCommand createResourceCommand_,
-		ViewCreator* viewCreator_,
+		DescriptorHeapContext::ViewCreator* viewCreator_,
 		BufferPoolSet* bufferPoolSet_
 	);
 

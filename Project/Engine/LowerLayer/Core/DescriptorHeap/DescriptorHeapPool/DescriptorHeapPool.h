@@ -2,7 +2,6 @@
 #include "../DescriptorHeapContext.h"
 #include "../../../../Utility/SimpleFreeList/SimpleFreeList.h"
 
-class ViewCreator;
 
 class DescriptorHeapPool
 {
@@ -49,7 +48,7 @@ struct DescriptorHeapPool::CreateViewKey
 private:
 
 	//アクセスできるのはビュークリエイターのみ
-	friend class ViewCreator;
+	friend class DescriptorHeapContext::ViewCreator;
 	explicit CreateViewKey() = default;
 };
 

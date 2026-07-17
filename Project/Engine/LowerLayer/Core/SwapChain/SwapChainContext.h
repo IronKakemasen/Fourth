@@ -1,9 +1,8 @@
 #pragma once
+#include "../DescriptorHeap/DescriptorHeapContext.h"
 
 class Nexus;
-class ViewCreator;
 class CommandContext;
-class DescriptorHeapContext;
 
 
 
@@ -74,7 +73,7 @@ private:
 	//スワップチェーンからリソースを引っ張ってくる
 	void PullResourcesFromSwapChain(std::unique_ptr<Description>&& desc_);
 	//RTVの生成
-	void CreateRTV(InstanceKey instanceKey_ ,const D3D12_RENDER_TARGET_VIEW_DESC& rtvDesc_, ViewCreator& viewCreator_);
+	void CreateRTV(InstanceKey instanceKey_ ,const D3D12_RENDER_TARGET_VIEW_DESC& rtvDesc_, DescriptorHeapContext::ViewCreator& viewCreator_);
 
 	//スワップチェーン
 	Microsoft::WRL::ComPtr<IDXGISwapChain4> swapChain = nullptr;
