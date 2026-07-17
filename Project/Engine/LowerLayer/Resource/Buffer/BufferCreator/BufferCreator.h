@@ -12,8 +12,8 @@ public:
 	BufferCreator
 	(
 		BufferContext::InstanceKey instancekey_,
-		CreateResourceCommand createResourceCommand_,
-		DescriptorHeapContext::ViewCreator* viewCreator_,
+		BufferContext::ResourceCreator* resourceCreator_,
+		DescriptorHeapContext* descriptorHeapContext_,
 		BufferPoolSet* bufferPoolSet_
 	);
 

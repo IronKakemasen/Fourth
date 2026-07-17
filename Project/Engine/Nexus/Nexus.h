@@ -22,14 +22,17 @@ class Nexus
 		kDeviceContext,
 		kWindowContext,
 		kDescriptorHeapContext,
-		kBufferContext,
 		kCommandContext,
+		kBufferContext,
 		kSwapChainContext,
 		kShaderContext,
 		kPSO_Context,
 		kRootSignatureContext,
 		kMeshContext,
-		kRenderContext
+		kRenderContext,
+
+		kKickCommands,
+		kDeleteIntermediateResources
 
 
 		,kEnd

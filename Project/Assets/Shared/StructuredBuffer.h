@@ -1,6 +1,6 @@
 #pragma once
-#include "../../Engine/Math/Vector/Vector4.h"
-#include "../../Engine/Math/Matrix/Matrix4x4.h"
+#include "../../Engine/MiddleLayer/Math/Vector/Vector4.h"
+#include "../../Engine/MiddleLayer/Math/Matrix/Matrix4x4.h"
 
 #ifdef __cplusplus
 

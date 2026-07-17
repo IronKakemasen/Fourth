@@ -2,15 +2,17 @@
 #include "ResourceCreator/ResourceCreator.h"
 #include "BufferAssembler/BufferAssembler.h"
 
+
+
 BufferContext::BufferCreator::BufferCreator
 (
 	BufferContext::InstanceKey instancekey_,
-	CreateResourceCommand createResourceCommand_,
-	DescriptorHeapContext::ViewCreator* viewCreator_,
+	BufferContext::ResourceCreator* resourceCreator_,
+	DescriptorHeapContext* descriptorHeapContext_,
 	BufferPoolSet* bufferPoolSet_
 ) 
 {
-	assembler.reset(new BufferContext::BufferAssembler(instancekey_, createResourceCommand_, viewCreator_));
+	assembler.reset(new BufferContext::BufferAssembler(instancekey_, resourceCreator_, descriptorHeapContext_));
 	Logger::Log("Instantiate: BufferAssembler", "BufferCreator.cpp");
 	collector.reset
 	(

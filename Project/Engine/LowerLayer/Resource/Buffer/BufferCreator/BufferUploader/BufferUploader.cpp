@@ -25,7 +25,8 @@ BufferContext::BufferUploader::BufferUploader
 
 BufferContext::BufferUploader::~BufferUploader()
 {
-
+	Logger::Log("BufferUploader Destructor Runs", fileName);
+	Logger::Log("Delete: intermediateResources", fileName);
 }
 
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

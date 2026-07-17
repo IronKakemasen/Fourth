@@ -7,6 +7,8 @@
 
 //バッファ作成ツール
 #include "BufferCreator/BufferCreator.h"
+//バッファをアップロード
+#include "BufferCreator/BufferUploader/BufferUploader.h"
 
 //ランタイム処理ツール
 #include "RuntimeBufferManagementSystems/BufferDispatcher/BufferDispatcher.h"
@@ -26,12 +28,20 @@ BufferContext::BufferContext
 (
 	InstanceKey instanceKey_, 
 	CreateResourceCommand createResourceCommand_, 
-	DescriptorHeapContext* descriptorHeapContext_)
+	DescriptorHeapContext* descriptorHeapContext_,
+	CommandContext* commandContext_
+)
 {
 	Logger::Entry("BufferContext: Constructor");
 
+	resourceCreator.reset(new BufferContext::ResourceCreator(instanceKey_, createResourceCommand_));
+	Logger::Log("Instantiate: ResourceCreator", fileName);
 
-	InstantiateBufferCreator(instanceKey_, createResourceCommand_, descriptorHeapContext_);
+	bufferCreator.reset(new BufferCreator(instanceKey_, resourceCreator.get(), descriptorHeapContext_, &bufferPoolSet));
+	Logger::Log("Instantiate: BufferCreator", fileName);
+
+	bufferUploader.reset(new BufferUploader(instanceKey_, resourceCreator.get(), commandContext_));
+	Logger::Log("Instantiate: BufferUploader", fileName);
 
 
 	Logger::End("BufferContext: Constructor");
@@ -41,21 +51,6 @@ BufferContext::BufferContext
 BufferContext::~BufferContext()
 {
 
-}
-///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-void BufferContext::InstantiateBufferCreator
-(
-	InstanceKey instanceKey_,
-	CreateResourceCommand createResourceCommand_,
-	DescriptorHeapContext* descriptorHeapContext_
-)
-{
-	auto* viewCreator = descriptorHeapContext_->GetViewCreator(DescriptorHeapContext::ViewCreatorGetKey{});
-	
-	bufferCreator.reset(new BufferCreator(instanceKey_, createResourceCommand_,viewCreator,&bufferPoolSet));
-	Logger::Log("Instantiate: BufferCreator", fileName);
 }
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -78,4 +73,13 @@ std::vector<std::unique_ptr<GPUBufferBehavior>>* BufferContext::BufferPoolSet::C
 BufferContext::BufferPoolSet::BufferPoolSet()
 {
 	bufferLocationClosedHashedMap.reset(new ClosedHashMap<std::pair<RegisterType, uint32_t>>(kHashedMapSize));
+}
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+void BufferContext::DeleteBufferUploader(const InstanceKey& key_)
+{
+	///中にある中間リソースをすべて削除
+	bufferUploader.reset();
+	Logger::Log("delete: bufferUploader", fileName);
 }

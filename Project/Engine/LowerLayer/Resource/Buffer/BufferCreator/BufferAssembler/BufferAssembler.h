@@ -33,7 +33,7 @@ class BufferContext::BufferAssembler
     using ResourceContainer = std::vector<Microsoft::WRL::ComPtr<ID3D12Resource>>;
 
     //ツール
-    std::unique_ptr<BufferContext::ResourceCreator> resourceCreator;
+    BufferContext::ResourceCreator* resourceCreator;
     DescriptorHeapContext::ViewCreator* viewCreator;
 
 public:
@@ -41,8 +41,8 @@ public:
     BufferAssembler
     (
         BufferContext::InstanceKey instancekey_, 
-        CreateResourceCommand createResourceCommand_,
-        DescriptorHeapContext::ViewCreator* viewCreator_
+        ResourceCreator* resourceCreator_,
+        DescriptorHeapContext* descriptorHeapContext_
     );
 
     ///☆☆☆バッファ生成関数（本丸）☆☆☆

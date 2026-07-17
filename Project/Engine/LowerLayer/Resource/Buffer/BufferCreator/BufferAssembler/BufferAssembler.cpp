@@ -16,8 +16,10 @@
 #include "../../BufferDefinition/BufferDescriptions/UploadStructuredBufferDescription/UploadStructuredBufferDescription.h"
 #include "../../BufferDefinition/BufferDescriptions/StaticStructuredBufferDescription/StaticStructuredBufferDescription.h"
 
-//ツール
+//外部
 #include "../../../../Core/DescriptorHeap/ViewCreator/ViewCreator.h"
+
+//外部
 
 namespace
 {
@@ -28,14 +30,12 @@ namespace
 BufferContext::BufferAssembler::BufferAssembler
 (
 	BufferContext::InstanceKey instancekey_, 
-	CreateResourceCommand createResourceCommand_,
-	DescriptorHeapContext::ViewCreator* viewCreator_
+	ResourceCreator* resourceCreator_, 
+	DescriptorHeapContext* descriptorHeapContext_
 )
-	:viewCreator(viewCreator_)
+	:resourceCreator(resourceCreator_)
 {
-	resourceCreator.reset(new BufferContext::ResourceCreator(instancekey_, createResourceCommand_));
-	Logger::Log("Instantiate: BufferAssembler", fileName);
-
+	viewCreator = descriptorHeapContext_->GetViewCreator(DescriptorHeapContext::ViewCreatorGetKey{});
 }
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////

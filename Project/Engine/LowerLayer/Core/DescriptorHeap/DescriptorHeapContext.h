@@ -1,9 +1,8 @@
 #pragma once
+#include "../../Resource/Buffer/BufferContext.h"
 
 class Nexus;
 class DescriptorHeapPool;
-class ViewCreator;
-class BufferContext;
 class SwapChainContext;
 
 class DescriptorHeapContext
@@ -104,7 +103,7 @@ struct DescriptorHeapContext::ViewCreatorGetKey
 private:
 
 	friend class SwapChainContext;
-	friend class BufferContext;
+	friend class BufferContext::BufferAssembler;
 	explicit ViewCreatorGetKey() = default;
 
 };

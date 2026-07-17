@@ -1,6 +1,7 @@
 #pragma once
 
 class Nexus;
+class CommandContext;
 class DescriptorHeapContext;
 class GPUBufferBehavior;
 template<typename ValueType> class ClosedHashMap;
@@ -83,7 +84,8 @@ public:
 	(
 		InstanceKey instanceKey_,
 		CreateResourceCommand createResourceCommand_,
-		DescriptorHeapContext* descriptorHeapContext_
+		DescriptorHeapContext* descriptorHeapContext_,
+		CommandContext* commandContext_
 	);
 
 	~BufferContext();
@@ -94,19 +96,17 @@ public:
 	std::unique_ptr<BufferDispatcher> bufferDispatcher;
 	//Extractors
 	std::unique_ptr<BufferInfoExtractor> BufferInfoExtractor;
+	//uploader
+	std::unique_ptr<BufferUploader> bufferUploader;
+
+	void DeleteBufferUploader(const InstanceKey& key_);
 
 private:
 
-	//複数のバッファのプールが定義されている
+	///複数のバッファのプールが定義されている
 	BufferPoolSet bufferPoolSet;
 
-	void InstantiateBufferCreator
-	(
-		InstanceKey instanceKey_,
-		CreateResourceCommand createResourceCommand_,
-		DescriptorHeapContext* descriptorHeapContext_
-	);
-
+	std::unique_ptr<ResourceCreator> resourceCreator;
 };
 
 
