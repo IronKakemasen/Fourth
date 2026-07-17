@@ -6,7 +6,7 @@ BufferContext::BufferCreator::BufferCreator
 (
 	BufferContext::InstanceKey instancekey_,
 	CreateResourceCommand createResourceCommand_,
-	ViewCreator* viewCreator_,
+	DescriptorHeapContext::ViewCreator* viewCreator_,
 	BufferPoolSet* bufferPoolSet_
 ) 
 {

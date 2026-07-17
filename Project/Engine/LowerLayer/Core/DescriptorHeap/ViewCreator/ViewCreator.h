@@ -4,7 +4,7 @@
 
 class GPUBufferBehavior;
 
-class ViewCreator
+class DescriptorHeapContext::ViewCreator
 {
 	enum HeapType
 	{

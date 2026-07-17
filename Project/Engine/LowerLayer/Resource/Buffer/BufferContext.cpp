@@ -1,4 +1,3 @@
-
 #include "BufferContext.h"
 #include "BufferDefinition/GPUBuffer/GPUBufferBehavior.h"
 

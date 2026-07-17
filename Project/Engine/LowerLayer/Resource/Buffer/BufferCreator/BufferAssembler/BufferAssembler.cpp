@@ -1,4 +1,3 @@
-
 #include "BufferAssembler.h"
 
 //バッファ
@@ -30,7 +29,7 @@ BufferContext::BufferAssembler::BufferAssembler
 (
 	BufferContext::InstanceKey instancekey_, 
 	CreateResourceCommand createResourceCommand_,
-	ViewCreator* viewCreator_
+	DescriptorHeapContext::ViewCreator* viewCreator_
 )
 	:viewCreator(viewCreator_)
 {
