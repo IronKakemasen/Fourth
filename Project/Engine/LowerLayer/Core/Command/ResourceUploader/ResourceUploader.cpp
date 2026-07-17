@@ -8,6 +8,7 @@ namespace
 
 CommandContext::ResourceUploader::ResourceUploader
 (
+	CommandContext::InstanceKey key_,
 	Microsoft::WRL::ComPtr<ID3D12CommandAllocator>&& allocator_forUpload_,
 	Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList6>&& cmdList_forUpload_,
 	ID3D12CommandQueue* commandQueue_,
@@ -17,11 +18,14 @@ CommandContext::ResourceUploader::ResourceUploader
 {
 	commandList->Close();
 	Logger::Log("Close: upload cmdList", fileName);
+	RecordingStart();
+	Logger::Log("Commmand recording start", fileName);
+
 }
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-void CommandContext::ResourceUploader::WaitAndKick(const UsesResourceUploaderPermission& permission_)
+void CommandContext::ResourceUploader::WaitAndKick(const WaitAndKickLicence& licence_)
 {
 	HRESULT hr = commandList->Close();
 	ErrorMessageOutput::Assert::DetectError(SUCCEEDED(hr), "コマンド確定できない", fileName);
@@ -34,7 +38,7 @@ void CommandContext::ResourceUploader::WaitAndKick(const UsesResourceUploaderPer
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-void CommandContext::ResourceUploader::RecordingStart(const UsesResourceUploaderPermission& permission_)
+void CommandContext::ResourceUploader::RecordingStart()
 {
 	HRESULT hr = allocator->Reset();
 	ErrorMessageOutput::Assert::DetectError(SUCCEEDED(hr), "コマンドアロケーターのリセットに失敗", fileName);
@@ -43,3 +47,21 @@ void CommandContext::ResourceUploader::RecordingStart(const UsesResourceUploader
 	ErrorMessageOutput::Assert::DetectError(SUCCEEDED(hr), "コマンドリストのリセットに失敗", fileName);
 
 }
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+CommandContext::UploadCommand CommandContext::ResourceUploader::ProvideUploadCommand()
+{
+	return[this]
+	(
+		ID3D12Resource* dstResource_,
+		ID3D12Resource* intermediateResource_,
+		const D3D12_SUBRESOURCE_DATA* subeResource_,
+		UINT subResourceCount_
+		)
+		{
+			UpdateSubresources(commandList.Get(), dstResource_, intermediateResource_, 0, 0, subResourceCount_, subeResource_);
+		};
+
+}
+

@@ -1,9 +1,8 @@
 #pragma once
-
+#include "../../Resource/Buffer/BufferContext.h"
 
 class Nexus;
 class SwapChainContext;
-class BufferUploader;
 
 class CommandContext
 {
@@ -13,20 +12,29 @@ class CommandContext
 	class Synchronizer;
 	//コマンドリストの処理のラッパークラス
 	class RuntimeWrapper;
-	//リソースのアップロードを行う
-	class ResourceUploader;
 
 public:
+
+	using UploadCommand = std::function<void
+	(
+		ID3D12Resource* dstResource_,
+		ID3D12Resource* intermediateResource_,
+		const D3D12_SUBRESOURCE_DATA* subeResource_,
+		UINT subResourceCount_
+	)>;
+
 
 	struct InstanceKey;
 	//コマンドキューのアドレス取得キー
 	struct CmdQueueGetKey;
-	//ResourceUploaderの利用許可
-	struct UsesResourceUploaderPermission;
+	//ResourceUploadコマンドの利用許可
+	struct UsesResourceUploadCmdPermission;
+	//リソースのアップロードを行う
+	class ResourceUploader;
 
 	CommandContext
 	(
-		InstanceKey instanceKey_,
+		const InstanceKey& instanceKey_,
 		Microsoft::WRL::ComPtr<ID3D12CommandQueue> commandQueue_,
 		std::array<Microsoft::WRL::ComPtr<ID3D12CommandAllocator>, (UINT)ProjectConfig::Render::NumBuffer::kDoubleBuffer> commandAllocators_,
 		Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList6> commandList_,
@@ -37,18 +45,20 @@ public:
 
 	~CommandContext();
 
+	//コマンドキューの取得
 	ID3D12CommandQueue* GetCommandQueue(CmdQueueGetKey key_);
-	ResourceUploader* GetResourceUploader();
-
+	//リソースアップロードコマンドの提供
+	UploadCommand ProvideResouceUploadCommand(const UsesResourceUploadCmdPermission& permission_);
+	//同期してCloseHandle()する
 	void Finalize(InstanceKey instanceKey_);
 
 	std::unique_ptr<RuntimeCommandController> runtimeCommandController;
+	std::unique_ptr<ResourceUploader> resourceUploader;
 
 private:
 
 	std::unique_ptr<Synchronizer> synchronizer;
 	std::unique_ptr<RuntimeWrapper> runtimeWrapper;
-	std::unique_ptr<ResourceUploader> resourceUploader;
 
 	//コマンドキュー
 	Microsoft::WRL::ComPtr<ID3D12CommandQueue> commandQueue;
@@ -89,11 +99,11 @@ private:
 
 };
 
-struct CommandContext::UsesResourceUploaderPermission
+struct CommandContext::UsesResourceUploadCmdPermission
 {
 private:
 
-	friend class BufferUploader;
-	explicit UsesResourceUploaderPermission() = default;
+	friend class BufferContext::BufferUploader;
+	explicit UsesResourceUploadCmdPermission() = default;
 };
 

@@ -20,6 +20,8 @@ GPUBufferBehavior::GPUBufferBehavior
 
 ) : name(name_)
 {
+	numBuffer = description_.numBuffer;
+
 	size_t const bufferSize = (size_t)numBuffer;
 	ErrorMessageOutput::Assert::DetectError
 	(
@@ -71,3 +73,7 @@ ID3D12Resource* GPUBufferBehavior::GetResource(ResourceAccessKey bufferAccessKey
 	return buffers.at(resourceNo_).resource.Get();
 }
 
+std::string GPUBufferBehavior::WatchName()
+{
+	return name;
+}

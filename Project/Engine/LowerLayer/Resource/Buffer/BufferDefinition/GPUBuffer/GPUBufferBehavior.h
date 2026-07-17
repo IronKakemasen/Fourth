@@ -50,7 +50,9 @@ public:
 
 	//生リソースを取得
 	ID3D12Resource* GetResource(ResourceAccessKey resourceAccessKey_ , int resourceNo_);
-	
+	//名前取得
+	std::string WatchName();
+
 	//descriptorHeapIndexを書き込む
 	template<ViewType type, typename Index>
 	void OverrideHeapIndex(InstanceKey instanceKey_, Index index_, uint8_t resourceNo_)
@@ -76,7 +78,6 @@ protected:
 
 	//シングルかダブルか
 	ProjectConfig::Render::NumBuffer numBuffer;
-
 	//バッファ本体
 	std::vector<Buffer> buffers;
 
@@ -125,6 +126,7 @@ struct GPUBufferBehavior::ResourceAccessKey
 {
 private:
 	friend class BufferContext::BufferAssembler;
+	friend class BufferContext::BufferUploader;
 
 	explicit ResourceAccessKey() = default;
 };
