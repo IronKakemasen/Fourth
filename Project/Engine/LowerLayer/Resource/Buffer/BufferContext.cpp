@@ -6,9 +6,12 @@
 #include "../../Core/DescriptorHeap/ViewCreator/ViewCreator.h"
 
 //バッファ作成ツール
-#include "BufferCreator/BufferCreator.h"
+#include "BufferCreateTools/BufferCreator.h"
 //バッファをアップロード
-#include "BufferCreator/BufferUploader/BufferUploader.h"
+#include "BufferCreateTools/BufferUploader/BufferUploader.h"
+//各種ツールを下位部へ貸し出します
+#include "BufferToolLender/BufferToolLender.h"
+
 
 //ランタイム処理ツール
 #include "RuntimeBufferManagementSystems/BufferDispatcher/BufferDispatcher.h"
@@ -42,6 +45,9 @@ BufferContext::BufferContext
 
 	bufferUploader.reset(new BufferUploader(instanceKey_, resourceCreator.get(), commandContext_));
 	Logger::Log("Instantiate: BufferUploader", fileName);
+
+	toolLender.reset(new ToolLender(instanceKey_, bufferCreator.get(), bufferUploader.get()));
+	Logger::Log("Instantiate: ToolLender", fileName);
 
 
 	Logger::End("BufferContext: Constructor");

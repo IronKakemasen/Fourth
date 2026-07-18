@@ -18,8 +18,7 @@
 
 //外部
 #include "../../../../Core/DescriptorHeap/ViewCreator/ViewCreator.h"
-
-//外部
+#include "../../../../Core/DescriptorHeap/DescriptorHeapToolLender/DescriptorHeapToolLender.h"
 
 namespace
 {
@@ -35,7 +34,9 @@ BufferContext::BufferAssembler::BufferAssembler
 )
 	:resourceCreator(resourceCreator_)
 {
-	viewCreator = descriptorHeapContext_->GetViewCreator(DescriptorHeapContext::ViewCreatorGetKey{});
+
+	viewCreator = descriptorHeapContext_->toolLender->Lend(DescriptorHeapContext::ToolLender::LicenceTypeTraits<DescriptorHeapContext::ViewCreator>{});
+	
 }
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////

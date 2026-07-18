@@ -8,11 +8,11 @@ namespace
 }
 
 
-MeshContext::MeshContext(const InstanceKey& key_)
+MeshContext::MeshContext(const InstanceKey& key_, BufferContext* bufferContext_)
 {
 	Logger::Entry("MeshContext: Constructor");
 
-	modelDataCreator.reset(new ModelDataCreator(key_));
+	modelDataCreator.reset(new ModelDataCreator(key_, bufferContext_));
 	Logger::Log("Instantiate: ModelDataCreator", fileName);
 
 

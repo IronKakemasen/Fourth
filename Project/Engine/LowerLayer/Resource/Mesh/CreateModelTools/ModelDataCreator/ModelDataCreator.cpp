@@ -5,6 +5,8 @@
 //ツール
 #include "ModelDataLoader/ModelDataLoader.h"
 #include "../ModelSlotAllocator/ModelSlotAllocator.h"
+#include "../../../Buffer/BufferCreateTools/BufferUploader/BufferUploader.h"
+#include "../../../Buffer/BufferCreateTools/BufferCreator.h"
 
 namespace
 {
@@ -12,7 +14,7 @@ namespace
 }
 
 
-MeshContext::ModelDataCreator::ModelDataCreator(MeshContext::InstanceKey key_)
+MeshContext::ModelDataCreator::ModelDataCreator(MeshContext::InstanceKey key_, BufferContext* bufferContext_)
 {
 	Logger::Entry("ModelDataCreator: Constructor");
 
@@ -39,15 +41,12 @@ void MeshContext::ModelDataCreator::CreateAllModelData(MeshContext::ModelSlotAll
     {
         for (const auto& [key, value] : tmpModelDataLib)
         {
-            meshDataIDLib[key] = MeshDetaID(meshID);
+            meshDataIDLib[key] = MeshDetaID(meshID++);
         }
     }
 
     //モデルの種類の数
     UINT numModelTypes = meshID + 1;
-
-
-
 }
 
 void MeshContext::ModelDataCreator::CreateMeshDataBuffer(const ResourceMesh& data_)

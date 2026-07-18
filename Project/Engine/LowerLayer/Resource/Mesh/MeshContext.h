@@ -1,6 +1,7 @@
 #pragma once
 
 class Nexus;
+class BufferContext;
 
 class MeshContext
 {
@@ -11,7 +12,7 @@ public:
 	//自身の生成キー
 	struct InstanceKey;
 
-	MeshContext(const InstanceKey& key_);
+	MeshContext(const InstanceKey& key_, BufferContext* bufferContext_);
 	~MeshContext();
 
 

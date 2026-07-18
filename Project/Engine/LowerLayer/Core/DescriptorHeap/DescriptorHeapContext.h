@@ -3,15 +3,19 @@
 
 class Nexus;
 class DescriptorHeapPool;
-class SwapChainContext;
-
+\
 class DescriptorHeapContext
 {
-public:
+	//DescriptorHeap生成クラス
+	class DescriptorHeapCreator;
+
+protected:
 
 	//DescriptorHeapを生成するコマンド
-	using DescriptorCreateCommand =
+	using CreateDescriptorHeapCommand =
 		std::function<Microsoft::WRL::ComPtr<ID3D12DescriptorHeap>(D3D12_DESCRIPTOR_HEAP_TYPE, UINT, bool)>;
+	//ディスクリプタヒープコンテナ
+	using DescriptorHeapContainer = std::unordered_map < D3D12_DESCRIPTOR_HEAP_TYPE, std::unique_ptr<DescriptorHeapPool>>;
 	//RTVを生成するコマンド
 	using CreateRTVCommand =
 		std::function<void(ID3D12Resource* resource_, const D3D12_RENDER_TARGET_VIEW_DESC* desc_, D3D12_CPU_DESCRIPTOR_HANDLE descriptorHandleCPU_)>;
@@ -24,18 +28,19 @@ public:
 	//UAVを生成するコマンド
 	using CreateUAVCommand =
 		std::function<void(ID3D12Resource* resource_, const D3D12_UNORDERED_ACCESS_VIEW_DESC* desc_, D3D12_CPU_DESCRIPTOR_HANDLE descriptorHandleCPU_, ID3D12Resource* CounterResource_)>;
+public:
 
 	//Nexusのみ生成可能
 	struct InstanceKey;
-	//ViewCreatorポインター取得を許可するキー
-	struct ViewCreatorGetKey;
 	//view生成
 	class ViewCreator;
+	//ツール貸し出しクラス
+	class ToolLender;
 
 	DescriptorHeapContext
 	(
 		InstanceKey instanceKey_,
-		DescriptorCreateCommand createDescriptor_,
+		CreateDescriptorHeapCommand createDescriptor_,
 		CreateRTVCommand createRtv_,
 		CreateSRVCommand createSrv_,
 		CreateDSVCommand createDsv_,
@@ -45,35 +50,29 @@ public:
 
 	~DescriptorHeapContext();
 
-	//ビュークリエイターをシェアする。
-	ViewCreator* GetViewCreator(ViewCreatorGetKey key_);
+	//ツール貸し出し窓口
+	std::unique_ptr<ToolLender> toolLender;
+
 
 private:
 
-	//DescriptorHeap生成クラス
-	class DescriptorHeapCreator;
-	std::unique_ptr<DescriptorHeapCreator> descriptorHeapCreator;
-
 	//DescriptorHeapPoolのコンテナ
-	std::unordered_map < D3D12_DESCRIPTOR_HEAP_TYPE, std::unique_ptr<DescriptorHeapPool>> descriptorHeapContainer;
-
+	DescriptorHeapContainer descriptorHeapContainer;
 	//ビュー生成機関
 	std::unique_ptr<ViewCreator> viewCreator;
-
-	//DescriptorHeapの作成
-	template<D3D12_DESCRIPTOR_HEAP_TYPE HeapType>
-	void CreateDescriptorHeap(UINT numDescriptors_, bool shaderVisible_, UINT handleIncSize_);
 	
+
 	//各種ディスクリプターヒープの作成
-	void CreateDescriptorHeaps(UINT rtvDH_, UINT srvDH_, UINT dsvDH_);
+	void CreateDescriptorHeaps
+	(
+		InstanceKey instanceKey_,
+		CreateDescriptorHeapCommand cmd_, 
+		UINT rtvDH_, 
+		UINT srvDH_, 
+		UINT dsvDH_
+	);
 
-	//DescriptorHeapの名前を取得（初期化用）
-	std::string GetDescriptorName(D3D12_DESCRIPTOR_HEAP_TYPE heapType_)const;
-
-	//コマンドのセット
-	void SetCreateDescriptorHeapCommand(DescriptorCreateCommand createDescriptor);
-	
-	//コマンドのセット2
+	//ビュークリエイターの使用するコマンドをセット
 	void SetCreateViewCommand
 	(
 		InstanceKey key_,
@@ -97,16 +96,4 @@ private:
 	friend class Nexus;
 	explicit InstanceKey() = default;
 };
-
-struct DescriptorHeapContext::ViewCreatorGetKey
-{
-private:
-
-	friend class SwapChainContext;
-	friend class BufferContext::BufferAssembler;
-	explicit ViewCreatorGetKey() = default;
-
-};
-
-
 

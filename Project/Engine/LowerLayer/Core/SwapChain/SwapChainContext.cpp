@@ -5,6 +5,8 @@
 
 #include "../Command/CommandContext.h"
 #include "../DescriptorHeap/ViewCreator/ViewCreator.h"
+#include "../DescriptorHeap/DescriptorHeapToolLender/DescriptorHeapToolLender.h"
+
 
 using namespace ProjectConfig::Render;
 
@@ -73,7 +75,9 @@ void SwapChainContext::AssembleCoreParts
 	//コマンドキューを一時的に借りる
 	auto* commandQueue = commandContext_->GetCommandQueue(CommandContext::CmdQueueGetKey{});
 	//ビュークリエイターも一時的に借りる
-	auto& viewCreator = *descriptorHeapContext_->GetViewCreator(DescriptorHeapContext::ViewCreatorGetKey{});
+
+	DescriptorHeapContext::ViewCreator* viewCreator =
+		descriptorHeapContext_->toolLender->Lend(DescriptorHeapContext::ToolLender::LicenceTypeTraits<DescriptorHeapContext::ViewCreator>{});
 
 	//ディスクリプション
 	std::unique_ptr<Description> bufferDesc = std::make_unique<Description>(kColor, kRtFormat);
@@ -90,7 +94,7 @@ void SwapChainContext::AssembleCoreParts
 	PullResourcesFromSwapChain(std::move(bufferDesc));
 
 	//ビュー生成
-	CreateRTV(instanceKey_, rtvDesc, viewCreator);
+	CreateRTV(instanceKey_, rtvDesc, *viewCreator);
 }
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
