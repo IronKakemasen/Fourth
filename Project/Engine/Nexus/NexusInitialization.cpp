@@ -237,7 +237,7 @@ void Nexus::Instantiate<Nexus::InitSequence::kRenderContext>()
 template<>
 void Nexus::Instantiate<Nexus::InitSequence::kMeshContext>()
 {
-	meshContext.reset(new MeshContext(MeshContext::InstanceKey{}));
+	meshContext.reset(new MeshContext(MeshContext::InstanceKey{},bufferContext.get()));
 	Logger::Log("Instantiate: MeshContext", fileName);
 }
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////

@@ -1,18 +1,20 @@
-
 #include "DescriptorHeapContext.h"
 #include "DescriptorHeapCreator/DescriptorHeapCreator.h"
 #include "DescriptorHeapPool/DescriptorHeapPool.h"
 #include "ViewCreator/ViewCreator.h"
+#include "DescriptorHeapToolLender/DescriptorHeapToolLender.h"
 
 namespace
 {
 	std::string fileName = "DescriptorHeapContext.cpp";
 }
 
+using namespace ProjectConfig::Core;
+
 DescriptorHeapContext::DescriptorHeapContext
 (
 	InstanceKey instanceKey_,
-	DescriptorCreateCommand createDescriptor_,
+	CreateDescriptorHeapCommand createDescriptor_,
 	CreateRTVCommand createRtv_,
 	CreateSRVCommand createSrv_,
 	CreateDSVCommand createDsv_,
@@ -22,18 +24,12 @@ DescriptorHeapContext::DescriptorHeapContext
 {
 	Logger::Entry("DescriptorHeapContext: Constructor");
 
-
-	descriptorHeapCreator.reset(new DescriptorHeapCreator(instanceKey_));
-	Logger::Log("Instantiate: DescriptorHeapCreator", fileName);
-
-	descriptorHeapCreator->SetCommand(createDescriptor_);
-	Logger::Log("Set: commandCreateDescriptor", fileName);
-
-	CreateDescriptorHeaps(incrementSizeOfDH_.at(0), incrementSizeOfDH_.at(1), incrementSizeOfDH_.at(2));
-	Logger::Log("Create: DescriptorHeaps", fileName);
+	CreateDescriptorHeaps(instanceKey_, createDescriptor_,incrementSizeOfDH_.at(0), incrementSizeOfDH_.at(1), incrementSizeOfDH_.at(2));
 
 	SetCreateViewCommand(instanceKey_, createRtv_, createSrv_, createDsv_, createUav_);
-	Logger::Log("Set: commandCreateView", fileName);
+
+	toolLender.reset(new ToolLender(instanceKey_, viewCreator.get()));
+	Logger::Log("Instantiate: ToolLender", fileName);
 
 
 	Logger::End("DescriptorHeapContext: Constructor");
@@ -46,32 +42,32 @@ DescriptorHeapContext::~DescriptorHeapContext()
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-DescriptorHeapContext::ViewCreator* DescriptorHeapContext::GetViewCreator(ViewCreatorGetKey key_)
+void DescriptorHeapContext::CreateDescriptorHeaps
+(
+	InstanceKey instanceKey_,
+	CreateDescriptorHeapCommand cmd_ ,
+	UINT rtvDH_, 
+	UINT srvDH_, 
+	UINT dsvDH_
+)
 {
-	return viewCreator.get();
-}
-///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-void DescriptorHeapContext::CreateDescriptorHeaps(UINT rtvDH_, UINT srvDH_, UINT dsvDH_)
-{
-	using namespace ProjectConfig::Core;
 
-	//RTV
-	CreateDescriptorHeap<D3D12_DESCRIPTOR_HEAP_TYPE_RTV>(kNumDescriptorsRTVHeap, false, rtvDH_);
-	//SRV/UAV
-	CreateDescriptorHeap<D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV>(kNumDescriptorSRVHeap, true, srvDH_);
-	//DSV
-	CreateDescriptorHeap<D3D12_DESCRIPTOR_HEAP_TYPE_DSV>(kNumDescriptorsDSVHeap, false, dsvDH_);
+	DescriptorHeapCreator creator(instanceKey_, cmd_);
+	Logger::Log("Instantiate: DescriptorHeapCreator", fileName);
 
-}
-///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-void DescriptorHeapContext::SetCreateDescriptorHeapCommand(DescriptorCreateCommand createDescriptor)
-{
-	descriptorHeapCreator->SetCommand(createDescriptor);
-	Logger::Log("Set: DescriptorCreateCommand ", fileName);
+	descriptorHeapContainer[D3D12_DESCRIPTOR_HEAP_TYPE::D3D12_DESCRIPTOR_HEAP_TYPE_RTV] = 
+		std::move(creator.Create<D3D12_DESCRIPTOR_HEAP_TYPE_RTV>(kNumDescriptorsRTVHeap, false, rtvDH_));
+	Logger::Log("Create: DescriptorHeapRTV", fileName);
+
+	descriptorHeapContainer[D3D12_DESCRIPTOR_HEAP_TYPE::D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV] =
+		std::move(creator.Create<D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV>(kNumDescriptorSRVHeap, true, srvDH_));
+	Logger::Log("Create: DescriptorHeapSRV", fileName);
+
+	descriptorHeapContainer[D3D12_DESCRIPTOR_HEAP_TYPE::D3D12_DESCRIPTOR_HEAP_TYPE_DSV] =
+		std::move(creator.Create<D3D12_DESCRIPTOR_HEAP_TYPE_DSV>(kNumDescriptorsDSVHeap, false, dsvDH_));
+	Logger::Log("Create: DescriptorHeapDSV", fileName);
+
+
 }
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -101,46 +97,9 @@ void DescriptorHeapContext::SetCreateViewCommand
 	);
 
 	Logger::Log("Instantiate: ViewCreator", fileName);
+	Logger::Log("Set: commandCreateView", fileName);
+
 }
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-template<D3D12_DESCRIPTOR_HEAP_TYPE HeapType>
-void DescriptorHeapContext::CreateDescriptorHeap(UINT numDescriptors_, bool shaderVisible_, UINT handleIncSize_)
-{
-	descriptorHeapContainer[HeapType] = std::make_unique<DescriptorHeapPool>
-	(
-		std::move(descriptorHeapCreator->createFunc(HeapType, numDescriptors_, shaderVisible_)),
-		handleIncSize_,
-		numDescriptors_,
-		shaderVisible_,
-		GetDescriptorName(HeapType)
-	);
-}
-///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-std::string DescriptorHeapContext::GetDescriptorName(D3D12_DESCRIPTOR_HEAP_TYPE heapType_)const
-{
-	ErrorMessageOutput::Assert::DetectError((heapType_ < D3D12_DESCRIPTOR_HEAP_TYPE_NUM_TYPES), "TypeError: 要素外アクセス", fileName);
-
-	std::string descriptorHeap = "_descriptorHeap";
-
-	static const std::string nameTable[D3D12_DESCRIPTOR_HEAP_TYPE::D3D12_DESCRIPTOR_HEAP_TYPE_NUM_TYPES + 1] =
-	{
-		"SRV_UAV",
-		"Sampler",
-		"RTV",
-		"DSV",
-		"dummy" //このケースは上で止めてます
-	};
-
-	return nameTable[heapType_] + descriptorHeap;
-}
-///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-template void DescriptorHeapContext::CreateDescriptorHeap<D3D12_DESCRIPTOR_HEAP_TYPE_RTV>(UINT, bool, UINT);
-template void DescriptorHeapContext::CreateDescriptorHeap<D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV>(UINT, bool, UINT);
-template void DescriptorHeapContext::CreateDescriptorHeap<D3D12_DESCRIPTOR_HEAP_TYPE_DSV>(UINT, bool, UINT);

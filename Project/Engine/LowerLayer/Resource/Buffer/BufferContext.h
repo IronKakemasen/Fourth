@@ -1,5 +1,6 @@
 #pragma once
 
+
 class Nexus;
 class CommandContext;
 class DescriptorHeapContext;
@@ -16,7 +17,6 @@ class BufferContext
 	class BufferDispatcher;
 	//生リソース生成
 	class ResourceCreator;
-	
 
 protected:
 
@@ -70,6 +70,7 @@ public:
 	struct InstanceKey;
 	//バッファのポインタを扱うものの証
 	struct BufferAccessKey;
+
 	//BufferAssemblerとBufferCollectorをつかってバッファを作成する
 	class BufferCreator;
 	//BufferDescriptionをもとにバッファを組み立てる
@@ -78,6 +79,8 @@ public:
 	class BufferInfoExtractor;
 	//バッファをアップロードする
 	class BufferUploader;
+	//ツールの貸し出しを行う
+	class ToolLender;
 
 
 	BufferContext
@@ -90,23 +93,28 @@ public:
 
 	~BufferContext();
 
-	///バッファ生成クラス（本丸）
-	std::unique_ptr<BufferCreator> bufferCreator;
 	//ディスパッチャー
 	std::unique_ptr<BufferDispatcher> bufferDispatcher;
 	//Extractors
-	std::unique_ptr<BufferInfoExtractor> BufferInfoExtractor;
-	//uploader
-	std::unique_ptr<BufferUploader> bufferUploader;
+	std::unique_ptr<BufferInfoExtractor> bufferInfoExtractor;
+	//ツール貸し出し
+	std::unique_ptr<ToolLender> toolLender;
 
+	///ランタイムに入る前にNexusuがアップロード用の中間リソースを破棄する
 	void DeleteBufferUploader(const InstanceKey& key_);
-
+	
 private:
 
 	///複数のバッファのプールが定義されている
 	BufferPoolSet bufferPoolSet;
 
+	///バッファ生成クラス（本丸）
+	std::unique_ptr<BufferCreator> bufferCreator;
+	//生リソース生成
 	std::unique_ptr<ResourceCreator> resourceCreator;
+	//uploader
+	std::unique_ptr<BufferUploader> bufferUploader;
+
 };
 
 
@@ -125,4 +133,5 @@ private:
 	friend class BufferInfoExtractor;
 	explicit BufferAccessKey() = default;
 };
+
 

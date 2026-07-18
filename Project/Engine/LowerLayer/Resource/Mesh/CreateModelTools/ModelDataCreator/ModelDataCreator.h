@@ -1,5 +1,7 @@
 #pragma once
 #include "../../MeshContext.h"
+#include "../../../Buffer/BufferContext.h"
+
 
 struct ModelDataAggregate;
 struct ResourceMesh;
@@ -20,7 +22,7 @@ public:
 	void CreateAllModelData(MeshContext::ModelSlotAllocator* allocator_);
 
 
-	ModelDataCreator(MeshContext::InstanceKey key_);
+	ModelDataCreator(MeshContext::InstanceKey key_, BufferContext* bufferContext_);
 	~ModelDataCreator();
 
 
@@ -30,6 +32,10 @@ private:
 	std::unique_ptr<ModelDataLoader> modelDataLoader;
 	//ファイル名がキーのメッシュデータバッファ配列上のインデックス
 	std::unordered_map<std::string, MeshDetaID> meshDataIDLib;
+	//リソースのアップロードを行ってもらう
+	BufferContext::BufferUploader* bufferUploader;
+	//バッファの生成を行ってもらう
+	BufferContext::BufferCreator* bufferCreator;
 
 
 	//モデルファイルが登録されているファイルから、ファイル名をキーとしてデータのポインタを

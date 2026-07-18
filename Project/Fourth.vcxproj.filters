@@ -15,9 +15,6 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="main.cpp">
-      <Filter>ソース ファイル</Filter>
-    </ClCompile>
     <ClCompile Include="Engine\LowerLayer\Core\Window\WindowContext.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
@@ -96,19 +93,13 @@
     <ClCompile Include="Engine\Utility\StringConnverter\StringConverter.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="Engine\Math\Vector\Vector3.cpp">
-      <Filter>ソース ファイル</Filter>
-    </ClCompile>
-    <ClCompile Include="Engine\Math\Vector\Vector2.cpp">
-      <Filter>ソース ファイル</Filter>
-    </ClCompile>
     <ClCompile Include="Engine\LowerLayer\Resource\Buffer\BufferDefinition\GPUBuffer\ConstantBuffer\ConstantBuffer.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
     <ClCompile Include="Engine\LowerLayer\Debug\ErrorMessageOutput\ErrorMessageOutput.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="Engine\LowerLayer\Resource\Buffer\BufferCreator\ResourceCreator\ResourceCreator.cpp">
+    <ClCompile Include="Engine\LowerLayer\Resource\Buffer\BufferCreateTools\ResourceCreator\ResourceCreator.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
     <ClCompile Include="Engine\LowerLayer\Resource\Buffer\BufferDefinition\GPUBuffer\GPUBufferBehavior.cpp">
@@ -186,7 +177,7 @@
     <ClCompile Include="Engine\LowerLayer\Resource\Buffer\BufferDefinition\GPUBuffer\DepthStencilBuffer\DepthStencilBuffer.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="Engine\LowerLayer\Resource\Buffer\BufferCreator\BufferAssembler\BufferAssembler.cpp">
+    <ClCompile Include="Engine\LowerLayer\Resource\Buffer\BufferCreateTools\BufferAssembler\BufferAssembler.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
     <ClCompile Include="Engine\LowerLayer\Resource\Buffer\BufferDefinition\BufferDescriptions\BufferDescriptionBehavior.cpp">
@@ -234,19 +225,13 @@
     <ClCompile Include="Engine\LowerLayer\Resource\Buffer\BufferDefinition\BufferDescriptions\UploadStructuredBufferDescription\UploadStructuredBufferDescription.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="Engine\LowerLayer\Resource\Buffer\BufferCreator\BufferCreator.cpp">
+    <ClCompile Include="Engine\LowerLayer\Resource\Buffer\BufferCreateTools\BufferCreator.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="Engine\LowerLayer\Resource\Buffer\BufferCreator\BufferCollector\BufferCollector.cpp">
+    <ClCompile Include="Engine\LowerLayer\Resource\Buffer\BufferCreateTools\BufferCollector\BufferCollector.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
     <ClCompile Include="Engine\LowerLayer\Core\Command\RuntimeCommandController\RuntimeCommandController.cpp">
-      <Filter>ソース ファイル</Filter>
-    </ClCompile>
-    <ClCompile Include="Engine\NexusRun.cpp">
-      <Filter>ソース ファイル</Filter>
-    </ClCompile>
-    <ClCompile Include="Engine\Nexus.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
     <ClCompile Include="Engine\LowerLayer\Resource\Buffer\BufferDefinition\GPUBuffer\BufferInterface.cpp">
@@ -372,9 +357,6 @@
     <ClCompile Include="Engine\LowerLayer\Resource\Mesh\ModelStructure\ModelData\ModelDataAggregate.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="Engine\Math\Vector\Vector4.cpp">
-      <Filter>ソース ファイル</Filter>
-    </ClCompile>
     <ClCompile Include="Engine\LowerLayer\Resource\Mesh\CreateModelTools\ModelDataCreator\ModelDataCreator.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
@@ -390,7 +372,37 @@
     <ClCompile Include="Engine\LowerLayer\Resource\Mesh\CreateModelTools\ModelSlotAllocator\ModelSlotAllocator.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="Engine\LowerLayer\Resource\Buffer\BufferCreator\BufferUploader\BufferUploader.cpp">
+    <ClCompile Include="Engine\LowerLayer\Resource\Buffer\BufferCreateTools\BufferUploader\BufferUploader.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\Nexus\NexusFinalization.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\Nexus\NexusInitialization.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\Nexus\NexusRun.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\MiddleLayer\Math\Vector\Vector3.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\main.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\Nexus\Nexus.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\MiddleLayer\Math\Vector\Vector2.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\MiddleLayer\Math\Vector\Vector4.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\LowerLayer\Resource\Buffer\BufferToolLender\BufferToolLender.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\LowerLayer\Core\DescriptorHeap\DescriptorHeapToolLender\DescriptorHeapToolLender.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
   </ItemGroup>
@@ -461,15 +473,6 @@
     <ClInclude Include="Engine\Utility\StringConnverter\StringConverter.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\Math\Vector\Vector3.h">
-      <Filter>ヘッダー ファイル</Filter>
-    </ClInclude>
-    <ClInclude Include="Engine\Math\Quaternion\Quaternion.h">
-      <Filter>ヘッダー ファイル</Filter>
-    </ClInclude>
-    <ClInclude Include="Engine\Math\Vector\Vector2.h">
-      <Filter>ヘッダー ファイル</Filter>
-    </ClInclude>
     <ClInclude Include="Engine\LowerLayer\Resource\Buffer\BufferDefinition\GPUBuffer\ConstantBuffer\ConstantBuffer.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
@@ -479,7 +482,7 @@
     <ClInclude Include="Engine\LowerLayer\Core\SwapChain\SwapChainContext.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\LowerLayer\Resource\Buffer\BufferCreator\ResourceCreator\ResourceCreator.h">
+    <ClInclude Include="Engine\LowerLayer\Resource\Buffer\BufferCreateTools\ResourceCreator\ResourceCreator.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
     <ClInclude Include="Engine\LowerLayer\Resource\Buffer\BufferDefinition\GPUBuffer\GPUBufferBehavior.h">
@@ -560,7 +563,7 @@
     <ClInclude Include="Engine\LowerLayer\Resource\Buffer\BufferDefinition\GPUBuffer\DepthStencilBuffer\DepthStencilBuffer.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\LowerLayer\Resource\Buffer\BufferCreator\BufferAssembler\BufferAssembler.h">
+    <ClInclude Include="Engine\LowerLayer\Resource\Buffer\BufferCreateTools\BufferAssembler\BufferAssembler.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
     <ClInclude Include="Engine\LowerLayer\Core\Device\Commands\StructureSwapChain\CommandStructureSwapChain.h">
@@ -608,25 +611,19 @@
     <ClInclude Include="Engine\LowerLayer\Resource\Buffer\BufferDefinition\BufferDescriptions\UploadStructuredBufferDescription\UploadStructuredBufferDescription.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\LowerLayer\Resource\Buffer\BufferCreator\BufferCreator.h">
+    <ClInclude Include="Engine\LowerLayer\Resource\Buffer\BufferCreateTools\BufferCreator.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\LowerLayer\Resource\Buffer\BufferCreator\BufferCollector\BufferCollector.h">
+    <ClInclude Include="Engine\LowerLayer\Resource\Buffer\BufferCreateTools\BufferCollector\BufferCollector.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
     <ClInclude Include="Engine\LowerLayer\Core\Command\RuntimeCommandController\RuntimeCommandController.h">
-      <Filter>ヘッダー ファイル</Filter>
-    </ClInclude>
-    <ClInclude Include="Engine\Nexus.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
     <ClInclude Include="Engine\LowerLayer\Resource\Buffer\BufferDefinition\GPUBuffer\BufferInterface.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
     <ClInclude Include="Engine\LowerLayer\Resource\Buffer\RuntimeBufferManagementSystems\BufferDeferredReleaser\BufferDeferredReleaser.h">
-      <Filter>ヘッダー ファイル</Filter>
-    </ClInclude>
-    <ClInclude Include="Engine\Math\Matrix\Matrix4x4.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
     <ClInclude Include="Engine\LowerLayer\Resource\Buffer\RuntimeBufferManagementSystems\BufferInfoExtractor\BufferInfoExtractor.h">
@@ -797,9 +794,6 @@
     <ClInclude Include="Engine\LowerLayer\Resource\Mesh\ModelStructure\ModelData\ModelDataAggregate.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\Math\Vector\Vector4.h">
-      <Filter>ヘッダー ファイル</Filter>
-    </ClInclude>
     <ClInclude Include="Engine\LowerLayer\Resource\Mesh\ModelStructure\ModelData\ResourceMaterial\StandardMaterial.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
@@ -809,7 +803,7 @@
     <ClInclude Include="Engine\LowerLayer\Resource\Mesh\CreateModelTools\ModelDataCreator\ModelDataCreator.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\Utility\Transform\Transform.h">
+    <ClInclude Include="Engine\MiddleLayer\Transform\Transform.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
     <ClInclude Include="Engine\LowerLayer\Resource\Buffer\BufferDefinition\BufferDescriptions\StaticStructuredBufferDescription\StaticStructuredBufferDescription.h">
@@ -830,7 +824,31 @@
     <ClInclude Include="Engine\LowerLayer\Resource\Mesh\ModelStructure\ModelDescription.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\LowerLayer\Resource\Buffer\BufferCreator\BufferUploader\BufferUploader.h">
+    <ClInclude Include="Engine\LowerLayer\Resource\Buffer\BufferCreateTools\BufferUploader\BufferUploader.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\MiddleLayer\Math\Matrix\Matrix4x4.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Nexus\Nexus.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\MiddleLayer\Math\Vector\Vector3.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\MiddleLayer\Math\Quaternion\Quaternion.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\MiddleLayer\Math\Vector\Vector2.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\MiddleLayer\Math\Vector\Vector4.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\LowerLayer\Resource\Buffer\BufferToolLender\BufferToolLender.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\LowerLayer\Core\DescriptorHeap\DescriptorHeapToolLender\DescriptorHeapToolLender.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
   </ItemGroup>
