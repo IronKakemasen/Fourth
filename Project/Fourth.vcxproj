@@ -323,6 +323,10 @@
     <ClInclude Include="Assets\Shared\StructuredBuffer.h" />
     <ClInclude Include="Engine\LowerLayer\Core\Command\CommandContextCmdProvider\CommandContextCmdProvider.h" />
     <ClInclude Include="Engine\LowerLayer\Core\DescriptorHeap\DescriptorHeapToolLender\DescriptorHeapToolLender.h" />
+    <ClInclude Include="Engine\LowerLayer\Resource\Buffer\BufferDefinition\AllBufferDescsIFwd.h" />
+    <ClInclude Include="Engine\LowerLayer\Resource\Buffer\BufferDefinition\AllBufferDescsInclude.h" />
+    <ClInclude Include="Engine\LowerLayer\Resource\Buffer\BufferDefinition\AllBuffersFwd.h" />
+    <ClInclude Include="Engine\LowerLayer\Resource\Buffer\BufferDefinition\AllBuffersInclude.h" />
     <ClInclude Include="Engine\LowerLayer\Resource\Buffer\BufferToolLender\BufferToolLender.h" />
     <ClInclude Include="Engine\LowerLayer\Resource\Buffer\BufferCreateTools\BufferUploader\BufferUploader.h" />
     <ClInclude Include="Engine\LowerLayer\Core\Device\Commands\UploadResource\CommandUploadResource.h" />

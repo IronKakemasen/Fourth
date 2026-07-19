@@ -43,7 +43,7 @@ BufferContext::BufferContext
 	bufferCreator.reset(new BufferCreator(instanceKey_, resourceCreator.get(), descriptorHeapContext_, &bufferPoolSet));
 	Logger::Log("Instantiate: BufferCreator", fileName);
 
-	bufferUploader.reset(new BufferUploader(instanceKey_, resourceCreator.get(), commandContext_));
+	bufferUploader.reset(new BufferUploader(instanceKey_, resourceCreator.get(),bufferDispatcher.get(), commandContext_));
 	Logger::Log("Instantiate: BufferUploader", fileName);
 
 	toolLender.reset(new ToolLender(instanceKey_, bufferCreator.get(), bufferUploader.get()));

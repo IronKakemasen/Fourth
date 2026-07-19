@@ -2,10 +2,13 @@
 #include "../BufferContext.h"
 #include "BufferCollector/BufferCollector.h"
 #include "BufferAssembler/BufferAssembler.h"
-
+#include "../BufferDefinition/AllBuffersInclude.h"
 
 class BufferContext::BufferCreator
 {
+	template<typename DescType>
+	struct DescTypeTraits;
+
 
 public:
 
@@ -20,22 +23,30 @@ public:
 	~BufferCreator();
 
 	//生成したバッファの管理を請け負います
-	template<typename BufferType, typename DescType>
+	template<typename DescType>
 	[[nodiscard]] BufferUniqueID Create(const DescType& desc_, const std::string& name_)
 	{
-		std::unique_ptr<BufferType> buffer = assembler->Assemble<BufferType>(desc_, name_);
+		using ActualBufferType = typename DescTypeTraits<DescType>::Type;
 
-		collector->Register(std::move(buffer));
+		std::unique_ptr<ActualBufferType> buffer = assembler->Assemble<ActualBufferType>(desc_, name_);
+		
+		//生成数 = IDとす
+		BufferUniqueID dispatchUniqueID = BufferUniqueID(generateBufferSum++);
+
+		//コレクターに登録
+		collector->Register<ActualBufferType>(std::move(buffer), dispatchUniqueID);
 
 		//バッファユニークIDを返す
-		return BufferUniqueID(generateBufferSum++);
+		return dispatchUniqueID;
 	}
 
 	//生成したバッファの管理はしません。あとは任せました状態
-	template<typename BufferType, typename DescType>
-	[[nodiscard]] std::unique_ptr<BufferType> CreateBeyondMyJurisdiction(const DescType& desc_, const std::string& name_)
+	template<typename DescType>
+	[[nodiscard]] std::unique_ptr<DescTypeTraits<DescType>> CreateBeyondMyJurisdiction(const DescType& desc_, const std::string& name_)
 	{
-		return assembler->Assemble<BufferType>(desc_, name_);
+		using ActualBufferType = typename DescTypeTraits<DescType>::Type;
+
+		return assembler->Assemble<ActualBufferType>(desc_, name_);
 	}
 
 
@@ -47,3 +58,38 @@ private:
 	std::unique_ptr<BufferContext::BufferCollector> collector;
 };
 
+template<>
+struct BufferContext::BufferCreator::DescTypeTraits<StaticStructuredBufferDescription>
+{
+	using Type = StaticStructuredBuffer;
+};
+
+template<>
+struct BufferContext::BufferCreator::DescTypeTraits<UploadStructuredBufferDescription>
+{
+	using Type = UploadStructuredBuffer;
+};
+
+template<>
+struct BufferContext::BufferCreator::DescTypeTraits<ColorBufferDescription>
+{
+	using Type = ColorBuffer;
+};
+
+template<>
+struct BufferContext::BufferCreator::DescTypeTraits<DepthStencilBufferDescription>
+{
+	using Type = DepthStencilBuffer;
+};
+
+template<>
+struct BufferContext::BufferCreator::DescTypeTraits<ConstantBufferDescription>
+{
+	using Type = ConstantBuffer;
+};
+
+template<>
+struct BufferContext::BufferCreator::DescTypeTraits<ComputeBufferDescription>
+{
+	using Type = ComputeBuffer;
+};

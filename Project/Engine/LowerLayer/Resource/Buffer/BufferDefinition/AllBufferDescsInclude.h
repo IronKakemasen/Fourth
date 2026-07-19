@@ -1,0 +1,7 @@
+#pragma once
+#include "BufferDescriptions/ColorBufferDescription/ColorBufferDescription.h"
+#include "BufferDescriptions/ComputeBufferDescription/ComputeBufferDescription.h"
+#include "BufferDescriptions/ConstantBufferDescription/ConstantBufferDescription.h"
+#include "BufferDescriptions/DepthStencilBufferDescription/DepthStencilBufferDescription.h"
+#include "BufferDescriptions/StaticStructuredBufferDescription/StaticStructuredBufferDescription.h"
+#include "BufferDescriptions/UploadStructuredBufferDescription/UploadStructuredBufferDescription.h"

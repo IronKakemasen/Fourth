@@ -1,13 +1,7 @@
 #pragma once
 #include "../../BufferContext.h"
+#include "../../BufferDefinition/AllBuffersFwd.h"
 
-class GPUBufferBehavior;
-class ColorBuffer;
-class ConstantBuffer;
-class DepthStencilBuffer;
-class ComputeBuffer;
-class UploadStructuredBuffer;
-class StaticStructuredBuffer;
 
 class BufferContext::BufferCollector
 {
@@ -29,7 +23,7 @@ public:
 
 		TempSaveFormat tmpSaveFormat;
 		tmpSaveFormat.type = registerType;
-		tmpSaveFormat.buffer = std::move(buffer_);
+		tmpSaveFormat.buffer = CastBuffer(std::move(buffer_));
 		tmpSaveFormat.id = id_;
 
 		tmp_bufferContainer.emplace_back(std::move(tmpSaveFormat));
@@ -53,6 +47,10 @@ private:
 
 	///分別先
 	BufferContext::BufferPoolSet* bufferPoolSet;
+
+	//GPUBufferBehaviorにキャストしてユニークを返す
+	template<typename BufferType>
+	std::unique_ptr<GPUBufferBehavior> CastBuffer(std::unique_ptr<BufferType> buffer_);
 
 	//バッファのデータ型に応じて登録先識別用のタイプを返す
 	template<typename BufferType>
@@ -89,3 +87,20 @@ private:
 
 };
 
+template<>
+std::unique_ptr<GPUBufferBehavior> BufferContext::BufferCollector::CastBuffer(std::unique_ptr<ColorBuffer> buffer_);
+
+template<>
+std::unique_ptr<GPUBufferBehavior> BufferContext::BufferCollector::CastBuffer(std::unique_ptr<ConstantBuffer> buffer_);
+
+template<>
+std::unique_ptr<GPUBufferBehavior> BufferContext::BufferCollector::CastBuffer(std::unique_ptr<ComputeBuffer> buffer_);
+
+template<>
+std::unique_ptr<GPUBufferBehavior> BufferContext::BufferCollector::CastBuffer(std::unique_ptr<DepthStencilBuffer> buffer_);
+
+template<>
+std::unique_ptr<GPUBufferBehavior> BufferContext::BufferCollector::CastBuffer(std::unique_ptr<UploadStructuredBuffer> buffer_);
+
+template<>
+std::unique_ptr<GPUBufferBehavior> BufferContext::BufferCollector::CastBuffer(std::unique_ptr<StaticStructuredBuffer> buffer_);

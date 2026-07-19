@@ -2,11 +2,11 @@
 #include "../../MeshContext.h"
 #include "../../../Buffer/BufferContext.h"
 
+#include "../../../../../../Assets/Shared/StructuredBuffer.h"
 
 struct ModelDataAggregate;
 struct ResourceMesh;
 struct ResourrceMatrilal;
-struct BufferCreator;
 
 
 class MeshContext::ModelDataCreator
@@ -44,6 +44,12 @@ private:
 	///被り無しのはず設計なので、被りがあった場合はアサートでとまる
 	std::unordered_map<std::string, ModelDataAggregate*> LoadAllModelFiles();
 	//メッシュデータのバッファを作成する
-	void CreateMeshDataBuffer(const ResourceMesh& data_);
+	void CreateMeshDataBuffer
+	(
+		const ResourceMesh& data_,
+		MeshContext::ModelSlotAllocator* allocator_,
+		BufferContext::BufferCreator* bufferCreator_,
+		std::string meshDataName_
+	);
 };
 

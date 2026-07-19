@@ -46,7 +46,7 @@ public:
 		const BufferDescriptionBehavior& description_
 	);
 
-	virtual ~GPUBufferBehavior();
+	virtual ~GPUBufferBehavior() = default;
 
 	//生リソースを取得
 	ID3D12Resource* GetResource(ResourceAccessKey resourceAccessKey_ , int resourceNo_);
