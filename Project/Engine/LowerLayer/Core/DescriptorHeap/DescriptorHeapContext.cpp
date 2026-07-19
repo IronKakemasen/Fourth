@@ -24,8 +24,9 @@ DescriptorHeapContext::DescriptorHeapContext
 {
 	Logger::Entry("DescriptorHeapContext: Constructor");
 
+	//各種DescriptorHeapを生成する
 	CreateDescriptorHeaps(instanceKey_, createDescriptor_,incrementSizeOfDH_.at(0), incrementSizeOfDH_.at(1), incrementSizeOfDH_.at(2));
-
+	//ViewCreatorを生成して、中にview生成コマンドを積む
 	SetCreateViewCommand(instanceKey_, createRtv_, createSrv_, createDsv_, createUav_);
 
 	toolLender.reset(new ToolLender(instanceKey_, viewCreator.get()));

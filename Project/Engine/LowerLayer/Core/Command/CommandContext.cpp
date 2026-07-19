@@ -5,7 +5,7 @@
 #include "RuntimeWrapper/RuntimeWrapper.h"
 #include "ResourceUploader/ResourceUploader.h"
 #include "RuntimeCommandController/RuntimeCommandController.h"
-
+#include "CommandContextCmdProvider/CommandContextCmdProvider.h"
 
 using namespace ProjectConfig::Render;
 
@@ -41,6 +41,9 @@ CommandContext::CommandContext
 	resourceUploader.reset(new ResourceUploader(instanceKey_,std::move(allocator_forUpload_), std::move(cmdList_forUpload_), commandQueue.Get(), synchronizer.get()));
 	Logger::Log("Instantiate: ResourceUploader", fileName);
 
+	commandProvider.reset(new CommandProvider(instanceKey_, resourceUploader.get()));
+	Logger::Log("Instantiate: commandProvider", fileName);
+
 	InstantiateRuntimeCommandControler();
 
 
@@ -52,13 +55,6 @@ CommandContext::CommandContext
 ID3D12CommandQueue* CommandContext::GetCommandQueue(CmdQueueGetKey key_)
 {
 	return commandQueue.Get();
-}
-///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-CommandContext::UploadCommand CommandContext::ProvideResouceUploadCommand(const UsesResourceUploadCmdPermission& permission_)
-{
-	return resourceUploader->ProvideUploadCommand(permission_);
 }
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

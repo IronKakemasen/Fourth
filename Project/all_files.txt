@@ -175,7 +175,7 @@ namespace
 #include "RuntimeWrapper/RuntimeWrapper.h"
 #include "ResourceUploader/ResourceUploader.h"
 #include "RuntimeCommandController/RuntimeCommandController.h"
-
+#include "CommandContextCmdProvider/CommandContextCmdProvider.h"
 
 using namespace ProjectConfig::Render;
 
@@ -211,6 +211,9 @@ CommandContext::CommandContext
 	resourceUploader.reset(new ResourceUploader(instanceKey_,std::move(allocator_forUpload_), std::move(cmdList_forUpload_), commandQueue.Get(), synchronizer.get()));
 	Logger::Log("Instantiate: ResourceUploader", fileName);
 
+	commandProvider.reset(new CommandProvider(instanceKey_, resourceUploader.get()));
+	Logger::Log("Instantiate: commandProvider", fileName);
+
 	InstantiateRuntimeCommandControler();
 
 
@@ -222,13 +225,6 @@ CommandContext::CommandContext
 ID3D12CommandQueue* CommandContext::GetCommandQueue(CmdQueueGetKey key_)
 {
 	return commandQueue.Get();
-}
-///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-CommandContext::UploadCommand CommandContext::ProvideResouceUploadCommand(const UsesResourceUploadCmdPermission& permission_)
-{
-	return resourceUploader->ProvideUploadCommand(permission_);
 }
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -311,10 +307,10 @@ public:
 	struct InstanceKey;
 	//コマンドキューのアドレス取得キー
 	struct CmdQueueGetKey;
-	//ResourceUploadコマンドの利用許可
-	struct UsesResourceUploadCmdPermission;
 	//リソースのアップロードを行う
 	class ResourceUploader;
+	//コマンドを提供する
+	class CommandProvider;
 
 	CommandContext
 	(
@@ -331,13 +327,12 @@ public:
 
 	//コマンドキューの取得
 	ID3D12CommandQueue* GetCommandQueue(CmdQueueGetKey key_);
-	//リソースアップロードコマンドの提供
-	UploadCommand ProvideResouceUploadCommand(const UsesResourceUploadCmdPermission& permission_);
 	//同期してCloseHandle()する
 	void Finalize(InstanceKey instanceKey_);
 
 	std::unique_ptr<RuntimeCommandController> runtimeCommandController;
 	std::unique_ptr<ResourceUploader> resourceUploader;
+	std::unique_ptr<CommandProvider> commandProvider;
 
 private:
 
@@ -383,7 +378,61 @@ private:
 
 };
 
-struct CommandContext::UsesResourceUploadCmdPermission
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Core\Command\CommandContextCmdProvider\CommandContextCmdProvider.cpp ===
+========================================
+#include "PreCompileHeader.h"
+#include "CommandContextCmdProvider.h"
+
+
+CommandContext::CommandProvider::CommandProvider(InstanceKey kew_, CommandContext::ResourceUploader* resourceUploader_)
+	:resourceUploader(resourceUploader_)
+{
+
+}
+
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Core\Command\CommandContextCmdProvider\CommandContextCmdProvider.h ===
+========================================
+#pragma once
+#include "../CommandContext.h"
+#include "../../../Resource/Buffer/BufferContext.h"
+#include "../ResourceUploader/ResourceUploader.h"
+
+
+class CommandContext::CommandProvider
+{
+public:
+
+	//ResourceUploadコマンドの利用許可
+	struct UsesResourceUploadCmdPermission;
+
+	CommandProvider(InstanceKey kew_, CommandContext::ResourceUploader* resourceUploader_);
+
+	template<typename PermissionType>
+	auto ProvideResourceUploadCommand(PermissionType permission_)
+	{
+		if constexpr (std::is_same_v<PermissionType, UsesResourceUploadCmdPermission>)
+		{
+			return resourceUploader->ProvideUploadCommand();
+		}
+	}
+
+private:
+
+
+	CommandContext::ResourceUploader* resourceUploader;
+};
+
+struct CommandContext::CommandProvider::UsesResourceUploadCmdPermission
 {
 private:
 
@@ -452,7 +501,7 @@ void CommandContext::ResourceUploader::RecordingStart()
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-CommandContext::UploadCommand CommandContext::ResourceUploader::ProvideUploadCommand(const CommandContext::UsesResourceUploadCmdPermission& permission_)
+CommandContext::UploadCommand CommandContext::ResourceUploader::ProvideUploadCommand()
 {
 	return[this]
 	(
@@ -497,7 +546,7 @@ public:
 	//コマンドコンテキスとに呼び出してもらう
 	void WaitAndKick(const WaitAndKickLicence& licence_);
 	///commandListをラップしたアップロードコマンド
-	UploadCommand ProvideUploadCommand(const CommandContext::UsesResourceUploadCmdPermission& permission_);
+	UploadCommand ProvideUploadCommand();
 
 private:
 
@@ -975,21 +1024,23 @@ private:
 ========================================
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Core\DescriptorHeap\DescriptorHeapContext.cpp ===
 ========================================
-
 #include "DescriptorHeapContext.h"
 #include "DescriptorHeapCreator/DescriptorHeapCreator.h"
 #include "DescriptorHeapPool/DescriptorHeapPool.h"
 #include "ViewCreator/ViewCreator.h"
+#include "DescriptorHeapToolLender/DescriptorHeapToolLender.h"
 
 namespace
 {
 	std::string fileName = "DescriptorHeapContext.cpp";
 }
 
+using namespace ProjectConfig::Core;
+
 DescriptorHeapContext::DescriptorHeapContext
 (
 	InstanceKey instanceKey_,
-	DescriptorCreateCommand createDescriptor_,
+	CreateDescriptorHeapCommand createDescriptor_,
 	CreateRTVCommand createRtv_,
 	CreateSRVCommand createSrv_,
 	CreateDSVCommand createDsv_,
@@ -999,18 +1050,13 @@ DescriptorHeapContext::DescriptorHeapContext
 {
 	Logger::Entry("DescriptorHeapContext: Constructor");
 
-
-	descriptorHeapCreator.reset(new DescriptorHeapCreator(instanceKey_));
-	Logger::Log("Instantiate: DescriptorHeapCreator", fileName);
-
-	descriptorHeapCreator->SetCommand(createDescriptor_);
-	Logger::Log("Set: commandCreateDescriptor", fileName);
-
-	CreateDescriptorHeaps(incrementSizeOfDH_.at(0), incrementSizeOfDH_.at(1), incrementSizeOfDH_.at(2));
-	Logger::Log("Create: DescriptorHeaps", fileName);
-
+	//各種DescriptorHeapを生成する
+	CreateDescriptorHeaps(instanceKey_, createDescriptor_,incrementSizeOfDH_.at(0), incrementSizeOfDH_.at(1), incrementSizeOfDH_.at(2));
+	//ViewCreatorを生成して、中にview生成コマンドを積む
 	SetCreateViewCommand(instanceKey_, createRtv_, createSrv_, createDsv_, createUav_);
-	Logger::Log("Set: commandCreateView", fileName);
+
+	toolLender.reset(new ToolLender(instanceKey_, viewCreator.get()));
+	Logger::Log("Instantiate: ToolLender", fileName);
 
 
 	Logger::End("DescriptorHeapContext: Constructor");
@@ -1023,32 +1069,32 @@ DescriptorHeapContext::~DescriptorHeapContext()
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-DescriptorHeapContext::ViewCreator* DescriptorHeapContext::GetViewCreator(ViewCreatorGetKey key_)
+void DescriptorHeapContext::CreateDescriptorHeaps
+(
+	InstanceKey instanceKey_,
+	CreateDescriptorHeapCommand cmd_ ,
+	UINT rtvDH_, 
+	UINT srvDH_, 
+	UINT dsvDH_
+)
 {
-	return viewCreator.get();
-}
-///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-void DescriptorHeapContext::CreateDescriptorHeaps(UINT rtvDH_, UINT srvDH_, UINT dsvDH_)
-{
-	using namespace ProjectConfig::Core;
 
-	//RTV
-	CreateDescriptorHeap<D3D12_DESCRIPTOR_HEAP_TYPE_RTV>(kNumDescriptorsRTVHeap, false, rtvDH_);
-	//SRV/UAV
-	CreateDescriptorHeap<D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV>(kNumDescriptorSRVHeap, true, srvDH_);
-	//DSV
-	CreateDescriptorHeap<D3D12_DESCRIPTOR_HEAP_TYPE_DSV>(kNumDescriptorsDSVHeap, false, dsvDH_);
+	DescriptorHeapCreator creator(instanceKey_, cmd_);
+	Logger::Log("Instantiate: DescriptorHeapCreator", fileName);
 
-}
-///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-void DescriptorHeapContext::SetCreateDescriptorHeapCommand(DescriptorCreateCommand createDescriptor)
-{
-	descriptorHeapCreator->SetCommand(createDescriptor);
-	Logger::Log("Set: DescriptorCreateCommand ", fileName);
+	descriptorHeapContainer[D3D12_DESCRIPTOR_HEAP_TYPE::D3D12_DESCRIPTOR_HEAP_TYPE_RTV] = 
+		std::move(creator.Create<D3D12_DESCRIPTOR_HEAP_TYPE_RTV>(kNumDescriptorsRTVHeap, false, rtvDH_));
+	Logger::Log("Create: DescriptorHeapRTV", fileName);
+
+	descriptorHeapContainer[D3D12_DESCRIPTOR_HEAP_TYPE::D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV] =
+		std::move(creator.Create<D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV>(kNumDescriptorSRVHeap, true, srvDH_));
+	Logger::Log("Create: DescriptorHeapSRV", fileName);
+
+	descriptorHeapContainer[D3D12_DESCRIPTOR_HEAP_TYPE::D3D12_DESCRIPTOR_HEAP_TYPE_DSV] =
+		std::move(creator.Create<D3D12_DESCRIPTOR_HEAP_TYPE_DSV>(kNumDescriptorsDSVHeap, false, dsvDH_));
+	Logger::Log("Create: DescriptorHeapDSV", fileName);
+
+
 }
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -1078,49 +1124,12 @@ void DescriptorHeapContext::SetCreateViewCommand
 	);
 
 	Logger::Log("Instantiate: ViewCreator", fileName);
+	Logger::Log("Set: commandCreateView", fileName);
+
 }
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-template<D3D12_DESCRIPTOR_HEAP_TYPE HeapType>
-void DescriptorHeapContext::CreateDescriptorHeap(UINT numDescriptors_, bool shaderVisible_, UINT handleIncSize_)
-{
-	descriptorHeapContainer[HeapType] = std::make_unique<DescriptorHeapPool>
-	(
-		std::move(descriptorHeapCreator->createFunc(HeapType, numDescriptors_, shaderVisible_)),
-		handleIncSize_,
-		numDescriptors_,
-		shaderVisible_,
-		GetDescriptorName(HeapType)
-	);
-}
-///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-std::string DescriptorHeapContext::GetDescriptorName(D3D12_DESCRIPTOR_HEAP_TYPE heapType_)const
-{
-	ErrorMessageOutput::Assert::DetectError((heapType_ < D3D12_DESCRIPTOR_HEAP_TYPE_NUM_TYPES), "TypeError: 要素外アクセス", fileName);
-
-	std::string descriptorHeap = "_descriptorHeap";
-
-	static const std::string nameTable[D3D12_DESCRIPTOR_HEAP_TYPE::D3D12_DESCRIPTOR_HEAP_TYPE_NUM_TYPES + 1] =
-	{
-		"SRV_UAV",
-		"Sampler",
-		"RTV",
-		"DSV",
-		"dummy" //このケースは上で止めてます
-	};
-
-	return nameTable[heapType_] + descriptorHeap;
-}
-///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-template void DescriptorHeapContext::CreateDescriptorHeap<D3D12_DESCRIPTOR_HEAP_TYPE_RTV>(UINT, bool, UINT);
-template void DescriptorHeapContext::CreateDescriptorHeap<D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV>(UINT, bool, UINT);
-template void DescriptorHeapContext::CreateDescriptorHeap<D3D12_DESCRIPTOR_HEAP_TYPE_DSV>(UINT, bool, UINT);
 
 
 
@@ -1133,15 +1142,19 @@ template void DescriptorHeapContext::CreateDescriptorHeap<D3D12_DESCRIPTOR_HEAP_
 
 class Nexus;
 class DescriptorHeapPool;
-class SwapChainContext;
-
+\
 class DescriptorHeapContext
 {
-public:
+	//DescriptorHeap生成クラス
+	class DescriptorHeapCreator;
+
+protected:
 
 	//DescriptorHeapを生成するコマンド
-	using DescriptorCreateCommand =
+	using CreateDescriptorHeapCommand =
 		std::function<Microsoft::WRL::ComPtr<ID3D12DescriptorHeap>(D3D12_DESCRIPTOR_HEAP_TYPE, UINT, bool)>;
+	//ディスクリプタヒープコンテナ
+	using DescriptorHeapContainer = std::unordered_map < D3D12_DESCRIPTOR_HEAP_TYPE, std::unique_ptr<DescriptorHeapPool>>;
 	//RTVを生成するコマンド
 	using CreateRTVCommand =
 		std::function<void(ID3D12Resource* resource_, const D3D12_RENDER_TARGET_VIEW_DESC* desc_, D3D12_CPU_DESCRIPTOR_HANDLE descriptorHandleCPU_)>;
@@ -1154,18 +1167,19 @@ public:
 	//UAVを生成するコマンド
 	using CreateUAVCommand =
 		std::function<void(ID3D12Resource* resource_, const D3D12_UNORDERED_ACCESS_VIEW_DESC* desc_, D3D12_CPU_DESCRIPTOR_HANDLE descriptorHandleCPU_, ID3D12Resource* CounterResource_)>;
+public:
 
 	//Nexusのみ生成可能
 	struct InstanceKey;
-	//ViewCreatorポインター取得を許可するキー
-	struct ViewCreatorGetKey;
 	//view生成
 	class ViewCreator;
+	//ツール貸し出しクラス
+	class ToolLender;
 
 	DescriptorHeapContext
 	(
 		InstanceKey instanceKey_,
-		DescriptorCreateCommand createDescriptor_,
+		CreateDescriptorHeapCommand createDescriptor_,
 		CreateRTVCommand createRtv_,
 		CreateSRVCommand createSrv_,
 		CreateDSVCommand createDsv_,
@@ -1175,35 +1189,29 @@ public:
 
 	~DescriptorHeapContext();
 
-	//ビュークリエイターをシェアする。
-	ViewCreator* GetViewCreator(ViewCreatorGetKey key_);
+	//ツール貸し出し窓口
+	std::unique_ptr<ToolLender> toolLender;
+
 
 private:
 
-	//DescriptorHeap生成クラス
-	class DescriptorHeapCreator;
-	std::unique_ptr<DescriptorHeapCreator> descriptorHeapCreator;
-
 	//DescriptorHeapPoolのコンテナ
-	std::unordered_map < D3D12_DESCRIPTOR_HEAP_TYPE, std::unique_ptr<DescriptorHeapPool>> descriptorHeapContainer;
-
+	DescriptorHeapContainer descriptorHeapContainer;
 	//ビュー生成機関
 	std::unique_ptr<ViewCreator> viewCreator;
-
-	//DescriptorHeapの作成
-	template<D3D12_DESCRIPTOR_HEAP_TYPE HeapType>
-	void CreateDescriptorHeap(UINT numDescriptors_, bool shaderVisible_, UINT handleIncSize_);
 	
+
 	//各種ディスクリプターヒープの作成
-	void CreateDescriptorHeaps(UINT rtvDH_, UINT srvDH_, UINT dsvDH_);
+	void CreateDescriptorHeaps
+	(
+		InstanceKey instanceKey_,
+		CreateDescriptorHeapCommand cmd_, 
+		UINT rtvDH_, 
+		UINT srvDH_, 
+		UINT dsvDH_
+	);
 
-	//DescriptorHeapの名前を取得（初期化用）
-	std::string GetDescriptorName(D3D12_DESCRIPTOR_HEAP_TYPE heapType_)const;
-
-	//コマンドのセット
-	void SetCreateDescriptorHeapCommand(DescriptorCreateCommand createDescriptor);
-	
-	//コマンドのセット2
+	//ビュークリエイターの使用するコマンドをセット
 	void SetCreateViewCommand
 	(
 		InstanceKey key_,
@@ -1228,18 +1236,6 @@ private:
 	explicit InstanceKey() = default;
 };
 
-struct DescriptorHeapContext::ViewCreatorGetKey
-{
-private:
-
-	friend class SwapChainContext;
-	friend class BufferContext::BufferAssembler;
-	explicit ViewCreatorGetKey() = default;
-
-};
-
-
-
 
 
 
@@ -1251,24 +1247,6 @@ private:
 #include "DescriptorHeapCreator.h"
 
 
-DescriptorHeapContext::DescriptorHeapCreator::DescriptorHeapCreator(DescriptorHeapContext::InstanceKey instanceKey_)
-{
-
-}
-
-DescriptorHeapContext::DescriptorHeapCreator::~DescriptorHeapCreator()
-{
-
-}
-///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-void DescriptorHeapContext::DescriptorHeapCreator::SetCommand(std::function<Microsoft::WRL::ComPtr<ID3D12DescriptorHeap>(D3D12_DESCRIPTOR_HEAP_TYPE, UINT, bool)> func_)
-{
-	createFunc = func_;
-}
-
 
 
 
@@ -1277,20 +1255,51 @@ void DescriptorHeapContext::DescriptorHeapCreator::SetCommand(std::function<Micr
 ========================================
 #pragma once
 #include "../DescriptorHeapContext.h"
+#include "../DescriptorHeapPool/DescriptorHeapPool.h"
 
 
 class DescriptorHeapContext::DescriptorHeapCreator
 {
+	template<D3D12_DESCRIPTOR_HEAP_TYPE heapType>
+	inline std::string DescriptorName()const
+	{
+		std::string descriptorHeapString = "_descriptorHeap";
+
+		if constexpr (heapType == D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV)	return "SRV_UAV" + descriptorHeapString;
+		else if constexpr (heapType == D3D12_DESCRIPTOR_HEAP_TYPE_RTV)		return "RTV" + descriptorHeapString;
+		else if constexpr (heapType == D3D12_DESCRIPTOR_HEAP_TYPE_DSV)		return "DSV" + descriptorHeapString;
+
+		ErrorMessageOutput::Assert::OutputError("用意してないDescriptorheapTypeです", "DescriptorHeapCreator.h");
+
+		return descriptorHeapString;
+	}
+
+
 public:
 
+	DescriptorHeapCreator(InstanceKey key_, CreateDescriptorHeapCommand cmd_) :createCmd(cmd_) {}
+
+
+	template<D3D12_DESCRIPTOR_HEAP_TYPE heapType>
+	inline std::unique_ptr<DescriptorHeapPool> Create(UINT numDescriptors_, bool shaderVisible_, UINT handleIncSize_)const
+	{
+		return std::make_unique<DescriptorHeapPool>
+		(
+			std::move(createCmd(heapType, numDescriptors_, shaderVisible_)),
+			handleIncSize_,
+			numDescriptors_,
+			shaderVisible_,
+			DescriptorName<heapType>()
+		);
+
+	}
+
+
+private:
+
+
 	//DescriptorHeapを生成するコマンド
-	std::function<Microsoft::WRL::ComPtr<ID3D12DescriptorHeap>(D3D12_DESCRIPTOR_HEAP_TYPE, UINT, bool)> createFunc;
-
-	//コマンドをセットする
-	void SetCommand(std::function<Microsoft::WRL::ComPtr<ID3D12DescriptorHeap>(D3D12_DESCRIPTOR_HEAP_TYPE, UINT, bool)> func_);
-
-	DescriptorHeapCreator(DescriptorHeapContext::InstanceKey instanceKey_);
-	~DescriptorHeapCreator();
+	CreateDescriptorHeapCommand createCmd;
 
 };
 
@@ -1454,6 +1463,75 @@ template<>
 
 template<>
 [[nodiscard]] D3D12_GPU_DESCRIPTOR_HANDLE DescriptorHeapPool::GetHandle(uint32_t index_);
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Core\DescriptorHeap\DescriptorHeapToolLender\DescriptorHeapToolLender.cpp ===
+========================================
+#include "PreCompileHeader.h"
+#include "DescriptorHeapToolLender.h"
+
+DescriptorHeapContext::ToolLender::ToolLender(InstanceKey key_, DescriptorHeapContext::ViewCreator* viewCretator_) 
+{
+
+	std::get<DescriptorHeapContext::ViewCreator*>(tools) = viewCretator_;
+}
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Core\DescriptorHeap\DescriptorHeapToolLender\DescriptorHeapToolLender.h ===
+========================================
+#pragma once
+#include "../DescriptorHeapContext.h"
+#include "../../../Resource/Buffer/BufferContext.h"
+
+class SwapChainContext;
+
+class DescriptorHeapContext::ToolLender
+{
+public:
+
+	template<typename ToolType>
+	struct LicenceTypeTraits;
+
+private:
+
+	struct BasicViewManagementLicence;
+
+	//貸出可能なツール
+	std::tuple<ViewCreator*> tools;
+
+public:
+
+	ToolLender(InstanceKey key_, DescriptorHeapContext::ViewCreator* viewCretator_);
+	
+	///ツールの貸し出し
+	template<typename ToolType>
+	auto* Lend(LicenceTypeTraits<ToolType> licence_)
+	{
+		return std::get<ToolType*>(tools);
+	}
+
+};
+
+struct DescriptorHeapContext::ToolLender::BasicViewManagementLicence
+{
+private:
+
+	friend class SwapChainContext;
+	friend class BufferContext::BufferAssembler;
+	explicit BasicViewManagementLicence() = default;
+};
+
+template<>
+struct DescriptorHeapContext::ToolLender::LicenceTypeTraits<DescriptorHeapContext::ViewCreator>
+{
+	using Type = BasicViewManagementLicence;
+};
 
 
 
@@ -3240,6 +3318,8 @@ private:
 
 #include "../Command/CommandContext.h"
 #include "../DescriptorHeap/ViewCreator/ViewCreator.h"
+#include "../DescriptorHeap/DescriptorHeapToolLender/DescriptorHeapToolLender.h"
+
 
 using namespace ProjectConfig::Render;
 
@@ -3308,7 +3388,9 @@ void SwapChainContext::AssembleCoreParts
 	//コマンドキューを一時的に借りる
 	auto* commandQueue = commandContext_->GetCommandQueue(CommandContext::CmdQueueGetKey{});
 	//ビュークリエイターも一時的に借りる
-	auto& viewCreator = *descriptorHeapContext_->GetViewCreator(DescriptorHeapContext::ViewCreatorGetKey{});
+
+	DescriptorHeapContext::ViewCreator* viewCreator =
+		descriptorHeapContext_->toolLender->Lend(DescriptorHeapContext::ToolLender::LicenceTypeTraits<DescriptorHeapContext::ViewCreator>{});
 
 	//ディスクリプション
 	std::unique_ptr<Description> bufferDesc = std::make_unique<Description>(kColor, kRtFormat);
@@ -3325,7 +3407,7 @@ void SwapChainContext::AssembleCoreParts
 	PullResourcesFromSwapChain(std::move(bufferDesc));
 
 	//ビュー生成
-	CreateRTV(instanceKey_, rtvDesc, viewCreator);
+	CreateRTV(instanceKey_, rtvDesc, *viewCreator);
 }
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -5775,9 +5857,12 @@ public:
 #include "../../Core/DescriptorHeap/ViewCreator/ViewCreator.h"
 
 //バッファ作成ツール
-#include "BufferCreator/BufferCreator.h"
+#include "BufferCreateTools/BufferCreator.h"
 //バッファをアップロード
-#include "BufferCreator/BufferUploader/BufferUploader.h"
+#include "BufferCreateTools/BufferUploader/BufferUploader.h"
+//各種ツールを下位部へ貸し出します
+#include "BufferToolLender/BufferToolLender.h"
+
 
 //ランタイム処理ツール
 #include "RuntimeBufferManagementSystems/BufferDispatcher/BufferDispatcher.h"
@@ -5811,6 +5896,9 @@ BufferContext::BufferContext
 
 	bufferUploader.reset(new BufferUploader(instanceKey_, resourceCreator.get(), commandContext_));
 	Logger::Log("Instantiate: BufferUploader", fileName);
+
+	toolLender.reset(new ToolLender(instanceKey_, bufferCreator.get(), bufferUploader.get()));
+	Logger::Log("Instantiate: ToolLender", fileName);
 
 
 	Logger::End("BufferContext: Constructor");
@@ -5861,6 +5949,7 @@ void BufferContext::DeleteBufferUploader(const InstanceKey& key_)
 ========================================
 #pragma once
 
+
 class Nexus;
 class CommandContext;
 class DescriptorHeapContext;
@@ -5877,7 +5966,6 @@ class BufferContext
 	class BufferDispatcher;
 	//生リソース生成
 	class ResourceCreator;
-	
 
 protected:
 
@@ -5931,6 +6019,7 @@ public:
 	struct InstanceKey;
 	//バッファのポインタを扱うものの証
 	struct BufferAccessKey;
+
 	//BufferAssemblerとBufferCollectorをつかってバッファを作成する
 	class BufferCreator;
 	//BufferDescriptionをもとにバッファを組み立てる
@@ -5939,6 +6028,8 @@ public:
 	class BufferInfoExtractor;
 	//バッファをアップロードする
 	class BufferUploader;
+	//ツールの貸し出しを行う
+	class ToolLender;
 
 
 	BufferContext
@@ -5951,23 +6042,28 @@ public:
 
 	~BufferContext();
 
-	///バッファ生成クラス（本丸）
-	std::unique_ptr<BufferCreator> bufferCreator;
 	//ディスパッチャー
 	std::unique_ptr<BufferDispatcher> bufferDispatcher;
 	//Extractors
-	std::unique_ptr<BufferInfoExtractor> BufferInfoExtractor;
-	//uploader
-	std::unique_ptr<BufferUploader> bufferUploader;
+	std::unique_ptr<BufferInfoExtractor> bufferInfoExtractor;
+	//ツール貸し出し
+	std::unique_ptr<ToolLender> toolLender;
 
+	///ランタイムに入る前にNexusuがアップロード用の中間リソースを破棄する
 	void DeleteBufferUploader(const InstanceKey& key_);
-
+	
 private:
 
 	///複数のバッファのプールが定義されている
 	BufferPoolSet bufferPoolSet;
 
+	///バッファ生成クラス（本丸）
+	std::unique_ptr<BufferCreator> bufferCreator;
+	//生リソース生成
 	std::unique_ptr<ResourceCreator> resourceCreator;
+	//uploader
+	std::unique_ptr<BufferUploader> bufferUploader;
+
 };
 
 
@@ -5991,8 +6087,9 @@ private:
 
 
 
+
 ========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Buffer\BufferCreator\BufferCreator.cpp ===
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Buffer\BufferCreateTools\BufferCreator.cpp ===
 ========================================
 #include "BufferCreator.h"
 #include "ResourceCreator/ResourceCreator.h"
@@ -6035,7 +6132,7 @@ BufferContext::BufferCreator::~BufferCreator()
 
 
 ========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Buffer\BufferCreator\BufferCreator.h ===
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Buffer\BufferCreateTools\BufferCreator.h ===
 ========================================
 #pragma once
 #include "../BufferContext.h"
@@ -6091,7 +6188,7 @@ private:
 
 
 ========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Buffer\BufferCreator\BufferAssembler\BufferAssembler.cpp ===
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Buffer\BufferCreateTools\BufferAssembler\BufferAssembler.cpp ===
 ========================================
 #include "BufferAssembler.h"
 
@@ -6113,8 +6210,7 @@ private:
 
 //外部
 #include "../../../../Core/DescriptorHeap/ViewCreator/ViewCreator.h"
-
-//外部
+#include "../../../../Core/DescriptorHeap/DescriptorHeapToolLender/DescriptorHeapToolLender.h"
 
 namespace
 {
@@ -6130,7 +6226,9 @@ BufferContext::BufferAssembler::BufferAssembler
 )
 	:resourceCreator(resourceCreator_)
 {
-	viewCreator = descriptorHeapContext_->GetViewCreator(DescriptorHeapContext::ViewCreatorGetKey{});
+
+	viewCreator = descriptorHeapContext_->toolLender->Lend(DescriptorHeapContext::ToolLender::LicenceTypeTraits<DescriptorHeapContext::ViewCreator>{});
+	
 }
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -6456,7 +6554,7 @@ void BufferContext::BufferAssembler::CreateView
 
 
 ========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Buffer\BufferCreator\BufferAssembler\BufferAssembler.h ===
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Buffer\BufferCreateTools\BufferAssembler\BufferAssembler.h ===
 ========================================
 #pragma once
 #include "../../BufferContext.h"
@@ -6740,7 +6838,7 @@ std::unique_ptr<UploadStructuredBuffer> BufferContext::BufferAssembler::Assemble
 
 
 ========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Buffer\BufferCreator\BufferCollector\BufferCollector.cpp ===
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Buffer\BufferCreateTools\BufferCollector\BufferCollector.cpp ===
 ========================================
 #include "BufferCollector.h"
 #include "../../BufferDefinition/GPUBuffer/GPUBufferBehavior.h"
@@ -6799,7 +6897,7 @@ void BufferContext::BufferCollector::Distribute()
 
 
 ========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Buffer\BufferCreator\BufferCollector\BufferCollector.h ===
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Buffer\BufferCreateTools\BufferCollector\BufferCollector.h ===
 ========================================
 #pragma once
 #include "../../BufferContext.h"
@@ -6897,7 +6995,7 @@ private:
 
 
 ========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Buffer\BufferCreator\BufferUploader\BufferUploader.cpp ===
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Buffer\BufferCreateTools\BufferUploader\BufferUploader.cpp ===
 ========================================
 #include "PreCompileHeader.h"
 #include "BufferUploader.h"
@@ -6907,7 +7005,7 @@ private:
 
 //外部
 #include "../../BufferDefinition/GPUBuffer/GPUBufferBehavior.h"
-
+#include "../../../../Core/Command/CommandContextCmdProvider/CommandContextCmdProvider.h"
 
 namespace
 {
@@ -6921,7 +7019,8 @@ BufferContext::BufferUploader::BufferUploader
 	CommandContext* commandContext_
 ):resourceCreator(resourceCreator_)
 {
-	uploadCommand = commandContext_->ProvideResouceUploadCommand(CommandContext::UsesResourceUploadCmdPermission{});
+	uploadCommand = commandContext_->commandProvider->
+		ProvideResourceUploadCommand(CommandContext::CommandProvider::UsesResourceUploadCmdPermission{});
 }
 
 BufferContext::BufferUploader::~BufferUploader()
@@ -7001,7 +7100,7 @@ D3D12_HEAP_PROPERTIES BufferContext::BufferUploader::CreateIntermedeiteHeapProp(
 
 
 ========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Buffer\BufferCreator\BufferUploader\BufferUploader.h ===
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Buffer\BufferCreateTools\BufferUploader\BufferUploader.h ===
 ========================================
 #pragma once
 #include "../../BufferContext.h"
@@ -7044,7 +7143,7 @@ private:
 
 
 ========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Buffer\BufferCreator\ResourceCreator\ResourceCreator.cpp ===
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Buffer\BufferCreateTools\ResourceCreator\ResourceCreator.cpp ===
 ========================================
 
 #include "ResourceCreator.h"
@@ -7091,7 +7190,7 @@ BufferContext::ResourceCreator::ResourceCreator::~ResourceCreator()
 
 
 ========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Buffer\BufferCreator\ResourceCreator\ResourceCreator.h ===
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Buffer\BufferCreateTools\ResourceCreator\ResourceCreator.h ===
 ========================================
 #pragma once
 #include "../../BufferContext.h"
@@ -9121,6 +9220,94 @@ private:
 
 
 ========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Buffer\BufferToolLender\BufferToolLender.cpp ===
+========================================
+#include "PreCompileHeader.h"
+#include "BufferToolLender.h"
+
+
+BufferContext::ToolLender::ToolLender
+(
+	BufferContext::InstanceKey key_,
+	BufferContext::BufferCreator* creator_,
+	BufferContext::BufferUploader* uploader_
+)
+{
+	std::get<BufferContext::BufferCreator*>(tools) = creator_;
+	std::get<BufferContext::BufferUploader*>(tools) = uploader_;
+
+}
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Buffer\BufferToolLender\BufferToolLender.h ===
+========================================
+#pragma once
+#include "../BufferContext.h"
+#include "../../Mesh/MeshContext.h"
+
+class BufferContext::ToolLender
+{
+public:
+
+	//貸し出すツールのデータ型とそれに対応したLicenceのデータ型を結び付ける
+	template<typename ToolType>
+	struct LicenceTypeTraits;
+
+private:
+	//バッファクリエイターやアップローダーを触ってもいい資格
+	struct BasicBufferManagementLicence;
+
+	///貸し出せるツール
+	std::tuple<BufferContext::BufferCreator*, BufferContext::BufferUploader*> tools;
+
+public:
+
+	ToolLender
+	(
+		BufferContext::InstanceKey key_,
+		BufferContext::BufferCreator* creator_,
+		BufferContext::BufferUploader* uploader_
+	);
+
+
+	///ツールの貸し出し
+	template<typename ToolType>
+	auto* Lend(LicenceTypeTraits<ToolType> licence_)
+	{
+		return std::get<ToolType*>(tools);
+	}
+
+};
+
+
+struct BufferContext::ToolLender::BasicBufferManagementLicence
+{
+private:
+
+	friend class MeshContext::ModelDataCreator;
+	explicit BasicBufferManagementLicence() = default;
+};
+
+
+template<>
+struct BufferContext::ToolLender::LicenceTypeTraits<BufferContext::BufferCreator>
+{
+	using Type = BasicBufferManagementLicence;
+};
+
+template<>
+struct BufferContext::ToolLender::LicenceTypeTraits<BufferContext::BufferUploader>
+{
+	using Type = BasicBufferManagementLicence;
+};
+
+
+
+
+========================================
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Buffer\RuntimeBufferManagementSystems\BufferDeferredReleaser\BufferDeferredReleaser.cpp ===
 ========================================
 
@@ -9347,11 +9534,11 @@ namespace
 }
 
 
-MeshContext::MeshContext(const InstanceKey& key_)
+MeshContext::MeshContext(const InstanceKey& key_, BufferContext* bufferContext_)
 {
 	Logger::Entry("MeshContext: Constructor");
 
-	modelDataCreator.reset(new ModelDataCreator(key_));
+	modelDataCreator.reset(new ModelDataCreator(key_, bufferContext_));
 	Logger::Log("Instantiate: ModelDataCreator", fileName);
 
 
@@ -9373,6 +9560,7 @@ MeshContext::~MeshContext()
 #pragma once
 
 class Nexus;
+class BufferContext;
 
 class MeshContext
 {
@@ -9383,7 +9571,7 @@ public:
 	//自身の生成キー
 	struct InstanceKey;
 
-	MeshContext(const InstanceKey& key_);
+	MeshContext(const InstanceKey& key_, BufferContext* bufferContext_);
 	~MeshContext();
 
 
@@ -9415,6 +9603,9 @@ private:
 //ツール
 #include "ModelDataLoader/ModelDataLoader.h"
 #include "../ModelSlotAllocator/ModelSlotAllocator.h"
+#include "../../../Buffer/BufferToolLender/BufferToolLender.h"
+#include "../../../Buffer/BufferCreateTools/BufferUploader/BufferUploader.h"
+#include "../../../Buffer/BufferCreateTools/BufferCreator.h"
 
 namespace
 {
@@ -9422,13 +9613,16 @@ namespace
 }
 
 
-MeshContext::ModelDataCreator::ModelDataCreator(MeshContext::InstanceKey key_)
+MeshContext::ModelDataCreator::ModelDataCreator(MeshContext::InstanceKey key_, BufferContext* bufferContext_)
 {
 	Logger::Entry("ModelDataCreator: Constructor");
 
     modelDataLoader.reset(new ModelDataLoader(key_));
     Logger::Log("Instantiate: ModelDataLoader", fileName);
 
+    auto* bufferCreator = bufferContext_->toolLender->Lend(BufferContext::ToolLender::LicenceTypeTraits < BufferContext::BufferCreator>{});
+    auto* bufferUploader = bufferContext_->toolLender->Lend(BufferContext::ToolLender::LicenceTypeTraits < BufferContext::BufferUploader>{});
+    
 
 	Logger::End("ModelDataCreator: Constructor");
 }
@@ -9449,15 +9643,12 @@ void MeshContext::ModelDataCreator::CreateAllModelData(MeshContext::ModelSlotAll
     {
         for (const auto& [key, value] : tmpModelDataLib)
         {
-            meshDataIDLib[key] = MeshDetaID(meshID);
+            meshDataIDLib[key] = MeshDetaID(meshID++);
         }
     }
 
     //モデルの種類の数
     UINT numModelTypes = meshID + 1;
-
-
-
 }
 
 void MeshContext::ModelDataCreator::CreateMeshDataBuffer(const ResourceMesh& data_)
@@ -9575,6 +9766,8 @@ std::unordered_map<std::string, std::string > MeshContext::ModelDataCreator::Loa
 ========================================
 #pragma once
 #include "../../MeshContext.h"
+#include "../../../Buffer/BufferContext.h"
+
 
 struct ModelDataAggregate;
 struct ResourceMesh;
@@ -9595,7 +9788,7 @@ public:
 	void CreateAllModelData(MeshContext::ModelSlotAllocator* allocator_);
 
 
-	ModelDataCreator(MeshContext::InstanceKey key_);
+	ModelDataCreator(MeshContext::InstanceKey key_, BufferContext* bufferContext_);
 	~ModelDataCreator();
 
 
@@ -9605,6 +9798,10 @@ private:
 	std::unique_ptr<ModelDataLoader> modelDataLoader;
 	//ファイル名がキーのメッシュデータバッファ配列上のインデックス
 	std::unordered_map<std::string, MeshDetaID> meshDataIDLib;
+	//リソースのアップロードを行ってもらう
+	BufferContext::BufferUploader* bufferUploader;
+	//バッファの生成を行ってもらう
+	BufferContext::BufferCreator* bufferCreator;
 
 
 	//モデルファイルが登録されているファイルから、ファイル名をキーとしてデータのポインタを
@@ -10313,7 +10510,7 @@ struct ModelDescription
 		MeshDetaID meshDataID_,
 		uint32_t dispatchedTransformedMatrixID_,
 		std::string name_
-	) :meshDataID(meshDataID), dispatchedTransformedMatrixID(dispatchedTransformedMatrixID_), name(name_){}
+	) :meshDataID(meshDataID_), dispatchedTransformedMatrixID(dispatchedTransformedMatrixID_), name(name_){}
 
 	MeshDetaID meshDataID{};
 	uint32_t dispatchedTransformedMatrixID{};
@@ -13204,6 +13401,222 @@ struct Vector4
 
 
 ========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\MiddleLayer\Transform\Transform.h ===
+========================================
+#pragma once
+#include "../Math/Vector/Vector3.h"
+#include "../Math/Quaternion/Quaternion.h"
+#include "../Math/Matrix/Matrix4x4.h"
+
+
+class Transform
+{
+	static inline const Vector3 kRight =  { 1.0f,0.0f,0.0f };
+	static inline const Vector3 kUp =	  { 0.0f,1.0f,0.0f };
+	static inline const Vector3 kBeyond = { 0.0f,0.0f,1.0f };
+
+	Vector3 worldPos;					//ワールド座標
+	Vector3 scale;						//スケール
+	Vector3 rotation;					//ヨーピッチロール
+	Vector3 lookDir;					//向いている方向
+	Quaternion quaternion;				//回転用クォータニオン
+	float rotationInterpolationCoe{};	//回転補完係数
+	Matrix4x4 worldMatrix;				//キャッシュ用ワールド行列
+	std::vector<Transform*> children;	//子孫
+	Transform* parent = nullptr;		//親
+	bool hasTransformChanged{};			//ワールド行列をアップデートするかどうかに関わる
+	bool needRotationUpdate{};			//回転補完がまだなのかどうか
+	bool updatedThisFrame{};			//1フレーム１きり更新ガード
+
+
+	//回転更新処理
+	inline void RotationUpdate()
+	{
+		//次の回転クォータニオン
+		Quaternion nextQuaternion = Quaternion::CreateQuaternion(lookDir);
+
+		//rotationに値が入って入れば
+		if (rotation.LengthSq() > 0.0f)
+		{
+			nextQuaternion = nextQuaternion.Multiply
+			(
+				Quaternion::CreateQuaternion(kRight, rotation.data.x).Multiply
+				(
+					Quaternion::CreateQuaternion(kUp, rotation.data.y).Multiply
+					(
+						Quaternion::CreateQuaternion(kBeyond, rotation.data.z)
+					)
+				)
+			);
+		}
+		
+		//回転補完
+		quaternion = quaternion.Slerp(nextQuaternion, rotationInterpolationCoe);
+		
+		//一致していなければ、ワールド行列を更新する必要がある
+		needRotationUpdate = !quaternion.NearlyEquals(nextQuaternion);
+		
+		if (needRotationUpdate)
+		{
+			NotifyChanged();
+		}
+	}
+
+	inline void BeChild(Transform* parent_)
+	{
+		parent = parent_;
+	}
+
+	inline void DeleteChild(Transform* dstChild_)
+	{
+		for (auto itr = children.begin();itr != children.end();++itr)
+		{
+			if ((*itr) && (*itr) == dstChild_)(*itr) = nullptr;
+		}
+	}
+
+	inline void ResetFrameFlag()
+	{
+		updatedThisFrame = false;
+	}
+
+public:
+
+	inline void TranslatePosition(const Vector3& dstWorldPos_)
+	{
+		worldPos = dstWorldPos_;
+		NotifyChanged();
+	}
+
+	inline void LookAt(const Vector3& dstDirection_)
+	{
+		lookDir = dstDirection_;
+		needRotationUpdate = true;
+		NotifyChanged();
+	}
+
+	inline void Rotate(const Vector3& dstRotation_)
+	{
+		rotation = dstRotation_;
+		needRotationUpdate = true;
+		NotifyChanged();
+	}
+
+	inline void ChangeScale(const Vector3& scale_)
+	{
+		scale = scale_;
+		NotifyChanged();
+	}
+
+	inline void ChangeRotationInterpolationCoe(float dstCoe_)
+	{
+		rotationInterpolationCoe = dstCoe_;
+		needRotationUpdate = true;
+		NotifyChanged();
+	}
+
+	inline void Clear()
+	{
+		worldPos = {};
+		rotation = {};
+		lookDir = kBeyond;
+		scale = { 1.0f,1.0f,1.0f };
+		quaternion.Identity();
+		rotationInterpolationCoe = 1.0f;
+		hasTransformChanged = true;
+		needRotationUpdate = true;
+		updatedThisFrame = false;
+		worldMatrix = Matrix4x4{};
+	}
+
+	inline void NotifyChanged()
+	{
+		if (hasTransformChanged) return;
+
+		hasTransformChanged = true;
+
+		for (auto* child : children)
+		{
+			if(child) child->NotifyChanged();
+		}
+	}
+
+	Transform()
+	{
+		Clear();
+	}
+
+	~Transform()
+	{
+		if(parent) parent->DeleteChild(this);
+	}
+
+	template<typename... Children>
+	inline void BeParent(Children... children_)
+	{
+		uint8_t length = sizeof...(children_);
+		Transform* ary[] = { children_... };
+		for (int i = 0;i < length;++i)
+		{
+			auto* child = children.emplace_back(ary[i]);
+			child->BeChild(this);
+		}
+	}
+
+
+	void Update()
+	{
+		//既に更新処理をしていればリターン
+		if (updatedThisFrame) return;
+		updatedThisFrame = true;
+
+		//親の更新処理を先に呼ぶ
+		if (parent) parent->Update();
+
+		//回転クォータニオンの更新
+		if (needRotationUpdate) RotationUpdate();
+
+		///変更なしなら更新しない
+		if (!hasTransformChanged) return;
+
+		//スケール行列
+		Matrix4x4 scaleMat = Matrix4x4::CreateScale(scale);
+		//位置行列
+		Matrix4x4 translationMat = Matrix4x4::CreateTranslation(worldPos);
+		//回転行列
+		Matrix4x4 rotationMat = quaternion.GetRotateMatrix();
+
+		//SRT
+		worldMatrix = scaleMat.GetMultiply(rotationMat.GetMultiply(translationMat));
+
+		//ペアレント化しているなら
+		if (parent) worldMatrix = worldMatrix.GetMultiply(parent->WatchWorldMatrix());
+
+		hasTransformChanged = false;
+	}
+
+	inline const Matrix4x4& WatchWorldMatrix()const
+	{
+		return worldMatrix;
+	}
+
+	inline Vector3 WatchWorldPos()const
+	{
+		return
+		{
+			worldMatrix.data.m[3][0],
+			worldMatrix.data.m[3][1],
+			worldMatrix.data.m[3][2],
+		};
+	}
+
+};
+
+
+
+
+
+========================================
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Nexus\Nexus.cpp ===
 ========================================
 #include "Nexus.h"
@@ -13692,7 +14105,7 @@ void Nexus::Instantiate<Nexus::InitSequence::kRenderContext>()
 template<>
 void Nexus::Instantiate<Nexus::InitSequence::kMeshContext>()
 {
-	meshContext.reset(new MeshContext(MeshContext::InstanceKey{}));
+	meshContext.reset(new MeshContext(MeshContext::InstanceKey{},bufferContext.get()));
 	Logger::Log("Instantiate: MeshContext", fileName);
 }
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -14225,222 +14638,6 @@ namespace StringConverter
 	std::string ConvertString(const std::wstring& str);
 	std::string ToUTF8(const std::wstring& value);
 }
-
-
-
-
-
-========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Utility\Transform\Transform.h ===
-========================================
-#pragma once
-#include "../../Math/Vector/Vector3.h"
-#include "../../Math/Quaternion/Quaternion.h"
-#include "../../Math/Matrix/Matrix4x4.h"
-
-
-class Transform
-{
-	static inline const Vector3 kRight = { 1.0f,0.0f,0.0f };
-	static inline const Vector3 kUp = { 0.0f,1.0f,0.0f };
-	static inline const Vector3 kBeyond = { 0.0f,0.0f,1.0f};
-
-	Vector3 worldPos;					//ワールド座標
-	Vector3 scale;						//スケール
-	Vector3 rotation;					//ヨーピッチロール
-	Vector3 lookDir;					//向いている方向
-	Quaternion quaternion;				//回転用クォータニオン
-	float rotationInterpolationCoe{};	//回転補完係数
-	Matrix4x4 worldMatrix;				//キャッシュ用ワールド行列
-	std::vector<Transform*> children;	//子孫
-	Transform* parent = nullptr;		//親
-	bool hasTransformChanged{};			//ワールド行列をアップデートするかどうかに関わる
-	bool needRotationUpdate{};			//回転補完がまだなのかどうか
-	bool updatedThisFrame{};			//1フレーム１きり更新ガード
-
-
-	//回転更新処理
-	inline void RotationUpdate()
-	{
-		//次の回転クォータニオン
-		Quaternion nextQuaternion = Quaternion::CreateQuaternion(lookDir);
-
-		//rotationに値が入って入れば
-		if (rotation.LengthSq() > 0.0f)
-		{
-			nextQuaternion = nextQuaternion.Multiply
-			(
-				Quaternion::CreateQuaternion(kRight, rotation.data.x).Multiply
-				(
-					Quaternion::CreateQuaternion(kUp, rotation.data.y).Multiply
-					(
-						Quaternion::CreateQuaternion(kBeyond, rotation.data.z)
-					)
-				)
-			);
-		}
-		
-		//回転補完
-		quaternion = quaternion.Slerp(nextQuaternion, rotationInterpolationCoe);
-		
-		//一致していなければ、ワールド行列を更新する必要がある
-		needRotationUpdate = !quaternion.NearlyEquals(nextQuaternion);
-		
-		if (needRotationUpdate)
-		{
-			NotifyChanged();
-		}
-	}
-
-	inline void BeChild(Transform* parent_)
-	{
-		parent = parent_;
-	}
-
-	inline void DeleteChild(Transform* dstChild_)
-	{
-		for (auto itr = children.begin();itr != children.end();++itr)
-		{
-			if ((*itr) && (*itr) == dstChild_)(*itr) = nullptr;
-		}
-	}
-
-	inline void ResetFrameFlag()
-	{
-		updatedThisFrame = false;
-	}
-
-public:
-
-	inline void TranslatePosition(const Vector3& dstWorldPos_)
-	{
-		worldPos = dstWorldPos_;
-		NotifyChanged();
-	}
-
-	inline void LookAt(const Vector3& dstDirection_)
-	{
-		lookDir = dstDirection_;
-		needRotationUpdate = true;
-		NotifyChanged();
-	}
-
-	inline void Rotate(const Vector3& dstRotation_)
-	{
-		rotation = dstRotation_;
-		needRotationUpdate = true;
-		NotifyChanged();
-	}
-
-	inline void ChangeScale(const Vector3& scale_)
-	{
-		scale = scale_;
-		NotifyChanged();
-	}
-
-	inline void ChangeRotationInterpolationCoe(float dstCoe_)
-	{
-		rotationInterpolationCoe = dstCoe_;
-		needRotationUpdate = true;
-		NotifyChanged();
-	}
-
-	inline void Clear()
-	{
-		worldPos = {};
-		rotation = {};
-		lookDir = kBeyond;
-		scale = { 1.0f,1.0f,1.0f };
-		quaternion.Identity();
-		rotationInterpolationCoe = 1.0f;
-		hasTransformChanged = true;
-		needRotationUpdate = true;
-		updatedThisFrame = false;
-		worldMatrix = Matrix4x4{};
-	}
-
-	inline void NotifyChanged()
-	{
-		if (hasTransformChanged) return;
-
-		hasTransformChanged = true;
-
-		for (auto* child : children)
-		{
-			if(child) child->NotifyChanged();
-		}
-	}
-
-	Transform()
-	{
-		Clear();
-	}
-
-	~Transform()
-	{
-		if(parent) parent->DeleteChild(this);
-	}
-
-	template<typename... Children>
-	inline void BeParent(Children... children_)
-	{
-		uint8_t length = sizeof...(children_);
-		Transform* ary[] = { children_... };
-		for (int i = 0;i < length;++i)
-		{
-			auto* child = children.emplace_back(ary[i]);
-			child->BeChild(this);
-		}
-	}
-
-
-	void Update()
-	{
-		//既に更新処理をしていればリターン
-		if (updatedThisFrame) return;
-		updatedThisFrame = true;
-
-		//親の更新処理を先に呼ぶ
-		if (parent) parent->Update();
-
-		//回転クォータニオンの更新
-		if (needRotationUpdate) RotationUpdate();
-
-		///変更なしなら更新しない
-		if (!hasTransformChanged) return;
-
-		//スケール行列
-		Matrix4x4 scaleMat = Matrix4x4::CreateScale(scale);
-		//位置行列
-		Matrix4x4 translationMat = Matrix4x4::CreateTranslation(worldPos);
-		//回転行列
-		Matrix4x4 rotationMat = quaternion.GetRotateMatrix();
-
-		//SRT
-		worldMatrix = scaleMat.GetMultiply(rotationMat.GetMultiply(translationMat));
-
-		//ペアレント化しているなら
-		if (parent) worldMatrix = worldMatrix.GetMultiply(parent->WatchWorldMatrix());
-
-		hasTransformChanged = false;
-	}
-
-	inline const Matrix4x4& WatchWorldMatrix()const
-	{
-		return worldMatrix;
-	}
-
-	inline Vector3 WatchWorldPos()const
-	{
-		return
-		{
-			worldMatrix.data.m[3][0],
-			worldMatrix.data.m[3][1],
-			worldMatrix.data.m[3][2],
-		};
-	}
-
-};
 
 
 

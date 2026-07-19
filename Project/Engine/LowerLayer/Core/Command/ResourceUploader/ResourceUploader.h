@@ -21,7 +21,7 @@ public:
 	//コマンドコンテキスとに呼び出してもらう
 	void WaitAndKick(const WaitAndKickLicence& licence_);
 	///commandListをラップしたアップロードコマンド
-	UploadCommand ProvideUploadCommand(const CommandContext::UsesResourceUploadCmdPermission& permission_);
+	UploadCommand ProvideUploadCommand();
 
 private:
 

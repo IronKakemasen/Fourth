@@ -27,10 +27,10 @@ public:
 	struct InstanceKey;
 	//コマンドキューのアドレス取得キー
 	struct CmdQueueGetKey;
-	//ResourceUploadコマンドの利用許可
-	struct UsesResourceUploadCmdPermission;
 	//リソースのアップロードを行う
 	class ResourceUploader;
+	//コマンドを提供する
+	class CommandProvider;
 
 	CommandContext
 	(
@@ -47,13 +47,12 @@ public:
 
 	//コマンドキューの取得
 	ID3D12CommandQueue* GetCommandQueue(CmdQueueGetKey key_);
-	//リソースアップロードコマンドの提供
-	UploadCommand ProvideResouceUploadCommand(const UsesResourceUploadCmdPermission& permission_);
 	//同期してCloseHandle()する
 	void Finalize(InstanceKey instanceKey_);
 
 	std::unique_ptr<RuntimeCommandController> runtimeCommandController;
 	std::unique_ptr<ResourceUploader> resourceUploader;
+	std::unique_ptr<CommandProvider> commandProvider;
 
 private:
 
@@ -97,13 +96,5 @@ private:
 	friend class SwapChainContext;
 	explicit CmdQueueGetKey() = default;
 
-};
-
-struct CommandContext::UsesResourceUploadCmdPermission
-{
-private:
-
-	friend class BufferContext::BufferUploader;
-	explicit UsesResourceUploadCmdPermission() = default;
 };
 
