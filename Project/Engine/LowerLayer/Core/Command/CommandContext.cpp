@@ -5,7 +5,11 @@
 #include "RuntimeWrapper/RuntimeWrapper.h"
 #include "ResourceUploader/ResourceUploader.h"
 #include "RuntimeCommandController/RuntimeCommandController.h"
-#include "CommandContextCmdProvider/CommandContextCmdProvider.h"
+
+
+#include "CommandContextDiplomat/CommandContextDiplomat.h"
+#include "CommandContextDiplomat/CommandContextCmdProvider/CommandContextCmdProvider.h"
+#include "CommandContextDiplomat/CommandContextToolLender/CommandContextToolLender.h"
 
 using namespace ProjectConfig::Render;
 
@@ -41,20 +45,22 @@ CommandContext::CommandContext
 	resourceUploader.reset(new ResourceUploader(instanceKey_,std::move(allocator_forUpload_), std::move(cmdList_forUpload_), commandQueue.Get(), synchronizer.get()));
 	Logger::Log("Instantiate: ResourceUploader", fileName);
 
-	commandProvider.reset(new CommandProvider(instanceKey_, resourceUploader.get()));
-	Logger::Log("Instantiate: commandProvider", fileName);
+	diplomat.reset
+	(
+		new CommandContextDiplomat
+		(
+			instanceKey_,
+			std::make_unique<CommandProvider>(instanceKey_, resourceUploader.get()),
+			std::make_unique<ToolLender>(instanceKey_, commandQueue.Get())
+		)
+	);
+
+	Logger::Log("Instantiate: CommandContextDiplomat", fileName);
+
 
 	InstantiateRuntimeCommandControler();
 
-
 	Logger::End("CommandContext: Constructor");
-}
-///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-ID3D12CommandQueue* CommandContext::GetCommandQueue(CmdQueueGetKey key_)
-{
-	return commandQueue.Get();
 }
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

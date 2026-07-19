@@ -14,6 +14,7 @@ class BufferContext::ToolLender
 	///貸し出せるツール
 	std::tuple<BufferContext::BufferCreator*, BufferContext::BufferUploader*> tools;
 
+
 public:
 
 	//ただのエイリアステンプレート

@@ -6,9 +6,10 @@ class BufferContext;
 class MeshContext
 {
 public:
-
 	//モデルを生成する。
 	class ModelDataCreator;
+	class ModelSlotAllocator;
+
 	//自身の生成キー
 	struct InstanceKey;
 
@@ -17,10 +18,11 @@ public:
 
 
 private:
-	class ModelSlotAllocator;
 
 
 	std::unique_ptr<ModelDataCreator> modelDataCreator;
+	std::unique_ptr<ModelSlotAllocator> modelSlotAllocator;
+
 };
 
 struct MeshContext::InstanceKey

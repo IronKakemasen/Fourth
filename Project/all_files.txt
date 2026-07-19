@@ -279,7 +279,6 @@ void CommandContext::Finalize(InstanceKey instanceKey_)
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Core\Command\CommandContext.h ===
 ========================================
 #pragma once
-#include "../../Resource/Buffer/BufferContext.h"
 
 class Nexus;
 class SwapChainContext;
@@ -1498,6 +1497,10 @@ public:
 	template<typename ToolType>
 	struct LicenceTypeTraits;
 
+	//ただのエイリアステンプレート
+	template<typename ToolType>
+	using LicenceType = typename LicenceTypeTraits<ToolType>::Type;
+
 private:
 
 	struct BasicViewManagementLicence;
@@ -1511,7 +1514,7 @@ public:
 	
 	///ツールの貸し出し
 	template<typename ToolType>
-	auto* Lend(LicenceTypeTraits<ToolType> licence_)
+	auto* Lend(typename LicenceTypeTraits<ToolType>::Type licence_)
 	{
 		return std::get<ToolType*>(tools);
 	}
@@ -3389,8 +3392,10 @@ void SwapChainContext::AssembleCoreParts
 	auto* commandQueue = commandContext_->GetCommandQueue(CommandContext::CmdQueueGetKey{});
 	//ビュークリエイターも一時的に借りる
 
-	DescriptorHeapContext::ViewCreator* viewCreator =
-		descriptorHeapContext_->toolLender->Lend(DescriptorHeapContext::ToolLender::LicenceTypeTraits<DescriptorHeapContext::ViewCreator>{});
+	DescriptorHeapContext::ToolLender::LicenceType<DescriptorHeapContext::ViewCreator> licence;
+
+	DescriptorHeapContext::ViewCreator* viewCreator = 
+		descriptorHeapContext_->toolLender->Lend<DescriptorHeapContext::ViewCreator>(licence);
 
 	//ディスクリプション
 	std::unique_ptr<Description> bufferDesc = std::make_unique<Description>(kColor, kRtFormat);
@@ -4224,9 +4229,9 @@ void Logger::Log(std::string const& message_, const std::string& fileName_)
 
 	if (fileName_.size() > 0)
 	{
-		std::string space = " ";
-		std::string colon = ": ";
-		int const numSpace = 60;
+		static std::string space = " ";
+		static std::string colon = ": ";
+		static int const numSpace = 60;
 		int numSpaceRequired = numSpace - (int)message_.size();
 
 		for (int i = 0;i < numSpaceRequired;++i)
@@ -4253,10 +4258,10 @@ void Logger::Entry(const std::string& message_)
 
 	std::string output = "\n[ Entry ]=======----[ " + message_ + " ]----";
 
-	std::string const lineBreak = "\n";
-	std::string const doubleLine = "=";
+	static std::string const lineBreak = "\n";
+	static std::string const doubleLine = "=";
 
-	int const numEnd = 90;
+	static int const numEnd = 90;
 	int numCharRequired = numEnd - (int)output.size();
 	for (int i = 0;i < numCharRequired;++i)
 	{
@@ -5894,7 +5899,7 @@ BufferContext::BufferContext
 	bufferCreator.reset(new BufferCreator(instanceKey_, resourceCreator.get(), descriptorHeapContext_, &bufferPoolSet));
 	Logger::Log("Instantiate: BufferCreator", fileName);
 
-	bufferUploader.reset(new BufferUploader(instanceKey_, resourceCreator.get(), commandContext_));
+	bufferUploader.reset(new BufferUploader(instanceKey_, resourceCreator.get(),bufferDispatcher.get(), commandContext_));
 	Logger::Log("Instantiate: BufferUploader", fileName);
 
 	toolLender.reset(new ToolLender(instanceKey_, bufferCreator.get(), bufferUploader.get()));
@@ -6107,15 +6112,8 @@ BufferContext::BufferCreator::BufferCreator
 {
 	assembler.reset(new BufferContext::BufferAssembler(instancekey_, resourceCreator_, descriptorHeapContext_));
 	Logger::Log("Instantiate: BufferAssembler", "BufferCreator.cpp");
-	collector.reset
-	(
-		new BufferContext::BufferCollector
-		(
-			instancekey_,
-			bufferPoolSet_
-		)
-	);
-
+	
+	collector.reset(new BufferContext::BufferCollector(instancekey_,bufferPoolSet_));
 	Logger::Log("Instantiate: bufferCollector", "BufferCreator.cpp");
 
 }
@@ -6138,10 +6136,13 @@ BufferContext::BufferCreator::~BufferCreator()
 #include "../BufferContext.h"
 #include "BufferCollector/BufferCollector.h"
 #include "BufferAssembler/BufferAssembler.h"
-
+#include "../BufferDefinition/AllBuffersInclude.h"
 
 class BufferContext::BufferCreator
 {
+	template<typename DescType>
+	struct DescTypeTraits;
+
 
 public:
 
@@ -6156,22 +6157,30 @@ public:
 	~BufferCreator();
 
 	//生成したバッファの管理を請け負います
-	template<typename BufferType, typename DescType>
+	template<typename DescType>
 	[[nodiscard]] BufferUniqueID Create(const DescType& desc_, const std::string& name_)
 	{
-		std::unique_ptr<BufferType> buffer = assembler->Assemble<BufferType>(desc_, name_);
+		using ActualBufferType = typename DescTypeTraits<DescType>::Type;
 
-		collector->Register(std::move(buffer));
+		std::unique_ptr<ActualBufferType> buffer = assembler->Assemble<ActualBufferType>(desc_, name_);
+		
+		//生成数 = IDとす
+		BufferUniqueID dispatchUniqueID = BufferUniqueID(generateBufferSum++);
+
+		//コレクターに登録
+		collector->Register<ActualBufferType>(std::move(buffer), dispatchUniqueID);
 
 		//バッファユニークIDを返す
-		return BufferUniqueID(generateBufferSum++);
+		return dispatchUniqueID;
 	}
 
 	//生成したバッファの管理はしません。あとは任せました状態
-	template<typename BufferType, typename DescType>
-	[[nodiscard]] std::unique_ptr<BufferType> CreateBeyondMyJurisdiction(const DescType& desc_, const std::string& name_)
+	template<typename DescType>
+	[[nodiscard]] std::unique_ptr<DescTypeTraits<DescType>> CreateBeyondMyJurisdiction(const DescType& desc_, const std::string& name_)
 	{
-		return assembler->Assemble<BufferType>(desc_, name_);
+		using ActualBufferType = typename DescTypeTraits<DescType>::Type;
+
+		return assembler->Assemble<ActualBufferType>(desc_, name_);
 	}
 
 
@@ -6183,6 +6192,41 @@ private:
 	std::unique_ptr<BufferContext::BufferCollector> collector;
 };
 
+template<>
+struct BufferContext::BufferCreator::DescTypeTraits<StaticStructuredBufferDescription>
+{
+	using Type = StaticStructuredBuffer;
+};
+
+template<>
+struct BufferContext::BufferCreator::DescTypeTraits<UploadStructuredBufferDescription>
+{
+	using Type = UploadStructuredBuffer;
+};
+
+template<>
+struct BufferContext::BufferCreator::DescTypeTraits<ColorBufferDescription>
+{
+	using Type = ColorBuffer;
+};
+
+template<>
+struct BufferContext::BufferCreator::DescTypeTraits<DepthStencilBufferDescription>
+{
+	using Type = DepthStencilBuffer;
+};
+
+template<>
+struct BufferContext::BufferCreator::DescTypeTraits<ConstantBufferDescription>
+{
+	using Type = ConstantBuffer;
+};
+
+template<>
+struct BufferContext::BufferCreator::DescTypeTraits<ComputeBufferDescription>
+{
+	using Type = ComputeBuffer;
+};
 
 
 
@@ -6191,22 +6235,8 @@ private:
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Buffer\BufferCreateTools\BufferAssembler\BufferAssembler.cpp ===
 ========================================
 #include "BufferAssembler.h"
-
-//バッファ
-#include "../../BufferDefinition/GPUBuffer/ColorBuffer/ColorBuffer.h"
-#include "../../BufferDefinition/GPUBuffer/ConstantBuffer/ConstantBuffer.h"
-#include "../../BufferDefinition/GPUBuffer/DepthStencilBuffer/DepthStencilBuffer.h"
-#include "../../BufferDefinition/GPUBuffer/ComputeBuffer/ComputeBuffer.h"
-#include "../../BufferDefinition/GPUBuffer/UploadStructuredBuffer/UploadStructuredBuffer.h"
-#include"../../BufferDefinition/GPUBuffer/StaticStructuredBuffer/StaticStructuredBuffer.h"
-
-//ディスクリプション
-#include "../../BufferDefinition/BufferDescriptions/ColorBufferDescription/ColorBufferDescription.h"
-#include "../../BufferDefinition/BufferDescriptions/ConstantBufferDescription/ConstantBufferDescription.h"
-#include "../../BufferDefinition/BufferDescriptions/DepthStencilBufferDescription/DepthStencilBufferDescription.h"
-#include "../../BufferDefinition/BufferDescriptions/ComputeBufferDescription/ComputeBufferDescription.h"
-#include "../../BufferDefinition/BufferDescriptions/UploadStructuredBufferDescription/UploadStructuredBufferDescription.h"
-#include "../../BufferDefinition/BufferDescriptions/StaticStructuredBufferDescription/StaticStructuredBufferDescription.h"
+#include "../../BufferDefinition/AllBuffersInclude.h"
+#include "../../BufferDefinition/AllBufferDescsInclude.h"
 
 //外部
 #include "../../../../Core/DescriptorHeap/ViewCreator/ViewCreator.h"
@@ -6226,9 +6256,10 @@ BufferContext::BufferAssembler::BufferAssembler
 )
 	:resourceCreator(resourceCreator_)
 {
+	//ビュークリエイターを借りる
+	DescriptorHeapContext::ToolLender::LicenceType<DescriptorHeapContext::ViewCreator> licence;
+	viewCreator = descriptorHeapContext_->toolLender->Lend<DescriptorHeapContext::ViewCreator>(licence);
 
-	viewCreator = descriptorHeapContext_->toolLender->Lend(DescriptorHeapContext::ToolLender::LicenceTypeTraits<DescriptorHeapContext::ViewCreator>{});
-	
 }
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -6241,10 +6272,8 @@ std::pair<D3D12_RESOURCE_DESC, D3D12_HEAP_PROPERTIES> BufferContext::BufferAssem
 	Logger::Log("Check: RequirementsFilled", fileName);
 
 	D3D12_HEAP_PROPERTIES heapProp = desc_.CreateHeapProperties();
-	Logger::Log("Create: heapProp", fileName);
 
 	D3D12_RESOURCE_DESC resourceDesc = desc_.CreateResourceDesc();
-	Logger::Log("Create: resourceDesc", fileName);
 
 	return std::make_pair(resourceDesc, heapProp);
 }
@@ -6559,29 +6588,20 @@ void BufferContext::BufferAssembler::CreateView
 #pragma once
 #include "../../BufferContext.h"
 #include "../../BufferDefinition/GPUBuffer/GPUBufferBehavior.h"
+
+//バッファクラスの前方宣言
+#include "../../BufferDefinition/AllBuffersFwd.h"
+#include "../../BufferDefinition/AllBufferDescsInclude.h"
+
+//リソース生成
 #include "../ResourceCreator/ResourceCreator.h"
 
+//外部
 #include "../../../../Core/DescriptorHeap/DescriptorHeapContext.h"
+
 
 //ビュー生成ツール
 class DescriptorHeapContext::ViewCreator;
-
-//ディスクリプション
-struct ColorBufferDescription;
-struct ConstantBufferDescription;
-struct DepthStencilBufferDescription;
-struct ComputeBufferDescription;
-struct UploadStructuredBufferDescription;
-struct StaticStructuredBufferDescription;
-
-
-//バッファ
-class ColorBuffer;
-class ConstantBuffer;
-class DepthStencilBuffer;
-class ComputeBuffer;
-class UploadStructuredBuffer;
-class StaticStructuredBuffer;
 
 
 
@@ -6664,7 +6684,7 @@ private:
             clearValueOpt ? &clearValueOpt.value() : nullptr,
             desc_.initialState,
             nameCnv_,
-            desc_.numBuffer
+            (UINT)desc_.numBuffer
 
         );
     }
@@ -6844,6 +6864,8 @@ std::unique_ptr<UploadStructuredBuffer> BufferContext::BufferAssembler::Assemble
 #include "../../BufferDefinition/GPUBuffer/GPUBufferBehavior.h"
 #include "ClosedHashMap/ClosedHashMap.h" 
 
+//バッファ群
+#include "../../BufferDefinition/AllBuffersInclude.h"
 
 BufferContext::BufferCollector::BufferCollector
 (
@@ -6871,9 +6893,6 @@ void BufferContext::BufferCollector::Distribute()
 		//コンテナ取得
 		auto* dstContainer = bufferPoolSet->ContainerTable((*itrSrcContainer).type);
 
-		//空きスロットを検索
-		//auto itrDstConatiner = FindFreeSlot(dstContainer);
-
 		///バッファは削除しない、使いまわさない条約が決定したので全部けつに突っ込む
 		dstContainer->emplace_back(std::move((*itrSrcContainer).buffer));
 		//ユニークIDとコンテナ上のIDを紐づける 
@@ -6892,6 +6911,41 @@ void BufferContext::BufferCollector::Distribute()
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+template<>
+std::unique_ptr<GPUBufferBehavior> BufferContext::BufferCollector::CastBuffer(std::unique_ptr<ColorBuffer> buffer_)
+{
+	return std::move(std::unique_ptr<GPUBufferBehavior>(std::move(buffer_)));
+}
+
+template<>
+std::unique_ptr<GPUBufferBehavior> BufferContext::BufferCollector::CastBuffer(std::unique_ptr<ConstantBuffer> buffer_)
+{
+	return std::move(std::unique_ptr<GPUBufferBehavior>(std::move(buffer_)));
+}
+
+template<>
+std::unique_ptr<GPUBufferBehavior> BufferContext::BufferCollector::CastBuffer(std::unique_ptr<ComputeBuffer> buffer_)
+{
+	return std::move(std::unique_ptr<GPUBufferBehavior>(std::move(buffer_)));
+}
+
+template<>
+std::unique_ptr<GPUBufferBehavior> BufferContext::BufferCollector::CastBuffer(std::unique_ptr<DepthStencilBuffer> buffer_)
+{
+	return std::move(std::unique_ptr<GPUBufferBehavior>(std::move(buffer_)));
+}
+
+template<>
+std::unique_ptr<GPUBufferBehavior> BufferContext::BufferCollector::CastBuffer(std::unique_ptr<UploadStructuredBuffer> buffer_)
+{
+	return std::move(std::unique_ptr<GPUBufferBehavior>(std::move(buffer_)));
+}
+
+template<>
+std::unique_ptr<GPUBufferBehavior> BufferContext::BufferCollector::CastBuffer(std::unique_ptr<StaticStructuredBuffer> buffer_)
+{
+	return std::unique_ptr<GPUBufferBehavior>(std::move(buffer_));
+}
 
 
 
@@ -6901,14 +6955,8 @@ void BufferContext::BufferCollector::Distribute()
 ========================================
 #pragma once
 #include "../../BufferContext.h"
+#include "../../BufferDefinition/AllBuffersFwd.h"
 
-class GPUBufferBehavior;
-class ColorBuffer;
-class ConstantBuffer;
-class DepthStencilBuffer;
-class ComputeBuffer;
-class UploadStructuredBuffer;
-class StaticStructuredBuffer;
 
 class BufferContext::BufferCollector
 {
@@ -6930,7 +6978,7 @@ public:
 
 		TempSaveFormat tmpSaveFormat;
 		tmpSaveFormat.type = registerType;
-		tmpSaveFormat.buffer = std::move(buffer_);
+		tmpSaveFormat.buffer = CastBuffer(std::move(buffer_));
 		tmpSaveFormat.id = id_;
 
 		tmp_bufferContainer.emplace_back(std::move(tmpSaveFormat));
@@ -6954,6 +7002,10 @@ private:
 
 	///分別先
 	BufferContext::BufferPoolSet* bufferPoolSet;
+
+	//GPUBufferBehaviorにキャストしてユニークを返す
+	template<typename BufferType>
+	std::unique_ptr<GPUBufferBehavior> CastBuffer(std::unique_ptr<BufferType> buffer_);
 
 	//バッファのデータ型に応じて登録先識別用のタイプを返す
 	template<typename BufferType>
@@ -6990,6 +7042,23 @@ private:
 
 };
 
+template<>
+std::unique_ptr<GPUBufferBehavior> BufferContext::BufferCollector::CastBuffer(std::unique_ptr<ColorBuffer> buffer_);
+
+template<>
+std::unique_ptr<GPUBufferBehavior> BufferContext::BufferCollector::CastBuffer(std::unique_ptr<ConstantBuffer> buffer_);
+
+template<>
+std::unique_ptr<GPUBufferBehavior> BufferContext::BufferCollector::CastBuffer(std::unique_ptr<ComputeBuffer> buffer_);
+
+template<>
+std::unique_ptr<GPUBufferBehavior> BufferContext::BufferCollector::CastBuffer(std::unique_ptr<DepthStencilBuffer> buffer_);
+
+template<>
+std::unique_ptr<GPUBufferBehavior> BufferContext::BufferCollector::CastBuffer(std::unique_ptr<UploadStructuredBuffer> buffer_);
+
+template<>
+std::unique_ptr<GPUBufferBehavior> BufferContext::BufferCollector::CastBuffer(std::unique_ptr<StaticStructuredBuffer> buffer_);
 
 
 
@@ -6999,12 +7068,13 @@ private:
 ========================================
 #include "PreCompileHeader.h"
 #include "BufferUploader.h"
+#include "../../BufferDefinition/GPUBuffer/GPUBufferBehavior.h"
 
 //ツール
 #include "../ResourceCreator/ResourceCreator.h"
+#include "../../RuntimeBufferManagementSystems/BufferDispatcher/BufferDispatcher.h"
 
 //外部
-#include "../../BufferDefinition/GPUBuffer/GPUBufferBehavior.h"
 #include "../../../../Core/Command/CommandContextCmdProvider/CommandContextCmdProvider.h"
 
 namespace
@@ -7016,8 +7086,9 @@ BufferContext::BufferUploader::BufferUploader
 (
 	BufferContext::InstanceKey key_,
 	BufferContext::ResourceCreator* resourceCreator_,
+	BufferContext::BufferDispatcher* dispatcher_,
 	CommandContext* commandContext_
-):resourceCreator(resourceCreator_)
+):resourceCreator(resourceCreator_), dispatcher(dispatcher_)
 {
 	uploadCommand = commandContext_->commandProvider->
 		ProvideResourceUploadCommand(CommandContext::CommandProvider::UsesResourceUploadCmdPermission{});
@@ -7034,7 +7105,7 @@ BufferContext::BufferUploader::~BufferUploader()
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 void BufferContext::BufferUploader::Upload
 (
-	GPUBufferBehavior* dstBuffer_,
+	BufferUniqueID id_,
 	UINT dstResourceSize_,
 	const D3D12_SUBRESOURCE_DATA* subeResource_,
 	UINT subResourceCount_
@@ -7055,14 +7126,15 @@ void BufferContext::BufferUploader::Upload
 	);
 
 	//生リソースを取り出す
-	ID3D12Resource* dstResource = dstBuffer_->GetResource(GPUBufferBehavior::ResourceAccessKey{}, 0);
+	GPUBufferBehavior* dstBuffer = dispatcher->Dispatch(id_);
+	ID3D12Resource* dstResource = dstBuffer->GetResource(GPUBufferBehavior::ResourceAccessKey{}, 0);
 
 	//アップロードする
 	uploadCommand(dstResource, intermediateResource.Get(), subeResource_, subResourceCount_);
 
-
+	//中間リソースを一時保管
 	intermediateResources.emplace_back(std::move(intermediateResource));
-	Logger::Log("Complete Uploading: " + dstBuffer_->WatchName() + "(" + std::to_string(dstResourceSize_) + ")", fileName);
+	Logger::Log("Complete Uploading: " + dstBuffer->WatchName() + "(" + std::to_string(dstResourceSize_) + ")", fileName);
 }
 
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -7116,6 +7188,7 @@ public:
 	(
 		BufferContext::InstanceKey key_,
 		BufferContext::ResourceCreator* resourceCreator_,
+		BufferContext::BufferDispatcher* dispatcher_,
 		CommandContext* commandContext_
 	);
 
@@ -7123,7 +7196,7 @@ public:
 
 	void Upload
 	(
-		GPUBufferBehavior* dstBuffer_,
+		BufferUniqueID id_,
 		UINT dstResourceSize_,
 		const D3D12_SUBRESOURCE_DATA* subeResource_,
 		UINT subResourceCount_
@@ -7131,6 +7204,7 @@ public:
 
 private:
 	BufferContext::ResourceCreator* resourceCreator;
+	BufferContext::BufferDispatcher* dispatcher;
 	CommandContext::UploadCommand uploadCommand;
 	std::vector<Microsoft::WRL::ComPtr<ID3D12Resource>> intermediateResources;
 	
@@ -7220,6 +7294,63 @@ private:
 
 
 };
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Buffer\BufferDefinition\AllBufferDescsIFwd.h ===
+========================================
+#pragma once
+
+struct ColorBufferDescription;
+struct ConstantBufferDescription;
+struct DepthStencilBufferDescription;
+struct ComputeBufferDescription;
+struct UploadStructuredBufferDescription;
+struct StaticStructuredBufferDescription;
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Buffer\BufferDefinition\AllBufferDescsInclude.h ===
+========================================
+#pragma once
+#include "BufferDescriptions/ColorBufferDescription/ColorBufferDescription.h"
+#include "BufferDescriptions/ComputeBufferDescription/ComputeBufferDescription.h"
+#include "BufferDescriptions/ConstantBufferDescription/ConstantBufferDescription.h"
+#include "BufferDescriptions/DepthStencilBufferDescription/DepthStencilBufferDescription.h"
+#include "BufferDescriptions/StaticStructuredBufferDescription/StaticStructuredBufferDescription.h"
+#include "BufferDescriptions/UploadStructuredBufferDescription/UploadStructuredBufferDescription.h"
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Buffer\BufferDefinition\AllBuffersFwd.h ===
+========================================
+#pragma once
+
+class GPUBufferBehaviror;
+class ColorBuffer;
+class ConstantBuffer;
+class DepthStencilBuffer;
+class ComputeBuffer;
+class UploadStructuredBuffer;
+class StaticStructuredBuffer;
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Buffer\BufferDefinition\AllBuffersInclude.h ===
+========================================
+#pragma once
+#include "GPUBuffer/ColorBuffer/ColorBuffer.h"
+#include "GPUBuffer/ComputeBuffer/ComputeBuffer.h"
+#include "GPUBuffer/ConstantBuffer/ConstantBuffer.h"
+#include "GPUBuffer/DepthStencilBuffer/DepthStencilBuffer.h"
+#include "GPUBuffer/StaticStructuredBuffer/StaticStructuredBuffer.h"
+#include "GPUBuffer/UploadStructuredBuffer/UploadStructuredBuffer.h"
 
 
 
@@ -8536,10 +8667,6 @@ GPUBufferBehavior::GPUBufferBehavior
 		buffers.at(i).curResourceState = description_.initialState;
 	}
 }
-GPUBufferBehavior::~GPUBufferBehavior()
-{
-
-}
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -8563,12 +8690,15 @@ D3D12_RESOURCE_BARRIER GPUBufferBehavior::Buffer::CreateBarrier(D3D12_RESOURCE_S
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ID3D12Resource* GPUBufferBehavior::GetResource(ResourceAccessKey bufferAccessKey_ ,int resourceNo_)
 {
-	std::string errorMsg = name + "は空です (GetResourceに失敗)";
+	static std::string errorMsg = name + "は空です (GetResourceに失敗)";
 
 	ErrorMessageOutput::Assert::DetectError((buffers.at(resourceNo_).resource != nullptr), errorMsg , fileName);
 
 	return buffers.at(resourceNo_).resource.Get();
 }
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 std::string GPUBufferBehavior::WatchName()
 {
@@ -8629,7 +8759,7 @@ public:
 		const BufferDescriptionBehavior& description_
 	);
 
-	virtual ~GPUBufferBehavior();
+	virtual ~GPUBufferBehavior() = default;
 
 	//生リソースを取得
 	ID3D12Resource* GetResource(ResourceAccessKey resourceAccessKey_ , int resourceNo_);
@@ -9144,6 +9274,8 @@ public:
 		const BufferDescriptionBehavior& description_
 	);
 
+	virtual ~StaticStructuredBuffer() = default;
+
 	virtual SRVHeapIndex OutProperSRVHeapIndex(int frameIndex_ = 0)const override;
 	virtual D3D12_RESOURCE_BARRIER CreateBarrierAsReading()override;
 
@@ -9250,13 +9382,10 @@ BufferContext::ToolLender::ToolLender
 
 class BufferContext::ToolLender
 {
-public:
-
 	//貸し出すツールのデータ型とそれに対応したLicenceのデータ型を結び付ける
 	template<typename ToolType>
 	struct LicenceTypeTraits;
 
-private:
 	//バッファクリエイターやアップローダーを触ってもいい資格
 	struct BasicBufferManagementLicence;
 
@@ -9264,6 +9393,10 @@ private:
 	std::tuple<BufferContext::BufferCreator*, BufferContext::BufferUploader*> tools;
 
 public:
+
+	//ただのエイリアステンプレート
+	template<typename ToolType>
+	using LicenceType = typename LicenceTypeTraits<ToolType>::Type;
 
 	ToolLender
 	(
@@ -9275,7 +9408,7 @@ public:
 
 	///ツールの貸し出し
 	template<typename ToolType>
-	auto* Lend(LicenceTypeTraits<ToolType> licence_)
+	auto* Lend(typename LicenceTypeTraits<ToolType>::Type licence_)
 	{
 		return std::get<ToolType*>(tools);
 	}
@@ -9527,6 +9660,8 @@ RenderPath::Pass::RequiredBufferInfo::RenderTarget BufferContext::BufferInfoExtr
 #include "PreCompileHeader.h"
 #include "MeshContext.h"
 #include "CreateModelTools/ModelDataCreator/ModelDataCreator.h"
+#include "CreateModelTools/ModelSlotAllocator/ModelSlotAllocator.h"
+
 
 namespace
 {
@@ -9538,7 +9673,10 @@ MeshContext::MeshContext(const InstanceKey& key_, BufferContext* bufferContext_)
 {
 	Logger::Entry("MeshContext: Constructor");
 
-	modelDataCreator.reset(new ModelDataCreator(key_, bufferContext_));
+	modelSlotAllocator.reset(new ModelSlotAllocator(key_));
+	Logger::Log("Instantiate: modelSlotAllocator", fileName);
+
+	modelDataCreator.reset(new ModelDataCreator(key_, modelSlotAllocator.get(), bufferContext_));
 	Logger::Log("Instantiate: ModelDataCreator", fileName);
 
 
@@ -9565,9 +9703,10 @@ class BufferContext;
 class MeshContext
 {
 public:
-
 	//モデルを生成する。
 	class ModelDataCreator;
+	class ModelSlotAllocator;
+
 	//自身の生成キー
 	struct InstanceKey;
 
@@ -9576,10 +9715,11 @@ public:
 
 
 private:
-	class ModelSlotAllocator;
 
 
 	std::unique_ptr<ModelDataCreator> modelDataCreator;
+	std::unique_ptr<ModelSlotAllocator> modelSlotAllocator;
+
 };
 
 struct MeshContext::InstanceKey
@@ -9600,6 +9740,9 @@ private:
 #include "ModelDataCreator.h"
 #include "../../ModelStructure/ModelData/ModelDataAggregate.h"
 
+#include "../../../../../../Assets/Shared/StructuredBuffer.h"
+#include "../../../Buffer/BufferDefinition/BufferDescriptions/StaticStructuredBufferDescription/StaticStructuredBufferDescription.h"
+
 //ツール
 #include "ModelDataLoader/ModelDataLoader.h"
 #include "../ModelSlotAllocator/ModelSlotAllocator.h"
@@ -9607,22 +9750,28 @@ private:
 #include "../../../Buffer/BufferCreateTools/BufferUploader/BufferUploader.h"
 #include "../../../Buffer/BufferCreateTools/BufferCreator.h"
 
+
+using namespace StructuredBufferDataDefinition;
+
 namespace
 {
 	auto const fileName = "ModelDataCreator.cpp";
 }
 
 
-MeshContext::ModelDataCreator::ModelDataCreator(MeshContext::InstanceKey key_, BufferContext* bufferContext_)
+MeshContext::ModelDataCreator::ModelDataCreator
+(
+    MeshContext::InstanceKey key_,
+    MeshContext::ModelSlotAllocator* allocator_,
+    BufferContext* bufferContext_
+)
 {
 	Logger::Entry("ModelDataCreator: Constructor");
 
     modelDataLoader.reset(new ModelDataLoader(key_));
     Logger::Log("Instantiate: ModelDataLoader", fileName);
 
-    auto* bufferCreator = bufferContext_->toolLender->Lend(BufferContext::ToolLender::LicenceTypeTraits < BufferContext::BufferCreator>{});
-    auto* bufferUploader = bufferContext_->toolLender->Lend(BufferContext::ToolLender::LicenceTypeTraits < BufferContext::BufferUploader>{});
-    
+    CreateAllModelData(allocator_, bufferContext_);
 
 	Logger::End("ModelDataCreator: Constructor");
 }
@@ -9632,28 +9781,70 @@ MeshContext::ModelDataCreator::~ModelDataCreator()
 
 }
 
-
-void MeshContext::ModelDataCreator::CreateAllModelData(MeshContext::ModelSlotAllocator* allocator_)
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+void MeshContext::ModelDataCreator::CreateAllModelData
+(
+    MeshContext::ModelSlotAllocator* allocator_,
+    BufferContext* bufferContext_
+)
 {
+    //モデルデータライブラリー
     std::unordered_map<std::string, ModelDataAggregate*> tmpModelDataLib = LoadAllModelFiles();
 
+    //bufferCreatorとuploaderを借りる
+    BufferContext::ToolLender::LicenceType<BufferContext::BufferCreator> licence{};
+    auto* bufferCreator = bufferContext_->toolLender->Lend<BufferContext::BufferCreator>(licence);
+    auto* bufferUploader = bufferContext_->toolLender->Lend<BufferContext::BufferUploader>(licence);
 
     ///メッシュIDとファイル名を紐づける
-    UINT meshID{};
+    for (const auto& [key, value] : tmpModelDataLib)
     {
-        for (const auto& [key, value] : tmpModelDataLib)
-        {
-            meshDataIDLib[key] = MeshDetaID(meshID++);
-        }
+        //メッシュデータのバッファを生成する
+        CreateMeshDataBuffer(value->resourceMesh, allocator_, bufferCreator, key);
     }
 
     //モデルの種類の数
-    UINT numModelTypes = meshID + 1;
+    //UINT numModelTypes = meshID + 1;
 }
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void MeshContext::ModelDataCreator::CreateMeshDataBuffer(const ResourceMesh& data_)
+void MeshContext::ModelDataCreator::CreateMeshDataBuffer
+(
+    const std::vector<ResourceMesh>& data_,
+    MeshContext::ModelSlotAllocator* allocator_,
+    BufferContext::BufferCreator* bufferCreator_,
+    std::string meshDataName_
+)
 {
-    //data_.meshlets
+    UINT meshID{};
+
+    ///メッシュデータのGPUバッファを作成
+    for (const auto& meshData : data_)
+    {
+        //マルチメッシュに対応するために、インデックスの文字列をキーに含める
+        std::string meshDataKey = meshDataName_ + std::to_string(meshID);
+        meshDataIDLib[meshDataKey] = MeshDetaID(meshID++);
+
+        //まずはディスクの定義から
+        StaticStructuredBufferDescription descVertices(sizeof(StandardVertexGPU), (UINT)meshData.vertices.size(), 0);
+        StaticStructuredBufferDescription descUniqueVertsIndices(sizeof(UniqueVertexIndexCPUGPU), (UINT)meshData.uniqueVertexIndices.size(), 0);
+        StaticStructuredBufferDescription descMeshlets(sizeof(MeshletCPUGPU), (UINT)meshData.meshlets.size(), 0);
+        StaticStructuredBufferDescription descPrimIndices(sizeof(PrimitiveIndexCPUGPU), (UINT)meshData.primitiveIndices.size(), 0);
+
+        //ディスクをもとにバッファを生成
+        BufferUniqueID tmp_idVertices = bufferCreator_->Create(descVertices, meshDataKey + "[Vertices]");
+        BufferUniqueID tmp_idUniqueVertsIndices = bufferCreator_->Create(descUniqueVertsIndices, meshDataKey + "[UniqueVertsIndices]");
+        BufferUniqueID tmp_idMeshlets = bufferCreator_->Create(descMeshlets, meshDataKey + "[Meshlets]");
+        BufferUniqueID tmp_idPrimIndices = bufferCreator_->Create(descPrimIndices, meshDataKey + "[PrimIndices ]");
+
+    }
+
+    
+
 }
 
 
@@ -9768,11 +9959,11 @@ std::unordered_map<std::string, std::string > MeshContext::ModelDataCreator::Loa
 #include "../../MeshContext.h"
 #include "../../../Buffer/BufferContext.h"
 
+#include "../../../../../../Assets/Shared/StructuredBuffer.h"
 
 struct ModelDataAggregate;
 struct ResourceMesh;
 struct ResourrceMatrilal;
-struct BufferCreator;
 
 
 class MeshContext::ModelDataCreator
@@ -9785,10 +9976,19 @@ public:
 	//モデルデータ管理クラス
 	
 	///全てのメッシュデータを作成する
-	void CreateAllModelData(MeshContext::ModelSlotAllocator* allocator_);
+	void CreateAllModelData
+	(
+		MeshContext::ModelSlotAllocator* allocator_,
+		BufferContext* bufferContext_
+	);
 
 
-	ModelDataCreator(MeshContext::InstanceKey key_, BufferContext* bufferContext_);
+	ModelDataCreator
+	(
+		MeshContext::InstanceKey key_, 
+		MeshContext::ModelSlotAllocator* allocator_, 
+		BufferContext* bufferContext_
+	);
 	~ModelDataCreator();
 
 
@@ -9810,7 +10010,13 @@ private:
 	///被り無しのはず設計なので、被りがあった場合はアサートでとまる
 	std::unordered_map<std::string, ModelDataAggregate*> LoadAllModelFiles();
 	//メッシュデータのバッファを作成する
-	void CreateMeshDataBuffer(const ResourceMesh& data_);
+	void CreateMeshDataBuffer
+	(
+		const std::vector<ResourceMesh>& data_,
+		MeshContext::ModelSlotAllocator* allocator_,
+		BufferContext::BufferCreator* bufferCreator_,
+		std::string meshDataName_
+	);
 };
 
 

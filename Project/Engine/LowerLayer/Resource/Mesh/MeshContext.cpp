@@ -1,6 +1,8 @@
 #include "PreCompileHeader.h"
 #include "MeshContext.h"
 #include "CreateModelTools/ModelDataCreator/ModelDataCreator.h"
+#include "CreateModelTools/ModelSlotAllocator/ModelSlotAllocator.h"
+
 
 namespace
 {
@@ -12,7 +14,10 @@ MeshContext::MeshContext(const InstanceKey& key_, BufferContext* bufferContext_)
 {
 	Logger::Entry("MeshContext: Constructor");
 
-	modelDataCreator.reset(new ModelDataCreator(key_, bufferContext_));
+	modelSlotAllocator.reset(new ModelSlotAllocator(key_));
+	Logger::Log("Instantiate: modelSlotAllocator", fileName);
+
+	modelDataCreator.reset(new ModelDataCreator(key_, modelSlotAllocator.get(), bufferContext_));
 	Logger::Log("Instantiate: ModelDataCreator", fileName);
 
 

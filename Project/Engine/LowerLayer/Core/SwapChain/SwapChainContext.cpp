@@ -3,10 +3,13 @@
 #include "Presenter/Presenter.h"
 #include "RenderPassMaterialProvider/RenderPassMaterialProvider.h"
 
-#include "../Command/CommandContext.h"
+
+//外部
+#include "../Command/CommandContextDiplomat/CommandContextDiplomat.h"
+#include "../Command/CommandContextDiplomat/CommandContextToolLender/CommandContextToolLender.h"
+
 #include "../DescriptorHeap/ViewCreator/ViewCreator.h"
 #include "../DescriptorHeap/DescriptorHeapToolLender/DescriptorHeapToolLender.h"
-
 
 using namespace ProjectConfig::Render;
 
@@ -19,7 +22,7 @@ SwapChainContext::SwapChainContext
 (
 	InstanceKey instanceKey_,
 	DescriptorHeapContext* descriptorHeapContext_,
-	CommandContext* commandContext_,
+	CommandContextDiplomat* commandContextDiplomat_,
 	CommandCreateSwapChain cmdCreateSwapChain_,
 	const HWND hWnd_
 )
@@ -27,7 +30,7 @@ SwapChainContext::SwapChainContext
 	Logger::Entry("SwapChainContext: Constructor");
 
 
-	AssembleCoreParts(instanceKey_, descriptorHeapContext_, commandContext_, cmdCreateSwapChain_, hWnd_);
+	AssembleCoreParts(instanceKey_, descriptorHeapContext_, commandContextDiplomat_, cmdCreateSwapChain_, hWnd_);
 	Logger::Log("Assemble: core parts", fileName);
 
 	presenter.reset(new Presenter(swapChain.Get()));
@@ -65,7 +68,7 @@ void SwapChainContext::AssembleCoreParts
 (
 	InstanceKey instanceKey_,
 	DescriptorHeapContext* descriptorHeapContext_,
-	CommandContext* commandContext_,
+	CommandContextDiplomat* commandContextDiplomat_,
 	CommandCreateSwapChain cmdCreateSwapChain_,
 	const HWND hWnd_
 )
@@ -73,7 +76,9 @@ void SwapChainContext::AssembleCoreParts
 	using namespace ProjectConfig::Window;
 
 	//コマンドキューを一時的に借りる
-	auto* commandQueue = commandContext_->GetCommandQueue(CommandContext::CmdQueueGetKey{});
+	auto* commandContextToolLender = commandContextDiplomat_->Access<CommandContext::ToolLender>();
+	CommandContext::ToolLender::LicenceType<ID3D12CommandQueue> cmdQueueAccesslicence{};
+	auto* commandQueue = commandContextToolLender->Lend<ID3D12CommandQueue>(cmdQueueAccesslicence);
 	//ビュークリエイターも一時的に借りる
 
 	DescriptorHeapContext::ToolLender::LicenceType<DescriptorHeapContext::ViewCreator> licence;

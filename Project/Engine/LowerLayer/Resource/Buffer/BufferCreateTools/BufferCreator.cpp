@@ -14,15 +14,8 @@ BufferContext::BufferCreator::BufferCreator
 {
 	assembler.reset(new BufferContext::BufferAssembler(instancekey_, resourceCreator_, descriptorHeapContext_));
 	Logger::Log("Instantiate: BufferAssembler", "BufferCreator.cpp");
-	collector.reset
-	(
-		new BufferContext::BufferCollector
-		(
-			instancekey_,
-			bufferPoolSet_
-		)
-	);
-
+	
+	collector.reset(new BufferContext::BufferCollector(instancekey_,bufferPoolSet_));
 	Logger::Log("Instantiate: bufferCollector", "BufferCreator.cpp");
 
 }
