@@ -5,6 +5,7 @@
 //ツール
 #include "ModelDataLoader/ModelDataLoader.h"
 #include "../ModelSlotAllocator/ModelSlotAllocator.h"
+#include "../../../Buffer/BufferToolLender/BufferToolLender.h"
 #include "../../../Buffer/BufferCreateTools/BufferUploader/BufferUploader.h"
 #include "../../../Buffer/BufferCreateTools/BufferCreator.h"
 
@@ -21,6 +22,11 @@ MeshContext::ModelDataCreator::ModelDataCreator(MeshContext::InstanceKey key_, B
     modelDataLoader.reset(new ModelDataLoader(key_));
     Logger::Log("Instantiate: ModelDataLoader", fileName);
 
+    BufferContext::ToolLender::LicenceType<BufferContext::BufferCreator> licence{};
+
+    auto* bufferCreator = bufferContext_->toolLender->Lend<BufferContext::BufferCreator>(licence);
+    auto* bufferUploader = bufferContext_->toolLender->Lend<BufferContext::BufferUploader>(licence);
+    
 
 	Logger::End("ModelDataCreator: Constructor");
 }

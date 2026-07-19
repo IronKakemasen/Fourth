@@ -6,31 +6,32 @@ class SwapChainContext;
 
 class DescriptorHeapContext::ToolLender
 {
+public:
+
+	template<typename ToolType>
+	struct LicenceTypeTraits;
+
+	//ただのエイリアステンプレート
+	template<typename ToolType>
+	using LicenceType = typename LicenceTypeTraits<ToolType>::Type;
+
+private:
+
 	struct BasicViewManagementLicence;
+
+	//貸出可能なツール
+	std::tuple<ViewCreator*> tools;
 
 public:
 
 	ToolLender(InstanceKey key_, DescriptorHeapContext::ViewCreator* viewCretator_);
 	
-	template<typename ToolType>
-	struct LicenceTypeTraits;
-
-	template<>
-	struct LicenceTypeTraits<DescriptorHeapContext::ViewCreator>
-	{
-		using Type = BasicViewManagementLicence;
-	};
-
 	///ツールの貸し出し
 	template<typename ToolType>
-	auto* Lend(LicenceTypeTraits<ToolType> licence_)
+	auto* Lend(typename LicenceTypeTraits<ToolType>::Type licence_)
 	{
 		return std::get<ToolType*>(tools);
 	}
-
-private:
-
-	std::tuple<ViewCreator*> tools;
 
 };
 
@@ -43,3 +44,8 @@ private:
 	explicit BasicViewManagementLicence() = default;
 };
 
+template<>
+struct DescriptorHeapContext::ToolLender::LicenceTypeTraits<DescriptorHeapContext::ViewCreator>
+{
+	using Type = BasicViewManagementLicence;
+};

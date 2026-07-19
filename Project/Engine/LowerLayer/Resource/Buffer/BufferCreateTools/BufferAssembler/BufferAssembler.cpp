@@ -35,8 +35,11 @@ BufferContext::BufferAssembler::BufferAssembler
 	:resourceCreator(resourceCreator_)
 {
 
-	viewCreator = descriptorHeapContext_->toolLender->Lend(DescriptorHeapContext::ToolLender::LicenceTypeTraits<DescriptorHeapContext::ViewCreator>{});
-	
+	DescriptorHeapContext::ToolLender::LicenceType<DescriptorHeapContext::ViewCreator> licence;
+
+	DescriptorHeapContext::ViewCreator* viewCreator =
+		descriptorHeapContext_->toolLender->Lend<DescriptorHeapContext::ViewCreator>(licence);
+
 }
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////

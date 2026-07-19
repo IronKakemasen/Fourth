@@ -4,8 +4,22 @@
 
 class BufferContext::ToolLender
 {
+public:
+
+	//貸し出すツールのデータ型とそれに対応したLicenceのデータ型を結び付ける
+	template<typename ToolType>
+	struct LicenceTypeTraits;
+
+	//ただのエイリアステンプレート
+	template<typename ToolType>
+	using LicenceType = typename LicenceTypeTraits<ToolType>::Type;
+
+private:
 	//バッファクリエイターやアップローダーを触ってもいい資格
 	struct BasicBufferManagementLicence;
+
+	///貸し出せるツール
+	std::tuple<BufferContext::BufferCreator*, BufferContext::BufferUploader*> tools;
 
 public:
 
@@ -16,31 +30,14 @@ public:
 		BufferContext::BufferUploader* uploader_
 	);
 
-	template<typename ToolType>
-	struct LicenceTypeTraits;
-
-	template<>
-	struct LicenceTypeTraits<BufferContext::BufferCreator>
-	{
-		using Type = BasicBufferManagementLicence;
-	};
-
-	template<>
-	struct LicenceTypeTraits<BufferContext::BufferUploader>
-	{
-		using Type = BasicBufferManagementLicence;
-	};
 
 	///ツールの貸し出し
 	template<typename ToolType>
-	auto* Lend(LicenceTypeTraits<ToolType> licence_)
+	auto* Lend(typename LicenceTypeTraits<ToolType>::Type licence_)
 	{
 		return std::get<ToolType*>(tools);
 	}
 
-private:
-
-	std::tuple<BufferContext::BufferCreator*, BufferContext::BufferUploader*> tools;
 };
 
 
@@ -53,4 +50,14 @@ private:
 };
 
 
+template<>
+struct BufferContext::ToolLender::LicenceTypeTraits<BufferContext::BufferCreator>
+{
+	using Type = BasicBufferManagementLicence;
+};
 
+template<>
+struct BufferContext::ToolLender::LicenceTypeTraits<BufferContext::BufferUploader>
+{
+	using Type = BasicBufferManagementLicence;
+};

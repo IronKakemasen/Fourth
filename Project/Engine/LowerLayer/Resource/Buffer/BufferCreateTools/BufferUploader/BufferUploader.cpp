@@ -6,7 +6,7 @@
 
 //外部
 #include "../../BufferDefinition/GPUBuffer/GPUBufferBehavior.h"
-
+#include "../../../../Core/Command/CommandContextCmdProvider/CommandContextCmdProvider.h"
 
 namespace
 {
@@ -20,7 +20,8 @@ BufferContext::BufferUploader::BufferUploader
 	CommandContext* commandContext_
 ):resourceCreator(resourceCreator_)
 {
-	uploadCommand = commandContext_->ProvideResouceUploadCommand(CommandContext::UsesResourceUploadCmdPermission{});
+	uploadCommand = commandContext_->commandProvider->
+		ProvideResourceUploadCommand(CommandContext::CommandProvider::UsesResourceUploadCmdPermission{});
 }
 
 BufferContext::BufferUploader::~BufferUploader()

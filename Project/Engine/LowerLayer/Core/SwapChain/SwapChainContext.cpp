@@ -76,8 +76,10 @@ void SwapChainContext::AssembleCoreParts
 	auto* commandQueue = commandContext_->GetCommandQueue(CommandContext::CmdQueueGetKey{});
 	//ビュークリエイターも一時的に借りる
 
-	DescriptorHeapContext::ViewCreator* viewCreator =
-		descriptorHeapContext_->toolLender->Lend(DescriptorHeapContext::ToolLender::LicenceTypeTraits<DescriptorHeapContext::ViewCreator>{});
+	DescriptorHeapContext::ToolLender::LicenceType<DescriptorHeapContext::ViewCreator> licence;
+
+	DescriptorHeapContext::ViewCreator* viewCreator = 
+		descriptorHeapContext_->toolLender->Lend<DescriptorHeapContext::ViewCreator>(licence);
 
 	//ディスクリプション
 	std::unique_ptr<Description> bufferDesc = std::make_unique<Description>(kColor, kRtFormat);
