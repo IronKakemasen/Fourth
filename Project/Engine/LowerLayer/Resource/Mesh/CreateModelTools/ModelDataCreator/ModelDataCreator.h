@@ -19,10 +19,19 @@ public:
 	//モデルデータ管理クラス
 	
 	///全てのメッシュデータを作成する
-	void CreateAllModelData(MeshContext::ModelSlotAllocator* allocator_);
+	void CreateAllModelData
+	(
+		MeshContext::ModelSlotAllocator* allocator_,
+		BufferContext* bufferContext_
+	);
 
 
-	ModelDataCreator(MeshContext::InstanceKey key_, BufferContext* bufferContext_);
+	ModelDataCreator
+	(
+		MeshContext::InstanceKey key_, 
+		MeshContext::ModelSlotAllocator* allocator_, 
+		BufferContext* bufferContext_
+	);
 	~ModelDataCreator();
 
 
@@ -46,7 +55,7 @@ private:
 	//メッシュデータのバッファを作成する
 	void CreateMeshDataBuffer
 	(
-		const ResourceMesh& data_,
+		const std::vector<ResourceMesh>& data_,
 		MeshContext::ModelSlotAllocator* allocator_,
 		BufferContext::BufferCreator* bufferCreator_,
 		std::string meshDataName_

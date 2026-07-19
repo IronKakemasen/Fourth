@@ -21,20 +21,19 @@ namespace
 }
 
 
-MeshContext::ModelDataCreator::ModelDataCreator(MeshContext::InstanceKey key_, BufferContext* bufferContext_)
+MeshContext::ModelDataCreator::ModelDataCreator
+(
+    MeshContext::InstanceKey key_,
+    MeshContext::ModelSlotAllocator* allocator_,
+    BufferContext* bufferContext_
+)
 {
 	Logger::Entry("ModelDataCreator: Constructor");
 
     modelDataLoader.reset(new ModelDataLoader(key_));
     Logger::Log("Instantiate: ModelDataLoader", fileName);
 
-    //bufferCreatorとuploaderを借りる
-    BufferContext::ToolLender::LicenceType<BufferContext::BufferCreator> licence{};
-    auto* bufferCreator = bufferContext_->toolLender->Lend<BufferContext::BufferCreator>(licence);
-    auto* bufferUploader = bufferContext_->toolLender->Lend<BufferContext::BufferUploader>(licence);
-    
-
-
+    CreateAllModelData(allocator_, bufferContext_);
 
 	Logger::End("ModelDataCreator: Constructor");
 }
@@ -47,22 +46,29 @@ MeshContext::ModelDataCreator::~ModelDataCreator()
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-void MeshContext::ModelDataCreator::CreateAllModelData(MeshContext::ModelSlotAllocator* allocator_)
+void MeshContext::ModelDataCreator::CreateAllModelData
+(
+    MeshContext::ModelSlotAllocator* allocator_,
+    BufferContext* bufferContext_
+)
 {
+    //モデルデータライブラリー
     std::unordered_map<std::string, ModelDataAggregate*> tmpModelDataLib = LoadAllModelFiles();
 
+    //bufferCreatorとuploaderを借りる
+    BufferContext::ToolLender::LicenceType<BufferContext::BufferCreator> licence{};
+    auto* bufferCreator = bufferContext_->toolLender->Lend<BufferContext::BufferCreator>(licence);
+    auto* bufferUploader = bufferContext_->toolLender->Lend<BufferContext::BufferUploader>(licence);
 
     ///メッシュIDとファイル名を紐づける
-    UINT meshID{};
+    for (const auto& [key, value] : tmpModelDataLib)
     {
-        for (const auto& [key, value] : tmpModelDataLib)
-        {
-            meshDataIDLib[key] = MeshDetaID(meshID++);
-        }
+        //メッシュデータのバッファを生成する
+        CreateMeshDataBuffer(value->resourceMesh, allocator_, bufferCreator, key);
     }
 
     //モデルの種類の数
-    UINT numModelTypes = meshID + 1;
+    //UINT numModelTypes = meshID + 1;
 }
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -70,22 +76,36 @@ void MeshContext::ModelDataCreator::CreateAllModelData(MeshContext::ModelSlotAll
 
 void MeshContext::ModelDataCreator::CreateMeshDataBuffer
 (
-    const ResourceMesh& data_,
+    const std::vector<ResourceMesh>& data_,
     MeshContext::ModelSlotAllocator* allocator_,
     BufferContext::BufferCreator* bufferCreator_,
     std::string meshDataName_
 )
 {
+    UINT meshID{};
+
     ///メッシュデータのGPUバッファを作成
-   
-    //まずはディスクの定義から
-    StaticStructuredBufferDescription descVertices(sizeof(StandardVertexGPU), (UINT)data_.vertices.size(), 0);
-    StaticStructuredBufferDescription descUniqueVertsIndices(sizeof(UniqueVertexIndexCPUGPU), (UINT)data_.uniqueVertexIndices.size(), 0);
-    StaticStructuredBufferDescription descMeshlets(sizeof(MeshletCPUGPU), (UINT)data_.meshlets.size(), 0);
-    StaticStructuredBufferDescription descPrimIndices(sizeof(PrimitiveIndexCPUGPU), (UINT)data_.primitiveIndices.size(), 0);
+    for (const auto& meshData : data_)
+    {
+        //マルチメッシュに対応するために、インデックスの文字列をキーに含める
+        std::string meshDataKey = meshDataName_ + std::to_string(meshID);
+        meshDataIDLib[meshDataKey] = MeshDetaID(meshID++);
+
+        //まずはディスクの定義から
+        StaticStructuredBufferDescription descVertices(sizeof(StandardVertexGPU), (UINT)meshData.vertices.size(), 0);
+        StaticStructuredBufferDescription descUniqueVertsIndices(sizeof(UniqueVertexIndexCPUGPU), (UINT)meshData.uniqueVertexIndices.size(), 0);
+        StaticStructuredBufferDescription descMeshlets(sizeof(MeshletCPUGPU), (UINT)meshData.meshlets.size(), 0);
+        StaticStructuredBufferDescription descPrimIndices(sizeof(PrimitiveIndexCPUGPU), (UINT)meshData.primitiveIndices.size(), 0);
+
+        //ディスクをもとにバッファを生成
+        BufferUniqueID tmp_idVertices = bufferCreator_->Create(descVertices, meshDataKey + "[Vertices]");
+        BufferUniqueID tmp_idUniqueVertsIndices = bufferCreator_->Create(descUniqueVertsIndices, meshDataKey + "[UniqueVertsIndices]");
+        BufferUniqueID tmp_idMeshlets = bufferCreator_->Create(descMeshlets, meshDataKey + "[Meshlets]");
+        BufferUniqueID tmp_idPrimIndices = bufferCreator_->Create(descPrimIndices, meshDataKey + "[PrimIndices ]");
+
+    }
+
     
-    //ディスクをもとにバッファを生成
-    BufferUniqueID idVertices = bufferCreator_->Create(descVertices, meshDataName_);
 
 }
 

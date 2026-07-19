@@ -2,6 +2,7 @@
 
 class Nexus;
 class SwapChainContext;
+class CommandContextDiplomat;
 
 class CommandContext
 {
@@ -24,12 +25,13 @@ public:
 
 
 	struct InstanceKey;
-	//コマンドキューのアドレス取得キー
-	struct CmdQueueGetKey;
 	//リソースのアップロードを行う
 	class ResourceUploader;
 	//コマンドを提供する
 	class CommandProvider;
+	//ツールを貸す
+	class ToolLender;
+
 
 	CommandContext
 	(
@@ -44,20 +46,19 @@ public:
 
 	~CommandContext();
 
-	//コマンドキューの取得
-	ID3D12CommandQueue* GetCommandQueue(CmdQueueGetKey key_);
 	//同期してCloseHandle()する
 	void Finalize(InstanceKey instanceKey_);
 
 	std::unique_ptr<RuntimeCommandController> runtimeCommandController;
 	std::unique_ptr<ResourceUploader> resourceUploader;
-	std::unique_ptr<CommandProvider> commandProvider;
+	std::unique_ptr<CommandContextDiplomat> diplomat;
 
 private:
 
 	std::unique_ptr<Synchronizer> synchronizer;
 	std::unique_ptr<RuntimeWrapper> runtimeWrapper;
 
+	
 	//コマンドキュー
 	Microsoft::WRL::ComPtr<ID3D12CommandQueue> commandQueue;
 	//コマンドアローケータ
@@ -85,15 +86,5 @@ private:
 
 	friend class Nexus;
 	explicit InstanceKey() = default;
-};
-
-struct CommandContext::CmdQueueGetKey
-{
-private:
-
-	friend class Nexus;
-	friend class SwapChainContext;
-	explicit CmdQueueGetKey() = default;
-
 };
 

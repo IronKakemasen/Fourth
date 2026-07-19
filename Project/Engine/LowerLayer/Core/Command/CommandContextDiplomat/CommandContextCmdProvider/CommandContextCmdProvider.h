@@ -1,7 +1,7 @@
 #pragma once
-#include "../CommandContext.h"
-#include "../../../Resource/Buffer/BufferContext.h"
-#include "../ResourceUploader/ResourceUploader.h"
+#include "../../CommandContext.h"
+#include "../../../../Resource/Buffer/BufferContext.h"
+#include "../../ResourceUploader/ResourceUploader.h"
 
 
 class CommandContext::CommandProvider

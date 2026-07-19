@@ -111,7 +111,7 @@ void Nexus::Instantiate<Nexus::InitSequence::kBufferContext>()
 	auto createResourceCommand = cmdProvider->ProvideCreateResourceCommand();
 	Logger::Log("Set: CommandCreateResource", fileName);
 
-	bufferContext.reset(new BufferContext(BufferContext::InstanceKey{}, createResourceCommand, descriptorHeapContext.get(),commandContext.get()));
+	bufferContext.reset(new BufferContext(BufferContext::InstanceKey{}, createResourceCommand, descriptorHeapContext.get(),commandContext->diplomat.get()));
 	Logger::Log("Instantiate: bufferContext", fileName);
 }
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -160,7 +160,7 @@ void Nexus::Instantiate<Nexus::InitSequence::kSwapChainContext>()
 		(
 			SwapChainContext::InstanceKey{},
 			descriptorHeapContext.get(),
-			commandContext.get(),
+			commandContext->diplomat.get(),
 			cmdProvider->ProvideCreateSwapChainCommand(),
 			windowContext->WatchHWND()
 		)

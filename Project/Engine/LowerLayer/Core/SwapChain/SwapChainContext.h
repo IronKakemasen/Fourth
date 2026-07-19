@@ -3,7 +3,7 @@
 
 class Nexus;
 class CommandContext;
-
+class CommandContextDiplomat;
 
 
 class SwapChainContext
@@ -38,7 +38,7 @@ public:
 	(
 		InstanceKey instanceKey_,
 		DescriptorHeapContext* descriptorHeapContext_,
-		CommandContext* commandContext_,
+		CommandContextDiplomat* commandContextDiplomat_,
 		CommandCreateSwapChain cmdCreateSwapChain_,
 		const HWND hWnd_
 	);
@@ -56,7 +56,7 @@ private:
 	(
 		InstanceKey instanceKey_,
 		DescriptorHeapContext* descriptorHeapContext_,
-		CommandContext* commandContext_,
+		CommandContextDiplomat* commandContextDiplomat_,
 		CommandCreateSwapChain cmdCreateSwapChain_,
 		const HWND hWnd_
 	);

@@ -7,7 +7,8 @@
 #include "../../RuntimeBufferManagementSystems/BufferDispatcher/BufferDispatcher.h"
 
 //外部
-#include "../../../../Core/Command/CommandContextCmdProvider/CommandContextCmdProvider.h"
+#include "../../../../Core/Command/CommandContextDiplomat/CommandContextDiplomat.h"
+#include "../../../../Core/Command/CommandContextDiplomat/CommandContextCmdProvider/CommandContextCmdProvider.h"
 
 namespace
 {
@@ -19,11 +20,12 @@ BufferContext::BufferUploader::BufferUploader
 	BufferContext::InstanceKey key_,
 	BufferContext::ResourceCreator* resourceCreator_,
 	BufferContext::BufferDispatcher* dispatcher_,
-	CommandContext* commandContext_
+	CommandContextDiplomat* commandContextDiplomat_
 ):resourceCreator(resourceCreator_), dispatcher(dispatcher_)
 {
-	uploadCommand = commandContext_->commandProvider->
-		ProvideResourceUploadCommand(CommandContext::CommandProvider::UsesResourceUploadCmdPermission{});
+	//コマンドプロバイダーにアクセス
+	auto* commandProvider = commandContextDiplomat_->Access<CommandContext::CommandProvider>();
+	uploadCommand = commandProvider->ProvideResourceUploadCommand(CommandContext::CommandProvider::UsesResourceUploadCmdPermission{});
 }
 
 BufferContext::BufferUploader::~BufferUploader()

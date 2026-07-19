@@ -20,11 +20,9 @@ BufferContext::BufferAssembler::BufferAssembler
 )
 	:resourceCreator(resourceCreator_)
 {
-
+	//ビュークリエイターを借りる
 	DescriptorHeapContext::ToolLender::LicenceType<DescriptorHeapContext::ViewCreator> licence;
-
-	DescriptorHeapContext::ViewCreator* viewCreator =
-		descriptorHeapContext_->toolLender->Lend<DescriptorHeapContext::ViewCreator>(licence);
+	viewCreator = descriptorHeapContext_->toolLender->Lend<DescriptorHeapContext::ViewCreator>(licence);
 
 }
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -38,10 +36,8 @@ std::pair<D3D12_RESOURCE_DESC, D3D12_HEAP_PROPERTIES> BufferContext::BufferAssem
 	Logger::Log("Check: RequirementsFilled", fileName);
 
 	D3D12_HEAP_PROPERTIES heapProp = desc_.CreateHeapProperties();
-	Logger::Log("Create: heapProp", fileName);
 
 	D3D12_RESOURCE_DESC resourceDesc = desc_.CreateResourceDesc();
-	Logger::Log("Create: resourceDesc", fileName);
 
 	return std::make_pair(resourceDesc, heapProp);
 }

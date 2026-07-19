@@ -13,7 +13,7 @@ public:
 		BufferContext::InstanceKey key_,
 		BufferContext::ResourceCreator* resourceCreator_,
 		BufferContext::BufferDispatcher* dispatcher_,
-		CommandContext* commandContext_
+		CommandContextDiplomat* commandContextDiplomat_
 	);
 
 	~BufferUploader();
