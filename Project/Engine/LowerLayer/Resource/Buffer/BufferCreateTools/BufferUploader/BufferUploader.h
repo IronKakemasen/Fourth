@@ -12,6 +12,7 @@ public:
 	(
 		BufferContext::InstanceKey key_,
 		BufferContext::ResourceCreator* resourceCreator_,
+		BufferContext::BufferDispatcher* dispatcher_,
 		CommandContext* commandContext_
 	);
 
@@ -19,7 +20,7 @@ public:
 
 	void Upload
 	(
-		GPUBufferBehavior* dstBuffer_,
+		BufferUniqueID id_,
 		UINT dstResourceSize_,
 		const D3D12_SUBRESOURCE_DATA* subeResource_,
 		UINT subResourceCount_
@@ -27,6 +28,7 @@ public:
 
 private:
 	BufferContext::ResourceCreator* resourceCreator;
+	BufferContext::BufferDispatcher* dispatcher;
 	CommandContext::UploadCommand uploadCommand;
 	std::vector<Microsoft::WRL::ComPtr<ID3D12Resource>> intermediateResources;
 	

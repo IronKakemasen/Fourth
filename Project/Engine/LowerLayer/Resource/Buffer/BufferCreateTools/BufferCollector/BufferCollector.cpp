@@ -2,6 +2,8 @@
 #include "../../BufferDefinition/GPUBuffer/GPUBufferBehavior.h"
 #include "ClosedHashMap/ClosedHashMap.h" 
 
+//バッファ群
+#include "../../BufferDefinition/AllBuffersInclude.h"
 
 BufferContext::BufferCollector::BufferCollector
 (
@@ -29,9 +31,6 @@ void BufferContext::BufferCollector::Distribute()
 		//コンテナ取得
 		auto* dstContainer = bufferPoolSet->ContainerTable((*itrSrcContainer).type);
 
-		//空きスロットを検索
-		//auto itrDstConatiner = FindFreeSlot(dstContainer);
-
 		///バッファは削除しない、使いまわさない条約が決定したので全部けつに突っ込む
 		dstContainer->emplace_back(std::move((*itrSrcContainer).buffer));
 		//ユニークIDとコンテナ上のIDを紐づける 
@@ -50,3 +49,38 @@ void BufferContext::BufferCollector::Distribute()
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+template<>
+std::unique_ptr<GPUBufferBehavior> BufferContext::BufferCollector::CastBuffer(std::unique_ptr<ColorBuffer> buffer_)
+{
+	return std::move(std::unique_ptr<GPUBufferBehavior>(std::move(buffer_)));
+}
+
+template<>
+std::unique_ptr<GPUBufferBehavior> BufferContext::BufferCollector::CastBuffer(std::unique_ptr<ConstantBuffer> buffer_)
+{
+	return std::move(std::unique_ptr<GPUBufferBehavior>(std::move(buffer_)));
+}
+
+template<>
+std::unique_ptr<GPUBufferBehavior> BufferContext::BufferCollector::CastBuffer(std::unique_ptr<ComputeBuffer> buffer_)
+{
+	return std::move(std::unique_ptr<GPUBufferBehavior>(std::move(buffer_)));
+}
+
+template<>
+std::unique_ptr<GPUBufferBehavior> BufferContext::BufferCollector::CastBuffer(std::unique_ptr<DepthStencilBuffer> buffer_)
+{
+	return std::move(std::unique_ptr<GPUBufferBehavior>(std::move(buffer_)));
+}
+
+template<>
+std::unique_ptr<GPUBufferBehavior> BufferContext::BufferCollector::CastBuffer(std::unique_ptr<UploadStructuredBuffer> buffer_)
+{
+	return std::move(std::unique_ptr<GPUBufferBehavior>(std::move(buffer_)));
+}
+
+template<>
+std::unique_ptr<GPUBufferBehavior> BufferContext::BufferCollector::CastBuffer(std::unique_ptr<StaticStructuredBuffer> buffer_)
+{
+	return std::unique_ptr<GPUBufferBehavior>(std::move(buffer_));
+}

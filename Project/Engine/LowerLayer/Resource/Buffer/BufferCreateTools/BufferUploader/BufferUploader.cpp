@@ -1,11 +1,12 @@
 #include "PreCompileHeader.h"
 #include "BufferUploader.h"
+#include "../../BufferDefinition/GPUBuffer/GPUBufferBehavior.h"
 
 //ツール
 #include "../ResourceCreator/ResourceCreator.h"
+#include "../../RuntimeBufferManagementSystems/BufferDispatcher/BufferDispatcher.h"
 
 //外部
-#include "../../BufferDefinition/GPUBuffer/GPUBufferBehavior.h"
 #include "../../../../Core/Command/CommandContextCmdProvider/CommandContextCmdProvider.h"
 
 namespace
@@ -17,8 +18,9 @@ BufferContext::BufferUploader::BufferUploader
 (
 	BufferContext::InstanceKey key_,
 	BufferContext::ResourceCreator* resourceCreator_,
+	BufferContext::BufferDispatcher* dispatcher_,
 	CommandContext* commandContext_
-):resourceCreator(resourceCreator_)
+):resourceCreator(resourceCreator_), dispatcher(dispatcher_)
 {
 	uploadCommand = commandContext_->commandProvider->
 		ProvideResourceUploadCommand(CommandContext::CommandProvider::UsesResourceUploadCmdPermission{});
@@ -35,7 +37,7 @@ BufferContext::BufferUploader::~BufferUploader()
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 void BufferContext::BufferUploader::Upload
 (
-	GPUBufferBehavior* dstBuffer_,
+	BufferUniqueID id_,
 	UINT dstResourceSize_,
 	const D3D12_SUBRESOURCE_DATA* subeResource_,
 	UINT subResourceCount_
@@ -56,14 +58,15 @@ void BufferContext::BufferUploader::Upload
 	);
 
 	//生リソースを取り出す
-	ID3D12Resource* dstResource = dstBuffer_->GetResource(GPUBufferBehavior::ResourceAccessKey{}, 0);
+	GPUBufferBehavior* dstBuffer = dispatcher->Dispatch(id_);
+	ID3D12Resource* dstResource = dstBuffer->GetResource(GPUBufferBehavior::ResourceAccessKey{}, 0);
 
 	//アップロードする
 	uploadCommand(dstResource, intermediateResource.Get(), subeResource_, subResourceCount_);
 
-
+	//中間リソースを一時保管
 	intermediateResources.emplace_back(std::move(intermediateResource));
-	Logger::Log("Complete Uploading: " + dstBuffer_->WatchName() + "(" + std::to_string(dstResourceSize_) + ")", fileName);
+	Logger::Log("Complete Uploading: " + dstBuffer->WatchName() + "(" + std::to_string(dstResourceSize_) + ")", fileName);
 }
 
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

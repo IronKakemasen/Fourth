@@ -4,17 +4,10 @@
 
 class BufferContext::ToolLender
 {
-public:
-
 	//貸し出すツールのデータ型とそれに対応したLicenceのデータ型を結び付ける
 	template<typename ToolType>
 	struct LicenceTypeTraits;
 
-	//ただのエイリアステンプレート
-	template<typename ToolType>
-	using LicenceType = typename LicenceTypeTraits<ToolType>::Type;
-
-private:
 	//バッファクリエイターやアップローダーを触ってもいい資格
 	struct BasicBufferManagementLicence;
 
@@ -22,6 +15,10 @@ private:
 	std::tuple<BufferContext::BufferCreator*, BufferContext::BufferUploader*> tools;
 
 public:
+
+	//ただのエイリアステンプレート
+	template<typename ToolType>
+	using LicenceType = typename LicenceTypeTraits<ToolType>::Type;
 
 	ToolLender
 	(

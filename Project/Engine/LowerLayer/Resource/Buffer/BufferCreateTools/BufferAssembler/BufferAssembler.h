@@ -5,25 +5,14 @@
 
 #include "../../../../Core/DescriptorHeap/DescriptorHeapContext.h"
 
+//バッファクラスの前方宣言
+#include "../../BufferDefinition/AllBuffersFwd.h"
+#include "../../BufferDefinition/AllBufferDescsInclude.h"
+
 //ビュー生成ツール
 class DescriptorHeapContext::ViewCreator;
 
-//ディスクリプション
-struct ColorBufferDescription;
-struct ConstantBufferDescription;
-struct DepthStencilBufferDescription;
-struct ComputeBufferDescription;
-struct UploadStructuredBufferDescription;
-struct StaticStructuredBufferDescription;
 
-
-//バッファ
-class ColorBuffer;
-class ConstantBuffer;
-class DepthStencilBuffer;
-class ComputeBuffer;
-class UploadStructuredBuffer;
-class StaticStructuredBuffer;
 
 
 
@@ -106,7 +95,7 @@ private:
             clearValueOpt ? &clearValueOpt.value() : nullptr,
             desc_.initialState,
             nameCnv_,
-            desc_.numBuffer
+            (UINT)desc_.numBuffer
 
         );
     }

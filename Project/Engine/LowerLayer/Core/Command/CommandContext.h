@@ -1,5 +1,4 @@
 #pragma once
-#include "../../Resource/Buffer/BufferContext.h"
 
 class Nexus;
 class SwapChainContext;

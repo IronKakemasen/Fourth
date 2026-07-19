@@ -1,0 +1,8 @@
+#pragma once
+
+struct ColorBufferDescription;
+struct ConstantBufferDescription;
+struct DepthStencilBufferDescription;
+struct ComputeBufferDescription;
+struct UploadStructuredBufferDescription;
+struct StaticStructuredBufferDescription;
