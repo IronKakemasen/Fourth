@@ -1,9 +1,10 @@
 #include "DeviceContext.h"
 #include "DeviceSetupper/DeviceContextSetupper.h"
 
-//コマンド窓口
-#include "DeviceContextCommandProvider/DeviceContextCommandProvider.h"
-#include "DeviceContextCommandExecutor/DeviceContextCommandExecutor.h"
+
+#include "DeviceContextDiplomat/DeviceContextDiplomat.h"
+#include "DeviceContextDiplomat/DeviceContextCommandExecutor/DeviceContextCommandExecutor.h"
+#include "DeviceContextDiplomat/DeviceContextCommandProvider/DeviceContextCommandProvider.h"
 
 
 namespace
@@ -16,8 +17,16 @@ DeviceContext::DeviceContext(DeviceContext::InstanceKey instanceKey_)
 	Logger::Entry("DeviceContext::Constructor");
 
 	TakeOverCoreParts(instanceKey_);
-	CreateCommandProvider(instanceKey_);
-	CreateCommandExecutor(instanceKey_);
+
+	diplomat.reset
+	(
+		new DeviceContextDiplomat
+		(
+			instanceKey_,
+			std::move(InstantiateCommandProvider(instanceKey_)),
+			std::move(InstantiateCommandExecutor(instanceKey_))
+		)
+	);
 
 	Logger::End("DeviceContext::Constructor");
 }
@@ -30,7 +39,7 @@ DeviceContext::~DeviceContext()
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-void DeviceContext::CreateCommandProvider(DeviceContext::InstanceKey instanceKey_)
+std::unique_ptr<DeviceContext::CommandProvider> DeviceContext::InstantiateCommandProvider(DeviceContext::InstanceKey instanceKey_)
 {
 	//デバイスにアクセスする関数オブジェ
 	auto deviceGetFunc = [this](DeviceContext::AccessKey key_) -> ID3D12Device8*
@@ -44,13 +53,13 @@ void DeviceContext::CreateCommandProvider(DeviceContext::InstanceKey instanceKey
 		return dxgiFactory.Get();
 	};
 
-	commandProvider.reset(new CommandProvider(instanceKey_, deviceGetFunc, dxgiFactoryGetter));
 	Logger::Log("Create: CommandProvider", fileName);
+	return std::make_unique<CommandProvider>(instanceKey_, deviceGetFunc, dxgiFactoryGetter);
 }
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-void DeviceContext::CreateCommandExecutor(DeviceContext::InstanceKey instanceKey_)
+std::unique_ptr<DeviceContext::CommandExecutor> DeviceContext::InstantiateCommandExecutor(DeviceContext::InstanceKey instanceKey_)
 {
 	//デバイスにアクセスする関数オブジェ
 	auto deviceGetFunc = [this](DeviceContext::AccessKey key_) -> ID3D12Device8*
@@ -58,9 +67,9 @@ void DeviceContext::CreateCommandExecutor(DeviceContext::InstanceKey instanceKey
 		return device.Get();
 	};
 
-	commandExecutor.reset(new CommandExecutor(instanceKey_, deviceGetFunc));
-
 	Logger::Log("Create: CommandExecutor", fileName);
+
+	return std::make_unique<CommandExecutor>(instanceKey_, deviceGetFunc);
 }
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////

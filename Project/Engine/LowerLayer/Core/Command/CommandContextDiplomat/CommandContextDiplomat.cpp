@@ -4,7 +4,6 @@
 #include "CommandContextToolLender/CommandContextToolLender.h"
 #include "CommandContextCmdProvider/CommandContextCmdProvider.h"
 
-
 namespace
 {
 	auto const fileName = "CommandContextDiplomat.cpp";

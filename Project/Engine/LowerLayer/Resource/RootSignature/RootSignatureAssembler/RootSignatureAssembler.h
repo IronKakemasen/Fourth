@@ -7,7 +7,7 @@
 class RootSignatureContext::Assembler
 {
 public:
-	Assembler(RootSignatureContext::InstanceKey key_, RootSignatureContext::CommandCreateRootSignature cmd_);
+	Assembler(RootSignatureContext::InstanceKey key_, DeviceContextDiplomat* deviceContextDiplomat_);
 	~Assembler();
 
 	//生成関数
@@ -16,7 +16,7 @@ public:
 
 private:
 
-	RootSignatureContext::CommandCreateRootSignature cmdCreaterootSignature;
+	RootSignatureContext::CommandCreateRootSignature cmdCreateRootSignature;
 
 	Microsoft::WRL::ComPtr<ID3D12RootSignature> CreateRootSignature(D3D12_ROOT_SIGNATURE_DESC* desc_);
 };

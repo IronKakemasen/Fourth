@@ -1,8 +1,6 @@
 #include "Nexus.h"
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 #include "../LowerLayer/Core/Device/DeviceContext.h"
-#include "../LowerLayer/Core/Device/DeviceContextCommandProvider/DeviceContextCommandProvider.h"
-#include "../LowerLayer/Core/Device/DeviceContextCommandExecutor/DeviceContextCommandExecutor.h"
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 #include "../LowerLayer/Core/DescriptorHeap/DescriptorHeapContext.h"
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -57,45 +55,15 @@ void Nexus::Instantiate<Nexus::InitSequence::kWindowContext>()
 template<>
 void Nexus::Instantiate<Nexus::InitSequence::kDescriptorHeapContext>()
 {
-	auto* cmdProvider = deviceContext->commandProvider.get();
-	auto* cmdExecutor = deviceContext->commandExecutor.get();
-
-	//DescriptorHeap生成コマンド
-	auto createDescriptorHeapCommand = cmdProvider->ProvideCreateDescriptorHeapCommand();
-	auto createRTVCommand = cmdProvider->ProvideCreateViewCommand<D3D12_RENDER_TARGET_VIEW_DESC>();
-	auto createSRVCommand = cmdProvider->ProvideCreateViewCommand<D3D12_SHADER_RESOURCE_VIEW_DESC>();
-	auto createDSVCommand = cmdProvider->ProvideCreateViewCommand<D3D12_DEPTH_STENCIL_VIEW_DESC>();
-	auto createUAVCommand = cmdProvider->ProvideCreateUAVCommand();
-
-	struct IncrementSizeOfDescriptorHeaps
-	{
-		UINT rtv{};
-		UINT srv{};
-		UINT dsv{};
-		IncrementSizeOfDescriptorHeaps(UINT rtv_, UINT srv_, UINT dsv_) : rtv(rtv_), srv(srv_), dsv(dsv_) {}
-	};
-
-	//deviceContextからDescriptorHandleIncrementSizeを教えてもらう
-	IncrementSizeOfDescriptorHeaps sizeArray
-	(
-		cmdExecutor->CalcDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV),
-		cmdExecutor->CalcDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV),
-		cmdExecutor->CalcDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_DSV)
-	);
-
-	std::array<UINT, 3> tmpSizeArray = { sizeArray.rtv ,sizeArray.srv,sizeArray.dsv };
-
 	//descriptorHeapContextクラスのインスタンス化
-	descriptorHeapContext.reset(new DescriptorHeapContext
+	descriptorHeapContext.reset
 	(
-		DescriptorHeapContext::InstanceKey{},
-		createDescriptorHeapCommand,
-		createRTVCommand,
-		createSRVCommand,
-		createDSVCommand,
-		createUAVCommand,
-		tmpSizeArray
-	));
+		new DescriptorHeapContext
+		(
+			DescriptorHeapContext::InstanceKey{},
+			deviceContext->diplomat.get()
+		)
+	);
 
 	Logger::Log("Instantiate: descriptorHeapContext", fileName);
 }
@@ -105,13 +73,7 @@ void Nexus::Instantiate<Nexus::InitSequence::kDescriptorHeapContext>()
 template<>
 void Nexus::Instantiate<Nexus::InitSequence::kBufferContext>()
 {
-	auto* cmdProvider = deviceContext->commandProvider.get();
-
-	//リソース生成コマンド
-	auto createResourceCommand = cmdProvider->ProvideCreateResourceCommand();
-	Logger::Log("Set: CommandCreateResource", fileName);
-
-	bufferContext.reset(new BufferContext(BufferContext::InstanceKey{}, createResourceCommand, descriptorHeapContext.get(),commandContext->diplomat.get()));
+	bufferContext.reset(new BufferContext(BufferContext::InstanceKey{}, deviceContext->diplomat.get(), descriptorHeapContext.get(), commandContext->diplomat.get()));
 	Logger::Log("Instantiate: bufferContext", fileName);
 }
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -120,27 +82,12 @@ void Nexus::Instantiate<Nexus::InitSequence::kBufferContext>()
 template<>
 void Nexus::Instantiate<Nexus::InitSequence::kCommandContext>()
 {
-	auto* cmdExecutor = deviceContext->commandExecutor.get();
-
-	//メイン
-	auto [cmdQueue, cmdAllocators, cmdList] =
-		cmdExecutor->CreateCommandContextCorePartsForRuntime(DeviceContext::InstanceKey{});
-
-	//リソースアップロード用
-	auto [allocator_forUpload, cmdList_forUpload] =
-		cmdExecutor->CreateCommandContextCorePartsForUpload(DeviceContext::InstanceKey{});
-
 	commandContext.reset
 	(
 		new CommandContext
 		(
 			CommandContext::InstanceKey{},
-			std::move(cmdQueue),
-			std::move(cmdAllocators),
-			std::move(cmdList),
-			std::move(cmdExecutor->CreateFence()),
-			std::move(allocator_forUpload),
-			std::move(cmdList_forUpload)
+			deviceContext->diplomat.get()
 		)
 	);
 
@@ -152,8 +99,6 @@ void Nexus::Instantiate<Nexus::InitSequence::kCommandContext>()
 template<>
 void Nexus::Instantiate<Nexus::InitSequence::kSwapChainContext>()
 {
-	auto* cmdProvider = deviceContext->commandProvider.get();
-
 	swapChainContext.reset
 	(
 		new SwapChainContext
@@ -161,7 +106,7 @@ void Nexus::Instantiate<Nexus::InitSequence::kSwapChainContext>()
 			SwapChainContext::InstanceKey{},
 			descriptorHeapContext.get(),
 			commandContext->diplomat.get(),
-			cmdProvider->ProvideCreateSwapChainCommand(),
+			deviceContext->diplomat.get(),
 			windowContext->WatchHWND()
 		)
 	);
@@ -184,18 +129,12 @@ void Nexus::Instantiate<Nexus::InitSequence::kShaderContext>()
 template<>
 void Nexus::Instantiate<Nexus::InitSequence::kPSO_Context>()
 {
-	auto* cmdProvider = deviceContext->commandProvider.get();
-
-	auto cmdCreateGraphicsPSO = cmdProvider->ProvideCreatePSOCommand<D3D12_PIPELINE_STATE_STREAM_DESC>();
-	auto cmdCreateComputePSO = cmdProvider->ProvideCreatePSOCommand<D3D12_COMPUTE_PIPELINE_STATE_DESC>();
-
 	pso_context.reset
 	(
 		new PSO_Context
 		(
 			PSO_Context::InstanceKey{},
-			cmdCreateGraphicsPSO,
-			cmdCreateComputePSO
+			deviceContext->diplomat.get()
 		)
 	);
 	Logger::Log("Instantiate: PSO_Context", fileName);
@@ -206,16 +145,12 @@ void Nexus::Instantiate<Nexus::InitSequence::kPSO_Context>()
 template<>
 void Nexus::Instantiate<Nexus::InitSequence::kRootSignatureContext>()
 {
-	auto* cmdProvider = deviceContext->commandProvider.get();
-
-	auto cmdCreateRootSignature = cmdProvider->ProvideCommandCreateRootSignature();
-
 	rootSignatureContext.reset
 	(
 		new RootSignatureContext
 		(
 			RootSignatureContext::InstanceKey{},
-			cmdCreateRootSignature
+			deviceContext->diplomat.get()
 		)
 	);
 

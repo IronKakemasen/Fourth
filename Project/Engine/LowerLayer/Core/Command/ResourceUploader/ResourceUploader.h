@@ -1,5 +1,5 @@
 #pragma once
-#include "../Synchronizer/Synchronizer.h"
+#include "../CommandContext.h"
 
 class CommandContext::ResourceUploader
 {
@@ -12,10 +12,9 @@ public:
 	ResourceUploader
 	(
 		CommandContext::InstanceKey key_,
-		Microsoft::WRL::ComPtr<ID3D12CommandAllocator>&& allocator_forUpload_,
-		Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList6>&& cmdList_forUpload_,
+		DeviceContextDiplomat* deviceContextDiplomat_,
 		ID3D12CommandQueue* commandQueue_,
-		Synchronizer* synchronizer_
+		CommandContext::Synchronizer* synchronizer_
 	);
 
 	//コマンドコンテキスとに呼び出してもらう

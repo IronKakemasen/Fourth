@@ -1,9 +1,9 @@
 #pragma once
-#include "../../Resource/Buffer/BufferContext.h"
 
 class Nexus;
 class DescriptorHeapPool;
-\
+class DeviceContextDiplomat;
+
 class DescriptorHeapContext
 {
 	//DescriptorHeap生成クラス
@@ -40,12 +40,7 @@ public:
 	DescriptorHeapContext
 	(
 		InstanceKey instanceKey_,
-		CreateDescriptorHeapCommand createDescriptor_,
-		CreateRTVCommand createRtv_,
-		CreateSRVCommand createSrv_,
-		CreateDSVCommand createDsv_,
-		CreateUAVCommand createUav_,
-		std::array<UINT, 3> incrementSizeOfDH_
+		DeviceContextDiplomat* deviceContextDiplomat_
 	);
 
 	~DescriptorHeapContext();
@@ -63,24 +58,10 @@ private:
 	
 
 	//各種ディスクリプターヒープの作成
-	void CreateDescriptorHeaps
-	(
-		InstanceKey instanceKey_,
-		CreateDescriptorHeapCommand cmd_, 
-		UINT rtvDH_, 
-		UINT srvDH_, 
-		UINT dsvDH_
-	);
+	void CreateDescriptorHeaps(InstanceKey instanceKey_, DeviceContextDiplomat* deviceContextDiplomat_);
 
 	//ビュークリエイターの使用するコマンドをセット
-	void SetCreateViewCommand
-	(
-		InstanceKey key_,
-		CreateRTVCommand createRtv_,
-		CreateSRVCommand createSrv_,
-		CreateDSVCommand createDsv_,
-		CreateUAVCommand createUav_
-	);
+	void SetCreateViewCommand(InstanceKey key_,DeviceContextDiplomat* deviceContextDiplomat_);
 
 };
 

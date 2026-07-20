@@ -2,12 +2,12 @@
 #include "DeviceContextCommandProvider.h"
 
 //コマンド群
-#include "../Commands/CreatGPUBuffer/CommandOfCreatingGPUBuffer.h"
-#include "../Commands/CreateDescriptorHeap/CommandCreateDescriptorHeap.h"
-#include "../Commands/CreateView/CommandCreateView.h"
-#include "../Commands/StructureSwapChain/CommandStructureSwapChain.h"
-#include "../Commands/CreatePSO/CommandCreatePSO.h"
-#include "../Commands/CreateRootSignature/CommandCreateRootSignature.h"
+#include "../../Commands/CreatGPUBuffer/CommandOfCreatingGPUBuffer.h"
+#include "../../Commands/CreateDescriptorHeap/CommandCreateDescriptorHeap.h"
+#include "../../Commands/CreateView/CommandCreateView.h"
+#include "../../Commands/StructureSwapChain/CommandStructureSwapChain.h"
+#include "../../Commands/CreatePSO/CommandCreatePSO.h"
+#include "../../Commands/CreateRootSignature/CommandCreateRootSignature.h"
 
 
 namespace

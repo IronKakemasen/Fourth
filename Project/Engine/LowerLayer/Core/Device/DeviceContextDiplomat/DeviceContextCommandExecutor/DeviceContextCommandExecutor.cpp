@@ -1,10 +1,10 @@
 
 #include "DeviceContextCommandExecutor.h"
-#include "../Commands/DeviceContextCommandBehavior.h"
+#include "../../Commands/DeviceContextCommandBehavior.h"
 
 //コマンド群
-#include "../Commands/StructureCommandContext/CommandStructureCommandContext.h"
-#include "../Commands/CreateFenceObject/CommandCreateFenceObject.h"
+#include "../../Commands/StructureCommandContext/CommandStructureCommandContext.h"
+#include "../../Commands/CreateFenceObject/CommandCreateFenceObject.h"
 
 
 using namespace  ProjectConfig::Render;
@@ -48,7 +48,7 @@ UINT DeviceContext::CommandExecutor::CalcDescriptorHandleIncrementSize(D3D12_DES
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-[[nodiscard]] Microsoft::WRL::ComPtr<ID3D12Fence> DeviceContext::CommandExecutor::CreateFence()
+[[nodiscard]] Microsoft::WRL::ComPtr<ID3D12Fence> DeviceContext::CommandExecutor::CreateFence(CommandContext::InstanceKey instanceKey_)
 {
 	Microsoft::WRL::ComPtr<ID3D12Fence> fence;
 	auto* device = deviceGetter(DeviceContext::AccessKey{});
@@ -62,7 +62,7 @@ UINT DeviceContext::CommandExecutor::CalcDescriptorHandleIncrementSize(D3D12_DES
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 [[nodiscard]] CommandContextCorePartsRuntime
-DeviceContext::CommandExecutor::CreateCommandContextCorePartsForRuntime(DeviceContext::InstanceKey instanceKey_)
+DeviceContext::CommandExecutor::CreateCommandContextCorePartsForRuntime(CommandContext::InstanceKey instanceKey_)
 {
 	//ランタイム用なので万能型
 	auto const cmdListType = D3D12_COMMAND_LIST_TYPE_DIRECT;
@@ -91,7 +91,7 @@ DeviceContext::CommandExecutor::CreateCommandContextCorePartsForRuntime(DeviceCo
 }
 
 [[nodiscard]] CommandContextCorePartsUpload
-DeviceContext::CommandExecutor::CreateCommandContextCorePartsForUpload(DeviceContext::InstanceKey instanceKey_)
+DeviceContext::CommandExecutor::CreateCommandContextCorePartsForUpload(CommandContext::InstanceKey instanceKey_)
 {
 	//コマンドリストのタイプはアップロードしかしないのでコピーだけでいいんだけど、
 	//ちょいめんどいのでいったん

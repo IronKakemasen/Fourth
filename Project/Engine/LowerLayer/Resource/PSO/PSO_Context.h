@@ -1,6 +1,7 @@
 #pragma once
 
 class Nexus;
+class DeviceContextDiplomat;
 
 class PSO_Context
 {
@@ -20,8 +21,7 @@ public:
 	PSO_Context
 	(
 		InstanceKey key_,
-		CommandCreateGraphicsPSO cmdCreateGraphicsPSO_,
-		CommandCreateComputePSO cmdCreateComputePSO_
+		DeviceContextDiplomat* deviceContextDiplomat_
 	);
 
 	~PSO_Context();
@@ -31,12 +31,6 @@ private:
 
 	std::unique_ptr<Assembler> assembler;
 
-	void InstantiatePSO_Assembler
-	(
-		InstanceKey key_,
-		CommandCreateGraphicsPSO cmdCreateGraphicsPSO_,
-		CommandCreateComputePSO cmdCreateComputePSO_
-	);
 
 	//ただのpsoのコンテナ
 	std::vector<Microsoft::WRL::ComPtr<ID3D12PipelineState>> psoContainer;

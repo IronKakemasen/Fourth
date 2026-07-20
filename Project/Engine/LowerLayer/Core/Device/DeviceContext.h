@@ -2,6 +2,7 @@
 
 class Nexus;
 class DeviceContextCommandBehavior;
+class DeviceContextDiplomat;
 
 
 class DeviceContext
@@ -23,8 +24,7 @@ public:
 	//他クラスにコアパーツを流用させないようにコマンドを自ら実行する
 	class CommandExecutor;
 
-	std::unique_ptr<CommandProvider> commandProvider;
-	std::unique_ptr<CommandExecutor> commandExecutor;
+	std::unique_ptr<DeviceContextDiplomat> diplomat;
 
 	DeviceContext(InstanceKey instanceKey);
 	~DeviceContext();
@@ -38,9 +38,9 @@ private:
 	//Setupperからコアパーツを生成し、引き継ぐ
 	void TakeOverCoreParts(DeviceContext::InstanceKey instanceKey_);
 	//CommandProviderの生成
-	void CreateCommandProvider(DeviceContext::InstanceKey instanceKey_);
+	std::unique_ptr<CommandProvider> InstantiateCommandProvider(DeviceContext::InstanceKey instanceKey_);
 	//CommandExecutorの生成
-	void CreateCommandExecutor(DeviceContext::InstanceKey instanceKey_);
+	std::unique_ptr<CommandExecutor> InstantiateCommandExecutor(DeviceContext::InstanceKey instanceKey_);
 };
 
 

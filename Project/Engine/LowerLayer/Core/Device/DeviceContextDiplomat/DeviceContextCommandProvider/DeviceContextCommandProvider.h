@@ -1,5 +1,5 @@
 #pragma once
-#include "../DeviceContext.h"
+#include "../../DeviceContext.h"
 
 class DeviceContextCommandBehavior;
 

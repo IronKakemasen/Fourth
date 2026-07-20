@@ -8,5 +8,5 @@ CommandContext::ToolLender::ToolLender
 	ID3D12CommandQueue* cmdQueue_
 )
 {
-
+	std::get<ID3D12CommandQueue*>(tools) = cmdQueue_;
 }

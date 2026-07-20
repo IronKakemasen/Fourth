@@ -1,21 +1,15 @@
 #include "BufferContext.h"
 #include "BufferDefinition/GPUBuffer/GPUBufferBehavior.h"
-
-//外部
-#include "../../Core/DescriptorHeap/DescriptorHeapContext.h"
-#include "../../Core/DescriptorHeap/ViewCreator/ViewCreator.h"
-
 //バッファ作成ツール
 #include "BufferCreateTools/BufferCreator.h"
 //バッファをアップロード
 #include "BufferCreateTools/BufferUploader/BufferUploader.h"
 //各種ツールを下位部へ貸し出します
 #include "BufferToolLender/BufferToolLender.h"
-
-
 //ランタイム処理ツール
 #include "RuntimeBufferManagementSystems/BufferDispatcher/BufferDispatcher.h"
 #include "RuntimeBufferManagementSystems/BufferInfoExtractor/BufferInfoExtractor.h"
+
 
 #include "ClosedHashMap/ClosedHashMap.h" 
 
@@ -30,14 +24,14 @@ namespace
 BufferContext::BufferContext
 (
 	InstanceKey instanceKey_, 
-	CreateResourceCommand createResourceCommand_, 
+	DeviceContextDiplomat* deviceContextDiplomat_,
 	DescriptorHeapContext* descriptorHeapContext_,
 	CommandContextDiplomat* commandContextDiplomat_
 )
 {
 	Logger::Entry("BufferContext: Constructor");
 
-	resourceCreator.reset(new BufferContext::ResourceCreator(instanceKey_, createResourceCommand_));
+	resourceCreator.reset(new BufferContext::ResourceCreator(instanceKey_, deviceContextDiplomat_));
 	Logger::Log("Instantiate: ResourceCreator", fileName);
 
 	bufferCreator.reset(new BufferCreator(instanceKey_, resourceCreator.get(), descriptorHeapContext_, &bufferPoolSet));

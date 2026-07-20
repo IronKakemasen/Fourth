@@ -1,9 +1,12 @@
-
 #include "RootSignatureAssembler.h"
 
 //ツール
 #include "ToolCreateRootSignature/CreateRootParam/CreateRootParam.h"
 #include "ToolCreateRootSignature/CreateStaticSamplerDesc/CreateStaticSamplerDesc.h"
+
+//外部
+#include "../../../Core/Device/DeviceContextDiplomat/DeviceContextDiplomat.h"
+#include "../../../Core/Device/DeviceContextDiplomat/DeviceContextCommandProvider/DeviceContextCommandProvider.h"
 
 namespace
 {
@@ -13,10 +16,10 @@ namespace
 
 using namespace RootSignatureLayoutComponent;
 
-RootSignatureContext::Assembler::Assembler(RootSignatureContext::InstanceKey key_, RootSignatureContext::CommandCreateRootSignature cmd_)
-	:cmdCreaterootSignature(cmd_)
+RootSignatureContext::Assembler::Assembler(RootSignatureContext::InstanceKey key_, DeviceContextDiplomat* deviceContextDiplomat_)
 {
-
+	auto cmdProvider = deviceContextDiplomat_->Access<DeviceContext::CommandProvider>();
+	cmdCreateRootSignature = cmdProvider->ProvideCommandCreateRootSignature();
 }
 
 RootSignatureContext::Assembler::~Assembler() {};
@@ -97,7 +100,7 @@ Microsoft::WRL::ComPtr<ID3D12RootSignature> RootSignatureContext::Assembler::Cre
 
 	//バイナリをもとにrootSignatureを作成
 	{
-		cmdCreaterootSignature
+		cmdCreateRootSignature
 		(
 			0,
 			signatureBlob,

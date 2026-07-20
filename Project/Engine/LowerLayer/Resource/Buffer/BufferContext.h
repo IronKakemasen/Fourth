@@ -3,6 +3,7 @@
 
 class Nexus;
 class CommandContextDiplomat;
+class DeviceContextDiplomat;
 class DescriptorHeapContext;
 class GPUBufferBehavior;
 template<typename ValueType> class ClosedHashMap;
@@ -86,7 +87,7 @@ public:
 	BufferContext
 	(
 		InstanceKey instanceKey_,
-		CreateResourceCommand createResourceCommand_,
+		DeviceContextDiplomat* deviceContextDiplomat_,
 		DescriptorHeapContext* descriptorHeapContext_,
 		CommandContextDiplomat* commandContextDiplomat_
 	);

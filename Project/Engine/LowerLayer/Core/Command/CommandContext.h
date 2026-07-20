@@ -3,6 +3,7 @@
 class Nexus;
 class SwapChainContext;
 class CommandContextDiplomat;
+class DeviceContextDiplomat;
 
 class CommandContext
 {
@@ -36,12 +37,7 @@ public:
 	CommandContext
 	(
 		const InstanceKey& instanceKey_,
-		Microsoft::WRL::ComPtr<ID3D12CommandQueue> commandQueue_,
-		std::array<Microsoft::WRL::ComPtr<ID3D12CommandAllocator>, (UINT)ProjectConfig::Render::NumBuffer::kDoubleBuffer> commandAllocators_,
-		Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList6> commandList_,
-		Microsoft::WRL::ComPtr<ID3D12Fence> fence_,
-		Microsoft::WRL::ComPtr<ID3D12CommandAllocator> allocator_forUpload_,
-		Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList6> cmdList_forUpload_
+		DeviceContextDiplomat* deviceContextDiplomat_
 	);
 
 	~CommandContext();
@@ -76,7 +72,7 @@ private:
 
 	void CreateFenceEvent();
 	void InstantiateRuntimeCommandControler();
-
+	void CreateCoreParts(InstanceKey instanceKey_,DeviceContextDiplomat* deviceContextDiplomat_);
 };
 
 

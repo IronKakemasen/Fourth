@@ -11,6 +11,10 @@
 #include "CommandContextDiplomat/CommandContextCmdProvider/CommandContextCmdProvider.h"
 #include "CommandContextDiplomat/CommandContextToolLender/CommandContextToolLender.h"
 
+//外部
+#include "../Device/DeviceContextDiplomat/DeviceContextDiplomat.h"
+#include "../Device/DeviceContextDiplomat/DeviceContextCommandExecutor/DeviceContextCommandExecutor.h"
+
 using namespace ProjectConfig::Render;
 
 namespace
@@ -23,17 +27,14 @@ CommandContext::~CommandContext() {}
 CommandContext::CommandContext
 (
 	const InstanceKey& instanceKey_,
-	Microsoft::WRL::ComPtr<ID3D12CommandQueue> commandQueue_,
-	std::array<Microsoft::WRL::ComPtr<ID3D12CommandAllocator>, (UINT)NumBuffer::kDoubleBuffer> commandAllocators_,
-	Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList6> commandList_,
-	Microsoft::WRL::ComPtr<ID3D12Fence> fence_,
-	Microsoft::WRL::ComPtr<ID3D12CommandAllocator> allocator_forUpload_,
-	Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList6> cmdList_forUpload_
-) :commandQueue(std::move(commandQueue_)), commandAllocators(std::move(commandAllocators_)), commandList(std::move(commandList_)), fence(std::move(fence_))
+	DeviceContextDiplomat* deviceContextDiplomat_
+) 
 {
 	Logger::Entry("CommandContext: Constructor");
 
-
+	//コアパーツの生成
+	CreateCoreParts(instanceKey_, deviceContextDiplomat_);
+	//フェンスイベントの生成
 	CreateFenceEvent();
 
 	synchronizer.reset(new Synchronizer(commandQueue.Get(), fence.Get(), &fenceCounters, &fenceEvent,&commonFenceValue));
@@ -42,8 +43,11 @@ CommandContext::CommandContext
 	runtimeWrapper.reset(new RuntimeWrapper(commandList.Get()));
 	Logger::Log("Instantiate: RuntimeWrapper", fileName);
 
-	resourceUploader.reset(new ResourceUploader(instanceKey_,std::move(allocator_forUpload_), std::move(cmdList_forUpload_), commandQueue.Get(), synchronizer.get()));
+	resourceUploader.reset(new ResourceUploader(instanceKey_, deviceContextDiplomat_, commandQueue.Get(), synchronizer.get()));
 	Logger::Log("Instantiate: ResourceUploader", fileName);
+
+	//ランタイムでコマンドを利用するクラスの生成
+	InstantiateRuntimeCommandControler();
 
 	diplomat.reset
 	(
@@ -57,10 +61,24 @@ CommandContext::CommandContext
 
 	Logger::Log("Instantiate: CommandContextDiplomat", fileName);
 
-
-	InstantiateRuntimeCommandControler();
-
 	Logger::End("CommandContext: Constructor");
+}
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+void CommandContext::CreateCoreParts(InstanceKey instanceKey_ , DeviceContextDiplomat* deviceContextDiplomat_)
+{
+	auto* cmdExecutor = deviceContextDiplomat_->Access<DeviceContext::CommandExecutor>();
+
+	//メイン
+	auto [cmdQueue, cmdAllocators, cmdList] =
+		cmdExecutor->CreateCommandContextCorePartsForRuntime(instanceKey_);
+
+	commandQueue = std::move(cmdQueue);
+	commandAllocators = std::move(cmdAllocators);
+	commandList = std::move(cmdList);
+
+	fence = std::move(cmdExecutor->CreateFence(instanceKey_));
 }
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
