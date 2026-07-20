@@ -10,14 +10,14 @@ namespace
 }
 
 
-MeshContext::MeshContext(const InstanceKey& key_, BufferContext* bufferContext_)
+MeshContext::MeshContext(const InstanceKey& key_,BufferContextDiplomat* bufferContextDiplomat_)
 {
 	Logger::Entry("MeshContext: Constructor");
 
 	modelSlotAllocator.reset(new ModelSlotAllocator(key_));
 	Logger::Log("Instantiate: modelSlotAllocator", fileName);
 
-	modelDataCreator.reset(new ModelDataCreator(key_, modelSlotAllocator.get(), bufferContext_));
+	modelDataCreator.reset(new ModelDataCreator(key_, modelSlotAllocator.get(), bufferContextDiplomat_));
 	Logger::Log("Instantiate: ModelDataCreator", fileName);
 
 

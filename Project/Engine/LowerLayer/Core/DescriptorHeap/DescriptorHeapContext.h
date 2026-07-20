@@ -3,6 +3,7 @@
 class Nexus;
 class DescriptorHeapPool;
 class DeviceContextDiplomat;
+class DescriptorHeapContextDiplomat;
 
 class DescriptorHeapContext
 {
@@ -45,9 +46,7 @@ public:
 
 	~DescriptorHeapContext();
 
-	//ツール貸し出し窓口
-	std::unique_ptr<ToolLender> toolLender;
-
+	std::unique_ptr<DescriptorHeapContextDiplomat> diplomat;
 
 private:
 

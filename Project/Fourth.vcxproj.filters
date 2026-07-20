@@ -132,9 +132,6 @@
     <ClCompile Include="Engine\LowerLayer\Resource\Buffer\BufferDefinition\BufferDescriptions\ColorBufferDescription\ColorBufferDescription.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="Engine\LowerLayer\Core\Device\DeviceContextCommandProvider\DeviceContextCommandProvider.cpp">
-      <Filter>ソース ファイル</Filter>
-    </ClCompile>
     <ClCompile Include="Engine\LowerLayer\Core\Device\DeviceSetupper\DeviceContextSetupper.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
@@ -214,9 +211,6 @@
       <Filter>ソース ファイル</Filter>
     </ClCompile>
     <ClCompile Include="Engine\LowerLayer\Core\Command\ResourceUploader\ResourceUploader.cpp">
-      <Filter>ソース ファイル</Filter>
-    </ClCompile>
-    <ClCompile Include="Engine\LowerLayer\Core\Device\DeviceContextCommandExecutor\DeviceContextCommandExecutor.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
     <ClCompile Include="Engine\LowerLayer\Resource\Buffer\BufferDefinition\GPUBuffer\UploadStructuredBuffer\UploadStructuredBuffer.cpp">
@@ -399,10 +393,10 @@
     <ClCompile Include="Engine\MiddleLayer\Math\Vector\Vector4.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="Engine\LowerLayer\Resource\Buffer\BufferToolLender\BufferToolLender.cpp">
+    <ClCompile Include="Engine\LowerLayer\Resource\Buffer\BufferContextDiplomat\BufferToolLender\BufferToolLender.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="Engine\LowerLayer\Core\DescriptorHeap\DescriptorHeapToolLender\DescriptorHeapToolLender.cpp">
+    <ClCompile Include="Engine\LowerLayer\Core\DescriptorHeap\DescriptorHeapContextDiplomat\DescriptorHeapToolLender\DescriptorHeapToolLender.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
     <ClCompile Include="Engine\LowerLayer\Core\Command\CommandContextDiplomat\CommandContextCmdProvider\CommandContextCmdProvider.cpp">
@@ -412,6 +406,21 @@
       <Filter>ソース ファイル</Filter>
     </ClCompile>
     <ClCompile Include="Engine\LowerLayer\Core\Command\CommandContextDiplomat\CommandContextToolLender\CommandContextToolLender.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\LowerLayer\Core\DescriptorHeap\DescriptorHeapContextDiplomat\DescriptorHeapContextDiplomat.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\LowerLayer\Core\Device\DeviceContextDiplomat\DeviceContextDiplomat.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\LowerLayer\Core\Device\DeviceContextDiplomat\DeviceContextCommandExecutor\DeviceContextCommandExecutor.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\LowerLayer\Core\Device\DeviceContextDiplomat\DeviceContextCommandProvider\DeviceContextCommandProvider.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\LowerLayer\Resource\Buffer\BufferContextDiplomat\BufferContextDiplomat.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
   </ItemGroup>
@@ -524,9 +533,6 @@
     <ClInclude Include="Engine\LowerLayer\Resource\Buffer\BufferDefinition\BufferDescriptions\ColorBufferDescription\ColorBufferDescription.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\LowerLayer\Core\Device\DeviceContextCommandProvider\DeviceContextCommandProvider.h">
-      <Filter>ヘッダー ファイル</Filter>
-    </ClInclude>
     <ClInclude Include="Engine\LowerLayer\Core\Device\DeviceSetupper\DeviceContextSetupper.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
@@ -609,9 +615,6 @@
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
     <ClInclude Include="Engine\LowerLayer\Core\Command\ResourceUploader\ResourceUploader.h">
-      <Filter>ヘッダー ファイル</Filter>
-    </ClInclude>
-    <ClInclude Include="Engine\LowerLayer\Core\Device\DeviceContextCommandExecutor\DeviceContextCommandExecutor.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
     <ClInclude Include="Engine\LowerLayer\Resource\Buffer\BufferDefinition\GPUBuffer\UploadStructuredBuffer\UploadStructuredBuffer.h">
@@ -854,10 +857,10 @@
     <ClInclude Include="Engine\MiddleLayer\Math\Vector\Vector4.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\LowerLayer\Resource\Buffer\BufferToolLender\BufferToolLender.h">
+    <ClInclude Include="Engine\LowerLayer\Resource\Buffer\BufferContextDiplomat\BufferToolLender\BufferToolLender.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\LowerLayer\Core\DescriptorHeap\DescriptorHeapToolLender\DescriptorHeapToolLender.h">
+    <ClInclude Include="Engine\LowerLayer\Core\DescriptorHeap\DescriptorHeapContextDiplomat\DescriptorHeapToolLender\DescriptorHeapToolLender.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
     <ClInclude Include="Engine\LowerLayer\Core\Command\CommandContextDiplomat\CommandContextCmdProvider\CommandContextCmdProvider.h">
@@ -879,6 +882,21 @@
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
     <ClInclude Include="Engine\LowerLayer\Core\Command\CommandContextDiplomat\CommandContextToolLender\CommandContextToolLender.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\LowerLayer\Core\DescriptorHeap\DescriptorHeapContextDiplomat\DescriptorHeapContextDiplomat.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\LowerLayer\Core\Device\DeviceContextDiplomat\DeviceContextDiplomat.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\LowerLayer\Core\Device\DeviceContextDiplomat\DeviceContextCommandExecutor\DeviceContextCommandExecutor.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\LowerLayer\Core\Device\DeviceContextDiplomat\DeviceContextCommandProvider\DeviceContextCommandProvider.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\LowerLayer\Resource\Buffer\BufferContextDiplomat\BufferContextDiplomat.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
   </ItemGroup>

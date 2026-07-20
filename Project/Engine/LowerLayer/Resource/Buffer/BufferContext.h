@@ -1,10 +1,11 @@
 #pragma once
 
-
 class Nexus;
 class CommandContextDiplomat;
 class DeviceContextDiplomat;
-class DescriptorHeapContext;
+class DescriptorHeapContextDiplomat;
+class BufferContextDiplomat;
+
 class GPUBufferBehavior;
 template<typename ValueType> class ClosedHashMap;
 
@@ -88,18 +89,16 @@ public:
 	(
 		InstanceKey instanceKey_,
 		DeviceContextDiplomat* deviceContextDiplomat_,
-		DescriptorHeapContext* descriptorHeapContext_,
+		DescriptorHeapContextDiplomat* descriptorheapContextDiplomat_,
 		CommandContextDiplomat* commandContextDiplomat_
 	);
 
 	~BufferContext();
 
-	//ディスパッチャー
-	std::unique_ptr<BufferDispatcher> bufferDispatcher;
 	//Extractors
 	std::unique_ptr<BufferInfoExtractor> bufferInfoExtractor;
 	//ツール貸し出し
-	std::unique_ptr<ToolLender> toolLender;
+	std::unique_ptr<BufferContextDiplomat> diplomat;
 
 	///ランタイムに入る前にNexusuがアップロード用の中間リソースを破棄する
 	void DeleteBufferUploader(const InstanceKey& key_);
@@ -115,6 +114,8 @@ private:
 	std::unique_ptr<ResourceCreator> resourceCreator;
 	//uploader
 	std::unique_ptr<BufferUploader> bufferUploader;
+	//ディスパッチャー
+	std::unique_ptr<BufferDispatcher> bufferDispatcher;
 
 };
 

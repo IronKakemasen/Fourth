@@ -16,7 +16,7 @@ public:
 	(
 		BufferContext::InstanceKey instancekey_,
 		BufferContext::ResourceCreator* resourceCreator_,
-		DescriptorHeapContext* descriptorHeapContext_,
+		DescriptorHeapContextDiplomat* descriptorheapContextDiplomat_,
 		BufferPoolSet* bufferPoolSet_
 	);
 

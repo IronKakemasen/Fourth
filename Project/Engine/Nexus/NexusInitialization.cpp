@@ -73,7 +73,7 @@ void Nexus::Instantiate<Nexus::InitSequence::kDescriptorHeapContext>()
 template<>
 void Nexus::Instantiate<Nexus::InitSequence::kBufferContext>()
 {
-	bufferContext.reset(new BufferContext(BufferContext::InstanceKey{}, deviceContext->diplomat.get(), descriptorHeapContext.get(), commandContext->diplomat.get()));
+	bufferContext.reset(new BufferContext(BufferContext::InstanceKey{}, deviceContext->diplomat.get(), descriptorHeapContext->diplomat.get(), commandContext->diplomat.get()));
 	Logger::Log("Instantiate: bufferContext", fileName);
 }
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -104,7 +104,7 @@ void Nexus::Instantiate<Nexus::InitSequence::kSwapChainContext>()
 		new SwapChainContext
 		(
 			SwapChainContext::InstanceKey{},
-			descriptorHeapContext.get(),
+			descriptorHeapContext->diplomat.get(),
 			commandContext->diplomat.get(),
 			deviceContext->diplomat.get(),
 			windowContext->WatchHWND()
@@ -172,7 +172,7 @@ void Nexus::Instantiate<Nexus::InitSequence::kRenderContext>()
 template<>
 void Nexus::Instantiate<Nexus::InitSequence::kMeshContext>()
 {
-	meshContext.reset(new MeshContext(MeshContext::InstanceKey{},bufferContext.get()));
+	meshContext.reset(new MeshContext(MeshContext::InstanceKey{},bufferContext->diplomat.get()));
 	Logger::Log("Instantiate: MeshContext", fileName);
 }
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////

@@ -5,7 +5,8 @@
 //バッファをアップロード
 #include "BufferCreateTools/BufferUploader/BufferUploader.h"
 //各種ツールを下位部へ貸し出します
-#include "BufferToolLender/BufferToolLender.h"
+#include "BufferContextDiplomat/BufferToolLender/BufferToolLender.h"
+#include "BufferContextDiplomat/BufferContextDiplomat.h"
 //ランタイム処理ツール
 #include "RuntimeBufferManagementSystems/BufferDispatcher/BufferDispatcher.h"
 #include "RuntimeBufferManagementSystems/BufferInfoExtractor/BufferInfoExtractor.h"
@@ -25,7 +26,7 @@ BufferContext::BufferContext
 (
 	InstanceKey instanceKey_, 
 	DeviceContextDiplomat* deviceContextDiplomat_,
-	DescriptorHeapContext* descriptorHeapContext_,
+	DescriptorHeapContextDiplomat* descriptorheapContextDiplomat_,
 	CommandContextDiplomat* commandContextDiplomat_
 )
 {
@@ -34,14 +35,23 @@ BufferContext::BufferContext
 	resourceCreator.reset(new BufferContext::ResourceCreator(instanceKey_, deviceContextDiplomat_));
 	Logger::Log("Instantiate: ResourceCreator", fileName);
 
-	bufferCreator.reset(new BufferCreator(instanceKey_, resourceCreator.get(), descriptorHeapContext_, &bufferPoolSet));
+	bufferCreator.reset(new BufferCreator(instanceKey_, resourceCreator.get(), descriptorheapContextDiplomat_, &bufferPoolSet));
 	Logger::Log("Instantiate: BufferCreator", fileName);
 
 	bufferUploader.reset(new BufferUploader(instanceKey_, resourceCreator.get(),bufferDispatcher.get(), commandContextDiplomat_));
 	Logger::Log("Instantiate: BufferUploader", fileName);
 
-	toolLender.reset(new ToolLender(instanceKey_, bufferCreator.get(), bufferUploader.get()));
+	diplomat.reset
+	(
+		new BufferContextDiplomat
+		(
+			instanceKey_,
+			std::make_unique<ToolLender>(instanceKey_, bufferCreator.get(), bufferUploader.get(), bufferDispatcher.get())
+		)
+	);
 	Logger::Log("Instantiate: ToolLender", fileName);
+	Logger::Log("Instantiate: BufferContextDiplomat", fileName);
+
 
 
 	Logger::End("BufferContext: Constructor");

@@ -1,10 +1,10 @@
 #pragma once
-#include "../DescriptorHeap/DescriptorHeapContext.h"
 
 class Nexus;
 class CommandContext;
 class CommandContextDiplomat;
 class DeviceContextDiplomat;
+class DescriptorHeapContextDiplomat;
 
 class SwapChainContext
 {
@@ -37,7 +37,7 @@ public:
 	SwapChainContext
 	(
 		InstanceKey instanceKey_,
-		DescriptorHeapContext* descriptorHeapContext_,
+		DescriptorHeapContextDiplomat* descriptorheapContextDiplomat_,
 		CommandContextDiplomat* commandContextDiplomat_,
 		DeviceContextDiplomat* deviceContextDiplomat_,
 		const HWND hWnd_
@@ -55,7 +55,7 @@ private:
 	void AssembleCoreParts
 	(
 		InstanceKey instanceKey_,
-		DescriptorHeapContext* descriptorHeapContext_,
+		DescriptorHeapContextDiplomat* descriptorheapContextDiplomat_,
 		CommandContextDiplomat* commandContextDiplomat_,
 		DeviceContextDiplomat* deviceContextDiplomat_,
 		const HWND hWnd_
@@ -73,7 +73,12 @@ private:
 	//スワップチェーンからリソースを引っ張ってくる
 	void PullResourcesFromSwapChain(std::unique_ptr<Description>&& desc_);
 	//RTVの生成
-	void CreateRTV(InstanceKey instanceKey_ ,const D3D12_RENDER_TARGET_VIEW_DESC& rtvDesc_, DescriptorHeapContext::ViewCreator& viewCreator_);
+	void CreateRTV
+	(
+		InstanceKey instanceKey_ ,
+		const D3D12_RENDER_TARGET_VIEW_DESC& rtvDesc_, 
+		DescriptorHeapContextDiplomat* descriptorheapContextDiplomat_
+	);
 
 	//スワップチェーン
 	Microsoft::WRL::ComPtr<IDXGISwapChain4> swapChain = nullptr;

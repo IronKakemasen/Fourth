@@ -8,11 +8,11 @@ BufferContext::BufferCreator::BufferCreator
 (
 	BufferContext::InstanceKey instancekey_,
 	BufferContext::ResourceCreator* resourceCreator_,
-	DescriptorHeapContext* descriptorHeapContext_,
+	DescriptorHeapContextDiplomat* descriptorheapContextDiplomat_,
 	BufferPoolSet* bufferPoolSet_
 ) 
 {
-	assembler.reset(new BufferContext::BufferAssembler(instancekey_, resourceCreator_, descriptorHeapContext_));
+	assembler.reset(new BufferContext::BufferAssembler(instancekey_, resourceCreator_, descriptorheapContextDiplomat_));
 	Logger::Log("Instantiate: BufferAssembler", "BufferCreator.cpp");
 	
 	collector.reset(new BufferContext::BufferCollector(instancekey_,bufferPoolSet_));
