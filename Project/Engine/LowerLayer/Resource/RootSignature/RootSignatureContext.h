@@ -2,7 +2,7 @@
 
 class Nexus;
 class RootSignatureLibrary;
-
+class DeviceContextDiplomat;
 
 class RootSignatureContext
 {
@@ -17,7 +17,7 @@ public:
 	class Assembler;
 	struct InstanceKey;
 
-	RootSignatureContext(InstanceKey key_, CommandCreateRootSignature cmdCreateRootSignature_);
+	RootSignatureContext(InstanceKey key_, DeviceContextDiplomat* deviceContextDiplomat_);
 	~RootSignatureContext();
 
 private:

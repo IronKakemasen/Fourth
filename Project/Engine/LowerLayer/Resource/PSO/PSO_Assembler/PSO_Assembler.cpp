@@ -1,13 +1,16 @@
 
 #include "PSO_Assembler.h"
-
-
 //ツール
 #include "ToolCreatePSO/CreateBlendDesc/CreateBlendDesc.h"
 #include "ToolCreatePSO/CreateDepthStencilDesc/CreateDepthStencilDesc.h"
 #include "ToolCreatePSO/CreateRasterizerDesc/CreateRasterizerDesc.h"
 #include "ToolCreatePSO/CreateSampleDesc/CreateSampleDesc.h"
 #include "ToolCreatePSO/PSO_InfoOutputter/PSO_InfoOutputter.h"
+
+
+//外部
+#include "../../../Core/Device/DeviceContextDiplomat/DeviceContextDiplomat.h"
+#include "../../../Core/Device/DeviceContextDiplomat/DeviceContextCommandProvider/DeviceContextCommandProvider.h"
 
 namespace
 {
@@ -17,11 +20,14 @@ namespace
 PSO_Context::Assembler::Assembler
 (
 	PSO_Context::InstanceKey key_,
-	CommandCreateGraphicsPSO cmdCreateGraphicsPSO_,
-	CommandCreateComputePSO cmdCreateComputePSO_,
+	DeviceContextDiplomat* deviceContextDiplomat_,	
 	std::vector<Microsoft::WRL::ComPtr<ID3D12PipelineState>>* psoContainer_
-):cmdCreateGraphicsPSO(cmdCreateGraphicsPSO_), cmdCreateComputePSO(cmdCreateComputePSO_), psoContainer(psoContainer_)
+): psoContainer(psoContainer_)
 {
+	auto cmdProvider = deviceContextDiplomat_->Access<DeviceContext::CommandProvider>();
+	cmdCreateGraphicsPSO = cmdProvider->ProvideCreatePSOCommand<D3D12_PIPELINE_STATE_STREAM_DESC>();
+	cmdCreateComputePSO = cmdProvider->ProvideCreatePSOCommand<D3D12_COMPUTE_PIPELINE_STATE_DESC>();
+
 
 }
 

@@ -1,5 +1,10 @@
 #include "ResourceUploader.h"
+#include "../Synchronizer/Synchronizer.h"
 
+
+//外部
+#include "../../Device/DeviceContextDiplomat/DeviceContextDiplomat.h"
+#include "../../Device/DeviceContextDiplomat/DeviceContextCommandExecutor/DeviceContextCommandExecutor.h"
 
 namespace
 {
@@ -9,15 +14,27 @@ namespace
 CommandContext::ResourceUploader::ResourceUploader
 (
 	CommandContext::InstanceKey key_,
-	Microsoft::WRL::ComPtr<ID3D12CommandAllocator>&& allocator_forUpload_,
-	Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList6>&& cmdList_forUpload_,
+	DeviceContextDiplomat* deviceContextDiplomat_,
 	ID3D12CommandQueue* commandQueue_,
-	Synchronizer* synchronizer_
+	CommandContext::Synchronizer* synchronizer_
 
-) :allocator(std::move(allocator_forUpload_)),commandList(std::move(cmdList_forUpload_)), commandQueue(commandQueue_), synchronizer(synchronizer_)
+) :commandQueue(commandQueue_), synchronizer(synchronizer_)
 {
+
+	auto* cmdExecutor = deviceContextDiplomat_->Access<DeviceContext::CommandExecutor>();
+	
+	//リソースアップロード用
+	auto [allocator_forUpload, cmdList_forUpload] =
+		cmdExecutor->CreateCommandContextCorePartsForUpload(key_);
+
+	allocator = std::move(allocator_forUpload);
+	commandList = std::move(cmdList_forUpload);
+
+	//最初開いてるから閉じておく
 	commandList->Close();
 	Logger::Log("Close: upload cmdList", fileName);
+
+	///後続するリソースのアップロードのためにコマンドの記録を開始する
 	RecordingStart();
 	Logger::Log("Commmand recording start", fileName);
 

@@ -6,7 +6,7 @@ class BufferContext::ResourceCreator
 	using ResourceContainer = std::vector<Microsoft::WRL::ComPtr<ID3D12Resource>>;
 public:
 
-	ResourceCreator(BufferContext::InstanceKey instanceKey_, BufferContext::CreateResourceCommand createResourceCommand_);
+	ResourceCreator(BufferContext::InstanceKey instanceKey_, DeviceContextDiplomat* deviceContextDiplomat_);
 	~ResourceCreator();
 
 	[[nodiscard]] ResourceContainer Create

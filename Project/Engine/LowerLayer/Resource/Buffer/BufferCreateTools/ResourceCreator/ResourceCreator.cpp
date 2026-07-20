@@ -1,12 +1,14 @@
-
 #include "ResourceCreator.h"
 #include "../../../../../Utility/StringConnverter/StringConverter.h"
 
+//外部
+#include "../../../../Core/Device/DeviceContextDiplomat/DeviceContextDiplomat.h"
+#include "../../../../Core/Device/DeviceContextDiplomat/DeviceContextCommandProvider/DeviceContextCommandProvider.h"
 
-BufferContext::ResourceCreator::ResourceCreator(BufferContext::InstanceKey instanceKey_, BufferContext::CreateResourceCommand createResourceCommand_)
-	: createResourceCommand(createResourceCommand_) 
+BufferContext::ResourceCreator::ResourceCreator(BufferContext::InstanceKey instanceKey_, DeviceContextDiplomat* deviceContextDiplomat_)
 {
-
+	auto* cmdProvider = deviceContextDiplomat_->Access<DeviceContext::CommandProvider>();
+	createResourceCommand = cmdProvider->ProvideCreateResourceCommand();
 }
 
 BufferContext::ResourceCreator::ResourceCreator::~ResourceCreator()

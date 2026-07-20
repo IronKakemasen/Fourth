@@ -11,8 +11,7 @@ public:
 	Assembler
 	(
 		PSO_Context::InstanceKey key_,
-		CommandCreateGraphicsPSO cmdCreateGraphicsPSO_,
-		CommandCreateComputePSO cmdCreateComputePSO_,
+		DeviceContextDiplomat* deviceContextDiplomat_, 
 		std::vector<Microsoft::WRL::ComPtr<ID3D12PipelineState>>* psoContainer_
 	);
 

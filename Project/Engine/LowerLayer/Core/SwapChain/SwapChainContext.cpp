@@ -7,11 +7,15 @@
 //外部
 #include "../Command/CommandContextDiplomat/CommandContextDiplomat.h"
 #include "../Command/CommandContextDiplomat/CommandContextToolLender/CommandContextToolLender.h"
+#include "../Device/DeviceContextDiplomat/DeviceContextDiplomat.h"
+#include "../Device/DeviceContextDiplomat/DeviceContextCommandProvider/DeviceContextCommandProvider.h"
+
 
 #include "../DescriptorHeap/ViewCreator/ViewCreator.h"
 #include "../DescriptorHeap/DescriptorHeapToolLender/DescriptorHeapToolLender.h"
 
 using namespace ProjectConfig::Render;
+using namespace ProjectConfig::Window;
 
 namespace
 {
@@ -23,14 +27,14 @@ SwapChainContext::SwapChainContext
 	InstanceKey instanceKey_,
 	DescriptorHeapContext* descriptorHeapContext_,
 	CommandContextDiplomat* commandContextDiplomat_,
-	CommandCreateSwapChain cmdCreateSwapChain_,
+	DeviceContextDiplomat* deviceContextDiplomat_,
 	const HWND hWnd_
 )
 {
 	Logger::Entry("SwapChainContext: Constructor");
 
-
-	AssembleCoreParts(instanceKey_, descriptorHeapContext_, commandContextDiplomat_, cmdCreateSwapChain_, hWnd_);
+	//コアパーツを組み立てる
+	AssembleCoreParts(instanceKey_, descriptorHeapContext_, commandContextDiplomat_, deviceContextDiplomat_, hWnd_);
 	Logger::Log("Assemble: core parts", fileName);
 
 	presenter.reset(new Presenter(swapChain.Get()));
@@ -69,20 +73,18 @@ void SwapChainContext::AssembleCoreParts
 	InstanceKey instanceKey_,
 	DescriptorHeapContext* descriptorHeapContext_,
 	CommandContextDiplomat* commandContextDiplomat_,
-	CommandCreateSwapChain cmdCreateSwapChain_,
+	DeviceContextDiplomat* deviceContextDiplomat_,
 	const HWND hWnd_
 )
 {
-	using namespace ProjectConfig::Window;
 
 	//コマンドキューを一時的に借りる
 	auto* commandContextToolLender = commandContextDiplomat_->Access<CommandContext::ToolLender>();
 	CommandContext::ToolLender::LicenceType<ID3D12CommandQueue> cmdQueueAccesslicence{};
 	auto* commandQueue = commandContextToolLender->Lend<ID3D12CommandQueue>(cmdQueueAccesslicence);
+	
 	//ビュークリエイターも一時的に借りる
-
 	DescriptorHeapContext::ToolLender::LicenceType<DescriptorHeapContext::ViewCreator> licence;
-
 	DescriptorHeapContext::ViewCreator* viewCreator = 
 		descriptorHeapContext_->toolLender->Lend<DescriptorHeapContext::ViewCreator>(licence);
 
@@ -95,7 +97,9 @@ void SwapChainContext::AssembleCoreParts
 	auto swapChainDesc = bufferDesc->CreateSwapChainDesc();
 
 	//スワップチェーン生成
-	CreateSwapChain(cmdCreateSwapChain_, swapChainDesc, hWnd_, commandQueue);
+	auto commandProvider = deviceContextDiplomat_->Access<DeviceContext::CommandProvider>();
+	auto createSwapChainCmd = commandProvider->ProvideCreateSwapChainCommand();
+	CreateSwapChain(createSwapChainCmd, swapChainDesc, hWnd_, commandQueue);
 
 	//スワップチェーンからリソースを引っ張る
 	PullResourcesFromSwapChain(std::move(bufferDesc));
