@@ -1,6 +1,6 @@
 #pragma once
-#include "../DescriptorHeapContext.h"
-#include "../../../Resource/Buffer/BufferContext.h"
+#include "../../DescriptorHeapContext.h"
+#include "../../../../Resource/Buffer/BufferContext.h"
 
 class SwapChainContext;
 

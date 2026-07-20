@@ -8,7 +8,10 @@
 //ツール
 #include "ModelDataLoader/ModelDataLoader.h"
 #include "../ModelSlotAllocator/ModelSlotAllocator.h"
-#include "../../../Buffer/BufferToolLender/BufferToolLender.h"
+
+//外部
+#include "../../../Buffer/BufferContextDiplomat/BufferToolLender/BufferToolLender.h"
+#include "../../../Buffer/BufferContextDiplomat/BufferContextDiplomat.h"
 #include "../../../Buffer/BufferCreateTools/BufferUploader/BufferUploader.h"
 #include "../../../Buffer/BufferCreateTools/BufferCreator.h"
 
@@ -25,7 +28,7 @@ MeshContext::ModelDataCreator::ModelDataCreator
 (
     MeshContext::InstanceKey key_,
     MeshContext::ModelSlotAllocator* allocator_,
-    BufferContext* bufferContext_
+    BufferContextDiplomat* bufferContextDiplomat_
 )
 {
 	Logger::Entry("ModelDataCreator: Constructor");
@@ -33,7 +36,7 @@ MeshContext::ModelDataCreator::ModelDataCreator
     modelDataLoader.reset(new ModelDataLoader(key_));
     Logger::Log("Instantiate: ModelDataLoader", fileName);
 
-    CreateAllModelData(allocator_, bufferContext_);
+    CreateAllModelData(allocator_, bufferContextDiplomat_);
 
 	Logger::End("ModelDataCreator: Constructor");
 }
@@ -49,16 +52,17 @@ MeshContext::ModelDataCreator::~ModelDataCreator()
 void MeshContext::ModelDataCreator::CreateAllModelData
 (
     MeshContext::ModelSlotAllocator* allocator_,
-    BufferContext* bufferContext_
+    BufferContextDiplomat* bufferContextDiplomat_
 )
 {
     //モデルデータライブラリー
     std::unordered_map<std::string, ModelDataAggregate*> tmpModelDataLib = LoadAllModelFiles();
 
     //bufferCreatorとuploaderを借りる
+    auto bufferToolLender = bufferContextDiplomat_->Access<BufferContext::ToolLender>();
     BufferContext::ToolLender::LicenceType<BufferContext::BufferCreator> licence{};
-    auto* bufferCreator = bufferContext_->toolLender->Lend<BufferContext::BufferCreator>(licence);
-    auto* bufferUploader = bufferContext_->toolLender->Lend<BufferContext::BufferUploader>(licence);
+    auto* bufferCreator = bufferToolLender->Lend<BufferContext::BufferCreator>(licence);
+    auto* bufferUploader = bufferToolLender->Lend<BufferContext::BufferUploader>(licence);
 
     ///メッシュIDとファイル名を紐づける
     for (const auto& [key, value] : tmpModelDataLib)

@@ -22,7 +22,7 @@ public:
 	void CreateAllModelData
 	(
 		MeshContext::ModelSlotAllocator* allocator_,
-		BufferContext* bufferContext_
+		BufferContextDiplomat* bufferContextDiplomat_
 	);
 
 
@@ -30,7 +30,7 @@ public:
 	(
 		MeshContext::InstanceKey key_, 
 		MeshContext::ModelSlotAllocator* allocator_, 
-		BufferContext* bufferContext_
+		BufferContextDiplomat* bufferContextDiplomat_
 	);
 	~ModelDataCreator();
 

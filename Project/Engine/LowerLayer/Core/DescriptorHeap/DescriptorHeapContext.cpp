@@ -2,7 +2,8 @@
 #include "DescriptorHeapCreator/DescriptorHeapCreator.h"
 #include "DescriptorHeapPool/DescriptorHeapPool.h"
 #include "ViewCreator/ViewCreator.h"
-#include "DescriptorHeapToolLender/DescriptorHeapToolLender.h"
+#include "DescriptorHeapContextDiplomat/DescriptorHeapToolLender/DescriptorHeapToolLender.h"
+#include "DescriptorHeapContextDiplomat/DescriptorHeapContextDiplomat.h"
 
 //外部
 #include "../Device/DeviceContextDiplomat/DeviceContextDiplomat.h"
@@ -30,8 +31,16 @@ DescriptorHeapContext::DescriptorHeapContext
 	//ViewCreatorを生成して、中にview生成コマンドを積む
 	SetCreateViewCommand(instanceKey_, deviceContextDiplomat_);
 
-	toolLender.reset(new ToolLender(instanceKey_, viewCreator.get()));
+	diplomat.reset
+	(
+		new DescriptorHeapContextDiplomat
+		(
+			instanceKey_,
+			std::make_unique<ToolLender>(instanceKey_, viewCreator.get())
+		)
+	);
 	Logger::Log("Instantiate: ToolLender", fileName);
+	Logger::Log("Instantiate: DescriptorHeapContextDiplomat", fileName);
 
 
 	Logger::End("DescriptorHeapContext: Constructor");

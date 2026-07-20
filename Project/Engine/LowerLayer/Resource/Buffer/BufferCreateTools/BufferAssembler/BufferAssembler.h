@@ -33,7 +33,7 @@ public:
     (
         BufferContext::InstanceKey instancekey_, 
         ResourceCreator* resourceCreator_,
-        DescriptorHeapContext* descriptorHeapContext_
+        DescriptorHeapContextDiplomat* descriptorheapContextDiplomat_
     );
 
     ///☆☆☆バッファ生成関数（本丸）☆☆☆

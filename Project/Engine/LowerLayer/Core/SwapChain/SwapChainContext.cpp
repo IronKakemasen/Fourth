@@ -9,10 +9,9 @@
 #include "../Command/CommandContextDiplomat/CommandContextToolLender/CommandContextToolLender.h"
 #include "../Device/DeviceContextDiplomat/DeviceContextDiplomat.h"
 #include "../Device/DeviceContextDiplomat/DeviceContextCommandProvider/DeviceContextCommandProvider.h"
-
-
+#include "../DescriptorHeap/DescriptorHeapContextDiplomat/DescriptorHeapContextDiplomat.h"
+#include "../DescriptorHeap/DescriptorHeapContextDiplomat/DescriptorHeapToolLender/DescriptorHeapToolLender.h"
 #include "../DescriptorHeap/ViewCreator/ViewCreator.h"
-#include "../DescriptorHeap/DescriptorHeapToolLender/DescriptorHeapToolLender.h"
 
 using namespace ProjectConfig::Render;
 using namespace ProjectConfig::Window;
@@ -25,7 +24,7 @@ namespace
 SwapChainContext::SwapChainContext
 (
 	InstanceKey instanceKey_,
-	DescriptorHeapContext* descriptorHeapContext_,
+	DescriptorHeapContextDiplomat* descriptorheapContextDiplomat_,
 	CommandContextDiplomat* commandContextDiplomat_,
 	DeviceContextDiplomat* deviceContextDiplomat_,
 	const HWND hWnd_
@@ -34,7 +33,7 @@ SwapChainContext::SwapChainContext
 	Logger::Entry("SwapChainContext: Constructor");
 
 	//コアパーツを組み立てる
-	AssembleCoreParts(instanceKey_, descriptorHeapContext_, commandContextDiplomat_, deviceContextDiplomat_, hWnd_);
+	AssembleCoreParts(instanceKey_, descriptorheapContextDiplomat_, commandContextDiplomat_, deviceContextDiplomat_, hWnd_);
 	Logger::Log("Assemble: core parts", fileName);
 
 	presenter.reset(new Presenter(swapChain.Get()));
@@ -71,7 +70,7 @@ void SwapChainContext::CreateSwapChain
 void SwapChainContext::AssembleCoreParts
 (
 	InstanceKey instanceKey_,
-	DescriptorHeapContext* descriptorHeapContext_,
+	DescriptorHeapContextDiplomat* descriptorheapContextDiplomat_,
 	CommandContextDiplomat* commandContextDiplomat_,
 	DeviceContextDiplomat* deviceContextDiplomat_,
 	const HWND hWnd_
@@ -83,11 +82,6 @@ void SwapChainContext::AssembleCoreParts
 	CommandContext::ToolLender::LicenceType<ID3D12CommandQueue> cmdQueueAccesslicence{};
 	auto* commandQueue = commandContextToolLender->Lend<ID3D12CommandQueue>(cmdQueueAccesslicence);
 	
-	//ビュークリエイターも一時的に借りる
-	DescriptorHeapContext::ToolLender::LicenceType<DescriptorHeapContext::ViewCreator> licence;
-	DescriptorHeapContext::ViewCreator* viewCreator = 
-		descriptorHeapContext_->toolLender->Lend<DescriptorHeapContext::ViewCreator>(licence);
-
 	//ディスクリプション
 	std::unique_ptr<Description> bufferDesc = std::make_unique<Description>(kColor, kRtFormat);
 
@@ -105,7 +99,7 @@ void SwapChainContext::AssembleCoreParts
 	PullResourcesFromSwapChain(std::move(bufferDesc));
 
 	//ビュー生成
-	CreateRTV(instanceKey_, rtvDesc, *viewCreator);
+	CreateRTV(instanceKey_, rtvDesc, descriptorheapContextDiplomat_);
 }
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -132,8 +126,19 @@ void SwapChainContext::PullResourcesFromSwapChain(std::unique_ptr<Description>&&
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-void SwapChainContext::CreateRTV(InstanceKey instanceKey_ , const D3D12_RENDER_TARGET_VIEW_DESC& rtvDesc_, DescriptorHeapContext::ViewCreator& viewCreator_)
+void SwapChainContext::CreateRTV
+(
+	InstanceKey instanceKey_,
+	const D3D12_RENDER_TARGET_VIEW_DESC& rtvDesc_,
+	DescriptorHeapContextDiplomat* descriptorheapContextDiplomat_
+)
 {
+
+	//ビュークリエイターを一時的に借りる
+	DescriptorHeapContext::ToolLender::LicenceType<DescriptorHeapContext::ViewCreator> licence;
+	auto* toolLender = descriptorheapContextDiplomat_->Access<DescriptorHeapContext::ToolLender>();
+	auto* viewCreator = toolLender->Lend<DescriptorHeapContext::ViewCreator>(licence);
+
 	ResourceGetKey resourceGetKey;
 
 	for (int i = 0;i < (int)NumBuffer::kDoubleBuffer;++i)
@@ -142,7 +147,7 @@ void SwapChainContext::CreateRTV(InstanceKey instanceKey_ , const D3D12_RENDER_T
 
 		//Rtvを作成
 		std::tie(std::ignore, rtvCPU, std::ignore) =
-			viewCreator_.CreateView(colorBuffer->GetResource(resourceGetKey, i), &rtvDesc_);
+			viewCreator->CreateView(colorBuffer->GetResource(resourceGetKey, i), &rtvDesc_);
 
 		//インデックスを書き込む
 		colorBuffer->OverrideHeapIndex(instanceKey_,i, rtvCPU);

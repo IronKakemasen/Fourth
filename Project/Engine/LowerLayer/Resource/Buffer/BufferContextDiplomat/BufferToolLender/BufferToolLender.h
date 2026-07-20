@@ -1,6 +1,6 @@
 #pragma once
-#include "../BufferContext.h"
-#include "../../Mesh/MeshContext.h"
+#include "../../BufferContext.h"
+#include "../../../Mesh/MeshContext.h"
 
 class BufferContext::ToolLender
 {
@@ -12,7 +12,7 @@ class BufferContext::ToolLender
 	struct BasicBufferManagementLicence;
 
 	///貸し出せるツール
-	std::tuple<BufferContext::BufferCreator*, BufferContext::BufferUploader*> tools;
+	std::tuple<BufferContext::BufferCreator*, BufferContext::BufferUploader*, BufferContext::BufferDispatcher*> tools;
 
 
 public:
@@ -25,7 +25,8 @@ public:
 	(
 		BufferContext::InstanceKey key_,
 		BufferContext::BufferCreator* creator_,
-		BufferContext::BufferUploader* uploader_
+		BufferContext::BufferUploader* uploader_,
+		BufferContext::BufferDispatcher* dispatcher_
 	);
 
 

@@ -4,8 +4,8 @@
 
 //外部
 #include "../../../../Core/DescriptorHeap/ViewCreator/ViewCreator.h"
-#include "../../../../Core/DescriptorHeap/DescriptorHeapToolLender/DescriptorHeapToolLender.h"
-
+#include "../../../../Core/DescriptorHeap/DescriptorHeapContextDiplomat/DescriptorHeapContextDiplomat.h"
+#include "../../../../Core/DescriptorHeap/DescriptorHeapContextDiplomat/DescriptorHeapToolLender/DescriptorHeapToolLender.h"
 namespace
 {
 	auto const fileName = "BufferAssembler.cpp";
@@ -16,13 +16,14 @@ BufferContext::BufferAssembler::BufferAssembler
 (
 	BufferContext::InstanceKey instancekey_, 
 	ResourceCreator* resourceCreator_, 
-	DescriptorHeapContext* descriptorHeapContext_
+	DescriptorHeapContextDiplomat* descriptorheapContextDiplomat_
 )
 	:resourceCreator(resourceCreator_)
 {
 	//ビュークリエイターを借りる
+	auto* toolLender = descriptorheapContextDiplomat_->Access<DescriptorHeapContext::ToolLender>();
 	DescriptorHeapContext::ToolLender::LicenceType<DescriptorHeapContext::ViewCreator> licence;
-	viewCreator = descriptorHeapContext_->toolLender->Lend<DescriptorHeapContext::ViewCreator>(licence);
+	viewCreator = toolLender->Lend<DescriptorHeapContext::ViewCreator>(licence);
 
 }
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
