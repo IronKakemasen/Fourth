@@ -1,6 +1,4 @@
-
 #include "ComputeBuffer.h"
-#include "../../BufferDescriptions/ComputeBufferDescription/ComputeBufferDescription.h"
 
 
 ComputeBuffer::ComputeBuffer
@@ -40,22 +38,3 @@ ComputeBuffer::ComputeBuffer
 //}
 
 
-uint32_t ComputeBuffer::CurrentSRVHeapIndex()
-{
-	uint32_t heapIndex{};
-
-	if (status == kSRV_UAV)heapIndex = WatchIndex<ViewType::kSRV,uint32_t>(0);
-	else heapIndex = WatchIndex<ViewType::kSRV, uint32_t>(1);
-
-	return heapIndex;
-}
-
-uint32_t ComputeBuffer::CurrentUAVHeapIndex()
-{
-	uint32_t heapIndex{};
-
-	if (status == kUAV_SRV)heapIndex = WatchIndex<ViewType::kUAV, uint32_t>(0);
-	else heapIndex = WatchIndex<ViewType::kUAV, uint32_t>(1);
-
-	return heapIndex;
-}

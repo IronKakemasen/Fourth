@@ -5,12 +5,6 @@
 //読み書き
 class ComputeBuffer final : public GPUBufferBehavior
 {
-	enum Status
-	{
-		kSRV_UAV,	//index0が読み込み用、index1が書き込み用
-		kUAV_SRV,	//その逆
-		kSingle
-	};
 
 public:
 
@@ -26,8 +20,7 @@ public:
 	///+/////////////////////////////////////////////////////////////
 	///+/////////////////////////////////////////////////////////////
 	///+抽象化予定
-	uint32_t CurrentSRVHeapIndex();
-	uint32_t CurrentUAVHeapIndex();
+
 	///+/////////////////////////////////////////////////////////////
 	///+/////////////////////////////////////////////////////////////
 
@@ -36,7 +29,6 @@ public:
 
 private:
 
-	Status status = kSRV_UAV;
 
 };
 

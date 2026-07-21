@@ -9,7 +9,9 @@
 #include "../LowerLayer/Core/SwapChain/SwapChainContext.h"
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 #include "../LowerLayer/Core/Command/CommandContext.h"
+#include "../LowerLayer/Core/Command/CommandContextDiplomat/CommandContextToolLender/CommandContextToolLender.h"
 #include "../LowerLayer/Core/Command/ResourceUploader/ResourceUploader.h"
+#include "../LowerLayer/Core/Command/CommandContextDiplomat/CommandContextDiplomat.h"
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 #include "../LowerLayer/Resource/Shader/ShaderContext.h"
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -23,8 +25,6 @@
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 #include "../LowerLayer/Render/RenderContext.h"
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-
 
 namespace
 {
@@ -182,7 +182,13 @@ template<>
 void Nexus::Instantiate<Nexus::InitSequence::kKickCommands>()
 {
 	//溜まったリソースアップロードのコマンドをキックして同期し、コマンドを閉じる
-	commandContext->resourceUploader->WaitAndKick(CommandContext::ResourceUploader::WaitAndKickLicence{});
+	auto* toolLender = commandContext->diplomat->Access<CommandContext::ToolLender>();
+	//リソースアップローダーにアクセスするための資格
+	CommandContext::ToolLender::LicenceType<CommandContext::ResourceUploader> licence;
+	auto* resourceUploader = toolLender->Lend<CommandContext::ResourceUploader>(licence);
+
+	//リソースアップロードのために溜まったコマンドを全てキックして同期し、コマンドリストを閉じる
+	resourceUploader->WaitAndKick(CommandContext::ResourceUploader::WaitAndKickLicence{});
 }
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -190,6 +196,7 @@ void Nexus::Instantiate<Nexus::InitSequence::kKickCommands>()
 template<>
 void Nexus::Instantiate<Nexus::InitSequence::kDeleteIntermediateResources>()
 {
+	//BufferUploaderを削除する
 	bufferContext->DeleteBufferUploader(BufferContext::InstanceKey{});
 }
 

@@ -17,7 +17,9 @@ public:
 		CommandContext::Synchronizer* synchronizer_
 	);
 
-	//コマンドコンテキスとに呼び出してもらう
+
+	//リソースをアップロードするときに溜まったコマンドリストをキックしてかつ同期し、閉じる
+	//コアな処理なので鍵付き
 	void WaitAndKick(const WaitAndKickLicence& licence_);
 	///commandListをラップしたアップロードコマンド
 	UploadCommand ProvideUploadCommand();

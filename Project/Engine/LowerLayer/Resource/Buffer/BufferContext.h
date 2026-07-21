@@ -11,12 +11,8 @@ template<typename ValueType> class ClosedHashMap;
 
 class BufferContext
 {
-	//生成したバッファを回収し分別する
-	class BufferCollector;
 	//生成したバッファの削除を担当
 	class BufferDeferredReleaser;
-	//BufferUniqueIDから該当のバッファのアドレスをキャストして渡す
-	class BufferDispatcher;
 	//生リソース生成
 	class ResourceCreator;
 
@@ -77,12 +73,16 @@ public:
 	class BufferCreator;
 	//BufferDescriptionをもとにバッファを組み立てる
 	class BufferAssembler;
+	//BufferUniqueIDから該当のバッファのアドレスを渡す
+	class BufferDispatcher;
 	//ランタイムパス構築に必要な情報の抽出とそのリソースのSwapを行う
 	class BufferInfoExtractor;
 	//バッファをアップロードする
 	class BufferUploader;
 	//ツールの貸し出しを行う
 	class ToolLender;
+	//生成したバッファを回収し分別する
+	class BufferCollector;
 
 
 	BufferContext
@@ -106,7 +106,7 @@ public:
 private:
 
 	///複数のバッファのプールが定義されている
-	BufferPoolSet bufferPoolSet;
+	std::unique_ptr<BufferPoolSet> bufferPoolSet;
 
 	///バッファ生成クラス（本丸）
 	std::unique_ptr<BufferCreator> bufferCreator;
@@ -116,6 +116,8 @@ private:
 	std::unique_ptr<BufferUploader> bufferUploader;
 	//ディスパッチャー
 	std::unique_ptr<BufferDispatcher> bufferDispatcher;
+	//コレクター
+	std::unique_ptr<BufferCollector> bufferCollector;
 
 };
 

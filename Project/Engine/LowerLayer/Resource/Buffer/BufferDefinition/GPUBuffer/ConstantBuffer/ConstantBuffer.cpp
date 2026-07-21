@@ -1,6 +1,4 @@
-
 #include "ConstantBuffer.h"
-#include "../../BufferDescriptions/ConstantBufferDescription/ConstantBufferDescription.h"
 
 
 ConstantBuffer::ConstantBuffer
