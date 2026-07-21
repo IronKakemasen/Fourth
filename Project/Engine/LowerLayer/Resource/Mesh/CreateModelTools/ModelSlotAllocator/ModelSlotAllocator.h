@@ -35,6 +35,10 @@ private:
 	///「transformMatrixバッファ」の配列のSRVHeapIndex
 	std::unique_ptr<SRVHeapIndex> transformMatrixBufferArraySRVHeapIndex;
 
+	///そのモデルファイル名が、
+	///「メッシュデータバッファのsrvHeapIndexが詰まったもの」の配列の何番目に該当するのかを索引するため
+	std::unordered_map<std::string, std::vector<MeshDetaID>> meshDataIDLib;
+
 
 	//TransformMatrixの空きインデックスのリスト
 	SimpleFreeList transformMatrixSlotList;

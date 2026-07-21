@@ -8,11 +8,17 @@ class BufferContext::ToolLender
 	template<typename ToolType>
 	struct LicenceTypeTraits;
 
-	//バッファクリエイターやアップローダーを触ってもいい資格
+	//バッファクリエイターやアップローダー、ディスパッチャーを触ってもいい資格
 	struct BasicBufferManagementLicence;
 
 	///貸し出せるツール
-	std::tuple<BufferContext::BufferCreator*, BufferContext::BufferUploader*, BufferContext::BufferDispatcher*> tools;
+	std::tuple
+	<
+		BufferContext::BufferCreator*, 
+		BufferContext::BufferUploader*, 
+		BufferContext::BufferDispatcher*,
+		BufferContext::BufferCollector*
+	> tools;
 
 
 public:
@@ -26,7 +32,8 @@ public:
 		BufferContext::InstanceKey key_,
 		BufferContext::BufferCreator* creator_,
 		BufferContext::BufferUploader* uploader_,
-		BufferContext::BufferDispatcher* dispatcher_
+		BufferContext::BufferDispatcher* dispatcher_,
+		BufferContext::BufferCollector * collector_
 	);
 
 
@@ -57,6 +64,18 @@ struct BufferContext::ToolLender::LicenceTypeTraits<BufferContext::BufferCreator
 
 template<>
 struct BufferContext::ToolLender::LicenceTypeTraits<BufferContext::BufferUploader>
+{
+	using Type = BasicBufferManagementLicence;
+};
+
+template<>
+struct BufferContext::ToolLender::LicenceTypeTraits<BufferContext::BufferDispatcher>
+{
+	using Type = BasicBufferManagementLicence;
+};
+
+template<>
+struct BufferContext::ToolLender::LicenceTypeTraits<BufferContext::BufferCollector>
 {
 	using Type = BasicBufferManagementLicence;
 };

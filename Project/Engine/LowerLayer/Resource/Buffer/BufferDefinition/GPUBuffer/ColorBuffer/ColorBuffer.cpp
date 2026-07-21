@@ -1,6 +1,4 @@
-
 #include "ColorBuffer.h"
-#include "../../BufferDescriptions/ColorBufferDescription/ColorBufferDescription.h"
 
 namespace
 {

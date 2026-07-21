@@ -46,13 +46,13 @@ public:
 	void Finalize(InstanceKey instanceKey_);
 
 	std::unique_ptr<RuntimeCommandController> runtimeCommandController;
-	std::unique_ptr<ResourceUploader> resourceUploader;
 	std::unique_ptr<CommandContextDiplomat> diplomat;
 
 private:
 
 	std::unique_ptr<Synchronizer> synchronizer;
 	std::unique_ptr<RuntimeWrapper> runtimeWrapper;
+	std::unique_ptr<ResourceUploader> resourceUploader;
 
 	
 	//コマンドキュー

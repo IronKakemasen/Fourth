@@ -11,9 +11,11 @@ class CommandContext::ToolLender
 
 	//CommandQueueを扱う資格
 	struct CommandQueueAccessLicence;
+	struct ResourceUploaderAccessLicence;
+
 
 	///貸し出せるツール
-	std::tuple<ID3D12CommandQueue*> tools;
+	std::tuple<ID3D12CommandQueue*, CommandContext::ResourceUploader*> tools;
 
 public:
 
@@ -24,7 +26,8 @@ public:
 	ToolLender
 	(
 		CommandContext::InstanceKey key_,
-		ID3D12CommandQueue* cmdQueue_
+		ID3D12CommandQueue* cmdQueue_,
+		CommandContext::ResourceUploader* resourceUploader_
 	);
 
 
@@ -47,9 +50,23 @@ private:
 	explicit CommandQueueAccessLicence() = default;
 };
 
+struct CommandContext::ToolLender::ResourceUploaderAccessLicence
+{
+private:
+
+	friend class Nexus;
+	explicit ResourceUploaderAccessLicence() = default;
+};
+
 
 template<>
 struct CommandContext::ToolLender::LicenceTypeTraits<ID3D12CommandQueue>
 {
 	using Type = CommandQueueAccessLicence;
+};
+
+template<>
+struct CommandContext::ToolLender::LicenceTypeTraits<CommandContext::ResourceUploader>
+{
+	using Type = ResourceUploaderAccessLicence;
 };

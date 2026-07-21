@@ -35,8 +35,6 @@ public:
 	struct InstanceKey;
 	//生リソースアクセスキー
 	struct ResourceAccessKey;
-	//バッファから描画パスに必要な情報をもらうためのキー
-	struct ExtractMaterialKey;
 
 	GPUBufferBehavior
 	(
@@ -132,12 +130,3 @@ private:
 };
 
 
-struct GPUBufferBehavior::ExtractMaterialKey
-{
-private:
-	
-	friend class SwapChainContext::RenderPassMaterialProvider;
-
-	explicit ExtractMaterialKey() = default;
-
-};

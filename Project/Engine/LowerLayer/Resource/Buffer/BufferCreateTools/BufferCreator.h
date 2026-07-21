@@ -17,7 +17,7 @@ public:
 		BufferContext::InstanceKey instancekey_,
 		BufferContext::ResourceCreator* resourceCreator_,
 		DescriptorHeapContextDiplomat* descriptorheapContextDiplomat_,
-		BufferPoolSet* bufferPoolSet_
+		BufferCollector* collector_
 	);
 
 	~BufferCreator();
@@ -55,7 +55,7 @@ private:
 	//バッファを生成した合計数。ユニークIDとして使用する
 	uint32_t generateBufferSum{};
 	std::unique_ptr<BufferContext::BufferAssembler> assembler;
-	std::unique_ptr<BufferContext::BufferCollector> collector;
+	BufferCollector* collector;
 };
 
 template<>

@@ -175,7 +175,15 @@ namespace
 #include "RuntimeWrapper/RuntimeWrapper.h"
 #include "ResourceUploader/ResourceUploader.h"
 #include "RuntimeCommandController/RuntimeCommandController.h"
-#include "CommandContextCmdProvider/CommandContextCmdProvider.h"
+
+
+#include "CommandContextDiplomat/CommandContextDiplomat.h"
+#include "CommandContextDiplomat/CommandContextCmdProvider/CommandContextCmdProvider.h"
+#include "CommandContextDiplomat/CommandContextToolLender/CommandContextToolLender.h"
+
+//外部
+#include "../Device/DeviceContextDiplomat/DeviceContextDiplomat.h"
+#include "../Device/DeviceContextDiplomat/DeviceContextCommandExecutor/DeviceContextCommandExecutor.h"
 
 using namespace ProjectConfig::Render;
 
@@ -189,17 +197,14 @@ CommandContext::~CommandContext() {}
 CommandContext::CommandContext
 (
 	const InstanceKey& instanceKey_,
-	Microsoft::WRL::ComPtr<ID3D12CommandQueue> commandQueue_,
-	std::array<Microsoft::WRL::ComPtr<ID3D12CommandAllocator>, (UINT)NumBuffer::kDoubleBuffer> commandAllocators_,
-	Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList6> commandList_,
-	Microsoft::WRL::ComPtr<ID3D12Fence> fence_,
-	Microsoft::WRL::ComPtr<ID3D12CommandAllocator> allocator_forUpload_,
-	Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList6> cmdList_forUpload_
-) :commandQueue(std::move(commandQueue_)), commandAllocators(std::move(commandAllocators_)), commandList(std::move(commandList_)), fence(std::move(fence_))
+	DeviceContextDiplomat* deviceContextDiplomat_
+) 
 {
 	Logger::Entry("CommandContext: Constructor");
 
-
+	//コアパーツの生成
+	CreateCoreParts(instanceKey_, deviceContextDiplomat_);
+	//フェンスイベントの生成
 	CreateFenceEvent();
 
 	synchronizer.reset(new Synchronizer(commandQueue.Get(), fence.Get(), &fenceCounters, &fenceEvent,&commonFenceValue));
@@ -208,23 +213,42 @@ CommandContext::CommandContext
 	runtimeWrapper.reset(new RuntimeWrapper(commandList.Get()));
 	Logger::Log("Instantiate: RuntimeWrapper", fileName);
 
-	resourceUploader.reset(new ResourceUploader(instanceKey_,std::move(allocator_forUpload_), std::move(cmdList_forUpload_), commandQueue.Get(), synchronizer.get()));
+	resourceUploader.reset(new ResourceUploader(instanceKey_, deviceContextDiplomat_, commandQueue.Get(), synchronizer.get()));
 	Logger::Log("Instantiate: ResourceUploader", fileName);
 
-	commandProvider.reset(new CommandProvider(instanceKey_, resourceUploader.get()));
-	Logger::Log("Instantiate: commandProvider", fileName);
-
+	//ランタイムでコマンドを利用するクラスの生成
 	InstantiateRuntimeCommandControler();
 
+	diplomat.reset
+	(
+		new CommandContextDiplomat
+		(
+			instanceKey_,
+			std::make_unique<CommandProvider>(instanceKey_, resourceUploader.get()),
+			std::make_unique<ToolLender>(instanceKey_, commandQueue.Get(),resourceUploader.get())
+		)
+	);
+
+	Logger::Log("Instantiate: CommandContextDiplomat", fileName);
 
 	Logger::End("CommandContext: Constructor");
 }
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-ID3D12CommandQueue* CommandContext::GetCommandQueue(CmdQueueGetKey key_)
+void CommandContext::CreateCoreParts(InstanceKey instanceKey_ , DeviceContextDiplomat* deviceContextDiplomat_)
 {
-	return commandQueue.Get();
+	auto* cmdExecutor = deviceContextDiplomat_->Access<DeviceContext::CommandExecutor>();
+
+	//メイン
+	auto [cmdQueue, cmdAllocators, cmdList] =
+		cmdExecutor->CreateCommandContextCorePartsForRuntime(instanceKey_);
+
+	commandQueue = std::move(cmdQueue);
+	commandAllocators = std::move(cmdAllocators);
+	commandList = std::move(cmdList);
+
+	fence = std::move(cmdExecutor->CreateFence(instanceKey_));
 }
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -282,6 +306,8 @@ void CommandContext::Finalize(InstanceKey instanceKey_)
 
 class Nexus;
 class SwapChainContext;
+class CommandContextDiplomat;
+class DeviceContextDiplomat;
 
 class CommandContext
 {
@@ -304,40 +330,35 @@ public:
 
 
 	struct InstanceKey;
-	//コマンドキューのアドレス取得キー
-	struct CmdQueueGetKey;
 	//リソースのアップロードを行う
 	class ResourceUploader;
 	//コマンドを提供する
 	class CommandProvider;
+	//ツールを貸す
+	class ToolLender;
+
 
 	CommandContext
 	(
 		const InstanceKey& instanceKey_,
-		Microsoft::WRL::ComPtr<ID3D12CommandQueue> commandQueue_,
-		std::array<Microsoft::WRL::ComPtr<ID3D12CommandAllocator>, (UINT)ProjectConfig::Render::NumBuffer::kDoubleBuffer> commandAllocators_,
-		Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList6> commandList_,
-		Microsoft::WRL::ComPtr<ID3D12Fence> fence_,
-		Microsoft::WRL::ComPtr<ID3D12CommandAllocator> allocator_forUpload_,
-		Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList6> cmdList_forUpload_
+		DeviceContextDiplomat* deviceContextDiplomat_
 	);
 
 	~CommandContext();
 
-	//コマンドキューの取得
-	ID3D12CommandQueue* GetCommandQueue(CmdQueueGetKey key_);
 	//同期してCloseHandle()する
 	void Finalize(InstanceKey instanceKey_);
 
 	std::unique_ptr<RuntimeCommandController> runtimeCommandController;
-	std::unique_ptr<ResourceUploader> resourceUploader;
-	std::unique_ptr<CommandProvider> commandProvider;
+	std::unique_ptr<CommandContextDiplomat> diplomat;
 
 private:
 
 	std::unique_ptr<Synchronizer> synchronizer;
 	std::unique_ptr<RuntimeWrapper> runtimeWrapper;
+	std::unique_ptr<ResourceUploader> resourceUploader;
 
+	
 	//コマンドキュー
 	Microsoft::WRL::ComPtr<ID3D12CommandQueue> commandQueue;
 	//コマンドアローケータ
@@ -355,7 +376,7 @@ private:
 
 	void CreateFenceEvent();
 	void InstantiateRuntimeCommandControler();
-
+	void CreateCoreParts(InstanceKey instanceKey_,DeviceContextDiplomat* deviceContextDiplomat_);
 };
 
 
@@ -367,13 +388,65 @@ private:
 	explicit InstanceKey() = default;
 };
 
-struct CommandContext::CmdQueueGetKey
-{
-private:
 
-	friend class Nexus;
-	friend class SwapChainContext;
-	explicit CmdQueueGetKey() = default;
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Core\Command\CommandContextDiplomat\CommandContextDiplomat.cpp ===
+========================================
+#include "PreCompileHeader.h"
+#include "CommandContextDiplomat.h"
+
+#include "CommandContextToolLender/CommandContextToolLender.h"
+#include "CommandContextCmdProvider/CommandContextCmdProvider.h"
+
+namespace
+{
+	auto const fileName = "CommandContextDiplomat.cpp";
+}
+
+CommandContextDiplomat::CommandContextDiplomat
+(
+	CommandContext::InstanceKey key_,
+	std::unique_ptr<CommandContext::CommandProvider>&& cmdProvider_,
+	std::unique_ptr<CommandContext::ToolLender>&& toolLender_
+)
+{
+	std::get<std::unique_ptr<CommandContext::CommandProvider>>(tools) = std::move(cmdProvider_);
+	std::get<std::unique_ptr<CommandContext::ToolLender>>(tools) = std::move(toolLender_);
+}
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Core\Command\CommandContextDiplomat\CommandContextDiplomat.h ===
+========================================
+#pragma once
+#include "../CommandContext.h"
+
+
+//コマンドコンテキストの外交官クラス
+class CommandContextDiplomat
+{
+public:
+	CommandContextDiplomat
+	(
+		CommandContext::InstanceKey key_,
+		std::unique_ptr<CommandContext::CommandProvider>&& cmdProvider_,
+		std::unique_ptr<CommandContext::ToolLender>&& toolLender_
+	);
+
+	template<typename ToolType>
+	ToolType* Access()
+	{
+		return std::get<std::unique_ptr<ToolType>>(tools).get();
+	}
+
+private:
+	//提供するツールのテーブル
+	std::tuple<std::unique_ptr<CommandContext::CommandProvider>, std::unique_ptr<CommandContext::ToolLender>> tools;
 
 };
 
@@ -382,7 +455,7 @@ private:
 
 
 ========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Core\Command\CommandContextCmdProvider\CommandContextCmdProvider.cpp ===
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Core\Command\CommandContextDiplomat\CommandContextCmdProvider\CommandContextCmdProvider.cpp ===
 ========================================
 #include "PreCompileHeader.h"
 #include "CommandContextCmdProvider.h"
@@ -399,12 +472,12 @@ CommandContext::CommandProvider::CommandProvider(InstanceKey kew_, CommandContex
 
 
 ========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Core\Command\CommandContextCmdProvider\CommandContextCmdProvider.h ===
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Core\Command\CommandContextDiplomat\CommandContextCmdProvider\CommandContextCmdProvider.h ===
 ========================================
 #pragma once
-#include "../CommandContext.h"
-#include "../../../Resource/Buffer/BufferContext.h"
-#include "../ResourceUploader/ResourceUploader.h"
+#include "../../CommandContext.h"
+#include "../../../../Resource/Buffer/BufferContext.h"
+#include "../../ResourceUploader/ResourceUploader.h"
 
 
 class CommandContext::CommandProvider
@@ -444,10 +517,116 @@ private:
 
 
 ========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Core\Command\CommandContextDiplomat\CommandContextToolLender\CommandContextToolLender.cpp ===
+========================================
+#include "PreCompileHeader.h"
+#include "CommandContextToolLender.h"
+
+
+CommandContext::ToolLender::ToolLender
+(
+	CommandContext::InstanceKey key_,
+	ID3D12CommandQueue* cmdQueue_,
+	CommandContext::ResourceUploader* resourceUploader_
+)
+{
+	std::get<ID3D12CommandQueue*>(tools) = cmdQueue_;
+	std::get<CommandContext::ResourceUploader*>(tools) = resourceUploader_;
+
+
+	}
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Core\Command\CommandContextDiplomat\CommandContextToolLender\CommandContextToolLender.h ===
+========================================
+#pragma once
+#include "../../CommandContext.h"
+
+class SwapChainContext;
+
+class CommandContext::ToolLender
+{
+	//貸し出すツールのデータ型とそれに対応したLicenceのデータ型を結び付ける
+	template<typename ToolType>
+	struct LicenceTypeTraits;
+
+	//CommandQueueを扱う資格
+	struct CommandQueueAccessLicence;
+	struct ResourceUploaderAccessLicence;
+
+
+	///貸し出せるツール
+	std::tuple<ID3D12CommandQueue*, CommandContext::ResourceUploader*> tools;
+
+public:
+
+	//ただのエイリアステンプレート
+	template<typename ToolType>
+	using LicenceType = typename LicenceTypeTraits<ToolType>::Type;
+
+	ToolLender
+	(
+		CommandContext::InstanceKey key_,
+		ID3D12CommandQueue* cmdQueue_,
+		CommandContext::ResourceUploader* resourceUploader_
+	);
+
+
+	///ツールの貸し出し
+	template<typename ToolType>
+	auto* Lend(typename LicenceTypeTraits<ToolType>::Type licence_)
+	{
+		return std::get<ToolType*>(tools);
+	}
+
+
+};
+
+
+struct CommandContext::ToolLender::CommandQueueAccessLicence
+{
+private:
+
+	friend class SwapChainContext;
+	explicit CommandQueueAccessLicence() = default;
+};
+
+struct CommandContext::ToolLender::ResourceUploaderAccessLicence
+{
+private:
+
+	friend class Nexus;
+	explicit ResourceUploaderAccessLicence() = default;
+};
+
+
+template<>
+struct CommandContext::ToolLender::LicenceTypeTraits<ID3D12CommandQueue>
+{
+	using Type = CommandQueueAccessLicence;
+};
+
+template<>
+struct CommandContext::ToolLender::LicenceTypeTraits<CommandContext::ResourceUploader>
+{
+	using Type = ResourceUploaderAccessLicence;
+};
+
+
+
+
+========================================
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Core\Command\ResourceUploader\ResourceUploader.cpp ===
 ========================================
 #include "ResourceUploader.h"
+#include "../Synchronizer/Synchronizer.h"
 
+
+//外部
+#include "../../Device/DeviceContextDiplomat/DeviceContextDiplomat.h"
+#include "../../Device/DeviceContextDiplomat/DeviceContextCommandExecutor/DeviceContextCommandExecutor.h"
 
 namespace
 {
@@ -457,15 +636,27 @@ namespace
 CommandContext::ResourceUploader::ResourceUploader
 (
 	CommandContext::InstanceKey key_,
-	Microsoft::WRL::ComPtr<ID3D12CommandAllocator>&& allocator_forUpload_,
-	Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList6>&& cmdList_forUpload_,
+	DeviceContextDiplomat* deviceContextDiplomat_,
 	ID3D12CommandQueue* commandQueue_,
-	Synchronizer* synchronizer_
+	CommandContext::Synchronizer* synchronizer_
 
-) :allocator(std::move(allocator_forUpload_)),commandList(std::move(cmdList_forUpload_)), commandQueue(commandQueue_), synchronizer(synchronizer_)
+) :commandQueue(commandQueue_), synchronizer(synchronizer_)
 {
+
+	auto* cmdExecutor = deviceContextDiplomat_->Access<DeviceContext::CommandExecutor>();
+	
+	//リソースアップロード用
+	auto [allocator_forUpload, cmdList_forUpload] =
+		cmdExecutor->CreateCommandContextCorePartsForUpload(key_);
+
+	allocator = std::move(allocator_forUpload);
+	commandList = std::move(cmdList_forUpload);
+
+	//最初開いてるから閉じておく
 	commandList->Close();
 	Logger::Log("Close: upload cmdList", fileName);
+
+	///後続するリソースのアップロードのためにコマンドの記録を開始する
 	RecordingStart();
 	Logger::Log("Commmand recording start", fileName);
 
@@ -523,7 +714,7 @@ CommandContext::UploadCommand CommandContext::ResourceUploader::ProvideUploadCom
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Core\Command\ResourceUploader\ResourceUploader.h ===
 ========================================
 #pragma once
-#include "../Synchronizer/Synchronizer.h"
+#include "../CommandContext.h"
 
 class CommandContext::ResourceUploader
 {
@@ -536,10 +727,9 @@ public:
 	ResourceUploader
 	(
 		CommandContext::InstanceKey key_,
-		Microsoft::WRL::ComPtr<ID3D12CommandAllocator>&& allocator_forUpload_,
-		Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList6>&& cmdList_forUpload_,
+		DeviceContextDiplomat* deviceContextDiplomat_,
 		ID3D12CommandQueue* commandQueue_,
-		Synchronizer* synchronizer_
+		CommandContext::Synchronizer* synchronizer_
 	);
 
 	//コマンドコンテキスとに呼び出してもらう
@@ -1027,7 +1217,13 @@ private:
 #include "DescriptorHeapCreator/DescriptorHeapCreator.h"
 #include "DescriptorHeapPool/DescriptorHeapPool.h"
 #include "ViewCreator/ViewCreator.h"
-#include "DescriptorHeapToolLender/DescriptorHeapToolLender.h"
+#include "DescriptorHeapContextDiplomat/DescriptorHeapToolLender/DescriptorHeapToolLender.h"
+#include "DescriptorHeapContextDiplomat/DescriptorHeapContextDiplomat.h"
+
+//外部
+#include "../Device/DeviceContextDiplomat/DeviceContextDiplomat.h"
+#include "../Device/DeviceContextDiplomat/DeviceContextCommandProvider/DeviceContextCommandProvider.h"
+#include "../Device/DeviceContextDiplomat/DeviceContextCommandExecutor/DeviceContextCommandExecutor.h"
 
 namespace
 {
@@ -1039,23 +1235,27 @@ using namespace ProjectConfig::Core;
 DescriptorHeapContext::DescriptorHeapContext
 (
 	InstanceKey instanceKey_,
-	CreateDescriptorHeapCommand createDescriptor_,
-	CreateRTVCommand createRtv_,
-	CreateSRVCommand createSrv_,
-	CreateDSVCommand createDsv_,
-	CreateUAVCommand createUav_,
-	std::array<UINT, 3> incrementSizeOfDH_
+	DeviceContextDiplomat* deviceContextDiplomat_
 )
 {
 	Logger::Entry("DescriptorHeapContext: Constructor");
 
+	
 	//各種DescriptorHeapを生成する
-	CreateDescriptorHeaps(instanceKey_, createDescriptor_,incrementSizeOfDH_.at(0), incrementSizeOfDH_.at(1), incrementSizeOfDH_.at(2));
+	CreateDescriptorHeaps(instanceKey_, deviceContextDiplomat_);
 	//ViewCreatorを生成して、中にview生成コマンドを積む
-	SetCreateViewCommand(instanceKey_, createRtv_, createSrv_, createDsv_, createUav_);
+	SetCreateViewCommand(instanceKey_, deviceContextDiplomat_);
 
-	toolLender.reset(new ToolLender(instanceKey_, viewCreator.get()));
+	diplomat.reset
+	(
+		new DescriptorHeapContextDiplomat
+		(
+			instanceKey_,
+			std::make_unique<ToolLender>(instanceKey_, viewCreator.get())
+		)
+	);
 	Logger::Log("Instantiate: ToolLender", fileName);
+	Logger::Log("Instantiate: DescriptorHeapContextDiplomat", fileName);
 
 
 	Logger::End("DescriptorHeapContext: Constructor");
@@ -1068,29 +1268,31 @@ DescriptorHeapContext::~DescriptorHeapContext()
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-void DescriptorHeapContext::CreateDescriptorHeaps
-(
-	InstanceKey instanceKey_,
-	CreateDescriptorHeapCommand cmd_ ,
-	UINT rtvDH_, 
-	UINT srvDH_, 
-	UINT dsvDH_
-)
+void DescriptorHeapContext::CreateDescriptorHeaps(InstanceKey instanceKey_, DeviceContextDiplomat* deviceContextDiplomat_)
 {
+	auto* cmdExecutor = deviceContextDiplomat_->Access<DeviceContext::CommandExecutor>();
+	auto* cmdProvider = deviceContextDiplomat_->Access<DeviceContext::CommandProvider>();
 
-	DescriptorHeapCreator creator(instanceKey_, cmd_);
+	auto createDescriptorHeapCmd = cmdProvider->ProvideCreateDescriptorHeapCommand();
+
+	UINT rtvDHIncrementSIze = cmdExecutor->CalcDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
+	UINT srvDHIncrementSIze = cmdExecutor->CalcDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+	UINT dsvDHIncrementSIze = cmdExecutor->CalcDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_DSV);
+
+	DescriptorHeapCreator creator(instanceKey_, createDescriptorHeapCmd);
 	Logger::Log("Instantiate: DescriptorHeapCreator", fileName);
 
 	descriptorHeapContainer[D3D12_DESCRIPTOR_HEAP_TYPE::D3D12_DESCRIPTOR_HEAP_TYPE_RTV] = 
-		std::move(creator.Create<D3D12_DESCRIPTOR_HEAP_TYPE_RTV>(kNumDescriptorsRTVHeap, false, rtvDH_));
+		std::move(creator.Create<D3D12_DESCRIPTOR_HEAP_TYPE_RTV>(kNumDescriptorsRTVHeap, false, rtvDHIncrementSIze));
+	
 	Logger::Log("Create: DescriptorHeapRTV", fileName);
 
 	descriptorHeapContainer[D3D12_DESCRIPTOR_HEAP_TYPE::D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV] =
-		std::move(creator.Create<D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV>(kNumDescriptorSRVHeap, true, srvDH_));
+		std::move(creator.Create<D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV>(kNumDescriptorSRVHeap, true, srvDHIncrementSIze));
 	Logger::Log("Create: DescriptorHeapSRV", fileName);
 
 	descriptorHeapContainer[D3D12_DESCRIPTOR_HEAP_TYPE::D3D12_DESCRIPTOR_HEAP_TYPE_DSV] =
-		std::move(creator.Create<D3D12_DESCRIPTOR_HEAP_TYPE_DSV>(kNumDescriptorsDSVHeap, false, dsvDH_));
+		std::move(creator.Create<D3D12_DESCRIPTOR_HEAP_TYPE_DSV>(kNumDescriptorsDSVHeap, false, dsvDHIncrementSIze));
 	Logger::Log("Create: DescriptorHeapDSV", fileName);
 
 
@@ -1101,12 +1303,11 @@ void DescriptorHeapContext::CreateDescriptorHeaps
 void DescriptorHeapContext::SetCreateViewCommand
 (
 	InstanceKey key_,
-	CreateRTVCommand createRtv_,
-	CreateSRVCommand createSrv_,
-	CreateDSVCommand createDsv_,
-	CreateUAVCommand createUav_
+	DeviceContextDiplomat* deviceContextDiplomat_
 )
 {
+	auto* cmdProvider = deviceContextDiplomat_->Access<DeviceContext::CommandProvider>();
+
 	viewCreator.reset
 	(
 		new ViewCreator
@@ -1115,10 +1316,10 @@ void DescriptorHeapContext::SetCreateViewCommand
 			descriptorHeapContainer[D3D12_DESCRIPTOR_HEAP_TYPE::D3D12_DESCRIPTOR_HEAP_TYPE_RTV].get(),
 			descriptorHeapContainer[D3D12_DESCRIPTOR_HEAP_TYPE::D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV].get(),
 			descriptorHeapContainer[D3D12_DESCRIPTOR_HEAP_TYPE::D3D12_DESCRIPTOR_HEAP_TYPE_DSV].get(),
-			std::move(createRtv_),
-			std::move(createSrv_),
-			std::move(createDsv_),
-			std::move(createUav_)
+			std::move(cmdProvider->ProvideCreateViewCommand<D3D12_RENDER_TARGET_VIEW_DESC>()),
+			std::move(cmdProvider->ProvideCreateViewCommand<D3D12_SHADER_RESOURCE_VIEW_DESC>()),
+			std::move(cmdProvider->ProvideCreateViewCommand<D3D12_DEPTH_STENCIL_VIEW_DESC>()),
+			std::move(cmdProvider->ProvideCreateUAVCommand())
 		)
 	);
 
@@ -1137,11 +1338,12 @@ void DescriptorHeapContext::SetCreateViewCommand
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Core\DescriptorHeap\DescriptorHeapContext.h ===
 ========================================
 #pragma once
-#include "../../Resource/Buffer/BufferContext.h"
 
 class Nexus;
 class DescriptorHeapPool;
-\
+class DeviceContextDiplomat;
+class DescriptorHeapContextDiplomat;
+
 class DescriptorHeapContext
 {
 	//DescriptorHeap生成クラス
@@ -1178,19 +1380,12 @@ public:
 	DescriptorHeapContext
 	(
 		InstanceKey instanceKey_,
-		CreateDescriptorHeapCommand createDescriptor_,
-		CreateRTVCommand createRtv_,
-		CreateSRVCommand createSrv_,
-		CreateDSVCommand createDsv_,
-		CreateUAVCommand createUav_,
-		std::array<UINT, 3> incrementSizeOfDH_
+		DeviceContextDiplomat* deviceContextDiplomat_
 	);
 
 	~DescriptorHeapContext();
 
-	//ツール貸し出し窓口
-	std::unique_ptr<ToolLender> toolLender;
-
+	std::unique_ptr<DescriptorHeapContextDiplomat> diplomat;
 
 private:
 
@@ -1201,24 +1396,10 @@ private:
 	
 
 	//各種ディスクリプターヒープの作成
-	void CreateDescriptorHeaps
-	(
-		InstanceKey instanceKey_,
-		CreateDescriptorHeapCommand cmd_, 
-		UINT rtvDH_, 
-		UINT srvDH_, 
-		UINT dsvDH_
-	);
+	void CreateDescriptorHeaps(InstanceKey instanceKey_, DeviceContextDiplomat* deviceContextDiplomat_);
 
 	//ビュークリエイターの使用するコマンドをセット
-	void SetCreateViewCommand
-	(
-		InstanceKey key_,
-		CreateRTVCommand createRtv_,
-		CreateSRVCommand createSrv_,
-		CreateDSVCommand createDsv_,
-		CreateUAVCommand createUav_
-	);
+	void SetCreateViewCommand(InstanceKey key_,DeviceContextDiplomat* deviceContextDiplomat_);
 
 };
 
@@ -1235,6 +1416,132 @@ private:
 	explicit InstanceKey() = default;
 };
 
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Core\DescriptorHeap\DescriptorHeapContextDiplomat\DescriptorHeapContextDiplomat.cpp ===
+========================================
+#include "PreCompileHeader.h"
+#include "DescriptorHeapContextDiplomat.h"
+#include "DescriptorHeapToolLender/DescriptorHeapToolLender.h"
+
+
+DescriptorHeapContextDiplomat::DescriptorHeapContextDiplomat
+(
+	DescriptorHeapContext::InstanceKey key_,
+	std::unique_ptr<DescriptorHeapContext::ToolLender>&& toolLender_
+)
+{
+	std::get<std::unique_ptr<DescriptorHeapContext::ToolLender>>(tools) = std::move(toolLender_);
+}
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Core\DescriptorHeap\DescriptorHeapContextDiplomat\DescriptorHeapContextDiplomat.h ===
+========================================
+#pragma once
+#include "../DescriptorHeapContext.h"
+
+
+//コマンドコンテキストの外交官クラス
+class DescriptorHeapContextDiplomat
+{
+public:
+	DescriptorHeapContextDiplomat
+	(
+		DescriptorHeapContext::InstanceKey key_,
+		std::unique_ptr<DescriptorHeapContext::ToolLender>&& toolLender_
+	);
+
+	template<typename ToolType>
+	ToolType* Access()
+	{
+		return std::get<std::unique_ptr<ToolType>>(tools).get();
+	}
+
+private:
+	//提供するツールのテーブル
+	std::tuple<std::unique_ptr<DescriptorHeapContext::ToolLender>> tools;
+
+};
+
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Core\DescriptorHeap\DescriptorHeapContextDiplomat\DescriptorHeapToolLender\DescriptorHeapToolLender.cpp ===
+========================================
+#include "PreCompileHeader.h"
+#include "DescriptorHeapToolLender.h"
+
+DescriptorHeapContext::ToolLender::ToolLender(InstanceKey key_, DescriptorHeapContext::ViewCreator* viewCretator_) 
+{
+
+	std::get<DescriptorHeapContext::ViewCreator*>(tools) = viewCretator_;
+}
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Core\DescriptorHeap\DescriptorHeapContextDiplomat\DescriptorHeapToolLender\DescriptorHeapToolLender.h ===
+========================================
+#pragma once
+#include "../../DescriptorHeapContext.h"
+#include "../../../../Resource/Buffer/BufferContext.h"
+
+class SwapChainContext;
+
+class DescriptorHeapContext::ToolLender
+{
+public:
+
+	template<typename ToolType>
+	struct LicenceTypeTraits;
+
+	//ただのエイリアステンプレート
+	template<typename ToolType>
+	using LicenceType = typename LicenceTypeTraits<ToolType>::Type;
+
+private:
+
+	struct BasicViewManagementLicence;
+
+	//貸出可能なツール
+	std::tuple<ViewCreator*> tools;
+
+public:
+
+	ToolLender(InstanceKey key_, DescriptorHeapContext::ViewCreator* viewCretator_);
+	
+	///ツールの貸し出し
+	template<typename ToolType>
+	auto* Lend(typename LicenceTypeTraits<ToolType>::Type licence_)
+	{
+		return std::get<ToolType*>(tools);
+	}
+
+};
+
+struct DescriptorHeapContext::ToolLender::BasicViewManagementLicence
+{
+private:
+
+	friend class SwapChainContext;
+	friend class BufferContext::BufferAssembler;
+	explicit BasicViewManagementLicence() = default;
+};
+
+template<>
+struct DescriptorHeapContext::ToolLender::LicenceTypeTraits<DescriptorHeapContext::ViewCreator>
+{
+	using Type = BasicViewManagementLicence;
+};
 
 
 
@@ -1467,79 +1774,6 @@ template<>
 
 
 ========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Core\DescriptorHeap\DescriptorHeapToolLender\DescriptorHeapToolLender.cpp ===
-========================================
-#include "PreCompileHeader.h"
-#include "DescriptorHeapToolLender.h"
-
-DescriptorHeapContext::ToolLender::ToolLender(InstanceKey key_, DescriptorHeapContext::ViewCreator* viewCretator_) 
-{
-
-	std::get<DescriptorHeapContext::ViewCreator*>(tools) = viewCretator_;
-}
-
-
-
-
-========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Core\DescriptorHeap\DescriptorHeapToolLender\DescriptorHeapToolLender.h ===
-========================================
-#pragma once
-#include "../DescriptorHeapContext.h"
-#include "../../../Resource/Buffer/BufferContext.h"
-
-class SwapChainContext;
-
-class DescriptorHeapContext::ToolLender
-{
-public:
-
-	template<typename ToolType>
-	struct LicenceTypeTraits;
-
-	//ただのエイリアステンプレート
-	template<typename ToolType>
-	using LicenceType = typename LicenceTypeTraits<ToolType>::Type;
-
-private:
-
-	struct BasicViewManagementLicence;
-
-	//貸出可能なツール
-	std::tuple<ViewCreator*> tools;
-
-public:
-
-	ToolLender(InstanceKey key_, DescriptorHeapContext::ViewCreator* viewCretator_);
-	
-	///ツールの貸し出し
-	template<typename ToolType>
-	auto* Lend(typename LicenceTypeTraits<ToolType>::Type licence_)
-	{
-		return std::get<ToolType*>(tools);
-	}
-
-};
-
-struct DescriptorHeapContext::ToolLender::BasicViewManagementLicence
-{
-private:
-
-	friend class SwapChainContext;
-	friend class BufferContext::BufferAssembler;
-	explicit BasicViewManagementLicence() = default;
-};
-
-template<>
-struct DescriptorHeapContext::ToolLender::LicenceTypeTraits<DescriptorHeapContext::ViewCreator>
-{
-	using Type = BasicViewManagementLicence;
-};
-
-
-
-
-========================================
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Core\DescriptorHeap\ViewCreator\ViewCreator.cpp ===
 ========================================
 
@@ -1672,9 +1906,10 @@ public:
 #include "DeviceContext.h"
 #include "DeviceSetupper/DeviceContextSetupper.h"
 
-//コマンド窓口
-#include "DeviceContextCommandProvider/DeviceContextCommandProvider.h"
-#include "DeviceContextCommandExecutor/DeviceContextCommandExecutor.h"
+
+#include "DeviceContextDiplomat/DeviceContextDiplomat.h"
+#include "DeviceContextDiplomat/DeviceContextCommandExecutor/DeviceContextCommandExecutor.h"
+#include "DeviceContextDiplomat/DeviceContextCommandProvider/DeviceContextCommandProvider.h"
 
 
 namespace
@@ -1687,8 +1922,16 @@ DeviceContext::DeviceContext(DeviceContext::InstanceKey instanceKey_)
 	Logger::Entry("DeviceContext::Constructor");
 
 	TakeOverCoreParts(instanceKey_);
-	CreateCommandProvider(instanceKey_);
-	CreateCommandExecutor(instanceKey_);
+
+	diplomat.reset
+	(
+		new DeviceContextDiplomat
+		(
+			instanceKey_,
+			std::move(InstantiateCommandProvider(instanceKey_)),
+			std::move(InstantiateCommandExecutor(instanceKey_))
+		)
+	);
 
 	Logger::End("DeviceContext::Constructor");
 }
@@ -1701,7 +1944,7 @@ DeviceContext::~DeviceContext()
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-void DeviceContext::CreateCommandProvider(DeviceContext::InstanceKey instanceKey_)
+std::unique_ptr<DeviceContext::CommandProvider> DeviceContext::InstantiateCommandProvider(DeviceContext::InstanceKey instanceKey_)
 {
 	//デバイスにアクセスする関数オブジェ
 	auto deviceGetFunc = [this](DeviceContext::AccessKey key_) -> ID3D12Device8*
@@ -1715,13 +1958,13 @@ void DeviceContext::CreateCommandProvider(DeviceContext::InstanceKey instanceKey
 		return dxgiFactory.Get();
 	};
 
-	commandProvider.reset(new CommandProvider(instanceKey_, deviceGetFunc, dxgiFactoryGetter));
 	Logger::Log("Create: CommandProvider", fileName);
+	return std::make_unique<CommandProvider>(instanceKey_, deviceGetFunc, dxgiFactoryGetter);
 }
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-void DeviceContext::CreateCommandExecutor(DeviceContext::InstanceKey instanceKey_)
+std::unique_ptr<DeviceContext::CommandExecutor> DeviceContext::InstantiateCommandExecutor(DeviceContext::InstanceKey instanceKey_)
 {
 	//デバイスにアクセスする関数オブジェ
 	auto deviceGetFunc = [this](DeviceContext::AccessKey key_) -> ID3D12Device8*
@@ -1729,9 +1972,9 @@ void DeviceContext::CreateCommandExecutor(DeviceContext::InstanceKey instanceKey
 		return device.Get();
 	};
 
-	commandExecutor.reset(new CommandExecutor(instanceKey_, deviceGetFunc));
-
 	Logger::Log("Create: CommandExecutor", fileName);
+
+	return std::make_unique<CommandExecutor>(instanceKey_, deviceGetFunc);
 }
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -1757,6 +2000,7 @@ void DeviceContext::TakeOverCoreParts(DeviceContext::InstanceKey instanceKey_)
 
 class Nexus;
 class DeviceContextCommandBehavior;
+class DeviceContextDiplomat;
 
 
 class DeviceContext
@@ -1778,8 +2022,7 @@ public:
 	//他クラスにコアパーツを流用させないようにコマンドを自ら実行する
 	class CommandExecutor;
 
-	std::unique_ptr<CommandProvider> commandProvider;
-	std::unique_ptr<CommandExecutor> commandExecutor;
+	std::unique_ptr<DeviceContextDiplomat> diplomat;
 
 	DeviceContext(InstanceKey instanceKey);
 	~DeviceContext();
@@ -1793,9 +2036,9 @@ private:
 	//Setupperからコアパーツを生成し、引き継ぐ
 	void TakeOverCoreParts(DeviceContext::InstanceKey instanceKey_);
 	//CommandProviderの生成
-	void CreateCommandProvider(DeviceContext::InstanceKey instanceKey_);
+	std::unique_ptr<CommandProvider> InstantiateCommandProvider(DeviceContext::InstanceKey instanceKey_);
 	//CommandExecutorの生成
-	void CreateCommandExecutor(DeviceContext::InstanceKey instanceKey_);
+	std::unique_ptr<CommandExecutor> InstantiateCommandExecutor(DeviceContext::InstanceKey instanceKey_);
 };
 
 
@@ -2530,15 +2773,76 @@ struct CommandUploadResource : public DeviceContextCommandBehavior
 
 
 ========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Core\Device\DeviceContextCommandExecutor\DeviceContextCommandExecutor.cpp ===
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Core\Device\DeviceContextDiplomat\DeviceContextDiplomat.cpp ===
+========================================
+#include "PreCompileHeader.h"
+#include "DeviceContextDiplomat.h"
+
+#include "DeviceContextCommandProvider/DeviceContextCommandProvider.h"
+#include "DeviceContextCommandExecutor/DeviceContextCommandExecutor.h"
+
+namespace
+{
+	auto const fileName = "CommandContextDiplomat.cpp";
+}
+
+DeviceContextDiplomat::DeviceContextDiplomat
+(
+	DeviceContext::InstanceKey key_,
+	std::unique_ptr<DeviceContext::CommandProvider>&& cmdProvider_,
+	std::unique_ptr<DeviceContext::CommandExecutor>&& cmdExecutor_
+)
+{
+	std::get<std::unique_ptr<DeviceContext::CommandProvider>>(tools) = std::move(cmdProvider_);
+	std::get<std::unique_ptr<DeviceContext::CommandExecutor>>(tools) = std::move(cmdExecutor_);
+
+}
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Core\Device\DeviceContextDiplomat\DeviceContextDiplomat.h ===
+========================================
+#pragma once
+#include "../DeviceContext.h"
+
+class DeviceContextDiplomat
+{
+public:
+	DeviceContextDiplomat
+	(
+		DeviceContext::InstanceKey key_,
+		std::unique_ptr<DeviceContext::CommandProvider>&& cmdProvider_,
+		std::unique_ptr<DeviceContext::CommandExecutor>&& cmdExecutor_
+	);
+
+	template<typename ToolType>
+	ToolType* Access()
+	{
+		return std::get<std::unique_ptr<ToolType>>(tools).get();
+	}
+
+private:
+	//提供するツールのテーブル
+	std::tuple<std::unique_ptr<DeviceContext::CommandProvider>, std::unique_ptr<DeviceContext::CommandExecutor>> tools;
+
+
+};
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Core\Device\DeviceContextDiplomat\DeviceContextCommandExecutor\DeviceContextCommandExecutor.cpp ===
 ========================================
 
 #include "DeviceContextCommandExecutor.h"
-#include "../Commands/DeviceContextCommandBehavior.h"
+#include "../../Commands/DeviceContextCommandBehavior.h"
 
 //コマンド群
-#include "../Commands/StructureCommandContext/CommandStructureCommandContext.h"
-#include "../Commands/CreateFenceObject/CommandCreateFenceObject.h"
+#include "../../Commands/StructureCommandContext/CommandStructureCommandContext.h"
+#include "../../Commands/CreateFenceObject/CommandCreateFenceObject.h"
 
 
 using namespace  ProjectConfig::Render;
@@ -2582,7 +2886,7 @@ UINT DeviceContext::CommandExecutor::CalcDescriptorHandleIncrementSize(D3D12_DES
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-[[nodiscard]] Microsoft::WRL::ComPtr<ID3D12Fence> DeviceContext::CommandExecutor::CreateFence()
+[[nodiscard]] Microsoft::WRL::ComPtr<ID3D12Fence> DeviceContext::CommandExecutor::CreateFence(CommandContext::InstanceKey instanceKey_)
 {
 	Microsoft::WRL::ComPtr<ID3D12Fence> fence;
 	auto* device = deviceGetter(DeviceContext::AccessKey{});
@@ -2596,7 +2900,7 @@ UINT DeviceContext::CommandExecutor::CalcDescriptorHandleIncrementSize(D3D12_DES
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 [[nodiscard]] CommandContextCorePartsRuntime
-DeviceContext::CommandExecutor::CreateCommandContextCorePartsForRuntime(DeviceContext::InstanceKey instanceKey_)
+DeviceContext::CommandExecutor::CreateCommandContextCorePartsForRuntime(CommandContext::InstanceKey instanceKey_)
 {
 	//ランタイム用なので万能型
 	auto const cmdListType = D3D12_COMMAND_LIST_TYPE_DIRECT;
@@ -2625,7 +2929,7 @@ DeviceContext::CommandExecutor::CreateCommandContextCorePartsForRuntime(DeviceCo
 }
 
 [[nodiscard]] CommandContextCorePartsUpload
-DeviceContext::CommandExecutor::CreateCommandContextCorePartsForUpload(DeviceContext::InstanceKey instanceKey_)
+DeviceContext::CommandExecutor::CreateCommandContextCorePartsForUpload(CommandContext::InstanceKey instanceKey_)
 {
 	//コマンドリストのタイプはアップロードしかしないのでコピーだけでいいんだけど、
 	//ちょいめんどいのでいったん
@@ -2655,10 +2959,11 @@ DeviceContext::CommandExecutor::CreateCommandContextCorePartsForUpload(DeviceCon
 
 
 ========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Core\Device\DeviceContextCommandExecutor\DeviceContextCommandExecutor.h ===
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Core\Device\DeviceContextDiplomat\DeviceContextCommandExecutor\DeviceContextCommandExecutor.h ===
 ========================================
 #pragma once
-#include "../DeviceContext.h"
+#include "../../DeviceContext.h"
+#include "../../../Command/CommandContext.h"
 
 class DeviceContextCommandBehavior;
 
@@ -2677,7 +2982,7 @@ public:
 	UINT CalcDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE type_);
 
 	//フェンス生成
-	[[nodiscard]] Microsoft::WRL::ComPtr<ID3D12Fence> CreateFence();
+	[[nodiscard]] Microsoft::WRL::ComPtr<ID3D12Fence> CreateFence(CommandContext::InstanceKey instanceKey_);
 
 	//CommandContextのコアパーツ生成.ランタイム用
 	[[nodiscard]] std::tuple
@@ -2686,11 +2991,11 @@ public:
 		std::array<Microsoft::WRL::ComPtr<ID3D12CommandAllocator>, (UINT)ProjectConfig::Render::NumBuffer::kDoubleBuffer>,
 		Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList6>
 	>
-	CreateCommandContextCorePartsForRuntime(DeviceContext::InstanceKey instanceKey_);
+	CreateCommandContextCorePartsForRuntime(CommandContext::InstanceKey instanceKey_);
 
 	//リソースアップロード用
 	[[nodiscard]] std::tuple<Microsoft::WRL::ComPtr<ID3D12CommandAllocator>, Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList6>>
-	CreateCommandContextCorePartsForUpload(DeviceContext::InstanceKey instanceKey_);
+	CreateCommandContextCorePartsForUpload(CommandContext::InstanceKey instanceKey_);
 
 
 private:
@@ -2704,18 +3009,18 @@ private:
 
 
 ========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Core\Device\DeviceContextCommandProvider\DeviceContextCommandProvider.cpp ===
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Core\Device\DeviceContextDiplomat\DeviceContextCommandProvider\DeviceContextCommandProvider.cpp ===
 ========================================
 
 #include "DeviceContextCommandProvider.h"
 
 //コマンド群
-#include "../Commands/CreatGPUBuffer/CommandOfCreatingGPUBuffer.h"
-#include "../Commands/CreateDescriptorHeap/CommandCreateDescriptorHeap.h"
-#include "../Commands/CreateView/CommandCreateView.h"
-#include "../Commands/StructureSwapChain/CommandStructureSwapChain.h"
-#include "../Commands/CreatePSO/CommandCreatePSO.h"
-#include "../Commands/CreateRootSignature/CommandCreateRootSignature.h"
+#include "../../Commands/CreatGPUBuffer/CommandOfCreatingGPUBuffer.h"
+#include "../../Commands/CreateDescriptorHeap/CommandCreateDescriptorHeap.h"
+#include "../../Commands/CreateView/CommandCreateView.h"
+#include "../../Commands/StructureSwapChain/CommandStructureSwapChain.h"
+#include "../../Commands/CreatePSO/CommandCreatePSO.h"
+#include "../../Commands/CreateRootSignature/CommandCreateRootSignature.h"
 
 
 namespace
@@ -2943,10 +3248,10 @@ DeviceContext::CommandProvider::ProvideCommandCreateRootSignature()
 
 
 ========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Core\Device\DeviceContextCommandProvider\DeviceContextCommandProvider.h ===
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Core\Device\DeviceContextDiplomat\DeviceContextCommandProvider\DeviceContextCommandProvider.h ===
 ========================================
 #pragma once
-#include "../DeviceContext.h"
+#include "../../DeviceContext.h"
 
 class DeviceContextCommandBehavior;
 
@@ -2955,9 +3260,6 @@ class DeviceContextCommandBehavior;
 class DeviceContext::CommandProvider
 {
 public:
-
-	//コマンド生成キー
-	struct GenerateKey;
 
 	CommandProvider
 	(
@@ -3319,12 +3621,18 @@ private:
 #include "Presenter/Presenter.h"
 #include "RenderPassMaterialProvider/RenderPassMaterialProvider.h"
 
-#include "../Command/CommandContext.h"
-#include "../DescriptorHeap/ViewCreator/ViewCreator.h"
-#include "../DescriptorHeap/DescriptorHeapToolLender/DescriptorHeapToolLender.h"
 
+//外部
+#include "../Command/CommandContextDiplomat/CommandContextDiplomat.h"
+#include "../Command/CommandContextDiplomat/CommandContextToolLender/CommandContextToolLender.h"
+#include "../Device/DeviceContextDiplomat/DeviceContextDiplomat.h"
+#include "../Device/DeviceContextDiplomat/DeviceContextCommandProvider/DeviceContextCommandProvider.h"
+#include "../DescriptorHeap/DescriptorHeapContextDiplomat/DescriptorHeapContextDiplomat.h"
+#include "../DescriptorHeap/DescriptorHeapContextDiplomat/DescriptorHeapToolLender/DescriptorHeapToolLender.h"
+#include "../DescriptorHeap/ViewCreator/ViewCreator.h"
 
 using namespace ProjectConfig::Render;
+using namespace ProjectConfig::Window;
 
 namespace
 {
@@ -3334,16 +3642,16 @@ namespace
 SwapChainContext::SwapChainContext
 (
 	InstanceKey instanceKey_,
-	DescriptorHeapContext* descriptorHeapContext_,
-	CommandContext* commandContext_,
-	CommandCreateSwapChain cmdCreateSwapChain_,
+	DescriptorHeapContextDiplomat* descriptorheapContextDiplomat_,
+	CommandContextDiplomat* commandContextDiplomat_,
+	DeviceContextDiplomat* deviceContextDiplomat_,
 	const HWND hWnd_
 )
 {
 	Logger::Entry("SwapChainContext: Constructor");
 
-
-	AssembleCoreParts(instanceKey_, descriptorHeapContext_, commandContext_, cmdCreateSwapChain_, hWnd_);
+	//コアパーツを組み立てる
+	AssembleCoreParts(instanceKey_, descriptorheapContextDiplomat_, commandContextDiplomat_, deviceContextDiplomat_, hWnd_);
 	Logger::Log("Assemble: core parts", fileName);
 
 	presenter.reset(new Presenter(swapChain.Get()));
@@ -3380,23 +3688,18 @@ void SwapChainContext::CreateSwapChain
 void SwapChainContext::AssembleCoreParts
 (
 	InstanceKey instanceKey_,
-	DescriptorHeapContext* descriptorHeapContext_,
-	CommandContext* commandContext_,
-	CommandCreateSwapChain cmdCreateSwapChain_,
+	DescriptorHeapContextDiplomat* descriptorheapContextDiplomat_,
+	CommandContextDiplomat* commandContextDiplomat_,
+	DeviceContextDiplomat* deviceContextDiplomat_,
 	const HWND hWnd_
 )
 {
-	using namespace ProjectConfig::Window;
 
 	//コマンドキューを一時的に借りる
-	auto* commandQueue = commandContext_->GetCommandQueue(CommandContext::CmdQueueGetKey{});
-	//ビュークリエイターも一時的に借りる
-
-	DescriptorHeapContext::ToolLender::LicenceType<DescriptorHeapContext::ViewCreator> licence;
-
-	DescriptorHeapContext::ViewCreator* viewCreator = 
-		descriptorHeapContext_->toolLender->Lend<DescriptorHeapContext::ViewCreator>(licence);
-
+	auto* commandContextToolLender = commandContextDiplomat_->Access<CommandContext::ToolLender>();
+	CommandContext::ToolLender::LicenceType<ID3D12CommandQueue> cmdQueueAccesslicence{};
+	auto* commandQueue = commandContextToolLender->Lend<ID3D12CommandQueue>(cmdQueueAccesslicence);
+	
 	//ディスクリプション
 	std::unique_ptr<Description> bufferDesc = std::make_unique<Description>(kColor, kRtFormat);
 
@@ -3406,13 +3709,15 @@ void SwapChainContext::AssembleCoreParts
 	auto swapChainDesc = bufferDesc->CreateSwapChainDesc();
 
 	//スワップチェーン生成
-	CreateSwapChain(cmdCreateSwapChain_, swapChainDesc, hWnd_, commandQueue);
+	auto commandProvider = deviceContextDiplomat_->Access<DeviceContext::CommandProvider>();
+	auto createSwapChainCmd = commandProvider->ProvideCreateSwapChainCommand();
+	CreateSwapChain(createSwapChainCmd, swapChainDesc, hWnd_, commandQueue);
 
 	//スワップチェーンからリソースを引っ張る
 	PullResourcesFromSwapChain(std::move(bufferDesc));
 
 	//ビュー生成
-	CreateRTV(instanceKey_, rtvDesc, *viewCreator);
+	CreateRTV(instanceKey_, rtvDesc, descriptorheapContextDiplomat_);
 }
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -3439,8 +3744,19 @@ void SwapChainContext::PullResourcesFromSwapChain(std::unique_ptr<Description>&&
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-void SwapChainContext::CreateRTV(InstanceKey instanceKey_ , const D3D12_RENDER_TARGET_VIEW_DESC& rtvDesc_, DescriptorHeapContext::ViewCreator& viewCreator_)
+void SwapChainContext::CreateRTV
+(
+	InstanceKey instanceKey_,
+	const D3D12_RENDER_TARGET_VIEW_DESC& rtvDesc_,
+	DescriptorHeapContextDiplomat* descriptorheapContextDiplomat_
+)
 {
+
+	//ビュークリエイターを一時的に借りる
+	DescriptorHeapContext::ToolLender::LicenceType<DescriptorHeapContext::ViewCreator> licence;
+	auto* toolLender = descriptorheapContextDiplomat_->Access<DescriptorHeapContext::ToolLender>();
+	auto* viewCreator = toolLender->Lend<DescriptorHeapContext::ViewCreator>(licence);
+
 	ResourceGetKey resourceGetKey;
 
 	for (int i = 0;i < (int)NumBuffer::kDoubleBuffer;++i)
@@ -3449,7 +3765,7 @@ void SwapChainContext::CreateRTV(InstanceKey instanceKey_ , const D3D12_RENDER_T
 
 		//Rtvを作成
 		std::tie(std::ignore, rtvCPU, std::ignore) =
-			viewCreator_.CreateView(colorBuffer->GetResource(resourceGetKey, i), &rtvDesc_);
+			viewCreator->CreateView(colorBuffer->GetResource(resourceGetKey, i), &rtvDesc_);
 
 		//インデックスを書き込む
 		colorBuffer->OverrideHeapIndex(instanceKey_,i, rtvCPU);
@@ -3466,12 +3782,12 @@ void SwapChainContext::CreateRTV(InstanceKey instanceKey_ , const D3D12_RENDER_T
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Core\SwapChain\SwapChainContext.h ===
 ========================================
 #pragma once
-#include "../DescriptorHeap/DescriptorHeapContext.h"
 
 class Nexus;
 class CommandContext;
-
-
+class CommandContextDiplomat;
+class DeviceContextDiplomat;
+class DescriptorHeapContextDiplomat;
 
 class SwapChainContext
 {
@@ -3504,9 +3820,9 @@ public:
 	SwapChainContext
 	(
 		InstanceKey instanceKey_,
-		DescriptorHeapContext* descriptorHeapContext_,
-		CommandContext* commandContext_,
-		CommandCreateSwapChain cmdCreateSwapChain_,
+		DescriptorHeapContextDiplomat* descriptorheapContextDiplomat_,
+		CommandContextDiplomat* commandContextDiplomat_,
+		DeviceContextDiplomat* deviceContextDiplomat_,
 		const HWND hWnd_
 	);
 
@@ -3522,9 +3838,9 @@ private:
 	void AssembleCoreParts
 	(
 		InstanceKey instanceKey_,
-		DescriptorHeapContext* descriptorHeapContext_,
-		CommandContext* commandContext_,
-		CommandCreateSwapChain cmdCreateSwapChain_,
+		DescriptorHeapContextDiplomat* descriptorheapContextDiplomat_,
+		CommandContextDiplomat* commandContextDiplomat_,
+		DeviceContextDiplomat* deviceContextDiplomat_,
 		const HWND hWnd_
 	);
 
@@ -3540,7 +3856,12 @@ private:
 	//スワップチェーンからリソースを引っ張ってくる
 	void PullResourcesFromSwapChain(std::unique_ptr<Description>&& desc_);
 	//RTVの生成
-	void CreateRTV(InstanceKey instanceKey_ ,const D3D12_RENDER_TARGET_VIEW_DESC& rtvDesc_, DescriptorHeapContext::ViewCreator& viewCreator_);
+	void CreateRTV
+	(
+		InstanceKey instanceKey_ ,
+		const D3D12_RENDER_TARGET_VIEW_DESC& rtvDesc_, 
+		DescriptorHeapContextDiplomat* descriptorheapContextDiplomat_
+	);
 
 	//スワップチェーン
 	Microsoft::WRL::ComPtr<IDXGISwapChain4> swapChain = nullptr;
@@ -5856,22 +6177,17 @@ public:
 ========================================
 #include "BufferContext.h"
 #include "BufferDefinition/GPUBuffer/GPUBufferBehavior.h"
-
-//外部
-#include "../../Core/DescriptorHeap/DescriptorHeapContext.h"
-#include "../../Core/DescriptorHeap/ViewCreator/ViewCreator.h"
-
 //バッファ作成ツール
 #include "BufferCreateTools/BufferCreator.h"
 //バッファをアップロード
 #include "BufferCreateTools/BufferUploader/BufferUploader.h"
 //各種ツールを下位部へ貸し出します
-#include "BufferToolLender/BufferToolLender.h"
-
-
+#include "BufferContextDiplomat/BufferToolLender/BufferToolLender.h"
+#include "BufferContextDiplomat/BufferContextDiplomat.h"
 //ランタイム処理ツール
 #include "RuntimeBufferManagementSystems/BufferDispatcher/BufferDispatcher.h"
 #include "RuntimeBufferManagementSystems/BufferInfoExtractor/BufferInfoExtractor.h"
+
 
 #include "ClosedHashMap/ClosedHashMap.h" 
 
@@ -5886,24 +6202,33 @@ namespace
 BufferContext::BufferContext
 (
 	InstanceKey instanceKey_, 
-	CreateResourceCommand createResourceCommand_, 
-	DescriptorHeapContext* descriptorHeapContext_,
-	CommandContext* commandContext_
+	DeviceContextDiplomat* deviceContextDiplomat_,
+	DescriptorHeapContextDiplomat* descriptorheapContextDiplomat_,
+	CommandContextDiplomat* commandContextDiplomat_
 )
 {
 	Logger::Entry("BufferContext: Constructor");
 
-	resourceCreator.reset(new BufferContext::ResourceCreator(instanceKey_, createResourceCommand_));
+	resourceCreator.reset(new BufferContext::ResourceCreator(instanceKey_, deviceContextDiplomat_));
 	Logger::Log("Instantiate: ResourceCreator", fileName);
 
-	bufferCreator.reset(new BufferCreator(instanceKey_, resourceCreator.get(), descriptorHeapContext_, &bufferPoolSet));
+	bufferCreator.reset(new BufferCreator(instanceKey_, resourceCreator.get(), descriptorheapContextDiplomat_, &bufferPoolSet));
 	Logger::Log("Instantiate: BufferCreator", fileName);
 
-	bufferUploader.reset(new BufferUploader(instanceKey_, resourceCreator.get(),bufferDispatcher.get(), commandContext_));
+	bufferUploader.reset(new BufferUploader(instanceKey_, resourceCreator.get(),bufferDispatcher.get(), commandContextDiplomat_));
 	Logger::Log("Instantiate: BufferUploader", fileName);
 
-	toolLender.reset(new ToolLender(instanceKey_, bufferCreator.get(), bufferUploader.get()));
+	diplomat.reset
+	(
+		new BufferContextDiplomat
+		(
+			instanceKey_,
+			std::make_unique<ToolLender>(instanceKey_, bufferCreator.get(), bufferUploader.get(), bufferDispatcher.get())
+		)
+	);
 	Logger::Log("Instantiate: ToolLender", fileName);
+	Logger::Log("Instantiate: BufferContextDiplomat", fileName);
+
 
 
 	Logger::End("BufferContext: Constructor");
@@ -5954,10 +6279,12 @@ void BufferContext::DeleteBufferUploader(const InstanceKey& key_)
 ========================================
 #pragma once
 
-
 class Nexus;
-class CommandContext;
-class DescriptorHeapContext;
+class CommandContextDiplomat;
+class DeviceContextDiplomat;
+class DescriptorHeapContextDiplomat;
+class BufferContextDiplomat;
+
 class GPUBufferBehavior;
 template<typename ValueType> class ClosedHashMap;
 
@@ -6040,19 +6367,17 @@ public:
 	BufferContext
 	(
 		InstanceKey instanceKey_,
-		CreateResourceCommand createResourceCommand_,
-		DescriptorHeapContext* descriptorHeapContext_,
-		CommandContext* commandContext_
+		DeviceContextDiplomat* deviceContextDiplomat_,
+		DescriptorHeapContextDiplomat* descriptorheapContextDiplomat_,
+		CommandContextDiplomat* commandContextDiplomat_
 	);
 
 	~BufferContext();
 
-	//ディスパッチャー
-	std::unique_ptr<BufferDispatcher> bufferDispatcher;
 	//Extractors
 	std::unique_ptr<BufferInfoExtractor> bufferInfoExtractor;
 	//ツール貸し出し
-	std::unique_ptr<ToolLender> toolLender;
+	std::unique_ptr<BufferContextDiplomat> diplomat;
 
 	///ランタイムに入る前にNexusuがアップロード用の中間リソースを破棄する
 	void DeleteBufferUploader(const InstanceKey& key_);
@@ -6068,6 +6393,8 @@ private:
 	std::unique_ptr<ResourceCreator> resourceCreator;
 	//uploader
 	std::unique_ptr<BufferUploader> bufferUploader;
+	//ディスパッチャー
+	std::unique_ptr<BufferDispatcher> bufferDispatcher;
 
 };
 
@@ -6094,6 +6421,158 @@ private:
 
 
 ========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Buffer\BufferContextDiplomat\BufferContextDiplomat.cpp ===
+========================================
+#include "PreCompileHeader.h"
+#include "BufferContextDiplomat.h"
+#include "BufferToolLender/BufferToolLender.h"
+
+
+BufferContextDiplomat::BufferContextDiplomat
+(
+	BufferContext::InstanceKey key_,
+	std::unique_ptr<BufferContext::ToolLender>&& toolLender_
+)
+{
+	std::get<std::unique_ptr<BufferContext::ToolLender>>(tools) = std::move(toolLender_);
+}
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Buffer\BufferContextDiplomat\BufferContextDiplomat.h ===
+========================================
+#pragma once
+#include "../BufferContext.h"
+
+
+//コマンドコンテキストの外交官クラス
+class BufferContextDiplomat
+{
+public:
+	BufferContextDiplomat
+	(
+		BufferContext::InstanceKey key_,
+		std::unique_ptr<BufferContext::ToolLender>&& toolLender_
+	);
+
+	template<typename ToolType>
+	ToolType* Access()
+	{
+		return std::get<std::unique_ptr<ToolType>>(tools).get();
+	}
+
+private:
+	//提供するツールのテーブル
+	std::tuple<std::unique_ptr<BufferContext::ToolLender>> tools;
+
+};
+
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Buffer\BufferContextDiplomat\BufferToolLender\BufferToolLender.cpp ===
+========================================
+#include "PreCompileHeader.h"
+#include "BufferToolLender.h"
+
+
+BufferContext::ToolLender::ToolLender
+(
+	BufferContext::InstanceKey key_,
+	BufferContext::BufferCreator* creator_,
+	BufferContext::BufferUploader* uploader_,
+	BufferContext::BufferDispatcher* dispatcher_
+)
+{
+	std::get<BufferContext::BufferCreator*>(tools) = creator_;
+	std::get<BufferContext::BufferUploader*>(tools) = uploader_;
+	std::get<BufferContext::BufferDispatcher*>(tools) = dispatcher_;
+
+}
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Buffer\BufferContextDiplomat\BufferToolLender\BufferToolLender.h ===
+========================================
+#pragma once
+#include "../../BufferContext.h"
+#include "../../../Mesh/MeshContext.h"
+
+class BufferContext::ToolLender
+{
+	//貸し出すツールのデータ型とそれに対応したLicenceのデータ型を結び付ける
+	template<typename ToolType>
+	struct LicenceTypeTraits;
+
+	//バッファクリエイターやアップローダー、ディスパッチャーを触ってもいい資格
+	struct BasicBufferManagementLicence;
+
+	///貸し出せるツール
+	std::tuple<BufferContext::BufferCreator*, BufferContext::BufferUploader*, BufferContext::BufferDispatcher*> tools;
+
+
+public:
+
+	//ただのエイリアステンプレート
+	template<typename ToolType>
+	using LicenceType = typename LicenceTypeTraits<ToolType>::Type;
+
+	ToolLender
+	(
+		BufferContext::InstanceKey key_,
+		BufferContext::BufferCreator* creator_,
+		BufferContext::BufferUploader* uploader_,
+		BufferContext::BufferDispatcher* dispatcher_
+	);
+
+
+	///ツールの貸し出し
+	template<typename ToolType>
+	auto* Lend(typename LicenceTypeTraits<ToolType>::Type licence_)
+	{
+		return std::get<ToolType*>(tools);
+	}
+
+};
+
+
+struct BufferContext::ToolLender::BasicBufferManagementLicence
+{
+private:
+
+	friend class MeshContext::ModelDataCreator;
+	explicit BasicBufferManagementLicence() = default;
+};
+
+
+template<>
+struct BufferContext::ToolLender::LicenceTypeTraits<BufferContext::BufferCreator>
+{
+	using Type = BasicBufferManagementLicence;
+};
+
+template<>
+struct BufferContext::ToolLender::LicenceTypeTraits<BufferContext::BufferUploader>
+{
+	using Type = BasicBufferManagementLicence;
+};
+
+template<>
+struct BufferContext::ToolLender::LicenceTypeTraits<BufferContext::BufferDispatcher>
+{
+	using Type = BasicBufferManagementLicence;
+};
+
+
+
+
+========================================
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Buffer\BufferCreateTools\BufferCreator.cpp ===
 ========================================
 #include "BufferCreator.h"
@@ -6106,11 +6585,11 @@ BufferContext::BufferCreator::BufferCreator
 (
 	BufferContext::InstanceKey instancekey_,
 	BufferContext::ResourceCreator* resourceCreator_,
-	DescriptorHeapContext* descriptorHeapContext_,
+	DescriptorHeapContextDiplomat* descriptorheapContextDiplomat_,
 	BufferPoolSet* bufferPoolSet_
 ) 
 {
-	assembler.reset(new BufferContext::BufferAssembler(instancekey_, resourceCreator_, descriptorHeapContext_));
+	assembler.reset(new BufferContext::BufferAssembler(instancekey_, resourceCreator_, descriptorheapContextDiplomat_));
 	Logger::Log("Instantiate: BufferAssembler", "BufferCreator.cpp");
 	
 	collector.reset(new BufferContext::BufferCollector(instancekey_,bufferPoolSet_));
@@ -6150,7 +6629,7 @@ public:
 	(
 		BufferContext::InstanceKey instancekey_,
 		BufferContext::ResourceCreator* resourceCreator_,
-		DescriptorHeapContext* descriptorHeapContext_,
+		DescriptorHeapContextDiplomat* descriptorheapContextDiplomat_,
 		BufferPoolSet* bufferPoolSet_
 	);
 
@@ -6240,8 +6719,8 @@ struct BufferContext::BufferCreator::DescTypeTraits<ComputeBufferDescription>
 
 //外部
 #include "../../../../Core/DescriptorHeap/ViewCreator/ViewCreator.h"
-#include "../../../../Core/DescriptorHeap/DescriptorHeapToolLender/DescriptorHeapToolLender.h"
-
+#include "../../../../Core/DescriptorHeap/DescriptorHeapContextDiplomat/DescriptorHeapContextDiplomat.h"
+#include "../../../../Core/DescriptorHeap/DescriptorHeapContextDiplomat/DescriptorHeapToolLender/DescriptorHeapToolLender.h"
 namespace
 {
 	auto const fileName = "BufferAssembler.cpp";
@@ -6252,13 +6731,14 @@ BufferContext::BufferAssembler::BufferAssembler
 (
 	BufferContext::InstanceKey instancekey_, 
 	ResourceCreator* resourceCreator_, 
-	DescriptorHeapContext* descriptorHeapContext_
+	DescriptorHeapContextDiplomat* descriptorheapContextDiplomat_
 )
 	:resourceCreator(resourceCreator_)
 {
 	//ビュークリエイターを借りる
+	auto* toolLender = descriptorheapContextDiplomat_->Access<DescriptorHeapContext::ToolLender>();
 	DescriptorHeapContext::ToolLender::LicenceType<DescriptorHeapContext::ViewCreator> licence;
-	viewCreator = descriptorHeapContext_->toolLender->Lend<DescriptorHeapContext::ViewCreator>(licence);
+	viewCreator = toolLender->Lend<DescriptorHeapContext::ViewCreator>(licence);
 
 }
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -6620,7 +7100,7 @@ public:
     (
         BufferContext::InstanceKey instancekey_, 
         ResourceCreator* resourceCreator_,
-        DescriptorHeapContext* descriptorHeapContext_
+        DescriptorHeapContextDiplomat* descriptorheapContextDiplomat_
     );
 
     ///☆☆☆バッファ生成関数（本丸）☆☆☆
@@ -7075,7 +7555,8 @@ std::unique_ptr<GPUBufferBehavior> BufferContext::BufferCollector::CastBuffer(st
 #include "../../RuntimeBufferManagementSystems/BufferDispatcher/BufferDispatcher.h"
 
 //外部
-#include "../../../../Core/Command/CommandContextCmdProvider/CommandContextCmdProvider.h"
+#include "../../../../Core/Command/CommandContextDiplomat/CommandContextDiplomat.h"
+#include "../../../../Core/Command/CommandContextDiplomat/CommandContextCmdProvider/CommandContextCmdProvider.h"
 
 namespace
 {
@@ -7087,11 +7568,12 @@ BufferContext::BufferUploader::BufferUploader
 	BufferContext::InstanceKey key_,
 	BufferContext::ResourceCreator* resourceCreator_,
 	BufferContext::BufferDispatcher* dispatcher_,
-	CommandContext* commandContext_
+	CommandContextDiplomat* commandContextDiplomat_
 ):resourceCreator(resourceCreator_), dispatcher(dispatcher_)
 {
-	uploadCommand = commandContext_->commandProvider->
-		ProvideResourceUploadCommand(CommandContext::CommandProvider::UsesResourceUploadCmdPermission{});
+	//コマンドプロバイダーにアクセス
+	auto* commandProvider = commandContextDiplomat_->Access<CommandContext::CommandProvider>();
+	uploadCommand = commandProvider->ProvideResourceUploadCommand(CommandContext::CommandProvider::UsesResourceUploadCmdPermission{});
 }
 
 BufferContext::BufferUploader::~BufferUploader()
@@ -7189,7 +7671,7 @@ public:
 		BufferContext::InstanceKey key_,
 		BufferContext::ResourceCreator* resourceCreator_,
 		BufferContext::BufferDispatcher* dispatcher_,
-		CommandContext* commandContext_
+		CommandContextDiplomat* commandContextDiplomat_
 	);
 
 	~BufferUploader();
@@ -7219,15 +7701,17 @@ private:
 ========================================
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Buffer\BufferCreateTools\ResourceCreator\ResourceCreator.cpp ===
 ========================================
-
 #include "ResourceCreator.h"
 #include "../../../../../Utility/StringConnverter/StringConverter.h"
 
+//外部
+#include "../../../../Core/Device/DeviceContextDiplomat/DeviceContextDiplomat.h"
+#include "../../../../Core/Device/DeviceContextDiplomat/DeviceContextCommandProvider/DeviceContextCommandProvider.h"
 
-BufferContext::ResourceCreator::ResourceCreator(BufferContext::InstanceKey instanceKey_, BufferContext::CreateResourceCommand createResourceCommand_)
-	: createResourceCommand(createResourceCommand_) 
+BufferContext::ResourceCreator::ResourceCreator(BufferContext::InstanceKey instanceKey_, DeviceContextDiplomat* deviceContextDiplomat_)
 {
-
+	auto* cmdProvider = deviceContextDiplomat_->Access<DeviceContext::CommandProvider>();
+	createResourceCommand = cmdProvider->ProvideCreateResourceCommand();
 }
 
 BufferContext::ResourceCreator::ResourceCreator::~ResourceCreator()
@@ -7274,7 +7758,7 @@ class BufferContext::ResourceCreator
 	using ResourceContainer = std::vector<Microsoft::WRL::ComPtr<ID3D12Resource>>;
 public:
 
-	ResourceCreator(BufferContext::InstanceKey instanceKey_, BufferContext::CreateResourceCommand createResourceCommand_);
+	ResourceCreator(BufferContext::InstanceKey instanceKey_, DeviceContextDiplomat* deviceContextDiplomat_);
 	~ResourceCreator();
 
 	[[nodiscard]] ResourceContainer Create
@@ -9352,95 +9836,6 @@ private:
 
 
 ========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Buffer\BufferToolLender\BufferToolLender.cpp ===
-========================================
-#include "PreCompileHeader.h"
-#include "BufferToolLender.h"
-
-
-BufferContext::ToolLender::ToolLender
-(
-	BufferContext::InstanceKey key_,
-	BufferContext::BufferCreator* creator_,
-	BufferContext::BufferUploader* uploader_
-)
-{
-	std::get<BufferContext::BufferCreator*>(tools) = creator_;
-	std::get<BufferContext::BufferUploader*>(tools) = uploader_;
-
-}
-
-
-
-
-========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Buffer\BufferToolLender\BufferToolLender.h ===
-========================================
-#pragma once
-#include "../BufferContext.h"
-#include "../../Mesh/MeshContext.h"
-
-class BufferContext::ToolLender
-{
-	//貸し出すツールのデータ型とそれに対応したLicenceのデータ型を結び付ける
-	template<typename ToolType>
-	struct LicenceTypeTraits;
-
-	//バッファクリエイターやアップローダーを触ってもいい資格
-	struct BasicBufferManagementLicence;
-
-	///貸し出せるツール
-	std::tuple<BufferContext::BufferCreator*, BufferContext::BufferUploader*> tools;
-
-public:
-
-	//ただのエイリアステンプレート
-	template<typename ToolType>
-	using LicenceType = typename LicenceTypeTraits<ToolType>::Type;
-
-	ToolLender
-	(
-		BufferContext::InstanceKey key_,
-		BufferContext::BufferCreator* creator_,
-		BufferContext::BufferUploader* uploader_
-	);
-
-
-	///ツールの貸し出し
-	template<typename ToolType>
-	auto* Lend(typename LicenceTypeTraits<ToolType>::Type licence_)
-	{
-		return std::get<ToolType*>(tools);
-	}
-
-};
-
-
-struct BufferContext::ToolLender::BasicBufferManagementLicence
-{
-private:
-
-	friend class MeshContext::ModelDataCreator;
-	explicit BasicBufferManagementLicence() = default;
-};
-
-
-template<>
-struct BufferContext::ToolLender::LicenceTypeTraits<BufferContext::BufferCreator>
-{
-	using Type = BasicBufferManagementLicence;
-};
-
-template<>
-struct BufferContext::ToolLender::LicenceTypeTraits<BufferContext::BufferUploader>
-{
-	using Type = BasicBufferManagementLicence;
-};
-
-
-
-
-========================================
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Buffer\RuntimeBufferManagementSystems\BufferDeferredReleaser\BufferDeferredReleaser.cpp ===
 ========================================
 
@@ -9669,14 +10064,14 @@ namespace
 }
 
 
-MeshContext::MeshContext(const InstanceKey& key_, BufferContext* bufferContext_)
+MeshContext::MeshContext(const InstanceKey& key_,BufferContextDiplomat* bufferContextDiplomat_)
 {
 	Logger::Entry("MeshContext: Constructor");
 
 	modelSlotAllocator.reset(new ModelSlotAllocator(key_));
 	Logger::Log("Instantiate: modelSlotAllocator", fileName);
 
-	modelDataCreator.reset(new ModelDataCreator(key_, modelSlotAllocator.get(), bufferContext_));
+	modelDataCreator.reset(new ModelDataCreator(key_, modelSlotAllocator.get(), bufferContextDiplomat_));
 	Logger::Log("Instantiate: ModelDataCreator", fileName);
 
 
@@ -9698,7 +10093,7 @@ MeshContext::~MeshContext()
 #pragma once
 
 class Nexus;
-class BufferContext;
+class BufferContextDiplomat;
 
 class MeshContext
 {
@@ -9710,7 +10105,7 @@ public:
 	//自身の生成キー
 	struct InstanceKey;
 
-	MeshContext(const InstanceKey& key_, BufferContext* bufferContext_);
+	MeshContext(const InstanceKey& key_, BufferContextDiplomat* bufferContextDiplomat_);
 	~MeshContext();
 
 
@@ -9746,7 +10141,10 @@ private:
 //ツール
 #include "ModelDataLoader/ModelDataLoader.h"
 #include "../ModelSlotAllocator/ModelSlotAllocator.h"
-#include "../../../Buffer/BufferToolLender/BufferToolLender.h"
+
+//外部
+#include "../../../Buffer/BufferContextDiplomat/BufferToolLender/BufferToolLender.h"
+#include "../../../Buffer/BufferContextDiplomat/BufferContextDiplomat.h"
 #include "../../../Buffer/BufferCreateTools/BufferUploader/BufferUploader.h"
 #include "../../../Buffer/BufferCreateTools/BufferCreator.h"
 
@@ -9763,7 +10161,7 @@ MeshContext::ModelDataCreator::ModelDataCreator
 (
     MeshContext::InstanceKey key_,
     MeshContext::ModelSlotAllocator* allocator_,
-    BufferContext* bufferContext_
+    BufferContextDiplomat* bufferContextDiplomat_
 )
 {
 	Logger::Entry("ModelDataCreator: Constructor");
@@ -9771,7 +10169,7 @@ MeshContext::ModelDataCreator::ModelDataCreator
     modelDataLoader.reset(new ModelDataLoader(key_));
     Logger::Log("Instantiate: ModelDataLoader", fileName);
 
-    CreateAllModelData(allocator_, bufferContext_);
+    CreateAllModelData(allocator_, bufferContextDiplomat_);
 
 	Logger::End("ModelDataCreator: Constructor");
 }
@@ -9787,16 +10185,17 @@ MeshContext::ModelDataCreator::~ModelDataCreator()
 void MeshContext::ModelDataCreator::CreateAllModelData
 (
     MeshContext::ModelSlotAllocator* allocator_,
-    BufferContext* bufferContext_
+    BufferContextDiplomat* bufferContextDiplomat_
 )
 {
     //モデルデータライブラリー
     std::unordered_map<std::string, ModelDataAggregate*> tmpModelDataLib = LoadAllModelFiles();
 
     //bufferCreatorとuploaderを借りる
+    auto bufferToolLender = bufferContextDiplomat_->Access<BufferContext::ToolLender>();
     BufferContext::ToolLender::LicenceType<BufferContext::BufferCreator> licence{};
-    auto* bufferCreator = bufferContext_->toolLender->Lend<BufferContext::BufferCreator>(licence);
-    auto* bufferUploader = bufferContext_->toolLender->Lend<BufferContext::BufferUploader>(licence);
+    auto* bufferCreator = bufferToolLender->Lend<BufferContext::BufferCreator>(licence);
+    auto* bufferUploader = bufferToolLender->Lend<BufferContext::BufferUploader>(licence);
 
     ///メッシュIDとファイル名を紐づける
     for (const auto& [key, value] : tmpModelDataLib)
@@ -9979,7 +10378,7 @@ public:
 	void CreateAllModelData
 	(
 		MeshContext::ModelSlotAllocator* allocator_,
-		BufferContext* bufferContext_
+		BufferContextDiplomat* bufferContextDiplomat_
 	);
 
 
@@ -9987,7 +10386,7 @@ public:
 	(
 		MeshContext::InstanceKey key_, 
 		MeshContext::ModelSlotAllocator* allocator_, 
-		BufferContext* bufferContext_
+		BufferContextDiplomat* bufferContextDiplomat_
 	);
 	~ModelDataCreator();
 
@@ -10865,7 +11264,6 @@ struct StandardVertex
 ========================================
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\PSO\PSO_Context.cpp ===
 ========================================
-
 #include "PSO_Context.h"
 
 //ツール
@@ -10881,13 +11279,14 @@ namespace
 PSO_Context::PSO_Context
 (
 	InstanceKey key_,
-	CommandCreateGraphicsPSO cmdCreateGraphicsPSO_,
-	CommandCreateComputePSO cmdCreateComputePSO_
+	DeviceContextDiplomat* deviceContextDiplomat_
 )
 {
 	Logger::Entry("PSO_Context: Constructor");
 	
-	InstantiatePSO_Assembler(key_, cmdCreateGraphicsPSO_, cmdCreateComputePSO_);
+	assembler.reset(new Assembler(key_, deviceContextDiplomat_, &psoContainer));
+	Logger::Log("Instantiate: psoAssembler");
+
 
 	Logger::End("PSO_Context: Constructor");
 
@@ -10900,16 +11299,6 @@ PSO_Context::~PSO_Context()
 ///+//////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+//////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+//////////////////////////////////////////////////////////////////////////////////////////////////////
-void PSO_Context::InstantiatePSO_Assembler
-(
-	InstanceKey key_,
-	CommandCreateGraphicsPSO cmdCreateGraphicsPSO_,
-	CommandCreateComputePSO cmdCreateComputePSO_
-)
-{
-	assembler.reset(new Assembler(key_, cmdCreateGraphicsPSO_, cmdCreateComputePSO_,&psoContainer));
-	Logger::Log("Instantiate: psoAssembler");
-}
 
 
 
@@ -10919,6 +11308,7 @@ void PSO_Context::InstantiatePSO_Assembler
 #pragma once
 
 class Nexus;
+class DeviceContextDiplomat;
 
 class PSO_Context
 {
@@ -10938,8 +11328,7 @@ public:
 	PSO_Context
 	(
 		InstanceKey key_,
-		CommandCreateGraphicsPSO cmdCreateGraphicsPSO_,
-		CommandCreateComputePSO cmdCreateComputePSO_
+		DeviceContextDiplomat* deviceContextDiplomat_
 	);
 
 	~PSO_Context();
@@ -10949,12 +11338,6 @@ private:
 
 	std::unique_ptr<Assembler> assembler;
 
-	void InstantiatePSO_Assembler
-	(
-		InstanceKey key_,
-		CommandCreateGraphicsPSO cmdCreateGraphicsPSO_,
-		CommandCreateComputePSO cmdCreateComputePSO_
-	);
 
 	//ただのpsoのコンテナ
 	std::vector<Microsoft::WRL::ComPtr<ID3D12PipelineState>> psoContainer;
@@ -11058,14 +11441,17 @@ namespace PipelineStateDesc
 ========================================
 
 #include "PSO_Assembler.h"
-
-
 //ツール
 #include "ToolCreatePSO/CreateBlendDesc/CreateBlendDesc.h"
 #include "ToolCreatePSO/CreateDepthStencilDesc/CreateDepthStencilDesc.h"
 #include "ToolCreatePSO/CreateRasterizerDesc/CreateRasterizerDesc.h"
 #include "ToolCreatePSO/CreateSampleDesc/CreateSampleDesc.h"
 #include "ToolCreatePSO/PSO_InfoOutputter/PSO_InfoOutputter.h"
+
+
+//外部
+#include "../../../Core/Device/DeviceContextDiplomat/DeviceContextDiplomat.h"
+#include "../../../Core/Device/DeviceContextDiplomat/DeviceContextCommandProvider/DeviceContextCommandProvider.h"
 
 namespace
 {
@@ -11075,11 +11461,14 @@ namespace
 PSO_Context::Assembler::Assembler
 (
 	PSO_Context::InstanceKey key_,
-	CommandCreateGraphicsPSO cmdCreateGraphicsPSO_,
-	CommandCreateComputePSO cmdCreateComputePSO_,
+	DeviceContextDiplomat* deviceContextDiplomat_,	
 	std::vector<Microsoft::WRL::ComPtr<ID3D12PipelineState>>* psoContainer_
-):cmdCreateGraphicsPSO(cmdCreateGraphicsPSO_), cmdCreateComputePSO(cmdCreateComputePSO_), psoContainer(psoContainer_)
+): psoContainer(psoContainer_)
 {
+	auto cmdProvider = deviceContextDiplomat_->Access<DeviceContext::CommandProvider>();
+	cmdCreateGraphicsPSO = cmdProvider->ProvideCreatePSOCommand<D3D12_PIPELINE_STATE_STREAM_DESC>();
+	cmdCreateComputePSO = cmdProvider->ProvideCreatePSOCommand<D3D12_COMPUTE_PIPELINE_STATE_DESC>();
+
 
 }
 
@@ -11264,8 +11653,7 @@ public:
 	Assembler
 	(
 		PSO_Context::InstanceKey key_,
-		CommandCreateGraphicsPSO cmdCreateGraphicsPSO_,
-		CommandCreateComputePSO cmdCreateComputePSO_,
+		DeviceContextDiplomat* deviceContextDiplomat_, 
 		std::vector<Microsoft::WRL::ComPtr<ID3D12PipelineState>>* psoContainer_
 	);
 
@@ -11800,7 +12188,6 @@ private:
 ========================================
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\RootSignature\RootSignatureContext.cpp ===
 ========================================
-
 #include "RootSignatureContext.h"
 #include "RootSignatureLibrary/RootSignatureLibrary.h"
 
@@ -11812,11 +12199,11 @@ namespace
 	auto const fileName = "RootSignatureContext.cpp";
 }
 
-RootSignatureContext::RootSignatureContext(InstanceKey key_, CommandCreateRootSignature cmdCreateRootSignature_)
+RootSignatureContext::RootSignatureContext(InstanceKey key_, DeviceContextDiplomat* deviceContextDiplomat_)
 {
 	Logger::Entry("RootSignatureContext: Constructor");
 
-	assembler.reset(new Assembler(key_, cmdCreateRootSignature_));
+	assembler.reset(new Assembler(key_, deviceContextDiplomat_));
 	Logger::Log("Instantiate: RootSignatureAssembler", fileName);
 
 	rootSignatureLibrary.reset(new RootSignatureLibrary(RootSignatureLibrary::InstanceKey{}, assembler.get()));
@@ -11843,7 +12230,7 @@ RootSignatureContext::~RootSignatureContext()
 
 class Nexus;
 class RootSignatureLibrary;
-
+class DeviceContextDiplomat;
 
 class RootSignatureContext
 {
@@ -11858,7 +12245,7 @@ public:
 	class Assembler;
 	struct InstanceKey;
 
-	RootSignatureContext(InstanceKey key_, CommandCreateRootSignature cmdCreateRootSignature_);
+	RootSignatureContext(InstanceKey key_, DeviceContextDiplomat* deviceContextDiplomat_);
 	~RootSignatureContext();
 
 private:
@@ -11883,12 +12270,15 @@ private:
 ========================================
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\RootSignature\RootSignatureAssembler\RootSignatureAssembler.cpp ===
 ========================================
-
 #include "RootSignatureAssembler.h"
 
 //ツール
 #include "ToolCreateRootSignature/CreateRootParam/CreateRootParam.h"
 #include "ToolCreateRootSignature/CreateStaticSamplerDesc/CreateStaticSamplerDesc.h"
+
+//外部
+#include "../../../Core/Device/DeviceContextDiplomat/DeviceContextDiplomat.h"
+#include "../../../Core/Device/DeviceContextDiplomat/DeviceContextCommandProvider/DeviceContextCommandProvider.h"
 
 namespace
 {
@@ -11898,10 +12288,10 @@ namespace
 
 using namespace RootSignatureLayoutComponent;
 
-RootSignatureContext::Assembler::Assembler(RootSignatureContext::InstanceKey key_, RootSignatureContext::CommandCreateRootSignature cmd_)
-	:cmdCreaterootSignature(cmd_)
+RootSignatureContext::Assembler::Assembler(RootSignatureContext::InstanceKey key_, DeviceContextDiplomat* deviceContextDiplomat_)
 {
-
+	auto cmdProvider = deviceContextDiplomat_->Access<DeviceContext::CommandProvider>();
+	cmdCreateRootSignature = cmdProvider->ProvideCommandCreateRootSignature();
 }
 
 RootSignatureContext::Assembler::~Assembler() {};
@@ -11982,7 +12372,7 @@ Microsoft::WRL::ComPtr<ID3D12RootSignature> RootSignatureContext::Assembler::Cre
 
 	//バイナリをもとにrootSignatureを作成
 	{
-		cmdCreaterootSignature
+		cmdCreateRootSignature
 		(
 			0,
 			signatureBlob,
@@ -12006,7 +12396,7 @@ Microsoft::WRL::ComPtr<ID3D12RootSignature> RootSignatureContext::Assembler::Cre
 class RootSignatureContext::Assembler
 {
 public:
-	Assembler(RootSignatureContext::InstanceKey key_, RootSignatureContext::CommandCreateRootSignature cmd_);
+	Assembler(RootSignatureContext::InstanceKey key_, DeviceContextDiplomat* deviceContextDiplomat_);
 	~Assembler();
 
 	//生成関数
@@ -12015,7 +12405,7 @@ public:
 
 private:
 
-	RootSignatureContext::CommandCreateRootSignature cmdCreaterootSignature;
+	RootSignatureContext::CommandCreateRootSignature cmdCreateRootSignature;
 
 	Microsoft::WRL::ComPtr<ID3D12RootSignature> CreateRootSignature(D3D12_ROOT_SIGNATURE_DESC* desc_);
 };
@@ -14075,8 +14465,6 @@ void Nexus::Finalize()
 #include "Nexus.h"
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 #include "../LowerLayer/Core/Device/DeviceContext.h"
-#include "../LowerLayer/Core/Device/DeviceContextCommandProvider/DeviceContextCommandProvider.h"
-#include "../LowerLayer/Core/Device/DeviceContextCommandExecutor/DeviceContextCommandExecutor.h"
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 #include "../LowerLayer/Core/DescriptorHeap/DescriptorHeapContext.h"
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -14085,7 +14473,9 @@ void Nexus::Finalize()
 #include "../LowerLayer/Core/SwapChain/SwapChainContext.h"
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 #include "../LowerLayer/Core/Command/CommandContext.h"
+#include "../LowerLayer/Core/Command/CommandContextDiplomat/CommandContextToolLender/CommandContextToolLender.h"
 #include "../LowerLayer/Core/Command/ResourceUploader/ResourceUploader.h"
+#include "../LowerLayer/Core/Command/CommandContextDiplomat/CommandContextDiplomat.h"
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 #include "../LowerLayer/Resource/Shader/ShaderContext.h"
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -14099,8 +14489,6 @@ void Nexus::Finalize()
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 #include "../LowerLayer/Render/RenderContext.h"
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-
 
 namespace
 {
@@ -14131,45 +14519,15 @@ void Nexus::Instantiate<Nexus::InitSequence::kWindowContext>()
 template<>
 void Nexus::Instantiate<Nexus::InitSequence::kDescriptorHeapContext>()
 {
-	auto* cmdProvider = deviceContext->commandProvider.get();
-	auto* cmdExecutor = deviceContext->commandExecutor.get();
-
-	//DescriptorHeap生成コマンド
-	auto createDescriptorHeapCommand = cmdProvider->ProvideCreateDescriptorHeapCommand();
-	auto createRTVCommand = cmdProvider->ProvideCreateViewCommand<D3D12_RENDER_TARGET_VIEW_DESC>();
-	auto createSRVCommand = cmdProvider->ProvideCreateViewCommand<D3D12_SHADER_RESOURCE_VIEW_DESC>();
-	auto createDSVCommand = cmdProvider->ProvideCreateViewCommand<D3D12_DEPTH_STENCIL_VIEW_DESC>();
-	auto createUAVCommand = cmdProvider->ProvideCreateUAVCommand();
-
-	struct IncrementSizeOfDescriptorHeaps
-	{
-		UINT rtv{};
-		UINT srv{};
-		UINT dsv{};
-		IncrementSizeOfDescriptorHeaps(UINT rtv_, UINT srv_, UINT dsv_) : rtv(rtv_), srv(srv_), dsv(dsv_) {}
-	};
-
-	//deviceContextからDescriptorHandleIncrementSizeを教えてもらう
-	IncrementSizeOfDescriptorHeaps sizeArray
-	(
-		cmdExecutor->CalcDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV),
-		cmdExecutor->CalcDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV),
-		cmdExecutor->CalcDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_DSV)
-	);
-
-	std::array<UINT, 3> tmpSizeArray = { sizeArray.rtv ,sizeArray.srv,sizeArray.dsv };
-
 	//descriptorHeapContextクラスのインスタンス化
-	descriptorHeapContext.reset(new DescriptorHeapContext
+	descriptorHeapContext.reset
 	(
-		DescriptorHeapContext::InstanceKey{},
-		createDescriptorHeapCommand,
-		createRTVCommand,
-		createSRVCommand,
-		createDSVCommand,
-		createUAVCommand,
-		tmpSizeArray
-	));
+		new DescriptorHeapContext
+		(
+			DescriptorHeapContext::InstanceKey{},
+			deviceContext->diplomat.get()
+		)
+	);
 
 	Logger::Log("Instantiate: descriptorHeapContext", fileName);
 }
@@ -14179,13 +14537,7 @@ void Nexus::Instantiate<Nexus::InitSequence::kDescriptorHeapContext>()
 template<>
 void Nexus::Instantiate<Nexus::InitSequence::kBufferContext>()
 {
-	auto* cmdProvider = deviceContext->commandProvider.get();
-
-	//リソース生成コマンド
-	auto createResourceCommand = cmdProvider->ProvideCreateResourceCommand();
-	Logger::Log("Set: CommandCreateResource", fileName);
-
-	bufferContext.reset(new BufferContext(BufferContext::InstanceKey{}, createResourceCommand, descriptorHeapContext.get(),commandContext.get()));
+	bufferContext.reset(new BufferContext(BufferContext::InstanceKey{}, deviceContext->diplomat.get(), descriptorHeapContext->diplomat.get(), commandContext->diplomat.get()));
 	Logger::Log("Instantiate: bufferContext", fileName);
 }
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -14194,27 +14546,12 @@ void Nexus::Instantiate<Nexus::InitSequence::kBufferContext>()
 template<>
 void Nexus::Instantiate<Nexus::InitSequence::kCommandContext>()
 {
-	auto* cmdExecutor = deviceContext->commandExecutor.get();
-
-	//メイン
-	auto [cmdQueue, cmdAllocators, cmdList] =
-		cmdExecutor->CreateCommandContextCorePartsForRuntime(DeviceContext::InstanceKey{});
-
-	//リソースアップロード用
-	auto [allocator_forUpload, cmdList_forUpload] =
-		cmdExecutor->CreateCommandContextCorePartsForUpload(DeviceContext::InstanceKey{});
-
 	commandContext.reset
 	(
 		new CommandContext
 		(
 			CommandContext::InstanceKey{},
-			std::move(cmdQueue),
-			std::move(cmdAllocators),
-			std::move(cmdList),
-			std::move(cmdExecutor->CreateFence()),
-			std::move(allocator_forUpload),
-			std::move(cmdList_forUpload)
+			deviceContext->diplomat.get()
 		)
 	);
 
@@ -14226,16 +14563,14 @@ void Nexus::Instantiate<Nexus::InitSequence::kCommandContext>()
 template<>
 void Nexus::Instantiate<Nexus::InitSequence::kSwapChainContext>()
 {
-	auto* cmdProvider = deviceContext->commandProvider.get();
-
 	swapChainContext.reset
 	(
 		new SwapChainContext
 		(
 			SwapChainContext::InstanceKey{},
-			descriptorHeapContext.get(),
-			commandContext.get(),
-			cmdProvider->ProvideCreateSwapChainCommand(),
+			descriptorHeapContext->diplomat.get(),
+			commandContext->diplomat.get(),
+			deviceContext->diplomat.get(),
 			windowContext->WatchHWND()
 		)
 	);
@@ -14258,18 +14593,12 @@ void Nexus::Instantiate<Nexus::InitSequence::kShaderContext>()
 template<>
 void Nexus::Instantiate<Nexus::InitSequence::kPSO_Context>()
 {
-	auto* cmdProvider = deviceContext->commandProvider.get();
-
-	auto cmdCreateGraphicsPSO = cmdProvider->ProvideCreatePSOCommand<D3D12_PIPELINE_STATE_STREAM_DESC>();
-	auto cmdCreateComputePSO = cmdProvider->ProvideCreatePSOCommand<D3D12_COMPUTE_PIPELINE_STATE_DESC>();
-
 	pso_context.reset
 	(
 		new PSO_Context
 		(
 			PSO_Context::InstanceKey{},
-			cmdCreateGraphicsPSO,
-			cmdCreateComputePSO
+			deviceContext->diplomat.get()
 		)
 	);
 	Logger::Log("Instantiate: PSO_Context", fileName);
@@ -14280,16 +14609,12 @@ void Nexus::Instantiate<Nexus::InitSequence::kPSO_Context>()
 template<>
 void Nexus::Instantiate<Nexus::InitSequence::kRootSignatureContext>()
 {
-	auto* cmdProvider = deviceContext->commandProvider.get();
-
-	auto cmdCreateRootSignature = cmdProvider->ProvideCommandCreateRootSignature();
-
 	rootSignatureContext.reset
 	(
 		new RootSignatureContext
 		(
 			RootSignatureContext::InstanceKey{},
-			cmdCreateRootSignature
+			deviceContext->diplomat.get()
 		)
 	);
 
@@ -14311,7 +14636,7 @@ void Nexus::Instantiate<Nexus::InitSequence::kRenderContext>()
 template<>
 void Nexus::Instantiate<Nexus::InitSequence::kMeshContext>()
 {
-	meshContext.reset(new MeshContext(MeshContext::InstanceKey{},bufferContext.get()));
+	meshContext.reset(new MeshContext(MeshContext::InstanceKey{},bufferContext->diplomat.get()));
 	Logger::Log("Instantiate: MeshContext", fileName);
 }
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -14321,7 +14646,13 @@ template<>
 void Nexus::Instantiate<Nexus::InitSequence::kKickCommands>()
 {
 	//溜まったリソースアップロードのコマンドをキックして同期し、コマンドを閉じる
-	commandContext->resourceUploader->WaitAndKick(CommandContext::ResourceUploader::WaitAndKickLicence{});
+	auto* toolLender = commandContext->diplomat->Access<CommandContext::ToolLender>();
+	//リソースアップローダーにアクセスするための資格
+	CommandContext::ToolLender::LicenceType<CommandContext::ResourceUploader> licence;
+	auto* resourceUploader = toolLender->Lend<CommandContext::ResourceUploader>(licence);
+
+	//リソースアップロードのために溜まったコマンドを全てキックして同期し、コマンドリストを閉じる
+	resourceUploader->WaitAndKick(CommandContext::ResourceUploader::WaitAndKickLicence{});
 }
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////

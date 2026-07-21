@@ -1,6 +1,5 @@
 
 #include "DepthStencilBuffer.h"
-#include "../../BufferDescriptions/DepthStencilBufferDescription/DepthStencilBufferDescription.h"
 
 namespace
 {

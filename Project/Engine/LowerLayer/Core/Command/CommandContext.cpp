@@ -55,7 +55,7 @@ CommandContext::CommandContext
 		(
 			instanceKey_,
 			std::make_unique<CommandProvider>(instanceKey_, resourceUploader.get()),
-			std::make_unique<ToolLender>(instanceKey_, commandQueue.Get())
+			std::make_unique<ToolLender>(instanceKey_, commandQueue.Get(),resourceUploader.get())
 		)
 	);
 

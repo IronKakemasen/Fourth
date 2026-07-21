@@ -1,7 +1,6 @@
 #pragma once 
 #include "../BufferInterface.h"
 
-struct UploadStructuredBufferDescription;
 
 //読み書きStructuredBuffer
 class UploadStructuredBuffer final : public GPUBufferBehavior, IReadable
@@ -18,8 +17,6 @@ public:
 	);
 
 	virtual SRVHeapIndex OutProperSRVHeapIndex(int frameIndex_ = 0)const override;
-
-private:
 
 
 };

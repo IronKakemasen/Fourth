@@ -1,6 +1,5 @@
 #include "PreCompileHeader.h"
 #include "StaticStructuredBuffer.h"
-#include "../../BufferDescriptions/StaticStructuredBufferDescription/StaticStructuredBufferDescription.h"
 
 
 StaticStructuredBuffer::StaticStructuredBuffer

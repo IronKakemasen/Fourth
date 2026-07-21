@@ -1,6 +1,5 @@
 
 #include "UploadStructuredBuffer.h"
-#include "../../BufferDescriptions/UploadStructuredBufferDescription/UploadStructuredBufferDescription.h"
 
 
 UploadStructuredBuffer::UploadStructuredBuffer

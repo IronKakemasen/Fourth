@@ -32,11 +32,20 @@ BufferContext::BufferContext
 {
 	Logger::Entry("BufferContext: Constructor");
 
+	bufferPoolSet.reset(new BufferPoolSet());
+	Logger::Log("Create: bufferPoolSet", fileName);
+
+	bufferCollector.reset(new BufferContext::BufferCollector(instanceKey_, bufferPoolSet.get()));
+	Logger::Log("Instantiate: bufferCollector", "BufferCreator.cpp");
+
 	resourceCreator.reset(new BufferContext::ResourceCreator(instanceKey_, deviceContextDiplomat_));
 	Logger::Log("Instantiate: ResourceCreator", fileName);
 
-	bufferCreator.reset(new BufferCreator(instanceKey_, resourceCreator.get(), descriptorheapContextDiplomat_, &bufferPoolSet));
+	bufferCreator.reset(new BufferCreator(instanceKey_, resourceCreator.get(), descriptorheapContextDiplomat_, bufferCollector.get()));
 	Logger::Log("Instantiate: BufferCreator", fileName);
+
+	bufferDispatcher.reset(new BufferDispatcher(instanceKey_, bufferPoolSet.get()));
+	Logger::Log("Instantiate: bufferDispatcher", fileName);
 
 	bufferUploader.reset(new BufferUploader(instanceKey_, resourceCreator.get(),bufferDispatcher.get(), commandContextDiplomat_));
 	Logger::Log("Instantiate: BufferUploader", fileName);
@@ -46,7 +55,7 @@ BufferContext::BufferContext
 		new BufferContextDiplomat
 		(
 			instanceKey_,
-			std::make_unique<ToolLender>(instanceKey_, bufferCreator.get(), bufferUploader.get(), bufferDispatcher.get())
+			std::make_unique<ToolLender>(instanceKey_, bufferCreator.get(), bufferUploader.get(), bufferDispatcher.get(), bufferCollector.get())
 		)
 	);
 	Logger::Log("Instantiate: ToolLender", fileName);

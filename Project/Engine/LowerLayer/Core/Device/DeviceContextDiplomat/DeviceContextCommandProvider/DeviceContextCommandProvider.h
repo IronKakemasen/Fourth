@@ -9,9 +9,6 @@ class DeviceContext::CommandProvider
 {
 public:
 
-	//コマンド生成キー
-	struct GenerateKey;
-
 	CommandProvider
 	(
 		DeviceContext::InstanceKey instanceKey_, 
