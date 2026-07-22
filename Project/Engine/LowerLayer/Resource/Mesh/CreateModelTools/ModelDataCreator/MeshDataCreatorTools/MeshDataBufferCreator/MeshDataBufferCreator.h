@@ -5,7 +5,7 @@
 
 class MeshContext::ModelDataCreator::MeshDataBufferCreator
 {
-public:
+	friend class MeshContext::ModelDataCreator;
 
 	//メッシュデータのバッファを作成し,そのメッシュデータのバッファユニークID群を返す
 	[[nodiscard]] static std::vector<MeshDataBufferUniqueIDGroup> CreateMeshDataBuffer

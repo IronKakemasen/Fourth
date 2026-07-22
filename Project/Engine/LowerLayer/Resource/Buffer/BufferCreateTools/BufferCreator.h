@@ -42,7 +42,7 @@ public:
 
 	//生成したバッファの管理はしません。あとは任せました状態
 	template<typename DescType>
-	[[nodiscard]] std::unique_ptr<DescTypeTraits<DescType>> CreateBeyondMyJurisdiction(const DescType& desc_, const std::string& name_)
+	[[nodiscard]] std::unique_ptr<DescTypeTraits<DescType>>::Type CreateBeyondMyJurisdiction(const DescType& desc_, const std::string& name_)
 	{
 		using ActualBufferType = typename DescTypeTraits<DescType>::Type;
 

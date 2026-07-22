@@ -5,7 +5,7 @@
 
 class MeshContext::ModelDataCreator::DataTransducer
 {
-public:
+	friend class MeshContext::ModelDataCreator;
 
 	///バッファユニークIDが指すバッファのアドレス群を取得
 	[[nodiscard]] static std::vector<MeshDataStructuredBufferGroup> BufferUniqueID_To_BufferPtr

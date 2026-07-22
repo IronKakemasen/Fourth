@@ -12,7 +12,7 @@ public:
 
 	//生成関数
 	template<typename DescType>
-	Microsoft::WRL::ComPtr<ID3D12RootSignature> Create(const DescType& descType_);
+	Microsoft::WRL::ComPtr<ID3D12RootSignature> Assemble(const DescType& descType_);
 
 private:
 
@@ -23,4 +23,4 @@ private:
 
 
 template<>
-Microsoft::WRL::ComPtr<ID3D12RootSignature> RootSignatureContext::Assembler::Create(const RootSignatureDesc::Graphics& srcDesc_);
+Microsoft::WRL::ComPtr<ID3D12RootSignature> RootSignatureContext::Assembler::Assemble(const RootSignatureDesc::Graphics& srcDesc_);

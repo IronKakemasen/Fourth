@@ -2,12 +2,12 @@
 #include "ModelDataCache.h"
 
 
-MeshContext::ModelDataCreator::ModelDataLoader::ModelDataCache::ModelDataCache(MeshContext::InstanceKey key_)
+MeshContext::ModelDataLoader::ModelDataCache::ModelDataCache(MeshContext::InstanceKey key_)
 {
 
 }
 
-ModelDataAggregate* MeshContext::ModelDataCreator::ModelDataLoader::ModelDataCache::FindDuplication(AccessKey key_, std::string fileName_)
+ModelDataAggregate* MeshContext::ModelDataLoader::ModelDataCache::FindDuplication(AccessKey key_, std::string fileName_)
 {
 	if (modelDataCache.find(fileName_) != modelDataCache.end())
 	{				
@@ -17,7 +17,7 @@ ModelDataAggregate* MeshContext::ModelDataCreator::ModelDataLoader::ModelDataCac
 	return nullptr;
 }
 
-void MeshContext::ModelDataCreator::ModelDataLoader::ModelDataCache::Register(AccessKey key_, std::string fileName_, std::unique_ptr<ModelDataAggregate>&& data_)
+void MeshContext::ModelDataLoader::ModelDataCache::Register(AccessKey key_, std::string fileName_, std::unique_ptr<ModelDataAggregate>&& data_)
 {
 	Logger::Log("Regieter: " + fileName_, "ModelDataCache.cpp");
 

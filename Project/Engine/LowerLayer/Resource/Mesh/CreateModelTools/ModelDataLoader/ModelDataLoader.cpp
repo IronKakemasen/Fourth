@@ -11,7 +11,7 @@ namespace
     auto const fileName = "ModelDataLoader.cpp";
 }
 
-MeshContext::ModelDataCreator::ModelDataLoader::ModelDataLoader(MeshContext::InstanceKey key_)
+MeshContext::ModelDataLoader::ModelDataLoader(MeshContext::InstanceKey key_)
 {
     Logger::Entry("ModelDataLoader: Constructor");
 
@@ -22,14 +22,14 @@ MeshContext::ModelDataCreator::ModelDataLoader::ModelDataLoader(MeshContext::Ins
     Logger::End("ModelDataLoader: Constructor");
 }
 
-MeshContext::ModelDataCreator::ModelDataLoader::~ModelDataLoader()
+MeshContext::ModelDataLoader::~ModelDataLoader()
 {
 
 }
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-ModelDataAggregate* MeshContext::ModelDataCreator::ModelDataLoader::Load(std::string fileName_ , std::string filePath_)
+ModelDataAggregate* MeshContext::ModelDataLoader::Load(std::string fileName_ , std::string filePath_)
 {
     std::unique_ptr<ModelDataAggregate> modelDataAggregate = std::make_unique<ModelDataAggregate>();
 
@@ -80,7 +80,7 @@ ModelDataAggregate* MeshContext::ModelDataCreator::ModelDataLoader::Load(std::st
 
     //キャッシュデータに登録
     auto returnPtr = modelDataAggregate.get();
-    modelDataCache->Register(MeshContext::ModelDataCreator::ModelDataLoader::ModelDataCache::AccessKey{}, fileName_, std::move(modelDataAggregate));
+    modelDataCache->Register(MeshContext::ModelDataLoader::ModelDataCache::AccessKey{}, fileName_, std::move(modelDataAggregate));
 
     //不要になったのでクリア
     importer.FreeScene();
@@ -93,7 +93,7 @@ ModelDataAggregate* MeshContext::ModelDataCreator::ModelDataLoader::Load(std::st
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-void MeshContext::ModelDataCreator::ModelDataLoader::ParseMesh(ResourceMesh& dstMesh_, const aiMesh* pSrcMesh_)
+void MeshContext::ModelDataLoader::ParseMesh(ResourceMesh& dstMesh_, const aiMesh* pSrcMesh_)
 {
     //マテリアル番号を設定
     //dstMesh.materialId = pSrcMesh->mMaterialIndex;
@@ -295,7 +295,7 @@ void MeshContext::ModelDataCreator::ModelDataLoader::ParseMesh(ResourceMesh& dst
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-void MeshContext::ModelDataCreator::ModelDataLoader::ParseMaterial(ResourceMaterial& dstMaterial_, const aiMaterial* pSrcMaterial_)
+void MeshContext::ModelDataLoader::ParseMaterial(ResourceMaterial& dstMaterial_, const aiMaterial* pSrcMaterial_)
 {
     // 拡散反射成分
     {
@@ -380,12 +380,12 @@ void MeshContext::ModelDataCreator::ModelDataLoader::ParseMaterial(ResourceMater
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-std::wstring MeshContext::ModelDataCreator::ModelDataLoader::Convert(const aiString& path)
+std::wstring MeshContext::ModelDataLoader::Convert(const aiString& path_)
 {
     wchar_t temp[256] = {};
     size_t  size;
-    mbstowcs_s(&size, temp, path.C_Str(), 256);
-    return std::wstring(temp);
+    mbstowcs_s(&size, temp, path_.C_Str(), 256);
+    return StringConverter::ConvertString(std::string(path_.C_Str()));;
 }
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

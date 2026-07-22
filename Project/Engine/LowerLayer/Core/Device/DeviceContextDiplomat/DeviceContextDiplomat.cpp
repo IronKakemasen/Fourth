@@ -6,7 +6,7 @@
 
 namespace
 {
-	auto const fileName = "CommandContextDiplomat.cpp";
+	auto const fileName = "DeviceContextDiplomat.cpp";
 }
 
 DeviceContextDiplomat::DeviceContextDiplomat

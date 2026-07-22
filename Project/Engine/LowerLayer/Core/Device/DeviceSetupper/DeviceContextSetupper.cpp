@@ -1,6 +1,7 @@
-
 #include "DeviceContextSetupper.h"
-#include "../../../../Utility/StringConnverter/StringConverter.h"
+#include "EngineRequirementsChecker/EngineRequirementsChecker.h"
+
+#include "StringConnverter/StringConverter.h"
 
 namespace 
 {
@@ -18,17 +19,18 @@ DeviceContext::Setupper::Setupper(InstanceKey instanceKey_)
 	//デバイスの生成
 	CreateDevice();
 
-	//シェーダーモデルサポートチェック
-	ShaderModelChack(ProjectConfig::Render::kRequiredShaderModel);
-
-	//メッシュシェーダーをサポートしているかチェック
-	IsMeshShaderSupported();
-
-	//ResourceBindingTierが必要値を満たしているか
-	ResourceBindingTierCheck();
-
 	//デバッグレイヤーのフィルターを設定
 	SetDebugLayerFilter();
+
+	//シェーダーモデルサポートチェック
+	EngineRequiementsChecker::ShaderModelChack(device.Get(),ProjectConfig::Render::kRequiredShaderModel);
+
+	//メッシュシェーダーをサポートしているかチェック
+	EngineRequiementsChecker::IsMeshShaderSupported(device.Get());
+
+	//ResourceBindingTierが必要値を満たしているか
+	EngineRequiementsChecker::ResourceBindingTierCheck(device.Get());
+
 }
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -76,46 +78,6 @@ void DeviceContext::Setupper::SetDebugLayerFilter()
 
 	}
 #endif
-
-}
-
-///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-void DeviceContext::Setupper::ShaderModelChack(D3D_SHADER_MODEL shaderModel_)
-{
-	D3D12_FEATURE_DATA_SHADER_MODEL shaderModel = { shaderModel_ };
-
-	HRESULT hr = device->CheckFeatureSupport(D3D12_FEATURE_SHADER_MODEL, &shaderModel, sizeof(shaderModel));
-
-	bool positiveResult = (SUCCEEDED(hr)) * (shaderModel.HighestShaderModel >= shaderModel_);
-	ErrorMessageOutput::Abort::DetectError
-	(
-		positiveResult,
-		"ShaderModelが必要値に対応していない", 
-		fileName
-	);
-
-	Logger::Log("ShaderModel Maximum Checked");
-}
-///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-void DeviceContext::Setupper::IsMeshShaderSupported()
-{
-	//メッシュシェーダがサポートされているかどうか
-	D3D12_FEATURE_DATA_D3D12_OPTIONS7 features = {};
-
-	HRESULT hr = device->CheckFeatureSupport(D3D12_FEATURE_D3D12_OPTIONS7, &features, sizeof(features));
-
-	bool positiveResult = (SUCCEEDED(hr)) * (features.MeshShaderTier != D3D12_MESH_SHADER_TIER_NOT_SUPPORTED);
-	ErrorMessageOutput::Abort::DetectError
-	(
-		positiveResult,
-		"MeshShaderがサポートされていません。", 
-		fileName
-	);
-	Logger::Log("MeshShader is Supported");
 
 }
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -182,6 +144,8 @@ void DeviceContext::Setupper::CreateDevice()
 
 		//採用したアダプタでデバイスを生成
 		HRESULT hr = D3D12CreateDevice(useAdapter.Get(), featureLevels[i], IID_PPV_ARGS(&d3d12Device));
+		ErrorMessageOutput::Assert::DetectError(SUCCEEDED(hr), "デバイスの生成に失敗", fileName);
+		
 		//型変換
 		hr = d3d12Device.As(&device); 
 		if (FAILED(hr)) continue;
@@ -204,19 +168,3 @@ void DeviceContext::Setupper::CreateDevice()
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-void DeviceContext::Setupper::ResourceBindingTierCheck()
-{
-	//メッシュシェーダがサポートされているかどうか
-	D3D12_FEATURE_DATA_D3D12_OPTIONS features = {};
-
-	HRESULT hr = device->CheckFeatureSupport(D3D12_FEATURE_D3D12_OPTIONS, &features, sizeof(features));
-
-	bool positiveResult = (SUCCEEDED(hr)) * (features.ResourceBindingTier >= D3D12_RESOURCE_BINDING_TIER_3);
-	ErrorMessageOutput::Abort::DetectError
-	(
-		positiveResult,
-		"RESOURCE_BINDING_TIERが3以上じゃない",
-		fileName
-	);
-	Logger::Log("RESOURCE_BINDING_TIER is 3 or more");
-}

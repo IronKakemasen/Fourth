@@ -3,10 +3,9 @@
 
 class MeshContext::ModelDataCreator::ModelRegistryLoader
 {
-private:
     static inline const std::string kRegistryFileName = "Assets/Registry/ModelFiles.txt";
 
-public:
+    friend class MeshContext::ModelDataCreator;
 
     static std::unordered_map<std::string, std::string > Load()
     {

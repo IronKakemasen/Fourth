@@ -27,7 +27,7 @@ RootSignatureContext::Assembler::~Assembler() {};
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 template<>
-Microsoft::WRL::ComPtr<ID3D12RootSignature> RootSignatureContext::Assembler::Create(const RootSignatureDesc::Graphics& srcDesc_)
+Microsoft::WRL::ComPtr<ID3D12RootSignature> RootSignatureContext::Assembler::Assemble(const RootSignatureDesc::Graphics& srcDesc_)
 {
 	//ルートパラメーターの生成
 	std::vector<D3D12_ROOT_PARAMETER> tmpRootParam;
@@ -95,7 +95,6 @@ Microsoft::WRL::ComPtr<ID3D12RootSignature> RootSignatureContext::Assembler::Cre
 
 		Logger::Log("Complete: Serializing RootSignature", fileName);
 
-		return rootSignature;
 	}
 
 	//バイナリをもとにrootSignatureを作成
@@ -107,4 +106,7 @@ Microsoft::WRL::ComPtr<ID3D12RootSignature> RootSignatureContext::Assembler::Cre
 			rootSignature.GetAddressOf()
 		);
 	}
+
+	return rootSignature;
+
 }

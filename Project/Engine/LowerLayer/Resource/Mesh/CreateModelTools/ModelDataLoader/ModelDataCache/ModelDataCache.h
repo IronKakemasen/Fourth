@@ -2,7 +2,7 @@
 #include "../ModelDataLoader.h"
 #include "../../../ModelStructure/ModelData/ModelDataAggregate.h"
 
-class MeshContext::ModelDataCreator::ModelDataLoader::ModelDataCache
+class MeshContext::ModelDataLoader::ModelDataCache
 {
 public:
 
@@ -18,10 +18,10 @@ private:
 	std::unordered_map<std::string, std::unique_ptr<ModelDataAggregate>> modelDataCache;
 };
 
-struct MeshContext::ModelDataCreator::ModelDataLoader::ModelDataCache::AccessKey
+struct MeshContext::ModelDataLoader::ModelDataCache::AccessKey
 {
 private:
-	friend class MeshContext::ModelDataCreator::ModelDataLoader;
+	friend class MeshContext::ModelDataLoader;
 	explicit AccessKey() = default;
 };
 
