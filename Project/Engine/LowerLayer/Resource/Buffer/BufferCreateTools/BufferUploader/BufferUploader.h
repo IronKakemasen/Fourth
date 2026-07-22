@@ -44,7 +44,7 @@ public:
 		ID3D12Resource* dstResource = dstBuffer->GetResource(GPUBufferBehavior::ResourceAccessKey{}, 0);
 
 		//コピーしてアップロードする
-		uploadCommand(dstResource, interMediateResource, &subResource, 0);
+		uploadCommand(dstResource, interMediateResource, &subResource, 1);
 
 		Logger::Log("Complete Uploading: " + dstBuffer->WatchName() + "(" + std::to_string(bufferSize) + ")", "BufferUploader.h");
 	}

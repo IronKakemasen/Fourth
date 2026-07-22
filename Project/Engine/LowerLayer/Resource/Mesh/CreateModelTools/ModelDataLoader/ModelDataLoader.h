@@ -13,7 +13,7 @@ struct ResourceMaterial;
 struct ModelDataAggregate;
 
 
-class MeshContext::ModelDataCreator::ModelDataLoader
+class MeshContext::ModelDataLoader
 {
 public:
 
@@ -32,7 +32,7 @@ private:
 	//シーンデータ
 	const aiScene* scene = nullptr;   
 
-	std::wstring Convert(const aiString& path);
+	std::wstring Convert(const aiString& path_);
 
 	void ParseMesh(ResourceMesh& dstMesh_, const aiMesh* pSrcMesh_);
 	void ParseMaterial(ResourceMaterial& dstMaterial_, const aiMaterial* pSrcMaterial_);

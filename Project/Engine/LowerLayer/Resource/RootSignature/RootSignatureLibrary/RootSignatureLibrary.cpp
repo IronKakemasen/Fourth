@@ -1,10 +1,4 @@
-
 #include "RootSignatureLibrary.h"
-
-#include <regex>
-#include <set>
-#include <iostream>
-
 //ツール
 #include "../RootSignatureAssembler/RootSignatureAssembler.h"
 
@@ -69,7 +63,7 @@ void RootSignatureLibrary::CreateAllRootSignatures(RootSignatureContext::Assembl
         Logger::Log("SamplerSlot2: kPointWrap", fileName);
 
 
-        data.at((int)Usage::kGraphics) = assembler_->Create(srcGraphicsDesc);
+        data.at((int)Usage::kGraphics) = assembler_->Assemble(srcGraphicsDesc);
     }
 
 }

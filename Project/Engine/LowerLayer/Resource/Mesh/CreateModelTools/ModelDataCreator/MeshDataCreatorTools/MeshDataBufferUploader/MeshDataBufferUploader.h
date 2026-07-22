@@ -4,7 +4,8 @@
 
 class MeshContext::ModelDataCreator::MeshDataBufferUploader
 {
-public:
+	friend class MeshContext::ModelDataCreator;
+
 	//BufferUploaderが中間リソースに実メッシュデータをマッピングして、静的バッファの生リソースをアップロードする
 	static void CopyAndUploadBuffer
 	(

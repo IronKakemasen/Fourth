@@ -62,7 +62,7 @@ D3D12_RESOURCE_BARRIER GPUBufferBehavior::Buffer::CreateBarrier(D3D12_RESOURCE_S
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ID3D12Resource* GPUBufferBehavior::GetResource(ResourceAccessKey bufferAccessKey_ ,int resourceNo_)
 {
-	static std::string errorMsg = name + "は空です (GetResourceに失敗)";
+	std::string errorMsg = name + "は空です (GetResourceに失敗)";
 
 	ErrorMessageOutput::Assert::DetectError((buffers.at(resourceNo_).resource != nullptr), errorMsg , fileName);
 
