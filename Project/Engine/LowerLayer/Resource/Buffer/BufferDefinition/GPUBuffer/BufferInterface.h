@@ -30,24 +30,29 @@ protected:
 
 struct IDualRole
 {
+	virtual ~IDualRole() = default;
 	virtual D3D12_RESOURCE_STATES ResourceStateTable(Usage usage_)const = 0;
 };
 
 //シェーダーバッファのインターフェース
 struct IReadable
 {
+	virtual ~IReadable() = default;
 	virtual SRVHeapIndex OutProperSRVHeapIndex(int frameIndex_ = 0)const = 0;
 };
 
 //リードオンリーバッファのインターフェース
 struct IReadOnly
 {
+	virtual ~IReadOnly() = default;
 	virtual D3D12_RESOURCE_BARRIER CreateBarrierAsReading() = 0;
 };
 
 //ディプスバッファのインターフェース
 struct IDepthBuffer:IDualRole
 {
+	virtual ~IDepthBuffer() = default;
+
 	virtual D3D12_CPU_DESCRIPTOR_HANDLE OutProperDSVHeapHandle()const = 0;
 protected:
 	virtual D3D12_RESOURCE_STATES ResourceStateTable(Usage usage_)const override;

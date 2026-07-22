@@ -7,7 +7,6 @@
 struct ModelDataAggregate;
 struct ResourceMesh;
 struct ResourrceMatrilal;
-class StaticStructuredBuffer;
 
 
 class MeshContext::ModelDataCreator
@@ -16,7 +15,6 @@ class MeshContext::ModelDataCreator
 	<
 		BufferContext::BufferCreator*,
 		BufferContext::BufferCollector*,
-		BufferContext::BufferDispatcher*,
 		BufferContext::BufferUploader*
 	>;
 
@@ -31,22 +29,11 @@ protected:
 		BufferUniqueID primIndicesID{};
 	};
 
-	//メッシュデータの静的ストラクチャードバッファのアドレス群
-	struct MeshDataStructuredBufferGroup
-	{
-		///STB = StructuredBuffer
-		StaticStructuredBuffer* verticesGPUSTB;
-		StaticStructuredBuffer* uniqueVertsIndicesSTB;
-		StaticStructuredBuffer* meshletsSTB;
-		StaticStructuredBuffer* primIndicesSTB;
-	};
 
 private:
 
 	//モデルの理事ストリーファイルを読み込んで、キーがファイル名のバリューがファイルパスであるマップを返す
 	class ModelRegistryLoader;
-	//メッシュデータのバッファを作成し,そのメッシュデータのバッファユニークID群を返す
-	class MeshDataBufferCreator;
 	//頂点データをGPUように変換したり、BufferUniqueIDからstructuredBufferポインタに変換する
 	class DataTransducer;
 	//メッシュデータのバッファのアップロードを行う
@@ -54,7 +41,9 @@ private:
 
 public:
 
-	//モデルデータ管理クラス
+	//メッシュデータのバッファを作成し,そのメッシュデータのバッファユニークID群を返す
+	class MeshDataBufferCreator;
+
 	
 	///全てのメッシュデータのバッファを作成し、
 	///メッシュデータのバッファユニークID群の配列のバッファも作成
@@ -79,8 +68,6 @@ private:
 
 	//モデルファイルからモデルデータを読み込む
 	std::unique_ptr<ModelDataLoader> modelDataLoader;
-	//ファイル名がキーのメッシュデータバッファ配列上のインデックスがバリュー
-	std::unordered_map<std::string, std::vector<MeshDataID>> meshDataIDLib;
 
 
 	//ローダーが全モデルファイルを読み込み、そのモデルデータのポインタを返す

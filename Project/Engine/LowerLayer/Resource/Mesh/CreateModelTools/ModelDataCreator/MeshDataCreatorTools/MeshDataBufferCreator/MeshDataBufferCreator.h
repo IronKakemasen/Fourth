@@ -10,7 +10,7 @@ class MeshContext::ModelDataCreator::MeshDataBufferCreator
 	//メッシュデータのバッファを作成し,そのメッシュデータのバッファユニークID群を返す
 	[[nodiscard]] static std::vector<MeshDataBufferUniqueIDGroup> CreateMeshDataBuffer
 	(
-		std::unordered_map<std::string, std::vector<MeshDataID>>& meshDataIDLib_,
+		MeshContext::ModelSlotAllocator* allocator_, 
 		const std::vector<ResourceMesh>& data_,
 		BufferContext::BufferCreator* bufferCreator_,
 		BufferContext::BufferCollector* bufferCollector_,

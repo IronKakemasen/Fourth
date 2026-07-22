@@ -3,7 +3,6 @@
 #include "ClosedHashMap/ClosedHashMap.h" 
 
 
-class GPUBufferBehavior;
 
 class BufferContext::BufferDispatcher
 {

@@ -3,7 +3,7 @@
 
 
 //読み込み専用StructuredBuffer
-class StaticStructuredBuffer final : public GPUBufferBehavior, IReadable,IReadOnly
+class StaticStructuredBuffer final : public GPUBufferBehavior, IReadable,public IReadOnly
 {
 
 public:
@@ -16,7 +16,6 @@ public:
 		const BufferDescriptionBehavior& description_
 	);
 
-	virtual ~StaticStructuredBuffer() = default;
 
 	virtual SRVHeapIndex OutProperSRVHeapIndex(int frameIndex_ = 0)const override;
 	virtual D3D12_RESOURCE_BARRIER CreateBarrierAsReading()override;
