@@ -23,7 +23,7 @@ private:
 	ID3D12Fence* fence;
 	std::array<uint64_t, (UINT)ProjectConfig::Render::NumBuffer::kDoubleBuffer>* fenceCounters;
 	HANDLE* fenceEvent;
-	uint64_t* commonFenceValue = 0;
+	uint64_t* commonFenceValue = nullptr;
 
 
 };

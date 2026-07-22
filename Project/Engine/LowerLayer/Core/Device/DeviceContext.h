@@ -4,18 +4,50 @@ class Nexus;
 class DeviceContextCommandBehavior;
 class DeviceContextDiplomat;
 
+//struct ModelStructure
+//{
+//	Transform trans;
+//
+//private:
+//
+//	//割り当てられたTransformMatrixBufferArrayのインデックス
+//	DispatchedTransformMatrixID transID;
+//	//必要かわからないが、自身のtransIDが指すバッファのユニークID。バッチング時に検索を省くために使用？
+//	TransformBufferUniqueID transIDCache;
+//	//色やカラーマップなどの情報
+//	Material material;
+//	//メッシュシェーダーの決定要因
+//	MeshType meshType;
+//	//BlendMode、CullModeなど。昔定義したやつ
+//	RenderState renderState;
+//
+//};
+//
+//struct Model
+//{
+//	//MeshFile名で決定.サブメッシュも含む
+//	std::vector<MeshDataID> id;
+//
+//	//メインとサブ分のデータ群
+//	std::vector<ModelStructure> modelStructures;
+//};
+
+
 
 class DeviceContext
 {
 	//コアパーツを生成する
 	class Setupper;
 
+protected:
+
+	//コアパーツにアクセスするのを許可するキー
+	struct AccessKey;
+
 public:
 
 	//自身の生成キー。Nexusしか許さない
 	struct InstanceKey;
-	//コアパーツにアクセスするのを許可するキー
-	struct AccessKey;
 	//コマンド生成キー
 	struct GenerateKey;
 

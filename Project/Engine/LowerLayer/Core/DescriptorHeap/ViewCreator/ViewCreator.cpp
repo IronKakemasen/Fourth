@@ -1,4 +1,3 @@
-
 #include "ViewCreator.h"
 
 
@@ -14,9 +13,9 @@ DescriptorHeapContext::ViewCreator::ViewCreator
 	DescriptorHeapContext::CreateUAVCommand uavCmd_
 ) :rtvCmd(rtvCmd_), srvCmd(srvCmd_), dsvCmd(dsvCmd_), uavCmd(uavCmd_)
 {
-	DescriptorHeapPool_Library[kRTV] = RTVdescriptorHeapPool_;
-	DescriptorHeapPool_Library[kSRVUAV] = SRVUAVdescriptorHeapPool_;
-	DescriptorHeapPool_Library[kDSV] = DSVdescriptorHeapPool_;
+	DescriptorHeapPool_Library.at(UINT(DescriptorHeapContext::ViewCreator::HeapType::kRTV))= RTVdescriptorHeapPool_;
+	DescriptorHeapPool_Library.at(UINT(DescriptorHeapContext::ViewCreator::HeapType::kSRVUAV)) = SRVUAVdescriptorHeapPool_;
+	DescriptorHeapPool_Library.at(UINT(DescriptorHeapContext::ViewCreator::HeapType::kDSV)) = DSVdescriptorHeapPool_;
 }
 
 

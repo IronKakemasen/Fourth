@@ -112,7 +112,7 @@ struct Vector3
 
 	inline Vector3(std::array<float , 3> entries_) : data(entries_[0], entries_[1], entries_[2]) {}
 
-	inline Vector3 operator+(const Vector3 other_)
+	inline Vector3 operator+(const Vector3 other_)const
 	{
 		//保管用のデータを、計算用データに入れ替える
 		DirectX::XMVECTOR v1 = DirectX::XMLoadFloat3(&data);
@@ -128,7 +128,7 @@ struct Vector3
 		return result;
 	}
 
-	inline Vector3 operator-(const Vector3 other_)
+	inline Vector3 operator-(const Vector3 other_)const
 	{
 		//保管用のデータを、計算用データに入れ替える
 		DirectX::XMVECTOR v1 = DirectX::XMLoadFloat3(&data);
@@ -144,7 +144,7 @@ struct Vector3
 		return result;
 	}
 
-	inline Vector3 operator*(const float num_)
+	inline Vector3 operator*(const float num_)const
 	{
 		//保管用のデータを、計算用データに入れ替える
 		DirectX::XMVECTOR v = DirectX::XMLoadFloat3(&data);

@@ -2,8 +2,8 @@
 #include "ModelDataLoader.h"
 
 #include "ModelDataCache/ModelDataCache.h"
-#include "../../../../../../External/MeshOptimizer/meshoptimizer.h"
-#include "../../../../../../Utility/StringConnverter/StringConverter.h"
+#include "../../../../External/MeshOptimizer/meshoptimizer.h"
+#include "../../../../../Utility/StringConnverter/StringConverter.h"
 
 
 namespace

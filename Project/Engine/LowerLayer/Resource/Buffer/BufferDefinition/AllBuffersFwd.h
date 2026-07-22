@@ -1,6 +1,6 @@
 #pragma once
 
-class GPUBufferBehaviror;
+class GPUBufferBehavior;
 class ColorBuffer;
 class ConstantBuffer;
 class DepthStencilBuffer;

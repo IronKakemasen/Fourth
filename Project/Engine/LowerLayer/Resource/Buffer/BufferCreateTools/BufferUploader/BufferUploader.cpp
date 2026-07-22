@@ -37,38 +37,26 @@ BufferContext::BufferUploader::~BufferUploader()
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-void BufferContext::BufferUploader::Upload
-(
-	BufferUniqueID id_,
-	UINT dstResourceSize_,
-	const D3D12_SUBRESOURCE_DATA* subeResource_,
-	UINT subResourceCount_
-)
+ID3D12Resource* BufferContext::BufferUploader::CreateInterMediateResource(UINT resourceSize_)
 {
 	//中間リソース作成
-	Microsoft::WRL::ComPtr<ID3D12Resource> intermediateResource = std::move
+	auto& intermedRes = intermediateResources.emplace_back
 	(
-		resourceCreator->Create
+		std::move
 		(
-			CreateIntermedeiteResourceDesc(dstResourceSize_),
-			CreateIntermedeiteHeapProp(),
-			nullptr,
-			D3D12_RESOURCE_STATE_GENERIC_READ,
-			"intermed",
-			1
-		)[0]
+			resourceCreator->Create
+			(
+				CreateIntermedeiteResourceDesc(resourceSize_),
+				CreateIntermedeiteHeapProp(),
+				nullptr,
+				D3D12_RESOURCE_STATE_GENERIC_READ,
+				"intermed" + std::to_string(UINT(intermediateResources.size())),
+				1
+			)[0]
+		)
 	);
 
-	//生リソースを取り出す
-	GPUBufferBehavior* dstBuffer = dispatcher->Dispatch(id_);
-	ID3D12Resource* dstResource = dstBuffer->GetResource(GPUBufferBehavior::ResourceAccessKey{}, 0);
-
-	//アップロードする
-	uploadCommand(dstResource, intermediateResource.Get(), subeResource_, subResourceCount_);
-
-	//中間リソースを一時保管
-	intermediateResources.emplace_back(std::move(intermediateResource));
-	Logger::Log("Complete Uploading: " + dstBuffer->WatchName() + "(" + std::to_string(dstResourceSize_) + ")", fileName);
+	return intermedRes.Get();
 }
 
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
