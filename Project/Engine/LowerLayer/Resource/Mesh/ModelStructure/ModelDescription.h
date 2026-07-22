@@ -5,12 +5,12 @@ struct ModelDescription
 {
 	ModelDescription
 	(
-		MeshDetaID meshDataID_,
+		MeshDataID meshDataID_,
 		uint32_t dispatchedTransformedMatrixID_,
 		std::string name_
 	) :meshDataID(meshDataID_), dispatchedTransformedMatrixID(dispatchedTransformedMatrixID_), name(name_){}
 
-	MeshDetaID meshDataID{};
+	MeshDataID meshDataID{};
 	uint32_t dispatchedTransformedMatrixID{};
 	std::string name{};
 };

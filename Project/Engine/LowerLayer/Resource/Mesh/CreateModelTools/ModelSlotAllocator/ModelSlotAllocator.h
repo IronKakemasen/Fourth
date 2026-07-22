@@ -37,7 +37,7 @@ private:
 
 	///そのモデルファイル名が、
 	///「メッシュデータバッファのsrvHeapIndexが詰まったもの」の配列の何番目に該当するのかを索引するため
-	std::unordered_map<std::string, std::vector<MeshDetaID>> meshDataIDLib;
+	std::unordered_map<std::string, std::vector<MeshDataID>> meshDataIDLib;
 
 
 	//TransformMatrixの空きインデックスのリスト

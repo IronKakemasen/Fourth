@@ -55,7 +55,7 @@ using BufferUniqueID = uint32_t;
 //srv/uavディスクリプタヒープ上のインデックス
 using SRVHeapIndex = uint32_t;
 //メッシュデータのID
-using MeshDetaID = uint32_t;
+using MeshDataID = uint32_t;
 
 
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -732,7 +732,9 @@ public:
 		CommandContext::Synchronizer* synchronizer_
 	);
 
-	//コマンドコンテキスとに呼び出してもらう
+
+	//リソースをアップロードするときに溜まったコマンドリストをキックしてかつ同期し、閉じる
+	//コアな処理なので鍵付き
 	void WaitAndKick(const WaitAndKickLicence& licence_);
 	///commandListをラップしたアップロードコマンド
 	UploadCommand ProvideUploadCommand();
@@ -1776,7 +1778,6 @@ template<>
 ========================================
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Core\DescriptorHeap\ViewCreator\ViewCreator.cpp ===
 ========================================
-
 #include "ViewCreator.h"
 
 
@@ -1792,9 +1793,9 @@ DescriptorHeapContext::ViewCreator::ViewCreator
 	DescriptorHeapContext::CreateUAVCommand uavCmd_
 ) :rtvCmd(rtvCmd_), srvCmd(srvCmd_), dsvCmd(dsvCmd_), uavCmd(uavCmd_)
 {
-	DescriptorHeapPool_Library[kRTV] = RTVdescriptorHeapPool_;
-	DescriptorHeapPool_Library[kSRVUAV] = SRVUAVdescriptorHeapPool_;
-	DescriptorHeapPool_Library[kDSV] = DSVdescriptorHeapPool_;
+	DescriptorHeapPool_Library.at(UINT(DescriptorHeapContext::ViewCreator::HeapType::kRTV))= RTVdescriptorHeapPool_;
+	DescriptorHeapPool_Library.at(UINT(DescriptorHeapContext::ViewCreator::HeapType::kSRVUAV)) = SRVUAVdescriptorHeapPool_;
+	DescriptorHeapPool_Library.at(UINT(DescriptorHeapContext::ViewCreator::HeapType::kDSV)) = DSVdescriptorHeapPool_;
 }
 
 
@@ -1813,21 +1814,29 @@ class GPUBufferBehavior;
 
 class DescriptorHeapContext::ViewCreator
 {
-	enum HeapType
+	enum class HeapType
 	{
 		kRTV,
 		kSRVUAV,
 		kDSV
+
+		,kCount
 	};
 
 	//DescriptorHeapPoolのアドレス
-	std::unordered_map<HeapType, DescriptorHeapPool*> DescriptorHeapPool_Library;
+	std::array < DescriptorHeapPool*, UINT(HeapType::kCount) > DescriptorHeapPool_Library;
 
 	//コマンド
 	DescriptorHeapContext::CreateRTVCommand rtvCmd;
 	DescriptorHeapContext::CreateSRVCommand srvCmd;
 	DescriptorHeapContext::CreateDSVCommand dsvCmd;
 	DescriptorHeapContext::CreateUAVCommand uavCmd;
+
+	template<typename ViewDescType>
+	struct DescTypeTraits;
+
+	template<typename ViewDescType>
+	using DescType = typename DescTypeTraits<ViewDescType>::Type;
 
 public:
 	ViewCreator
@@ -1843,35 +1852,31 @@ public:
 	);
 
 	//VIEWを生成し、インデックスやハンドルを返す。
-	template<typename ViewType>
-	std::tuple<uint32_t, D3D12_CPU_DESCRIPTOR_HANDLE, D3D12_GPU_DESCRIPTOR_HANDLE> CreateView(ID3D12Resource* resource_, const ViewType* viewDesc, ID3D12Resource* counterResource_ = nullptr)
+	template<typename ViewDescType>
+	std::tuple<uint32_t, D3D12_CPU_DESCRIPTOR_HANDLE, D3D12_GPU_DESCRIPTOR_HANDLE> CreateView(ID3D12Resource* resource_, const ViewDescType* viewDesc, ID3D12Resource* counterResource_ = nullptr)
 	{
 		//ViewTypeどのヒープを使うべきか分岐
-		HeapType type;
-		if constexpr (std::is_same_v<ViewType, D3D12_RENDER_TARGET_VIEW_DESC>) { type = kRTV; }
-		else if constexpr (std::is_same_v<ViewType, D3D12_DEPTH_STENCIL_VIEW_DESC>) { type = kDSV; }
-		else { type = kSRVUAV; }
-
+		HeapType type = DescTypeTraits<ViewDescType>::heapType;
 		//ディスクリプタヒープを取り出す
-		auto* targetHeap = DescriptorHeapPool_Library.at(type);
+		auto* targetHeap = DescriptorHeapPool_Library.at(UINT(type));
 
 		//空きヒープインデックスを割り当てる
 		auto[allocateIndex, handleCPU, handleGPU] = targetHeap->ProvideFreeHeapIndex(DescriptorHeapPool::CreateViewKey{});
 
 		//ビュー生成
-		if constexpr (std::is_same_v<ViewType, D3D12_RENDER_TARGET_VIEW_DESC>)
+		if constexpr (std::is_same_v<ViewDescType, D3D12_RENDER_TARGET_VIEW_DESC>)
 		{
 			rtvCmd(resource_, viewDesc, handleCPU);
 		}
-		else if constexpr (std::is_same_v<ViewType, D3D12_SHADER_RESOURCE_VIEW_DESC>)
+		else if constexpr (std::is_same_v<ViewDescType, D3D12_SHADER_RESOURCE_VIEW_DESC>)
 		{
 			srvCmd(resource_, viewDesc, handleCPU);
 		}
-		else if constexpr (std::is_same_v<ViewType, D3D12_DEPTH_STENCIL_VIEW_DESC>)
+		else if constexpr (std::is_same_v<ViewDescType, D3D12_DEPTH_STENCIL_VIEW_DESC>)
 		{
 			dsvCmd(resource_, viewDesc, handleCPU);
 		}
-		else if constexpr (std::is_same_v<ViewType, D3D12_UNORDERED_ACCESS_VIEW_DESC>)
+		else if constexpr (std::is_same_v<ViewDescType, D3D12_UNORDERED_ACCESS_VIEW_DESC>)
 		{
 			uavCmd(resource_, viewDesc, handleCPU, counterResource_);
 		}
@@ -1882,6 +1887,30 @@ public:
 };
 
 
+template<>
+struct DescriptorHeapContext::ViewCreator::DescTypeTraits<D3D12_RENDER_TARGET_VIEW_DESC>
+{
+	static constexpr HeapType heapType = HeapType::kRTV;
+};
+
+template<>
+struct DescriptorHeapContext::ViewCreator::DescTypeTraits<D3D12_SHADER_RESOURCE_VIEW_DESC>
+{
+	static constexpr HeapType heapType = HeapType::kSRVUAV;
+};
+
+template<>
+struct DescriptorHeapContext::ViewCreator::DescTypeTraits<D3D12_UNORDERED_ACCESS_VIEW_DESC>
+{
+	static constexpr HeapType heapType = HeapType::kSRVUAV;
+};
+
+
+template<>
+struct DescriptorHeapContext::ViewCreator::DescTypeTraits<D3D12_DEPTH_STENCIL_VIEW_DESC>
+{
+	static constexpr HeapType heapType = HeapType::kDSV;
+};
 
 
 
@@ -2002,18 +2031,50 @@ class Nexus;
 class DeviceContextCommandBehavior;
 class DeviceContextDiplomat;
 
+//struct ModelStructure
+//{
+//	Transform trans;
+//
+//private:
+//
+//	//割り当てられたTransformMatrixBufferArrayのインデックス
+//	DispatchedTransformMatrixID transID;
+//	//必要かわからないが、自身のtransIDが指すバッファのユニークID。バッチング時に検索を省くために使用？
+//	TransformBufferUniqueID transIDCache;
+//	//色やカラーマップなどの情報
+//	Material material;
+//	//メッシュシェーダーの決定要因
+//	MeshType meshType;
+//	//BlendMode、CullModeなど。昔定義したやつ
+//	RenderState renderState;
+//
+//};
+//
+//struct Model
+//{
+//	//MeshFile名で決定.サブメッシュも含む
+//	std::vector<MeshDataID> id;
+//
+//	//メインとサブ分のデータ群
+//	std::vector<ModelStructure> modelStructures;
+//};
+
+
 
 class DeviceContext
 {
 	//コアパーツを生成する
 	class Setupper;
 
+protected:
+
+	//コアパーツにアクセスするのを許可するキー
+	struct AccessKey;
+
 public:
 
 	//自身の生成キー。Nexusしか許さない
 	struct InstanceKey;
-	//コアパーツにアクセスするのを許可するキー
-	struct AccessKey;
 	//コマンド生成キー
 	struct GenerateKey;
 
@@ -6209,11 +6270,20 @@ BufferContext::BufferContext
 {
 	Logger::Entry("BufferContext: Constructor");
 
+	bufferPoolSet.reset(new BufferPoolSet());
+	Logger::Log("Create: bufferPoolSet", fileName);
+
+	bufferCollector.reset(new BufferContext::BufferCollector(instanceKey_, bufferPoolSet.get()));
+	Logger::Log("Instantiate: bufferCollector", "BufferCreator.cpp");
+
 	resourceCreator.reset(new BufferContext::ResourceCreator(instanceKey_, deviceContextDiplomat_));
 	Logger::Log("Instantiate: ResourceCreator", fileName);
 
-	bufferCreator.reset(new BufferCreator(instanceKey_, resourceCreator.get(), descriptorheapContextDiplomat_, &bufferPoolSet));
+	bufferCreator.reset(new BufferCreator(instanceKey_, resourceCreator.get(), descriptorheapContextDiplomat_, bufferCollector.get()));
 	Logger::Log("Instantiate: BufferCreator", fileName);
+
+	bufferDispatcher.reset(new BufferDispatcher(instanceKey_, bufferPoolSet.get()));
+	Logger::Log("Instantiate: bufferDispatcher", fileName);
 
 	bufferUploader.reset(new BufferUploader(instanceKey_, resourceCreator.get(),bufferDispatcher.get(), commandContextDiplomat_));
 	Logger::Log("Instantiate: BufferUploader", fileName);
@@ -6223,7 +6293,7 @@ BufferContext::BufferContext
 		new BufferContextDiplomat
 		(
 			instanceKey_,
-			std::make_unique<ToolLender>(instanceKey_, bufferCreator.get(), bufferUploader.get(), bufferDispatcher.get())
+			std::make_unique<ToolLender>(instanceKey_, bufferCreator.get(), bufferUploader.get(), bufferDispatcher.get(), bufferCollector.get())
 		)
 	);
 	Logger::Log("Instantiate: ToolLender", fileName);
@@ -6290,12 +6360,8 @@ template<typename ValueType> class ClosedHashMap;
 
 class BufferContext
 {
-	//生成したバッファを回収し分別する
-	class BufferCollector;
 	//生成したバッファの削除を担当
 	class BufferDeferredReleaser;
-	//BufferUniqueIDから該当のバッファのアドレスをキャストして渡す
-	class BufferDispatcher;
 	//生リソース生成
 	class ResourceCreator;
 
@@ -6356,12 +6422,16 @@ public:
 	class BufferCreator;
 	//BufferDescriptionをもとにバッファを組み立てる
 	class BufferAssembler;
+	//BufferUniqueIDから該当のバッファのアドレスを渡す
+	class BufferDispatcher;
 	//ランタイムパス構築に必要な情報の抽出とそのリソースのSwapを行う
 	class BufferInfoExtractor;
 	//バッファをアップロードする
 	class BufferUploader;
 	//ツールの貸し出しを行う
 	class ToolLender;
+	//生成したバッファを回収し分別する
+	class BufferCollector;
 
 
 	BufferContext
@@ -6385,7 +6455,7 @@ public:
 private:
 
 	///複数のバッファのプールが定義されている
-	BufferPoolSet bufferPoolSet;
+	std::unique_ptr<BufferPoolSet> bufferPoolSet;
 
 	///バッファ生成クラス（本丸）
 	std::unique_ptr<BufferCreator> bufferCreator;
@@ -6395,6 +6465,8 @@ private:
 	std::unique_ptr<BufferUploader> bufferUploader;
 	//ディスパッチャー
 	std::unique_ptr<BufferDispatcher> bufferDispatcher;
+	//コレクター
+	std::unique_ptr<BufferCollector> bufferCollector;
 
 };
 
@@ -6485,12 +6557,15 @@ BufferContext::ToolLender::ToolLender
 	BufferContext::InstanceKey key_,
 	BufferContext::BufferCreator* creator_,
 	BufferContext::BufferUploader* uploader_,
-	BufferContext::BufferDispatcher* dispatcher_
+	BufferContext::BufferDispatcher* dispatcher_,
+	BufferContext::BufferCollector* collector_
+
 )
 {
 	std::get<BufferContext::BufferCreator*>(tools) = creator_;
 	std::get<BufferContext::BufferUploader*>(tools) = uploader_;
 	std::get<BufferContext::BufferDispatcher*>(tools) = dispatcher_;
+	std::get<BufferContext::BufferCollector*>(tools) = collector_;
 
 }
 
@@ -6514,7 +6589,13 @@ class BufferContext::ToolLender
 	struct BasicBufferManagementLicence;
 
 	///貸し出せるツール
-	std::tuple<BufferContext::BufferCreator*, BufferContext::BufferUploader*, BufferContext::BufferDispatcher*> tools;
+	std::tuple
+	<
+		BufferContext::BufferCreator*, 
+		BufferContext::BufferUploader*, 
+		BufferContext::BufferDispatcher*,
+		BufferContext::BufferCollector*
+	> tools;
 
 
 public:
@@ -6528,7 +6609,8 @@ public:
 		BufferContext::InstanceKey key_,
 		BufferContext::BufferCreator* creator_,
 		BufferContext::BufferUploader* uploader_,
-		BufferContext::BufferDispatcher* dispatcher_
+		BufferContext::BufferDispatcher* dispatcher_,
+		BufferContext::BufferCollector * collector_
 	);
 
 
@@ -6569,6 +6651,12 @@ struct BufferContext::ToolLender::LicenceTypeTraits<BufferContext::BufferDispatc
 	using Type = BasicBufferManagementLicence;
 };
 
+template<>
+struct BufferContext::ToolLender::LicenceTypeTraits<BufferContext::BufferCollector>
+{
+	using Type = BasicBufferManagementLicence;
+};
+
 
 
 
@@ -6586,14 +6674,11 @@ BufferContext::BufferCreator::BufferCreator
 	BufferContext::InstanceKey instancekey_,
 	BufferContext::ResourceCreator* resourceCreator_,
 	DescriptorHeapContextDiplomat* descriptorheapContextDiplomat_,
-	BufferPoolSet* bufferPoolSet_
-) 
+	BufferCollector* collector_
+):collector(collector_)
 {
 	assembler.reset(new BufferContext::BufferAssembler(instancekey_, resourceCreator_, descriptorheapContextDiplomat_));
 	Logger::Log("Instantiate: BufferAssembler", "BufferCreator.cpp");
-	
-	collector.reset(new BufferContext::BufferCollector(instancekey_,bufferPoolSet_));
-	Logger::Log("Instantiate: bufferCollector", "BufferCreator.cpp");
 
 }
 
@@ -6630,7 +6715,7 @@ public:
 		BufferContext::InstanceKey instancekey_,
 		BufferContext::ResourceCreator* resourceCreator_,
 		DescriptorHeapContextDiplomat* descriptorheapContextDiplomat_,
-		BufferPoolSet* bufferPoolSet_
+		BufferCollector* collector_
 	);
 
 	~BufferCreator();
@@ -6668,7 +6753,7 @@ private:
 	//バッファを生成した合計数。ユニークIDとして使用する
 	uint32_t generateBufferSum{};
 	std::unique_ptr<BufferContext::BufferAssembler> assembler;
-	std::unique_ptr<BufferContext::BufferCollector> collector;
+	BufferCollector* collector;
 };
 
 template<>
@@ -7585,38 +7670,26 @@ BufferContext::BufferUploader::~BufferUploader()
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-void BufferContext::BufferUploader::Upload
-(
-	BufferUniqueID id_,
-	UINT dstResourceSize_,
-	const D3D12_SUBRESOURCE_DATA* subeResource_,
-	UINT subResourceCount_
-)
+ID3D12Resource* BufferContext::BufferUploader::CreateInterMediateResource(UINT resourceSize_)
 {
 	//中間リソース作成
-	Microsoft::WRL::ComPtr<ID3D12Resource> intermediateResource = std::move
+	auto& intermedRes = intermediateResources.emplace_back
 	(
-		resourceCreator->Create
+		std::move
 		(
-			CreateIntermedeiteResourceDesc(dstResourceSize_),
-			CreateIntermedeiteHeapProp(),
-			nullptr,
-			D3D12_RESOURCE_STATE_GENERIC_READ,
-			"intermed",
-			1
-		)[0]
+			resourceCreator->Create
+			(
+				CreateIntermedeiteResourceDesc(resourceSize_),
+				CreateIntermedeiteHeapProp(),
+				nullptr,
+				D3D12_RESOURCE_STATE_GENERIC_READ,
+				"intermed" + std::to_string(UINT(intermediateResources.size())),
+				1
+			)[0]
+		)
 	);
 
-	//生リソースを取り出す
-	GPUBufferBehavior* dstBuffer = dispatcher->Dispatch(id_);
-	ID3D12Resource* dstResource = dstBuffer->GetResource(GPUBufferBehavior::ResourceAccessKey{}, 0);
-
-	//アップロードする
-	uploadCommand(dstResource, intermediateResource.Get(), subeResource_, subResourceCount_);
-
-	//中間リソースを一時保管
-	intermediateResources.emplace_back(std::move(intermediateResource));
-	Logger::Log("Complete Uploading: " + dstBuffer->WatchName() + "(" + std::to_string(dstResourceSize_) + ")", fileName);
+	return intermedRes.Get();
 }
 
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -7658,7 +7731,12 @@ D3D12_HEAP_PROPERTIES BufferContext::BufferUploader::CreateIntermedeiteHeapProp(
 ========================================
 #pragma once
 #include "../../BufferContext.h"
+#include "../../BufferDefinition/GPUBuffer/GPUBufferBehavior.h"
+#include "../../RuntimeBufferManagementSystems/BufferDispatcher/BufferDispatcher.h"
+
+//外部
 #include "../../../../Core/Command/CommandContext.h"
+
 
 class GPUBufferBehavior;
 
@@ -7676,13 +7754,31 @@ public:
 
 	~BufferUploader();
 
-	void Upload
+	///バッファをアップロードする(テクスチャバッファはまた別。あとで共通窓口を作る)
+	template<typename RealDataType>
+	void UploadBuffer
 	(
 		BufferUniqueID id_,
-		UINT dstResourceSize_,
-		const D3D12_SUBRESOURCE_DATA* subeResource_,
-		UINT subResourceCount_
-	);
+		UINT numDataContaines_,
+		RealDataType* realData_
+	)
+	{
+		UINT const bufferSize = sizeof(RealDataType) * numDataContaines_;
+
+		//中間リソース生成
+		ID3D12Resource* interMediateResource = CreateInterMediateResource(bufferSize);
+		//サブリソース生成
+		D3D12_SUBRESOURCE_DATA subResource = CreateBufferSubResource(realData_,numDataContaines_);
+		
+		//生リソースを取り出す
+		GPUBufferBehavior* dstBuffer = dispatcher->Dispatch(id_);
+		ID3D12Resource* dstResource = dstBuffer->GetResource(GPUBufferBehavior::ResourceAccessKey{}, 0);
+
+		//コピーしてアップロードする
+		uploadCommand(dstResource, interMediateResource, &subResource, 0);
+
+		Logger::Log("Complete Uploading: " + dstBuffer->WatchName() + "(" + std::to_string(bufferSize) + ")", "BufferUploader.h");
+	}
 
 private:
 	BufferContext::ResourceCreator* resourceCreator;
@@ -7692,6 +7788,19 @@ private:
 	
 	D3D12_RESOURCE_DESC CreateIntermedeiteResourceDesc(UINT resourceSize_)const;
 	D3D12_HEAP_PROPERTIES CreateIntermedeiteHeapProp()const;
+	ID3D12Resource* CreateInterMediateResource(UINT resourceSize_);
+
+	template<typename RealDataType>
+	D3D12_SUBRESOURCE_DATA CreateBufferSubResource(RealDataType* realData_ , UINT numDataContaines_)
+	{
+		D3D12_SUBRESOURCE_DATA subResource{};
+
+		subResource.pData = realData_;
+		subResource.RowPitch = sizeof(RealDataType) * numDataContaines_;
+		subResource.SlicePitch = subResource.RowPitch;
+
+		return subResource;
+	}
 };
 
 
@@ -7814,7 +7923,7 @@ struct StaticStructuredBufferDescription;
 ========================================
 #pragma once
 
-class GPUBufferBehaviror;
+class GPUBufferBehavior;
 class ColorBuffer;
 class ConstantBuffer;
 class DepthStencilBuffer;
@@ -9232,8 +9341,6 @@ public:
 	struct InstanceKey;
 	//生リソースアクセスキー
 	struct ResourceAccessKey;
-	//バッファから描画パスに必要な情報をもらうためのキー
-	struct ExtractMaterialKey;
 
 	GPUBufferBehavior
 	(
@@ -9329,24 +9436,14 @@ private:
 };
 
 
-struct GPUBufferBehavior::ExtractMaterialKey
-{
-private:
-	
-	friend class SwapChainContext::RenderPassMaterialProvider;
 
-	explicit ExtractMaterialKey() = default;
-
-};
 
 
 
 ========================================
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Buffer\BufferDefinition\GPUBuffer\ColorBuffer\ColorBuffer.cpp ===
 ========================================
-
 #include "ColorBuffer.h"
-#include "../../BufferDescriptions/ColorBufferDescription/ColorBufferDescription.h"
 
 namespace
 {
@@ -9438,9 +9535,7 @@ private:
 ========================================
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Buffer\BufferDefinition\GPUBuffer\ComputeBuffer\ComputeBuffer.cpp ===
 ========================================
-
 #include "ComputeBuffer.h"
-#include "../../BufferDescriptions/ComputeBufferDescription/ComputeBufferDescription.h"
 
 
 ComputeBuffer::ComputeBuffer
@@ -9480,25 +9575,6 @@ ComputeBuffer::ComputeBuffer
 //}
 
 
-uint32_t ComputeBuffer::CurrentSRVHeapIndex()
-{
-	uint32_t heapIndex{};
-
-	if (status == kSRV_UAV)heapIndex = WatchIndex<ViewType::kSRV,uint32_t>(0);
-	else heapIndex = WatchIndex<ViewType::kSRV, uint32_t>(1);
-
-	return heapIndex;
-}
-
-uint32_t ComputeBuffer::CurrentUAVHeapIndex()
-{
-	uint32_t heapIndex{};
-
-	if (status == kUAV_SRV)heapIndex = WatchIndex<ViewType::kUAV, uint32_t>(0);
-	else heapIndex = WatchIndex<ViewType::kUAV, uint32_t>(1);
-
-	return heapIndex;
-}
 
 
 
@@ -9513,12 +9589,6 @@ uint32_t ComputeBuffer::CurrentUAVHeapIndex()
 //読み書き
 class ComputeBuffer final : public GPUBufferBehavior
 {
-	enum Status
-	{
-		kSRV_UAV,	//index0が読み込み用、index1が書き込み用
-		kUAV_SRV,	//その逆
-		kSingle
-	};
 
 public:
 
@@ -9534,8 +9604,7 @@ public:
 	///+/////////////////////////////////////////////////////////////
 	///+/////////////////////////////////////////////////////////////
 	///+抽象化予定
-	uint32_t CurrentSRVHeapIndex();
-	uint32_t CurrentUAVHeapIndex();
+
 	///+/////////////////////////////////////////////////////////////
 	///+/////////////////////////////////////////////////////////////
 
@@ -9544,7 +9613,6 @@ public:
 
 private:
 
-	Status status = kSRV_UAV;
 
 };
 
@@ -9555,9 +9623,7 @@ private:
 ========================================
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Buffer\BufferDefinition\GPUBuffer\ConstantBuffer\ConstantBuffer.cpp ===
 ========================================
-
 #include "ConstantBuffer.h"
-#include "../../BufferDescriptions/ConstantBufferDescription/ConstantBufferDescription.h"
 
 
 ConstantBuffer::ConstantBuffer
@@ -9610,7 +9676,6 @@ public:
 ========================================
 
 #include "DepthStencilBuffer.h"
-#include "../../BufferDescriptions/DepthStencilBufferDescription/DepthStencilBufferDescription.h"
 
 namespace
 {
@@ -9705,7 +9770,6 @@ private:
 ========================================
 #include "PreCompileHeader.h"
 #include "StaticStructuredBuffer.h"
-#include "../../BufferDescriptions/StaticStructuredBufferDescription/StaticStructuredBufferDescription.h"
 
 
 StaticStructuredBuffer::StaticStructuredBuffer
@@ -9742,7 +9806,6 @@ D3D12_RESOURCE_BARRIER StaticStructuredBuffer::CreateBarrierAsReading()
 #pragma once
 #include "../BufferInterface.h"
 
-struct StaticStructuredBufferDescription;
 
 //読み込み専用StructuredBuffer
 class StaticStructuredBuffer final : public GPUBufferBehavior, IReadable,IReadOnly
@@ -9763,9 +9826,6 @@ public:
 	virtual SRVHeapIndex OutProperSRVHeapIndex(int frameIndex_ = 0)const override;
 	virtual D3D12_RESOURCE_BARRIER CreateBarrierAsReading()override;
 
-private:
-
-
 };
 
 
@@ -9777,7 +9837,6 @@ private:
 ========================================
 
 #include "UploadStructuredBuffer.h"
-#include "../../BufferDescriptions/UploadStructuredBufferDescription/UploadStructuredBufferDescription.h"
 
 
 UploadStructuredBuffer::UploadStructuredBuffer
@@ -9808,7 +9867,6 @@ SRVHeapIndex UploadStructuredBuffer::OutProperSRVHeapIndex(int frameIndex_)const
 #pragma once 
 #include "../BufferInterface.h"
 
-struct UploadStructuredBufferDescription;
 
 //読み書きStructuredBuffer
 class UploadStructuredBuffer final : public GPUBufferBehavior, IReadable
@@ -9825,8 +9883,6 @@ public:
 	);
 
 	virtual SRVHeapIndex OutProperSRVHeapIndex(int frameIndex_ = 0)const override;
-
-private:
 
 
 };
@@ -10133,20 +10189,18 @@ private:
 ========================================
 #include "PreCompileHeader.h"
 #include "ModelDataCreator.h"
+#include "../ModelSlotAllocator/ModelSlotAllocator.h"
 #include "../../ModelStructure/ModelData/ModelDataAggregate.h"
 
-#include "../../../../../../Assets/Shared/StructuredBuffer.h"
-#include "../../../Buffer/BufferDefinition/BufferDescriptions/StaticStructuredBufferDescription/StaticStructuredBufferDescription.h"
-
-//ツール
-#include "ModelDataLoader/ModelDataLoader.h"
-#include "../ModelSlotAllocator/ModelSlotAllocator.h"
+#include "MeshDataCreatorTools/ModelDataTransducer/ModelDataTransducer.h"
+#include "MeshDataCreatorTools/MeshDataBufferCreator/MeshDataBufferCreator.h"
+#include "MeshDataCreatorTools/ModelDataLoader/ModelDataLoader.h"
+#include "MeshDataCreatorTools/ModelRegistryLoader/ModelRegistryLoader.h"
 
 //外部
 #include "../../../Buffer/BufferContextDiplomat/BufferToolLender/BufferToolLender.h"
 #include "../../../Buffer/BufferContextDiplomat/BufferContextDiplomat.h"
-#include "../../../Buffer/BufferCreateTools/BufferUploader/BufferUploader.h"
-#include "../../../Buffer/BufferCreateTools/BufferCreator.h"
+
 
 
 using namespace StructuredBufferDataDefinition;
@@ -10188,75 +10242,64 @@ void MeshContext::ModelDataCreator::CreateAllModelData
     BufferContextDiplomat* bufferContextDiplomat_
 )
 {
+    ///＜最終目的＞
+    ///そのキー(ファイル名)に対してメッシュデータID(マルチメッシュ対応のためvector)を紐づける。
+
+    ///メッシュデータ生成数
+    ///メッシュIDが指す先は一つのメッシュデータバッファのsrvheapIndex群であり、
+    ///マルチメッシュで3つ存在していた場合、IDが3つできることを意味する
+    MeshDataID meshDataID{};
+
+    ///メッシュデータのsrvHeapIndexがひとまとまりになったものの一時コンテナ
+    ///全てのメッシュデータ分を詰めていき、最後にstaticStruturedBufferを作成しマッピング。アップロードする
+    ///そのバッファのsrvHeapIndexは配列に詰められ、コンスタントバッファとして転送される。
+    std::vector<MeshDataSRVHeapIndexGroupGPUCPU> tmpMeshDataSRVHeapIndexGroupContainer;
+
+
+    //メッシュデータのバッファを作る
+
+
     //モデルデータライブラリー
     std::unordered_map<std::string, ModelDataAggregate*> tmpModelDataLib = LoadAllModelFiles();
 
-    //bufferCreatorとuploaderを借りる
-    auto bufferToolLender = bufferContextDiplomat_->Access<BufferContext::ToolLender>();
-    BufferContext::ToolLender::LicenceType<BufferContext::BufferCreator> licence{};
-    auto* bufferCreator = bufferToolLender->Lend<BufferContext::BufferCreator>(licence);
-    auto* bufferUploader = bufferToolLender->Lend<BufferContext::BufferUploader>(licence);
+    //バッファコンテキストのツールレンダーから各種ツールを借りる
+    auto [bufferCreator, bufferCollector, bufferDispatcher, bufferUploader] =
+        BorrowBufferContextTools(bufferContextDiplomat_);
 
-    ///メッシュIDとファイル名を紐づける
     for (const auto& [key, value] : tmpModelDataLib)
     {
         //メッシュデータのバッファを生成する
-        CreateMeshDataBuffer(value->resourceMesh, allocator_, bufferCreator, key);
+        std::vector<MeshDataBufferUniqueIDGroup> meshDataBufferUniqueIDGroupContainer =
+        MeshDataBufferCreator::CreateMeshDataBuffer
+        (
+            meshDataIDLib,
+            value->resourceMesh, 
+            bufferCreator, 
+            bufferCollector, 
+            key, 
+            meshDataID
+        );
+
+        //生成したメッシュデータバッファのユニークID群からバッファのポインタを探す
+        std::vector<MeshDataStructuredBufferGroup> MeshDataStructuredBufferGroupContainer =
+            DataTransducer::BufferUniqueID_To_BufferPtr(meshDataBufferUniqueIDGroupContainer, bufferDispatcher);
+
+        //BufferUploaderが
+        //静的バッファのポインタをもとに実メッシュデータをマッピングして、アップロードする
+
+
     }
 
-    //モデルの種類の数
-    //UINT numModelTypes = meshID + 1;
 }
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void MeshContext::ModelDataCreator::CreateMeshDataBuffer
-(
-    const std::vector<ResourceMesh>& data_,
-    MeshContext::ModelSlotAllocator* allocator_,
-    BufferContext::BufferCreator* bufferCreator_,
-    std::string meshDataName_
-)
-{
-    UINT meshID{};
-
-    ///メッシュデータのGPUバッファを作成
-    for (const auto& meshData : data_)
-    {
-        //マルチメッシュに対応するために、インデックスの文字列をキーに含める
-        std::string meshDataKey = meshDataName_ + std::to_string(meshID);
-        meshDataIDLib[meshDataKey] = MeshDetaID(meshID++);
-
-        //まずはディスクの定義から
-        StaticStructuredBufferDescription descVertices(sizeof(StandardVertexGPU), (UINT)meshData.vertices.size(), 0);
-        StaticStructuredBufferDescription descUniqueVertsIndices(sizeof(UniqueVertexIndexCPUGPU), (UINT)meshData.uniqueVertexIndices.size(), 0);
-        StaticStructuredBufferDescription descMeshlets(sizeof(MeshletCPUGPU), (UINT)meshData.meshlets.size(), 0);
-        StaticStructuredBufferDescription descPrimIndices(sizeof(PrimitiveIndexCPUGPU), (UINT)meshData.primitiveIndices.size(), 0);
-
-        //ディスクをもとにバッファを生成
-        BufferUniqueID tmp_idVertices = bufferCreator_->Create(descVertices, meshDataKey + "[Vertices]");
-        BufferUniqueID tmp_idUniqueVertsIndices = bufferCreator_->Create(descUniqueVertsIndices, meshDataKey + "[UniqueVertsIndices]");
-        BufferUniqueID tmp_idMeshlets = bufferCreator_->Create(descMeshlets, meshDataKey + "[Meshlets]");
-        BufferUniqueID tmp_idPrimIndices = bufferCreator_->Create(descPrimIndices, meshDataKey + "[PrimIndices ]");
-
-    }
-
-    
-
-}
-
-
-///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 std::unordered_map<std::string , ModelDataAggregate*> MeshContext::ModelDataCreator::LoadAllModelFiles()
 {
-    std::string const registryFilePath = "Assets/Registry/ModelFiles.txt";
-
     std::unordered_map<std::string, ModelDataAggregate*> modelDataLib;
 
-    auto modelFileName_pathLib = LoadModelRegistry(registryFilePath);
+    auto modelFileName_pathLib = ModelRegistryLoader::Load();
 
     for (const auto& [key, value] : modelFileName_pathLib)
     {
@@ -10276,76 +10319,18 @@ std::unordered_map<std::string , ModelDataAggregate*> MeshContext::ModelDataCrea
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-std::unordered_map<std::string, std::string > MeshContext::ModelDataCreator::LoadModelRegistry(std::string const registryFilePath_)
+MeshContext::ModelDataCreator::BufferContextTools MeshContext::ModelDataCreator::BorrowBufferContextTools(BufferContextDiplomat* bufferContextDiplomat_)
 {
-    std::unordered_map<std::string, std::string > modelFileName_pathLib;
-    std::ifstream file(registryFilePath_);
-    ErrorMessageOutput::Abort::DetectError
-    (
-        file.is_open(),
-        registryFilePath_ + "このパス無くない？",
-        fileName
-    );
+    //バッファコンテキストのツールレンダーから、
+    //bufferCreator、bufferDispatcher、bufferCollector、uploaderを借りる
+    auto bufferToolLender = bufferContextDiplomat_->Access<BufferContext::ToolLender>();
+    BufferContext::ToolLender::LicenceType<BufferContext::BufferCreator> licence{};
+    auto* bufferCreator = bufferToolLender->Lend<BufferContext::BufferCreator>(licence);
+    auto* bufferCollector = bufferToolLender->Lend<BufferContext::BufferCollector>(licence);
+    auto* bufferDispatcher = bufferToolLender->Lend<BufferContext::BufferDispatcher>(licence);
+    auto* bufferUploader = bufferToolLender->Lend<BufferContext::BufferUploader>(licence);
 
-    std::string line;
-
-    while (std::getline(file, line))
-    {
-        constexpr std::string_view keyToken = "key: \"";
-        constexpr std::string_view valueToken = "value: \"";
-
-        auto keyStart = line.find(keyToken);
-        if (keyStart == std::string::npos)
-        {
-            continue;
-        }
-
-
-        keyStart += keyToken.size();
-
-        auto keyEnd = line.find("\"", keyStart);
-        if (keyEnd == std::string::npos)
-        {
-            continue;
-        }
-
-
-        std::string key = line.substr
-        (
-            keyStart,
-            keyEnd - keyStart
-        );
-
-
-        auto valueStart = line.find(valueToken);
-        if (valueStart == std::string::npos)
-        {
-            continue;
-        }
-
-
-        valueStart += valueToken.size();
-
-        auto valueEnd = line.find("\"", valueStart);
-        if (valueEnd == std::string::npos)
-        {
-            continue;
-        }
-
-
-        std::string value = line.substr
-        (
-            valueStart,
-            valueEnd - valueStart
-        );
-
-
-        modelFileName_pathLib.emplace(key, value);
-    }
-
-    Logger::Log("Load: " + registryFilePath_, fileName);
-    return modelFileName_pathLib;
-
+    return std::make_tuple(bufferCreator, bufferCollector, bufferDispatcher, bufferUploader);
 }
 
 
@@ -10356,17 +10341,57 @@ std::unordered_map<std::string, std::string > MeshContext::ModelDataCreator::Loa
 ========================================
 #pragma once
 #include "../../MeshContext.h"
-#include "../../../Buffer/BufferContext.h"
 
-#include "../../../../../../Assets/Shared/StructuredBuffer.h"
+//外部
+#include "../../../Buffer/BufferContext.h"
 
 struct ModelDataAggregate;
 struct ResourceMesh;
 struct ResourrceMatrilal;
+class StaticStructuredBuffer;
 
 
 class MeshContext::ModelDataCreator
 {
+	using BufferContextTools = std::tuple
+	<
+		BufferContext::BufferCreator*,
+		BufferContext::BufferCollector*,
+		BufferContext::BufferDispatcher*,
+		BufferContext::BufferUploader*
+	>;
+
+protected:
+
+	//MeshDataBufferのユニークIDを列挙するため
+	struct MeshDataBufferUniqueIDGroup
+	{
+		BufferUniqueID verticesGPUID{};
+		BufferUniqueID uniqueVertsIndicesID{};
+		BufferUniqueID meshletsID{};
+		BufferUniqueID primIndicesID{};
+	};
+
+	//メッシュデータの静的ストラクチャードバッファのアドレス群
+	struct MeshDataStructuredBufferGroup
+	{
+		///STB = StructuredBuffer
+		StaticStructuredBuffer* verticesGPUSTB;
+		StaticStructuredBuffer* uniqueVertsIndicesSTB;
+		StaticStructuredBuffer* meshletsSTB;
+		StaticStructuredBuffer* primIndicesSTB;
+	};
+
+private:
+
+	//モデルの理事ストリーファイルを読み込んで、キーがファイル名のバリューがファイルパスであるマップを返す
+	class ModelRegistryLoader;
+	//メッシュデータのバッファを作成し,そのメッシュデータのバッファユニークID群を返す
+	class MeshDataBufferCreator;
+	//頂点データをGPUように変換したり、BufferUniqueIDからstructuredBufferポインタに変換する
+	class DataTransducer;
+	//メッシュデータのバッファのアップロードを行う
+	class MeshDataBufferUploader;
 
 public:
 
@@ -10374,7 +10399,8 @@ public:
 	class ModelDataLoader;
 	//モデルデータ管理クラス
 	
-	///全てのメッシュデータを作成する
+	///全てのメッシュデータのバッファを作成し、
+	///メッシュデータのバッファユニークID群の配列のバッファも作成
 	void CreateAllModelData
 	(
 		MeshContext::ModelSlotAllocator* allocator_,
@@ -10388,6 +10414,7 @@ public:
 		MeshContext::ModelSlotAllocator* allocator_, 
 		BufferContextDiplomat* bufferContextDiplomat_
 	);
+
 	~ModelDataCreator();
 
 
@@ -10395,27 +10422,19 @@ private:
 
 	//モデルファイルからモデルデータを読み込む
 	std::unique_ptr<ModelDataLoader> modelDataLoader;
-	//ファイル名がキーのメッシュデータバッファ配列上のインデックス
-	std::unordered_map<std::string, MeshDetaID> meshDataIDLib;
-	//リソースのアップロードを行ってもらう
-	BufferContext::BufferUploader* bufferUploader;
-	//バッファの生成を行ってもらう
-	BufferContext::BufferCreator* bufferCreator;
+	//ファイル名がキーのメッシュデータバッファ配列上のインデックスがバリュー
+	std::unordered_map<std::string, std::vector<MeshDataID>> meshDataIDLib;
 
 
-	//モデルファイルが登録されているファイルから、ファイル名をキーとしてデータのポインタを
-	std::unordered_map<std::string, std::string > LoadModelRegistry(std::string const registryFilePath_);
 	//ローダーが全モデルファイルを読み込み、そのモデルデータのポインタを返す
 	///被り無しのはず設計なので、被りがあった場合はアサートでとまる
 	std::unordered_map<std::string, ModelDataAggregate*> LoadAllModelFiles();
-	//メッシュデータのバッファを作成する
-	void CreateMeshDataBuffer
-	(
-		const std::vector<ResourceMesh>& data_,
-		MeshContext::ModelSlotAllocator* allocator_,
-		BufferContext::BufferCreator* bufferCreator_,
-		std::string meshDataName_
-	);
+	
+	//バッファコンテキストクラスからツールをお借りする
+	BufferContextTools BorrowBufferContextTools(BufferContextDiplomat* bufferContextDiplomat_);
+
+
+
 };
 
 
@@ -10423,14 +10442,195 @@ private:
 
 
 ========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Mesh\CreateModelTools\ModelDataCreator\ModelDataLoader\ModelDataLoader.cpp ===
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Mesh\CreateModelTools\ModelDataCreator\MeshDataCreatorTools\MeshDataBufferCreator\MeshDataBufferCreator.cpp ===
+========================================
+#include "PreCompileHeader.h"
+#include "MeshDataBufferCreator.h"
+#include "../../../../ModelStructure/ModelData/ResourceMesh/ResourceMesh.h"
+
+//外部
+#include "../../../../../Buffer/BufferCreateTools/BufferCreator.h"
+#include "../../../../../../../../Assets/Shared/StructuredBuffer.h"
+
+using namespace StructuredBufferDataDefinition;
+
+[[nodiscard]] std::vector<MeshContext::ModelDataCreator::MeshDataBufferUniqueIDGroup> 
+MeshContext::ModelDataCreator::MeshDataBufferCreator::CreateMeshDataBuffer
+(
+    std::unordered_map<std::string, std::vector<MeshDataID>>& meshDataIDLib_,
+	const std::vector<ResourceMesh>& data_,
+	BufferContext::BufferCreator* bufferCreator_,
+	BufferContext::BufferCollector* bufferCollector_,
+	std::string modelFileName_,
+	MeshDataID& meshDataID_
+)
+{
+    ///メッシュデータのバッファユニークID群のコンテナ
+    std::vector<MeshDataBufferUniqueIDGroup> meshDataBufferUniqueIDContainer;
+
+    //バッファディスクを作り、それをもとにバッファを生成してユニークIDを返す
+    auto tmpCreateBufferFunc = [bufferCreator_]<typename DataType>(size_t size_, std::string meshDataKey_, std::string bufferName_)
+    {
+        std::string bufferName = meshDataKey_ + "<" + bufferName_ + ">";
+        StaticStructuredBufferDescription desc(sizeof(DataType), (UINT)size_, 0);
+
+        return bufferCreator_->Create(desc, bufferName);
+    };
+
+    //サブメッシュのカウント。バッファの命名に使用
+    UINT subMeshCnt{};
+    //MeshDataBufferUniqueIDGroupコンテナ上の番地を記録するため。(サブメッシュも含む)
+    std::vector<MeshDataID> meshDataIDContainer;
+
+    ///メッシュデータのGPUバッファを作成
+    for (const auto& meshData : data_)
+    {
+        MeshDataBufferUniqueIDGroup meshDataBufferUniqueID;
+
+        //名前
+        std::string meshDataName = modelFileName_ + std::to_string(subMeshCnt);
+
+        //ディスクをもとにバッファを生成
+        meshDataBufferUniqueID.verticesGPUID        = tmpCreateBufferFunc.operator() < StandardVertexGPU >      
+            (meshData.vertices.size(), meshDataName, "Vertices");
+
+        meshDataBufferUniqueID.uniqueVertsIndicesID = tmpCreateBufferFunc.operator() < UniqueVertexIndexCPUGPU > 
+            (meshData.uniqueVertexIndices.size(), meshDataName, "UniqueVertsIndices");
+
+        meshDataBufferUniqueID.meshletsID           = tmpCreateBufferFunc.operator() < MeshletCPUGPU >           
+            (meshData.meshlets.size(), meshDataName, "Meshlets");
+
+        meshDataBufferUniqueID.primIndicesID        = tmpCreateBufferFunc.operator() < PrimitiveIndexCPUGPU >   
+            (meshData.primitiveIndices.size(), meshDataName, "PrimIndices");
+
+        meshDataBufferUniqueIDContainer.emplace_back(meshDataBufferUniqueID);
+
+        //メッシュデータ番地を格納
+        meshDataIDContainer.emplace_back(meshDataID_);
+        //総メッシュデータ数をインクリメント
+        meshDataID_ += MeshDataID(1);
+    }
+
+    meshDataIDLib_[modelFileName_] = meshDataIDContainer;
+
+    //バッファコレクターに生成したバッファを仕分けしてもらう
+    bufferCollector_->Distribute();
+
+    //メッシュデータのバッファユニークID群を返す
+    return meshDataBufferUniqueIDContainer;
+
+}
+
+
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Mesh\CreateModelTools\ModelDataCreator\MeshDataCreatorTools\MeshDataBufferCreator\MeshDataBufferCreator.h ===
+========================================
+#pragma once
+#include "../../ModelDataCreator.h"
+
+
+
+class MeshContext::ModelDataCreator::MeshDataBufferCreator
+{
+public:
+
+	//メッシュデータのバッファを作成し,そのメッシュデータのバッファユニークID群を返す
+	[[nodiscard]] static std::vector<MeshDataBufferUniqueIDGroup> CreateMeshDataBuffer
+	(
+		std::unordered_map<std::string, std::vector<MeshDataID>>& meshDataIDLib_,
+		const std::vector<ResourceMesh>& data_,
+		BufferContext::BufferCreator* bufferCreator_,
+		BufferContext::BufferCollector* bufferCollector_,
+		std::string modelFileName_,
+		MeshDataID& meshDataID_
+	);
+
+};
+
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Mesh\CreateModelTools\ModelDataCreator\MeshDataCreatorTools\MeshDataBufferUploader\MeshDataBufferUploader.cpp ===
+========================================
+#include "PreCompileHeader.h"
+#include "MeshDataBufferUploader.h"
+#include "../ModelDataTransducer/ModelDataTransducer.h"
+
+
+//外部
+#include "../../../../../Buffer/BufferCreateTools/BufferUploader/BufferUploader.h"
+
+namespace
+{
+    auto const fileName = "MeshDataBufferUploader.cpp";
+}
+
+
+void MeshContext::ModelDataCreator::MeshDataBufferUploader::CopyAndUploadBuffer
+(
+	const std::vector<ResourceMesh>& data_,
+	const std::vector<MeshDataStructuredBufferGroup>& bufferPtrGroups_,
+	BufferContext::BufferUploader* bufferUploader_
+)
+{
+    size_t numMeshData = data_.size();
+    ErrorMessageOutput::Assert::DetectError
+    (
+        numMeshData == bufferPtrGroups_.size(),
+        "メッシュデータとそれのポインタのの種類数がおなじじゃない",
+        fileName
+    );
+
+    //CPUにマッピングしてアップロードする
+    for (size_t i = 0;i < numMeshData;++i)
+    {
+
+    }
+
+}
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Mesh\CreateModelTools\ModelDataCreator\MeshDataCreatorTools\MeshDataBufferUploader\MeshDataBufferUploader.h ===
+========================================
+#pragma once
+#include "../../ModelDataCreator.h"
+#include "../../../../ModelStructure/ModelData/ResourceMesh/ResourceMesh.h"
+
+class MeshContext::ModelDataCreator::MeshDataBufferUploader
+{
+public:
+	//BufferUploaderが中間リソースに実メッシュデータをマッピングして、静的バッファの生リソースをアップロードする
+	static void CopyAndUploadBuffer
+	(
+		const std::vector<ResourceMesh>& data_,
+		const std::vector<MeshDataStructuredBufferGroup>& bufferPtrGroups_,
+		BufferContext::BufferUploader* bufferUploader_
+	);
+
+};
+
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Mesh\CreateModelTools\ModelDataCreator\MeshDataCreatorTools\ModelDataLoader\ModelDataLoader.cpp ===
 ========================================
 #include "PreCompileHeader.h"
 #include "ModelDataLoader.h"
 
 #include "ModelDataCache/ModelDataCache.h"
 #include "../../../../../../External/MeshOptimizer/meshoptimizer.h"
-#include "../../../../../../Utility/StringConnverter/StringConverter.h"
+#include "../../../../../../../Utility/StringConnverter/StringConverter.h"
 
 
 namespace
@@ -10822,16 +11022,16 @@ std::wstring MeshContext::ModelDataCreator::ModelDataLoader::Convert(const aiStr
 
 
 ========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Mesh\CreateModelTools\ModelDataCreator\ModelDataLoader\ModelDataLoader.h ===
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Mesh\CreateModelTools\ModelDataCreator\MeshDataCreatorTools\ModelDataLoader\ModelDataLoader.h ===
 ========================================
 #pragma once
-#include "../ModelDataCreator.h"
+#include "../../ModelDataCreator.h"
 
 
-#include "../../.././../../External/assimp/include/assimp/Importer.hpp"
-#include "../../.././../../External/assimp/include/assimp/scene.h"
-#include "../../.././../../External/assimp/include/assimp/postprocess.h"
-#include "../../.././../../External/assimp/include/assimp/cimport.h"
+#include "../../.././../../../External/assimp/include/assimp/Importer.hpp"
+#include "../../.././../../../External/assimp/include/assimp/scene.h"
+#include "../../.././../../../External/assimp/include/assimp/postprocess.h"
+#include "../../.././../../../External/assimp/include/assimp/cimport.h"
 
 
 struct ResourceMesh;
@@ -10871,7 +11071,7 @@ private:
 
 
 ========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Mesh\CreateModelTools\ModelDataCreator\ModelDataLoader\ModelDataCache\ModelDataCache.cpp ===
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Mesh\CreateModelTools\ModelDataCreator\MeshDataCreatorTools\ModelDataLoader\ModelDataCache\ModelDataCache.cpp ===
 ========================================
 #include "PreCompileHeader.h"
 #include "ModelDataCache.h"
@@ -10903,11 +11103,11 @@ void MeshContext::ModelDataCreator::ModelDataLoader::ModelDataCache::Register(Ac
 
 
 ========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Mesh\CreateModelTools\ModelDataCreator\ModelDataLoader\ModelDataCache\ModelDataCache.h ===
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Mesh\CreateModelTools\ModelDataCreator\MeshDataCreatorTools\ModelDataLoader\ModelDataCache\ModelDataCache.h ===
 ========================================
 #pragma once
 #include "../ModelDataLoader.h"
-#include "../../../../ModelStructure/ModelData/ModelDataAggregate.h"
+#include "../../../../../ModelStructure/ModelData/ModelDataAggregate.h"
 
 class MeshContext::ModelDataCreator::ModelDataLoader::ModelDataCache
 {
@@ -10930,6 +11130,208 @@ struct MeshContext::ModelDataCreator::ModelDataLoader::ModelDataCache::AccessKey
 private:
 	friend class MeshContext::ModelDataCreator::ModelDataLoader;
 	explicit AccessKey() = default;
+};
+
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Mesh\CreateModelTools\ModelDataCreator\MeshDataCreatorTools\ModelDataTransducer\ModelDataTransducer.cpp ===
+========================================
+#include "PreCompileHeader.h"
+#include "ModelDataTransducer.h"
+
+//外部
+#include "../../../../../Buffer/RuntimeBufferManagementSystems/BufferDispatcher/BufferDispatcher.h"
+#include "../../../../../Buffer/BufferDefinition/GPUBuffer/StaticStructuredBuffer/StaticStructuredBuffer.h"
+
+using namespace StructuredBufferDataDefinition;
+
+[[nodiscard]] std::vector<MeshContext::ModelDataCreator::MeshDataStructuredBufferGroup>
+MeshContext::ModelDataCreator::DataTransducer::BufferUniqueID_To_BufferPtr
+(
+    const std::vector<MeshDataBufferUniqueIDGroup>& uniqueIDGroup_,
+    BufferContext::BufferDispatcher* bufferDispatcher_
+)
+{
+    //メッシュデータのバッファのポインタ群のコンテナ
+    std::vector<MeshDataStructuredBufferGroup> meshDataStructuredBufferGroupContainer;
+
+    auto tmpPtrGetterFunc = [bufferDispatcher_](BufferUniqueID id_)
+    {
+        return static_cast<StaticStructuredBuffer*>(bufferDispatcher_->Dispatch(id_));
+    };
+
+    for (auto itr = uniqueIDGroup_.begin();itr != uniqueIDGroup_.end();++itr)
+    {
+        MeshDataStructuredBufferGroup meshDataStructuredBufferGroup;
+
+        //メッシュデータごとにアドレスを取得して詰めていく
+        meshDataStructuredBufferGroup.verticesGPUSTB =          tmpPtrGetterFunc((*itr).verticesGPUID);
+        meshDataStructuredBufferGroup.uniqueVertsIndicesSTB =   tmpPtrGetterFunc((*itr).uniqueVertsIndicesID);
+        meshDataStructuredBufferGroup.meshletsSTB =             tmpPtrGetterFunc((*itr).meshletsID);
+        meshDataStructuredBufferGroup.primIndicesSTB =          tmpPtrGetterFunc((*itr).primIndicesID);
+
+        meshDataStructuredBufferGroupContainer.emplace_back(meshDataStructuredBufferGroup);
+    }
+
+    return meshDataStructuredBufferGroupContainer;
+}
+
+std::vector<StandardVertexGPU> MeshContext::ModelDataCreator::DataTransducer::TransferVertexDataTypeToGPU(const std::vector<StandardVertex>& vertices_)
+{
+    std::vector<StandardVertexGPU> standardVertexGPUContainer;
+
+    size_t const verticesSize = vertices_.size();
+    standardVertexGPUContainer.resize(verticesSize);
+
+    auto transferToVector4Func = [](float* data_, uint8_t size_ = 3)
+        {
+            Vector4<float> transferDst;
+
+            for (uint8_t i = 0;i < size_;++i)
+            {
+                (&transferDst.x)[i] = data_[i];
+            }
+
+            return transferDst;
+        };
+
+    for (size_t i = 0;i < verticesSize;++i)
+    {
+        standardVertexGPUContainer[i].localPos =
+            transferToVector4Func((float*)&vertices_[i].localPos.data.x);
+
+        standardVertexGPUContainer[i].normal =
+            transferToVector4Func((float*)&vertices_[i].normal.data.x);
+
+        standardVertexGPUContainer[i].tangent =
+            transferToVector4Func((float*)&vertices_[i].tangent.data.x);
+
+        standardVertexGPUContainer[i].texcoord =
+            transferToVector4Func((float*)&vertices_[i].texcoord.x, 2);
+    }
+
+    return standardVertexGPUContainer;
+}
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Mesh\CreateModelTools\ModelDataCreator\MeshDataCreatorTools\ModelDataTransducer\ModelDataTransducer.h ===
+========================================
+#pragma once
+#include "../../ModelDataCreator.h"
+#include "../../../../ModelStructure/ModelData/ResourceMesh/StandardVertex.h"
+#include "../../../../../../../../Assets/Shared/StructuredBuffer.h"
+
+class MeshContext::ModelDataCreator::DataTransducer
+{
+public:
+
+	///バッファユニークIDが指すバッファのアドレス群を取得
+	[[nodiscard]] static std::vector<MeshDataStructuredBufferGroup> BufferUniqueID_To_BufferPtr
+	(
+		const std::vector<MeshDataBufferUniqueIDGroup>& uniqueIDGroup_,
+		BufferContext::BufferDispatcher* bufferDispatcher_
+	);
+
+	//CPU用の頂点データをGPU用に移し替える
+	[[nodiscard]] static std::vector<StructuredBufferDataDefinition::StandardVertexGPU> 
+		TransferVertexDataTypeToGPU(const std::vector<StandardVertex>& vertices_);
+
+
+};
+
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Mesh\CreateModelTools\ModelDataCreator\MeshDataCreatorTools\ModelRegistryLoader\ModelRegistryLoader.h ===
+========================================
+#pragma once
+#include "../../ModelDataCreator.h"
+
+class MeshContext::ModelDataCreator::ModelRegistryLoader
+{
+private:
+    static inline const std::string kRegistryFileName = "Assets/Registry/ModelFiles.txt";
+
+public:
+
+    static std::unordered_map<std::string, std::string > Load()
+    {
+        std::unordered_map<std::string, std::string > modelFileName_pathLib;
+        std::ifstream file(kRegistryFileName);
+
+        ErrorMessageOutput::Abort::DetectError
+        (
+            file.is_open(),
+            kRegistryFileName + "このパス無くない？",
+            "ModelRegistryLoader.h"
+        );
+
+        std::string line;
+
+        while (std::getline(file, line))
+        {
+            constexpr std::string_view keyToken = "key: \"";
+            constexpr std::string_view valueToken = "value: \"";
+
+            auto keyStart = line.find(keyToken);
+            if (keyStart == std::string::npos)
+            {
+                continue;
+            }
+
+
+            keyStart += keyToken.size();
+
+            auto keyEnd = line.find("\"", keyStart);
+            if (keyEnd == std::string::npos)
+            {
+                continue;
+            }
+
+
+            std::string key = line.substr
+            (
+                keyStart,
+                keyEnd - keyStart
+            );
+
+
+            auto valueStart = line.find(valueToken);
+            if (valueStart == std::string::npos)
+            {
+                continue;
+            }
+
+
+            valueStart += valueToken.size();
+
+            auto valueEnd = line.find("\"", valueStart);
+            if (valueEnd == std::string::npos)
+            {
+                continue;
+            }
+
+
+            std::string value = line.substr
+            (
+                valueStart,
+                valueEnd - valueStart
+            );
+
+
+            modelFileName_pathLib.emplace(key, value);
+        }
+
+        Logger::Log("Load: " + kRegistryFileName, "ModelRegistryLoader.h");
+        return modelFileName_pathLib;
+    }
 };
 
 
@@ -11022,6 +11424,10 @@ private:
 	///「transformMatrixバッファ」の配列のSRVHeapIndex
 	std::unique_ptr<SRVHeapIndex> transformMatrixBufferArraySRVHeapIndex;
 
+	///そのモデルファイル名が、
+	///「メッシュデータバッファのsrvHeapIndexが詰まったもの」の配列の何番目に該当するのかを索引するため
+	std::unordered_map<std::string, std::vector<MeshDataID>> meshDataIDLib;
+
 
 	//TransformMatrixの空きインデックスのリスト
 	SimpleFreeList transformMatrixSlotList;
@@ -11112,12 +11518,12 @@ struct ModelDescription
 {
 	ModelDescription
 	(
-		MeshDetaID meshDataID_,
+		MeshDataID meshDataID_,
 		uint32_t dispatchedTransformedMatrixID_,
 		std::string name_
 	) :meshDataID(meshDataID_), dispatchedTransformedMatrixID(dispatchedTransformedMatrixID_), name(name_){}
 
-	MeshDetaID meshDataID{};
+	MeshDataID meshDataID{};
 	uint32_t dispatchedTransformedMatrixID{};
 	std::string name{};
 };
@@ -14660,6 +15066,7 @@ void Nexus::Instantiate<Nexus::InitSequence::kKickCommands>()
 template<>
 void Nexus::Instantiate<Nexus::InitSequence::kDeleteIntermediateResources>()
 {
+	//BufferUploaderを削除する
 	bufferContext->DeleteBufferUploader(BufferContext::InstanceKey{});
 }
 

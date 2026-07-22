@@ -5,7 +5,7 @@ using BufferUniqueID = uint32_t;
 //srv/uavディスクリプタヒープ上のインデックス
 using SRVHeapIndex = uint32_t;
 //メッシュデータのID
-using MeshDetaID = uint32_t;
+using MeshDataID = uint32_t;
 
 
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////

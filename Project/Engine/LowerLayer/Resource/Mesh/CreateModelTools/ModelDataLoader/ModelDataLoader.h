@@ -1,11 +1,11 @@
 #pragma once
-#include "../ModelDataCreator.h"
+#include "../ModelDataCreator/ModelDataCreator.h"
 
 
-#include "../../.././../../External/assimp/include/assimp/Importer.hpp"
-#include "../../.././../../External/assimp/include/assimp/scene.h"
-#include "../../.././../../External/assimp/include/assimp/postprocess.h"
-#include "../../.././../../External/assimp/include/assimp/cimport.h"
+#include ".././../../../External/assimp/include/assimp/Importer.hpp"
+#include ".././../../../External/assimp/include/assimp/scene.h"
+#include ".././../../../External/assimp/include/assimp/postprocess.h"
+#include ".././../../../External/assimp/include/assimp/cimport.h"
 
 
 struct ResourceMesh;

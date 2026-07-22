@@ -3,7 +3,6 @@
 
 //外部
 #include "../../../Buffer/BufferContext.h"
-#include "../../../../../../Assets/Shared/StructuredBuffer.h"
 
 struct ModelDataAggregate;
 struct ResourceMesh;
@@ -13,10 +12,20 @@ class StaticStructuredBuffer;
 
 class MeshContext::ModelDataCreator
 {
+	using BufferContextTools = std::tuple
+	<
+		BufferContext::BufferCreator*,
+		BufferContext::BufferCollector*,
+		BufferContext::BufferDispatcher*,
+		BufferContext::BufferUploader*
+	>;
+
+protected:
+
 	//MeshDataBufferのユニークIDを列挙するため
 	struct MeshDataBufferUniqueIDGroup
 	{
-		BufferUniqueID verticesID{};
+		BufferUniqueID verticesGPUID{};
 		BufferUniqueID uniqueVertsIndicesID{};
 		BufferUniqueID meshletsID{};
 		BufferUniqueID primIndicesID{};
@@ -26,20 +35,22 @@ class MeshContext::ModelDataCreator
 	struct MeshDataStructuredBufferGroup
 	{
 		///STB = StructuredBuffer
-		StaticStructuredBuffer* verticesSTB;
+		StaticStructuredBuffer* verticesGPUSTB;
 		StaticStructuredBuffer* uniqueVertsIndicesSTB;
 		StaticStructuredBuffer* meshletsSTB;
 		StaticStructuredBuffer* primIndicesSTB;
 	};
 
-	using BufferContextTools = std::tuple
-	<
-		BufferContext::BufferCreator*,
-		BufferContext::BufferCollector*,
-		BufferContext::BufferDispatcher*,
-		BufferContext::BufferUploader*
-	>;
+private:
 
+	//モデルの理事ストリーファイルを読み込んで、キーがファイル名のバリューがファイルパスであるマップを返す
+	class ModelRegistryLoader;
+	//メッシュデータのバッファを作成し,そのメッシュデータのバッファユニークID群を返す
+	class MeshDataBufferCreator;
+	//頂点データをGPUように変換したり、BufferUniqueIDからstructuredBufferポインタに変換する
+	class DataTransducer;
+	//メッシュデータのバッファのアップロードを行う
+	class MeshDataBufferUploader;
 
 public:
 
@@ -70,17 +81,10 @@ private:
 
 	//モデルファイルからモデルデータを読み込む
 	std::unique_ptr<ModelDataLoader> modelDataLoader;
-	//ファイル名がキーのメッシュデータバッファ配列上のインデックス
-	std::unordered_map<std::string, MeshDetaID> meshDataIDLib;
+	//ファイル名がキーのメッシュデータバッファ配列上のインデックスがバリュー
+	std::unordered_map<std::string, std::vector<MeshDataID>> meshDataIDLib;
 
 
-
-
-
-
-	//モデルファイルが登録されているファイルから、ファイル名をキーとしてデータのポインタを
-	std::unordered_map<std::string, std::string > LoadModelRegistry(std::string const registryFilePath_);
-	
 	//ローダーが全モデルファイルを読み込み、そのモデルデータのポインタを返す
 	///被り無しのはず設計なので、被りがあった場合はアサートでとまる
 	std::unordered_map<std::string, ModelDataAggregate*> LoadAllModelFiles();
@@ -88,29 +92,6 @@ private:
 	//バッファコンテキストクラスからツールをお借りする
 	BufferContextTools BorrowBufferContextTools(BufferContextDiplomat* bufferContextDiplomat_);
 
-	//メッシュデータのバッファを作成する
-	///そのメッシュデータのバッファユニークID群を返す
-	std::vector<MeshDataBufferUniqueIDGroup> CreateMeshDataBuffer
-	(
-		const std::vector<ResourceMesh>& data_,
-		BufferContext::BufferCreator* bufferCreator_,
-		BufferContext::BufferCollector* bufferCollector_,
-		std::string meshDataName_,
-		MeshDetaID& meshDataID_
-	);
-
-	///バッファユニークIDが指すバッファのアドレス群を取得
-	std::vector<MeshDataStructuredBufferGroup> BufferUniqueID_To_BufferPtr
-	(
-		const std::vector<MeshDataBufferUniqueIDGroup>& uniqueIDGroup_, 
-		BufferContext::BufferDispatcher* bufferDispatcher_
-	);
-
-
-
-
-	//メッシュデータのバッファをアップロードし、
-	//そのバッファ群のMeshDataSRVHeapIndexGroupGPUCPUを返す
 
 
 };
