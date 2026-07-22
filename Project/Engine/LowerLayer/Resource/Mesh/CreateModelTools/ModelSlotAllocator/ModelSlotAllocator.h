@@ -1,5 +1,5 @@
 #pragma once
-#include "../../MeshContext.h"
+#include "../ModelDataCreator/ModelDataCreator.h"
 #include "SimpleFreeList/SimpleFreeList.h"
 
 
@@ -16,7 +16,7 @@ public:
 	};
 
 	struct DistributeLicence;
-	struct ResizeLicence;
+	struct CreateModelDataLicence;
 
 
 	template<SlotType slotType>
@@ -25,6 +25,14 @@ public:
 	//meshDataSRVHeapIndexGroupArraySRVHeapIndexこれを設定する
 	void SetMeshDataSRVHeapIndexGroupArraySRVHeapIndex(std::unique_ptr<SRVHeapIndex>&& index_);
 
+	//メッシュファイル名に対してMeshDataIDを紐づける
+	void LinkModelFileNameToMeshDataID
+	(
+		CreateModelDataLicence licence_,
+		std::string modelFileName_ , 
+		const std::vector<MeshDataID>& idContainer_
+	);
+
 	ModelSlotAllocator(MeshContext::InstanceKey key_);
 	~ModelSlotAllocator();
 
@@ -32,6 +40,7 @@ private:
 
 	///「メッシュデータバッファのsrvHeapIndexが詰まったもの」の配列のSRVHeapIndex
 	std::unique_ptr<SRVHeapIndex> meshDataSRVHeapIndexGroupArraySRVHeapIndex;
+	
 	///「transformMatrixバッファ」の配列のSRVHeapIndex
 	std::unique_ptr<SRVHeapIndex> transformMatrixBufferArraySRVHeapIndex;
 
@@ -55,13 +64,11 @@ private:
 };
 
 
-
-
-struct MeshContext::ModelSlotAllocator::ResizeLicence
+struct MeshContext::ModelSlotAllocator::CreateModelDataLicence
 {
 private:
 
-	friend class MeshContext::ModelDataCreator;
-	explicit ResizeLicence() = default;
+	friend class ModelDataCreator::MeshDataBufferCreator;
+	explicit CreateModelDataLicence() = default;
 };
 

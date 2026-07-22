@@ -1,17 +1,8 @@
 #pragma once
-#include "../ModelDataCreator/ModelDataCreator.h"
+#include "../../MeshContext.h"
 
-
-#include ".././../../../External/assimp/include/assimp/Importer.hpp"
-#include ".././../../../External/assimp/include/assimp/scene.h"
-#include ".././../../../External/assimp/include/assimp/postprocess.h"
-#include ".././../../../External/assimp/include/assimp/cimport.h"
-
-
-struct ResourceMesh;
-struct ResourceMaterial;
 struct ModelDataAggregate;
-
+struct aiScene;
 
 class MeshContext::ModelDataLoader
 {
@@ -27,15 +18,12 @@ public:
 private:
 
 	class ModelDataCache;
+	class MeshParser;
+	class MaterialParser;
 
 	std::unique_ptr<ModelDataCache> modelDataCache;
 	//シーンデータ
 	const aiScene* scene = nullptr;   
-
-	std::wstring Convert(const aiString& path_);
-
-	void ParseMesh(ResourceMesh& dstMesh_, const aiMesh* pSrcMesh_);
-	void ParseMaterial(ResourceMaterial& dstMaterial_, const aiMaterial* pSrcMaterial_);
 
 
 };

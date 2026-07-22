@@ -1,12 +1,16 @@
 #include "PreCompileHeader.h"
 #include "ModelDataCreator.h"
-#include "../ModelSlotAllocator/ModelSlotAllocator.h"
+
 #include "../../ModelStructure/ModelData/ModelDataAggregate.h"
+
+#include "../ModelDataLoader/ModelDataLoader.h"
+#include "../ModelSlotAllocator/ModelSlotAllocator.h"
 
 #include "MeshDataCreatorTools/ModelDataTransducer/ModelDataTransducer.h"
 #include "MeshDataCreatorTools/MeshDataBufferCreator/MeshDataBufferCreator.h"
-#include "../ModelDataLoader/ModelDataLoader.h"
 #include "MeshDataCreatorTools/ModelRegistryLoader/ModelRegistryLoader.h"
+#include "MeshDataCreatorTools/MeshDataBufferUploader/MeshDataBufferUploader.h"
+
 
 //外部
 #include "../../../Buffer/BufferContextDiplomat/BufferToolLender/BufferToolLender.h"
@@ -54,7 +58,9 @@ void MeshContext::ModelDataCreator::CreateAllModelData
 )
 {
     ///＜最終目的＞
-    ///そのキー(ファイル名)に対してメッシュデータID(マルチメッシュ対応のためvector)を紐づける。
+    ///1.そのキー(ファイル名)に対してメッシュデータID(マルチメッシュ対応のためvector)を紐づける。
+    ///2.メッシュデータIDの数分のTransformMatrixDispatchedIdを付与する
+
 
     ///メッシュデータ生成数
     ///メッシュIDが指す先は一つのメッシュデータバッファのsrvheapIndex群であり、
@@ -67,14 +73,11 @@ void MeshContext::ModelDataCreator::CreateAllModelData
     std::vector<MeshDataSRVHeapIndexGroupGPUCPU> tmpMeshDataSRVHeapIndexGroupContainer;
 
 
-    //メッシュデータのバッファを作る
-
-
     //モデルデータライブラリー
     std::unordered_map<std::string, ModelDataAggregate*> tmpModelDataLib = LoadAllModelFiles();
 
     //バッファコンテキストのツールレンダーから各種ツールを借りる
-    auto [bufferCreator, bufferCollector, bufferDispatcher, bufferUploader] =
+    auto [bufferCreator, bufferCollector, bufferUploader] =
         BorrowBufferContextTools(bufferContextDiplomat_);
 
     for (const auto& [key, value] : tmpModelDataLib)
@@ -83,7 +86,7 @@ void MeshContext::ModelDataCreator::CreateAllModelData
         std::vector<MeshDataBufferUniqueIDGroup> meshDataBufferUniqueIDGroupContainer =
         MeshDataBufferCreator::CreateMeshDataBuffer
         (
-            meshDataIDLib,
+            allocator_,
             value->resourceMesh, 
             bufferCreator, 
             bufferCollector, 
@@ -91,13 +94,14 @@ void MeshContext::ModelDataCreator::CreateAllModelData
             meshDataID
         );
 
-        //生成したメッシュデータバッファのユニークID群からバッファのポインタを探す
-        std::vector<MeshDataStructuredBufferGroup> MeshDataStructuredBufferGroupContainer =
-            DataTransducer::BufferUniqueID_To_BufferPtr(meshDataBufferUniqueIDGroupContainer, bufferDispatcher);
-
         //BufferUploaderが
-        //静的バッファのポインタをもとに実メッシュデータをマッピングして、アップロードする
-
+        //メッシュデータバッファのユニークIDをもとに実メッシュデータをマッピングして、アップロードする
+        MeshDataBufferUploader::CopyAndUploadBuffer
+        (
+            value->resourceMesh,
+            meshDataBufferUniqueIDGroupContainer,
+            bufferUploader
+        );
 
     }
 
@@ -138,8 +142,7 @@ MeshContext::ModelDataCreator::BufferContextTools MeshContext::ModelDataCreator:
     BufferContext::ToolLender::LicenceType<BufferContext::BufferCreator> licence{};
     auto* bufferCreator = bufferToolLender->Lend<BufferContext::BufferCreator>(licence);
     auto* bufferCollector = bufferToolLender->Lend<BufferContext::BufferCollector>(licence);
-    auto* bufferDispatcher = bufferToolLender->Lend<BufferContext::BufferDispatcher>(licence);
     auto* bufferUploader = bufferToolLender->Lend<BufferContext::BufferUploader>(licence);
 
-    return std::make_tuple(bufferCreator, bufferCollector, bufferDispatcher, bufferUploader);
+    return std::make_tuple(bufferCreator, bufferCollector, bufferUploader);
 }

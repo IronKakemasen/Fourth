@@ -26,7 +26,7 @@ private:
 	//ファイルパスにする
 	std::wstring AssembleFilePath(std::string const& folderPath, std::string const& fileName_);
 	//シェーダーファイルを読み込む
-	DxcBuffer LoadFile(std::wstring const& cnvFilePath_, IDxcBlobEncoding* shaderSource_);
+	DxcBuffer LoadFile(std::wstring const& cnvFilePath_, Microsoft::WRL::ComPtr<IDxcBlobEncoding>& shaderSource_);
 	//コンパイルする
 	Microsoft::WRL::ComPtr<IDxcResult> Compile
 	(

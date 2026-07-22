@@ -7,36 +7,6 @@
 
 using namespace StructuredBufferDataDefinition;
 
-[[nodiscard]] std::vector<MeshContext::ModelDataCreator::MeshDataStructuredBufferGroup>
-MeshContext::ModelDataCreator::DataTransducer::BufferUniqueID_To_BufferPtr
-(
-    const std::vector<MeshDataBufferUniqueIDGroup>& uniqueIDGroup_,
-    BufferContext::BufferDispatcher* bufferDispatcher_
-)
-{
-    //メッシュデータのバッファのポインタ群のコンテナ
-    std::vector<MeshDataStructuredBufferGroup> meshDataStructuredBufferGroupContainer;
-
-    auto tmpPtrGetterFunc = [bufferDispatcher_](BufferUniqueID id_)
-    {
-        return static_cast<StaticStructuredBuffer*>(bufferDispatcher_->Dispatch(id_));
-    };
-
-    for (auto itr = uniqueIDGroup_.begin();itr != uniqueIDGroup_.end();++itr)
-    {
-        MeshDataStructuredBufferGroup meshDataStructuredBufferGroup;
-
-        //メッシュデータごとにアドレスを取得して詰めていく
-        meshDataStructuredBufferGroup.verticesGPUSTB =          tmpPtrGetterFunc((*itr).verticesGPUID);
-        meshDataStructuredBufferGroup.uniqueVertsIndicesSTB =   tmpPtrGetterFunc((*itr).uniqueVertsIndicesID);
-        meshDataStructuredBufferGroup.meshletsSTB =             tmpPtrGetterFunc((*itr).meshletsID);
-        meshDataStructuredBufferGroup.primIndicesSTB =          tmpPtrGetterFunc((*itr).primIndicesID);
-
-        meshDataStructuredBufferGroupContainer.emplace_back(meshDataStructuredBufferGroup);
-    }
-
-    return meshDataStructuredBufferGroupContainer;
-}
 
 std::vector<StandardVertexGPU> MeshContext::ModelDataCreator::DataTransducer::TransferVertexDataTypeToGPU(const std::vector<StandardVertex>& vertices_)
 {

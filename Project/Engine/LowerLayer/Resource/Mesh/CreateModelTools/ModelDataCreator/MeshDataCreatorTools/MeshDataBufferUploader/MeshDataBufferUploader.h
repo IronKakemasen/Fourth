@@ -10,7 +10,7 @@ class MeshContext::ModelDataCreator::MeshDataBufferUploader
 	static void CopyAndUploadBuffer
 	(
 		const std::vector<ResourceMesh>& data_,
-		const std::vector<MeshDataStructuredBufferGroup>& bufferPtrGroups_,
+		const std::vector<MeshDataBufferUniqueIDGroup>& meshDataBufferUniqueIDGroup_,
 		BufferContext::BufferUploader* bufferUploader_
 	);
 

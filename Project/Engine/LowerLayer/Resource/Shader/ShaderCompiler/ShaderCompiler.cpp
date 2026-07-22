@@ -31,7 +31,7 @@ ShaderContext::Compiler::Compiler(ShaderContext::InstanceKey key_)
 	std::wstring cnvFilePath = AssembleFilePath(folderPath, fileName_);
 
 	//ファイルを読み込む	
-	DxcBuffer shaderSourceBuffer = LoadFile(cnvFilePath, shaderSource.Get());
+	DxcBuffer shaderSourceBuffer = LoadFile(cnvFilePath, shaderSource);
 
 	//コンパイルする
 	Microsoft::WRL::ComPtr<IDxcResult> result = Compile(shaderSourceBuffer, cnvFilePath, profile_, extraArguments_);
@@ -171,7 +171,7 @@ Microsoft::WRL::ComPtr<IDxcBlob> ShaderContext::Compiler::CheckResult(IDxcResult
 ///+/////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+/////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+/////////////////////////////////////////////////////////////////////////////////////////////////////////
-DxcBuffer ShaderContext::Compiler::LoadFile(std::wstring const& cnvFilePath_, IDxcBlobEncoding* shaderSource_)
+DxcBuffer ShaderContext::Compiler::LoadFile(std::wstring const& cnvFilePath_, Microsoft::WRL::ComPtr<IDxcBlobEncoding>& shaderSource_)
 {
 	HRESULT hr = dxcUtils.Get()->LoadFile(cnvFilePath_.c_str(), nullptr, &shaderSource_);
 	ErrorMessageOutput::Assert::DetectError(SUCCEEDED(hr), "シェーダーファイルを読み込めません", fileName);

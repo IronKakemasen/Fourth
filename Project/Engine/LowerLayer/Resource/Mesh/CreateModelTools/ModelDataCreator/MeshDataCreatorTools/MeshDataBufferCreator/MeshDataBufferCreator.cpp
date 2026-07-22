@@ -1,6 +1,8 @@
 #include "PreCompileHeader.h"
 #include "MeshDataBufferCreator.h"
 #include "../../../../ModelStructure/ModelData/ResourceMesh/ResourceMesh.h"
+#include "../../../ModelSlotAllocator/ModelSlotAllocator.h"
+
 
 //外部
 #include "../../../../../Buffer/BufferCreateTools/BufferCreator.h"
@@ -11,8 +13,8 @@ using namespace StructuredBufferDataDefinition;
 [[nodiscard]] std::vector<MeshContext::ModelDataCreator::MeshDataBufferUniqueIDGroup> 
 MeshContext::ModelDataCreator::MeshDataBufferCreator::CreateMeshDataBuffer
 (
-    std::unordered_map<std::string, std::vector<MeshDataID>>& meshDataIDLib_,
-	const std::vector<ResourceMesh>& data_,
+    MeshContext::ModelSlotAllocator* allocator_, 
+    const std::vector<ResourceMesh>& data_,
 	BufferContext::BufferCreator* bufferCreator_,
 	BufferContext::BufferCollector* bufferCollector_,
 	std::string modelFileName_,
@@ -65,7 +67,13 @@ MeshContext::ModelDataCreator::MeshDataBufferCreator::CreateMeshDataBuffer
         meshDataID_ += MeshDataID(1);
     }
 
-    meshDataIDLib_[modelFileName_] = meshDataIDContainer;
+    //モデルのファイル名とメッシュデータIDを紐づける
+    allocator_->LinkModelFileNameToMeshDataID
+    (
+        MeshContext::ModelSlotAllocator::CreateModelDataLicence{},
+        modelFileName_, 
+        meshDataIDContainer
+    );
 
     //バッファコレクターに生成したバッファを仕分けしてもらう
     bufferCollector_->Distribute();
