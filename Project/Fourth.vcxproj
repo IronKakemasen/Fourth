@@ -102,6 +102,8 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Engine\LowerLayer\Resource\Buffer\BufferCreateTools\BufferAssembler\BufferAssemblerTools\BufferMaterializer\BufferMaterializer.cpp" />
+    <ClCompile Include="Engine\LowerLayer\Resource\Buffer\BufferCreateTools\BufferAssembler\BufferAssemblerTools\BufferNameConverter\BufferNameConverter.cpp" />
     <ClCompile Include="Engine\LowerLayer\Core\Device\DeviceSetupper\EngineRequirementsChecker\EngineRequirementsChecker.cpp" />
     <ClCompile Include="Engine\LowerLayer\Resource\Buffer\BufferContextDiplomat\BufferContextDiplomat.cpp" />
     <ClCompile Include="Engine\LowerLayer\Core\DescriptorHeap\DescriptorHeapContextDiplomat\DescriptorHeapContextDiplomat.cpp" />
@@ -328,10 +330,14 @@
     <ClCompile Include="Engine\LowerLayer\Resource\Mesh\CreateModelTools\ModelDataCreator\MeshDataCreatorTools\MeshDataBufferUploader\MeshDataBufferUploader.cpp" />
     <ClCompile Include="Engine\LowerLayer\Resource\Mesh\CreateModelTools\ModelDataLoader\MeshParser\MeshParser.cpp" />
     <ClCompile Include="Engine\LowerLayer\Resource\Mesh\CreateModelTools\ModelDataLoader\MaterialParser\MaterialParser.cpp" />
+    <ClCompile Include="Engine\LowerLayer\Resource\Buffer\BufferCreateTools\BufferAssembler\BufferAssemblerTools\ResourceAssembler\ResourceAssembler.cpp" />
+    <ClCompile Include="Engine\LowerLayer\Resource\Buffer\BufferCreateTools\BufferAssembler\BufferAssemblerTools\ViewAssembler\ViewAssembler.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Assets\Shared\ConstantBuffers.h" />
     <ClInclude Include="Assets\Shared\StructuredBuffer.h" />
+    <ClInclude Include="Engine\LowerLayer\Resource\Buffer\BufferCreateTools\BufferAssembler\BufferAssemblerTools\BufferMaterializer\BufferMaterializer.h" />
+    <ClInclude Include="Engine\LowerLayer\Resource\Buffer\BufferCreateTools\BufferAssembler\BufferAssemblerTools\BufferNameConverter\BufferNameConverter.h" />
     <ClInclude Include="Engine\LowerLayer\Core\Device\DeviceSetupper\EngineRequirementsChecker\EngineRequirementsChecker.h" />
     <ClInclude Include="Engine\LowerLayer\Resource\Buffer\BufferContextDiplomat\BufferContextDiplomat.h" />
     <ClInclude Include="Engine\LowerLayer\Core\DescriptorHeap\DescriptorHeapContextDiplomat\DescriptorHeapContextDiplomat.h" />
@@ -495,6 +501,8 @@
     <ClInclude Include="Engine\LowerLayer\Resource\Mesh\CreateModelTools\ModelDataCreator\MeshDataCreatorTools\MeshDataBufferUploader\MeshDataBufferUploader.h" />
     <ClInclude Include="Engine\LowerLayer\Resource\Mesh\CreateModelTools\ModelDataLoader\MeshParser\MeshParser.h" />
     <ClInclude Include="Engine\LowerLayer\Resource\Mesh\CreateModelTools\ModelDataLoader\MaterialParser\MaterialParser.h" />
+    <ClInclude Include="Engine\LowerLayer\Resource\Buffer\BufferCreateTools\BufferAssembler\BufferAssemblerTools\ResourceAssembler\ResourceAssembler.h" />
+    <ClInclude Include="Engine\LowerLayer\Resource\Buffer\BufferCreateTools\BufferAssembler\BufferAssemblerTools\ViewAssembler\ViewAssembler.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

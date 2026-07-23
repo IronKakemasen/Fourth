@@ -44,13 +44,18 @@ struct IAssembleComputeBuffer
 
 };
 
-struct IAssembleColorBuffer 
+struct IAssembleRenderTarget
+{
+	virtual D3D12_CLEAR_VALUE WatchClearValue() const = 0;
+};
+
+struct IAssembleColorBuffer:public IAssembleRenderTarget
 {
 	virtual D3D12_RENDER_TARGET_VIEW_DESC CreateRTV_Desc()const = 0; 
 	virtual D3D12_CLEAR_VALUE WatchClearValue() const = 0;
 };
 
-struct IAssembleDepthStencilBuffer 
+struct IAssembleDepthStencilBuffer: public IAssembleRenderTarget
 {
 	virtual D3D12_DEPTH_STENCIL_VIEW_DESC CreateDSVDesc()const = 0; 
 	virtual D3D12_CLEAR_VALUE WatchClearValue() const = 0;

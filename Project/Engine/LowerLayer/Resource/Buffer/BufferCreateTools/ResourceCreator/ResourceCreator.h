@@ -17,7 +17,7 @@ public:
 		D3D12_RESOURCE_STATES initialState_,
 		const std::string& name_,
 		int numResource_
-	);
+	)const;
 
 private:
 

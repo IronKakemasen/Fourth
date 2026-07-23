@@ -3,9 +3,10 @@
 #include "../../../../ModelStructure/ModelData/ResourceMesh/ResourceMesh.h"
 #include "../../../ModelSlotAllocator/ModelSlotAllocator.h"
 
-
 //外部
 #include "../../../../../Buffer/BufferCreateTools/BufferCreator.h"
+//ほんとはstaticStructuredBufferDescriptionだけでいいんだけど、文字列制限なのかインクルードできないので
+#include "../../../../../Buffer/BufferDefinition/AllBufferDescsInclude.h"
 #include "../../../../../../../../Assets/Shared/StructuredBuffer.h"
 
 using namespace StructuredBufferDataDefinition;
