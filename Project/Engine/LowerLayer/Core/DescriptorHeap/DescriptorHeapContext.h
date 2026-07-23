@@ -31,8 +31,8 @@ protected:
 		std::function<void(ID3D12Resource* resource_, const D3D12_UNORDERED_ACCESS_VIEW_DESC* desc_, D3D12_CPU_DESCRIPTOR_HANDLE descriptorHandleCPU_, ID3D12Resource* CounterResource_)>;
 public:
 
-	//Nexusのみ生成可能
-	struct InstanceKey;
+	//Nexusフィールドである証
+	struct NexusFieldProof;
 	//view生成
 	class ViewCreator;
 	//ツール貸し出しクラス
@@ -40,7 +40,7 @@ public:
 
 	DescriptorHeapContext
 	(
-		InstanceKey instanceKey_,
+		NexusFieldProof proof_,
 		DeviceContextDiplomat* deviceContextDiplomat_
 	);
 
@@ -57,10 +57,10 @@ private:
 	
 
 	//各種ディスクリプターヒープの作成
-	void CreateDescriptorHeaps(InstanceKey instanceKey_, DeviceContextDiplomat* deviceContextDiplomat_);
+	void CreateDescriptorHeaps(DescriptorHeapContext::NexusFieldProof proof_, DeviceContextDiplomat* deviceContextDiplomat_);
 
 	//ビュークリエイターの使用するコマンドをセット
-	void SetCreateViewCommand(InstanceKey key_,DeviceContextDiplomat* deviceContextDiplomat_);
+	void SetCreateViewCommand(DescriptorHeapContext::NexusFieldProof proof_ , DeviceContextDiplomat* deviceContextDiplomat_);
 
 };
 
@@ -69,11 +69,11 @@ private:
 
 
 //生成できるのはNexusのみ
-struct DescriptorHeapContext::InstanceKey
+struct DescriptorHeapContext::NexusFieldProof
 {
 private:
 
 	friend class Nexus;
-	explicit InstanceKey() = default;
+	explicit NexusFieldProof() = default;
 };
 

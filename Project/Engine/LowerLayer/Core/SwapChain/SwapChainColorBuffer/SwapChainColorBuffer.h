@@ -29,7 +29,7 @@ public:
 	//リソース取得
 	inline ID3D12Resource* GetResource(SwapChainContext::ResourceGetKey key_, int index_) { return buffers.at(index_).resource.Get(); }
 	//ヒープインデックスの上書き
-	void OverrideHeapIndex(SwapChainContext::InstanceKey instanceKey_, int index_, D3D12_CPU_DESCRIPTOR_HANDLE handle_);
+	void OverrideHeapIndex(SwapChainContext::NexusFieldProof proof_, int index_, D3D12_CPU_DESCRIPTOR_HANDLE handle_);
 	//MaterialProviderが情報を欲する
 	friend class SwapChainContext::RenderPassMaterialProvider;
 

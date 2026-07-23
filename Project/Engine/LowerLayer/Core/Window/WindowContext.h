@@ -6,9 +6,9 @@ class WindowContext
 {
 public:
 
-	struct InstanceKey;
+	struct NexusFieldProof;
 
-	WindowContext(InstanceKey instanceKey_);
+	WindowContext(NexusFieldProof proof_);
 	void Finalize();
 	HWND WatchHWND();
 
@@ -28,9 +28,9 @@ private:
 };
 
 
-struct WindowContext::InstanceKey
+struct WindowContext::NexusFieldProof
 {
 private:
 	friend class Nexus;
-	explicit InstanceKey() = default;
+	explicit NexusFieldProof() = default;
 };

@@ -1,7 +1,6 @@
 #pragma once
 
 class Nexus;
-class CommandContext;
 class CommandContextDiplomat;
 class DeviceContextDiplomat;
 class DescriptorHeapContextDiplomat;
@@ -23,7 +22,7 @@ class SwapChainContext
 public:
 
 	//Nexusのみ生成可能
-	struct InstanceKey;
+	struct NexusFieldProof;
 	//バッファの生リソースアドレスを取得キー
 	struct ResourceGetKey;
 	//専用のカラーバッファ
@@ -36,7 +35,7 @@ public:
 
 	SwapChainContext
 	(
-		InstanceKey instanceKey_,
+		NexusFieldProof proof_,
 		DescriptorHeapContextDiplomat* descriptorheapContextDiplomat_,
 		CommandContextDiplomat* commandContextDiplomat_,
 		DeviceContextDiplomat* deviceContextDiplomat_,
@@ -54,7 +53,7 @@ private:
 	//SwapChainとそのカラーバッファを構築
 	void AssembleCoreParts
 	(
-		InstanceKey instanceKey_,
+		NexusFieldProof proof_,
 		DescriptorHeapContextDiplomat* descriptorheapContextDiplomat_,
 		CommandContextDiplomat* commandContextDiplomat_,
 		DeviceContextDiplomat* deviceContextDiplomat_,
@@ -75,7 +74,7 @@ private:
 	//RTVの生成
 	void CreateRTV
 	(
-		InstanceKey instanceKey_ ,
+		NexusFieldProof proof_ ,
 		const D3D12_RENDER_TARGET_VIEW_DESC& rtvDesc_, 
 		DescriptorHeapContextDiplomat* descriptorheapContextDiplomat_
 	);
@@ -85,12 +84,12 @@ private:
 	std::unique_ptr<ColorBuffer> colorBuffer;
 };
 
-struct SwapChainContext::InstanceKey
+struct SwapChainContext::NexusFieldProof
 {
 private:
 
 	friend class Nexus;
-	explicit InstanceKey() = default;
+	explicit NexusFieldProof() = default;
 };
 
 struct SwapChainContext::ResourceGetKey

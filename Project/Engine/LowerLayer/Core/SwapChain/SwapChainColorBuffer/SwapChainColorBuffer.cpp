@@ -41,7 +41,7 @@ void SwapChainContext::ColorBuffer::AssembleMatrix()
 	scissorRect.top = static_cast<LONG>(0.0f);
 }
 
-void SwapChainContext::ColorBuffer::OverrideHeapIndex(SwapChainContext::InstanceKey instanceKey_, int index_ ,D3D12_CPU_DESCRIPTOR_HANDLE handle_)
+void SwapChainContext::ColorBuffer::OverrideHeapIndex(SwapChainContext::NexusFieldProof proof_, int index_ ,D3D12_CPU_DESCRIPTOR_HANDLE handle_)
 {
 	buffers.at(index_).cpuHandle = handle_;
 }

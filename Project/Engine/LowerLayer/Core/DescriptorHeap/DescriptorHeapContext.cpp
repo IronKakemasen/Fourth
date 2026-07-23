@@ -19,7 +19,7 @@ using namespace ProjectConfig::Core;
 
 DescriptorHeapContext::DescriptorHeapContext
 (
-	InstanceKey instanceKey_,
+	DescriptorHeapContext::NexusFieldProof proof_,
 	DeviceContextDiplomat* deviceContextDiplomat_
 )
 {
@@ -27,16 +27,16 @@ DescriptorHeapContext::DescriptorHeapContext
 
 	
 	//各種DescriptorHeapを生成する
-	CreateDescriptorHeaps(instanceKey_, deviceContextDiplomat_);
+	CreateDescriptorHeaps(proof_, deviceContextDiplomat_);
 	//ViewCreatorを生成して、中にview生成コマンドを積む
-	SetCreateViewCommand(instanceKey_, deviceContextDiplomat_);
+	SetCreateViewCommand(proof_, deviceContextDiplomat_);
 
 	diplomat.reset
 	(
 		new DescriptorHeapContextDiplomat
 		(
-			instanceKey_,
-			std::make_unique<ToolLender>(instanceKey_, viewCreator.get())
+			proof_,
+			std::make_unique<ToolLender>(proof_, viewCreator.get())
 		)
 	);
 	Logger::Log("Instantiate: ToolLender", fileName);
@@ -53,7 +53,7 @@ DescriptorHeapContext::~DescriptorHeapContext()
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-void DescriptorHeapContext::CreateDescriptorHeaps(InstanceKey instanceKey_, DeviceContextDiplomat* deviceContextDiplomat_)
+void DescriptorHeapContext::CreateDescriptorHeaps(DescriptorHeapContext::NexusFieldProof proof_, DeviceContextDiplomat* deviceContextDiplomat_)
 {
 	auto* cmdExecutor = deviceContextDiplomat_->Access<DeviceContext::CommandExecutor>();
 	auto* cmdProvider = deviceContextDiplomat_->Access<DeviceContext::CommandProvider>();
@@ -64,7 +64,7 @@ void DescriptorHeapContext::CreateDescriptorHeaps(InstanceKey instanceKey_, Devi
 	UINT srvDHIncrementSIze = cmdExecutor->CalcDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 	UINT dsvDHIncrementSIze = cmdExecutor->CalcDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_DSV);
 
-	DescriptorHeapCreator creator(instanceKey_, createDescriptorHeapCmd);
+	DescriptorHeapCreator creator(proof_, createDescriptorHeapCmd);
 	Logger::Log("Instantiate: DescriptorHeapCreator", fileName);
 
 	descriptorHeapContainer[D3D12_DESCRIPTOR_HEAP_TYPE::D3D12_DESCRIPTOR_HEAP_TYPE_RTV] = 
@@ -87,7 +87,7 @@ void DescriptorHeapContext::CreateDescriptorHeaps(InstanceKey instanceKey_, Devi
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 void DescriptorHeapContext::SetCreateViewCommand
 (
-	InstanceKey key_,
+	NexusFieldProof proof_,
 	DeviceContextDiplomat* deviceContextDiplomat_
 )
 {
@@ -97,7 +97,7 @@ void DescriptorHeapContext::SetCreateViewCommand
 	(
 		new ViewCreator
 		(
-			key_,
+			proof_,
 			descriptorHeapContainer[D3D12_DESCRIPTOR_HEAP_TYPE::D3D12_DESCRIPTOR_HEAP_TYPE_RTV].get(),
 			descriptorHeapContainer[D3D12_DESCRIPTOR_HEAP_TYPE::D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV].get(),
 			descriptorHeapContainer[D3D12_DESCRIPTOR_HEAP_TYPE::D3D12_DESCRIPTOR_HEAP_TYPE_DSV].get(),

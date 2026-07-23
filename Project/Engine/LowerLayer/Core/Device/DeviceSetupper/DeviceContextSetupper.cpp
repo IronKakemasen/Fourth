@@ -8,7 +8,7 @@ namespace
 	std::string fileName = "DeviceContextSetupper.cpp";
 }
 
-DeviceContext::Setupper::Setupper(InstanceKey instanceKey_)
+DeviceContext::Setupper::Setupper(NexusFieldProof proof_)
 {
 	//dxgiFactoryの生成
 	CreateDXGI_Factory();
@@ -36,7 +36,7 @@ DeviceContext::Setupper::Setupper(InstanceKey instanceKey_)
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 [[nodiscard]] std::tuple<Microsoft::WRL::ComPtr<IDXGIAdapter4>, Microsoft::WRL::ComPtr<ID3D12Device8>, Microsoft::WRL::ComPtr<IDXGIFactory7>>
-DeviceContext::Setupper::HandOver(DeviceContext::InstanceKey instanceKey_)
+DeviceContext::Setupper::HandOver(NexusFieldProof proof_)
 {
 	return std::make_tuple(std::move(useAdapter), std::move(device), std::move(dxgiFactory));
 }

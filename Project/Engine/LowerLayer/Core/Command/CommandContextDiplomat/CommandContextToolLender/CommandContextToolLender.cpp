@@ -4,7 +4,7 @@
 
 CommandContext::ToolLender::ToolLender
 (
-	CommandContext::InstanceKey key_,
+	NexusFieldProof proof_,
 	ID3D12CommandQueue* cmdQueue_,
 	CommandContext::ResourceUploader* resourceUploader_
 )
@@ -13,4 +13,4 @@ CommandContext::ToolLender::ToolLender
 	std::get<CommandContext::ResourceUploader*>(tools) = resourceUploader_;
 
 
-	}
+}

@@ -7,7 +7,7 @@
 
 BufferContext::BufferCollector::BufferCollector
 (
-	BufferContext::InstanceKey key_,
+	BufferContext::NexusFieldProof proof_,
 	BufferContext::BufferPoolSet* bufferPoolSet_
 ):bufferPoolSet(bufferPoolSet_)
 {

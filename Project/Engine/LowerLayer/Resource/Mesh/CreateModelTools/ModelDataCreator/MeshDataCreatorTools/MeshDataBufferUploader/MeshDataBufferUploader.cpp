@@ -31,7 +31,6 @@ void MeshContext::ModelDataCreator::MeshDataBufferUploader::CopyAndUploadBuffer
     //CPUにマッピングしてアップロードする
     for (size_t i = 0;i < numMeshData;++i)
     {
-
         //頂点データをGPU仕様にする
         std::vector<StandardVertexGPU> vertexGPU =
             MeshContext::ModelDataCreator::DataTransducer::TransferVertexDataTypeToGPU(data_[i].vertices);

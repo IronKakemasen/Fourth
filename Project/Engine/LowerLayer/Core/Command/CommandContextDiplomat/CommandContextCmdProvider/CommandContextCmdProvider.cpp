@@ -2,7 +2,7 @@
 #include "CommandContextCmdProvider.h"
 
 
-CommandContext::CommandProvider::CommandProvider(InstanceKey kew_, CommandContext::ResourceUploader* resourceUploader_)
+CommandContext::CommandProvider::CommandProvider(NexusFieldProof proof_, CommandContext::ResourceUploader* resourceUploader_)
 	:resourceUploader(resourceUploader_)
 {
 

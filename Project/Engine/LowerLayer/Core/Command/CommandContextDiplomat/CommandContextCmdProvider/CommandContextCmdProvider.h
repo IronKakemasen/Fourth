@@ -11,7 +11,7 @@ public:
 	//ResourceUploadコマンドの利用許可
 	struct UsesResourceUploadCmdPermission;
 
-	CommandProvider(InstanceKey kew_, CommandContext::ResourceUploader* resourceUploader_);
+	CommandProvider(NexusFieldProof proof_, CommandContext::ResourceUploader* resourceUploader_);
 
 	template<typename PermissionType>
 	auto ProvideResourceUploadCommand(PermissionType permission_)

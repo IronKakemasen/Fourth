@@ -6,12 +6,9 @@ class CommandContext::ResourceUploader
 
 public:
 
-	//Nexusにコマンドのキックと同期処理＆コマンド閉じをしてもらう
-	struct WaitAndKickLicence;
-
 	ResourceUploader
 	(
-		CommandContext::InstanceKey key_,
+		NexusFieldProof proof_,
 		DeviceContextDiplomat* deviceContextDiplomat_,
 		ID3D12CommandQueue* commandQueue_,
 		CommandContext::Synchronizer* synchronizer_
@@ -19,8 +16,9 @@ public:
 
 
 	//リソースをアップロードするときに溜まったコマンドリストをキックしてかつ同期し、閉じる
-	//コアな処理なので鍵付き
-	void WaitAndKick(const WaitAndKickLicence& licence_);
+	//コアな処理なのでNexusフィールドでしかさせん
+	void KickAndSynchronize(const NexusFieldProof& nexusFieldProof_, AgentKey agentKey_);
+
 	///commandListをラップしたアップロードコマンド
 	UploadCommand ProvideUploadCommand();
 
@@ -35,14 +33,3 @@ private:
 	void RecordingStart();
 
 };
-
-struct CommandContext::ResourceUploader::WaitAndKickLicence
-{
-private:
-
-	friend class Nexus;
-	explicit WaitAndKickLicence() = default;
-};
-
-
-

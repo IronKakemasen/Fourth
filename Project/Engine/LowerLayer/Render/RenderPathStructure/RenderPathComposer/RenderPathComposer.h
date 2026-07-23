@@ -5,7 +5,7 @@ class ShaderLibrary;
 
 class RenderPath::PathComposer
 {
-	PathComposer(RenderContext::InstanceKey key_, ShaderLibrary* shaderLibrary_);
+	PathComposer(RenderContext::NexusFieldProof proof_, ShaderLibrary* shaderLibrary_);
 
 
 public:

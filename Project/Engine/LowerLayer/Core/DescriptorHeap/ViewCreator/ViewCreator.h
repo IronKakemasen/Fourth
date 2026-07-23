@@ -33,7 +33,7 @@ class DescriptorHeapContext::ViewCreator
 public:
 	ViewCreator
 	(
-		DescriptorHeapContext::InstanceKey instanceKey_,
+		NexusFieldProof proof_,
 		DescriptorHeapPool* RTVdescriptorHeapPool_,
 		DescriptorHeapPool* SRVUAVdescriptorHeapPool_,
 		DescriptorHeapPool* DSVdescriptorHeapPool_,

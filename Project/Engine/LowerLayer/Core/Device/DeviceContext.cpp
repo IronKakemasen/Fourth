@@ -12,19 +12,19 @@ namespace
 	std::string const fileName = "DeviceContext.cpp";
 }
 
-DeviceContext::DeviceContext(DeviceContext::InstanceKey instanceKey_)
+DeviceContext::DeviceContext(NexusFieldProof proof_)
 {
 	Logger::Entry("DeviceContext::Constructor");
 
-	TakeOverCoreParts(instanceKey_);
+	TakeOverCoreParts(proof_);
 
 	diplomat.reset
 	(
 		new DeviceContextDiplomat
 		(
-			instanceKey_,
-			std::move(InstantiateCommandProvider(instanceKey_)),
-			std::move(InstantiateCommandExecutor(instanceKey_))
+			proof_,
+			std::move(InstantiateCommandProvider(proof_)),
+			std::move(InstantiateCommandExecutor(proof_))
 		)
 	);
 
@@ -39,7 +39,7 @@ DeviceContext::~DeviceContext()
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-std::unique_ptr<DeviceContext::CommandProvider> DeviceContext::InstantiateCommandProvider(DeviceContext::InstanceKey instanceKey_)
+std::unique_ptr<DeviceContext::CommandProvider> DeviceContext::InstantiateCommandProvider(NexusFieldProof proof_)
 {
 	//デバイスにアクセスする関数オブジェ
 	auto deviceGetFunc = [this](DeviceContext::AccessKey key_) -> ID3D12Device8*
@@ -54,12 +54,12 @@ std::unique_ptr<DeviceContext::CommandProvider> DeviceContext::InstantiateComman
 	};
 
 	Logger::Log("Create: CommandProvider", fileName);
-	return std::make_unique<CommandProvider>(instanceKey_, deviceGetFunc, dxgiFactoryGetter);
+	return std::make_unique<CommandProvider>(proof_, deviceGetFunc, dxgiFactoryGetter);
 }
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-std::unique_ptr<DeviceContext::CommandExecutor> DeviceContext::InstantiateCommandExecutor(DeviceContext::InstanceKey instanceKey_)
+std::unique_ptr<DeviceContext::CommandExecutor> DeviceContext::InstantiateCommandExecutor(NexusFieldProof proof_)
 {
 	//デバイスにアクセスする関数オブジェ
 	auto deviceGetFunc = [this](DeviceContext::AccessKey key_) -> ID3D12Device8*
@@ -69,17 +69,17 @@ std::unique_ptr<DeviceContext::CommandExecutor> DeviceContext::InstantiateComman
 
 	Logger::Log("Create: CommandExecutor", fileName);
 
-	return std::make_unique<CommandExecutor>(instanceKey_, deviceGetFunc);
+	return std::make_unique<CommandExecutor>(proof_, deviceGetFunc);
 }
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-void DeviceContext::TakeOverCoreParts(DeviceContext::InstanceKey instanceKey_)
+void DeviceContext::TakeOverCoreParts(NexusFieldProof proof_)
 {
 	//コアパーツの生成
-	Setupper setupper(instanceKey_);
+	Setupper setupper(proof_);
 
-	std::tie(useAdapter, device, dxgiFactory) = setupper.HandOver(instanceKey_);
+	std::tie(useAdapter, device, dxgiFactory) = setupper.HandOver(proof_);
 	Logger::Log("take over CoreParts", fileName);
 
 }

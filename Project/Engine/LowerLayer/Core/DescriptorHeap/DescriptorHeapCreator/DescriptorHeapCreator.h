@@ -22,7 +22,7 @@ class DescriptorHeapContext::DescriptorHeapCreator
 
 public:
 
-	DescriptorHeapCreator(InstanceKey key_, CreateDescriptorHeapCommand cmd_) :createCmd(cmd_) {}
+	DescriptorHeapCreator(NexusFieldProof proof_, CreateDescriptorHeapCommand cmd_) :createCmd(cmd_) {}
 
 
 	template<D3D12_DESCRIPTOR_HEAP_TYPE heapType>

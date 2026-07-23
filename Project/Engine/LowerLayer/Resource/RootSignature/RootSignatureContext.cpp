@@ -9,11 +9,11 @@ namespace
 	auto const fileName = "RootSignatureContext.cpp";
 }
 
-RootSignatureContext::RootSignatureContext(InstanceKey key_, DeviceContextDiplomat* deviceContextDiplomat_)
+RootSignatureContext::RootSignatureContext(NexusFieldProof proof_, DeviceContextDiplomat* deviceContextDiplomat_)
 {
 	Logger::Entry("RootSignatureContext: Constructor");
 
-	assembler.reset(new Assembler(key_, deviceContextDiplomat_));
+	assembler.reset(new Assembler(proof_, deviceContextDiplomat_));
 	Logger::Log("Instantiate: RootSignatureAssembler", fileName);
 
 	rootSignatureLibrary.reset(new RootSignatureLibrary(RootSignatureLibrary::InstanceKey{}, assembler.get()));

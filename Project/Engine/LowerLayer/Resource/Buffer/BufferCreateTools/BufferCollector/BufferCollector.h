@@ -9,7 +9,7 @@ public:
 
 	BufferCollector
 	(
-		BufferContext::InstanceKey key_,
+		BufferContext::NexusFieldProof proof_,
 		BufferContext::BufferPoolSet* bufferPoolSet_
 	);
 

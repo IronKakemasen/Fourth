@@ -8,11 +8,11 @@ namespace
 }
 
 
-RenderContext::RenderContext(InstanceKey key_)
+RenderContext::RenderContext(NexusFieldProof proof_)
 {
 	Logger::Entry("RenderContext: Constructor");
 
-	pso_PoolDispatcher.reset(new PSO_PoolDispatcher(key_));
+	pso_PoolDispatcher.reset(new PSO_PoolDispatcher(proof_));
 	Logger::Log("Instantiate: PSO_PoolDispatcher", fileName);
 
 

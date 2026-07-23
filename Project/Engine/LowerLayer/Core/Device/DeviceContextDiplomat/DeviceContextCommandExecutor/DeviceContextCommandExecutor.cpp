@@ -30,7 +30,7 @@ namespace
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 DeviceContext::CommandExecutor::CommandExecutor
 (
-	DeviceContext::InstanceKey instanceKey_,
+	NexusFieldProof proof_,
 	std::function< ID3D12Device8* (DeviceContext::AccessKey)> deviceGetter_
 ) :deviceGetter(deviceGetter_)
 {
@@ -48,7 +48,7 @@ UINT DeviceContext::CommandExecutor::CalcDescriptorHandleIncrementSize(D3D12_DES
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-[[nodiscard]] Microsoft::WRL::ComPtr<ID3D12Fence> DeviceContext::CommandExecutor::CreateFence(CommandContext::InstanceKey instanceKey_)
+[[nodiscard]] Microsoft::WRL::ComPtr<ID3D12Fence> DeviceContext::CommandExecutor::CreateFence(CommandContext::NexusFieldProof  proof_)
 {
 	Microsoft::WRL::ComPtr<ID3D12Fence> fence;
 	auto* device = deviceGetter(DeviceContext::AccessKey{});
@@ -62,7 +62,7 @@ UINT DeviceContext::CommandExecutor::CalcDescriptorHandleIncrementSize(D3D12_DES
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 [[nodiscard]] CommandContextCorePartsRuntime
-DeviceContext::CommandExecutor::CreateCommandContextCorePartsForRuntime(CommandContext::InstanceKey instanceKey_)
+DeviceContext::CommandExecutor::CreateCommandContextCorePartsForRuntime(CommandContext::NexusFieldProof proof_)
 {
 	//ランタイム用なので万能型
 	auto const cmdListType = D3D12_COMMAND_LIST_TYPE_DIRECT;
@@ -91,7 +91,7 @@ DeviceContext::CommandExecutor::CreateCommandContextCorePartsForRuntime(CommandC
 }
 
 [[nodiscard]] CommandContextCorePartsUpload
-DeviceContext::CommandExecutor::CreateCommandContextCorePartsForUpload(CommandContext::InstanceKey instanceKey_)
+DeviceContext::CommandExecutor::CreateCommandContextCorePartsForUpload(CommandContext::NexusFieldProof proof_)
 {
 	//コマンドリストのタイプはアップロードしかしないのでコピーだけでいいんだけど、
 	//ちょいめんどいのでいったん

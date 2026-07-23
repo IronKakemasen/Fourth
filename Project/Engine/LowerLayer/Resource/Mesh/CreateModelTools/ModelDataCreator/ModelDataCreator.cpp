@@ -28,14 +28,14 @@ namespace
 
 MeshContext::ModelDataCreator::ModelDataCreator
 (
-    MeshContext::InstanceKey key_,
+    NexusFieldProof proof_,
     MeshContext::ModelSlotAllocator* allocator_,
     BufferContextDiplomat* bufferContextDiplomat_
 )
 {
 	Logger::Entry("ModelDataCreator: Constructor");
 
-    modelDataLoader.reset(new ModelDataLoader(key_));
+    modelDataLoader.reset(new ModelDataLoader(proof_));
     Logger::Log("Instantiate: ModelDataLoader", fileName);
 
     CreateAllModelData(allocator_, bufferContextDiplomat_);

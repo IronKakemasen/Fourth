@@ -11,7 +11,7 @@ public:
 
 	CommandExecutor
 	(
-		DeviceContext::InstanceKey instanceKey_,
+		NexusFieldProof proof_,
 		std::function< ID3D12Device8* (DeviceContext::AccessKey)> deviceGetter_
 	);
 
@@ -19,7 +19,7 @@ public:
 	UINT CalcDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE type_);
 
 	//フェンス生成
-	[[nodiscard]] Microsoft::WRL::ComPtr<ID3D12Fence> CreateFence(CommandContext::InstanceKey instanceKey_);
+	[[nodiscard]] Microsoft::WRL::ComPtr<ID3D12Fence> CreateFence(CommandContext::NexusFieldProof proof_);
 
 	//CommandContextのコアパーツ生成.ランタイム用
 	[[nodiscard]] std::tuple
@@ -28,11 +28,11 @@ public:
 		std::array<Microsoft::WRL::ComPtr<ID3D12CommandAllocator>, (UINT)ProjectConfig::Render::NumBuffer::kDoubleBuffer>,
 		Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList6>
 	>
-	CreateCommandContextCorePartsForRuntime(CommandContext::InstanceKey instanceKey_);
+	CreateCommandContextCorePartsForRuntime(CommandContext::NexusFieldProof proof_);
 
 	//リソースアップロード用
 	[[nodiscard]] std::tuple<Microsoft::WRL::ComPtr<ID3D12CommandAllocator>, Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList6>>
-	CreateCommandContextCorePartsForUpload(CommandContext::InstanceKey instanceKey_);
+	CreateCommandContextCorePartsForUpload(CommandContext::NexusFieldProof proof_);
 
 
 private:

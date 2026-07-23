@@ -102,6 +102,8 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Engine\LowerLayer\Resource\Buffer\BufferContextDiplomat\BufferContextExecutionAgent\BufferContextExecutionAgent.cpp" />
+    <ClCompile Include="Engine\LowerLayer\Core\Command\CommandContextDiplomat\CommandContextExecutionAgent\CommandContextExecutionAgent.cpp" />
     <ClCompile Include="Engine\LowerLayer\Resource\Buffer\BufferCreateTools\BufferAssembler\BufferAssemblerTools\BufferMaterializer\BufferMaterializer.cpp" />
     <ClCompile Include="Engine\LowerLayer\Resource\Buffer\BufferCreateTools\BufferAssembler\BufferAssemblerTools\BufferNameConverter\BufferNameConverter.cpp" />
     <ClCompile Include="Engine\LowerLayer\Core\Device\DeviceSetupper\EngineRequirementsChecker\EngineRequirementsChecker.cpp" />
@@ -336,6 +338,8 @@
   <ItemGroup>
     <ClInclude Include="Assets\Shared\ConstantBuffers.h" />
     <ClInclude Include="Assets\Shared\StructuredBuffer.h" />
+    <ClInclude Include="Engine\LowerLayer\Resource\Buffer\BufferContextDiplomat\BufferContextExecutionAgent\BufferContextExecutionAgent.h" />
+    <ClInclude Include="Engine\LowerLayer\Core\Command\CommandContextDiplomat\CommandContextExecutionAgent\CommandContextExecutionAgent.h" />
     <ClInclude Include="Engine\LowerLayer\Resource\Buffer\BufferCreateTools\BufferAssembler\BufferAssemblerTools\BufferMaterializer\BufferMaterializer.h" />
     <ClInclude Include="Engine\LowerLayer\Resource\Buffer\BufferCreateTools\BufferAssembler\BufferAssemblerTools\BufferNameConverter\BufferNameConverter.h" />
     <ClInclude Include="Engine\LowerLayer\Core\Device\DeviceSetupper\EngineRequirementsChecker\EngineRequirementsChecker.h" />

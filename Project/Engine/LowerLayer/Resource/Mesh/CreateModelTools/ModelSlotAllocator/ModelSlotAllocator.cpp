@@ -7,7 +7,7 @@ namespace
 }
 
 
-MeshContext::ModelSlotAllocator::ModelSlotAllocator(MeshContext::InstanceKey key_)
+MeshContext::ModelSlotAllocator::ModelSlotAllocator(NexusFieldProof proof_)
 {
 	//使いまわしTransformMatrixのスロットのサイズを確保する
 	for (UINT i = 0;i < (UINT)ProjectConfig::Render::GlobalBufferTableSetting::kSizeOfTransformMatrixBufferArray;++i)

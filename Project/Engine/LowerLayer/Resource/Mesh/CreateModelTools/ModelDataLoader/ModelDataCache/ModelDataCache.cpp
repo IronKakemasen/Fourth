@@ -2,7 +2,7 @@
 #include "ModelDataCache.h"
 
 
-MeshContext::ModelDataLoader::ModelDataCache::ModelDataCache(MeshContext::InstanceKey key_)
+MeshContext::ModelDataLoader::ModelDataCache::ModelDataCache(NexusFieldProof proof_)
 {
 
 }

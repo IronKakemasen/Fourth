@@ -8,8 +8,8 @@ class ShaderContext
 {
 public:
 
-	//自身のインスタンス化キー
-	struct InstanceKey;
+	//ネクサスフィールドの証
+	struct NexusFieldProof;
 	//シェーダーライブラリを貸し出し許可キー
 	struct ShaderLibraryAccessKey;
 	//コンパイラー
@@ -18,7 +18,7 @@ public:
 	//シェーダーライブラリを貸し出し
 	ShaderLibrary* AllowAccessToLibrary(ShaderLibraryAccessKey accessKey_);
 	
-	ShaderContext(InstanceKey instanceKey_);
+	ShaderContext(NexusFieldProof proof_);
 	~ShaderContext();
 
 private:
@@ -29,12 +29,12 @@ private:
 };
 
 
-struct ShaderContext::InstanceKey
+struct ShaderContext::NexusFieldProof
 {
 private:
 
 	friend class Nexus;
-	explicit InstanceKey() = default;
+	explicit NexusFieldProof() = default;
 };
 
 struct ShaderContext::ShaderLibraryAccessKey

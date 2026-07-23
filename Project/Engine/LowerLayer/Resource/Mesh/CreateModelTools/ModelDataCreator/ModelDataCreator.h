@@ -56,7 +56,7 @@ public:
 
 	ModelDataCreator
 	(
-		MeshContext::InstanceKey key_, 
+		NexusFieldProof proof_,
 		MeshContext::ModelSlotAllocator* allocator_, 
 		BufferContextDiplomat* bufferContextDiplomat_
 	);

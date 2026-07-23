@@ -10,6 +10,6 @@ namespace
 
 void Nexus::Finalize()
 {
-	commandContext->Finalize(CommandContext::InstanceKey{});
+	commandContext->Finalize(CommandContext::NexusFieldProof{});
 	windowContext->Finalize();
 }

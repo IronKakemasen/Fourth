@@ -6,11 +6,11 @@ class DeviceContext::Setupper
 {
 public:
 
-	Setupper(InstanceKey instanceKey_);
+	Setupper(NexusFieldProof proof_);
 
 	//DeviceContextにコアパーツを渡す
 	[[nodiscard]] std::tuple<Microsoft::WRL::ComPtr<IDXGIAdapter4>, Microsoft::WRL::ComPtr<ID3D12Device8>, Microsoft::WRL::ComPtr<IDXGIFactory7>>
-		HandOver(DeviceContext::InstanceKey instanceKey_);
+		HandOver(NexusFieldProof proof_);
 
 private:
 

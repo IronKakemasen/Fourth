@@ -63,9 +63,15 @@ protected:
 public:
 
 	//自身のインスタンス化キー
-	struct InstanceKey;
+	struct NexusFieldProof;
 	//バッファのポインタを扱うものの証
 	struct BufferAccessKey;
+	//エージェント認証キー
+	struct AgentKey;
+
+
+
+	using DeleteBufferUploaderCommand = std::function<void()>;
 
 	//BufferAssemblerとBufferCollectorをつかってバッファを作成する
 	class BufferCreator;
@@ -83,11 +89,13 @@ public:
 	class BufferCollector;
 	//生リソース生成
 	class ResourceCreator;
+	//代行者
+	class ExecutionAgent;
 
 
 	BufferContext
 	(
-		InstanceKey instanceKey_,
+		NexusFieldProof proof_,
 		DeviceContextDiplomat* deviceContextDiplomat_,
 		DescriptorHeapContextDiplomat* descriptorheapContextDiplomat_,
 		CommandContextDiplomat* commandContextDiplomat_
@@ -95,13 +103,11 @@ public:
 
 	~BufferContext();
 
-	//Extractors
-	std::unique_ptr<BufferInfoExtractor> bufferInfoExtractor;
 	//ツール貸し出し
 	std::unique_ptr<BufferContextDiplomat> diplomat;
 
 	///ランタイムに入る前にNexusuがアップロード用の中間リソースを破棄する
-	void DeleteBufferUploader(const InstanceKey& key_);
+	void DeleteBufferUploader(const NexusFieldProof& proof_, AgentKey agentKey_);
 	
 private:
 
@@ -118,16 +124,17 @@ private:
 	std::unique_ptr<BufferDispatcher> bufferDispatcher;
 	//コレクター
 	std::unique_ptr<BufferCollector> bufferCollector;
+	//Extractors
+	std::unique_ptr<BufferInfoExtractor> bufferInfoExtractor;
 
 };
 
-
-struct BufferContext::InstanceKey
+struct BufferContext::NexusFieldProof
 {
 private:
 
 	friend class Nexus;
-	explicit InstanceKey() = default;
+	explicit NexusFieldProof() = default;
 };
 
 struct BufferContext::BufferAccessKey
@@ -137,5 +144,14 @@ private:
 	friend class BufferInfoExtractor;
 	explicit BufferAccessKey() = default;
 };
+
+struct BufferContext::AgentKey
+{
+private:
+
+	friend class ExecutionAgent;
+	explicit AgentKey() = default;
+};
+
 
 

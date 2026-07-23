@@ -9,13 +9,15 @@
 #include "../LowerLayer/Core/SwapChain/SwapChainContext.h"
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 #include "../LowerLayer/Core/Command/CommandContext.h"
-#include "../LowerLayer/Core/Command/CommandContextDiplomat/CommandContextToolLender/CommandContextToolLender.h"
 #include "../LowerLayer/Core/Command/ResourceUploader/ResourceUploader.h"
 #include "../LowerLayer/Core/Command/CommandContextDiplomat/CommandContextDiplomat.h"
+#include "../LowerLayer/Core/Command/CommandContextDiplomat/CommandContextExecutionAgent/CommandContextExecutionAgent.h"
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 #include "../LowerLayer/Resource/Shader/ShaderContext.h"
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 #include "../LowerLayer/Resource/Buffer/BufferContext.h"
+#include "../LowerLayer/Resource/Buffer/BufferContextDiplomat/BufferContextDiplomat.h"
+#include "../LowerLayer/Resource/Buffer/BufferContextDiplomat/BufferContextExecutionAgent/BufferContextExecutionAgent.h"
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 #include "../LowerLayer/Resource/PSO/PSO_Context.h"
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -36,7 +38,7 @@ template<>
 void Nexus::Init<Nexus::InitSequence::kDeviceContext>()
 {
 	//deviceContextクラスのインスタンス化
-	deviceContext.reset(new DeviceContext(DeviceContext::InstanceKey{}));
+	deviceContext.reset(new DeviceContext(DeviceContext::NexusFieldProof{}));
 	Logger::Log("Instantiate: deviceContext", fileName);
 }
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -46,7 +48,7 @@ template<>
 void Nexus::Init<Nexus::InitSequence::kWindowContext>()
 {
 	//windowContextのインスタンス化
-	windowContext.reset(new WindowContext(WindowContext::InstanceKey{}));
+	windowContext.reset(new WindowContext(WindowContext::NexusFieldProof{}));
 	Logger::Log("Instantiate: windowContext", fileName);
 }
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -60,7 +62,7 @@ void Nexus::Init<Nexus::InitSequence::kDescriptorHeapContext>()
 	(
 		new DescriptorHeapContext
 		(
-			DescriptorHeapContext::InstanceKey{},
+			DescriptorHeapContext::NexusFieldProof{},
 			deviceContext->diplomat.get()
 		)
 	);
@@ -73,7 +75,7 @@ void Nexus::Init<Nexus::InitSequence::kDescriptorHeapContext>()
 template<>
 void Nexus::Init<Nexus::InitSequence::kBufferContext>()
 {
-	bufferContext.reset(new BufferContext(BufferContext::InstanceKey{}, deviceContext->diplomat.get(), descriptorHeapContext->diplomat.get(), commandContext->diplomat.get()));
+	bufferContext.reset(new BufferContext(BufferContext::NexusFieldProof{}, deviceContext->diplomat.get(), descriptorHeapContext->diplomat.get(), commandContext->diplomat.get()));
 	Logger::Log("Instantiate: bufferContext", fileName);
 }
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -86,7 +88,7 @@ void Nexus::Init<Nexus::InitSequence::kCommandContext>()
 	(
 		new CommandContext
 		(
-			CommandContext::InstanceKey{},
+			CommandContext::NexusFieldProof{},
 			deviceContext->diplomat.get()
 		)
 	);
@@ -103,7 +105,7 @@ void Nexus::Init<Nexus::InitSequence::kSwapChainContext>()
 	(
 		new SwapChainContext
 		(
-			SwapChainContext::InstanceKey{},
+			SwapChainContext::NexusFieldProof{},
 			descriptorHeapContext->diplomat.get(),
 			commandContext->diplomat.get(),
 			deviceContext->diplomat.get(),
@@ -120,7 +122,7 @@ void Nexus::Init<Nexus::InitSequence::kSwapChainContext>()
 template<>
 void Nexus::Init<Nexus::InitSequence::kShaderContext>()
 {
-	shaderContext.reset(new ShaderContext(ShaderContext::InstanceKey{}));
+	shaderContext.reset(new ShaderContext(ShaderContext::NexusFieldProof{}));
 	Logger::Log("Instantiate: ShaderContext", fileName);
 }
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -133,7 +135,7 @@ void Nexus::Init<Nexus::InitSequence::kPSO_Context>()
 	(
 		new PSO_Context
 		(
-			PSO_Context::InstanceKey{},
+			PSO_Context::NexusFieldProof{},
 			deviceContext->diplomat.get()
 		)
 	);
@@ -149,7 +151,7 @@ void Nexus::Init<Nexus::InitSequence::kRootSignatureContext>()
 	(
 		new RootSignatureContext
 		(
-			RootSignatureContext::InstanceKey{},
+			RootSignatureContext::NexusFieldProof{},
 			deviceContext->diplomat.get()
 		)
 	);
@@ -163,7 +165,7 @@ void Nexus::Init<Nexus::InitSequence::kRootSignatureContext>()
 template<>
 void Nexus::Init<Nexus::InitSequence::kRenderContext>()
 {
-	renderContext.reset(new RenderContext(RenderContext::InstanceKey{}));
+	renderContext.reset(new RenderContext(RenderContext::NexusFieldProof{}));
 	Logger::Log("Instantiate: RenderContext", fileName);
 }
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -172,7 +174,7 @@ void Nexus::Init<Nexus::InitSequence::kRenderContext>()
 template<>
 void Nexus::Init<Nexus::InitSequence::kMeshContext>()
 {
-	meshContext.reset(new MeshContext(MeshContext::InstanceKey{},bufferContext->diplomat.get()));
+	meshContext.reset(new MeshContext(MeshContext::NexusFieldProof{},bufferContext->diplomat.get()));
 	Logger::Log("Instantiate: MeshContext", fileName);
 }
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -181,14 +183,10 @@ void Nexus::Init<Nexus::InitSequence::kMeshContext>()
 template<>
 void Nexus::Init<Nexus::InitSequence::kKickCommands>()
 {
-	//溜まったリソースアップロードのコマンドをキックして同期し、コマンドを閉じる
-	auto* toolLender = commandContext->diplomat->Access<CommandContext::ToolLender>();
-	//リソースアップローダーにアクセスするための資格
-	CommandContext::ToolLender::LicenceType<CommandContext::ResourceUploader> licence;
-	auto* resourceUploader = toolLender->Lend<CommandContext::ResourceUploader>(licence);
-
+	//CommandContextの代行者
+	auto* agent = commandContext->diplomat->Access<CommandContext::ExecutionAgent>();
 	//リソースアップロードのために溜まったコマンドを全てキックして同期し、コマンドリストを閉じる
-	resourceUploader->WaitAndKick(CommandContext::ResourceUploader::WaitAndKickLicence{});
+	agent->KickAndSynchronizeUploadCommand(CommandContext::NexusFieldProof{});
 }
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -196,8 +194,9 @@ void Nexus::Init<Nexus::InitSequence::kKickCommands>()
 template<>
 void Nexus::Init<Nexus::InitSequence::kDeleteIntermediateResources>()
 {
-	//BufferUploaderを削除する
-	bufferContext->DeleteBufferUploader(BufferContext::InstanceKey{});
+	auto* agent = bufferContext->diplomat->Access<BufferContext::ExecutionAgent>();
+	//BufferUploaderの削除を代行
+	agent->DeleteBufferUploader(BufferContext::NexusFieldProof{});
 }
 
 

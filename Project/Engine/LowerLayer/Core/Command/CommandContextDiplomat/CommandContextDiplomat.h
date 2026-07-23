@@ -8,9 +8,10 @@ class CommandContextDiplomat
 public:
 	CommandContextDiplomat
 	(
-		CommandContext::InstanceKey key_,
+		CommandContext::NexusFieldProof proof_,
 		std::unique_ptr<CommandContext::CommandProvider>&& cmdProvider_,
-		std::unique_ptr<CommandContext::ToolLender>&& toolLender_
+		std::unique_ptr<CommandContext::ToolLender>&& toolLender_,
+		std::unique_ptr<CommandContext::ExecutionAgent>&& executionAgent_
 	);
 
 	template<typename ToolType>
@@ -21,7 +22,12 @@ public:
 
 private:
 	//提供するツールのテーブル
-	std::tuple<std::unique_ptr<CommandContext::CommandProvider>, std::unique_ptr<CommandContext::ToolLender>> tools;
+	std::tuple
+	<
+		std::unique_ptr<CommandContext::CommandProvider>, 
+		std::unique_ptr<CommandContext::ToolLender>,
+		std::unique_ptr<CommandContext::ExecutionAgent>
+	> tools;
 
 };
 

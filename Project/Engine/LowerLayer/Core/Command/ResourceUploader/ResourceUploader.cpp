@@ -13,7 +13,7 @@ namespace
 
 CommandContext::ResourceUploader::ResourceUploader
 (
-	CommandContext::InstanceKey key_,
+	NexusFieldProof proof_,
 	DeviceContextDiplomat* deviceContextDiplomat_,
 	ID3D12CommandQueue* commandQueue_,
 	CommandContext::Synchronizer* synchronizer_
@@ -25,7 +25,7 @@ CommandContext::ResourceUploader::ResourceUploader
 	
 	//リソースアップロード用
 	auto [allocator_forUpload, cmdList_forUpload] =
-		cmdExecutor->CreateCommandContextCorePartsForUpload(key_);
+		cmdExecutor->CreateCommandContextCorePartsForUpload(proof_);
 
 	allocator = std::move(allocator_forUpload);
 	commandList = std::move(cmdList_forUpload);
@@ -42,7 +42,7 @@ CommandContext::ResourceUploader::ResourceUploader
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-void CommandContext::ResourceUploader::WaitAndKick(const WaitAndKickLicence& licence_)
+void CommandContext::ResourceUploader::KickAndSynchronize(const NexusFieldProof& nexusFieldProof_, AgentKey agentKey_)
 {
 	HRESULT hr = commandList->Close();
 	ErrorMessageOutput::Assert::DetectError(SUCCEEDED(hr), "コマンド確定できない", fileName);

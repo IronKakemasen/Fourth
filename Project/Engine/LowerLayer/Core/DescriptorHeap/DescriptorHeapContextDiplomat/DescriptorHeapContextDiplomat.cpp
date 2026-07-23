@@ -5,7 +5,7 @@
 
 DescriptorHeapContextDiplomat::DescriptorHeapContextDiplomat
 (
-	DescriptorHeapContext::InstanceKey key_,
+	DescriptorHeapContext::NexusFieldProof proof_,
 	std::unique_ptr<DescriptorHeapContext::ToolLender>&& toolLender_
 )
 {
