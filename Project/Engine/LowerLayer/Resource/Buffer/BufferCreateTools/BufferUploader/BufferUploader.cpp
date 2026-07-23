@@ -17,7 +17,7 @@ namespace
 
 BufferContext::BufferUploader::BufferUploader
 (
-	BufferContext::InstanceKey key_,
+	BufferContext::NexusFieldProof proof_,
 	BufferContext::ResourceCreator* resourceCreator_,
 	BufferContext::BufferDispatcher* dispatcher_,
 	CommandContextDiplomat* commandContextDiplomat_

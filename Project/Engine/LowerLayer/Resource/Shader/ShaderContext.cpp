@@ -12,11 +12,11 @@ namespace
 }
 
 
-ShaderContext::ShaderContext(InstanceKey instanceKey_)
+ShaderContext::ShaderContext(NexusFieldProof proof_)
 {
 	Logger::Entry("ShaderContext: Constructor");
 
-	compiler.reset(new Compiler(instanceKey_));
+	compiler.reset(new Compiler(proof_));
 	Logger::Log("Instantiate: shaderCompiler", fileName);
 
 	shaderLibrary.reset(new ShaderLibrary(ShaderLibrary::InstanceKey{}, compiler.get()));

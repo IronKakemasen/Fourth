@@ -12,13 +12,13 @@ namespace
 
 PSO_Context::PSO_Context
 (
-	InstanceKey key_,
+	NexusFieldProof proof_,
 	DeviceContextDiplomat* deviceContextDiplomat_
 )
 {
 	Logger::Entry("PSO_Context: Constructor");
 	
-	assembler.reset(new Assembler(key_, deviceContextDiplomat_, &psoContainer));
+	assembler.reset(new Assembler(proof_, deviceContextDiplomat_, &psoContainer));
 	Logger::Log("Instantiate: psoAssembler");
 
 

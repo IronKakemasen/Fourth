@@ -16,7 +16,7 @@ namespace
 
 using namespace RootSignatureLayoutComponent;
 
-RootSignatureContext::Assembler::Assembler(RootSignatureContext::InstanceKey key_, DeviceContextDiplomat* deviceContextDiplomat_)
+RootSignatureContext::Assembler::Assembler(NexusFieldProof proof_, DeviceContextDiplomat* deviceContextDiplomat_)
 {
 	auto cmdProvider = deviceContextDiplomat_->Access<DeviceContext::CommandProvider>();
 	cmdCreateRootSignature = cmdProvider->ProvideCommandCreateRootSignature();

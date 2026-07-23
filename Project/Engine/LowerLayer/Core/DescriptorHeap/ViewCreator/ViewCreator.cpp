@@ -3,7 +3,7 @@
 
 DescriptorHeapContext::ViewCreator::ViewCreator
 (
-	DescriptorHeapContext::InstanceKey instanceKey_,
+	DescriptorHeapContext::NexusFieldProof proof_,
 	DescriptorHeapPool* RTVdescriptorHeapPool_,
 	DescriptorHeapPool* SRVUAVdescriptorHeapPool_,
 	DescriptorHeapPool* DSVdescriptorHeapPool_,

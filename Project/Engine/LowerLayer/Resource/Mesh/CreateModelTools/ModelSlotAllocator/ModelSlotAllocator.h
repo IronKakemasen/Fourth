@@ -33,7 +33,7 @@ public:
 		const std::vector<MeshDataID>& idContainer_
 	);
 
-	ModelSlotAllocator(MeshContext::InstanceKey key_);
+	ModelSlotAllocator(NexusFieldProof proof_);
 	~ModelSlotAllocator();
 
 private:

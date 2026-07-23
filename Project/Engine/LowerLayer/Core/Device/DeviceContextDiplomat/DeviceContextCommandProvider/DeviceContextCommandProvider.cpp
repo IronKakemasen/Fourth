@@ -42,7 +42,7 @@ using C_CreateSwapChain = std::function< void
 
 DeviceContext::CommandProvider::CommandProvider
 (
-	DeviceContext::InstanceKey instanceKey_,
+	NexusFieldProof proof_,
 	std::function< ID3D12Device8* (DeviceContext::AccessKey)> deviceGetter_,
 	std::function< IDXGIFactory7* (DeviceContext::AccessKey)> dxgiFactoryGetter_
 ) : deviceGetter(deviceGetter_), dxgiFactoryGetter(dxgiFactoryGetter_)

@@ -53,25 +53,25 @@ private:
 
 
 template<>
-static std::optional<D3D12_CLEAR_VALUE>
+std::optional<D3D12_CLEAR_VALUE>
 BufferContext::BufferAssembler::ResourceAssembler::GetClearValue(const ColorBufferDescription& desc_);
 
 template<>
-static std::optional<D3D12_CLEAR_VALUE>
+std::optional<D3D12_CLEAR_VALUE>
 BufferContext::BufferAssembler::ResourceAssembler::GetClearValue(const DepthStencilBufferDescription& desc_);
 
 template<>
-static std::optional<D3D12_CLEAR_VALUE>
+std::optional<D3D12_CLEAR_VALUE>
 BufferContext::BufferAssembler::ResourceAssembler::GetClearValue(const ConstantBufferDescription& desc_);
 
 template<>
-static std::optional<D3D12_CLEAR_VALUE>
+std::optional<D3D12_CLEAR_VALUE>
 BufferContext::BufferAssembler::ResourceAssembler::GetClearValue(const StaticStructuredBufferDescription& desc_);
 
 template<>
-static std::optional<D3D12_CLEAR_VALUE>
+std::optional<D3D12_CLEAR_VALUE>
 BufferContext::BufferAssembler::ResourceAssembler::GetClearValue(const UploadStructuredBufferDescription& desc_);
 
 template<>
-static std::optional<D3D12_CLEAR_VALUE>
+std::optional<D3D12_CLEAR_VALUE>
 BufferContext::BufferAssembler::ResourceAssembler::GetClearValue(const ComputeBufferDescription& desc_);

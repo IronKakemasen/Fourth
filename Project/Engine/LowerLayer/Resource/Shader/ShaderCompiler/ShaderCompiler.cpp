@@ -8,7 +8,7 @@ namespace
 }
 
 
-ShaderContext::Compiler::Compiler(ShaderContext::InstanceKey key_)
+ShaderContext::Compiler::Compiler(NexusFieldProof proof_)
 {
 	InstantiateCorePatrts();
 }

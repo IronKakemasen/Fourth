@@ -9,7 +9,7 @@ namespace
 
 RenderContext::PSO_PoolDispatcher::PSO_PoolDispatcher
 (
-	RenderContext::InstanceKey key_
+	NexusFieldProof proof_
 )
 {
 	DefinePackageLayout();

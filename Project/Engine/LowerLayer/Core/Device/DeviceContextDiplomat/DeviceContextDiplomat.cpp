@@ -11,7 +11,7 @@ namespace
 
 DeviceContextDiplomat::DeviceContextDiplomat
 (
-	DeviceContext::InstanceKey key_,
+	DeviceContext::NexusFieldProof proof_,
 	std::unique_ptr<DeviceContext::CommandProvider>&& cmdProvider_,
 	std::unique_ptr<DeviceContext::CommandExecutor>&& cmdExecutor_
 )

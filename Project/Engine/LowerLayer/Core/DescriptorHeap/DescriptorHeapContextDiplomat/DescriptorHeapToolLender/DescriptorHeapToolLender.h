@@ -24,7 +24,7 @@ private:
 
 public:
 
-	ToolLender(InstanceKey key_, DescriptorHeapContext::ViewCreator* viewCretator_);
+	ToolLender(NexusFieldProof proof_, DescriptorHeapContext::ViewCreator* viewCretator_);
 	
 	///ツールの貸し出し
 	template<typename ToolType>

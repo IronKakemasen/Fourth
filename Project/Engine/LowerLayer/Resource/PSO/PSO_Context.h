@@ -16,11 +16,11 @@ public:
 	class Assembler;
 
 	//自身のインスタンスキー
-	struct InstanceKey;
+	struct NexusFieldProof;
 
 	PSO_Context
 	(
-		InstanceKey key_,
+		NexusFieldProof proof_,
 		DeviceContextDiplomat* deviceContextDiplomat_
 	);
 
@@ -37,10 +37,10 @@ private:
 };
 
 
-struct PSO_Context::InstanceKey
+struct PSO_Context::NexusFieldProof
 {
 private:
 
 	friend class Nexus;
-	explicit InstanceKey() = default;
+	explicit NexusFieldProof() = default;
 };

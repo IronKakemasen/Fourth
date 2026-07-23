@@ -23,7 +23,7 @@ namespace
 
 SwapChainContext::SwapChainContext
 (
-	InstanceKey instanceKey_,
+	NexusFieldProof proof_,
 	DescriptorHeapContextDiplomat* descriptorheapContextDiplomat_,
 	CommandContextDiplomat* commandContextDiplomat_,
 	DeviceContextDiplomat* deviceContextDiplomat_,
@@ -33,7 +33,7 @@ SwapChainContext::SwapChainContext
 	Logger::Entry("SwapChainContext: Constructor");
 
 	//コアパーツを組み立てる
-	AssembleCoreParts(instanceKey_, descriptorheapContextDiplomat_, commandContextDiplomat_, deviceContextDiplomat_, hWnd_);
+	AssembleCoreParts(proof_, descriptorheapContextDiplomat_, commandContextDiplomat_, deviceContextDiplomat_, hWnd_);
 	Logger::Log("Assemble: core parts", fileName);
 
 	presenter.reset(new Presenter(swapChain.Get()));
@@ -69,7 +69,7 @@ void SwapChainContext::CreateSwapChain
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 void SwapChainContext::AssembleCoreParts
 (
-	InstanceKey instanceKey_,
+	NexusFieldProof proof_,
 	DescriptorHeapContextDiplomat* descriptorheapContextDiplomat_,
 	CommandContextDiplomat* commandContextDiplomat_,
 	DeviceContextDiplomat* deviceContextDiplomat_,
@@ -99,7 +99,7 @@ void SwapChainContext::AssembleCoreParts
 	PullResourcesFromSwapChain(std::move(bufferDesc));
 
 	//ビュー生成
-	CreateRTV(instanceKey_, rtvDesc, descriptorheapContextDiplomat_);
+	CreateRTV(proof_, rtvDesc, descriptorheapContextDiplomat_);
 }
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -128,7 +128,7 @@ void SwapChainContext::PullResourcesFromSwapChain(std::unique_ptr<Description>&&
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 void SwapChainContext::CreateRTV
 (
-	InstanceKey instanceKey_,
+	NexusFieldProof proof_,
 	const D3D12_RENDER_TARGET_VIEW_DESC& rtvDesc_,
 	DescriptorHeapContextDiplomat* descriptorheapContextDiplomat_
 )
@@ -150,7 +150,7 @@ void SwapChainContext::CreateRTV
 			viewCreator->CreateView(colorBuffer->GetResource(resourceGetKey, i), &rtvDesc_);
 
 		//インデックスを書き込む
-		colorBuffer->OverrideHeapIndex(instanceKey_,i, rtvCPU);
+		colorBuffer->OverrideHeapIndex(proof_,i, rtvCPU);
 	}
 
 	Logger::Log("Create: SwapChainResourceRTV", fileName);

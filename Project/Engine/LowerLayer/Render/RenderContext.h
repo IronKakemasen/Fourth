@@ -9,9 +9,10 @@ class RenderContext
 {
 public:
 
-	struct InstanceKey;
+	//ネクサスフィールドの証
+	struct NexusFieldProof;
 
-	RenderContext(InstanceKey key_);
+	RenderContext(NexusFieldProof proof_);
 	~RenderContext();
 
 	//モデルの描画情報を収集して整理する
@@ -30,12 +31,14 @@ private:
 };
 
 
-struct RenderContext::InstanceKey
+struct RenderContext::NexusFieldProof
 {
 private:
 	friend class Nexus;
-	explicit InstanceKey() = default;
+	explicit NexusFieldProof() = default;
 };
+
+
 //void IColorBuffer::AssembleMatrix(UINT width_, UINT height_)
 //{
 //	//クライアント領域と一緒のサイズにして画面全体に表示

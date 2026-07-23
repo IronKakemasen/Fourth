@@ -11,7 +11,7 @@
 //ランタイム処理ツール
 #include "RuntimeBufferManagementSystems/BufferDispatcher/BufferDispatcher.h"
 #include "RuntimeBufferManagementSystems/BufferInfoExtractor/BufferInfoExtractor.h"
-
+#include "BufferContextDiplomat/BufferContextExecutionAgent/BufferContextExecutionAgent.h"
 
 #include "ClosedHashMap/ClosedHashMap.h" 
 
@@ -25,7 +25,7 @@ namespace
 
 BufferContext::BufferContext
 (
-	InstanceKey instanceKey_, 
+	NexusFieldProof proof_,
 	DeviceContextDiplomat* deviceContextDiplomat_,
 	DescriptorHeapContextDiplomat* descriptorheapContextDiplomat_,
 	CommandContextDiplomat* commandContextDiplomat_
@@ -36,33 +36,34 @@ BufferContext::BufferContext
 	bufferPoolSet.reset(new BufferPoolSet());
 	Logger::Log("Create: bufferPoolSet", fileName);
 
-	bufferCollector.reset(new BufferContext::BufferCollector(instanceKey_, bufferPoolSet.get()));
+	bufferCollector.reset(new BufferContext::BufferCollector(proof_, bufferPoolSet.get()));
 	Logger::Log("Instantiate: bufferCollector", "BufferCreator.cpp");
 
-	resourceCreator.reset(new BufferContext::ResourceCreator(instanceKey_, deviceContextDiplomat_));
+	resourceCreator.reset(new BufferContext::ResourceCreator(proof_, deviceContextDiplomat_));
 	Logger::Log("Instantiate: ResourceCreator", fileName);
 
-	bufferCreator.reset(new BufferCreator(instanceKey_, resourceCreator.get(), descriptorheapContextDiplomat_, bufferCollector.get()));
+	bufferCreator.reset(new BufferCreator(proof_, resourceCreator.get(), descriptorheapContextDiplomat_, bufferCollector.get()));
 	Logger::Log("Instantiate: BufferCreator", fileName);
 
-	bufferDispatcher.reset(new BufferDispatcher(instanceKey_, bufferPoolSet.get()));
+	bufferDispatcher.reset(new BufferDispatcher(proof_, bufferPoolSet.get()));
 	Logger::Log("Instantiate: bufferDispatcher", fileName);
 
-	bufferUploader.reset(new BufferUploader(instanceKey_, resourceCreator.get(),bufferDispatcher.get(), commandContextDiplomat_));
+	bufferUploader.reset(new BufferUploader(proof_, resourceCreator.get(),bufferDispatcher.get(), commandContextDiplomat_));
 	Logger::Log("Instantiate: BufferUploader", fileName);
 
 	diplomat.reset
 	(
 		new BufferContextDiplomat
 		(
-			instanceKey_,
-			std::make_unique<ToolLender>(instanceKey_, bufferCreator.get(), bufferUploader.get(), bufferDispatcher.get(), bufferCollector.get())
+			proof_,
+			std::make_unique<ToolLender>(proof_, bufferCreator.get(), bufferUploader.get(), bufferDispatcher.get(), bufferCollector.get()),
+			std::make_unique<ExecutionAgent>(proof_, this)
 		)
 	);
+
 	Logger::Log("Instantiate: ToolLender", fileName);
+	Logger::Log("Instantiate: ExecutionAgent", fileName);
 	Logger::Log("Instantiate: BufferContextDiplomat", fileName);
-
-
 
 	Logger::End("BufferContext: Constructor");
 
@@ -97,7 +98,7 @@ BufferContext::BufferPoolSet::BufferPoolSet()
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-void BufferContext::DeleteBufferUploader(const InstanceKey& key_)
+void BufferContext::DeleteBufferUploader(const NexusFieldProof& proof_, AgentKey agentKey_)
 {
 	///中にある中間リソースをすべて削除
 	bufferUploader.reset();

@@ -15,9 +15,9 @@ public:
 
 	//rootSignatureを組み立てる
 	class Assembler;
-	struct InstanceKey;
+	struct NexusFieldProof;
 
-	RootSignatureContext(InstanceKey key_, DeviceContextDiplomat* deviceContextDiplomat_);
+	RootSignatureContext(NexusFieldProof proof_, DeviceContextDiplomat* deviceContextDiplomat_);
 	~RootSignatureContext();
 
 private:
@@ -27,11 +27,11 @@ private:
 
 };
 
-struct RootSignatureContext::InstanceKey
+struct RootSignatureContext::NexusFieldProof
 {
 private:
 
 	friend class Nexus;
-	explicit InstanceKey() = default;
+	explicit NexusFieldProof() = default;
 };
 

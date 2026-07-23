@@ -5,7 +5,7 @@
 #include "../../../../Core/Device/DeviceContextDiplomat/DeviceContextDiplomat.h"
 #include "../../../../Core/Device/DeviceContextDiplomat/DeviceContextCommandProvider/DeviceContextCommandProvider.h"
 
-BufferContext::ResourceCreator::ResourceCreator(BufferContext::InstanceKey instanceKey_, DeviceContextDiplomat* deviceContextDiplomat_)
+BufferContext::ResourceCreator::ResourceCreator(NexusFieldProof proof_, DeviceContextDiplomat* deviceContextDiplomat_)
 {
 	auto* cmdProvider = deviceContextDiplomat_->Access<DeviceContext::CommandProvider>();
 	createResourceCommand = cmdProvider->ProvideCreateResourceCommand();

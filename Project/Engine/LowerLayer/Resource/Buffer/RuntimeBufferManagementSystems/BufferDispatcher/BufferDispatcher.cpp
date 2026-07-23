@@ -4,7 +4,7 @@
 
 BufferContext::BufferDispatcher::BufferDispatcher
 (
-	BufferContext::InstanceKey key_,
+	BufferContext::NexusFieldProof proof_,
 	BufferContext::BufferPoolSet* bufferPoolSet_
 ) :bufferPoolSet(bufferPoolSet_)
 {

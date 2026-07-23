@@ -4,7 +4,7 @@
 
 BufferContext::ToolLender::ToolLender
 (
-	BufferContext::InstanceKey key_,
+	BufferContext::NexusFieldProof proof_,
 	BufferContext::BufferCreator* creator_,
 	BufferContext::BufferUploader* uploader_,
 	BufferContext::BufferDispatcher* dispatcher_,

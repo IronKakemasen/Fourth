@@ -7,7 +7,7 @@
 class RootSignatureContext::Assembler
 {
 public:
-	Assembler(RootSignatureContext::InstanceKey key_, DeviceContextDiplomat* deviceContextDiplomat_);
+	Assembler(NexusFieldProof proof_, DeviceContextDiplomat* deviceContextDiplomat_);
 	~Assembler();
 
 	//生成関数

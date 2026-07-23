@@ -10,7 +10,7 @@ public:
 
 	Assembler
 	(
-		PSO_Context::InstanceKey key_,
+		NexusFieldProof proof_,
 		DeviceContextDiplomat* deviceContextDiplomat_, 
 		std::vector<Microsoft::WRL::ComPtr<ID3D12PipelineState>>* psoContainer_
 	);

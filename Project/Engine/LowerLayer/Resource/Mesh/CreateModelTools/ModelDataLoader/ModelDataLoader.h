@@ -8,7 +8,7 @@ class MeshContext::ModelDataLoader
 {
 public:
 
-	ModelDataLoader(MeshContext::InstanceKey key_);
+	ModelDataLoader(NexusFieldProof proof_);
 	~ModelDataLoader();
 
 	///ファイルの名前から実メッシュデータのアドレスを生成

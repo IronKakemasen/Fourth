@@ -16,12 +16,12 @@ namespace
     auto const fileName = "ModelDataLoader.cpp";
 }
 
-MeshContext::ModelDataLoader::ModelDataLoader(MeshContext::InstanceKey key_)
+MeshContext::ModelDataLoader::ModelDataLoader(NexusFieldProof proof_)
 {
     Logger::Entry("ModelDataLoader: Constructor");
 
 
-	modelDataCache.reset(new ModelDataCache(key_));
+	modelDataCache.reset(new ModelDataCache(proof_));
     Logger::Log("Instantiate: ModelDataCache",fileName);
 
     Logger::End("ModelDataLoader: Constructor");

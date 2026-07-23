@@ -32,7 +32,7 @@ public:
 	//psoを登録するための許可証
 	struct RegisterLicense;
 
-	PSO_PoolDispatcher(RenderContext::InstanceKey key_);
+	PSO_PoolDispatcher(NexusFieldProof proof_);
 	~PSO_PoolDispatcher();
 
 	///キーをもとにpsoを検索して渡す

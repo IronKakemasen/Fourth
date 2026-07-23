@@ -13,9 +13,9 @@ public:
 	class ModelSlotAllocator;
 
 	//自身の生成キー
-	struct InstanceKey;
+	struct NexusFieldProof;
 
-	MeshContext(const InstanceKey& key_, BufferContextDiplomat* bufferContextDiplomat_);
+	MeshContext(NexusFieldProof proof_, BufferContextDiplomat* bufferContextDiplomat_);
 	~MeshContext();
 
 
@@ -27,10 +27,10 @@ private:
 
 };
 
-struct MeshContext::InstanceKey
+struct MeshContext::NexusFieldProof
 {
 private:
 
 	friend class Nexus;
-	explicit InstanceKey() = default;
+	explicit NexusFieldProof() = default;
 };

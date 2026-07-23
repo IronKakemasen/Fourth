@@ -8,8 +8,9 @@ class BufferContextDiplomat
 public:
 	BufferContextDiplomat
 	(
-		BufferContext::InstanceKey key_,
-		std::unique_ptr<BufferContext::ToolLender>&& toolLender_
+		BufferContext::NexusFieldProof proof_,
+		std::unique_ptr<BufferContext::ToolLender>&& toolLender_,
+		std::unique_ptr<BufferContext::ExecutionAgent>&& executionAgent_
 	);
 
 	template<typename ToolType>
@@ -20,7 +21,7 @@ public:
 
 private:
 	//提供するツールのテーブル
-	std::tuple<std::unique_ptr<BufferContext::ToolLender>> tools;
+	std::tuple<std::unique_ptr<BufferContext::ToolLender>, std::unique_ptr<BufferContext::ExecutionAgent>> tools;
 
 };
 

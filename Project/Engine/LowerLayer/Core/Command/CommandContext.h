@@ -24,29 +24,37 @@ public:
 		UINT subResourceCount_
 	)>;
 
+	//Nexusフィールドの証明
+	struct NexusFieldProof;
+	//代行者認証キー
+	struct AgentKey;
 
-	struct InstanceKey;
+
+
 	//リソースのアップロードを行う
 	class ResourceUploader;
 	//コマンドを提供する
 	class CommandProvider;
 	//ツールを貸す
 	class ToolLender;
+	//自クラスの処理を代行する
+	class ExecutionAgent;
 
 
 	CommandContext
 	(
-		const InstanceKey& instanceKey_,
+		NexusFieldProof proof_,
 		DeviceContextDiplomat* deviceContextDiplomat_
 	);
 
 	~CommandContext();
 
 	//同期してCloseHandle()する
-	void Finalize(InstanceKey instanceKey_);
+	void Finalize(NexusFieldProof instanceKey_);
 
 	std::unique_ptr<RuntimeCommandController> runtimeCommandController;
 	std::unique_ptr<CommandContextDiplomat> diplomat;
+
 
 private:
 
@@ -72,15 +80,24 @@ private:
 
 	void CreateFenceEvent();
 	void InstantiateRuntimeCommandControler();
-	void CreateCoreParts(InstanceKey instanceKey_,DeviceContextDiplomat* deviceContextDiplomat_);
+	void CreateCoreParts(NexusFieldProof instanceKey_,DeviceContextDiplomat* deviceContextDiplomat_);
 };
 
 
-struct CommandContext::InstanceKey
+struct CommandContext::NexusFieldProof
 {
 private:
 
 	friend class Nexus;
-	explicit InstanceKey() = default;
+	explicit NexusFieldProof() = default;
 };
+
+struct CommandContext::AgentKey
+{
+private:
+
+	friend class ExecutionAgent;
+	explicit AgentKey() = default;
+};
+
 

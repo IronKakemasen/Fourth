@@ -8,7 +8,7 @@ public:
 
 	struct AccessKey;
 
-	ModelDataCache(MeshContext::InstanceKey key_);
+	ModelDataCache(NexusFieldProof proof_);
 
 	ModelDataAggregate* FindDuplication(AccessKey key_, std::string fileName_);
 	void Register(AccessKey key_, std::string fileName_, std::unique_ptr<ModelDataAggregate>&& data_);

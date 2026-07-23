@@ -27,7 +27,7 @@ public:
 
     BufferAssembler
     (
-        BufferContext::InstanceKey instancekey_, 
+        BufferContext::NexusFieldProof proof_,
         ResourceCreator* resourceCreator_,
         DescriptorHeapContextDiplomat* descriptorheapContextDiplomat_
     );

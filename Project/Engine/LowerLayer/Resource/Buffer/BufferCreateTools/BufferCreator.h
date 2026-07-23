@@ -14,7 +14,7 @@ public:
 
 	BufferCreator
 	(
-		BufferContext::InstanceKey instancekey_,
+		BufferContext::NexusFieldProof proof_,
 		BufferContext::ResourceCreator* resourceCreator_,
 		DescriptorHeapContextDiplomat* descriptorheapContextDiplomat_,
 		BufferCollector* collector_

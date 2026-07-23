@@ -5,7 +5,7 @@ class ShaderContext::Compiler
 {
 public:
 
-	Compiler(ShaderContext::InstanceKey key_);
+	Compiler(NexusFieldProof proof_);
 
 	[[nodiscard]] Microsoft::WRL::ComPtr<IDxcBlob> CompileShader
 	(

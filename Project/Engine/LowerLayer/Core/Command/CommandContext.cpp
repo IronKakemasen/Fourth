@@ -10,6 +10,7 @@
 #include "CommandContextDiplomat/CommandContextDiplomat.h"
 #include "CommandContextDiplomat/CommandContextCmdProvider/CommandContextCmdProvider.h"
 #include "CommandContextDiplomat/CommandContextToolLender/CommandContextToolLender.h"
+#include "CommandContextDiplomat/CommandContextExecutionAgent/CommandContextExecutionAgent.h"
 
 //外部
 #include "../Device/DeviceContextDiplomat/DeviceContextDiplomat.h"
@@ -26,14 +27,14 @@ CommandContext::~CommandContext() {}
 
 CommandContext::CommandContext
 (
-	const InstanceKey& instanceKey_,
+	NexusFieldProof proof_,
 	DeviceContextDiplomat* deviceContextDiplomat_
 ) 
 {
 	Logger::Entry("CommandContext: Constructor");
 
 	//コアパーツの生成
-	CreateCoreParts(instanceKey_, deviceContextDiplomat_);
+	CreateCoreParts(proof_, deviceContextDiplomat_);
 	//フェンスイベントの生成
 	CreateFenceEvent();
 
@@ -43,7 +44,7 @@ CommandContext::CommandContext
 	runtimeWrapper.reset(new RuntimeWrapper(commandList.Get()));
 	Logger::Log("Instantiate: RuntimeWrapper", fileName);
 
-	resourceUploader.reset(new ResourceUploader(instanceKey_, deviceContextDiplomat_, commandQueue.Get(), synchronizer.get()));
+	resourceUploader.reset(new ResourceUploader(proof_, deviceContextDiplomat_, commandQueue.Get(), synchronizer.get()));
 	Logger::Log("Instantiate: ResourceUploader", fileName);
 
 	//ランタイムでコマンドを利用するクラスの生成
@@ -53,9 +54,10 @@ CommandContext::CommandContext
 	(
 		new CommandContextDiplomat
 		(
-			instanceKey_,
-			std::make_unique<CommandProvider>(instanceKey_, resourceUploader.get()),
-			std::make_unique<ToolLender>(instanceKey_, commandQueue.Get(),resourceUploader.get())
+			proof_,
+			std::make_unique<CommandProvider>(proof_, resourceUploader.get()),
+			std::make_unique<ToolLender>(proof_, commandQueue.Get(),resourceUploader.get()),
+			std::make_unique<ExecutionAgent>(proof_, resourceUploader.get())
 		)
 	);
 
@@ -66,19 +68,19 @@ CommandContext::CommandContext
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-void CommandContext::CreateCoreParts(InstanceKey instanceKey_ , DeviceContextDiplomat* deviceContextDiplomat_)
+void CommandContext::CreateCoreParts(NexusFieldProof proof_, DeviceContextDiplomat* deviceContextDiplomat_)
 {
 	auto* cmdExecutor = deviceContextDiplomat_->Access<DeviceContext::CommandExecutor>();
 
 	//メイン
 	auto [cmdQueue, cmdAllocators, cmdList] =
-		cmdExecutor->CreateCommandContextCorePartsForRuntime(instanceKey_);
+		cmdExecutor->CreateCommandContextCorePartsForRuntime(proof_);
 
 	commandQueue = std::move(cmdQueue);
 	commandAllocators = std::move(cmdAllocators);
 	commandList = std::move(cmdList);
 
-	fence = std::move(cmdExecutor->CreateFence(instanceKey_));
+	fence = std::move(cmdExecutor->CreateFence(proof_));
 }
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -116,11 +118,10 @@ void CommandContext::InstantiateRuntimeCommandControler()
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-void CommandContext::Finalize(InstanceKey instanceKey_)
+void CommandContext::Finalize(NexusFieldProof proof_)
 {
 	synchronizer->WaitDirectly();
 	CloseHandle(fenceEvent);
-
 }
 
 
