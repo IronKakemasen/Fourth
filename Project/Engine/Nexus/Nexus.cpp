@@ -63,19 +63,19 @@ Nexus::Nexus()
 	//自身のインスタンス制限
 	ErrorMessageOutput::Assert::DetectError(InstanceLimiter::CanInstantiate(), "Nexusクラスが複数具現化されてます", fileName);
 
-	InstantiateInSequence<InitSequence::kDeviceContext>();
-	InstantiateInSequence<InitSequence::kWindowContext>();
-	InstantiateInSequence<InitSequence::kDescriptorHeapContext>();
-	InstantiateInSequence<InitSequence::kCommandContext>();
-	InstantiateInSequence<InitSequence::kBufferContext>();
-	InstantiateInSequence<InitSequence::kSwapChainContext>();
-	InstantiateInSequence<InitSequence::kShaderContext>();
-	InstantiateInSequence<InitSequence::kPSO_Context>();
-	InstantiateInSequence<InitSequence::kRootSignatureContext>();
-	InstantiateInSequence<InitSequence::kMeshContext>();
-	InstantiateInSequence<InitSequence::kRenderContext>();
-	InstantiateInSequence<InitSequence::kKickCommands>();
-	InstantiateInSequence<InitSequence::kDeleteIntermediateResources>();
+	InitializeInSequence<InitSequence::kDeviceContext>();
+	InitializeInSequence<InitSequence::kWindowContext>();
+	InitializeInSequence<InitSequence::kDescriptorHeapContext>();
+	InitializeInSequence<InitSequence::kCommandContext>();
+	InitializeInSequence<InitSequence::kBufferContext>();
+	InitializeInSequence<InitSequence::kSwapChainContext>();
+	InitializeInSequence<InitSequence::kShaderContext>();
+	InitializeInSequence<InitSequence::kPSO_Context>();
+	InitializeInSequence<InitSequence::kRootSignatureContext>();
+	InitializeInSequence<InitSequence::kMeshContext>();
+	InitializeInSequence<InitSequence::kRenderContext>();
+	InitializeInSequence<InitSequence::kKickCommands>();
+	InitializeInSequence<InitSequence::kDeleteIntermediateResources>();
 
 	ErrorMessageOutput::Assert::DetectError(next == InitSequence::kEnd, "初期化が正常に行われていない可能性がある", fileName);
 

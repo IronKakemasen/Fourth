@@ -3557,7 +3557,7 @@ void DeviceContext::Setupper::CreateDevice()
 
 		//採用したアダプタでデバイスを生成
 		HRESULT hr = D3D12CreateDevice(useAdapter.Get(), featureLevels[i], IID_PPV_ARGS(&d3d12Device));
-		ErrorMessageOutput::Assert::DetectError(SUCCEEDED(hr), "デバイスの生成に失敗", fileName);
+		ErrorMessageOutput::Abort::DetectError(SUCCEEDED(hr), "デバイスの生成に失敗", fileName);
 		
 		//型変換
 		hr = d3d12Device.As(&device); 
@@ -4650,7 +4650,7 @@ void Logger::Log(std::string const& message_, const std::string& fileName_)
 	{
 		static std::string space = " ";
 		static std::string colon = ": ";
-		static int const numSpace = 60;
+		static int const numSpace = 88;
 		int numSpaceRequired = numSpace - (int)message_.size();
 
 		for (int i = 0;i < numSpaceRequired;++i)
@@ -6277,6 +6277,7 @@ public:
 #include "BufferDefinition/GPUBuffer/GPUBufferBehavior.h"
 //バッファ作成ツール
 #include "BufferCreateTools/BufferCreator.h"
+#include "BufferCreateTools/ResourceCreator/ResourceCreator.h"
 //バッファをアップロード
 #include "BufferCreateTools/BufferUploader/BufferUploader.h"
 //各種ツールを下位部へ貸し出します
@@ -6399,8 +6400,6 @@ class BufferContext
 {
 	//生成したバッファの削除を担当
 	class BufferDeferredReleaser;
-	//生リソース生成
-	class ResourceCreator;
 
 protected:
 
@@ -6469,6 +6468,8 @@ public:
 	class ToolLender;
 	//生成したバッファを回収し分別する
 	class BufferCollector;
+	//生リソース生成
+	class ResourceCreator;
 
 
 	BufferContext
@@ -6839,10 +6840,16 @@ struct BufferContext::BufferCreator::DescTypeTraits<ComputeBufferDescription>
 #include "../../BufferDefinition/AllBuffersInclude.h"
 #include "../../BufferDefinition/AllBufferDescsInclude.h"
 
+#include "BufferAssemblerTools/ResourceAssembler/ResourceAssembler.h"
+#include "BufferAssemblerTools/BufferNameConverter/BufferNameConverter.h"
+#include "BufferAssemblerTools/BufferMaterializer/BufferMaterializer.h"
+#include "BufferAssemblerTools/ViewAssembler/ViewAssembler.h"
+
+
 //外部
-#include "../../../../Core/DescriptorHeap/ViewCreator/ViewCreator.h"
 #include "../../../../Core/DescriptorHeap/DescriptorHeapContextDiplomat/DescriptorHeapContextDiplomat.h"
 #include "../../../../Core/DescriptorHeap/DescriptorHeapContextDiplomat/DescriptorHeapToolLender/DescriptorHeapToolLender.h"
+
 namespace
 {
 	auto const fileName = "BufferAssembler.cpp";
@@ -6866,320 +6873,262 @@ BufferContext::BufferAssembler::BufferAssembler
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-std::pair<D3D12_RESOURCE_DESC, D3D12_HEAP_PROPERTIES> BufferContext::BufferAssembler::AssembleResourceCreateRequirements(const BufferDescriptionBehavior& desc_)
-{
-	//要項チェック
-	desc_.CheckRequirementsFilled();
-	Logger::Log("Check: RequirementsFilled", fileName);
-
-	D3D12_HEAP_PROPERTIES heapProp = desc_.CreateHeapProperties();
-
-	D3D12_RESOURCE_DESC resourceDesc = desc_.CreateResourceDesc();
-
-	return std::make_pair(resourceDesc, heapProp);
-}
-
-
-///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-template<>
-std::optional<D3D12_CLEAR_VALUE> BufferContext::BufferAssembler::GetClearValue(const ColorBufferDescription& desc_)
-{
-	return desc_.WatchClearValue();
-}
-
-template<>
-std::unique_ptr<ColorBuffer> BufferContext::BufferAssembler::AssembleBuffer<ColorBuffer, ColorBufferDescription>
-(ResourceContainer resourceContainer_, const ColorBufferDescription& desc_, std::string nameCnv_)
-{
-	//バッファ生成
-	return std::make_unique<ColorBuffer>
-	(
-	    ColorBuffer::InstanceKey{},
-	    nameCnv_,
-	    std::move(resourceContainer_),
-	    desc_
-	);
-}
-
-template<>
-void BufferContext::BufferAssembler::AssembleView<ColorBuffer, ColorBufferDescription>
-(ColorBuffer* buffer_, const ColorBufferDescription& desc_, GPUBufferBehavior::ResourceAccessKey accessKey_, GPUBufferBehavior::InstanceKey instanceKey_)
-{
-	auto srvDesc = desc_.CreateSRV_Desc();
-	auto rtvDesc = desc_.CreateRTV_Desc();
-
-	for (int i = 0;i < (int)desc_.numBuffer;++i)
-	{
-		//srv作成
-		CreateView(buffer_, srvDesc, i, accessKey_, instanceKey_);
-		Logger::Log("Create: srv", fileName);
-		//UAV生成
-		CreateView(buffer_, rtvDesc, i, accessKey_, instanceKey_);
-		Logger::Log("Create: rtv", fileName);
-
-	}
-}
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 template<>
-std::optional<D3D12_CLEAR_VALUE> BufferContext::BufferAssembler::GetClearValue(const DepthStencilBufferDescription& desc_)
-{
-	return desc_.WatchClearValue();
-}
-
-template<>
-std::unique_ptr<DepthStencilBuffer> BufferContext::BufferAssembler::AssembleBuffer<DepthStencilBuffer, DepthStencilBufferDescription>
-(ResourceContainer resourceContainer_, const DepthStencilBufferDescription& desc_, std::string nameCnv_)
-{
-	//バッファ生成
-	return std::make_unique<DepthStencilBuffer>
-	(
-		DepthStencilBuffer::InstanceKey{},
-		nameCnv_,
-		std::move(resourceContainer_),
-		desc_
-	);
-}
-
-template<>
-void BufferContext::BufferAssembler::AssembleView<DepthStencilBuffer, DepthStencilBufferDescription>
-(DepthStencilBuffer* buffer_, const DepthStencilBufferDescription& desc_, GPUBufferBehavior::ResourceAccessKey accessKey_, GPUBufferBehavior::InstanceKey instanceKey_)
-{
-	auto srvDesc = desc_.CreateSRV_Desc();
-	auto dsvDesc = desc_.CreateDSVDesc();
-
-	for (int i = 0;i < (int)desc_.numBuffer;++i)
-	{
-		//srv作成
-		CreateView(buffer_, srvDesc, i, accessKey_, instanceKey_);
-		Logger::Log("Create: srv", fileName);
-		//DSV生成
-		CreateView(buffer_, dsvDesc, i, accessKey_, instanceKey_);
-		Logger::Log("Create: dsv", fileName);
-
-	}
-}
-///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-template<>
-std::optional<D3D12_CLEAR_VALUE> BufferContext::BufferAssembler::GetClearValue(const ConstantBufferDescription& desc_)
-{
-	return std::nullopt;
-}
-	
-template<>
-std::unique_ptr<ConstantBuffer> BufferContext::BufferAssembler::AssembleBuffer<ConstantBuffer, ConstantBufferDescription>
-(ResourceContainer resourceContainer_, const ConstantBufferDescription& desc_, std::string nameCnv_)
-{
-	//バッファ生成
-	return std::make_unique<ConstantBuffer>
-	(
-		ConstantBuffer::InstanceKey{},
-		nameCnv_,
-		std::move(resourceContainer_),
-		desc_
-	);
-}
-
-///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-template<>
-std::optional<D3D12_CLEAR_VALUE> BufferContext::BufferAssembler::GetClearValue(const ComputeBufferDescription& desc_)
-{
-	return std::nullopt;
-}
-
-template<>
-std::unique_ptr<ComputeBuffer> BufferContext::BufferAssembler::AssembleBuffer<ComputeBuffer, ComputeBufferDescription>
-(ResourceContainer resourceContainer_, const ComputeBufferDescription& desc_, std::string nameCnv_)
-{
-	//バッファ生成
-	return std::make_unique<ComputeBuffer>
-	(
-		ComputeBuffer::InstanceKey{},
-		nameCnv_,
-		std::move(resourceContainer_),
-		desc_
-	);
-}
-
-template<>
-void BufferContext::BufferAssembler::AssembleView<ComputeBuffer, ComputeBufferDescription>
-(ComputeBuffer* buffer_, const ComputeBufferDescription& desc_, GPUBufferBehavior::ResourceAccessKey accessKey_, GPUBufferBehavior::InstanceKey instanceKey_)
-{
-	auto srvDesc = desc_.CreateSRV_Desc();
-	auto uavDesc = desc_.CreateUAV_Desc();
-
-	for (int i = 0;i < (int)desc_.numBuffer;++i)
-	{
-		//srv作成
-		CreateView(buffer_, srvDesc, i, accessKey_, instanceKey_);
-		Logger::Log("Create: srv", fileName);
-		//UAV生成
-		CreateView(buffer_, uavDesc, i, accessKey_, instanceKey_);
-		Logger::Log("Create: uav", fileName);
-	}
-
-}
-
-///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-template<>
-std::optional<D3D12_CLEAR_VALUE> BufferContext::BufferAssembler::GetClearValue(const StaticStructuredBufferDescription& desc_)
-{
-	return std::nullopt;
-}
-
-template<>
-void BufferContext::BufferAssembler::AssembleView<StaticStructuredBuffer, StaticStructuredBufferDescription>
-(StaticStructuredBuffer* buffer_, const StaticStructuredBufferDescription& desc_, GPUBufferBehavior::ResourceAccessKey accessKey_, GPUBufferBehavior::InstanceKey instanceKey_)
-{
-	auto srvDesc = desc_.CreateSRV_Desc();
-
-	//srv作成
-	CreateView(buffer_, srvDesc, 0, accessKey_, instanceKey_);
-	Logger::Log("Create: srv", fileName);
-
-}
-
-template<>
-std::unique_ptr<StaticStructuredBuffer> BufferContext::BufferAssembler::AssembleBuffer<StaticStructuredBuffer, StaticStructuredBufferDescription>
-(ResourceContainer resourceContainer_, const StaticStructuredBufferDescription& desc_, std::string nameCnv_)
-{
-	//バッファ生成
-	return std::make_unique<StaticStructuredBuffer>
-	(
-		StaticStructuredBuffer::InstanceKey{},
-		nameCnv_,
-		std::move(resourceContainer_),
-		desc_
-	);
-
-}
-///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-template<>
-std::optional<D3D12_CLEAR_VALUE> BufferContext::BufferAssembler::GetClearValue(const UploadStructuredBufferDescription& desc_)
-{
-	return std::nullopt;
-
-}
-
-template<>
-void BufferContext::BufferAssembler::AssembleView<UploadStructuredBuffer, UploadStructuredBufferDescription>
-(UploadStructuredBuffer* buffer_, const UploadStructuredBufferDescription& desc_, GPUBufferBehavior::ResourceAccessKey accessKey_, GPUBufferBehavior::InstanceKey instanceKey_)
-{
-	auto srvDesc = desc_.CreateSRV_Desc();
-
-	//srv作成
-	CreateView(buffer_, srvDesc, 0, accessKey_, instanceKey_);
-	Logger::Log("Create: srv", fileName);
-	//srv生成
-	CreateView(buffer_, srvDesc, 1, accessKey_, instanceKey_);
-	Logger::Log("Create: srv", fileName);
-}
-
-template<>
-std::unique_ptr<UploadStructuredBuffer> BufferContext::BufferAssembler::AssembleBuffer<UploadStructuredBuffer, UploadStructuredBufferDescription>
-(ResourceContainer resourceContainer_, const UploadStructuredBufferDescription& desc_, std::string nameCnv_)
-{
-	//バッファ生成
-	return std::make_unique<UploadStructuredBuffer>
-	(
-		UploadStructuredBuffer::InstanceKey{},
-		nameCnv_,
-		std::move(resourceContainer_),
-		desc_
-	);
-
-}
-///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-template<>
-void BufferContext::BufferAssembler::CreateView
+BufferContext::BufferAssembler::ResourceContainer BufferContext::BufferAssembler::AssembleResource
 (
-	GPUBufferBehavior* buffer_,
-	const D3D12_RENDER_TARGET_VIEW_DESC& desc_,
-	uint8_t index_,
-	GPUBufferBehavior::ResourceAccessKey accessKey_,
-	GPUBufferBehavior::InstanceKey instanceKey_
+	const std::string& nameCnv_,
+	const ColorBufferDescription& desc_
 )
 {
-	D3D12_CPU_DESCRIPTOR_HANDLE rtvCPU{};
-
-	std::tie(std::ignore, rtvCPU, std::ignore) = viewCreator->CreateView(buffer_->GetResource(accessKey_, index_), &desc_);
-	buffer_->OverrideHeapIndex<ViewType::kRTV>(instanceKey_, rtvCPU, index_);
+	return ResourceAssembler::AssembleResource
+	(
+		*resourceCreator,
+		nameCnv_,
+		desc_
+	);
 }
 
 template<>
-void BufferContext::BufferAssembler::CreateView
+BufferContext::BufferAssembler::ResourceContainer BufferContext::BufferAssembler::AssembleResource
 (
-	GPUBufferBehavior* buffer_,
-	const D3D12_DEPTH_STENCIL_VIEW_DESC& desc_,
-	uint8_t index_,
-	GPUBufferBehavior::ResourceAccessKey accessKey_,
-	GPUBufferBehavior::InstanceKey instanceKey_
+	const std::string& nameCnv_,
+	const DepthStencilBufferDescription& desc_
 )
 {
-	D3D12_CPU_DESCRIPTOR_HANDLE dsvCPU{};
-
-	std::tie(std::ignore, dsvCPU, std::ignore) = viewCreator->CreateView(buffer_->GetResource(accessKey_, index_), &desc_);
-	buffer_->OverrideHeapIndex<ViewType::kDSV>(instanceKey_, dsvCPU, index_);
+	return ResourceAssembler::AssembleResource
+	(
+		*resourceCreator,
+		nameCnv_,
+		desc_
+	);
 }
 
 template<>
-void BufferContext::BufferAssembler::CreateView
+BufferContext::BufferAssembler::ResourceContainer BufferContext::BufferAssembler::AssembleResource
 (
-	GPUBufferBehavior* buffer_,
-	const D3D12_SHADER_RESOURCE_VIEW_DESC& desc_,
-	uint8_t index_,
-	GPUBufferBehavior::ResourceAccessKey accessKey_,
-	GPUBufferBehavior::InstanceKey instanceKey_
+	const std::string& nameCnv_,
+	const ConstantBufferDescription& desc_
 )
 {
-
-	SRVHeapIndex srvIndex{};
-	D3D12_CPU_DESCRIPTOR_HANDLE srvCPU{};
-	D3D12_GPU_DESCRIPTOR_HANDLE srvGPU{};
-
-	std::tie(srvIndex, srvCPU, srvGPU) = viewCreator->CreateView(buffer_->GetResource(accessKey_, index_), &desc_);
-	buffer_->OverrideHeapIndex<ViewType::kSRV>(instanceKey_, srvIndex, index_);
-	buffer_->OverrideHeapIndex<ViewType::kSRV>(instanceKey_, srvCPU, index_);
-	buffer_->OverrideHeapIndex<ViewType::kSRV>(instanceKey_, srvGPU, index_);
+	return ResourceAssembler::AssembleResource
+	(
+		*resourceCreator,
+		nameCnv_,
+		desc_
+	);
 }
 
 template<>
-void BufferContext::BufferAssembler::CreateView
+BufferContext::BufferAssembler::ResourceContainer BufferContext::BufferAssembler::AssembleResource
 (
-	GPUBufferBehavior* buffer_,
-	const D3D12_UNORDERED_ACCESS_VIEW_DESC& desc_,
-	uint8_t index_,
-	GPUBufferBehavior::ResourceAccessKey accessKey_,
-	GPUBufferBehavior::InstanceKey instanceKey_
+	const std::string& nameCnv_,
+	const ComputeBufferDescription& desc_
 )
 {
-	SRVHeapIndex uavIndex{};
-	D3D12_CPU_DESCRIPTOR_HANDLE uavCPU{};
-	D3D12_GPU_DESCRIPTOR_HANDLE uavGPU{};
+	return ResourceAssembler::AssembleResource
+	(
+		*resourceCreator,
+		nameCnv_,
+		desc_
+	);
+}
 
-	std::tie(uavIndex, uavCPU, uavGPU) = viewCreator->CreateView(buffer_->GetResource(accessKey_, index_), &desc_);
-	buffer_->OverrideHeapIndex<ViewType::kUAV>(instanceKey_, uavIndex, index_);
-	buffer_->OverrideHeapIndex<ViewType::kUAV>(instanceKey_, uavCPU, index_);
-	buffer_->OverrideHeapIndex<ViewType::kUAV>(instanceKey_, uavGPU, index_);
+template<>
+BufferContext::BufferAssembler::ResourceContainer BufferContext::BufferAssembler::AssembleResource
+(
+	const std::string& nameCnv_,
+	const StaticStructuredBufferDescription& desc_
+)
+{
+	return ResourceAssembler::AssembleResource
+	(
+		*resourceCreator,
+		nameCnv_,
+		desc_
+	);
+}
+
+template<>
+BufferContext::BufferAssembler::ResourceContainer BufferContext::BufferAssembler::AssembleResource
+(
+	const std::string& nameCnv_,
+	const UploadStructuredBufferDescription& desc_
+)
+{
+	return ResourceAssembler::AssembleResource
+	(
+		*resourceCreator,
+		nameCnv_,
+		desc_
+	);
 }
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+template<>
+std::string BufferContext::BufferAssembler::ConvertName<ColorBuffer>(const std::string& srcName_)
+{
+	return BufferNameConverter::ConvertName<ColorBuffer>(srcName_);
+}
+template<>
+std::string BufferContext::BufferAssembler::ConvertName<DepthStencilBuffer>(const std::string& srcName_)
+{
+	return BufferNameConverter::ConvertName<DepthStencilBuffer>(srcName_);
+}
+template<>
+std::string BufferContext::BufferAssembler::ConvertName<ConstantBuffer>(const std::string& srcName_)
+{
+	return BufferNameConverter::ConvertName<ConstantBuffer>(srcName_);
+}
+
+template<>
+std::string BufferContext::BufferAssembler::ConvertName<StaticStructuredBuffer>(const std::string& srcName_)
+{
+	return BufferNameConverter::ConvertName<StaticStructuredBuffer>(srcName_);
+}
+
+template<>
+std::string BufferContext::BufferAssembler::ConvertName<UploadStructuredBuffer>(const std::string& srcName_)
+{
+	return BufferNameConverter::ConvertName<UploadStructuredBuffer>(srcName_);
+}
+
+template<>
+std::string BufferContext::BufferAssembler::ConvertName<ComputeBuffer>(const std::string& srcName_)
+{
+	return BufferNameConverter::ConvertName<ComputeBuffer>(srcName_);
+}
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+template<>
+std::unique_ptr<ColorBuffer> BufferContext::BufferAssembler::Materialize(ResourceContainer resourceContainer_, const BufferDescriptionBehavior& desc_, std::string nameCnv_)
+{
+	return std::move(BufferMaterializer::Materialize<ColorBuffer>(std::move(resourceContainer_), desc_, nameCnv_));
+}
+template<>
+std::unique_ptr<DepthStencilBuffer> BufferContext::BufferAssembler::Materialize(ResourceContainer resourceContainer_, const BufferDescriptionBehavior& desc_, std::string nameCnv_)
+{
+	return std::move(BufferMaterializer::Materialize<DepthStencilBuffer>(std::move(resourceContainer_), desc_, nameCnv_));
+}
+template<>
+std::unique_ptr<StaticStructuredBuffer> BufferContext::BufferAssembler::Materialize(ResourceContainer resourceContainer_, const BufferDescriptionBehavior& desc_, std::string nameCnv_)
+{
+	return std::move(BufferMaterializer::Materialize<StaticStructuredBuffer>(std::move(resourceContainer_), desc_, nameCnv_));
+}
+template<>
+std::unique_ptr<ConstantBuffer> BufferContext::BufferAssembler::Materialize(ResourceContainer resourceContainer_, const BufferDescriptionBehavior& desc_, std::string nameCnv_)
+{
+	return std::move(BufferMaterializer::Materialize<ConstantBuffer>(std::move(resourceContainer_), desc_, nameCnv_));
+}
+template<>
+std::unique_ptr<UploadStructuredBuffer> BufferContext::BufferAssembler::Materialize(ResourceContainer resourceContainer_, const BufferDescriptionBehavior& desc_, std::string nameCnv_)
+{
+	return std::move(BufferMaterializer::Materialize<UploadStructuredBuffer>(std::move(resourceContainer_), desc_, nameCnv_));
+}
+template<>
+std::unique_ptr<ComputeBuffer> BufferContext::BufferAssembler::Materialize(ResourceContainer resourceContainer_, const BufferDescriptionBehavior& desc_, std::string nameCnv_)
+{
+	return std::move(BufferMaterializer::Materialize<ComputeBuffer>(std::move(resourceContainer_), desc_, nameCnv_));
+}
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+template<>
+void BufferContext::BufferAssembler::AssembleView
+(
+	GPUBufferBehavior::ResourceAccessKey accessKey_,
+	GPUBufferBehavior::InstanceKey instanceKey_,
+	GPUBufferBehavior* buffer_,
+	const ColorBufferDescription& desc_
+)
+{
+	return ViewAssembler::AssembleView
+	(
+		accessKey_,
+		instanceKey_,
+		*viewCreator,
+		buffer_,
+		desc_
+	);
+}
+template<>
+void BufferContext::BufferAssembler::AssembleView
+(
+	GPUBufferBehavior::ResourceAccessKey accessKey_,
+	GPUBufferBehavior::InstanceKey instanceKey_,
+	GPUBufferBehavior* buffer_,
+	const DepthStencilBufferDescription& desc_
+)
+{
+	return ViewAssembler::AssembleView
+	(
+		accessKey_,
+		instanceKey_,
+		*viewCreator,
+		buffer_,
+		desc_
+	);
+}
+template<>
+void BufferContext::BufferAssembler::AssembleView
+(
+	GPUBufferBehavior::ResourceAccessKey accessKey_,
+	GPUBufferBehavior::InstanceKey instanceKey_,
+	GPUBufferBehavior* buffer_,
+	const UploadStructuredBufferDescription& desc_
+)
+{
+	return ViewAssembler::AssembleView
+	(
+		accessKey_,
+		instanceKey_,
+		*viewCreator,
+		buffer_,
+		desc_
+	);
+}
+template<>
+void BufferContext::BufferAssembler::AssembleView
+(
+	GPUBufferBehavior::ResourceAccessKey accessKey_,
+	GPUBufferBehavior::InstanceKey instanceKey_,
+	GPUBufferBehavior* buffer_,
+	const ComputeBufferDescription& desc_
+)
+{
+	return ViewAssembler::AssembleView
+	(
+		accessKey_,
+		instanceKey_,
+		*viewCreator,
+		buffer_,
+		desc_
+	);
+}
+template<>
+void BufferContext::BufferAssembler::AssembleView
+(
+	GPUBufferBehavior::ResourceAccessKey accessKey_,
+	GPUBufferBehavior::InstanceKey instanceKey_,
+	GPUBufferBehavior* buffer_,
+	const StaticStructuredBufferDescription& desc_
+)
+{
+	return ViewAssembler::AssembleView
+	(
+		accessKey_,
+		instanceKey_,
+		*viewCreator,
+		buffer_,
+		desc_
+	);
+}
 
 
 
@@ -7193,10 +7142,7 @@ void BufferContext::BufferAssembler::CreateView
 
 //バッファクラスの前方宣言
 #include "../../BufferDefinition/AllBuffersFwd.h"
-#include "../../BufferDefinition/AllBufferDescsInclude.h"
-
-//リソース生成
-#include "../ResourceCreator/ResourceCreator.h"
+#include "../../BufferDefinition/AllBufferDescsIFwd.h"
 
 //外部
 #include "../../../../Core/DescriptorHeap/DescriptorHeapContext.h"
@@ -7204,7 +7150,6 @@ void BufferContext::BufferAssembler::CreateView
 
 //ビュー生成ツール
 class DescriptorHeapContext::ViewCreator;
-
 
 
 //バッファとディスクを特定のクラスに限定して組み立てる
@@ -7234,18 +7179,13 @@ public:
 
         Logger::Entry("AssemblingStart:" + nameCnv);
 
-        //リソース生成に必要な情報を組み立てる
-        std::pair<D3D12_RESOURCE_DESC, D3D12_HEAP_PROPERTIES> resourceDescAndHeapProp  = AssembleResourceCreateRequirements(desc_);
-
-
         //生リソース生成
-        ResourceContainer resourceContainer =
-            std::move(AssembleResource(resourceDescAndHeapProp.first, resourceDescAndHeapProp.second, nameCnv, desc_));
+        ResourceContainer resourceContainer = std::move(AssembleResource(nameCnv, desc_));
 
         //バッファの実体生成
         std::unique_ptr<BufferType> buffer = std::move
         (
-            AssembleBuffer<BufferType>(std::move(resourceContainer), desc_, nameCnv)
+            Materialize<BufferType>(std::move(resourceContainer), desc_, nameCnv)
         );
 
         //ビュー生成。ConstantBuffer以外
@@ -7254,7 +7194,7 @@ public:
             GPUBufferBehavior::ResourceAccessKey reourceAccessKey;
             GPUBufferBehavior::InstanceKey instanceKey;
 
-            AssembleView<BufferType>(buffer.get(), desc_, reourceAccessKey, instanceKey);
+            AssembleView(reourceAccessKey, instanceKey,buffer.get(), desc_);
         }
 
         Logger::End("AssemblingComplete:" + nameCnv);
@@ -7265,196 +7205,939 @@ public:
 
 private:
 
+    //生リソースを組み立てる
+    class ResourceAssembler;
+    //名前を変換する
+    class BufferNameConverter;
+    //バッファの実体を作る
+    class BufferMaterializer;
+    //viewCreatorを使ってバッファのビューを生成
+    class ViewAssembler;
+
     //生リソース生成
     template<typename DescType>
     ResourceContainer AssembleResource
     (
-        D3D12_RESOURCE_DESC resourceDesc_,
-        D3D12_HEAP_PROPERTIES heapProp_,
         const std::string& nameCnv_,
         const DescType& desc_
-    )
-    {
-        //クリアバリュー
-        std::optional<D3D12_CLEAR_VALUE> clearValueOpt = GetClearValue(desc_);
+    );
 
-        //リソース生成
-        return resourceCreator->Create
-        (
-            resourceDesc_,
-            heapProp_,
-            clearValueOpt ? &clearValueOpt.value() : nullptr,
-            desc_.initialState,
-            nameCnv_,
-            (UINT)desc_.numBuffer
-
-        );
-    }
-   
     //名前変換
     template<typename BufferType>
-    std::string ConvertName(const std::string& srcName_)
+    std::string ConvertName(const std::string& srcName_);
+
+    //バッファ生成
+    template<typename BufferType>
+    std::unique_ptr<BufferType> Materialize(ResourceContainer resourceContainer_, const BufferDescriptionBehavior& desc_, std::string nameCnv_);
+    
+    //ビュー生成
+    template<typename DescType>
+    void AssembleView
+    (
+        GPUBufferBehavior::ResourceAccessKey accessKey_, 
+        GPUBufferBehavior::InstanceKey instanceKey_,
+        GPUBufferBehavior* buffer_, 
+        const DescType& desc_
+    );
+
+};
+
+
+
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+template<>
+BufferContext::BufferAssembler::ResourceContainer BufferContext::BufferAssembler::AssembleResource
+(
+    const std::string& nameCnv_,
+    const ColorBufferDescription& desc_
+);
+template<>
+BufferContext::BufferAssembler::ResourceContainer BufferContext::BufferAssembler::AssembleResource
+(
+    const std::string& nameCnv_,
+    const DepthStencilBufferDescription& desc_
+);
+template<>
+BufferContext::BufferAssembler::ResourceContainer BufferContext::BufferAssembler::AssembleResource
+(
+    const std::string& nameCnv_,
+    const ConstantBufferDescription& desc_
+);
+template<>
+BufferContext::BufferAssembler::ResourceContainer BufferContext::BufferAssembler::AssembleResource
+(
+    const std::string& nameCnv_,
+    const ComputeBufferDescription& desc_
+);
+template<>
+BufferContext::BufferAssembler::ResourceContainer BufferContext::BufferAssembler::AssembleResource
+(
+    const std::string& nameCnv_,
+    const StaticStructuredBufferDescription& desc_
+);
+template<>
+BufferContext::BufferAssembler::ResourceContainer BufferContext::BufferAssembler::AssembleResource
+(
+    const std::string& nameCnv_,
+    const UploadStructuredBufferDescription& desc_
+);
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+template<>
+std::string BufferContext::BufferAssembler::ConvertName<ColorBuffer>(const std::string& srcName_);
+template<>
+std::string BufferContext::BufferAssembler::ConvertName<DepthStencilBuffer>(const std::string& srcName_);
+template<>
+std::string BufferContext::BufferAssembler::ConvertName<ConstantBuffer>(const std::string& srcName_);
+template<>
+std::string BufferContext::BufferAssembler::ConvertName<StaticStructuredBuffer>(const std::string& srcName_);
+template<>
+std::string BufferContext::BufferAssembler::ConvertName<UploadStructuredBuffer>(const std::string& srcName_);
+template<>
+std::string BufferContext::BufferAssembler::ConvertName<ComputeBuffer>(const std::string& srcName_);
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+template<>
+std::unique_ptr<ColorBuffer> BufferContext::BufferAssembler::Materialize(ResourceContainer resourceContainer_, const BufferDescriptionBehavior& desc_, std::string nameCnv_);
+template<>
+std::unique_ptr<DepthStencilBuffer> BufferContext::BufferAssembler::Materialize(ResourceContainer resourceContainer_, const BufferDescriptionBehavior& desc_, std::string nameCnv_);
+template<>
+std::unique_ptr<StaticStructuredBuffer> BufferContext::BufferAssembler::Materialize(ResourceContainer resourceContainer_, const BufferDescriptionBehavior& desc_, std::string nameCnv_);
+template<>
+std::unique_ptr<ConstantBuffer> BufferContext::BufferAssembler::Materialize(ResourceContainer resourceContainer_, const BufferDescriptionBehavior& desc_, std::string nameCnv_);
+template<>
+std::unique_ptr<UploadStructuredBuffer> BufferContext::BufferAssembler::Materialize(ResourceContainer resourceContainer_, const BufferDescriptionBehavior& desc_, std::string nameCnv_);
+template<>
+std::unique_ptr<ComputeBuffer> BufferContext::BufferAssembler::Materialize(ResourceContainer resourceContainer_, const BufferDescriptionBehavior& desc_, std::string nameCnv_);
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+template<>
+void BufferContext::BufferAssembler::AssembleView
+(
+    GPUBufferBehavior::ResourceAccessKey accessKey_,
+    GPUBufferBehavior::InstanceKey instanceKey_,
+    GPUBufferBehavior* buffer_,
+    const ColorBufferDescription& desc_
+);
+template<>
+void BufferContext::BufferAssembler::AssembleView
+(
+    GPUBufferBehavior::ResourceAccessKey accessKey_,
+    GPUBufferBehavior::InstanceKey instanceKey_,
+    GPUBufferBehavior* buffer_,
+    const DepthStencilBufferDescription& desc_
+);
+template<>
+void BufferContext::BufferAssembler::AssembleView
+(
+    GPUBufferBehavior::ResourceAccessKey accessKey_,
+    GPUBufferBehavior::InstanceKey instanceKey_,
+    GPUBufferBehavior* buffer_,
+    const UploadStructuredBufferDescription& desc_
+);
+template<>
+void BufferContext::BufferAssembler::AssembleView
+(
+    GPUBufferBehavior::ResourceAccessKey accessKey_,
+    GPUBufferBehavior::InstanceKey instanceKey_,
+    GPUBufferBehavior* buffer_,
+    const ComputeBufferDescription& desc_
+);
+template<>
+void BufferContext::BufferAssembler::AssembleView
+(
+    GPUBufferBehavior::ResourceAccessKey accessKey_,
+    GPUBufferBehavior::InstanceKey instanceKey_,
+    GPUBufferBehavior* buffer_,
+    const StaticStructuredBufferDescription& desc_
+);
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Buffer\BufferCreateTools\BufferAssembler\BufferAssemblerTools\BufferMaterializer\BufferMaterializer.cpp ===
+========================================
+#include "PreCompileHeader.h"
+#include "BufferMaterializer.h"
+#include "../../../../BufferDefinition/AllBuffersInclude.h"
+
+
+
+template<>
+static [[nodiscard]] std::unique_ptr<ColorBuffer> BufferContext::BufferAssembler::BufferMaterializer::Materialize
+(
+	ResourceContainer resourceContainer_,
+	const BufferDescriptionBehavior& desc_,
+	std::string nameCnv_
+)
+{
+	//バッファ生成
+	return std::make_unique<ColorBuffer>
+	(
+		ColorBuffer::InstanceKey{},
+		nameCnv_,
+		std::move(resourceContainer_),
+		desc_
+	);
+
+}
+
+template<>
+static [[nodiscard]] std::unique_ptr<DepthStencilBuffer> BufferContext::BufferAssembler::BufferMaterializer::Materialize
+(
+	ResourceContainer resourceContainer_,
+	const BufferDescriptionBehavior& desc_,
+	std::string nameCnv_
+)
+{
+	//バッファ生成
+	return std::make_unique<DepthStencilBuffer>
+	(
+		DepthStencilBuffer::InstanceKey{},
+		nameCnv_,
+		std::move(resourceContainer_),
+		desc_
+	);
+
+}
+
+template<>
+static [[nodiscard]] std::unique_ptr<StaticStructuredBuffer> BufferContext::BufferAssembler::BufferMaterializer::Materialize
+(
+	ResourceContainer resourceContainer_,
+	const BufferDescriptionBehavior& desc_,
+	std::string nameCnv_
+)
+{
+	//バッファ生成
+	return std::make_unique<StaticStructuredBuffer>
+	(
+		StaticStructuredBuffer::InstanceKey{},
+		nameCnv_,
+		std::move(resourceContainer_),
+		desc_
+	);
+
+}
+
+template<>
+static [[nodiscard]] std::unique_ptr<UploadStructuredBuffer> BufferContext::BufferAssembler::BufferMaterializer::Materialize
+(
+	ResourceContainer resourceContainer_,
+	const BufferDescriptionBehavior& desc_,
+	std::string nameCnv_
+)
+{
+	//バッファ生成
+	return std::make_unique<UploadStructuredBuffer>
+		(
+			UploadStructuredBuffer::InstanceKey{},
+			nameCnv_,
+			std::move(resourceContainer_),
+			desc_
+		);
+
+}
+
+template<>
+static [[nodiscard]] std::unique_ptr<ComputeBuffer> BufferContext::BufferAssembler::BufferMaterializer::Materialize
+(
+	ResourceContainer resourceContainer_,
+	const BufferDescriptionBehavior& desc_,
+	std::string nameCnv_
+)
+{
+	//バッファ生成
+	return std::make_unique<ComputeBuffer>
+		(
+			ComputeBuffer::InstanceKey{},
+			nameCnv_,
+			std::move(resourceContainer_),
+			desc_
+		);
+
+}
+
+template<>
+static [[nodiscard]] std::unique_ptr<ConstantBuffer> BufferContext::BufferAssembler::BufferMaterializer::Materialize
+(
+	ResourceContainer resourceContainer_,
+	const BufferDescriptionBehavior& desc_,
+	std::string nameCnv_
+)
+{
+	//バッファ生成
+	return std::make_unique<ConstantBuffer>
+	(
+		ConstantBuffer::InstanceKey{},
+		nameCnv_,
+		std::move(resourceContainer_),
+		desc_
+	);
+
+}
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Buffer\BufferCreateTools\BufferAssembler\BufferAssemblerTools\BufferMaterializer\BufferMaterializer.h ===
+========================================
+#pragma once
+#include "../../BufferAssembler.h"
+
+class BufferContext::BufferAssembler::BufferMaterializer
+{
+	friend class BufferContext::BufferAssembler;
+
+	template<typename BufferType>
+	static [[nodiscard]] std::unique_ptr<BufferType> Materialize
+	(
+		ResourceContainer resourceContainer_,
+		const BufferDescriptionBehavior& desc_,
+		std::string nameCnv_
+	);
+
+};
+
+template<>
+static [[nodiscard]] std::unique_ptr<ColorBuffer> BufferContext::BufferAssembler::BufferMaterializer::Materialize
+(
+	ResourceContainer resourceContainer_,
+	const BufferDescriptionBehavior& desc_,
+	std::string nameCnv_
+);
+
+template<>
+static [[nodiscard]] std::unique_ptr<DepthStencilBuffer> BufferContext::BufferAssembler::BufferMaterializer::Materialize
+(
+	ResourceContainer resourceContainer_,
+	const BufferDescriptionBehavior& desc_,
+	std::string nameCnv_
+);
+
+template<>
+static [[nodiscard]] std::unique_ptr<StaticStructuredBuffer> BufferContext::BufferAssembler::BufferMaterializer::Materialize
+(
+	ResourceContainer resourceContainer_,
+	const BufferDescriptionBehavior& desc_,
+	std::string nameCnv_
+);
+
+template<>
+static [[nodiscard]] std::unique_ptr<UploadStructuredBuffer> BufferContext::BufferAssembler::BufferMaterializer::Materialize
+(
+	ResourceContainer resourceContainer_,
+	const BufferDescriptionBehavior& desc_,
+	std::string nameCnv_
+);
+
+template<>
+static [[nodiscard]] std::unique_ptr<ComputeBuffer> BufferContext::BufferAssembler::BufferMaterializer::Materialize
+(
+	ResourceContainer resourceContainer_,
+	const BufferDescriptionBehavior& desc_,
+	std::string nameCnv_
+);
+
+template<>
+static [[nodiscard]] std::unique_ptr<ConstantBuffer> BufferContext::BufferAssembler::BufferMaterializer::Materialize
+(
+	ResourceContainer resourceContainer_,
+	const BufferDescriptionBehavior& desc_,
+	std::string nameCnv_
+);
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Buffer\BufferCreateTools\BufferAssembler\BufferAssemblerTools\BufferNameConverter\BufferNameConverter.cpp ===
+========================================
+#include "PreCompileHeader.h"
+#include "BufferNameConverter.h"
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Buffer\BufferCreateTools\BufferAssembler\BufferAssemblerTools\BufferNameConverter\BufferNameConverter.h ===
+========================================
+#pragma once
+#include "../../BufferAssembler.h"
+
+class BufferContext::BufferAssembler::BufferNameConverter
+{
+    friend class BufferContext::BufferAssembler;
+
+    //名前変換
+    template<typename BufferType>
+    static inline std::string ConvertName(const std::string& srcName_)
     {
         std::string attach;
 
-        if constexpr (std::is_same_v<BufferType, ConstantBuffer>)               attach  = "Constant";
-        else if constexpr (std::is_same_v<BufferType, ColorBuffer>)             attach  = "Color";
-        else if constexpr (std::is_same_v<BufferType, DepthStencilBuffer>)      attach  = "DepthStencil";
-        else if constexpr (std::is_same_v<BufferType, ComputeBuffer>)           attach  = "Compute";
-        else if constexpr (std::is_same_v<BufferType, UploadStructuredBuffer>)  attach  = "UploadStructured";
-        else if constexpr (std::is_same_v<BufferType, StaticStructuredBuffer>)  attach  = "StaticStructuredBuffer";
+        if constexpr (std::is_same_v<BufferType, ConstantBuffer>)               attach = "Constant";
+        else if constexpr (std::is_same_v<BufferType, ColorBuffer>)             attach = "Color";
+        else if constexpr (std::is_same_v<BufferType, DepthStencilBuffer>)      attach = "DepthStencil";
+        else if constexpr (std::is_same_v<BufferType, ComputeBuffer>)           attach = "Compute";
+        else if constexpr (std::is_same_v<BufferType, UploadStructuredBuffer>)  attach = "UploadStructured";
+        else if constexpr (std::is_same_v<BufferType, StaticStructuredBuffer>)  attach = "StaticStructuredBuffer";
 
         return attach + "Buffer" + "[ " + srcName_ + " ] ";
     }
 
-    //クリアバリュー取得
-    template<typename DescType>
-    std::optional<D3D12_CLEAR_VALUE> GetClearValue(const DescType& desc_);
 
-    //バッファ生成
-    template<typename BufferType, typename DescType>
-    std::unique_ptr<BufferType> AssembleBuffer(ResourceContainer resourceContainer_, const DescType& desc_, std::string nameCnv_);
-    
-    //ビュー生成
-    template<typename BufferType, typename DescType>
-    void AssembleView
-    (BufferType* buffer_, const DescType& desc_, GPUBufferBehavior::ResourceAccessKey accessKey_, GPUBufferBehavior::InstanceKey instanceKey_);
-
-    //生リソース生成に必要な情報を組み立てる
-    std::pair<D3D12_RESOURCE_DESC, D3D12_HEAP_PROPERTIES> AssembleResourceCreateRequirements(const BufferDescriptionBehavior& desc_);
-
-    //ビュー生成
-    template<typename DescType>
-    void CreateView
-    (
-        GPUBufferBehavior* buffer_,
-        const DescType& desc_,
-        uint8_t index_,
-        GPUBufferBehavior::ResourceAccessKey accessKey_,
-        GPUBufferBehavior::InstanceKey instanceKey_
-    );
 };
 
 
-///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-template<>
-void BufferContext::BufferAssembler::CreateView
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Buffer\BufferCreateTools\BufferAssembler\BufferAssemblerTools\ResourceAssembler\ResourceAssembler.cpp ===
+========================================
+#include "PreCompileHeader.h"
+#include "ResourceAssembler.h"
+
+#include "../../../ResourceCreator/ResourceCreator.h"
+#include "../../../../BufferDefinition/AllBufferDescsInclude.h"
+
+namespace
+{
+    auto const fileName = "ResourceAssembler.cpp";
+}
+
+
+
+BufferContext::BufferAssembler::ResourceContainer BufferContext::BufferAssembler::ResourceAssembler::CreateResource
 (
-    GPUBufferBehavior* buffer_,
-    const D3D12_RENDER_TARGET_VIEW_DESC& desc_,
-    uint8_t index_,
+    const BufferContext::ResourceCreator& resourceCreator_,
+    std::optional<D3D12_CLEAR_VALUE> cleaValue_,
+    const std::string& nameCnv_,
+    const BufferDescriptionBehavior& desc_
+)
+{
+
+    //リソースディスクとヒーププロパティを取得
+    std::pair < D3D12_RESOURCE_DESC, D3D12_HEAP_PROPERTIES > resDesc_Props = CreateRequirements(desc_);
+
+    //リソース生成
+    return resourceCreator_.Create
+    (
+        resDesc_Props.first,
+        resDesc_Props.second,
+        cleaValue_.has_value() ? &(*cleaValue_) : nullptr,
+        desc_.initialState,
+        nameCnv_,
+        (UINT)desc_.numBuffer
+    );
+
+}
+
+std::pair<D3D12_RESOURCE_DESC, D3D12_HEAP_PROPERTIES> BufferContext::BufferAssembler::ResourceAssembler::CreateRequirements(const BufferDescriptionBehavior& desc_)
+{
+    //要項チェック
+    desc_.CheckRequirementsFilled();
+    Logger::Log("Check: RequirementsFilled", fileName);
+
+    D3D12_HEAP_PROPERTIES heapProp = desc_.CreateHeapProperties();
+
+    D3D12_RESOURCE_DESC resourceDesc = desc_.CreateResourceDesc();
+
+    return std::make_pair(resourceDesc, heapProp);
+
+}
+
+
+template<>
+std::optional<D3D12_CLEAR_VALUE>
+BufferContext::BufferAssembler::ResourceAssembler::GetClearValue(const ColorBufferDescription& desc_)
+{
+    return desc_.WatchClearValue();
+}
+
+template<>
+std::optional<D3D12_CLEAR_VALUE>
+BufferContext::BufferAssembler::ResourceAssembler::GetClearValue(const DepthStencilBufferDescription& desc_)
+{
+    return desc_.WatchClearValue();
+}
+
+template<>
+std::optional<D3D12_CLEAR_VALUE>
+BufferContext::BufferAssembler::ResourceAssembler::GetClearValue(const ConstantBufferDescription& desc_)
+{
+    return std::nullopt;
+}
+
+template<>
+std::optional<D3D12_CLEAR_VALUE>
+BufferContext::BufferAssembler::ResourceAssembler::GetClearValue(const StaticStructuredBufferDescription& desc_)
+{
+    return std::nullopt;
+}
+
+template<>
+std::optional<D3D12_CLEAR_VALUE>
+BufferContext::BufferAssembler::ResourceAssembler::GetClearValue(const UploadStructuredBufferDescription& desc_)
+{
+    return std::nullopt;
+}
+
+template<>
+std::optional<D3D12_CLEAR_VALUE>
+BufferContext::BufferAssembler::ResourceAssembler::GetClearValue(const ComputeBufferDescription& desc_)
+{
+    return std::nullopt;
+}
+
+
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Buffer\BufferCreateTools\BufferAssembler\BufferAssemblerTools\ResourceAssembler\ResourceAssembler.h ===
+========================================
+#pragma once
+#include "../../BufferAssembler.h"
+#include "../../../../BufferDefinition/AllBufferDescsIFwd.h"
+
+
+class BufferContext::BufferAssembler::ResourceAssembler
+{
+    friend class BufferContext::BufferAssembler;
+
+public:
+    //生リソース生成
+    template<typename DescType>
+    [[nodiscard]]static ResourceContainer AssembleResource
+    (
+        const BufferContext::ResourceCreator& resourceCreator_,
+        const std::string& nameCnv_,
+        const DescType& desc_
+    )
+    {
+        std::optional<D3D12_CLEAR_VALUE> cleavalue = GetClearValue(desc_);
+
+        return CreateResource
+        (
+            resourceCreator_,
+            cleavalue,
+            nameCnv_,
+            desc_
+        );
+    }
+
+
+private:
+
+    //生リソース生成に必要な情報を組み立てる
+    static std::pair<D3D12_RESOURCE_DESC, D3D12_HEAP_PROPERTIES> CreateRequirements(const BufferDescriptionBehavior& desc_);
+
+
+    //生リソース生成
+    static ResourceContainer CreateResource
+    (
+        const BufferContext::ResourceCreator& resourceCreator_,
+        std::optional<D3D12_CLEAR_VALUE> cleaValue_,
+        const std::string& nameCnv_,
+        const BufferDescriptionBehavior& desc_
+    );
+
+    //クリアバリュー取得
+    //カラーバッファとディプスステンシルバッファのみ実体が存在
+    template<typename DescType>
+    static std::optional<D3D12_CLEAR_VALUE> GetClearValue(const DescType& desc_);
+
+};
+
+
+template<>
+static std::optional<D3D12_CLEAR_VALUE>
+BufferContext::BufferAssembler::ResourceAssembler::GetClearValue(const ColorBufferDescription& desc_);
+
+template<>
+static std::optional<D3D12_CLEAR_VALUE>
+BufferContext::BufferAssembler::ResourceAssembler::GetClearValue(const DepthStencilBufferDescription& desc_);
+
+template<>
+static std::optional<D3D12_CLEAR_VALUE>
+BufferContext::BufferAssembler::ResourceAssembler::GetClearValue(const ConstantBufferDescription& desc_);
+
+template<>
+static std::optional<D3D12_CLEAR_VALUE>
+BufferContext::BufferAssembler::ResourceAssembler::GetClearValue(const StaticStructuredBufferDescription& desc_);
+
+template<>
+static std::optional<D3D12_CLEAR_VALUE>
+BufferContext::BufferAssembler::ResourceAssembler::GetClearValue(const UploadStructuredBufferDescription& desc_);
+
+template<>
+static std::optional<D3D12_CLEAR_VALUE>
+BufferContext::BufferAssembler::ResourceAssembler::GetClearValue(const ComputeBufferDescription& desc_);
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Buffer\BufferCreateTools\BufferAssembler\BufferAssemblerTools\ViewAssembler\ViewAssembler.cpp ===
+========================================
+#include "PreCompileHeader.h"
+#include "ViewAssembler.h"
+#include "../../../../BufferDefinition/AllBufferDescsInclude.h"
+
+//外部
+#include "../../../../../../Core/DescriptorHeap/ViewCreator/ViewCreator.h"
+
+
+namespace
+{
+    auto const fileName = "ViewAssembler.cpp";
+}
+
+
+template<>
+void BufferContext::BufferAssembler::ViewAssembler::AssembleView
+(
     GPUBufferBehavior::ResourceAccessKey accessKey_,
-    GPUBufferBehavior::InstanceKey instanceKey_
+    GPUBufferBehavior::InstanceKey instanceKey_,
+    DescriptorHeapContext::ViewCreator& viewCreator_,
+    GPUBufferBehavior* buffer_,
+    const ColorBufferDescription& desc_
+)
+{
+    auto srvDesc = desc_.CreateSRV_Desc();
+    auto rtvDesc = desc_.CreateRTV_Desc();
+
+    for (int i = 0;i < (int)desc_.numBuffer;++i)
+    {
+        //srv作成
+        CreateView(accessKey_, instanceKey_, viewCreator_, buffer_, srvDesc, i);
+        Logger::Log("Create: srv", fileName);
+        //rtv生成
+        CreateView(accessKey_, instanceKey_, viewCreator_, buffer_, rtvDesc, i);
+        Logger::Log("Create: rtv", fileName);
+
+    }
+}
+
+template<>
+void BufferContext::BufferAssembler::ViewAssembler::AssembleView
+(
+    GPUBufferBehavior::ResourceAccessKey accessKey_,
+    GPUBufferBehavior::InstanceKey instanceKey_,
+    DescriptorHeapContext::ViewCreator& viewCreator_,
+    GPUBufferBehavior* buffer_,
+    const DepthStencilBufferDescription& desc_
+)
+{
+    auto srvDesc = desc_.CreateSRV_Desc();
+    auto dsvDesc = desc_.CreateDSVDesc();
+
+    for (int i = 0;i < (int)desc_.numBuffer;++i)
+    {
+        //srv作成
+        CreateView(accessKey_, instanceKey_, viewCreator_, buffer_, srvDesc, i);
+        Logger::Log("Create: srv", fileName);
+        //DSV生成
+        CreateView(accessKey_, instanceKey_, viewCreator_, buffer_, dsvDesc, i);
+        Logger::Log("Create: dsv", fileName);
+
+    }
+
+}
+
+template<>
+void BufferContext::BufferAssembler::ViewAssembler::AssembleView
+(
+    GPUBufferBehavior::ResourceAccessKey accessKey_,
+    GPUBufferBehavior::InstanceKey instanceKey_,
+    DescriptorHeapContext::ViewCreator& viewCreator_,
+    GPUBufferBehavior* buffer_,
+    const ComputeBufferDescription& desc_
+)
+{
+    auto srvDesc = desc_.CreateSRV_Desc();
+    auto uavDesc = desc_.CreateUAV_Desc();
+
+    for (int i = 0;i < (int)desc_.numBuffer;++i)
+    {
+        //srv作成
+        CreateView(accessKey_, instanceKey_, viewCreator_, buffer_, srvDesc, i);
+        Logger::Log("Create: srv", fileName);
+        //UAV生成
+        CreateView(accessKey_, instanceKey_, viewCreator_, buffer_, uavDesc, i);
+        Logger::Log("Create: uav", fileName);
+    }
+
+}
+
+template<>
+void BufferContext::BufferAssembler::ViewAssembler::AssembleView
+(
+    GPUBufferBehavior::ResourceAccessKey accessKey_,
+    GPUBufferBehavior::InstanceKey instanceKey_,
+    DescriptorHeapContext::ViewCreator& viewCreator_,
+    GPUBufferBehavior* buffer_,
+    const StaticStructuredBufferDescription& desc_
+)
+{
+    auto srvDesc = desc_.CreateSRV_Desc();
+
+    //srv作成
+    CreateView(accessKey_, instanceKey_, viewCreator_, buffer_, srvDesc, 0);
+    Logger::Log("Create: srv", fileName);
+
+}
+
+template<>
+void BufferContext::BufferAssembler::ViewAssembler::AssembleView
+(
+    GPUBufferBehavior::ResourceAccessKey accessKey_,
+    GPUBufferBehavior::InstanceKey instanceKey_,
+    DescriptorHeapContext::ViewCreator& viewCreator_,
+    GPUBufferBehavior* buffer_,
+    const UploadStructuredBufferDescription& desc_
+)
+{
+    auto srvDesc = desc_.CreateSRV_Desc();
+
+    //srv作成
+    CreateView(accessKey_, instanceKey_, viewCreator_,buffer_, srvDesc, 0);
+    Logger::Log("Create: srv", fileName);
+    //srv生成
+    CreateView(accessKey_, instanceKey_, viewCreator_, buffer_, srvDesc, 1);
+    Logger::Log("Create: srv", fileName);
+}
+
+
+
+template<>
+void BufferContext::BufferAssembler::ViewAssembler::CreateView
+(
+    GPUBufferBehavior::ResourceAccessKey accessKey_,
+    GPUBufferBehavior::InstanceKey instanceKey_,
+    DescriptorHeapContext::ViewCreator& viewCreator_,
+    GPUBufferBehavior* buffer_,
+    const D3D12_RENDER_TARGET_VIEW_DESC& viewDescType_,
+    uint8_t index_
+)
+{
+    D3D12_CPU_DESCRIPTOR_HANDLE rtvCPU{};
+
+    std::tie(std::ignore, rtvCPU, std::ignore) = viewCreator_.CreateView(buffer_->GetResource(accessKey_, index_), &viewDescType_);
+    buffer_->OverrideHeapIndex<ViewType::kRTV>(instanceKey_, rtvCPU, index_);
+
+}
+
+template<>
+void BufferContext::BufferAssembler::ViewAssembler::CreateView
+(
+    GPUBufferBehavior::ResourceAccessKey accessKey_,
+    GPUBufferBehavior::InstanceKey instanceKey_,
+    DescriptorHeapContext::ViewCreator& viewCreator_,
+    GPUBufferBehavior* buffer_,
+    const D3D12_DEPTH_STENCIL_VIEW_DESC& viewDescType_,
+    uint8_t index_
+)
+{
+    D3D12_CPU_DESCRIPTOR_HANDLE dsvCPU{};
+
+    std::tie(std::ignore, dsvCPU, std::ignore) = viewCreator_.CreateView(buffer_->GetResource(accessKey_, index_), &viewDescType_);
+    buffer_->OverrideHeapIndex<ViewType::kDSV>(instanceKey_, dsvCPU, index_);
+
+}
+
+template<>
+void BufferContext::BufferAssembler::ViewAssembler::CreateView
+(
+    GPUBufferBehavior::ResourceAccessKey accessKey_,
+    GPUBufferBehavior::InstanceKey instanceKey_,
+    DescriptorHeapContext::ViewCreator& viewCreator_,
+    GPUBufferBehavior* buffer_,
+    const D3D12_SHADER_RESOURCE_VIEW_DESC& viewDescType_,
+    uint8_t index_
+)
+{
+    SRVHeapIndex srvIndex{};
+    D3D12_CPU_DESCRIPTOR_HANDLE srvCPU{};
+    D3D12_GPU_DESCRIPTOR_HANDLE srvGPU{};
+
+    std::tie(srvIndex, srvCPU, srvGPU) = viewCreator_.CreateView(buffer_->GetResource(accessKey_, index_), &viewDescType_);
+    buffer_->OverrideHeapIndex<ViewType::kSRV>(instanceKey_, srvIndex, index_);
+    buffer_->OverrideHeapIndex<ViewType::kSRV>(instanceKey_, srvCPU, index_);
+    buffer_->OverrideHeapIndex<ViewType::kSRV>(instanceKey_, srvGPU, index_);
+
+}
+
+template<>
+void BufferContext::BufferAssembler::ViewAssembler::CreateView
+(
+    GPUBufferBehavior::ResourceAccessKey accessKey_,
+    GPUBufferBehavior::InstanceKey instanceKey_,
+    DescriptorHeapContext::ViewCreator& viewCreator_,
+    GPUBufferBehavior* buffer_,
+    const D3D12_UNORDERED_ACCESS_VIEW_DESC& viewDescType_,
+    uint8_t index_
+)
+{
+    SRVHeapIndex uavIndex{};
+    D3D12_CPU_DESCRIPTOR_HANDLE uavCPU{};
+    D3D12_GPU_DESCRIPTOR_HANDLE uavGPU{};
+
+    std::tie(uavIndex, uavCPU, uavGPU) = viewCreator_.CreateView(buffer_->GetResource(accessKey_, index_), &viewDescType_);
+    buffer_->OverrideHeapIndex<ViewType::kUAV>(instanceKey_, uavIndex, index_);
+    buffer_->OverrideHeapIndex<ViewType::kUAV>(instanceKey_, uavCPU, index_);
+    buffer_->OverrideHeapIndex<ViewType::kUAV>(instanceKey_, uavGPU, index_);
+
+}
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Buffer\BufferCreateTools\BufferAssembler\BufferAssemblerTools\ViewAssembler\ViewAssembler.h ===
+========================================
+#pragma once
+#include "../../BufferAssembler.h"
+
+class BufferContext::BufferAssembler::ViewAssembler
+{
+public:
+
+    friend class BufferContext::BufferAssembler;
+
+    //ビュー生成
+    template<typename DescType>
+    static void AssembleView
+    (
+        GPUBufferBehavior::ResourceAccessKey accessKey_,
+        GPUBufferBehavior::InstanceKey instanceKey_,
+        DescriptorHeapContext::ViewCreator& viewCreator_,
+        GPUBufferBehavior* buffer_,
+        const DescType& desc_
+    );
+
+private:
+
+    //ビュー生成ヘルパー
+    template<typename ViewDescType>
+    static void CreateView
+    (
+        GPUBufferBehavior::ResourceAccessKey accessKey_,
+        GPUBufferBehavior::InstanceKey instanceKey_,
+        DescriptorHeapContext::ViewCreator& viewCreator_,
+        GPUBufferBehavior* buffer_,
+        const ViewDescType& viewDescType_,
+        uint8_t index_
+    );
+
+};
+
+
+template<>
+void BufferContext::BufferAssembler::ViewAssembler::AssembleView
+(
+    GPUBufferBehavior::ResourceAccessKey accessKey_,
+    GPUBufferBehavior::InstanceKey instanceKey_,
+    DescriptorHeapContext::ViewCreator& viewCreator_,
+    GPUBufferBehavior* buffer_,
+    const ColorBufferDescription& desc_
 );
 
 template<>
-void BufferContext::BufferAssembler::CreateView
+void BufferContext::BufferAssembler::ViewAssembler::AssembleView
 (
-    GPUBufferBehavior* buffer_,
-    const D3D12_DEPTH_STENCIL_VIEW_DESC& desc_,
-    uint8_t index_,
     GPUBufferBehavior::ResourceAccessKey accessKey_,
-    GPUBufferBehavior::InstanceKey instanceKey_
+    GPUBufferBehavior::InstanceKey instanceKey_,
+    DescriptorHeapContext::ViewCreator& viewCreator_,
+    GPUBufferBehavior* buffer_,
+    const DepthStencilBufferDescription& desc_
 );
 
 template<>
-void BufferContext::BufferAssembler::CreateView
+void BufferContext::BufferAssembler::ViewAssembler::AssembleView
 (
-    GPUBufferBehavior* buffer_,
-    const D3D12_SHADER_RESOURCE_VIEW_DESC& desc_,
-    uint8_t index_,
     GPUBufferBehavior::ResourceAccessKey accessKey_,
-    GPUBufferBehavior::InstanceKey instanceKey_
+    GPUBufferBehavior::InstanceKey instanceKey_,
+    DescriptorHeapContext::ViewCreator& viewCreator_,
+    GPUBufferBehavior* buffer_,
+    const ComputeBufferDescription& desc_
 );
 
 template<>
-void BufferContext::BufferAssembler::CreateView
+void BufferContext::BufferAssembler::ViewAssembler::AssembleView
 (
-    GPUBufferBehavior* buffer_,
-    const D3D12_UNORDERED_ACCESS_VIEW_DESC& desc_,
-    uint8_t index_,
     GPUBufferBehavior::ResourceAccessKey accessKey_,
-    GPUBufferBehavior::InstanceKey instanceKey_
+    GPUBufferBehavior::InstanceKey instanceKey_,
+    DescriptorHeapContext::ViewCreator& viewCreator_,
+    GPUBufferBehavior* buffer_,
+    const StaticStructuredBufferDescription& desc_
 );
-///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-template<>
-std::optional<D3D12_CLEAR_VALUE> BufferContext::BufferAssembler::GetClearValue(const ColorBufferDescription& desc_);
 
 template<>
-void BufferContext::BufferAssembler::AssembleView<ColorBuffer, ColorBufferDescription>
-(ColorBuffer* buffer_, const ColorBufferDescription& desc_, GPUBufferBehavior::ResourceAccessKey accessKey_,GPUBufferBehavior::InstanceKey instanceKey_);
+void BufferContext::BufferAssembler::ViewAssembler::AssembleView
+(
+    GPUBufferBehavior::ResourceAccessKey accessKey_,
+    GPUBufferBehavior::InstanceKey instanceKey_,
+    DescriptorHeapContext::ViewCreator& viewCreator_,
+    GPUBufferBehavior* buffer_,
+    const UploadStructuredBufferDescription& desc_
+);
+
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+template<>
+void BufferContext::BufferAssembler::ViewAssembler::CreateView
+(
+    GPUBufferBehavior::ResourceAccessKey accessKey_,
+    GPUBufferBehavior::InstanceKey instanceKey_,
+    DescriptorHeapContext::ViewCreator& viewCreator_,
+    GPUBufferBehavior* buffer_,
+    const D3D12_RENDER_TARGET_VIEW_DESC& viewDescType_,
+    uint8_t index_
+);
 
 template<>
-std::unique_ptr<ColorBuffer> BufferContext::BufferAssembler::AssembleBuffer<ColorBuffer, ColorBufferDescription>
-(ResourceContainer resourceContainer_, const ColorBufferDescription& desc_, std::string nameCnv_);
-
-///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-template<>
-std::optional<D3D12_CLEAR_VALUE> BufferContext::BufferAssembler::GetClearValue(const DepthStencilBufferDescription& desc_);
-
-template<>
-void BufferContext::BufferAssembler::AssembleView<DepthStencilBuffer, DepthStencilBufferDescription>
-(DepthStencilBuffer* buffer_, const DepthStencilBufferDescription& desc_, GPUBufferBehavior::ResourceAccessKey accessKey_, GPUBufferBehavior::InstanceKey instanceKey_);
+void BufferContext::BufferAssembler::ViewAssembler::CreateView
+(
+    GPUBufferBehavior::ResourceAccessKey accessKey_,
+    GPUBufferBehavior::InstanceKey instanceKey_,
+    DescriptorHeapContext::ViewCreator& viewCreator_,
+    GPUBufferBehavior* buffer_,
+    const D3D12_DEPTH_STENCIL_VIEW_DESC& viewDescType_,
+    uint8_t index_
+);
 
 template<>
-std::unique_ptr<DepthStencilBuffer> BufferContext::BufferAssembler::AssembleBuffer<DepthStencilBuffer, DepthStencilBufferDescription>
-(ResourceContainer resourceContainer_, const DepthStencilBufferDescription& desc_, std::string nameCnv_);
-
-///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-template<>
-std::optional<D3D12_CLEAR_VALUE> BufferContext::BufferAssembler::GetClearValue(const ConstantBufferDescription& desc_);
-
-template<>
-std::unique_ptr<ConstantBuffer> BufferContext::BufferAssembler::AssembleBuffer<ConstantBuffer, ConstantBufferDescription>
-(ResourceContainer resourceContainer_, const ConstantBufferDescription& desc_, std::string nameCnv_);
-
-///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-template<>
-std::optional<D3D12_CLEAR_VALUE> BufferContext::BufferAssembler::GetClearValue(const ComputeBufferDescription& desc_);
+void BufferContext::BufferAssembler::ViewAssembler::CreateView
+(
+    GPUBufferBehavior::ResourceAccessKey accessKey_,
+    GPUBufferBehavior::InstanceKey instanceKey_,
+    DescriptorHeapContext::ViewCreator& viewCreator_,
+    GPUBufferBehavior* buffer_,
+    const D3D12_SHADER_RESOURCE_VIEW_DESC& viewDescType_,
+    uint8_t index_
+);
 
 template<>
-void BufferContext::BufferAssembler::AssembleView<ComputeBuffer, ComputeBufferDescription>
-(ComputeBuffer* buffer_, const ComputeBufferDescription& desc_, GPUBufferBehavior::ResourceAccessKey accessKey_, GPUBufferBehavior::InstanceKey instanceKey_);
-
-template<>
-std::unique_ptr<ComputeBuffer> BufferContext::BufferAssembler::AssembleBuffer<ComputeBuffer, ComputeBufferDescription>
-(ResourceContainer resourceContainer_, const ComputeBufferDescription& desc_, std::string nameCnv_);
-///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-template<>
-std::optional<D3D12_CLEAR_VALUE> BufferContext::BufferAssembler::GetClearValue(const StaticStructuredBufferDescription& desc_);
-
-template<>
-void BufferContext::BufferAssembler::AssembleView<StaticStructuredBuffer, StaticStructuredBufferDescription>
-(StaticStructuredBuffer* buffer_, const StaticStructuredBufferDescription& desc_, GPUBufferBehavior::ResourceAccessKey accessKey_, GPUBufferBehavior::InstanceKey instanceKey_);
-
-template<>
-std::unique_ptr<StaticStructuredBuffer> BufferContext::BufferAssembler::AssembleBuffer<StaticStructuredBuffer, StaticStructuredBufferDescription>
-(ResourceContainer resourceContainer_, const StaticStructuredBufferDescription& desc_, std::string nameCnv_);
-///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-template<>
-std::optional<D3D12_CLEAR_VALUE> BufferContext::BufferAssembler::GetClearValue(const UploadStructuredBufferDescription& desc_);
-
-template<>
-void BufferContext::BufferAssembler::AssembleView<UploadStructuredBuffer, UploadStructuredBufferDescription>
-(UploadStructuredBuffer* buffer_, const UploadStructuredBufferDescription& desc_, GPUBufferBehavior::ResourceAccessKey accessKey_, GPUBufferBehavior::InstanceKey instanceKey_);
-
-template<>
-std::unique_ptr<UploadStructuredBuffer> BufferContext::BufferAssembler::AssembleBuffer<UploadStructuredBuffer, UploadStructuredBufferDescription>
-(ResourceContainer resourceContainer_, const UploadStructuredBufferDescription& desc_, std::string nameCnv_);
+void BufferContext::BufferAssembler::ViewAssembler::CreateView
+(
+    GPUBufferBehavior::ResourceAccessKey accessKey_,
+    GPUBufferBehavior::InstanceKey instanceKey_,
+    DescriptorHeapContext::ViewCreator& viewCreator_,
+    GPUBufferBehavior* buffer_,
+    const D3D12_UNORDERED_ACCESS_VIEW_DESC& viewDescType_,
+    uint8_t index_
+);
 
 
 
@@ -7888,7 +8571,7 @@ BufferContext::ResourceCreator::ResourceCreator::~ResourceCreator()
 	D3D12_RESOURCE_STATES initialState_,
 	const std::string& name_,
 	int numResource_
-)
+)const
 {
 	ResourceContainer resourceContainer;
 
@@ -7928,7 +8611,7 @@ public:
 		D3D12_RESOURCE_STATES initialState_,
 		const std::string& name_,
 		int numResource_
-	);
+	)const;
 
 private:
 
@@ -7965,6 +8648,7 @@ struct StaticStructuredBufferDescription;
 #include "BufferDescriptions/DepthStencilBufferDescription/DepthStencilBufferDescription.h"
 #include "BufferDescriptions/StaticStructuredBufferDescription/StaticStructuredBufferDescription.h"
 #include "BufferDescriptions/UploadStructuredBufferDescription/UploadStructuredBufferDescription.h"
+
 
 
 
@@ -8107,13 +8791,18 @@ struct IAssembleComputeBuffer
 
 };
 
-struct IAssembleColorBuffer 
+struct IAssembleRenderTarget
+{
+	virtual D3D12_CLEAR_VALUE WatchClearValue() const = 0;
+};
+
+struct IAssembleColorBuffer:public IAssembleRenderTarget
 {
 	virtual D3D12_RENDER_TARGET_VIEW_DESC CreateRTV_Desc()const = 0; 
 	virtual D3D12_CLEAR_VALUE WatchClearValue() const = 0;
 };
 
-struct IAssembleDepthStencilBuffer 
+struct IAssembleDepthStencilBuffer: public IAssembleRenderTarget
 {
 	virtual D3D12_DEPTH_STENCIL_VIEW_DESC CreateDSVDesc()const = 0; 
 	virtual D3D12_CLEAR_VALUE WatchClearValue() const = 0;
@@ -10492,9 +11181,10 @@ private:
 #include "../../../../ModelStructure/ModelData/ResourceMesh/ResourceMesh.h"
 #include "../../../ModelSlotAllocator/ModelSlotAllocator.h"
 
-
 //外部
 #include "../../../../../Buffer/BufferCreateTools/BufferCreator.h"
+//ほんとはstaticStructuredBufferDescriptionだけでいいんだけど、文字列制限なのかインクルードできないので
+#include "../../../../../Buffer/BufferDefinition/AllBufferDescsInclude.h"
 #include "../../../../../../../../Assets/Shared/StructuredBuffer.h"
 
 using namespace StructuredBufferDataDefinition;
@@ -14843,19 +15533,19 @@ Nexus::Nexus()
 	//自身のインスタンス制限
 	ErrorMessageOutput::Assert::DetectError(InstanceLimiter::CanInstantiate(), "Nexusクラスが複数具現化されてます", fileName);
 
-	InstantiateInSequence<InitSequence::kDeviceContext>();
-	InstantiateInSequence<InitSequence::kWindowContext>();
-	InstantiateInSequence<InitSequence::kDescriptorHeapContext>();
-	InstantiateInSequence<InitSequence::kCommandContext>();
-	InstantiateInSequence<InitSequence::kBufferContext>();
-	InstantiateInSequence<InitSequence::kSwapChainContext>();
-	InstantiateInSequence<InitSequence::kShaderContext>();
-	InstantiateInSequence<InitSequence::kPSO_Context>();
-	InstantiateInSequence<InitSequence::kRootSignatureContext>();
-	InstantiateInSequence<InitSequence::kMeshContext>();
-	InstantiateInSequence<InitSequence::kRenderContext>();
-	InstantiateInSequence<InitSequence::kKickCommands>();
-	InstantiateInSequence<InitSequence::kDeleteIntermediateResources>();
+	InitializeInSequence<InitSequence::kDeviceContext>();
+	InitializeInSequence<InitSequence::kWindowContext>();
+	InitializeInSequence<InitSequence::kDescriptorHeapContext>();
+	InitializeInSequence<InitSequence::kCommandContext>();
+	InitializeInSequence<InitSequence::kBufferContext>();
+	InitializeInSequence<InitSequence::kSwapChainContext>();
+	InitializeInSequence<InitSequence::kShaderContext>();
+	InitializeInSequence<InitSequence::kPSO_Context>();
+	InitializeInSequence<InitSequence::kRootSignatureContext>();
+	InitializeInSequence<InitSequence::kMeshContext>();
+	InitializeInSequence<InitSequence::kRenderContext>();
+	InitializeInSequence<InitSequence::kKickCommands>();
+	InitializeInSequence<InitSequence::kDeleteIntermediateResources>();
 
 	ErrorMessageOutput::Assert::DetectError(next == InitSequence::kEnd, "初期化が正常に行われていない可能性がある", fileName);
 
@@ -14970,12 +15660,12 @@ private:
 	
 	//各Contextクラスの具現化、初期化を行う
 	template<InitSequence initSequence>
-	void Instantiate();
+	void Init();
 
 
 	///簡易だけども初期化順序制御を行いながら初期化する
 	template<InitSequence next_>
-	void InstantiateInSequence()
+	void InitializeInSequence()
 	{
 		ErrorMessageOutput::Assert::DetectError
 		(
@@ -14984,7 +15674,7 @@ private:
 			"Nexus.h"
 		);
 
-		Instantiate<next_>();
+		Init<next_>();
 
 		next = InitSequence((UINT)next + 1);
 	}
@@ -15060,7 +15750,7 @@ namespace
 
 
 template<>
-void Nexus::Instantiate<Nexus::InitSequence::kDeviceContext>()
+void Nexus::Init<Nexus::InitSequence::kDeviceContext>()
 {
 	//deviceContextクラスのインスタンス化
 	deviceContext.reset(new DeviceContext(DeviceContext::InstanceKey{}));
@@ -15070,7 +15760,7 @@ void Nexus::Instantiate<Nexus::InitSequence::kDeviceContext>()
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 template<>
-void Nexus::Instantiate<Nexus::InitSequence::kWindowContext>()
+void Nexus::Init<Nexus::InitSequence::kWindowContext>()
 {
 	//windowContextのインスタンス化
 	windowContext.reset(new WindowContext(WindowContext::InstanceKey{}));
@@ -15080,7 +15770,7 @@ void Nexus::Instantiate<Nexus::InitSequence::kWindowContext>()
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 template<>
-void Nexus::Instantiate<Nexus::InitSequence::kDescriptorHeapContext>()
+void Nexus::Init<Nexus::InitSequence::kDescriptorHeapContext>()
 {
 	//descriptorHeapContextクラスのインスタンス化
 	descriptorHeapContext.reset
@@ -15098,7 +15788,7 @@ void Nexus::Instantiate<Nexus::InitSequence::kDescriptorHeapContext>()
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 template<>
-void Nexus::Instantiate<Nexus::InitSequence::kBufferContext>()
+void Nexus::Init<Nexus::InitSequence::kBufferContext>()
 {
 	bufferContext.reset(new BufferContext(BufferContext::InstanceKey{}, deviceContext->diplomat.get(), descriptorHeapContext->diplomat.get(), commandContext->diplomat.get()));
 	Logger::Log("Instantiate: bufferContext", fileName);
@@ -15107,7 +15797,7 @@ void Nexus::Instantiate<Nexus::InitSequence::kBufferContext>()
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 template<>
-void Nexus::Instantiate<Nexus::InitSequence::kCommandContext>()
+void Nexus::Init<Nexus::InitSequence::kCommandContext>()
 {
 	commandContext.reset
 	(
@@ -15124,7 +15814,7 @@ void Nexus::Instantiate<Nexus::InitSequence::kCommandContext>()
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 template<>
-void Nexus::Instantiate<Nexus::InitSequence::kSwapChainContext>()
+void Nexus::Init<Nexus::InitSequence::kSwapChainContext>()
 {
 	swapChainContext.reset
 	(
@@ -15145,7 +15835,7 @@ void Nexus::Instantiate<Nexus::InitSequence::kSwapChainContext>()
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 template<>
-void Nexus::Instantiate<Nexus::InitSequence::kShaderContext>()
+void Nexus::Init<Nexus::InitSequence::kShaderContext>()
 {
 	shaderContext.reset(new ShaderContext(ShaderContext::InstanceKey{}));
 	Logger::Log("Instantiate: ShaderContext", fileName);
@@ -15154,7 +15844,7 @@ void Nexus::Instantiate<Nexus::InitSequence::kShaderContext>()
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 template<>
-void Nexus::Instantiate<Nexus::InitSequence::kPSO_Context>()
+void Nexus::Init<Nexus::InitSequence::kPSO_Context>()
 {
 	pso_context.reset
 	(
@@ -15170,7 +15860,7 @@ void Nexus::Instantiate<Nexus::InitSequence::kPSO_Context>()
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 template<>
-void Nexus::Instantiate<Nexus::InitSequence::kRootSignatureContext>()
+void Nexus::Init<Nexus::InitSequence::kRootSignatureContext>()
 {
 	rootSignatureContext.reset
 	(
@@ -15188,7 +15878,7 @@ void Nexus::Instantiate<Nexus::InitSequence::kRootSignatureContext>()
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 template<>
-void Nexus::Instantiate<Nexus::InitSequence::kRenderContext>()
+void Nexus::Init<Nexus::InitSequence::kRenderContext>()
 {
 	renderContext.reset(new RenderContext(RenderContext::InstanceKey{}));
 	Logger::Log("Instantiate: RenderContext", fileName);
@@ -15197,7 +15887,7 @@ void Nexus::Instantiate<Nexus::InitSequence::kRenderContext>()
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 template<>
-void Nexus::Instantiate<Nexus::InitSequence::kMeshContext>()
+void Nexus::Init<Nexus::InitSequence::kMeshContext>()
 {
 	meshContext.reset(new MeshContext(MeshContext::InstanceKey{},bufferContext->diplomat.get()));
 	Logger::Log("Instantiate: MeshContext", fileName);
@@ -15206,7 +15896,7 @@ void Nexus::Instantiate<Nexus::InitSequence::kMeshContext>()
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 template<>
-void Nexus::Instantiate<Nexus::InitSequence::kKickCommands>()
+void Nexus::Init<Nexus::InitSequence::kKickCommands>()
 {
 	//溜まったリソースアップロードのコマンドをキックして同期し、コマンドを閉じる
 	auto* toolLender = commandContext->diplomat->Access<CommandContext::ToolLender>();
@@ -15221,7 +15911,7 @@ void Nexus::Instantiate<Nexus::InitSequence::kKickCommands>()
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 template<>
-void Nexus::Instantiate<Nexus::InitSequence::kDeleteIntermediateResources>()
+void Nexus::Init<Nexus::InitSequence::kDeleteIntermediateResources>()
 {
 	//BufferUploaderを削除する
 	bufferContext->DeleteBufferUploader(BufferContext::InstanceKey{});
@@ -15232,43 +15922,43 @@ void Nexus::Instantiate<Nexus::InitSequence::kDeleteIntermediateResources>()
 
 
 template
-void Nexus::Instantiate<Nexus::InitSequence::kDeviceContext>();
+void Nexus::Init<Nexus::InitSequence::kDeviceContext>();
 
 template
-void Nexus::Instantiate<Nexus::InitSequence::kWindowContext>();
+void Nexus::Init<Nexus::InitSequence::kWindowContext>();
 
 template
-void Nexus::Instantiate<Nexus::InitSequence::kDescriptorHeapContext>();
+void Nexus::Init<Nexus::InitSequence::kDescriptorHeapContext>();
 
 template
-void Nexus::Instantiate<Nexus::InitSequence::kBufferContext>();
+void Nexus::Init<Nexus::InitSequence::kBufferContext>();
 
 template
-void Nexus::Instantiate<Nexus::InitSequence::kCommandContext>();
+void Nexus::Init<Nexus::InitSequence::kCommandContext>();
 
 template
-void Nexus::Instantiate<Nexus::InitSequence::kSwapChainContext>();
+void Nexus::Init<Nexus::InitSequence::kSwapChainContext>();
 
 template
-void Nexus::Instantiate<Nexus::InitSequence::kShaderContext>();
+void Nexus::Init<Nexus::InitSequence::kShaderContext>();
 
 template
-void Nexus::Instantiate<Nexus::InitSequence::kPSO_Context>();
+void Nexus::Init<Nexus::InitSequence::kPSO_Context>();
 
 template
-void Nexus::Instantiate<Nexus::InitSequence::kRootSignatureContext>();
+void Nexus::Init<Nexus::InitSequence::kRootSignatureContext>();
 
 template
-void Nexus::Instantiate<Nexus::InitSequence::kMeshContext>();
+void Nexus::Init<Nexus::InitSequence::kMeshContext>();
 
 template
-void Nexus::Instantiate<Nexus::InitSequence::kRenderContext>();
+void Nexus::Init<Nexus::InitSequence::kRenderContext>();
 
 template
-void Nexus::Instantiate<Nexus::InitSequence::kKickCommands>();
+void Nexus::Init<Nexus::InitSequence::kKickCommands>();
 
 template
-void Nexus::Instantiate<Nexus::InitSequence::kDeleteIntermediateResources>();
+void Nexus::Init<Nexus::InitSequence::kDeleteIntermediateResources>();
 
 
 

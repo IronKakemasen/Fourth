@@ -2,6 +2,7 @@
 #include "BufferDefinition/GPUBuffer/GPUBufferBehavior.h"
 //バッファ作成ツール
 #include "BufferCreateTools/BufferCreator.h"
+#include "BufferCreateTools/ResourceCreator/ResourceCreator.h"
 //バッファをアップロード
 #include "BufferCreateTools/BufferUploader/BufferUploader.h"
 //各種ツールを下位部へ貸し出します

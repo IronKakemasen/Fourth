@@ -144,7 +144,7 @@ void DeviceContext::Setupper::CreateDevice()
 
 		//採用したアダプタでデバイスを生成
 		HRESULT hr = D3D12CreateDevice(useAdapter.Get(), featureLevels[i], IID_PPV_ARGS(&d3d12Device));
-		ErrorMessageOutput::Assert::DetectError(SUCCEEDED(hr), "デバイスの生成に失敗", fileName);
+		ErrorMessageOutput::Abort::DetectError(SUCCEEDED(hr), "デバイスの生成に失敗", fileName);
 		
 		//型変換
 		hr = d3d12Device.As(&device); 

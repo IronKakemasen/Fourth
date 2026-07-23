@@ -33,7 +33,7 @@ namespace
 
 
 template<>
-void Nexus::Instantiate<Nexus::InitSequence::kDeviceContext>()
+void Nexus::Init<Nexus::InitSequence::kDeviceContext>()
 {
 	//deviceContextクラスのインスタンス化
 	deviceContext.reset(new DeviceContext(DeviceContext::InstanceKey{}));
@@ -43,7 +43,7 @@ void Nexus::Instantiate<Nexus::InitSequence::kDeviceContext>()
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 template<>
-void Nexus::Instantiate<Nexus::InitSequence::kWindowContext>()
+void Nexus::Init<Nexus::InitSequence::kWindowContext>()
 {
 	//windowContextのインスタンス化
 	windowContext.reset(new WindowContext(WindowContext::InstanceKey{}));
@@ -53,7 +53,7 @@ void Nexus::Instantiate<Nexus::InitSequence::kWindowContext>()
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 template<>
-void Nexus::Instantiate<Nexus::InitSequence::kDescriptorHeapContext>()
+void Nexus::Init<Nexus::InitSequence::kDescriptorHeapContext>()
 {
 	//descriptorHeapContextクラスのインスタンス化
 	descriptorHeapContext.reset
@@ -71,7 +71,7 @@ void Nexus::Instantiate<Nexus::InitSequence::kDescriptorHeapContext>()
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 template<>
-void Nexus::Instantiate<Nexus::InitSequence::kBufferContext>()
+void Nexus::Init<Nexus::InitSequence::kBufferContext>()
 {
 	bufferContext.reset(new BufferContext(BufferContext::InstanceKey{}, deviceContext->diplomat.get(), descriptorHeapContext->diplomat.get(), commandContext->diplomat.get()));
 	Logger::Log("Instantiate: bufferContext", fileName);
@@ -80,7 +80,7 @@ void Nexus::Instantiate<Nexus::InitSequence::kBufferContext>()
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 template<>
-void Nexus::Instantiate<Nexus::InitSequence::kCommandContext>()
+void Nexus::Init<Nexus::InitSequence::kCommandContext>()
 {
 	commandContext.reset
 	(
@@ -97,7 +97,7 @@ void Nexus::Instantiate<Nexus::InitSequence::kCommandContext>()
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 template<>
-void Nexus::Instantiate<Nexus::InitSequence::kSwapChainContext>()
+void Nexus::Init<Nexus::InitSequence::kSwapChainContext>()
 {
 	swapChainContext.reset
 	(
@@ -118,7 +118,7 @@ void Nexus::Instantiate<Nexus::InitSequence::kSwapChainContext>()
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 template<>
-void Nexus::Instantiate<Nexus::InitSequence::kShaderContext>()
+void Nexus::Init<Nexus::InitSequence::kShaderContext>()
 {
 	shaderContext.reset(new ShaderContext(ShaderContext::InstanceKey{}));
 	Logger::Log("Instantiate: ShaderContext", fileName);
@@ -127,7 +127,7 @@ void Nexus::Instantiate<Nexus::InitSequence::kShaderContext>()
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 template<>
-void Nexus::Instantiate<Nexus::InitSequence::kPSO_Context>()
+void Nexus::Init<Nexus::InitSequence::kPSO_Context>()
 {
 	pso_context.reset
 	(
@@ -143,7 +143,7 @@ void Nexus::Instantiate<Nexus::InitSequence::kPSO_Context>()
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 template<>
-void Nexus::Instantiate<Nexus::InitSequence::kRootSignatureContext>()
+void Nexus::Init<Nexus::InitSequence::kRootSignatureContext>()
 {
 	rootSignatureContext.reset
 	(
@@ -161,7 +161,7 @@ void Nexus::Instantiate<Nexus::InitSequence::kRootSignatureContext>()
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 template<>
-void Nexus::Instantiate<Nexus::InitSequence::kRenderContext>()
+void Nexus::Init<Nexus::InitSequence::kRenderContext>()
 {
 	renderContext.reset(new RenderContext(RenderContext::InstanceKey{}));
 	Logger::Log("Instantiate: RenderContext", fileName);
@@ -170,7 +170,7 @@ void Nexus::Instantiate<Nexus::InitSequence::kRenderContext>()
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 template<>
-void Nexus::Instantiate<Nexus::InitSequence::kMeshContext>()
+void Nexus::Init<Nexus::InitSequence::kMeshContext>()
 {
 	meshContext.reset(new MeshContext(MeshContext::InstanceKey{},bufferContext->diplomat.get()));
 	Logger::Log("Instantiate: MeshContext", fileName);
@@ -179,7 +179,7 @@ void Nexus::Instantiate<Nexus::InitSequence::kMeshContext>()
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 template<>
-void Nexus::Instantiate<Nexus::InitSequence::kKickCommands>()
+void Nexus::Init<Nexus::InitSequence::kKickCommands>()
 {
 	//溜まったリソースアップロードのコマンドをキックして同期し、コマンドを閉じる
 	auto* toolLender = commandContext->diplomat->Access<CommandContext::ToolLender>();
@@ -194,7 +194,7 @@ void Nexus::Instantiate<Nexus::InitSequence::kKickCommands>()
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 template<>
-void Nexus::Instantiate<Nexus::InitSequence::kDeleteIntermediateResources>()
+void Nexus::Init<Nexus::InitSequence::kDeleteIntermediateResources>()
 {
 	//BufferUploaderを削除する
 	bufferContext->DeleteBufferUploader(BufferContext::InstanceKey{});
@@ -205,41 +205,41 @@ void Nexus::Instantiate<Nexus::InitSequence::kDeleteIntermediateResources>()
 
 
 template
-void Nexus::Instantiate<Nexus::InitSequence::kDeviceContext>();
+void Nexus::Init<Nexus::InitSequence::kDeviceContext>();
 
 template
-void Nexus::Instantiate<Nexus::InitSequence::kWindowContext>();
+void Nexus::Init<Nexus::InitSequence::kWindowContext>();
 
 template
-void Nexus::Instantiate<Nexus::InitSequence::kDescriptorHeapContext>();
+void Nexus::Init<Nexus::InitSequence::kDescriptorHeapContext>();
 
 template
-void Nexus::Instantiate<Nexus::InitSequence::kBufferContext>();
+void Nexus::Init<Nexus::InitSequence::kBufferContext>();
 
 template
-void Nexus::Instantiate<Nexus::InitSequence::kCommandContext>();
+void Nexus::Init<Nexus::InitSequence::kCommandContext>();
 
 template
-void Nexus::Instantiate<Nexus::InitSequence::kSwapChainContext>();
+void Nexus::Init<Nexus::InitSequence::kSwapChainContext>();
 
 template
-void Nexus::Instantiate<Nexus::InitSequence::kShaderContext>();
+void Nexus::Init<Nexus::InitSequence::kShaderContext>();
 
 template
-void Nexus::Instantiate<Nexus::InitSequence::kPSO_Context>();
+void Nexus::Init<Nexus::InitSequence::kPSO_Context>();
 
 template
-void Nexus::Instantiate<Nexus::InitSequence::kRootSignatureContext>();
+void Nexus::Init<Nexus::InitSequence::kRootSignatureContext>();
 
 template
-void Nexus::Instantiate<Nexus::InitSequence::kMeshContext>();
+void Nexus::Init<Nexus::InitSequence::kMeshContext>();
 
 template
-void Nexus::Instantiate<Nexus::InitSequence::kRenderContext>();
+void Nexus::Init<Nexus::InitSequence::kRenderContext>();
 
 template
-void Nexus::Instantiate<Nexus::InitSequence::kKickCommands>();
+void Nexus::Init<Nexus::InitSequence::kKickCommands>();
 
 template
-void Nexus::Instantiate<Nexus::InitSequence::kDeleteIntermediateResources>();
+void Nexus::Init<Nexus::InitSequence::kDeleteIntermediateResources>();
 

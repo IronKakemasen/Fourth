@@ -13,8 +13,6 @@ class BufferContext
 {
 	//生成したバッファの削除を担当
 	class BufferDeferredReleaser;
-	//生リソース生成
-	class ResourceCreator;
 
 protected:
 
@@ -83,6 +81,8 @@ public:
 	class ToolLender;
 	//生成したバッファを回収し分別する
 	class BufferCollector;
+	//生リソース生成
+	class ResourceCreator;
 
 
 	BufferContext

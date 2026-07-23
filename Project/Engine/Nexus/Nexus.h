@@ -82,12 +82,12 @@ private:
 	
 	//各Contextクラスの具現化、初期化を行う
 	template<InitSequence initSequence>
-	void Instantiate();
+	void Init();
 
 
 	///簡易だけども初期化順序制御を行いながら初期化する
 	template<InitSequence next_>
-	void InstantiateInSequence()
+	void InitializeInSequence()
 	{
 		ErrorMessageOutput::Assert::DetectError
 		(
@@ -96,7 +96,7 @@ private:
 			"Nexus.h"
 		);
 
-		Instantiate<next_>();
+		Init<next_>();
 
 		next = InitSequence((UINT)next + 1);
 	}

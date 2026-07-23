@@ -4,10 +4,7 @@
 
 //バッファクラスの前方宣言
 #include "../../BufferDefinition/AllBuffersFwd.h"
-#include "../../BufferDefinition/AllBufferDescsInclude.h"
-
-//リソース生成
-#include "../ResourceCreator/ResourceCreator.h"
+#include "../../BufferDefinition/AllBufferDescsIFwd.h"
 
 //外部
 #include "../../../../Core/DescriptorHeap/DescriptorHeapContext.h"
@@ -15,7 +12,6 @@
 
 //ビュー生成ツール
 class DescriptorHeapContext::ViewCreator;
-
 
 
 //バッファとディスクを特定のクラスに限定して組み立てる
@@ -45,18 +41,13 @@ public:
 
         Logger::Entry("AssemblingStart:" + nameCnv);
 
-        //リソース生成に必要な情報を組み立てる
-        std::pair<D3D12_RESOURCE_DESC, D3D12_HEAP_PROPERTIES> resourceDescAndHeapProp  = AssembleResourceCreateRequirements(desc_);
-
-
         //生リソース生成
-        ResourceContainer resourceContainer =
-            std::move(AssembleResource(resourceDescAndHeapProp.first, resourceDescAndHeapProp.second, nameCnv, desc_));
+        ResourceContainer resourceContainer = std::move(AssembleResource(nameCnv, desc_));
 
         //バッファの実体生成
         std::unique_ptr<BufferType> buffer = std::move
         (
-            AssembleBuffer<BufferType>(std::move(resourceContainer), desc_, nameCnv)
+            Materialize<BufferType>(std::move(resourceContainer), desc_, nameCnv)
         );
 
         //ビュー生成。ConstantBuffer以外
@@ -65,7 +56,7 @@ public:
             GPUBufferBehavior::ResourceAccessKey reourceAccessKey;
             GPUBufferBehavior::InstanceKey instanceKey;
 
-            AssembleView<BufferType>(buffer.get(), desc_, reourceAccessKey, instanceKey);
+            AssembleView(reourceAccessKey, instanceKey,buffer.get(), desc_);
         }
 
         Logger::End("AssemblingComplete:" + nameCnv);
@@ -76,193 +67,154 @@ public:
 
 private:
 
+    //生リソースを組み立てる
+    class ResourceAssembler;
+    //名前を変換する
+    class BufferNameConverter;
+    //バッファの実体を作る
+    class BufferMaterializer;
+    //viewCreatorを使ってバッファのビューを生成
+    class ViewAssembler;
+
     //生リソース生成
     template<typename DescType>
     ResourceContainer AssembleResource
     (
-        D3D12_RESOURCE_DESC resourceDesc_,
-        D3D12_HEAP_PROPERTIES heapProp_,
         const std::string& nameCnv_,
         const DescType& desc_
-    )
-    {
-        //クリアバリュー
-        std::optional<D3D12_CLEAR_VALUE> clearValueOpt = GetClearValue(desc_);
+    );
 
-        //リソース生成
-        return resourceCreator->Create
-        (
-            resourceDesc_,
-            heapProp_,
-            clearValueOpt ? &clearValueOpt.value() : nullptr,
-            desc_.initialState,
-            nameCnv_,
-            (UINT)desc_.numBuffer
-
-        );
-    }
-   
     //名前変換
     template<typename BufferType>
-    std::string ConvertName(const std::string& srcName_)
-    {
-        std::string attach;
-
-        if constexpr (std::is_same_v<BufferType, ConstantBuffer>)               attach  = "Constant";
-        else if constexpr (std::is_same_v<BufferType, ColorBuffer>)             attach  = "Color";
-        else if constexpr (std::is_same_v<BufferType, DepthStencilBuffer>)      attach  = "DepthStencil";
-        else if constexpr (std::is_same_v<BufferType, ComputeBuffer>)           attach  = "Compute";
-        else if constexpr (std::is_same_v<BufferType, UploadStructuredBuffer>)  attach  = "UploadStructured";
-        else if constexpr (std::is_same_v<BufferType, StaticStructuredBuffer>)  attach  = "StaticStructuredBuffer";
-
-        return attach + "Buffer" + "[ " + srcName_ + " ] ";
-    }
-
-    //クリアバリュー取得
-    template<typename DescType>
-    std::optional<D3D12_CLEAR_VALUE> GetClearValue(const DescType& desc_);
+    std::string ConvertName(const std::string& srcName_);
 
     //バッファ生成
-    template<typename BufferType, typename DescType>
-    std::unique_ptr<BufferType> AssembleBuffer(ResourceContainer resourceContainer_, const DescType& desc_, std::string nameCnv_);
+    template<typename BufferType>
+    std::unique_ptr<BufferType> Materialize(ResourceContainer resourceContainer_, const BufferDescriptionBehavior& desc_, std::string nameCnv_);
     
     //ビュー生成
-    template<typename BufferType, typename DescType>
-    void AssembleView
-    (BufferType* buffer_, const DescType& desc_, GPUBufferBehavior::ResourceAccessKey accessKey_, GPUBufferBehavior::InstanceKey instanceKey_);
-
-    //生リソース生成に必要な情報を組み立てる
-    std::pair<D3D12_RESOURCE_DESC, D3D12_HEAP_PROPERTIES> AssembleResourceCreateRequirements(const BufferDescriptionBehavior& desc_);
-
-    //ビュー生成
     template<typename DescType>
-    void CreateView
+    void AssembleView
     (
-        GPUBufferBehavior* buffer_,
-        const DescType& desc_,
-        uint8_t index_,
-        GPUBufferBehavior::ResourceAccessKey accessKey_,
-        GPUBufferBehavior::InstanceKey instanceKey_
+        GPUBufferBehavior::ResourceAccessKey accessKey_, 
+        GPUBufferBehavior::InstanceKey instanceKey_,
+        GPUBufferBehavior* buffer_, 
+        const DescType& desc_
     );
+
 };
 
 
+
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 template<>
-void BufferContext::BufferAssembler::CreateView
+BufferContext::BufferAssembler::ResourceContainer BufferContext::BufferAssembler::AssembleResource
 (
-    GPUBufferBehavior* buffer_,
-    const D3D12_RENDER_TARGET_VIEW_DESC& desc_,
-    uint8_t index_,
-    GPUBufferBehavior::ResourceAccessKey accessKey_,
-    GPUBufferBehavior::InstanceKey instanceKey_
+    const std::string& nameCnv_,
+    const ColorBufferDescription& desc_
 );
-
 template<>
-void BufferContext::BufferAssembler::CreateView
+BufferContext::BufferAssembler::ResourceContainer BufferContext::BufferAssembler::AssembleResource
 (
-    GPUBufferBehavior* buffer_,
-    const D3D12_DEPTH_STENCIL_VIEW_DESC& desc_,
-    uint8_t index_,
-    GPUBufferBehavior::ResourceAccessKey accessKey_,
-    GPUBufferBehavior::InstanceKey instanceKey_
+    const std::string& nameCnv_,
+    const DepthStencilBufferDescription& desc_
 );
-
 template<>
-void BufferContext::BufferAssembler::CreateView
+BufferContext::BufferAssembler::ResourceContainer BufferContext::BufferAssembler::AssembleResource
 (
-    GPUBufferBehavior* buffer_,
-    const D3D12_SHADER_RESOURCE_VIEW_DESC& desc_,
-    uint8_t index_,
-    GPUBufferBehavior::ResourceAccessKey accessKey_,
-    GPUBufferBehavior::InstanceKey instanceKey_
+    const std::string& nameCnv_,
+    const ConstantBufferDescription& desc_
 );
-
 template<>
-void BufferContext::BufferAssembler::CreateView
+BufferContext::BufferAssembler::ResourceContainer BufferContext::BufferAssembler::AssembleResource
 (
-    GPUBufferBehavior* buffer_,
-    const D3D12_UNORDERED_ACCESS_VIEW_DESC& desc_,
-    uint8_t index_,
-    GPUBufferBehavior::ResourceAccessKey accessKey_,
-    GPUBufferBehavior::InstanceKey instanceKey_
+    const std::string& nameCnv_,
+    const ComputeBufferDescription& desc_
+);
+template<>
+BufferContext::BufferAssembler::ResourceContainer BufferContext::BufferAssembler::AssembleResource
+(
+    const std::string& nameCnv_,
+    const StaticStructuredBufferDescription& desc_
+);
+template<>
+BufferContext::BufferAssembler::ResourceContainer BufferContext::BufferAssembler::AssembleResource
+(
+    const std::string& nameCnv_,
+    const UploadStructuredBufferDescription& desc_
 );
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 template<>
-std::optional<D3D12_CLEAR_VALUE> BufferContext::BufferAssembler::GetClearValue(const ColorBufferDescription& desc_);
-
+std::string BufferContext::BufferAssembler::ConvertName<ColorBuffer>(const std::string& srcName_);
 template<>
-void BufferContext::BufferAssembler::AssembleView<ColorBuffer, ColorBufferDescription>
-(ColorBuffer* buffer_, const ColorBufferDescription& desc_, GPUBufferBehavior::ResourceAccessKey accessKey_,GPUBufferBehavior::InstanceKey instanceKey_);
-
+std::string BufferContext::BufferAssembler::ConvertName<DepthStencilBuffer>(const std::string& srcName_);
 template<>
-std::unique_ptr<ColorBuffer> BufferContext::BufferAssembler::AssembleBuffer<ColorBuffer, ColorBufferDescription>
-(ResourceContainer resourceContainer_, const ColorBufferDescription& desc_, std::string nameCnv_);
-
+std::string BufferContext::BufferAssembler::ConvertName<ConstantBuffer>(const std::string& srcName_);
+template<>
+std::string BufferContext::BufferAssembler::ConvertName<StaticStructuredBuffer>(const std::string& srcName_);
+template<>
+std::string BufferContext::BufferAssembler::ConvertName<UploadStructuredBuffer>(const std::string& srcName_);
+template<>
+std::string BufferContext::BufferAssembler::ConvertName<ComputeBuffer>(const std::string& srcName_);
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 template<>
-std::optional<D3D12_CLEAR_VALUE> BufferContext::BufferAssembler::GetClearValue(const DepthStencilBufferDescription& desc_);
-
+std::unique_ptr<ColorBuffer> BufferContext::BufferAssembler::Materialize(ResourceContainer resourceContainer_, const BufferDescriptionBehavior& desc_, std::string nameCnv_);
 template<>
-void BufferContext::BufferAssembler::AssembleView<DepthStencilBuffer, DepthStencilBufferDescription>
-(DepthStencilBuffer* buffer_, const DepthStencilBufferDescription& desc_, GPUBufferBehavior::ResourceAccessKey accessKey_, GPUBufferBehavior::InstanceKey instanceKey_);
-
+std::unique_ptr<DepthStencilBuffer> BufferContext::BufferAssembler::Materialize(ResourceContainer resourceContainer_, const BufferDescriptionBehavior& desc_, std::string nameCnv_);
 template<>
-std::unique_ptr<DepthStencilBuffer> BufferContext::BufferAssembler::AssembleBuffer<DepthStencilBuffer, DepthStencilBufferDescription>
-(ResourceContainer resourceContainer_, const DepthStencilBufferDescription& desc_, std::string nameCnv_);
-
+std::unique_ptr<StaticStructuredBuffer> BufferContext::BufferAssembler::Materialize(ResourceContainer resourceContainer_, const BufferDescriptionBehavior& desc_, std::string nameCnv_);
+template<>
+std::unique_ptr<ConstantBuffer> BufferContext::BufferAssembler::Materialize(ResourceContainer resourceContainer_, const BufferDescriptionBehavior& desc_, std::string nameCnv_);
+template<>
+std::unique_ptr<UploadStructuredBuffer> BufferContext::BufferAssembler::Materialize(ResourceContainer resourceContainer_, const BufferDescriptionBehavior& desc_, std::string nameCnv_);
+template<>
+std::unique_ptr<ComputeBuffer> BufferContext::BufferAssembler::Materialize(ResourceContainer resourceContainer_, const BufferDescriptionBehavior& desc_, std::string nameCnv_);
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 template<>
-std::optional<D3D12_CLEAR_VALUE> BufferContext::BufferAssembler::GetClearValue(const ConstantBufferDescription& desc_);
-
+void BufferContext::BufferAssembler::AssembleView
+(
+    GPUBufferBehavior::ResourceAccessKey accessKey_,
+    GPUBufferBehavior::InstanceKey instanceKey_,
+    GPUBufferBehavior* buffer_,
+    const ColorBufferDescription& desc_
+);
 template<>
-std::unique_ptr<ConstantBuffer> BufferContext::BufferAssembler::AssembleBuffer<ConstantBuffer, ConstantBufferDescription>
-(ResourceContainer resourceContainer_, const ConstantBufferDescription& desc_, std::string nameCnv_);
-
-///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+void BufferContext::BufferAssembler::AssembleView
+(
+    GPUBufferBehavior::ResourceAccessKey accessKey_,
+    GPUBufferBehavior::InstanceKey instanceKey_,
+    GPUBufferBehavior* buffer_,
+    const DepthStencilBufferDescription& desc_
+);
 template<>
-std::optional<D3D12_CLEAR_VALUE> BufferContext::BufferAssembler::GetClearValue(const ComputeBufferDescription& desc_);
-
+void BufferContext::BufferAssembler::AssembleView
+(
+    GPUBufferBehavior::ResourceAccessKey accessKey_,
+    GPUBufferBehavior::InstanceKey instanceKey_,
+    GPUBufferBehavior* buffer_,
+    const UploadStructuredBufferDescription& desc_
+);
 template<>
-void BufferContext::BufferAssembler::AssembleView<ComputeBuffer, ComputeBufferDescription>
-(ComputeBuffer* buffer_, const ComputeBufferDescription& desc_, GPUBufferBehavior::ResourceAccessKey accessKey_, GPUBufferBehavior::InstanceKey instanceKey_);
-
+void BufferContext::BufferAssembler::AssembleView
+(
+    GPUBufferBehavior::ResourceAccessKey accessKey_,
+    GPUBufferBehavior::InstanceKey instanceKey_,
+    GPUBufferBehavior* buffer_,
+    const ComputeBufferDescription& desc_
+);
 template<>
-std::unique_ptr<ComputeBuffer> BufferContext::BufferAssembler::AssembleBuffer<ComputeBuffer, ComputeBufferDescription>
-(ResourceContainer resourceContainer_, const ComputeBufferDescription& desc_, std::string nameCnv_);
-///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-template<>
-std::optional<D3D12_CLEAR_VALUE> BufferContext::BufferAssembler::GetClearValue(const StaticStructuredBufferDescription& desc_);
-
-template<>
-void BufferContext::BufferAssembler::AssembleView<StaticStructuredBuffer, StaticStructuredBufferDescription>
-(StaticStructuredBuffer* buffer_, const StaticStructuredBufferDescription& desc_, GPUBufferBehavior::ResourceAccessKey accessKey_, GPUBufferBehavior::InstanceKey instanceKey_);
-
-template<>
-std::unique_ptr<StaticStructuredBuffer> BufferContext::BufferAssembler::AssembleBuffer<StaticStructuredBuffer, StaticStructuredBufferDescription>
-(ResourceContainer resourceContainer_, const StaticStructuredBufferDescription& desc_, std::string nameCnv_);
-///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-template<>
-std::optional<D3D12_CLEAR_VALUE> BufferContext::BufferAssembler::GetClearValue(const UploadStructuredBufferDescription& desc_);
-
-template<>
-void BufferContext::BufferAssembler::AssembleView<UploadStructuredBuffer, UploadStructuredBufferDescription>
-(UploadStructuredBuffer* buffer_, const UploadStructuredBufferDescription& desc_, GPUBufferBehavior::ResourceAccessKey accessKey_, GPUBufferBehavior::InstanceKey instanceKey_);
-
-template<>
-std::unique_ptr<UploadStructuredBuffer> BufferContext::BufferAssembler::AssembleBuffer<UploadStructuredBuffer, UploadStructuredBufferDescription>
-(ResourceContainer resourceContainer_, const UploadStructuredBufferDescription& desc_, std::string nameCnv_);
+void BufferContext::BufferAssembler::AssembleView
+(
+    GPUBufferBehavior::ResourceAccessKey accessKey_,
+    GPUBufferBehavior::InstanceKey instanceKey_,
+    GPUBufferBehavior* buffer_,
+    const StaticStructuredBufferDescription& desc_
+);
