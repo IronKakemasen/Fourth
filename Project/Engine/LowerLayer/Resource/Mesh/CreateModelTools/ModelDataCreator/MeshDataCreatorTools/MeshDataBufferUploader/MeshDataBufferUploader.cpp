@@ -1,6 +1,7 @@
 #include "PreCompileHeader.h"
 #include "MeshDataBufferUploader.h"
 #include "../ModelDataTransducer/ModelDataTransducer.h"
+#include "../../../../ModelStructure/ModelData/ResourceMesh/ResourceMesh.h"
 
 
 //外部
@@ -38,7 +39,7 @@ void MeshContext::ModelDataCreator::MeshDataBufferUploader::CopyAndUploadBuffer
         //頂点データ
         bufferUploader_->UploadBuffer
         (
-            meshDataBufferUniqueIDGroupContainer_[i].verticesGPUID,
+            meshDataBufferUniqueIDGroupContainer_[i].verticesGPU,
             (UINT)vertexGPU.size(),
             vertexGPU.data()
         );
@@ -46,7 +47,7 @@ void MeshContext::ModelDataCreator::MeshDataBufferUploader::CopyAndUploadBuffer
         //頂点インデックス
         bufferUploader_->UploadBuffer
         (
-            meshDataBufferUniqueIDGroupContainer_[i].uniqueVertsIndicesID,
+            meshDataBufferUniqueIDGroupContainer_[i].uniqueVertsIndices,
             (UINT)data_[i].uniqueVertexIndices.size(),
             data_[i].uniqueVertexIndices.data()
         );
@@ -54,7 +55,7 @@ void MeshContext::ModelDataCreator::MeshDataBufferUploader::CopyAndUploadBuffer
         //メッシュレット
         bufferUploader_->UploadBuffer
         (
-            meshDataBufferUniqueIDGroupContainer_[i].meshletsID,
+            meshDataBufferUniqueIDGroupContainer_[i].meshlets,
             (UINT)data_[i].meshlets.size(),
             data_[i].meshlets.data()
         );
@@ -62,7 +63,7 @@ void MeshContext::ModelDataCreator::MeshDataBufferUploader::CopyAndUploadBuffer
         //三角形頂点構成番号
         bufferUploader_->UploadBuffer
         (
-            meshDataBufferUniqueIDGroupContainer_[i].primIndicesID,
+            meshDataBufferUniqueIDGroupContainer_[i].primIndices,
             (UINT)data_[i].primitiveIndices.size(),
             data_[i].primitiveIndices.data()
         );

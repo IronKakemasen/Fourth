@@ -129,10 +129,10 @@
     <ClCompile Include="Engine\LowerLayer\Resource\PSO\PSO_Assembler\ToolCreatePSO\CreateRasterizerDesc\CreateRasterizerDesc.cpp" />
     <ClCompile Include="Engine\LowerLayer\Resource\PSO\PSO_Assembler\ToolCreatePSO\CreateDepthStencilDesc\CreateDepthStencilDesc.cpp" />
     <ClCompile Include="Engine\LowerLayer\Resource\PSO\PSO_Assembler\ToolCreatePSO\CreateBlendDesc\CreateBlendDesc.cpp" />
-    <ClCompile Include="Engine\LowerLayer\Resource\Buffer\RuntimeBufferManagementSystems\BufferDispatcher\BufferDispatcher.cpp" />
+    <ClCompile Include="Engine\LowerLayer\Resource\Buffer\BufferRuntime\BufferDispatcher\BufferDispatcher.cpp" />
     <ClCompile Include="Engine\LowerLayer\Resource\Buffer\BufferCreateTools\BufferCreator.cpp" />
     <ClCompile Include="Engine\LowerLayer\Resource\Buffer\BufferCreateTools\BufferCollector\BufferCollector.cpp" />
-    <ClCompile Include="Engine\LowerLayer\Resource\Buffer\RuntimeBufferManagementSystems\BufferDeferredReleaser\BufferDeferredReleaser.cpp" />
+    <ClCompile Include="Engine\LowerLayer\Resource\Buffer\BufferRuntime\BufferDeferredReleaser\BufferDeferredReleaser.cpp" />
     <ClCompile Include="Engine\LowerLayer\Core\Device\DeviceContextDiplomat\DeviceContextCommandExecutor\DeviceContextCommandExecutor.cpp" />
     <ClCompile Include="Engine\LowerLayer\Core\Command\RuntimeCommandController\CommandExecutor\CommandExecutor.cpp" />
     <ClCompile Include="Engine\LowerLayer\Core\Device\Commands\CreateFenceObject\CommandCreateFenceObject.cpp" />
@@ -295,7 +295,7 @@
     <ClCompile Include="Engine\LowerLayer\Core\Command\ResourceUploader\ResourceUploader.cpp" />
     <ClCompile Include="Engine\LowerLayer\Resource\Buffer\BufferDefinition\GPUBuffer\UploadStructuredBuffer\UploadStructuredBuffer.cpp" />
     <ClCompile Include="Engine\LowerLayer\Resource\Buffer\BufferDefinition\BufferDescriptions\UploadStructuredBufferDescription\UploadStructuredBufferDescription.cpp" />
-    <ClCompile Include="Engine\LowerLayer\Resource\Buffer\RuntimeBufferManagementSystems\BufferInfoExtractor\BufferInfoExtractor.cpp" />
+    <ClCompile Include="Engine\LowerLayer\Resource\Buffer\BufferRuntime\BufferInfoExtractor\BufferInfoExtractor.cpp" />
     <ClCompile Include="Engine\LowerLayer\Core\Command\RuntimeCommandController\RuntimeCommandController.cpp" />
     <ClCompile Include="Engine\LowerLayer\Render\RenderContext.cpp" />
     <ClCompile Include="Engine\LowerLayer\Render\RuntimeRenderingManagementSystems\ModelRenderingInfoOrganizer\ModelRenderingInfoOrganizer.cpp" />
@@ -337,6 +337,7 @@
     <ClCompile Include="Engine\LowerLayer\Resource\Buffer\BufferCreateTools\BufferAssembler\BufferAssemblerTools\ResourceAssembler\ResourceAssembler.cpp" />
     <ClCompile Include="Engine\LowerLayer\Resource\Buffer\BufferCreateTools\BufferAssembler\BufferAssemblerTools\ViewAssembler\ViewAssembler.cpp" />
     <ClCompile Include="Engine\LowerLayer\Resource\Buffer\BufferCreateTools\BufferUploader\BufferUploaderTools\IntermediateResourceCreator\IntermediateResourceCreator.cpp" />
+    <ClCompile Include="Engine\LowerLayer\Resource\Mesh\CreateModelTools\ModelDataCreator\MeshDataCreatorTools\MeshDataBufferSRVHeapIndexGroupPackager\MeshDataBufferSRVHeapIndexGroupPackager.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Assets\Shared\ConstantBuffers.h" />
@@ -381,11 +382,11 @@
     <ClInclude Include="Engine\LowerLayer\Resource\PSO\PSO_Assembler\ToolCreatePSO\CreateRasterizerDesc\CreateRasterizerDesc.h" />
     <ClInclude Include="Engine\LowerLayer\Resource\PSO\PSO_Assembler\ToolCreatePSO\CreateDepthStencilDesc\CreateDepthStencilDesc.h" />
     <ClInclude Include="Engine\LowerLayer\Resource\PSO\PSO_Assembler\ToolCreatePSO\CreateBlendDesc\CreateBlendDesc.h" />
-    <ClInclude Include="Engine\LowerLayer\Resource\Buffer\RuntimeBufferManagementSystems\BufferDispatcher\BufferDispatcher.h" />
+    <ClInclude Include="Engine\LowerLayer\Resource\Buffer\BufferRuntime\BufferDispatcher\BufferDispatcher.h" />
     <ClInclude Include="Engine\LowerLayer\Resource\Buffer\BufferDefinition\GPUBuffer\BufferInterface.h" />
     <ClInclude Include="Engine\LowerLayer\Resource\Buffer\BufferCreateTools\BufferCreator.h" />
     <ClInclude Include="Engine\LowerLayer\Resource\Buffer\BufferCreateTools\BufferCollector\BufferCollector.h" />
-    <ClInclude Include="Engine\LowerLayer\Resource\Buffer\RuntimeBufferManagementSystems\BufferDeferredReleaser\BufferDeferredReleaser.h" />
+    <ClInclude Include="Engine\LowerLayer\Resource\Buffer\BufferRuntime\BufferDeferredReleaser\BufferDeferredReleaser.h" />
     <ClInclude Include="Engine\LowerLayer\Core\Device\DeviceContextDiplomat\DeviceContextCommandExecutor\DeviceContextCommandExecutor.h" />
     <ClInclude Include="Engine\LowerLayer\Core\Command\RuntimeCommandController\CommandExecutor\CommandExecutor.h" />
     <ClInclude Include="Engine\LowerLayer\Core\Device\Commands\CreateFenceObject\CommandCreateFenceObject.h" />
@@ -466,7 +467,7 @@
     <ClInclude Include="Engine\LowerLayer\Core\Command\ResourceUploader\ResourceUploader.h" />
     <ClInclude Include="Engine\LowerLayer\Resource\Buffer\BufferDefinition\GPUBuffer\UploadStructuredBuffer\UploadStructuredBuffer.h" />
     <ClInclude Include="Engine\LowerLayer\Resource\Buffer\BufferDefinition\BufferDescriptions\UploadStructuredBufferDescription\UploadStructuredBufferDescription.h" />
-    <ClInclude Include="Engine\LowerLayer\Resource\Buffer\RuntimeBufferManagementSystems\BufferInfoExtractor\BufferInfoExtractor.h" />
+    <ClInclude Include="Engine\LowerLayer\Resource\Buffer\BufferRuntime\BufferInfoExtractor\BufferInfoExtractor.h" />
     <ClInclude Include="Engine\LowerLayer\Core\Command\RuntimeCommandController\RuntimeCommandController.h" />
     <ClInclude Include="Engine\LowerLayer\Render\RenderContext.h" />
     <ClInclude Include="Engine\LowerLayer\Render\RuntimeRenderingManagementSystems\ModelRenderingInfoOrganizer\ModelRenderingInfoOrganizer.h" />
@@ -513,6 +514,7 @@
     <ClInclude Include="Engine\LowerLayer\Resource\Buffer\BufferCreateTools\BufferAssembler\BufferAssemblerTools\ResourceAssembler\ResourceAssembler.h" />
     <ClInclude Include="Engine\LowerLayer\Resource\Buffer\BufferCreateTools\BufferAssembler\BufferAssemblerTools\ViewAssembler\ViewAssembler.h" />
     <ClInclude Include="Engine\LowerLayer\Resource\Buffer\BufferCreateTools\BufferUploader\BufferUploaderTools\IntermediateResourceCreator\IntermediateResourceCreator.h" />
+    <ClInclude Include="Engine\LowerLayer\Resource\Mesh\CreateModelTools\ModelDataCreator\MeshDataCreatorTools\MeshDataBufferSRVHeapIndexGroupPackager\MeshDataBufferSRVHeapIndexGroupPackager.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

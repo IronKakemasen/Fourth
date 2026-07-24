@@ -3,7 +3,7 @@
 
 
 //読み込み専用StructuredBuffer
-class StaticStructuredBuffer final : public GPUBufferBehavior, IReadable,public IReadOnly
+class StaticStructuredBuffer final : public GPUBufferBehavior, public IReadable,public IReadOnly
 {
 
 public:

@@ -5,9 +5,7 @@
 #include "../../../Buffer/BufferContext.h"
 
 struct ModelDataAggregate;
-struct ResourceMesh;
-struct ResourrceMatrilal;
-
+class StaticStructuredBuffer;
 
 class MeshContext::ModelDataCreator
 {
@@ -15,7 +13,8 @@ class MeshContext::ModelDataCreator
 	<
 		BufferContext::BufferCreator*,
 		BufferContext::BufferCollector*,
-		BufferContext::BufferUploader*
+		BufferContext::BufferUploader*,
+		BufferContext::BufferDispatcher*
 	>;
 
 protected:
@@ -23,21 +22,22 @@ protected:
 	//MeshDataBufferのユニークIDを列挙するため
 	struct MeshDataBufferUniqueIDGroup
 	{
-		BufferUniqueID verticesGPUID{};
-		BufferUniqueID uniqueVertsIndicesID{};
-		BufferUniqueID meshletsID{};
-		BufferUniqueID primIndicesID{};
+		BufferUniqueID verticesGPU{};
+		BufferUniqueID uniqueVertsIndices{};
+		BufferUniqueID meshlets{};
+		BufferUniqueID primIndices{};
 	};
-
 
 private:
 
 	//モデルの理事ストリーファイルを読み込んで、キーがファイル名のバリューがファイルパスであるマップを返す
 	class ModelRegistryLoader;
-	//頂点データをGPUように変換したり、BufferUniqueIDからstructuredBufferポインタに変換する
+	//頂点データをGPU用に変換したり、BufferUniqueIDからstructuredBufferポインタに変換する
 	class DataTransducer;
 	//メッシュデータのバッファのアップロードを行う
 	class MeshDataBufferUploader;
+	//メッシュデータバッファのsrvHeapIndexを詰めていく
+	class MeshDataBufferSRVHeapIndexGroupPackager;
 
 public:
 

@@ -2,8 +2,6 @@
 #include "../../BufferContext.h"
 #include "ClosedHashMap/ClosedHashMap.h" 
 
-
-
 class BufferContext::BufferDispatcher
 {
 public:

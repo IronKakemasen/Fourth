@@ -1,7 +1,8 @@
 #pragma once
 #include "../../ModelDataCreator.h"
 
-
+struct ResourceMesh;
+struct ResourrceMatrilal;
 
 class MeshContext::ModelDataCreator::MeshDataBufferCreator
 {

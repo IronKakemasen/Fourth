@@ -74,6 +74,9 @@ Nexus::Nexus()
 	InitializeInSequence<InitSequence::kRootSignatureContext>();
 	InitializeInSequence<InitSequence::kMeshContext>();
 	InitializeInSequence<InitSequence::kRenderContext>();
+
+
+	InitializeInSequence<InitSequence::kPitchAllBarriersForShaderResource>();
 	InitializeInSequence<InitSequence::kKickCommands>();
 	InitializeInSequence<InitSequence::kDeleteIntermediateResources>();
 

@@ -9,7 +9,6 @@
 #include "../LowerLayer/Core/SwapChain/SwapChainContext.h"
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 #include "../LowerLayer/Core/Command/CommandContext.h"
-#include "../LowerLayer/Core/Command/ResourceUploader/ResourceUploader.h"
 #include "../LowerLayer/Core/Command/CommandContextDiplomat/CommandContextDiplomat.h"
 #include "../LowerLayer/Core/Command/CommandContextDiplomat/CommandContextExecutionAgent/CommandContextExecutionAgent.h"
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -194,10 +193,24 @@ void Nexus::Init<Nexus::InitSequence::kKickCommands>()
 template<>
 void Nexus::Init<Nexus::InitSequence::kDeleteIntermediateResources>()
 {
+	//bufferContextの代行者
 	auto* agent = bufferContext->diplomat->Access<BufferContext::ExecutionAgent>();
 	//BufferUploaderの削除を代行
 	agent->DeleteBufferUploader(BufferContext::NexusFieldProof{});
 }
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+template<>
+void Nexus::Init<Nexus::InitSequence::kPitchAllBarriersForShaderResource>()
+{
+	//bufferContextの代行者
+	auto* agent = bufferContext->diplomat->Access<BufferContext::ExecutionAgent>();
+	//BufferUploaderの削除を代行
+	agent->PitchAllBarriersForUpload(BufferContext::NexusFieldProof{});
+}
+
+
 
 
 
@@ -235,6 +248,9 @@ void Nexus::Init<Nexus::InitSequence::kMeshContext>();
 
 template
 void Nexus::Init<Nexus::InitSequence::kRenderContext>();
+
+template
+void Nexus::Init<Nexus::InitSequence::kPitchAllBarriersForShaderResource>();
 
 template
 void Nexus::Init<Nexus::InitSequence::kKickCommands>();

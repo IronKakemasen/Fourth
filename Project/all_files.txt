@@ -306,7 +306,6 @@ void CommandContext::Finalize(NexusFieldProof proof_)
 #pragma once
 
 class Nexus;
-class SwapChainContext;
 class CommandContextDiplomat;
 class DeviceContextDiplomat;
 
@@ -321,19 +320,13 @@ class CommandContext
 
 public:
 
-	using UploadCommand = std::function<void
-	(
-		ID3D12Resource* dstResource_,
-		ID3D12Resource* intermediateResource_,
-		const D3D12_SUBRESOURCE_DATA* subeResource_,
-		UINT subResourceCount_
-	)>;
 
 	//Nexusフィールドの証明
 	struct NexusFieldProof;
 	//代行者認証キー
 	struct AgentKey;
-
+	//コマンド提供者認証キー
+	struct ProviderKey;
 
 
 	//リソースのアップロードを行う
@@ -404,6 +397,15 @@ private:
 	friend class ExecutionAgent;
 	explicit AgentKey() = default;
 };
+
+struct CommandContext::ProviderKey
+{
+private:
+
+	friend class CommandProvider;
+	explicit ProviderKey() = default;
+};
+
 
 
 
@@ -505,34 +507,59 @@ CommandContext::CommandProvider::CommandProvider(NexusFieldProof proof_, Command
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Core\Command\CommandContextDiplomat\CommandContextCmdProvider\CommandContextCmdProvider.h ===
 ========================================
 #pragma once
-#include "../../CommandContext.h"
 #include "../../../../Resource/Buffer/BufferContext.h"
 #include "../../ResourceUploader/ResourceUploader.h"
 
 
 class CommandContext::CommandProvider
 {
-public:
+	//コマンドのタイプと許可を紐づける
+	template<typename CommandType>
+	struct CommandTypeTraits;
 
 	//ResourceUploadコマンドの利用許可
 	struct UsesResourceUploadCmdPermission;
 
+public:
+
+	template<typename CommandType>
+	using PermissionType = typename CommandTypeTraits<CommandType>::Type;
+
+
 	CommandProvider(NexusFieldProof proof_, CommandContext::ResourceUploader* resourceUploader_);
 
-	template<typename PermissionType>
-	auto ProvideResourceUploadCommand(PermissionType permission_)
+	template<typename CommandType>
+	auto Provide(typename CommandTypeTraits<CommandType>::Type type_)
 	{
-		if constexpr (std::is_same_v<PermissionType, UsesResourceUploadCmdPermission>)
+		if constexpr (std::is_same_v<CommandType, CommandContext::ResourceUploader::UploadCommand>)
 		{
-			return resourceUploader->ProvideUploadCommand();
+			return resourceUploader->ProvideUploadCommand(CommandContext::ProviderKey{});
 		}
+		else if constexpr (std::is_same_v<CommandType, CommandContext::ResourceUploader::PitchBarrierCommand>)
+		{
+			return resourceUploader->ProvideBarrierPitchCommand(CommandContext::ProviderKey{});
+		}
+
 	}
 
 private:
 
-
 	CommandContext::ResourceUploader* resourceUploader;
 };
+
+
+template<>
+struct CommandContext::CommandProvider::CommandTypeTraits<CommandContext::ResourceUploader::UploadCommand>
+{
+	using Type = CommandContext::CommandProvider::UsesResourceUploadCmdPermission;
+};
+
+template<>
+struct CommandContext::CommandProvider::CommandTypeTraits<CommandContext::ResourceUploader::PitchBarrierCommand>
+{
+	using Type = CommandContext::CommandProvider::UsesResourceUploadCmdPermission;
+};
+
 
 struct CommandContext::CommandProvider::UsesResourceUploadCmdPermission
 {
@@ -767,7 +794,7 @@ void CommandContext::ResourceUploader::RecordingStart()
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-CommandContext::UploadCommand CommandContext::ResourceUploader::ProvideUploadCommand()
+CommandContext::ResourceUploader::UploadCommand CommandContext::ResourceUploader::ProvideUploadCommand(ProviderKey providerKey_)
 {
 	return[this]
 	(
@@ -775,13 +802,23 @@ CommandContext::UploadCommand CommandContext::ResourceUploader::ProvideUploadCom
 		ID3D12Resource* intermediateResource_,
 		const D3D12_SUBRESOURCE_DATA* subeResource_,
 		UINT subResourceCount_
-		)
-		{
-			UpdateSubresources(commandList.Get(), dstResource_, intermediateResource_, 0, 0, subResourceCount_, subeResource_);
-		};
+	)
+	{
+		UpdateSubresources(commandList.Get(), dstResource_, intermediateResource_, 0, 0, subResourceCount_, subeResource_);
+	};
 
 }
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+CommandContext::ResourceUploader::PitchBarrierCommand CommandContext::ResourceUploader::ProvideBarrierPitchCommand(ProviderKey providerKey_)
+{
+	return [this](const std::vector<D3D12_RESOURCE_BARRIER>& barriers_)
+	{
+		commandList->ResourceBarrier(UINT(barriers_.size()), barriers_.data());
+	};
 
+}
 
 
 
@@ -797,6 +834,16 @@ class CommandContext::ResourceUploader
 
 public:
 
+	using UploadCommand = std::function<void
+	(
+		ID3D12Resource* dstResource_,
+		ID3D12Resource* intermediateResource_,
+		const D3D12_SUBRESOURCE_DATA* subeResource_,
+		UINT subResourceCount_
+	)>;
+
+	using PitchBarrierCommand = std::function<void(const std::vector<D3D12_RESOURCE_BARRIER>&)>;
+
 	ResourceUploader
 	(
 		NexusFieldProof proof_,
@@ -811,7 +858,10 @@ public:
 	void KickAndSynchronize(const NexusFieldProof& nexusFieldProof_, AgentKey agentKey_);
 
 	///commandListをラップしたアップロードコマンド
-	UploadCommand ProvideUploadCommand();
+	UploadCommand ProvideUploadCommand(ProviderKey providerKey_);
+	///commandListをラップした、バリア張りコマンド
+	PitchBarrierCommand ProvideBarrierPitchCommand(ProviderKey providerKey_);
+
 
 private:
 
@@ -6319,14 +6369,12 @@ public:
 #include "BufferContextDiplomat/BufferToolLender/BufferToolLender.h"
 #include "BufferContextDiplomat/BufferContextDiplomat.h"
 //ランタイム処理ツール
-#include "RuntimeBufferManagementSystems/BufferDispatcher/BufferDispatcher.h"
-#include "RuntimeBufferManagementSystems/BufferInfoExtractor/BufferInfoExtractor.h"
+#include "BufferRuntime/BufferDispatcher/BufferDispatcher.h"
+#include "BufferRuntime/BufferInfoExtractor/BufferInfoExtractor.h"
 #include "BufferContextDiplomat/BufferContextExecutionAgent/BufferContextExecutionAgent.h"
 
 #include "ClosedHashMap/ClosedHashMap.h" 
 
-
-//ランライム
 
 namespace
 {
@@ -6367,7 +6415,7 @@ BufferContext::BufferContext
 		(
 			proof_,
 			std::make_unique<ToolLender>(proof_, bufferCreator.get(), bufferUploader.get(), bufferDispatcher.get(), bufferCollector.get()),
-			std::make_unique<ExecutionAgent>(proof_, this)
+			std::make_unique<ExecutionAgent>(proof_, this, bufferUploader.get())
 		)
 	);
 
@@ -6644,10 +6692,14 @@ private:
 ========================================
 #include "PreCompileHeader.h"
 #include "BufferContextExecutionAgent.h"
+#include "../../BufferCreateTools/BufferUploader/BufferUploader.h"
 
-
-BufferContext::ExecutionAgent::ExecutionAgent(NexusFieldProof proof_, BufferContext* bufferContext_)
-	:bufferContext(bufferContext_)
+BufferContext::ExecutionAgent::ExecutionAgent
+(
+	NexusFieldProof proof_,
+	BufferContext* bufferContext_,
+	BufferContext::BufferUploader* bufferUploader_
+):bufferContext(bufferContext_), bufferUploader(bufferUploader_)
 {
 
 }
@@ -6655,6 +6707,11 @@ BufferContext::ExecutionAgent::ExecutionAgent(NexusFieldProof proof_, BufferCont
 void BufferContext::ExecutionAgent::DeleteBufferUploader(NexusFieldProof proof_)
 {
 	bufferContext->DeleteBufferUploader(proof_, BufferContext::AgentKey{});
+}
+
+void BufferContext::ExecutionAgent::PitchAllBarriersForUpload(BufferContext::NexusFieldProof proof_)
+{
+	bufferUploader->PitchAllBarrier(proof_,BufferContext::AgentKey{});
 }
 
 
@@ -6668,13 +6725,22 @@ void BufferContext::ExecutionAgent::DeleteBufferUploader(NexusFieldProof proof_)
 class BufferContext::ExecutionAgent
 {
 public:
-	ExecutionAgent(NexusFieldProof proof_, BufferContext* bufferContext_);
+	ExecutionAgent
+	(
+		NexusFieldProof proof_,
+		BufferContext* bufferContext_,
+		BufferContext::BufferUploader* bufferUploader_
+	);
 
 	//BufferUploaderの削除を代行
 	void DeleteBufferUploader(BufferContext::NexusFieldProof proof_);
+	//Resourceのバリアを全て張るのを代行
+	void PitchAllBarriersForUpload(BufferContext::NexusFieldProof proof_);
+
 
 private:
 	BufferContext* bufferContext;
+	BufferContext::BufferUploader* bufferUploader;
 };
 
 
@@ -7702,7 +7768,6 @@ class BufferContext::BufferAssembler::BufferNameConverter
 ========================================
 #include "PreCompileHeader.h"
 #include "ResourceAssembler.h"
-
 #include "../../../ResourceCreator/ResourceCreator.h"
 #include "../../../../BufferDefinition/AllBufferDescsInclude.h"
 
@@ -7805,14 +7870,12 @@ BufferContext::BufferAssembler::ResourceAssembler::GetClearValue(const ComputeBu
 ========================================
 #pragma once
 #include "../../BufferAssembler.h"
-#include "../../../../BufferDefinition/AllBufferDescsIFwd.h"
 
 
 class BufferContext::BufferAssembler::ResourceAssembler
 {
     friend class BufferContext::BufferAssembler;
 
-public:
     //生リソース生成
     template<typename DescType>
     [[nodiscard]]static ResourceContainer AssembleResource
@@ -7832,9 +7895,6 @@ public:
             desc_
         );
     }
-
-
-private:
 
     //生リソース生成に必要な情報を組み立てる
     static std::pair<D3D12_RESOURCE_DESC, D3D12_HEAP_PROPERTIES> CreateRequirements(const BufferDescriptionBehavior& desc_);
@@ -8108,7 +8168,6 @@ void BufferContext::BufferAssembler::ViewAssembler::CreateView
 
 class BufferContext::BufferAssembler::ViewAssembler
 {
-public:
 
     friend class BufferContext::BufferAssembler;
 
@@ -8122,8 +8181,6 @@ public:
         GPUBufferBehavior* buffer_,
         const DescType& desc_
     );
-
-private:
 
     //ビュー生成ヘルパー
     template<typename ViewDescType>
@@ -8451,11 +8508,11 @@ std::unique_ptr<GPUBufferBehavior> BufferContext::BufferCollector::CastBuffer(st
 ========================================
 #include "PreCompileHeader.h"
 #include "BufferUploader.h"
-#include "../../BufferDefinition/GPUBuffer/GPUBufferBehavior.h"
 
-//ツール
-#include "../ResourceCreator/ResourceCreator.h"
-#include "../../RuntimeBufferManagementSystems/BufferDispatcher/BufferDispatcher.h"
+
+#include "BufferUploaderTools/IntermediateResourceCreator/IntermediateResourceCreator.h"
+#include "BufferUploaderTools/BarrierExtractor/BarrierExtractor.h"
+#include "BufferUploaderTools/BufferAndResourcePicker/BufferAndResourcePicker.h"
 
 //外部
 #include "../../../../Core/Command/CommandContextDiplomat/CommandContextDiplomat.h"
@@ -8476,70 +8533,48 @@ BufferContext::BufferUploader::BufferUploader
 {
 	//コマンドプロバイダーにアクセス
 	auto* commandProvider = commandContextDiplomat_->Access<CommandContext::CommandProvider>();
-	uploadCommand = commandProvider->ProvideResourceUploadCommand(CommandContext::CommandProvider::UsesResourceUploadCmdPermission{});
+	CommandContext::CommandProvider::PermissionType<CommandContext::ResourceUploader::UploadCommand> licence{};
+
+	uploadCommand = commandProvider->Provide<CommandContext::ResourceUploader::UploadCommand>(licence);
+	pitchBarriersCommand = commandProvider->Provide<CommandContext::ResourceUploader::PitchBarrierCommand>(licence);
 }
 
 BufferContext::BufferUploader::~BufferUploader()
 {
 	Logger::Log("BufferUploader Destructor Runs", fileName);
-	Logger::Log("Delete: intermediateResources", fileName);
+	Logger::Log("Delete: all intermediateResources(" + std::to_string((UINT)intermediateResources.size()) + ")", fileName);
 }
 
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-ID3D12Resource* BufferContext::BufferUploader::CreateInterMediateResource(UINT resourceSize_)
+ID3D12Resource* BufferContext::BufferUploader::CreateInterMediateResource(UINT const resourceSize_)
 {
-	//中間リソース作成
-	auto& intermedRes = intermediateResources.emplace_back
-	(
-		std::move
-		(
-			resourceCreator->Create
-			(
-				CreateIntermedeiteResourceDesc(resourceSize_),
-				CreateIntermedeiteHeapProp(),
-				nullptr,
-				D3D12_RESOURCE_STATE_GENERIC_READ,
-				"intermed" + std::to_string(UINT(intermediateResources.size())),
-				1
-			)[0]
-		)
-	);
-
-	return intermedRes.Get();
+	return intermediateResources.emplace_back
+	(IntermediateResourceCreator::CreateInterMediateResource(resourceCreator, resourceSize_)).Get();
 }
-
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-D3D12_RESOURCE_DESC BufferContext::BufferUploader::CreateIntermedeiteResourceDesc(UINT resourceSize_)const
+void BufferContext::BufferUploader::ExtractBarrier(GPUBufferBehavior* dstBuffer_)
 {
-	D3D12_RESOURCE_DESC resourceDesc{};
-	resourceDesc.Dimension = D3D12_RESOURCE_DIMENSION_BUFFER;
-	resourceDesc.Width = resourceSize_;
-	resourceDesc.Height = 1;
-	resourceDesc.DepthOrArraySize = 1;
-	resourceDesc.MipLevels = 1;
-	resourceDesc.SampleDesc.Count = 1;
-	resourceDesc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
-	resourceDesc.Flags = D3D12_RESOURCE_FLAG_NONE;
-
-	return resourceDesc;
+	barriers.emplace_back(BarrierExtractor::ExtractBarrier(dstBuffer_));
 }
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-D3D12_HEAP_PROPERTIES BufferContext::BufferUploader::CreateIntermedeiteHeapProp()const
+std::tuple<GPUBufferBehavior*, ID3D12Resource*, std::string> BufferContext::BufferUploader::PickBufferAndResource(BufferUniqueID id_)
 {
-	D3D12_HEAP_PROPERTIES heapProperties{};
-	heapProperties.Type = D3D12_HEAP_TYPE_UPLOAD;
-	
-	return heapProperties;
+	return BufferAndResourcePicker::PickBufferAndResource(dispatcher, id_);
 }
-
-
-
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+void BufferContext::BufferUploader::PitchAllBarrier(BufferContext::NexusFieldProof proof_, BufferContext::AgentKey agentKey_)
+{
+	pitchBarriersCommand(barriers);
+	Logger::Log("Pitch All Barriers(" + std::to_string((UINT)barriers.size()) + ")", fileName);
+}
 
 
 
@@ -8550,11 +8585,8 @@ D3D12_HEAP_PROPERTIES BufferContext::BufferUploader::CreateIntermedeiteHeapProp(
 #pragma once
 #include "../../BufferContext.h"
 
-#include "../../BufferDefinition/GPUBuffer/StaticStructuredBuffer/StaticStructuredBuffer.h"
-#include "../../RuntimeBufferManagementSystems/BufferDispatcher/BufferDispatcher.h"
-
 //外部
-#include "../../../../Core/Command/CommandContext.h"
+#include "../../../../Core/Command/ResourceUploader/ResourceUploader.h"
 
 
 class GPUBufferBehavior;
@@ -8582,56 +8614,239 @@ public:
 		const RealDataType* realData_
 	)
 	{
-		UINT const bufferSize = sizeof(RealDataType) * numDataContaines_;
+		UINT const resourceSize = sizeof(RealDataType) * numDataContaines_;
 
 		//中間リソース生成
-		ID3D12Resource* interMediateResource = CreateInterMediateResource(bufferSize);
+		ID3D12Resource* interMediateResource = CreateInterMediateResource(resourceSize);
 		//サブリソース生成
-		D3D12_SUBRESOURCE_DATA subResource = CreateBufferSubResource(realData_, bufferSize);
+		D3D12_SUBRESOURCE_DATA subResource = CreateBufferSubResource(realData_, resourceSize);
 		
-		//生リソースを取り出す
-		GPUBufferBehavior* dstBuffer = dispatcher->Dispatch(id_);
-		ID3D12Resource* dstResource = dstBuffer->GetResource(GPUBufferBehavior::ResourceAccessKey{}, 0);
+		//バッファと生リソースを取り出す
+		auto [dstBuffer, dstResource,bufferName] = PickBufferAndResource(id_);
 
 		//コピーしてアップロードする
 		uploadCommand(dstResource, interMediateResource, &subResource, 1);
 
-		//GPUBufferBehaviorから、IReadOnlyインターフェースにキャストしてバリアを張る
-		IReadOnly* readOnlyBuffer = dynamic_cast<IReadOnly*>(dstBuffer);
-		ErrorMessageOutput::Assert::DetectError(readOnlyBuffer, "リードオンリーなバッファじゃない", "BufferUploader.h");
-		//コピーからシェーダーリソースに遷移させるバリアを吐かせる
-		auto barrier_copyDstToShaderResource = readOnlyBuffer->CreateBarrierAsReading();
-		barriers.emplace_back(barrier_copyDstToShaderResource);
+		//GPUBufferBehaviorから、IReadOnlyインターフェースにキャストしてバリアを抽出
+		ExtractBarrier(dstBuffer);
 
-		Logger::Log("Complete Uploading: " + dstBuffer->WatchName() + "(" + std::to_string(bufferSize) + ")", "BufferUploader.h");
+		Logger::Log("Complete Uploading: " + bufferName + "(" + std::to_string(resourceSize) + ")", "BufferUploader.h");
 	}
 
+	//たまりにたまったバリアを張る
+	//Nexusフィールド限定、代行者限定
+	void PitchAllBarrier(BufferContext::NexusFieldProof proof_, BufferContext::AgentKey agentKey_);
+
+
 private:
+
+	//中間リソース生成
+	class IntermediateResourceCreator;
+	//BufferDispatcherを使って、バッファのユニークIDからバッファとその生リソースを取り出す
+	class BufferAndResourcePicker;
+	//コピーからシェーダーリソースに遷移するためのバリアを抽出
+	class BarrierExtractor;
+
 	BufferContext::ResourceCreator* resourceCreator;
 	BufferContext::BufferDispatcher* dispatcher;
-	CommandContext::UploadCommand uploadCommand;
+	//リソースをアップロードするコマンド
+	CommandContext::ResourceUploader::UploadCommand uploadCommand;
+	//バリアを張るためのコマンド
+	CommandContext::ResourceUploader::PitchBarrierCommand pitchBarriersCommand;
 
 	//中間リソースのコンテナ
 	std::vector<Microsoft::WRL::ComPtr<ID3D12Resource>> intermediateResources;
 	//バリアのコンテナ
 	std::vector<D3D12_RESOURCE_BARRIER> barriers;
 
-
-	D3D12_RESOURCE_DESC CreateIntermedeiteResourceDesc(UINT resourceSize_)const;
-	D3D12_HEAP_PROPERTIES CreateIntermedeiteHeapProp()const;
-	ID3D12Resource* CreateInterMediateResource(UINT resourceSize_);
+	ID3D12Resource* CreateInterMediateResource(UINT const resourceSize_);
+	void ExtractBarrier(GPUBufferBehavior* dstBuffer_);
+	std::tuple<GPUBufferBehavior*, ID3D12Resource*,std::string> PickBufferAndResource(BufferUniqueID id_);
 
 	template<typename RealDataType>
-	D3D12_SUBRESOURCE_DATA CreateBufferSubResource(RealDataType* realData_ , UINT const bufferSize_)
+	D3D12_SUBRESOURCE_DATA CreateBufferSubResource(RealDataType* realData_ , UINT const resourceSize_)
 	{
 		D3D12_SUBRESOURCE_DATA subResource{};
 
 		subResource.pData = realData_;
-		subResource.RowPitch = bufferSize_;
+		subResource.RowPitch = resourceSize_;
 		subResource.SlicePitch = subResource.RowPitch;
 
 		return subResource;
 	}
+};
+
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Buffer\BufferCreateTools\BufferUploader\BufferUploaderTools\BarrierExtractor\BarrierExtractor.cpp ===
+========================================
+#include "PreCompileHeader.h"
+#include "BarrierExtractor.h"
+#include "../../../../BufferDefinition/GPUBuffer/BufferInterface.h"
+
+[[nodiscard]] D3D12_RESOURCE_BARRIER BufferContext::BufferUploader::BarrierExtractor::ExtractBarrier(GPUBufferBehavior* dstBuffer_)
+{
+	IReadOnly* readOnlyBuffer = dynamic_cast<IReadOnly*>(dstBuffer_);
+	ErrorMessageOutput::Assert::DetectError(readOnlyBuffer, "リードオンリーなバッファじゃない", "BufferUploader.h");
+	//コピーからシェーダーリソースに遷移させるバリアを吐かせる
+	return readOnlyBuffer->CreateBarrierAsReading();
+}
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Buffer\BufferCreateTools\BufferUploader\BufferUploaderTools\BarrierExtractor\BarrierExtractor.h ===
+========================================
+#pragma once
+#include "../../BufferUploader.h"
+
+class BufferContext::BufferUploader::BarrierExtractor
+{
+	friend class BufferContext::BufferUploader;
+
+	static [[nodiscard]]D3D12_RESOURCE_BARRIER ExtractBarrier(GPUBufferBehavior* dstBuffer_);
+
+		
+
+};
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Buffer\BufferCreateTools\BufferUploader\BufferUploaderTools\BufferAndResourcePicker\BufferAndResourcePicker.cpp ===
+========================================
+#include "PreCompileHeader.h"
+#include "BufferAndResourcePicker.h"
+#include "../../../../BufferDefinition/GPUBuffer/GPUBufferBehavior.h"
+#include "../../../../BufferRuntime/BufferDispatcher/BufferDispatcher.h"
+
+
+
+
+
+[[nodiscard]] std::tuple<GPUBufferBehavior*, ID3D12Resource*, std::string> BufferContext::BufferUploader::BufferAndResourcePicker::PickBufferAndResource
+(
+	BufferContext::BufferDispatcher* dispatcher_,
+	BufferUniqueID id_
+)
+{
+	GPUBufferBehavior* dstBuffer = dispatcher_->Dispatch(id_);
+	ID3D12Resource* dstResource = dstBuffer->GetResource(GPUBufferBehavior::ResourceAccessKey{}, 0);
+
+	return std::make_tuple(dstBuffer, dstResource, dstBuffer->WatchName());
+}
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Buffer\BufferCreateTools\BufferUploader\BufferUploaderTools\BufferAndResourcePicker\BufferAndResourcePicker.h ===
+========================================
+#pragma once
+#include "../../BufferUploader.h"
+
+class GPUBufferBehavior;
+
+
+class BufferContext::BufferUploader::BufferAndResourcePicker
+{
+	friend class BufferContext::BufferUploader;
+
+	static [[nodiscard]]std::tuple<GPUBufferBehavior*, ID3D12Resource*,std::string> PickBufferAndResource
+	(
+		BufferContext::BufferDispatcher* dispatcher_,
+		BufferUniqueID id_
+	);
+};
+
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Buffer\BufferCreateTools\BufferUploader\BufferUploaderTools\IntermediateResourceCreator\IntermediateResourceCreator.cpp ===
+========================================
+#include "PreCompileHeader.h"
+#include "IntermediateResourceCreator.h"
+#include "../../../ResourceCreator/ResourceCreator.h"
+
+[[nodiscard]] Microsoft::WRL::ComPtr<ID3D12Resource> BufferContext::BufferUploader::IntermediateResourceCreator::CreateInterMediateResource
+(
+	BufferContext::ResourceCreator* resourceCreator_,
+	UINT resourceSize_
+)
+{
+	//中間リソース作成
+	return resourceCreator_->Create
+	(
+		CreateIntermedeiteResourceDesc(resourceSize_),
+		CreateIntermedeiteHeapProp(),
+		nullptr,
+		D3D12_RESOURCE_STATE_GENERIC_READ,
+		"intermed" + std::to_string(createNum++),
+		1
+	)[0];
+}
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+D3D12_RESOURCE_DESC BufferContext::BufferUploader::IntermediateResourceCreator::CreateIntermedeiteResourceDesc(UINT resourceSize_)
+{
+	D3D12_RESOURCE_DESC resourceDesc{};
+	resourceDesc.Dimension = D3D12_RESOURCE_DIMENSION_BUFFER;
+	resourceDesc.Width = resourceSize_;
+	resourceDesc.Height = 1;
+	resourceDesc.DepthOrArraySize = 1;
+	resourceDesc.MipLevels = 1;
+	resourceDesc.SampleDesc.Count = 1;
+	resourceDesc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
+	resourceDesc.Flags = D3D12_RESOURCE_FLAG_NONE;
+
+	return resourceDesc;
+}
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+D3D12_HEAP_PROPERTIES BufferContext::BufferUploader::IntermediateResourceCreator::CreateIntermedeiteHeapProp()
+{
+	D3D12_HEAP_PROPERTIES heapProperties{};
+	heapProperties.Type = D3D12_HEAP_TYPE_UPLOAD;
+
+	return heapProperties;
+}
+
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Buffer\BufferCreateTools\BufferUploader\BufferUploaderTools\IntermediateResourceCreator\IntermediateResourceCreator.h ===
+========================================
+#pragma once
+#include "../../BufferUploader.h"
+
+
+class BufferContext::BufferUploader::IntermediateResourceCreator
+{
+	friend class BufferContext::BufferUploader;
+
+	//生成数。命名に使うだけ
+	static inline int createNum{};
+
+	static [[nodiscard]] Microsoft::WRL::ComPtr<ID3D12Resource> CreateInterMediateResource
+	(
+		BufferContext::ResourceCreator* resourceCreator_,
+		UINT resourceSize_
+	);
+
+	static D3D12_RESOURCE_DESC CreateIntermedeiteResourceDesc(UINT resourceSize_);
+	static D3D12_HEAP_PROPERTIES CreateIntermedeiteHeapProp();
+
 };
 
 
@@ -10650,7 +10865,7 @@ D3D12_RESOURCE_BARRIER StaticStructuredBuffer::CreateBarrierAsReading()
 
 
 //読み込み専用StructuredBuffer
-class StaticStructuredBuffer final : public GPUBufferBehavior, IReadable,public IReadOnly
+class StaticStructuredBuffer final : public GPUBufferBehavior, public IReadable,public IReadOnly
 {
 
 public:
@@ -10733,7 +10948,7 @@ public:
 
 
 ========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Buffer\RuntimeBufferManagementSystems\BufferDeferredReleaser\BufferDeferredReleaser.cpp ===
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Buffer\BufferRuntime\BufferDeferredReleaser\BufferDeferredReleaser.cpp ===
 ========================================
 
 #include "BufferDeferredReleaser.h"
@@ -10742,7 +10957,7 @@ public:
 
 
 ========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Buffer\RuntimeBufferManagementSystems\BufferDeferredReleaser\BufferDeferredReleaser.h ===
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Buffer\BufferRuntime\BufferDeferredReleaser\BufferDeferredReleaser.h ===
 ========================================
 #pragma once
 #include "../../BufferContext.h"
@@ -10758,7 +10973,7 @@ class BufferDeferredReleaser
 
 
 ========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Buffer\RuntimeBufferManagementSystems\BufferDispatcher\BufferDispatcher.cpp ===
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Buffer\BufferRuntime\BufferDispatcher\BufferDispatcher.cpp ===
 ========================================
 
 #include "BufferDispatcher.h"
@@ -10778,13 +10993,11 @@ BufferContext::BufferDispatcher::BufferDispatcher
 
 
 ========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Buffer\RuntimeBufferManagementSystems\BufferDispatcher\BufferDispatcher.h ===
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Buffer\BufferRuntime\BufferDispatcher\BufferDispatcher.h ===
 ========================================
 #pragma once
 #include "../../BufferContext.h"
 #include "ClosedHashMap/ClosedHashMap.h" 
-
-
 
 class BufferContext::BufferDispatcher
 {
@@ -10817,7 +11030,7 @@ private:
 
 
 ========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Buffer\RuntimeBufferManagementSystems\BufferInfoExtractor\BufferInfoExtractor.cpp ===
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Buffer\BufferRuntime\BufferInfoExtractor\BufferInfoExtractor.cpp ===
 ========================================
 
 #include "BufferInfoExtractor.h"
@@ -10895,7 +11108,7 @@ RenderPath::Pass::RequiredBufferInfo::RenderTarget BufferContext::BufferInfoExtr
 
 
 ========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Buffer\RuntimeBufferManagementSystems\BufferInfoExtractor\BufferInfoExtractor.h ===
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Buffer\BufferRuntime\BufferInfoExtractor\BufferInfoExtractor.h ===
 ========================================
 #pragma once
 #include "../../BufferContext.h"
@@ -11041,7 +11254,7 @@ private:
 #include "MeshDataCreatorTools/MeshDataBufferCreator/MeshDataBufferCreator.h"
 #include "MeshDataCreatorTools/ModelRegistryLoader/ModelRegistryLoader.h"
 #include "MeshDataCreatorTools/MeshDataBufferUploader/MeshDataBufferUploader.h"
-
+#include "MeshDataCreatorTools/MeshDataBufferSRVHeapIndexGroupPackager/MeshDataBufferSRVHeapIndexGroupPackager.h"
 
 //外部
 #include "../../../Buffer/BufferContextDiplomat/BufferToolLender/BufferToolLender.h"
@@ -11108,7 +11321,7 @@ void MeshContext::ModelDataCreator::CreateAllModelData
     std::unordered_map<std::string, ModelDataAggregate*> tmpModelDataLib = LoadAllModelFiles();
 
     //バッファコンテキストのツールレンダーから各種ツールを借りる
-    auto [bufferCreator, bufferCollector, bufferUploader] =
+    auto [bufferCreator, bufferCollector, bufferUploader,bufferDispatcher] =
         BorrowBufferContextTools(bufferContextDiplomat_);
 
     for (const auto& [key, value] : tmpModelDataLib)
@@ -11133,6 +11346,18 @@ void MeshContext::ModelDataCreator::CreateAllModelData
             meshDataBufferUniqueIDGroupContainer,
             bufferUploader
         );
+
+        //メッシュデータのユニークIDをもとにそれぞれのsrvHeapIndexを引き出し、
+        //tmpMeshDataSRVHeapIndexGroupContainer
+        //こいつに詰めていく。こいつのインデックスはmeshDataIDとリンクしている
+
+        MeshDataBufferSRVHeapIndexGroupPackager::PackMeshDataBufferSRVHeapIndex
+        (
+            meshDataBufferUniqueIDGroupContainer,
+            tmpMeshDataSRVHeapIndexGroupContainer,
+            bufferDispatcher
+        );
+
 
     }
 
@@ -11174,8 +11399,9 @@ MeshContext::ModelDataCreator::BufferContextTools MeshContext::ModelDataCreator:
     auto* bufferCreator = bufferToolLender->Lend<BufferContext::BufferCreator>(licence);
     auto* bufferCollector = bufferToolLender->Lend<BufferContext::BufferCollector>(licence);
     auto* bufferUploader = bufferToolLender->Lend<BufferContext::BufferUploader>(licence);
+    auto* bufferDispatcher = bufferToolLender->Lend<BufferContext::BufferDispatcher>(licence);
 
-    return std::make_tuple(bufferCreator, bufferCollector, bufferUploader);
+    return std::make_tuple(bufferCreator, bufferCollector, bufferUploader, bufferDispatcher);
 }
 
 
@@ -11191,9 +11417,7 @@ MeshContext::ModelDataCreator::BufferContextTools MeshContext::ModelDataCreator:
 #include "../../../Buffer/BufferContext.h"
 
 struct ModelDataAggregate;
-struct ResourceMesh;
-struct ResourrceMatrilal;
-
+class StaticStructuredBuffer;
 
 class MeshContext::ModelDataCreator
 {
@@ -11201,7 +11425,8 @@ class MeshContext::ModelDataCreator
 	<
 		BufferContext::BufferCreator*,
 		BufferContext::BufferCollector*,
-		BufferContext::BufferUploader*
+		BufferContext::BufferUploader*,
+		BufferContext::BufferDispatcher*
 	>;
 
 protected:
@@ -11209,21 +11434,22 @@ protected:
 	//MeshDataBufferのユニークIDを列挙するため
 	struct MeshDataBufferUniqueIDGroup
 	{
-		BufferUniqueID verticesGPUID{};
-		BufferUniqueID uniqueVertsIndicesID{};
-		BufferUniqueID meshletsID{};
-		BufferUniqueID primIndicesID{};
+		BufferUniqueID verticesGPU{};
+		BufferUniqueID uniqueVertsIndices{};
+		BufferUniqueID meshlets{};
+		BufferUniqueID primIndices{};
 	};
-
 
 private:
 
 	//モデルの理事ストリーファイルを読み込んで、キーがファイル名のバリューがファイルパスであるマップを返す
 	class ModelRegistryLoader;
-	//頂点データをGPUように変換したり、BufferUniqueIDからstructuredBufferポインタに変換する
+	//頂点データをGPU用に変換したり、BufferUniqueIDからstructuredBufferポインタに変換する
 	class DataTransducer;
 	//メッシュデータのバッファのアップロードを行う
 	class MeshDataBufferUploader;
+	//メッシュデータバッファのsrvHeapIndexを詰めていく
+	class MeshDataBufferSRVHeapIndexGroupPackager;
 
 public:
 
@@ -11324,16 +11550,16 @@ MeshContext::ModelDataCreator::MeshDataBufferCreator::CreateMeshDataBuffer
         std::string meshDataName = modelFileName_ + std::to_string(subMeshCnt);
 
         //ディスクをもとにバッファを生成
-        meshDataBufferUniqueID.verticesGPUID        = tmpCreateBufferFunc.operator() < StandardVertexGPU >      
+        meshDataBufferUniqueID.verticesGPU        = tmpCreateBufferFunc.operator() < StandardVertexGPU >      
             (meshData.vertices.size(), meshDataName, "Vertices");
 
-        meshDataBufferUniqueID.uniqueVertsIndicesID = tmpCreateBufferFunc.operator() < UniqueVertexIndexCPUGPU > 
+        meshDataBufferUniqueID.uniqueVertsIndices = tmpCreateBufferFunc.operator() < UniqueVertexIndexCPUGPU > 
             (meshData.uniqueVertexIndices.size(), meshDataName, "UniqueVertsIndices");
 
-        meshDataBufferUniqueID.meshletsID           = tmpCreateBufferFunc.operator() < MeshletCPUGPU >           
+        meshDataBufferUniqueID.meshlets           = tmpCreateBufferFunc.operator() < MeshletCPUGPU >           
             (meshData.meshlets.size(), meshDataName, "Meshlets");
 
-        meshDataBufferUniqueID.primIndicesID        = tmpCreateBufferFunc.operator() < PrimitiveIndexCPUGPU >   
+        meshDataBufferUniqueID.primIndices        = tmpCreateBufferFunc.operator() < PrimitiveIndexCPUGPU >   
             (meshData.primitiveIndices.size(), meshDataName, "PrimIndices");
 
         meshDataBufferUniqueIDContainer.emplace_back(meshDataBufferUniqueID);
@@ -11371,7 +11597,8 @@ MeshContext::ModelDataCreator::MeshDataBufferCreator::CreateMeshDataBuffer
 #pragma once
 #include "../../ModelDataCreator.h"
 
-
+struct ResourceMesh;
+struct ResourrceMatrilal;
 
 class MeshContext::ModelDataCreator::MeshDataBufferCreator
 {
@@ -11395,11 +11622,94 @@ class MeshContext::ModelDataCreator::MeshDataBufferCreator
 
 
 ========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Mesh\CreateModelTools\ModelDataCreator\MeshDataCreatorTools\MeshDataBufferSRVHeapIndexGroupPackager\MeshDataBufferSRVHeapIndexGroupPackager.cpp ===
+========================================
+#include "PreCompileHeader.h"
+#include "MeshDataBufferSRVHeapIndexGroupPackager.h"
+
+//外部
+#include "../../../../../Buffer/BufferDefinition/GPUBuffer/BufferInterface.h"
+#include "../../../../../Buffer/BufferRuntime/BufferDispatcher/BufferDispatcher.h"
+
+
+namespace
+{
+	auto const fileName = "MeshDataBufferSRVHeapIndexGroupPackager.cpp";
+}
+
+using namespace StructuredBufferDataDefinition;
+
+
+void MeshContext::ModelDataCreator::MeshDataBufferSRVHeapIndexGroupPackager::PackMeshDataBufferSRVHeapIndex
+(
+	const std::vector<MeshDataBufferUniqueIDGroup>& uniqueIDGroupContainer_,
+	std::vector<MeshDataSRVHeapIndexGroupGPUCPU>& tmpMeshDataSRVHeapIndexGroupContainer_,
+	BufferContext::BufferDispatcher* dispatcher_
+)
+{
+
+	size_t containerSize = uniqueIDGroupContainer_.size();
+
+	auto GetSRVHeapIndexFunc = [dispatcher_](BufferUniqueID id_)
+	{
+		auto* bufferBehav = dispatcher_->Dispatch(id_);
+		auto* readableBuffer = dynamic_cast<IReadable*>(bufferBehav);
+		ErrorMessageOutput::Assert::DetectError(readableBuffer, "リーダブルじゃない", fileName);
+
+		return readableBuffer->OutProperSRVHeapIndex();
+	};
+
+	for (size_t i = 0;i< containerSize;++i)
+	{
+		MeshDataSRVHeapIndexGroupGPUCPU srvHeapIndexGroup;
+
+		srvHeapIndexGroup.vertices =			GetSRVHeapIndexFunc(uniqueIDGroupContainer_[i].verticesGPU);
+		srvHeapIndexGroup.uniqueVertexIndices = GetSRVHeapIndexFunc(uniqueIDGroupContainer_[i].uniqueVertsIndices);
+		srvHeapIndexGroup.meshlets =			GetSRVHeapIndexFunc(uniqueIDGroupContainer_[i].meshlets);
+		srvHeapIndexGroup.primitiveIndices =	GetSRVHeapIndexFunc(uniqueIDGroupContainer_[i].primIndices);
+
+		tmpMeshDataSRVHeapIndexGroupContainer_.emplace_back(srvHeapIndexGroup);
+	}
+}
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Mesh\CreateModelTools\ModelDataCreator\MeshDataCreatorTools\MeshDataBufferSRVHeapIndexGroupPackager\MeshDataBufferSRVHeapIndexGroupPackager.h ===
+========================================
+#pragma once
+#include "../../ModelDataCreator.h"
+
+
+//外部
+#include "../../../../../../../../Assets/Shared/StructuredBuffer.h"
+
+
+class MeshContext::ModelDataCreator::MeshDataBufferSRVHeapIndexGroupPackager
+{
+	friend class MeshContext::ModelDataCreator;
+
+	static void PackMeshDataBufferSRVHeapIndex
+	(
+		const std::vector<MeshDataBufferUniqueIDGroup>& uniqueIDGroupContainer_,
+		std::vector<StructuredBufferDataDefinition::MeshDataSRVHeapIndexGroupGPUCPU>& tmpMeshDataSRVHeapIndexGroupContainer_,
+		BufferContext::BufferDispatcher* dispatcher_
+	);
+
+};
+
+
+
+
+
+========================================
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Mesh\CreateModelTools\ModelDataCreator\MeshDataCreatorTools\MeshDataBufferUploader\MeshDataBufferUploader.cpp ===
 ========================================
 #include "PreCompileHeader.h"
 #include "MeshDataBufferUploader.h"
 #include "../ModelDataTransducer/ModelDataTransducer.h"
+#include "../../../../ModelStructure/ModelData/ResourceMesh/ResourceMesh.h"
 
 
 //外部
@@ -11437,7 +11747,7 @@ void MeshContext::ModelDataCreator::MeshDataBufferUploader::CopyAndUploadBuffer
         //頂点データ
         bufferUploader_->UploadBuffer
         (
-            meshDataBufferUniqueIDGroupContainer_[i].verticesGPUID,
+            meshDataBufferUniqueIDGroupContainer_[i].verticesGPU,
             (UINT)vertexGPU.size(),
             vertexGPU.data()
         );
@@ -11445,7 +11755,7 @@ void MeshContext::ModelDataCreator::MeshDataBufferUploader::CopyAndUploadBuffer
         //頂点インデックス
         bufferUploader_->UploadBuffer
         (
-            meshDataBufferUniqueIDGroupContainer_[i].uniqueVertsIndicesID,
+            meshDataBufferUniqueIDGroupContainer_[i].uniqueVertsIndices,
             (UINT)data_[i].uniqueVertexIndices.size(),
             data_[i].uniqueVertexIndices.data()
         );
@@ -11453,7 +11763,7 @@ void MeshContext::ModelDataCreator::MeshDataBufferUploader::CopyAndUploadBuffer
         //メッシュレット
         bufferUploader_->UploadBuffer
         (
-            meshDataBufferUniqueIDGroupContainer_[i].meshletsID,
+            meshDataBufferUniqueIDGroupContainer_[i].meshlets,
             (UINT)data_[i].meshlets.size(),
             data_[i].meshlets.data()
         );
@@ -11461,7 +11771,7 @@ void MeshContext::ModelDataCreator::MeshDataBufferUploader::CopyAndUploadBuffer
         //三角形頂点構成番号
         bufferUploader_->UploadBuffer
         (
-            meshDataBufferUniqueIDGroupContainer_[i].primIndicesID,
+            meshDataBufferUniqueIDGroupContainer_[i].primIndices,
             (UINT)data_[i].primitiveIndices.size(),
             data_[i].primitiveIndices.data()
         );
@@ -11478,7 +11788,8 @@ void MeshContext::ModelDataCreator::MeshDataBufferUploader::CopyAndUploadBuffer
 ========================================
 #pragma once
 #include "../../ModelDataCreator.h"
-#include "../../../../ModelStructure/ModelData/ResourceMesh/ResourceMesh.h"
+
+struct ResourceMesh;
 
 class MeshContext::ModelDataCreator::MeshDataBufferUploader
 {
@@ -11503,9 +11814,10 @@ class MeshContext::ModelDataCreator::MeshDataBufferUploader
 ========================================
 #include "PreCompileHeader.h"
 #include "ModelDataTransducer.h"
+#include "../../../../ModelStructure/ModelData/ResourceMesh/StandardVertex.h"
 
 //外部
-#include "../../../../../Buffer/RuntimeBufferManagementSystems/BufferDispatcher/BufferDispatcher.h"
+#include "../../../../../Buffer/BufferRuntime/BufferDispatcher/BufferDispatcher.h"
 #include "../../../../../Buffer/BufferDefinition/GPUBuffer/StaticStructuredBuffer/StaticStructuredBuffer.h"
 
 using namespace StructuredBufferDataDefinition;
@@ -11555,25 +11867,19 @@ std::vector<StandardVertexGPU> MeshContext::ModelDataCreator::DataTransducer::Tr
 ========================================
 #pragma once
 #include "../../ModelDataCreator.h"
-#include "../../../../ModelStructure/ModelData/ResourceMesh/StandardVertex.h"
 #include "../../../../../../../../Assets/Shared/StructuredBuffer.h"
+
+
+struct StandardVertex;
 
 class MeshContext::ModelDataCreator::DataTransducer
 {
 	friend class MeshContext::ModelDataCreator;
 
-	/////バッファユニークIDが指すバッファのアドレス群を取得
-	//[[nodiscard]] static std::vector<MeshDataStructuredBufferGroup> BufferUniqueID_To_BufferPtr
-	//(
-	//	const std::vector<MeshDataBufferUniqueIDGroup>& uniqueIDGroup_,
-	//	BufferContext::BufferDispatcher* bufferDispatcher_
-	//);
-
 	//CPU用の頂点データをGPU用に移し替える
 	[[nodiscard]] static std::vector<StructuredBufferDataDefinition::StandardVertexGPU> 
 		TransferVertexDataTypeToGPU(const std::vector<StandardVertex>& vertices_);
-
-
+		
 };
 
 
@@ -15641,6 +15947,9 @@ Nexus::Nexus()
 	InitializeInSequence<InitSequence::kRootSignatureContext>();
 	InitializeInSequence<InitSequence::kMeshContext>();
 	InitializeInSequence<InitSequence::kRenderContext>();
+
+
+	InitializeInSequence<InitSequence::kPitchAllBarriersForShaderResource>();
 	InitializeInSequence<InitSequence::kKickCommands>();
 	InitializeInSequence<InitSequence::kDeleteIntermediateResources>();
 
@@ -15706,6 +16015,8 @@ class Nexus
 		kMeshContext,
 		kRenderContext,
 
+
+		kPitchAllBarriersForShaderResource,
 		kKickCommands,
 		kDeleteIntermediateResources
 
@@ -15823,7 +16134,6 @@ void Nexus::Finalize()
 #include "../LowerLayer/Core/SwapChain/SwapChainContext.h"
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 #include "../LowerLayer/Core/Command/CommandContext.h"
-#include "../LowerLayer/Core/Command/ResourceUploader/ResourceUploader.h"
 #include "../LowerLayer/Core/Command/CommandContextDiplomat/CommandContextDiplomat.h"
 #include "../LowerLayer/Core/Command/CommandContextDiplomat/CommandContextExecutionAgent/CommandContextExecutionAgent.h"
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -16008,10 +16318,24 @@ void Nexus::Init<Nexus::InitSequence::kKickCommands>()
 template<>
 void Nexus::Init<Nexus::InitSequence::kDeleteIntermediateResources>()
 {
+	//bufferContextの代行者
 	auto* agent = bufferContext->diplomat->Access<BufferContext::ExecutionAgent>();
 	//BufferUploaderの削除を代行
 	agent->DeleteBufferUploader(BufferContext::NexusFieldProof{});
 }
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+template<>
+void Nexus::Init<Nexus::InitSequence::kPitchAllBarriersForShaderResource>()
+{
+	//bufferContextの代行者
+	auto* agent = bufferContext->diplomat->Access<BufferContext::ExecutionAgent>();
+	//BufferUploaderの削除を代行
+	agent->PitchAllBarriersForUpload(BufferContext::NexusFieldProof{});
+}
+
+
 
 
 
@@ -16049,6 +16373,9 @@ void Nexus::Init<Nexus::InitSequence::kMeshContext>();
 
 template
 void Nexus::Init<Nexus::InitSequence::kRenderContext>();
+
+template
+void Nexus::Init<Nexus::InitSequence::kPitchAllBarriersForShaderResource>();
 
 template
 void Nexus::Init<Nexus::InitSequence::kKickCommands>();
