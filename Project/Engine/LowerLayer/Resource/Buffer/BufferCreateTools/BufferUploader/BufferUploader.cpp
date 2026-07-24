@@ -1,10 +1,10 @@
 #include "PreCompileHeader.h"
 #include "BufferUploader.h"
-#include "../../BufferDefinition/GPUBuffer/GPUBufferBehavior.h"
 
-//ツール
-#include "../ResourceCreator/ResourceCreator.h"
-#include "../../RuntimeBufferManagementSystems/BufferDispatcher/BufferDispatcher.h"
+
+#include "BufferUploaderTools/IntermediateResourceCreator/IntermediateResourceCreator.h"
+#include "BufferUploaderTools/BarrierExtractor/BarrierExtractor.h"
+#include "BufferUploaderTools/BufferAndResourcePicker/BufferAndResourcePicker.h"
 
 //外部
 #include "../../../../Core/Command/CommandContextDiplomat/CommandContextDiplomat.h"
@@ -25,7 +25,10 @@ BufferContext::BufferUploader::BufferUploader
 {
 	//コマンドプロバイダーにアクセス
 	auto* commandProvider = commandContextDiplomat_->Access<CommandContext::CommandProvider>();
-	uploadCommand = commandProvider->ProvideResourceUploadCommand(CommandContext::CommandProvider::UsesResourceUploadCmdPermission{});
+	CommandContext::CommandProvider::PermissionType<CommandContext::ResourceUploader::UploadCommand> licence{};
+
+	uploadCommand = commandProvider->Provide<CommandContext::ResourceUploader::UploadCommand>(licence);
+	pitchBarriersCommand = commandProvider->Provide<CommandContext::ResourceUploader::PitchBarrierCommand>(licence);
 }
 
 BufferContext::BufferUploader::~BufferUploader()
@@ -37,55 +40,29 @@ BufferContext::BufferUploader::~BufferUploader()
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-ID3D12Resource* BufferContext::BufferUploader::CreateInterMediateResource(UINT resourceSize_)
+ID3D12Resource* BufferContext::BufferUploader::CreateInterMediateResource(UINT const resourceSize_)
 {
-	//中間リソース作成
-	auto& intermedRes = intermediateResources.emplace_back
-	(
-		std::move
-		(
-			resourceCreator->Create
-			(
-				CreateIntermedeiteResourceDesc(resourceSize_),
-				CreateIntermedeiteHeapProp(),
-				nullptr,
-				D3D12_RESOURCE_STATE_GENERIC_READ,
-				"intermed" + std::to_string(UINT(intermediateResources.size())),
-				1
-			)[0]
-		)
-	);
-
-	return intermedRes.Get();
-}
-
-///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-D3D12_RESOURCE_DESC BufferContext::BufferUploader::CreateIntermedeiteResourceDesc(UINT resourceSize_)const
-{
-	D3D12_RESOURCE_DESC resourceDesc{};
-	resourceDesc.Dimension = D3D12_RESOURCE_DIMENSION_BUFFER;
-	resourceDesc.Width = resourceSize_;
-	resourceDesc.Height = 1;
-	resourceDesc.DepthOrArraySize = 1;
-	resourceDesc.MipLevels = 1;
-	resourceDesc.SampleDesc.Count = 1;
-	resourceDesc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
-	resourceDesc.Flags = D3D12_RESOURCE_FLAG_NONE;
-
-	return resourceDesc;
+	return intermediateResources.emplace_back
+	(IntermediateResourceCreator::CreateInterMediateResource(resourceCreator, resourceSize_)).Get();
 }
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-D3D12_HEAP_PROPERTIES BufferContext::BufferUploader::CreateIntermedeiteHeapProp()const
+void BufferContext::BufferUploader::ExtractBarrier(GPUBufferBehavior* dstBuffer_)
 {
-	D3D12_HEAP_PROPERTIES heapProperties{};
-	heapProperties.Type = D3D12_HEAP_TYPE_UPLOAD;
-	
-	return heapProperties;
+	barriers.emplace_back(BarrierExtractor::ExtractBarrier(dstBuffer_));
 }
-
-
-
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+std::tuple<GPUBufferBehavior*, ID3D12Resource*, std::string> BufferContext::BufferUploader::PickBufferAndResource(BufferUniqueID id_)
+{
+	return BufferAndResourcePicker::PickBufferAndResource(dispatcher, id_);
+}
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+void BufferContext::BufferUploader::PitchAllBarrier(BufferContext::NexusFieldProof proof_, BufferContext::AgentKey agentKey_)
+{
+	pitchBarriersCommand(barriers);
+}

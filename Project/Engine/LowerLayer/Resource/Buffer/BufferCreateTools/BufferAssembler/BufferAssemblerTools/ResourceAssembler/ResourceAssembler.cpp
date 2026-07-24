@@ -1,6 +1,5 @@
 #include "PreCompileHeader.h"
 #include "ResourceAssembler.h"
-
 #include "../../../ResourceCreator/ResourceCreator.h"
 #include "../../../../BufferDefinition/AllBufferDescsInclude.h"
 
