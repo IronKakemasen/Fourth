@@ -48,16 +48,16 @@ MeshContext::ModelDataCreator::MeshDataBufferCreator::CreateMeshDataBuffer
         std::string meshDataName = modelFileName_ + std::to_string(subMeshCnt);
 
         //ディスクをもとにバッファを生成
-        meshDataBufferUniqueID.verticesGPUID        = tmpCreateBufferFunc.operator() < StandardVertexGPU >      
+        meshDataBufferUniqueID.verticesGPU        = tmpCreateBufferFunc.operator() < StandardVertexGPU >      
             (meshData.vertices.size(), meshDataName, "Vertices");
 
-        meshDataBufferUniqueID.uniqueVertsIndicesID = tmpCreateBufferFunc.operator() < UniqueVertexIndexCPUGPU > 
+        meshDataBufferUniqueID.uniqueVertsIndices = tmpCreateBufferFunc.operator() < UniqueVertexIndexCPUGPU > 
             (meshData.uniqueVertexIndices.size(), meshDataName, "UniqueVertsIndices");
 
-        meshDataBufferUniqueID.meshletsID           = tmpCreateBufferFunc.operator() < MeshletCPUGPU >           
+        meshDataBufferUniqueID.meshlets           = tmpCreateBufferFunc.operator() < MeshletCPUGPU >           
             (meshData.meshlets.size(), meshDataName, "Meshlets");
 
-        meshDataBufferUniqueID.primIndicesID        = tmpCreateBufferFunc.operator() < PrimitiveIndexCPUGPU >   
+        meshDataBufferUniqueID.primIndices        = tmpCreateBufferFunc.operator() < PrimitiveIndexCPUGPU >   
             (meshData.primitiveIndices.size(), meshDataName, "PrimIndices");
 
         meshDataBufferUniqueIDContainer.emplace_back(meshDataBufferUniqueID);

@@ -10,7 +10,7 @@
 #include "MeshDataCreatorTools/MeshDataBufferCreator/MeshDataBufferCreator.h"
 #include "MeshDataCreatorTools/ModelRegistryLoader/ModelRegistryLoader.h"
 #include "MeshDataCreatorTools/MeshDataBufferUploader/MeshDataBufferUploader.h"
-
+#include "MeshDataCreatorTools/MeshDataBufferSRVHeapIndexGroupPackager/MeshDataBufferSRVHeapIndexGroupPackager.h"
 
 //外部
 #include "../../../Buffer/BufferContextDiplomat/BufferToolLender/BufferToolLender.h"
@@ -77,7 +77,7 @@ void MeshContext::ModelDataCreator::CreateAllModelData
     std::unordered_map<std::string, ModelDataAggregate*> tmpModelDataLib = LoadAllModelFiles();
 
     //バッファコンテキストのツールレンダーから各種ツールを借りる
-    auto [bufferCreator, bufferCollector, bufferUploader] =
+    auto [bufferCreator, bufferCollector, bufferUploader,bufferDispatcher] =
         BorrowBufferContextTools(bufferContextDiplomat_);
 
     for (const auto& [key, value] : tmpModelDataLib)
@@ -102,6 +102,18 @@ void MeshContext::ModelDataCreator::CreateAllModelData
             meshDataBufferUniqueIDGroupContainer,
             bufferUploader
         );
+
+        //メッシュデータのユニークIDをもとにそれぞれのsrvHeapIndexを引き出し、
+        //tmpMeshDataSRVHeapIndexGroupContainer
+        //こいつに詰めていく。こいつのインデックスはmeshDataIDとリンクしている
+
+        MeshDataBufferSRVHeapIndexGroupPackager::PackMeshDataBufferSRVHeapIndex
+        (
+            meshDataBufferUniqueIDGroupContainer,
+            tmpMeshDataSRVHeapIndexGroupContainer,
+            bufferDispatcher
+        );
+
 
     }
 
@@ -143,6 +155,7 @@ MeshContext::ModelDataCreator::BufferContextTools MeshContext::ModelDataCreator:
     auto* bufferCreator = bufferToolLender->Lend<BufferContext::BufferCreator>(licence);
     auto* bufferCollector = bufferToolLender->Lend<BufferContext::BufferCollector>(licence);
     auto* bufferUploader = bufferToolLender->Lend<BufferContext::BufferUploader>(licence);
+    auto* bufferDispatcher = bufferToolLender->Lend<BufferContext::BufferDispatcher>(licence);
 
-    return std::make_tuple(bufferCreator, bufferCollector, bufferUploader);
+    return std::make_tuple(bufferCreator, bufferCollector, bufferUploader, bufferDispatcher);
 }

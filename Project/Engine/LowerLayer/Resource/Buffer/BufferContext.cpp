@@ -9,8 +9,8 @@
 #include "BufferContextDiplomat/BufferToolLender/BufferToolLender.h"
 #include "BufferContextDiplomat/BufferContextDiplomat.h"
 //ランタイム処理ツール
-#include "RuntimeBufferManagementSystems/BufferDispatcher/BufferDispatcher.h"
-#include "RuntimeBufferManagementSystems/BufferInfoExtractor/BufferInfoExtractor.h"
+#include "BufferRuntime/BufferDispatcher/BufferDispatcher.h"
+#include "BufferRuntime/BufferInfoExtractor/BufferInfoExtractor.h"
 #include "BufferContextDiplomat/BufferContextExecutionAgent/BufferContextExecutionAgent.h"
 
 #include "ClosedHashMap/ClosedHashMap.h" 

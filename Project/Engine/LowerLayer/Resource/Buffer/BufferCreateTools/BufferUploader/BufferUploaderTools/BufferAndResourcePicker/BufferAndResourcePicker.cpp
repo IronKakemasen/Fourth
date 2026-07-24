@@ -1,7 +1,7 @@
 #include "PreCompileHeader.h"
 #include "BufferAndResourcePicker.h"
 #include "../../../../BufferDefinition/GPUBuffer/GPUBufferBehavior.h"
-#include "../../../../RuntimeBufferManagementSystems/BufferDispatcher/BufferDispatcher.h"
+#include "../../../../BufferRuntime/BufferDispatcher/BufferDispatcher.h"
 
 
 

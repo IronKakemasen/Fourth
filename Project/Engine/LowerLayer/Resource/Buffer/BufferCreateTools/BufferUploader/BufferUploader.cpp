@@ -34,7 +34,7 @@ BufferContext::BufferUploader::BufferUploader
 BufferContext::BufferUploader::~BufferUploader()
 {
 	Logger::Log("BufferUploader Destructor Runs", fileName);
-	Logger::Log("Delete: intermediateResources", fileName);
+	Logger::Log("Delete: all intermediateResources(" + std::to_string((UINT)intermediateResources.size()) + ")", fileName);
 }
 
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -65,4 +65,5 @@ std::tuple<GPUBufferBehavior*, ID3D12Resource*, std::string> BufferContext::Buff
 void BufferContext::BufferUploader::PitchAllBarrier(BufferContext::NexusFieldProof proof_, BufferContext::AgentKey agentKey_)
 {
 	pitchBarriersCommand(barriers);
+	Logger::Log("Pitch All Barriers(" + std::to_string((UINT)barriers.size()) + ")", fileName);
 }

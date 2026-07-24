@@ -31,6 +31,8 @@ class Nexus
 		kMeshContext,
 		kRenderContext,
 
+
+		kPitchAllBarriersForShaderResource,
 		kKickCommands,
 		kDeleteIntermediateResources
 
