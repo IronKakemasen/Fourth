@@ -69,7 +69,7 @@ void CommandContext::ResourceUploader::RecordingStart()
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-CommandContext::UploadCommand CommandContext::ResourceUploader::ProvideUploadCommand()
+CommandContext::ResourceUploader::UploadCommand CommandContext::ResourceUploader::ProvideUploadCommand(ProviderKey providerKey_)
 {
 	return[this]
 	(
@@ -77,10 +77,20 @@ CommandContext::UploadCommand CommandContext::ResourceUploader::ProvideUploadCom
 		ID3D12Resource* intermediateResource_,
 		const D3D12_SUBRESOURCE_DATA* subeResource_,
 		UINT subResourceCount_
-		)
-		{
-			UpdateSubresources(commandList.Get(), dstResource_, intermediateResource_, 0, 0, subResourceCount_, subeResource_);
-		};
+	)
+	{
+		UpdateSubresources(commandList.Get(), dstResource_, intermediateResource_, 0, 0, subResourceCount_, subeResource_);
+	};
 
 }
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+CommandContext::ResourceUploader::PitchBarrierCommand CommandContext::ResourceUploader::ProvideBarrierPitchCommand(ProviderKey providerKey_)
+{
+	return [this](const std::vector<D3D12_RESOURCE_BARRIER>& barriers_)
+	{
+		commandList->ResourceBarrier(UINT(barriers_.size()), barriers_.data());
+	};
 
+}

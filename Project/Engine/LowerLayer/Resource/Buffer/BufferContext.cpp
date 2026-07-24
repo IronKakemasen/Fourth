@@ -16,8 +16,6 @@
 #include "ClosedHashMap/ClosedHashMap.h" 
 
 
-//ランライム
-
 namespace
 {
 	std::string fileName = "BufferContext.cpp";
@@ -57,7 +55,7 @@ BufferContext::BufferContext
 		(
 			proof_,
 			std::make_unique<ToolLender>(proof_, bufferCreator.get(), bufferUploader.get(), bufferDispatcher.get(), bufferCollector.get()),
-			std::make_unique<ExecutionAgent>(proof_, this)
+			std::make_unique<ExecutionAgent>(proof_, this, bufferUploader.get())
 		)
 	);
 

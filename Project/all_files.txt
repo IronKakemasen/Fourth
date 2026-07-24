@@ -180,6 +180,7 @@ namespace
 #include "CommandContextDiplomat/CommandContextDiplomat.h"
 #include "CommandContextDiplomat/CommandContextCmdProvider/CommandContextCmdProvider.h"
 #include "CommandContextDiplomat/CommandContextToolLender/CommandContextToolLender.h"
+#include "CommandContextDiplomat/CommandContextExecutionAgent/CommandContextExecutionAgent.h"
 
 //外部
 #include "../Device/DeviceContextDiplomat/DeviceContextDiplomat.h"
@@ -196,14 +197,14 @@ CommandContext::~CommandContext() {}
 
 CommandContext::CommandContext
 (
-	const InstanceKey& instanceKey_,
+	NexusFieldProof proof_,
 	DeviceContextDiplomat* deviceContextDiplomat_
 ) 
 {
 	Logger::Entry("CommandContext: Constructor");
 
 	//コアパーツの生成
-	CreateCoreParts(instanceKey_, deviceContextDiplomat_);
+	CreateCoreParts(proof_, deviceContextDiplomat_);
 	//フェンスイベントの生成
 	CreateFenceEvent();
 
@@ -213,7 +214,7 @@ CommandContext::CommandContext
 	runtimeWrapper.reset(new RuntimeWrapper(commandList.Get()));
 	Logger::Log("Instantiate: RuntimeWrapper", fileName);
 
-	resourceUploader.reset(new ResourceUploader(instanceKey_, deviceContextDiplomat_, commandQueue.Get(), synchronizer.get()));
+	resourceUploader.reset(new ResourceUploader(proof_, deviceContextDiplomat_, commandQueue.Get(), synchronizer.get()));
 	Logger::Log("Instantiate: ResourceUploader", fileName);
 
 	//ランタイムでコマンドを利用するクラスの生成
@@ -223,9 +224,10 @@ CommandContext::CommandContext
 	(
 		new CommandContextDiplomat
 		(
-			instanceKey_,
-			std::make_unique<CommandProvider>(instanceKey_, resourceUploader.get()),
-			std::make_unique<ToolLender>(instanceKey_, commandQueue.Get(),resourceUploader.get())
+			proof_,
+			std::make_unique<CommandProvider>(proof_, resourceUploader.get()),
+			std::make_unique<ToolLender>(proof_, commandQueue.Get(),resourceUploader.get()),
+			std::make_unique<ExecutionAgent>(proof_, resourceUploader.get())
 		)
 	);
 
@@ -236,19 +238,19 @@ CommandContext::CommandContext
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-void CommandContext::CreateCoreParts(InstanceKey instanceKey_ , DeviceContextDiplomat* deviceContextDiplomat_)
+void CommandContext::CreateCoreParts(NexusFieldProof proof_, DeviceContextDiplomat* deviceContextDiplomat_)
 {
 	auto* cmdExecutor = deviceContextDiplomat_->Access<DeviceContext::CommandExecutor>();
 
 	//メイン
 	auto [cmdQueue, cmdAllocators, cmdList] =
-		cmdExecutor->CreateCommandContextCorePartsForRuntime(instanceKey_);
+		cmdExecutor->CreateCommandContextCorePartsForRuntime(proof_);
 
 	commandQueue = std::move(cmdQueue);
 	commandAllocators = std::move(cmdAllocators);
 	commandList = std::move(cmdList);
 
-	fence = std::move(cmdExecutor->CreateFence(instanceKey_));
+	fence = std::move(cmdExecutor->CreateFence(proof_));
 }
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -286,11 +288,10 @@ void CommandContext::InstantiateRuntimeCommandControler()
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-void CommandContext::Finalize(InstanceKey instanceKey_)
+void CommandContext::Finalize(NexusFieldProof proof_)
 {
 	synchronizer->WaitDirectly();
 	CloseHandle(fenceEvent);
-
 }
 
 
@@ -328,29 +329,37 @@ public:
 		UINT subResourceCount_
 	)>;
 
+	//Nexusフィールドの証明
+	struct NexusFieldProof;
+	//代行者認証キー
+	struct AgentKey;
 
-	struct InstanceKey;
+
+
 	//リソースのアップロードを行う
 	class ResourceUploader;
 	//コマンドを提供する
 	class CommandProvider;
 	//ツールを貸す
 	class ToolLender;
+	//自クラスの処理を代行する
+	class ExecutionAgent;
 
 
 	CommandContext
 	(
-		const InstanceKey& instanceKey_,
+		NexusFieldProof proof_,
 		DeviceContextDiplomat* deviceContextDiplomat_
 	);
 
 	~CommandContext();
 
 	//同期してCloseHandle()する
-	void Finalize(InstanceKey instanceKey_);
+	void Finalize(NexusFieldProof instanceKey_);
 
 	std::unique_ptr<RuntimeCommandController> runtimeCommandController;
 	std::unique_ptr<CommandContextDiplomat> diplomat;
+
 
 private:
 
@@ -376,17 +385,26 @@ private:
 
 	void CreateFenceEvent();
 	void InstantiateRuntimeCommandControler();
-	void CreateCoreParts(InstanceKey instanceKey_,DeviceContextDiplomat* deviceContextDiplomat_);
+	void CreateCoreParts(NexusFieldProof instanceKey_,DeviceContextDiplomat* deviceContextDiplomat_);
 };
 
 
-struct CommandContext::InstanceKey
+struct CommandContext::NexusFieldProof
 {
 private:
 
 	friend class Nexus;
-	explicit InstanceKey() = default;
+	explicit NexusFieldProof() = default;
 };
+
+struct CommandContext::AgentKey
+{
+private:
+
+	friend class ExecutionAgent;
+	explicit AgentKey() = default;
+};
+
 
 
 
@@ -400,6 +418,7 @@ private:
 
 #include "CommandContextToolLender/CommandContextToolLender.h"
 #include "CommandContextCmdProvider/CommandContextCmdProvider.h"
+#include "CommandContextExecutionAgent/CommandContextExecutionAgent.h"
 
 namespace
 {
@@ -408,13 +427,18 @@ namespace
 
 CommandContextDiplomat::CommandContextDiplomat
 (
-	CommandContext::InstanceKey key_,
+	CommandContext::NexusFieldProof proof_,
 	std::unique_ptr<CommandContext::CommandProvider>&& cmdProvider_,
-	std::unique_ptr<CommandContext::ToolLender>&& toolLender_
+	std::unique_ptr<CommandContext::ToolLender>&& toolLender_,
+	std::unique_ptr<CommandContext::ExecutionAgent>&& executionAgent_
+
 )
 {
 	std::get<std::unique_ptr<CommandContext::CommandProvider>>(tools) = std::move(cmdProvider_);
 	std::get<std::unique_ptr<CommandContext::ToolLender>>(tools) = std::move(toolLender_);
+	std::get<std::unique_ptr<CommandContext::ExecutionAgent>>(tools) = std::move(executionAgent_);
+
+	
 }
 
 
@@ -433,9 +457,10 @@ class CommandContextDiplomat
 public:
 	CommandContextDiplomat
 	(
-		CommandContext::InstanceKey key_,
+		CommandContext::NexusFieldProof proof_,
 		std::unique_ptr<CommandContext::CommandProvider>&& cmdProvider_,
-		std::unique_ptr<CommandContext::ToolLender>&& toolLender_
+		std::unique_ptr<CommandContext::ToolLender>&& toolLender_,
+		std::unique_ptr<CommandContext::ExecutionAgent>&& executionAgent_
 	);
 
 	template<typename ToolType>
@@ -446,7 +471,12 @@ public:
 
 private:
 	//提供するツールのテーブル
-	std::tuple<std::unique_ptr<CommandContext::CommandProvider>, std::unique_ptr<CommandContext::ToolLender>> tools;
+	std::tuple
+	<
+		std::unique_ptr<CommandContext::CommandProvider>, 
+		std::unique_ptr<CommandContext::ToolLender>,
+		std::unique_ptr<CommandContext::ExecutionAgent>
+	> tools;
 
 };
 
@@ -461,7 +491,7 @@ private:
 #include "CommandContextCmdProvider.h"
 
 
-CommandContext::CommandProvider::CommandProvider(InstanceKey kew_, CommandContext::ResourceUploader* resourceUploader_)
+CommandContext::CommandProvider::CommandProvider(NexusFieldProof proof_, CommandContext::ResourceUploader* resourceUploader_)
 	:resourceUploader(resourceUploader_)
 {
 
@@ -487,7 +517,7 @@ public:
 	//ResourceUploadコマンドの利用許可
 	struct UsesResourceUploadCmdPermission;
 
-	CommandProvider(InstanceKey kew_, CommandContext::ResourceUploader* resourceUploader_);
+	CommandProvider(NexusFieldProof proof_, CommandContext::ResourceUploader* resourceUploader_);
 
 	template<typename PermissionType>
 	auto ProvideResourceUploadCommand(PermissionType permission_)
@@ -517,6 +547,52 @@ private:
 
 
 ========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Core\Command\CommandContextDiplomat\CommandContextExecutionAgent\CommandContextExecutionAgent.cpp ===
+========================================
+#include "PreCompileHeader.h"
+#include "CommandContextExecutionAgent.h"
+
+#include "../../ResourceUploader/ResourceUploader.h"
+
+
+CommandContext::ExecutionAgent::ExecutionAgent(NexusFieldProof proof_, CommandContext::ResourceUploader* resourceUploader_)
+:resourceUploader(resourceUploader_)
+{
+
+}
+
+void CommandContext::ExecutionAgent::KickAndSynchronizeUploadCommand(NexusFieldProof proof_)
+{
+	resourceUploader->KickAndSynchronize(proof_, CommandContext::AgentKey{});
+}
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Core\Command\CommandContextDiplomat\CommandContextExecutionAgent\CommandContextExecutionAgent.h ===
+========================================
+#pragma once
+#include "../../ResourceUploader/ResourceUploader.h"
+
+class CommandContext::ExecutionAgent
+{
+public:
+	ExecutionAgent(NexusFieldProof proof_, CommandContext::ResourceUploader* resourceUploader_);
+
+	//リソースをアップロードするときに溜まったコマンドリストをキックしてかつ同期し、閉じる
+	void KickAndSynchronizeUploadCommand(NexusFieldProof proof_ );
+
+private:
+
+	CommandContext::ResourceUploader* resourceUploader;
+};
+
+
+
+
+
+========================================
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Core\Command\CommandContextDiplomat\CommandContextToolLender\CommandContextToolLender.cpp ===
 ========================================
 #include "PreCompileHeader.h"
@@ -525,7 +601,7 @@ private:
 
 CommandContext::ToolLender::ToolLender
 (
-	CommandContext::InstanceKey key_,
+	NexusFieldProof proof_,
 	ID3D12CommandQueue* cmdQueue_,
 	CommandContext::ResourceUploader* resourceUploader_
 )
@@ -534,7 +610,7 @@ CommandContext::ToolLender::ToolLender
 	std::get<CommandContext::ResourceUploader*>(tools) = resourceUploader_;
 
 
-	}
+}
 
 
 
@@ -568,7 +644,7 @@ public:
 
 	ToolLender
 	(
-		CommandContext::InstanceKey key_,
+		NexusFieldProof proof_,
 		ID3D12CommandQueue* cmdQueue_,
 		CommandContext::ResourceUploader* resourceUploader_
 	);
@@ -635,7 +711,7 @@ namespace
 
 CommandContext::ResourceUploader::ResourceUploader
 (
-	CommandContext::InstanceKey key_,
+	NexusFieldProof proof_,
 	DeviceContextDiplomat* deviceContextDiplomat_,
 	ID3D12CommandQueue* commandQueue_,
 	CommandContext::Synchronizer* synchronizer_
@@ -647,7 +723,7 @@ CommandContext::ResourceUploader::ResourceUploader
 	
 	//リソースアップロード用
 	auto [allocator_forUpload, cmdList_forUpload] =
-		cmdExecutor->CreateCommandContextCorePartsForUpload(key_);
+		cmdExecutor->CreateCommandContextCorePartsForUpload(proof_);
 
 	allocator = std::move(allocator_forUpload);
 	commandList = std::move(cmdList_forUpload);
@@ -664,7 +740,7 @@ CommandContext::ResourceUploader::ResourceUploader
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-void CommandContext::ResourceUploader::WaitAndKick(const WaitAndKickLicence& licence_)
+void CommandContext::ResourceUploader::KickAndSynchronize(const NexusFieldProof& nexusFieldProof_, AgentKey agentKey_)
 {
 	HRESULT hr = commandList->Close();
 	ErrorMessageOutput::Assert::DetectError(SUCCEEDED(hr), "コマンド確定できない", fileName);
@@ -721,12 +797,9 @@ class CommandContext::ResourceUploader
 
 public:
 
-	//Nexusにコマンドのキックと同期処理＆コマンド閉じをしてもらう
-	struct WaitAndKickLicence;
-
 	ResourceUploader
 	(
-		CommandContext::InstanceKey key_,
+		NexusFieldProof proof_,
 		DeviceContextDiplomat* deviceContextDiplomat_,
 		ID3D12CommandQueue* commandQueue_,
 		CommandContext::Synchronizer* synchronizer_
@@ -734,8 +807,9 @@ public:
 
 
 	//リソースをアップロードするときに溜まったコマンドリストをキックしてかつ同期し、閉じる
-	//コアな処理なので鍵付き
-	void WaitAndKick(const WaitAndKickLicence& licence_);
+	//コアな処理なのでNexusフィールドでしかさせん
+	void KickAndSynchronize(const NexusFieldProof& nexusFieldProof_, AgentKey agentKey_);
+
 	///commandListをラップしたアップロードコマンド
 	UploadCommand ProvideUploadCommand();
 
@@ -750,17 +824,6 @@ private:
 	void RecordingStart();
 
 };
-
-struct CommandContext::ResourceUploader::WaitAndKickLicence
-{
-private:
-
-	friend class Nexus;
-	explicit WaitAndKickLicence() = default;
-};
-
-
-
 
 
 
@@ -1236,7 +1299,7 @@ using namespace ProjectConfig::Core;
 
 DescriptorHeapContext::DescriptorHeapContext
 (
-	InstanceKey instanceKey_,
+	DescriptorHeapContext::NexusFieldProof proof_,
 	DeviceContextDiplomat* deviceContextDiplomat_
 )
 {
@@ -1244,16 +1307,16 @@ DescriptorHeapContext::DescriptorHeapContext
 
 	
 	//各種DescriptorHeapを生成する
-	CreateDescriptorHeaps(instanceKey_, deviceContextDiplomat_);
+	CreateDescriptorHeaps(proof_, deviceContextDiplomat_);
 	//ViewCreatorを生成して、中にview生成コマンドを積む
-	SetCreateViewCommand(instanceKey_, deviceContextDiplomat_);
+	SetCreateViewCommand(proof_, deviceContextDiplomat_);
 
 	diplomat.reset
 	(
 		new DescriptorHeapContextDiplomat
 		(
-			instanceKey_,
-			std::make_unique<ToolLender>(instanceKey_, viewCreator.get())
+			proof_,
+			std::make_unique<ToolLender>(proof_, viewCreator.get())
 		)
 	);
 	Logger::Log("Instantiate: ToolLender", fileName);
@@ -1270,7 +1333,7 @@ DescriptorHeapContext::~DescriptorHeapContext()
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-void DescriptorHeapContext::CreateDescriptorHeaps(InstanceKey instanceKey_, DeviceContextDiplomat* deviceContextDiplomat_)
+void DescriptorHeapContext::CreateDescriptorHeaps(DescriptorHeapContext::NexusFieldProof proof_, DeviceContextDiplomat* deviceContextDiplomat_)
 {
 	auto* cmdExecutor = deviceContextDiplomat_->Access<DeviceContext::CommandExecutor>();
 	auto* cmdProvider = deviceContextDiplomat_->Access<DeviceContext::CommandProvider>();
@@ -1281,7 +1344,7 @@ void DescriptorHeapContext::CreateDescriptorHeaps(InstanceKey instanceKey_, Devi
 	UINT srvDHIncrementSIze = cmdExecutor->CalcDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 	UINT dsvDHIncrementSIze = cmdExecutor->CalcDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_DSV);
 
-	DescriptorHeapCreator creator(instanceKey_, createDescriptorHeapCmd);
+	DescriptorHeapCreator creator(proof_, createDescriptorHeapCmd);
 	Logger::Log("Instantiate: DescriptorHeapCreator", fileName);
 
 	descriptorHeapContainer[D3D12_DESCRIPTOR_HEAP_TYPE::D3D12_DESCRIPTOR_HEAP_TYPE_RTV] = 
@@ -1304,7 +1367,7 @@ void DescriptorHeapContext::CreateDescriptorHeaps(InstanceKey instanceKey_, Devi
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 void DescriptorHeapContext::SetCreateViewCommand
 (
-	InstanceKey key_,
+	NexusFieldProof proof_,
 	DeviceContextDiplomat* deviceContextDiplomat_
 )
 {
@@ -1314,7 +1377,7 @@ void DescriptorHeapContext::SetCreateViewCommand
 	(
 		new ViewCreator
 		(
-			key_,
+			proof_,
 			descriptorHeapContainer[D3D12_DESCRIPTOR_HEAP_TYPE::D3D12_DESCRIPTOR_HEAP_TYPE_RTV].get(),
 			descriptorHeapContainer[D3D12_DESCRIPTOR_HEAP_TYPE::D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV].get(),
 			descriptorHeapContainer[D3D12_DESCRIPTOR_HEAP_TYPE::D3D12_DESCRIPTOR_HEAP_TYPE_DSV].get(),
@@ -1372,8 +1435,8 @@ protected:
 		std::function<void(ID3D12Resource* resource_, const D3D12_UNORDERED_ACCESS_VIEW_DESC* desc_, D3D12_CPU_DESCRIPTOR_HANDLE descriptorHandleCPU_, ID3D12Resource* CounterResource_)>;
 public:
 
-	//Nexusのみ生成可能
-	struct InstanceKey;
+	//Nexusフィールドである証
+	struct NexusFieldProof;
 	//view生成
 	class ViewCreator;
 	//ツール貸し出しクラス
@@ -1381,7 +1444,7 @@ public:
 
 	DescriptorHeapContext
 	(
-		InstanceKey instanceKey_,
+		NexusFieldProof proof_,
 		DeviceContextDiplomat* deviceContextDiplomat_
 	);
 
@@ -1398,10 +1461,10 @@ private:
 	
 
 	//各種ディスクリプターヒープの作成
-	void CreateDescriptorHeaps(InstanceKey instanceKey_, DeviceContextDiplomat* deviceContextDiplomat_);
+	void CreateDescriptorHeaps(DescriptorHeapContext::NexusFieldProof proof_, DeviceContextDiplomat* deviceContextDiplomat_);
 
 	//ビュークリエイターの使用するコマンドをセット
-	void SetCreateViewCommand(InstanceKey key_,DeviceContextDiplomat* deviceContextDiplomat_);
+	void SetCreateViewCommand(DescriptorHeapContext::NexusFieldProof proof_ , DeviceContextDiplomat* deviceContextDiplomat_);
 
 };
 
@@ -1410,12 +1473,12 @@ private:
 
 
 //生成できるのはNexusのみ
-struct DescriptorHeapContext::InstanceKey
+struct DescriptorHeapContext::NexusFieldProof
 {
 private:
 
 	friend class Nexus;
-	explicit InstanceKey() = default;
+	explicit NexusFieldProof() = default;
 };
 
 
@@ -1432,7 +1495,7 @@ private:
 
 DescriptorHeapContextDiplomat::DescriptorHeapContextDiplomat
 (
-	DescriptorHeapContext::InstanceKey key_,
+	DescriptorHeapContext::NexusFieldProof proof_,
 	std::unique_ptr<DescriptorHeapContext::ToolLender>&& toolLender_
 )
 {
@@ -1455,7 +1518,7 @@ class DescriptorHeapContextDiplomat
 public:
 	DescriptorHeapContextDiplomat
 	(
-		DescriptorHeapContext::InstanceKey key_,
+		DescriptorHeapContext::NexusFieldProof proof_,
 		std::unique_ptr<DescriptorHeapContext::ToolLender>&& toolLender_
 	);
 
@@ -1481,7 +1544,7 @@ private:
 #include "PreCompileHeader.h"
 #include "DescriptorHeapToolLender.h"
 
-DescriptorHeapContext::ToolLender::ToolLender(InstanceKey key_, DescriptorHeapContext::ViewCreator* viewCretator_) 
+DescriptorHeapContext::ToolLender::ToolLender(NexusFieldProof proof_, DescriptorHeapContext::ViewCreator* viewCretator_)
 {
 
 	std::get<DescriptorHeapContext::ViewCreator*>(tools) = viewCretator_;
@@ -1519,7 +1582,7 @@ private:
 
 public:
 
-	ToolLender(InstanceKey key_, DescriptorHeapContext::ViewCreator* viewCretator_);
+	ToolLender(NexusFieldProof proof_, DescriptorHeapContext::ViewCreator* viewCretator_);
 	
 	///ツールの貸し出し
 	template<typename ToolType>
@@ -1585,7 +1648,7 @@ class DescriptorHeapContext::DescriptorHeapCreator
 
 public:
 
-	DescriptorHeapCreator(InstanceKey key_, CreateDescriptorHeapCommand cmd_) :createCmd(cmd_) {}
+	DescriptorHeapCreator(NexusFieldProof proof_, CreateDescriptorHeapCommand cmd_) :createCmd(cmd_) {}
 
 
 	template<D3D12_DESCRIPTOR_HEAP_TYPE heapType>
@@ -1783,7 +1846,7 @@ template<>
 
 DescriptorHeapContext::ViewCreator::ViewCreator
 (
-	DescriptorHeapContext::InstanceKey instanceKey_,
+	DescriptorHeapContext::NexusFieldProof proof_,
 	DescriptorHeapPool* RTVdescriptorHeapPool_,
 	DescriptorHeapPool* SRVUAVdescriptorHeapPool_,
 	DescriptorHeapPool* DSVdescriptorHeapPool_,
@@ -1841,7 +1904,7 @@ class DescriptorHeapContext::ViewCreator
 public:
 	ViewCreator
 	(
-		DescriptorHeapContext::InstanceKey instanceKey_,
+		NexusFieldProof proof_,
 		DescriptorHeapPool* RTVdescriptorHeapPool_,
 		DescriptorHeapPool* SRVUAVdescriptorHeapPool_,
 		DescriptorHeapPool* DSVdescriptorHeapPool_,
@@ -1946,19 +2009,19 @@ namespace
 	std::string const fileName = "DeviceContext.cpp";
 }
 
-DeviceContext::DeviceContext(DeviceContext::InstanceKey instanceKey_)
+DeviceContext::DeviceContext(NexusFieldProof proof_)
 {
 	Logger::Entry("DeviceContext::Constructor");
 
-	TakeOverCoreParts(instanceKey_);
+	TakeOverCoreParts(proof_);
 
 	diplomat.reset
 	(
 		new DeviceContextDiplomat
 		(
-			instanceKey_,
-			std::move(InstantiateCommandProvider(instanceKey_)),
-			std::move(InstantiateCommandExecutor(instanceKey_))
+			proof_,
+			std::move(InstantiateCommandProvider(proof_)),
+			std::move(InstantiateCommandExecutor(proof_))
 		)
 	);
 
@@ -1973,7 +2036,7 @@ DeviceContext::~DeviceContext()
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-std::unique_ptr<DeviceContext::CommandProvider> DeviceContext::InstantiateCommandProvider(DeviceContext::InstanceKey instanceKey_)
+std::unique_ptr<DeviceContext::CommandProvider> DeviceContext::InstantiateCommandProvider(NexusFieldProof proof_)
 {
 	//デバイスにアクセスする関数オブジェ
 	auto deviceGetFunc = [this](DeviceContext::AccessKey key_) -> ID3D12Device8*
@@ -1988,12 +2051,12 @@ std::unique_ptr<DeviceContext::CommandProvider> DeviceContext::InstantiateComman
 	};
 
 	Logger::Log("Create: CommandProvider", fileName);
-	return std::make_unique<CommandProvider>(instanceKey_, deviceGetFunc, dxgiFactoryGetter);
+	return std::make_unique<CommandProvider>(proof_, deviceGetFunc, dxgiFactoryGetter);
 }
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-std::unique_ptr<DeviceContext::CommandExecutor> DeviceContext::InstantiateCommandExecutor(DeviceContext::InstanceKey instanceKey_)
+std::unique_ptr<DeviceContext::CommandExecutor> DeviceContext::InstantiateCommandExecutor(NexusFieldProof proof_)
 {
 	//デバイスにアクセスする関数オブジェ
 	auto deviceGetFunc = [this](DeviceContext::AccessKey key_) -> ID3D12Device8*
@@ -2003,17 +2066,17 @@ std::unique_ptr<DeviceContext::CommandExecutor> DeviceContext::InstantiateComman
 
 	Logger::Log("Create: CommandExecutor", fileName);
 
-	return std::make_unique<CommandExecutor>(instanceKey_, deviceGetFunc);
+	return std::make_unique<CommandExecutor>(proof_, deviceGetFunc);
 }
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-void DeviceContext::TakeOverCoreParts(DeviceContext::InstanceKey instanceKey_)
+void DeviceContext::TakeOverCoreParts(NexusFieldProof proof_)
 {
 	//コアパーツの生成
-	Setupper setupper(instanceKey_);
+	Setupper setupper(proof_);
 
-	std::tie(useAdapter, device, dxgiFactory) = setupper.HandOver(instanceKey_);
+	std::tie(useAdapter, device, dxgiFactory) = setupper.HandOver(proof_);
 	Logger::Log("take over CoreParts", fileName);
 
 }
@@ -2031,36 +2094,6 @@ class Nexus;
 class DeviceContextCommandBehavior;
 class DeviceContextDiplomat;
 
-//struct ModelStructure
-//{
-//	Transform trans;
-//
-//private:
-//
-//	//割り当てられたTransformMatrixBufferArrayのインデックス
-//	DispatchedTransformMatrixID transID;
-//	//必要かわからないが、自身のtransIDが指すバッファのユニークID。バッチング時に検索を省くために使用？
-//	TransformBufferUniqueID transIDCache;
-//	//色やカラーマップなどの情報
-//	Material material;
-//	//メッシュシェーダーの決定要因
-//	MeshType meshType;
-//	//BlendMode、CullModeなど。昔定義したやつ
-//	RenderState renderState;
-//
-//};
-//
-//struct Model
-//{
-//	//MeshFile名で決定.サブメッシュも含む
-//	std::vector<MeshDataID> id;
-//
-//	//メインとサブ分のデータ群
-//	std::vector<ModelStructure> modelStructures;
-//};
-
-
-
 class DeviceContext
 {
 	//コアパーツを生成する
@@ -2073,8 +2106,8 @@ protected:
 
 public:
 
-	//自身の生成キー。Nexusしか許さない
-	struct InstanceKey;
+	//Nexusしか許さない
+	struct NexusFieldProof;
 	//コマンド生成キー
 	struct GenerateKey;
 
@@ -2085,7 +2118,7 @@ public:
 
 	std::unique_ptr<DeviceContextDiplomat> diplomat;
 
-	DeviceContext(InstanceKey instanceKey);
+	DeviceContext(NexusFieldProof proof_);
 	~DeviceContext();
 
 private:
@@ -2095,21 +2128,21 @@ private:
 	Microsoft::WRL::ComPtr<IDXGIAdapter4> useAdapter = nullptr;
 
 	//Setupperからコアパーツを生成し、引き継ぐ
-	void TakeOverCoreParts(DeviceContext::InstanceKey instanceKey_);
+	void TakeOverCoreParts(NexusFieldProof proof_);
 	//CommandProviderの生成
-	std::unique_ptr<CommandProvider> InstantiateCommandProvider(DeviceContext::InstanceKey instanceKey_);
+	std::unique_ptr<CommandProvider> InstantiateCommandProvider(NexusFieldProof proof_);
 	//CommandExecutorの生成
-	std::unique_ptr<CommandExecutor> InstantiateCommandExecutor(DeviceContext::InstanceKey instanceKey_);
+	std::unique_ptr<CommandExecutor> InstantiateCommandExecutor(NexusFieldProof proof_);
 };
 
 
 //生成できるのはNexusのみ
-struct DeviceContext::InstanceKey
+struct DeviceContext::NexusFieldProof
 {
 private:
 
 	friend class Nexus;
-	explicit InstanceKey() = default;
+	explicit NexusFieldProof() = default;
 };
 
 
@@ -2849,7 +2882,7 @@ namespace
 
 DeviceContextDiplomat::DeviceContextDiplomat
 (
-	DeviceContext::InstanceKey key_,
+	DeviceContext::NexusFieldProof proof_,
 	std::unique_ptr<DeviceContext::CommandProvider>&& cmdProvider_,
 	std::unique_ptr<DeviceContext::CommandExecutor>&& cmdExecutor_
 )
@@ -2873,7 +2906,7 @@ class DeviceContextDiplomat
 public:
 	DeviceContextDiplomat
 	(
-		DeviceContext::InstanceKey key_,
+		DeviceContext::NexusFieldProof proof_,
 		std::unique_ptr<DeviceContext::CommandProvider>&& cmdProvider_,
 		std::unique_ptr<DeviceContext::CommandExecutor>&& cmdExecutor_
 	);
@@ -2929,7 +2962,7 @@ namespace
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 DeviceContext::CommandExecutor::CommandExecutor
 (
-	DeviceContext::InstanceKey instanceKey_,
+	NexusFieldProof proof_,
 	std::function< ID3D12Device8* (DeviceContext::AccessKey)> deviceGetter_
 ) :deviceGetter(deviceGetter_)
 {
@@ -2947,7 +2980,7 @@ UINT DeviceContext::CommandExecutor::CalcDescriptorHandleIncrementSize(D3D12_DES
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-[[nodiscard]] Microsoft::WRL::ComPtr<ID3D12Fence> DeviceContext::CommandExecutor::CreateFence(CommandContext::InstanceKey instanceKey_)
+[[nodiscard]] Microsoft::WRL::ComPtr<ID3D12Fence> DeviceContext::CommandExecutor::CreateFence(CommandContext::NexusFieldProof  proof_)
 {
 	Microsoft::WRL::ComPtr<ID3D12Fence> fence;
 	auto* device = deviceGetter(DeviceContext::AccessKey{});
@@ -2961,7 +2994,7 @@ UINT DeviceContext::CommandExecutor::CalcDescriptorHandleIncrementSize(D3D12_DES
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 [[nodiscard]] CommandContextCorePartsRuntime
-DeviceContext::CommandExecutor::CreateCommandContextCorePartsForRuntime(CommandContext::InstanceKey instanceKey_)
+DeviceContext::CommandExecutor::CreateCommandContextCorePartsForRuntime(CommandContext::NexusFieldProof proof_)
 {
 	//ランタイム用なので万能型
 	auto const cmdListType = D3D12_COMMAND_LIST_TYPE_DIRECT;
@@ -2990,7 +3023,7 @@ DeviceContext::CommandExecutor::CreateCommandContextCorePartsForRuntime(CommandC
 }
 
 [[nodiscard]] CommandContextCorePartsUpload
-DeviceContext::CommandExecutor::CreateCommandContextCorePartsForUpload(CommandContext::InstanceKey instanceKey_)
+DeviceContext::CommandExecutor::CreateCommandContextCorePartsForUpload(CommandContext::NexusFieldProof proof_)
 {
 	//コマンドリストのタイプはアップロードしかしないのでコピーだけでいいんだけど、
 	//ちょいめんどいのでいったん
@@ -3035,7 +3068,7 @@ public:
 
 	CommandExecutor
 	(
-		DeviceContext::InstanceKey instanceKey_,
+		NexusFieldProof proof_,
 		std::function< ID3D12Device8* (DeviceContext::AccessKey)> deviceGetter_
 	);
 
@@ -3043,7 +3076,7 @@ public:
 	UINT CalcDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE type_);
 
 	//フェンス生成
-	[[nodiscard]] Microsoft::WRL::ComPtr<ID3D12Fence> CreateFence(CommandContext::InstanceKey instanceKey_);
+	[[nodiscard]] Microsoft::WRL::ComPtr<ID3D12Fence> CreateFence(CommandContext::NexusFieldProof proof_);
 
 	//CommandContextのコアパーツ生成.ランタイム用
 	[[nodiscard]] std::tuple
@@ -3052,11 +3085,11 @@ public:
 		std::array<Microsoft::WRL::ComPtr<ID3D12CommandAllocator>, (UINT)ProjectConfig::Render::NumBuffer::kDoubleBuffer>,
 		Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList6>
 	>
-	CreateCommandContextCorePartsForRuntime(CommandContext::InstanceKey instanceKey_);
+	CreateCommandContextCorePartsForRuntime(CommandContext::NexusFieldProof proof_);
 
 	//リソースアップロード用
 	[[nodiscard]] std::tuple<Microsoft::WRL::ComPtr<ID3D12CommandAllocator>, Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList6>>
-	CreateCommandContextCorePartsForUpload(CommandContext::InstanceKey instanceKey_);
+	CreateCommandContextCorePartsForUpload(CommandContext::NexusFieldProof proof_);
 
 
 private:
@@ -3116,7 +3149,7 @@ using C_CreateSwapChain = std::function< void
 
 DeviceContext::CommandProvider::CommandProvider
 (
-	DeviceContext::InstanceKey instanceKey_,
+	NexusFieldProof proof_,
 	std::function< ID3D12Device8* (DeviceContext::AccessKey)> deviceGetter_,
 	std::function< IDXGIFactory7* (DeviceContext::AccessKey)> dxgiFactoryGetter_
 ) : deviceGetter(deviceGetter_), dxgiFactoryGetter(dxgiFactoryGetter_)
@@ -3324,7 +3357,7 @@ public:
 
 	CommandProvider
 	(
-		DeviceContext::InstanceKey instanceKey_, 
+		NexusFieldProof proof_,
 		std::function< ID3D12Device8* (DeviceContext::AccessKey)> deviceGetter_,
 		std::function< IDXGIFactory7* (DeviceContext::AccessKey)> dxgiFactoryGetter_
 	);
@@ -3421,7 +3454,7 @@ namespace
 	std::string fileName = "DeviceContextSetupper.cpp";
 }
 
-DeviceContext::Setupper::Setupper(InstanceKey instanceKey_)
+DeviceContext::Setupper::Setupper(NexusFieldProof proof_)
 {
 	//dxgiFactoryの生成
 	CreateDXGI_Factory();
@@ -3449,7 +3482,7 @@ DeviceContext::Setupper::Setupper(InstanceKey instanceKey_)
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 [[nodiscard]] std::tuple<Microsoft::WRL::ComPtr<IDXGIAdapter4>, Microsoft::WRL::ComPtr<ID3D12Device8>, Microsoft::WRL::ComPtr<IDXGIFactory7>>
-DeviceContext::Setupper::HandOver(DeviceContext::InstanceKey instanceKey_)
+DeviceContext::Setupper::HandOver(NexusFieldProof proof_)
 {
 	return std::make_tuple(std::move(useAdapter), std::move(device), std::move(dxgiFactory));
 }
@@ -3596,11 +3629,11 @@ class DeviceContext::Setupper
 {
 public:
 
-	Setupper(InstanceKey instanceKey_);
+	Setupper(NexusFieldProof proof_);
 
 	//DeviceContextにコアパーツを渡す
 	[[nodiscard]] std::tuple<Microsoft::WRL::ComPtr<IDXGIAdapter4>, Microsoft::WRL::ComPtr<ID3D12Device8>, Microsoft::WRL::ComPtr<IDXGIFactory7>>
-		HandOver(DeviceContext::InstanceKey instanceKey_);
+		HandOver(NexusFieldProof proof_);
 
 private:
 
@@ -3739,7 +3772,7 @@ namespace
 
 SwapChainContext::SwapChainContext
 (
-	InstanceKey instanceKey_,
+	NexusFieldProof proof_,
 	DescriptorHeapContextDiplomat* descriptorheapContextDiplomat_,
 	CommandContextDiplomat* commandContextDiplomat_,
 	DeviceContextDiplomat* deviceContextDiplomat_,
@@ -3749,7 +3782,7 @@ SwapChainContext::SwapChainContext
 	Logger::Entry("SwapChainContext: Constructor");
 
 	//コアパーツを組み立てる
-	AssembleCoreParts(instanceKey_, descriptorheapContextDiplomat_, commandContextDiplomat_, deviceContextDiplomat_, hWnd_);
+	AssembleCoreParts(proof_, descriptorheapContextDiplomat_, commandContextDiplomat_, deviceContextDiplomat_, hWnd_);
 	Logger::Log("Assemble: core parts", fileName);
 
 	presenter.reset(new Presenter(swapChain.Get()));
@@ -3785,7 +3818,7 @@ void SwapChainContext::CreateSwapChain
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 void SwapChainContext::AssembleCoreParts
 (
-	InstanceKey instanceKey_,
+	NexusFieldProof proof_,
 	DescriptorHeapContextDiplomat* descriptorheapContextDiplomat_,
 	CommandContextDiplomat* commandContextDiplomat_,
 	DeviceContextDiplomat* deviceContextDiplomat_,
@@ -3815,7 +3848,7 @@ void SwapChainContext::AssembleCoreParts
 	PullResourcesFromSwapChain(std::move(bufferDesc));
 
 	//ビュー生成
-	CreateRTV(instanceKey_, rtvDesc, descriptorheapContextDiplomat_);
+	CreateRTV(proof_, rtvDesc, descriptorheapContextDiplomat_);
 }
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -3844,7 +3877,7 @@ void SwapChainContext::PullResourcesFromSwapChain(std::unique_ptr<Description>&&
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 void SwapChainContext::CreateRTV
 (
-	InstanceKey instanceKey_,
+	NexusFieldProof proof_,
 	const D3D12_RENDER_TARGET_VIEW_DESC& rtvDesc_,
 	DescriptorHeapContextDiplomat* descriptorheapContextDiplomat_
 )
@@ -3866,7 +3899,7 @@ void SwapChainContext::CreateRTV
 			viewCreator->CreateView(colorBuffer->GetResource(resourceGetKey, i), &rtvDesc_);
 
 		//インデックスを書き込む
-		colorBuffer->OverrideHeapIndex(instanceKey_,i, rtvCPU);
+		colorBuffer->OverrideHeapIndex(proof_,i, rtvCPU);
 	}
 
 	Logger::Log("Create: SwapChainResourceRTV", fileName);
@@ -3882,7 +3915,6 @@ void SwapChainContext::CreateRTV
 #pragma once
 
 class Nexus;
-class CommandContext;
 class CommandContextDiplomat;
 class DeviceContextDiplomat;
 class DescriptorHeapContextDiplomat;
@@ -3904,7 +3936,7 @@ class SwapChainContext
 public:
 
 	//Nexusのみ生成可能
-	struct InstanceKey;
+	struct NexusFieldProof;
 	//バッファの生リソースアドレスを取得キー
 	struct ResourceGetKey;
 	//専用のカラーバッファ
@@ -3917,7 +3949,7 @@ public:
 
 	SwapChainContext
 	(
-		InstanceKey instanceKey_,
+		NexusFieldProof proof_,
 		DescriptorHeapContextDiplomat* descriptorheapContextDiplomat_,
 		CommandContextDiplomat* commandContextDiplomat_,
 		DeviceContextDiplomat* deviceContextDiplomat_,
@@ -3935,7 +3967,7 @@ private:
 	//SwapChainとそのカラーバッファを構築
 	void AssembleCoreParts
 	(
-		InstanceKey instanceKey_,
+		NexusFieldProof proof_,
 		DescriptorHeapContextDiplomat* descriptorheapContextDiplomat_,
 		CommandContextDiplomat* commandContextDiplomat_,
 		DeviceContextDiplomat* deviceContextDiplomat_,
@@ -3956,7 +3988,7 @@ private:
 	//RTVの生成
 	void CreateRTV
 	(
-		InstanceKey instanceKey_ ,
+		NexusFieldProof proof_ ,
 		const D3D12_RENDER_TARGET_VIEW_DESC& rtvDesc_, 
 		DescriptorHeapContextDiplomat* descriptorheapContextDiplomat_
 	);
@@ -3966,12 +3998,12 @@ private:
 	std::unique_ptr<ColorBuffer> colorBuffer;
 };
 
-struct SwapChainContext::InstanceKey
+struct SwapChainContext::NexusFieldProof
 {
 private:
 
 	friend class Nexus;
-	explicit InstanceKey() = default;
+	explicit NexusFieldProof() = default;
 };
 
 struct SwapChainContext::ResourceGetKey
@@ -4188,7 +4220,7 @@ void SwapChainContext::ColorBuffer::AssembleMatrix()
 	scissorRect.top = static_cast<LONG>(0.0f);
 }
 
-void SwapChainContext::ColorBuffer::OverrideHeapIndex(SwapChainContext::InstanceKey instanceKey_, int index_ ,D3D12_CPU_DESCRIPTOR_HANDLE handle_)
+void SwapChainContext::ColorBuffer::OverrideHeapIndex(SwapChainContext::NexusFieldProof proof_, int index_ ,D3D12_CPU_DESCRIPTOR_HANDLE handle_)
 {
 	buffers.at(index_).cpuHandle = handle_;
 }
@@ -4293,7 +4325,7 @@ public:
 	//リソース取得
 	inline ID3D12Resource* GetResource(SwapChainContext::ResourceGetKey key_, int index_) { return buffers.at(index_).resource.Get(); }
 	//ヒープインデックスの上書き
-	void OverrideHeapIndex(SwapChainContext::InstanceKey instanceKey_, int index_, D3D12_CPU_DESCRIPTOR_HANDLE handle_);
+	void OverrideHeapIndex(SwapChainContext::NexusFieldProof proof_, int index_, D3D12_CPU_DESCRIPTOR_HANDLE handle_);
 	//MaterialProviderが情報を欲する
 	friend class SwapChainContext::RenderPassMaterialProvider;
 
@@ -4414,7 +4446,7 @@ HWND WindowContext::WatchHWND()
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-WindowContext::WindowContext(InstanceKey instanceKey_)
+WindowContext::WindowContext(NexusFieldProof proof_)
 {
 	using namespace ProjectConfig::Window;
 
@@ -4500,9 +4532,9 @@ class WindowContext
 {
 public:
 
-	struct InstanceKey;
+	struct NexusFieldProof;
 
-	WindowContext(InstanceKey instanceKey_);
+	WindowContext(NexusFieldProof proof_);
 	void Finalize();
 	HWND WatchHWND();
 
@@ -4522,11 +4554,11 @@ private:
 };
 
 
-struct WindowContext::InstanceKey
+struct WindowContext::NexusFieldProof
 {
 private:
 	friend class Nexus;
-	explicit InstanceKey() = default;
+	explicit NexusFieldProof() = default;
 };
 
 
@@ -5012,11 +5044,11 @@ namespace
 }
 
 
-RenderContext::RenderContext(InstanceKey key_)
+RenderContext::RenderContext(NexusFieldProof proof_)
 {
 	Logger::Entry("RenderContext: Constructor");
 
-	pso_PoolDispatcher.reset(new PSO_PoolDispatcher(key_));
+	pso_PoolDispatcher.reset(new PSO_PoolDispatcher(proof_));
 	Logger::Log("Instantiate: PSO_PoolDispatcher", fileName);
 
 
@@ -5049,9 +5081,10 @@ class RenderContext
 {
 public:
 
-	struct InstanceKey;
+	//ネクサスフィールドの証
+	struct NexusFieldProof;
 
-	RenderContext(InstanceKey key_);
+	RenderContext(NexusFieldProof proof_);
 	~RenderContext();
 
 	//モデルの描画情報を収集して整理する
@@ -5070,12 +5103,14 @@ private:
 };
 
 
-struct RenderContext::InstanceKey
+struct RenderContext::NexusFieldProof
 {
 private:
 	friend class Nexus;
-	explicit InstanceKey() = default;
+	explicit NexusFieldProof() = default;
 };
+
+
 //void IColorBuffer::AssembleMatrix(UINT width_, UINT height_)
 //{
 //	//クライアント領域と一緒のサイズにして画面全体に表示
@@ -5283,7 +5318,7 @@ namespace
 
 RenderContext::PSO_PoolDispatcher::PSO_PoolDispatcher
 (
-	RenderContext::InstanceKey key_
+	NexusFieldProof proof_
 )
 {
 	DefinePackageLayout();
@@ -5421,7 +5456,7 @@ public:
 	//psoを登録するための許可証
 	struct RegisterLicense;
 
-	PSO_PoolDispatcher(RenderContext::InstanceKey key_);
+	PSO_PoolDispatcher(NexusFieldProof proof_);
 	~PSO_PoolDispatcher();
 
 	///キーをもとにpsoを検索して渡す
@@ -6170,7 +6205,7 @@ namespace
 
 
 
-RenderPath::PathComposer::PathComposer(RenderContext::InstanceKey key_, ShaderLibrary* shaderLibrary_)
+RenderPath::PathComposer::PathComposer(RenderContext::NexusFieldProof proof_, ShaderLibrary* shaderLibrary_)
 {
 
 }
@@ -6188,7 +6223,7 @@ class ShaderLibrary;
 
 class RenderPath::PathComposer
 {
-	PathComposer(RenderContext::InstanceKey key_, ShaderLibrary* shaderLibrary_);
+	PathComposer(RenderContext::NexusFieldProof proof_, ShaderLibrary* shaderLibrary_);
 
 
 public:
@@ -6286,7 +6321,7 @@ public:
 //ランタイム処理ツール
 #include "RuntimeBufferManagementSystems/BufferDispatcher/BufferDispatcher.h"
 #include "RuntimeBufferManagementSystems/BufferInfoExtractor/BufferInfoExtractor.h"
-
+#include "BufferContextDiplomat/BufferContextExecutionAgent/BufferContextExecutionAgent.h"
 
 #include "ClosedHashMap/ClosedHashMap.h" 
 
@@ -6300,7 +6335,7 @@ namespace
 
 BufferContext::BufferContext
 (
-	InstanceKey instanceKey_, 
+	NexusFieldProof proof_,
 	DeviceContextDiplomat* deviceContextDiplomat_,
 	DescriptorHeapContextDiplomat* descriptorheapContextDiplomat_,
 	CommandContextDiplomat* commandContextDiplomat_
@@ -6311,33 +6346,34 @@ BufferContext::BufferContext
 	bufferPoolSet.reset(new BufferPoolSet());
 	Logger::Log("Create: bufferPoolSet", fileName);
 
-	bufferCollector.reset(new BufferContext::BufferCollector(instanceKey_, bufferPoolSet.get()));
+	bufferCollector.reset(new BufferContext::BufferCollector(proof_, bufferPoolSet.get()));
 	Logger::Log("Instantiate: bufferCollector", "BufferCreator.cpp");
 
-	resourceCreator.reset(new BufferContext::ResourceCreator(instanceKey_, deviceContextDiplomat_));
+	resourceCreator.reset(new BufferContext::ResourceCreator(proof_, deviceContextDiplomat_));
 	Logger::Log("Instantiate: ResourceCreator", fileName);
 
-	bufferCreator.reset(new BufferCreator(instanceKey_, resourceCreator.get(), descriptorheapContextDiplomat_, bufferCollector.get()));
+	bufferCreator.reset(new BufferCreator(proof_, resourceCreator.get(), descriptorheapContextDiplomat_, bufferCollector.get()));
 	Logger::Log("Instantiate: BufferCreator", fileName);
 
-	bufferDispatcher.reset(new BufferDispatcher(instanceKey_, bufferPoolSet.get()));
+	bufferDispatcher.reset(new BufferDispatcher(proof_, bufferPoolSet.get()));
 	Logger::Log("Instantiate: bufferDispatcher", fileName);
 
-	bufferUploader.reset(new BufferUploader(instanceKey_, resourceCreator.get(),bufferDispatcher.get(), commandContextDiplomat_));
+	bufferUploader.reset(new BufferUploader(proof_, resourceCreator.get(),bufferDispatcher.get(), commandContextDiplomat_));
 	Logger::Log("Instantiate: BufferUploader", fileName);
 
 	diplomat.reset
 	(
 		new BufferContextDiplomat
 		(
-			instanceKey_,
-			std::make_unique<ToolLender>(instanceKey_, bufferCreator.get(), bufferUploader.get(), bufferDispatcher.get(), bufferCollector.get())
+			proof_,
+			std::make_unique<ToolLender>(proof_, bufferCreator.get(), bufferUploader.get(), bufferDispatcher.get(), bufferCollector.get()),
+			std::make_unique<ExecutionAgent>(proof_, this)
 		)
 	);
+
 	Logger::Log("Instantiate: ToolLender", fileName);
+	Logger::Log("Instantiate: ExecutionAgent", fileName);
 	Logger::Log("Instantiate: BufferContextDiplomat", fileName);
-
-
 
 	Logger::End("BufferContext: Constructor");
 
@@ -6372,7 +6408,7 @@ BufferContext::BufferPoolSet::BufferPoolSet()
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-void BufferContext::DeleteBufferUploader(const InstanceKey& key_)
+void BufferContext::DeleteBufferUploader(const NexusFieldProof& proof_, AgentKey agentKey_)
 {
 	///中にある中間リソースをすべて削除
 	bufferUploader.reset();
@@ -6450,9 +6486,15 @@ protected:
 public:
 
 	//自身のインスタンス化キー
-	struct InstanceKey;
+	struct NexusFieldProof;
 	//バッファのポインタを扱うものの証
 	struct BufferAccessKey;
+	//エージェント認証キー
+	struct AgentKey;
+
+
+
+	using DeleteBufferUploaderCommand = std::function<void()>;
 
 	//BufferAssemblerとBufferCollectorをつかってバッファを作成する
 	class BufferCreator;
@@ -6470,11 +6512,13 @@ public:
 	class BufferCollector;
 	//生リソース生成
 	class ResourceCreator;
+	//代行者
+	class ExecutionAgent;
 
 
 	BufferContext
 	(
-		InstanceKey instanceKey_,
+		NexusFieldProof proof_,
 		DeviceContextDiplomat* deviceContextDiplomat_,
 		DescriptorHeapContextDiplomat* descriptorheapContextDiplomat_,
 		CommandContextDiplomat* commandContextDiplomat_
@@ -6482,13 +6526,11 @@ public:
 
 	~BufferContext();
 
-	//Extractors
-	std::unique_ptr<BufferInfoExtractor> bufferInfoExtractor;
 	//ツール貸し出し
 	std::unique_ptr<BufferContextDiplomat> diplomat;
 
 	///ランタイムに入る前にNexusuがアップロード用の中間リソースを破棄する
-	void DeleteBufferUploader(const InstanceKey& key_);
+	void DeleteBufferUploader(const NexusFieldProof& proof_, AgentKey agentKey_);
 	
 private:
 
@@ -6505,16 +6547,17 @@ private:
 	std::unique_ptr<BufferDispatcher> bufferDispatcher;
 	//コレクター
 	std::unique_ptr<BufferCollector> bufferCollector;
+	//Extractors
+	std::unique_ptr<BufferInfoExtractor> bufferInfoExtractor;
 
 };
 
-
-struct BufferContext::InstanceKey
+struct BufferContext::NexusFieldProof
 {
 private:
 
 	friend class Nexus;
-	explicit InstanceKey() = default;
+	explicit NexusFieldProof() = default;
 };
 
 struct BufferContext::BufferAccessKey
@@ -6524,6 +6567,15 @@ private:
 	friend class BufferInfoExtractor;
 	explicit BufferAccessKey() = default;
 };
+
+struct BufferContext::AgentKey
+{
+private:
+
+	friend class ExecutionAgent;
+	explicit AgentKey() = default;
+};
+
 
 
 
@@ -6536,15 +6588,18 @@ private:
 #include "PreCompileHeader.h"
 #include "BufferContextDiplomat.h"
 #include "BufferToolLender/BufferToolLender.h"
-
+#include "BufferContextExecutionAgent/BufferContextExecutionAgent.h"
 
 BufferContextDiplomat::BufferContextDiplomat
 (
-	BufferContext::InstanceKey key_,
-	std::unique_ptr<BufferContext::ToolLender>&& toolLender_
+	BufferContext::NexusFieldProof proof_,
+	std::unique_ptr<BufferContext::ToolLender>&& toolLender_,
+	std::unique_ptr<BufferContext::ExecutionAgent>&& executionAgent_
 )
 {
 	std::get<std::unique_ptr<BufferContext::ToolLender>>(tools) = std::move(toolLender_);
+	std::get<std::unique_ptr<BufferContext::ExecutionAgent>>(tools) = std::move(executionAgent_);
+
 }
 
 
@@ -6563,8 +6618,9 @@ class BufferContextDiplomat
 public:
 	BufferContextDiplomat
 	(
-		BufferContext::InstanceKey key_,
-		std::unique_ptr<BufferContext::ToolLender>&& toolLender_
+		BufferContext::NexusFieldProof proof_,
+		std::unique_ptr<BufferContext::ToolLender>&& toolLender_,
+		std::unique_ptr<BufferContext::ExecutionAgent>&& executionAgent_
 	);
 
 	template<typename ToolType>
@@ -6575,8 +6631,50 @@ public:
 
 private:
 	//提供するツールのテーブル
-	std::tuple<std::unique_ptr<BufferContext::ToolLender>> tools;
+	std::tuple<std::unique_ptr<BufferContext::ToolLender>, std::unique_ptr<BufferContext::ExecutionAgent>> tools;
 
+};
+
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Buffer\BufferContextDiplomat\BufferContextExecutionAgent\BufferContextExecutionAgent.cpp ===
+========================================
+#include "PreCompileHeader.h"
+#include "BufferContextExecutionAgent.h"
+
+
+BufferContext::ExecutionAgent::ExecutionAgent(NexusFieldProof proof_, BufferContext* bufferContext_)
+	:bufferContext(bufferContext_)
+{
+
+}
+
+void BufferContext::ExecutionAgent::DeleteBufferUploader(NexusFieldProof proof_)
+{
+	bufferContext->DeleteBufferUploader(proof_, BufferContext::AgentKey{});
+}
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Buffer\BufferContextDiplomat\BufferContextExecutionAgent\BufferContextExecutionAgent.h ===
+========================================
+#pragma once
+#include "../../BufferContext.h"
+
+class BufferContext::ExecutionAgent
+{
+public:
+	ExecutionAgent(NexusFieldProof proof_, BufferContext* bufferContext_);
+
+	//BufferUploaderの削除を代行
+	void DeleteBufferUploader(BufferContext::NexusFieldProof proof_);
+
+private:
+	BufferContext* bufferContext;
 };
 
 
@@ -6592,7 +6690,7 @@ private:
 
 BufferContext::ToolLender::ToolLender
 (
-	BufferContext::InstanceKey key_,
+	BufferContext::NexusFieldProof proof_,
 	BufferContext::BufferCreator* creator_,
 	BufferContext::BufferUploader* uploader_,
 	BufferContext::BufferDispatcher* dispatcher_,
@@ -6644,7 +6742,7 @@ public:
 
 	ToolLender
 	(
-		BufferContext::InstanceKey key_,
+		BufferContext::NexusFieldProof proof_,
 		BufferContext::BufferCreator* creator_,
 		BufferContext::BufferUploader* uploader_,
 		BufferContext::BufferDispatcher* dispatcher_,
@@ -6709,13 +6807,13 @@ struct BufferContext::ToolLender::LicenceTypeTraits<BufferContext::BufferCollect
 
 BufferContext::BufferCreator::BufferCreator
 (
-	BufferContext::InstanceKey instancekey_,
+	BufferContext::NexusFieldProof proof_,
 	BufferContext::ResourceCreator* resourceCreator_,
 	DescriptorHeapContextDiplomat* descriptorheapContextDiplomat_,
 	BufferCollector* collector_
 ):collector(collector_)
 {
-	assembler.reset(new BufferContext::BufferAssembler(instancekey_, resourceCreator_, descriptorheapContextDiplomat_));
+	assembler.reset(new BufferContext::BufferAssembler(proof_, resourceCreator_, descriptorheapContextDiplomat_));
 	Logger::Log("Instantiate: BufferAssembler", "BufferCreator.cpp");
 
 }
@@ -6750,7 +6848,7 @@ public:
 
 	BufferCreator
 	(
-		BufferContext::InstanceKey instancekey_,
+		BufferContext::NexusFieldProof proof_,
 		BufferContext::ResourceCreator* resourceCreator_,
 		DescriptorHeapContextDiplomat* descriptorheapContextDiplomat_,
 		BufferCollector* collector_
@@ -6858,7 +6956,7 @@ namespace
 
 BufferContext::BufferAssembler::BufferAssembler
 (
-	BufferContext::InstanceKey instancekey_, 
+	BufferContext::NexusFieldProof proof_,
 	ResourceCreator* resourceCreator_, 
 	DescriptorHeapContextDiplomat* descriptorheapContextDiplomat_
 )
@@ -7165,7 +7263,7 @@ public:
 
     BufferAssembler
     (
-        BufferContext::InstanceKey instancekey_, 
+        BufferContext::NexusFieldProof proof_,
         ResourceCreator* resourceCreator_,
         DescriptorHeapContextDiplomat* descriptorheapContextDiplomat_
     );
@@ -7760,27 +7858,27 @@ private:
 
 
 template<>
-static std::optional<D3D12_CLEAR_VALUE>
+std::optional<D3D12_CLEAR_VALUE>
 BufferContext::BufferAssembler::ResourceAssembler::GetClearValue(const ColorBufferDescription& desc_);
 
 template<>
-static std::optional<D3D12_CLEAR_VALUE>
+std::optional<D3D12_CLEAR_VALUE>
 BufferContext::BufferAssembler::ResourceAssembler::GetClearValue(const DepthStencilBufferDescription& desc_);
 
 template<>
-static std::optional<D3D12_CLEAR_VALUE>
+std::optional<D3D12_CLEAR_VALUE>
 BufferContext::BufferAssembler::ResourceAssembler::GetClearValue(const ConstantBufferDescription& desc_);
 
 template<>
-static std::optional<D3D12_CLEAR_VALUE>
+std::optional<D3D12_CLEAR_VALUE>
 BufferContext::BufferAssembler::ResourceAssembler::GetClearValue(const StaticStructuredBufferDescription& desc_);
 
 template<>
-static std::optional<D3D12_CLEAR_VALUE>
+std::optional<D3D12_CLEAR_VALUE>
 BufferContext::BufferAssembler::ResourceAssembler::GetClearValue(const UploadStructuredBufferDescription& desc_);
 
 template<>
-static std::optional<D3D12_CLEAR_VALUE>
+std::optional<D3D12_CLEAR_VALUE>
 BufferContext::BufferAssembler::ResourceAssembler::GetClearValue(const ComputeBufferDescription& desc_);
 
 
@@ -8154,7 +8252,7 @@ void BufferContext::BufferAssembler::ViewAssembler::CreateView
 
 BufferContext::BufferCollector::BufferCollector
 (
-	BufferContext::InstanceKey key_,
+	BufferContext::NexusFieldProof proof_,
 	BufferContext::BufferPoolSet* bufferPoolSet_
 ):bufferPoolSet(bufferPoolSet_)
 {
@@ -8249,7 +8347,7 @@ public:
 
 	BufferCollector
 	(
-		BufferContext::InstanceKey key_,
+		BufferContext::NexusFieldProof proof_,
 		BufferContext::BufferPoolSet* bufferPoolSet_
 	);
 
@@ -8370,7 +8468,7 @@ namespace
 
 BufferContext::BufferUploader::BufferUploader
 (
-	BufferContext::InstanceKey key_,
+	BufferContext::NexusFieldProof proof_,
 	BufferContext::ResourceCreator* resourceCreator_,
 	BufferContext::BufferDispatcher* dispatcher_,
 	CommandContextDiplomat* commandContextDiplomat_
@@ -8467,7 +8565,7 @@ public:
 
 	BufferUploader
 	(
-		BufferContext::InstanceKey key_,
+		BufferContext::NexusFieldProof proof_,
 		BufferContext::ResourceCreator* resourceCreator_,
 		BufferContext::BufferDispatcher* dispatcher_,
 		CommandContextDiplomat* commandContextDiplomat_
@@ -8550,7 +8648,7 @@ private:
 #include "../../../../Core/Device/DeviceContextDiplomat/DeviceContextDiplomat.h"
 #include "../../../../Core/Device/DeviceContextDiplomat/DeviceContextCommandProvider/DeviceContextCommandProvider.h"
 
-BufferContext::ResourceCreator::ResourceCreator(BufferContext::InstanceKey instanceKey_, DeviceContextDiplomat* deviceContextDiplomat_)
+BufferContext::ResourceCreator::ResourceCreator(NexusFieldProof proof_, DeviceContextDiplomat* deviceContextDiplomat_)
 {
 	auto* cmdProvider = deviceContextDiplomat_->Access<DeviceContext::CommandProvider>();
 	createResourceCommand = cmdProvider->ProvideCreateResourceCommand();
@@ -8600,7 +8698,7 @@ class BufferContext::ResourceCreator
 	using ResourceContainer = std::vector<Microsoft::WRL::ComPtr<ID3D12Resource>>;
 public:
 
-	ResourceCreator(BufferContext::InstanceKey instanceKey_, DeviceContextDiplomat* deviceContextDiplomat_);
+	ResourceCreator(NexusFieldProof proof_, DeviceContextDiplomat* deviceContextDiplomat_);
 	~ResourceCreator();
 
 	[[nodiscard]] ResourceContainer Create
@@ -10668,7 +10766,7 @@ class BufferDeferredReleaser
 
 BufferContext::BufferDispatcher::BufferDispatcher
 (
-	BufferContext::InstanceKey key_,
+	BufferContext::NexusFieldProof proof_,
 	BufferContext::BufferPoolSet* bufferPoolSet_
 ) :bufferPoolSet(bufferPoolSet_)
 {
@@ -10694,7 +10792,7 @@ public:
 
 	BufferDispatcher
 	(
-		BufferContext::InstanceKey key_,
+		BufferContext::NexusFieldProof proof_,
 		BufferContext::BufferPoolSet* bufferPoolSet_
 	);
 
@@ -10862,14 +10960,14 @@ namespace
 }
 
 
-MeshContext::MeshContext(const InstanceKey& key_,BufferContextDiplomat* bufferContextDiplomat_)
+MeshContext::MeshContext(NexusFieldProof proof_,BufferContextDiplomat* bufferContextDiplomat_)
 {
 	Logger::Entry("MeshContext: Constructor");
 
-	modelSlotAllocator.reset(new ModelSlotAllocator(key_));
+	modelSlotAllocator.reset(new ModelSlotAllocator(proof_));
 	Logger::Log("Instantiate: modelSlotAllocator", fileName);
 
-	modelDataCreator.reset(new ModelDataCreator(key_, modelSlotAllocator.get(), bufferContextDiplomat_));
+	modelDataCreator.reset(new ModelDataCreator(proof_, modelSlotAllocator.get(), bufferContextDiplomat_));
 	Logger::Log("Instantiate: ModelDataCreator", fileName);
 
 
@@ -10903,9 +11001,9 @@ public:
 	class ModelSlotAllocator;
 
 	//自身の生成キー
-	struct InstanceKey;
+	struct NexusFieldProof;
 
-	MeshContext(const InstanceKey& key_, BufferContextDiplomat* bufferContextDiplomat_);
+	MeshContext(NexusFieldProof proof_, BufferContextDiplomat* bufferContextDiplomat_);
 	~MeshContext();
 
 
@@ -10917,12 +11015,12 @@ private:
 
 };
 
-struct MeshContext::InstanceKey
+struct MeshContext::NexusFieldProof
 {
 private:
 
 	friend class Nexus;
-	explicit InstanceKey() = default;
+	explicit NexusFieldProof() = default;
 };
 
 
@@ -10961,14 +11059,14 @@ namespace
 
 MeshContext::ModelDataCreator::ModelDataCreator
 (
-    MeshContext::InstanceKey key_,
+    NexusFieldProof proof_,
     MeshContext::ModelSlotAllocator* allocator_,
     BufferContextDiplomat* bufferContextDiplomat_
 )
 {
 	Logger::Entry("ModelDataCreator: Constructor");
 
-    modelDataLoader.reset(new ModelDataLoader(key_));
+    modelDataLoader.reset(new ModelDataLoader(proof_));
     Logger::Log("Instantiate: ModelDataLoader", fileName);
 
     CreateAllModelData(allocator_, bufferContextDiplomat_);
@@ -11144,7 +11242,7 @@ public:
 
 	ModelDataCreator
 	(
-		MeshContext::InstanceKey key_, 
+		NexusFieldProof proof_,
 		MeshContext::ModelSlotAllocator* allocator_, 
 		BufferContextDiplomat* bufferContextDiplomat_
 	);
@@ -11332,7 +11430,6 @@ void MeshContext::ModelDataCreator::MeshDataBufferUploader::CopyAndUploadBuffer
     //CPUにマッピングしてアップロードする
     for (size_t i = 0;i < numMeshData;++i)
     {
-
         //頂点データをGPU仕様にする
         std::vector<StandardVertexGPU> vertexGPU =
             MeshContext::ModelDataCreator::DataTransducer::TransferVertexDataTypeToGPU(data_[i].vertices);
@@ -11593,12 +11690,12 @@ namespace
     auto const fileName = "ModelDataLoader.cpp";
 }
 
-MeshContext::ModelDataLoader::ModelDataLoader(MeshContext::InstanceKey key_)
+MeshContext::ModelDataLoader::ModelDataLoader(NexusFieldProof proof_)
 {
     Logger::Entry("ModelDataLoader: Constructor");
 
 
-	modelDataCache.reset(new ModelDataCache(key_));
+	modelDataCache.reset(new ModelDataCache(proof_));
     Logger::Log("Instantiate: ModelDataCache",fileName);
 
     Logger::End("ModelDataLoader: Constructor");
@@ -11692,7 +11789,7 @@ class MeshContext::ModelDataLoader
 {
 public:
 
-	ModelDataLoader(MeshContext::InstanceKey key_);
+	ModelDataLoader(NexusFieldProof proof_);
 	~ModelDataLoader();
 
 	///ファイルの名前から実メッシュデータのアドレスを生成
@@ -12104,7 +12201,7 @@ class MeshContext::ModelDataLoader::MeshParser
 #include "ModelDataCache.h"
 
 
-MeshContext::ModelDataLoader::ModelDataCache::ModelDataCache(MeshContext::InstanceKey key_)
+MeshContext::ModelDataLoader::ModelDataCache::ModelDataCache(NexusFieldProof proof_)
 {
 
 }
@@ -12142,7 +12239,7 @@ public:
 
 	struct AccessKey;
 
-	ModelDataCache(MeshContext::InstanceKey key_);
+	ModelDataCache(NexusFieldProof proof_);
 
 	ModelDataAggregate* FindDuplication(AccessKey key_, std::string fileName_);
 	void Register(AccessKey key_, std::string fileName_, std::unique_ptr<ModelDataAggregate>&& data_);
@@ -12175,7 +12272,7 @@ namespace
 }
 
 
-MeshContext::ModelSlotAllocator::ModelSlotAllocator(MeshContext::InstanceKey key_)
+MeshContext::ModelSlotAllocator::ModelSlotAllocator(NexusFieldProof proof_)
 {
 	//使いまわしTransformMatrixのスロットのサイズを確保する
 	for (UINT i = 0;i < (UINT)ProjectConfig::Render::GlobalBufferTableSetting::kSizeOfTransformMatrixBufferArray;++i)
@@ -12266,7 +12363,7 @@ public:
 		const std::vector<MeshDataID>& idContainer_
 	);
 
-	ModelSlotAllocator(MeshContext::InstanceKey key_);
+	ModelSlotAllocator(NexusFieldProof proof_);
 	~ModelSlotAllocator();
 
 private:
@@ -12535,13 +12632,13 @@ namespace
 
 PSO_Context::PSO_Context
 (
-	InstanceKey key_,
+	NexusFieldProof proof_,
 	DeviceContextDiplomat* deviceContextDiplomat_
 )
 {
 	Logger::Entry("PSO_Context: Constructor");
 	
-	assembler.reset(new Assembler(key_, deviceContextDiplomat_, &psoContainer));
+	assembler.reset(new Assembler(proof_, deviceContextDiplomat_, &psoContainer));
 	Logger::Log("Instantiate: psoAssembler");
 
 
@@ -12580,11 +12677,11 @@ public:
 	class Assembler;
 
 	//自身のインスタンスキー
-	struct InstanceKey;
+	struct NexusFieldProof;
 
 	PSO_Context
 	(
-		InstanceKey key_,
+		NexusFieldProof proof_,
 		DeviceContextDiplomat* deviceContextDiplomat_
 	);
 
@@ -12601,12 +12698,12 @@ private:
 };
 
 
-struct PSO_Context::InstanceKey
+struct PSO_Context::NexusFieldProof
 {
 private:
 
 	friend class Nexus;
-	explicit InstanceKey() = default;
+	explicit NexusFieldProof() = default;
 };
 
 
@@ -12717,7 +12814,7 @@ namespace
 
 PSO_Context::Assembler::Assembler
 (
-	PSO_Context::InstanceKey key_,
+	NexusFieldProof proof_,
 	DeviceContextDiplomat* deviceContextDiplomat_,	
 	std::vector<Microsoft::WRL::ComPtr<ID3D12PipelineState>>* psoContainer_
 ): psoContainer(psoContainer_)
@@ -12909,7 +13006,7 @@ public:
 
 	Assembler
 	(
-		PSO_Context::InstanceKey key_,
+		NexusFieldProof proof_,
 		DeviceContextDiplomat* deviceContextDiplomat_, 
 		std::vector<Microsoft::WRL::ComPtr<ID3D12PipelineState>>* psoContainer_
 	);
@@ -13456,11 +13553,11 @@ namespace
 	auto const fileName = "RootSignatureContext.cpp";
 }
 
-RootSignatureContext::RootSignatureContext(InstanceKey key_, DeviceContextDiplomat* deviceContextDiplomat_)
+RootSignatureContext::RootSignatureContext(NexusFieldProof proof_, DeviceContextDiplomat* deviceContextDiplomat_)
 {
 	Logger::Entry("RootSignatureContext: Constructor");
 
-	assembler.reset(new Assembler(key_, deviceContextDiplomat_));
+	assembler.reset(new Assembler(proof_, deviceContextDiplomat_));
 	Logger::Log("Instantiate: RootSignatureAssembler", fileName);
 
 	rootSignatureLibrary.reset(new RootSignatureLibrary(RootSignatureLibrary::InstanceKey{}, assembler.get()));
@@ -13500,9 +13597,9 @@ public:
 
 	//rootSignatureを組み立てる
 	class Assembler;
-	struct InstanceKey;
+	struct NexusFieldProof;
 
-	RootSignatureContext(InstanceKey key_, DeviceContextDiplomat* deviceContextDiplomat_);
+	RootSignatureContext(NexusFieldProof proof_, DeviceContextDiplomat* deviceContextDiplomat_);
 	~RootSignatureContext();
 
 private:
@@ -13512,12 +13609,12 @@ private:
 
 };
 
-struct RootSignatureContext::InstanceKey
+struct RootSignatureContext::NexusFieldProof
 {
 private:
 
 	friend class Nexus;
-	explicit InstanceKey() = default;
+	explicit NexusFieldProof() = default;
 };
 
 
@@ -13545,7 +13642,7 @@ namespace
 
 using namespace RootSignatureLayoutComponent;
 
-RootSignatureContext::Assembler::Assembler(RootSignatureContext::InstanceKey key_, DeviceContextDiplomat* deviceContextDiplomat_)
+RootSignatureContext::Assembler::Assembler(NexusFieldProof proof_, DeviceContextDiplomat* deviceContextDiplomat_)
 {
 	auto cmdProvider = deviceContextDiplomat_->Access<DeviceContext::CommandProvider>();
 	cmdCreateRootSignature = cmdProvider->ProvideCommandCreateRootSignature();
@@ -13655,7 +13752,7 @@ Microsoft::WRL::ComPtr<ID3D12RootSignature> RootSignatureContext::Assembler::Cre
 class RootSignatureContext::Assembler
 {
 public:
-	Assembler(RootSignatureContext::InstanceKey key_, DeviceContextDiplomat* deviceContextDiplomat_);
+	Assembler(NexusFieldProof proof_, DeviceContextDiplomat* deviceContextDiplomat_);
 	~Assembler();
 
 	//生成関数
@@ -14133,11 +14230,11 @@ namespace
 }
 
 
-ShaderContext::ShaderContext(InstanceKey instanceKey_)
+ShaderContext::ShaderContext(NexusFieldProof proof_)
 {
 	Logger::Entry("ShaderContext: Constructor");
 
-	compiler.reset(new Compiler(instanceKey_));
+	compiler.reset(new Compiler(proof_));
 	Logger::Log("Instantiate: shaderCompiler", fileName);
 
 	shaderLibrary.reset(new ShaderLibrary(ShaderLibrary::InstanceKey{}, compiler.get()));
@@ -14178,8 +14275,8 @@ class ShaderContext
 {
 public:
 
-	//自身のインスタンス化キー
-	struct InstanceKey;
+	//ネクサスフィールドの証
+	struct NexusFieldProof;
 	//シェーダーライブラリを貸し出し許可キー
 	struct ShaderLibraryAccessKey;
 	//コンパイラー
@@ -14188,7 +14285,7 @@ public:
 	//シェーダーライブラリを貸し出し
 	ShaderLibrary* AllowAccessToLibrary(ShaderLibraryAccessKey accessKey_);
 	
-	ShaderContext(InstanceKey instanceKey_);
+	ShaderContext(NexusFieldProof proof_);
 	~ShaderContext();
 
 private:
@@ -14199,12 +14296,12 @@ private:
 };
 
 
-struct ShaderContext::InstanceKey
+struct ShaderContext::NexusFieldProof
 {
 private:
 
 	friend class Nexus;
-	explicit InstanceKey() = default;
+	explicit NexusFieldProof() = default;
 };
 
 struct ShaderContext::ShaderLibraryAccessKey
@@ -14232,7 +14329,7 @@ namespace
 }
 
 
-ShaderContext::Compiler::Compiler(ShaderContext::InstanceKey key_)
+ShaderContext::Compiler::Compiler(NexusFieldProof proof_)
 {
 	InstantiateCorePatrts();
 }
@@ -14444,7 +14541,7 @@ class ShaderContext::Compiler
 {
 public:
 
-	Compiler(ShaderContext::InstanceKey key_);
+	Compiler(NexusFieldProof proof_);
 
 	[[nodiscard]] Microsoft::WRL::ComPtr<IDxcBlob> CompileShader
 	(
@@ -15705,7 +15802,7 @@ namespace
 
 void Nexus::Finalize()
 {
-	commandContext->Finalize(CommandContext::InstanceKey{});
+	commandContext->Finalize(CommandContext::NexusFieldProof{});
 	windowContext->Finalize();
 }
 
@@ -15726,13 +15823,15 @@ void Nexus::Finalize()
 #include "../LowerLayer/Core/SwapChain/SwapChainContext.h"
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 #include "../LowerLayer/Core/Command/CommandContext.h"
-#include "../LowerLayer/Core/Command/CommandContextDiplomat/CommandContextToolLender/CommandContextToolLender.h"
 #include "../LowerLayer/Core/Command/ResourceUploader/ResourceUploader.h"
 #include "../LowerLayer/Core/Command/CommandContextDiplomat/CommandContextDiplomat.h"
+#include "../LowerLayer/Core/Command/CommandContextDiplomat/CommandContextExecutionAgent/CommandContextExecutionAgent.h"
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 #include "../LowerLayer/Resource/Shader/ShaderContext.h"
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 #include "../LowerLayer/Resource/Buffer/BufferContext.h"
+#include "../LowerLayer/Resource/Buffer/BufferContextDiplomat/BufferContextDiplomat.h"
+#include "../LowerLayer/Resource/Buffer/BufferContextDiplomat/BufferContextExecutionAgent/BufferContextExecutionAgent.h"
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 #include "../LowerLayer/Resource/PSO/PSO_Context.h"
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -15753,7 +15852,7 @@ template<>
 void Nexus::Init<Nexus::InitSequence::kDeviceContext>()
 {
 	//deviceContextクラスのインスタンス化
-	deviceContext.reset(new DeviceContext(DeviceContext::InstanceKey{}));
+	deviceContext.reset(new DeviceContext(DeviceContext::NexusFieldProof{}));
 	Logger::Log("Instantiate: deviceContext", fileName);
 }
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -15763,7 +15862,7 @@ template<>
 void Nexus::Init<Nexus::InitSequence::kWindowContext>()
 {
 	//windowContextのインスタンス化
-	windowContext.reset(new WindowContext(WindowContext::InstanceKey{}));
+	windowContext.reset(new WindowContext(WindowContext::NexusFieldProof{}));
 	Logger::Log("Instantiate: windowContext", fileName);
 }
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -15777,7 +15876,7 @@ void Nexus::Init<Nexus::InitSequence::kDescriptorHeapContext>()
 	(
 		new DescriptorHeapContext
 		(
-			DescriptorHeapContext::InstanceKey{},
+			DescriptorHeapContext::NexusFieldProof{},
 			deviceContext->diplomat.get()
 		)
 	);
@@ -15790,7 +15889,7 @@ void Nexus::Init<Nexus::InitSequence::kDescriptorHeapContext>()
 template<>
 void Nexus::Init<Nexus::InitSequence::kBufferContext>()
 {
-	bufferContext.reset(new BufferContext(BufferContext::InstanceKey{}, deviceContext->diplomat.get(), descriptorHeapContext->diplomat.get(), commandContext->diplomat.get()));
+	bufferContext.reset(new BufferContext(BufferContext::NexusFieldProof{}, deviceContext->diplomat.get(), descriptorHeapContext->diplomat.get(), commandContext->diplomat.get()));
 	Logger::Log("Instantiate: bufferContext", fileName);
 }
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -15803,7 +15902,7 @@ void Nexus::Init<Nexus::InitSequence::kCommandContext>()
 	(
 		new CommandContext
 		(
-			CommandContext::InstanceKey{},
+			CommandContext::NexusFieldProof{},
 			deviceContext->diplomat.get()
 		)
 	);
@@ -15820,7 +15919,7 @@ void Nexus::Init<Nexus::InitSequence::kSwapChainContext>()
 	(
 		new SwapChainContext
 		(
-			SwapChainContext::InstanceKey{},
+			SwapChainContext::NexusFieldProof{},
 			descriptorHeapContext->diplomat.get(),
 			commandContext->diplomat.get(),
 			deviceContext->diplomat.get(),
@@ -15837,7 +15936,7 @@ void Nexus::Init<Nexus::InitSequence::kSwapChainContext>()
 template<>
 void Nexus::Init<Nexus::InitSequence::kShaderContext>()
 {
-	shaderContext.reset(new ShaderContext(ShaderContext::InstanceKey{}));
+	shaderContext.reset(new ShaderContext(ShaderContext::NexusFieldProof{}));
 	Logger::Log("Instantiate: ShaderContext", fileName);
 }
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -15850,7 +15949,7 @@ void Nexus::Init<Nexus::InitSequence::kPSO_Context>()
 	(
 		new PSO_Context
 		(
-			PSO_Context::InstanceKey{},
+			PSO_Context::NexusFieldProof{},
 			deviceContext->diplomat.get()
 		)
 	);
@@ -15866,7 +15965,7 @@ void Nexus::Init<Nexus::InitSequence::kRootSignatureContext>()
 	(
 		new RootSignatureContext
 		(
-			RootSignatureContext::InstanceKey{},
+			RootSignatureContext::NexusFieldProof{},
 			deviceContext->diplomat.get()
 		)
 	);
@@ -15880,7 +15979,7 @@ void Nexus::Init<Nexus::InitSequence::kRootSignatureContext>()
 template<>
 void Nexus::Init<Nexus::InitSequence::kRenderContext>()
 {
-	renderContext.reset(new RenderContext(RenderContext::InstanceKey{}));
+	renderContext.reset(new RenderContext(RenderContext::NexusFieldProof{}));
 	Logger::Log("Instantiate: RenderContext", fileName);
 }
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -15889,7 +15988,7 @@ void Nexus::Init<Nexus::InitSequence::kRenderContext>()
 template<>
 void Nexus::Init<Nexus::InitSequence::kMeshContext>()
 {
-	meshContext.reset(new MeshContext(MeshContext::InstanceKey{},bufferContext->diplomat.get()));
+	meshContext.reset(new MeshContext(MeshContext::NexusFieldProof{},bufferContext->diplomat.get()));
 	Logger::Log("Instantiate: MeshContext", fileName);
 }
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -15898,14 +15997,10 @@ void Nexus::Init<Nexus::InitSequence::kMeshContext>()
 template<>
 void Nexus::Init<Nexus::InitSequence::kKickCommands>()
 {
-	//溜まったリソースアップロードのコマンドをキックして同期し、コマンドを閉じる
-	auto* toolLender = commandContext->diplomat->Access<CommandContext::ToolLender>();
-	//リソースアップローダーにアクセスするための資格
-	CommandContext::ToolLender::LicenceType<CommandContext::ResourceUploader> licence;
-	auto* resourceUploader = toolLender->Lend<CommandContext::ResourceUploader>(licence);
-
+	//CommandContextの代行者
+	auto* agent = commandContext->diplomat->Access<CommandContext::ExecutionAgent>();
 	//リソースアップロードのために溜まったコマンドを全てキックして同期し、コマンドリストを閉じる
-	resourceUploader->WaitAndKick(CommandContext::ResourceUploader::WaitAndKickLicence{});
+	agent->KickAndSynchronizeUploadCommand(CommandContext::NexusFieldProof{});
 }
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -15913,8 +16008,9 @@ void Nexus::Init<Nexus::InitSequence::kKickCommands>()
 template<>
 void Nexus::Init<Nexus::InitSequence::kDeleteIntermediateResources>()
 {
-	//BufferUploaderを削除する
-	bufferContext->DeleteBufferUploader(BufferContext::InstanceKey{});
+	auto* agent = bufferContext->diplomat->Access<BufferContext::ExecutionAgent>();
+	//BufferUploaderの削除を代行
+	agent->DeleteBufferUploader(BufferContext::NexusFieldProof{});
 }
 
 

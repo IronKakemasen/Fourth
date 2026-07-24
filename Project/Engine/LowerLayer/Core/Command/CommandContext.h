@@ -1,7 +1,6 @@
 #pragma once
 
 class Nexus;
-class SwapChainContext;
 class CommandContextDiplomat;
 class DeviceContextDiplomat;
 
@@ -16,19 +15,13 @@ class CommandContext
 
 public:
 
-	using UploadCommand = std::function<void
-	(
-		ID3D12Resource* dstResource_,
-		ID3D12Resource* intermediateResource_,
-		const D3D12_SUBRESOURCE_DATA* subeResource_,
-		UINT subResourceCount_
-	)>;
 
 	//Nexusフィールドの証明
 	struct NexusFieldProof;
 	//代行者認証キー
 	struct AgentKey;
-
+	//コマンド提供者認証キー
+	struct ProviderKey;
 
 
 	//リソースのアップロードを行う
@@ -99,5 +92,14 @@ private:
 	friend class ExecutionAgent;
 	explicit AgentKey() = default;
 };
+
+struct CommandContext::ProviderKey
+{
+private:
+
+	friend class CommandProvider;
+	explicit ProviderKey() = default;
+};
+
 
 

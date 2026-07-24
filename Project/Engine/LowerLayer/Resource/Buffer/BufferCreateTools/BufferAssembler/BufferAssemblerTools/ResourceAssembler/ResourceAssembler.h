@@ -1,13 +1,11 @@
 #pragma once
 #include "../../BufferAssembler.h"
-#include "../../../../BufferDefinition/AllBufferDescsIFwd.h"
 
 
 class BufferContext::BufferAssembler::ResourceAssembler
 {
     friend class BufferContext::BufferAssembler;
 
-public:
     //生リソース生成
     template<typename DescType>
     [[nodiscard]]static ResourceContainer AssembleResource
@@ -27,9 +25,6 @@ public:
             desc_
         );
     }
-
-
-private:
 
     //生リソース生成に必要な情報を組み立てる
     static std::pair<D3D12_RESOURCE_DESC, D3D12_HEAP_PROPERTIES> CreateRequirements(const BufferDescriptionBehavior& desc_);

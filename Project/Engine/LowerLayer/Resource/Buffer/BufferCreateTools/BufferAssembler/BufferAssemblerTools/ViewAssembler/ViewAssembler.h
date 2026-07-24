@@ -3,7 +3,6 @@
 
 class BufferContext::BufferAssembler::ViewAssembler
 {
-public:
 
     friend class BufferContext::BufferAssembler;
 
@@ -17,8 +16,6 @@ public:
         GPUBufferBehavior* buffer_,
         const DescType& desc_
     );
-
-private:
 
     //ビュー生成ヘルパー
     template<typename ViewDescType>
