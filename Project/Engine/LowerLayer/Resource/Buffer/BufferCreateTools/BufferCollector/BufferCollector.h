@@ -7,6 +7,8 @@ class BufferContext::BufferCollector
 {
 public:
 
+	struct RegisterLicence;
+
 	BufferCollector
 	(
 		BufferContext::NexusFieldProof proof_,
@@ -17,7 +19,7 @@ public:
 	
 	///作成されたバッファを一時保管場所へ移動
 	template<typename BufferType>
-	void Register(std::unique_ptr<BufferType> buffer_,BufferUniqueID id_)
+	void Register(RegisterLicence licence_, std::unique_ptr<BufferType> buffer_,BufferUniqueID id_)
 	{
 		auto registerType = Identify<BufferType>();
 
@@ -86,6 +88,16 @@ private:
 	}
 
 };
+
+
+struct BufferContext::BufferCollector::RegisterLicence
+{
+private:
+
+	friend class BufferContext::BufferCreator;
+	explicit RegisterLicence() = default;
+};
+
 
 template<>
 std::unique_ptr<GPUBufferBehavior> BufferContext::BufferCollector::CastBuffer(std::unique_ptr<ColorBuffer> buffer_);
