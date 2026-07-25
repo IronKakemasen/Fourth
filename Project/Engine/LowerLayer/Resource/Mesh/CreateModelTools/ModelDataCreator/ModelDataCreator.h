@@ -29,6 +29,8 @@ protected:
 
 private:
 
+	//メッシュデータのバッファを作成し,そのメッシュデータのバッファユニークID群を返す
+	class MeshDataBufferCreator;
 	//モデルの理事ストリーファイルを読み込んで、キーがファイル名のバリューがファイルパスであるマップを返す
 	class ModelRegistryLoader;
 	//頂点データをGPU用に変換したり、BufferUniqueIDからstructuredBufferポインタに変換する
@@ -42,22 +44,21 @@ private:
 
 public:
 
-	//メッシュデータのバッファを作成し,そのメッシュデータのバッファユニークID群を返す
-	class MeshDataBufferCreator;
 
-	
-	///全てのメッシュデータのバッファを作成し、
-	///メッシュデータのバッファユニークID群の配列のバッファも作成
+	///全てのメッシュデータのバッファを作成してアップロードし、
+	///キー(ファイル名)とメッシュデータバッファのsrvHapIndex群を紐づける
+	///全メッシュデータバッファのsrvHeapIndex群のコンテナのバッファも作成してアップロードし、
+	///そのsrvHeapIndexをMeshSlotAllocatorが受け取る
 	void CreateAllModelData
 	(
 		MeshContext::ModelSlotAllocator* allocator_,
 		BufferContextDiplomat* bufferContextDiplomat_
 	);
 
-
 	ModelDataCreator
 	(
 		NexusFieldProof proof_,
+		std::unique_ptr<ModelDataLoader>&& modelDataLoader_,
 		MeshContext::ModelSlotAllocator* allocator_, 
 		BufferContextDiplomat* bufferContextDiplomat_
 	);
@@ -70,15 +71,12 @@ private:
 	//モデルファイルからモデルデータを読み込む
 	std::unique_ptr<ModelDataLoader> modelDataLoader;
 
-
 	//ローダーが全モデルファイルを読み込み、そのモデルデータのポインタを返す
 	///被り無しのはず設計なので、被りがあった場合はアサートでとまる
 	std::unordered_map<std::string, ModelDataAggregate*> LoadAllModelFiles();
 	
 	//バッファコンテキストクラスからツールをお借りする
 	BufferContextTools BorrowBufferContextTools(BufferContextDiplomat* bufferContextDiplomat_);
-
-
 
 };
 

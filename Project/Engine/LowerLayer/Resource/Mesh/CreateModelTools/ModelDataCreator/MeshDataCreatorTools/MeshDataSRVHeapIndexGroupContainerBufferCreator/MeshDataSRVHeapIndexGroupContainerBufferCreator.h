@@ -16,6 +16,7 @@ class MeshContext::ModelDataCreator::MeshDataSRVHeapIndexGroupContainerBufferCre
 		BufferContext::BufferCreator* bufferCreator_,
 		BufferContext::BufferCollector* bufferCollector_,
 		BufferContext::BufferDispatcher* dispatcher_,
+		BufferContext::BufferUploader* uploader_,
 		MeshContext::ModelSlotAllocator* allocator_
 	);
 };

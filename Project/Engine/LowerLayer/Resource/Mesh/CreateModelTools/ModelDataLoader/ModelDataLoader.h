@@ -12,8 +12,13 @@ public:
 	~ModelDataLoader();
 
 	///ファイルの名前から実メッシュデータのアドレスを生成
-	///既に読み込み済みの場合はぬるぽを返す
+	///既に読み込み済みの場合はアサートで止める
 	ModelDataAggregate* Load(std::string fileName_ , std::string filePath_);
+
+	//不要になったモデルデータのキャッシュの削除を代行してもらう
+	void DeleteModelDataCache(MeshContext::NexusFieldProof proof_, MeshContext::AgentKey agentKey_);
+
+
 
 private:
 

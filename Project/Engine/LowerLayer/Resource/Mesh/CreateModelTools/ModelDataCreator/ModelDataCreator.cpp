@@ -18,6 +18,8 @@
 #include "../../../Buffer/BufferContextDiplomat/BufferToolLender/BufferToolLender.h"
 #include "../../../Buffer/BufferContextDiplomat/BufferContextDiplomat.h"
 
+    ///2.MeshSlotAllocatorが必要数分のトランスフォームマトリックスバッファコンテナのインデックスを
+    ///vectorで渡す。この値も同様に各モデルがRootConstantsでGPUに転送する
 
 
 using namespace StructuredBufferDataDefinition;
@@ -31,14 +33,12 @@ namespace
 MeshContext::ModelDataCreator::ModelDataCreator
 (
     NexusFieldProof proof_,
+    std::unique_ptr<ModelDataLoader>&& modelDataLoader_,
     MeshContext::ModelSlotAllocator* allocator_,
     BufferContextDiplomat* bufferContextDiplomat_
-)
+) :modelDataLoader(std::move(modelDataLoader_))
 {
 	Logger::Entry("ModelDataCreator: Constructor");
-
-    modelDataLoader.reset(new ModelDataLoader(proof_));
-    Logger::Log("Instantiate: ModelDataLoader", fileName);
 
     CreateAllModelData(allocator_, bufferContextDiplomat_);
 
@@ -59,10 +59,13 @@ void MeshContext::ModelDataCreator::CreateAllModelData
     BufferContextDiplomat* bufferContextDiplomat_
 )
 {
-    ///＜最終目的＞
-    ///1.そのキー(ファイル名)に対してメッシュデータID(マルチメッシュ対応のためvector)を紐づける。
-    ///2.メッシュデータIDの数分のTransformMatrixDispatchedIdを付与する
-
+    ///＜目標＞
+    ///0.全てのメッシュデータのスタティックストラクチャードバッファを生成して、バッファアップローダーに
+    ///登録する
+    ///1.そのキー(ファイル名)に対してメッシュデータバッファのsrvHeapIndex群のID(マルチメッシュ対応のためvector)
+    ///を紐づける。後にこの値は各モデルがRootConstantsでGPUに転送する
+    ///2.メッシュデータバッファのsrvHeapIndex群のコンテナを1つのストラクチャードバッファとして生成して
+    ///アップロードし、MeshSlotAllocatorがそのバッファのsrvHeapIndexを保存する
 
     ///メッシュデータ生成数
     ///メッシュIDが指す先は一つのメッシュデータバッファのsrvheapIndex群であり、
@@ -117,17 +120,18 @@ void MeshContext::ModelDataCreator::CreateAllModelData
     }
 
     ///tmpMeshDataSRVHeapIndexGroupContainerのバッファを作る
-    //そのsrvHeapIndexをMeshSlotAllocatorが保存する
+    ///そのsrvHeapIndexをMeshSlotAllocatorが保存する
     MeshDataSRVHeapIndexGroupContainerBufferCreator::Create
     (
         tmpMeshDataSRVHeapIndexGroupContainer,
         bufferCreator,
         bufferCollector,
         bufferDispatcher,
+        bufferUploader,
         allocator_
     );
 
-
+    allocator_->Log(MeshContext::ModelSlotAllocator::HandleLicence{});
 }
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

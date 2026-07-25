@@ -16,6 +16,8 @@ class BufferContext::BufferUploader
 		ID3D12Resource* intermediateResource;
 		D3D12_SUBRESOURCE_DATA subResource;
 		UINT resourceSize;
+		UINT dataSize;
+		UINT numData;
 		std::vector<std::byte> ownedData;
 	};
 
@@ -48,6 +50,9 @@ public:
 		temporaryBufferInfoStorage.resourceSize = resourceSize;
 		temporaryBufferInfoStorage.intermediateResource = CreateInterMediateResource(resourceSize);
 		temporaryBufferInfoStorage.subResource = CreateBufferSubResource(realData_, resourceSize);
+		//デバッグのため
+		temporaryBufferInfoStorage.numData = numDataContaines_;
+		temporaryBufferInfoStorage.dataSize = sizeof(RealDataType);
 
 		//実データをコピーして自前で保持する
 		temporaryBufferInfoStorage.ownedData.resize(resourceSize);

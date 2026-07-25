@@ -1,5 +1,6 @@
 #include "PreCompileHeader.h"
 #include "ModelDataCache.h"
+#include "../../../ModelStructure/ModelData/ModelDataAggregate.h"
 
 
 MeshContext::ModelDataLoader::ModelDataCache::ModelDataCache(NexusFieldProof proof_)
@@ -7,17 +8,18 @@ MeshContext::ModelDataLoader::ModelDataCache::ModelDataCache(NexusFieldProof pro
 
 }
 
-ModelDataAggregate* MeshContext::ModelDataLoader::ModelDataCache::FindDuplication(AccessKey key_, std::string fileName_)
+void MeshContext::ModelDataLoader::ModelDataCache::FindDuplication(AccessKey key_, std::string fileName_)
 {
-	if (modelDataCache.find(fileName_) != modelDataCache.end())
-	{				
-		return modelDataCache.at(fileName_).get();
-	}
+	ErrorMessageOutput::Assert::DetectError
+	(
+		modelDataCache.find(fileName_) == modelDataCache.end(),
+		"おかしいね、ファイルを2重に読み込んでる",
+		"ModelDataCache.cpp"
+	);
 
-	return nullptr;
 }
 
-void MeshContext::ModelDataLoader::ModelDataCache::Register(AccessKey key_, std::string fileName_, std::unique_ptr<ModelDataAggregate>&& data_)
+void MeshContext::ModelDataLoader::ModelDataCache::StoreTemporarily(AccessKey key_, std::string fileName_, std::unique_ptr<ModelDataAggregate>&& data_)
 {
 	Logger::Log("Regieter: " + fileName_, "ModelDataCache.cpp");
 

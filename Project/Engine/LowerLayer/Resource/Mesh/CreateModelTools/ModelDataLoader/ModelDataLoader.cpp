@@ -4,6 +4,7 @@
 #include "MeshParser/MeshParser.h"
 #include "MaterialParser/MaterialParser.h"
 #include "ModelDataCache/ModelDataCache.h"
+#include "../../ModelStructure/ModelData/ModelDataAggregate.h"
 
 #include "StringConnverter/StringConverter.h"
 
@@ -39,8 +40,7 @@ ModelDataAggregate* MeshContext::ModelDataLoader::Load(std::string fileName_ , s
     std::unique_ptr<ModelDataAggregate> modelDataAggregate = std::make_unique<ModelDataAggregate>();
 
 	///同じモデルファイルを読み込んでいる場合は何かおかしいのでアサート
-	ModelDataAggregate* cachedModelData = modelDataCache->FindDuplication(ModelDataCache::AccessKey{},fileName_);
-    ErrorMessageOutput::Assert::DetectError(!cachedModelData, "ファイルを重複読み込みしている", fileName);
+	modelDataCache->FindDuplication(ModelDataCache::AccessKey{},fileName_);
 
     // wchar_t から char型(UTF-8)に変換
     auto path = StringConverter::ToUTF8(StringConverter::ConvertString(filePath_));
@@ -79,13 +79,13 @@ ModelDataAggregate* MeshContext::ModelDataLoader::Load(std::string fileName_ , s
     //マテリアルデータを変換
     for (size_t i = 0; i < modelDataAggregate->resourceMaterial.size(); ++i)
     {
-        const auto pMaterial = scene->mMaterials[i];
+        const auto pMaterial = (scene) ? scene->mMaterials[i] : nullptr;
         MaterialParser::ParseMaterial(modelDataAggregate->resourceMaterial[i], pMaterial);
     }
 
     //キャッシュデータに登録
     auto returnPtr = modelDataAggregate.get();
-    modelDataCache->Register(MeshContext::ModelDataLoader::ModelDataCache::AccessKey{}, fileName_, std::move(modelDataAggregate));
+    modelDataCache->StoreTemporarily(MeshContext::ModelDataLoader::ModelDataCache::AccessKey{}, fileName_, std::move(modelDataAggregate));
 
     //不要になったのでクリア
     importer.FreeScene();
@@ -98,3 +98,8 @@ ModelDataAggregate* MeshContext::ModelDataLoader::Load(std::string fileName_ , s
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+void MeshContext::ModelDataLoader::DeleteModelDataCache(MeshContext::NexusFieldProof proof_, MeshContext::AgentKey agentKey_)
+{
+    modelDataCache.release();
+    Logger::Log("Delete: modelDataCache", fileName);
+}

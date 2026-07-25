@@ -18,19 +18,23 @@ public:
 	struct HandleLicence;
 
 
+	//空きスロットを分配する
 	template<SlotType slotType>
 	uint32_t DistributeSlot(HandleLicence licence_);
 
-	//meshDataSRVHeapIndexGroupArraySRVHeapIndexこれを設定する
+	//meshDataSRVHeapIndexGroupContainerのSRVHeapIndexセットする
 	void SetMeshDataSRVHeapIndexGroupContainerSRVHeapIndex(HandleLicence licence_ , std::unique_ptr<SRVHeapIndex>&& index_);
 
-	//メッシュファイル名に対してMeshDataIDを紐づける
+	//メッシュファイル名に対してMeshDataID(複数)を紐づける
 	void LinkModelFileNameToMeshDataID
 	(
 		HandleLicence licence_,
 		std::string modelFileName_ , 
 		const std::vector<MeshDataID>& idContainer_
 	);
+
+	//内容をログファイルに書き出す
+	void Log(HandleLicence licence_);
 
 	ModelSlotAllocator(NexusFieldProof proof_);
 	~ModelSlotAllocator();

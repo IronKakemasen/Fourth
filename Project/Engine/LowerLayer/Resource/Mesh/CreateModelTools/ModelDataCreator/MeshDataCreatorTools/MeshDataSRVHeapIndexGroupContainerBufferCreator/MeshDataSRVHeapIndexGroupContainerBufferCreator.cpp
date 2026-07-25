@@ -3,6 +3,8 @@
 
 //外部
 #include "../../../../../Buffer/BufferCreateTools/BufferCreator.h"
+#include "../../../../../Buffer/BufferCreateTools/BufferUploader/BufferUploader.h"
+
 #include "../../../../../Buffer/BufferRuntime/BufferDispatcher/BufferDispatcher.h"
 //ほんとはstaticStructuredBufferDescriptionだけでいいんだけど、文字列制限なのかインクルードできないので
 #include "../../../../../Buffer/BufferDefinition/AllBufferDescsInclude.h"
@@ -16,19 +18,25 @@ void MeshContext::ModelDataCreator::MeshDataSRVHeapIndexGroupContainerBufferCrea
 	BufferContext::BufferCreator* bufferCreator_,
 	BufferContext::BufferCollector* bufferCollector_,
 	BufferContext::BufferDispatcher* dispatcher_,
+	BufferContext::BufferUploader* uploader_,
 	MeshContext::ModelSlotAllocator* allocator_
 )
 {
+	UINT srcContainerSize = (UINT)tmpMeshDataSRVHeapIndexGroupContainer_.size();
+
 	StaticStructuredBufferDescription desc
 	(
 		sizeof(MeshDataSRVHeapIndexGroupGPUCPU),
-		(UINT)tmpMeshDataSRVHeapIndexGroupContainer_.size(),
+		srcContainerSize,
 		0
 	);
 
 	//バッファ生成
 	BufferUniqueID uniqueID = bufferCreator_->Create(desc, "MeshDataSRVHeapIndexGroupContainer");
 	bufferCollector_->Distribute();
+
+	//アップロードする
+	uploader_->RegisterBuffer(uniqueID, srcContainerSize, tmpMeshDataSRVHeapIndexGroupContainer_.data());
 
 	//srvHeapIndexを抽出
 	StaticStructuredBuffer* buffer = static_cast<StaticStructuredBuffer*>(dispatcher_->Dispatch(uniqueID));
@@ -40,5 +48,7 @@ void MeshContext::ModelDataCreator::MeshDataSRVHeapIndexGroupContainerBufferCrea
 		MeshContext::ModelSlotAllocator::HandleLicence{}, 
 		std::move(std::make_unique<SRVHeapIndex>(readableBuffer->OutProperSRVHeapIndex()))
 	);
+
+
 
 }
