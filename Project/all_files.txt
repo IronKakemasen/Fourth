@@ -1789,7 +1789,7 @@ template<>
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 std::tuple<uint32_t, D3D12_CPU_DESCRIPTOR_HANDLE, D3D12_GPU_DESCRIPTOR_HANDLE>
-DescriptorHeapPool::ProvideFreeHeapIndex(CreateViewKey accessKey_)
+DescriptorHeapPool::DistributeFreeHeapIndex(CreateViewKey accessKey_)
 {
 	uint32_t lastIndex = freeList.Distribute();
 	return std::make_tuple
@@ -1833,9 +1833,9 @@ public:
 		UINT handleIncrementSize_, uint32_t kMaxDescriptor_,bool shaderVisible_ ,std::string name_);
 	~DescriptorHeapPool();
 	
-	//フリーヒープインデックスを提供
+	//フリーヒープインデックスを割り当てる
 	std::tuple<uint32_t, D3D12_CPU_DESCRIPTOR_HANDLE, D3D12_GPU_DESCRIPTOR_HANDLE>
-	ProvideFreeHeapIndex(CreateViewKey accessKey_);
+	DistributeFreeHeapIndex(CreateViewKey accessKey_);
 
 	//ヒープインデックスを回収
 	void CollectHeapIndex(uint32_t index_, CollectHeapIndexKey key_);
@@ -1893,6 +1893,11 @@ template<>
 ========================================
 #include "ViewCreator.h"
 
+namespace 
+{
+	auto const fileName = "ViewCreator.cpp";
+}
+
 
 DescriptorHeapContext::ViewCreator::ViewCreator
 (
@@ -1910,6 +1915,43 @@ DescriptorHeapContext::ViewCreator::ViewCreator
 	DescriptorHeapPool_Library.at(UINT(DescriptorHeapContext::ViewCreator::HeapType::kSRVUAV)) = SRVUAVdescriptorHeapPool_;
 	DescriptorHeapPool_Library.at(UINT(DescriptorHeapContext::ViewCreator::HeapType::kDSV)) = DSVdescriptorHeapPool_;
 }
+
+template<>
+void DescriptorHeapContext::ViewCreator::Log<DescriptorHeapContext::ViewCreator::HeapType::kRTV>
+(const uint32_t handle_)const
+{
+	Logger::Log("Dispatched < RTV > [ " + std::to_string(handle_) + " ]", fileName);
+}
+
+template<>
+void DescriptorHeapContext::ViewCreator::Log<DescriptorHeapContext::ViewCreator::HeapType::kSRVUAV>
+(const uint32_t handle_)const
+{
+	Logger::Log("Dispatched < SRVUAV > [ " + std::to_string(handle_) + " ]", fileName);
+}
+
+template<>
+void DescriptorHeapContext::ViewCreator::Log<DescriptorHeapContext::ViewCreator::HeapType::kDSV>
+(const uint32_t handle_)const
+{
+	Logger::Log("Dispatched < DSV > [ " + std::to_string(handle_) + " ]", fileName);
+}
+
+
+
+
+
+template
+void DescriptorHeapContext::ViewCreator::Log<DescriptorHeapContext::ViewCreator::HeapType::kRTV>
+(const uint32_t handle_)const;
+
+template
+void DescriptorHeapContext::ViewCreator::Log<DescriptorHeapContext::ViewCreator::HeapType::kSRVUAV>
+(const uint32_t handle_)const;
+
+template
+void DescriptorHeapContext::ViewCreator::Log<DescriptorHeapContext::ViewCreator::HeapType::kDSV>
+(const uint32_t handle_)const;
 
 
 
@@ -1964,7 +2006,7 @@ public:
 		DescriptorHeapContext::CreateUAVCommand uavCmd_
 	);
 
-	//VIEWを生成し、インデックスやハンドルを返す。
+	///VIEWを生成し、インデックスやハンドルを返す。
 	template<typename ViewDescType>
 	std::tuple<uint32_t, D3D12_CPU_DESCRIPTOR_HANDLE, D3D12_GPU_DESCRIPTOR_HANDLE> CreateView(ID3D12Resource* resource_, const ViewDescType* viewDesc, ID3D12Resource* counterResource_ = nullptr)
 	{
@@ -1974,7 +2016,7 @@ public:
 		auto* targetHeap = DescriptorHeapPool_Library.at(UINT(type));
 
 		//空きヒープインデックスを割り当てる
-		auto[allocateIndex, handleCPU, handleGPU] = targetHeap->ProvideFreeHeapIndex(DescriptorHeapPool::CreateViewKey{});
+		auto[allocateIndex, handleCPU, handleGPU] = targetHeap->DistributeFreeHeapIndex(DescriptorHeapPool::CreateViewKey{});
 
 		//ビュー生成
 		if constexpr (std::is_same_v<ViewDescType, D3D12_RENDER_TARGET_VIEW_DESC>)
@@ -1994,9 +2036,16 @@ public:
 			uavCmd(resource_, viewDesc, handleCPU, counterResource_);
 		}
 
+		Log<DescTypeTraits<ViewDescType>::heapType>(allocateIndex);
+
 		//uint、CPU・GPUのインデックスを返す
 		return std::make_tuple(allocateIndex, handleCPU, handleGPU);
 	}
+
+private:
+
+	template<HeapType heapType>
+	void Log(const uint32_t handle_)const;
 };
 
 
@@ -2017,7 +2066,6 @@ struct DescriptorHeapContext::ViewCreator::DescTypeTraits<D3D12_UNORDERED_ACCESS
 {
 	static constexpr HeapType heapType = HeapType::kSRVUAV;
 };
-
 
 template<>
 struct DescriptorHeapContext::ViewCreator::DescTypeTraits<D3D12_DEPTH_STENCIL_VIEW_DESC>
@@ -7536,7 +7584,10 @@ void BufferContext::BufferAssembler::AssembleView
 #include "BufferMaterializer.h"
 #include "../../../../BufferDefinition/AllBuffersInclude.h"
 
-
+namespace
+{
+	auto const fileName = "BufferMaterializer.cpp";
+}
 
 template<>
 static [[nodiscard]] std::unique_ptr<ColorBuffer> BufferContext::BufferAssembler::BufferMaterializer::Materialize
@@ -7546,6 +7597,9 @@ static [[nodiscard]] std::unique_ptr<ColorBuffer> BufferContext::BufferAssembler
 	std::string nameCnv_
 )
 {
+
+	Logger::Log("BufferType: ColorBuffer", fileName);
+
 	//バッファ生成
 	return std::make_unique<ColorBuffer>
 	(
@@ -7565,6 +7619,8 @@ static [[nodiscard]] std::unique_ptr<DepthStencilBuffer> BufferContext::BufferAs
 	std::string nameCnv_
 )
 {
+	Logger::Log("BufferType: DepthStencilBuffer", fileName);
+
 	//バッファ生成
 	return std::make_unique<DepthStencilBuffer>
 	(
@@ -7584,6 +7640,8 @@ static [[nodiscard]] std::unique_ptr<StaticStructuredBuffer> BufferContext::Buff
 	std::string nameCnv_
 )
 {
+	Logger::Log("BufferType: StaticStructuredBuffer", fileName);
+
 	//バッファ生成
 	return std::make_unique<StaticStructuredBuffer>
 	(
@@ -7603,6 +7661,9 @@ static [[nodiscard]] std::unique_ptr<UploadStructuredBuffer> BufferContext::Buff
 	std::string nameCnv_
 )
 {
+
+	Logger::Log("BufferType: UploadStructuredBuffer", fileName);
+
 	//バッファ生成
 	return std::make_unique<UploadStructuredBuffer>
 		(
@@ -7622,6 +7683,9 @@ static [[nodiscard]] std::unique_ptr<ComputeBuffer> BufferContext::BufferAssembl
 	std::string nameCnv_
 )
 {
+
+	Logger::Log("BufferType: ComputeBuffer", fileName);
+
 	//バッファ生成
 	return std::make_unique<ComputeBuffer>
 		(
@@ -7641,6 +7705,9 @@ static [[nodiscard]] std::unique_ptr<ConstantBuffer> BufferContext::BufferAssemb
 	std::string nameCnv_
 )
 {
+
+	Logger::Log("BufferType: ConstantBuffer", fileName);
+
 	//バッファ生成
 	return std::make_unique<ConstantBuffer>
 	(

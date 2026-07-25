@@ -2,6 +2,7 @@
 
 class Nexus;
 class BufferContextDiplomat;
+class MeshContextDiplomat;
 
 class MeshContext
 {
@@ -11,13 +12,19 @@ public:
 	//モデルファイルからメッシュ情報を読み込む
 	class ModelDataLoader;
 	class ModelSlotAllocator;
+	//代行者
+	class ExecutionAgent;
+
 
 	//自身の生成キー
 	struct NexusFieldProof;
+	//代行認証キー
+	struct AgentKey;
 
 	MeshContext(NexusFieldProof proof_, BufferContextDiplomat* bufferContextDiplomat_);
 	~MeshContext();
 
+	std::unique_ptr<MeshContextDiplomat> diplomat;
 
 private:
 
@@ -34,3 +41,13 @@ private:
 	friend class Nexus;
 	explicit NexusFieldProof() = default;
 };
+
+struct MeshContext::AgentKey
+{
+private:
+
+	friend class ExecutionAgent;
+	explicit AgentKey() = default;
+};
+
+

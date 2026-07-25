@@ -121,10 +121,11 @@ void BufferContext::BufferUploader::Flush(std::string log_)
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 void BufferContext::BufferUploader::EndLog()const
 {
+	Logger::Log("===== Size Of DataType x numDataContains =====");
 	for (auto& data : temporaryBufferInfoStorageContainer)
 	{
 		auto [dstBuffer, dstResource] = PickBufferAndResource(data.id);
-		Logger::Log("Complete Uploading: " + dstBuffer->WatchName() + "(" + std::to_string(data.resourceSize) + ")", fileName);
+		Logger::Log("Complete Uploading: " + dstBuffer->WatchName() + "(" + std::to_string(data.dataSize) + " x " + std::to_string(data.numData) + ")", fileName);
 	}
 }
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

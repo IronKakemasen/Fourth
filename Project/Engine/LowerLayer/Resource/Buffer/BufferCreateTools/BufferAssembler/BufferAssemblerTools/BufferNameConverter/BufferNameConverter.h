@@ -16,7 +16,7 @@ class BufferContext::BufferAssembler::BufferNameConverter
         else if constexpr (std::is_same_v<BufferType, DepthStencilBuffer>)      attach = "DepthStencil";
         else if constexpr (std::is_same_v<BufferType, ComputeBuffer>)           attach = "Compute";
         else if constexpr (std::is_same_v<BufferType, UploadStructuredBuffer>)  attach = "UploadStructured";
-        else if constexpr (std::is_same_v<BufferType, StaticStructuredBuffer>)  attach = "StaticStructuredBuffer";
+        else if constexpr (std::is_same_v<BufferType, StaticStructuredBuffer>)  attach = "StaticStructured";
 
         return attach + "Buffer" + "[ " + srcName_ + " ] ";
     }

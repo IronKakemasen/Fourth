@@ -23,6 +23,8 @@
 #include "../LowerLayer/Resource/RootSignature/RootSignatureContext.h"
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 #include "../LowerLayer/Resource/Mesh/MeshContext.h"
+#include "../LowerLayer/Resource/Mesh/MeshContextDiplomat/MeshContextDiplomat.h"
+#include "../LowerLayer/Resource/Mesh/MeshContextDiplomat/MeshContextExecutionAgent/MeshContextExecutionAgent.h"
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 #include "../LowerLayer/Render/RenderContext.h"
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -209,6 +211,19 @@ void Nexus::Init<Nexus::InitSequence::kUploadAllResources>()
 	//BufferUploaderの削除を代行
 	agent->UploadAllBuffer(BufferContext::NexusFieldProof{});
 }
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+template<>
+void Nexus::Init<Nexus::InitSequence::kDeleteModelDataCache>()
+{
+	//meshContextの代行者
+	auto* agent = meshContext->diplomat->Access<MeshContext::ExecutionAgent>();
+	//モデルデータのキャッシュを削除
+	agent->DeleteModelDataCache(MeshContext::NexusFieldProof{});
+
+}
+
 
 
 
@@ -257,4 +272,7 @@ void Nexus::Init<Nexus::InitSequence::kKickCommands>();
 
 template
 void Nexus::Init<Nexus::InitSequence::kDeleteIntermediateResources>();
+
+template
+void Nexus::Init<Nexus::InitSequence::kDeleteModelDataCache>();
 
