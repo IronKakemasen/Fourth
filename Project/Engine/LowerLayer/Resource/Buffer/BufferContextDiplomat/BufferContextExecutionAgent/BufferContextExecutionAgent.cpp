@@ -17,7 +17,7 @@ void BufferContext::ExecutionAgent::DeleteBufferUploader(NexusFieldProof proof_)
 	bufferContext->DeleteBufferUploader(proof_, BufferContext::AgentKey{});
 }
 
-void BufferContext::ExecutionAgent::PitchAllBarriersForUpload(BufferContext::NexusFieldProof proof_)
+void BufferContext::ExecutionAgent::UploadAllBuffer(BufferContext::NexusFieldProof proof_)
 {
-	bufferUploader->PitchAllBarrier(proof_,BufferContext::AgentKey{});
+	bufferUploader->UploadBuffer(proof_,BufferContext::AgentKey{});
 }

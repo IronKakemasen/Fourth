@@ -76,7 +76,7 @@ Nexus::Nexus()
 	InitializeInSequence<InitSequence::kRenderContext>();
 
 
-	InitializeInSequence<InitSequence::kPitchAllBarriersForShaderResource>();
+	InitializeInSequence<InitSequence::kUploadAllResources>();
 	InitializeInSequence<InitSequence::kKickCommands>();
 	InitializeInSequence<InitSequence::kDeleteIntermediateResources>();
 

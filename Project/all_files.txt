@@ -813,9 +813,9 @@ CommandContext::ResourceUploader::UploadCommand CommandContext::ResourceUploader
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 CommandContext::ResourceUploader::PitchBarrierCommand CommandContext::ResourceUploader::ProvideBarrierPitchCommand(ProviderKey providerKey_)
 {
-	return [this](const std::vector<D3D12_RESOURCE_BARRIER>& barriers_)
+	return [this](D3D12_RESOURCE_BARRIER* barriers_,UINT count_)
 	{
-		commandList->ResourceBarrier(UINT(barriers_.size()), barriers_.data());
+		commandList->ResourceBarrier(count_, barriers_);
 	};
 
 }
@@ -842,7 +842,7 @@ public:
 		UINT subResourceCount_
 	)>;
 
-	using PitchBarrierCommand = std::function<void(const std::vector<D3D12_RESOURCE_BARRIER>&)>;
+	using PitchBarrierCommand = std::function<void(D3D12_RESOURCE_BARRIER*,UINT)>;
 
 	ResourceUploader
 	(
@@ -6709,9 +6709,9 @@ void BufferContext::ExecutionAgent::DeleteBufferUploader(NexusFieldProof proof_)
 	bufferContext->DeleteBufferUploader(proof_, BufferContext::AgentKey{});
 }
 
-void BufferContext::ExecutionAgent::PitchAllBarriersForUpload(BufferContext::NexusFieldProof proof_)
+void BufferContext::ExecutionAgent::UploadAllBuffer(BufferContext::NexusFieldProof proof_)
 {
-	bufferUploader->PitchAllBarrier(proof_,BufferContext::AgentKey{});
+	bufferUploader->UploadBuffer(proof_,BufferContext::AgentKey{});
 }
 
 
@@ -6735,7 +6735,7 @@ public:
 	//BufferUploaderの削除を代行
 	void DeleteBufferUploader(BufferContext::NexusFieldProof proof_);
 	//Resourceのバリアを全て張るのを代行
-	void PitchAllBarriersForUpload(BufferContext::NexusFieldProof proof_);
+	void UploadAllBuffer(BufferContext::NexusFieldProof proof_);
 
 
 private:
@@ -8508,7 +8508,7 @@ std::unique_ptr<GPUBufferBehavior> BufferContext::BufferCollector::CastBuffer(st
 ========================================
 #include "PreCompileHeader.h"
 #include "BufferUploader.h"
-
+#include "../../BufferDefinition/GPUBuffer/GPUBufferBehavior.h"
 
 #include "BufferUploaderTools/IntermediateResourceCreator/IntermediateResourceCreator.h"
 #include "BufferUploaderTools/BarrierExtractor/BarrierExtractor.h"
@@ -8556,25 +8556,92 @@ ID3D12Resource* BufferContext::BufferUploader::CreateInterMediateResource(UINT c
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-void BufferContext::BufferUploader::ExtractBarrier(GPUBufferBehavior* dstBuffer_)
+template<>
+void BufferContext::BufferUploader::ExtractBarrier<D3D12_RESOURCE_STATE_COPY_DEST>(GPUBufferBehavior* dstBuffer_)
 {
-	barriers.emplace_back(BarrierExtractor::ExtractBarrier(dstBuffer_));
+	barriers.emplace_back(BarrierExtractor::ExtractBarrier<D3D12_RESOURCE_STATE_COPY_DEST>(dstBuffer_));
 }
+
+template<>
+void BufferContext::BufferUploader::ExtractBarrier<D3D12_RESOURCE_STATE_ALL_SHADER_RESOURCE>(GPUBufferBehavior* dstBuffer_)
+{
+	barriers.emplace_back(BarrierExtractor::ExtractBarrier<D3D12_RESOURCE_STATE_ALL_SHADER_RESOURCE>(dstBuffer_));
+}
+
+//Nexusフィールド限定、代行者限定
+void BufferContext::BufferUploader::UploadBuffer(BufferContext::NexusFieldProof proof_, BufferContext::AgentKey agentKey_)
+{
+	//GPUBufferBehaviorから、IReadOnlyインターフェースにキャストしてバリアを抽出し
+	///バリアをためる
+	///common -> copy
+	for (auto& data : temporaryBufferInfoStorageContainer)
+	{
+		//バッファと生リソースを取り出す
+		auto [dstBuffer, dstResource] = PickBufferAndResource(data.id);
+		ExtractBarrier<D3D12_RESOURCE_STATE_COPY_DEST>(dstBuffer);
+	}
+
+	///上記のコマンドを流す
+	Flush("Pitch All Barriers to CopyDst");
+
+	///コピーしてアップロードする
+	for (auto& data : temporaryBufferInfoStorageContainer)
+	{
+		auto [dstBuffer, dstResource] = PickBufferAndResource(data.id);
+		uploadCommand(dstResource, data.intermediateResource, &data.subResource, 1);
+	}
+
+	///バリアをためる
+	///Copy -> ShaderResource
+	for (auto& data : temporaryBufferInfoStorageContainer)
+	{
+		auto [dstBuffer, dstResource] = PickBufferAndResource(data.id);
+		ExtractBarrier<D3D12_RESOURCE_STATE_ALL_SHADER_RESOURCE>(dstBuffer);
+	}
+
+	///上記のコマンドを流す
+	Flush("Pitch All Barriers to ShaderResource");
+
+	//ログ出力
+	EndLog();
+}
+
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-std::tuple<GPUBufferBehavior*, ID3D12Resource*, std::string> BufferContext::BufferUploader::PickBufferAndResource(BufferUniqueID id_)
+std::tuple<GPUBufferBehavior*, ID3D12Resource*> BufferContext::BufferUploader::PickBufferAndResource(BufferUniqueID id_)const
 {
 	return BufferAndResourcePicker::PickBufferAndResource(dispatcher, id_);
 }
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-void BufferContext::BufferUploader::PitchAllBarrier(BufferContext::NexusFieldProof proof_, BufferContext::AgentKey agentKey_)
+void BufferContext::BufferUploader::Flush(std::string log_)
 {
-	pitchBarriersCommand(barriers);
-	Logger::Log("Pitch All Barriers(" + std::to_string((UINT)barriers.size()) + ")", fileName);
+	pitchBarriersCommand(barriers.data(), UINT(barriers.size()));
+	Logger::Log(log_ + "(" + std::to_string((UINT)barriers.size()) + ")", fileName);
+	barriers.clear();
 }
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+void BufferContext::BufferUploader::EndLog()const
+{
+	for (auto& data : temporaryBufferInfoStorageContainer)
+	{
+		auto [dstBuffer, dstResource] = PickBufferAndResource(data.id);
+		Logger::Log("Complete Uploading: " + dstBuffer->WatchName() + "(" + std::to_string(data.resourceSize) + ")", fileName);
+	}
+}
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+//template
+//void BufferContext::BufferUploader::ExtractBarrier<D3D12_RESOURCE_STATE_COPY_DEST>(GPUBufferBehavior* dstBuffer_);
+//
+//template
+//void BufferContext::BufferUploader::ExtractBarrier<D3D12_RESOURCE_STATE_ALL_SHADER_RESOURCE>(GPUBufferBehavior* dstBuffer_);
 
 
 
@@ -8593,6 +8660,16 @@ class GPUBufferBehavior;
 
 class BufferContext::BufferUploader
 {
+	//一時的にアップロードするバッファの情報を保持するための形式
+	struct TemporaryBufferInfoStorage
+	{
+		BufferUniqueID id;
+		ID3D12Resource* intermediateResource;
+		D3D12_SUBRESOURCE_DATA subResource;
+		UINT resourceSize;
+	};
+
+
 public:
 
 	BufferUploader
@@ -8605,37 +8682,30 @@ public:
 
 	~BufferUploader();
 
-	///バッファをアップロードする(テクスチャバッファはまた別。あとで共通窓口を作る)
+	///アップロードするバッファの必要情報の登録
 	template<typename RealDataType>
-	void UploadBuffer
+	void RegisterBuffer
 	(
 		const BufferUniqueID id_,
 		const UINT numDataContaines_,
 		const RealDataType* realData_
 	)
 	{
+		TemporaryBufferInfoStorage temporaryBufferInfoStorage;
 		UINT const resourceSize = sizeof(RealDataType) * numDataContaines_;
 
-		//中間リソース生成
-		ID3D12Resource* interMediateResource = CreateInterMediateResource(resourceSize);
-		//サブリソース生成
-		D3D12_SUBRESOURCE_DATA subResource = CreateBufferSubResource(realData_, resourceSize);
-		
-		//バッファと生リソースを取り出す
-		auto [dstBuffer, dstResource,bufferName] = PickBufferAndResource(id_);
+		temporaryBufferInfoStorage.id = id_;
+		temporaryBufferInfoStorage.resourceSize = resourceSize;
+		temporaryBufferInfoStorage.intermediateResource = CreateInterMediateResource(resourceSize);
+		temporaryBufferInfoStorage.subResource = CreateBufferSubResource(realData_, resourceSize);
 
-		//コピーしてアップロードする
-		uploadCommand(dstResource, interMediateResource, &subResource, 1);
-
-		//GPUBufferBehaviorから、IReadOnlyインターフェースにキャストしてバリアを抽出
-		ExtractBarrier(dstBuffer);
-
-		Logger::Log("Complete Uploading: " + bufferName + "(" + std::to_string(resourceSize) + ")", "BufferUploader.h");
+		temporaryBufferInfoStorageContainer.emplace_back(temporaryBufferInfoStorage);
 	}
 
-	//たまりにたまったバリアを張る
+
+	///バッファをアップロードする(テクスチャバッファはまた別。あとで共通窓口を作る)
 	//Nexusフィールド限定、代行者限定
-	void PitchAllBarrier(BufferContext::NexusFieldProof proof_, BufferContext::AgentKey agentKey_);
+	void UploadBuffer(BufferContext::NexusFieldProof proof_, BufferContext::AgentKey agentKey_);
 
 
 private:
@@ -8658,13 +8728,28 @@ private:
 	std::vector<Microsoft::WRL::ComPtr<ID3D12Resource>> intermediateResources;
 	//バリアのコンテナ
 	std::vector<D3D12_RESOURCE_BARRIER> barriers;
+	std::vector<TemporaryBufferInfoStorage> temporaryBufferInfoStorageContainer;
 
+
+
+	//中間リソースの生成
 	ID3D12Resource* CreateInterMediateResource(UINT const resourceSize_);
+	
+	//バリアを吐かせる
+	template<D3D12_RESOURCE_STATES state>
 	void ExtractBarrier(GPUBufferBehavior* dstBuffer_);
-	std::tuple<GPUBufferBehavior*, ID3D12Resource*,std::string> PickBufferAndResource(BufferUniqueID id_);
+
+	//バッファと生ポインタのフェッチ
+	std::tuple<GPUBufferBehavior*, ID3D12Resource*> PickBufferAndResource(BufferUniqueID id_)const;
+
+	//コマンドを流す
+	void Flush(std::string log_);
+
+	//終わりの一言
+	void EndLog()const;
 
 	template<typename RealDataType>
-	D3D12_SUBRESOURCE_DATA CreateBufferSubResource(RealDataType* realData_ , UINT const resourceSize_)
+	D3D12_SUBRESOURCE_DATA CreateBufferSubResource(RealDataType* realData_ , UINT const resourceSize_)const
 	{
 		D3D12_SUBRESOURCE_DATA subResource{};
 
@@ -8687,13 +8772,38 @@ private:
 #include "BarrierExtractor.h"
 #include "../../../../BufferDefinition/GPUBuffer/BufferInterface.h"
 
-[[nodiscard]] D3D12_RESOURCE_BARRIER BufferContext::BufferUploader::BarrierExtractor::ExtractBarrier(GPUBufferBehavior* dstBuffer_)
+template<>
+[[nodiscard]] D3D12_RESOURCE_BARRIER BufferContext::BufferUploader::BarrierExtractor::
+ExtractBarrier<D3D12_RESOURCE_STATE_COPY_DEST>(GPUBufferBehavior* dstBuffer_)
+{
+	IUpload* uploadBuffer = dynamic_cast<IUpload*>(dstBuffer_);
+	ErrorMessageOutput::Assert::DetectError(uploadBuffer, "uploadBufferじゃない", "BufferUploader.h");
+
+	//CommonからCopyDestに遷移させるバリアを吐かせる
+	return uploadBuffer->CreateBarrierAsCopy();
+}
+
+template<>
+[[nodiscard]] D3D12_RESOURCE_BARRIER BufferContext::BufferUploader::BarrierExtractor::
+ExtractBarrier<D3D12_RESOURCE_STATE_ALL_SHADER_RESOURCE>(GPUBufferBehavior* dstBuffer_)
 {
 	IReadOnly* readOnlyBuffer = dynamic_cast<IReadOnly*>(dstBuffer_);
 	ErrorMessageOutput::Assert::DetectError(readOnlyBuffer, "リードオンリーなバッファじゃない", "BufferUploader.h");
+	
 	//コピーからシェーダーリソースに遷移させるバリアを吐かせる
 	return readOnlyBuffer->CreateBarrierAsReading();
 }
+
+
+
+
+template
+[[nodiscard]] D3D12_RESOURCE_BARRIER BufferContext::BufferUploader::BarrierExtractor::
+ExtractBarrier<D3D12_RESOURCE_STATE_COPY_DEST>(GPUBufferBehavior* dstBuffer_);
+
+template
+[[nodiscard]] D3D12_RESOURCE_BARRIER BufferContext::BufferUploader::BarrierExtractor::
+ExtractBarrier<D3D12_RESOURCE_STATE_ALL_SHADER_RESOURCE>(GPUBufferBehavior* dstBuffer_);
 
 
 
@@ -8708,9 +8818,10 @@ class BufferContext::BufferUploader::BarrierExtractor
 {
 	friend class BufferContext::BufferUploader;
 
+	//Copy->ShaderResource
+	//Common->Copy
+	template<D3D12_RESOURCE_STATES state>
 	static [[nodiscard]]D3D12_RESOURCE_BARRIER ExtractBarrier(GPUBufferBehavior* dstBuffer_);
-
-		
 
 };
 
@@ -8729,7 +8840,7 @@ class BufferContext::BufferUploader::BarrierExtractor
 
 
 
-[[nodiscard]] std::tuple<GPUBufferBehavior*, ID3D12Resource*, std::string> BufferContext::BufferUploader::BufferAndResourcePicker::PickBufferAndResource
+[[nodiscard]] std::tuple<GPUBufferBehavior*, ID3D12Resource*> BufferContext::BufferUploader::BufferAndResourcePicker::PickBufferAndResource
 (
 	BufferContext::BufferDispatcher* dispatcher_,
 	BufferUniqueID id_
@@ -8738,7 +8849,7 @@ class BufferContext::BufferUploader::BarrierExtractor
 	GPUBufferBehavior* dstBuffer = dispatcher_->Dispatch(id_);
 	ID3D12Resource* dstResource = dstBuffer->GetResource(GPUBufferBehavior::ResourceAccessKey{}, 0);
 
-	return std::make_tuple(dstBuffer, dstResource, dstBuffer->WatchName());
+	return std::make_tuple(dstBuffer, dstResource);
 }
 
 
@@ -8757,7 +8868,7 @@ class BufferContext::BufferUploader::BufferAndResourcePicker
 {
 	friend class BufferContext::BufferUploader;
 
-	static [[nodiscard]]std::tuple<GPUBufferBehavior*, ID3D12Resource*,std::string> PickBufferAndResource
+	static [[nodiscard]]std::tuple<GPUBufferBehavior*, ID3D12Resource*> PickBufferAndResource
 	(
 		BufferContext::BufferDispatcher* dispatcher_,
 		BufferUniqueID id_
@@ -9748,7 +9859,7 @@ StaticStructuredBufferDescription::StaticStructuredBufferDescription
 	UINT structureByte_,
 	UINT numElements_,
 	UINT firstElement_
-) :BufferDescriptionBehavior(D3D12_RESOURCE_STATE_COPY_DEST, ProjectConfig::Render::NumBuffer::kSingleBuffer)
+) :BufferDescriptionBehavior(D3D12_RESOURCE_STATE_COMMON, ProjectConfig::Render::NumBuffer::kSingleBuffer)
 {
 	param.structureByte = structureByte_;
 	param.numElements = numElements_;
@@ -10183,7 +10294,14 @@ struct IReadable
 struct IReadOnly
 {
 	virtual ~IReadOnly() = default;
+
 	virtual D3D12_RESOURCE_BARRIER CreateBarrierAsReading() = 0;
+};
+//アップロードするバッファのインターフェース
+struct IUpload
+{
+	virtual ~IUpload() = default;
+	virtual D3D12_RESOURCE_BARRIER CreateBarrierAsCopy() = 0;
 };
 
 //ディプスバッファのインターフェース
@@ -10841,18 +10959,20 @@ StaticStructuredBuffer::StaticStructuredBuffer
 }
 
 
-
 SRVHeapIndex StaticStructuredBuffer::OutProperSRVHeapIndex(int frameIndex_)const
 {
 	return WatchIndex<ViewType::kSRV, SRVHeapIndex >(0);
 }
-
 
 D3D12_RESOURCE_BARRIER StaticStructuredBuffer::CreateBarrierAsReading()
 {
 	return buffers[0].CreateBarrier(D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_ALL_SHADER_RESOURCE);
 }
 
+D3D12_RESOURCE_BARRIER StaticStructuredBuffer::CreateBarrierAsCopy()
+{
+	return buffers[0].CreateBarrier(D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_COPY_DEST);
+}
 
 
 
@@ -10865,7 +10985,7 @@ D3D12_RESOURCE_BARRIER StaticStructuredBuffer::CreateBarrierAsReading()
 
 
 //読み込み専用StructuredBuffer
-class StaticStructuredBuffer final : public GPUBufferBehavior, public IReadable,public IReadOnly
+class StaticStructuredBuffer final : public GPUBufferBehavior, public IReadable,public IReadOnly,public IUpload
 {
 
 public:
@@ -10881,6 +11001,7 @@ public:
 
 	virtual SRVHeapIndex OutProperSRVHeapIndex(int frameIndex_ = 0)const override;
 	virtual D3D12_RESOURCE_BARRIER CreateBarrierAsReading()override;
+	virtual D3D12_RESOURCE_BARRIER CreateBarrierAsCopy()override;
 
 };
 
@@ -11745,7 +11866,7 @@ void MeshContext::ModelDataCreator::MeshDataBufferUploader::CopyAndUploadBuffer
             MeshContext::ModelDataCreator::DataTransducer::TransferVertexDataTypeToGPU(data_[i].vertices);
 
         //頂点データ
-        bufferUploader_->UploadBuffer
+        bufferUploader_->RegisterBuffer
         (
             meshDataBufferUniqueIDGroupContainer_[i].verticesGPU,
             (UINT)vertexGPU.size(),
@@ -11753,7 +11874,7 @@ void MeshContext::ModelDataCreator::MeshDataBufferUploader::CopyAndUploadBuffer
         );
 
         //頂点インデックス
-        bufferUploader_->UploadBuffer
+        bufferUploader_->RegisterBuffer
         (
             meshDataBufferUniqueIDGroupContainer_[i].uniqueVertsIndices,
             (UINT)data_[i].uniqueVertexIndices.size(),
@@ -11761,7 +11882,7 @@ void MeshContext::ModelDataCreator::MeshDataBufferUploader::CopyAndUploadBuffer
         );
 
         //メッシュレット
-        bufferUploader_->UploadBuffer
+        bufferUploader_->RegisterBuffer
         (
             meshDataBufferUniqueIDGroupContainer_[i].meshlets,
             (UINT)data_[i].meshlets.size(),
@@ -11769,7 +11890,7 @@ void MeshContext::ModelDataCreator::MeshDataBufferUploader::CopyAndUploadBuffer
         );
 
         //三角形頂点構成番号
-        bufferUploader_->UploadBuffer
+        bufferUploader_->RegisterBuffer
         (
             meshDataBufferUniqueIDGroupContainer_[i].primIndices,
             (UINT)data_[i].primitiveIndices.size(),
@@ -15949,7 +16070,7 @@ Nexus::Nexus()
 	InitializeInSequence<InitSequence::kRenderContext>();
 
 
-	InitializeInSequence<InitSequence::kPitchAllBarriersForShaderResource>();
+	InitializeInSequence<InitSequence::kUploadAllResources>();
 	InitializeInSequence<InitSequence::kKickCommands>();
 	InitializeInSequence<InitSequence::kDeleteIntermediateResources>();
 
@@ -16016,7 +16137,7 @@ class Nexus
 		kRenderContext,
 
 
-		kPitchAllBarriersForShaderResource,
+		kUploadAllResources,
 		kKickCommands,
 		kDeleteIntermediateResources
 
@@ -16327,12 +16448,12 @@ void Nexus::Init<Nexus::InitSequence::kDeleteIntermediateResources>()
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 template<>
-void Nexus::Init<Nexus::InitSequence::kPitchAllBarriersForShaderResource>()
+void Nexus::Init<Nexus::InitSequence::kUploadAllResources>()
 {
 	//bufferContextの代行者
 	auto* agent = bufferContext->diplomat->Access<BufferContext::ExecutionAgent>();
 	//BufferUploaderの削除を代行
-	agent->PitchAllBarriersForUpload(BufferContext::NexusFieldProof{});
+	agent->UploadAllBuffer(BufferContext::NexusFieldProof{});
 }
 
 
@@ -16375,7 +16496,7 @@ template
 void Nexus::Init<Nexus::InitSequence::kRenderContext>();
 
 template
-void Nexus::Init<Nexus::InitSequence::kPitchAllBarriersForShaderResource>();
+void Nexus::Init<Nexus::InitSequence::kUploadAllResources>();
 
 template
 void Nexus::Init<Nexus::InitSequence::kKickCommands>();

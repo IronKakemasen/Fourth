@@ -88,9 +88,9 @@ CommandContext::ResourceUploader::UploadCommand CommandContext::ResourceUploader
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 CommandContext::ResourceUploader::PitchBarrierCommand CommandContext::ResourceUploader::ProvideBarrierPitchCommand(ProviderKey providerKey_)
 {
-	return [this](const std::vector<D3D12_RESOURCE_BARRIER>& barriers_)
+	return [this](D3D12_RESOURCE_BARRIER* barriers_,UINT count_)
 	{
-		commandList->ResourceBarrier(UINT(barriers_.size()), barriers_.data());
+		commandList->ResourceBarrier(count_, barriers_);
 	};
 
 }

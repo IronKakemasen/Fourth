@@ -14,15 +14,17 @@ StaticStructuredBuffer::StaticStructuredBuffer
 }
 
 
-
 SRVHeapIndex StaticStructuredBuffer::OutProperSRVHeapIndex(int frameIndex_)const
 {
 	return WatchIndex<ViewType::kSRV, SRVHeapIndex >(0);
 }
-
 
 D3D12_RESOURCE_BARRIER StaticStructuredBuffer::CreateBarrierAsReading()
 {
 	return buffers[0].CreateBarrier(D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_ALL_SHADER_RESOURCE);
 }
 
+D3D12_RESOURCE_BARRIER StaticStructuredBuffer::CreateBarrierAsCopy()
+{
+	return buffers[0].CreateBarrier(D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_COPY_DEST);
+}
