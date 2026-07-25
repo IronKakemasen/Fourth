@@ -34,7 +34,12 @@ public:
 		BufferUniqueID dispatchUniqueID = BufferUniqueID(generateBufferSum++);
 
 		//コレクターに登録
-		collector->Register<ActualBufferType>(std::move(buffer), dispatchUniqueID);
+		collector->Register<ActualBufferType>
+		(
+			BufferContext::BufferCollector::RegisterLicence{}, 
+			std::move(buffer), 
+			dispatchUniqueID
+		);
 
 		//バッファユニークIDを返す
 		return dispatchUniqueID;

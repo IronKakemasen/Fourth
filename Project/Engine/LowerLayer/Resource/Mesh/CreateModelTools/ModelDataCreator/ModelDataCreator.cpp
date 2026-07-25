@@ -11,6 +11,8 @@
 #include "MeshDataCreatorTools/ModelRegistryLoader/ModelRegistryLoader.h"
 #include "MeshDataCreatorTools/MeshDataBufferUploader/MeshDataBufferUploader.h"
 #include "MeshDataCreatorTools/MeshDataBufferSRVHeapIndexGroupPackager/MeshDataBufferSRVHeapIndexGroupPackager.h"
+#include "MeshDataCreatorTools/MeshDataSRVHeapIndexGroupContainerBufferCreator/MeshDataSRVHeapIndexGroupContainerBufferCreator.h"
+
 
 //外部
 #include "../../../Buffer/BufferContextDiplomat/BufferToolLender/BufferToolLender.h"
@@ -106,16 +108,25 @@ void MeshContext::ModelDataCreator::CreateAllModelData
         //メッシュデータのユニークIDをもとにそれぞれのsrvHeapIndexを引き出し、
         //tmpMeshDataSRVHeapIndexGroupContainer
         //こいつに詰めていく。こいつのインデックスはmeshDataIDとリンクしている
-
         MeshDataBufferSRVHeapIndexGroupPackager::PackMeshDataBufferSRVHeapIndex
         (
             meshDataBufferUniqueIDGroupContainer,
             tmpMeshDataSRVHeapIndexGroupContainer,
             bufferDispatcher
         );
-
-
     }
+
+    ///tmpMeshDataSRVHeapIndexGroupContainerのバッファを作る
+    //そのsrvHeapIndexをMeshSlotAllocatorが保存する
+    MeshDataSRVHeapIndexGroupContainerBufferCreator::Create
+    (
+        tmpMeshDataSRVHeapIndexGroupContainer,
+        bufferCreator,
+        bufferCollector,
+        bufferDispatcher,
+        allocator_
+    );
+
 
 }
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

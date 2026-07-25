@@ -5,7 +5,6 @@
 #include "../../../Buffer/BufferContext.h"
 
 struct ModelDataAggregate;
-class StaticStructuredBuffer;
 
 class MeshContext::ModelDataCreator
 {
@@ -36,8 +35,10 @@ private:
 	class DataTransducer;
 	//メッシュデータのバッファのアップロードを行う
 	class MeshDataBufferUploader;
-	//メッシュデータバッファのsrvHeapIndexを詰めていく
+	//メッシュデータバッファのsrvHeapIndex群を詰めていく
 	class MeshDataBufferSRVHeapIndexGroupPackager;
+	//メッシュデータバッファsrvHeapIndexGroup配列のバッファを作る
+	class MeshDataSRVHeapIndexGroupContainerBufferCreator;
 
 public:
 

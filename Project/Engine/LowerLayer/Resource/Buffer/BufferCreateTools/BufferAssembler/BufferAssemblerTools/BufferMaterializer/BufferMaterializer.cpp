@@ -2,7 +2,10 @@
 #include "BufferMaterializer.h"
 #include "../../../../BufferDefinition/AllBuffersInclude.h"
 
-
+namespace
+{
+	auto const fileName = "BufferMaterializer.cpp";
+}
 
 template<>
 static [[nodiscard]] std::unique_ptr<ColorBuffer> BufferContext::BufferAssembler::BufferMaterializer::Materialize
@@ -12,6 +15,9 @@ static [[nodiscard]] std::unique_ptr<ColorBuffer> BufferContext::BufferAssembler
 	std::string nameCnv_
 )
 {
+
+	Logger::Log("BufferType: ColorBuffer", fileName);
+
 	//バッファ生成
 	return std::make_unique<ColorBuffer>
 	(
@@ -31,6 +37,8 @@ static [[nodiscard]] std::unique_ptr<DepthStencilBuffer> BufferContext::BufferAs
 	std::string nameCnv_
 )
 {
+	Logger::Log("BufferType: DepthStencilBuffer", fileName);
+
 	//バッファ生成
 	return std::make_unique<DepthStencilBuffer>
 	(
@@ -50,6 +58,8 @@ static [[nodiscard]] std::unique_ptr<StaticStructuredBuffer> BufferContext::Buff
 	std::string nameCnv_
 )
 {
+	Logger::Log("BufferType: StaticStructuredBuffer", fileName);
+
 	//バッファ生成
 	return std::make_unique<StaticStructuredBuffer>
 	(
@@ -69,6 +79,9 @@ static [[nodiscard]] std::unique_ptr<UploadStructuredBuffer> BufferContext::Buff
 	std::string nameCnv_
 )
 {
+
+	Logger::Log("BufferType: UploadStructuredBuffer", fileName);
+
 	//バッファ生成
 	return std::make_unique<UploadStructuredBuffer>
 		(
@@ -88,6 +101,9 @@ static [[nodiscard]] std::unique_ptr<ComputeBuffer> BufferContext::BufferAssembl
 	std::string nameCnv_
 )
 {
+
+	Logger::Log("BufferType: ComputeBuffer", fileName);
+
 	//バッファ生成
 	return std::make_unique<ComputeBuffer>
 		(
@@ -107,6 +123,9 @@ static [[nodiscard]] std::unique_ptr<ConstantBuffer> BufferContext::BufferAssemb
 	std::string nameCnv_
 )
 {
+
+	Logger::Log("BufferType: ConstantBuffer", fileName);
+
 	//バッファ生成
 	return std::make_unique<ConstantBuffer>
 	(

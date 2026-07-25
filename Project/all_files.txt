@@ -6934,7 +6934,12 @@ public:
 		BufferUniqueID dispatchUniqueID = BufferUniqueID(generateBufferSum++);
 
 		//コレクターに登録
-		collector->Register<ActualBufferType>(std::move(buffer), dispatchUniqueID);
+		collector->Register<ActualBufferType>
+		(
+			BufferContext::BufferCollector::RegisterLicence{}, 
+			std::move(buffer), 
+			dispatchUniqueID
+		);
 
 		//バッファユニークIDを返す
 		return dispatchUniqueID;
@@ -8402,6 +8407,8 @@ class BufferContext::BufferCollector
 {
 public:
 
+	struct RegisterLicence;
+
 	BufferCollector
 	(
 		BufferContext::NexusFieldProof proof_,
@@ -8412,7 +8419,7 @@ public:
 	
 	///作成されたバッファを一時保管場所へ移動
 	template<typename BufferType>
-	void Register(std::unique_ptr<BufferType> buffer_,BufferUniqueID id_)
+	void Register(RegisterLicence licence_, std::unique_ptr<BufferType> buffer_,BufferUniqueID id_)
 	{
 		auto registerType = Identify<BufferType>();
 
@@ -8481,6 +8488,16 @@ private:
 	}
 
 };
+
+
+struct BufferContext::BufferCollector::RegisterLicence
+{
+private:
+
+	friend class BufferContext::BufferCreator;
+	explicit RegisterLicence() = default;
+};
+
 
 template<>
 std::unique_ptr<GPUBufferBehavior> BufferContext::BufferCollector::CastBuffer(std::unique_ptr<ColorBuffer> buffer_);
@@ -8567,7 +8584,9 @@ void BufferContext::BufferUploader::ExtractBarrier<D3D12_RESOURCE_STATE_ALL_SHAD
 {
 	barriers.emplace_back(BarrierExtractor::ExtractBarrier<D3D12_RESOURCE_STATE_ALL_SHADER_RESOURCE>(dstBuffer_));
 }
-
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //Nexusフィールド限定、代行者限定
 void BufferContext::BufferUploader::UploadBuffer(BufferContext::NexusFieldProof proof_, BufferContext::AgentKey agentKey_)
 {
@@ -8637,12 +8656,6 @@ void BufferContext::BufferUploader::EndLog()const
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-//template
-//void BufferContext::BufferUploader::ExtractBarrier<D3D12_RESOURCE_STATE_COPY_DEST>(GPUBufferBehavior* dstBuffer_);
-//
-//template
-//void BufferContext::BufferUploader::ExtractBarrier<D3D12_RESOURCE_STATE_ALL_SHADER_RESOURCE>(GPUBufferBehavior* dstBuffer_);
-
 
 
 
@@ -8667,6 +8680,7 @@ class BufferContext::BufferUploader
 		ID3D12Resource* intermediateResource;
 		D3D12_SUBRESOURCE_DATA subResource;
 		UINT resourceSize;
+		std::vector<std::byte> ownedData;
 	};
 
 
@@ -8699,12 +8713,23 @@ public:
 		temporaryBufferInfoStorage.intermediateResource = CreateInterMediateResource(resourceSize);
 		temporaryBufferInfoStorage.subResource = CreateBufferSubResource(realData_, resourceSize);
 
-		temporaryBufferInfoStorageContainer.emplace_back(temporaryBufferInfoStorage);
+		//実データをコピーして自前で保持する
+		temporaryBufferInfoStorage.ownedData.resize(resourceSize);
+		memcpy(temporaryBufferInfoStorage.ownedData.data(), realData_, resourceSize);
+
+		//subResource.pDataは、コピー先(ownedData)を指すようにする
+		temporaryBufferInfoStorage.subResource = CreateBufferSubResource
+		(
+			reinterpret_cast<const RealDataType*>(temporaryBufferInfoStorage.ownedData.data()),
+			resourceSize
+		);
+
+		temporaryBufferInfoStorageContainer.emplace_back(std::move(temporaryBufferInfoStorage));
 	}
 
 
 	///バッファをアップロードする(テクスチャバッファはまた別。あとで共通窓口を作る)
-	//Nexusフィールド限定、代行者限定
+	///Nexusフィールド限定、代行者限定
 	void UploadBuffer(BufferContext::NexusFieldProof proof_, BufferContext::AgentKey agentKey_);
 
 
@@ -8729,7 +8754,6 @@ private:
 	//バリアのコンテナ
 	std::vector<D3D12_RESOURCE_BARRIER> barriers;
 	std::vector<TemporaryBufferInfoStorage> temporaryBufferInfoStorageContainer;
-
 
 
 	//中間リソースの生成
@@ -11376,6 +11400,8 @@ private:
 #include "MeshDataCreatorTools/ModelRegistryLoader/ModelRegistryLoader.h"
 #include "MeshDataCreatorTools/MeshDataBufferUploader/MeshDataBufferUploader.h"
 #include "MeshDataCreatorTools/MeshDataBufferSRVHeapIndexGroupPackager/MeshDataBufferSRVHeapIndexGroupPackager.h"
+#include "MeshDataCreatorTools/MeshDataSRVHeapIndexGroupContainerBufferCreator/MeshDataSRVHeapIndexGroupContainerBufferCreator.h"
+
 
 //外部
 #include "../../../Buffer/BufferContextDiplomat/BufferToolLender/BufferToolLender.h"
@@ -11471,16 +11497,25 @@ void MeshContext::ModelDataCreator::CreateAllModelData
         //メッシュデータのユニークIDをもとにそれぞれのsrvHeapIndexを引き出し、
         //tmpMeshDataSRVHeapIndexGroupContainer
         //こいつに詰めていく。こいつのインデックスはmeshDataIDとリンクしている
-
         MeshDataBufferSRVHeapIndexGroupPackager::PackMeshDataBufferSRVHeapIndex
         (
             meshDataBufferUniqueIDGroupContainer,
             tmpMeshDataSRVHeapIndexGroupContainer,
             bufferDispatcher
         );
-
-
     }
+
+    ///tmpMeshDataSRVHeapIndexGroupContainerのバッファを作る
+    //そのsrvHeapIndexをMeshSlotAllocatorが保存する
+    MeshDataSRVHeapIndexGroupContainerBufferCreator::Create
+    (
+        tmpMeshDataSRVHeapIndexGroupContainer,
+        bufferCreator,
+        bufferCollector,
+        bufferDispatcher,
+        allocator_
+    );
+
 
 }
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -11538,7 +11573,6 @@ MeshContext::ModelDataCreator::BufferContextTools MeshContext::ModelDataCreator:
 #include "../../../Buffer/BufferContext.h"
 
 struct ModelDataAggregate;
-class StaticStructuredBuffer;
 
 class MeshContext::ModelDataCreator
 {
@@ -11569,8 +11603,10 @@ private:
 	class DataTransducer;
 	//メッシュデータのバッファのアップロードを行う
 	class MeshDataBufferUploader;
-	//メッシュデータバッファのsrvHeapIndexを詰めていく
+	//メッシュデータバッファのsrvHeapIndex群を詰めていく
 	class MeshDataBufferSRVHeapIndexGroupPackager;
+	//メッシュデータバッファsrvHeapIndexGroup配列のバッファを作る
+	class MeshDataSRVHeapIndexGroupContainerBufferCreator;
 
 public:
 
@@ -11694,7 +11730,7 @@ MeshContext::ModelDataCreator::MeshDataBufferCreator::CreateMeshDataBuffer
     //モデルのファイル名とメッシュデータIDを紐づける
     allocator_->LinkModelFileNameToMeshDataID
     (
-        MeshContext::ModelSlotAllocator::CreateModelDataLicence{},
+        MeshContext::ModelSlotAllocator::HandleLicence{},
         modelFileName_, 
         meshDataIDContainer
     );
@@ -11924,6 +11960,86 @@ class MeshContext::ModelDataCreator::MeshDataBufferUploader
 		BufferContext::BufferUploader* bufferUploader_
 	);
 
+};
+
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Mesh\CreateModelTools\ModelDataCreator\MeshDataCreatorTools\MeshDataSRVHeapIndexGroupContainerBufferCreator\MeshDataSRVHeapIndexGroupContainerBufferCreator.cpp ===
+========================================
+#include "PreCompileHeader.h"
+#include "MeshDataSRVHeapIndexGroupContainerBufferCreator.h"
+
+//外部
+#include "../../../../../Buffer/BufferCreateTools/BufferCreator.h"
+#include "../../../../../Buffer/BufferRuntime/BufferDispatcher/BufferDispatcher.h"
+//ほんとはstaticStructuredBufferDescriptionだけでいいんだけど、文字列制限なのかインクルードできないので
+#include "../../../../../Buffer/BufferDefinition/AllBufferDescsInclude.h"
+#include "../../../../../Buffer/BufferDefinition/GPUBuffer/BufferInterface.h"
+
+using namespace StructuredBufferDataDefinition;
+
+void MeshContext::ModelDataCreator::MeshDataSRVHeapIndexGroupContainerBufferCreator::Create
+(
+	const std::vector<MeshDataSRVHeapIndexGroupGPUCPU>& tmpMeshDataSRVHeapIndexGroupContainer_,
+	BufferContext::BufferCreator* bufferCreator_,
+	BufferContext::BufferCollector* bufferCollector_,
+	BufferContext::BufferDispatcher* dispatcher_,
+	MeshContext::ModelSlotAllocator* allocator_
+)
+{
+	StaticStructuredBufferDescription desc
+	(
+		sizeof(MeshDataSRVHeapIndexGroupGPUCPU),
+		(UINT)tmpMeshDataSRVHeapIndexGroupContainer_.size(),
+		0
+	);
+
+	//バッファ生成
+	BufferUniqueID uniqueID = bufferCreator_->Create(desc, "MeshDataSRVHeapIndexGroupContainer");
+	bufferCollector_->Distribute();
+
+	//srvHeapIndexを抽出
+	StaticStructuredBuffer* buffer = static_cast<StaticStructuredBuffer*>(dispatcher_->Dispatch(uniqueID));
+	IReadable* readableBuffer = static_cast<IReadable*>(buffer);
+
+	//アロケータにこのバッファのsrvHeapIndexを記録させる
+	allocator_->SetMeshDataSRVHeapIndexGroupContainerSRVHeapIndex
+	(
+		MeshContext::ModelSlotAllocator::HandleLicence{}, 
+		std::move(std::make_unique<SRVHeapIndex>(readableBuffer->OutProperSRVHeapIndex()))
+	);
+
+}
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Mesh\CreateModelTools\ModelDataCreator\MeshDataCreatorTools\MeshDataSRVHeapIndexGroupContainerBufferCreator\MeshDataSRVHeapIndexGroupContainerBufferCreator.h ===
+========================================
+#pragma once
+#include "../../ModelDataCreator.h"
+#include "../../../ModelSlotAllocator/ModelSlotAllocator.h"
+
+//外部
+#include "../../../../../../../../Assets/Shared/StructuredBuffer.h"
+
+
+class MeshContext::ModelDataCreator::MeshDataSRVHeapIndexGroupContainerBufferCreator
+{
+	friend class MeshContext::ModelDataCreator;
+
+	static void Create
+	(
+		const std::vector<StructuredBufferDataDefinition::MeshDataSRVHeapIndexGroupGPUCPU>& tmpMeshDataSRVHeapIndexGroupContainer_,
+		BufferContext::BufferCreator* bufferCreator_,
+		BufferContext::BufferCollector* bufferCollector_,
+		BufferContext::BufferDispatcher* dispatcher_,
+		MeshContext::ModelSlotAllocator* allocator_
+	);
 };
 
 
@@ -12716,7 +12832,7 @@ MeshContext::ModelSlotAllocator::~ModelSlotAllocator()
 
 void MeshContext::ModelSlotAllocator::LinkModelFileNameToMeshDataID
 (
-	CreateModelDataLicence licence_,
+	HandleLicence licence_,
 	std::string modelFileName_,
 	const std::vector<MeshDataID>& idContainer_
 ) 
@@ -12728,14 +12844,13 @@ void MeshContext::ModelSlotAllocator::LinkModelFileNameToMeshDataID
 	Logger::Log("Register: " + modelFileName_ + " MeshDataIDs", fileName);
 }
 
-void MeshContext::ModelSlotAllocator::SetMeshDataSRVHeapIndexGroupArraySRVHeapIndex(std::unique_ptr<SRVHeapIndex>&& index_)
+void MeshContext::ModelSlotAllocator::SetMeshDataSRVHeapIndexGroupContainerSRVHeapIndex(HandleLicence licence_, std::unique_ptr<SRVHeapIndex>&& index_)
 {
-	meshDataSRVHeapIndexGroupArraySRVHeapIndex = std::move(index_);
+	meshDataSRVHeapIndexGroupContainerSRVHeapIndex = std::move(index_);
 }
 
-
 template<> uint32_t MeshContext::ModelSlotAllocator::
-DistributeSlot<MeshContext::ModelSlotAllocator::SlotType::kTransformMatrix>(DistributeLicence licence_)
+DistributeSlot<MeshContext::ModelSlotAllocator::SlotType::kTransformMatrix>(HandleLicence licence_)
 {
 	return transformMatrixSlotList.Distribute();
 }
@@ -12747,7 +12862,7 @@ DistributeSlot<MeshContext::ModelSlotAllocator::SlotType::kTransformMatrix>(Dist
 
 
 template uint32_t MeshContext::ModelSlotAllocator::
-DistributeSlot<MeshContext::ModelSlotAllocator::SlotType::kTransformMatrix>(DistributeLicence licence_);
+DistributeSlot<MeshContext::ModelSlotAllocator::SlotType::kTransformMatrix>(HandleLicence licence_);
 
 
 
@@ -12756,7 +12871,7 @@ DistributeSlot<MeshContext::ModelSlotAllocator::SlotType::kTransformMatrix>(Dist
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Mesh\CreateModelTools\ModelSlotAllocator\ModelSlotAllocator.h ===
 ========================================
 #pragma once
-#include "../ModelDataCreator/ModelDataCreator.h"
+#include"../../MeshContext.h"
 #include "SimpleFreeList/SimpleFreeList.h"
 
 
@@ -12772,20 +12887,19 @@ public:
 
 	};
 
-	struct DistributeLicence;
-	struct CreateModelDataLicence;
+	struct HandleLicence;
 
 
 	template<SlotType slotType>
-	uint32_t DistributeSlot(DistributeLicence licence_);
+	uint32_t DistributeSlot(HandleLicence licence_);
 
 	//meshDataSRVHeapIndexGroupArraySRVHeapIndexこれを設定する
-	void SetMeshDataSRVHeapIndexGroupArraySRVHeapIndex(std::unique_ptr<SRVHeapIndex>&& index_);
+	void SetMeshDataSRVHeapIndexGroupContainerSRVHeapIndex(HandleLicence licence_ , std::unique_ptr<SRVHeapIndex>&& index_);
 
 	//メッシュファイル名に対してMeshDataIDを紐づける
 	void LinkModelFileNameToMeshDataID
 	(
-		CreateModelDataLicence licence_,
+		HandleLicence licence_,
 		std::string modelFileName_ , 
 		const std::vector<MeshDataID>& idContainer_
 	);
@@ -12796,7 +12910,7 @@ public:
 private:
 
 	///「メッシュデータバッファのsrvHeapIndexが詰まったもの」の配列のSRVHeapIndex
-	std::unique_ptr<SRVHeapIndex> meshDataSRVHeapIndexGroupArraySRVHeapIndex;
+	std::unique_ptr<SRVHeapIndex> meshDataSRVHeapIndexGroupContainerSRVHeapIndex;
 	
 	///「transformMatrixバッファ」の配列のSRVHeapIndex
 	std::unique_ptr<SRVHeapIndex> transformMatrixBufferArraySRVHeapIndex;
@@ -12812,21 +12926,12 @@ private:
 };
 
 
-struct MeshContext::ModelSlotAllocator::DistributeLicence
+struct MeshContext::ModelSlotAllocator::HandleLicence
 {
 private:
 
-
-	explicit DistributeLicence() = default;
-};
-
-
-struct MeshContext::ModelSlotAllocator::CreateModelDataLicence
-{
-private:
-
-	friend class ModelDataCreator::MeshDataBufferCreator;
-	explicit CreateModelDataLicence() = default;
+	friend class ModelDataCreator;
+	explicit HandleLicence() = default;
 };
 
 
@@ -16521,8 +16626,8 @@ void Nexus::Init<Nexus::InitSequence::kDeleteIntermediateResources>();
 void Nexus::Run()
 {
 	auto const frameIndex = swapChainContext->presenter->GetFrameIndex();
-	static auto* runtimeCmdController = commandContext->runtimeCommandController.get();
-	static auto* presenter = swapChainContext->presenter.get();
+	auto* runtimeCmdController = commandContext->runtimeCommandController.get();
+	auto* presenter = swapChainContext->presenter.get();
 
 
 	//コマンドの記録開始

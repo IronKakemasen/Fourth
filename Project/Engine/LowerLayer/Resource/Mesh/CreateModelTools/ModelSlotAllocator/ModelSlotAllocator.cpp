@@ -24,7 +24,7 @@ MeshContext::ModelSlotAllocator::~ModelSlotAllocator()
 
 void MeshContext::ModelSlotAllocator::LinkModelFileNameToMeshDataID
 (
-	CreateModelDataLicence licence_,
+	HandleLicence licence_,
 	std::string modelFileName_,
 	const std::vector<MeshDataID>& idContainer_
 ) 
@@ -36,14 +36,13 @@ void MeshContext::ModelSlotAllocator::LinkModelFileNameToMeshDataID
 	Logger::Log("Register: " + modelFileName_ + " MeshDataIDs", fileName);
 }
 
-void MeshContext::ModelSlotAllocator::SetMeshDataSRVHeapIndexGroupArraySRVHeapIndex(std::unique_ptr<SRVHeapIndex>&& index_)
+void MeshContext::ModelSlotAllocator::SetMeshDataSRVHeapIndexGroupContainerSRVHeapIndex(HandleLicence licence_, std::unique_ptr<SRVHeapIndex>&& index_)
 {
-	meshDataSRVHeapIndexGroupArraySRVHeapIndex = std::move(index_);
+	meshDataSRVHeapIndexGroupContainerSRVHeapIndex = std::move(index_);
 }
 
-
 template<> uint32_t MeshContext::ModelSlotAllocator::
-DistributeSlot<MeshContext::ModelSlotAllocator::SlotType::kTransformMatrix>(DistributeLicence licence_)
+DistributeSlot<MeshContext::ModelSlotAllocator::SlotType::kTransformMatrix>(HandleLicence licence_)
 {
 	return transformMatrixSlotList.Distribute();
 }
@@ -55,4 +54,4 @@ DistributeSlot<MeshContext::ModelSlotAllocator::SlotType::kTransformMatrix>(Dist
 
 
 template uint32_t MeshContext::ModelSlotAllocator::
-DistributeSlot<MeshContext::ModelSlotAllocator::SlotType::kTransformMatrix>(DistributeLicence licence_);
+DistributeSlot<MeshContext::ModelSlotAllocator::SlotType::kTransformMatrix>(HandleLicence licence_);

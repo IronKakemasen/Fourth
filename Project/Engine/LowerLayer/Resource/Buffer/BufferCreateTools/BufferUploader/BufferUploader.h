@@ -16,6 +16,7 @@ class BufferContext::BufferUploader
 		ID3D12Resource* intermediateResource;
 		D3D12_SUBRESOURCE_DATA subResource;
 		UINT resourceSize;
+		std::vector<std::byte> ownedData;
 	};
 
 
@@ -48,12 +49,23 @@ public:
 		temporaryBufferInfoStorage.intermediateResource = CreateInterMediateResource(resourceSize);
 		temporaryBufferInfoStorage.subResource = CreateBufferSubResource(realData_, resourceSize);
 
-		temporaryBufferInfoStorageContainer.emplace_back(temporaryBufferInfoStorage);
+		//実データをコピーして自前で保持する
+		temporaryBufferInfoStorage.ownedData.resize(resourceSize);
+		memcpy(temporaryBufferInfoStorage.ownedData.data(), realData_, resourceSize);
+
+		//subResource.pDataは、コピー先(ownedData)を指すようにする
+		temporaryBufferInfoStorage.subResource = CreateBufferSubResource
+		(
+			reinterpret_cast<const RealDataType*>(temporaryBufferInfoStorage.ownedData.data()),
+			resourceSize
+		);
+
+		temporaryBufferInfoStorageContainer.emplace_back(std::move(temporaryBufferInfoStorage));
 	}
 
 
 	///バッファをアップロードする(テクスチャバッファはまた別。あとで共通窓口を作る)
-	//Nexusフィールド限定、代行者限定
+	///Nexusフィールド限定、代行者限定
 	void UploadBuffer(BufferContext::NexusFieldProof proof_, BufferContext::AgentKey agentKey_);
 
 
@@ -78,7 +90,6 @@ private:
 	//バリアのコンテナ
 	std::vector<D3D12_RESOURCE_BARRIER> barriers;
 	std::vector<TemporaryBufferInfoStorage> temporaryBufferInfoStorageContainer;
-
 
 
 	//中間リソースの生成

@@ -71,7 +71,7 @@ MeshContext::ModelDataCreator::MeshDataBufferCreator::CreateMeshDataBuffer
     //モデルのファイル名とメッシュデータIDを紐づける
     allocator_->LinkModelFileNameToMeshDataID
     (
-        MeshContext::ModelSlotAllocator::CreateModelDataLicence{},
+        MeshContext::ModelSlotAllocator::HandleLicence{},
         modelFileName_, 
         meshDataIDContainer
     );

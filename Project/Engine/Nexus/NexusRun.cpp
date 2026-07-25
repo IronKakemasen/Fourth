@@ -8,8 +8,8 @@
 void Nexus::Run()
 {
 	auto const frameIndex = swapChainContext->presenter->GetFrameIndex();
-	static auto* runtimeCmdController = commandContext->runtimeCommandController.get();
-	static auto* presenter = swapChainContext->presenter.get();
+	auto* runtimeCmdController = commandContext->runtimeCommandController.get();
+	auto* presenter = swapChainContext->presenter.get();
 
 
 	//コマンドの記録開始

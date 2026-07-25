@@ -16,9 +16,9 @@ public:
 		UINT handleIncrementSize_, uint32_t kMaxDescriptor_,bool shaderVisible_ ,std::string name_);
 	~DescriptorHeapPool();
 	
-	//フリーヒープインデックスを提供
+	//フリーヒープインデックスを割り当てる
 	std::tuple<uint32_t, D3D12_CPU_DESCRIPTOR_HANDLE, D3D12_GPU_DESCRIPTOR_HANDLE>
-	ProvideFreeHeapIndex(CreateViewKey accessKey_);
+	DistributeFreeHeapIndex(CreateViewKey accessKey_);
 
 	//ヒープインデックスを回収
 	void CollectHeapIndex(uint32_t index_, CollectHeapIndexKey key_);
