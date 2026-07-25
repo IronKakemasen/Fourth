@@ -32,7 +32,7 @@ class Nexus
 		kRenderContext,
 
 
-		kPitchAllBarriersForShaderResource,
+		kUploadAllResources,
 		kKickCommands,
 		kDeleteIntermediateResources
 

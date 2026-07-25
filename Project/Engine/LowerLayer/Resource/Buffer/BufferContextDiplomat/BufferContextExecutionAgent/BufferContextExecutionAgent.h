@@ -14,7 +14,7 @@ public:
 	//BufferUploaderの削除を代行
 	void DeleteBufferUploader(BufferContext::NexusFieldProof proof_);
 	//Resourceのバリアを全て張るのを代行
-	void PitchAllBarriersForUpload(BufferContext::NexusFieldProof proof_);
+	void UploadAllBuffer(BufferContext::NexusFieldProof proof_);
 
 
 private:

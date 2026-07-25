@@ -9,6 +9,16 @@ class GPUBufferBehavior;
 
 class BufferContext::BufferUploader
 {
+	//一時的にアップロードするバッファの情報を保持するための形式
+	struct TemporaryBufferInfoStorage
+	{
+		BufferUniqueID id;
+		ID3D12Resource* intermediateResource;
+		D3D12_SUBRESOURCE_DATA subResource;
+		UINT resourceSize;
+	};
+
+
 public:
 
 	BufferUploader
@@ -21,37 +31,30 @@ public:
 
 	~BufferUploader();
 
-	///バッファをアップロードする(テクスチャバッファはまた別。あとで共通窓口を作る)
+	///アップロードするバッファの必要情報の登録
 	template<typename RealDataType>
-	void UploadBuffer
+	void RegisterBuffer
 	(
 		const BufferUniqueID id_,
 		const UINT numDataContaines_,
 		const RealDataType* realData_
 	)
 	{
+		TemporaryBufferInfoStorage temporaryBufferInfoStorage;
 		UINT const resourceSize = sizeof(RealDataType) * numDataContaines_;
 
-		//中間リソース生成
-		ID3D12Resource* interMediateResource = CreateInterMediateResource(resourceSize);
-		//サブリソース生成
-		D3D12_SUBRESOURCE_DATA subResource = CreateBufferSubResource(realData_, resourceSize);
-		
-		//バッファと生リソースを取り出す
-		auto [dstBuffer, dstResource,bufferName] = PickBufferAndResource(id_);
+		temporaryBufferInfoStorage.id = id_;
+		temporaryBufferInfoStorage.resourceSize = resourceSize;
+		temporaryBufferInfoStorage.intermediateResource = CreateInterMediateResource(resourceSize);
+		temporaryBufferInfoStorage.subResource = CreateBufferSubResource(realData_, resourceSize);
 
-		//コピーしてアップロードする
-		uploadCommand(dstResource, interMediateResource, &subResource, 1);
-
-		//GPUBufferBehaviorから、IReadOnlyインターフェースにキャストしてバリアを抽出
-		ExtractBarrier(dstBuffer);
-
-		Logger::Log("Complete Uploading: " + bufferName + "(" + std::to_string(resourceSize) + ")", "BufferUploader.h");
+		temporaryBufferInfoStorageContainer.emplace_back(temporaryBufferInfoStorage);
 	}
 
-	//たまりにたまったバリアを張る
+
+	///バッファをアップロードする(テクスチャバッファはまた別。あとで共通窓口を作る)
 	//Nexusフィールド限定、代行者限定
-	void PitchAllBarrier(BufferContext::NexusFieldProof proof_, BufferContext::AgentKey agentKey_);
+	void UploadBuffer(BufferContext::NexusFieldProof proof_, BufferContext::AgentKey agentKey_);
 
 
 private:
@@ -74,13 +77,28 @@ private:
 	std::vector<Microsoft::WRL::ComPtr<ID3D12Resource>> intermediateResources;
 	//バリアのコンテナ
 	std::vector<D3D12_RESOURCE_BARRIER> barriers;
+	std::vector<TemporaryBufferInfoStorage> temporaryBufferInfoStorageContainer;
 
+
+
+	//中間リソースの生成
 	ID3D12Resource* CreateInterMediateResource(UINT const resourceSize_);
+	
+	//バリアを吐かせる
+	template<D3D12_RESOURCE_STATES state>
 	void ExtractBarrier(GPUBufferBehavior* dstBuffer_);
-	std::tuple<GPUBufferBehavior*, ID3D12Resource*,std::string> PickBufferAndResource(BufferUniqueID id_);
+
+	//バッファと生ポインタのフェッチ
+	std::tuple<GPUBufferBehavior*, ID3D12Resource*> PickBufferAndResource(BufferUniqueID id_)const;
+
+	//コマンドを流す
+	void Flush(std::string log_);
+
+	//終わりの一言
+	void EndLog()const;
 
 	template<typename RealDataType>
-	D3D12_SUBRESOURCE_DATA CreateBufferSubResource(RealDataType* realData_ , UINT const resourceSize_)
+	D3D12_SUBRESOURCE_DATA CreateBufferSubResource(RealDataType* realData_ , UINT const resourceSize_)const
 	{
 		D3D12_SUBRESOURCE_DATA subResource{};
 

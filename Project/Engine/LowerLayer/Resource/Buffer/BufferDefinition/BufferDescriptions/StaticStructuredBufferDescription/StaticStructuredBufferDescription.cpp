@@ -6,7 +6,7 @@ StaticStructuredBufferDescription::StaticStructuredBufferDescription
 	UINT structureByte_,
 	UINT numElements_,
 	UINT firstElement_
-) :BufferDescriptionBehavior(D3D12_RESOURCE_STATE_COPY_DEST, ProjectConfig::Render::NumBuffer::kSingleBuffer)
+) :BufferDescriptionBehavior(D3D12_RESOURCE_STATE_COMMON, ProjectConfig::Render::NumBuffer::kSingleBuffer)
 {
 	param.structureByte = structureByte_;
 	param.numElements = numElements_;

@@ -14,7 +14,7 @@ public:
 		UINT subResourceCount_
 	)>;
 
-	using PitchBarrierCommand = std::function<void(const std::vector<D3D12_RESOURCE_BARRIER>&)>;
+	using PitchBarrierCommand = std::function<void(D3D12_RESOURCE_BARRIER*,UINT)>;
 
 	ResourceUploader
 	(

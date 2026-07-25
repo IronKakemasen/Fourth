@@ -8,7 +8,7 @@ class BufferContext::BufferUploader::BufferAndResourcePicker
 {
 	friend class BufferContext::BufferUploader;
 
-	static [[nodiscard]]std::tuple<GPUBufferBehavior*, ID3D12Resource*,std::string> PickBufferAndResource
+	static [[nodiscard]]std::tuple<GPUBufferBehavior*, ID3D12Resource*> PickBufferAndResource
 	(
 		BufferContext::BufferDispatcher* dispatcher_,
 		BufferUniqueID id_

@@ -202,12 +202,12 @@ void Nexus::Init<Nexus::InitSequence::kDeleteIntermediateResources>()
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 template<>
-void Nexus::Init<Nexus::InitSequence::kPitchAllBarriersForShaderResource>()
+void Nexus::Init<Nexus::InitSequence::kUploadAllResources>()
 {
 	//bufferContextの代行者
 	auto* agent = bufferContext->diplomat->Access<BufferContext::ExecutionAgent>();
 	//BufferUploaderの削除を代行
-	agent->PitchAllBarriersForUpload(BufferContext::NexusFieldProof{});
+	agent->UploadAllBuffer(BufferContext::NexusFieldProof{});
 }
 
 
@@ -250,7 +250,7 @@ template
 void Nexus::Init<Nexus::InitSequence::kRenderContext>();
 
 template
-void Nexus::Init<Nexus::InitSequence::kPitchAllBarriersForShaderResource>();
+void Nexus::Init<Nexus::InitSequence::kUploadAllResources>();
 
 template
 void Nexus::Init<Nexus::InitSequence::kKickCommands>();

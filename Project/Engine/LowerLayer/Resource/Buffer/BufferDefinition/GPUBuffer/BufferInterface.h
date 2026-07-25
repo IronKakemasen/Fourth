@@ -45,7 +45,14 @@ struct IReadable
 struct IReadOnly
 {
 	virtual ~IReadOnly() = default;
+
 	virtual D3D12_RESOURCE_BARRIER CreateBarrierAsReading() = 0;
+};
+//アップロードするバッファのインターフェース
+struct IUpload
+{
+	virtual ~IUpload() = default;
+	virtual D3D12_RESOURCE_BARRIER CreateBarrierAsCopy() = 0;
 };
 
 //ディプスバッファのインターフェース

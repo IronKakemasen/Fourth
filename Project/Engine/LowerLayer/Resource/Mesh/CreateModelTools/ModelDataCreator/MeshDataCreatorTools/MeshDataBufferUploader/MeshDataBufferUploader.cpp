@@ -37,7 +37,7 @@ void MeshContext::ModelDataCreator::MeshDataBufferUploader::CopyAndUploadBuffer
             MeshContext::ModelDataCreator::DataTransducer::TransferVertexDataTypeToGPU(data_[i].vertices);
 
         //頂点データ
-        bufferUploader_->UploadBuffer
+        bufferUploader_->RegisterBuffer
         (
             meshDataBufferUniqueIDGroupContainer_[i].verticesGPU,
             (UINT)vertexGPU.size(),
@@ -45,7 +45,7 @@ void MeshContext::ModelDataCreator::MeshDataBufferUploader::CopyAndUploadBuffer
         );
 
         //頂点インデックス
-        bufferUploader_->UploadBuffer
+        bufferUploader_->RegisterBuffer
         (
             meshDataBufferUniqueIDGroupContainer_[i].uniqueVertsIndices,
             (UINT)data_[i].uniqueVertexIndices.size(),
@@ -53,7 +53,7 @@ void MeshContext::ModelDataCreator::MeshDataBufferUploader::CopyAndUploadBuffer
         );
 
         //メッシュレット
-        bufferUploader_->UploadBuffer
+        bufferUploader_->RegisterBuffer
         (
             meshDataBufferUniqueIDGroupContainer_[i].meshlets,
             (UINT)data_[i].meshlets.size(),
@@ -61,7 +61,7 @@ void MeshContext::ModelDataCreator::MeshDataBufferUploader::CopyAndUploadBuffer
         );
 
         //三角形頂点構成番号
-        bufferUploader_->UploadBuffer
+        bufferUploader_->RegisterBuffer
         (
             meshDataBufferUniqueIDGroupContainer_[i].primIndices,
             (UINT)data_[i].primitiveIndices.size(),
