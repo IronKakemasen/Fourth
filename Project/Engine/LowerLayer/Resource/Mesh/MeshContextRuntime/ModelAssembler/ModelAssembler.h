@@ -17,7 +17,21 @@ public:
 
 private:
 
+	void PackCommonData
+	(
+		Model& dstModel_, 
+		const std::vector<MeshDataID>& meshDataIDs_,
+		size_t const kNumMeshData_
+	);
+
+	void PackUniqueData
+	(
+		Model& dstModel_,
+		size_t const kNumMeshData_
+	);
+
 	MeshContext::ModelSlotAllocator* slotAllocator;
 
 };
+
 

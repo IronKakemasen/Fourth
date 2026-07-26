@@ -20,10 +20,7 @@ DescriptorHeapPool::DescriptorHeapPool
 	Logger::Log(log, fileName);
 
 	//フリーリストに空きインデックスを最大数まで登録
-	for (uint32_t i = 0u;i < kMaxDescriptor_;++i)
-	{
-		freeList.Add(i);
-	}
+	freeList.Resize(kMaxDescriptor_);
 }
 
 DescriptorHeapPool::~DescriptorHeapPool(){}

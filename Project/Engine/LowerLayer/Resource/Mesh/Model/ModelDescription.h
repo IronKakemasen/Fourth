@@ -22,6 +22,9 @@ struct ModelDescription
 	//そのモデルクラス固有の
 	struct Unique
 	{
+		Unique() {};
+		Unique(uint32_t dispatchedTransformedMatrixID_) :dispatchedTransformedMatrixID(dispatchedTransformedMatrixID_) {};
+
 		//トランスフォームID
 		uint32_t dispatchedTransformedMatrixID{};
 	};
@@ -29,6 +32,9 @@ struct ModelDescription
 	//そのモデルクラス共通
 	struct Common
 	{
+		Common() {};
+		Common(MeshDataID meshDataID_) :meshDataID(meshDataID_) {};
+
 		MeshDataID meshDataID{};
 
 	};

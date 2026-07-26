@@ -342,6 +342,7 @@
     <ClCompile Include="Engine\LowerLayer\Resource\Mesh\MeshContextDiplomat\MeshContextDiplomat.cpp" />
     <ClCompile Include="Engine\LowerLayer\Resource\Mesh\MeshContextDiplomat\MeshContextExecutionAgent\MeshContextExecutionAgent.cpp" />
     <ClCompile Include="Engine\LowerLayer\Resource\Mesh\MeshContextRuntime\ModelAssembler\ModelAssembler.cpp" />
+    <ClCompile Include="Engine\LowerLayer\Resource\Mesh\CreateModelTools\ModelSlotAllocator\MeshDataIDLibrary\MeshDataIDLibrary.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Assets\Shared\ConstantBuffers.h" />
@@ -522,6 +523,7 @@
     <ClInclude Include="Engine\LowerLayer\Resource\Mesh\MeshContextDiplomat\MeshContextDiplomat.h" />
     <ClInclude Include="Engine\LowerLayer\Resource\Mesh\MeshContextDiplomat\MeshContextExecutionAgent\MeshContextExecutionAgent.h" />
     <ClInclude Include="Engine\LowerLayer\Resource\Mesh\MeshContextRuntime\ModelAssembler\ModelAssembler.h" />
+    <ClInclude Include="Engine\LowerLayer\Resource\Mesh\CreateModelTools\ModelSlotAllocator\MeshDataIDLibrary\MeshDataIDLibrary.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

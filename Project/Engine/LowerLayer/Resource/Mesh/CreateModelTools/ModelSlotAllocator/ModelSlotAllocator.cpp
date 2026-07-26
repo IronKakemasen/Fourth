@@ -1,5 +1,7 @@
 #include "PreCompileHeader.h"
 #include "ModelSlotAllocator.h"
+#include "MeshDataIDLibrary/MeshDataIDLibrary.h"
+
 
 namespace
 {
@@ -10,52 +12,15 @@ namespace
 MeshContext::ModelSlotAllocator::ModelSlotAllocator(NexusFieldProof proof_)
 {
 	//使いまわしTransformMatrixのスロットのサイズを確保する
-	for (UINT i = 0;i < (UINT)ProjectConfig::Render::GlobalBufferTableSetting::kSizeOfTransformMatrixBufferArray;++i)
-	{
-		transformMatrixSlotList.Add(i);
-	}
+	transformMatrixSlotList.Resize((UINT)ProjectConfig::Render::GlobalBufferTableSetting::kSizeOfTransformMatrixBufferArray);
 
+	meshDataIDLibrary.reset(new MeshDataIDLibrary(proof_));
+	Logger::Log("Instantiate: MeshDataIDLibrary", fileName);
 }
 
 MeshContext::ModelSlotAllocator::~ModelSlotAllocator()
 {
 
-}
-///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-void MeshContext::ModelSlotAllocator::Log(HandleLicence licence_)
-{
-	Logger::Log("Check MeshDataIdLibrary Contents",fileName);
-
-	for (auto [key, value] : meshDataIDLib)
-	{
-		std::string mess = key + "::MeshDataID: { ";
-		for (size_t i = 0;i < value.size();++i)
-		{
-			mess += std::to_string((UINT)value[i]); 
-			mess += (i + 1) < value.size() ? +"," : "";
-		}
-
-		Logger::Log(mess + " }");
-
-	}
-}
-///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-void MeshContext::ModelSlotAllocator::LinkModelFileNameToMeshDataID
-(
-	HandleLicence licence_,
-	std::string modelFileName_,
-	const std::vector<MeshDataID>& idContainer_
-) 
-{
-	//いちおう
-	ErrorMessageOutput::Assert::DetectError(idContainer_.size() > 0, "中身すっからかんやん！", fileName);
-
-	meshDataIDLib[modelFileName_] = idContainer_;
-	Logger::Log("Register: " + modelFileName_ + " MeshDataIDs", fileName);
 }
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -68,19 +33,21 @@ void MeshContext::ModelSlotAllocator::SetMeshDataSRVHeapIndexGroupContainerSRVHe
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 template<> uint32_t MeshContext::ModelSlotAllocator::
-DistributeSlot<MeshContext::ModelSlotAllocator::SlotType::kTransformMatrix>(HandleLicence licence_)
+AllocateSlot<MeshContext::ModelSlotAllocator::SlotType::kTransformMatrix>(AllocateLicence licence_)
 {
 	return transformMatrixSlotList.Distribute();
 }
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-
-
+MeshContext::ModelSlotAllocator::MeshDataIDLibrary& MeshContext::ModelSlotAllocator::AccessMeshDataIDLibrary(HandleLicence licence_)
+{
+	return *meshDataIDLibrary.get();
+}
 
 
 
 
 template uint32_t MeshContext::ModelSlotAllocator::
-DistributeSlot<MeshContext::ModelSlotAllocator::SlotType::kTransformMatrix>(HandleLicence licence_);
+AllocateSlot<MeshContext::ModelSlotAllocator::SlotType::kTransformMatrix>(AllocateLicence licence_);
+

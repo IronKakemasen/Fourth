@@ -1,7 +1,7 @@
 #include "PreCompileHeader.h"
 #include "MeshDataBufferCreator.h"
 #include "../../../../Model/ModelData/ResourceMesh/ResourceMesh.h"
-#include "../../../ModelSlotAllocator/ModelSlotAllocator.h"
+#include "../../../ModelSlotAllocator/MeshDataIDLibrary/MeshDataIDLibrary.h"
 
 //外部
 #include "../../../../../Buffer/BufferCreateTools/BufferCreator.h"
@@ -69,9 +69,10 @@ MeshContext::ModelDataCreator::MeshDataBufferCreator::CreateMeshDataBuffer
     }
 
     //モデルのファイル名とメッシュデータIDを紐づける
-    allocator_->LinkModelFileNameToMeshDataID
+    auto& meshDataIDLibrary = allocator_->AccessMeshDataIDLibrary(MeshContext::ModelSlotAllocator::HandleLicence{});
+
+    meshDataIDLibrary.LinkModelFileNameToMeshDataID
     (
-        MeshContext::ModelSlotAllocator::HandleLicence{},
         modelFileName_, 
         meshDataIDContainer
     );
@@ -81,7 +82,6 @@ MeshContext::ModelDataCreator::MeshDataBufferCreator::CreateMeshDataBuffer
 
     //メッシュデータのバッファユニークID群を返す
     return meshDataBufferUniqueIDContainer;
-
 }
 
 
