@@ -19,6 +19,16 @@ public:
 		freeList.emplace_back(dst_);
 	}
 
+	inline void Resize(UINT capacity_)
+	{
+		freeList.resize(capacity_);
+
+		for (UINT i = 0;i < capacity_;++i)
+		{
+			freeList[i] = i;
+		}
+	}
+
 private:
 	std::vector<uint32_t> freeList;
 };

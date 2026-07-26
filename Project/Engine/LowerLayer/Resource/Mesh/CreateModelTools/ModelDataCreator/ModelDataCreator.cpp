@@ -4,7 +4,7 @@
 #include "../../Model/ModelData/ModelDataAggregate.h"
 
 #include "../ModelDataLoader/ModelDataLoader.h"
-#include "../ModelSlotAllocator/ModelSlotAllocator.h"
+#include "../ModelSlotAllocator/MeshDataIDLibrary/MeshDataIDLibrary.h"
 
 #include "MeshDataCreatorTools/ModelDataTransducer/ModelDataTransducer.h"
 #include "MeshDataCreatorTools/MeshDataBufferCreator/MeshDataBufferCreator.h"
@@ -132,7 +132,8 @@ void MeshContext::ModelDataCreator::CreateAllModelData
         allocator_
     );
 
-    allocator_->Log(MeshContext::ModelSlotAllocator::HandleLicence{});
+   auto& meshDataIDLibrary = allocator_->AccessMeshDataIDLibrary(MeshContext::ModelSlotAllocator::HandleLicence{});
+   meshDataIDLibrary.Log();
 }
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

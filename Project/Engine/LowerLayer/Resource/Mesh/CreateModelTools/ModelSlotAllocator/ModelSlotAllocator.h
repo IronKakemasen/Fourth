@@ -7,6 +7,10 @@ struct ModelDataAggregate;
 
 class MeshContext::ModelSlotAllocator
 {
+	///そのモデルファイル名が、
+	///「メッシュデータバッファのsrvHeapIndexが詰まったもの」の配列の何番目に該当するのかを索引するため
+	class MeshDataIDLibrary;
+
 public:
 
 	enum class SlotType
@@ -16,41 +20,31 @@ public:
 	};
 
 	struct HandleLicence;
-
+	struct AllocateLicence;
 
 	//空きスロットを分配する
 	template<SlotType slotType>
-	uint32_t DistributeSlot(HandleLicence licence_);
+	uint32_t AllocateSlot(AllocateLicence licence_);
 
 	//meshDataSRVHeapIndexGroupContainerのSRVHeapIndexセットする
 	void SetMeshDataSRVHeapIndexGroupContainerSRVHeapIndex(HandleLicence licence_ , SRVHeapIndex index_);
 
-	//メッシュファイル名に対してMeshDataID(複数)を紐づける
-	void LinkModelFileNameToMeshDataID
-	(
-		HandleLicence licence_,
-		std::string modelFileName_ , 
-		const std::vector<MeshDataID>& idContainer_
-	);
-
-	//内容をログファイルに書き出す
-	void Log(HandleLicence licence_);
+	//meshDataIDLibraryにアクセスする
+	MeshDataIDLibrary& AccessMeshDataIDLibrary(HandleLicence licence_);
 
 	ModelSlotAllocator(NexusFieldProof proof_);
 	~ModelSlotAllocator();
 
 private:
 
+	std::unique_ptr<MeshDataIDLibrary> meshDataIDLibrary;
+
+
 	///「メッシュデータバッファのsrvHeapIndexが詰まったもの」の配列のSRVHeapIndex
 	std::optional<SRVHeapIndex> meshDataSRVHeapIndexGroupContainerSRVHeapIndex;
 	
 	///「transformMatrixバッファ」の配列のSRVHeapIndex
 	std::optional<SRVHeapIndex> transformMatrixBufferArraySRVHeapIndex;
-
-	///そのモデルファイル名が、
-	///「メッシュデータバッファのsrvHeapIndexが詰まったもの」の配列の何番目に該当するのかを索引するため
-	std::unordered_map<std::string, std::vector<MeshDataID>> meshDataIDLib;
-
 
 	//TransformMatrixの空きインデックスのリスト
 	SimpleFreeList transformMatrixSlotList;
@@ -63,6 +57,15 @@ struct MeshContext::ModelSlotAllocator::HandleLicence
 private:
 
 	friend class ModelDataCreator;
+	friend class ModelAssembler;
 	explicit HandleLicence() = default;
+};
+
+struct MeshContext::ModelSlotAllocator::AllocateLicence
+{
+private:
+
+	friend class ModelAssembler;
+	explicit AllocateLicence() = default;
 };
 
