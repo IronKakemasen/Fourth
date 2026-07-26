@@ -7823,7 +7823,7 @@ class BufferContext::BufferAssembler::BufferNameConverter
         else if constexpr (std::is_same_v<BufferType, DepthStencilBuffer>)      attach = "DepthStencil";
         else if constexpr (std::is_same_v<BufferType, ComputeBuffer>)           attach = "Compute";
         else if constexpr (std::is_same_v<BufferType, UploadStructuredBuffer>)  attach = "UploadStructured";
-        else if constexpr (std::is_same_v<BufferType, StaticStructuredBuffer>)  attach = "StaticStructuredBuffer";
+        else if constexpr (std::is_same_v<BufferType, StaticStructuredBuffer>)  attach = "StaticStructured";
 
         return attach + "Buffer" + "[ " + srcName_ + " ] ";
     }
@@ -8713,10 +8713,11 @@ void BufferContext::BufferUploader::Flush(std::string log_)
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 void BufferContext::BufferUploader::EndLog()const
 {
+	Logger::Log("===== Size Of DataType x numDataContains =====");
 	for (auto& data : temporaryBufferInfoStorageContainer)
 	{
 		auto [dstBuffer, dstResource] = PickBufferAndResource(data.id);
-		Logger::Log("Complete Uploading: " + dstBuffer->WatchName() + "(" + std::to_string(data.resourceSize) + ")", fileName);
+		Logger::Log("Complete Uploading: " + dstBuffer->WatchName() + "(" + std::to_string(data.dataSize) + " x " + std::to_string(data.numData) + ")", fileName);
 	}
 }
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -8747,6 +8748,8 @@ class BufferContext::BufferUploader
 		ID3D12Resource* intermediateResource;
 		D3D12_SUBRESOURCE_DATA subResource;
 		UINT resourceSize;
+		UINT dataSize;
+		UINT numData;
 		std::vector<std::byte> ownedData;
 	};
 
@@ -8779,6 +8782,9 @@ public:
 		temporaryBufferInfoStorage.resourceSize = resourceSize;
 		temporaryBufferInfoStorage.intermediateResource = CreateInterMediateResource(resourceSize);
 		temporaryBufferInfoStorage.subResource = CreateBufferSubResource(realData_, resourceSize);
+		//デバッグのため
+		temporaryBufferInfoStorage.numData = numDataContaines_;
+		temporaryBufferInfoStorage.dataSize = sizeof(RealDataType);
 
 		//実データをコピーして自前で保持する
 		temporaryBufferInfoStorage.ownedData.resize(resourceSize);
@@ -11377,7 +11383,9 @@ RenderPath::Pass::RequiredBufferInfo::RenderTarget BufferContext::BufferInfoExtr
 #include "MeshContext.h"
 #include "CreateModelTools/ModelDataCreator/ModelDataCreator.h"
 #include "CreateModelTools/ModelSlotAllocator/ModelSlotAllocator.h"
-
+#include "CreateModelTools/ModelDataLoader/ModelDataLoader.h"
+#include "MeshContextDiplomat/MeshContextExecutionAgent/MeshContextExecutionAgent.h"
+#include "MeshContextDiplomat/MeshContextDiplomat.h"
 
 namespace
 {
@@ -11392,7 +11400,29 @@ MeshContext::MeshContext(NexusFieldProof proof_,BufferContextDiplomat* bufferCon
 	modelSlotAllocator.reset(new ModelSlotAllocator(proof_));
 	Logger::Log("Instantiate: modelSlotAllocator", fileName);
 
-	modelDataCreator.reset(new ModelDataCreator(proof_, modelSlotAllocator.get(), bufferContextDiplomat_));
+	std::unique_ptr<ModelDataLoader> modelDataLoader(std::make_unique<ModelDataLoader>(proof_));
+	Logger::Log("Instantiate: ModelDataLoader", fileName);
+
+	diplomat.reset
+	(
+		new MeshContextDiplomat
+		(
+			proof_,
+			std::make_unique<ExecutionAgent>(proof_, modelDataLoader.get())
+		)
+	);
+	Logger::Log("Instantiate: ExecutionAgent", fileName);
+	Logger::Log("Instantiate: MeshContextDiplomat", fileName);
+
+	modelDataCreator.reset
+	(
+		new ModelDataCreator
+		(
+			proof_,std::move(modelDataLoader), 
+			modelSlotAllocator.get(),
+			bufferContextDiplomat_
+		)
+	);
 	Logger::Log("Instantiate: ModelDataCreator", fileName);
 
 
@@ -11415,6 +11445,7 @@ MeshContext::~MeshContext()
 
 class Nexus;
 class BufferContextDiplomat;
+class MeshContextDiplomat;
 
 class MeshContext
 {
@@ -11424,13 +11455,19 @@ public:
 	//モデルファイルからメッシュ情報を読み込む
 	class ModelDataLoader;
 	class ModelSlotAllocator;
+	//代行者
+	class ExecutionAgent;
+
 
 	//自身の生成キー
 	struct NexusFieldProof;
+	//代行認証キー
+	struct AgentKey;
 
 	MeshContext(NexusFieldProof proof_, BufferContextDiplomat* bufferContextDiplomat_);
 	~MeshContext();
 
+	std::unique_ptr<MeshContextDiplomat> diplomat;
 
 private:
 
@@ -11447,6 +11484,16 @@ private:
 	friend class Nexus;
 	explicit NexusFieldProof() = default;
 };
+
+struct MeshContext::AgentKey
+{
+private:
+
+	friend class ExecutionAgent;
+	explicit AgentKey() = default;
+};
+
+
 
 
 
@@ -11474,6 +11521,8 @@ private:
 #include "../../../Buffer/BufferContextDiplomat/BufferToolLender/BufferToolLender.h"
 #include "../../../Buffer/BufferContextDiplomat/BufferContextDiplomat.h"
 
+    ///2.MeshSlotAllocatorが必要数分のトランスフォームマトリックスバッファコンテナのインデックスを
+    ///vectorで渡す。この値も同様に各モデルがRootConstantsでGPUに転送する
 
 
 using namespace StructuredBufferDataDefinition;
@@ -11487,14 +11536,12 @@ namespace
 MeshContext::ModelDataCreator::ModelDataCreator
 (
     NexusFieldProof proof_,
+    std::unique_ptr<ModelDataLoader>&& modelDataLoader_,
     MeshContext::ModelSlotAllocator* allocator_,
     BufferContextDiplomat* bufferContextDiplomat_
-)
+) :modelDataLoader(std::move(modelDataLoader_))
 {
 	Logger::Entry("ModelDataCreator: Constructor");
-
-    modelDataLoader.reset(new ModelDataLoader(proof_));
-    Logger::Log("Instantiate: ModelDataLoader", fileName);
 
     CreateAllModelData(allocator_, bufferContextDiplomat_);
 
@@ -11515,10 +11562,13 @@ void MeshContext::ModelDataCreator::CreateAllModelData
     BufferContextDiplomat* bufferContextDiplomat_
 )
 {
-    ///＜最終目的＞
-    ///1.そのキー(ファイル名)に対してメッシュデータID(マルチメッシュ対応のためvector)を紐づける。
-    ///2.メッシュデータIDの数分のTransformMatrixDispatchedIdを付与する
-
+    ///＜目標＞
+    ///0.全てのメッシュデータのスタティックストラクチャードバッファを生成して、バッファアップローダーに
+    ///登録する
+    ///1.そのキー(ファイル名)に対してメッシュデータバッファのsrvHeapIndex群のID(マルチメッシュ対応のためvector)
+    ///を紐づける。後にこの値は各モデルがRootConstantsでGPUに転送する
+    ///2.メッシュデータバッファのsrvHeapIndex群のコンテナを1つのストラクチャードバッファとして生成して
+    ///アップロードし、MeshSlotAllocatorがそのバッファのsrvHeapIndexを保存する
 
     ///メッシュデータ生成数
     ///メッシュIDが指す先は一つのメッシュデータバッファのsrvheapIndex群であり、
@@ -11573,17 +11623,18 @@ void MeshContext::ModelDataCreator::CreateAllModelData
     }
 
     ///tmpMeshDataSRVHeapIndexGroupContainerのバッファを作る
-    //そのsrvHeapIndexをMeshSlotAllocatorが保存する
+    ///そのsrvHeapIndexをMeshSlotAllocatorが保存する
     MeshDataSRVHeapIndexGroupContainerBufferCreator::Create
     (
         tmpMeshDataSRVHeapIndexGroupContainer,
         bufferCreator,
         bufferCollector,
         bufferDispatcher,
+        bufferUploader,
         allocator_
     );
 
-
+    allocator_->Log(MeshContext::ModelSlotAllocator::HandleLicence{});
 }
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -11664,6 +11715,8 @@ protected:
 
 private:
 
+	//メッシュデータのバッファを作成し,そのメッシュデータのバッファユニークID群を返す
+	class MeshDataBufferCreator;
 	//モデルの理事ストリーファイルを読み込んで、キーがファイル名のバリューがファイルパスであるマップを返す
 	class ModelRegistryLoader;
 	//頂点データをGPU用に変換したり、BufferUniqueIDからstructuredBufferポインタに変換する
@@ -11677,22 +11730,21 @@ private:
 
 public:
 
-	//メッシュデータのバッファを作成し,そのメッシュデータのバッファユニークID群を返す
-	class MeshDataBufferCreator;
 
-	
-	///全てのメッシュデータのバッファを作成し、
-	///メッシュデータのバッファユニークID群の配列のバッファも作成
+	///全てのメッシュデータのバッファを作成してアップロードし、
+	///キー(ファイル名)とメッシュデータバッファのsrvHapIndex群を紐づける
+	///全メッシュデータバッファのsrvHeapIndex群のコンテナのバッファも作成してアップロードし、
+	///そのsrvHeapIndexをMeshSlotAllocatorが受け取る
 	void CreateAllModelData
 	(
 		MeshContext::ModelSlotAllocator* allocator_,
 		BufferContextDiplomat* bufferContextDiplomat_
 	);
 
-
 	ModelDataCreator
 	(
 		NexusFieldProof proof_,
+		std::unique_ptr<ModelDataLoader>&& modelDataLoader_,
 		MeshContext::ModelSlotAllocator* allocator_, 
 		BufferContextDiplomat* bufferContextDiplomat_
 	);
@@ -11705,15 +11757,12 @@ private:
 	//モデルファイルからモデルデータを読み込む
 	std::unique_ptr<ModelDataLoader> modelDataLoader;
 
-
 	//ローダーが全モデルファイルを読み込み、そのモデルデータのポインタを返す
 	///被り無しのはず設計なので、被りがあった場合はアサートでとまる
 	std::unordered_map<std::string, ModelDataAggregate*> LoadAllModelFiles();
 	
 	//バッファコンテキストクラスからツールをお借りする
 	BufferContextTools BorrowBufferContextTools(BufferContextDiplomat* bufferContextDiplomat_);
-
-
 
 };
 
@@ -12041,6 +12090,8 @@ class MeshContext::ModelDataCreator::MeshDataBufferUploader
 
 //外部
 #include "../../../../../Buffer/BufferCreateTools/BufferCreator.h"
+#include "../../../../../Buffer/BufferCreateTools/BufferUploader/BufferUploader.h"
+
 #include "../../../../../Buffer/BufferRuntime/BufferDispatcher/BufferDispatcher.h"
 //ほんとはstaticStructuredBufferDescriptionだけでいいんだけど、文字列制限なのかインクルードできないので
 #include "../../../../../Buffer/BufferDefinition/AllBufferDescsInclude.h"
@@ -12054,19 +12105,25 @@ void MeshContext::ModelDataCreator::MeshDataSRVHeapIndexGroupContainerBufferCrea
 	BufferContext::BufferCreator* bufferCreator_,
 	BufferContext::BufferCollector* bufferCollector_,
 	BufferContext::BufferDispatcher* dispatcher_,
+	BufferContext::BufferUploader* uploader_,
 	MeshContext::ModelSlotAllocator* allocator_
 )
 {
+	UINT srcContainerSize = (UINT)tmpMeshDataSRVHeapIndexGroupContainer_.size();
+
 	StaticStructuredBufferDescription desc
 	(
 		sizeof(MeshDataSRVHeapIndexGroupGPUCPU),
-		(UINT)tmpMeshDataSRVHeapIndexGroupContainer_.size(),
+		srcContainerSize,
 		0
 	);
 
 	//バッファ生成
 	BufferUniqueID uniqueID = bufferCreator_->Create(desc, "MeshDataSRVHeapIndexGroupContainer");
 	bufferCollector_->Distribute();
+
+	//アップロードする
+	uploader_->RegisterBuffer(uniqueID, srcContainerSize, tmpMeshDataSRVHeapIndexGroupContainer_.data());
 
 	//srvHeapIndexを抽出
 	StaticStructuredBuffer* buffer = static_cast<StaticStructuredBuffer*>(dispatcher_->Dispatch(uniqueID));
@@ -12078,6 +12135,8 @@ void MeshContext::ModelDataCreator::MeshDataSRVHeapIndexGroupContainerBufferCrea
 		MeshContext::ModelSlotAllocator::HandleLicence{}, 
 		std::move(std::make_unique<SRVHeapIndex>(readableBuffer->OutProperSRVHeapIndex()))
 	);
+
+
 
 }
 
@@ -12105,6 +12164,7 @@ class MeshContext::ModelDataCreator::MeshDataSRVHeapIndexGroupContainerBufferCre
 		BufferContext::BufferCreator* bufferCreator_,
 		BufferContext::BufferCollector* bufferCollector_,
 		BufferContext::BufferDispatcher* dispatcher_,
+		BufferContext::BufferUploader* uploader_,
 		MeshContext::ModelSlotAllocator* allocator_
 	);
 };
@@ -12288,6 +12348,7 @@ class MeshContext::ModelDataCreator::ModelRegistryLoader
 #include "MeshParser/MeshParser.h"
 #include "MaterialParser/MaterialParser.h"
 #include "ModelDataCache/ModelDataCache.h"
+#include "../../ModelStructure/ModelData/ModelDataAggregate.h"
 
 #include "StringConnverter/StringConverter.h"
 
@@ -12323,8 +12384,7 @@ ModelDataAggregate* MeshContext::ModelDataLoader::Load(std::string fileName_ , s
     std::unique_ptr<ModelDataAggregate> modelDataAggregate = std::make_unique<ModelDataAggregate>();
 
 	///同じモデルファイルを読み込んでいる場合は何かおかしいのでアサート
-	ModelDataAggregate* cachedModelData = modelDataCache->FindDuplication(ModelDataCache::AccessKey{},fileName_);
-    ErrorMessageOutput::Assert::DetectError(!cachedModelData, "ファイルを重複読み込みしている", fileName);
+	modelDataCache->FindDuplication(ModelDataCache::AccessKey{},fileName_);
 
     // wchar_t から char型(UTF-8)に変換
     auto path = StringConverter::ToUTF8(StringConverter::ConvertString(filePath_));
@@ -12363,13 +12423,13 @@ ModelDataAggregate* MeshContext::ModelDataLoader::Load(std::string fileName_ , s
     //マテリアルデータを変換
     for (size_t i = 0; i < modelDataAggregate->resourceMaterial.size(); ++i)
     {
-        const auto pMaterial = scene->mMaterials[i];
+        const auto pMaterial = (scene) ? scene->mMaterials[i] : nullptr;
         MaterialParser::ParseMaterial(modelDataAggregate->resourceMaterial[i], pMaterial);
     }
 
     //キャッシュデータに登録
     auto returnPtr = modelDataAggregate.get();
-    modelDataCache->Register(MeshContext::ModelDataLoader::ModelDataCache::AccessKey{}, fileName_, std::move(modelDataAggregate));
+    modelDataCache->StoreTemporarily(MeshContext::ModelDataLoader::ModelDataCache::AccessKey{}, fileName_, std::move(modelDataAggregate));
 
     //不要になったのでクリア
     importer.FreeScene();
@@ -12382,6 +12442,11 @@ ModelDataAggregate* MeshContext::ModelDataLoader::Load(std::string fileName_ , s
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+void MeshContext::ModelDataLoader::DeleteModelDataCache(MeshContext::NexusFieldProof proof_, MeshContext::AgentKey agentKey_)
+{
+    modelDataCache.release();
+    Logger::Log("Delete: modelDataCache", fileName);
+}
 
 
 
@@ -12403,8 +12468,13 @@ public:
 	~ModelDataLoader();
 
 	///ファイルの名前から実メッシュデータのアドレスを生成
-	///既に読み込み済みの場合はぬるぽを返す
+	///既に読み込み済みの場合はアサートで止める
 	ModelDataAggregate* Load(std::string fileName_ , std::string filePath_);
+
+	//不要になったモデルデータのキャッシュの削除を代行してもらう
+	void DeleteModelDataCache(MeshContext::NexusFieldProof proof_, MeshContext::AgentKey agentKey_);
+
+
 
 private:
 
@@ -12809,6 +12879,7 @@ class MeshContext::ModelDataLoader::MeshParser
 ========================================
 #include "PreCompileHeader.h"
 #include "ModelDataCache.h"
+#include "../../../ModelStructure/ModelData/ModelDataAggregate.h"
 
 
 MeshContext::ModelDataLoader::ModelDataCache::ModelDataCache(NexusFieldProof proof_)
@@ -12816,17 +12887,18 @@ MeshContext::ModelDataLoader::ModelDataCache::ModelDataCache(NexusFieldProof pro
 
 }
 
-ModelDataAggregate* MeshContext::ModelDataLoader::ModelDataCache::FindDuplication(AccessKey key_, std::string fileName_)
+void MeshContext::ModelDataLoader::ModelDataCache::FindDuplication(AccessKey key_, std::string fileName_)
 {
-	if (modelDataCache.find(fileName_) != modelDataCache.end())
-	{				
-		return modelDataCache.at(fileName_).get();
-	}
+	ErrorMessageOutput::Assert::DetectError
+	(
+		modelDataCache.find(fileName_) == modelDataCache.end(),
+		"おかしいね、ファイルを2重に読み込んでる",
+		"ModelDataCache.cpp"
+	);
 
-	return nullptr;
 }
 
-void MeshContext::ModelDataLoader::ModelDataCache::Register(AccessKey key_, std::string fileName_, std::unique_ptr<ModelDataAggregate>&& data_)
+void MeshContext::ModelDataLoader::ModelDataCache::StoreTemporarily(AccessKey key_, std::string fileName_, std::unique_ptr<ModelDataAggregate>&& data_)
 {
 	Logger::Log("Regieter: " + fileName_, "ModelDataCache.cpp");
 
@@ -12841,7 +12913,8 @@ void MeshContext::ModelDataLoader::ModelDataCache::Register(AccessKey key_, std:
 ========================================
 #pragma once
 #include "../ModelDataLoader.h"
-#include "../../../ModelStructure/ModelData/ModelDataAggregate.h"
+
+struct ModelDataAggregate;
 
 class MeshContext::ModelDataLoader::ModelDataCache
 {
@@ -12851,8 +12924,10 @@ public:
 
 	ModelDataCache(NexusFieldProof proof_);
 
-	ModelDataAggregate* FindDuplication(AccessKey key_, std::string fileName_);
-	void Register(AccessKey key_, std::string fileName_, std::unique_ptr<ModelDataAggregate>&& data_);
+	//ダブりチェック
+	void FindDuplication(AccessKey key_, std::string fileName_);
+	//一時データとして保存
+	void StoreTemporarily(AccessKey key_, std::string fileName_, std::unique_ptr<ModelDataAggregate>&& data_);
 
 private:
 
@@ -12896,7 +12971,29 @@ MeshContext::ModelSlotAllocator::~ModelSlotAllocator()
 {
 
 }
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+void MeshContext::ModelSlotAllocator::Log(HandleLicence licence_)
+{
+	Logger::Log("Check MeshDataIdLibrary Contents",fileName);
 
+	for (auto [key, value] : meshDataIDLib)
+	{
+		std::string mess = key + "::MeshDataID: { ";
+		for (size_t i = 0;i < value.size();++i)
+		{
+			mess += std::to_string((UINT)value[i]); 
+			mess += (i + 1) < value.size() ? +"," : "";
+		}
+
+		Logger::Log(mess + " }");
+
+	}
+}
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 void MeshContext::ModelSlotAllocator::LinkModelFileNameToMeshDataID
 (
 	HandleLicence licence_,
@@ -12910,17 +13007,24 @@ void MeshContext::ModelSlotAllocator::LinkModelFileNameToMeshDataID
 	meshDataIDLib[modelFileName_] = idContainer_;
 	Logger::Log("Register: " + modelFileName_ + " MeshDataIDs", fileName);
 }
-
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 void MeshContext::ModelSlotAllocator::SetMeshDataSRVHeapIndexGroupContainerSRVHeapIndex(HandleLicence licence_, std::unique_ptr<SRVHeapIndex>&& index_)
 {
 	meshDataSRVHeapIndexGroupContainerSRVHeapIndex = std::move(index_);
 }
-
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 template<> uint32_t MeshContext::ModelSlotAllocator::
 DistributeSlot<MeshContext::ModelSlotAllocator::SlotType::kTransformMatrix>(HandleLicence licence_)
 {
 	return transformMatrixSlotList.Distribute();
 }
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
 
@@ -12957,19 +13061,23 @@ public:
 	struct HandleLicence;
 
 
+	//空きスロットを分配する
 	template<SlotType slotType>
 	uint32_t DistributeSlot(HandleLicence licence_);
 
-	//meshDataSRVHeapIndexGroupArraySRVHeapIndexこれを設定する
+	//meshDataSRVHeapIndexGroupContainerのSRVHeapIndexセットする
 	void SetMeshDataSRVHeapIndexGroupContainerSRVHeapIndex(HandleLicence licence_ , std::unique_ptr<SRVHeapIndex>&& index_);
 
-	//メッシュファイル名に対してMeshDataIDを紐づける
+	//メッシュファイル名に対してMeshDataID(複数)を紐づける
 	void LinkModelFileNameToMeshDataID
 	(
 		HandleLicence licence_,
 		std::string modelFileName_ , 
 		const std::vector<MeshDataID>& idContainer_
 	);
+
+	//内容をログファイルに書き出す
+	void Log(HandleLicence licence_);
 
 	ModelSlotAllocator(NexusFieldProof proof_);
 	~ModelSlotAllocator();
@@ -12999,6 +13107,111 @@ private:
 
 	friend class ModelDataCreator;
 	explicit HandleLicence() = default;
+};
+
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Mesh\MeshContextDiplomat\MeshContextDiplomat.cpp ===
+========================================
+#include "PreCompileHeader.h"
+#include "MeshContextDiplomat.h"
+#include "MeshContextExecutionAgent/MeshContextExecutionAgent.h"
+
+
+
+MeshContextDiplomat::MeshContextDiplomat
+(
+	MeshContext::NexusFieldProof proof_,
+	std::unique_ptr<MeshContext::ExecutionAgent>&& agent_
+)
+{
+	std::get<std::unique_ptr<MeshContext::ExecutionAgent>>(tools) = std::move(agent_);
+}
+
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Mesh\MeshContextDiplomat\MeshContextDiplomat.h ===
+========================================
+#pragma once
+#include "../MeshContext.h"
+
+class MeshContextDiplomat
+{
+public:
+
+	MeshContextDiplomat
+	(
+		MeshContext::NexusFieldProof proof_,
+		std::unique_ptr<MeshContext::ExecutionAgent>&& agent_
+	);
+	
+	template<typename ToolType>
+	auto* Access()
+	{
+		return std::get<std::unique_ptr<ToolType>>(tools).get();
+
+	}
+
+private:
+
+	std::tuple<std::unique_ptr<MeshContext::ExecutionAgent>> tools;
+};
+
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Mesh\MeshContextDiplomat\MeshContextExecutionAgent\MeshContextExecutionAgent.cpp ===
+========================================
+#include "PreCompileHeader.h"
+#include "MeshContextExecutionAgent.h"
+#include "../../CreateModelTools/ModelDataLoader/ModelDataLoader.h"
+
+
+MeshContext::ExecutionAgent::ExecutionAgent
+(
+	MeshContext::NexusFieldProof proof_,
+	MeshContext::ModelDataLoader* modelDataLoader_
+): modelDataLoader(modelDataLoader_)
+{
+	
+}
+
+void MeshContext::ExecutionAgent::DeleteModelDataCache(MeshContext::NexusFieldProof proof_)
+{
+	modelDataLoader->DeleteModelDataCache(proof_, MeshContext::AgentKey{});
+}
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Mesh\MeshContextDiplomat\MeshContextExecutionAgent\MeshContextExecutionAgent.h ===
+========================================
+#pragma once
+#include "../../MeshContext.h"
+
+
+
+class MeshContext::ExecutionAgent
+{
+public:
+	ExecutionAgent
+	(
+		MeshContext::NexusFieldProof proof_,
+		MeshContext::ModelDataLoader* modelDataLoader_
+	);
+
+	void DeleteModelDataCache(MeshContext::NexusFieldProof proof_);
+
+private:
+	MeshContext::ModelDataLoader* modelDataLoader;
 };
 
 
@@ -16245,6 +16458,7 @@ Nexus::Nexus()
 	InitializeInSequence<InitSequence::kUploadAllResources>();
 	InitializeInSequence<InitSequence::kKickCommands>();
 	InitializeInSequence<InitSequence::kDeleteIntermediateResources>();
+	InitializeInSequence<InitSequence::kDeleteModelDataCache>();
 
 	ErrorMessageOutput::Assert::DetectError(next == InitSequence::kEnd, "初期化が正常に行われていない可能性がある", fileName);
 
@@ -16311,7 +16525,8 @@ class Nexus
 
 		kUploadAllResources,
 		kKickCommands,
-		kDeleteIntermediateResources
+		kDeleteIntermediateResources,
+		kDeleteModelDataCache
 
 
 		,kEnd
@@ -16441,6 +16656,8 @@ void Nexus::Finalize()
 #include "../LowerLayer/Resource/RootSignature/RootSignatureContext.h"
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 #include "../LowerLayer/Resource/Mesh/MeshContext.h"
+#include "../LowerLayer/Resource/Mesh/MeshContextDiplomat/MeshContextDiplomat.h"
+#include "../LowerLayer/Resource/Mesh/MeshContextDiplomat/MeshContextExecutionAgent/MeshContextExecutionAgent.h"
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 #include "../LowerLayer/Render/RenderContext.h"
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -16627,6 +16844,19 @@ void Nexus::Init<Nexus::InitSequence::kUploadAllResources>()
 	//BufferUploaderの削除を代行
 	agent->UploadAllBuffer(BufferContext::NexusFieldProof{});
 }
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+template<>
+void Nexus::Init<Nexus::InitSequence::kDeleteModelDataCache>()
+{
+	//meshContextの代行者
+	auto* agent = meshContext->diplomat->Access<MeshContext::ExecutionAgent>();
+	//モデルデータのキャッシュを削除
+	agent->DeleteModelDataCache(MeshContext::NexusFieldProof{});
+
+}
+
 
 
 
@@ -16675,6 +16905,9 @@ void Nexus::Init<Nexus::InitSequence::kKickCommands>();
 
 template
 void Nexus::Init<Nexus::InitSequence::kDeleteIntermediateResources>();
+
+template
+void Nexus::Init<Nexus::InitSequence::kDeleteModelDataCache>();
 
 
 

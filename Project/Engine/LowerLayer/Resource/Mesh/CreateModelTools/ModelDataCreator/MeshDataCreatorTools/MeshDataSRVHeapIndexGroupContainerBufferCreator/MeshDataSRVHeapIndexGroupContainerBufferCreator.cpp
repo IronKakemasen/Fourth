@@ -46,7 +46,7 @@ void MeshContext::ModelDataCreator::MeshDataSRVHeapIndexGroupContainerBufferCrea
 	allocator_->SetMeshDataSRVHeapIndexGroupContainerSRVHeapIndex
 	(
 		MeshContext::ModelSlotAllocator::HandleLicence{}, 
-		std::move(std::make_unique<SRVHeapIndex>(readableBuffer->OutProperSRVHeapIndex()))
+		readableBuffer->OutProperSRVHeapIndex()
 	);
 
 

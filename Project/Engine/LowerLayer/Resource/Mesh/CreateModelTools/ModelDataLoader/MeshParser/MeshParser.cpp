@@ -1,6 +1,6 @@
 #include "PreCompileHeader.h"
 #include "MeshParser.h"
-#include "../../../ModelStructure/ModelData/ResourceMesh/ResourceMesh.h"
+#include "../../../Model/ModelData/ResourceMesh/ResourceMesh.h"
 
 #include ".././../../../External/assimp/include/assimp/scene.h"
 #include "../../../../External/MeshOptimizer/meshoptimizer.h"

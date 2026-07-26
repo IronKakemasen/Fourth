@@ -23,7 +23,7 @@ public:
 	uint32_t DistributeSlot(HandleLicence licence_);
 
 	//meshDataSRVHeapIndexGroupContainerのSRVHeapIndexセットする
-	void SetMeshDataSRVHeapIndexGroupContainerSRVHeapIndex(HandleLicence licence_ , std::unique_ptr<SRVHeapIndex>&& index_);
+	void SetMeshDataSRVHeapIndexGroupContainerSRVHeapIndex(HandleLicence licence_ , SRVHeapIndex index_);
 
 	//メッシュファイル名に対してMeshDataID(複数)を紐づける
 	void LinkModelFileNameToMeshDataID
@@ -42,10 +42,10 @@ public:
 private:
 
 	///「メッシュデータバッファのsrvHeapIndexが詰まったもの」の配列のSRVHeapIndex
-	std::unique_ptr<SRVHeapIndex> meshDataSRVHeapIndexGroupContainerSRVHeapIndex;
+	std::optional<SRVHeapIndex> meshDataSRVHeapIndexGroupContainerSRVHeapIndex;
 	
 	///「transformMatrixバッファ」の配列のSRVHeapIndex
-	std::unique_ptr<SRVHeapIndex> transformMatrixBufferArraySRVHeapIndex;
+	std::optional<SRVHeapIndex> transformMatrixBufferArraySRVHeapIndex;
 
 	///そのモデルファイル名が、
 	///「メッシュデータバッファのsrvHeapIndexが詰まったもの」の配列の何番目に該当するのかを索引するため

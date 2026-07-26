@@ -4,7 +4,7 @@
 #include "MeshParser/MeshParser.h"
 #include "MaterialParser/MaterialParser.h"
 #include "ModelDataCache/ModelDataCache.h"
-#include "../../ModelStructure/ModelData/ModelDataAggregate.h"
+#include "../../Model/ModelData/ModelDataAggregate.h"
 
 #include "StringConnverter/StringConverter.h"
 
@@ -100,6 +100,6 @@ ModelDataAggregate* MeshContext::ModelDataLoader::Load(std::string fileName_ , s
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 void MeshContext::ModelDataLoader::DeleteModelDataCache(MeshContext::NexusFieldProof proof_, MeshContext::AgentKey agentKey_)
 {
-    modelDataCache.release();
+    modelDataCache.reset();
     Logger::Log("Delete: modelDataCache", fileName);
 }

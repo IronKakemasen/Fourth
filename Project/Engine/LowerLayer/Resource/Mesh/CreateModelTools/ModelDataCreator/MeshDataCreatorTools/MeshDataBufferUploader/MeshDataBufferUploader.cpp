@@ -1,7 +1,7 @@
 #include "PreCompileHeader.h"
 #include "MeshDataBufferUploader.h"
 #include "../ModelDataTransducer/ModelDataTransducer.h"
-#include "../../../../ModelStructure/ModelData/ResourceMesh/ResourceMesh.h"
+#include "../../../../Model/ModelData/ResourceMesh/ResourceMesh.h"
 
 
 //外部

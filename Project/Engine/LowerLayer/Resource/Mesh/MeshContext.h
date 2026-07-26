@@ -6,15 +6,18 @@ class MeshContextDiplomat;
 
 class MeshContext
 {
-public:
-	//モデルを生成する。
-	class ModelDataCreator;
-	//モデルファイルからメッシュ情報を読み込む
+	//モデルファイルからモデル情報を読み込む
 	class ModelDataLoader;
 	class ModelSlotAllocator;
+
+public:
+	//モデルレジストリーファイルにあるモデルのバッファを生成する。
+	class ModelDataCreator;
+	//インスタンス化されたモデルクラスのモデルファイル名をもとに中身を構築してあげる
+	class ModelAssembler;
+
 	//代行者
 	class ExecutionAgent;
-
 
 	//自身の生成キー
 	struct NexusFieldProof;
@@ -24,6 +27,7 @@ public:
 	MeshContext(NexusFieldProof proof_, BufferContextDiplomat* bufferContextDiplomat_);
 	~MeshContext();
 
+	//外交官
 	std::unique_ptr<MeshContextDiplomat> diplomat;
 
 private:
@@ -31,6 +35,7 @@ private:
 
 	std::unique_ptr<ModelDataCreator> modelDataCreator;
 	std::unique_ptr<ModelSlotAllocator> modelSlotAllocator;
+	std::unique_ptr<ModelAssembler> modelAssembler;
 
 };
 
