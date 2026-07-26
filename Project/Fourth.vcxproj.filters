@@ -330,16 +330,16 @@
     <ClCompile Include="Engine\LowerLayer\Resource\Mesh\CreateModelTools\ModelDataLoader\ModelDataLoader.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="Engine\LowerLayer\Resource\Mesh\ModelStructure\Model.cpp">
+    <ClCompile Include="Engine\LowerLayer\Resource\Mesh\Model\Model.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="Engine\LowerLayer\Resource\Mesh\ModelStructure\ModelData\ResourceMesh\ResourceMesh.cpp">
+    <ClCompile Include="Engine\LowerLayer\Resource\Mesh\Model\ModelData\ResourceMesh\ResourceMesh.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="Engine\LowerLayer\Resource\Mesh\ModelStructure\ModelData\ResourceMaterial\ResourceMaterial.cpp">
+    <ClCompile Include="Engine\LowerLayer\Resource\Mesh\Model\ModelData\ResourceMaterial\ResourceMaterial.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="Engine\LowerLayer\Resource\Mesh\ModelStructure\ModelData\ModelDataAggregate.cpp">
+    <ClCompile Include="Engine\LowerLayer\Resource\Mesh\Model\ModelData\ModelDataAggregate.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
     <ClCompile Include="Engine\LowerLayer\Resource\Mesh\CreateModelTools\ModelDataCreator\ModelDataCreator.cpp">
@@ -478,6 +478,9 @@
       <Filter>ソース ファイル</Filter>
     </ClCompile>
     <ClCompile Include="Engine\LowerLayer\Resource\Mesh\MeshContextDiplomat\MeshContextExecutionAgent\MeshContextExecutionAgent.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\LowerLayer\Resource\Mesh\MeshContextRuntime\ModelAssembler\ModelAssembler.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
   </ItemGroup>
@@ -779,9 +782,6 @@
     <ClInclude Include="Engine\LowerLayer\Render\RenderPathStructure\RenderStateComponent.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\LowerLayer\Render\RenderStates.h">
-      <Filter>ヘッダー ファイル</Filter>
-    </ClInclude>
     <ClInclude Include="Engine\LowerLayer\Render\RenderPathStructure\ShaderPathComponent.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
@@ -839,25 +839,25 @@
     <ClInclude Include="Engine\LowerLayer\Resource\Mesh\CreateModelTools\ModelDataLoader\ModelDataLoader.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\LowerLayer\Resource\Mesh\ModelStructure\Model.h">
+    <ClInclude Include="Engine\LowerLayer\Resource\Mesh\Model\Model.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
     <ClInclude Include="Assets\Shared\StructuredBuffer.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\LowerLayer\Resource\Mesh\ModelStructure\ModelData\ResourceMesh\ResourceMesh.h">
+    <ClInclude Include="Engine\LowerLayer\Resource\Mesh\Model\ModelData\ResourceMesh\ResourceMesh.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\LowerLayer\Resource\Mesh\ModelStructure\ModelData\ResourceMaterial\ResourceMaterial.h">
+    <ClInclude Include="Engine\LowerLayer\Resource\Mesh\Model\ModelData\ResourceMaterial\ResourceMaterial.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\LowerLayer\Resource\Mesh\ModelStructure\ModelData\ModelDataAggregate.h">
+    <ClInclude Include="Engine\LowerLayer\Resource\Mesh\Model\ModelData\ModelDataAggregate.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\LowerLayer\Resource\Mesh\ModelStructure\ModelData\ResourceMaterial\StandardMaterial.h">
+    <ClInclude Include="Engine\LowerLayer\Resource\Mesh\Model\ModelData\ResourceMaterial\StandardMaterial.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\LowerLayer\Resource\Mesh\ModelStructure\ModelData\ResourceMesh\StandardVertex.h">
+    <ClInclude Include="Engine\LowerLayer\Resource\Mesh\Model\ModelData\ResourceMesh\StandardVertex.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
     <ClInclude Include="Engine\LowerLayer\Resource\Mesh\CreateModelTools\ModelDataCreator\ModelDataCreator.h">
@@ -881,7 +881,7 @@
     <ClInclude Include="Engine\Utility\SimpleFreeList\SimpleFreeList.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\LowerLayer\Resource\Mesh\ModelStructure\ModelDescription.h">
+    <ClInclude Include="Engine\LowerLayer\Resource\Mesh\Model\ModelDescription.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
     <ClInclude Include="Engine\LowerLayer\Resource\Buffer\BufferCreateTools\BufferUploader\BufferUploader.h">
@@ -1014,6 +1014,9 @@
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
     <ClInclude Include="Engine\LowerLayer\Resource\Mesh\MeshContextDiplomat\MeshContextExecutionAgent\MeshContextExecutionAgent.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\LowerLayer\Resource\Mesh\MeshContextRuntime\ModelAssembler\ModelAssembler.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
   </ItemGroup>

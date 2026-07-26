@@ -25,19 +25,6 @@ namespace RenderStateComponent
         ,kCount
     };
 
-    //モデル一つにつき１定義のみ
-    struct Uniqued
-    {
-        RenderStateComponent::CullMode cullMode = RenderStateComponent::CullMode::kBack;
-    };
-
-    //複数定義可能
-    struct Flexible
-    {
-        RenderStateComponent::BlendMode blendMode = RenderStateComponent::BlendMode::kOpaque;
-    };
-
-
 
     inline D3D12_FILL_MODE Convert(FillMode fillMode_)
     {

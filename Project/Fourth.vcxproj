@@ -318,13 +318,13 @@
     <ClCompile Include="Engine\LowerLayer\Render\RenderPathStructure\RenderPass\RenderPass.cpp" />
     <ClCompile Include="Engine\LowerLayer\Render\PassAssembler\PassAssembler.cpp" />
     <ClCompile Include="Engine\LowerLayer\Resource\Mesh\MeshContext.cpp" />
-    <ClCompile Include="Engine\LowerLayer\Resource\Mesh\ModelStructure\ModelData\ResourceMesh\ResourceMesh.cpp" />
+    <ClCompile Include="Engine\LowerLayer\Resource\Mesh\Model\ModelData\ResourceMesh\ResourceMesh.cpp" />
     <ClCompile Include="Engine\LowerLayer\Resource\Mesh\CreateModelTools\ModelDataLoader\ModelDataCache\ModelDataCache.cpp" />
     <ClCompile Include="Engine\LowerLayer\Resource\Mesh\CreateModelTools\ModelDataLoader\ModelDataLoader.cpp" />
     <ClCompile Include="Engine\LowerLayer\Resource\Mesh\CreateModelTools\ModelDataCreator\ModelDataCreator.cpp" />
-    <ClCompile Include="Engine\LowerLayer\Resource\Mesh\ModelStructure\Model.cpp" />
-    <ClCompile Include="Engine\LowerLayer\Resource\Mesh\ModelStructure\ModelData\ResourceMaterial\ResourceMaterial.cpp" />
-    <ClCompile Include="Engine\LowerLayer\Resource\Mesh\ModelStructure\ModelData\ModelDataAggregate.cpp" />
+    <ClCompile Include="Engine\LowerLayer\Resource\Mesh\Model\Model.cpp" />
+    <ClCompile Include="Engine\LowerLayer\Resource\Mesh\Model\ModelData\ResourceMaterial\ResourceMaterial.cpp" />
+    <ClCompile Include="Engine\LowerLayer\Resource\Mesh\Model\ModelData\ModelDataAggregate.cpp" />
     <ClCompile Include="Engine\MiddleLayer\Math\Vector\Vector4.cpp" />
     <ClCompile Include="Engine\LowerLayer\Resource\Buffer\BufferDefinition\BufferDescriptions\StaticStructuredBufferDescription\StaticStructuredBufferDescription.cpp" />
     <ClCompile Include="Engine\LowerLayer\Resource\Buffer\BufferDefinition\GPUBuffer\StaticStructuredBuffer\StaticStructuredBuffer.cpp" />
@@ -341,6 +341,7 @@
     <ClCompile Include="Engine\LowerLayer\Resource\Mesh\CreateModelTools\ModelDataCreator\MeshDataCreatorTools\MeshDataSRVHeapIndexGroupContainerBufferCreator\MeshDataSRVHeapIndexGroupContainerBufferCreator.cpp" />
     <ClCompile Include="Engine\LowerLayer\Resource\Mesh\MeshContextDiplomat\MeshContextDiplomat.cpp" />
     <ClCompile Include="Engine\LowerLayer\Resource\Mesh\MeshContextDiplomat\MeshContextExecutionAgent\MeshContextExecutionAgent.cpp" />
+    <ClCompile Include="Engine\LowerLayer\Resource\Mesh\MeshContextRuntime\ModelAssembler\ModelAssembler.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Assets\Shared\ConstantBuffers.h" />
@@ -369,9 +370,9 @@
     <ClInclude Include="Engine\LowerLayer\Render\RenderPathStructure\RenderPass\RenderPassBluePrint\RenderPassSettingTable\RenderPassSettingTable.h" />
     <ClInclude Include="Engine\LowerLayer\Render\RenderPathStructure\RenderPass\RequiredInfo\BufferRequiredInfo\BufferRequiredInfo.h" />
     <ClInclude Include="Engine\LowerLayer\Render\RenderPathStructure\RenderPass\RequiredInfo\PassSettings\PassSettings.h" />
-    <ClInclude Include="Engine\LowerLayer\Resource\Mesh\ModelStructure\ModelDescription.h" />
-    <ClInclude Include="Engine\LowerLayer\Resource\Mesh\ModelStructure\ModelData\ResourceMaterial\StandardMaterial.h" />
-    <ClInclude Include="Engine\LowerLayer\Resource\Mesh\ModelStructure\ModelData\ResourceMesh\StandardVertex.h" />
+    <ClInclude Include="Engine\LowerLayer\Resource\Mesh\Model\ModelDescription.h" />
+    <ClInclude Include="Engine\LowerLayer\Resource\Mesh\Model\ModelData\ResourceMaterial\StandardMaterial.h" />
+    <ClInclude Include="Engine\LowerLayer\Resource\Mesh\Model\ModelData\ResourceMesh\StandardVertex.h" />
     <ClInclude Include="Engine\Utility\ClosedHashMap\ClosedHashMap.h" />
     <ClInclude Include="Engine\LowerLayer\Render\PSO_PoolDispatcher\GraphicsPSO_Key.h" />
     <ClInclude Include="Engine\LowerLayer\Render\RenderPathStructure\RenderPassComponent.h" />
@@ -422,7 +423,6 @@
     <ClInclude Include="Engine\LowerLayer\Debug\ErrorMessageOutput\ErrorMessageOutput.h" />
     <ClInclude Include="Engine\LowerLayer\Resource\Buffer\BufferDefinition\ResourceBarrier.h" />
     <ClInclude Include="Engine\LowerLayer\Render\RenderPathStructure\RenderStateComponent.h" />
-    <ClInclude Include="Engine\LowerLayer\Render\RenderStates.h" />
     <ClInclude Include="Engine\LowerLayer\Render\RenderPathStructure\ShaderPathComponent.h" />
     <ClInclude Include="Engine\LowerLayer\Resource\RootSignature\RootSignatureAssembler\RootSignatureLayoutComponent.h" />
     <ClInclude Include="Engine\MiddleLayer\kara.h" />
@@ -495,13 +495,13 @@
     <ClInclude Include="Engine\LowerLayer\Render\RenderPathStructure\RenderPass\RenderPass.h" />
     <ClInclude Include="Engine\LowerLayer\Render\PassAssembler\PassAssembler.h" />
     <ClInclude Include="Engine\LowerLayer\Resource\Mesh\MeshContext.h" />
-    <ClInclude Include="Engine\LowerLayer\Resource\Mesh\ModelStructure\ModelData\ResourceMesh\ResourceMesh.h" />
+    <ClInclude Include="Engine\LowerLayer\Resource\Mesh\Model\ModelData\ResourceMesh\ResourceMesh.h" />
     <ClInclude Include="Engine\LowerLayer\Resource\Mesh\CreateModelTools\ModelDataLoader\ModelDataCache\ModelDataCache.h" />
     <ClInclude Include="Engine\LowerLayer\Resource\Mesh\CreateModelTools\ModelDataLoader\ModelDataLoader.h" />
     <ClInclude Include="Engine\LowerLayer\Resource\Mesh\CreateModelTools\ModelDataCreator\ModelDataCreator.h" />
-    <ClInclude Include="Engine\LowerLayer\Resource\Mesh\ModelStructure\Model.h" />
-    <ClInclude Include="Engine\LowerLayer\Resource\Mesh\ModelStructure\ModelData\ResourceMaterial\ResourceMaterial.h" />
-    <ClInclude Include="Engine\LowerLayer\Resource\Mesh\ModelStructure\ModelData\ModelDataAggregate.h" />
+    <ClInclude Include="Engine\LowerLayer\Resource\Mesh\Model\Model.h" />
+    <ClInclude Include="Engine\LowerLayer\Resource\Mesh\Model\ModelData\ResourceMaterial\ResourceMaterial.h" />
+    <ClInclude Include="Engine\LowerLayer\Resource\Mesh\Model\ModelData\ModelDataAggregate.h" />
     <ClInclude Include="Engine\MiddleLayer\Math\Vector\Vector4.h" />
     <ClInclude Include="Engine\MiddleLayer\Transform\Transform.h" />
     <ClInclude Include="Engine\LowerLayer\Resource\Buffer\BufferDefinition\BufferDescriptions\StaticStructuredBufferDescription\StaticStructuredBufferDescription.h" />
@@ -521,6 +521,7 @@
     <ClInclude Include="Engine\LowerLayer\Resource\Mesh\CreateModelTools\ModelDataCreator\MeshDataCreatorTools\MeshDataSRVHeapIndexGroupContainerBufferCreator\MeshDataSRVHeapIndexGroupContainerBufferCreator.h" />
     <ClInclude Include="Engine\LowerLayer\Resource\Mesh\MeshContextDiplomat\MeshContextDiplomat.h" />
     <ClInclude Include="Engine\LowerLayer\Resource\Mesh\MeshContextDiplomat\MeshContextExecutionAgent\MeshContextExecutionAgent.h" />
+    <ClInclude Include="Engine\LowerLayer\Resource\Mesh\MeshContextRuntime\ModelAssembler\ModelAssembler.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

@@ -51,6 +51,7 @@ public:
 	///そのsrvHeapIndexをMeshSlotAllocatorが受け取る
 	void CreateAllModelData
 	(
+		NexusFieldProof proof_,
 		MeshContext::ModelSlotAllocator* allocator_,
 		BufferContextDiplomat* bufferContextDiplomat_
 	);

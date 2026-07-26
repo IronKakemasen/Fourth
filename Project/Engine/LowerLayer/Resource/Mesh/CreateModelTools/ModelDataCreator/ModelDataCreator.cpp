@@ -1,7 +1,7 @@
 #include "PreCompileHeader.h"
 #include "ModelDataCreator.h"
 
-#include "../../ModelStructure/ModelData/ModelDataAggregate.h"
+#include "../../Model/ModelData/ModelDataAggregate.h"
 
 #include "../ModelDataLoader/ModelDataLoader.h"
 #include "../ModelSlotAllocator/ModelSlotAllocator.h"
@@ -40,7 +40,7 @@ MeshContext::ModelDataCreator::ModelDataCreator
 {
 	Logger::Entry("ModelDataCreator: Constructor");
 
-    CreateAllModelData(allocator_, bufferContextDiplomat_);
+    CreateAllModelData(proof_, allocator_, bufferContextDiplomat_);
 
 	Logger::End("ModelDataCreator: Constructor");
 }
@@ -55,6 +55,7 @@ MeshContext::ModelDataCreator::~ModelDataCreator()
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 void MeshContext::ModelDataCreator::CreateAllModelData
 (
+    NexusFieldProof proof_,
     MeshContext::ModelSlotAllocator* allocator_,
     BufferContextDiplomat* bufferContextDiplomat_
 )

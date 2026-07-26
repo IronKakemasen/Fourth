@@ -1,6 +1,6 @@
 #include "PreCompileHeader.h"
 #include "MeshDataBufferCreator.h"
-#include "../../../../ModelStructure/ModelData/ResourceMesh/ResourceMesh.h"
+#include "../../../../Model/ModelData/ResourceMesh/ResourceMesh.h"
 #include "../../../ModelSlotAllocator/ModelSlotAllocator.h"
 
 //外部
