@@ -11,15 +11,19 @@ class MeshContext
 	class ModelSlotAllocator;
 
 public:
-	//モデルレジストリーファイルにあるモデルのバッファを生成する。
+	//モデルレジストリーファイルにあるモデルデータのバッファを生成する。
 	class ModelDataCreator;
 	//インスタンス化されたモデルクラスのモデルファイル名をもとに中身を構築してあげる
-	class ModelAssembler;
+	class ModelDescAssembler;
+	///モデルクラスを生成する
+	class ModelCreator;
+	//モデルのコンテナ
+	class ModelContainer;
 
 	//代行者
 	class ExecutionAgent;
 
-	//自身の生成キー
+	//ネクサスフィールド証明
 	struct NexusFieldProof;
 	//代行認証キー
 	struct AgentKey;
@@ -35,7 +39,7 @@ private:
 
 	std::unique_ptr<ModelDataCreator> modelDataCreator;
 	std::unique_ptr<ModelSlotAllocator> modelSlotAllocator;
-	std::unique_ptr<ModelAssembler> modelAssembler;
+	std::unique_ptr<ModelCreator> modelCreator;
 
 };
 

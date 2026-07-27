@@ -57,7 +57,7 @@ struct MeshContext::ModelSlotAllocator::HandleLicence
 private:
 
 	friend class ModelDataCreator;
-	friend class ModelAssembler;
+	friend class ModelDescAssembler;
 	explicit HandleLicence() = default;
 };
 
@@ -65,7 +65,7 @@ struct MeshContext::ModelSlotAllocator::AllocateLicence
 {
 private:
 
-	friend class ModelAssembler;
+	friend class ModelDescAssembler;
 	explicit AllocateLicence() = default;
 };
 

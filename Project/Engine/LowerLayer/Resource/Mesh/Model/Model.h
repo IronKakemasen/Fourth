@@ -6,16 +6,24 @@ class Model
 {
 public:
 
-	Model(std::string fileName_, const std::vector<ModelDescription::Configurable>& modelDataConfigurables_);
+	Model
+	(
+		const std::vector<ModelDescription::Configurable>& modelDataConfigurables_,
+		const std::vector<ModelDescription::Unique>& modelDataUniques_,
+		const std::vector<ModelDescription::Common>& modelDataCommons_,
+		std::string modelName_
+	);
 
 
 private:
 
-	friend class MeshContext::ModelAssembler;
+	friend class MeshContext::ModelDescAssembler;
 
-	std::string fileName;
+	//ModelDescAssemblerに設定してもらう
 	std::vector<ModelDescription::Common> modelDataCommons;
 	std::vector<ModelDescription::Unique> modelDataUniques;
+	//これだけは自分で決める
+	std::string modelName;
 	std::vector<ModelDescription::Configurable> modelDataConfigurables;
 
 };

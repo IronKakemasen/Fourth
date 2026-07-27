@@ -13,7 +13,9 @@ struct ModelDescription
 	//コンストラクタで設置可能
 	struct Configurable
 	{
-		RenderStateComponent::BlendMode blendMode;
+		Configurable() {};
+
+		std::vector<RenderStateComponent::BlendMode> blendModes;
 		RenderStateComponent::CullMode cullMode;
 		ShaderPathComponent::MeshType meshType;
 		ShaderPathComponent::MaterialType materialType;
