@@ -4,7 +4,7 @@
 #include "MeshParser/MeshParser.h"
 #include "MaterialParser/MaterialParser.h"
 #include "ModelDataCache/ModelDataCache.h"
-#include "../../Model/ModelData/ModelDataAggregate.h"
+#include "../../ModelStructure/ModelData/ModelDataAggregate.h"
 
 #include "StringConnverter/StringConverter.h"
 

@@ -13,24 +13,32 @@ class ModelContext::ModelSlotAllocator
 
 public:
 
+	//TransformMatrixContainerBufferのスロットの割り当てを行う
+	class TransformMatrixSlot;
+
 	struct HandleLicence;
 	struct AllocateLicence;
 
-	//TransformMatrixContainerBufferのスロットの割り当てを行う
-	class TransformMatrixSlot;
+	ModelSlotAllocator(NexusFieldProof proof_);
+	~ModelSlotAllocator();
 
 	//空きスロットを分配する
 	template<typename SlotType>
 	uint32_t AllocateSlot(AllocateLicence licence_);
 
-	//meshDataSRVHeapIndexGroupContainerのSRVHeapIndexセットする
+	//meshDataCreatorにて、
+	///meshDataSRVHeapIndexGroupContainerのSRVHeapIndexセットする
 	void SetMeshDataSRVHeapIndexGroupContainerSRVHeapIndex(HandleLicence licence_ , SRVHeapIndex index_);
+	///TransformMatrixConatinerのSRVHeapIndexセットする
+	void SetTransformMatrixConatinerSrvHeapIndices
+	(
+		HandleLicence licence_,
+		std::array<SRVHeapIndex, (UINT)ProjectConfig::Render::NumBuffer::kDoubleBuffer> indices_
+	);
 
 	//meshDataIDLibraryにアクセスする
 	MeshDataIDLibrary& AccessMeshDataIDLibrary(HandleLicence licence_);
 
-	ModelSlotAllocator(NexusFieldProof proof_);
-	~ModelSlotAllocator();
 
 private:
 
@@ -42,7 +50,8 @@ private:
 	std::optional<SRVHeapIndex> meshDataSRVHeapIndexGroupContainerSRVHeapIndex;
 	
 	///「transformMatrixバッファ」の配列のSRVHeapIndex
-	std::optional<SRVHeapIndex> transformMatrixBufferArraySRVHeapIndex;
+	std::optional<std::array<SRVHeapIndex,(UINT)ProjectConfig::Render::NumBuffer::kDoubleBuffer>> 
+		doubleTransformMatrixContainerSRVHeapIndex;
 
 
 };

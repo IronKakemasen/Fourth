@@ -1,6 +1,6 @@
 #include "PreCompileHeader.h"
 #include "MaterialParser.h"
-#include "../../../Model/ModelData/ResourceMaterial/ResourceMaterial.h"
+#include "../../../ModelStructure/ModelData/ResourceMaterial/ResourceMaterial.h"
 
 
 #include ".././../../../External/assimp/include/assimp/Importer.hpp"

@@ -1,6 +1,6 @@
 #include "PreCompileHeader.h"
 #include "ModelDataTransducer.h"
-#include "../../../../Model/ModelData/ResourceMesh/StandardVertex.h"
+#include "../../../../ModelStructure/ModelData/ResourceMesh/StandardVertex.h"
 
 //外部
 #include "../../../../../Buffer/BufferRuntime/BufferDispatcher/BufferDispatcher.h"

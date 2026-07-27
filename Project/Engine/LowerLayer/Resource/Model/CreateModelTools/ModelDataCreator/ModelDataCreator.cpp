@@ -1,7 +1,7 @@
 #include "PreCompileHeader.h"
 #include "ModelDataCreator.h"
 
-#include "../../Model/ModelData/ModelDataAggregate.h"
+#include "../../ModelStructure/ModelData/ModelDataAggregate.h"
 
 #include "../ModelDataLoader/ModelDataLoader.h"
 #include "../ModelSlotAllocator/MeshDataIDLibrary/MeshDataIDLibrary.h"
@@ -12,15 +12,13 @@
 #include "MeshDataCreatorTools/MeshDataBufferUploader/MeshDataBufferUploader.h"
 #include "MeshDataCreatorTools/MeshDataBufferSRVHeapIndexGroupPackager/MeshDataBufferSRVHeapIndexGroupPackager.h"
 #include "MeshDataCreatorTools/MeshDataSRVHeapIndexGroupContainerBufferCreator/MeshDataSRVHeapIndexGroupContainerBufferCreator.h"
+#include "MeshDataCreatorTools/TransformMatrixContainerBufferCreator/TransformMatrixContainerBufferCreator.h"
 
 
 //外部
 #include "../../../Buffer/BufferContextDiplomat/BufferContextDiplomat.h"
 #include "../../../Buffer/BufferContextDiplomat/BufferToolLender/BufferToolLender.h"
 #include "../../../Buffer/BufferContextDiplomat/BufferToolLender/BufferToolLenderLicence.h"
-
-    ///2.MeshSlotAllocatorが必要数分のトランスフォームマトリックスバッファコンテナのインデックスを
-    ///vectorで渡す。この値も同様に各モデルがRootConstantsでGPUに転送する
 
 
 using namespace StructuredBufferDataDefinition;
@@ -68,6 +66,8 @@ void ModelContext::ModelDataCreator::CreateAllModelData
     ///を紐づける。後にこの値は各モデルがRootConstantsでGPUに転送する
     ///2.メッシュデータバッファのsrvHeapIndex群のコンテナを1つのストラクチャードバッファとして生成して
     ///アップロードし、MeshSlotAllocatorがそのバッファのsrvHeapIndexを保存する
+    ///3.TransformMatrixContainerのuploadStructuredBufferを作成。そのsrvHeapIndexをallocatorが保管する
+
 
     ///メッシュデータ生成数
     ///メッシュIDが指す先は一つのメッシュデータバッファのsrvheapIndex群であり、
@@ -133,8 +133,20 @@ void ModelContext::ModelDataCreator::CreateAllModelData
         allocator_
     );
 
-   auto& meshDataIDLibrary = allocator_->AccessMeshDataIDLibrary(ModelContext::ModelSlotAllocator::HandleLicence{});
-   meshDataIDLibrary.Log();
+
+    ///TransformMatrixのコンテナのUploadStructuredBufferを作成し、
+    ///そのsrvHeapIndexをallocatorが補完する
+    TransformMatrixContainerBufferCreator::Create
+    (
+        allocator_,
+        bufferCreator,
+        bufferCollector,
+        bufferDispatcher
+    );
+
+    //meshDataIDLibraryの中身をログ出力
+    auto& meshDataIDLibrary = allocator_->AccessMeshDataIDLibrary(ModelContext::ModelSlotAllocator::HandleLicence{});
+    meshDataIDLibrary.Log();
 }
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

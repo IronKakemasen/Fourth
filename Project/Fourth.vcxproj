@@ -347,6 +347,7 @@
     <ClCompile Include="Engine\LowerLayer\Resource\Model\ModelContainer\ModelContainer.cpp" />
     <ClCompile Include="Engine\LowerLayer\Resource\Model\CreateModelTools\ModelSlotAllocator\TransformMatrixSlot\TransformMatrixSlot.cpp" />
     <ClCompile Include="Engine\LowerLayer\Resource\Model\TestModelOKIBA.cpp" />
+    <ClCompile Include="Engine\LowerLayer\Resource\Model\CreateModelTools\ModelDataCreator\MeshDataCreatorTools\TransformMatrixContainerBufferCreator\TransformMatrixContainerBufferCreator.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Assets\Shared\ConstantBuffers.h" />
@@ -534,6 +535,7 @@
     <ClInclude Include="Engine\LowerLayer\Resource\Model\ModelContainer\ModelContainer.h" />
     <ClInclude Include="Engine\LowerLayer\Resource\Model\CreateModelTools\ModelSlotAllocator\TransformMatrixSlot\TransformMatrixSlot.h" />
     <ClInclude Include="Engine\LowerLayer\Resource\Model\TestModelOKIBA.h" />
+    <ClInclude Include="Engine\LowerLayer\Resource\Model\CreateModelTools\ModelDataCreator\MeshDataCreatorTools\TransformMatrixContainerBufferCreator\TransformMatrixContainerBufferCreator.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
