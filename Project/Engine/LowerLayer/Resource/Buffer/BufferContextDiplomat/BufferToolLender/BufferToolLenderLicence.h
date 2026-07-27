@@ -1,12 +1,12 @@
 #pragma once
 #include "BufferToolLender.h"
-#include "../../../Mesh/MeshContext.h"
+#include "../../../Mesh/ModelContext.h"
 
 struct BufferContext::ToolLender::BasicBufferManagementLicence
 {
 private:
 
-	friend class MeshContext::ModelDataCreator;
+	friend class ModelContext::ModelDataCreator;
 	explicit BasicBufferManagementLicence() = default;
 };
 

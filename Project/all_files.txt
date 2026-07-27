@@ -11348,8 +11348,9 @@ RenderPath::Pass::RequiredBufferInfo::RenderTarget BufferContext::BufferInfoExtr
 #include "CreateModelTools/ModelDataCreator/ModelDataCreator.h"
 #include "CreateModelTools/ModelSlotAllocator/ModelSlotAllocator.h"
 #include "CreateModelTools/ModelDataLoader/ModelDataLoader.h"
-#include "CreateModelTools/ModelAssembler/ModelAssembler.h"
+#include "CreateModelTools/ModelDescAssembler/ModelDescAssembler.h"
 #include "CreateModelTools/ModelCreator.h"
+#include "ModelContainer/ModelContainer.h"
 
 #include "MeshContextDiplomat/MeshContextExecutionAgent/MeshContextExecutionAgent.h"
 #include "MeshContextDiplomat/MeshContextDiplomat.h"
@@ -11370,16 +11371,20 @@ MeshContext::MeshContext(NexusFieldProof proof_,BufferContextDiplomat* bufferCon
 	std::unique_ptr<ModelDataLoader> modelDataLoader(std::make_unique<ModelDataLoader>(proof_));
 	Logger::Log("Instantiate: ModelDataLoader", fileName);
 
+	modelContainer.reset(new ModelContainer(proof_));
+	Logger::Log("Instantiate: modelContainer", fileName);
+
 	modelCreator.reset
 	(
 		new ModelCreator
 		(
 			proof_,
-			std::make_unique<ModelAssembler>(proof_, modelSlotAllocator.get())
+			std::make_unique<ModelDescAssembler>(proof_, modelSlotAllocator.get()),
+			modelContainer.get()
 		)
 	);
 
-	Logger::Log("Instantiate: ModelAssembler", fileName);
+	Logger::Log("Instantiate: ModelDescAssembler", fileName);
 	Logger::Log("Instantiate: ModelCreator", fileName);
 
 	diplomat.reset
@@ -11436,7 +11441,7 @@ public:
 	//モデルレジストリーファイルにあるモデルデータのバッファを生成する。
 	class ModelDataCreator;
 	//インスタンス化されたモデルクラスのモデルファイル名をもとに中身を構築してあげる
-	class ModelAssembler;
+	class ModelDescAssembler;
 	///モデルクラスを生成する
 	class ModelCreator;
 	//モデルのコンテナ
@@ -11462,6 +11467,7 @@ private:
 	std::unique_ptr<ModelDataCreator> modelDataCreator;
 	std::unique_ptr<ModelSlotAllocator> modelSlotAllocator;
 	std::unique_ptr<ModelCreator> modelCreator;
+	std::unique_ptr<ModelContainer> modelContainer;
 
 };
 
@@ -11491,12 +11497,17 @@ private:
 ========================================
 #include "PreCompileHeader.h"
 #include "ModelCreator.h"
+#include "../Model/Model.h"
+#include "ModelDescAssembler/ModelDescAssembler.h"
+#include "../ModelContainer/ModelContainer.h"
 
-#include "ModelAssembler/ModelAssembler.h"
 
-
-MeshContext::ModelCreator::ModelCreator(NexusFieldProof proof_, std::unique_ptr<MeshContext::ModelAssembler>&& modelAssembler_)
-	:modelAssembler(std::move(modelAssembler_))
+MeshContext::ModelCreator::ModelCreator
+(
+	NexusFieldProof proof_,
+	std::unique_ptr<MeshContext::ModelDescAssembler>&& modelAssembler_,
+	MeshContext::ModelContainer* modelContainer_
+) :modelDescAssembler(std::move(modelAssembler_)), modelContainer(modelContainer_)
 {
 
 }
@@ -11506,11 +11517,24 @@ Model* MeshContext::ModelCreator::Create
 (
 	std::string modelFileName_,
 	const std::vector<ModelDescription::Configurable>& modelDataConfigurables_,
-	std::string modelName_ = "nameLess"
+	std::string modelName_
 )
 {
+	//commonとuniqueのディスクリプション
+	auto commons_uniques = modelDescAssembler->Assemble(modelFileName_);
 
+	std::unique_ptr<Model> model = std::make_unique<Model>
+	(
+		modelDataConfigurables_,
+		commons_uniques.first,
+		commons_uniques.second,
+		modelName_ + std::to_string(numCreate++)
+	);
 
+	Model* modelPtr = model.get();
+
+	//実体はモデルコンテナが握る
+	modelContainer->Add(ModelContainer::AddLicence{}, std::move(model));
 
 	return nullptr;
 }
@@ -11531,7 +11555,12 @@ class MeshContext::ModelCreator
 {
 public:
 
-	ModelCreator(NexusFieldProof proof_, std::unique_ptr<MeshContext::ModelAssembler>&& modelAssembler_);
+	ModelCreator
+	(
+		NexusFieldProof proof_, 
+		std::unique_ptr<MeshContext::ModelDescAssembler>&& modelAssembler_,
+		MeshContext::ModelContainer* modelContainer_
+	);
 
 	Model* Create
 	(
@@ -11542,133 +11571,11 @@ public:
 
 private:
 
-	std::unique_ptr<MeshContext::ModelAssembler> modelAssembler;
-
+	//生成数。ネーミング用
+	UINT numCreate{};
+	std::unique_ptr<MeshContext::ModelDescAssembler> modelDescAssembler;
+	MeshContext::ModelContainer* modelContainer;
 };
-
-
-
-
-
-========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Mesh\CreateModelTools\ModelAssembler\ModelAssembler.cpp ===
-========================================
-#include "PreCompileHeader.h"
-#include "ModelAssembler.h"
-#include "../../Model/Model.h"
-#include "../../Model/ModelDescription.h"
-#include "../../CreateModelTools/ModelSlotAllocator/MeshDataIDLibrary/MeshDataIDLibrary.h"
-
-MeshContext::ModelAssembler::ModelAssembler
-(
-	NexusFieldProof proof_,
-	MeshContext::ModelSlotAllocator* slotAllocator_
-):slotAllocator(slotAllocator_)
-{
-
-}
-
-void MeshContext::ModelAssembler::Assemble(Model& dstModel_)
-{
-	auto& meshDataIDLib = slotAllocator->AccessMeshDataIDLibrary(MeshContext::ModelSlotAllocator::HandleLicence{});
-	const std::vector<MeshDataID>& meshDataIDs = meshDataIDLib.Find(dstModel_.fileName);
-	size_t const kNumMeshData = meshDataIDs.size();
-
-	PackCommonData(dstModel_, meshDataIDs, kNumMeshData);
-	PackUniqueData(dstModel_, kNumMeshData);
-
-}
-
-void MeshContext::ModelAssembler::PackCommonData
-(
-	Model& dstModel_,
-	const std::vector<MeshDataID>& meshDataIDs_,
-	size_t const kNumMeshData_
-)
-{
-
-	std::vector<ModelDescription::Common> commons;
-	commons.resize(kNumMeshData_);
-
-	for (size_t i = 0;i < kNumMeshData_;++i)
-	{
-		ModelDescription::Common common;
-		common.meshDataID = meshDataIDs_[i];
-
-		commons[i] = std::move(common);
-	}
-
-	dstModel_.modelDataCommons = std::move(commons);
-
-}
-
-void MeshContext::ModelAssembler::PackUniqueData
-(
-	Model& dstModel_,
-	size_t const kNumMeshData_
-)
-{
-	std::vector<ModelDescription::Unique> uniques;
-	uniques.resize(kNumMeshData_);
-
-	for (size_t i = 0;i < kNumMeshData_;++i)
-	{
-		
-		ModelDescription::Unique unique;
-		unique.dispatchedTransformedMatrixID =
-			slotAllocator->AllocateSlot<MeshContext::ModelSlotAllocator::SlotType::kTransformMatrix>
-			(MeshContext::ModelSlotAllocator::AllocateLicence{});
-
-		uniques[i] = std::move(unique);
-
-	}
-
-	dstModel_.modelDataUniques = std::move(uniques);
-}
-
-
-
-
-
-========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Mesh\CreateModelTools\ModelAssembler\ModelAssembler.h ===
-========================================
-#pragma once
-#include "../../MeshContext.h"
-
-class Model;
-
-class MeshContext::ModelAssembler
-{
-public:
-
-	ModelAssembler
-	(
-		NexusFieldProof proof_,
-		MeshContext::ModelSlotAllocator* slotAllocator_
-	);
-
-	void Assemble(Model& dstModel_);
-
-private:
-
-	void PackCommonData
-	(
-		Model& dstModel_, 
-		const std::vector<MeshDataID>& meshDataIDs_,
-		size_t const kNumMeshData_
-	);
-
-	void PackUniqueData
-	(
-		Model& dstModel_,
-		size_t const kNumMeshData_
-	);
-
-	MeshContext::ModelSlotAllocator* slotAllocator;
-
-};
-
 
 
 
@@ -11694,8 +11601,9 @@ private:
 
 
 //外部
-#include "../../../Buffer/BufferContextDiplomat/BufferToolLender/BufferToolLender.h"
 #include "../../../Buffer/BufferContextDiplomat/BufferContextDiplomat.h"
+#include "../../../Buffer/BufferContextDiplomat/BufferToolLender/BufferToolLender.h"
+#include "../../../Buffer/BufferContextDiplomat/BufferToolLender/BufferToolLenderLicence.h"
 
     ///2.MeshSlotAllocatorが必要数分のトランスフォームマトリックスバッファコンテナのインデックスを
     ///vectorで渡す。この値も同様に各モデルがRootConstantsでGPUに転送する
@@ -13125,6 +13033,117 @@ private:
 
 
 ========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Mesh\CreateModelTools\ModelDescAssembler\ModelDescAssembler.cpp ===
+========================================
+#include "PreCompileHeader.h"
+#include "ModelDescAssembler.h"
+#include "../../CreateModelTools/ModelSlotAllocator/MeshDataIDLibrary/MeshDataIDLibrary.h"
+
+MeshContext::ModelDescAssembler::ModelDescAssembler
+(
+	NexusFieldProof proof_,
+	MeshContext::ModelSlotAllocator* slotAllocator_
+):slotAllocator(slotAllocator_)
+{
+
+}
+
+MeshContext::ModelDescAssembler::ModelDescSet MeshContext::ModelDescAssembler::Assemble(std::string modelFileName_)
+{
+	auto& meshDataIDLib = slotAllocator->AccessMeshDataIDLibrary(MeshContext::ModelSlotAllocator::HandleLicence{});
+	const std::vector<MeshDataID>& meshDataIDs = meshDataIDLib.Find(modelFileName_);
+	size_t const kNumMeshData = meshDataIDs.size();
+
+	return std::make_pair(PackCommonData(meshDataIDs, kNumMeshData), PackUniqueData(kNumMeshData));
+}
+
+std::vector<ModelDescription::Common> MeshContext::ModelDescAssembler::PackCommonData
+(
+	const std::vector<MeshDataID>& meshDataIDs_,
+	size_t const kNumMeshData_
+)
+{
+
+	std::vector<ModelDescription::Common> commons;
+	commons.resize(kNumMeshData_);
+
+	for (size_t i = 0;i < kNumMeshData_;++i)
+	{
+		ModelDescription::Common common;
+		common.meshDataID = meshDataIDs_[i];
+
+		commons[i] = std::move(common);
+	}
+
+	return commons;
+}
+
+std::vector<ModelDescription::Unique> MeshContext::ModelDescAssembler::PackUniqueData(size_t const kNumMeshData_)
+{
+	std::vector<ModelDescription::Unique> uniques;
+	uniques.resize(kNumMeshData_);
+
+	for (size_t i = 0;i < kNumMeshData_;++i)
+	{
+		
+		ModelDescription::Unique unique;
+		unique.dispatchedTransformedMatrixID =
+			slotAllocator->AllocateSlot<MeshContext::ModelSlotAllocator::SlotType::kTransformMatrix>
+			(MeshContext::ModelSlotAllocator::AllocateLicence{});
+
+		uniques[i] = std::move(unique);
+
+	}
+
+	return uniques;
+}
+
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Mesh\CreateModelTools\ModelDescAssembler\ModelDescAssembler.h ===
+========================================
+#pragma once
+#include "../../MeshContext.h"
+#include "../../Model/ModelDescription.h"
+
+class MeshContext::ModelDescAssembler
+{
+	using ModelDescSet = std::pair<std::vector<ModelDescription::Common>, std::vector<ModelDescription::Unique>>;
+
+public:
+
+	ModelDescAssembler
+	(
+		NexusFieldProof proof_,
+		MeshContext::ModelSlotAllocator* slotAllocator_
+	);
+
+	//モデルクラスのConfigurable以外のディスクリプションを作ってあげる
+	ModelDescSet Assemble(std::string modelFileName_);
+
+private:
+
+	std::vector<ModelDescription::Common> PackCommonData
+	(
+		const std::vector<MeshDataID>& meshDataIDs_,
+		size_t const kNumMeshData_
+	);
+
+	std::vector<ModelDescription::Unique> PackUniqueData(size_t const kNumMeshData_);
+
+	MeshContext::ModelSlotAllocator* slotAllocator;
+
+};
+
+
+
+
+
+
+========================================
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Mesh\CreateModelTools\ModelSlotAllocator\ModelSlotAllocator.cpp ===
 ========================================
 #include "PreCompileHeader.h"
@@ -13246,7 +13265,7 @@ struct MeshContext::ModelSlotAllocator::HandleLicence
 private:
 
 	friend class ModelDataCreator;
-	friend class ModelAssembler;
+	friend class ModelDescAssembler;
 	explicit HandleLicence() = default;
 };
 
@@ -13254,7 +13273,7 @@ struct MeshContext::ModelSlotAllocator::AllocateLicence
 {
 private:
 
-	friend class ModelAssembler;
+	friend class ModelDescAssembler;
 	explicit AllocateLicence() = default;
 };
 
@@ -13485,15 +13504,19 @@ private:
 
 Model::Model
 (
-	const std::vector<ModelDescription::Configurable>& modelDataConfigurables_,
-	const std::vector<ModelDescription::Unique>& modelDataUniques_,
-	const std::vector<ModelDescription::Common>& modelDataCommons_,
+	const std::vector<ModelDescription::Configurable>& modelDescConfigurables_,
+	const std::vector<ModelDescription::Common>& modelDescCommons_,
+	const std::vector<ModelDescription::Unique>& modelDescUniques_,
 	std::string modelName_
-) :modelDataConfigurables(modelDataConfigurables_), modelDataUniques(modelDataUniques_), modelDataCommons(modelDataCommons_), modelName(modelName_)
+) :modelDescConfigurables(modelDescConfigurables_), modelDescUniques(modelDescUniques_), modelDescCommons(modelDescCommons_), modelName(modelName_)
 {
 	
 }
 
+std::string Model::WatchName()const
+{
+	return modelName;
+}
 
 
 
@@ -13510,22 +13533,22 @@ public:
 
 	Model
 	(
-		const std::vector<ModelDescription::Configurable>& modelDataConfigurables_,
-		const std::vector<ModelDescription::Unique>& modelDataUniques_,
-		const std::vector<ModelDescription::Common>& modelDataCommons_,
+		const std::vector<ModelDescription::Configurable>& modelDescConfigurables_,
+		const std::vector<ModelDescription::Common>& modelDescCommons_,
+		const std::vector<ModelDescription::Unique>& modelDescUniques_,
 		std::string modelName_
 	);
 
+	std::string WatchName()const;
 
 private:
 
-	friend class MeshContext::ModelAssembler;
-
-	std::string modelName ;
-	std::vector<ModelDescription::Common> modelDataCommons;
-	std::vector<ModelDescription::Unique> modelDataUniques;
+	//ModelDescAssemblerに設定してもらう
+	std::vector<ModelDescription::Common> modelDescCommons;
+	std::vector<ModelDescription::Unique> modelDescUniques;
 	//これだけは自分で決める
-	std::vector<ModelDescription::Configurable> modelDataConfigurables;
+	std::string modelName;
+	std::vector<ModelDescription::Configurable> modelDescConfigurables;
 
 };
 
@@ -13728,19 +13751,30 @@ struct StandardVertex
 #include "../Model/Model.h"
 
 
+namespace
+{
+	auto const fileName = "ModelContainer.cpp";
+}
+
 MeshContext::ModelContainer::ModelContainer(NexusFieldProof proof_)
+{
+
+}
+
+MeshContext::ModelContainer::~ModelContainer()
 {
 
 }
 
 void MeshContext::ModelContainer::Add(AddLicence addLicence_, std::unique_ptr<Model>&& model_)
 {
-
+	const auto& model =  container.emplace_back(std::move(model_));
+	Logger::Log("Add: " + model->WatchName(), fileName);
 }
 
 const std::vector<std::unique_ptr<Model>>& MeshContext::ModelContainer::Access()const
 {
-	return modelContainer;
+	return container;
 }
 
 
@@ -13761,13 +13795,15 @@ public:
 	struct AddLicence;
 
 	ModelContainer(NexusFieldProof proof_);
+	~ModelContainer();
+
 
 	void Add(AddLicence addLicence_,std::unique_ptr<Model>&& model_);
 	const std::vector<std::unique_ptr<Model>>& Access()const;
 
 private:
 
-	std::vector<std::unique_ptr<Model>> modelContainer;
+	std::vector<std::unique_ptr<Model>> container;
 
 };
 
