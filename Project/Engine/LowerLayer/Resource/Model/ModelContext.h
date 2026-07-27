@@ -4,11 +4,13 @@ class Nexus;
 class BufferContextDiplomat;
 class MeshContextDiplomat;
 
+///tesutooooooooooooooooooooooooooooooooooo
+struct TestModelOKIBA;
+
 class ModelContext
 {
 	//モデルファイルからモデル情報を読み込む
 	class ModelDataLoader;
-	class ModelSlotAllocator;
 
 public:
 	//モデルレジストリーファイルにあるモデルデータのバッファを生成する。
@@ -19,6 +21,7 @@ public:
 	class ModelCreator;
 	//モデルのコンテナ
 	class ModelContainer;
+	class ModelSlotAllocator;
 
 	//代行者
 	class ExecutionAgent;
@@ -33,15 +36,15 @@ public:
 
 	//外交官
 	std::unique_ptr<MeshContextDiplomat> diplomat;
+	std::unique_ptr<ModelCreator> modelCreator;
 
 private:
 
 
 	std::unique_ptr<ModelDataCreator> modelDataCreator;
 	std::unique_ptr<ModelSlotAllocator> modelSlotAllocator;
-	std::unique_ptr<ModelCreator> modelCreator;
 	std::unique_ptr<ModelContainer> modelContainer;
-
+	std::unique_ptr<TestModelOKIBA> testModelOKIBA;
 };
 
 struct ModelContext::NexusFieldProof

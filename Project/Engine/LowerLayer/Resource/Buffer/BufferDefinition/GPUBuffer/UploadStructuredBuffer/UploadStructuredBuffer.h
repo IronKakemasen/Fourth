@@ -3,10 +3,12 @@
 
 
 //読み書きStructuredBuffer
-class UploadStructuredBuffer final : public GPUBufferBehavior, IReadable
+class UploadStructuredBuffer final : public GPUBufferBehavior, public IReadable,public IWritableCPU
 {
 
 public:
+
+	~UploadStructuredBuffer();
 
 	UploadStructuredBuffer
 	(
@@ -17,7 +19,6 @@ public:
 	);
 
 	virtual SRVHeapIndex OutProperSRVHeapIndex(int frameIndex_ = 0)const override;
-
 
 };
 

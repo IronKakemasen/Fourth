@@ -1,5 +1,15 @@
 #pragma once
-class TestModelOKIBA
+#include "ModelContext.h"
+
+class Model;
+
+
+struct TestModelOKIBA
 {
+	TestModelOKIBA(ModelContext::ModelCreator* modelCreator_);
+
+	Model* cube;
+	Model* player;
+
 };
 

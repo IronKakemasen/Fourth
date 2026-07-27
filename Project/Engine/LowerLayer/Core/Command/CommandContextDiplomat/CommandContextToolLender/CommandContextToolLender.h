@@ -13,7 +13,6 @@ class CommandContext::ToolLender
 	struct CommandQueueAccessLicence;
 	struct ResourceUploaderAccessLicence;
 
-
 	///貸し出せるツール
 	std::tuple<ID3D12CommandQueue*, CommandContext::ResourceUploader*> tools;
 

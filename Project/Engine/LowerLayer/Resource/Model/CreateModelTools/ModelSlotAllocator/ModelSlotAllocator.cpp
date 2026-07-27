@@ -3,6 +3,11 @@
 #include "MeshDataIDLibrary/MeshDataIDLibrary.h"
 #include "TransformMatrixSlot/TransformMatrixSlot.h"
 
+
+//外部
+#include "../../../Buffer/BufferContextDiplomat/BufferContextDiplomat.h"
+#include "../../../Buffer/BufferContextDiplomat/BufferToolLender/BufferToolLender.h"
+
 namespace
 {
 	auto const fileName = "ModelSlotAllocator.cpp";
@@ -29,6 +34,7 @@ ModelContext::ModelSlotAllocator::~ModelSlotAllocator()
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 void ModelContext::ModelSlotAllocator::SetMeshDataSRVHeapIndexGroupContainerSRVHeapIndex(HandleLicence licence_, SRVHeapIndex index_)
 {
+	Logger::Log("Set: meshDataSRVHeapIndexGroupContainerSRVHeapIndex", fileName);
 	meshDataSRVHeapIndexGroupContainerSRVHeapIndex = index_;
 }
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -46,6 +52,18 @@ uint32_t ModelContext::ModelSlotAllocator::AllocateSlot
 ModelContext::ModelSlotAllocator::MeshDataIDLibrary& ModelContext::ModelSlotAllocator::AccessMeshDataIDLibrary(HandleLicence licence_)
 {
 	return *meshDataIDLibrary.get();
+}
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+void ModelContext::ModelSlotAllocator::SetTransformMatrixConatinerSrvHeapIndices
+(
+	HandleLicence licence_,
+	std::array<SRVHeapIndex, (UINT)ProjectConfig::Render::NumBuffer::kDoubleBuffer> indices_
+)
+{
+	Logger::Log("Set: doubleTransformMatrixContainerSRVHeapIndex", fileName);
+	doubleTransformMatrixContainerSRVHeapIndex = indices_;
 }
 
 

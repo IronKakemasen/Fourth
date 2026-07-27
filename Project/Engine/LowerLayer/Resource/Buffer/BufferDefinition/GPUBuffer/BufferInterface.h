@@ -55,6 +55,22 @@ struct IUpload
 	virtual D3D12_RESOURCE_BARRIER CreateBarrierAsCopy() = 0;
 };
 
+//CPUから書き込み可能
+struct IWritableCPU
+{
+	template<typename DataType>
+	inline auto* GetMappedPtr(UINT frameIndex_) { return static_cast<DataType*>(mappedPtrs[frameIndex_]); }
+
+	virtual ~IWritableCPU() {};
+
+protected:
+
+	std::array<void*, (UINT)ProjectConfig::Render::NumBuffer::kDoubleBuffer> mappedPtrs;
+	//初期化でマッピングする
+	void Map(std::array<ID3D12Resource*, (UINT)ProjectConfig::Render::NumBuffer::kDoubleBuffer> resources_);
+
+};
+
 //ディプスバッファのインターフェース
 struct IDepthBuffer:IDualRole
 {

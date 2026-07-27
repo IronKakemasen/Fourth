@@ -4,6 +4,11 @@
 #include "ModelDescAssembler/ModelDescAssembler.h"
 #include "../ModelContainer/ModelContainer.h"
 
+namespace
+{
+	auto const fileName = "ModelCreator.cpp";
+}
+
 
 ModelContext::ModelCreator::ModelCreator
 (
@@ -32,6 +37,15 @@ Model* ModelContext::ModelCreator::Create
 		commons_uniques.first,
 		commons_uniques.second,
 		modelName_ + "[" + std::to_string(numCreate++) + "]"
+	);
+
+	//比がおなじかチェックしておく
+	ErrorMessageOutput::Assert::DetectError
+	(
+		((modelDataConfigurables_.size() == commons_uniques.first.size()) &&
+		(modelDataConfigurables_.size() == commons_uniques.second.size())),
+		"なんかサイズがちげーど？",
+		fileName
 	);
 
 	Model* modelPtr = model.get();

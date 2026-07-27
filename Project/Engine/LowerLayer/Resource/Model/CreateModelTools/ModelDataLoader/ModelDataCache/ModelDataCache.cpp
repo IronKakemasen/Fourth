@@ -1,6 +1,6 @@
 #include "PreCompileHeader.h"
 #include "ModelDataCache.h"
-#include "../../../Model/ModelData/ModelDataAggregate.h"
+#include "../../../ModelStructure/ModelData/ModelDataAggregate.h"
 
 
 ModelContext::ModelDataLoader::ModelDataCache::ModelDataCache(NexusFieldProof proof_)

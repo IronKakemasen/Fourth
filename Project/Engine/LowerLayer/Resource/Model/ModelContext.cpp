@@ -6,10 +6,15 @@
 #include "CreateModelTools/ModelDataLoader/ModelDataLoader.h"
 #include "CreateModelTools/ModelDescAssembler/ModelDescAssembler.h"
 #include "CreateModelTools/ModelCreator.h"
+
 #include "ModelContainer/ModelContainer.h"
 
 #include "MeshContextDiplomat/MeshContextExecutionAgent/MeshContextExecutionAgent.h"
 #include "MeshContextDiplomat/MeshContextDiplomat.h"
+
+
+#include "TestModelOKIBA.h"
+
 
 namespace
 {
@@ -65,6 +70,9 @@ ModelContext::ModelContext(NexusFieldProof proof_,BufferContextDiplomat* bufferC
 	);
 	Logger::Log("Instantiate: ModelDataCreator", fileName);
 
+
+	///てすとおおおおお
+	testModelOKIBA.reset(new TestModelOKIBA(modelCreator.get()));
 
 	Logger::End("ModelContext: Constructor");
 

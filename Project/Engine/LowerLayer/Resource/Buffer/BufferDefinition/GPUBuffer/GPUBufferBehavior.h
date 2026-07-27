@@ -20,10 +20,12 @@ class GPUBufferBehavior
 		Microsoft::WRL::ComPtr<ID3D12Resource> resource;
 		//各ビューのインデックス
 		std::unordered_map<ViewType, IndexSet> heapIndicesContainer;
-		//ステートを遷移するためのバリアを生成
-		D3D12_RESOURCE_BARRIER CreateBarrier(D3D12_RESOURCE_STATES after_);
 		//リソースステート
 		D3D12_RESOURCE_STATES curResourceState;
+
+		//ステートを遷移するためのバリアを生成
+		D3D12_RESOURCE_BARRIER CreateBarrier(D3D12_RESOURCE_STATES after_);
+		void UnMap();
 	};
 
 	//なまえ

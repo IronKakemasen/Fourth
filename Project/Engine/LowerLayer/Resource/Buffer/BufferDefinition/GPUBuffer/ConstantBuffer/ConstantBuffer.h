@@ -4,9 +4,11 @@
 
 
 //定数バッファクラス
-class ConstantBuffer final : public GPUBufferBehavior
+class ConstantBuffer final : public GPUBufferBehavior, public IWritableCPU
 {
 public:
+
+	~ConstantBuffer();
 
 	ConstantBuffer
 	(
