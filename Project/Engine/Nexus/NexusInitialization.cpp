@@ -22,9 +22,9 @@
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 #include "../LowerLayer/Resource/RootSignature/RootSignatureContext.h"
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-#include "../LowerLayer/Resource/Mesh/MeshContext.h"
-#include "../LowerLayer/Resource/Mesh/MeshContextDiplomat/MeshContextDiplomat.h"
-#include "../LowerLayer/Resource/Mesh/MeshContextDiplomat/MeshContextExecutionAgent/MeshContextExecutionAgent.h"
+#include "../LowerLayer/Resource/Model/ModelContext.h"
+#include "../LowerLayer/Resource/Model/MeshContextDiplomat/MeshContextDiplomat.h"
+#include "../LowerLayer/Resource/Model/MeshContextDiplomat/MeshContextExecutionAgent/MeshContextExecutionAgent.h"
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 #include "../LowerLayer/Render/RenderContext.h"
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -175,8 +175,8 @@ void Nexus::Init<Nexus::InitSequence::kRenderContext>()
 template<>
 void Nexus::Init<Nexus::InitSequence::kMeshContext>()
 {
-	meshContext.reset(new MeshContext(MeshContext::NexusFieldProof{},bufferContext->diplomat.get()));
-	Logger::Log("Instantiate: MeshContext", fileName);
+	modelContext.reset(new ModelContext(ModelContext::NexusFieldProof{},bufferContext->diplomat.get()));
+	Logger::Log("Instantiate: ModelContext", fileName);
 }
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -217,10 +217,10 @@ void Nexus::Init<Nexus::InitSequence::kUploadAllResources>()
 template<>
 void Nexus::Init<Nexus::InitSequence::kDeleteModelDataCache>()
 {
-	//meshContextの代行者
-	auto* agent = meshContext->diplomat->Access<MeshContext::ExecutionAgent>();
+	//ModelContextの代行者
+	auto* agent = modelContext->diplomat->Access<ModelContext::ExecutionAgent>();
 	//モデルデータのキャッシュを削除
-	agent->DeleteModelDataCache(MeshContext::NexusFieldProof{});
+	agent->DeleteModelDataCache(ModelContext::NexusFieldProof{});
 
 }
 

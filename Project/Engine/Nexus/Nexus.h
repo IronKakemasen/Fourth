@@ -10,7 +10,7 @@ class ShaderContext;
 class PSO_Context;
 class RootSignatureContext;
 class RenderContext;
-class MeshContext;
+class ModelContext;
 
 
 //交易場
@@ -80,7 +80,7 @@ private:
 	//PSOの管理、描画パスの構築
 	std::unique_ptr<RenderContext> renderContext;
 	//モデルクラスの生成、管理
-	std::unique_ptr<MeshContext> meshContext;
+	std::unique_ptr<ModelContext> modelContext;
 
 	
 	//各Contextクラスの具現化、初期化を行う
