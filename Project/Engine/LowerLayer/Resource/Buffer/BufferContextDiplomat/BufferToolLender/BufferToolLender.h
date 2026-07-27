@@ -1,6 +1,5 @@
 #pragma once
 #include "../../BufferContext.h"
-#include "../../../Mesh/MeshContext.h"
 
 class BufferContext::ToolLender
 {
@@ -46,14 +45,6 @@ public:
 
 };
 
-
-struct BufferContext::ToolLender::BasicBufferManagementLicence
-{
-private:
-
-	friend class MeshContext::ModelDataCreator;
-	explicit BasicBufferManagementLicence() = default;
-};
 
 
 template<>

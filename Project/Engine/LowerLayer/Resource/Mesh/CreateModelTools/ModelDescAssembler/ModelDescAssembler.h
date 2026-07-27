@@ -1,34 +1,28 @@
 #pragma once
 #include "../../MeshContext.h"
+#include "../../Model/ModelDescription.h"
 
-class Model;
-
-class MeshContext::ModelAssembler
+class MeshContext::ModelDescAssembler
 {
 public:
 
-	ModelAssembler
+	ModelDescAssembler
 	(
 		NexusFieldProof proof_,
 		MeshContext::ModelSlotAllocator* slotAllocator_
 	);
 
-	void Assemble(Model& dstModel_);
+	void Assemble(std::string modelFileName_);
 
 private:
 
-	void PackCommonData
+	std::vector<ModelDescription::Common> PackCommonData
 	(
-		Model& dstModel_, 
 		const std::vector<MeshDataID>& meshDataIDs_,
 		size_t const kNumMeshData_
 	);
 
-	void PackUniqueData
-	(
-		Model& dstModel_,
-		size_t const kNumMeshData_
-	);
+	std::vector<ModelDescription::Unique> PackUniqueData(size_t const kNumMeshData_);
 
 	MeshContext::ModelSlotAllocator* slotAllocator;
 

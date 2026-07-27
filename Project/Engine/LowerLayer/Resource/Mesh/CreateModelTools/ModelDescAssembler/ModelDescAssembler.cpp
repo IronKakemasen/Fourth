@@ -1,10 +1,8 @@
 #include "PreCompileHeader.h"
-#include "ModelAssembler.h"
-#include "../../Model/Model.h"
-#include "../../Model/ModelDescription.h"
+#include "ModelDescAssembler.h"
 #include "../../CreateModelTools/ModelSlotAllocator/MeshDataIDLibrary/MeshDataIDLibrary.h"
 
-MeshContext::ModelAssembler::ModelAssembler
+MeshContext::ModelDescAssembler::ModelDescAssembler
 (
 	NexusFieldProof proof_,
 	MeshContext::ModelSlotAllocator* slotAllocator_
@@ -13,20 +11,19 @@ MeshContext::ModelAssembler::ModelAssembler
 
 }
 
-void MeshContext::ModelAssembler::Assemble(Model& dstModel_)
+void MeshContext::ModelDescAssembler::Assemble(std::string modelFileName_)
 {
 	auto& meshDataIDLib = slotAllocator->AccessMeshDataIDLibrary(MeshContext::ModelSlotAllocator::HandleLicence{});
-	const std::vector<MeshDataID>& meshDataIDs = meshDataIDLib.Find(dstModel_.fileName);
+	const std::vector<MeshDataID>& meshDataIDs = meshDataIDLib.Find(modelFileName_);
 	size_t const kNumMeshData = meshDataIDs.size();
 
-	PackCommonData(dstModel_, meshDataIDs, kNumMeshData);
-	PackUniqueData(dstModel_, kNumMeshData);
+	PackCommonData(meshDataIDs, kNumMeshData);
+	PackUniqueData(kNumMeshData);
 
 }
 
-void MeshContext::ModelAssembler::PackCommonData
+std::vector<ModelDescription::Common> MeshContext::ModelDescAssembler::PackCommonData
 (
-	Model& dstModel_,
 	const std::vector<MeshDataID>& meshDataIDs_,
 	size_t const kNumMeshData_
 )
@@ -40,18 +37,13 @@ void MeshContext::ModelAssembler::PackCommonData
 		ModelDescription::Common common;
 		common.meshDataID = meshDataIDs_[i];
 
-		commons.emplace_back(common);
+		commons[i] = std::move(common);
 	}
 
-	dstModel_.modelDataCommons = std::move(commons);
-
+	return commons;
 }
 
-void MeshContext::ModelAssembler::PackUniqueData
-(
-	Model& dstModel_,
-	size_t const kNumMeshData_
-)
+std::vector<ModelDescription::Unique> MeshContext::ModelDescAssembler::PackUniqueData(size_t const kNumMeshData_)
 {
 	std::vector<ModelDescription::Unique> uniques;
 	uniques.resize(kNumMeshData_);
@@ -64,9 +56,10 @@ void MeshContext::ModelAssembler::PackUniqueData
 			slotAllocator->AllocateSlot<MeshContext::ModelSlotAllocator::SlotType::kTransformMatrix>
 			(MeshContext::ModelSlotAllocator::AllocateLicence{});
 
-		uniques.emplace_back(unique);
+		uniques[i] = std::move(unique);
+
 	}
 
-	dstModel_.modelDataUniques = std::move(uniques);
+	return uniques;
 }
 

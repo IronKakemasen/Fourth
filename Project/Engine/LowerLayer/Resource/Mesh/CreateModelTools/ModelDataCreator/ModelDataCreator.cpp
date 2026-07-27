@@ -15,8 +15,9 @@
 
 
 //外部
-#include "../../../Buffer/BufferContextDiplomat/BufferToolLender/BufferToolLender.h"
 #include "../../../Buffer/BufferContextDiplomat/BufferContextDiplomat.h"
+#include "../../../Buffer/BufferContextDiplomat/BufferToolLender/BufferToolLender.h"
+#include "../../../Buffer/BufferContextDiplomat/BufferToolLender/BufferToolLenderLicence.h"
 
     ///2.MeshSlotAllocatorが必要数分のトランスフォームマトリックスバッファコンテナのインデックスを
     ///vectorで渡す。この値も同様に各モデルがRootConstantsでGPUに転送する

@@ -1,9 +1,12 @@
 #include "PreCompileHeader.h"
 #include "MeshContext.h"
+
 #include "CreateModelTools/ModelDataCreator/ModelDataCreator.h"
 #include "CreateModelTools/ModelSlotAllocator/ModelSlotAllocator.h"
 #include "CreateModelTools/ModelDataLoader/ModelDataLoader.h"
-#include "MeshContextRuntime/ModelAssembler/ModelAssembler.h"
+#include "CreateModelTools/ModelDescAssembler/ModelDescAssembler.h"
+#include "CreateModelTools/ModelCreator.h"
+
 #include "MeshContextDiplomat/MeshContextExecutionAgent/MeshContextExecutionAgent.h"
 #include "MeshContextDiplomat/MeshContextDiplomat.h"
 
@@ -23,8 +26,17 @@ MeshContext::MeshContext(NexusFieldProof proof_,BufferContextDiplomat* bufferCon
 	std::unique_ptr<ModelDataLoader> modelDataLoader(std::make_unique<ModelDataLoader>(proof_));
 	Logger::Log("Instantiate: ModelDataLoader", fileName);
 
-	modelAssembler.reset(new ModelAssembler(proof_, modelSlotAllocator.get()));
-	Logger::Log("Instantiate: ModelAssembler", fileName);
+	modelCreator.reset
+	(
+		new ModelCreator
+		(
+			proof_,
+			std::make_unique<ModelDescAssembler>(proof_, modelSlotAllocator.get())
+		)
+	);
+
+	Logger::Log("Instantiate: ModelDescAssembler", fileName);
+	Logger::Log("Instantiate: ModelCreator", fileName);
 
 	diplomat.reset
 	(
