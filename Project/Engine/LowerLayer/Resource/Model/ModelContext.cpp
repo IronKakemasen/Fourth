@@ -9,8 +9,9 @@
 
 #include "ModelContainer/ModelContainer.h"
 
-#include "MeshContextDiplomat/MeshContextExecutionAgent/MeshContextExecutionAgent.h"
-#include "MeshContextDiplomat/MeshContextDiplomat.h"
+#include "ModelContextDiplomat/ModelContextExecutionAgent/ModelContextExecutionAgent.h"
+#include "ModelContextDiplomat/ModelContextToolLender/ModelContextToolLender.h"
+#include "ModelContextDiplomat/ModelContextDiplomat.h"
 
 
 #include "TestModelOKIBA.h"
@@ -50,14 +51,16 @@ ModelContext::ModelContext(NexusFieldProof proof_,BufferContextDiplomat* bufferC
 
 	diplomat.reset
 	(
-		new MeshContextDiplomat
+		new ModelContextDiplomat
 		(
 			proof_,
-			std::make_unique<ExecutionAgent>(proof_, modelDataLoader.get())
+			std::make_unique<ExecutionAgent>(proof_, modelDataLoader.get()),
+			std::make_unique<ToolLender>(proof_, modelContainer.get())
 		)
 	);
+	Logger::Log("Instantiate: ToolLender", fileName);
 	Logger::Log("Instantiate: ExecutionAgent", fileName);
-	Logger::Log("Instantiate: MeshContextDiplomat", fileName);
+	Logger::Log("Instantiate: ModelContextDiplomat", fileName);
 
 	modelDataCreator.reset
 	(

@@ -31,7 +31,7 @@ TestModelOKIBA::TestModelOKIBA(ModelContext::ModelCreator* modelCreator_)
 	cC.materialType = ShaderPathComponent::MaterialType::kStandard;
 
 	std::vector<ModelDescription::Configurable> cubeC;
-	playerC.emplace_back(std::move(cC));
+	cubeC.emplace_back(std::move(cC));
 
 	cube = modelCreator_->Create("CubeGltf", cubeC,"Cube");
 

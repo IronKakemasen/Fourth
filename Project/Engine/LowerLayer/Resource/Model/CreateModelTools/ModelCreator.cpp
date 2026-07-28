@@ -36,7 +36,7 @@ Model* ModelContext::ModelCreator::Create
 		modelDataConfigurables_,
 		commons_uniques.first,
 		commons_uniques.second,
-		modelName_ + "[" + std::to_string(numCreate++) + "]"
+		modelName_ + std::to_string(numCreate++)
 	);
 
 	//比がおなじかチェックしておく

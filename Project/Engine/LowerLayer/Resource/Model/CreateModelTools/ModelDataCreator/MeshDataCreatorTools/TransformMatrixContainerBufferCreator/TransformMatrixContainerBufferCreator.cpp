@@ -32,7 +32,7 @@ void ModelContext::ModelDataCreator::TransformMatrixContainerBufferCreator::Crea
 		0
 	);
 
-	BufferUniqueID TransformMatrixContainerBufferID = bufferCreator_->Create(desc,"TransformMatrix");
+	BufferUniqueID TransformMatrixContainerBufferID = bufferCreator_->Create(desc,"TransformMatrixContainer");
 	bufferCollector_->Distribute();
 
 	//SRVHeapIndexを抽出

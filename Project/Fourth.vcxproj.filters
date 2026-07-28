@@ -474,10 +474,10 @@
     <ClCompile Include="Engine\LowerLayer\Resource\Model\CreateModelTools\ModelDataCreator\MeshDataCreatorTools\MeshDataSRVHeapIndexGroupContainerBufferCreator\MeshDataSRVHeapIndexGroupContainerBufferCreator.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="Engine\LowerLayer\Resource\Model\MeshContextDiplomat\MeshContextDiplomat.cpp">
+    <ClCompile Include="Engine\LowerLayer\Resource\Model\ModelContextDiplomat\ModelContextDiplomat.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="Engine\LowerLayer\Resource\Model\MeshContextDiplomat\MeshContextExecutionAgent\MeshContextExecutionAgent.cpp">
+    <ClCompile Include="Engine\LowerLayer\Resource\Model\ModelContextDiplomat\ModelContextExecutionAgent\ModelContextExecutionAgent.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
     <ClCompile Include="Engine\LowerLayer\Resource\Model\CreateModelTools\ModelSlotAllocator\MeshDataIDLibrary\MeshDataIDLibrary.cpp">
@@ -496,6 +496,12 @@
       <Filter>ソース ファイル</Filter>
     </ClCompile>
     <ClCompile Include="Engine\LowerLayer\Resource\Model\TestModelOKIBA.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\LowerLayer\Resource\Model\CreateModelTools\ModelDataCreator\MeshDataCreatorTools\TransformMatrixContainerBufferCreator\TransformMatrixContainerBufferCreator.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\LowerLayer\Resource\Model\ModelContextDiplomat\ModelContextToolLender\ModelContextToolLender.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
   </ItemGroup>
@@ -1025,10 +1031,10 @@
     <ClInclude Include="Engine\LowerLayer\Resource\Model\CreateModelTools\ModelDataCreator\MeshDataCreatorTools\MeshDataSRVHeapIndexGroupContainerBufferCreator\MeshDataSRVHeapIndexGroupContainerBufferCreator.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\LowerLayer\Resource\Model\MeshContextDiplomat\MeshContextDiplomat.h">
+    <ClInclude Include="Engine\LowerLayer\Resource\Model\ModelContextDiplomat\ModelContextDiplomat.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\LowerLayer\Resource\Model\MeshContextDiplomat\MeshContextExecutionAgent\MeshContextExecutionAgent.h">
+    <ClInclude Include="Engine\LowerLayer\Resource\Model\ModelContextDiplomat\ModelContextExecutionAgent\ModelContextExecutionAgent.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
     <ClInclude Include="Engine\LowerLayer\Resource\Model\CreateModelTools\ModelSlotAllocator\MeshDataIDLibrary\MeshDataIDLibrary.h">
@@ -1053,6 +1059,15 @@
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
     <ClInclude Include="Engine\LowerLayer\Resource\Model\TestModelOKIBA.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\LowerLayer\Resource\Model\CreateModelTools\ModelDataCreator\MeshDataCreatorTools\TransformMatrixContainerBufferCreator\TransformMatrixContainerBufferCreator.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\LowerLayer\Resource\Model\ModelContextDiplomat\ModelContextToolLender\ModelContextToolLender.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\LowerLayer\Resource\Model\ModelContextDiplomat\ModelContextToolLender\ModelContextToolLenderLicence.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
   </ItemGroup>

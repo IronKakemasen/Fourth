@@ -10,6 +10,7 @@ UploadStructuredBuffer::UploadStructuredBuffer
 	const BufferDescriptionBehavior& description_
 ) : GPUBufferBehavior(instanceKey_, name_, std::move(resourceContainer_), description_)
 {
+	Map({ buffers[0].resource.Get(),buffers[1].resource.Get() });
 
 }
 

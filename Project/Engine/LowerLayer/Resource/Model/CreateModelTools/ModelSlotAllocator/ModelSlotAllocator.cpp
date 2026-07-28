@@ -34,7 +34,7 @@ ModelContext::ModelSlotAllocator::~ModelSlotAllocator()
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 void ModelContext::ModelSlotAllocator::SetMeshDataSRVHeapIndexGroupContainerSRVHeapIndex(HandleLicence licence_, SRVHeapIndex index_)
 {
-	Logger::Log("Set: meshDataSRVHeapIndexGroupContainerSRVHeapIndex", fileName);
+	Logger::Log("Set: meshDataSRVHeapIndexGroupContainerSRVHeapIndex[" + std::to_string((UINT)index_) + "]", fileName);
 	meshDataSRVHeapIndexGroupContainerSRVHeapIndex = index_;
 }
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -62,7 +62,11 @@ void ModelContext::ModelSlotAllocator::SetTransformMatrixConatinerSrvHeapIndices
 	std::array<SRVHeapIndex, (UINT)ProjectConfig::Render::NumBuffer::kDoubleBuffer> indices_
 )
 {
-	Logger::Log("Set: doubleTransformMatrixContainerSRVHeapIndex", fileName);
+	Logger::Log
+	(
+		"Set: doubleTransformMatrixContainerSRVHeapIndices{" + std::to_string((UINT)indices_[0]) +"," + std::to_string((UINT)indices_[1]) + "}",
+		fileName
+	);
 	doubleTransformMatrixContainerSRVHeapIndex = indices_;
 }
 
