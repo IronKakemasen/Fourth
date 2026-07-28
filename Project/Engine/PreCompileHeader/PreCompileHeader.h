@@ -42,7 +42,8 @@
 #include "../LowerLayer/Debug/Logger/Logger.h"
 //プロジェクト設定
 #include "../ProjectConfig.h"
-
+//ジェーソン読み書き
+#include "../MiddleLayer/MiyaJison/MiyaJison.h"
 
 
 

@@ -1,0 +1,1 @@
+key: "Jsonファイル名" , value: "Assets/JsonFiles/EngineCoreJsonFile/Jsonファイル名.json"

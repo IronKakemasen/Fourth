@@ -147,16 +147,19 @@ std::wstring ShaderContext::Compiler::AssembleFilePath
 ///+/////////////////////////////////////////////////////////////////////////////////////////////////////////
 Microsoft::WRL::ComPtr<IDxcBlob> ShaderContext::Compiler::CheckResult(IDxcResult* shaderResult_)
 {
+
 	//警告エラーが出てたらログに出して止める
 	Microsoft::WRL::ComPtr<IDxcBlobUtf8> shaderError = nullptr;
 	
 	shaderResult_->GetOutput(DXC_OUT_ERRORS, IID_PPV_ARGS(shaderError.GetAddressOf()), nullptr);
+	
+	OutputDebugStringA(shaderError->GetStringPointer());
 
-	ErrorMessageOutput::Abort::DetectError
-	(
-		((shaderError == nullptr) || (shaderError->GetStringLength() == 0)),
-		"シェーダーのエラーがあります", fileName
-	);
+	//ErrorMessageOutput::Abort::DetectError
+	//(
+	//	((shaderError == nullptr) || (shaderError->GetStringLength() == 0)),
+	//	"シェーダーのエラーがあります", fileName
+	//);
 
 	//コンパイル結果から実行用のバイナリ部分を受け取る
 	Microsoft::WRL::ComPtr<IDxcBlob> shaderBlob = nullptr;

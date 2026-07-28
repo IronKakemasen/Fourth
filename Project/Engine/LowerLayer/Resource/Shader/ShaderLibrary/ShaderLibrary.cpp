@@ -1,6 +1,6 @@
-
 #include "ShaderLibrary.h"
 #include "../ShaderCompiler/ShaderCompiler.h"
+#include "LoadRegistry/LoadRegistry.h"
 
 #include <regex>
 #include <iostream>
@@ -54,9 +54,9 @@ void ShaderLibrary::CompileAllShaderFiles(ShaderContext::Compiler* compiler_)
     std::unordered_map<std::string, std::string> shaderRegistryMS;
     std::unordered_map<std::string, std::string> shaderRegistryPS;
 
-    shaderRegistryMS = LoadShaderRegistry(shaderRegistryFilePath_MS);
+    shaderRegistryMS = LoadRegistry::Load(shaderRegistryFilePath_MS);
     Logger::Log("Load: " + shaderRegistryFilePath_MS, fileName);
-    shaderRegistryPS = LoadShaderRegistry(shaderRegistryFilePath_PS);
+    shaderRegistryPS = LoadRegistry::Load(shaderRegistryFilePath_PS);
     Logger::Log("Load: " + shaderRegistryFilePath_PS, fileName);
 
     for (const auto& [key, value] : shaderRegistryMS)

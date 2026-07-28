@@ -8,7 +8,6 @@
 
 #include "MeshDataCreatorTools/ModelDataTransducer/ModelDataTransducer.h"
 #include "MeshDataCreatorTools/MeshDataBufferCreator/MeshDataBufferCreator.h"
-#include "MeshDataCreatorTools/ModelRegistryLoader/ModelRegistryLoader.h"
 #include "MeshDataCreatorTools/MeshDataBufferUploader/MeshDataBufferUploader.h"
 #include "MeshDataCreatorTools/MeshDataBufferSRVHeapIndexGroupPackager/MeshDataBufferSRVHeapIndexGroupPackager.h"
 #include "MeshDataCreatorTools/MeshDataSRVHeapIndexGroupContainerBufferCreator/MeshDataSRVHeapIndexGroupContainerBufferCreator.h"
@@ -20,6 +19,7 @@
 #include "../../../Buffer/BufferContextDiplomat/BufferToolLender/BufferToolLender.h"
 #include "../../../Buffer/BufferContextDiplomat/BufferToolLender/BufferToolLenderLicence.h"
 
+#include "LoadRegistry/LoadRegistry.h"
 
 using namespace StructuredBufferDataDefinition;
 
@@ -156,7 +156,7 @@ std::unordered_map<std::string , ModelDataAggregate*> ModelContext::ModelDataCre
 {
     std::unordered_map<std::string, ModelDataAggregate*> modelDataLib;
 
-    auto modelFileName_pathLib = ModelRegistryLoader::Load();
+    auto modelFileName_pathLib = LoadRegistry::Load("Assets/Registry/ModelFiles.txt");
 
     for (const auto& [key, value] : modelFileName_pathLib)
     {

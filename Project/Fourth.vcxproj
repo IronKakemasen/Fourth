@@ -171,6 +171,7 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="Engine\LowerLayer\Debug\ErrorMessageOutput\ErrorMessageOutput.cpp" />
+    <ClCompile Include="Engine\Utility\LoadRegistry\LoadRegistry.cpp" />
     <ClCompile Include="External\Audio\xaudio_player_mf.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
@@ -349,6 +350,9 @@
     <ClCompile Include="Engine\LowerLayer\Resource\Model\TestModelOKIBA.cpp" />
     <ClCompile Include="Engine\LowerLayer\Resource\Model\CreateModelTools\ModelDataCreator\MeshDataCreatorTools\TransformMatrixContainerBufferCreator\TransformMatrixContainerBufferCreator.cpp" />
     <ClCompile Include="Engine\LowerLayer\Resource\Model\ModelContextDiplomat\ModelContextToolLender\ModelContextToolLender.cpp" />
+    <ClCompile Include="Engine\MiddleLayer\MiyaJison\JsonLoader\JsonLoader.cpp" />
+    <ClCompile Include="Engine\MiddleLayer\MiyaJison\MiyaJison.cpp" />
+    <ClCompile Include="Engine\MiddleLayer\MiyaJison\JsonDataLibrary\JsonDataLibrary.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Assets\Shared\ConstantBuffers.h" />
@@ -437,6 +441,7 @@
     <ClInclude Include="Engine\LowerLayer\Resource\RootSignature\RootSignatureAssembler\RootSignatureLayoutComponent.h" />
     <ClInclude Include="Engine\MiddleLayer\kara.h" />
     <ClInclude Include="Engine\ProjectConfig.h" />
+    <ClInclude Include="Engine\Utility\LoadRegistry\LoadRegistry.h" />
     <ClInclude Include="External\Audio\SoundCommon.h" />
     <ClInclude Include="External\Audio\xaudio_player_core.h" />
     <ClInclude Include="External\Audio\xaudio_player_mf.h" />
@@ -518,7 +523,6 @@
     <ClInclude Include="Engine\LowerLayer\Resource\Buffer\BufferDefinition\GPUBuffer\StaticStructuredBuffer\StaticStructuredBuffer.h" />
     <ClInclude Include="Engine\LowerLayer\Resource\Model\CreateModelTools\ModelSlotAllocator\ModelSlotAllocator.h" />
     <ClInclude Include="Engine\Utility\SimpleFreeList\SimpleFreeList.h" />
-    <ClInclude Include="Engine\LowerLayer\Resource\Model\CreateModelTools\ModelDataCreator\MeshDataCreatorTools\ModelRegistryLoader\ModelRegistryLoader.h" />
     <ClInclude Include="Engine\LowerLayer\Resource\Model\CreateModelTools\ModelDataCreator\MeshDataCreatorTools\MeshDataBufferCreator\MeshDataBufferCreator.h" />
     <ClInclude Include="Engine\LowerLayer\Resource\Model\CreateModelTools\ModelDataCreator\MeshDataCreatorTools\ModelDataTransducer\ModelDataTransducer.h" />
     <ClInclude Include="Engine\LowerLayer\Resource\Model\CreateModelTools\ModelDataCreator\MeshDataCreatorTools\MeshDataBufferUploader\MeshDataBufferUploader.h" />
@@ -539,6 +543,9 @@
     <ClInclude Include="Engine\LowerLayer\Resource\Model\TestModelOKIBA.h" />
     <ClInclude Include="Engine\LowerLayer\Resource\Model\CreateModelTools\ModelDataCreator\MeshDataCreatorTools\TransformMatrixContainerBufferCreator\TransformMatrixContainerBufferCreator.h" />
     <ClInclude Include="Engine\LowerLayer\Resource\Model\ModelContextDiplomat\ModelContextToolLender\ModelContextToolLender.h" />
+    <ClInclude Include="Engine\MiddleLayer\MiyaJison\JsonLoader\JsonLoader.h" />
+    <ClInclude Include="Engine\MiddleLayer\MiyaJison\MiyaJison.h" />
+    <ClInclude Include="Engine\MiddleLayer\MiyaJison\JsonDataLibrary\JsonDataLibrary.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
