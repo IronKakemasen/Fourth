@@ -31,8 +31,6 @@ private:
 
 	//メッシュデータのバッファを作成し,そのメッシュデータのバッファユニークID群を返す
 	class MeshDataBufferCreator;
-	//モデルの理事ストリーファイルを読み込んで、キーがファイル名のバリューがファイルパスであるマップを返す
-	class ModelRegistryLoader;
 	//頂点データをGPU用に変換したり、BufferUniqueIDからstructuredBufferポインタに変換する
 	class DataTransducer;
 	//メッシュデータのバッファのアップロードを行う

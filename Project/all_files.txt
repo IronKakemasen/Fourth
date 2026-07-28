@@ -13,6 +13,8 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
     //エンジンの交易場
     Nexus nexus;
 
+    MiyaJison::Get();
+
     Update(nexus);
 
     return 0;
@@ -11743,7 +11745,6 @@ private:
 
 #include "MeshDataCreatorTools/ModelDataTransducer/ModelDataTransducer.h"
 #include "MeshDataCreatorTools/MeshDataBufferCreator/MeshDataBufferCreator.h"
-#include "MeshDataCreatorTools/ModelRegistryLoader/ModelRegistryLoader.h"
 #include "MeshDataCreatorTools/MeshDataBufferUploader/MeshDataBufferUploader.h"
 #include "MeshDataCreatorTools/MeshDataBufferSRVHeapIndexGroupPackager/MeshDataBufferSRVHeapIndexGroupPackager.h"
 #include "MeshDataCreatorTools/MeshDataSRVHeapIndexGroupContainerBufferCreator/MeshDataSRVHeapIndexGroupContainerBufferCreator.h"
@@ -11755,6 +11756,7 @@ private:
 #include "../../../Buffer/BufferContextDiplomat/BufferToolLender/BufferToolLender.h"
 #include "../../../Buffer/BufferContextDiplomat/BufferToolLender/BufferToolLenderLicence.h"
 
+#include "LoadRegistry/LoadRegistry.h"
 
 using namespace StructuredBufferDataDefinition;
 
@@ -11891,7 +11893,7 @@ std::unordered_map<std::string , ModelDataAggregate*> ModelContext::ModelDataCre
 {
     std::unordered_map<std::string, ModelDataAggregate*> modelDataLib;
 
-    auto modelFileName_pathLib = ModelRegistryLoader::Load();
+    auto modelFileName_pathLib = LoadRegistry::Load("Assets/Registry/ModelFiles.txt");
 
     for (const auto& [key, value] : modelFileName_pathLib)
     {
@@ -11964,8 +11966,6 @@ private:
 
 	//メッシュデータのバッファを作成し,そのメッシュデータのバッファユニークID群を返す
 	class MeshDataBufferCreator;
-	//モデルの理事ストリーファイルを読み込んで、キーがファイル名のバリューがファイルパスであるマップを返す
-	class ModelRegistryLoader;
 	//頂点データをGPU用に変換したり、BufferUniqueIDからstructuredBufferポインタに変換する
 	class DataTransducer;
 	//メッシュデータのバッファのアップロードを行う
@@ -12460,6 +12460,7 @@ std::vector<StandardVertexGPU> ModelContext::ModelDataCreator::DataTransducer::T
     {
         standardVertexGPUContainer[i].localPos =
             transferToVector4Func((float*)&vertices_[i].localPos.data.x);
+        standardVertexGPUContainer[i].localPos.w = 1.0f;
 
         standardVertexGPUContainer[i].normal =
             transferToVector4Func((float*)&vertices_[i].normal.data.x);
@@ -12494,95 +12495,6 @@ class ModelContext::ModelDataCreator::DataTransducer
 	[[nodiscard]] static std::vector<StructuredBufferDataDefinition::StandardVertexGPU> 
 		TransferVertexDataTypeToGPU(const std::vector<StandardVertex>& vertices_);
 		
-};
-
-
-
-
-
-========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Model\CreateModelTools\ModelDataCreator\MeshDataCreatorTools\ModelRegistryLoader\ModelRegistryLoader.h ===
-========================================
-#pragma once
-#include "../../ModelDataCreator.h"
-
-class ModelContext::ModelDataCreator::ModelRegistryLoader
-{
-    static inline const std::string kRegistryFileName = "Assets/Registry/ModelFiles.txt";
-
-    friend class ModelContext::ModelDataCreator;
-
-    static std::unordered_map<std::string, std::string > Load()
-    {
-        std::unordered_map<std::string, std::string > modelFileName_pathLib;
-        std::ifstream file(kRegistryFileName);
-
-        ErrorMessageOutput::Abort::DetectError
-        (
-            file.is_open(),
-            kRegistryFileName + "このパス無くない？",
-            "ModelRegistryLoader.h"
-        );
-
-        std::string line;
-
-        while (std::getline(file, line))
-        {
-            constexpr std::string_view keyToken = "key: \"";
-            constexpr std::string_view valueToken = "value: \"";
-
-            auto keyStart = line.find(keyToken);
-            if (keyStart == std::string::npos)
-            {
-                continue;
-            }
-
-
-            keyStart += keyToken.size();
-
-            auto keyEnd = line.find("\"", keyStart);
-            if (keyEnd == std::string::npos)
-            {
-                continue;
-            }
-
-
-            std::string key = line.substr
-            (
-                keyStart,
-                keyEnd - keyStart
-            );
-
-
-            auto valueStart = line.find(valueToken);
-            if (valueStart == std::string::npos)
-            {
-                continue;
-            }
-
-
-            valueStart += valueToken.size();
-
-            auto valueEnd = line.find("\"", valueStart);
-            if (valueEnd == std::string::npos)
-            {
-                continue;
-            }
-
-
-            std::string value = line.substr
-            (
-                valueStart,
-                valueEnd - valueStart
-            );
-
-
-            modelFileName_pathLib.emplace(key, value);
-        }
-
-        Logger::Log("Load: " + kRegistryFileName, "ModelRegistryLoader.h");
-        return modelFileName_pathLib;
-    }
 };
 
 
@@ -13840,6 +13752,7 @@ public:
 		ModelContext::NexusFieldProof proof_,
 		std::unique_ptr<ModelContext::ExecutionAgent>&& agent_,
 		std::unique_ptr<ModelContext::ToolLender>&& toolLender_
+
 	);
 	
 	template<typename ToolType>
@@ -16097,16 +16010,19 @@ std::wstring ShaderContext::Compiler::AssembleFilePath
 ///+/////////////////////////////////////////////////////////////////////////////////////////////////////////
 Microsoft::WRL::ComPtr<IDxcBlob> ShaderContext::Compiler::CheckResult(IDxcResult* shaderResult_)
 {
+
 	//警告エラーが出てたらログに出して止める
 	Microsoft::WRL::ComPtr<IDxcBlobUtf8> shaderError = nullptr;
 	
 	shaderResult_->GetOutput(DXC_OUT_ERRORS, IID_PPV_ARGS(shaderError.GetAddressOf()), nullptr);
+	
+	OutputDebugStringA(shaderError->GetStringPointer());
 
-	ErrorMessageOutput::Abort::DetectError
-	(
-		((shaderError == nullptr) || (shaderError->GetStringLength() == 0)),
-		"シェーダーのエラーがあります", fileName
-	);
+	//ErrorMessageOutput::Abort::DetectError
+	//(
+	//	((shaderError == nullptr) || (shaderError->GetStringLength() == 0)),
+	//	"シェーダーのエラーがあります", fileName
+	//);
 
 	//コンパイル結果から実行用のバイナリ部分を受け取る
 	Microsoft::WRL::ComPtr<IDxcBlob> shaderBlob = nullptr;
@@ -16212,9 +16128,9 @@ private:
 ========================================
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Shader\ShaderLibrary\ShaderLibrary.cpp ===
 ========================================
-
 #include "ShaderLibrary.h"
 #include "../ShaderCompiler/ShaderCompiler.h"
+#include "LoadRegistry/LoadRegistry.h"
 
 #include <regex>
 #include <iostream>
@@ -16268,9 +16184,9 @@ void ShaderLibrary::CompileAllShaderFiles(ShaderContext::Compiler* compiler_)
     std::unordered_map<std::string, std::string> shaderRegistryMS;
     std::unordered_map<std::string, std::string> shaderRegistryPS;
 
-    shaderRegistryMS = LoadShaderRegistry(shaderRegistryFilePath_MS);
+    shaderRegistryMS = LoadRegistry::Load(shaderRegistryFilePath_MS);
     Logger::Log("Load: " + shaderRegistryFilePath_MS, fileName);
-    shaderRegistryPS = LoadShaderRegistry(shaderRegistryFilePath_PS);
+    shaderRegistryPS = LoadRegistry::Load(shaderRegistryFilePath_PS);
     Logger::Log("Load: " + shaderRegistryFilePath_PS, fileName);
 
     for (const auto& [key, value] : shaderRegistryMS)
@@ -16346,6 +16262,8 @@ private:
 	std::unordered_map<std::string, std::string> LoadShaderRegistry(const std::string& filePath);
 	//コンパイルする
 	void CompileAllShaderFiles(ShaderContext::Compiler* compiler_);
+	//いったんハードコーディングでそのシェーダーファイルの
+
 };
 
 
@@ -16969,6 +16887,198 @@ struct Vector4
 	Vector4(T x_, T y_, T z_, T w_) : x(x_), y(y_), z(z_), w(w_) {}
 	Vector4() {}
 
+};
+
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\MiddleLayer\MiyaJison\MiyaJison.cpp ===
+========================================
+#include "PreCompileHeader.h"
+#include "MiyaJison.h"
+#include "JsonDataLibrary/JsonDataLibrary.h"
+#include "LoadRegistry/LoadRegistry.h"
+
+MiyaJison::MiyaJison()
+{
+    std::unordered_map<std::string, std::string> fileName_Path =
+        LoadRegistry::Load("Assets/Registry/JsonFiles.txt");
+
+}
+
+nlohmann::json MiyaJison::LoadJsonFile(std::string filePath_)
+{
+    std::ifstream file(filePath_);
+
+    ErrorMessageOutput::Abort::DetectError
+    (
+        file.is_open(),
+        filePath_ + "こんなファイルはねぇよ！他所をあたりな",
+        "Json.cpp"
+    );
+
+
+    nlohmann::json jsonData;
+    file >> jsonData;
+
+    return jsonData;
+}
+
+
+const nlohmann::json& MiyaJison::Load(std::string fileName)
+{
+    return jsonDataLibrary->Export(JsonDataLibrary::HandleLicence{}, fileName);
+}
+
+
+MiyaJison* MiyaJison::Get()
+{
+    static MiyaJison miyaJison;
+
+    return &miyaJison;
+}
+
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\MiddleLayer\MiyaJison\MiyaJison.h ===
+========================================
+#pragma once
+#include "../../../External/nlohmann/json.hpp"
+
+
+class MiyaJison
+{
+	class Loader;
+	class JsonDataLibrary;
+
+
+	using Group_Value = std::array<std::string, 2>;
+
+public:
+
+	static MiyaJison* Get();
+
+	MiyaJison();
+
+	MiyaJison(const MiyaJison&) = delete;
+	MiyaJison& operator=(const MiyaJison&) = delete;
+	MiyaJison(MiyaJison&&) = delete;
+	MiyaJison& operator=(MiyaJison&&) = delete;
+
+
+	const nlohmann::json& Load(std::string fileName);
+
+protected:
+
+
+private:
+
+	std::unique_ptr<JsonDataLibrary> jsonDataLibrary;
+
+	nlohmann::json LoadJsonFile(std::string filePath_);
+
+};
+
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\MiddleLayer\MiyaJison\JsonDataLibrary\JsonDataLibrary.cpp ===
+========================================
+#include "PreCompileHeader.h"
+#include "JsonDataLibrary.h"
+
+
+
+void MiyaJison::JsonDataLibrary::Import(HandleLicence licence_, std::string fileName_, nlohmann::json jsonData_)
+{
+	lib[fileName_] = jsonData_;
+}
+
+
+const nlohmann::json& MiyaJison::JsonDataLibrary::Export(HandleLicence licence_, std::string fileName_)const
+{
+	ErrorMessageOutput::Assert::DetectError
+	(
+		lib.find(fileName_) != lib.end(),
+		"んなファイル無いんだわ",
+		"JsonDataLibrary.cpp"
+	);
+
+	return lib.at(fileName_);
+}
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\MiddleLayer\MiyaJison\JsonDataLibrary\JsonDataLibrary.h ===
+========================================
+#pragma once
+#include "../MiyaJison.h"
+
+
+class MiyaJison::JsonDataLibrary
+{
+public:
+
+	struct HandleLicence;
+
+	const nlohmann::json& Export(HandleLicence licence_, std::string fileName_)const;
+	void Import(HandleLicence licence_, std::string fileName_, nlohmann::json jsonData_);
+
+
+private:
+	std::map<std::string, nlohmann::json> lib;
+
+};
+
+
+struct MiyaJison::JsonDataLibrary::HandleLicence
+{
+private:
+
+	friend class MiyaJison;
+
+	explicit HandleLicence() = default;
+};
+
+
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\MiddleLayer\MiyaJison\JsonLoader\JsonLoader.cpp ===
+========================================
+#include "PreCompileHeader.h"
+#include "JsonLoader.h"
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\MiddleLayer\MiyaJison\JsonLoader\JsonLoader.h ===
+========================================
+#pragma once
+#include "../MiyaJison.h"
+
+class MiyaJison::Loader
+{
+	friend class Json;
+
+	template<typename DataType>
+	static DataType Load(const nlohmann::json& jsonData, Group_Value group_value_)
+	{
+
+
+	}
 };
 
 
@@ -17819,7 +17929,8 @@ void Nexus::Run()
 #include "../LowerLayer/Debug/Logger/Logger.h"
 //プロジェクト設定
 #include "../ProjectConfig.h"
-
+//ジェーソン読み書き
+#include "../MiddleLayer/MiyaJison/MiyaJison.h"
 
 
 
@@ -18088,6 +18199,102 @@ public:
 
 
 };
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Utility\LoadRegistry\LoadRegistry.cpp ===
+========================================
+#include "LoadRegistry.h"
+
+
+
+std::unordered_map<std::string, std::string > LoadRegistry::Load(std::string const kRegistryFileName_)
+{
+    std::unordered_map<std::string, std::string > modelFileName_pathLib;
+    std::ifstream file(kRegistryFileName_);
+
+    ErrorMessageOutput::Abort::DetectError
+    (
+        file.is_open(),
+        kRegistryFileName_ + "このパス無くない？",
+        "ModelRegistryLoader.h"
+    );
+
+    std::string line;
+
+    while (std::getline(file, line))
+    {
+        constexpr std::string_view keyToken = "key: \"";
+        constexpr std::string_view valueToken = "value: \"";
+
+        auto keyStart = line.find(keyToken);
+        if (keyStart == std::string::npos)
+        {
+            continue;
+        }
+
+
+        keyStart += keyToken.size();
+
+        auto keyEnd = line.find("\"", keyStart);
+        if (keyEnd == std::string::npos)
+        {
+            continue;
+        }
+
+
+        std::string key = line.substr
+        (
+            keyStart,
+            keyEnd - keyStart
+        );
+
+
+        auto valueStart = line.find(valueToken);
+        if (valueStart == std::string::npos)
+        {
+            continue;
+        }
+
+
+        valueStart += valueToken.size();
+
+        auto valueEnd = line.find("\"", valueStart);
+        if (valueEnd == std::string::npos)
+        {
+            continue;
+        }
+
+
+        std::string value = line.substr
+        (
+            valueStart,
+            valueEnd - valueStart
+        );
+
+
+        modelFileName_pathLib.emplace(key, value);
+    }
+
+    Logger::Log("Load: " + kRegistryFileName_, "ModelRegistryLoader.h");
+    return modelFileName_pathLib;
+}
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Utility\LoadRegistry\LoadRegistry.h ===
+========================================
+#pragma once
+
+namespace LoadRegistry
+{
+    std::unordered_map<std::string, std::string > Load(std::string const kRegistryFileName_);
+
+}
+
 
 
 

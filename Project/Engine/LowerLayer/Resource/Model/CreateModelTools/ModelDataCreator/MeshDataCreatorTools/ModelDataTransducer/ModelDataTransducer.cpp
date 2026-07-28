@@ -32,6 +32,7 @@ std::vector<StandardVertexGPU> ModelContext::ModelDataCreator::DataTransducer::T
     {
         standardVertexGPUContainer[i].localPos =
             transferToVector4Func((float*)&vertices_[i].localPos.data.x);
+        standardVertexGPUContainer[i].localPos.w = 1.0f;
 
         standardVertexGPUContainer[i].normal =
             transferToVector4Func((float*)&vertices_[i].normal.data.x);

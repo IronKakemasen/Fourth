@@ -27,6 +27,8 @@ private:
 	std::unordered_map<std::string, std::string> LoadShaderRegistry(const std::string& filePath);
 	//コンパイルする
 	void CompileAllShaderFiles(ShaderContext::Compiler* compiler_);
+	//いったんハードコーディングでそのシェーダーファイルの
+
 };
 
 

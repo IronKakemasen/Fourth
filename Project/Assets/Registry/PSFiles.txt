@@ -1,1 +1,2 @@
-﻿key: "TestPS" , value: "Assets/Shader/Test/"
+﻿key: "StandardPS" , value: "Assets/Shader/PS/"
+key: "TestPS" , value: "Assets/Shader/Test/"

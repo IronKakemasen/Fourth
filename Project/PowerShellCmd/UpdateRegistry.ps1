@@ -16,6 +16,7 @@ $RegistryFolder = Join-Path $projectFolder "Assets\Registry"
 
 $ShaderFolder = Join-Path $projectFolder "Assets\Shader"
 $ModelFolder  = Join-Path $projectFolder "Assets\Model"
+$JsonFolder   = Join-Path $projectFolder "Assets\JsonFiles"
 
 
 # Registryフォルダ作成
@@ -179,6 +180,48 @@ if (Test-Path $ModelFolder)
 
         Add-Content `
             -Path $OutputFileModel `
+            -Value "key: `"$key`" , value: `"$relativePath`""
+    }
+}
+
+
+
+########################################
+# JSON Registry (追加部分)
+########################################
+
+$OutputFileJson = Join-Path `
+    $RegistryFolder `
+    "JsonFiles.txt"
+
+
+if (Test-Path $OutputFileJson)
+{
+    Remove-Item $OutputFileJson
+}
+
+
+if (Test-Path $JsonFolder)
+{
+    Get-ChildItem `
+        -Path $JsonFolder `
+        -Recurse `
+        -File |
+    Where-Object {
+        $_.Extension -eq ".json"
+    } |
+    ForEach-Object {
+
+        $key = $_.BaseName
+
+
+        $relativePath = $_.FullName.Substring(
+            $projectFolder.Length + 1
+        ).Replace("\", "/")
+
+
+        Add-Content `
+            -Path $OutputFileJson `
             -Value "key: `"$key`" , value: `"$relativePath`""
     }
 }
