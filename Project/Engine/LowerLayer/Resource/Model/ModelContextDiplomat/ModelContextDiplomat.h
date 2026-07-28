@@ -10,6 +10,7 @@ public:
 		ModelContext::NexusFieldProof proof_,
 		std::unique_ptr<ModelContext::ExecutionAgent>&& agent_,
 		std::unique_ptr<ModelContext::ToolLender>&& toolLender_
+
 	);
 	
 	template<typename ToolType>
