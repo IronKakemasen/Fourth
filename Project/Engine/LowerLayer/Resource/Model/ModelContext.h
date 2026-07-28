@@ -2,7 +2,7 @@
 
 class Nexus;
 class BufferContextDiplomat;
-class MeshContextDiplomat;
+class ModelContextDiplomat;
 
 ///tesutooooooooooooooooooooooooooooooooooo
 struct TestModelOKIBA;
@@ -25,6 +25,7 @@ public:
 
 	//代行者
 	class ExecutionAgent;
+	class ToolLender;
 
 	//ネクサスフィールド証明
 	struct NexusFieldProof;
@@ -35,7 +36,7 @@ public:
 	~ModelContext();
 
 	//外交官
-	std::unique_ptr<MeshContextDiplomat> diplomat;
+	std::unique_ptr<ModelContextDiplomat> diplomat;
 	std::unique_ptr<ModelCreator> modelCreator;
 
 private:

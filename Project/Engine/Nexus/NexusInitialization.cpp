@@ -23,8 +23,8 @@
 #include "../LowerLayer/Resource/RootSignature/RootSignatureContext.h"
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 #include "../LowerLayer/Resource/Model/ModelContext.h"
-#include "../LowerLayer/Resource/Model/MeshContextDiplomat/MeshContextDiplomat.h"
-#include "../LowerLayer/Resource/Model/MeshContextDiplomat/MeshContextExecutionAgent/MeshContextExecutionAgent.h"
+#include "../LowerLayer/Resource/Model/ModelContextDiplomat/ModelContextDiplomat.h"
+#include "../LowerLayer/Resource/Model/ModelContextDiplomat/ModelContextExecutionAgent/ModelContextExecutionAgent.h"
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 #include "../LowerLayer/Render/RenderContext.h"
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////

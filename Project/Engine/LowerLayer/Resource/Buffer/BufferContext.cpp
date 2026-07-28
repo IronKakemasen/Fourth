@@ -63,6 +63,9 @@ BufferContext::BufferContext
 	Logger::Log("Instantiate: ExecutionAgent", fileName);
 	Logger::Log("Instantiate: BufferContextDiplomat", fileName);
 
+
+
+
 	Logger::End("BufferContext: Constructor");
 
 }

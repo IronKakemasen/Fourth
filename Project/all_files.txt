@@ -659,7 +659,6 @@ class CommandContext::ToolLender
 	struct CommandQueueAccessLicence;
 	struct ResourceUploaderAccessLicence;
 
-
 	///貸し出せるツール
 	std::tuple<ID3D12CommandQueue*, CommandContext::ResourceUploader*> tools;
 
@@ -6424,6 +6423,9 @@ BufferContext::BufferContext
 	Logger::Log("Instantiate: ExecutionAgent", fileName);
 	Logger::Log("Instantiate: BufferContextDiplomat", fileName);
 
+
+
+
 	Logger::End("BufferContext: Constructor");
 
 }
@@ -10904,7 +10906,7 @@ ConstantBuffer::ConstantBuffer
 	const BufferDescriptionBehavior& description_
 ) : GPUBufferBehavior(instanceKey_, name_, std::move(resourceContainer_), description_)
 {
-
+	Map({ buffers[0].resource.Get(),buffers[1].resource.Get() });
 }
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -11126,6 +11128,7 @@ UploadStructuredBuffer::UploadStructuredBuffer
 	const BufferDescriptionBehavior& description_
 ) : GPUBufferBehavior(instanceKey_, name_, std::move(resourceContainer_), description_)
 {
+	Map({ buffers[0].resource.Get(),buffers[1].resource.Get() });
 
 }
 
@@ -11402,8 +11405,9 @@ RenderPath::Pass::RequiredBufferInfo::RenderTarget BufferContext::BufferInfoExtr
 
 #include "ModelContainer/ModelContainer.h"
 
-#include "MeshContextDiplomat/MeshContextExecutionAgent/MeshContextExecutionAgent.h"
-#include "MeshContextDiplomat/MeshContextDiplomat.h"
+#include "ModelContextDiplomat/ModelContextExecutionAgent/ModelContextExecutionAgent.h"
+#include "ModelContextDiplomat/ModelContextToolLender/ModelContextToolLender.h"
+#include "ModelContextDiplomat/ModelContextDiplomat.h"
 
 
 #include "TestModelOKIBA.h"
@@ -11443,14 +11447,16 @@ ModelContext::ModelContext(NexusFieldProof proof_,BufferContextDiplomat* bufferC
 
 	diplomat.reset
 	(
-		new MeshContextDiplomat
+		new ModelContextDiplomat
 		(
 			proof_,
-			std::make_unique<ExecutionAgent>(proof_, modelDataLoader.get())
+			std::make_unique<ExecutionAgent>(proof_, modelDataLoader.get()),
+			std::make_unique<ToolLender>(proof_, modelContainer.get())
 		)
 	);
+	Logger::Log("Instantiate: ToolLender", fileName);
 	Logger::Log("Instantiate: ExecutionAgent", fileName);
-	Logger::Log("Instantiate: MeshContextDiplomat", fileName);
+	Logger::Log("Instantiate: ModelContextDiplomat", fileName);
 
 	modelDataCreator.reset
 	(
@@ -11486,7 +11492,7 @@ ModelContext::~ModelContext()
 
 class Nexus;
 class BufferContextDiplomat;
-class MeshContextDiplomat;
+class ModelContextDiplomat;
 
 ///tesutooooooooooooooooooooooooooooooooooo
 struct TestModelOKIBA;
@@ -11509,6 +11515,7 @@ public:
 
 	//代行者
 	class ExecutionAgent;
+	class ToolLender;
 
 	//ネクサスフィールド証明
 	struct NexusFieldProof;
@@ -11519,14 +11526,14 @@ public:
 	~ModelContext();
 
 	//外交官
-	std::unique_ptr<MeshContextDiplomat> diplomat;
+	std::unique_ptr<ModelContextDiplomat> diplomat;
+	std::unique_ptr<ModelCreator> modelCreator;
 
 private:
 
 
 	std::unique_ptr<ModelDataCreator> modelDataCreator;
 	std::unique_ptr<ModelSlotAllocator> modelSlotAllocator;
-	std::unique_ptr<ModelCreator> modelCreator;
 	std::unique_ptr<ModelContainer> modelContainer;
 	std::unique_ptr<TestModelOKIBA> testModelOKIBA;
 };
@@ -11588,7 +11595,7 @@ TestModelOKIBA::TestModelOKIBA(ModelContext::ModelCreator* modelCreator_)
 	cC.materialType = ShaderPathComponent::MaterialType::kStandard;
 
 	std::vector<ModelDescription::Configurable> cubeC;
-	playerC.emplace_back(std::move(cC));
+	cubeC.emplace_back(std::move(cC));
 
 	cube = modelCreator_->Create("CubeGltf", cubeC,"Cube");
 
@@ -11660,7 +11667,7 @@ Model* ModelContext::ModelCreator::Create
 		modelDataConfigurables_,
 		commons_uniques.first,
 		commons_uniques.second,
-		modelName_ + "[" + std::to_string(numCreate++) + "]"
+		modelName_ + std::to_string(numCreate++)
 	);
 
 	//比がおなじかチェックしておく
@@ -11861,8 +11868,20 @@ void ModelContext::ModelDataCreator::CreateAllModelData
         allocator_
     );
 
-   auto& meshDataIDLibrary = allocator_->AccessMeshDataIDLibrary(ModelContext::ModelSlotAllocator::HandleLicence{});
-   meshDataIDLibrary.Log();
+
+    ///TransformMatrixのコンテナのUploadStructuredBufferを作成し、
+    ///そのsrvHeapIndexをallocatorが補完する
+    TransformMatrixContainerBufferCreator::Create
+    (
+        allocator_,
+        bufferCreator,
+        bufferCollector,
+        bufferDispatcher
+    );
+
+    //meshDataIDLibraryの中身をログ出力
+    auto& meshDataIDLibrary = allocator_->AccessMeshDataIDLibrary(ModelContext::ModelSlotAllocator::HandleLicence{});
+    meshDataIDLibrary.Log();
 }
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -12596,8 +12615,6 @@ void ModelContext::ModelDataCreator::TransformMatrixContainerBufferCreator::Crea
 	BufferContext::BufferDispatcher* bufferDispatcher_
 )
 {
-
-
 	//まずTransformMatrixのUploadStructuredBufferを作成するためのディスクリプションの生成
 	///データ型はTransformMatrixCPUGPU
 	///用意する数はkSizeOfTransformMatrixBufferArray個分 = 最大でモデルを描画できる数
@@ -12609,17 +12626,20 @@ void ModelContext::ModelDataCreator::TransformMatrixContainerBufferCreator::Crea
 		0
 	);
 
-	BufferUniqueID TransformMatrixContainerBufferID = bufferCreator_->Create(desc,"TransformMatrix");
+	BufferUniqueID TransformMatrixContainerBufferID = bufferCreator_->Create(desc,"TransformMatrixContainer");
 	bufferCollector_->Distribute();
 
 	//SRVHeapIndexを抽出
 	auto* TransformMatrixContainerBuffer = 
 		static_cast<UploadStructuredBuffer*>(bufferDispatcher_->Dispatch(TransformMatrixContainerBufferID));
-	auto* IReadable_TransformMatrixContainerBuffer = static_cast<IReadable*>(TransformMatrixContainerBuffer);
+	auto* iReadable_TransformMatrixContainerBuffer = static_cast<IReadable*>(TransformMatrixContainerBuffer);
 
-	std::array<SRVHeapIndex, (UINT)NumBuffer::kDoubleBuffer> srvHeapIndices =
-	{ IReadable_TransformMatrixContainerBuffer->OutProperSRVHeapIndex(0),IReadable_TransformMatrixContainerBuffer->OutProperSRVHeapIndex(1) };
-
+	//それらを保存する
+	slotAllocator_->SetTransformMatrixConatinerSrvHeapIndices
+	(
+		ModelContext::ModelSlotAllocator::HandleLicence{},
+		{ iReadable_TransformMatrixContainerBuffer->OutProperSRVHeapIndex(0),iReadable_TransformMatrixContainerBuffer->OutProperSRVHeapIndex(1) }
+	);
 }
 
 
@@ -13405,6 +13425,7 @@ ModelContext::ModelSlotAllocator::~ModelSlotAllocator()
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 void ModelContext::ModelSlotAllocator::SetMeshDataSRVHeapIndexGroupContainerSRVHeapIndex(HandleLicence licence_, SRVHeapIndex index_)
 {
+	Logger::Log("Set: meshDataSRVHeapIndexGroupContainerSRVHeapIndex[" + std::to_string((UINT)index_) + "]", fileName);
 	meshDataSRVHeapIndexGroupContainerSRVHeapIndex = index_;
 }
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -13422,6 +13443,22 @@ uint32_t ModelContext::ModelSlotAllocator::AllocateSlot
 ModelContext::ModelSlotAllocator::MeshDataIDLibrary& ModelContext::ModelSlotAllocator::AccessMeshDataIDLibrary(HandleLicence licence_)
 {
 	return *meshDataIDLibrary.get();
+}
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+void ModelContext::ModelSlotAllocator::SetTransformMatrixConatinerSrvHeapIndices
+(
+	HandleLicence licence_,
+	std::array<SRVHeapIndex, (UINT)ProjectConfig::Render::NumBuffer::kDoubleBuffer> indices_
+)
+{
+	Logger::Log
+	(
+		"Set: doubleTransformMatrixContainerSRVHeapIndices{" + std::to_string((UINT)indices_[0]) +"," + std::to_string((UINT)indices_[1]) + "}",
+		fileName
+	);
+	doubleTransformMatrixContainerSRVHeapIndex = indices_;
 }
 
 
@@ -13463,8 +13500,15 @@ public:
 	template<typename SlotType>
 	uint32_t AllocateSlot(AllocateLicence licence_);
 
-	//meshDataSRVHeapIndexGroupContainerのSRVHeapIndexセットする
+	//meshDataCreatorにて、
+	///meshDataSRVHeapIndexGroupContainerのSRVHeapIndexセットする
 	void SetMeshDataSRVHeapIndexGroupContainerSRVHeapIndex(HandleLicence licence_ , SRVHeapIndex index_);
+	///TransformMatrixConatinerのSRVHeapIndexセットする
+	void SetTransformMatrixConatinerSrvHeapIndices
+	(
+		HandleLicence licence_,
+		std::array<SRVHeapIndex, (UINT)ProjectConfig::Render::NumBuffer::kDoubleBuffer> indices_
+	);
 
 	//meshDataIDLibraryにアクセスする
 	MeshDataIDLibrary& AccessMeshDataIDLibrary(HandleLicence licence_);
@@ -13481,7 +13525,7 @@ private:
 	
 	///「transformMatrixバッファ」の配列のSRVHeapIndex
 	std::optional<std::array<SRVHeapIndex,(UINT)ProjectConfig::Render::NumBuffer::kDoubleBuffer>> 
-		doubleTransformMatrixBufferContainerSRVHeapIndex;
+		doubleTransformMatrixContainerSRVHeapIndex;
 
 
 };
@@ -13671,111 +13715,6 @@ private:
 
 
 ========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Model\MeshContextDiplomat\MeshContextDiplomat.cpp ===
-========================================
-#include "PreCompileHeader.h"
-#include "MeshContextDiplomat.h"
-#include "MeshContextExecutionAgent/MeshContextExecutionAgent.h"
-
-
-
-MeshContextDiplomat::MeshContextDiplomat
-(
-	ModelContext::NexusFieldProof proof_,
-	std::unique_ptr<ModelContext::ExecutionAgent>&& agent_
-)
-{
-	std::get<std::unique_ptr<ModelContext::ExecutionAgent>>(tools) = std::move(agent_);
-}
-
-
-
-
-
-========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Model\MeshContextDiplomat\MeshContextDiplomat.h ===
-========================================
-#pragma once
-#include "../ModelContext.h"
-
-class MeshContextDiplomat
-{
-public:
-
-	MeshContextDiplomat
-	(
-		ModelContext::NexusFieldProof proof_,
-		std::unique_ptr<ModelContext::ExecutionAgent>&& agent_
-	);
-	
-	template<typename ToolType>
-	auto* Access()
-	{
-		return std::get<std::unique_ptr<ToolType>>(tools).get();
-
-	}
-
-private:
-
-	std::tuple<std::unique_ptr<ModelContext::ExecutionAgent>> tools;
-};
-
-
-
-
-
-========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Model\MeshContextDiplomat\MeshContextExecutionAgent\MeshContextExecutionAgent.cpp ===
-========================================
-#include "PreCompileHeader.h"
-#include "MeshContextExecutionAgent.h"
-#include "../../CreateModelTools/ModelDataLoader/ModelDataLoader.h"
-
-
-ModelContext::ExecutionAgent::ExecutionAgent
-(
-	ModelContext::NexusFieldProof proof_,
-	ModelContext::ModelDataLoader* modelDataLoader_
-): modelDataLoader(modelDataLoader_)
-{
-	
-}
-
-void ModelContext::ExecutionAgent::DeleteModelDataCache(ModelContext::NexusFieldProof proof_)
-{
-	modelDataLoader->DeleteModelDataCache(proof_, ModelContext::AgentKey{});
-}
-
-
-
-========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Model\MeshContextDiplomat\MeshContextExecutionAgent\MeshContextExecutionAgent.h ===
-========================================
-#pragma once
-#include "../../ModelContext.h"
-
-
-
-class ModelContext::ExecutionAgent
-{
-public:
-	ExecutionAgent
-	(
-		ModelContext::NexusFieldProof proof_,
-		ModelContext::ModelDataLoader* modelDataLoader_
-	);
-
-	void DeleteModelDataCache(ModelContext::NexusFieldProof proof_);
-
-private:
-	ModelContext::ModelDataLoader* modelDataLoader;
-};
-
-
-
-
-
-========================================
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Model\MeshContextRuntime\ヘッダー.h ===
 ========================================
 #pragma once
@@ -13857,6 +13796,202 @@ private:
 
 
 
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Model\ModelContextDiplomat\ModelContextDiplomat.cpp ===
+========================================
+#include "PreCompileHeader.h"
+#include "ModelContextDiplomat.h"
+#include "ModelContextExecutionAgent/ModelContextExecutionAgent.h"
+#include "ModelContextToolLender/ModelContextToolLender.h"
+
+
+ModelContextDiplomat::ModelContextDiplomat
+(
+	ModelContext::NexusFieldProof proof_,
+	std::unique_ptr<ModelContext::ExecutionAgent>&& agent_,
+	std::unique_ptr<ModelContext::ToolLender>&& toolLender_
+)
+{
+	std::get<std::unique_ptr<ModelContext::ExecutionAgent>>(tools) = std::move(agent_);
+	std::get<std::unique_ptr<ModelContext::ToolLender>>(tools) = std::move(toolLender_);
+
+}
+
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Model\ModelContextDiplomat\ModelContextDiplomat.h ===
+========================================
+#pragma once
+#include "../ModelContext.h"
+
+class ModelContextDiplomat
+{
+public:
+
+	ModelContextDiplomat
+	(
+		ModelContext::NexusFieldProof proof_,
+		std::unique_ptr<ModelContext::ExecutionAgent>&& agent_,
+		std::unique_ptr<ModelContext::ToolLender>&& toolLender_
+	);
+	
+	template<typename ToolType>
+	auto* Access()
+	{
+		return std::get<std::unique_ptr<ToolType>>(tools).get();
+	}
+
+private:
+
+	std::tuple
+	<
+		std::unique_ptr<ModelContext::ExecutionAgent>,
+		std::unique_ptr<ModelContext::ToolLender>
+	> tools;
+};
+
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Model\ModelContextDiplomat\ModelContextExecutionAgent\ModelContextExecutionAgent.cpp ===
+========================================
+#include "PreCompileHeader.h"
+#include "ModelContextExecutionAgent.h"
+#include "../../CreateModelTools/ModelDataLoader/ModelDataLoader.h"
+
+
+ModelContext::ExecutionAgent::ExecutionAgent
+(
+	ModelContext::NexusFieldProof proof_,
+	ModelContext::ModelDataLoader* modelDataLoader_
+): modelDataLoader(modelDataLoader_)
+{
+	
+}
+
+void ModelContext::ExecutionAgent::DeleteModelDataCache(ModelContext::NexusFieldProof proof_)
+{
+	modelDataLoader->DeleteModelDataCache(proof_, ModelContext::AgentKey{});
+}
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Model\ModelContextDiplomat\ModelContextExecutionAgent\ModelContextExecutionAgent.h ===
+========================================
+#pragma once
+#include "../../ModelContext.h"
+
+
+
+class ModelContext::ExecutionAgent
+{
+public:
+	ExecutionAgent
+	(
+		ModelContext::NexusFieldProof proof_,
+		ModelContext::ModelDataLoader* modelDataLoader_
+	);
+
+	void DeleteModelDataCache(ModelContext::NexusFieldProof proof_);
+
+private:
+	ModelContext::ModelDataLoader* modelDataLoader;
+};
+
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Model\ModelContextDiplomat\ModelContextToolLender\ModelContextToolLender.cpp ===
+========================================
+#include "PreCompileHeader.h"
+#include "ModelContextToolLender.h"
+#include "../../ModelContainer/ModelContainer.h"
+
+ModelContext::ToolLender::ToolLender
+(
+	NexusFieldProof proof_, 
+	ModelContext::ModelContainer* modelContainer_
+)
+{
+	std::get<ModelContext::ModelContainer*>(tools) = modelContainer_;
+
+}
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Model\ModelContextDiplomat\ModelContextToolLender\ModelContextToolLender.h ===
+========================================
+#pragma once
+#include "../../ModelContext.h"
+
+class ModelContext::ToolLender
+{
+	template<typename ToolType>
+	struct LicenceTypeTraits;
+
+
+	//モデルコンテナにアクセスするための資格
+	struct ModelContainerAccessLicence;
+
+public:
+
+	template<typename ToolType>
+	using LicenceType = typename LicenceTypeTraits<ToolType>::Type;
+
+	ToolLender(NexusFieldProof proof_, ModelContext::ModelContainer* modelContainer_);
+
+	template<typename ToolType>
+	auto* Lend(typename LicenceTypeTraits<ToolType>::Type licence_)
+	{
+		return std::get<ToolType*>(tools).get();
+	}
+
+
+private:
+
+	std::tuple<ModelContext::ModelContainer*> tools;
+
+};
+
+
+template<>
+struct ModelContext::ToolLender::LicenceTypeTraits<ModelContext::ModelContainer>
+{
+	using Type = ModelContainerAccessLicence;
+};
+
+
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Model\ModelContextDiplomat\ModelContextToolLender\ModelContextToolLenderLicence.h ===
+========================================
+#pragma once
+#include "ModelContextToolLender.h"
+
+struct ModelContext::ToolLender::ModelContainerAccessLicence
+{
+private:
+
+	//friend class SwapChainContext;
+	explicit ModelContainerAccessLicence() = default;
+};
 
 
 
@@ -17338,8 +17473,8 @@ void Nexus::Finalize()
 #include "../LowerLayer/Resource/RootSignature/RootSignatureContext.h"
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 #include "../LowerLayer/Resource/Model/ModelContext.h"
-#include "../LowerLayer/Resource/Model/MeshContextDiplomat/MeshContextDiplomat.h"
-#include "../LowerLayer/Resource/Model/MeshContextDiplomat/MeshContextExecutionAgent/MeshContextExecutionAgent.h"
+#include "../LowerLayer/Resource/Model/ModelContextDiplomat/ModelContextDiplomat.h"
+#include "../LowerLayer/Resource/Model/ModelContextDiplomat/ModelContextExecutionAgent/ModelContextExecutionAgent.h"
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 #include "../LowerLayer/Render/RenderContext.h"
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
