@@ -112,6 +112,8 @@ namespace ProjectConfig
 		constexpr bool kEnablePointerValidator = true;
 		//Comptrのリークチェック
 		constexpr bool kEnableLeakChecker = true;
+		//Jsonファイルを読み込むときに型チェックを行うかどうか
+		constexpr bool kEnableJsonDataTypeCheck = true;
 
 	}
 
@@ -16202,31 +16204,7 @@ void ShaderLibrary::CompileAllShaderFiles(ShaderContext::Compiler* compiler_)
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////
-std::unordered_map<std::string, std::string> ShaderLibrary::LoadShaderRegistry(const std::string& filePath) 
-{
-    std::unordered_map<std::string, std::string> registry;
 
-    std::ifstream file(filePath);
-    ErrorMessageOutput::Abort::DetectError(file.is_open(), "Registryフォルダの中のファイルが読み込めない", fileName);
-
-    std::regex pattern("key:\\s*\"([^\"]*)\"\\s*,\\s*value:\\s*\"([^\"]*)\"");
-    std::string line;
-    std::smatch match;
-
-    while (std::getline(file, line)) 
-    {
-        if (std::regex_search(line, match, pattern)) 
-        {
-            std::string key = match[1].str();
-            std::string value = match[2].str();
-                
-            registry[key] = value;
-        }
-    }
-
-    file.close();
-    return registry;
-}
 
 
 
@@ -16258,8 +16236,6 @@ private:
 	///本元データ
 	std::unordered_map<std::string, Microsoft::WRL::ComPtr<IDxcBlob>> data;
 
-	//シェーダー登録ファイルから何が登録されているか読み込む
-	std::unordered_map<std::string, std::string> LoadShaderRegistry(const std::string& filePath);
 	//コンパイルする
 	void CompileAllShaderFiles(ShaderContext::Compiler* compiler_);
 	//いったんハードコーディングでそのシェーダーファイルの
@@ -16900,14 +16876,39 @@ struct Vector4
 #include "MiyaJison.h"
 #include "JsonDataLibrary/JsonDataLibrary.h"
 #include "LoadRegistry/LoadRegistry.h"
+#include "JsonDataLoader/JsonDataLoader.h"
 
 MiyaJison::MiyaJison()
+{
+    jsonDataLibrary.reset(new DataLibrary());
+
+    LoadAllJsonFiles();
+}
+
+MiyaJison* MiyaJison::Get()
+{
+    static MiyaJison miyaJison;
+
+    return &miyaJison;
+}
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+void MiyaJison::LoadAllJsonFiles()
 {
     std::unordered_map<std::string, std::string> fileName_Path =
         LoadRegistry::Load("Assets/Registry/JsonFiles.txt");
 
-}
+    DataLibrary::HandleLicence licence;
 
+    for (const auto& [key, value] : fileName_Path)
+    {
+        jsonDataLibrary->Import(licence, key, LoadJsonFile(value));
+    }
+}
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 nlohmann::json MiyaJison::LoadJsonFile(std::string filePath_)
 {
     std::ifstream file(filePath_);
@@ -16919,25 +16920,55 @@ nlohmann::json MiyaJison::LoadJsonFile(std::string filePath_)
         "Json.cpp"
     );
 
-
     nlohmann::json jsonData;
     file >> jsonData;
 
     return jsonData;
 }
-
-
-const nlohmann::json& MiyaJison::Load(std::string fileName)
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+const nlohmann::json& MiyaJison::PullJsonData(std::string fileName_)
 {
-    return jsonDataLibrary->Export(JsonDataLibrary::HandleLicence{}, fileName);
+    return jsonDataLibrary->Export(DataLibrary::HandleLicence{}, fileName_);
+}
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+template<>
+int MiyaJison::LoadData(std::string fileName_, Group_Value group_value_)
+{
+    const nlohmann::json& jsonData = PullJsonData(fileName_);
+
+    return DataLoader::Load<int>(jsonData, group_value_);
 }
 
-
-MiyaJison* MiyaJison::Get()
+template<>
+double MiyaJison::LoadData(std::string fileName_, Group_Value group_value_)
 {
-    static MiyaJison miyaJison;
+    const nlohmann::json& jsonData = PullJsonData(fileName_);
 
-    return &miyaJison;
+    return DataLoader::Load<double>(jsonData, group_value_);
+
+}
+
+template<>
+bool MiyaJison::LoadData(std::string fileName_, Group_Value group_value_)
+{
+    const nlohmann::json& jsonData = PullJsonData(fileName_);
+
+    return DataLoader::Load<bool>(jsonData, group_value_);
+
+}
+
+template<>
+std::string MiyaJison::LoadData(std::string fileName_, Group_Value group_value_)
+{
+    const nlohmann::json& jsonData = PullJsonData(fileName_);
+
+    return DataLoader::Load<std::string>(jsonData, group_value_);
+
 }
 
 
@@ -16953,11 +16984,12 @@ MiyaJison* MiyaJison::Get()
 
 class MiyaJison
 {
-	class Loader;
-	class JsonDataLibrary;
-
+	class DataLoader;
+	class DataLibrary;
+	class DataChecker;
 
 	using Group_Value = std::array<std::string, 2>;
+	using ValidDataTypes = std::variant<std::string, int, float, bool>;
 
 public:
 
@@ -16970,17 +17002,81 @@ public:
 	MiyaJison(MiyaJison&&) = delete;
 	MiyaJison& operator=(MiyaJison&&) = delete;
 
-
-	const nlohmann::json& Load(std::string fileName);
+	///ジェーソンファイル名(「.json」省略！！！！)、グループ名とキーを入力し目的のデータを引っ張る
+	///ファイル名はすべてAssets/Registryにあるからそこを見るべし
+	template<typename DataType>
+	DataType LoadData(std::string fileName_, Group_Value group_value_);
 
 protected:
 
 
 private:
 
-	std::unique_ptr<JsonDataLibrary> jsonDataLibrary;
+	std::unique_ptr<DataLibrary> jsonDataLibrary;
 
+	///ファイル名からジェーソンデータをライブラリーから引っ張り、返す
+	const nlohmann::json& PullJsonData(std::string fileName_);
+
+	//パスからジェーソンファイルを読み込んでジェーソンデータを返す
 	nlohmann::json LoadJsonFile(std::string filePath_);
+
+	//ジェーソンファイルレジストリーから全てのジェーソンファイルのパスを取得して読み込み、
+	///ライブラリーに詰めていく
+	void LoadAllJsonFiles();
+};
+
+template<>
+int MiyaJison::LoadData(std::string fileName_, Group_Value group_value_);
+
+template<>
+double MiyaJison::LoadData(std::string fileName_, Group_Value group_value_);
+
+template<>
+bool MiyaJison::LoadData(std::string fileName_, Group_Value group_value_);
+
+template<>
+std::string MiyaJison::LoadData(std::string fileName_, Group_Value group_value_);
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\MiddleLayer\MiyaJison\JsonDataChecker\JsonDataChecker.cpp ===
+========================================
+#include "PreCompileHeader.h"
+#include "JsonDataChecker.h"
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\MiddleLayer\MiyaJison\JsonDataChecker\JsonDataChecker.h ===
+========================================
+#pragma once
+#include "../MiyaJison.h"
+
+
+class MiyaJison::DataChecker
+{
+	friend class MiyaJison;
+
+	///ProjectConfigのテータチェックフラグがオンの時に作動する
+	template<typename DataType>
+	static void Check()
+	{
+		if (ProjectConfig::Debug::kEnableJsonDataTypeCheck) return;
+
+		if constexpr
+		(
+			!std::is_same_v<DataType, std::string>   &&
+			!std::is_same_v<DataType, int>			 &&
+			!std::is_same_v<DataType, bool>			 &&
+			!std::is_same_v<DataType, double>
+		)
+		{
+			ErrorMessageOutput::Assert::OutputError("データ型に異常あり", "JsonDataLoader.h");
+		}
+	}
 
 };
 
@@ -16996,13 +17092,14 @@ private:
 
 
 
-void MiyaJison::JsonDataLibrary::Import(HandleLicence licence_, std::string fileName_, nlohmann::json jsonData_)
+void MiyaJison::DataLibrary::Import(HandleLicence licence_, std::string fileName_, nlohmann::json jsonData_)
 {
 	lib[fileName_] = jsonData_;
+	Logger::Log("Import: " + fileName_, "JsonDataLibrary.h");
 }
 
 
-const nlohmann::json& MiyaJison::JsonDataLibrary::Export(HandleLicence licence_, std::string fileName_)const
+const nlohmann::json& MiyaJison::DataLibrary::Export(HandleLicence licence_, std::string fileName_)const
 {
 	ErrorMessageOutput::Assert::DetectError
 	(
@@ -17024,7 +17121,7 @@ const nlohmann::json& MiyaJison::JsonDataLibrary::Export(HandleLicence licence_,
 #include "../MiyaJison.h"
 
 
-class MiyaJison::JsonDataLibrary
+class MiyaJison::DataLibrary
 {
 public:
 
@@ -17040,7 +17137,7 @@ private:
 };
 
 
-struct MiyaJison::JsonDataLibrary::HandleLicence
+struct MiyaJison::DataLibrary::HandleLicence
 {
 private:
 
@@ -17055,30 +17152,37 @@ private:
 
 
 ========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\MiddleLayer\MiyaJison\JsonLoader\JsonLoader.cpp ===
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\MiddleLayer\MiyaJison\JsonDataLoader\JsonDataLoader.cpp ===
 ========================================
 #include "PreCompileHeader.h"
-#include "JsonLoader.h"
+#include "JsonDataLoader.h"
 
 
 
 
 ========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\MiddleLayer\MiyaJison\JsonLoader\JsonLoader.h ===
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\MiddleLayer\MiyaJison\JsonDataLoader\JsonDataLoader.h ===
 ========================================
 #pragma once
 #include "../MiyaJison.h"
+#include "../JsonDataChecker/JsonDataChecker.h"
 
-class MiyaJison::Loader
+class MiyaJison::DataLoader
 {
-	friend class Json;
+	friend class MiyaJison;
 
 	template<typename DataType>
 	static DataType Load(const nlohmann::json& jsonData, Group_Value group_value_)
 	{
+		auto data = jsonData[group_value_[0]][group_value_[1]];
+		auto value = data.get<DataType>();
 
+		//データ型チェック
+		MiyaJison::DataChecker::Check<decltype(value)>();
 
+		return value;
 	}
+
 };
 
 

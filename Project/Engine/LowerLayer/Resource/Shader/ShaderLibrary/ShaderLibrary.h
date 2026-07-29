@@ -23,8 +23,6 @@ private:
 	///本元データ
 	std::unordered_map<std::string, Microsoft::WRL::ComPtr<IDxcBlob>> data;
 
-	//シェーダー登録ファイルから何が登録されているか読み込む
-	std::unordered_map<std::string, std::string> LoadShaderRegistry(const std::string& filePath);
 	//コンパイルする
 	void CompileAllShaderFiles(ShaderContext::Compiler* compiler_);
 	//いったんハードコーディングでそのシェーダーファイルの

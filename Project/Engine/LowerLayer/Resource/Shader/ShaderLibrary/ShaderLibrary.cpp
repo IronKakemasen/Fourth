@@ -72,28 +72,3 @@ void ShaderLibrary::CompileAllShaderFiles(ShaderContext::Compiler* compiler_)
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////
-std::unordered_map<std::string, std::string> ShaderLibrary::LoadShaderRegistry(const std::string& filePath) 
-{
-    std::unordered_map<std::string, std::string> registry;
-
-    std::ifstream file(filePath);
-    ErrorMessageOutput::Abort::DetectError(file.is_open(), "Registryフォルダの中のファイルが読み込めない", fileName);
-
-    std::regex pattern("key:\\s*\"([^\"]*)\"\\s*,\\s*value:\\s*\"([^\"]*)\"");
-    std::string line;
-    std::smatch match;
-
-    while (std::getline(file, line)) 
-    {
-        if (std::regex_search(line, match, pattern)) 
-        {
-            std::string key = match[1].str();
-            std::string value = match[2].str();
-                
-            registry[key] = value;
-        }
-    }
-
-    file.close();
-    return registry;
-}

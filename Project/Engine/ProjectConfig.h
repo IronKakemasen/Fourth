@@ -60,6 +60,8 @@ namespace ProjectConfig
 		constexpr bool kEnablePointerValidator = true;
 		//Comptrのリークチェック
 		constexpr bool kEnableLeakChecker = true;
+		//Jsonファイルを読み込むときに型チェックを行うかどうか
+		constexpr bool kEnableJsonDataTypeCheck = true;
 
 	}
 
