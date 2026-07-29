@@ -4,11 +4,12 @@
 
 class MiyaJison
 {
-	class Loader;
-	class JsonDataLibrary;
-
+	class DataLoader;
+	class DataLibrary;
+	class DataChecker;
 
 	using Group_Value = std::array<std::string, 2>;
+	using ValidDataTypes = std::variant<std::string, int, float, bool>;
 
 public:
 
@@ -21,17 +22,37 @@ public:
 	MiyaJison(MiyaJison&&) = delete;
 	MiyaJison& operator=(MiyaJison&&) = delete;
 
-
-	const nlohmann::json& Load(std::string fileName);
+	///ジェーソンファイル名(「.json」省略！！！！)、グループ名とキーを入力し目的のデータを引っ張る
+	///ファイル名はすべてAssets/Registryにあるからそこを見るべし
+	template<typename DataType>
+	DataType LoadData(std::string fileName_, Group_Value group_value_);
 
 protected:
 
 
 private:
 
-	std::unique_ptr<JsonDataLibrary> jsonDataLibrary;
+	std::unique_ptr<DataLibrary> jsonDataLibrary;
 
+	///ファイル名からジェーソンデータをライブラリーから引っ張り、返す
+	const nlohmann::json& PullJsonData(std::string fileName_);
+
+	//パスからジェーソンファイルを読み込んでジェーソンデータを返す
 	nlohmann::json LoadJsonFile(std::string filePath_);
 
+	//ジェーソンファイルレジストリーから全てのジェーソンファイルのパスを取得して読み込み、
+	///ライブラリーに詰めていく
+	void LoadAllJsonFiles();
 };
 
+template<>
+int MiyaJison::LoadData(std::string fileName_, Group_Value group_value_);
+
+template<>
+double MiyaJison::LoadData(std::string fileName_, Group_Value group_value_);
+
+template<>
+bool MiyaJison::LoadData(std::string fileName_, Group_Value group_value_);
+
+template<>
+std::string MiyaJison::LoadData(std::string fileName_, Group_Value group_value_);

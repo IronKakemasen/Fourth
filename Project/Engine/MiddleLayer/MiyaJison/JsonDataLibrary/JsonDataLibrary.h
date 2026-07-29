@@ -2,7 +2,7 @@
 #include "../MiyaJison.h"
 
 
-class MiyaJison::JsonDataLibrary
+class MiyaJison::DataLibrary
 {
 public:
 
@@ -18,7 +18,7 @@ private:
 };
 
 
-struct MiyaJison::JsonDataLibrary::HandleLicence
+struct MiyaJison::DataLibrary::HandleLicence
 {
 private:
 

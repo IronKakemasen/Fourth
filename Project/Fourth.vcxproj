@@ -350,9 +350,10 @@
     <ClCompile Include="Engine\LowerLayer\Resource\Model\TestModelOKIBA.cpp" />
     <ClCompile Include="Engine\LowerLayer\Resource\Model\CreateModelTools\ModelDataCreator\MeshDataCreatorTools\TransformMatrixContainerBufferCreator\TransformMatrixContainerBufferCreator.cpp" />
     <ClCompile Include="Engine\LowerLayer\Resource\Model\ModelContextDiplomat\ModelContextToolLender\ModelContextToolLender.cpp" />
-    <ClCompile Include="Engine\MiddleLayer\MiyaJison\JsonLoader\JsonLoader.cpp" />
+    <ClCompile Include="Engine\MiddleLayer\MiyaJison\JsonDataLoader\JsonDataLoader.cpp" />
     <ClCompile Include="Engine\MiddleLayer\MiyaJison\MiyaJison.cpp" />
     <ClCompile Include="Engine\MiddleLayer\MiyaJison\JsonDataLibrary\JsonDataLibrary.cpp" />
+    <ClCompile Include="Engine\MiddleLayer\MiyaJison\JsonDataChecker\JsonDataChecker.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Assets\Shared\ConstantBuffers.h" />
@@ -543,9 +544,10 @@
     <ClInclude Include="Engine\LowerLayer\Resource\Model\TestModelOKIBA.h" />
     <ClInclude Include="Engine\LowerLayer\Resource\Model\CreateModelTools\ModelDataCreator\MeshDataCreatorTools\TransformMatrixContainerBufferCreator\TransformMatrixContainerBufferCreator.h" />
     <ClInclude Include="Engine\LowerLayer\Resource\Model\ModelContextDiplomat\ModelContextToolLender\ModelContextToolLender.h" />
-    <ClInclude Include="Engine\MiddleLayer\MiyaJison\JsonLoader\JsonLoader.h" />
+    <ClInclude Include="Engine\MiddleLayer\MiyaJison\JsonDataLoader\JsonDataLoader.h" />
     <ClInclude Include="Engine\MiddleLayer\MiyaJison\MiyaJison.h" />
     <ClInclude Include="Engine\MiddleLayer\MiyaJison\JsonDataLibrary\JsonDataLibrary.h" />
+    <ClInclude Include="Engine\MiddleLayer\MiyaJison\JsonDataChecker\JsonDataChecker.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
