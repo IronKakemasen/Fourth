@@ -1,12 +1,12 @@
 #pragma once
-#include "../../Engine/MiddleLayer/Math/Vector/Vector4.h"
-#include "../../Engine/MiddleLayer/Math/Matrix/Matrix4x4.h"
 
 #ifdef __cplusplus
 
+#include "../../Engine/MiddleLayer/Math/Vector/Vector4.h"
+#include "../../Engine/MiddleLayer/Math/Matrix/Matrix4x4.h"
+
 namespace StructuredBufferDataDefinition
 {
-    //標準的な頂点情報
     struct StandardVertexGPU
     {
         Vector4<float> localPos;
@@ -17,28 +17,25 @@ namespace StructuredBufferDataDefinition
 
     struct MeshletCPUGPU
     {
-        //頂点番号オフセット
         uint32_t vertexOffset;
-        //頂点カウント
         uint32_t vertexCnt;
-        //プリミティブ番号オフセット
         uint32_t primitiveOffset;
-        //プリミティブカウント
         uint32_t primitiveCnt;
     };
 
     struct PrimitiveIndexCPUGPU
     {
-        uint32_t index0     : 10;
-        uint32_t index1     : 10;
-        uint32_t index2     : 10;
-        uint32_t reserved   : 2;
+        uint32_t index0 : 10;
+        uint32_t index1 : 10;
+        uint32_t index2 : 10;
+        uint32_t reserved : 2;
     };
 
     struct UniqueVertexIndexCPUGPU
     {
         UniqueVertexIndexCPUGPU(uint32_t index_)
-        : index(index_) {}
+            : index(index_) {
+        }
 
         uint32_t index{};
 
@@ -50,14 +47,12 @@ namespace StructuredBufferDataDefinition
         Matrix4x4 world;
     };
 
-    ///メッシュデータのバッファのSRVHeapIndexをひとまとまりにしたもの
     struct MeshDataSRVHeapIndexGroupGPUCPU
     {
         SRVHeapIndex vertices{};
         SRVHeapIndex uniqueVertexIndices{};
         SRVHeapIndex meshlets{};
         SRVHeapIndex primitiveIndices{};
-        ///マテリアルも追加予定?
     };
 }
 
@@ -73,13 +68,9 @@ struct StandardVertex
 
 struct Meshlet
 {
-    //頂点番号オフセット
     uint vertexOffset;
-    //頂点数
     uint vertexCnt;
-    //プリミティブ番号オフセット
     uint primitiveOffset;
-    //プリミティブオフセット
     uint primitiveCnt;
 };
 

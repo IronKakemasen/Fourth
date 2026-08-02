@@ -2,46 +2,71 @@
     [string]$fileName,  # 1: JSONファイル名（.json なしでOK）
     [string]$groupName, # 2: グループ名
     [string]$keyName,   # 3: キー名
-    [string]$value      # 4: 値（自動型判別）
+    [string]$value      # 4: 値（カンマ区切りで配列化）
 )
+
+# ------------------------------------------
+# 余計なクォーテーションの自動除去 & スペース区切りの結合処理
+# ------------------------------------------
+if ($args.Count -gt 0) {
+    $value = ($value, ($args -join " ")) -join " "
+}
+
+$fileName  = $fileName.Trim('"').Trim("'")
+$groupName = $groupName.Trim('"').Trim("'")
+$keyName   = $keyName.Trim('"').Trim("'")
+if ($value) {
+    $value = $value.Trim('"').Trim("'")
+}
 
 # ------------------------------------------
 # 設定：保存先ディレクトリ
 # ------------------------------------------
 $baseDir = "C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Assets\JsonFiles\EngineCoreJsonFile"
-# ファイル名チェック
+
 if ([string]::IsNullOrWhiteSpace($fileName)) {
     Write-Host "エラー: JSONファイル名が指定されていません。" -ForegroundColor Red
     exit
 }
 
-# 拡張子 .json の自動補完
 if (-not $fileName.EndsWith(".json", [System.StringComparison]::OrdinalIgnoreCase)) {
     $fileName = "$fileName.json"
 }
 
-# フルパスを作成
 $filePath = Join-Path -Path $baseDir -ChildPath $fileName
 
 # ------------------------------------------
-# 型の自動判別（Bool / Float / Int / String）
+# 型判別処理用の内部関数
 # ------------------------------------------
-$parsedValue = $value
+function Parse-SingleValue([string]$item) {
+    $item = $item.Trim()
 
-# 1. Bool値 (true / false)
-if ($value -match '^(true|false)$') {
-    $parsedValue = [bool]::Parse($value)
+    # 1. Bool値 (true / false)
+    if ($item -match '^(true|false)$') {
+        return [bool]::Parse($item)
+    }
+    # 2. Float値
+    elseif ($item -match '^-?\d+\.\d+[fF]?$' -or $item -match '^-?\d+[fF]$') {
+        $clean = $item -replace '[fF]$', ''
+        return [double]$clean
+    }
+    # 3. 整数値
+    elseif ($item -match '^-?\d+$') {
+        return [int64]$item
+    }
+    # 4. 文字列
+    return $item
 }
-# 2. Float値（3.14 や -0.5 に加え、1.0f や 2f などの 'f' 付き表記にも対応）
-elseif ($value -match '^-?\d+\.\d+[fF]?$' -or $value -match '^-?\d+[fF]$') {
-    $cleanValue = $value -replace '[fF]$', ''
-    $parsedValue = [double]$cleanValue
+
+# ------------------------------------------
+# 値のパース処理（カンマが含まれていれば配列化）
+# ------------------------------------------
+if ($value -contains ',' -or $value -match ',') {
+    # カンマで分割して要素ごとに型判別
+    $parsedValue = @($value -split ',' | ForEach-Object { Parse-SingleValue $_ })
+} else {
+    $parsedValue = Parse-SingleValue $value
 }
-# 3. 整数値 (100, -50 など)
-elseif ($value -match '^-?\d+$') {
-    $parsedValue = [int64]$value
-}
-# 4. それ以外は文字列 ($value のまま)
 
 # ------------------------------------------
 # 1. 保存先フォルダが存在しなければ自動作成
@@ -78,4 +103,4 @@ $jsonObj.$groupName | Add-Member -NotePropertyName $keyName -NotePropertyValue $
 $jsonObj | ConvertTo-Json -Depth 10 | Set-Content -Path $filePath -Encoding UTF8
 
 Write-Host "JSON更新完了: $filePath" -ForegroundColor Green
-Write-Host " -> [$groupName][$keyName] = $parsedValue ($($parsedValue.GetType().Name))" -ForegroundColor Cyan
+Write-Host " -> [$groupName][$keyName] = $value" -ForegroundColor Cyan

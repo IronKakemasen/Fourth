@@ -63,6 +63,8 @@ Nexus::Nexus()
 	//自身のインスタンス制限
 	ErrorMessageOutput::Assert::DetectError(InstanceLimiter::CanInstantiate(), "Nexusクラスが複数具現化されてます", fileName);
 
+	InitializeInSequence<InitSequence::kLoadAllJsonFiles>();
+
 	InitializeInSequence<InitSequence::kDeviceContext>();
 	InitializeInSequence<InitSequence::kWindowContext>();
 	InitializeInSequence<InitSequence::kDescriptorHeapContext>();

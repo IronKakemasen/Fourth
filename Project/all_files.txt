@@ -8,12 +8,14 @@ void Update(Nexus& nexus_);
 
 int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 {
+
+    Logger::Log(std::filesystem::current_path().string());
+
     //デバッガー。DebugLayer, PointerValidator, LeakChecker
     RuntimeDebugger runtimeDebugger;
     //エンジンの交易場
     Nexus nexus;
 
-    MiyaJison::Get();
 
     Update(nexus);
 
@@ -3545,7 +3547,7 @@ DeviceContext::CommandProvider::ProvideCreatePSOCommand();
 #include "DeviceContextSetupper.h"
 #include "EngineRequirementsChecker/EngineRequirementsChecker.h"
 
-#include "StringConnverter/StringConverter.h"
+#include "StringConverter/StringConverter.h"
 
 namespace 
 {
@@ -4667,7 +4669,7 @@ private:
 ========================================
 
 #include "ErrorMessageOutput.h"
-#include "../../../Utility/StringConnverter/StringConverter.h"
+#include "../../../Utility/StringConverter/StringConverter.h"
 
 
 void ErrorMessageOutput::Abort::OutputError(const std::string& message_ , const std::string& fileName_)
@@ -9037,7 +9039,7 @@ class BufferContext::BufferUploader::IntermediateResourceCreator
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Buffer\BufferCreateTools\ResourceCreator\ResourceCreator.cpp ===
 ========================================
 #include "ResourceCreator.h"
-#include "../../../../../Utility/StringConnverter/StringConverter.h"
+#include "../../../../../Utility/StringConverter/StringConverter.h"
 
 //外部
 #include "../../../../Core/Device/DeviceContextDiplomat/DeviceContextDiplomat.h"
@@ -10490,7 +10492,7 @@ protected:
 ========================================
 
 #include "GPUBufferBehavior.h"
-#include "../../../../../Utility/StringConnverter/StringConverter.h"
+#include "../../../../../Utility/StringConverter/StringConverter.h"
 #include "../BufferDescriptions/BufferDescriptionBehavior.h"
 #include "../ResourceBarrier.h"
 
@@ -11758,7 +11760,7 @@ private:
 #include "../../../Buffer/BufferContextDiplomat/BufferToolLender/BufferToolLender.h"
 #include "../../../Buffer/BufferContextDiplomat/BufferToolLender/BufferToolLenderLicence.h"
 
-#include "LoadRegistry/LoadRegistry.h"
+#include "RegistryLoader/RegistryLoader.h"
 
 using namespace StructuredBufferDataDefinition;
 
@@ -11895,7 +11897,7 @@ std::unordered_map<std::string , ModelDataAggregate*> ModelContext::ModelDataCre
 {
     std::unordered_map<std::string, ModelDataAggregate*> modelDataLib;
 
-    auto modelFileName_pathLib = LoadRegistry::Load("Assets/Registry/ModelFiles.txt");
+    auto modelFileName_pathLib = RegistryLoader::Load<RegistryLoader::RegistryFileType::kModelFiles>();
 
     for (const auto& [key, value] : modelFileName_pathLib)
     {
@@ -12594,7 +12596,7 @@ class ModelContext::ModelDataCreator::TransformMatrixContainerBufferCreator
 #include "ModelDataCache/ModelDataCache.h"
 #include "../../ModelStructure/ModelData/ModelDataAggregate.h"
 
-#include "StringConnverter/StringConverter.h"
+#include "StringConverter/StringConverter.h"
 
 #include ".././../../../External/assimp/include/assimp/Importer.hpp"
 #include ".././../../../External/assimp/include/assimp/scene.h"
@@ -12750,7 +12752,7 @@ private:
 #include ".././../../../External/assimp/include/assimp/postprocess.h"
 #include ".././../../../External/assimp/include/assimp/cimport.h"
 
-#include "StringConnverter/StringConverter.h"
+#include "StringConverter/StringConverter.h"
 
 namespace
 {
@@ -15865,7 +15867,7 @@ private:
 ========================================
 
 #include "ShaderCompiler.h"
-#include "../../../../Utility/StringConnverter/StringConverter.h"
+#include "../../../../Utility/StringConverter/StringConverter.h"
 
 namespace
 {
@@ -16132,7 +16134,8 @@ private:
 ========================================
 #include "ShaderLibrary.h"
 #include "../ShaderCompiler/ShaderCompiler.h"
-#include "LoadRegistry/LoadRegistry.h"
+#include "RegistryLoader/RegistryLoader.h"
+#include "StringConverter/StringConverter.h"
 
 #include <regex>
 #include <iostream>
@@ -16180,31 +16183,81 @@ void ShaderLibrary::CompileAllShaderFiles(ShaderContext::Compiler* compiler_)
 {
     auto const psProfile = L"ps_6_6";
     auto const msProfile = L"ms_6_6";
-    std::string const shaderRegistryFilePath_MS = "Assets/Registry/MSFiles.txt";
-    std::string const shaderRegistryFilePath_PS = "Assets/Registry/PSFiles.txt";
 
-    std::unordered_map<std::string, std::string> shaderRegistryMS;
-    std::unordered_map<std::string, std::string> shaderRegistryPS;
+    std::string const shaderArgmentJsonPath = "Assets/JsonFiles/EngineCoreJsonFile/";
 
-    shaderRegistryMS = LoadRegistry::Load(shaderRegistryFilePath_MS);
-    Logger::Log("Load: " + shaderRegistryFilePath_MS, fileName);
-    shaderRegistryPS = LoadRegistry::Load(shaderRegistryFilePath_PS);
-    Logger::Log("Load: " + shaderRegistryFilePath_PS, fileName);
+    std::unordered_map<std::string, std::string> shaderRegistryMS = 
+        RegistryLoader::Load<RegistryLoader::RegistryFileType::kMSFiles>();
+
+    std::unordered_map<std::string, std::string> shaderRegistryPS = 
+        RegistryLoader::Load<RegistryLoader::RegistryFileType::kPSFiles>();
+
+    //シェーダのargmentsが詰まってる
+    auto shaderFileNameToArgs = GetArgs();
+
+
 
     for (const auto& [key, value] : shaderRegistryMS)
     {
-        data[key] = compiler_->CompileShader(value, key, msProfile);
+        data[key] = compiler_->CompileShader(value, key, msProfile, shaderFileNameToArgs[key]);
     }
 
     for (const auto& [key, value] : shaderRegistryPS)
     {
-        data[key] = compiler_->CompileShader(value, key, psProfile);
+        data[key] = compiler_->CompileShader(value, key, psProfile, shaderFileNameToArgs[key]);
     }
 }
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////
+std::unordered_map<std::string, std::vector<std::wstring>> ShaderLibrary::GetArgs()
+{
+    //シェーダーファイルの名前をキーとしたArgs
+    std::unordered_map<std::string, std::vector<std::wstring>> shaderArgs;
 
+    //ジェーソンファイル一覧を取得
+    std::unordered_map<std::string, std::string> jsonRegistry =
+        RegistryLoader::Load<RegistryLoader::RegistryFileType::kJsonFiles>();
+
+    //メッシュシェーダーのキーのベクター
+    std::vector<std::string> msShaderFileNames = 
+        RegistryLoader::LoadRegistryKeys<RegistryLoader::RegistryFileType::kMSFiles>();
+    //ピクセルシェーダーのキーのベクター
+    std::vector<std::string> psShaderFileNames =
+        RegistryLoader::LoadRegistryKeys<RegistryLoader::RegistryFileType::kPSFiles>();
+
+    //結合
+    std::vector<std::string> allShaderFileNames;
+    allShaderFileNames.reserve(msShaderFileNames.size() + psShaderFileNames.size());
+    allShaderFileNames.insert(allShaderFileNames.end(), msShaderFileNames.begin(), msShaderFileNames.end());
+    allShaderFileNames.insert(allShaderFileNames.end(), psShaderFileNames.begin(), psShaderFileNames.end());
+
+    auto* miyaJison = MiyaJison::Get();
+
+    //シェーダーのセッティングが記述されているジェーソンファイルのキー
+    auto const srcJsonFileKey = "ShaderSettings";
+    std::unordered_map<std::string, std::vector<std::string>> argsMap;
+
+    for (auto const& key : allShaderFileNames)
+    {
+        auto const groupName = key;
+
+        std::vector<std::string> args =
+            miyaJison->LoadData<std::vector<std::string>>(srcJsonFileKey, { groupName ,"Args" });
+
+        argsMap[key] = args;
+    }
+
+    for (auto [key,value] : argsMap)
+    {
+        for (auto& arg : value)
+        {
+            shaderArgs[key].emplace_back(StringConverter::ConvertString(arg));
+        }
+    }
+
+    return shaderArgs;
+}
 
 
 
@@ -16231,6 +16284,7 @@ public:
 
 	///シェーダーバイナリオブジェのポインタを輸出
 	IDxcBlob* Export(GetDataKey key_, const std::string& fileName_);
+	
 
 private:
 	///本元データ
@@ -16238,7 +16292,8 @@ private:
 
 	//コンパイルする
 	void CompileAllShaderFiles(ShaderContext::Compiler* compiler_);
-	//いったんハードコーディングでそのシェーダーファイルの
+	std::unordered_map<std::string, std::vector<std::wstring>> GetArgs();
+
 
 };
 
@@ -16875,12 +16930,13 @@ struct Vector4
 #include "PreCompileHeader.h"
 #include "MiyaJison.h"
 #include "JsonDataLibrary/JsonDataLibrary.h"
-#include "LoadRegistry/LoadRegistry.h"
+#include "RegistryLoader/RegistryLoader.h"
 #include "JsonDataLoader/JsonDataLoader.h"
 
 MiyaJison::MiyaJison()
 {
     jsonDataLibrary.reset(new DataLibrary());
+    Logger::Log("Instantiate: jsonDataLibrary", "MiyaJison.cpp");
 
     LoadAllJsonFiles();
 }
@@ -16897,7 +16953,7 @@ MiyaJison* MiyaJison::Get()
 void MiyaJison::LoadAllJsonFiles()
 {
     std::unordered_map<std::string, std::string> fileName_Path =
-        LoadRegistry::Load("Assets/Registry/JsonFiles.txt");
+        RegistryLoader::Load<RegistryLoader::RegistryFileType::kJsonFiles>();
 
     DataLibrary::HandleLicence licence;
 
@@ -16971,6 +17027,42 @@ std::string MiyaJison::LoadData(std::string fileName_, Group_Value group_value_)
 
 }
 
+template<>
+std::vector<int> MiyaJison::LoadData(std::string fileName_, Group_Value group_value_)
+{
+    const nlohmann::json& jsonData = PullJsonData(fileName_);
+
+    return DataLoader::Load<std::vector<int>>(jsonData, group_value_);
+}
+
+template<>
+std::vector<double> MiyaJison::LoadData(std::string fileName_, Group_Value group_value_)
+{
+    const nlohmann::json& jsonData = PullJsonData(fileName_);
+
+    return DataLoader::Load<std::vector<double>>(jsonData, group_value_);
+}
+
+template<>
+std::vector<bool> MiyaJison::LoadData(std::string fileName_, Group_Value group_value_)
+{
+    const nlohmann::json& jsonData = PullJsonData(fileName_);
+
+    return DataLoader::Load<std::vector<bool>>(jsonData, group_value_);
+}
+
+template<>
+std::vector<std::string> MiyaJison::LoadData(std::string fileName_, Group_Value group_value_)
+{
+    const nlohmann::json& jsonData = PullJsonData(fileName_);
+
+    return DataLoader::Load<std::vector<std::string>>(jsonData, group_value_);
+}
+
+
+
+
+
 
 
 
@@ -16981,17 +17073,15 @@ std::string MiyaJison::LoadData(std::string fileName_, Group_Value group_value_)
 #pragma once
 #include "../../../External/nlohmann/json.hpp"
 
-
 class MiyaJison
 {
 	class DataLoader;
 	class DataLibrary;
 	class DataChecker;
 
-	using Group_Value = std::array<std::string, 2>;
-	using ValidDataTypes = std::variant<std::string, int, float, bool>;
-
 public:
+
+	using Group_Value = std::array<std::string, 2>;
 
 	static MiyaJison* Get();
 
@@ -17006,8 +17096,6 @@ public:
 	///ファイル名はすべてAssets/Registryにあるからそこを見るべし
 	template<typename DataType>
 	DataType LoadData(std::string fileName_, Group_Value group_value_);
-
-protected:
 
 
 private:
@@ -17037,6 +17125,18 @@ bool MiyaJison::LoadData(std::string fileName_, Group_Value group_value_);
 template<>
 std::string MiyaJison::LoadData(std::string fileName_, Group_Value group_value_);
 
+template<>
+std::vector<int> MiyaJison::LoadData(std::string fileName_, Group_Value group_value_);
+
+template<>
+std::vector<double> MiyaJison::LoadData(std::string fileName_, Group_Value group_value_);
+
+template<>
+std::vector<bool> MiyaJison::LoadData(std::string fileName_, Group_Value group_value_);
+
+template<>
+std::vector<std::string> MiyaJison::LoadData(std::string fileName_, Group_Value group_value_);
+
 
 
 
@@ -17064,14 +17164,19 @@ class MiyaJison::DataChecker
 	template<typename DataType>
 	static void Check()
 	{
-		if (ProjectConfig::Debug::kEnableJsonDataTypeCheck) return;
+		if (!ProjectConfig::Debug::kEnableJsonDataTypeCheck) return;
 
 		if constexpr
 		(
-			!std::is_same_v<DataType, std::string>   &&
-			!std::is_same_v<DataType, int>			 &&
-			!std::is_same_v<DataType, bool>			 &&
-			!std::is_same_v<DataType, double>
+			!std::is_same_v<DataType, std::string>					&&
+			!std::is_same_v<DataType, int>							&&
+			!std::is_same_v<DataType, bool>							&&
+			!std::is_same_v<DataType, double>						&&
+			!std::is_same_v<DataType, std::vector<std::string>>		&&
+			!std::is_same_v<DataType, std::vector<int>>				&&
+			!std::is_same_v<DataType, std::vector<bool>>			&&
+			!std::is_same_v<DataType, std::vector<double>>
+
 		)
 		{
 			ErrorMessageOutput::Assert::OutputError("データ型に異常あり", "JsonDataLoader.h");
@@ -17174,11 +17279,11 @@ class MiyaJison::DataLoader
 	template<typename DataType>
 	static DataType Load(const nlohmann::json& jsonData, Group_Value group_value_)
 	{
+		//データ型チェック
+		MiyaJison::DataChecker::Check<DataType>();
+
 		auto data = jsonData[group_value_[0]][group_value_[1]];
 		auto value = data.get<DataType>();
-
-		//データ型チェック
-		MiyaJison::DataChecker::Check<decltype(value)>();
 
 		return value;
 	}
@@ -17473,6 +17578,8 @@ Nexus::Nexus()
 	//自身のインスタンス制限
 	ErrorMessageOutput::Assert::DetectError(InstanceLimiter::CanInstantiate(), "Nexusクラスが複数具現化されてます", fileName);
 
+	InitializeInSequence<InitSequence::kLoadAllJsonFiles>();
+
 	InitializeInSequence<InitSequence::kDeviceContext>();
 	InitializeInSequence<InitSequence::kWindowContext>();
 	InitializeInSequence<InitSequence::kDescriptorHeapContext>();
@@ -17541,6 +17648,7 @@ class Nexus
 	//初期化・生成順序
 	enum class InitSequence
 	{
+		kLoadAllJsonFiles,
 		kDeviceContext,
 		kWindowContext,
 		kDescriptorHeapContext,
@@ -17561,7 +17669,7 @@ class Nexus
 
 
 		,kEnd
-	}next = InitSequence::kDeviceContext;
+	}next = InitSequence(0);
 
 public:
 
@@ -17705,6 +17813,18 @@ void Nexus::Init<Nexus::InitSequence::kDeviceContext>()
 	//deviceContextクラスのインスタンス化
 	deviceContext.reset(new DeviceContext(DeviceContext::NexusFieldProof{}));
 	Logger::Log("Instantiate: deviceContext", fileName);
+}
+
+
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+template<>
+void Nexus::Init<Nexus::InitSequence::kLoadAllJsonFiles>()
+{
+	//シングルトンだから一度読んでコンストラクタが通ればよし
+	MiyaJison::Get();
+
 }
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -17893,7 +18013,8 @@ void Nexus::Init<Nexus::InitSequence::kDeleteModelDataCache>()
 
 
 
-
+template
+void Nexus::Init<Nexus::InitSequence::kLoadAllJsonFiles>();
 
 template
 void Nexus::Init<Nexus::InitSequence::kDeviceContext>();
@@ -18307,97 +18428,176 @@ public:
 
 
 ========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Utility\LoadRegistry\LoadRegistry.cpp ===
-========================================
-#include "LoadRegistry.h"
-
-
-
-std::unordered_map<std::string, std::string > LoadRegistry::Load(std::string const kRegistryFileName_)
-{
-    std::unordered_map<std::string, std::string > modelFileName_pathLib;
-    std::ifstream file(kRegistryFileName_);
-
-    ErrorMessageOutput::Abort::DetectError
-    (
-        file.is_open(),
-        kRegistryFileName_ + "このパス無くない？",
-        "ModelRegistryLoader.h"
-    );
-
-    std::string line;
-
-    while (std::getline(file, line))
-    {
-        constexpr std::string_view keyToken = "key: \"";
-        constexpr std::string_view valueToken = "value: \"";
-
-        auto keyStart = line.find(keyToken);
-        if (keyStart == std::string::npos)
-        {
-            continue;
-        }
-
-
-        keyStart += keyToken.size();
-
-        auto keyEnd = line.find("\"", keyStart);
-        if (keyEnd == std::string::npos)
-        {
-            continue;
-        }
-
-
-        std::string key = line.substr
-        (
-            keyStart,
-            keyEnd - keyStart
-        );
-
-
-        auto valueStart = line.find(valueToken);
-        if (valueStart == std::string::npos)
-        {
-            continue;
-        }
-
-
-        valueStart += valueToken.size();
-
-        auto valueEnd = line.find("\"", valueStart);
-        if (valueEnd == std::string::npos)
-        {
-            continue;
-        }
-
-
-        std::string value = line.substr
-        (
-            valueStart,
-            valueEnd - valueStart
-        );
-
-
-        modelFileName_pathLib.emplace(key, value);
-    }
-
-    Logger::Log("Load: " + kRegistryFileName_, "ModelRegistryLoader.h");
-    return modelFileName_pathLib;
-}
-
-
-
-
-========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Utility\LoadRegistry\LoadRegistry.h ===
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Utility\RegistryLoader\RegistryLoader.h ===
 ========================================
 #pragma once
 
-namespace LoadRegistry
-{
-    std::unordered_map<std::string, std::string > Load(std::string const kRegistryFileName_);
 
-}
+class RegistryLoader
+{
+public:
+
+    enum class RegistryFileType
+    {
+        kMSFiles,
+        kPSFiles,
+        kCSFiles,
+        kModelFiles,
+        kJsonFiles
+
+
+
+        , kCount
+    };
+
+private:
+
+    template<RegistryFileType fileType>
+    static std::string FilePathtable()
+    {
+        static std::string const commonTo = "Assets/Registry/";
+        static std::string const commonFormat = ".txt";
+
+        static const std::string pathTable[(UINT)RegistryFileType::kCount]
+        {
+            "MSFiles",
+            "PSFiles",
+            "CSFiles",
+            "ModelFiles",
+            "JsonFiles"
+        };
+
+        return commonTo + pathTable[(UINT)fileType] + commonFormat;
+    }
+
+public:
+    
+    ///キーとバリューを取得
+    template<RegistryFileType fileType>
+    static std::unordered_map<std::string, std::string > Load()
+    {
+        std::string const registryFilePath = FilePathtable<fileType>();
+
+        std::unordered_map<std::string, std::string > modelFileName_pathLib;
+        std::ifstream file(registryFilePath);
+
+        ErrorMessageOutput::Abort::DetectError
+        (
+            file.is_open(),
+            registryFilePath + "このパス無くない？",
+            "ModelRegistryLoader.h"
+        );
+
+        std::string line;
+
+        while (std::getline(file, line))
+        {
+            constexpr std::string_view keyToken = "key: \"";
+            constexpr std::string_view valueToken = "value: \"";
+
+            auto keyStart = line.find(keyToken);
+            if (keyStart == std::string::npos)
+            {
+                continue;
+            }
+
+
+            keyStart += keyToken.size();
+
+            auto keyEnd = line.find("\"", keyStart);
+            if (keyEnd == std::string::npos)
+            {
+                continue;
+            }
+
+
+            std::string key = line.substr
+            (
+                keyStart,
+                keyEnd - keyStart
+            );
+
+
+            auto valueStart = line.find(valueToken);
+            if (valueStart == std::string::npos)
+            {
+                continue;
+            }
+
+            valueStart += valueToken.size();
+
+            auto valueEnd = line.find("\"", valueStart);
+            if (valueEnd == std::string::npos)
+            {
+                continue;
+            }
+
+            std::string value = line.substr
+            (
+                valueStart,
+                valueEnd - valueStart
+            );
+
+            modelFileName_pathLib.emplace(key, value);
+        }
+
+        Logger::Log("Load: " + registryFilePath, "RegistryLoader.h");
+        return modelFileName_pathLib;
+    }
+
+    ///キーのみ取得
+    template<RegistryFileType fileType>
+    static std::vector<std::string> LoadRegistryKeys()
+    {
+        std::string const registryFilePath = FilePathtable<fileType>();
+
+        std::vector<std::string> keys;
+        std::ifstream file(registryFilePath);
+
+        ErrorMessageOutput::Abort::DetectError
+        (
+            file.is_open(),
+            registryFilePath + "このパス無くない？",
+            "ModelRegistryLoader.h"
+        );
+
+        std::string line;
+
+        while (std::getline(file, line))
+        {
+            constexpr std::string_view keyToken = "key: \"";
+
+            auto keyStart = line.find(keyToken);
+            if (keyStart == std::string::npos)
+            {
+                continue;
+            }
+
+            keyStart += keyToken.size();
+
+            auto keyEnd = line.find("\"", keyStart);
+            if (keyEnd == std::string::npos)
+            {
+                continue;
+            }
+
+            std::string key = line.substr
+            (
+                keyStart,
+                keyEnd - keyStart
+            );
+
+
+            keys.emplace_back(key);
+        }
+
+        return keys;
+    }
+
+};
+
+
+
 
 
 
@@ -18445,7 +18645,7 @@ private:
 
 
 ========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Utility\StringConnverter\StringConverter.cpp ===
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Utility\StringConverter\StringConverter.cpp ===
 ========================================
 //
 #include "StringConverter.h"
@@ -18506,7 +18706,7 @@ std::string StringConverter::ToUTF8(const std::wstring& value)
 
 
 ========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Utility\StringConnverter\StringConverter.h ===
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Utility\StringConverter\StringConverter.h ===
 ========================================
 #pragma once
 

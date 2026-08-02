@@ -901,7 +901,7 @@ static void quadricFromAttributes(Quadric& Q, QuadricGrad* G, const Vector3& p0,
 	float denomr = denom == 0 ? 0.f : 1.f / denom;
 
 	// precompute gradient factors
-	// these are derived by directly computing derivative of eval(pos) = a0 * u + a1 * v + a2 * w and factoring out expressions that are shared between attributes
+	// these are derived by directly computing derivative of eval(pos) = a0 * u + a1 * v + a2 * w and factoring out expressions that are Shared between attributes
 	float gx1 = (d11 * v0.x - d01 * v1.x) * denomr;
 	float gx2 = (d00 * v1.x - d01 * v0.x) * denomr;
 	float gy1 = (d11 * v0.y - d01 * v1.y) * denomr;
@@ -1774,25 +1774,25 @@ static void solveAttributes(Vector3* vertex_positions, float* vertex_attributes,
 
 		for (size_t k = 0; k < attribute_count; ++k)
 		{
-			unsigned int shared = ~0u;
+			unsigned int Shared = ~0u;
 
-			// for complex vertices, preserve attribute continuity and use highest weight wedge if values were shared
+			// for complex vertices, preserve attribute continuity and use highest weight wedge if values were Shared
 			if (vertex_kind[i] == Kind_Complex)
 			{
-				shared = unsigned(i);
+				Shared = unsigned(i);
 
 				for (unsigned int v = wedge[i]; v != i; v = wedge[v])
 					if (vertex_attributes[v * attribute_count + k] != vertex_attributes[i * attribute_count + k])
-						shared = ~0u;
-					else if (shared != ~0u && attribute_quadrics[v].w > attribute_quadrics[shared].w)
-						shared = v;
+						Shared = ~0u;
+					else if (Shared != ~0u && attribute_quadrics[v].w > attribute_quadrics[Shared].w)
+						Shared = v;
 			}
 
 			// update attributes for all wedges
 			unsigned int v = unsigned(i);
 			do
 			{
-				unsigned int r = (shared == ~0u) ? v : shared;
+				unsigned int r = (Shared == ~0u) ? v : Shared;
 
 				const Vector3& p = vertex_positions[i]; // same for all wedges
 				const Quadric& A = attribute_quadrics[r];

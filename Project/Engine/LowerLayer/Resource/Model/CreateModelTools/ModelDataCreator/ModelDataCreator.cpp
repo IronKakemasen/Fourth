@@ -19,7 +19,7 @@
 #include "../../../Buffer/BufferContextDiplomat/BufferToolLender/BufferToolLender.h"
 #include "../../../Buffer/BufferContextDiplomat/BufferToolLender/BufferToolLenderLicence.h"
 
-#include "LoadRegistry/LoadRegistry.h"
+#include "RegistryLoader/RegistryLoader.h"
 
 using namespace StructuredBufferDataDefinition;
 
@@ -156,7 +156,7 @@ std::unordered_map<std::string , ModelDataAggregate*> ModelContext::ModelDataCre
 {
     std::unordered_map<std::string, ModelDataAggregate*> modelDataLib;
 
-    auto modelFileName_pathLib = LoadRegistry::Load("Assets/Registry/ModelFiles.txt");
+    auto modelFileName_pathLib = RegistryLoader::Load<RegistryLoader::RegistryFileType::kModelFiles>();
 
     for (const auto& [key, value] : modelFileName_pathLib)
     {

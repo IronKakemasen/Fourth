@@ -90,7 +90,7 @@
     <ClCompile Include="Engine\LowerLayer\Debug\Logger\Logger.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="Engine\Utility\StringConnverter\StringConverter.cpp">
+    <ClCompile Include="Engine\Utility\StringConverter\StringConverter.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
     <ClCompile Include="Engine\LowerLayer\Resource\Buffer\BufferDefinition\GPUBuffer\ConstantBuffer\ConstantBuffer.cpp">
@@ -513,9 +513,6 @@
     <ClCompile Include="Engine\MiddleLayer\MiyaJison\JsonDataLibrary\JsonDataLibrary.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="Engine\Utility\LoadRegistry\LoadRegistry.cpp">
-      <Filter>ソース ファイル</Filter>
-    </ClCompile>
     <ClCompile Include="Engine\MiddleLayer\MiyaJison\JsonDataChecker\JsonDataChecker.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
@@ -584,7 +581,7 @@
     <ClInclude Include="Engine\LowerLayer\Debug\Logger\Logger.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\Utility\StringConnverter\StringConverter.h">
+    <ClInclude Include="Engine\Utility\StringConverter\StringConverter.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
     <ClInclude Include="Engine\LowerLayer\Resource\Buffer\BufferDefinition\GPUBuffer\ConstantBuffer\ConstantBuffer.h">
@@ -809,7 +806,7 @@
     <ClInclude Include="Engine\LowerLayer\Resource\RootSignature\RootSignatureLibrary\RootSignatureLibrary.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="Assets\Shared\ConstantBuffers.h">
+    <ClInclude Include="Assets\BAKA\ConstantBuffers.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
     <ClInclude Include="Engine\LowerLayer\Render\PSO_PoolDispatcher\PSO_PoolDispatcher.h">
@@ -876,9 +873,6 @@
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
     <ClInclude Include="Engine\LowerLayer\Resource\Model\ModelStructure\Model.h">
-      <Filter>ヘッダー ファイル</Filter>
-    </ClInclude>
-    <ClInclude Include="Assets\Shared\StructuredBuffer.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
     <ClInclude Include="Engine\LowerLayer\Resource\Model\ModelStructure\ModelData\ResourceMesh\ResourceMesh.h">
@@ -1091,10 +1085,16 @@
     <ClInclude Include="Engine\MiddleLayer\MiyaJison\JsonDataLibrary\JsonDataLibrary.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\Utility\LoadRegistry\LoadRegistry.h">
+    <ClInclude Include="Engine\Utility\RegistryLoader\RegistryLoader.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
     <ClInclude Include="Engine\MiddleLayer\MiyaJison\JsonDataChecker\JsonDataChecker.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="External\AI\IncludeHandler\IncludeHandler.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="Assets\BAKA\StructuredBuffer.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
   </ItemGroup>

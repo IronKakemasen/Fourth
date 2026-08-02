@@ -1,7 +1,7 @@
 #include "DeviceContextSetupper.h"
 #include "EngineRequirementsChecker/EngineRequirementsChecker.h"
 
-#include "StringConnverter/StringConverter.h"
+#include "StringConverter/StringConverter.h"
 
 namespace 
 {
@@ -144,6 +144,7 @@ void DeviceContext::Setupper::CreateDevice()
 
 		//採用したアダプタでデバイスを生成
 		HRESULT hr = D3D12CreateDevice(useAdapter.Get(), featureLevels[i], IID_PPV_ARGS(&d3d12Device));
+		Logger::Log("D3D12CreateDevice hr: " + std::to_string(hr));
 		ErrorMessageOutput::Abort::DetectError(SUCCEEDED(hr), "デバイスの生成に失敗", fileName);
 		
 		//型変換

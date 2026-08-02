@@ -1,17 +1,15 @@
 #pragma once
 #include "../../../External/nlohmann/json.hpp"
 
-
 class MiyaJison
 {
 	class DataLoader;
 	class DataLibrary;
 	class DataChecker;
 
-	using Group_Value = std::array<std::string, 2>;
-	using ValidDataTypes = std::variant<std::string, int, float, bool>;
-
 public:
+
+	using Group_Value = std::array<std::string, 2>;
 
 	static MiyaJison* Get();
 
@@ -26,8 +24,6 @@ public:
 	///ファイル名はすべてAssets/Registryにあるからそこを見るべし
 	template<typename DataType>
 	DataType LoadData(std::string fileName_, Group_Value group_value_);
-
-protected:
 
 
 private:
@@ -56,3 +52,15 @@ bool MiyaJison::LoadData(std::string fileName_, Group_Value group_value_);
 
 template<>
 std::string MiyaJison::LoadData(std::string fileName_, Group_Value group_value_);
+
+template<>
+std::vector<int> MiyaJison::LoadData(std::string fileName_, Group_Value group_value_);
+
+template<>
+std::vector<double> MiyaJison::LoadData(std::string fileName_, Group_Value group_value_);
+
+template<>
+std::vector<bool> MiyaJison::LoadData(std::string fileName_, Group_Value group_value_);
+
+template<>
+std::vector<std::string> MiyaJison::LoadData(std::string fileName_, Group_Value group_value_);
