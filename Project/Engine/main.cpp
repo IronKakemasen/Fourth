@@ -10,7 +10,6 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
     //エンジンの交易場
     Nexus nexus;
 
-    MiyaJison::Get();
 
     Update(nexus);
 

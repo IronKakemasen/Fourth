@@ -17,7 +17,7 @@ struct ClusterAdjacency
 {
 	unsigned int* offsets;
 	unsigned int* clusters;
-	unsigned int* shared;
+	unsigned int* Shared;
 };
 
 static void filterClusterIndices(unsigned int* data, unsigned int* offsets, const unsigned int* cluster_indices, const unsigned int* cluster_index_counts, size_t cluster_count, unsigned char* used, size_t vertex_count, size_t total_index_count)
@@ -126,7 +126,7 @@ static void buildClusterAdjacency(ClusterAdjacency& adjacency, const unsigned in
 	// we can now allocate adjacency buffers
 	adjacency.offsets = allocator.allocate<unsigned int>(cluster_count + 1);
 	adjacency.clusters = allocator.allocate<unsigned int>(total_adjacency);
-	adjacency.shared = allocator.allocate<unsigned int>(total_adjacency);
+	adjacency.Shared = allocator.allocate<unsigned int>(total_adjacency);
 
 	// convert ref counts to offsets
 	size_t total_refs = 0;
@@ -157,7 +157,7 @@ static void buildClusterAdjacency(ClusterAdjacency& adjacency, const unsigned in
 	for (size_t i = 0; i < cluster_count; ++i)
 	{
 		unsigned int* adj = adjacency.clusters + adjacency.offsets[i];
-		unsigned int* shd = adjacency.shared + adjacency.offsets[i];
+		unsigned int* shd = adjacency.Shared + adjacency.offsets[i];
 		size_t count = 0;
 
 		for (size_t j = cluster_offsets[i]; j < cluster_offsets[i + 1]; ++j)
@@ -173,7 +173,7 @@ static void buildClusterAdjacency(ClusterAdjacency& adjacency, const unsigned in
 				if (c == unsigned(i))
 					continue;
 
-				// if the cluster is already in the list, increment the shared count
+				// if the cluster is already in the list, increment the Shared count
 				bool found = false;
 				for (size_t l = 0; l < count; ++l)
 					if (adj[l] == c)
@@ -278,7 +278,7 @@ static unsigned int countShared(const ClusterGroup* groups, int group1, int grou
 			for (unsigned int adj = adjacency.offsets[i1]; adj < adjacency.offsets[i1 + 1]; ++adj)
 				if (adjacency.clusters[adj] == unsigned(i2))
 				{
-					total += adjacency.shared[adj];
+					total += adjacency.Shared[adj];
 					break;
 				}
 		}
@@ -344,11 +344,11 @@ static int pickGroupToMerge(const ClusterGroup* groups, int id, const ClusterAdj
 			if (groups[id].size + groups[other].size > max_partition_size)
 				continue;
 
-			unsigned int shared = countShared(groups, id, other, adjacency);
+			unsigned int Shared = countShared(groups, id, other, adjacency);
 			float other_rsqrt = 1.f / sqrtf(float(int(groups[other].vertices)));
 
-			// normalize shared count by the expected boundary of each group (+ keeps scoring symmetric)
-			float score = float(int(shared)) * (group_rsqrt + other_rsqrt);
+			// normalize Shared count by the expected boundary of each group (+ keeps scoring symmetric)
+			float score = float(int(Shared)) * (group_rsqrt + other_rsqrt);
 
 			// incorporate spatial score to favor merging nearby groups
 			if (use_bounds)
@@ -503,7 +503,7 @@ size_t meshopt_partitionClusters(unsigned int* destination, const unsigned int* 
 	filterClusterIndices(cluster_newindices, cluster_offsets, cluster_indices, cluster_index_counts, cluster_count, used, vertex_count, total_index_count);
 	cluster_indices = cluster_newindices;
 
-	// build cluster adjacency along with edge weights (shared vertex count)
+	// build cluster adjacency along with edge weights (Shared vertex count)
 	ClusterAdjacency adjacency = {};
 	buildClusterAdjacency(adjacency, cluster_indices, cluster_offsets, cluster_count, vertex_count, allocator);
 
@@ -559,8 +559,8 @@ size_t meshopt_partitionClusters(unsigned int* destination, const unsigned int* 
 		if (best_group == -1)
 			continue;
 
-		// compute shared vertices to adjust the total vertices estimate after merging
-		unsigned int shared = countShared(groups, top.id, best_group, adjacency);
+		// compute Shared vertices to adjust the total vertices estimate after merging
+		unsigned int Shared = countShared(groups, top.id, best_group, adjacency);
 
 		// combine groups by linking them together
 		unsigned int tail = top.id;
@@ -572,7 +572,7 @@ size_t meshopt_partitionClusters(unsigned int* destination, const unsigned int* 
 		// update group sizes; note, the vertex update is a O(1) approximation which avoids recomputing the true size
 		groups[top.id].size += groups[best_group].size;
 		groups[top.id].vertices += groups[best_group].vertices;
-		groups[top.id].vertices = (groups[top.id].vertices > shared) ? groups[top.id].vertices - shared : 1;
+		groups[top.id].vertices = (groups[top.id].vertices > Shared) ? groups[top.id].vertices - Shared : 1;
 
 		groups[best_group].size = 0;
 		groups[best_group].vertices = 0;

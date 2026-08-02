@@ -19,6 +19,7 @@ class Nexus
 	//初期化・生成順序
 	enum class InitSequence
 	{
+		kLoadAllJsonFiles,
 		kDeviceContext,
 		kWindowContext,
 		kDescriptorHeapContext,
@@ -39,7 +40,7 @@ class Nexus
 
 
 		,kEnd
-	}next = InitSequence::kDeviceContext;
+	}next = InitSequence(0);
 
 public:
 

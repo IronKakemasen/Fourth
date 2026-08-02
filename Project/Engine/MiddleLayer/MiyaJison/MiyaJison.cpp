@@ -1,7 +1,7 @@
 #include "PreCompileHeader.h"
 #include "MiyaJison.h"
 #include "JsonDataLibrary/JsonDataLibrary.h"
-#include "LoadRegistry/LoadRegistry.h"
+#include "RegistryLoader/RegistryLoader.h"
 #include "JsonDataLoader/JsonDataLoader.h"
 
 MiyaJison::MiyaJison()
@@ -24,7 +24,7 @@ MiyaJison* MiyaJison::Get()
 void MiyaJison::LoadAllJsonFiles()
 {
     std::unordered_map<std::string, std::string> fileName_Path =
-        LoadRegistry::Load("Assets/Registry/JsonFiles.txt");
+        RegistryLoader::Load<RegistryLoader::RegistryFileType::kJsonFiles>();
 
     DataLibrary::HandleLicence licence;
 
@@ -97,4 +97,40 @@ std::string MiyaJison::LoadData(std::string fileName_, Group_Value group_value_)
     return DataLoader::Load<std::string>(jsonData, group_value_);
 
 }
+
+template<>
+std::vector<int> MiyaJison::LoadData(std::string fileName_, Group_Value group_value_)
+{
+    const nlohmann::json& jsonData = PullJsonData(fileName_);
+
+    return DataLoader::Load<std::vector<int>>(jsonData, group_value_);
+}
+
+template<>
+std::vector<double> MiyaJison::LoadData(std::string fileName_, Group_Value group_value_)
+{
+    const nlohmann::json& jsonData = PullJsonData(fileName_);
+
+    return DataLoader::Load<std::vector<double>>(jsonData, group_value_);
+}
+
+template<>
+std::vector<bool> MiyaJison::LoadData(std::string fileName_, Group_Value group_value_)
+{
+    const nlohmann::json& jsonData = PullJsonData(fileName_);
+
+    return DataLoader::Load<std::vector<bool>>(jsonData, group_value_);
+}
+
+template<>
+std::vector<std::string> MiyaJison::LoadData(std::string fileName_, Group_Value group_value_)
+{
+    const nlohmann::json& jsonData = PullJsonData(fileName_);
+
+    return DataLoader::Load<std::vector<std::string>>(jsonData, group_value_);
+}
+
+
+
+
 

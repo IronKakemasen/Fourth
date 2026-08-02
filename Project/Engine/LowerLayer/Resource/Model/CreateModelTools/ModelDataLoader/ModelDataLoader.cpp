@@ -6,7 +6,7 @@
 #include "ModelDataCache/ModelDataCache.h"
 #include "../../ModelStructure/ModelData/ModelDataAggregate.h"
 
-#include "StringConnverter/StringConverter.h"
+#include "StringConverter/StringConverter.h"
 
 #include ".././../../../External/assimp/include/assimp/Importer.hpp"
 #include ".././../../../External/assimp/include/assimp/scene.h"

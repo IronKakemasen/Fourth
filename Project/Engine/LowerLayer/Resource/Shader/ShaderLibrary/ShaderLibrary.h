@@ -18,6 +18,7 @@ public:
 
 	///シェーダーバイナリオブジェのポインタを輸出
 	IDxcBlob* Export(GetDataKey key_, const std::string& fileName_);
+	
 
 private:
 	///本元データ
@@ -25,7 +26,8 @@ private:
 
 	//コンパイルする
 	void CompileAllShaderFiles(ShaderContext::Compiler* compiler_);
-	//いったんハードコーディングでそのシェーダーファイルの
+	std::unordered_map<std::string, std::vector<std::wstring>> GetArgs();
+
 
 };
 

@@ -413,7 +413,7 @@ MESHOPTIMIZER_API void meshopt_decodeFilterColor(void* buffer, size_t count, siz
  * Input data must contain 4 floats for every quaternion (count*4 total).
  *
  * meshopt_encodeFilterExp encodes arbitrary (finite) floating-point data with 8-bit exponent and K-bit integer mantissa (1 <= K <= 24).
- * Exponent can be shared between all components of a given vector as defined by stride or all values of a given component; stride must be divisible by 4.
+ * Exponent can be Shared between all components of a given vector as defined by stride or all values of a given component; stride must be divisible by 4.
  * Input data must contain stride/4 floats for every vector (count*stride/4 total).
  *
  * meshopt_encodeFilterColor encodes RGBA color data by converting RGB to YCoCg color space with K-bit (2 <= K <= 16) component encoding; A is stored using K-1 bits.
@@ -424,9 +424,9 @@ enum meshopt_EncodeExpMode
 {
 	/* When encoding exponents, use separate values for each component (maximum quality) */
 	meshopt_EncodeExpSeparate,
-	/* When encoding exponents, use shared value for all components of each vector (better compression) */
+	/* When encoding exponents, use Shared value for all components of each vector (better compression) */
 	meshopt_EncodeExpSharedVector,
-	/* When encoding exponents, use shared value for each component of all vectors (best compression) */
+	/* When encoding exponents, use Shared value for each component of all vectors (best compression) */
 	meshopt_EncodeExpSharedComponent,
 	/* When encoding exponents, use separate values for each component, but clamp to 0 (good quality if very small values are not important) */
 	meshopt_EncodeExpClamped,
@@ -947,15 +947,15 @@ MESHOPTIMIZER_API float meshopt_quantizeFloat(float v, int N);
 MESHOPTIMIZER_API float meshopt_dequantizeHalf(unsigned short h);
 
 /**
- * Experimental: Compute shared exponent suitable for mesh/cluster position quantization
- * Given mesh or cluster bounds, compute a shared exponent that can be used to quantize any position inside the bounds to a 24-bit integer grid.
+ * Experimental: Compute Shared exponent suitable for mesh/cluster position quantization
+ * Given mesh or cluster bounds, compute a Shared exponent that can be used to quantize any position inside the bounds to a 24-bit integer grid.
  * The resulting output can be stored as a compact bit-stream to be decoded directly in shaders, or to be used as an input to RT BVH builders,
  * for example via D3D12_VERTEX_FORMAT_COMPRESSED1 in DXR2 (max_bits=16).
  *
  * To quantize positions, compute:
  *   scale = pow(2, exponent)
  *   iv = int(round(v / scale))
- * The resulting integer can be stored as signed 24-bit, or as an unsigned offset from a signed 24-bit anchor value, shared between all positions.
+ * The resulting integer can be stored as signed 24-bit, or as an unsigned offset from a signed 24-bit anchor value, Shared between all positions.
  *
  * minv/maxv specify the axis-aligned bounding box of the mesh or cluster; each should refer to a float3 value
  * min_exp specifies the minimum value for the returned exponent, limiting precision to reduce size; e.g. min_exp = -10 will produce minimum error of 1mm given metric units

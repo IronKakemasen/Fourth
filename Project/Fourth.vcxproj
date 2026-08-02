@@ -171,7 +171,6 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="Engine\LowerLayer\Debug\ErrorMessageOutput\ErrorMessageOutput.cpp" />
-    <ClCompile Include="Engine\Utility\LoadRegistry\LoadRegistry.cpp" />
     <ClCompile Include="External\Audio\xaudio_player_mf.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
@@ -277,7 +276,7 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Use</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Use</PrecompiledHeader>
     </ClCompile>
-    <ClCompile Include="Engine\Utility\StringConnverter\StringConverter.cpp" />
+    <ClCompile Include="Engine\Utility\StringConverter\StringConverter.cpp" />
     <ClCompile Include="Engine\Nexus\Nexus.cpp" />
     <ClCompile Include="Engine\MiddleLayer\Math\Vector\Vector2.cpp" />
     <ClCompile Include="Engine\LowerLayer\Core\SwapChain\SwapChainContext.cpp" />
@@ -356,8 +355,8 @@
     <ClCompile Include="Engine\MiddleLayer\MiyaJison\JsonDataChecker\JsonDataChecker.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Assets\Shared\ConstantBuffers.h" />
-    <ClInclude Include="Assets\Shared\StructuredBuffer.h" />
+    <ClInclude Include="Assets\BAKA\ConstantBuffers.h" />
+    <ClInclude Include="Assets\BAKA\StructuredBuffer.h" />
     <ClInclude Include="Engine\LowerLayer\Resource\Buffer\BufferContextDiplomat\BufferToolLender\BufferToolLenderLicence.h" />
     <ClInclude Include="Engine\LowerLayer\Resource\Buffer\BufferCreateTools\BufferUploader\BufferUploaderTools\BufferAndResourcePicker\BufferAndResourcePicker.h" />
     <ClInclude Include="Engine\LowerLayer\Resource\Buffer\BufferCreateTools\BufferUploader\BufferUploaderTools\BarrierExtractor\BarrierExtractor.h" />
@@ -442,7 +441,7 @@
     <ClInclude Include="Engine\LowerLayer\Resource\RootSignature\RootSignatureAssembler\RootSignatureLayoutComponent.h" />
     <ClInclude Include="Engine\MiddleLayer\kara.h" />
     <ClInclude Include="Engine\ProjectConfig.h" />
-    <ClInclude Include="Engine\Utility\LoadRegistry\LoadRegistry.h" />
+    <ClInclude Include="Engine\Utility\RegistryLoader\RegistryLoader.h" />
     <ClInclude Include="External\Audio\SoundCommon.h" />
     <ClInclude Include="External\Audio\xaudio_player_core.h" />
     <ClInclude Include="External\Audio\xaudio_player_mf.h" />
@@ -462,7 +461,7 @@
     <ClInclude Include="External\nlohmann\json_fwd.hpp" />
     <ClInclude Include="Engine\PreCompileHeader\PreCompileHeader.h" />
     <ClInclude Include="Engine\LowerLayer\Debug\Logger\Logger.h" />
-    <ClInclude Include="Engine\Utility\StringConnverter\StringConverter.h" />
+    <ClInclude Include="Engine\Utility\StringConverter\StringConverter.h" />
     <ClInclude Include="Engine\Nexus\Nexus.h" />
     <ClInclude Include="Engine\MiddleLayer\Math\Vector\Vector3.h" />
     <ClInclude Include="Engine\MiddleLayer\Math\Quaternion\Quaternion.h" />
@@ -548,6 +547,7 @@
     <ClInclude Include="Engine\MiddleLayer\MiyaJison\MiyaJison.h" />
     <ClInclude Include="Engine\MiddleLayer\MiyaJison\JsonDataLibrary\JsonDataLibrary.h" />
     <ClInclude Include="Engine\MiddleLayer\MiyaJison\JsonDataChecker\JsonDataChecker.h" />
+    <ClInclude Include="External\AI\IncludeHandler\IncludeHandler.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

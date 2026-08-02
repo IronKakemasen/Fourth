@@ -8,7 +8,7 @@
 #include ".././../../../External/assimp/include/assimp/postprocess.h"
 #include ".././../../../External/assimp/include/assimp/cimport.h"
 
-#include "StringConnverter/StringConverter.h"
+#include "StringConverter/StringConverter.h"
 
 namespace
 {

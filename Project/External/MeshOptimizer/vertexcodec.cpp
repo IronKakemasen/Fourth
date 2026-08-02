@@ -169,7 +169,7 @@ struct Stats
 	size_t size;
 	size_t header;  // bytes for header
 	size_t bitg[9]; // bytes for bit groups
-	size_t bitc[8]; // bit consistency: how many bits are shared between all bytes in a group
+	size_t bitc[8]; // bit consistency: how many bits are Shared between all bytes in a group
 	size_t ctrl[4]; // number of control groups
 };
 
@@ -1437,7 +1437,7 @@ static const unsigned char* decodeBytesSimd(const unsigned char* data, const uns
 
 	size_t i = 0;
 
-	// fast-path: process 4 groups at a time, do a shared bounds check
+	// fast-path: process 4 groups at a time, do a Shared bounds check
 	for (; i + kByteGroupSize * 4 <= buffer_size && size_t(data_end - data) >= kByteGroupDecodeLimit * 4; i += kByteGroupSize * 4)
 	{
 		size_t header_offset = i / kByteGroupSize;

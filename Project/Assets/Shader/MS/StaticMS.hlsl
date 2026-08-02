@@ -1,5 +1,4 @@
-//#include "../../Shared/StructuredBuffer.h"
-#include "C:/Users/yakii/OneDrive/文件/allForOne/Fourth/Project/Assets/Shared/StructuredBuffer.h"
+#include "../../Shared/StructuredBuffer.h"
 
 struct MSOutput
 {
@@ -14,10 +13,12 @@ uint3 UnpackPrimitiveIndex(uint packedIndex_)
 {
     //0x3ff = 0b1111111111
     //>>10 = 10bit右側にずらす
-    return uint3(
+    return uint3
+    (
         packedIndex_ & 0x3FF,
         (packedIndex_ >> 10) & 0x3FF,
-        (packedIndex_ >> 20) & 0x3FF);
+        (packedIndex_ >> 20) & 0x3FF
+    );
 }
 
 
@@ -28,7 +29,7 @@ StructuredBuffer<uint> primitiveIndices : register(t3);
 
 ConstantBuffer<TransformMatrix> transform : register(b0);
 
-[numthreads(64,1,1)]
+[numthreads(64, 1, 1)]
 [outputtopology("triangle")]
 void main
 (
@@ -39,13 +40,11 @@ void main
 )
 {
     Meshlet meshlet = meshlets[groupID_];
-    
+
     //スレッドグループの頂点数とポリゴン数を設定
-    if (groupThreadID_ == 0)
-    {
-        SetMeshOutputCounts(meshlet.vertexCnt, meshlet.primitiveCnt);
-    }
-    
+    //全スレッドが同じ値で呼ぶことで、制御フロー上「必ず先に実行される」ことを保証する
+    SetMeshOutputCounts(meshlet.vertexCnt, meshlet.primitiveCnt);
+
     if (groupThreadID_ < meshlet.vertexCnt)
     {
         uint accessID_uniqueIndices = groupThreadID_ + meshlet.vertexOffset;
@@ -58,13 +57,13 @@ void main
         verts_[groupThreadID_].worldPosition = float3(1, 1, 1);
 
     }
-    
-    
+
+
     for (uint i = groupThreadID_; i < meshlet.primitiveCnt; i += 64)
     {
         uint accessID_primitiveIndices = meshlet.primitiveOffset + i;
-        uint packedIndex = primitiveIndices[accessID_primitiveIndices];    
+        uint packedIndex = primitiveIndices[accessID_primitiveIndices];
         polys_[i] = UnpackPrimitiveIndex(packedIndex);
     }
-        
+
 }

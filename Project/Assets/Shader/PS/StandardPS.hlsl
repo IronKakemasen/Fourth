@@ -1,3 +1,5 @@
+#include "../../Shared/StructuredBuffer.h"
+
 SamplerState samp : register(s0);
 
 struct MeshShaderOutput

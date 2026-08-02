@@ -1,1 +1,1 @@
-key: "testJson" , value: "Assets/JsonFiles/EngineCoreJsonFile/testJson.json"
+key: "ShaderSettings" , value: "Assets/JsonFiles/EngineCoreJsonFile/ShaderSettings.json"

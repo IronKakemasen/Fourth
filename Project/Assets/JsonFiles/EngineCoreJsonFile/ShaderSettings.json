@@ -1,0 +1,14 @@
+﻿{
+    "StaticMS":  {
+                     "Args":  [
+                                  "-I",
+                                  "Assets/Shared"
+                              ]
+                 },
+    "StandardPS":  {
+                       "Args":  [
+                                    "-I",
+                                    "Assets/Shared"
+                                ]
+                   }
+}
