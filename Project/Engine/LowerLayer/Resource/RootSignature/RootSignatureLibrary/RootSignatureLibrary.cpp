@@ -1,11 +1,5 @@
 #include "RootSignatureLibrary.h"
-//ツール
-#include "../RootSignatureAssembler/RootSignatureAssembler.h"
 
-//共有ヘッダ
-#include "../../../../Assets/Shared/ConstantBuffers.h"
-
-using namespace RootSignatureLayoutComponent;
 
 namespace
 {
@@ -13,58 +7,70 @@ namespace
 
 }
 
-
-RootSignatureLibrary::RootSignatureLibrary(InstanceKey key_, RootSignatureContext::Assembler* assembler_)
+RootSignatureContext::RootSignatureLibrary::RootSignatureLibrary(NexusFieldProof proof_)
 {
-    Logger::Entry("RootSignatureLibrary: Constructor");
-
-
-    CreateAllRootSignatures(assembler_);
-
-
-    Logger::End("RootSignatureLibrary: Constructor");
 
 }
 
-RootSignatureLibrary::~RootSignatureLibrary()
+RootSignatureContext::RootSignatureLibrary::~RootSignatureLibrary()
 {
 
 }
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-///シェーダーバイナリオブジェのポインタを渡す
-ID3D12RootSignature* RootSignatureLibrary::Export(DataPtrAccesskey key_, Usage usage_)
+template<>
+ID3D12RootSignature* RootSignatureContext::RootSignatureLibrary::Export<RootSignatureContext::Usage::kGraphics>(HandleLicence licence_)
 {
-	ErrorMessageOutput::Assert::DetectError(data.at((int)usage_), "中身が空です", fileName);
+	ErrorMessageOutput::Assert::DetectError(data.at((UINT)RootSignatureContext::Usage::kGraphics), "中身が空です", fileName);
 
-	return data.at((int)usage_).Get();
+	return data.at((UINT)RootSignatureContext::Usage::kGraphics).Get();
+
+}
+
+template<>
+ID3D12RootSignature* RootSignatureContext::RootSignatureLibrary::Export<RootSignatureContext::Usage::kCompute>(HandleLicence licence_)
+{
+	ErrorMessageOutput::Assert::DetectError(data.at((int)RootSignatureContext::Usage::kCompute), "中身が空です", fileName);
+
+	return data.at((int)RootSignatureContext::Usage::kCompute).Get();
 }
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-void RootSignatureLibrary::CreateAllRootSignatures(RootSignatureContext::Assembler* assembler_)
+
+template<>
+void RootSignatureContext::RootSignatureLibrary::Import<RootSignatureContext::Usage::kGraphics>
+(HandleLicence licence_,Microsoft::WRL::ComPtr<ID3D12RootSignature>&& rootSig_)
 {
-    ///グラフィックス用
-    {
-        RootSignatureDesc::Graphics srcGraphicsDesc;
-        //コンスタントバッファの種類を計測
-        srcGraphicsDesc.numConstantBuffers_ = kNumConstantBufferTypes;
-
-        ///カラーテクスチャなど一般
-        srcGraphicsDesc.pair_shaderStageSamplerStateContainer.emplace_back(ShaderStage::kAll, SamplerState::kLinearWrap);
-        Logger::Log("SamplerSlot0: kLinearWrap", fileName);
-        ///法線テクスチャなど
-        srcGraphicsDesc.pair_shaderStageSamplerStateContainer.emplace_back(ShaderStage::kAll, SamplerState::kAnisotropicWrap);
-        Logger::Log("SamplerSlot1: kAnisotropicWrap", fileName);
-
-        ///輝度テクスチャなど
-        srcGraphicsDesc.pair_shaderStageSamplerStateContainer.emplace_back(ShaderStage::kAll, SamplerState::kPointWrap);
-        Logger::Log("SamplerSlot2: kPointWrap", fileName);
-
-
-        data.at((int)Usage::kGraphics) = assembler_->Assemble(srcGraphicsDesc);
-    }
-
+	data.at(UINT(RootSignatureContext::Usage::kGraphics)) = std::move(rootSig_);
 }
 
+template<>
+void RootSignatureContext::RootSignatureLibrary::Import<RootSignatureContext::Usage::kCompute>
+(HandleLicence licence_,Microsoft::WRL::ComPtr<ID3D12RootSignature>&& rootSig_)
+{
+	data.at(UINT(RootSignatureContext::Usage::kCompute)) = std::move(rootSig_);
+}
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+template
+void RootSignatureContext::RootSignatureLibrary::Import<RootSignatureContext::Usage::kGraphics>
+(HandleLicence licence_,Microsoft::WRL::ComPtr<ID3D12RootSignature>&& rootSig_);
+
+
+template
+void RootSignatureContext::RootSignatureLibrary::Import<RootSignatureContext::Usage::kCompute>
+(HandleLicence licence_,Microsoft::WRL::ComPtr<ID3D12RootSignature>&& rootSig_);
+
+
+
+template
+ID3D12RootSignature* RootSignatureContext::RootSignatureLibrary::Export<RootSignatureContext::Usage::kGraphics>
+(HandleLicence licence_);
+
+
+template
+ID3D12RootSignature* RootSignatureContext::RootSignatureLibrary::Export<RootSignatureContext::Usage::kCompute>
+(HandleLicence licence_);

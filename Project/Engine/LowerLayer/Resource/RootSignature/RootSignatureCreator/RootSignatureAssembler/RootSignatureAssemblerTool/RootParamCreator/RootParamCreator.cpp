@@ -1,8 +1,8 @@
 
-#include "CreateRootParam.h"
+#include "RootParamCreator.h"
 
 
-std::vector<D3D12_ROOT_PARAMETER> CreateRootParam::CreateRootparamGloballyCommonCBV(const RootSignatureDesc::Graphics& srcDesc_)
+std::vector<D3D12_ROOT_PARAMETER> RootSignatureContext::Assembler::RootParamCreator::CreateRootparamGloballyCommonCBV(const RootSignatureDesc::Graphics& srcDesc_)
 {
 	std::vector<D3D12_ROOT_PARAMETER> rootParams = {};
 	rootParams.resize(size_t(srcDesc_.numConstantBuffers_));

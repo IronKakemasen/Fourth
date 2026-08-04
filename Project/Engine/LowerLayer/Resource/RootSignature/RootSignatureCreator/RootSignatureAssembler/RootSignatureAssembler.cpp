@@ -1,12 +1,12 @@
 #include "RootSignatureAssembler.h"
 
 //ツール
-#include "ToolCreateRootSignature/CreateRootParam/CreateRootParam.h"
-#include "ToolCreateRootSignature/CreateStaticSamplerDesc/CreateStaticSamplerDesc.h"
+#include "RootSignatureAssemblerTool/RootParamCreator/RootParamCreator.h"
+#include "RootSignatureAssemblerTool/StaticSamplerDescCreator/StaticSamplerDescCreator.h"
 
 //外部
-#include "../../../Core/Device/DeviceContextDiplomat/DeviceContextDiplomat.h"
-#include "../../../Core/Device/DeviceContextDiplomat/DeviceContextCommandProvider/DeviceContextCommandProvider.h"
+#include "../../../../Core/Device/DeviceContextDiplomat/DeviceContextDiplomat.h"
+#include "../../../../Core/Device/DeviceContextDiplomat/DeviceContextCommandProvider/DeviceContextCommandProvider.h"
 
 namespace
 {
@@ -30,20 +30,10 @@ template<>
 Microsoft::WRL::ComPtr<ID3D12RootSignature> RootSignatureContext::Assembler::Assemble(const RootSignatureDesc::Graphics& srcDesc_)
 {
 	//ルートパラメーターの生成
-	std::vector<D3D12_ROOT_PARAMETER> tmpRootParam;
-	{
-		CreateRootParam createRootParam;
-
-		tmpRootParam = createRootParam.CreateRootparamGloballyCommonCBV(srcDesc_);
-	}
+	std::vector<D3D12_ROOT_PARAMETER> tmpRootParam = RootParamCreator::CreateRootparamGloballyCommonCBV(srcDesc_);
 
 	//静的サンプラーディスクの生成
-	std::vector<D3D12_STATIC_SAMPLER_DESC> tmpStaticSamplerDesc;
-	{
-		CreateStaticSamplerDesc createStaticSamplerDesc;
-
-		tmpStaticSamplerDesc = createStaticSamplerDesc.Create(srcDesc_);
-	}
+	std::vector<D3D12_STATIC_SAMPLER_DESC> tmpStaticSamplerDesc = StaticSamplerDescCreator::Create(srcDesc_);
 
 	//D3D12_ROOT_SIGNATURE_DESCに入力
 	D3D12_ROOT_SIGNATURE_DESC desc;

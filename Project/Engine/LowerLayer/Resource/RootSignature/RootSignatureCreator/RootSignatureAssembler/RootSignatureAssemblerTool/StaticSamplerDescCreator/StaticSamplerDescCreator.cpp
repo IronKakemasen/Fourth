@@ -1,10 +1,9 @@
-
-#include "CreateStaticSamplerDesc.h"
+#include "StaticSamplerDescCreator.h"
 
 
 using namespace RootSignatureLayoutComponent;
 
-std::vector<D3D12_STATIC_SAMPLER_DESC> CreateStaticSamplerDesc::Create(const RootSignatureDesc::Graphics& srcDesc_)
+std::vector<D3D12_STATIC_SAMPLER_DESC> RootSignatureContext::Assembler::StaticSamplerDescCreator::Create(const RootSignatureDesc::Graphics& srcDesc_)
 {
 	std::vector<D3D12_STATIC_SAMPLER_DESC> descContainer;
 	auto const sizeEntry = srcDesc_.pair_shaderStageSamplerStateContainer.size();
@@ -23,7 +22,7 @@ std::vector<D3D12_STATIC_SAMPLER_DESC> CreateStaticSamplerDesc::Create(const Roo
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-void CreateStaticSamplerDesc::SetBranchedDetails(D3D12_STATIC_SAMPLER_DESC* desc_, SamplerState state_)
+void RootSignatureContext::Assembler::StaticSamplerDescCreator::SetBranchedDetails(D3D12_STATIC_SAMPLER_DESC* desc_, SamplerState state_)
 {
 	switch (state_)
 	{
@@ -87,7 +86,7 @@ void CreateStaticSamplerDesc::SetBranchedDetails(D3D12_STATIC_SAMPLER_DESC* desc
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-void CreateStaticSamplerDesc::SetCommonDetails(D3D12_STATIC_SAMPLER_DESC* desc_)
+void RootSignatureContext::Assembler::StaticSamplerDescCreator::SetCommonDetails(D3D12_STATIC_SAMPLER_DESC* desc_)
 {
 	desc_->MipLODBias = D3D12_DEFAULT_MIP_LOD_BIAS;
 	desc_->MaxAnisotropy = 1;
@@ -102,7 +101,7 @@ void CreateStaticSamplerDesc::SetCommonDetails(D3D12_STATIC_SAMPLER_DESC* desc_)
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void CreateStaticSamplerDesc::SetDetailsDirectly
+void RootSignatureContext::Assembler::StaticSamplerDescCreator::SetDetailsDirectly
 (
 	D3D12_STATIC_SAMPLER_DESC* desc_,
 	RootSignatureLayoutComponent::ShaderStage shaderStage_,

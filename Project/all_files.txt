@@ -1616,16 +1616,8 @@ class SwapChainContext;
 
 class DescriptorHeapContext::ToolLender
 {
-public:
-
 	template<typename ToolType>
 	struct LicenceTypeTraits;
-
-	//ただのエイリアステンプレート
-	template<typename ToolType>
-	using LicenceType = typename LicenceTypeTraits<ToolType>::Type;
-
-private:
 
 	struct BasicViewManagementLicence;
 
@@ -1633,6 +1625,11 @@ private:
 	std::tuple<ViewCreator*> tools;
 
 public:
+
+
+	//ただのエイリアステンプレート
+	template<typename ToolType>
+	using LicenceType = typename LicenceTypeTraits<ToolType>::Type;
 
 	ToolLender(NexusFieldProof proof_, DescriptorHeapContext::ViewCreator* viewCretator_);
 	
@@ -6305,8 +6302,8 @@ RenderPath::MS_PS RenderPath::PathComposer::ShaderCombiner::Combine(ShaderContex
 {
 	return
 	{
-		lib_->Export(ShaderContext::ShaderLibrary::GetDataKey{}, msKey_) ,
-		(psKey_.size() > 0) ? lib_->Export(ShaderContext::ShaderLibrary::GetDataKey{}, psKey_) : nullptr
+		lib_->Export(msKey_) ,
+		(psKey_.size() > 0) ? lib_->Export(psKey_) : nullptr
 	};
 }
 
@@ -15766,6 +15763,9 @@ private:
 #include "ShaderContext.h"
 #include "ShaderLibrary/ShaderLibrary.h"
 #include "ShaderLoader/ShaderLoader.h"
+#include "ShaderContextDiplomat/ShaderContextDiplomat.h"
+#include "ShaderContextDiplomat/ShaderContextToolLender/ShaderContextToolLender.h"
+
 
 
 namespace
@@ -15782,7 +15782,18 @@ ShaderContext::ShaderContext(NexusFieldProof proof_)
 	shaderLibrary.reset(new ShaderLibrary(proof_));
 	Logger::Log("Instantiate: ShaderLibrary", fileName);
 
+	//全てのシェーダーファイルを読み込み、コンパイルしてライブラリーにぶっこむ
 	ShaderLoader shaderLoader(proof_, shaderLibrary.get());
+
+	diplomat.reset
+	(
+		new ShaderContextDiplomat
+		(
+			proof_,
+			std::make_unique<ToolLender>(proof_, shaderLibrary.get())
+		)
+	);
+
 
 	Logger::End("ShaderContext: Constructor");
 }
@@ -15794,13 +15805,6 @@ ShaderContext::~ShaderContext()
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-ShaderContext::ShaderLibrary* ShaderContext::AllowAccessToLibrary(ShaderLibraryAccessKey accessKey_)
-{
-	return shaderLibrary.get();
-}
-///+//////////////////////////////////////////////////////////////////////////////////////////////////////
-///+//////////////////////////////////////////////////////////////////////////////////////////////////////
-///+//////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
 
@@ -15811,8 +15815,8 @@ ShaderContext::ShaderLibrary* ShaderContext::AllowAccessToLibrary(ShaderLibraryA
 #pragma once
 
 class Nexus;
-class ShaderLibrary;
-class PSO_Context;
+class ShaderContextDiplomat;
+
 
 class ShaderContext
 {
@@ -15827,11 +15831,12 @@ public:
 	class ToolLender;
 
 
-	//シェーダーライブラリを貸し出し
-	ShaderLibrary* AllowAccessToLibrary(ShaderLibraryAccessKey accessKey_);
 	
 	ShaderContext(NexusFieldProof proof_);
 	~ShaderContext();
+
+
+	std::unique_ptr<ShaderContextDiplomat> diplomat;
 
 private:
 
@@ -15852,14 +15857,6 @@ private:
 
 	friend class Nexus;
 	explicit NexusFieldProof() = default;
-};
-
-struct ShaderContext::ShaderLibraryAccessKey
-{
-private:
-
-	friend class PSO_Context;
-	explicit ShaderLibraryAccessKey() = default;
 };
 
 
@@ -15903,6 +15900,12 @@ public:
 		std::unique_ptr<ShaderContext::ToolLender>&& toolLender_
 	);
 
+	template <typename ToolType>
+	auto* Access()
+	{
+		return std::get<std::unique_ptr<ToolType>>(tools).get();
+	}
+
 
 private:
 
@@ -15944,7 +15947,19 @@ ShaderContext::ToolLender::ToolLender
 
 class ShaderContext::ToolLender
 {
+	template<typename ToolType>
+	struct LicenceTypeTraits;
+
+
+	//ShaderLibraryへのアクセス許可
+	struct UsesShaderLibraryLicence;
+
+	std::tuple<ShaderContext::ShaderLibrary*> tools;
+
 public:
+
+	template<typename ToolType>
+	using LicenceType = typename LicenceTypeTraits<ToolType>::Type;
 
 	ToolLender
 	(
@@ -15952,10 +15967,39 @@ public:
 		ShaderContext::ShaderLibrary* shaderLibrary_
 	);
 
+	template<typename ToolType>
+	auto* Lend(typename LicenceTypeTraits<ToolType>::Type type_)
+	{
+		return std::get<ToolType*>(tools);
+	}
 
+};
+
+
+template<>
+struct ShaderContext::ToolLender::LicenceTypeTraits<ShaderContext::ShaderLibrary>
+{
+	using Type = UsesShaderLibraryLicence;
+};
+
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Shader\ShaderContextDiplomat\ShaderContextToolLender\ShaderContextToolLenderLicences.h ===
+========================================
+#pragma once
+#include "ShaderContextToolLender.h"
+
+class PSO_Context;
+
+struct ShaderContext::ToolLender::UsesShaderLibraryLicence
+{
 private:
 
-	std::tuple<ShaderContext::ShaderLibrary*> tools;
+	friend class PSO_Context;
+	explicit UsesShaderLibraryLicence() = default;
 
 };
 
@@ -15985,7 +16029,7 @@ ShaderContext::ShaderLibrary::ShaderLibrary(NexusFieldProof proof_)
 ///+//////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+//////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+//////////////////////////////////////////////////////////////////////////////////////////////////////
-IDxcBlob* ShaderContext::ShaderLibrary::Export(GetDataKey key_, const std::string& fileName_)
+IDxcBlob* ShaderContext::ShaderLibrary::Export(std::string fileName_)
 {   
     ErrorMessageOutput::Assert::DetectError
     (
@@ -16035,13 +16079,10 @@ struct RenderPath::PathComposer::ShaderCombiner;
 class ShaderContext::ShaderLibrary
 {
 public:
-
-	struct GetDataKey;
-
 	ShaderLibrary(NexusFieldProof proof_);
 
 	///シェーダーバイナリオブジェのポインタを輸出
-	IDxcBlob* Export(GetDataKey key_, const std::string& fileName_);
+	IDxcBlob* Export(std::string fileName_);
 	//輸入
 	void Import(NexusFieldProof proof_, const std::string& fileName_, Microsoft::WRL::ComPtr<IDxcBlob>&& data_);
 
@@ -16053,14 +16094,6 @@ private:
 
 };
 
-
-
-struct ShaderContext::ShaderLibrary::GetDataKey
-{
-private:
-	friend struct RenderPath::PathComposer::ShaderCombiner;
-	explicit GetDataKey() = default;
-};
 
 
 
@@ -16115,6 +16148,7 @@ void ShaderContext::ShaderLoader::CompileAllShaderFiles(NexusFieldProof proof_, 
         shaderLibrary_->Import(proof_, key, compiler.CompileShader(value, key, psProfile, shaderFileNameToArgs[key]));
     }
 
+    Logger::Log("Complete Load All Shaders", "ShaderLoader.cpp");
 }
 
 std::unordered_map<std::string, std::vector<std::wstring>> ShaderContext::ShaderLoader::GetArgs()
