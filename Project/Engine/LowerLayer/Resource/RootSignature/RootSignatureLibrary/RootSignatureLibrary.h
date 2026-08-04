@@ -2,49 +2,38 @@
 #include "../RootSignatureContext.h"
 
 
-class RootSignatureLibrary
+class RootSignatureContext::RootSignatureLibrary
 {
 public:
-	enum class Usage
-	{
-		kGraphics,
-		kCompute
-		,kCount
-	};
 
+	struct HandleLicence;
 
-	struct InstanceKey;
-	//データアドレスのアクセス権
-	struct DataPtrAccesskey;
-
-	RootSignatureLibrary(InstanceKey key_, RootSignatureContext::Assembler* assembler_);
+	RootSignatureLibrary(NexusFieldProof proof_);
 	~RootSignatureLibrary();
 
+	template<Usage usage>
+	ID3D12RootSignature* Export(HandleLicence licence_);
+	
+	template<Usage usage>
+	void Import(HandleLicence licence_,Microsoft::WRL::ComPtr<ID3D12RootSignature>&& rootSig_);
 
-	///シェーダーバイナリオブジェのポインタを渡す
-	ID3D12RootSignature* Export(DataPtrAccesskey key_, Usage usage_);
 
 private:
 	///本元データ
 	std::array<Microsoft::WRL::ComPtr<ID3D12RootSignature>, (int)Usage::kCount> data;
 
-	///ルートシグネチャを生成する
-	void CreateAllRootSignatures(RootSignatureContext::Assembler* assembler_);
 
 };
 
 
-struct RootSignatureLibrary::InstanceKey
+struct RootSignatureContext::RootSignatureLibrary::HandleLicence
 {
 private:
 
-	friend class RootSignatureContext;
-	explicit InstanceKey() = default;
+	friend class RootSignatureContext::RootSignatureCreator;
+	explicit HandleLicence() = default;
 };
 
-struct RootSignatureLibrary::DataPtrAccesskey
-{
-private:
 
-	explicit DataPtrAccesskey() = default;
-};
+
+

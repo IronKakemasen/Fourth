@@ -1,8 +1,9 @@
 #include "RootSignatureContext.h"
 #include "RootSignatureLibrary/RootSignatureLibrary.h"
-
-//ツール
-#include "RootSignatureAssembler/RootSignatureAssembler.h"
+#include "RootSignatureCreator/RootSignatureCreator.h"
+#include "RootSignatureCreator/RootSignatureAssembler/RootSignatureAssembler.h"
+#include "RootSignatureContextDiplomat/RootSignatureContextDiplomat.h"
+#include "RootSignatureContextDiplomat/RootSignatureToolLender/RootSignatureToolLender.h"
 
 namespace
 {
@@ -13,11 +14,33 @@ RootSignatureContext::RootSignatureContext(NexusFieldProof proof_, DeviceContext
 {
 	Logger::Entry("RootSignatureContext: Constructor");
 
-	assembler.reset(new Assembler(proof_, deviceContextDiplomat_));
-	Logger::Log("Instantiate: RootSignatureAssembler", fileName);
-
-	rootSignatureLibrary.reset(new RootSignatureLibrary(RootSignatureLibrary::InstanceKey{}, assembler.get()));
+	rootSignatureLibrary.reset(new RootSignatureLibrary(proof_));
 	Logger::Log("Instantiate: rootSignatureLibrary", fileName);
+
+	rootSignatureCreator.reset
+	(
+		new RootSignatureCreator
+		(
+			proof_,
+			std::make_unique<Assembler>(proof_, deviceContextDiplomat_),
+			rootSignatureLibrary.get()
+		)
+	);
+
+	Logger::Log("Instantiate: RootSignatureAssembler", fileName);
+	Logger::Log("Instantiate: RootSignatureCreator", fileName);
+
+
+	diplomat.reset
+	(
+		new RootSignatureContextDiplomat
+		(
+			proof_,
+			std::make_unique<ToolLender>(proof_, rootSignatureCreator.get())
+		)
+	);
+	Logger::Log("Instantiate: ToolLender", fileName);
+	Logger::Log("Instantiate: Diplomat", fileName);
 
 
 	Logger::End("RootSignatureContext: Constructor");

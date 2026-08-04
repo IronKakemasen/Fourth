@@ -1,12 +1,12 @@
 #pragma once
-#include "../RootSignatureContext.h"
+#include "../../RootSignatureContext.h"
 #include "RootSignatureDesc.h"
-
 
 
 class RootSignatureContext::Assembler
 {
 public:
+
 	Assembler(NexusFieldProof proof_, DeviceContextDiplomat* deviceContextDiplomat_);
 	~Assembler();
 
@@ -15,6 +15,9 @@ public:
 	Microsoft::WRL::ComPtr<ID3D12RootSignature> Assemble(const DescType& descType_);
 
 private:
+
+	class StaticSamplerDescCreator;
+	class RootParamCreator;
 
 	RootSignatureContext::CommandCreateRootSignature cmdCreateRootSignature;
 

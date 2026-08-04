@@ -13,7 +13,6 @@ public:
 
 	static MiyaJison* Get();
 
-	MiyaJison();
 
 	MiyaJison(const MiyaJison&) = delete;
 	MiyaJison& operator=(const MiyaJison&) = delete;
@@ -27,6 +26,8 @@ public:
 
 
 private:
+
+	MiyaJison();
 
 	std::unique_ptr<DataLibrary> jsonDataLibrary;
 

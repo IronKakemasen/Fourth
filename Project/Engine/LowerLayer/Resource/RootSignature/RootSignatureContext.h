@@ -1,8 +1,8 @@
 #pragma once
 
 class Nexus;
-class RootSignatureLibrary;
 class DeviceContextDiplomat;
+class RootSignatureContextDiplomat;
 
 class RootSignatureContext
 {
@@ -13,16 +13,30 @@ protected:
 
 public:
 
-	//rootSignatureを組み立てる
-	class Assembler;
+	enum class Usage
+	{
+		kGraphics,
+		kCompute
+		, kCount
+	};
+
+	class RootSignatureCreator;
+	class RootSignatureLibrary;
+	class ToolLender;
+
 	struct NexusFieldProof;
 
 	RootSignatureContext(NexusFieldProof proof_, DeviceContextDiplomat* deviceContextDiplomat_);
 	~RootSignatureContext();
 
-private:
 
-	std::unique_ptr<Assembler> assembler;
+	std::unique_ptr<RootSignatureContextDiplomat> diplomat;
+
+private:
+	//rootSignatureを組み立てる
+	class Assembler;
+
+	std::unique_ptr<RootSignatureCreator> rootSignatureCreator;
 	std::unique_ptr<RootSignatureLibrary> rootSignatureLibrary;
 
 };
