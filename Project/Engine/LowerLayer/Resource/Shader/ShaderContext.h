@@ -1,8 +1,8 @@
 #pragma once
 
 class Nexus;
-class ShaderLibrary;
-class PSO_Context;
+class ShaderContextDiplomat;
+
 
 class ShaderContext
 {
@@ -12,18 +12,26 @@ public:
 	struct NexusFieldProof;
 	//シェーダーライブラリを貸し出し許可キー
 	struct ShaderLibraryAccessKey;
-	//コンパイラー
-	class Compiler;
+	class ShaderLibrary;
+	//ツール貸し出し
+	class ToolLender;
 
-	//シェーダーライブラリを貸し出し
-	ShaderLibrary* AllowAccessToLibrary(ShaderLibraryAccessKey accessKey_);
+
 	
 	ShaderContext(NexusFieldProof proof_);
 	~ShaderContext();
 
+
+	std::unique_ptr<ShaderContextDiplomat> diplomat;
+
 private:
 
-	std::unique_ptr<Compiler> compiler;
+	//コンパイラー
+	class Compiler;
+	//シェーダーファイルをロードする
+	class ShaderLoader;
+
+
 	//シェーダーのデータがすべてここに
 	std::unique_ptr<ShaderLibrary> shaderLibrary;
 };
@@ -35,13 +43,5 @@ private:
 
 	friend class Nexus;
 	explicit NexusFieldProof() = default;
-};
-
-struct ShaderContext::ShaderLibraryAccessKey
-{
-private:
-
-	friend class PSO_Context;
-	explicit ShaderLibraryAccessKey() = default;
 };
 

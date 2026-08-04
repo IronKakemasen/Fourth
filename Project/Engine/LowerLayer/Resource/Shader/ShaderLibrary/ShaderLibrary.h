@@ -7,42 +7,21 @@
 
 struct RenderPath::PathComposer::ShaderCombiner;
 
-class ShaderLibrary
+class ShaderContext::ShaderLibrary
 {
 public:
-
-	struct InstanceKey;
-	struct GetDataKey;
-
-	ShaderLibrary(InstanceKey key_, ShaderContext::Compiler* compiler_);
+	ShaderLibrary(NexusFieldProof proof_);
 
 	///シェーダーバイナリオブジェのポインタを輸出
-	IDxcBlob* Export(GetDataKey key_, const std::string& fileName_);
-	
+	IDxcBlob* Export(std::string fileName_);
+	//輸入
+	void Import(NexusFieldProof proof_, const std::string& fileName_, Microsoft::WRL::ComPtr<IDxcBlob>&& data_);
 
 private:
 	///本元データ
 	std::unordered_map<std::string, Microsoft::WRL::ComPtr<IDxcBlob>> data;
 
-	//コンパイルする
-	void CompileAllShaderFiles(ShaderContext::Compiler* compiler_);
-	std::unordered_map<std::string, std::vector<std::wstring>> GetArgs();
 
 
 };
 
-
-struct ShaderLibrary::InstanceKey
-{
-private:
-
-	friend class ShaderContext;
-	explicit InstanceKey() = default;
-};
-
-struct ShaderLibrary::GetDataKey
-{
-private:
-	friend struct RenderPath::PathComposer::ShaderCombiner;
-	explicit GetDataKey() = default;
-};
