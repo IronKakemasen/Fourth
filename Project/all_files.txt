@@ -8,9 +8,6 @@ void Update(Nexus& nexus_);
 
 int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 {
-
-    Logger::Log(std::filesystem::current_path().string());
-
     //デバッガー。DebugLayer, PointerValidator, LeakChecker
     RuntimeDebugger runtimeDebugger;
     //エンジンの交易場
@@ -111,7 +108,7 @@ namespace ProjectConfig
 		//DebugLayer
 		constexpr bool kEnableDebugLayer = true;
 		//ポインター破壊検知
-		constexpr bool kEnablePointerValidator = true;
+		constexpr bool kEnablePointerValidator = false;
 		//Comptrのリークチェック
 		constexpr bool kEnableLeakChecker = true;
 		//Jsonファイルを読み込むときに型チェックを行うかどうか
@@ -3690,6 +3687,7 @@ void DeviceContext::Setupper::CreateDevice()
 
 		//採用したアダプタでデバイスを生成
 		HRESULT hr = D3D12CreateDevice(useAdapter.Get(), featureLevels[i], IID_PPV_ARGS(&d3d12Device));
+		Logger::Log("D3D12CreateDevice hr: " + std::to_string(hr));
 		ErrorMessageOutput::Abort::DetectError(SUCCEEDED(hr), "デバイスの生成に失敗", fileName);
 		
 		//型変換
@@ -6303,12 +6301,12 @@ public:
 //外部
 #include "../../../../Resource/Shader/ShaderLibrary/ShaderLibrary.h"
 
-RenderPath::MS_PS RenderPath::PathComposer::ShaderCombiner::Combine(ShaderLibrary* lib_, std::string const msKey_, std::string const psKey_)
+RenderPath::MS_PS RenderPath::PathComposer::ShaderCombiner::Combine(ShaderContext::ShaderLibrary* lib_, std::string const msKey_, std::string const psKey_)
 {
 	return
 	{
-		lib_->Export(ShaderLibrary::GetDataKey{}, msKey_) ,
-		(psKey_.size() > 0) ? lib_->Export(ShaderLibrary::GetDataKey{}, psKey_) : nullptr
+		lib_->Export(ShaderContext::ShaderLibrary::GetDataKey{}, msKey_) ,
+		(psKey_.size() > 0) ? lib_->Export(ShaderContext::ShaderLibrary::GetDataKey{}, psKey_) : nullptr
 	};
 }
 
@@ -6323,9 +6321,12 @@ RenderPath::MS_PS RenderPath::PathComposer::ShaderCombiner::Combine(ShaderLibrar
 #include "../RenderPathComposer.h"
 #include "../../ShaderPathComponent.h"
 
+
+#include "../../../../Resource/Shader/ShaderContext.h"
+
 struct RenderPath::PathComposer::ShaderCombiner
 {
-	RenderPath::MS_PS Combine(ShaderLibrary* lib_, std::string const msKey_, std::string const psKey_);
+	RenderPath::MS_PS Combine(ShaderContext::ShaderLibrary* lib_, std::string const msKey_, std::string const psKey_);
 
 };
 
@@ -15763,11 +15764,8 @@ private:
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Shader\ShaderContext.cpp ===
 ========================================
 #include "ShaderContext.h"
-
 #include "ShaderLibrary/ShaderLibrary.h"
-
-//ツール
-#include "ShaderCompiler/ShaderCompiler.h"
+#include "ShaderLoader/ShaderLoader.h"
 
 
 namespace
@@ -15780,12 +15778,11 @@ ShaderContext::ShaderContext(NexusFieldProof proof_)
 {
 	Logger::Entry("ShaderContext: Constructor");
 
-	compiler.reset(new Compiler(proof_));
-	Logger::Log("Instantiate: shaderCompiler", fileName);
 
-	shaderLibrary.reset(new ShaderLibrary(ShaderLibrary::InstanceKey{}, compiler.get()));
+	shaderLibrary.reset(new ShaderLibrary(proof_));
 	Logger::Log("Instantiate: ShaderLibrary", fileName);
 
+	ShaderLoader shaderLoader(proof_, shaderLibrary.get());
 
 	Logger::End("ShaderContext: Constructor");
 }
@@ -15797,7 +15794,7 @@ ShaderContext::~ShaderContext()
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-ShaderLibrary* ShaderContext::AllowAccessToLibrary(ShaderLibraryAccessKey accessKey_)
+ShaderContext::ShaderLibrary* ShaderContext::AllowAccessToLibrary(ShaderLibraryAccessKey accessKey_)
 {
 	return shaderLibrary.get();
 }
@@ -15825,8 +15822,10 @@ public:
 	struct NexusFieldProof;
 	//シェーダーライブラリを貸し出し許可キー
 	struct ShaderLibraryAccessKey;
-	//コンパイラー
-	class Compiler;
+	class ShaderLibrary;
+	//ツール貸し出し
+	class ToolLender;
+
 
 	//シェーダーライブラリを貸し出し
 	ShaderLibrary* AllowAccessToLibrary(ShaderLibraryAccessKey accessKey_);
@@ -15836,7 +15835,12 @@ public:
 
 private:
 
-	std::unique_ptr<Compiler> compiler;
+	//コンパイラー
+	class Compiler;
+	//シェーダーファイルをロードする
+	class ShaderLoader;
+
+
 	//シェーダーのデータがすべてここに
 	std::unique_ptr<ShaderLibrary> shaderLibrary;
 };
@@ -15863,11 +15867,345 @@ private:
 
 
 ========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Shader\ShaderCompiler\ShaderCompiler.cpp ===
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Shader\ShaderContextDiplomat\ShaderContextDiplomat.cpp ===
 ========================================
+#include "PreCompileHeader.h"
+#include "ShaderContextDiplomat.h"
+#include "ShaderContextToolLender/ShaderContextToolLender.h"
 
+
+
+ShaderContextDiplomat::ShaderContextDiplomat
+(
+	ShaderContext::NexusFieldProof proof_,
+	std::unique_ptr<ShaderContext::ToolLender>&& toolLender_
+)
+{
+	std::get<std::unique_ptr<ShaderContext::ToolLender>>(tools) = std::move(toolLender_);
+}
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Shader\ShaderContextDiplomat\ShaderContextDiplomat.h ===
+========================================
+#pragma once
+#include "../ShaderContext.h"
+
+
+class ShaderContextDiplomat
+{
+public:
+	ShaderContextDiplomat
+	(
+		ShaderContext::NexusFieldProof proof_,
+		std::unique_ptr<ShaderContext::ToolLender>&& toolLender_
+	);
+
+
+private:
+
+	std::tuple
+	<
+		std::unique_ptr<ShaderContext::ToolLender>
+	>tools;
+};
+
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Shader\ShaderContextDiplomat\ShaderContextToolLender\ShaderContextToolLender.cpp ===
+========================================
+#include "PreCompileHeader.h"
+#include "ShaderContextToolLender.h"
+
+
+ShaderContext::ToolLender::ToolLender
+(
+	NexusFieldProof proof_,
+	ShaderContext::ShaderLibrary* shaderLibrary_
+)
+{
+	std::get<ShaderContext::ShaderLibrary*>(tools) = shaderLibrary_;
+}
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Shader\ShaderContextDiplomat\ShaderContextToolLender\ShaderContextToolLender.h ===
+========================================
+#pragma once
+#include "../../ShaderContext.h"
+
+
+class ShaderContext::ToolLender
+{
+public:
+
+	ToolLender
+	(
+		NexusFieldProof proof_, 
+		ShaderContext::ShaderLibrary* shaderLibrary_
+	);
+
+
+private:
+
+	std::tuple<ShaderContext::ShaderLibrary*> tools;
+
+};
+
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Shader\ShaderLibrary\ShaderLibrary.cpp ===
+========================================
+#include "ShaderLibrary.h"
+#include "../ShaderLoader/ShaderCompiler/ShaderCompiler.h"
+
+#include <regex>
+#include <iostream>
+
+namespace
+{
+    std::string const fileName = "ShaderLibrary.cpp";
+}
+
+ShaderContext::ShaderLibrary::ShaderLibrary(NexusFieldProof proof_)
+{
+
+}
+
+///+//////////////////////////////////////////////////////////////////////////////////////////////////////
+///+//////////////////////////////////////////////////////////////////////////////////////////////////////
+///+//////////////////////////////////////////////////////////////////////////////////////////////////////
+IDxcBlob* ShaderContext::ShaderLibrary::Export(GetDataKey key_, const std::string& fileName_)
+{   
+    ErrorMessageOutput::Assert::DetectError
+    (
+        data.find(fileName_) != data.end(),
+        fileName_ + "このキーがそもそも存在しない", 
+        fileName
+    );
+
+    ErrorMessageOutput::Assert::DetectError
+    (
+        data.at(fileName_),
+        fileName_ + "このキーの中身がない",
+        fileName
+    );
+
+    return data.at(fileName_).Get();
+}
+///+//////////////////////////////////////////////////////////////////////////////////////////////////////
+///+//////////////////////////////////////////////////////////////////////////////////////////////////////
+///+//////////////////////////////////////////////////////////////////////////////////////////////////////
+void ShaderContext::ShaderLibrary::Import
+(
+    NexusFieldProof proof_, 
+    const std::string& fileName_, 
+    Microsoft::WRL::ComPtr<IDxcBlob>&& data_
+)
+{
+    data[fileName_] = std::move(data_);
+    Logger::Log("Import: " + fileName_, fileName);
+}
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Shader\ShaderLibrary\ShaderLibrary.h ===
+========================================
+#pragma once
+#include "../ShaderContext.h"
+
+
+//外部
+#include "../../../Render/RenderPathStructure/RenderPathComposer/RenderPathComposer.h"
+
+struct RenderPath::PathComposer::ShaderCombiner;
+
+class ShaderContext::ShaderLibrary
+{
+public:
+
+	struct GetDataKey;
+
+	ShaderLibrary(NexusFieldProof proof_);
+
+	///シェーダーバイナリオブジェのポインタを輸出
+	IDxcBlob* Export(GetDataKey key_, const std::string& fileName_);
+	//輸入
+	void Import(NexusFieldProof proof_, const std::string& fileName_, Microsoft::WRL::ComPtr<IDxcBlob>&& data_);
+
+private:
+	///本元データ
+	std::unordered_map<std::string, Microsoft::WRL::ComPtr<IDxcBlob>> data;
+
+
+
+};
+
+
+
+struct ShaderContext::ShaderLibrary::GetDataKey
+{
+private:
+	friend struct RenderPath::PathComposer::ShaderCombiner;
+	explicit GetDataKey() = default;
+};
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Shader\ShaderLoader\ShaderLoader.cpp ===
+========================================
+#include "PreCompileHeader.h"
+#include "ShaderLoader.h"
+#include "ShaderCompiler/ShaderCompiler.h"
+#include "../ShaderLibrary/ShaderLibrary.h"
+#include "StringConverter/StringConverter.h"
+#include "RegistryLoader/RegistryLoader.h"
+
+
+
+ShaderContext::ShaderLoader::ShaderLoader
+(
+	NexusFieldProof proof_,
+	ShaderLibrary* shaderLibrary_
+)
+{
+    CompileAllShaderFiles(proof_, shaderLibrary_);
+}
+
+
+void ShaderContext::ShaderLoader::CompileAllShaderFiles(NexusFieldProof proof_, ShaderLibrary* shaderLibrary_)
+{
+    ShaderContext::Compiler compiler(proof_);
+
+    //シェーダーモデル
+    auto const psProfile = L"ps_6_6";
+    auto const msProfile = L"ms_6_6";
+
+    //メッシュシェーダーファイル名とそのパスが登録されているファイル
+    std::unordered_map<std::string, std::string> shaderRegistryMS =
+        RegistryLoader::Load<RegistryLoader::RegistryFileType::kMSFiles>();
+    //そのピクセルシェーダーバージョン
+    std::unordered_map<std::string, std::string> shaderRegistryPS =
+        RegistryLoader::Load<RegistryLoader::RegistryFileType::kPSFiles>();
+
+    //シェーダのargmentsが詰まってる
+    auto shaderFileNameToArgs = GetArgs();
+
+    for (const auto& [key, value] : shaderRegistryMS)
+    {
+        shaderLibrary_->Import(proof_, key, compiler.CompileShader(value, key, msProfile, shaderFileNameToArgs[key]));
+    }
+
+    for (const auto& [key, value] : shaderRegistryPS)
+    {
+        shaderLibrary_->Import(proof_, key, compiler.CompileShader(value, key, psProfile, shaderFileNameToArgs[key]));
+    }
+
+}
+
+std::unordered_map<std::string, std::vector<std::wstring>> ShaderContext::ShaderLoader::GetArgs()
+{
+    //シェーダーファイルの名前をキーとしたArgs
+    std::unordered_map<std::string, std::vector<std::wstring>> shaderArgs;
+
+    //ジェーソンファイル一覧を取得
+    std::unordered_map<std::string, std::string> jsonRegistry =
+        RegistryLoader::Load<RegistryLoader::RegistryFileType::kJsonFiles>();
+
+    //メッシュシェーダーのキーのベクター
+    std::vector<std::string> msShaderFileNames =
+        RegistryLoader::LoadRegistryKeys<RegistryLoader::RegistryFileType::kMSFiles>();
+    //ピクセルシェーダーのキーのベクター
+    std::vector<std::string> psShaderFileNames =
+        RegistryLoader::LoadRegistryKeys<RegistryLoader::RegistryFileType::kPSFiles>();
+
+    //結合
+    std::vector<std::string> allShaderFileNames;
+    allShaderFileNames.reserve(msShaderFileNames.size() + psShaderFileNames.size());
+    allShaderFileNames.insert(allShaderFileNames.end(), msShaderFileNames.begin(), msShaderFileNames.end());
+    allShaderFileNames.insert(allShaderFileNames.end(), psShaderFileNames.begin(), psShaderFileNames.end());
+
+    auto* miyaJison = MiyaJison::Get();
+
+    //シェーダーのセッティングが記述されているジェーソンファイルのキー
+    auto const srcJsonFileKey = "ShaderSettings";
+    std::unordered_map<std::string, std::vector<std::string>> argsMap;
+
+    for (auto const& key : allShaderFileNames)
+    {
+        auto const groupName = key;
+
+        std::vector<std::string> args =
+            miyaJison->LoadData<std::vector<std::string>>(srcJsonFileKey, { groupName ,"Args" });
+
+        argsMap[key] = args;
+    }
+
+    //stringからwstringへ
+    for (auto [key, value] : argsMap)
+    {
+        for (auto& arg : value)
+        {
+            shaderArgs[key].emplace_back(StringConverter::ConvertString(arg));
+        }
+    }
+
+    return shaderArgs;
+
+}
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Shader\ShaderLoader\ShaderLoader.h ===
+========================================
+#pragma once
+#include "../ShaderContext.h"
+
+
+class ShaderContext::ShaderLoader
+{
+public:
+
+	ShaderLoader
+	(
+		NexusFieldProof proof_, 
+		ShaderContext::ShaderLibrary* shaderLibrary_
+	);
+
+private:
+
+	//全てのシェーダーファイルをコンパイルする
+	void CompileAllShaderFiles(NexusFieldProof proof_, ShaderLibrary* shaderLibrary_);
+	//シェーダファイルのArgsをjsonファイルから読み取る
+	std::unordered_map<std::string, std::vector<std::wstring>> GetArgs();
+
+};
+
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Shader\ShaderLoader\ShaderCompiler\ShaderCompiler.cpp ===
+========================================
 #include "ShaderCompiler.h"
-#include "../../../../Utility/StringConverter/StringConverter.h"
+#include "StringConverter/StringConverter.h"
 
 namespace
 {
@@ -15922,7 +16260,8 @@ Microsoft::WRL::ComPtr<IDxcResult> ShaderContext::Compiler::Compile
 	std::vector<std::wstring> const& extraArguments_
 )
 {
-	std::vector<const wchar_t*> arguments;
+	//std::vector<const wchar_t*> arguments;
+	std::vector<LPCWSTR> arguments;
 
 	//argmentsを構築
 	{
@@ -15934,7 +16273,7 @@ Microsoft::WRL::ComPtr<IDxcResult> ShaderContext::Compiler::Compile
 		//後で書き換えるための一時登録
 		arguments.emplace_back(profile_);
 
-		//基本フラグ（デバッグ情報や警告の扱い）の登録
+		//基本フラグ（デバッグ情報や警告の扱い）
 #ifdef _DEBUG
 		arguments.emplace_back(DXC_ARG_DEBUG);
 		arguments.emplace_back(DXC_ARG_SKIP_OPTIMIZATIONS);
@@ -15948,7 +16287,7 @@ Microsoft::WRL::ComPtr<IDxcResult> ShaderContext::Compiler::Compile
 		//すべてのリソースがバインド済みとして最適化
 		arguments.emplace_back(L"-all-resources-bound");
 
-		//外部から渡されたマクロや追加引数を合流させる
+		//外部から渡された追加引数を合流させる
 		for (auto const& arg : extraArguments_)
 		{
 			arguments.push_back(arg.c_str());
@@ -15959,17 +16298,18 @@ Microsoft::WRL::ComPtr<IDxcResult> ShaderContext::Compiler::Compile
 	{
 		std::string argString = "< arguments >----------------------------------------\n";
 		size_t const argumentSize = arguments.size();
-		for (size_t i = 1;i < argumentSize;++i)
+		for (size_t i = 0;i < argumentSize;++i)
 		{
 			argString += StringConverter::ConvertString(arguments.at(i));
 
 			if (i + 1 < argumentSize)argString += " , ";
 
-			if (i % 4 == 0)argString += "\n";
+			if ((i + 1) % 4 == 0)argString += "\n";
 		}
 		argString += "\n-----------------------------------------------------";
 		Logger::Log(argString);
 	}
+
 
 	Microsoft::WRL::ComPtr<IDxcResult> shaderResult = nullptr;
 	HRESULT hr = dxcCompiler.Get()->Compile
@@ -15987,7 +16327,7 @@ Microsoft::WRL::ComPtr<IDxcResult> ShaderContext::Compiler::Compile
 
 	//dxcが起動できないなどの致命的な状況
 	ErrorMessageOutput::Assert::DetectError(SUCCEEDED(hr), "Crit Error(DxCompiler)", fileName);
-	
+
 	Logger::Log("Complete: compile");
 
 	return shaderResult;
@@ -16003,7 +16343,7 @@ std::wstring ShaderContext::Compiler::AssembleFilePath
 {
 	std::string const fileType = ".hlsl";
 	std::string compositePath = folderPath + fileName_ + fileType;
-	
+
 	Logger::Log("FilePath: " + compositePath, fileName);
 
 	//完成パス
@@ -16017,20 +16357,20 @@ Microsoft::WRL::ComPtr<IDxcBlob> ShaderContext::Compiler::CheckResult(IDxcResult
 
 	//警告エラーが出てたらログに出して止める
 	Microsoft::WRL::ComPtr<IDxcBlobUtf8> shaderError = nullptr;
-	
+
 	shaderResult_->GetOutput(DXC_OUT_ERRORS, IID_PPV_ARGS(shaderError.GetAddressOf()), nullptr);
-	
+
 	OutputDebugStringA(shaderError->GetStringPointer());
 
-	//ErrorMessageOutput::Abort::DetectError
-	//(
-	//	((shaderError == nullptr) || (shaderError->GetStringLength() == 0)),
-	//	"シェーダーのエラーがあります", fileName
-	//);
+	ErrorMessageOutput::Abort::DetectError
+	(
+		((shaderError == nullptr) || (shaderError->GetStringLength() == 0)),
+		"シェーダーのエラーがあります", fileName
+	);
 
 	//コンパイル結果から実行用のバイナリ部分を受け取る
 	Microsoft::WRL::ComPtr<IDxcBlob> shaderBlob = nullptr;
-	
+
 	HRESULT hr = shaderResult_->GetOutput(DXC_OUT_OBJECT, IID_PPV_ARGS(&shaderBlob), nullptr);
 	ErrorMessageOutput::Abort::DetectError(SUCCEEDED(hr), "shaderBlobの生成失敗", fileName);
 
@@ -16070,8 +16410,10 @@ void ShaderContext::Compiler::InstantiateCorePatrts()
 	ErrorMessageOutput::Assert::DetectError(SUCCEEDED(hr), "dxcCompilerの生成失敗", fileName);
 	Logger::Log("Create: dxcCompiler", fileName);
 
+	//includeHandler.Attach(new IncludeHandler(dxcUtils, L"Assets/Shared"));
 	hr = dxcUtils->CreateDefaultIncludeHandler(&includeHandler);
 	ErrorMessageOutput::Assert::DetectError(SUCCEEDED(hr), "includeHandlerの生成失敗", fileName);
+
 	Logger::Log("Create: includeHandler", fileName);
 
 	Logger::Log("Complete: CreatingCoreParts", fileName);
@@ -16081,10 +16423,10 @@ void ShaderContext::Compiler::InstantiateCorePatrts()
 
 
 ========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Shader\ShaderCompiler\ShaderCompiler.h ===
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Shader\ShaderLoader\ShaderCompiler\ShaderCompiler.h ===
 ========================================
 #pragma once
-#include "../ShaderContext.h"
+#include "../../ShaderContext.h"
 
 class ShaderContext::Compiler
 {
@@ -16125,193 +16467,6 @@ private:
 
 };
 
-
-
-
-
-========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Shader\ShaderLibrary\ShaderLibrary.cpp ===
-========================================
-#include "ShaderLibrary.h"
-#include "../ShaderCompiler/ShaderCompiler.h"
-#include "RegistryLoader/RegistryLoader.h"
-#include "StringConverter/StringConverter.h"
-
-#include <regex>
-#include <iostream>
-
-namespace
-{
-    std::string const fileName = "ShaderLibrary.cpp";
-}
-
-ShaderLibrary::ShaderLibrary(InstanceKey key_, ShaderContext::Compiler* compiler_)
-{
-    Logger::Entry("ShaderLibrary: Constructor");
-
-    CompileAllShaderFiles(compiler_);
-
-    Logger::End("ShaderLibrary: Constructor");
-
-}
-
-///+//////////////////////////////////////////////////////////////////////////////////////////////////////
-///+//////////////////////////////////////////////////////////////////////////////////////////////////////
-///+//////////////////////////////////////////////////////////////////////////////////////////////////////
-IDxcBlob* ShaderLibrary::Export(GetDataKey key_, const std::string& fileName_)
-{   
-    ErrorMessageOutput::Assert::DetectError
-    (
-        data.find(fileName_) != data.end(),
-        fileName_ + "このキーがそもそも存在しない", 
-        fileName
-    );
-
-    ErrorMessageOutput::Assert::DetectError
-    (
-        data.at(fileName_),
-        fileName_ + "このキーの中身がない",
-        fileName
-    );
-
-    return data.at(fileName_).Get();
-}
-///+//////////////////////////////////////////////////////////////////////////////////////////////////////
-///+//////////////////////////////////////////////////////////////////////////////////////////////////////
-///+//////////////////////////////////////////////////////////////////////////////////////////////////////
-void ShaderLibrary::CompileAllShaderFiles(ShaderContext::Compiler* compiler_)
-{
-    auto const psProfile = L"ps_6_6";
-    auto const msProfile = L"ms_6_6";
-
-    std::string const shaderArgmentJsonPath = "Assets/JsonFiles/EngineCoreJsonFile/";
-
-    std::unordered_map<std::string, std::string> shaderRegistryMS = 
-        RegistryLoader::Load<RegistryLoader::RegistryFileType::kMSFiles>();
-
-    std::unordered_map<std::string, std::string> shaderRegistryPS = 
-        RegistryLoader::Load<RegistryLoader::RegistryFileType::kPSFiles>();
-
-    //シェーダのargmentsが詰まってる
-    auto shaderFileNameToArgs = GetArgs();
-
-
-
-    for (const auto& [key, value] : shaderRegistryMS)
-    {
-        data[key] = compiler_->CompileShader(value, key, msProfile, shaderFileNameToArgs[key]);
-    }
-
-    for (const auto& [key, value] : shaderRegistryPS)
-    {
-        data[key] = compiler_->CompileShader(value, key, psProfile, shaderFileNameToArgs[key]);
-    }
-}
-///+///////////////////////////////////////////////////////////////////////////////////////////////////////
-///+///////////////////////////////////////////////////////////////////////////////////////////////////////
-///+///////////////////////////////////////////////////////////////////////////////////////////////////////
-std::unordered_map<std::string, std::vector<std::wstring>> ShaderLibrary::GetArgs()
-{
-    //シェーダーファイルの名前をキーとしたArgs
-    std::unordered_map<std::string, std::vector<std::wstring>> shaderArgs;
-
-    //ジェーソンファイル一覧を取得
-    std::unordered_map<std::string, std::string> jsonRegistry =
-        RegistryLoader::Load<RegistryLoader::RegistryFileType::kJsonFiles>();
-
-    //メッシュシェーダーのキーのベクター
-    std::vector<std::string> msShaderFileNames = 
-        RegistryLoader::LoadRegistryKeys<RegistryLoader::RegistryFileType::kMSFiles>();
-    //ピクセルシェーダーのキーのベクター
-    std::vector<std::string> psShaderFileNames =
-        RegistryLoader::LoadRegistryKeys<RegistryLoader::RegistryFileType::kPSFiles>();
-
-    //結合
-    std::vector<std::string> allShaderFileNames;
-    allShaderFileNames.reserve(msShaderFileNames.size() + psShaderFileNames.size());
-    allShaderFileNames.insert(allShaderFileNames.end(), msShaderFileNames.begin(), msShaderFileNames.end());
-    allShaderFileNames.insert(allShaderFileNames.end(), psShaderFileNames.begin(), psShaderFileNames.end());
-
-    auto* miyaJison = MiyaJison::Get();
-
-    //シェーダーのセッティングが記述されているジェーソンファイルのキー
-    auto const srcJsonFileKey = "ShaderSettings";
-    std::unordered_map<std::string, std::vector<std::string>> argsMap;
-
-    for (auto const& key : allShaderFileNames)
-    {
-        auto const groupName = key;
-
-        std::vector<std::string> args =
-            miyaJison->LoadData<std::vector<std::string>>(srcJsonFileKey, { groupName ,"Args" });
-
-        argsMap[key] = args;
-    }
-
-    for (auto [key,value] : argsMap)
-    {
-        for (auto& arg : value)
-        {
-            shaderArgs[key].emplace_back(StringConverter::ConvertString(arg));
-        }
-    }
-
-    return shaderArgs;
-}
-
-
-
-========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Shader\ShaderLibrary\ShaderLibrary.h ===
-========================================
-#pragma once
-#include "../ShaderContext.h"
-
-
-//外部
-#include "../../../Render/RenderPathStructure/RenderPathComposer/RenderPathComposer.h"
-
-struct RenderPath::PathComposer::ShaderCombiner;
-
-class ShaderLibrary
-{
-public:
-
-	struct InstanceKey;
-	struct GetDataKey;
-
-	ShaderLibrary(InstanceKey key_, ShaderContext::Compiler* compiler_);
-
-	///シェーダーバイナリオブジェのポインタを輸出
-	IDxcBlob* Export(GetDataKey key_, const std::string& fileName_);
-	
-
-private:
-	///本元データ
-	std::unordered_map<std::string, Microsoft::WRL::ComPtr<IDxcBlob>> data;
-
-	//コンパイルする
-	void CompileAllShaderFiles(ShaderContext::Compiler* compiler_);
-	std::unordered_map<std::string, std::vector<std::wstring>> GetArgs();
-
-
-};
-
-
-struct ShaderLibrary::InstanceKey
-{
-private:
-
-	friend class ShaderContext;
-	explicit InstanceKey() = default;
-};
-
-struct ShaderLibrary::GetDataKey
-{
-private:
-	friend struct RenderPath::PathComposer::ShaderCombiner;
-	explicit GetDataKey() = default;
-};
 
 
 
@@ -18104,6 +18259,14 @@ void Nexus::Run()
 ========================================
 #include "PreCompileHeader.h"
 
+#pragma comment(lib,"d3d12.lib")
+#pragma comment(lib,"dxgi.lib")
+#pragma comment(lib,"dxcompiler.lib")
+#pragma comment(lib,"dxguid.lib")
+#pragma comment(lib,"Dbghelp.lib")
+#pragma comment(lib,"winmm.lib")
+
+
 
 
 
@@ -18157,14 +18320,6 @@ void Nexus::Run()
 //ジェーソン読み書き
 #include "../MiddleLayer/MiyaJison/MiyaJison.h"
 
-
-
-#pragma comment(lib,"d3d12.lib")
-#pragma comment(lib,"dxgi.lib")
-#pragma comment(lib,"dxcompiler.lib")
-#pragma comment(lib,"dxguid.lib")
-#pragma comment(lib,"Dbghelp.lib")
-#pragma comment(lib,"winmm.lib")
 
 
 

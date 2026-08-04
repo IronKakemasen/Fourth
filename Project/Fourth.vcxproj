@@ -300,7 +300,7 @@
     <ClCompile Include="Engine\LowerLayer\Render\RenderContext.cpp" />
     <ClCompile Include="Engine\LowerLayer\Render\RuntimeRenderingManagementSystems\ModelRenderingInfoOrganizer\ModelRenderingInfoOrganizer.cpp" />
     <ClCompile Include="Engine\LowerLayer\Resource\Shader\ShaderContext.cpp" />
-    <ClCompile Include="Engine\LowerLayer\Resource\Shader\ShaderCompiler\ShaderCompiler.cpp" />
+    <ClCompile Include="Engine\LowerLayer\Resource\Shader\ShaderLoader\ShaderCompiler\ShaderCompiler.cpp" />
     <ClCompile Include="Engine\LowerLayer\Resource\Shader\ShaderLibrary\ShaderLibrary.cpp" />
     <ClCompile Include="Engine\LowerLayer\Resource\PSO\PSO_Context.cpp" />
     <ClCompile Include="Engine\LowerLayer\Resource\PSO\PSO_Assembler\PSO_Assembler.cpp" />
@@ -353,6 +353,9 @@
     <ClCompile Include="Engine\MiddleLayer\MiyaJison\MiyaJison.cpp" />
     <ClCompile Include="Engine\MiddleLayer\MiyaJison\JsonDataLibrary\JsonDataLibrary.cpp" />
     <ClCompile Include="Engine\MiddleLayer\MiyaJison\JsonDataChecker\JsonDataChecker.cpp" />
+    <ClCompile Include="Engine\LowerLayer\Resource\Shader\ShaderLoader\ShaderLoader.cpp" />
+    <ClCompile Include="Engine\LowerLayer\Resource\Shader\ShaderContextDiplomat\ShaderContextDiplomat.cpp" />
+    <ClCompile Include="Engine\LowerLayer\Resource\Shader\ShaderContextDiplomat\ShaderContextToolLender\ShaderContextToolLender.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Assets\BAKA\ConstantBuffers.h" />
@@ -387,6 +390,7 @@
     <ClInclude Include="Engine\LowerLayer\Resource\Model\ModelStructure\ModelDescription.h" />
     <ClInclude Include="Engine\LowerLayer\Resource\Model\ModelStructure\ModelData\ResourceMaterial\StandardMaterial.h" />
     <ClInclude Include="Engine\LowerLayer\Resource\Model\ModelStructure\ModelData\ResourceMesh\StandardVertex.h" />
+    <ClInclude Include="Engine\LowerLayer\Resource\Shader\ShaderContextDiplomat\ShaderContextToolLender\ShaderContextToolLenderLicences.h" />
     <ClInclude Include="Engine\Utility\ClosedHashMap\ClosedHashMap.h" />
     <ClInclude Include="Engine\LowerLayer\Render\PSO_PoolDispatcher\GraphicsPSO_Key.h" />
     <ClInclude Include="Engine\LowerLayer\Render\RenderPathStructure\RenderPassComponent.h" />
@@ -490,7 +494,7 @@
     <ClInclude Include="Engine\LowerLayer\Render\RenderContext.h" />
     <ClInclude Include="Engine\LowerLayer\Render\RuntimeRenderingManagementSystems\ModelRenderingInfoOrganizer\ModelRenderingInfoOrganizer.h" />
     <ClInclude Include="Engine\LowerLayer\Resource\Shader\ShaderContext.h" />
-    <ClInclude Include="Engine\LowerLayer\Resource\Shader\ShaderCompiler\ShaderCompiler.h" />
+    <ClInclude Include="Engine\LowerLayer\Resource\Shader\ShaderLoader\ShaderCompiler\ShaderCompiler.h" />
     <ClInclude Include="Engine\LowerLayer\Resource\Shader\ShaderLibrary\ShaderLibrary.h" />
     <ClInclude Include="Engine\LowerLayer\Resource\PSO\PSO_Context.h" />
     <ClInclude Include="Engine\LowerLayer\Resource\PSO\PSO_Assembler\PSO_Assembler.h" />
@@ -548,6 +552,9 @@
     <ClInclude Include="Engine\MiddleLayer\MiyaJison\JsonDataLibrary\JsonDataLibrary.h" />
     <ClInclude Include="Engine\MiddleLayer\MiyaJison\JsonDataChecker\JsonDataChecker.h" />
     <ClInclude Include="External\AI\IncludeHandler\IncludeHandler.h" />
+    <ClInclude Include="Engine\LowerLayer\Resource\Shader\ShaderLoader\ShaderLoader.h" />
+    <ClInclude Include="Engine\LowerLayer\Resource\Shader\ShaderContextDiplomat\ShaderContextDiplomat.h" />
+    <ClInclude Include="Engine\LowerLayer\Resource\Shader\ShaderContextDiplomat\ShaderContextToolLender\ShaderContextToolLender.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
