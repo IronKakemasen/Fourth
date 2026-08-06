@@ -1,10 +1,9 @@
 #include "PreCompileHeader.h"
 #include "TransformMatrixContainerBufferCreator.h"
+#include "../../../../ModelContextRuntime/ModelDataBatcher/ModelDataBatcher.h"
 
-#include "../../../ModelSlotAllocator/ModelSlotAllocator.h"
 //外部
-#include "../../../../../Buffer/BufferCreateTools/BufferCreator.h"
-#include "../../../../../Buffer/BufferRuntime/BufferDispatcher/BufferDispatcher.h"
+#include "../../../../../Buffer/BufferContextToolsInclude.h"
 //ほんとはuploadStructuredBufferDescriptionだけでいいんだけど、文字列制限なのかインクルードできないので
 #include "../../../../../Buffer/BufferDefinition/AllBufferDescsInclude.h"
 #include "../../../../../Buffer/BufferDefinition/AllBuffersInclude.h"
@@ -15,10 +14,9 @@ using namespace ProjectConfig::Render;
 
 void ModelContext::ModelDataCreator::TransformMatrixContainerBufferCreator::Create
 (
-	ModelContext::ModelSlotAllocator* slotAllocator_,
 	BufferContext::BufferCreator* bufferCreator_,
-	BufferContext::BufferCollector* bufferCollector_,
-	BufferContext::BufferDispatcher* bufferDispatcher_
+	BufferContext::ConstantBufferCreator* cBufferCreator_,
+	ModelDataBatcher* modelDataBatcher_
 )
 {
 	//まずTransformMatrixのUploadStructuredBufferを作成するためのディスクリプションの生成
@@ -32,18 +30,25 @@ void ModelContext::ModelDataCreator::TransformMatrixContainerBufferCreator::Crea
 		0
 	);
 
-	BufferUniqueID TransformMatrixContainerBufferID = bufferCreator_->Create(desc,"TransformMatrixContainer");
-	bufferCollector_->Distribute();
+	//UploadStructuredBufferとして生成
+	std::string const bufferName = "TransformMatrixContainer";
+	auto bufferUnique_buffer = bufferCreator_->CreateWithBuffer(desc, bufferName);
+
+	///ランタイムでTransformMatrixはもちろん更新するから、その索引用として
+	///こいつのIDは頂戴する
+	modelDataBatcher_->ImportBufferID<ModelDataBatcher::BufferIDType::kTransformMatrixContainer>
+		(ModelDataBatcher::Local_InputBufferUniqueIDLicence{}, bufferUnique_buffer.first);
 
 	//SRVHeapIndexを抽出
-	auto* TransformMatrixContainerBuffer = 
-		static_cast<UploadStructuredBuffer*>(bufferDispatcher_->Dispatch(TransformMatrixContainerBufferID));
-	auto* iReadable_TransformMatrixContainerBuffer = static_cast<IReadable*>(TransformMatrixContainerBuffer);
+	auto* readableBuffer = static_cast<IReadable*>(bufferUnique_buffer.second);
+	
+	//そのコンスタントバッファを生成し、データを入力する
+	///定数バッファはダブルバッファなので、それぞれに別々のsrvHeapIndexを入力する
+	auto cBufferID_cBuffer = cBufferCreator_->Create(bufferName, UINT(sizeof(SRVHeapIndex)), 1);
+	for (int i = 0;i < (int)ProjectConfig::Render::NumBuffer::kDoubleBuffer;++i)
+	{
+		auto* mappedPtr = cBufferID_cBuffer.second->GetMappedPtr<SRVHeapIndex>(i);
+		*mappedPtr = readableBuffer->OutProperSRVHeapIndex(i);
+	}
 
-	//それらを保存する
-	slotAllocator_->SetTransformMatrixConatinerSrvHeapIndices
-	(
-		ModelContext::ModelSlotAllocator::HandleLicence{},
-		{ iReadable_TransformMatrixContainerBuffer->OutProperSRVHeapIndex(0),iReadable_TransformMatrixContainerBuffer->OutProperSRVHeapIndex(1) }
-	);
 }

@@ -1,6 +1,8 @@
 #pragma once
 #include "../../BufferContext.h"
 
+class ConstantBuffer;
+
 class BufferContext::ConstantBufferCreator
 {
 public:
@@ -13,7 +15,8 @@ public:
 	);
 
 	//データのコピーは他者にやってもらいたいから、バッファユニークIDを渡す
-	[[nodiscard]] BufferUniqueID Create(const std::string& name_, UINT const realDataSize_, const uint8_t bindSlot_);
+	[[nodiscard]] std::pair<BufferUniqueID, ConstantBuffer*>
+		Create(const std::string& name_, UINT const realDataSize_, const uint8_t bindSlot_);
 
 
 private:

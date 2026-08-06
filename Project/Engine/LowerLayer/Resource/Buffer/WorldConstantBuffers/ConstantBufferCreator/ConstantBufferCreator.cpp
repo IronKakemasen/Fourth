@@ -20,7 +20,8 @@ BufferContext::ConstantBufferCreator::ConstantBufferCreator
 
 }
 
-[[nodiscard]] BufferUniqueID BufferContext::ConstantBufferCreator::Create(const std::string& name_, UINT const realDataSize_, const uint8_t bindSlot_)
+[[nodiscard]] std::pair<BufferUniqueID, ConstantBuffer*> BufferContext::ConstantBufferCreator::Create
+(const std::string& name_, UINT const realDataSize_, const uint8_t bindSlot_)
 {
 
 	ConstantBufferDescription desc(realDataSize_);
@@ -40,7 +41,7 @@ BufferContext::ConstantBufferCreator::ConstantBufferCreator
 		}
 	);
 
-	return id_buffer.first;
+	return id_buffer;
 }
 
 

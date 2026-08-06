@@ -11,17 +11,21 @@ class ModelContext
 {
 	//モデルファイルからモデル情報を読み込む
 	class ModelDataLoader;
-
-public:
-	//モデルレジストリーファイルにあるモデルデータのバッファを生成する。
-	class ModelDataCreator;
+	//モデルのコンテナ。おそらくただのコンテナになると思う
+	class ModelContainer;
+	//TransformMatrixSlotの空きインデックスを割り当てたり、モデル名をもとに
+	//モデルデータの割り当てを行う
+	class ModelSlotAllocator;
 	//インスタンス化されたモデルクラスのモデルファイル名をもとに中身を構築してあげる
 	class ModelDescAssembler;
+
+public:
+	//全てのモデルファイルのモデルデータのバッファを生成する。
+	class ModelDataCreator;
 	///モデルクラスを生成する
 	class ModelCreator;
-	//モデルのコンテナ
-	class ModelContainer;
-	class ModelSlotAllocator;
+	//モデルの書き込まなくてはならないデータ(TransformMatrixなど)のバッチングを行う
+	class ModelDataBatcher;
 
 	//代行者
 	class ExecutionAgent;
@@ -37,7 +41,6 @@ public:
 
 	//外交官
 	std::unique_ptr<ModelContextDiplomat> diplomat;
-	std::unique_ptr<ModelCreator> modelCreator;
 
 private:
 
@@ -45,6 +48,9 @@ private:
 	std::unique_ptr<ModelDataCreator> modelDataCreator;
 	std::unique_ptr<ModelSlotAllocator> modelSlotAllocator;
 	std::unique_ptr<ModelContainer> modelContainer;
+	std::unique_ptr<ModelCreator> modelCreator;
+	std::unique_ptr<ModelDataBatcher> modelDataBatcher;
+
 	std::unique_ptr<TestModelOKIBA> testModelOKIBA;
 };
 

@@ -9,6 +9,8 @@
 
 #include "ModelContainer/ModelContainer.h"
 
+#include "ModelContextRuntime/ModelDataBatcher/ModelDataBatcher.h"
+
 #include "ModelContextDiplomat/ModelContextExecutionAgent/ModelContextExecutionAgent.h"
 #include "ModelContextDiplomat/ModelContextToolLender/ModelContextToolLender.h"
 #include "ModelContextDiplomat/ModelContextDiplomat.h"
@@ -49,6 +51,22 @@ ModelContext::ModelContext(NexusFieldProof proof_,BufferContextDiplomat* bufferC
 	Logger::Log("Instantiate: ModelDescAssembler", fileName);
 	Logger::Log("Instantiate: ModelCreator", fileName);
 
+	modelDataBatcher.reset(new ModelDataBatcher(proof_));
+	Logger::Log("Instantiate: modelDataBatcher", fileName);
+
+
+	modelDataCreator.reset
+	(
+		new ModelDataCreator
+		(
+			proof_, std::move(modelDataLoader),
+			modelSlotAllocator.get(),
+			modelDataBatcher.get(),
+			bufferContextDiplomat_
+		)
+	);
+	Logger::Log("Instantiate: ModelDataCreator", fileName);
+
 	diplomat.reset
 	(
 		new ModelContextDiplomat
@@ -62,16 +80,6 @@ ModelContext::ModelContext(NexusFieldProof proof_,BufferContextDiplomat* bufferC
 	Logger::Log("Instantiate: ExecutionAgent", fileName);
 	Logger::Log("Instantiate: ModelContextDiplomat", fileName);
 
-	modelDataCreator.reset
-	(
-		new ModelDataCreator
-		(
-			proof_,std::move(modelDataLoader), 
-			modelSlotAllocator.get(),
-			bufferContextDiplomat_
-		)
-	);
-	Logger::Log("Instantiate: ModelDataCreator", fileName);
 
 
 	///てすとおおおおお
