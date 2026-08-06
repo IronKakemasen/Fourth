@@ -36,7 +36,8 @@ class Nexus
 		kUploadAllResources,
 		kKickCommands,
 		kDeleteIntermediateResources,
-		kDeleteModelDataCache
+		kDeleteModelDataCache,
+		kSortOutWorldConstantBuffers
 
 
 		,kEnd

@@ -8,17 +8,22 @@ public:
 	(
 		NexusFieldProof proof_,
 		BufferContext* bufferContext_,
-		BufferContext::BufferUploader* bufferUploader_
+		BufferUploader* bufferUploader_,
+		WorldConstantBuffers* worldConstantBuffers_
 	);
 
 	//BufferUploaderの削除を代行
-	void DeleteBufferUploader(BufferContext::NexusFieldProof proof_);
+	void DeleteBufferUploader(NexusFieldProof proof_);
 	//Resourceのバリアを全て張るのを代行
-	void UploadAllBuffer(BufferContext::NexusFieldProof proof_);
+	void UploadAllBuffer(NexusFieldProof proof_);
+	//ワールド定数バッファのコンテナクラスの移し替えを代行
+	void PackRuntimeContainer(NexusFieldProof proof_);
 
 
 private:
 	BufferContext* bufferContext;
-	BufferContext::BufferUploader* bufferUploader;
+	BufferUploader* bufferUploader;
+	WorldConstantBuffers* worldConstantBuffers;
+
 };
 

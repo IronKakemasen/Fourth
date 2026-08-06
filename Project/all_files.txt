@@ -6404,11 +6404,18 @@ BufferContext::BufferContext
 	resourceCreator.reset(new BufferContext::ResourceCreator(proof_, deviceContextDiplomat_));
 	Logger::Log("Instantiate: ResourceCreator", fileName);
 
-	bufferCreator.reset(new BufferCreator(proof_, resourceCreator.get(), descriptorheapContextDiplomat_, bufferCollector.get()));
-	Logger::Log("Instantiate: BufferCreator", fileName);
-
 	bufferDispatcher.reset(new BufferDispatcher(proof_, bufferPoolSet.get()));
 	Logger::Log("Instantiate: bufferDispatcher", fileName);
+
+	bufferCreator.reset
+	(
+		new BufferCreator
+		(
+			proof_, resourceCreator.get(), descriptorheapContextDiplomat_, bufferCollector.get(), bufferDispatcher.get()
+		)
+	);
+	Logger::Log("Instantiate: BufferCreator", fileName);
+
 
 	bufferUploader.reset(new BufferUploader(proof_, resourceCreator.get(),bufferDispatcher.get(), commandContextDiplomat_));
 	Logger::Log("Instantiate: BufferUploader", fileName);
@@ -6491,6 +6498,8 @@ class BufferContext
 {
 	//生成したバッファの削除を担当
 	class BufferDeferredReleaser;
+	//生リソース生成
+	class ResourceCreator;
 
 protected:
 
@@ -6548,9 +6557,6 @@ public:
 	struct AgentKey;
 
 
-
-	using DeleteBufferUploaderCommand = std::function<void()>;
-
 	//BufferAssemblerとBufferCollectorをつかってバッファを作成する
 	class BufferCreator;
 	//BufferDescriptionをもとにバッファを組み立てる
@@ -6565,11 +6571,10 @@ public:
 	class ToolLender;
 	//生成したバッファを回収し分別する
 	class BufferCollector;
-	//生リソース生成
-	class ResourceCreator;
 	//代行者
 	class ExecutionAgent;
-
+	//ワールドコンスタントバッファ
+	class WorldConstantBuffers;
 
 	BufferContext
 	(
@@ -6581,10 +6586,10 @@ public:
 
 	~BufferContext();
 
-	//ツール貸し出し
+	//外交役
 	std::unique_ptr<BufferContextDiplomat> diplomat;
 
-	///ランタイムに入る前にNexusuがアップロード用の中間リソースを破棄する
+	///ランタイムに入る前にNexusがアップロード用の中間リソースを破棄する
 	void DeleteBufferUploader(const NexusFieldProof& proof_, AgentKey agentKey_);
 	
 private:
@@ -6896,8 +6901,9 @@ BufferContext::BufferCreator::BufferCreator
 	BufferContext::NexusFieldProof proof_,
 	BufferContext::ResourceCreator* resourceCreator_,
 	DescriptorHeapContextDiplomat* descriptorheapContextDiplomat_,
-	BufferCollector* collector_
-):collector(collector_)
+	BufferCollector* collector_,
+	BufferDispatcher* dispatcher_
+):collector(collector_), dispatcher(dispatcher_)
 {
 	assembler.reset(new BufferContext::BufferAssembler(proof_, resourceCreator_, descriptorheapContextDiplomat_));
 	Logger::Log("Instantiate: BufferAssembler", "BufferCreator.cpp");
@@ -6919,9 +6925,9 @@ BufferContext::BufferCreator::~BufferCreator()
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Buffer\BufferCreateTools\BufferCreator.h ===
 ========================================
 #pragma once
-#include "../BufferContext.h"
 #include "BufferCollector/BufferCollector.h"
 #include "BufferAssembler/BufferAssembler.h"
+#include "../BufferRuntime/BufferDispatcher/BufferDispatcher.h"
 #include "../BufferDefinition/AllBuffersInclude.h"
 
 class BufferContext::BufferCreator
@@ -6937,12 +6943,14 @@ public:
 		BufferContext::NexusFieldProof proof_,
 		BufferContext::ResourceCreator* resourceCreator_,
 		DescriptorHeapContextDiplomat* descriptorheapContextDiplomat_,
-		BufferCollector* collector_
+		BufferCollector* collector_,
+		BufferDispatcher* dispatcher_
 	);
 
 	~BufferCreator();
 
 	//生成したバッファの管理を請け負います
+	///任意のタイミングでcollectorのDistribute()をやってもらわな困る
 	template<typename DescType>
 	[[nodiscard]] BufferUniqueID Create(const DescType& desc_, const std::string& name_)
 	{
@@ -6965,6 +6973,25 @@ public:
 		return dispatchUniqueID;
 	}
 
+	///バージョン2
+	///collectorがdistributeし、お望みのバッファの型にして返す
+	template<typename DescType>
+	[[nodiscard]] std::pair<BufferUniqueID, typename DescTypeTraits<DescType>::Type*>
+	CreateWithBuffer(const DescType& desc_, const std::string& name_)
+	{
+		using ActualBufferType = typename DescTypeTraits<DescType>::Type;
+
+		//生成数 = IDとす
+		BufferUniqueID dispatchUniqueID = Create(desc_, name_);
+		collector->Distribute();
+
+		ActualBufferType* buffer = dynamic_cast<ActualBufferType*>(dispatcher->Dispatch(dispatchUniqueID));
+		ErrorMessageOutput::Assert::DetectError(buffer, "型変換できない", "BufferCreator.f");
+
+		return std::make_pair(dispatchUniqueID, buffer);
+	}
+
+
 	//生成したバッファの管理はしません。あとは任せました状態
 	template<typename DescType>
 	[[nodiscard]] std::unique_ptr<DescTypeTraits<DescType>>::Type CreateBeyondMyJurisdiction(const DescType& desc_, const std::string& name_)
@@ -6981,6 +7008,8 @@ private:
 	uint32_t generateBufferSum{};
 	std::unique_ptr<BufferContext::BufferAssembler> assembler;
 	BufferCollector* collector;
+	BufferDispatcher* dispatcher;
+
 };
 
 template<>
@@ -10386,7 +10415,7 @@ struct IUpload
 struct IWritableCPU
 {
 	template<typename DataType>
-	inline auto* GetMappedPtr(UINT frameIndex_) { return static_cast<DataType*>(mappedPtrs[frameIndex_]); }
+	auto* GetMappedPtr(UINT frameIndex_) { return static_cast<DataType*>(mappedPtrs[frameIndex_]); }
 
 	virtual ~IWritableCPU() {};
 
@@ -11391,6 +11420,79 @@ RenderPath::Pass::RequiredBufferInfo::Texture BufferContext::BufferInfoExtractor
 
 template<>
 RenderPath::Pass::RequiredBufferInfo::RenderTarget BufferContext::BufferInfoExtractor::Exstract(DepthStencilBuffer* buffer_);
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Buffer\WorldConstantBuffers\WorldConstantBuffers.cpp ===
+========================================
+#include "PreCompileHeader.h"
+#include "WorldConstantBuffers.h"
+
+
+
+BufferContext::WorldConstantBuffers::WorldConstantBuffers
+(
+	NexusFieldProof proof_,
+	BufferCreator* creator_
+):creator(creator_)
+{
+
+}
+
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Buffer\WorldConstantBuffers\WorldConstantBuffers.h ===
+========================================
+#pragma once
+#include "../BufferContext.h"
+#include "../BufferCreateTools/BufferCreator.h"
+
+#include "../BufferDefinition/GPUBuffer/ConstantBuffer/ConstantBuffer.h"
+#include "../BufferDefinition/BufferDescriptions/ConstantBufferDescription/ConstantBufferDescription.h"
+
+//struct ConstantBufferDescription;
+
+class BufferContext::WorldConstantBuffers
+{
+public:
+
+	WorldConstantBuffers
+	(
+		NexusFieldProof proof_,
+		BufferCreator* creator_
+	);
+
+	template<typename RealDataType>
+	void Create(const std::string& name_, const RealDataType& realData_)
+	{
+		ConstantBufferDescription desc(sizeof(RealDataType));
+
+		//バッファユニークIDとコンスタントバッファ
+		auto id_buffer = creator->CreateWithBuffer(desc, name_);
+
+		//リアルデータで初期化する
+		std::array<void*, (UINT)ProjectConfig::Render::NumBuffer::kDoubleBuffer> mappedPtrs;
+		mappedPtrs = { id_buffer.second->GetMappedPtr<RealDataType>(0),id_buffer.second->GetMappedPtr<RealDataType>(1) };
+		*mappedPtrs.at(0) = realData_;
+		*mappedPtrs.at(1) = realData_;
+
+		idMap[name_] = id_buffer.first;
+	}
+
+
+private:
+
+	BufferCreator* creator;
+	std::unordered_map<std::string,BufferUniqueID> idMap;
+
+
+};
+
 
 
 
@@ -15088,9 +15190,10 @@ private:
 ========================================
 #include "RootSignatureContext.h"
 #include "RootSignatureLibrary/RootSignatureLibrary.h"
-
-//ツール
-#include "RootSignatureAssembler/RootSignatureAssembler.h"
+#include "RootSignatureCreator/RootSignatureCreator.h"
+#include "RootSignatureCreator/RootSignatureAssembler/RootSignatureAssembler.h"
+#include "RootSignatureContextDiplomat/RootSignatureContextDiplomat.h"
+#include "RootSignatureContextDiplomat/RootSignatureToolLender/RootSignatureToolLender.h"
 
 namespace
 {
@@ -15101,11 +15204,33 @@ RootSignatureContext::RootSignatureContext(NexusFieldProof proof_, DeviceContext
 {
 	Logger::Entry("RootSignatureContext: Constructor");
 
-	assembler.reset(new Assembler(proof_, deviceContextDiplomat_));
-	Logger::Log("Instantiate: RootSignatureAssembler", fileName);
-
-	rootSignatureLibrary.reset(new RootSignatureLibrary(RootSignatureLibrary::InstanceKey{}, assembler.get()));
+	rootSignatureLibrary.reset(new RootSignatureLibrary(proof_));
 	Logger::Log("Instantiate: rootSignatureLibrary", fileName);
+
+	rootSignatureCreator.reset
+	(
+		new RootSignatureCreator
+		(
+			proof_,
+			std::make_unique<Assembler>(proof_, deviceContextDiplomat_),
+			rootSignatureLibrary.get()
+		)
+	);
+
+	Logger::Log("Instantiate: RootSignatureAssembler", fileName);
+	Logger::Log("Instantiate: RootSignatureCreator", fileName);
+
+
+	diplomat.reset
+	(
+		new RootSignatureContextDiplomat
+		(
+			proof_,
+			std::make_unique<ToolLender>(proof_, rootSignatureCreator.get())
+		)
+	);
+	Logger::Log("Instantiate: ToolLender", fileName);
+	Logger::Log("Instantiate: Diplomat", fileName);
 
 
 	Logger::End("RootSignatureContext: Constructor");
@@ -15127,8 +15252,8 @@ RootSignatureContext::~RootSignatureContext()
 #pragma once
 
 class Nexus;
-class RootSignatureLibrary;
 class DeviceContextDiplomat;
+class RootSignatureContextDiplomat;
 
 class RootSignatureContext
 {
@@ -15139,16 +15264,31 @@ protected:
 
 public:
 
-	//rootSignatureを組み立てる
-	class Assembler;
+	enum class Usage
+	{
+		kGraphics,
+		kCompute
+		, kCount
+	};
+
+	class RootSignatureCreator;
+	class ToolLender;
+
 	struct NexusFieldProof;
 
 	RootSignatureContext(NexusFieldProof proof_, DeviceContextDiplomat* deviceContextDiplomat_);
 	~RootSignatureContext();
 
+
+	std::unique_ptr<RootSignatureContextDiplomat> diplomat;
+
 private:
 
-	std::unique_ptr<Assembler> assembler;
+	class RootSignatureLibrary;
+	//rootSignatureを組み立てる
+	class Assembler;
+
+	std::unique_ptr<RootSignatureCreator> rootSignatureCreator;
 	std::unique_ptr<RootSignatureLibrary> rootSignatureLibrary;
 
 };
@@ -15166,17 +15306,235 @@ private:
 
 
 ========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\RootSignature\RootSignatureAssembler\RootSignatureAssembler.cpp ===
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\RootSignature\RootSignatureContextDiplomat\RootSignatureContextDiplomat.cpp ===
+========================================
+#include "PreCompileHeader.h"
+#include "RootSignatureContextDiplomat.h"
+#include "RootSignatureToolLender/RootSignatureToolLender.h"
+
+
+
+RootSignatureContextDiplomat::RootSignatureContextDiplomat
+(
+	RootSignatureContext::NexusFieldProof proof,
+	std::unique_ptr<RootSignatureContext::ToolLender>&& toolLender_
+)
+{
+	std::get<std::unique_ptr<RootSignatureContext::ToolLender>>(tools) = std::move(toolLender_);
+}
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\RootSignature\RootSignatureContextDiplomat\RootSignatureContextDiplomat.h ===
+========================================
+#pragma once
+#include "../RootSignatureContext.h"
+
+class RootSignatureContextDiplomat
+{
+public:
+
+	RootSignatureContextDiplomat
+	(
+		RootSignatureContext::NexusFieldProof proof,
+		std::unique_ptr<RootSignatureContext::ToolLender>&& toolLender_
+	);
+
+
+private:
+
+	std::tuple
+	<
+		std::unique_ptr<RootSignatureContext::ToolLender>
+	>tools;
+
+};
+
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\RootSignature\RootSignatureContextDiplomat\RootSignatureToolLender\RootSignatureToolLender.cpp ===
+========================================
+#include "PreCompileHeader.h"
+#include "RootSignatureToolLender.h"
+
+
+RootSignatureContext::ToolLender::ToolLender(NexusFieldProof proof_, RootSignatureCreator* creator_)
+{
+	std::get<RootSignatureCreator*>(tools) = creator_;
+}
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\RootSignature\RootSignatureContextDiplomat\RootSignatureToolLender\RootSignatureToolLender.h ===
+========================================
+#pragma once
+#include "../../RootSignatureContext.h"
+
+class RootSignatureContext::ToolLender
+{
+	template<typename ToolType>
+	struct LicenceTypeTraits;
+
+	struct UsesRootSigCreatorLicence;
+
+public:
+
+	template<typename ToolType>
+	using LicenceType = typename LicenceTypeTraits<ToolType>::Type;
+
+	ToolLender(NexusFieldProof proof_, RootSignatureCreator* creator_);
+
+	template<typename ToolType>
+	auto* Lend(typename LicenceTypeTraits<ToolType>::Type type_)
+	{
+		return std::get<ToolType*>(tools);
+	}
+
+
+private:
+
+	std::tuple<RootSignatureCreator*> tools;
+};
+
+template<>
+struct RootSignatureContext::ToolLender::LicenceTypeTraits<RootSignatureContext::RootSignatureCreator>
+{
+	using Type = UsesRootSigCreatorLicence;
+};
+
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\RootSignature\RootSignatureContextDiplomat\RootSignatureToolLender\RootSigToolLenderLicences.h ===
+========================================
+#pragma once
+#include "RootSignatureToolLender.h"
+
+
+struct RootSignatureContext::ToolLender::UsesRootSigCreatorLicence
+{
+private:
+
+	friend class UsesRootSigCreatorLicence;
+	explicit UsesRootSigCreatorLicence() = default;
+
+};
+
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\RootSignature\RootSignatureCreator\RootSignatureCreator.cpp ===
+========================================
+#include "PreCompileHeader.h"
+#include "RootSignatureCreator.h"
+#include "RootSignatureAssembler/RootSignatureAssembler.h"
+#include "../RootSignatureLibrary/RootSignatureLibrary.h"
+
+
+
+RootSignatureContext::RootSignatureCreator::RootSignatureCreator
+(
+	NexusFieldProof proof_,
+	std::unique_ptr<Assembler>&& assembler_,
+	RootSignatureLibrary* library_
+):assembler(std::move(assembler_)), library(library_)
+{
+
+}
+
+
+template<>
+ID3D12RootSignature* RootSignatureContext::RootSignatureCreator::Create(const RootSignatureDesc::Graphics& desc_)
+{
+	library->Import<Usage::kGraphics>(RootSignatureLibrary::HandleLicence{}, assembler->Assemble(desc_));
+
+	return library->Export<Usage::kGraphics>(RootSignatureLibrary::HandleLicence{});
+}
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\RootSignature\RootSignatureCreator\RootSignatureCreator.h ===
+========================================
+#pragma once
+#include "../RootSignatureContext.h"
+#include "RootSignatureAssembler/RootSignatureDesc.h"
+
+class RootSignatureContext::RootSignatureCreator
+{
+public:
+
+	RootSignatureCreator
+	(
+		NexusFieldProof proof_,
+		std::unique_ptr<Assembler>&& assembler_,
+		RootSignatureLibrary* library_
+	);
+
+	template<typename DescType>
+	ID3D12RootSignature* Create(const DescType& desc_);
+
+
+
+private:
+
+	std::unique_ptr<Assembler> assembler;
+	RootSignatureLibrary* library;
+};
+
+
+template<>
+ID3D12RootSignature* RootSignatureContext::RootSignatureCreator::Create(const RootSignatureDesc::Graphics& desc_);
+
+
+
+
+//
+//RootSignatureDesc::Graphics srcGraphicsDesc;
+////コンスタントバッファの種類を計測
+//srcGraphicsDesc.numConstantBuffers_ = kNumConstantBufferTypes;
+//
+/////カラーテクスチャなど一般
+//srcGraphicsDesc.pair_shaderStageSamplerStateContainer.emplace_back(ShaderStage::kAll, SamplerState::kLinearWrap);
+//Logger::Log("SamplerSlot0: kLinearWrap", fileName);
+/////法線テクスチャなど
+//srcGraphicsDesc.pair_shaderStageSamplerStateContainer.emplace_back(ShaderStage::kAll, SamplerState::kAnisotropicWrap);
+//Logger::Log("SamplerSlot1: kAnisotropicWrap", fileName);
+//
+/////輝度テクスチャなど
+//srcGraphicsDesc.pair_shaderStageSamplerStateContainer.emplace_back(ShaderStage::kAll, SamplerState::kPointWrap);
+//Logger::Log("SamplerSlot2: kPointWrap", fileName);
+//
+//
+//data.at((int)Usage::kGraphics) = assembler_->Assemble(srcGraphicsDesc);
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\RootSignature\RootSignatureCreator\RootSignatureAssembler\RootSignatureAssembler.cpp ===
 ========================================
 #include "RootSignatureAssembler.h"
 
 //ツール
-#include "ToolCreateRootSignature/CreateRootParam/CreateRootParam.h"
-#include "ToolCreateRootSignature/CreateStaticSamplerDesc/CreateStaticSamplerDesc.h"
+#include "RootSignatureAssemblerTool/RootParamCreator/RootParamCreator.h"
+#include "RootSignatureAssemblerTool/StaticSamplerDescCreator/StaticSamplerDescCreator.h"
 
 //外部
-#include "../../../Core/Device/DeviceContextDiplomat/DeviceContextDiplomat.h"
-#include "../../../Core/Device/DeviceContextDiplomat/DeviceContextCommandProvider/DeviceContextCommandProvider.h"
+#include "../../../../Core/Device/DeviceContextDiplomat/DeviceContextDiplomat.h"
+#include "../../../../Core/Device/DeviceContextDiplomat/DeviceContextCommandProvider/DeviceContextCommandProvider.h"
 
 namespace
 {
@@ -15200,20 +15558,10 @@ template<>
 Microsoft::WRL::ComPtr<ID3D12RootSignature> RootSignatureContext::Assembler::Assemble(const RootSignatureDesc::Graphics& srcDesc_)
 {
 	//ルートパラメーターの生成
-	std::vector<D3D12_ROOT_PARAMETER> tmpRootParam;
-	{
-		CreateRootParam createRootParam;
-
-		tmpRootParam = createRootParam.CreateRootparamGloballyCommonCBV(srcDesc_);
-	}
+	std::vector<D3D12_ROOT_PARAMETER> tmpRootParam = RootParamCreator::CreateRootparamGloballyCommonCBV(srcDesc_);
 
 	//静的サンプラーディスクの生成
-	std::vector<D3D12_STATIC_SAMPLER_DESC> tmpStaticSamplerDesc;
-	{
-		CreateStaticSamplerDesc createStaticSamplerDesc;
-
-		tmpStaticSamplerDesc = createStaticSamplerDesc.Create(srcDesc_);
-	}
+	std::vector<D3D12_STATIC_SAMPLER_DESC> tmpStaticSamplerDesc = StaticSamplerDescCreator::Create(srcDesc_);
 
 	//D3D12_ROOT_SIGNATURE_DESCに入力
 	D3D12_ROOT_SIGNATURE_DESC desc;
@@ -15285,17 +15633,17 @@ Microsoft::WRL::ComPtr<ID3D12RootSignature> RootSignatureContext::Assembler::Cre
 
 
 ========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\RootSignature\RootSignatureAssembler\RootSignatureAssembler.h ===
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\RootSignature\RootSignatureCreator\RootSignatureAssembler\RootSignatureAssembler.h ===
 ========================================
 #pragma once
-#include "../RootSignatureContext.h"
+#include "../../RootSignatureContext.h"
 #include "RootSignatureDesc.h"
-
 
 
 class RootSignatureContext::Assembler
 {
 public:
+
 	Assembler(NexusFieldProof proof_, DeviceContextDiplomat* deviceContextDiplomat_);
 	~Assembler();
 
@@ -15304,6 +15652,9 @@ public:
 	Microsoft::WRL::ComPtr<ID3D12RootSignature> Assemble(const DescType& descType_);
 
 private:
+
+	class StaticSamplerDescCreator;
+	class RootParamCreator;
 
 	RootSignatureContext::CommandCreateRootSignature cmdCreateRootSignature;
 
@@ -15318,7 +15669,7 @@ Microsoft::WRL::ComPtr<ID3D12RootSignature> RootSignatureContext::Assembler::Ass
 
 
 ========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\RootSignature\RootSignatureAssembler\RootSignatureDesc.h ===
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\RootSignature\RootSignatureCreator\RootSignatureAssembler\RootSignatureDesc.h ===
 ========================================
 #pragma once
 #include "RootSignatureLayoutComponent.h"
@@ -15341,7 +15692,7 @@ namespace RootSignatureDesc
 
 
 ========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\RootSignature\RootSignatureAssembler\RootSignatureLayoutComponent.h ===
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\RootSignature\RootSignatureCreator\RootSignatureAssembler\RootSignatureLayoutComponent.h ===
 ========================================
 #pragma once
 
@@ -15427,13 +15778,13 @@ namespace RootSignatureLayoutComponent
 
 
 ========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\RootSignature\RootSignatureAssembler\ToolCreateRootSignature\CreateRootParam\CreateRootParam.cpp ===
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\RootSignature\RootSignatureCreator\RootSignatureAssembler\RootSignatureAssemblerTool\RootParamCreator\RootParamCreator.cpp ===
 ========================================
 
-#include "CreateRootParam.h"
+#include "RootParamCreator.h"
 
 
-std::vector<D3D12_ROOT_PARAMETER> CreateRootParam::CreateRootparamGloballyCommonCBV(const RootSignatureDesc::Graphics& srcDesc_)
+std::vector<D3D12_ROOT_PARAMETER> RootSignatureContext::Assembler::RootParamCreator::CreateRootparamGloballyCommonCBV(const RootSignatureDesc::Graphics& srcDesc_)
 {
 	std::vector<D3D12_ROOT_PARAMETER> rootParams = {};
 	rootParams.resize(size_t(srcDesc_.numConstantBuffers_));
@@ -15456,15 +15807,17 @@ std::vector<D3D12_ROOT_PARAMETER> CreateRootParam::CreateRootparamGloballyCommon
 
 
 ========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\RootSignature\RootSignatureAssembler\ToolCreateRootSignature\CreateRootParam\CreateRootParam.h ===
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\RootSignature\RootSignatureCreator\RootSignatureAssembler\RootSignatureAssemblerTool\RootParamCreator\RootParamCreator.h ===
 ========================================
 #pragma once
-#include "../../RootSignatureDesc.h"
+#include "../../RootSignatureAssembler.h"
 
-struct CreateRootParam
+class RootSignatureContext::Assembler::RootParamCreator
 {
+	friend class RootSignatureContext::Assembler;
+
 	///全シェーダー間で共通のグローバルコンスタントバッファのルートパラメーター生成関数
-	std::vector<D3D12_ROOT_PARAMETER> CreateRootparamGloballyCommonCBV(const RootSignatureDesc::Graphics& srcDesc_);
+	static std::vector<D3D12_ROOT_PARAMETER> CreateRootparamGloballyCommonCBV(const RootSignatureDesc::Graphics& srcDesc_);
 
 };
 
@@ -15473,15 +15826,14 @@ struct CreateRootParam
 
 
 ========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\RootSignature\RootSignatureAssembler\ToolCreateRootSignature\CreateStaticSamplerDesc\CreateStaticSamplerDesc.cpp ===
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\RootSignature\RootSignatureCreator\RootSignatureAssembler\RootSignatureAssemblerTool\StaticSamplerDescCreator\StaticSamplerDescCreator.cpp ===
 ========================================
-
-#include "CreateStaticSamplerDesc.h"
+#include "StaticSamplerDescCreator.h"
 
 
 using namespace RootSignatureLayoutComponent;
 
-std::vector<D3D12_STATIC_SAMPLER_DESC> CreateStaticSamplerDesc::Create(const RootSignatureDesc::Graphics& srcDesc_)
+std::vector<D3D12_STATIC_SAMPLER_DESC> RootSignatureContext::Assembler::StaticSamplerDescCreator::Create(const RootSignatureDesc::Graphics& srcDesc_)
 {
 	std::vector<D3D12_STATIC_SAMPLER_DESC> descContainer;
 	auto const sizeEntry = srcDesc_.pair_shaderStageSamplerStateContainer.size();
@@ -15500,7 +15852,7 @@ std::vector<D3D12_STATIC_SAMPLER_DESC> CreateStaticSamplerDesc::Create(const Roo
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-void CreateStaticSamplerDesc::SetBranchedDetails(D3D12_STATIC_SAMPLER_DESC* desc_, SamplerState state_)
+void RootSignatureContext::Assembler::StaticSamplerDescCreator::SetBranchedDetails(D3D12_STATIC_SAMPLER_DESC* desc_, SamplerState state_)
 {
 	switch (state_)
 	{
@@ -15564,7 +15916,7 @@ void CreateStaticSamplerDesc::SetBranchedDetails(D3D12_STATIC_SAMPLER_DESC* desc
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-void CreateStaticSamplerDesc::SetCommonDetails(D3D12_STATIC_SAMPLER_DESC* desc_)
+void RootSignatureContext::Assembler::StaticSamplerDescCreator::SetCommonDetails(D3D12_STATIC_SAMPLER_DESC* desc_)
 {
 	desc_->MipLODBias = D3D12_DEFAULT_MIP_LOD_BIAS;
 	desc_->MaxAnisotropy = 1;
@@ -15579,7 +15931,7 @@ void CreateStaticSamplerDesc::SetCommonDetails(D3D12_STATIC_SAMPLER_DESC* desc_)
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-void CreateStaticSamplerDesc::SetDetailsDirectly
+void RootSignatureContext::Assembler::StaticSamplerDescCreator::SetDetailsDirectly
 (
 	D3D12_STATIC_SAMPLER_DESC* desc_,
 	RootSignatureLayoutComponent::ShaderStage shaderStage_,
@@ -15594,28 +15946,26 @@ void CreateStaticSamplerDesc::SetDetailsDirectly
 
 
 ========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\RootSignature\RootSignatureAssembler\ToolCreateRootSignature\CreateStaticSamplerDesc\CreateStaticSamplerDesc.h ===
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\RootSignature\RootSignatureCreator\RootSignatureAssembler\RootSignatureAssemblerTool\StaticSamplerDescCreator\StaticSamplerDescCreator.h ===
 ========================================
 #pragma once
-#include "../../RootSignatureDesc.h"
+#include "../../RootSignatureAssembler.h"
 
 
-
-struct CreateStaticSamplerDesc
+class RootSignatureContext::Assembler::StaticSamplerDescCreator
 {
-	std::vector<D3D12_STATIC_SAMPLER_DESC> Create(const RootSignatureDesc::Graphics& srcDesc_);
+	friend class RootSignatureContext::Assembler;
 
-private:
+	static std::vector<D3D12_STATIC_SAMPLER_DESC> Create(const RootSignatureDesc::Graphics& srcDesc_);
 
-	void SetBranchedDetails(D3D12_STATIC_SAMPLER_DESC* desc_, RootSignatureLayoutComponent::SamplerState state_);
-	void SetCommonDetails(D3D12_STATIC_SAMPLER_DESC* desc_);
-	void SetDetailsDirectly
+	static void SetBranchedDetails(D3D12_STATIC_SAMPLER_DESC* desc_, RootSignatureLayoutComponent::SamplerState state_);
+	static void SetCommonDetails(D3D12_STATIC_SAMPLER_DESC* desc_);
+	static void SetDetailsDirectly
 	(
 		D3D12_STATIC_SAMPLER_DESC* desc_,
 		RootSignatureLayoutComponent::ShaderStage shaderStage_,
 		uint32_t registerNum_
 	);
-
 
 };
 
@@ -15627,13 +15977,7 @@ private:
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\RootSignature\RootSignatureLibrary\RootSignatureLibrary.cpp ===
 ========================================
 #include "RootSignatureLibrary.h"
-//ツール
-#include "../RootSignatureAssembler/RootSignatureAssembler.h"
 
-//共有ヘッダ
-#include "../../../../Assets/Shared/ConstantBuffers.h"
-
-using namespace RootSignatureLayoutComponent;
 
 namespace
 {
@@ -15641,61 +15985,73 @@ namespace
 
 }
 
-
-RootSignatureLibrary::RootSignatureLibrary(InstanceKey key_, RootSignatureContext::Assembler* assembler_)
+RootSignatureContext::RootSignatureLibrary::RootSignatureLibrary(NexusFieldProof proof_)
 {
-    Logger::Entry("RootSignatureLibrary: Constructor");
-
-
-    CreateAllRootSignatures(assembler_);
-
-
-    Logger::End("RootSignatureLibrary: Constructor");
 
 }
 
-RootSignatureLibrary::~RootSignatureLibrary()
+RootSignatureContext::RootSignatureLibrary::~RootSignatureLibrary()
 {
 
 }
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-///シェーダーバイナリオブジェのポインタを渡す
-ID3D12RootSignature* RootSignatureLibrary::Export(DataPtrAccesskey key_, Usage usage_)
+template<>
+ID3D12RootSignature* RootSignatureContext::RootSignatureLibrary::Export<RootSignatureContext::Usage::kGraphics>(HandleLicence licence_)
 {
-	ErrorMessageOutput::Assert::DetectError(data.at((int)usage_), "中身が空です", fileName);
+	ErrorMessageOutput::Assert::DetectError(data.at((UINT)RootSignatureContext::Usage::kGraphics), "中身が空です", fileName);
 
-	return data.at((int)usage_).Get();
+	return data.at((UINT)RootSignatureContext::Usage::kGraphics).Get();
+
+}
+
+template<>
+ID3D12RootSignature* RootSignatureContext::RootSignatureLibrary::Export<RootSignatureContext::Usage::kCompute>(HandleLicence licence_)
+{
+	ErrorMessageOutput::Assert::DetectError(data.at((int)RootSignatureContext::Usage::kCompute), "中身が空です", fileName);
+
+	return data.at((int)RootSignatureContext::Usage::kCompute).Get();
 }
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-void RootSignatureLibrary::CreateAllRootSignatures(RootSignatureContext::Assembler* assembler_)
+
+template<>
+void RootSignatureContext::RootSignatureLibrary::Import<RootSignatureContext::Usage::kGraphics>
+(HandleLicence licence_,Microsoft::WRL::ComPtr<ID3D12RootSignature>&& rootSig_)
 {
-    ///グラフィックス用
-    {
-        RootSignatureDesc::Graphics srcGraphicsDesc;
-        //コンスタントバッファの種類を計測
-        srcGraphicsDesc.numConstantBuffers_ = kNumConstantBufferTypes;
-
-        ///カラーテクスチャなど一般
-        srcGraphicsDesc.pair_shaderStageSamplerStateContainer.emplace_back(ShaderStage::kAll, SamplerState::kLinearWrap);
-        Logger::Log("SamplerSlot0: kLinearWrap", fileName);
-        ///法線テクスチャなど
-        srcGraphicsDesc.pair_shaderStageSamplerStateContainer.emplace_back(ShaderStage::kAll, SamplerState::kAnisotropicWrap);
-        Logger::Log("SamplerSlot1: kAnisotropicWrap", fileName);
-
-        ///輝度テクスチャなど
-        srcGraphicsDesc.pair_shaderStageSamplerStateContainer.emplace_back(ShaderStage::kAll, SamplerState::kPointWrap);
-        Logger::Log("SamplerSlot2: kPointWrap", fileName);
-
-
-        data.at((int)Usage::kGraphics) = assembler_->Assemble(srcGraphicsDesc);
-    }
-
+	data.at(UINT(RootSignatureContext::Usage::kGraphics)) = std::move(rootSig_);
 }
 
+template<>
+void RootSignatureContext::RootSignatureLibrary::Import<RootSignatureContext::Usage::kCompute>
+(HandleLicence licence_,Microsoft::WRL::ComPtr<ID3D12RootSignature>&& rootSig_)
+{
+	data.at(UINT(RootSignatureContext::Usage::kCompute)) = std::move(rootSig_);
+}
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+template
+void RootSignatureContext::RootSignatureLibrary::Import<RootSignatureContext::Usage::kGraphics>
+(HandleLicence licence_,Microsoft::WRL::ComPtr<ID3D12RootSignature>&& rootSig_);
+
+
+template
+void RootSignatureContext::RootSignatureLibrary::Import<RootSignatureContext::Usage::kCompute>
+(HandleLicence licence_,Microsoft::WRL::ComPtr<ID3D12RootSignature>&& rootSig_);
+
+
+
+template
+ID3D12RootSignature* RootSignatureContext::RootSignatureLibrary::Export<RootSignatureContext::Usage::kGraphics>
+(HandleLicence licence_);
+
+
+template
+ID3D12RootSignature* RootSignatureContext::RootSignatureLibrary::Export<RootSignatureContext::Usage::kCompute>
+(HandleLicence licence_);
 
 
 
@@ -15707,52 +16063,41 @@ void RootSignatureLibrary::CreateAllRootSignatures(RootSignatureContext::Assembl
 #include "../RootSignatureContext.h"
 
 
-class RootSignatureLibrary
+class RootSignatureContext::RootSignatureLibrary
 {
 public:
-	enum class Usage
-	{
-		kGraphics,
-		kCompute
-		,kCount
-	};
 
+	struct HandleLicence;
 
-	struct InstanceKey;
-	//データアドレスのアクセス権
-	struct DataPtrAccesskey;
-
-	RootSignatureLibrary(InstanceKey key_, RootSignatureContext::Assembler* assembler_);
+	RootSignatureLibrary(NexusFieldProof proof_);
 	~RootSignatureLibrary();
 
+	template<Usage usage>
+	ID3D12RootSignature* Export(HandleLicence licence_);
+	
+	template<Usage usage>
+	void Import(HandleLicence licence_,Microsoft::WRL::ComPtr<ID3D12RootSignature>&& rootSig_);
 
-	///シェーダーバイナリオブジェのポインタを渡す
-	ID3D12RootSignature* Export(DataPtrAccesskey key_, Usage usage_);
 
 private:
 	///本元データ
 	std::array<Microsoft::WRL::ComPtr<ID3D12RootSignature>, (int)Usage::kCount> data;
 
-	///ルートシグネチャを生成する
-	void CreateAllRootSignatures(RootSignatureContext::Assembler* assembler_);
 
 };
 
 
-struct RootSignatureLibrary::InstanceKey
+struct RootSignatureContext::RootSignatureLibrary::HandleLicence
 {
 private:
 
-	friend class RootSignatureContext;
-	explicit InstanceKey() = default;
+	friend class RootSignatureContext::RootSignatureCreator;
+	explicit HandleLicence() = default;
 };
 
-struct RootSignatureLibrary::DataPtrAccesskey
-{
-private:
 
-	explicit DataPtrAccesskey() = default;
-};
+
+
 
 
 
@@ -17274,7 +17619,6 @@ public:
 
 	static MiyaJison* Get();
 
-	MiyaJison();
 
 	MiyaJison(const MiyaJison&) = delete;
 	MiyaJison& operator=(const MiyaJison&) = delete;
@@ -17288,6 +17632,8 @@ public:
 
 
 private:
+
+	MiyaJison();
 
 	std::unique_ptr<DataLibrary> jsonDataLibrary;
 

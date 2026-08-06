@@ -82,6 +82,7 @@ Nexus::Nexus()
 	InitializeInSequence<InitSequence::kKickCommands>();
 	InitializeInSequence<InitSequence::kDeleteIntermediateResources>();
 	InitializeInSequence<InitSequence::kDeleteModelDataCache>();
+	InitializeInSequence<InitSequence::kSortOutWorldConstantBuffers>();
 
 	ErrorMessageOutput::Assert::DetectError(next == InitSequence::kEnd, "初期化が正常に行われていない可能性がある", fileName);
 

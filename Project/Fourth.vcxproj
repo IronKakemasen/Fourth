@@ -102,6 +102,8 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Engine\LowerLayer\Resource\Buffer\BufferPoolSet\BufferPoolSet.cpp" />
+    <ClCompile Include="Engine\LowerLayer\Resource\Buffer\WorldConstantBuffers\ConstantBufferCreator\ConstantBufferCreator.cpp" />
     <ClCompile Include="Engine\LowerLayer\Resource\Buffer\BufferCreateTools\BufferUploader\BufferUploaderTools\BufferAndResourcePicker\BufferAndResourcePicker.cpp" />
     <ClCompile Include="Engine\LowerLayer\Resource\Buffer\BufferCreateTools\BufferUploader\BufferUploaderTools\BarrierExtractor\BarrierExtractor.cpp" />
     <ClCompile Include="Engine\LowerLayer\Resource\Buffer\BufferContextDiplomat\BufferContextExecutionAgent\BufferContextExecutionAgent.cpp" />
@@ -364,6 +366,8 @@
   <ItemGroup>
     <ClInclude Include="Assets\BAKA\ConstantBuffers.h" />
     <ClInclude Include="Assets\BAKA\StructuredBuffer.h" />
+    <ClInclude Include="Engine\LowerLayer\Resource\Buffer\BufferPoolSet\BufferPoolSet.h" />
+    <ClInclude Include="Engine\LowerLayer\Resource\Buffer\WorldConstantBuffers\ConstantBufferCreator\ConstantBufferCreator.h" />
     <ClInclude Include="Engine\LowerLayer\Resource\Buffer\BufferContextDiplomat\BufferToolLender\BufferToolLenderLicence.h" />
     <ClInclude Include="Engine\LowerLayer\Resource\Buffer\BufferCreateTools\BufferUploader\BufferUploaderTools\BufferAndResourcePicker\BufferAndResourcePicker.h" />
     <ClInclude Include="Engine\LowerLayer\Resource\Buffer\BufferCreateTools\BufferUploader\BufferUploaderTools\BarrierExtractor\BarrierExtractor.h" />

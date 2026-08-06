@@ -5,15 +5,21 @@
 #include "BufferCreateTools/ResourceCreator/ResourceCreator.h"
 //バッファをアップロード
 #include "BufferCreateTools/BufferUploader/BufferUploader.h"
-//各種ツールを下位部へ貸し出します
+//各種ツールを外部へ貸し出します
 #include "BufferContextDiplomat/BufferToolLender/BufferToolLender.h"
 #include "BufferContextDiplomat/BufferContextDiplomat.h"
 //ランタイム処理ツール
 #include "BufferRuntime/BufferDispatcher/BufferDispatcher.h"
 #include "BufferRuntime/BufferInfoExtractor/BufferInfoExtractor.h"
 #include "BufferContextDiplomat/BufferContextExecutionAgent/BufferContextExecutionAgent.h"
+//ワールドコンスタントバッファの生成
+#include "WorldConstantBuffers/ConstantBufferCreator/ConstantBufferCreator.h"
+//から仮想GPUアドレスの保持
+#include "WorldConstantBuffers/WorldConstantBuffers.h"
+//バッファコレクターがバッファを仕分ける
+#include "BufferPoolSet/BufferPoolSet.h"
 
-#include "ClosedHashMap/ClosedHashMap.h" 
+
 
 
 namespace
@@ -40,22 +46,43 @@ BufferContext::BufferContext
 	resourceCreator.reset(new BufferContext::ResourceCreator(proof_, deviceContextDiplomat_));
 	Logger::Log("Instantiate: ResourceCreator", fileName);
 
-	bufferCreator.reset(new BufferCreator(proof_, resourceCreator.get(), descriptorheapContextDiplomat_, bufferCollector.get()));
-	Logger::Log("Instantiate: BufferCreator", fileName);
-
 	bufferDispatcher.reset(new BufferDispatcher(proof_, bufferPoolSet.get()));
 	Logger::Log("Instantiate: bufferDispatcher", fileName);
 
+	bufferCreator.reset
+	(
+		new BufferCreator
+		(
+			proof_, resourceCreator.get(), descriptorheapContextDiplomat_, bufferCollector.get(), bufferDispatcher.get()
+		)
+	);
+	Logger::Log("Instantiate: BufferCreator", fileName);
+
 	bufferUploader.reset(new BufferUploader(proof_, resourceCreator.get(),bufferDispatcher.get(), commandContextDiplomat_));
 	Logger::Log("Instantiate: BufferUploader", fileName);
+
+	worldConstantBuffers.reset(new WorldConstantBuffers(proof_));
+	Logger::Log("Instantiate: worldConstantBuffers", fileName);
+
+	constantBufferCreator.reset(new ConstantBufferCreator(proof_, worldConstantBuffers.get(),bufferCreator.get()));
+	Logger::Log("Instantiate: constantBufferCreator", fileName);
 
 	diplomat.reset
 	(
 		new BufferContextDiplomat
 		(
 			proof_,
-			std::make_unique<ToolLender>(proof_, bufferCreator.get(), bufferUploader.get(), bufferDispatcher.get(), bufferCollector.get()),
-			std::make_unique<ExecutionAgent>(proof_, this, bufferUploader.get())
+			std::make_unique<ToolLender>
+			(
+				proof_,
+				bufferCreator.get(),
+				bufferUploader.get(),
+				bufferDispatcher.get(),
+				bufferCollector.get(),
+				constantBufferCreator.get(),
+				worldConstantBuffers.get()
+			),
+			std::make_unique<ExecutionAgent>(proof_, this, bufferUploader.get(),worldConstantBuffers.get())
 		)
 	);
 
@@ -73,28 +100,6 @@ BufferContext::BufferContext
 BufferContext::~BufferContext()
 {
 
-}
-///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-std::vector<std::unique_ptr<GPUBufferBehavior>>* BufferContext::BufferPoolSet::ContainerTable(BufferContext::RegisterType type_)
-{
-	static std::vector<std::unique_ptr<GPUBufferBehavior>>* table[(int)BufferContext::RegisterType::kCount]
-	{
-		&renderTargetBufferPool,
-		&frameBufferPool,
-		&computeBufferPool,
-		&readOnlyBufferPool
-	};
-
-	return table[(int)type_];
-}
-///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-BufferContext::BufferPoolSet::BufferPoolSet()
-{
-	bufferLocationClosedHashedMap.reset(new ClosedHashMap<std::pair<RegisterType, uint32_t>>(kHashedMapSize));
 }
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////

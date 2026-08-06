@@ -21,7 +21,6 @@ public:
 	};
 
 	class RootSignatureCreator;
-	class RootSignatureLibrary;
 	class ToolLender;
 
 	struct NexusFieldProof;
@@ -33,6 +32,8 @@ public:
 	std::unique_ptr<RootSignatureContextDiplomat> diplomat;
 
 private:
+
+	class RootSignatureLibrary;
 	//rootSignatureを組み立てる
 	class Assembler;
 

@@ -5,6 +5,7 @@
 class DepthStencilBuffer;
 class ColorBuffer;
 struct IRenderTargetBuffer;
+class GPUBufferBehavior;
 
 class BufferContext::BufferInfoExtractor
 {
