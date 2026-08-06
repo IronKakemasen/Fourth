@@ -3,8 +3,6 @@
 class Nexus;
 class ShaderContext;
 
-
-
 class RenderContext
 {
 public:

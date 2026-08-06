@@ -2,7 +2,6 @@
 #include"../../ModelContext.h"
 
 
-struct ModelDataAggregate;
 
 class ModelContext::ModelSlotAllocator
 {
@@ -26,33 +25,12 @@ public:
 	template<typename SlotType>
 	uint32_t AllocateSlot(AllocateLicence licence_);
 
-	//meshDataCreatorにて、
-	///meshDataSRVHeapIndexGroupContainerのSRVHeapIndexセットする
-	void SetMeshDataSRVHeapIndexGroupContainerSRVHeapIndex(HandleLicence licence_ , SRVHeapIndex index_);
-	///TransformMatrixConatinerのSRVHeapIndexセットする
-	void SetTransformMatrixConatinerSrvHeapIndices
-	(
-		HandleLicence licence_,
-		std::array<SRVHeapIndex, (UINT)ProjectConfig::Render::NumBuffer::kDoubleBuffer> indices_
-	);
-
-	//meshDataIDLibraryにアクセスする
 	MeshDataIDLibrary& AccessMeshDataIDLibrary(HandleLicence licence_);
-
 
 private:
 
 	std::unique_ptr<MeshDataIDLibrary> meshDataIDLibrary;
 	std::unique_ptr<TransformMatrixSlot> transformMatrixSlot;
-
-	
-	///「メッシュデータバッファのsrvHeapIndexが詰まったもの」の配列のSRVHeapIndex
-	std::optional<SRVHeapIndex> meshDataSRVHeapIndexGroupContainerSRVHeapIndex;
-	
-	///「transformMatrixバッファ」の配列のSRVHeapIndex
-	std::optional<std::array<SRVHeapIndex,(UINT)ProjectConfig::Render::NumBuffer::kDoubleBuffer>> 
-		doubleTransformMatrixContainerSRVHeapIndex;
-
 
 };
 

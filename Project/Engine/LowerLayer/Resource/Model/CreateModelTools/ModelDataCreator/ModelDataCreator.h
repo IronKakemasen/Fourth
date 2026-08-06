@@ -13,7 +13,8 @@ class ModelContext::ModelDataCreator
 		BufferContext::BufferCreator*,
 		BufferContext::BufferCollector*,
 		BufferContext::BufferUploader*,
-		BufferContext::BufferDispatcher*
+		BufferContext::BufferDispatcher*,
+		BufferContext::ConstantBufferCreator* 
 	>;
 
 protected:
@@ -53,6 +54,7 @@ public:
 	(
 		NexusFieldProof proof_,
 		ModelContext::ModelSlotAllocator* allocator_,
+		ModelDataBatcher* modelDataBatcher_,
 		BufferContextDiplomat* bufferContextDiplomat_
 	);
 
@@ -60,7 +62,8 @@ public:
 	(
 		NexusFieldProof proof_,
 		std::unique_ptr<ModelDataLoader>&& modelDataLoader_,
-		ModelContext::ModelSlotAllocator* allocator_, 
+		ModelSlotAllocator* allocator_, 
+		ModelDataBatcher* modelDataBatcher_,
 		BufferContextDiplomat* bufferContextDiplomat_
 	);
 

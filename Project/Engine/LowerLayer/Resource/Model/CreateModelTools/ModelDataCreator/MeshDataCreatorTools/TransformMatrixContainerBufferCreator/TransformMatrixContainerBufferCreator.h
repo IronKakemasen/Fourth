@@ -7,10 +7,9 @@ class ModelContext::ModelDataCreator::TransformMatrixContainerBufferCreator
 
 	static void Create
 	(
-		ModelContext::ModelSlotAllocator* slotAllocator_,
 		BufferContext::BufferCreator* bufferCreator_,
-		BufferContext::BufferCollector* bufferCollector_,
-		BufferContext::BufferDispatcher* bufferDispatcher_
+		BufferContext::ConstantBufferCreator* cBufferCreator_,
+		ModelDataBatcher* modelDataBatcher_
 	);
 
 };

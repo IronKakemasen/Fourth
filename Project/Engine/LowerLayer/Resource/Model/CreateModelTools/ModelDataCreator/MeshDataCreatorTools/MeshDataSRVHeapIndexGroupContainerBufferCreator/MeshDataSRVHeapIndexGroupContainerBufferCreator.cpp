@@ -2,13 +2,12 @@
 #include "MeshDataSRVHeapIndexGroupContainerBufferCreator.h"
 
 //外部
-#include "../../../../../Buffer/BufferCreateTools/BufferCreator.h"
-#include "../../../../../Buffer/BufferCreateTools/BufferUploader/BufferUploader.h"
+#include "../../../../../Buffer/BufferContextToolsInclude.h"
 
-#include "../../../../../Buffer/BufferRuntime/BufferDispatcher/BufferDispatcher.h"
 //ほんとはstaticStructuredBufferDescriptionだけでいいんだけど、文字列制限なのかインクルードできないので
 #include "../../../../../Buffer/BufferDefinition/AllBufferDescsInclude.h"
 #include "../../../../../Buffer/BufferDefinition/GPUBuffer/BufferInterface.h"
+
 
 using namespace StructuredBufferDataDefinition;
 
@@ -16,12 +15,12 @@ void ModelContext::ModelDataCreator::MeshDataSRVHeapIndexGroupContainerBufferCre
 (
 	const std::vector<MeshDataSRVHeapIndexGroupGPUCPU>& tmpMeshDataSRVHeapIndexGroupContainer_,
 	BufferContext::BufferCreator* bufferCreator_,
-	BufferContext::BufferCollector* bufferCollector_,
-	BufferContext::BufferDispatcher* dispatcher_,
 	BufferContext::BufferUploader* uploader_,
-	ModelContext::ModelSlotAllocator* allocator_
+	BufferContext::ConstantBufferCreator* cBufferCreator_
 )
 {
+	std::string const bufferName = "MeshDataSRVHeapIndexGroupContainer";
+
 	UINT srcContainerSize = (UINT)tmpMeshDataSRVHeapIndexGroupContainer_.size();
 
 	StaticStructuredBufferDescription desc
@@ -32,23 +31,20 @@ void ModelContext::ModelDataCreator::MeshDataSRVHeapIndexGroupContainerBufferCre
 	);
 
 	//バッファ生成
-	BufferUniqueID uniqueID = bufferCreator_->Create(desc, "MeshDataSRVHeapIndexGroupContainer");
-	bufferCollector_->Distribute();
+	auto uniqueID_buffer = bufferCreator_->CreateWithBuffer(desc, bufferName);
 
 	//アップロードする
-	uploader_->RegisterBuffer(uniqueID, srcContainerSize, tmpMeshDataSRVHeapIndexGroupContainer_.data());
+	uploader_->RegisterBuffer(uniqueID_buffer.first, srcContainerSize, tmpMeshDataSRVHeapIndexGroupContainer_.data());
 
 	//srvHeapIndexを抽出
-	StaticStructuredBuffer* buffer = static_cast<StaticStructuredBuffer*>(dispatcher_->Dispatch(uniqueID));
-	IReadable* readableBuffer = static_cast<IReadable*>(buffer);
-
-	//アロケータにこのバッファのsrvHeapIndexを記録させる
-	allocator_->SetMeshDataSRVHeapIndexGroupContainerSRVHeapIndex
-	(
-		ModelContext::ModelSlotAllocator::HandleLicence{}, 
-		readableBuffer->OutProperSRVHeapIndex()
-	);
-
+	IReadable* readableBuffer = static_cast<IReadable*>(uniqueID_buffer.second);
+	//そのコンスタントバッファを生成し、データを入力する
+	auto cBufferID_cBuffer = cBufferCreator_->Create(bufferName, UINT(sizeof(SRVHeapIndex)), 0);
+	for (int i = 0;i < (int)ProjectConfig::Render::NumBuffer::kDoubleBuffer;++i)
+	{
+		auto* mappedPtr = cBufferID_cBuffer.second->GetMappedPtr<SRVHeapIndex>(i);
+		*mappedPtr = readableBuffer->OutProperSRVHeapIndex();
+	}
 
 
 }

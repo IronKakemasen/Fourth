@@ -36,6 +36,7 @@ void BufferContext::WorldConstantBuffers::PackRuntimeContainer(NexusFieldProof p
 	}
 
 	gpuVirtualAddressMap.clear();
+	bufferNameMap.clear();
 }
 
 

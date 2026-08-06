@@ -74,3 +74,15 @@ struct BufferContext::ToolLender::LicenceTypeTraits<BufferContext::BufferCollect
 {
 	using Type = BasicBufferManagementLicence;
 };
+
+template<>
+struct BufferContext::ToolLender::LicenceTypeTraits<BufferContext::ConstantBufferCreator>
+{
+	using Type = BasicBufferManagementLicence;
+};
+
+template<>
+struct BufferContext::ToolLender::LicenceTypeTraits<BufferContext::WorldConstantBuffers>
+{
+	using Type = BasicBufferManagementLicence;
+};

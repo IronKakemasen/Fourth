@@ -1,6 +1,5 @@
 #pragma once
 #include "../../ModelDataCreator.h"
-#include "../../../ModelSlotAllocator/ModelSlotAllocator.h"
 
 //外部
 #include "../../../../../../../../Assets/Shared/StructuredBuffer.h"
@@ -14,10 +13,8 @@ class ModelContext::ModelDataCreator::MeshDataSRVHeapIndexGroupContainerBufferCr
 	(
 		const std::vector<StructuredBufferDataDefinition::MeshDataSRVHeapIndexGroupGPUCPU>& tmpMeshDataSRVHeapIndexGroupContainer_,
 		BufferContext::BufferCreator* bufferCreator_,
-		BufferContext::BufferCollector* bufferCollector_,
-		BufferContext::BufferDispatcher* dispatcher_,
 		BufferContext::BufferUploader* uploader_,
-		ModelContext::ModelSlotAllocator* allocator_
+		BufferContext::ConstantBufferCreator* cBufferCreator_
 	);
 };
 

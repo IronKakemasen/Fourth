@@ -6369,15 +6369,21 @@ public:
 #include "BufferCreateTools/ResourceCreator/ResourceCreator.h"
 //バッファをアップロード
 #include "BufferCreateTools/BufferUploader/BufferUploader.h"
-//各種ツールを下位部へ貸し出します
+//各種ツールを外部へ貸し出します
 #include "BufferContextDiplomat/BufferToolLender/BufferToolLender.h"
 #include "BufferContextDiplomat/BufferContextDiplomat.h"
 //ランタイム処理ツール
 #include "BufferRuntime/BufferDispatcher/BufferDispatcher.h"
 #include "BufferRuntime/BufferInfoExtractor/BufferInfoExtractor.h"
 #include "BufferContextDiplomat/BufferContextExecutionAgent/BufferContextExecutionAgent.h"
+//ワールドコンスタントバッファの生成
+#include "WorldConstantBuffers/ConstantBufferCreator/ConstantBufferCreator.h"
+//から仮想GPUアドレスの保持
+#include "WorldConstantBuffers/WorldConstantBuffers.h"
+//バッファコレクターがバッファを仕分ける
+#include "BufferPoolSet/BufferPoolSet.h"
 
-#include "ClosedHashMap/ClosedHashMap.h" 
+
 
 
 namespace
@@ -6416,17 +6422,31 @@ BufferContext::BufferContext
 	);
 	Logger::Log("Instantiate: BufferCreator", fileName);
 
-
 	bufferUploader.reset(new BufferUploader(proof_, resourceCreator.get(),bufferDispatcher.get(), commandContextDiplomat_));
 	Logger::Log("Instantiate: BufferUploader", fileName);
+
+	worldConstantBuffers.reset(new WorldConstantBuffers(proof_));
+	Logger::Log("Instantiate: worldConstantBuffers", fileName);
+
+	constantBufferCreator.reset(new ConstantBufferCreator(proof_, worldConstantBuffers.get(),bufferCreator.get()));
+	Logger::Log("Instantiate: constantBufferCreator", fileName);
 
 	diplomat.reset
 	(
 		new BufferContextDiplomat
 		(
 			proof_,
-			std::make_unique<ToolLender>(proof_, bufferCreator.get(), bufferUploader.get(), bufferDispatcher.get(), bufferCollector.get()),
-			std::make_unique<ExecutionAgent>(proof_, this, bufferUploader.get())
+			std::make_unique<ToolLender>
+			(
+				proof_,
+				bufferCreator.get(),
+				bufferUploader.get(),
+				bufferDispatcher.get(),
+				bufferCollector.get(),
+				constantBufferCreator.get(),
+				worldConstantBuffers.get()
+			),
+			std::make_unique<ExecutionAgent>(proof_, this, bufferUploader.get(),worldConstantBuffers.get())
 		)
 	);
 
@@ -6444,28 +6464,6 @@ BufferContext::BufferContext
 BufferContext::~BufferContext()
 {
 
-}
-///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-std::vector<std::unique_ptr<GPUBufferBehavior>>* BufferContext::BufferPoolSet::ContainerTable(BufferContext::RegisterType type_)
-{
-	static std::vector<std::unique_ptr<GPUBufferBehavior>>* table[(int)BufferContext::RegisterType::kCount]
-	{
-		&renderTargetBufferPool,
-		&frameBufferPool,
-		&computeBufferPool,
-		&readOnlyBufferPool
-	};
-
-	return table[(int)type_];
-}
-///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-BufferContext::BufferPoolSet::BufferPoolSet()
-{
-	bufferLocationClosedHashedMap.reset(new ClosedHashMap<std::pair<RegisterType, uint32_t>>(kHashedMapSize));
 }
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -6491,8 +6489,6 @@ class DeviceContextDiplomat;
 class DescriptorHeapContextDiplomat;
 class BufferContextDiplomat;
 
-class GPUBufferBehavior;
-template<typename ValueType> class ClosedHashMap;
 
 class BufferContext
 {
@@ -6523,36 +6519,12 @@ protected:
 		kCount
 	};
 
-	struct BufferPoolSet
-	{
-		BufferPoolSet();
-
-		//ColorBufferやDepthStencilBufferなどレンダーターゲットなバッファプール
-		std::vector<std::unique_ptr<GPUBufferBehavior>> renderTargetBufferPool;
-		//computeBufferのような、コンピュートシェーダをかませるバッファのプール
-		std::vector<std::unique_ptr<GPUBufferBehavior>> computeBufferPool;
-		//ConstantBufferやUploadStructuredBufferのようなフレームバッファのプール
-		std::vector<std::unique_ptr<GPUBufferBehavior>> frameBufferPool;
-		//staticStructuredBufferやtextureBufferのような、読みしかしない確定のシングルバッファのプール
-		std::vector<std::unique_ptr<GPUBufferBehavior>> readOnlyBufferPool;
-
-		//ユニークIDがどこのバッファコンテナの何番目のバッファを指しているのか示すマップコンテナ
-		//std::unordered_map<BufferUniqueID, std::pair<RegisterType, uint32_t>> bufferLocationMap;
-		std::unique_ptr<ClosedHashMap<std::pair<RegisterType, uint32_t>>> bufferLocationClosedHashedMap;
-		//RegisterTypeがキーのテーブル
-		std::vector<std::unique_ptr<GPUBufferBehavior>>* ContainerTable(BufferContext::RegisterType type_);
-
-	private:
-		//bufferLocationClosedHashedMapのサイズ
-		static constexpr int kHashedMapSize = 16384;
-	};
+	struct BufferPoolSet;
 
 public:
 
 	//自身のインスタンス化キー
 	struct NexusFieldProof;
-	//バッファのポインタを扱うものの証
-	struct BufferAccessKey;
 	//エージェント認証キー
 	struct AgentKey;
 
@@ -6575,6 +6547,8 @@ public:
 	class ExecutionAgent;
 	//ワールドコンスタントバッファ
 	class WorldConstantBuffers;
+	//コンスタントバッファ専用生成クラス
+	class ConstantBufferCreator;
 
 	BufferContext
 	(
@@ -6609,6 +6583,8 @@ private:
 	std::unique_ptr<BufferCollector> bufferCollector;
 	//Extractors
 	std::unique_ptr<BufferInfoExtractor> bufferInfoExtractor;
+	std::unique_ptr<WorldConstantBuffers> worldConstantBuffers;
+	std::unique_ptr<ConstantBufferCreator> constantBufferCreator;
 
 };
 
@@ -6618,14 +6594,6 @@ private:
 
 	friend class Nexus;
 	explicit NexusFieldProof() = default;
-};
-
-struct BufferContext::BufferAccessKey
-{
-private:
-
-	friend class BufferInfoExtractor;
-	explicit BufferAccessKey() = default;
 };
 
 struct BufferContext::AgentKey
@@ -6705,13 +6673,15 @@ private:
 #include "PreCompileHeader.h"
 #include "BufferContextExecutionAgent.h"
 #include "../../BufferCreateTools/BufferUploader/BufferUploader.h"
+#include "../../WorldConstantBuffers/WorldConstantBuffers.h"
 
 BufferContext::ExecutionAgent::ExecutionAgent
 (
 	NexusFieldProof proof_,
 	BufferContext* bufferContext_,
-	BufferContext::BufferUploader* bufferUploader_
-):bufferContext(bufferContext_), bufferUploader(bufferUploader_)
+	BufferContext::BufferUploader* bufferUploader_,
+	WorldConstantBuffers* worldConstantBuffers_
+):bufferContext(bufferContext_), bufferUploader(bufferUploader_), worldConstantBuffers(worldConstantBuffers_)
 {
 
 }
@@ -6725,6 +6695,12 @@ void BufferContext::ExecutionAgent::UploadAllBuffer(BufferContext::NexusFieldPro
 {
 	bufferUploader->UploadBuffer(proof_,BufferContext::AgentKey{});
 }
+
+void BufferContext::ExecutionAgent::PackRuntimeContainer(NexusFieldProof proof_)
+{
+	worldConstantBuffers->PackRuntimeContainer(proof_, BufferContext::AgentKey{});
+}
+
 
 
 
@@ -6741,18 +6717,23 @@ public:
 	(
 		NexusFieldProof proof_,
 		BufferContext* bufferContext_,
-		BufferContext::BufferUploader* bufferUploader_
+		BufferUploader* bufferUploader_,
+		WorldConstantBuffers* worldConstantBuffers_
 	);
 
 	//BufferUploaderの削除を代行
-	void DeleteBufferUploader(BufferContext::NexusFieldProof proof_);
+	void DeleteBufferUploader(NexusFieldProof proof_);
 	//Resourceのバリアを全て張るのを代行
-	void UploadAllBuffer(BufferContext::NexusFieldProof proof_);
+	void UploadAllBuffer(NexusFieldProof proof_);
+	//ワールド定数バッファのコンテナクラスの移し替えを代行
+	void PackRuntimeContainer(NexusFieldProof proof_);
 
 
 private:
 	BufferContext* bufferContext;
-	BufferContext::BufferUploader* bufferUploader;
+	BufferUploader* bufferUploader;
+	WorldConstantBuffers* worldConstantBuffers;
+
 };
 
 
@@ -6768,18 +6749,22 @@ private:
 
 BufferContext::ToolLender::ToolLender
 (
-	BufferContext::NexusFieldProof proof_,
-	BufferContext::BufferCreator* creator_,
-	BufferContext::BufferUploader* uploader_,
-	BufferContext::BufferDispatcher* dispatcher_,
-	BufferContext::BufferCollector* collector_
+	NexusFieldProof proof_,
+	BufferCreator* creator_,
+	BufferUploader* uploader_,
+	BufferDispatcher* dispatcher_,
+	BufferCollector* collector_,
+	ConstantBufferCreator* cBufferCreator_,
+	WorldConstantBuffers* worldConstantBuffers_
 
 )
 {
-	std::get<BufferContext::BufferCreator*>(tools) = creator_;
-	std::get<BufferContext::BufferUploader*>(tools) = uploader_;
-	std::get<BufferContext::BufferDispatcher*>(tools) = dispatcher_;
-	std::get<BufferContext::BufferCollector*>(tools) = collector_;
+	std::get<BufferCreator*>(tools) = creator_;
+	std::get<BufferUploader*>(tools) = uploader_;
+	std::get<BufferDispatcher*>(tools) = dispatcher_;
+	std::get<BufferCollector*>(tools) = collector_;
+	std::get<ConstantBufferCreator*>(tools) = cBufferCreator_;
+	std::get<WorldConstantBuffers*>(tools) = worldConstantBuffers_;
 
 }
 
@@ -6804,10 +6789,12 @@ class BufferContext::ToolLender
 	///貸し出せるツール
 	std::tuple
 	<
-		BufferContext::BufferCreator*, 
-		BufferContext::BufferUploader*, 
-		BufferContext::BufferDispatcher*,
-		BufferContext::BufferCollector*
+		BufferCreator*, 
+		BufferUploader*, 
+		BufferDispatcher*,
+		BufferCollector*,
+		ConstantBufferCreator*,
+		WorldConstantBuffers*
 	> tools;
 
 
@@ -6819,11 +6806,13 @@ public:
 
 	ToolLender
 	(
-		BufferContext::NexusFieldProof proof_,
-		BufferContext::BufferCreator* creator_,
-		BufferContext::BufferUploader* uploader_,
-		BufferContext::BufferDispatcher* dispatcher_,
-		BufferContext::BufferCollector * collector_
+		NexusFieldProof proof_,
+		BufferCreator* creator_,
+		BufferUploader* uploader_,
+		BufferDispatcher* dispatcher_,
+		BufferCollector * collector_,
+		ConstantBufferCreator* cBufferCreator_,
+		WorldConstantBuffers* worldConstantBuffers_
 	);
 
 
@@ -8374,12 +8363,10 @@ void BufferContext::BufferAssembler::ViewAssembler::CreateView
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Buffer\BufferCreateTools\BufferCollector\BufferCollector.cpp ===
 ========================================
 #include "BufferCollector.h"
-#include "../../BufferDefinition/GPUBuffer/GPUBufferBehavior.h"
-#include "ClosedHashMap/ClosedHashMap.h" 
-
+#include "../../BufferPoolSet/BufferPoolSet.h"
 //バッファ群
 #include "../../BufferDefinition/AllBuffersInclude.h"
-
+#include "ClosedHashMap/ClosedHashMap.h" 
 BufferContext::BufferCollector::BufferCollector
 (
 	BufferContext::NexusFieldProof proof_,
@@ -10609,7 +10596,6 @@ std::string GPUBufferBehavior::WatchName()
 ========================================
 #pragma once
 #include "../../BufferContext.h"
-#include "../../../../Core/SwapChain/SwapChainContext.h"
 
 struct BufferDescriptionBehavior;
 
@@ -10736,6 +10722,8 @@ struct GPUBufferBehavior::ResourceAccessKey
 private:
 	friend class BufferContext::BufferAssembler;
 	friend class BufferContext::BufferUploader;
+	friend class BufferContext::ConstantBufferCreator;
+
 
 	explicit ResourceAccessKey() = default;
 };
@@ -11214,6 +11202,76 @@ public:
 
 
 ========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Buffer\BufferPoolSet\BufferPoolSet.cpp ===
+========================================
+#include "PreCompileHeader.h"
+#include "BufferPoolSet.h"
+#include "ClosedHashMap/ClosedHashMap.h" 
+#include "../BufferDefinition/GPUBuffer/GPUBufferBehavior.h"
+
+std::vector<std::unique_ptr<GPUBufferBehavior>>* BufferContext::BufferPoolSet::ContainerTable(BufferContext::RegisterType type_)
+{
+	static std::vector<std::unique_ptr<GPUBufferBehavior>>* table[(int)BufferContext::RegisterType::kCount]
+	{
+		&renderTargetBufferPool,
+		&frameBufferPool,
+		&computeBufferPool,
+		&readOnlyBufferPool
+	};
+
+	return table[(int)type_];
+}
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+BufferContext::BufferPoolSet::BufferPoolSet()
+{
+	bufferLocationClosedHashedMap.reset(new ClosedHashMap<std::pair<RegisterType, uint32_t>>(kHashedMapSize));
+}
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Buffer\BufferPoolSet\BufferPoolSet.h ===
+========================================
+#pragma once
+#include "../BufferContext.h"
+
+
+class GPUBufferBehavior;
+template<typename ValueType> class ClosedHashMap;
+
+struct BufferContext::BufferPoolSet
+{
+	BufferPoolSet();
+
+	//ColorBufferやDepthStencilBufferなどレンダーターゲットなバッファプール
+	std::vector<std::unique_ptr<GPUBufferBehavior>> renderTargetBufferPool;
+	//computeBufferのような、コンピュートシェーダをかませるバッファのプール
+	std::vector<std::unique_ptr<GPUBufferBehavior>> computeBufferPool;
+	//ConstantBufferやUploadStructuredBufferのようなフレームバッファのプール
+	std::vector<std::unique_ptr<GPUBufferBehavior>> frameBufferPool;
+	//staticStructuredBufferやtextureBufferのような、読みしかしない確定のシングルバッファのプール
+	std::vector<std::unique_ptr<GPUBufferBehavior>> readOnlyBufferPool;
+
+	//ユニークIDがどこのバッファコンテナの何番目のバッファを指しているのか示すマップコンテナ
+	//std::unordered_map<BufferUniqueID, std::pair<RegisterType, uint32_t>> bufferLocationMap;
+	std::unique_ptr<ClosedHashMap<std::pair<RegisterType, uint32_t>>> bufferLocationClosedHashedMap;
+	//RegisterTypeがキーのテーブル
+	std::vector<std::unique_ptr<GPUBufferBehavior>>* ContainerTable(RegisterType type_);
+
+private:
+	//bufferLocationClosedHashedMapのサイズ
+	static constexpr int kHashedMapSize = 16384;
+
+};
+
+
+
+
+
+========================================
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Buffer\BufferRuntime\BufferDeferredReleaser\BufferDeferredReleaser.cpp ===
 ========================================
 
@@ -11262,8 +11320,10 @@ BufferContext::BufferDispatcher::BufferDispatcher
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Buffer\BufferRuntime\BufferDispatcher\BufferDispatcher.h ===
 ========================================
 #pragma once
-#include "../../BufferContext.h"
+#include "../../BufferPoolSet/BufferPoolSet.h"
 #include "ClosedHashMap/ClosedHashMap.h" 
+
+class GPUBufferBehavior;
 
 class BufferContext::BufferDispatcher
 {
@@ -11383,6 +11443,7 @@ RenderPath::Pass::RequiredBufferInfo::RenderTarget BufferContext::BufferInfoExtr
 class DepthStencilBuffer;
 class ColorBuffer;
 struct IRenderTargetBuffer;
+class GPUBufferBehavior;
 
 class BufferContext::BufferInfoExtractor
 {
@@ -11430,18 +11491,62 @@ RenderPath::Pass::RequiredBufferInfo::RenderTarget BufferContext::BufferInfoExtr
 #include "PreCompileHeader.h"
 #include "WorldConstantBuffers.h"
 
+namespace
+{
+	auto const fileName = "WorldConstantBuffers.cpp";
+}
 
 
 BufferContext::WorldConstantBuffers::WorldConstantBuffers
 (
-	NexusFieldProof proof_,
-	BufferCreator* creator_
-):creator(creator_)
+	NexusFieldProof proof_
+)
 {
 
 }
 
+void BufferContext::WorldConstantBuffers::PackRuntimeContainer(NexusFieldProof proof_, AgentKey agentKey_)
+{
+	//デバッグ用
+	uint8_t slotCnt{};
 
+	//昇順は担保されてるはずだからそのまま詰めてく
+	for (auto [key, value] : gpuVirtualAddressMap)
+	{
+		ErrorMessageOutput::Assert::DetectError(slotCnt++ == key, "定数バッファのスロット設定おかしくね？", fileName);
+
+		gpuVirtualAddressVector[0].emplace_back(value[0]);
+		gpuVirtualAddressVector[1].emplace_back(value[1]);
+	}
+
+	Logger::Log("=====Number Of cBuffer Slots: " + std::to_string(slotCnt) + "=====",fileName);
+	for (auto [key, value] : bufferNameMap)
+	{
+		Logger::Log("Slot[" + std::to_string(key) + "]: " + value);
+	}
+
+	gpuVirtualAddressMap.clear();
+}
+
+
+void BufferContext::WorldConstantBuffers::Import
+(
+	Local_ImportLicence licence_,
+	std::string const bufferName_,
+	const uint8_t bindSlot_,
+	DoubleVirtualGPUAddress doubleVirtualGPUAddress_
+) 
+{
+	ErrorMessageOutput::Assert::DetectError
+	(
+		gpuVirtualAddressMap.find(bindSlot_) == gpuVirtualAddressMap.end(),
+		"この定数バッファのスロットは使われているよ",
+		fileName
+	);
+
+	bufferNameMap[bindSlot_] = bufferName_;
+	gpuVirtualAddressMap[bindSlot_] = doubleVirtualGPUAddress_;
+}
 
 
 
@@ -11450,46 +11555,144 @@ BufferContext::WorldConstantBuffers::WorldConstantBuffers
 ========================================
 #pragma once
 #include "../BufferContext.h"
-#include "../BufferCreateTools/BufferCreator.h"
 
-#include "../BufferDefinition/GPUBuffer/ConstantBuffer/ConstantBuffer.h"
-#include "../BufferDefinition/BufferDescriptions/ConstantBufferDescription/ConstantBufferDescription.h"
-
-//struct ConstantBufferDescription;
 
 class BufferContext::WorldConstantBuffers
 {
 public:
 
+	struct Local_ImportLicence;
+
+	using DoubleVirtualGPUAddress = std::array
+		<D3D12_GPU_VIRTUAL_ADDRESS, (UINT)ProjectConfig::Render::NumBuffer::kDoubleBuffer>;
+
 	WorldConstantBuffers
 	(
+		NexusFieldProof proof_
+	);
+
+	//ランタイム用のベクターコンテナに詰め変える(全てのコンスタントバッファの生成が終わった後)
+	void PackRuntimeContainer(NexusFieldProof proof_, AgentKey agentKey_);
+	//データの転送は一括で行いたいから、いつでもgpuVirtualAddressを見せれるように
+	const std::vector<D3D12_GPU_VIRTUAL_ADDRESS>& WatchGPUAddressContainer(UINT curFrameIndex_)const
+	{
+		return gpuVirtualAddressVector[curFrameIndex_];
+	}
+
+	void Import
+	(
+		Local_ImportLicence licence_,
+		std::string const bufferName_,
+		const uint8_t bindSlot_ , 
+		DoubleVirtualGPUAddress doubleVirtualGPUAddress_
+	);
+
+private:
+
+	//一時保管用
+	std::map<uint8_t, DoubleVirtualGPUAddress> gpuVirtualAddressMap;
+	//デバッグ用
+	std::map<uint8_t, std::string> bufferNameMap;
+
+	//ランタイムで速度を稼ぎたいのでベクター版を用意
+	std::array<std::vector<D3D12_GPU_VIRTUAL_ADDRESS>, (UINT)ProjectConfig::Render::NumBuffer::kDoubleBuffer>
+		gpuVirtualAddressVector;
+
+};
+
+
+struct BufferContext::WorldConstantBuffers::Local_ImportLicence
+{
+private:
+
+	friend class ConstantBufferCreator;
+	explicit Local_ImportLicence() = default;
+};
+
+
+
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Buffer\WorldConstantBuffers\ConstantBufferCreator\ConstantBufferCreator.cpp ===
+========================================
+#include "PreCompileHeader.h"
+#include "ConstantBufferCreator.h"
+#include "../WorldConstantBuffers.h"
+#include "../../BufferCreateTools/BufferCreator.h"
+#include "../../BufferDefinition/GPUBuffer/ConstantBuffer/ConstantBuffer.h"
+#include "../../BufferDefinition/BufferDescriptions/ConstantBufferDescription/ConstantBufferDescription.h"
+
+namespace
+{
+	auto const fileName = "ConstantBufferCreator.cpp";
+}
+
+BufferContext::ConstantBufferCreator::ConstantBufferCreator
+(
+	NexusFieldProof proof_,
+	WorldConstantBuffers* worldConstantBuffers_,
+	BufferCreator* creator_
+):worldConstantBuffers(worldConstantBuffers_), creator(creator_)
+{
+
+}
+
+[[nodiscard]] BufferUniqueID BufferContext::ConstantBufferCreator::Create(const std::string& name_, UINT const realDataSize_, const uint8_t bindSlot_)
+{
+
+	ConstantBufferDescription desc(realDataSize_);
+
+	//バッファユニークIDとコンスタントバッファ
+	auto id_buffer = creator->CreateWithBuffer(desc, name_);
+
+
+	worldConstantBuffers->Import
+	(
+		WorldConstantBuffers::Local_ImportLicence{},
+		id_buffer.second->WatchName(),
+		bindSlot_,
+		{
+			id_buffer.second->GetResource(GPUBufferBehavior::ResourceAccessKey{}, 0)->GetGPUVirtualAddress(),
+			id_buffer.second->GetResource(GPUBufferBehavior::ResourceAccessKey{}, 1)->GetGPUVirtualAddress()
+		}
+	);
+
+	return id_buffer.first;
+}
+
+
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Buffer\WorldConstantBuffers\ConstantBufferCreator\ConstantBufferCreator.h ===
+========================================
+#pragma once
+#include "../../BufferContext.h"
+
+class BufferContext::ConstantBufferCreator
+{
+public:
+
+	ConstantBufferCreator
+	(
 		NexusFieldProof proof_,
+		WorldConstantBuffers* worldConstantBuffers_,
 		BufferCreator* creator_
 	);
 
-	template<typename RealDataType>
-	void Create(const std::string& name_, const RealDataType& realData_)
-	{
-		ConstantBufferDescription desc(sizeof(RealDataType));
-
-		//バッファユニークIDとコンスタントバッファ
-		auto id_buffer = creator->CreateWithBuffer(desc, name_);
-
-		//リアルデータで初期化する
-		std::array<void*, (UINT)ProjectConfig::Render::NumBuffer::kDoubleBuffer> mappedPtrs;
-		mappedPtrs = { id_buffer.second->GetMappedPtr<RealDataType>(0),id_buffer.second->GetMappedPtr<RealDataType>(1) };
-		*mappedPtrs.at(0) = realData_;
-		*mappedPtrs.at(1) = realData_;
-
-		idMap[name_] = id_buffer.first;
-	}
+	//データのコピーは他者にやってもらいたいから、バッファユニークIDを渡す
+	[[nodiscard]] BufferUniqueID Create(const std::string& name_, UINT const realDataSize_, const uint8_t bindSlot_);
 
 
 private:
 
 	BufferCreator* creator;
-	std::unordered_map<std::string,BufferUniqueID> idMap;
-
+	WorldConstantBuffers* worldConstantBuffers;
 
 };
 
@@ -18132,6 +18335,7 @@ Nexus::Nexus()
 	InitializeInSequence<InitSequence::kKickCommands>();
 	InitializeInSequence<InitSequence::kDeleteIntermediateResources>();
 	InitializeInSequence<InitSequence::kDeleteModelDataCache>();
+	InitializeInSequence<InitSequence::kSortOutWorldConstantBuffers>();
 
 	ErrorMessageOutput::Assert::DetectError(next == InitSequence::kEnd, "初期化が正常に行われていない可能性がある", fileName);
 
@@ -18200,7 +18404,8 @@ class Nexus
 		kUploadAllResources,
 		kKickCommands,
 		kDeleteIntermediateResources,
-		kDeleteModelDataCache
+		kDeleteModelDataCache,
+		kSortOutWorldConstantBuffers
 
 
 		,kEnd
@@ -18543,6 +18748,16 @@ void Nexus::Init<Nexus::InitSequence::kDeleteModelDataCache>()
 
 }
 
+template<>
+void Nexus::Init<Nexus::InitSequence::kSortOutWorldConstantBuffers>()
+{
+	//bufferContextの代行者
+	auto* agent = bufferContext->diplomat->Access<BufferContext::ExecutionAgent>();
+	//ランタイム用のベクターコンテナに詰め変える(全てのコンスタントバッファの生成が終わった後)
+	agent->PackRuntimeContainer(BufferContext::NexusFieldProof{});
+
+}
+
 
 
 
@@ -18595,6 +18810,10 @@ void Nexus::Init<Nexus::InitSequence::kDeleteIntermediateResources>();
 
 template
 void Nexus::Init<Nexus::InitSequence::kDeleteModelDataCache>();
+
+template
+void Nexus::Init<Nexus::InitSequence::kSortOutWorldConstantBuffers>();
+
 
 
 

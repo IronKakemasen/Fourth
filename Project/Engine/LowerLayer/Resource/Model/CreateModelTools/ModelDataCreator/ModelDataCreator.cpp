@@ -33,13 +33,14 @@ ModelContext::ModelDataCreator::ModelDataCreator
 (
     NexusFieldProof proof_,
     std::unique_ptr<ModelDataLoader>&& modelDataLoader_,
-    ModelContext::ModelSlotAllocator* allocator_,
+    ModelSlotAllocator* allocator_,
+    ModelDataBatcher* modelDataBatcher_,
     BufferContextDiplomat* bufferContextDiplomat_
 ) :modelDataLoader(std::move(modelDataLoader_))
 {
 	Logger::Entry("ModelDataCreator: Constructor");
 
-    CreateAllModelData(proof_, allocator_, bufferContextDiplomat_);
+    CreateAllModelData(proof_, allocator_, modelDataBatcher_,bufferContextDiplomat_);
 
 	Logger::End("ModelDataCreator: Constructor");
 }
@@ -56,6 +57,7 @@ void ModelContext::ModelDataCreator::CreateAllModelData
 (
     NexusFieldProof proof_,
     ModelContext::ModelSlotAllocator* allocator_,
+    ModelDataBatcher* modelDataBatcher_,
     BufferContextDiplomat* bufferContextDiplomat_
 )
 {
@@ -66,7 +68,8 @@ void ModelContext::ModelDataCreator::CreateAllModelData
     ///を紐づける。後にこの値は各モデルがRootConstantsでGPUに転送する
     ///2.メッシュデータバッファのsrvHeapIndex群のコンテナを1つのストラクチャードバッファとして生成して
     ///アップロードし、MeshSlotAllocatorがそのバッファのsrvHeapIndexを保存する
-    ///3.TransformMatrixContainerのuploadStructuredBufferを作成。そのsrvHeapIndexをallocatorが保管する
+    ///3.TransformMatrixContainerのuploadStructuredBufferを作成。そのsrvHeapIndexの
+    ///ワールド定数バッファを作成し、データを入力
 
 
     ///メッシュデータ生成数
@@ -84,7 +87,7 @@ void ModelContext::ModelDataCreator::CreateAllModelData
     std::unordered_map<std::string, ModelDataAggregate*> tmpModelDataLib = LoadAllModelFiles();
 
     //バッファコンテキストのツールレンダーから各種ツールを借りる
-    auto [bufferCreator, bufferCollector, bufferUploader,bufferDispatcher] =
+    auto [bufferCreator, bufferCollector, bufferUploader,bufferDispatcher, cBufferCreator] =
         BorrowBufferContextTools(bufferContextDiplomat_);
 
     for (const auto& [key, value] : tmpModelDataLib)
@@ -122,26 +125,25 @@ void ModelContext::ModelDataCreator::CreateAllModelData
     }
 
     ///tmpMeshDataSRVHeapIndexGroupContainerのバッファを作る
-    ///そのsrvHeapIndexをMeshSlotAllocatorが保存する
+    ///そのsrvHeapIndexの定数バッファも作成する
     MeshDataSRVHeapIndexGroupContainerBufferCreator::Create
     (
         tmpMeshDataSRVHeapIndexGroupContainer,
         bufferCreator,
-        bufferCollector,
-        bufferDispatcher,
         bufferUploader,
-        allocator_
+        cBufferCreator
     );
 
 
     ///TransformMatrixのコンテナのUploadStructuredBufferを作成し、
-    ///そのsrvHeapIndexをallocatorが補完する
+    ///そのsrvHeapIndexの定数バッファも作成する。
+    ///ランタイム用にTransformMatrixのコンテナのバッファのユニークIDをmodelDataBatcherが保管する
     TransformMatrixContainerBufferCreator::Create
     (
-        allocator_,
         bufferCreator,
-        bufferCollector,
-        bufferDispatcher
+        cBufferCreator,
+        modelDataBatcher_
+
     );
 
     //meshDataIDLibraryの中身をログ出力
@@ -178,14 +180,16 @@ std::unordered_map<std::string , ModelDataAggregate*> ModelContext::ModelDataCre
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ModelContext::ModelDataCreator::BufferContextTools ModelContext::ModelDataCreator::BorrowBufferContextTools(BufferContextDiplomat* bufferContextDiplomat_)
 {
-    //バッファコンテキストのツールレンダーから、
-    //bufferCreator、bufferDispatcher、bufferCollector、uploaderを借りる
+    //バッファコンテキストのツールレンダーからいろんなツールを借りる
     auto bufferToolLender = bufferContextDiplomat_->Access<BufferContext::ToolLender>();
     BufferContext::ToolLender::LicenceType<BufferContext::BufferCreator> licence{};
+    
     auto* bufferCreator = bufferToolLender->Lend<BufferContext::BufferCreator>(licence);
     auto* bufferCollector = bufferToolLender->Lend<BufferContext::BufferCollector>(licence);
     auto* bufferUploader = bufferToolLender->Lend<BufferContext::BufferUploader>(licence);
     auto* bufferDispatcher = bufferToolLender->Lend<BufferContext::BufferDispatcher>(licence);
+    auto* cBufferCreator = bufferToolLender->Lend<BufferContext::ConstantBufferCreator>(licence);
 
-    return std::make_tuple(bufferCreator, bufferCollector, bufferUploader, bufferDispatcher);
+
+    return std::make_tuple(bufferCreator, bufferCollector, bufferUploader, bufferDispatcher, cBufferCreator);
 }
