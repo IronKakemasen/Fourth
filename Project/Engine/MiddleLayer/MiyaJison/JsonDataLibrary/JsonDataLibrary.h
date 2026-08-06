@@ -1,8 +1,8 @@
 #pragma once
-#include "../MiyaJison.h"
+#include "../Miyajison.h"
 
 
-class MiyaJison::DataLibrary
+class Miyajison::DataLibrary
 {
 public:
 
@@ -18,11 +18,11 @@ private:
 };
 
 
-struct MiyaJison::DataLibrary::HandleLicence
+struct Miyajison::DataLibrary::HandleLicence
 {
 private:
 
-	friend class MiyaJison;
+	friend class Miyajison;
 
 	explicit HandleLicence() = default;
 };

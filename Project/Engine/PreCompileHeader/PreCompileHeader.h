@@ -43,7 +43,7 @@
 //プロジェクト設定
 #include "../ProjectConfig.h"
 //ジェーソン読み書き
-#include "../MiddleLayer/MiyaJison/MiyaJison.h"
+#include "../MiddleLayer/Miyajison/Miyajison.h"
 
 
 

@@ -1,1 +1,2 @@
 key: "ShaderSettings" , value: "Assets/JsonFiles/EngineCoreJsonFile/ShaderSettings.json"
+key: "WorldConstantBuffers" , value: "Assets/JsonFiles/EngineCoreJsonFile/WorldConstantBuffers.json"

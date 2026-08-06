@@ -1,7 +1,7 @@
 #pragma once
 #include "../../../External/nlohmann/json.hpp"
 
-class MiyaJison
+class Miyajison
 {
 	class DataLoader;
 	class DataLibrary;
@@ -11,13 +11,13 @@ public:
 
 	using Group_Value = std::array<std::string, 2>;
 
-	static MiyaJison* Get();
+	static Miyajison* Get();
 
 
-	MiyaJison(const MiyaJison&) = delete;
-	MiyaJison& operator=(const MiyaJison&) = delete;
-	MiyaJison(MiyaJison&&) = delete;
-	MiyaJison& operator=(MiyaJison&&) = delete;
+	Miyajison(const Miyajison&) = delete;
+	Miyajison& operator=(const Miyajison&) = delete;
+	Miyajison(Miyajison&&) = delete;
+	Miyajison& operator=(Miyajison&&) = delete;
 
 	///ジェーソンファイル名(「.json」省略！！！！)、グループ名とキーを入力し目的のデータを引っ張る
 	///ファイル名はすべてAssets/Registryにあるからそこを見るべし
@@ -27,7 +27,7 @@ public:
 
 private:
 
-	MiyaJison();
+	Miyajison();
 
 	std::unique_ptr<DataLibrary> jsonDataLibrary;
 
@@ -43,25 +43,25 @@ private:
 };
 
 template<>
-int MiyaJison::LoadData(std::string fileName_, Group_Value group_value_);
+int Miyajison::LoadData(std::string fileName_, Group_Value group_value_);
 
 template<>
-double MiyaJison::LoadData(std::string fileName_, Group_Value group_value_);
+double Miyajison::LoadData(std::string fileName_, Group_Value group_value_);
 
 template<>
-bool MiyaJison::LoadData(std::string fileName_, Group_Value group_value_);
+bool Miyajison::LoadData(std::string fileName_, Group_Value group_value_);
 
 template<>
-std::string MiyaJison::LoadData(std::string fileName_, Group_Value group_value_);
+std::string Miyajison::LoadData(std::string fileName_, Group_Value group_value_);
 
 template<>
-std::vector<int> MiyaJison::LoadData(std::string fileName_, Group_Value group_value_);
+std::vector<int> Miyajison::LoadData(std::string fileName_, Group_Value group_value_);
 
 template<>
-std::vector<double> MiyaJison::LoadData(std::string fileName_, Group_Value group_value_);
+std::vector<double> Miyajison::LoadData(std::string fileName_, Group_Value group_value_);
 
 template<>
-std::vector<bool> MiyaJison::LoadData(std::string fileName_, Group_Value group_value_);
+std::vector<bool> Miyajison::LoadData(std::string fileName_, Group_Value group_value_);
 
 template<>
-std::vector<std::string> MiyaJison::LoadData(std::string fileName_, Group_Value group_value_);
+std::vector<std::string> Miyajison::LoadData(std::string fileName_, Group_Value group_value_);

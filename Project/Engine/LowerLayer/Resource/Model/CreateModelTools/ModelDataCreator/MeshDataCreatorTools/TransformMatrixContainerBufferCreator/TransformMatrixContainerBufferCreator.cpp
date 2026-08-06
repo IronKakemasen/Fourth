@@ -9,6 +9,7 @@
 #include "../../../../../Buffer/BufferDefinition/AllBuffersInclude.h"
 #include "../../../../../../../../Assets/Shared/StructuredBuffer.h"
 
+
 using namespace StructuredBufferDataDefinition;
 using namespace ProjectConfig::Render;
 
@@ -44,7 +45,12 @@ void ModelContext::ModelDataCreator::TransformMatrixContainerBufferCreator::Crea
 	
 	//そのコンスタントバッファを生成し、データを入力する
 	///定数バッファはダブルバッファなので、それぞれに別々のsrvHeapIndexを入力する
-	auto cBufferID_cBuffer = cBufferCreator_->Create(bufferName, UINT(sizeof(SRVHeapIndex)), 1);
+	//バインドしているスロットはジェーソンファイルから読み込む
+	auto const srcJsonFileKey = "WorldConstantBuffers";
+	int const dstBindSlot = Miyajison::Get()->LoadData<int>(srcJsonFileKey, { bufferName,"BindSlot" });
+
+
+	auto cBufferID_cBuffer = cBufferCreator_->Create(bufferName, UINT(sizeof(SRVHeapIndex)), dstBindSlot);
 	for (int i = 0;i < (int)ProjectConfig::Render::NumBuffer::kDoubleBuffer;++i)
 	{
 		auto* mappedPtr = cBufferID_cBuffer.second->GetMappedPtr<SRVHeapIndex>(i);

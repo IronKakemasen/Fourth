@@ -3684,7 +3684,6 @@ void DeviceContext::Setupper::CreateDevice()
 
 		//採用したアダプタでデバイスを生成
 		HRESULT hr = D3D12CreateDevice(useAdapter.Get(), featureLevels[i], IID_PPV_ARGS(&d3d12Device));
-		Logger::Log("D3D12CreateDevice hr: " + std::to_string(hr));
 		ErrorMessageOutput::Abort::DetectError(SUCCEEDED(hr), "デバイスの生成に失敗", fileName);
 		
 		//型変換
@@ -5170,8 +5169,6 @@ RenderContext::~RenderContext()
 class Nexus;
 class ShaderContext;
 
-
-
 class RenderContext
 {
 public:
@@ -6611,6 +6608,19 @@ private:
 
 
 ========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Buffer\BufferContextToolsInclude.h ===
+========================================
+#pragma once
+//階層が深すぎてインクルードできないケースの応急処置
+
+#include "WorldConstantBuffers/ConstantBufferCreator/ConstantBufferCreator.h"
+#include "BufferCreateTools/BufferCreator.h"
+#include "BufferCreateTools/BufferUploader/BufferUploader.h"
+
+
+
+
+========================================
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Buffer\BufferContextDiplomat\BufferContextDiplomat.cpp ===
 ========================================
 #include "PreCompileHeader.h"
@@ -6851,6 +6861,18 @@ struct BufferContext::ToolLender::LicenceTypeTraits<BufferContext::BufferCollect
 	using Type = BasicBufferManagementLicence;
 };
 
+template<>
+struct BufferContext::ToolLender::LicenceTypeTraits<BufferContext::ConstantBufferCreator>
+{
+	using Type = BasicBufferManagementLicence;
+};
+
+template<>
+struct BufferContext::ToolLender::LicenceTypeTraits<BufferContext::WorldConstantBuffers>
+{
+	using Type = BasicBufferManagementLicence;
+};
+
 
 
 
@@ -6867,7 +6889,6 @@ struct BufferContext::ToolLender::BasicBufferManagementLicence
 private:
 
 	friend class ModelContext::ModelDataCreator;
-	friend class ModelContext::ModelSlotAllocator;
 
 	explicit BasicBufferManagementLicence() = default;
 };
@@ -11526,6 +11547,7 @@ void BufferContext::WorldConstantBuffers::PackRuntimeContainer(NexusFieldProof p
 	}
 
 	gpuVirtualAddressMap.clear();
+	bufferNameMap.clear();
 }
 
 
@@ -11640,7 +11662,8 @@ BufferContext::ConstantBufferCreator::ConstantBufferCreator
 
 }
 
-[[nodiscard]] BufferUniqueID BufferContext::ConstantBufferCreator::Create(const std::string& name_, UINT const realDataSize_, const uint8_t bindSlot_)
+[[nodiscard]] std::pair<BufferUniqueID, ConstantBuffer*> BufferContext::ConstantBufferCreator::Create
+(const std::string& name_, UINT const realDataSize_, const uint8_t bindSlot_)
 {
 
 	ConstantBufferDescription desc(realDataSize_);
@@ -11660,7 +11683,7 @@ BufferContext::ConstantBufferCreator::ConstantBufferCreator
 		}
 	);
 
-	return id_buffer.first;
+	return id_buffer;
 }
 
 
@@ -11674,6 +11697,8 @@ BufferContext::ConstantBufferCreator::ConstantBufferCreator
 #pragma once
 #include "../../BufferContext.h"
 
+class ConstantBuffer;
+
 class BufferContext::ConstantBufferCreator
 {
 public:
@@ -11686,7 +11711,8 @@ public:
 	);
 
 	//データのコピーは他者にやってもらいたいから、バッファユニークIDを渡す
-	[[nodiscard]] BufferUniqueID Create(const std::string& name_, UINT const realDataSize_, const uint8_t bindSlot_);
+	[[nodiscard]] std::pair<BufferUniqueID, ConstantBuffer*>
+		Create(const std::string& name_, UINT const realDataSize_, const uint8_t bindSlot_);
 
 
 private:
@@ -11714,6 +11740,8 @@ private:
 
 #include "ModelContainer/ModelContainer.h"
 
+#include "ModelContextRuntime/ModelDataBatcher/ModelDataBatcher.h"
+
 #include "ModelContextDiplomat/ModelContextExecutionAgent/ModelContextExecutionAgent.h"
 #include "ModelContextDiplomat/ModelContextToolLender/ModelContextToolLender.h"
 #include "ModelContextDiplomat/ModelContextDiplomat.h"
@@ -11736,6 +11764,7 @@ ModelContext::ModelContext(NexusFieldProof proof_,BufferContextDiplomat* bufferC
 	Logger::Log("Instantiate: modelSlotAllocator", fileName);
 
 	std::unique_ptr<ModelDataLoader> modelDataLoader(std::make_unique<ModelDataLoader>(proof_));
+	ModelDataLoader* modelDataLoaderPtr = modelDataLoader.get();
 	Logger::Log("Instantiate: ModelDataLoader", fileName);
 
 	modelContainer.reset(new ModelContainer(proof_));
@@ -11754,12 +11783,29 @@ ModelContext::ModelContext(NexusFieldProof proof_,BufferContextDiplomat* bufferC
 	Logger::Log("Instantiate: ModelDescAssembler", fileName);
 	Logger::Log("Instantiate: ModelCreator", fileName);
 
+	modelDataBatcher.reset(new ModelDataBatcher(proof_));
+	Logger::Log("Instantiate: modelDataBatcher", fileName);
+
+
+	modelDataCreator.reset
+	(
+		new ModelDataCreator
+		(
+			proof_, 
+			std::move(modelDataLoader),
+			modelSlotAllocator.get(),
+			modelDataBatcher.get(),
+			bufferContextDiplomat_
+		)
+	);
+	Logger::Log("Instantiate: ModelDataCreator", fileName);
+
 	diplomat.reset
 	(
 		new ModelContextDiplomat
 		(
 			proof_,
-			std::make_unique<ExecutionAgent>(proof_, modelDataLoader.get()),
+			std::make_unique<ExecutionAgent>(proof_, modelDataLoaderPtr),
 			std::make_unique<ToolLender>(proof_, modelContainer.get())
 		)
 	);
@@ -11767,16 +11813,6 @@ ModelContext::ModelContext(NexusFieldProof proof_,BufferContextDiplomat* bufferC
 	Logger::Log("Instantiate: ExecutionAgent", fileName);
 	Logger::Log("Instantiate: ModelContextDiplomat", fileName);
 
-	modelDataCreator.reset
-	(
-		new ModelDataCreator
-		(
-			proof_,std::move(modelDataLoader), 
-			modelSlotAllocator.get(),
-			bufferContextDiplomat_
-		)
-	);
-	Logger::Log("Instantiate: ModelDataCreator", fileName);
 
 
 	///てすとおおおおお
@@ -11810,17 +11846,21 @@ class ModelContext
 {
 	//モデルファイルからモデル情報を読み込む
 	class ModelDataLoader;
-
-public:
-	//モデルレジストリーファイルにあるモデルデータのバッファを生成する。
-	class ModelDataCreator;
+	//モデルのコンテナ。おそらくただのコンテナになると思う
+	class ModelContainer;
+	//TransformMatrixSlotの空きインデックスを割り当てたり、モデル名をもとに
+	//モデルデータの割り当てを行う
+	class ModelSlotAllocator;
 	//インスタンス化されたモデルクラスのモデルファイル名をもとに中身を構築してあげる
 	class ModelDescAssembler;
+
+public:
+	//全てのモデルファイルのモデルデータのバッファを生成する。
+	class ModelDataCreator;
 	///モデルクラスを生成する
 	class ModelCreator;
-	//モデルのコンテナ
-	class ModelContainer;
-	class ModelSlotAllocator;
+	//モデルの書き込まなくてはならないデータ(TransformMatrixなど)のバッチングを行う
+	class ModelDataBatcher;
 
 	//代行者
 	class ExecutionAgent;
@@ -11836,7 +11876,6 @@ public:
 
 	//外交官
 	std::unique_ptr<ModelContextDiplomat> diplomat;
-	std::unique_ptr<ModelCreator> modelCreator;
 
 private:
 
@@ -11844,6 +11883,9 @@ private:
 	std::unique_ptr<ModelDataCreator> modelDataCreator;
 	std::unique_ptr<ModelSlotAllocator> modelSlotAllocator;
 	std::unique_ptr<ModelContainer> modelContainer;
+	std::unique_ptr<ModelCreator> modelCreator;
+	std::unique_ptr<ModelDataBatcher> modelDataBatcher;
+
 	std::unique_ptr<TestModelOKIBA> testModelOKIBA;
 };
 
@@ -12077,13 +12119,14 @@ ModelContext::ModelDataCreator::ModelDataCreator
 (
     NexusFieldProof proof_,
     std::unique_ptr<ModelDataLoader>&& modelDataLoader_,
-    ModelContext::ModelSlotAllocator* allocator_,
+    ModelSlotAllocator* allocator_,
+    ModelDataBatcher* modelDataBatcher_,
     BufferContextDiplomat* bufferContextDiplomat_
 ) :modelDataLoader(std::move(modelDataLoader_))
 {
 	Logger::Entry("ModelDataCreator: Constructor");
 
-    CreateAllModelData(proof_, allocator_, bufferContextDiplomat_);
+    CreateAllModelData(proof_, allocator_, modelDataBatcher_,bufferContextDiplomat_);
 
 	Logger::End("ModelDataCreator: Constructor");
 }
@@ -12100,6 +12143,7 @@ void ModelContext::ModelDataCreator::CreateAllModelData
 (
     NexusFieldProof proof_,
     ModelContext::ModelSlotAllocator* allocator_,
+    ModelDataBatcher* modelDataBatcher_,
     BufferContextDiplomat* bufferContextDiplomat_
 )
 {
@@ -12110,7 +12154,8 @@ void ModelContext::ModelDataCreator::CreateAllModelData
     ///を紐づける。後にこの値は各モデルがRootConstantsでGPUに転送する
     ///2.メッシュデータバッファのsrvHeapIndex群のコンテナを1つのストラクチャードバッファとして生成して
     ///アップロードし、MeshSlotAllocatorがそのバッファのsrvHeapIndexを保存する
-    ///3.TransformMatrixContainerのuploadStructuredBufferを作成。そのsrvHeapIndexをallocatorが保管する
+    ///3.TransformMatrixContainerのuploadStructuredBufferを作成。そのsrvHeapIndexの
+    ///ワールド定数バッファを作成し、データを入力
 
 
     ///メッシュデータ生成数
@@ -12128,7 +12173,7 @@ void ModelContext::ModelDataCreator::CreateAllModelData
     std::unordered_map<std::string, ModelDataAggregate*> tmpModelDataLib = LoadAllModelFiles();
 
     //バッファコンテキストのツールレンダーから各種ツールを借りる
-    auto [bufferCreator, bufferCollector, bufferUploader,bufferDispatcher] =
+    auto [bufferCreator, bufferCollector, bufferUploader,bufferDispatcher, cBufferCreator] =
         BorrowBufferContextTools(bufferContextDiplomat_);
 
     for (const auto& [key, value] : tmpModelDataLib)
@@ -12166,26 +12211,25 @@ void ModelContext::ModelDataCreator::CreateAllModelData
     }
 
     ///tmpMeshDataSRVHeapIndexGroupContainerのバッファを作る
-    ///そのsrvHeapIndexをMeshSlotAllocatorが保存する
+    ///そのsrvHeapIndexの定数バッファも作成する
     MeshDataSRVHeapIndexGroupContainerBufferCreator::Create
     (
         tmpMeshDataSRVHeapIndexGroupContainer,
         bufferCreator,
-        bufferCollector,
-        bufferDispatcher,
         bufferUploader,
-        allocator_
+        cBufferCreator
     );
 
 
     ///TransformMatrixのコンテナのUploadStructuredBufferを作成し、
-    ///そのsrvHeapIndexをallocatorが補完する
+    ///そのsrvHeapIndexの定数バッファも作成する。
+    ///ランタイム用にTransformMatrixのコンテナのバッファのユニークIDをmodelDataBatcherが保管する
     TransformMatrixContainerBufferCreator::Create
     (
-        allocator_,
         bufferCreator,
-        bufferCollector,
-        bufferDispatcher
+        cBufferCreator,
+        modelDataBatcher_
+
     );
 
     //meshDataIDLibraryの中身をログ出力
@@ -12222,16 +12266,18 @@ std::unordered_map<std::string , ModelDataAggregate*> ModelContext::ModelDataCre
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ModelContext::ModelDataCreator::BufferContextTools ModelContext::ModelDataCreator::BorrowBufferContextTools(BufferContextDiplomat* bufferContextDiplomat_)
 {
-    //バッファコンテキストのツールレンダーから、
-    //bufferCreator、bufferDispatcher、bufferCollector、uploaderを借りる
+    //バッファコンテキストのツールレンダーからいろんなツールを借りる
     auto bufferToolLender = bufferContextDiplomat_->Access<BufferContext::ToolLender>();
     BufferContext::ToolLender::LicenceType<BufferContext::BufferCreator> licence{};
+    
     auto* bufferCreator = bufferToolLender->Lend<BufferContext::BufferCreator>(licence);
     auto* bufferCollector = bufferToolLender->Lend<BufferContext::BufferCollector>(licence);
     auto* bufferUploader = bufferToolLender->Lend<BufferContext::BufferUploader>(licence);
     auto* bufferDispatcher = bufferToolLender->Lend<BufferContext::BufferDispatcher>(licence);
+    auto* cBufferCreator = bufferToolLender->Lend<BufferContext::ConstantBufferCreator>(licence);
 
-    return std::make_tuple(bufferCreator, bufferCollector, bufferUploader, bufferDispatcher);
+
+    return std::make_tuple(bufferCreator, bufferCollector, bufferUploader, bufferDispatcher, cBufferCreator);
 }
 
 
@@ -12255,7 +12301,8 @@ class ModelContext::ModelDataCreator
 		BufferContext::BufferCreator*,
 		BufferContext::BufferCollector*,
 		BufferContext::BufferUploader*,
-		BufferContext::BufferDispatcher*
+		BufferContext::BufferDispatcher*,
+		BufferContext::ConstantBufferCreator* 
 	>;
 
 protected:
@@ -12295,6 +12342,7 @@ public:
 	(
 		NexusFieldProof proof_,
 		ModelContext::ModelSlotAllocator* allocator_,
+		ModelDataBatcher* modelDataBatcher_,
 		BufferContextDiplomat* bufferContextDiplomat_
 	);
 
@@ -12302,7 +12350,8 @@ public:
 	(
 		NexusFieldProof proof_,
 		std::unique_ptr<ModelDataLoader>&& modelDataLoader_,
-		ModelContext::ModelSlotAllocator* allocator_, 
+		ModelSlotAllocator* allocator_, 
+		ModelDataBatcher* modelDataBatcher_,
 		BufferContextDiplomat* bufferContextDiplomat_
 	);
 
@@ -12646,13 +12695,12 @@ class ModelContext::ModelDataCreator::MeshDataBufferUploader
 #include "MeshDataSRVHeapIndexGroupContainerBufferCreator.h"
 
 //外部
-#include "../../../../../Buffer/BufferCreateTools/BufferCreator.h"
-#include "../../../../../Buffer/BufferCreateTools/BufferUploader/BufferUploader.h"
+#include "../../../../../Buffer/BufferContextToolsInclude.h"
 
-#include "../../../../../Buffer/BufferRuntime/BufferDispatcher/BufferDispatcher.h"
 //ほんとはstaticStructuredBufferDescriptionだけでいいんだけど、文字列制限なのかインクルードできないので
 #include "../../../../../Buffer/BufferDefinition/AllBufferDescsInclude.h"
 #include "../../../../../Buffer/BufferDefinition/GPUBuffer/BufferInterface.h"
+
 
 using namespace StructuredBufferDataDefinition;
 
@@ -12660,12 +12708,12 @@ void ModelContext::ModelDataCreator::MeshDataSRVHeapIndexGroupContainerBufferCre
 (
 	const std::vector<MeshDataSRVHeapIndexGroupGPUCPU>& tmpMeshDataSRVHeapIndexGroupContainer_,
 	BufferContext::BufferCreator* bufferCreator_,
-	BufferContext::BufferCollector* bufferCollector_,
-	BufferContext::BufferDispatcher* dispatcher_,
 	BufferContext::BufferUploader* uploader_,
-	ModelContext::ModelSlotAllocator* allocator_
+	BufferContext::ConstantBufferCreator* cBufferCreator_
 )
 {
+	std::string const bufferName = "MeshDataSRVHeapIndexGroupContainer";
+
 	UINT srcContainerSize = (UINT)tmpMeshDataSRVHeapIndexGroupContainer_.size();
 
 	StaticStructuredBufferDescription desc
@@ -12676,23 +12724,20 @@ void ModelContext::ModelDataCreator::MeshDataSRVHeapIndexGroupContainerBufferCre
 	);
 
 	//バッファ生成
-	BufferUniqueID uniqueID = bufferCreator_->Create(desc, "MeshDataSRVHeapIndexGroupContainer");
-	bufferCollector_->Distribute();
+	auto uniqueID_buffer = bufferCreator_->CreateWithBuffer(desc, bufferName);
 
 	//アップロードする
-	uploader_->RegisterBuffer(uniqueID, srcContainerSize, tmpMeshDataSRVHeapIndexGroupContainer_.data());
+	uploader_->RegisterBuffer(uniqueID_buffer.first, srcContainerSize, tmpMeshDataSRVHeapIndexGroupContainer_.data());
 
 	//srvHeapIndexを抽出
-	StaticStructuredBuffer* buffer = static_cast<StaticStructuredBuffer*>(dispatcher_->Dispatch(uniqueID));
-	IReadable* readableBuffer = static_cast<IReadable*>(buffer);
-
-	//アロケータにこのバッファのsrvHeapIndexを記録させる
-	allocator_->SetMeshDataSRVHeapIndexGroupContainerSRVHeapIndex
-	(
-		ModelContext::ModelSlotAllocator::HandleLicence{}, 
-		readableBuffer->OutProperSRVHeapIndex()
-	);
-
+	IReadable* readableBuffer = static_cast<IReadable*>(uniqueID_buffer.second);
+	//そのコンスタントバッファを生成し、データを入力する
+	auto cBufferID_cBuffer = cBufferCreator_->Create(bufferName, UINT(sizeof(SRVHeapIndex)), 0);
+	for (int i = 0;i < (int)ProjectConfig::Render::NumBuffer::kDoubleBuffer;++i)
+	{
+		auto* mappedPtr = cBufferID_cBuffer.second->GetMappedPtr<SRVHeapIndex>(i);
+		*mappedPtr = readableBuffer->OutProperSRVHeapIndex();
+	}
 
 
 }
@@ -12705,7 +12750,6 @@ void ModelContext::ModelDataCreator::MeshDataSRVHeapIndexGroupContainerBufferCre
 ========================================
 #pragma once
 #include "../../ModelDataCreator.h"
-#include "../../../ModelSlotAllocator/ModelSlotAllocator.h"
 
 //外部
 #include "../../../../../../../../Assets/Shared/StructuredBuffer.h"
@@ -12719,10 +12763,8 @@ class ModelContext::ModelDataCreator::MeshDataSRVHeapIndexGroupContainerBufferCr
 	(
 		const std::vector<StructuredBufferDataDefinition::MeshDataSRVHeapIndexGroupGPUCPU>& tmpMeshDataSRVHeapIndexGroupContainer_,
 		BufferContext::BufferCreator* bufferCreator_,
-		BufferContext::BufferCollector* bufferCollector_,
-		BufferContext::BufferDispatcher* dispatcher_,
 		BufferContext::BufferUploader* uploader_,
-		ModelContext::ModelSlotAllocator* allocator_
+		BufferContext::ConstantBufferCreator* cBufferCreator_
 	);
 };
 
@@ -12813,11 +12855,10 @@ class ModelContext::ModelDataCreator::DataTransducer
 ========================================
 #include "PreCompileHeader.h"
 #include "TransformMatrixContainerBufferCreator.h"
+#include "../../../../ModelContextRuntime/ModelDataBatcher/ModelDataBatcher.h"
 
-#include "../../../ModelSlotAllocator/ModelSlotAllocator.h"
 //外部
-#include "../../../../../Buffer/BufferCreateTools/BufferCreator.h"
-#include "../../../../../Buffer/BufferRuntime/BufferDispatcher/BufferDispatcher.h"
+#include "../../../../../Buffer/BufferContextToolsInclude.h"
 //ほんとはuploadStructuredBufferDescriptionだけでいいんだけど、文字列制限なのかインクルードできないので
 #include "../../../../../Buffer/BufferDefinition/AllBufferDescsInclude.h"
 #include "../../../../../Buffer/BufferDefinition/AllBuffersInclude.h"
@@ -12828,10 +12869,9 @@ using namespace ProjectConfig::Render;
 
 void ModelContext::ModelDataCreator::TransformMatrixContainerBufferCreator::Create
 (
-	ModelContext::ModelSlotAllocator* slotAllocator_,
 	BufferContext::BufferCreator* bufferCreator_,
-	BufferContext::BufferCollector* bufferCollector_,
-	BufferContext::BufferDispatcher* bufferDispatcher_
+	BufferContext::ConstantBufferCreator* cBufferCreator_,
+	ModelDataBatcher* modelDataBatcher_
 )
 {
 	//まずTransformMatrixのUploadStructuredBufferを作成するためのディスクリプションの生成
@@ -12845,20 +12885,27 @@ void ModelContext::ModelDataCreator::TransformMatrixContainerBufferCreator::Crea
 		0
 	);
 
-	BufferUniqueID TransformMatrixContainerBufferID = bufferCreator_->Create(desc,"TransformMatrixContainer");
-	bufferCollector_->Distribute();
+	//UploadStructuredBufferとして生成
+	std::string const bufferName = "TransformMatrixContainer";
+	auto bufferUnique_buffer = bufferCreator_->CreateWithBuffer(desc, bufferName);
+
+	///ランタイムでTransformMatrixはもちろん更新するから、その索引用として
+	///こいつのIDは頂戴する
+	modelDataBatcher_->ImportBufferID<ModelDataBatcher::BufferIDType::kTransformMatrixContainer>
+		(ModelDataBatcher::Local_InputBufferUniqueIDLicence{}, bufferUnique_buffer.first);
 
 	//SRVHeapIndexを抽出
-	auto* TransformMatrixContainerBuffer = 
-		static_cast<UploadStructuredBuffer*>(bufferDispatcher_->Dispatch(TransformMatrixContainerBufferID));
-	auto* iReadable_TransformMatrixContainerBuffer = static_cast<IReadable*>(TransformMatrixContainerBuffer);
+	auto* readableBuffer = static_cast<IReadable*>(bufferUnique_buffer.second);
+	
+	//そのコンスタントバッファを生成し、データを入力する
+	///定数バッファはダブルバッファなので、それぞれに別々のsrvHeapIndexを入力する
+	auto cBufferID_cBuffer = cBufferCreator_->Create(bufferName, UINT(sizeof(SRVHeapIndex)), 1);
+	for (int i = 0;i < (int)ProjectConfig::Render::NumBuffer::kDoubleBuffer;++i)
+	{
+		auto* mappedPtr = cBufferID_cBuffer.second->GetMappedPtr<SRVHeapIndex>(i);
+		*mappedPtr = readableBuffer->OutProperSRVHeapIndex(i);
+	}
 
-	//それらを保存する
-	slotAllocator_->SetTransformMatrixConatinerSrvHeapIndices
-	(
-		ModelContext::ModelSlotAllocator::HandleLicence{},
-		{ iReadable_TransformMatrixContainerBuffer->OutProperSRVHeapIndex(0),iReadable_TransformMatrixContainerBuffer->OutProperSRVHeapIndex(1) }
-	);
 }
 
 
@@ -12876,10 +12923,9 @@ class ModelContext::ModelDataCreator::TransformMatrixContainerBufferCreator
 
 	static void Create
 	(
-		ModelContext::ModelSlotAllocator* slotAllocator_,
 		BufferContext::BufferCreator* bufferCreator_,
-		BufferContext::BufferCollector* bufferCollector_,
-		BufferContext::BufferDispatcher* bufferDispatcher_
+		BufferContext::ConstantBufferCreator* cBufferCreator_,
+		ModelDataBatcher* modelDataBatcher_
 	);
 
 };
@@ -13614,10 +13660,6 @@ private:
 #include "TransformMatrixSlot/TransformMatrixSlot.h"
 
 
-//外部
-#include "../../../Buffer/BufferContextDiplomat/BufferContextDiplomat.h"
-#include "../../../Buffer/BufferContextDiplomat/BufferToolLender/BufferToolLender.h"
-
 namespace
 {
 	auto const fileName = "ModelSlotAllocator.cpp";
@@ -13642,14 +13684,6 @@ ModelContext::ModelSlotAllocator::~ModelSlotAllocator()
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-void ModelContext::ModelSlotAllocator::SetMeshDataSRVHeapIndexGroupContainerSRVHeapIndex(HandleLicence licence_, SRVHeapIndex index_)
-{
-	Logger::Log("Set: meshDataSRVHeapIndexGroupContainerSRVHeapIndex[" + std::to_string((UINT)index_) + "]", fileName);
-	meshDataSRVHeapIndexGroupContainerSRVHeapIndex = index_;
-}
-///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 template<>
 uint32_t ModelContext::ModelSlotAllocator::AllocateSlot
 <ModelContext::ModelSlotAllocator::TransformMatrixSlot>(AllocateLicence licence_)
@@ -13663,27 +13697,6 @@ ModelContext::ModelSlotAllocator::MeshDataIDLibrary& ModelContext::ModelSlotAllo
 {
 	return *meshDataIDLibrary.get();
 }
-///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-void ModelContext::ModelSlotAllocator::SetTransformMatrixConatinerSrvHeapIndices
-(
-	HandleLicence licence_,
-	std::array<SRVHeapIndex, (UINT)ProjectConfig::Render::NumBuffer::kDoubleBuffer> indices_
-)
-{
-	Logger::Log
-	(
-		"Set: doubleTransformMatrixContainerSRVHeapIndices{" + std::to_string((UINT)indices_[0]) +"," + std::to_string((UINT)indices_[1]) + "}",
-		fileName
-	);
-	doubleTransformMatrixContainerSRVHeapIndex = indices_;
-}
-
-
-
-
-
 
 
 
@@ -13695,7 +13708,6 @@ void ModelContext::ModelSlotAllocator::SetTransformMatrixConatinerSrvHeapIndices
 #include"../../ModelContext.h"
 
 
-struct ModelDataAggregate;
 
 class ModelContext::ModelSlotAllocator
 {
@@ -13719,33 +13731,12 @@ public:
 	template<typename SlotType>
 	uint32_t AllocateSlot(AllocateLicence licence_);
 
-	//meshDataCreatorにて、
-	///meshDataSRVHeapIndexGroupContainerのSRVHeapIndexセットする
-	void SetMeshDataSRVHeapIndexGroupContainerSRVHeapIndex(HandleLicence licence_ , SRVHeapIndex index_);
-	///TransformMatrixConatinerのSRVHeapIndexセットする
-	void SetTransformMatrixConatinerSrvHeapIndices
-	(
-		HandleLicence licence_,
-		std::array<SRVHeapIndex, (UINT)ProjectConfig::Render::NumBuffer::kDoubleBuffer> indices_
-	);
-
-	//meshDataIDLibraryにアクセスする
 	MeshDataIDLibrary& AccessMeshDataIDLibrary(HandleLicence licence_);
-
 
 private:
 
 	std::unique_ptr<MeshDataIDLibrary> meshDataIDLibrary;
 	std::unique_ptr<TransformMatrixSlot> transformMatrixSlot;
-
-	
-	///「メッシュデータバッファのsrvHeapIndexが詰まったもの」の配列のSRVHeapIndex
-	std::optional<SRVHeapIndex> meshDataSRVHeapIndexGroupContainerSRVHeapIndex;
-	
-	///「transformMatrixバッファ」の配列のSRVHeapIndex
-	std::optional<std::array<SRVHeapIndex,(UINT)ProjectConfig::Render::NumBuffer::kDoubleBuffer>> 
-		doubleTransformMatrixContainerSRVHeapIndex;
-
 
 };
 
@@ -13929,14 +13920,6 @@ private:
 
 };
 
-
-
-
-
-========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Model\MeshContextRuntime\ヘッダー.h ===
-========================================
-#pragma once
 
 
 
@@ -14212,6 +14195,140 @@ private:
 	//friend class SwapChainContext;
 	explicit ModelContainerAccessLicence() = default;
 };
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Model\ModelContextRuntime\ModelDataBatcher\ModelDataBatcher.cpp ===
+========================================
+#include "PreCompileHeader.h"
+#include "ModelDataBatcher.h"
+#include "ModelUploadBufferUniqueIDs/ModelUploadBufferUniqueIDs.h"
+
+
+ModelContext::ModelDataBatcher::ModelDataBatcher(NexusFieldProof proof_)
+{
+	modelUploadBufferUniqueIDs.reset(new ModelUploadBufferUniqueIDs(proof_));
+
+}
+
+ModelContext::ModelDataBatcher::~ModelDataBatcher()
+{
+
+}
+
+template<>
+void ModelContext::ModelDataBatcher::ImportBufferID<ModelContext::ModelDataBatcher::BufferIDType::kTransformMatrixContainer>
+(Local_InputBufferUniqueIDLicence licence_, BufferUniqueID id_)
+{
+	modelUploadBufferUniqueIDs->Import<ModelContext::ModelDataBatcher::BufferIDType::kTransformMatrixContainer>(id_);
+}
+
+
+template
+void ModelContext::ModelDataBatcher::ImportBufferID<ModelContext::ModelDataBatcher::BufferIDType::kTransformMatrixContainer>
+(Local_InputBufferUniqueIDLicence licence_, BufferUniqueID id_);
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Model\ModelContextRuntime\ModelDataBatcher\ModelDataBatcher.h ===
+========================================
+#pragma once
+#include "../../ModelContext.h"
+
+
+class ModelContext::ModelDataBatcher
+{
+	class ModelUploadBufferUniqueIDs;
+
+public:
+
+	struct Local_InputBufferUniqueIDLicence;
+
+	enum class BufferIDType
+	{
+		kTransformMatrixContainer
+
+
+		,kCount
+	};
+
+	ModelDataBatcher(NexusFieldProof proof_);
+	~ModelDataBatcher();
+
+	template<BufferIDType idType>
+	void ImportBufferID(Local_InputBufferUniqueIDLicence licence_,BufferUniqueID id_);
+
+
+private:
+
+	std::unique_ptr<ModelUploadBufferUniqueIDs> modelUploadBufferUniqueIDs;
+
+};
+
+
+struct ModelContext::ModelDataBatcher::Local_InputBufferUniqueIDLicence
+{
+private:
+
+	friend class ModelDataCreator;
+	explicit Local_InputBufferUniqueIDLicence() = default;
+};
+
+
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Model\ModelContextRuntime\ModelDataBatcher\ModelUploadBufferUniqueIDs\ModelUploadBufferUniqueIDs.cpp ===
+========================================
+#include "PreCompileHeader.h"
+#include "ModelUploadBufferUniqueIDs.h"
+
+
+ModelContext::ModelDataBatcher::ModelUploadBufferUniqueIDs::ModelUploadBufferUniqueIDs(NexusFieldProof proof_)
+{
+
+}
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Model\ModelContextRuntime\ModelDataBatcher\ModelUploadBufferUniqueIDs\ModelUploadBufferUniqueIDs.h ===
+========================================
+#pragma once
+#include "../ModelDataBatcher.h"
+
+class ModelContext::ModelDataBatcher::ModelUploadBufferUniqueIDs
+{
+public:
+	ModelUploadBufferUniqueIDs(NexusFieldProof proof_);
+
+	template<BufferIDType idType>
+	void Import(BufferUniqueID uniqueID_)
+	{
+		bufferIDs.at(UINT(idType)) = uniqueID_;
+		Logger::Log("Import: " + std::to_string(UINT(uniqueID_)));
+	}
+
+	template<BufferIDType idType>
+	BufferUniqueID Export(BufferUniqueID uniqueID_)
+	{
+		return bufferIDs[(idType)] = uniqueID_;
+	}
+
+
+private:
+
+	std::array<BufferUniqueID, (UINT)BufferIDType::kCount> bufferIDs;
+
+};
+
 
 
 

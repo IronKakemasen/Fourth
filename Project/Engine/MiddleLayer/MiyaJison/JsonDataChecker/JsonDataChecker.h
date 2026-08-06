@@ -1,10 +1,10 @@
 #pragma once
-#include "../MiyaJison.h"
+#include "../Miyajison.h"
 
 
-class MiyaJison::DataChecker
+class Miyajison::DataChecker
 {
-	friend class MiyaJison;
+	friend class Miyajison;
 
 	///ProjectConfigのテータチェックフラグがオンの時に作動する
 	template<typename DataType>

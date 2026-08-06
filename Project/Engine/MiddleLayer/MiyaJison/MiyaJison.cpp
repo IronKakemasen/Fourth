@@ -1,27 +1,27 @@
 #include "PreCompileHeader.h"
-#include "MiyaJison.h"
+#include "Miyajison.h"
 #include "JsonDataLibrary/JsonDataLibrary.h"
 #include "RegistryLoader/RegistryLoader.h"
 #include "JsonDataLoader/JsonDataLoader.h"
 
-MiyaJison::MiyaJison()
+Miyajison::Miyajison()
 {
     jsonDataLibrary.reset(new DataLibrary());
-    Logger::Log("Instantiate: jsonDataLibrary", "MiyaJison.cpp");
+    Logger::Log("Instantiate: jsonDataLibrary", "Miyajison.cpp");
 
     LoadAllJsonFiles();
 }
 
-MiyaJison* MiyaJison::Get()
+Miyajison* Miyajison::Get()
 {
-    static MiyaJison miyaJison;
+    static Miyajison Miyajison;
 
-    return &miyaJison;
+    return &Miyajison;
 }
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-void MiyaJison::LoadAllJsonFiles()
+void Miyajison::LoadAllJsonFiles()
 {
     std::unordered_map<std::string, std::string> fileName_Path =
         RegistryLoader::Load<RegistryLoader::RegistryFileType::kJsonFiles>();
@@ -36,7 +36,7 @@ void MiyaJison::LoadAllJsonFiles()
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-nlohmann::json MiyaJison::LoadJsonFile(std::string filePath_)
+nlohmann::json Miyajison::LoadJsonFile(std::string filePath_)
 {
     std::ifstream file(filePath_);
 
@@ -55,7 +55,7 @@ nlohmann::json MiyaJison::LoadJsonFile(std::string filePath_)
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-const nlohmann::json& MiyaJison::PullJsonData(std::string fileName_)
+const nlohmann::json& Miyajison::PullJsonData(std::string fileName_)
 {
     return jsonDataLibrary->Export(DataLibrary::HandleLicence{}, fileName_);
 }
@@ -64,7 +64,7 @@ const nlohmann::json& MiyaJison::PullJsonData(std::string fileName_)
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 template<>
-int MiyaJison::LoadData(std::string fileName_, Group_Value group_value_)
+int Miyajison::LoadData(std::string fileName_, Group_Value group_value_)
 {
     const nlohmann::json& jsonData = PullJsonData(fileName_);
 
@@ -72,7 +72,7 @@ int MiyaJison::LoadData(std::string fileName_, Group_Value group_value_)
 }
 
 template<>
-double MiyaJison::LoadData(std::string fileName_, Group_Value group_value_)
+double Miyajison::LoadData(std::string fileName_, Group_Value group_value_)
 {
     const nlohmann::json& jsonData = PullJsonData(fileName_);
 
@@ -81,7 +81,7 @@ double MiyaJison::LoadData(std::string fileName_, Group_Value group_value_)
 }
 
 template<>
-bool MiyaJison::LoadData(std::string fileName_, Group_Value group_value_)
+bool Miyajison::LoadData(std::string fileName_, Group_Value group_value_)
 {
     const nlohmann::json& jsonData = PullJsonData(fileName_);
 
@@ -90,7 +90,7 @@ bool MiyaJison::LoadData(std::string fileName_, Group_Value group_value_)
 }
 
 template<>
-std::string MiyaJison::LoadData(std::string fileName_, Group_Value group_value_)
+std::string Miyajison::LoadData(std::string fileName_, Group_Value group_value_)
 {
     const nlohmann::json& jsonData = PullJsonData(fileName_);
 
@@ -99,7 +99,7 @@ std::string MiyaJison::LoadData(std::string fileName_, Group_Value group_value_)
 }
 
 template<>
-std::vector<int> MiyaJison::LoadData(std::string fileName_, Group_Value group_value_)
+std::vector<int> Miyajison::LoadData(std::string fileName_, Group_Value group_value_)
 {
     const nlohmann::json& jsonData = PullJsonData(fileName_);
 
@@ -107,7 +107,7 @@ std::vector<int> MiyaJison::LoadData(std::string fileName_, Group_Value group_va
 }
 
 template<>
-std::vector<double> MiyaJison::LoadData(std::string fileName_, Group_Value group_value_)
+std::vector<double> Miyajison::LoadData(std::string fileName_, Group_Value group_value_)
 {
     const nlohmann::json& jsonData = PullJsonData(fileName_);
 
@@ -115,7 +115,7 @@ std::vector<double> MiyaJison::LoadData(std::string fileName_, Group_Value group
 }
 
 template<>
-std::vector<bool> MiyaJison::LoadData(std::string fileName_, Group_Value group_value_)
+std::vector<bool> Miyajison::LoadData(std::string fileName_, Group_Value group_value_)
 {
     const nlohmann::json& jsonData = PullJsonData(fileName_);
 
@@ -123,7 +123,7 @@ std::vector<bool> MiyaJison::LoadData(std::string fileName_, Group_Value group_v
 }
 
 template<>
-std::vector<std::string> MiyaJison::LoadData(std::string fileName_, Group_Value group_value_)
+std::vector<std::string> Miyajison::LoadData(std::string fileName_, Group_Value group_value_)
 {
     const nlohmann::json& jsonData = PullJsonData(fileName_);
 

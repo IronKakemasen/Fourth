@@ -70,7 +70,7 @@ std::unordered_map<std::string, std::vector<std::wstring>> ShaderContext::Shader
     allShaderFileNames.insert(allShaderFileNames.end(), msShaderFileNames.begin(), msShaderFileNames.end());
     allShaderFileNames.insert(allShaderFileNames.end(), psShaderFileNames.begin(), psShaderFileNames.end());
 
-    auto* miyaJison = MiyaJison::Get();
+    auto* Miyajison = Miyajison::Get();
 
     //シェーダーのセッティングが記述されているジェーソンファイルのキー
     auto const srcJsonFileKey = "ShaderSettings";
@@ -81,7 +81,7 @@ std::unordered_map<std::string, std::vector<std::wstring>> ShaderContext::Shader
         auto const groupName = key;
 
         std::vector<std::string> args =
-            miyaJison->LoadData<std::vector<std::string>>(srcJsonFileKey, { groupName ,"Args" });
+            Miyajison->LoadData<std::vector<std::string>>(srcJsonFileKey, { groupName ,"Args" });
 
         argsMap[key] = args;
     }

@@ -16,8 +16,6 @@ public:
 		NexusFieldProof proof_
 	);
 
-	//ランタイム用のベクターコンテナに詰め変える(全てのコンスタントバッファの生成が終わった後)
-	void PackRuntimeContainer(NexusFieldProof proof_, AgentKey agentKey_);
 	//データの転送は一括で行いたいから、いつでもgpuVirtualAddressを見せれるように
 	const std::vector<D3D12_GPU_VIRTUAL_ADDRESS>& WatchGPUAddressContainer(UINT curFrameIndex_)const
 	{
@@ -31,6 +29,10 @@ public:
 		const uint8_t bindSlot_ , 
 		DoubleVirtualGPUAddress doubleVirtualGPUAddress_
 	);
+
+	//ランタイム用のベクターコンテナに詰め変える(全てのコンスタントバッファの生成が終わった後)
+	void PackRuntimeContainer(NexusFieldProof proof_, AgentKey agentKey_);
+
 
 private:
 
