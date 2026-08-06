@@ -4,17 +4,21 @@
 
 BufferContext::ToolLender::ToolLender
 (
-	BufferContext::NexusFieldProof proof_,
-	BufferContext::BufferCreator* creator_,
-	BufferContext::BufferUploader* uploader_,
-	BufferContext::BufferDispatcher* dispatcher_,
-	BufferContext::BufferCollector* collector_
+	NexusFieldProof proof_,
+	BufferCreator* creator_,
+	BufferUploader* uploader_,
+	BufferDispatcher* dispatcher_,
+	BufferCollector* collector_,
+	ConstantBufferCreator* cBufferCreator_,
+	WorldConstantBuffers* worldConstantBuffers_
 
 )
 {
-	std::get<BufferContext::BufferCreator*>(tools) = creator_;
-	std::get<BufferContext::BufferUploader*>(tools) = uploader_;
-	std::get<BufferContext::BufferDispatcher*>(tools) = dispatcher_;
-	std::get<BufferContext::BufferCollector*>(tools) = collector_;
+	std::get<BufferCreator*>(tools) = creator_;
+	std::get<BufferUploader*>(tools) = uploader_;
+	std::get<BufferDispatcher*>(tools) = dispatcher_;
+	std::get<BufferCollector*>(tools) = collector_;
+	std::get<ConstantBufferCreator*>(tools) = cBufferCreator_;
+	std::get<WorldConstantBuffers*>(tools) = worldConstantBuffers_;
 
 }

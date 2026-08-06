@@ -13,10 +13,12 @@ class BufferContext::ToolLender
 	///貸し出せるツール
 	std::tuple
 	<
-		BufferContext::BufferCreator*, 
-		BufferContext::BufferUploader*, 
-		BufferContext::BufferDispatcher*,
-		BufferContext::BufferCollector*
+		BufferCreator*, 
+		BufferUploader*, 
+		BufferDispatcher*,
+		BufferCollector*,
+		ConstantBufferCreator*,
+		WorldConstantBuffers*
 	> tools;
 
 
@@ -28,11 +30,13 @@ public:
 
 	ToolLender
 	(
-		BufferContext::NexusFieldProof proof_,
-		BufferContext::BufferCreator* creator_,
-		BufferContext::BufferUploader* uploader_,
-		BufferContext::BufferDispatcher* dispatcher_,
-		BufferContext::BufferCollector * collector_
+		NexusFieldProof proof_,
+		BufferCreator* creator_,
+		BufferUploader* uploader_,
+		BufferDispatcher* dispatcher_,
+		BufferCollector * collector_,
+		ConstantBufferCreator* cBufferCreator_,
+		WorldConstantBuffers* worldConstantBuffers_
 	);
 
 

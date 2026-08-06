@@ -59,7 +59,7 @@ struct IUpload
 struct IWritableCPU
 {
 	template<typename DataType>
-	inline auto* GetMappedPtr(UINT frameIndex_) { return static_cast<DataType*>(mappedPtrs[frameIndex_]); }
+	auto* GetMappedPtr(UINT frameIndex_) { return static_cast<DataType*>(mappedPtrs[frameIndex_]); }
 
 	virtual ~IWritableCPU() {};
 

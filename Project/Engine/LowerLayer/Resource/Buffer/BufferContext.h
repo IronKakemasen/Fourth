@@ -6,13 +6,13 @@ class DeviceContextDiplomat;
 class DescriptorHeapContextDiplomat;
 class BufferContextDiplomat;
 
-class GPUBufferBehavior;
-template<typename ValueType> class ClosedHashMap;
 
 class BufferContext
 {
 	//生成したバッファの削除を担当
 	class BufferDeferredReleaser;
+	//生リソース生成
+	class ResourceCreator;
 
 protected:
 
@@ -36,42 +36,15 @@ protected:
 		kCount
 	};
 
-	struct BufferPoolSet
-	{
-		BufferPoolSet();
-
-		//ColorBufferやDepthStencilBufferなどレンダーターゲットなバッファプール
-		std::vector<std::unique_ptr<GPUBufferBehavior>> renderTargetBufferPool;
-		//computeBufferのような、コンピュートシェーダをかませるバッファのプール
-		std::vector<std::unique_ptr<GPUBufferBehavior>> computeBufferPool;
-		//ConstantBufferやUploadStructuredBufferのようなフレームバッファのプール
-		std::vector<std::unique_ptr<GPUBufferBehavior>> frameBufferPool;
-		//staticStructuredBufferやtextureBufferのような、読みしかしない確定のシングルバッファのプール
-		std::vector<std::unique_ptr<GPUBufferBehavior>> readOnlyBufferPool;
-
-		//ユニークIDがどこのバッファコンテナの何番目のバッファを指しているのか示すマップコンテナ
-		//std::unordered_map<BufferUniqueID, std::pair<RegisterType, uint32_t>> bufferLocationMap;
-		std::unique_ptr<ClosedHashMap<std::pair<RegisterType, uint32_t>>> bufferLocationClosedHashedMap;
-		//RegisterTypeがキーのテーブル
-		std::vector<std::unique_ptr<GPUBufferBehavior>>* ContainerTable(BufferContext::RegisterType type_);
-
-	private:
-		//bufferLocationClosedHashedMapのサイズ
-		static constexpr int kHashedMapSize = 16384;
-	};
+	struct BufferPoolSet;
 
 public:
 
 	//自身のインスタンス化キー
 	struct NexusFieldProof;
-	//バッファのポインタを扱うものの証
-	struct BufferAccessKey;
 	//エージェント認証キー
 	struct AgentKey;
 
-
-
-	using DeleteBufferUploaderCommand = std::function<void()>;
 
 	//BufferAssemblerとBufferCollectorをつかってバッファを作成する
 	class BufferCreator;
@@ -87,11 +60,12 @@ public:
 	class ToolLender;
 	//生成したバッファを回収し分別する
 	class BufferCollector;
-	//生リソース生成
-	class ResourceCreator;
 	//代行者
 	class ExecutionAgent;
-
+	//ワールドコンスタントバッファ
+	class WorldConstantBuffers;
+	//コンスタントバッファ専用生成クラス
+	class ConstantBufferCreator;
 
 	BufferContext
 	(
@@ -103,10 +77,10 @@ public:
 
 	~BufferContext();
 
-	//ツール貸し出し
+	//外交役
 	std::unique_ptr<BufferContextDiplomat> diplomat;
 
-	///ランタイムに入る前にNexusuがアップロード用の中間リソースを破棄する
+	///ランタイムに入る前にNexusがアップロード用の中間リソースを破棄する
 	void DeleteBufferUploader(const NexusFieldProof& proof_, AgentKey agentKey_);
 	
 private:
@@ -126,6 +100,8 @@ private:
 	std::unique_ptr<BufferCollector> bufferCollector;
 	//Extractors
 	std::unique_ptr<BufferInfoExtractor> bufferInfoExtractor;
+	std::unique_ptr<WorldConstantBuffers> worldConstantBuffers;
+	std::unique_ptr<ConstantBufferCreator> constantBufferCreator;
 
 };
 
@@ -135,14 +111,6 @@ private:
 
 	friend class Nexus;
 	explicit NexusFieldProof() = default;
-};
-
-struct BufferContext::BufferAccessKey
-{
-private:
-
-	friend class BufferInfoExtractor;
-	explicit BufferAccessKey() = default;
 };
 
 struct BufferContext::AgentKey

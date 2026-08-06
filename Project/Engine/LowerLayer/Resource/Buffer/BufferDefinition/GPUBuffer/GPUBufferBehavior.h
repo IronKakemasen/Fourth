@@ -1,6 +1,5 @@
 #pragma once
 #include "../../BufferContext.h"
-#include "../../../../Core/SwapChain/SwapChainContext.h"
 
 struct BufferDescriptionBehavior;
 
@@ -127,6 +126,8 @@ struct GPUBufferBehavior::ResourceAccessKey
 private:
 	friend class BufferContext::BufferAssembler;
 	friend class BufferContext::BufferUploader;
+	friend class BufferContext::ConstantBufferCreator;
+
 
 	explicit ResourceAccessKey() = default;
 };

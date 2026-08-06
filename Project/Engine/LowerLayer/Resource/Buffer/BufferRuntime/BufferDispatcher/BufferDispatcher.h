@@ -1,6 +1,8 @@
 #pragma once
-#include "../../BufferContext.h"
+#include "../../BufferPoolSet/BufferPoolSet.h"
 #include "ClosedHashMap/ClosedHashMap.h" 
+
+class GPUBufferBehavior;
 
 class BufferContext::BufferDispatcher
 {

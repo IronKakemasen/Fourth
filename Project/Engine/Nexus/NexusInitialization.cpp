@@ -236,6 +236,16 @@ void Nexus::Init<Nexus::InitSequence::kDeleteModelDataCache>()
 
 }
 
+template<>
+void Nexus::Init<Nexus::InitSequence::kSortOutWorldConstantBuffers>()
+{
+	//bufferContextの代行者
+	auto* agent = bufferContext->diplomat->Access<BufferContext::ExecutionAgent>();
+	//ランタイム用のベクターコンテナに詰め変える(全てのコンスタントバッファの生成が終わった後)
+	agent->PackRuntimeContainer(BufferContext::NexusFieldProof{});
+
+}
+
 
 
 
@@ -288,4 +298,8 @@ void Nexus::Init<Nexus::InitSequence::kDeleteIntermediateResources>();
 
 template
 void Nexus::Init<Nexus::InitSequence::kDeleteModelDataCache>();
+
+template
+void Nexus::Init<Nexus::InitSequence::kSortOutWorldConstantBuffers>();
+
 

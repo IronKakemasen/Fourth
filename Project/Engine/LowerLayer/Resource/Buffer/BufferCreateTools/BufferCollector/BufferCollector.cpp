@@ -1,10 +1,8 @@
 #include "BufferCollector.h"
-#include "../../BufferDefinition/GPUBuffer/GPUBufferBehavior.h"
-#include "ClosedHashMap/ClosedHashMap.h" 
-
+#include "../../BufferPoolSet/BufferPoolSet.h"
 //バッファ群
 #include "../../BufferDefinition/AllBuffersInclude.h"
-
+#include "ClosedHashMap/ClosedHashMap.h" 
 BufferContext::BufferCollector::BufferCollector
 (
 	BufferContext::NexusFieldProof proof_,

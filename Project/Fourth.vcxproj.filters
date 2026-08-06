@@ -270,15 +270,6 @@
     <ClCompile Include="Engine\LowerLayer\Resource\RootSignature\RootSignatureContext.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="Engine\LowerLayer\Resource\RootSignature\RootSignatureAssembler\RootSignatureAssembler.cpp">
-      <Filter>ソース ファイル</Filter>
-    </ClCompile>
-    <ClCompile Include="Engine\LowerLayer\Resource\RootSignature\RootSignatureAssembler\ToolCreateRootSignature\CreateStaticSamplerDesc\CreateStaticSamplerDesc.cpp">
-      <Filter>ソース ファイル</Filter>
-    </ClCompile>
-    <ClCompile Include="Engine\LowerLayer\Resource\RootSignature\RootSignatureAssembler\ToolCreateRootSignature\CreateRootParam\CreateRootParam.cpp">
-      <Filter>ソース ファイル</Filter>
-    </ClCompile>
     <ClCompile Include="Engine\LowerLayer\Resource\PSO\PSO_Assembler\ToolCreatePSO\PSO_InfoOutputter\PSO_InfoOutputter.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
@@ -523,6 +514,33 @@
       <Filter>ソース ファイル</Filter>
     </ClCompile>
     <ClCompile Include="Engine\LowerLayer\Resource\Shader\ShaderContextDiplomat\ShaderContextToolLender\ShaderContextToolLender.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\LowerLayer\Resource\RootSignature\RootSignatureCreator\RootSignatureAssembler\RootSignatureAssemblerTool\RootParamCreator\RootParamCreator.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\LowerLayer\Resource\RootSignature\RootSignatureCreator\RootSignatureAssembler\RootSignatureAssemblerTool\StaticSamplerDescCreator\StaticSamplerDescCreator.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\LowerLayer\Resource\RootSignature\RootSignatureCreator\RootSignatureAssembler\RootSignatureAssembler.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\LowerLayer\Resource\Buffer\WorldConstantBuffers\WorldConstantBuffers.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\LowerLayer\Resource\RootSignature\RootSignatureCreator\RootSignatureCreator.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\LowerLayer\Resource\RootSignature\RootSignatureContextDiplomat\RootSignatureContextDiplomat.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\LowerLayer\Resource\RootSignature\RootSignatureContextDiplomat\RootSignatureToolLender\RootSignatureToolLender.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\LowerLayer\Resource\Buffer\WorldConstantBuffers\ConstantBufferCreator\ConstantBufferCreator.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\LowerLayer\Resource\Buffer\BufferPoolSet\BufferPoolSet.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
   </ItemGroup>
@@ -779,22 +797,7 @@
     <ClInclude Include="Engine\LowerLayer\Resource\RootSignature\RootSignatureContext.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\LowerLayer\Resource\RootSignature\RootSignatureAssembler\RootSignatureAssembler.h">
-      <Filter>ヘッダー ファイル</Filter>
-    </ClInclude>
-    <ClInclude Include="Engine\LowerLayer\Resource\RootSignature\RootSignatureAssembler\RootSignatureLayoutComponent.h">
-      <Filter>ヘッダー ファイル</Filter>
-    </ClInclude>
-    <ClInclude Include="Engine\LowerLayer\Resource\RootSignature\RootSignatureAssembler\ToolCreateRootSignature\CreateStaticSamplerDesc\CreateStaticSamplerDesc.h">
-      <Filter>ヘッダー ファイル</Filter>
-    </ClInclude>
-    <ClInclude Include="Engine\LowerLayer\Resource\RootSignature\RootSignatureAssembler\ToolCreateRootSignature\CreateRootParam\CreateRootParam.h">
-      <Filter>ヘッダー ファイル</Filter>
-    </ClInclude>
     <ClInclude Include="Engine\LowerLayer\Resource\PSO\PSO_Assembler\ToolCreatePSO\PSO_InfoOutputter\PSO_InfoOutputter.h">
-      <Filter>ヘッダー ファイル</Filter>
-    </ClInclude>
-    <ClInclude Include="Engine\LowerLayer\Resource\RootSignature\RootSignatureAssembler\RootSignatureDesc.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
     <ClInclude Include="Engine\LowerLayer\Render\RenderPathStructure\RenderPathComposer\RenderPathComposer.h">
@@ -1116,6 +1119,42 @@
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
     <ClInclude Include="Engine\LowerLayer\Resource\Shader\ShaderContextDiplomat\ShaderContextToolLender\ShaderContextToolLenderLicences.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\LowerLayer\Resource\RootSignature\RootSignatureContextDiplomat\RootSignatureToolLender\RootSigToolLenderLicences.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\LowerLayer\Resource\RootSignature\RootSignatureCreator\RootSignatureAssembler\RootSignatureDesc.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\LowerLayer\Resource\RootSignature\RootSignatureCreator\RootSignatureAssembler\RootSignatureAssemblerTool\RootParamCreator\RootParamCreator.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\LowerLayer\Resource\RootSignature\RootSignatureCreator\RootSignatureAssembler\RootSignatureAssemblerTool\StaticSamplerDescCreator\StaticSamplerDescCreator.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\LowerLayer\Resource\RootSignature\RootSignatureCreator\RootSignatureAssembler\RootSignatureLayoutComponent.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\LowerLayer\Resource\RootSignature\RootSignatureCreator\RootSignatureAssembler\RootSignatureAssembler.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\LowerLayer\Resource\Buffer\WorldConstantBuffers\WorldConstantBuffers.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\LowerLayer\Resource\RootSignature\RootSignatureCreator\RootSignatureCreator.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\LowerLayer\Resource\RootSignature\RootSignatureContextDiplomat\RootSignatureContextDiplomat.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\LowerLayer\Resource\RootSignature\RootSignatureContextDiplomat\RootSignatureToolLender\RootSignatureToolLender.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\LowerLayer\Resource\Buffer\WorldConstantBuffers\ConstantBufferCreator\ConstantBufferCreator.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\LowerLayer\Resource\Buffer\BufferPoolSet\BufferPoolSet.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
   </ItemGroup>
