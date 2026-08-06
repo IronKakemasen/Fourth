@@ -3,7 +3,6 @@
 
 //外部
 #include "../../../../../Buffer/BufferContextToolsInclude.h"
-
 //ほんとはstaticStructuredBufferDescriptionだけでいいんだけど、文字列制限なのかインクルードできないので
 #include "../../../../../Buffer/BufferDefinition/AllBufferDescsInclude.h"
 #include "../../../../../Buffer/BufferDefinition/GPUBuffer/BufferInterface.h"
@@ -39,12 +38,15 @@ void ModelContext::ModelDataCreator::MeshDataSRVHeapIndexGroupContainerBufferCre
 	//srvHeapIndexを抽出
 	IReadable* readableBuffer = static_cast<IReadable*>(uniqueID_buffer.second);
 	//そのコンスタントバッファを生成し、データを入力する
-	auto cBufferID_cBuffer = cBufferCreator_->Create(bufferName, UINT(sizeof(SRVHeapIndex)), 0);
+	//バインドしているスロットはジェーソンファイルから読み込む
+	auto const srcJsonFileKey = "WorldConstantBuffers";
+	int const dstBindSlot = Miyajison::Get()->LoadData<int>(srcJsonFileKey, { bufferName,"BindSlot" });
+
+	auto cBufferID_cBuffer = cBufferCreator_->Create(bufferName, UINT(sizeof(SRVHeapIndex)), dstBindSlot);
 	for (int i = 0;i < (int)ProjectConfig::Render::NumBuffer::kDoubleBuffer;++i)
 	{
 		auto* mappedPtr = cBufferID_cBuffer.second->GetMappedPtr<SRVHeapIndex>(i);
 		*mappedPtr = readableBuffer->OutProperSRVHeapIndex();
 	}
-
 
 }

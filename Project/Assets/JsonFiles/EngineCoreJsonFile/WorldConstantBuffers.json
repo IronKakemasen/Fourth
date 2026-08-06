@@ -1,0 +1,8 @@
+﻿{
+    "TransformMatrixContainer":  {
+                                     "BindSlot":  1
+                                 },
+    "MeshDataSRVHeapIndexGroupContainer":  {
+                                               "BindSlot":  0
+                                           }
+}
