@@ -1,6 +1,6 @@
 #pragma once
 #include "../RootSignatureContext.h"
-#include "RootSignatureAssembler/RootSignatureDesc.h"
+#include "../RootSignatureContextDiplomat/RootSignatureCmdProvider/RootSignatureCmds.h"
 
 class RootSignatureContext::RootSignatureCreator
 {
@@ -13,12 +13,13 @@ public:
 		RootSignatureLibrary* library_
 	);
 
-	template<typename DescType>
-	ID3D12RootSignature* Create(const DescType& desc_);
-
-
+	RootSignatureCmds::CreateGraphicsRootSigCmd CreateGraphicsrootSigCmd(CmdProviderKey key_);
 
 private:
+
+	//作成関数
+	template<typename DescType>
+	ID3D12RootSignature* Create(const DescType& desc_);
 
 	std::unique_ptr<Assembler> assembler;
 	RootSignatureLibrary* library;

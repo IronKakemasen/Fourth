@@ -2,8 +2,11 @@
 #include "RootSignatureLibrary/RootSignatureLibrary.h"
 #include "RootSignatureCreator/RootSignatureCreator.h"
 #include "RootSignatureCreator/RootSignatureAssembler/RootSignatureAssembler.h"
+
+
 #include "RootSignatureContextDiplomat/RootSignatureContextDiplomat.h"
 #include "RootSignatureContextDiplomat/RootSignatureToolLender/RootSignatureToolLender.h"
+#include "RootSignatureContextDiplomat/RootSignatureCmdProvider/RootSignatureCmdProvider.h"
 
 namespace
 {
@@ -36,9 +39,11 @@ RootSignatureContext::RootSignatureContext(NexusFieldProof proof_, DeviceContext
 		new RootSignatureContextDiplomat
 		(
 			proof_,
-			std::make_unique<ToolLender>(proof_, rootSignatureCreator.get())
+			std::make_unique<ToolLender>(proof_),
+			std::make_unique<CmdProvider>(proof_,rootSignatureCreator.get())
 		)
 	);
+	Logger::Log("Instantiate: CommandProvider", fileName);
 	Logger::Log("Instantiate: ToolLender", fileName);
 	Logger::Log("Instantiate: Diplomat", fileName);
 

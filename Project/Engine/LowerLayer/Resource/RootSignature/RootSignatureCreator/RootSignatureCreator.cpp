@@ -15,6 +15,14 @@ RootSignatureContext::RootSignatureCreator::RootSignatureCreator
 
 }
 
+RootSignatureCmds::CreateGraphicsRootSigCmd RootSignatureContext::RootSignatureCreator::CreateGraphicsrootSigCmd(CmdProviderKey key_)
+{
+	return [this](const RootSignatureDesc::Graphics& desc_)
+	{
+		return Create(desc_);
+	};
+}
+
 
 template<>
 ID3D12RootSignature* RootSignatureContext::RootSignatureCreator::Create(const RootSignatureDesc::Graphics& desc_)
