@@ -11,10 +11,10 @@
 
 #include "ModelContextRuntime/ModelDataBatcher/ModelDataBatcher.h"
 
+#include "ModelContextDiplomat/ModelContextDiplomat.h"
 #include "ModelContextDiplomat/ModelContextExecutionAgent/ModelContextExecutionAgent.h"
 #include "ModelContextDiplomat/ModelContextToolLender/ModelContextToolLender.h"
-#include "ModelContextDiplomat/ModelContextDiplomat.h"
-
+#include "ModelContextDiplomat/ModelContextCmdProvider/ModelContextCmdProvider.h"
 
 #include "TestModelOKIBA.h"
 
@@ -75,11 +75,13 @@ ModelContext::ModelContext(NexusFieldProof proof_,BufferContextDiplomat* bufferC
 		(
 			proof_,
 			std::make_unique<ExecutionAgent>(proof_, modelDataLoaderPtr),
-			std::make_unique<ToolLender>(proof_, modelContainer.get())
+			std::make_unique<ToolLender>(proof_),
+			std::make_unique<CommandProvider>(proof_, modelContainer.get())
 		)
 	);
 	Logger::Log("Instantiate: ToolLender", fileName);
 	Logger::Log("Instantiate: ExecutionAgent", fileName);
+	Logger::Log("Instantiate: CommandProvider", fileName);
 	Logger::Log("Instantiate: ModelContextDiplomat", fileName);
 
 

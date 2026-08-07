@@ -2,7 +2,7 @@
 #include "RootSignatureToolLender.h"
 
 
-RootSignatureContext::ToolLender::ToolLender(NexusFieldProof proof_, RootSignatureCreator* creator_)
+RootSignatureContext::ToolLender::ToolLender(NexusFieldProof proof_)
 {
-	std::get<RootSignatureCreator*>(tools) = creator_;
+	//std::get<RootSignatureCreator*>(tools) = creator_;
 }

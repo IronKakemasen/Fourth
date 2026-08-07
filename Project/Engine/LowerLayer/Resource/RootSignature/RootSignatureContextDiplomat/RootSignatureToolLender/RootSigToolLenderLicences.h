@@ -2,12 +2,12 @@
 #include "RootSignatureToolLender.h"
 
 
-struct RootSignatureContext::ToolLender::UsesRootSigCreatorLicence
-{
-private:
-
-	friend class UsesRootSigCreatorLicence;
-	explicit UsesRootSigCreatorLicence() = default;
-
-};
+//struct RootSignatureContext::ToolLender::UsesRootSigCreatorLicence
+//{
+//private:
+//
+//	friend class UsesRootSigCreatorLicence;
+//	explicit UsesRootSigCreatorLicence() = default;
+//
+//};
 

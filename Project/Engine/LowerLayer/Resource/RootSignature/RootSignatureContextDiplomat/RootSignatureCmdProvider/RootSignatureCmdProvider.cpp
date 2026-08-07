@@ -1,0 +1,18 @@
+#include "PreCompileHeader.h"
+#include "RootSignatureCmdProvider.h"
+#include "../../RootSignatureCreator/RootSignatureCreator.h"
+#include "RootSigCmdProviderLicences.h"
+
+RootSignatureContext::CmdProvider::CmdProvider(NexusFieldProof proof_, RootSignatureCreator* creator_)
+	:creator(creator_)
+{
+
+}
+
+
+template<>
+RootSignatureCmds::CreateGraphicsRootSigCmd RootSignatureContext::CmdProvider::Provide<RootSignatureCmds::CreateGraphicsRootSigCmd>
+(typename LicenceTypeTraits<RootSignatureCmds::CreateGraphicsRootSigCmd>::Type type_)
+{
+	return creator->CreateGraphicsrootSigCmd(CmdProviderKey{});
+}

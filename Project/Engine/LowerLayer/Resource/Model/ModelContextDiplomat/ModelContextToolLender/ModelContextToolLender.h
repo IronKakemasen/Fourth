@@ -7,15 +7,12 @@ class ModelContext::ToolLender
 	struct LicenceTypeTraits;
 
 
-	//モデルコンテナにアクセスするための資格
-	struct ModelContainerAccessLicence;
-
 public:
 
 	template<typename ToolType>
 	using LicenceType = typename LicenceTypeTraits<ToolType>::Type;
 
-	ToolLender(NexusFieldProof proof_, ModelContext::ModelContainer* modelContainer_);
+	ToolLender(NexusFieldProof proof_);
 
 	template<typename ToolType>
 	auto* Lend(typename LicenceTypeTraits<ToolType>::Type licence_)
@@ -26,15 +23,15 @@ public:
 
 private:
 
-	std::tuple<ModelContext::ModelContainer*> tools;
+	std::tuple<> tools;
 
 };
 
 
-template<>
-struct ModelContext::ToolLender::LicenceTypeTraits<ModelContext::ModelContainer>
-{
-	using Type = ModelContainerAccessLicence;
-};
-
+//template<>
+//struct ModelContext::ToolLender::LicenceTypeTraits<ModelContext::ModelContainer>
+//{
+//	using Type = ModelContainerAccessLicence;
+//};
+//
 

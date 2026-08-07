@@ -9,7 +9,9 @@ public:
 	(
 		ModelContext::NexusFieldProof proof_,
 		std::unique_ptr<ModelContext::ExecutionAgent>&& agent_,
-		std::unique_ptr<ModelContext::ToolLender>&& toolLender_
+		std::unique_ptr<ModelContext::ToolLender>&& toolLender_,
+		std::unique_ptr<ModelContext::CommandProvider>&& cmdProvider_ 
+
 
 	);
 	
@@ -24,7 +26,9 @@ private:
 	std::tuple
 	<
 		std::unique_ptr<ModelContext::ExecutionAgent>,
-		std::unique_ptr<ModelContext::ToolLender>
+		std::unique_ptr<ModelContext::ToolLender>,
+		std::unique_ptr<ModelContext::CommandProvider>
+
 	> tools;
 };
 

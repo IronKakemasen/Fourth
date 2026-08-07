@@ -10,7 +10,6 @@ protected:
 
 	using CommandCreateRootSignature = std::function<void(UINT nodeMask_, Microsoft::WRL::ComPtr<ID3DBlob>& signatureBlob_, ID3D12RootSignature** doublePtr_rootSignature_)>;
 
-
 public:
 
 	enum class Usage
@@ -22,8 +21,10 @@ public:
 
 	class RootSignatureCreator;
 	class ToolLender;
+	class CmdProvider;
 
 	struct NexusFieldProof;
+	struct CmdProviderKey;
 
 	RootSignatureContext(NexusFieldProof proof_, DeviceContextDiplomat* deviceContextDiplomat_);
 	~RootSignatureContext();
@@ -48,5 +49,14 @@ private:
 
 	friend class Nexus;
 	explicit NexusFieldProof() = default;
+};
+
+
+struct RootSignatureContext::CmdProviderKey
+{
+private:
+
+	friend class CmdProvider;
+	explicit CmdProviderKey() = default;
 };
 

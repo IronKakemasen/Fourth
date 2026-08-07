@@ -11781,10 +11781,10 @@ private:
 
 #include "ModelContextRuntime/ModelDataBatcher/ModelDataBatcher.h"
 
+#include "ModelContextDiplomat/ModelContextDiplomat.h"
 #include "ModelContextDiplomat/ModelContextExecutionAgent/ModelContextExecutionAgent.h"
 #include "ModelContextDiplomat/ModelContextToolLender/ModelContextToolLender.h"
-#include "ModelContextDiplomat/ModelContextDiplomat.h"
-
+#include "ModelContextDiplomat/ModelContextCmdProvider/ModelContextCmdProvider.h"
 
 #include "TestModelOKIBA.h"
 
@@ -11845,11 +11845,13 @@ ModelContext::ModelContext(NexusFieldProof proof_,BufferContextDiplomat* bufferC
 		(
 			proof_,
 			std::make_unique<ExecutionAgent>(proof_, modelDataLoaderPtr),
-			std::make_unique<ToolLender>(proof_, modelContainer.get())
+			std::make_unique<ToolLender>(proof_),
+			std::make_unique<CommandProvider>(proof_, modelContainer.get())
 		)
 	);
 	Logger::Log("Instantiate: ToolLender", fileName);
 	Logger::Log("Instantiate: ExecutionAgent", fileName);
+	Logger::Log("Instantiate: CommandProvider", fileName);
 	Logger::Log("Instantiate: ModelContextDiplomat", fileName);
 
 
@@ -14047,8 +14049,7 @@ public:
 
 	void Add(Local_AddLicence addLicence_,std::unique_ptr<Model>&& model_);
 
-
-
+	//コンテナの中身をっ見るためのコマンド
 	ModelContextCmds::WatchModelContainer WatchDataCmd(ProviderKey key_)const;
 
 private:
@@ -14078,17 +14079,20 @@ private:
 #include "ModelContextDiplomat.h"
 #include "ModelContextExecutionAgent/ModelContextExecutionAgent.h"
 #include "ModelContextToolLender/ModelContextToolLender.h"
-
+#include "ModelContextCmdProvider/ModelContextCmdProvider.h"
 
 ModelContextDiplomat::ModelContextDiplomat
 (
 	ModelContext::NexusFieldProof proof_,
 	std::unique_ptr<ModelContext::ExecutionAgent>&& agent_,
-	std::unique_ptr<ModelContext::ToolLender>&& toolLender_
+	std::unique_ptr<ModelContext::ToolLender>&& toolLender_,
+	std::unique_ptr<ModelContext::CommandProvider>&& cmdProvider_
+
 )
 {
 	std::get<std::unique_ptr<ModelContext::ExecutionAgent>>(tools) = std::move(agent_);
 	std::get<std::unique_ptr<ModelContext::ToolLender>>(tools) = std::move(toolLender_);
+	std::get<std::unique_ptr<ModelContext::CommandProvider>>(tools) = std::move(cmdProvider_);
 
 }
 
@@ -14110,7 +14114,9 @@ public:
 	(
 		ModelContext::NexusFieldProof proof_,
 		std::unique_ptr<ModelContext::ExecutionAgent>&& agent_,
-		std::unique_ptr<ModelContext::ToolLender>&& toolLender_
+		std::unique_ptr<ModelContext::ToolLender>&& toolLender_,
+		std::unique_ptr<ModelContext::CommandProvider>&& cmdProvider_ 
+
 
 	);
 	
@@ -14125,7 +14131,9 @@ private:
 	std::tuple
 	<
 		std::unique_ptr<ModelContext::ExecutionAgent>,
-		std::unique_ptr<ModelContext::ToolLender>
+		std::unique_ptr<ModelContext::ToolLender>,
+		std::unique_ptr<ModelContext::CommandProvider>
+
 	> tools;
 };
 
@@ -14296,15 +14304,12 @@ private:
 ========================================
 #include "PreCompileHeader.h"
 #include "ModelContextToolLender.h"
-#include "../../ModelContainer/ModelContainer.h"
 
 ModelContext::ToolLender::ToolLender
 (
-	NexusFieldProof proof_, 
-	ModelContext::ModelContainer* modelContainer_
+	NexusFieldProof proof_
 )
 {
-	std::get<ModelContext::ModelContainer*>(tools) = modelContainer_;
 
 }
 
@@ -14323,15 +14328,12 @@ class ModelContext::ToolLender
 	struct LicenceTypeTraits;
 
 
-	//モデルコンテナにアクセスするための資格
-	struct ModelContainerAccessLicence;
-
 public:
 
 	template<typename ToolType>
 	using LicenceType = typename LicenceTypeTraits<ToolType>::Type;
 
-	ToolLender(NexusFieldProof proof_, ModelContext::ModelContainer* modelContainer_);
+	ToolLender(NexusFieldProof proof_);
 
 	template<typename ToolType>
 	auto* Lend(typename LicenceTypeTraits<ToolType>::Type licence_)
@@ -14342,17 +14344,17 @@ public:
 
 private:
 
-	std::tuple<ModelContext::ModelContainer*> tools;
+	std::tuple<> tools;
 
 };
 
 
-template<>
-struct ModelContext::ToolLender::LicenceTypeTraits<ModelContext::ModelContainer>
-{
-	using Type = ModelContainerAccessLicence;
-};
-
+//template<>
+//struct ModelContext::ToolLender::LicenceTypeTraits<ModelContext::ModelContainer>
+//{
+//	using Type = ModelContainerAccessLicence;
+//};
+//
 
 
 
@@ -14364,13 +14366,13 @@ struct ModelContext::ToolLender::LicenceTypeTraits<ModelContext::ModelContainer>
 #pragma once
 #include "ModelContextToolLender.h"
 
-struct ModelContext::ToolLender::ModelContainerAccessLicence
-{
-private:
-
-	//friend class SwapChainContext;
-	explicit ModelContainerAccessLicence() = default;
-};
+//struct ModelContext::ToolLender::ModelContainerAccessLicence
+//{
+//private:
+//
+//	//friend class SwapChainContext;
+//	explicit ModelContainerAccessLicence() = default;
+//};
 
 
 
@@ -14489,7 +14491,8 @@ public:
 	void Import(BufferUniqueID uniqueID_)
 	{
 		bufferIDs.at(UINT(idType)) = uniqueID_;
-		Logger::Log("Import: " + std::to_string(UINT(uniqueID_)));
+		std::string bufferName = BufferTypeTraits<idType>::kBufferName;
+		Logger::Log("Import " + bufferName + " UniqueID: " + std::to_string(UINT(uniqueID_)), "ModelUploadBufferUniqueIDs.h");
 	}
 
 	template<BufferIDType idType>
@@ -14501,10 +14504,20 @@ public:
 
 private:
 
+	template<BufferIDType idType>
+	struct BufferTypeTraits;
+
+
 	std::array<BufferUniqueID, (UINT)BufferIDType::kCount> bufferIDs;
 
 };
 
+template<>
+struct ModelContext::ModelDataBatcher::ModelUploadBufferUniqueIDs::BufferTypeTraits
+<ModelContext::ModelDataBatcher::BufferIDType::kTransformMatrixContainer>
+{
+	static inline std::string const kBufferName = "TransformMatrixContainer";
+};
 
 
 
@@ -15688,8 +15701,11 @@ private:
 #include "RootSignatureLibrary/RootSignatureLibrary.h"
 #include "RootSignatureCreator/RootSignatureCreator.h"
 #include "RootSignatureCreator/RootSignatureAssembler/RootSignatureAssembler.h"
+
+
 #include "RootSignatureContextDiplomat/RootSignatureContextDiplomat.h"
 #include "RootSignatureContextDiplomat/RootSignatureToolLender/RootSignatureToolLender.h"
+#include "RootSignatureContextDiplomat/RootSignatureCmdProvider/RootSignatureCmdProvider.h"
 
 namespace
 {
@@ -15722,9 +15738,11 @@ RootSignatureContext::RootSignatureContext(NexusFieldProof proof_, DeviceContext
 		new RootSignatureContextDiplomat
 		(
 			proof_,
-			std::make_unique<ToolLender>(proof_, rootSignatureCreator.get())
+			std::make_unique<ToolLender>(proof_),
+			std::make_unique<CmdProvider>(proof_,rootSignatureCreator.get())
 		)
 	);
+	Logger::Log("Instantiate: CommandProvider", fileName);
 	Logger::Log("Instantiate: ToolLender", fileName);
 	Logger::Log("Instantiate: Diplomat", fileName);
 
@@ -15757,7 +15775,6 @@ protected:
 
 	using CommandCreateRootSignature = std::function<void(UINT nodeMask_, Microsoft::WRL::ComPtr<ID3DBlob>& signatureBlob_, ID3D12RootSignature** doublePtr_rootSignature_)>;
 
-
 public:
 
 	enum class Usage
@@ -15769,8 +15786,10 @@ public:
 
 	class RootSignatureCreator;
 	class ToolLender;
+	class CmdProvider;
 
 	struct NexusFieldProof;
+	struct CmdProviderKey;
 
 	RootSignatureContext(NexusFieldProof proof_, DeviceContextDiplomat* deviceContextDiplomat_);
 	~RootSignatureContext();
@@ -15798,6 +15817,15 @@ private:
 };
 
 
+struct RootSignatureContext::CmdProviderKey
+{
+private:
+
+	friend class CmdProvider;
+	explicit CmdProviderKey() = default;
+};
+
+
 
 
 
@@ -15807,16 +15835,20 @@ private:
 #include "PreCompileHeader.h"
 #include "RootSignatureContextDiplomat.h"
 #include "RootSignatureToolLender/RootSignatureToolLender.h"
-
+#include "RootSignatureCmdProvider/RootSignatureCmdProvider.h"
 
 
 RootSignatureContextDiplomat::RootSignatureContextDiplomat
 (
 	RootSignatureContext::NexusFieldProof proof,
-	std::unique_ptr<RootSignatureContext::ToolLender>&& toolLender_
+	std::unique_ptr<RootSignatureContext::ToolLender>&& toolLender_,
+	std::unique_ptr<RootSignatureContext::CmdProvider>&& cmdProvider_
+
 )
 {
 	std::get<std::unique_ptr<RootSignatureContext::ToolLender>>(tools) = std::move(toolLender_);
+	std::get<std::unique_ptr<RootSignatureContext::CmdProvider>>(tools) = std::move(cmdProvider_);
+
 }
 
 
@@ -15835,7 +15867,9 @@ public:
 	RootSignatureContextDiplomat
 	(
 		RootSignatureContext::NexusFieldProof proof,
-		std::unique_ptr<RootSignatureContext::ToolLender>&& toolLender_
+		std::unique_ptr<RootSignatureContext::ToolLender>&& toolLender_,
+		std::unique_ptr<RootSignatureContext::CmdProvider>&& cmdProvider_
+
 	);
 
 
@@ -15843,12 +15877,111 @@ private:
 
 	std::tuple
 	<
-		std::unique_ptr<RootSignatureContext::ToolLender>
+		std::unique_ptr<RootSignatureContext::ToolLender>,
+		std::unique_ptr<RootSignatureContext::CmdProvider>
 	>tools;
 
 };
 
 
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\RootSignature\RootSignatureContextDiplomat\RootSignatureCmdProvider\RootSigCmdProviderLicences.h ===
+========================================
+#pragma once
+#include "RootSignatureCmdProvider.h"
+
+
+struct RootSignatureContext::CmdProvider::UsesCreateGraphicsRootSigCmdLicence
+{
+
+};
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\RootSignature\RootSignatureContextDiplomat\RootSignatureCmdProvider\RootSignatureCmdProvider.cpp ===
+========================================
+#include "PreCompileHeader.h"
+#include "RootSignatureCmdProvider.h"
+#include "../../RootSignatureCreator/RootSignatureCreator.h"
+#include "RootSigCmdProviderLicences.h"
+
+RootSignatureContext::CmdProvider::CmdProvider(NexusFieldProof proof_, RootSignatureCreator* creator_)
+	:creator(creator_)
+{
+
+}
+
+
+template<>
+RootSignatureCmds::CreateGraphicsRootSigCmd RootSignatureContext::CmdProvider::Provide<RootSignatureCmds::CreateGraphicsRootSigCmd>
+(typename LicenceTypeTraits<RootSignatureCmds::CreateGraphicsRootSigCmd>::Type type_)
+{
+	return creator->CreateGraphicsrootSigCmd(CmdProviderKey{});
+}
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\RootSignature\RootSignatureContextDiplomat\RootSignatureCmdProvider\RootSignatureCmdProvider.h ===
+========================================
+#pragma once
+#include "../../RootSignatureContext.h"
+#include "RootSignatureCmds.h"
+
+class RootSignatureContext::CmdProvider
+{
+	template<typename CmdType>
+	struct LicenceTypeTraits;
+
+	struct UsesCreateGraphicsRootSigCmdLicence;
+
+public:
+
+	template<typename CmdType>
+	using LicenceType = typename LicenceTypeTraits<CmdType>::Type;
+
+	CmdProvider(NexusFieldProof proof_, RootSignatureCreator* creator_);
+
+	///コマンド提供
+	template<typename CmdType>
+	CmdType Provide(typename LicenceTypeTraits<CmdType>::Type type_);
+
+
+private:
+
+	RootSignatureCreator* creator;
+};
+
+
+template<>
+struct RootSignatureContext::CmdProvider::LicenceTypeTraits<RootSignatureCmds::CreateGraphicsRootSigCmd>
+{
+	using Type = UsesCreateGraphicsRootSigCmdLicence;
+};
+
+
+template<>
+RootSignatureCmds::CreateGraphicsRootSigCmd RootSignatureContext::CmdProvider::Provide<RootSignatureCmds::CreateGraphicsRootSigCmd>
+(typename LicenceTypeTraits<RootSignatureCmds::CreateGraphicsRootSigCmd>::Type type_);
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\RootSignature\RootSignatureContextDiplomat\RootSignatureCmdProvider\RootSignatureCmds.h ===
+========================================
+#pragma once
+#include "../../RootSignatureCreator/RootSignatureAssembler/RootSignatureDesc.h"
+
+namespace RootSignatureCmds 
+{
+	using CreateGraphicsRootSigCmd = std::function<ID3D12RootSignature* (const RootSignatureDesc::Graphics&)>;
+}
 
 
 
@@ -15859,9 +15992,9 @@ private:
 #include "RootSignatureToolLender.h"
 
 
-RootSignatureContext::ToolLender::ToolLender(NexusFieldProof proof_, RootSignatureCreator* creator_)
+RootSignatureContext::ToolLender::ToolLender(NexusFieldProof proof_)
 {
-	std::get<RootSignatureCreator*>(tools) = creator_;
+	//std::get<RootSignatureCreator*>(tools) = creator_;
 }
 
 
@@ -15878,14 +16011,12 @@ class RootSignatureContext::ToolLender
 	template<typename ToolType>
 	struct LicenceTypeTraits;
 
-	struct UsesRootSigCreatorLicence;
-
 public:
 
 	template<typename ToolType>
 	using LicenceType = typename LicenceTypeTraits<ToolType>::Type;
 
-	ToolLender(NexusFieldProof proof_, RootSignatureCreator* creator_);
+	ToolLender(NexusFieldProof proof_);
 
 	template<typename ToolType>
 	auto* Lend(typename LicenceTypeTraits<ToolType>::Type type_)
@@ -15896,14 +16027,14 @@ public:
 
 private:
 
-	std::tuple<RootSignatureCreator*> tools;
+	std::tuple<> tools;
 };
 
-template<>
-struct RootSignatureContext::ToolLender::LicenceTypeTraits<RootSignatureContext::RootSignatureCreator>
-{
-	using Type = UsesRootSigCreatorLicence;
-};
+//template<>
+//struct RootSignatureContext::ToolLender::LicenceTypeTraits<RootSignatureContext::RootSignatureCreator>
+//{
+//	using Type = UsesRootSigCreatorLicence;
+//};
 
 
 
@@ -15916,14 +16047,14 @@ struct RootSignatureContext::ToolLender::LicenceTypeTraits<RootSignatureContext:
 #include "RootSignatureToolLender.h"
 
 
-struct RootSignatureContext::ToolLender::UsesRootSigCreatorLicence
-{
-private:
-
-	friend class UsesRootSigCreatorLicence;
-	explicit UsesRootSigCreatorLicence() = default;
-
-};
+//struct RootSignatureContext::ToolLender::UsesRootSigCreatorLicence
+//{
+//private:
+//
+//	friend class UsesRootSigCreatorLicence;
+//	explicit UsesRootSigCreatorLicence() = default;
+//
+//};
 
 
 
@@ -15949,6 +16080,14 @@ RootSignatureContext::RootSignatureCreator::RootSignatureCreator
 
 }
 
+RootSignatureCmds::CreateGraphicsRootSigCmd RootSignatureContext::RootSignatureCreator::CreateGraphicsrootSigCmd(CmdProviderKey key_)
+{
+	return [this](const RootSignatureDesc::Graphics& desc_)
+	{
+		return Create(desc_);
+	};
+}
+
 
 template<>
 ID3D12RootSignature* RootSignatureContext::RootSignatureCreator::Create(const RootSignatureDesc::Graphics& desc_)
@@ -15966,7 +16105,7 @@ ID3D12RootSignature* RootSignatureContext::RootSignatureCreator::Create(const Ro
 ========================================
 #pragma once
 #include "../RootSignatureContext.h"
-#include "RootSignatureAssembler/RootSignatureDesc.h"
+#include "../RootSignatureContextDiplomat/RootSignatureCmdProvider/RootSignatureCmds.h"
 
 class RootSignatureContext::RootSignatureCreator
 {
@@ -15979,12 +16118,13 @@ public:
 		RootSignatureLibrary* library_
 	);
 
-	template<typename DescType>
-	ID3D12RootSignature* Create(const DescType& desc_);
-
-
+	RootSignatureCmds::CreateGraphicsRootSigCmd CreateGraphicsrootSigCmd(CmdProviderKey key_);
 
 private:
+
+	//作成関数
+	template<typename DescType>
+	ID3D12RootSignature* Create(const DescType& desc_);
 
 	std::unique_ptr<Assembler> assembler;
 	RootSignatureLibrary* library;

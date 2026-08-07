@@ -14,8 +14,7 @@ public:
 
 	void Add(Local_AddLicence addLicence_,std::unique_ptr<Model>&& model_);
 
-
-
+	//コンテナの中身をっ見るためのコマンド
 	ModelContextCmds::WatchModelContainer WatchDataCmd(ProviderKey key_)const;
 
 private:
