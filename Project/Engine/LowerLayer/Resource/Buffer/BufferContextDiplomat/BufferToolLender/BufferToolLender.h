@@ -34,7 +34,7 @@ public:
 		BufferCreator* creator_,
 		BufferUploader* uploader_,
 		BufferDispatcher* dispatcher_,
-		BufferCollector * collector_,
+		BufferCollector* collector_,
 		ConstantBufferCreator* cBufferCreator_,
 		WorldConstantBuffers* worldConstantBuffers_
 	);

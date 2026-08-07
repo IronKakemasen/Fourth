@@ -18,13 +18,17 @@ ModelContext::ModelContainer::~ModelContainer()
 
 }
 
-void ModelContext::ModelContainer::Add(AddLicence addLicence_, std::unique_ptr<Model>&& model_)
+void ModelContext::ModelContainer::Add(Local_AddLicence addLicence_, std::unique_ptr<Model>&& model_)
 {
 	const auto& model =  container.emplace_back(std::move(model_));
 	Logger::Log("Add: " + model->WatchName(), fileName);
 }
 
-const std::vector<std::unique_ptr<Model>>& ModelContext::ModelContainer::Access()const
+ModelContextCmds::WatchModelContainer ModelContext::ModelContainer::WatchDataCmd(ProviderKey key_)const
 {
-	return container;
+	return [this]()
+	{
+		return &this->container;
+	};
+
 }

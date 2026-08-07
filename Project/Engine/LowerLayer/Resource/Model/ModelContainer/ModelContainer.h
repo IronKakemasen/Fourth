@@ -1,21 +1,22 @@
 #pragma once
 #include "../ModelContext.h"
-
-class Model;
+#include "../ModelContextDiplomat/ModelContextCmdProvider/ModelContextCmds.h"
 
 
 class ModelContext::ModelContainer
 {
 public:
 
-	struct AddLicence;
+	struct Local_AddLicence;
 
 	ModelContainer(NexusFieldProof proof_);
 	~ModelContainer();
 
+	void Add(Local_AddLicence addLicence_,std::unique_ptr<Model>&& model_);
 
-	void Add(AddLicence addLicence_,std::unique_ptr<Model>&& model_);
-	const std::vector<std::unique_ptr<Model>>& Access()const;
+
+
+	ModelContextCmds::WatchModelContainer WatchDataCmd(ProviderKey key_)const;
 
 private:
 
@@ -23,12 +24,12 @@ private:
 
 };
 
-struct ModelContext::ModelContainer::AddLicence
+struct ModelContext::ModelContainer::Local_AddLicence
 {
 private:
 
 	friend class ModelContext::ModelCreator;
-	explicit AddLicence() = default;
+	explicit Local_AddLicence() = default;
 };
 
 

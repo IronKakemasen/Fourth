@@ -16,7 +16,7 @@ public:
 	template<BufferIDType idType>
 	BufferUniqueID Export(BufferUniqueID uniqueID_)
 	{
-		return bufferIDs[(idType)] = uniqueID_;
+		return bufferIDs[(idType)];
 	}
 
 

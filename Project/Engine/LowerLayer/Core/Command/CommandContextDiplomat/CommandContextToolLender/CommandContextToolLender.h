@@ -14,7 +14,7 @@ class CommandContext::ToolLender
 	struct ResourceUploaderAccessLicence;
 
 	///貸し出せるツール
-	std::tuple<ID3D12CommandQueue*, CommandContext::ResourceUploader*> tools;
+	std::tuple<ID3D12CommandQueue*> tools;
 
 public:
 
@@ -25,8 +25,7 @@ public:
 	ToolLender
 	(
 		NexusFieldProof proof_,
-		ID3D12CommandQueue* cmdQueue_,
-		CommandContext::ResourceUploader* resourceUploader_
+		ID3D12CommandQueue* cmdQueue_
 	);
 
 

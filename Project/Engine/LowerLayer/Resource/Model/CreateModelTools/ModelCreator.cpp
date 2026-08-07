@@ -51,7 +51,7 @@ Model* ModelContext::ModelCreator::Create
 	Model* modelPtr = model.get();
 
 	//実体はモデルコンテナが握る
-	modelContainer->Add(ModelContainer::AddLicence{}, std::move(model));
+	modelContainer->Add(ModelContainer::Local_AddLicence{}, std::move(model));
 
 	return modelPtr;
 }

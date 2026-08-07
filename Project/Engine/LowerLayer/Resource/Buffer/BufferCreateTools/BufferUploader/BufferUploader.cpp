@@ -9,6 +9,7 @@
 //外部
 #include "../../../../Core/Command/CommandContextDiplomat/CommandContextDiplomat.h"
 #include "../../../../Core/Command/CommandContextDiplomat/CommandContextCmdProvider/CommandContextCmdProvider.h"
+#include "../../../../Core/Command/CommandContextDiplomat/CommandContextCmdProvider/CommandContextCmdProviderLicences.h"
 
 namespace
 {
@@ -25,10 +26,10 @@ BufferContext::BufferUploader::BufferUploader
 {
 	//コマンドプロバイダーにアクセス
 	auto* commandProvider = commandContextDiplomat_->Access<CommandContext::CommandProvider>();
-	CommandContext::CommandProvider::PermissionType<CommandContext::ResourceUploader::UploadCommand> licence{};
+	CommandContext::CommandProvider::LicenceType<CommandContextCmds::UploadCommand> licence{};
 
-	uploadCommand = commandProvider->Provide<CommandContext::ResourceUploader::UploadCommand>(licence);
-	pitchBarriersCommand = commandProvider->Provide<CommandContext::ResourceUploader::PitchBarrierCommand>(licence);
+	uploadCommand = commandProvider->Provide<CommandContextCmds::UploadCommand>(licence);
+	pitchBarriersCommand = commandProvider->Provide<CommandContextCmds::PitchBarrierCommand>(licence);
 }
 
 BufferContext::BufferUploader::~BufferUploader()
