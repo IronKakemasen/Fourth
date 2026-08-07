@@ -364,10 +364,13 @@
     <ClCompile Include="Engine\LowerLayer\Resource\RootSignature\RootSignatureContextDiplomat\RootSignatureToolLender\RootSignatureToolLender.cpp" />
     <ClCompile Include="Engine\LowerLayer\Resource\Model\ModelContextRuntime\ModelDataBatcher\ModelDataBatcher.cpp" />
     <ClCompile Include="Engine\LowerLayer\Resource\Model\ModelContextRuntime\ModelDataBatcher\ModelUploadBufferUniqueIDs\ModelUploadBufferUniqueIDs.cpp" />
+    <ClCompile Include="Engine\LowerLayer\Resource\Model\ModelContextDiplomat\ModelContextCmdProvider\ModelContextCmdProvider.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Assets\BAKA\ConstantBuffers.h" />
     <ClInclude Include="Assets\BAKA\StructuredBuffer.h" />
+    <ClInclude Include="Engine\LowerLayer\Core\Command\CommandContextDiplomat\CommandContextCmdProvider\CommandContextCmdProviderLicences.h" />
+    <ClInclude Include="Engine\LowerLayer\Core\Command\CommandContextDiplomat\CommandContextCmdProvider\CommandContextCmds.h" />
     <ClInclude Include="Engine\LowerLayer\Resource\Buffer\BufferContextToolsInclude.h" />
     <ClInclude Include="Engine\LowerLayer\Resource\Buffer\BufferPoolSet\BufferPoolSet.h" />
     <ClInclude Include="Engine\LowerLayer\Resource\Buffer\WorldConstantBuffers\ConstantBufferCreator\ConstantBufferCreator.h" />
@@ -396,6 +399,8 @@
     <ClInclude Include="Engine\LowerLayer\Render\RenderPathStructure\RenderPass\RenderPassBluePrint\RenderPassSettingTable\RenderPassSettingTable.h" />
     <ClInclude Include="Engine\LowerLayer\Render\RenderPathStructure\RenderPass\RequiredInfo\BufferRequiredInfo\BufferRequiredInfo.h" />
     <ClInclude Include="Engine\LowerLayer\Render\RenderPathStructure\RenderPass\RequiredInfo\PassSettings\PassSettings.h" />
+    <ClInclude Include="Engine\LowerLayer\Resource\Model\ModelContextDiplomat\ModelContextCmdProvider\ModelContextCmds.h" />
+    <ClInclude Include="Engine\LowerLayer\Resource\Model\ModelContextDiplomat\ModelContextCmdProvider\ModelContextCmdProviderLicences.h" />
     <ClInclude Include="Engine\LowerLayer\Resource\Model\ModelContextDiplomat\ModelContextToolLender\ModelContextToolLenderLicence.h" />
     <ClInclude Include="Engine\LowerLayer\Resource\Model\ModelStructure\ModelDescription.h" />
     <ClInclude Include="Engine\LowerLayer\Resource\Model\ModelStructure\ModelData\ResourceMaterial\StandardMaterial.h" />
@@ -572,6 +577,7 @@
     <ClInclude Include="Engine\LowerLayer\Resource\RootSignature\RootSignatureContextDiplomat\RootSignatureToolLender\RootSignatureToolLender.h" />
     <ClInclude Include="Engine\LowerLayer\Resource\Model\ModelContextRuntime\ModelDataBatcher\ModelDataBatcher.h" />
     <ClInclude Include="Engine\LowerLayer\Resource\Model\ModelContextRuntime\ModelDataBatcher\ModelUploadBufferUniqueIDs\ModelUploadBufferUniqueIDs.h" />
+    <ClInclude Include="Engine\LowerLayer\Resource\Model\ModelContextDiplomat\ModelContextCmdProvider\ModelContextCmdProvider.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

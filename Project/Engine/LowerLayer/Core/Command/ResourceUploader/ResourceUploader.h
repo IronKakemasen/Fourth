@@ -1,20 +1,11 @@
 #pragma once
 #include "../CommandContext.h"
+#include "../CommandContextDiplomat/CommandContextCmdProvider/CommandContextCmds.h"
 
 class CommandContext::ResourceUploader
 {
 
 public:
-
-	using UploadCommand = std::function<void
-	(
-		ID3D12Resource* dstResource_,
-		ID3D12Resource* intermediateResource_,
-		const D3D12_SUBRESOURCE_DATA* subeResource_,
-		UINT subResourceCount_
-	)>;
-
-	using PitchBarrierCommand = std::function<void(D3D12_RESOURCE_BARRIER*,UINT)>;
 
 	ResourceUploader
 	(
@@ -30,9 +21,10 @@ public:
 	void KickAndSynchronize(const NexusFieldProof& nexusFieldProof_, AgentKey agentKey_);
 
 	///commandListをラップしたアップロードコマンド
-	UploadCommand ProvideUploadCommand(ProviderKey providerKey_);
+	CommandContextCmds::UploadCommand ProvideUploadCommand(ProviderKey providerKey_);
+
 	///commandListをラップした、バリア張りコマンド
-	PitchBarrierCommand ProvideBarrierPitchCommand(ProviderKey providerKey_);
+	CommandContextCmds::PitchBarrierCommand ProvideBarrierPitchCommand(ProviderKey providerKey_);
 
 
 private:

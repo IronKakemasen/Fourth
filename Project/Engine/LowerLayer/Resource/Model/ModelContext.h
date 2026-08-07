@@ -29,12 +29,17 @@ public:
 
 	//代行者
 	class ExecutionAgent;
+	//コマンド提供者
+	class CommandProvider;
 	class ToolLender;
 
 	//ネクサスフィールド証明
 	struct NexusFieldProof;
 	//代行認証キー
 	struct AgentKey;
+	//コマンド提供者キー
+	struct ProviderKey;
+
 
 	ModelContext(NexusFieldProof proof_, BufferContextDiplomat* bufferContextDiplomat_);
 	~ModelContext();
@@ -69,5 +74,17 @@ private:
 	friend class ExecutionAgent;
 	explicit AgentKey() = default;
 };
+
+struct ModelContext::ProviderKey
+{
+private:
+
+	friend class CommandProvider;
+	explicit ProviderKey() = default;
+};
+
+
+
+
 
 

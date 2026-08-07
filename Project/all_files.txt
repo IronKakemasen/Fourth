@@ -229,7 +229,7 @@ CommandContext::CommandContext
 		(
 			proof_,
 			std::make_unique<CommandProvider>(proof_, resourceUploader.get()),
-			std::make_unique<ToolLender>(proof_, commandQueue.Get(),resourceUploader.get()),
+			std::make_unique<ToolLender>(proof_, commandQueue.Get()),
 			std::make_unique<ExecutionAgent>(proof_, resourceUploader.get())
 		)
 	);
@@ -494,13 +494,30 @@ private:
 ========================================
 #include "PreCompileHeader.h"
 #include "CommandContextCmdProvider.h"
-
+#include "CommandContextCmdProviderLicences.h"
+#include "../../ResourceUploader/ResourceUploader.h"
 
 CommandContext::CommandProvider::CommandProvider(NexusFieldProof proof_, CommandContext::ResourceUploader* resourceUploader_)
 	:resourceUploader(resourceUploader_)
 {
 
 }
+
+template<>
+CommandContextCmds::UploadCommand CommandContext::CommandProvider::Provide<CommandContextCmds::UploadCommand>
+(typename LicenceTypeTraits<CommandContextCmds::UploadCommand>::Type type_)
+{
+	return resourceUploader->ProvideUploadCommand(ProviderKey{});
+}
+
+template<>
+CommandContextCmds::PitchBarrierCommand CommandContext::CommandProvider::Provide<CommandContextCmds::PitchBarrierCommand>
+(typename LicenceTypeTraits<CommandContextCmds::PitchBarrierCommand>::Type type_)
+{
+	return resourceUploader->ProvideBarrierPitchCommand(ProviderKey{});
+}
+
+
 
 
 
@@ -510,40 +527,28 @@ CommandContext::CommandProvider::CommandProvider(NexusFieldProof proof_, Command
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Core\Command\CommandContextDiplomat\CommandContextCmdProvider\CommandContextCmdProvider.h ===
 ========================================
 #pragma once
-#include "../../../../Resource/Buffer/BufferContext.h"
-#include "../../ResourceUploader/ResourceUploader.h"
-
+#include "CommandContextCmds.h"
+#include "../../CommandContext.h"
 
 class CommandContext::CommandProvider
 {
 	//コマンドのタイプと許可を紐づける
 	template<typename CommandType>
-	struct CommandTypeTraits;
+	struct LicenceTypeTraits;
 
 	//ResourceUploadコマンドの利用許可
-	struct UsesResourceUploadCmdPermission;
+	struct UsesResourceUploadCmdLicence;
 
 public:
 
 	template<typename CommandType>
-	using PermissionType = typename CommandTypeTraits<CommandType>::Type;
-
+	using LicenceType = typename LicenceTypeTraits<CommandType>::Type;
 
 	CommandProvider(NexusFieldProof proof_, CommandContext::ResourceUploader* resourceUploader_);
 
+	///コマンド提供
 	template<typename CommandType>
-	auto Provide(typename CommandTypeTraits<CommandType>::Type type_)
-	{
-		if constexpr (std::is_same_v<CommandType, CommandContext::ResourceUploader::UploadCommand>)
-		{
-			return resourceUploader->ProvideUploadCommand(CommandContext::ProviderKey{});
-		}
-		else if constexpr (std::is_same_v<CommandType, CommandContext::ResourceUploader::PitchBarrierCommand>)
-		{
-			return resourceUploader->ProvideBarrierPitchCommand(CommandContext::ProviderKey{});
-		}
-
-	}
+	CommandType Provide(typename LicenceTypeTraits<CommandType>::Type type_);
 
 private:
 
@@ -552,25 +557,67 @@ private:
 
 
 template<>
-struct CommandContext::CommandProvider::CommandTypeTraits<CommandContext::ResourceUploader::UploadCommand>
+struct CommandContext::CommandProvider::LicenceTypeTraits<CommandContextCmds::UploadCommand>
 {
-	using Type = CommandContext::CommandProvider::UsesResourceUploadCmdPermission;
+	using Type = CommandContext::CommandProvider::UsesResourceUploadCmdLicence;
 };
 
 template<>
-struct CommandContext::CommandProvider::CommandTypeTraits<CommandContext::ResourceUploader::PitchBarrierCommand>
+struct CommandContext::CommandProvider::LicenceTypeTraits<CommandContextCmds::PitchBarrierCommand>
 {
-	using Type = CommandContext::CommandProvider::UsesResourceUploadCmdPermission;
+	using Type = CommandContext::CommandProvider::UsesResourceUploadCmdLicence;
 };
 
 
-struct CommandContext::CommandProvider::UsesResourceUploadCmdPermission
+
+template<>
+CommandContextCmds::UploadCommand CommandContext::CommandProvider::Provide<CommandContextCmds::UploadCommand>
+(typename LicenceTypeTraits<CommandContextCmds::UploadCommand>::Type type_);
+
+template<>
+CommandContextCmds::PitchBarrierCommand CommandContext::CommandProvider::Provide<CommandContextCmds::PitchBarrierCommand>
+(typename LicenceTypeTraits<CommandContextCmds::PitchBarrierCommand>::Type type_);
+
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Core\Command\CommandContextDiplomat\CommandContextCmdProvider\CommandContextCmdProviderLicences.h ===
+========================================
+#pragma once
+#include "CommandContextCmdProvider.h"
+#include "../../../../Resource/Buffer/BufferCreateTools/BufferUploader/BufferUploader.h"
+
+struct CommandContext::CommandProvider::UsesResourceUploadCmdLicence
 {
 private:
 
 	friend class BufferContext::BufferUploader;
-	explicit UsesResourceUploadCmdPermission() = default;
+	explicit UsesResourceUploadCmdLicence() = default;
 };
+
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Core\Command\CommandContextDiplomat\CommandContextCmdProvider\CommandContextCmds.h ===
+========================================
+#pragma once
+
+namespace CommandContextCmds
+{
+	using UploadCommand = std::function<void
+	(
+		ID3D12Resource* dstResource_,
+		ID3D12Resource* intermediateResource_,
+		const D3D12_SUBRESOURCE_DATA* subeResource_,
+		UINT subResourceCount_
+		)>;
+
+	using PitchBarrierCommand = std::function<void(D3D12_RESOURCE_BARRIER*, UINT)>;
+}
 
 
 
@@ -632,12 +679,10 @@ private:
 CommandContext::ToolLender::ToolLender
 (
 	NexusFieldProof proof_,
-	ID3D12CommandQueue* cmdQueue_,
-	CommandContext::ResourceUploader* resourceUploader_
+	ID3D12CommandQueue* cmdQueue_
 )
 {
 	std::get<ID3D12CommandQueue*>(tools) = cmdQueue_;
-	std::get<CommandContext::ResourceUploader*>(tools) = resourceUploader_;
 
 
 }
@@ -663,7 +708,7 @@ class CommandContext::ToolLender
 	struct ResourceUploaderAccessLicence;
 
 	///貸し出せるツール
-	std::tuple<ID3D12CommandQueue*, CommandContext::ResourceUploader*> tools;
+	std::tuple<ID3D12CommandQueue*> tools;
 
 public:
 
@@ -674,8 +719,7 @@ public:
 	ToolLender
 	(
 		NexusFieldProof proof_,
-		ID3D12CommandQueue* cmdQueue_,
-		CommandContext::ResourceUploader* resourceUploader_
+		ID3D12CommandQueue* cmdQueue_
 	);
 
 
@@ -796,7 +840,7 @@ void CommandContext::ResourceUploader::RecordingStart()
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-CommandContext::ResourceUploader::UploadCommand CommandContext::ResourceUploader::ProvideUploadCommand(ProviderKey providerKey_)
+CommandContextCmds::UploadCommand CommandContext::ResourceUploader::ProvideUploadCommand(ProviderKey providerKey_)
 {
 	return[this]
 	(
@@ -813,7 +857,7 @@ CommandContext::ResourceUploader::UploadCommand CommandContext::ResourceUploader
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-CommandContext::ResourceUploader::PitchBarrierCommand CommandContext::ResourceUploader::ProvideBarrierPitchCommand(ProviderKey providerKey_)
+CommandContextCmds::PitchBarrierCommand CommandContext::ResourceUploader::ProvideBarrierPitchCommand(ProviderKey providerKey_)
 {
 	return [this](D3D12_RESOURCE_BARRIER* barriers_,UINT count_)
 	{
@@ -830,21 +874,12 @@ CommandContext::ResourceUploader::PitchBarrierCommand CommandContext::ResourceUp
 ========================================
 #pragma once
 #include "../CommandContext.h"
+#include "../CommandContextDiplomat/CommandContextCmdProvider/CommandContextCmds.h"
 
 class CommandContext::ResourceUploader
 {
 
 public:
-
-	using UploadCommand = std::function<void
-	(
-		ID3D12Resource* dstResource_,
-		ID3D12Resource* intermediateResource_,
-		const D3D12_SUBRESOURCE_DATA* subeResource_,
-		UINT subResourceCount_
-	)>;
-
-	using PitchBarrierCommand = std::function<void(D3D12_RESOURCE_BARRIER*,UINT)>;
 
 	ResourceUploader
 	(
@@ -860,9 +895,10 @@ public:
 	void KickAndSynchronize(const NexusFieldProof& nexusFieldProof_, AgentKey agentKey_);
 
 	///commandListをラップしたアップロードコマンド
-	UploadCommand ProvideUploadCommand(ProviderKey providerKey_);
+	CommandContextCmds::UploadCommand ProvideUploadCommand(ProviderKey providerKey_);
+
 	///commandListをラップした、バリア張りコマンド
-	PitchBarrierCommand ProvideBarrierPitchCommand(ProviderKey providerKey_);
+	CommandContextCmds::PitchBarrierCommand ProvideBarrierPitchCommand(ProviderKey providerKey_);
 
 
 private:
@@ -6820,7 +6856,7 @@ public:
 		BufferCreator* creator_,
 		BufferUploader* uploader_,
 		BufferDispatcher* dispatcher_,
-		BufferCollector * collector_,
+		BufferCollector* collector_,
 		ConstantBufferCreator* cBufferCreator_,
 		WorldConstantBuffers* worldConstantBuffers_
 	);
@@ -8610,6 +8646,7 @@ std::unique_ptr<GPUBufferBehavior> BufferContext::BufferCollector::CastBuffer(st
 //外部
 #include "../../../../Core/Command/CommandContextDiplomat/CommandContextDiplomat.h"
 #include "../../../../Core/Command/CommandContextDiplomat/CommandContextCmdProvider/CommandContextCmdProvider.h"
+#include "../../../../Core/Command/CommandContextDiplomat/CommandContextCmdProvider/CommandContextCmdProviderLicences.h"
 
 namespace
 {
@@ -8626,10 +8663,10 @@ BufferContext::BufferUploader::BufferUploader
 {
 	//コマンドプロバイダーにアクセス
 	auto* commandProvider = commandContextDiplomat_->Access<CommandContext::CommandProvider>();
-	CommandContext::CommandProvider::PermissionType<CommandContext::ResourceUploader::UploadCommand> licence{};
+	CommandContext::CommandProvider::LicenceType<CommandContextCmds::UploadCommand> licence{};
 
-	uploadCommand = commandProvider->Provide<CommandContext::ResourceUploader::UploadCommand>(licence);
-	pitchBarriersCommand = commandProvider->Provide<CommandContext::ResourceUploader::PitchBarrierCommand>(licence);
+	uploadCommand = commandProvider->Provide<CommandContextCmds::UploadCommand>(licence);
+	pitchBarriersCommand = commandProvider->Provide<CommandContextCmds::PitchBarrierCommand>(licence);
 }
 
 BufferContext::BufferUploader::~BufferUploader()
@@ -8743,7 +8780,7 @@ void BufferContext::BufferUploader::EndLog()const
 #include "../../BufferContext.h"
 
 //外部
-#include "../../../../Core/Command/ResourceUploader/ResourceUploader.h"
+#include "../../../../Core/Command/CommandContextDiplomat/CommandContextCmdProvider/CommandContextCmds.h"
 
 
 class GPUBufferBehavior;
@@ -8827,9 +8864,9 @@ private:
 	BufferContext::ResourceCreator* resourceCreator;
 	BufferContext::BufferDispatcher* dispatcher;
 	//リソースをアップロードするコマンド
-	CommandContext::ResourceUploader::UploadCommand uploadCommand;
+	CommandContextCmds::UploadCommand uploadCommand;
 	//バリアを張るためのコマンド
-	CommandContext::ResourceUploader::PitchBarrierCommand pitchBarriersCommand;
+	CommandContextCmds::PitchBarrierCommand pitchBarriersCommand;
 
 	//中間リソースのコンテナ
 	std::vector<Microsoft::WRL::ComPtr<ID3D12Resource>> intermediateResources;
@@ -11593,8 +11630,6 @@ public:
 		NexusFieldProof proof_
 	);
 
-	//ランタイム用のベクターコンテナに詰め変える(全てのコンスタントバッファの生成が終わった後)
-	void PackRuntimeContainer(NexusFieldProof proof_, AgentKey agentKey_);
 	//データの転送は一括で行いたいから、いつでもgpuVirtualAddressを見せれるように
 	const std::vector<D3D12_GPU_VIRTUAL_ADDRESS>& WatchGPUAddressContainer(UINT curFrameIndex_)const
 	{
@@ -11608,6 +11643,10 @@ public:
 		const uint8_t bindSlot_ , 
 		DoubleVirtualGPUAddress doubleVirtualGPUAddress_
 	);
+
+	//ランタイム用のベクターコンテナに詰め変える(全てのコンスタントバッファの生成が終わった後)
+	void PackRuntimeContainer(NexusFieldProof proof_, AgentKey agentKey_);
+
 
 private:
 
@@ -11864,12 +11903,17 @@ public:
 
 	//代行者
 	class ExecutionAgent;
+	//コマンド提供者
+	class CommandProvider;
 	class ToolLender;
 
 	//ネクサスフィールド証明
 	struct NexusFieldProof;
 	//代行認証キー
 	struct AgentKey;
+	//コマンド提供者キー
+	struct ProviderKey;
+
 
 	ModelContext(NexusFieldProof proof_, BufferContextDiplomat* bufferContextDiplomat_);
 	~ModelContext();
@@ -11904,6 +11948,18 @@ private:
 	friend class ExecutionAgent;
 	explicit AgentKey() = default;
 };
+
+struct ModelContext::ProviderKey
+{
+private:
+
+	friend class CommandProvider;
+	explicit ProviderKey() = default;
+};
+
+
+
+
 
 
 
@@ -12033,7 +12089,7 @@ Model* ModelContext::ModelCreator::Create
 	Model* modelPtr = model.get();
 
 	//実体はモデルコンテナが握る
-	modelContainer->Add(ModelContainer::AddLicence{}, std::move(model));
+	modelContainer->Add(ModelContainer::Local_AddLicence{}, std::move(model));
 
 	return modelPtr;
 }
@@ -12696,7 +12752,6 @@ class ModelContext::ModelDataCreator::MeshDataBufferUploader
 
 //外部
 #include "../../../../../Buffer/BufferContextToolsInclude.h"
-
 //ほんとはstaticStructuredBufferDescriptionだけでいいんだけど、文字列制限なのかインクルードできないので
 #include "../../../../../Buffer/BufferDefinition/AllBufferDescsInclude.h"
 #include "../../../../../Buffer/BufferDefinition/GPUBuffer/BufferInterface.h"
@@ -12732,13 +12787,16 @@ void ModelContext::ModelDataCreator::MeshDataSRVHeapIndexGroupContainerBufferCre
 	//srvHeapIndexを抽出
 	IReadable* readableBuffer = static_cast<IReadable*>(uniqueID_buffer.second);
 	//そのコンスタントバッファを生成し、データを入力する
-	auto cBufferID_cBuffer = cBufferCreator_->Create(bufferName, UINT(sizeof(SRVHeapIndex)), 0);
+	//バインドしているスロットはジェーソンファイルから読み込む
+	auto const srcJsonFileKey = "WorldConstantBuffers";
+	int const dstBindSlot = Miyajison::Get()->LoadData<int>(srcJsonFileKey, { bufferName,"BindSlot" });
+
+	auto cBufferID_cBuffer = cBufferCreator_->Create(bufferName, UINT(sizeof(SRVHeapIndex)), dstBindSlot);
 	for (int i = 0;i < (int)ProjectConfig::Render::NumBuffer::kDoubleBuffer;++i)
 	{
 		auto* mappedPtr = cBufferID_cBuffer.second->GetMappedPtr<SRVHeapIndex>(i);
 		*mappedPtr = readableBuffer->OutProperSRVHeapIndex();
 	}
-
 
 }
 
@@ -12864,6 +12922,7 @@ class ModelContext::ModelDataCreator::DataTransducer
 #include "../../../../../Buffer/BufferDefinition/AllBuffersInclude.h"
 #include "../../../../../../../../Assets/Shared/StructuredBuffer.h"
 
+
 using namespace StructuredBufferDataDefinition;
 using namespace ProjectConfig::Render;
 
@@ -12899,7 +12958,12 @@ void ModelContext::ModelDataCreator::TransformMatrixContainerBufferCreator::Crea
 	
 	//そのコンスタントバッファを生成し、データを入力する
 	///定数バッファはダブルバッファなので、それぞれに別々のsrvHeapIndexを入力する
-	auto cBufferID_cBuffer = cBufferCreator_->Create(bufferName, UINT(sizeof(SRVHeapIndex)), 1);
+	//バインドしているスロットはジェーソンファイルから読み込む
+	auto const srcJsonFileKey = "WorldConstantBuffers";
+	int const dstBindSlot = Miyajison::Get()->LoadData<int>(srcJsonFileKey, { bufferName,"BindSlot" });
+
+
+	auto cBufferID_cBuffer = cBufferCreator_->Create(bufferName, UINT(sizeof(SRVHeapIndex)), dstBindSlot);
 	for (int i = 0;i < (int)ProjectConfig::Render::NumBuffer::kDoubleBuffer;++i)
 	{
 		auto* mappedPtr = cBufferID_cBuffer.second->GetMappedPtr<SRVHeapIndex>(i);
@@ -13947,15 +14011,19 @@ ModelContext::ModelContainer::~ModelContainer()
 
 }
 
-void ModelContext::ModelContainer::Add(AddLicence addLicence_, std::unique_ptr<Model>&& model_)
+void ModelContext::ModelContainer::Add(Local_AddLicence addLicence_, std::unique_ptr<Model>&& model_)
 {
 	const auto& model =  container.emplace_back(std::move(model_));
 	Logger::Log("Add: " + model->WatchName(), fileName);
 }
 
-const std::vector<std::unique_ptr<Model>>& ModelContext::ModelContainer::Access()const
+ModelContextCmds::WatchModelContainer ModelContext::ModelContainer::WatchDataCmd(ProviderKey key_)const
 {
-	return container;
+	return [this]()
+	{
+		return &this->container;
+	};
+
 }
 
 
@@ -13965,22 +14033,23 @@ const std::vector<std::unique_ptr<Model>>& ModelContext::ModelContainer::Access(
 ========================================
 #pragma once
 #include "../ModelContext.h"
-
-class Model;
+#include "../ModelContextDiplomat/ModelContextCmdProvider/ModelContextCmds.h"
 
 
 class ModelContext::ModelContainer
 {
 public:
 
-	struct AddLicence;
+	struct Local_AddLicence;
 
 	ModelContainer(NexusFieldProof proof_);
 	~ModelContainer();
 
+	void Add(Local_AddLicence addLicence_,std::unique_ptr<Model>&& model_);
 
-	void Add(AddLicence addLicence_,std::unique_ptr<Model>&& model_);
-	const std::vector<std::unique_ptr<Model>>& Access()const;
+
+
+	ModelContextCmds::WatchModelContainer WatchDataCmd(ProviderKey key_)const;
 
 private:
 
@@ -13988,12 +14057,12 @@ private:
 
 };
 
-struct ModelContext::ModelContainer::AddLicence
+struct ModelContext::ModelContainer::Local_AddLicence
 {
 private:
 
 	friend class ModelContext::ModelCreator;
-	explicit AddLicence() = default;
+	explicit Local_AddLicence() = default;
 };
 
 
@@ -14061,6 +14130,113 @@ private:
 };
 
 
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Model\ModelContextDiplomat\ModelContextCmdProvider\ModelContextCmdProvider.cpp ===
+========================================
+#include "PreCompileHeader.h"
+#include "ModelContextCmdProvider.h"
+#include "../../ModelContainer/ModelContainer.h"
+#include "ModelContextCmdProviderLicences.h"
+
+ModelContext::CommandProvider::CommandProvider(NexusFieldProof proof_, ModelContainer* modelContainer_)
+	:modelContainer(modelContainer_)
+{
+
+}
+
+
+template<>
+ModelContextCmds::WatchModelContainer ModelContext::CommandProvider::Provide<ModelContextCmds::WatchModelContainer>
+(typename LicenceTypeTraits<ModelContextCmds::WatchModelContainer>::Type type_)
+{
+	return modelContainer->WatchDataCmd(ProviderKey{});
+}
+
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Model\ModelContextDiplomat\ModelContextCmdProvider\ModelContextCmdProvider.h ===
+========================================
+#pragma once
+#include "../../ModelContext.h"
+#include "ModelContextCmds.h"
+
+
+class ModelContext::CommandProvider
+{
+	template<typename CmdType>
+	struct LicenceTypeTraits;
+	
+	struct WatchModelContainerLicence;
+
+public:
+
+	template<typename CmdType>
+	using LicenceType = typename LicenceTypeTraits<CmdType>::Type;
+
+	CommandProvider(NexusFieldProof proof_, ModelContainer* modelContainer_);
+
+	
+	template<typename CmdType>
+	CmdType Provide(typename LicenceTypeTraits<CmdType>::Type type_);
+
+
+private:
+
+	ModelContainer* modelContainer;
+
+};
+
+template<>
+struct ModelContext::CommandProvider::LicenceTypeTraits<ModelContextCmds::WatchModelContainer>
+{
+	using Type = WatchModelContainerLicence;
+};
+
+
+
+template<>
+ModelContextCmds::WatchModelContainer ModelContext::CommandProvider::Provide<ModelContextCmds::WatchModelContainer>
+(typename LicenceTypeTraits<ModelContextCmds::WatchModelContainer>::Type type_);
+
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Model\ModelContextDiplomat\ModelContextCmdProvider\ModelContextCmdProviderLicences.h ===
+========================================
+#pragma once
+#include "ModelContextCmdProvider.h"
+
+struct ModelContext::CommandProvider::WatchModelContainerLicence
+{
+private:
+
+	explicit WatchModelContainerLicence() = default;
+};
+
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Model\ModelContextDiplomat\ModelContextCmdProvider\ModelContextCmds.h ===
+========================================
+#pragma once
+
+class Model;
+
+namespace ModelContextCmds
+{
+	using WatchModelContainer = std::function<const std::vector<std::unique_ptr<Model>>*()>;
+
+}
 
 
 
@@ -14319,7 +14495,7 @@ public:
 	template<BufferIDType idType>
 	BufferUniqueID Export(BufferUniqueID uniqueID_)
 	{
-		return bufferIDs[(idType)] = uniqueID_;
+		return bufferIDs[(idType)];
 	}
 
 
@@ -16838,7 +17014,7 @@ std::unordered_map<std::string, std::vector<std::wstring>> ShaderContext::Shader
     allShaderFileNames.insert(allShaderFileNames.end(), msShaderFileNames.begin(), msShaderFileNames.end());
     allShaderFileNames.insert(allShaderFileNames.end(), psShaderFileNames.begin(), psShaderFileNames.end());
 
-    auto* miyaJison = MiyaJison::Get();
+    auto* Miyajison = Miyajison::Get();
 
     //シェーダーのセッティングが記述されているジェーソンファイルのキー
     auto const srcJsonFileKey = "ShaderSettings";
@@ -16849,7 +17025,7 @@ std::unordered_map<std::string, std::vector<std::wstring>> ShaderContext::Shader
         auto const groupName = key;
 
         std::vector<std::string> args =
-            miyaJison->LoadData<std::vector<std::string>>(srcJsonFileKey, { groupName ,"Args" });
+            Miyajison->LoadData<std::vector<std::string>>(srcJsonFileKey, { groupName ,"Args" });
 
         argsMap[key] = args;
     }
@@ -17782,29 +17958,29 @@ struct Vector4
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\MiddleLayer\MiyaJison\MiyaJison.cpp ===
 ========================================
 #include "PreCompileHeader.h"
-#include "MiyaJison.h"
+#include "Miyajison.h"
 #include "JsonDataLibrary/JsonDataLibrary.h"
 #include "RegistryLoader/RegistryLoader.h"
 #include "JsonDataLoader/JsonDataLoader.h"
 
-MiyaJison::MiyaJison()
+Miyajison::Miyajison()
 {
     jsonDataLibrary.reset(new DataLibrary());
-    Logger::Log("Instantiate: jsonDataLibrary", "MiyaJison.cpp");
+    Logger::Log("Instantiate: jsonDataLibrary", "Miyajison.cpp");
 
     LoadAllJsonFiles();
 }
 
-MiyaJison* MiyaJison::Get()
+Miyajison* Miyajison::Get()
 {
-    static MiyaJison miyaJison;
+    static Miyajison Miyajison;
 
-    return &miyaJison;
+    return &Miyajison;
 }
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-void MiyaJison::LoadAllJsonFiles()
+void Miyajison::LoadAllJsonFiles()
 {
     std::unordered_map<std::string, std::string> fileName_Path =
         RegistryLoader::Load<RegistryLoader::RegistryFileType::kJsonFiles>();
@@ -17819,7 +17995,7 @@ void MiyaJison::LoadAllJsonFiles()
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-nlohmann::json MiyaJison::LoadJsonFile(std::string filePath_)
+nlohmann::json Miyajison::LoadJsonFile(std::string filePath_)
 {
     std::ifstream file(filePath_);
 
@@ -17838,7 +18014,7 @@ nlohmann::json MiyaJison::LoadJsonFile(std::string filePath_)
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-const nlohmann::json& MiyaJison::PullJsonData(std::string fileName_)
+const nlohmann::json& Miyajison::PullJsonData(std::string fileName_)
 {
     return jsonDataLibrary->Export(DataLibrary::HandleLicence{}, fileName_);
 }
@@ -17847,7 +18023,7 @@ const nlohmann::json& MiyaJison::PullJsonData(std::string fileName_)
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 template<>
-int MiyaJison::LoadData(std::string fileName_, Group_Value group_value_)
+int Miyajison::LoadData(std::string fileName_, Group_Value group_value_)
 {
     const nlohmann::json& jsonData = PullJsonData(fileName_);
 
@@ -17855,7 +18031,7 @@ int MiyaJison::LoadData(std::string fileName_, Group_Value group_value_)
 }
 
 template<>
-double MiyaJison::LoadData(std::string fileName_, Group_Value group_value_)
+double Miyajison::LoadData(std::string fileName_, Group_Value group_value_)
 {
     const nlohmann::json& jsonData = PullJsonData(fileName_);
 
@@ -17864,7 +18040,7 @@ double MiyaJison::LoadData(std::string fileName_, Group_Value group_value_)
 }
 
 template<>
-bool MiyaJison::LoadData(std::string fileName_, Group_Value group_value_)
+bool Miyajison::LoadData(std::string fileName_, Group_Value group_value_)
 {
     const nlohmann::json& jsonData = PullJsonData(fileName_);
 
@@ -17873,7 +18049,7 @@ bool MiyaJison::LoadData(std::string fileName_, Group_Value group_value_)
 }
 
 template<>
-std::string MiyaJison::LoadData(std::string fileName_, Group_Value group_value_)
+std::string Miyajison::LoadData(std::string fileName_, Group_Value group_value_)
 {
     const nlohmann::json& jsonData = PullJsonData(fileName_);
 
@@ -17882,7 +18058,7 @@ std::string MiyaJison::LoadData(std::string fileName_, Group_Value group_value_)
 }
 
 template<>
-std::vector<int> MiyaJison::LoadData(std::string fileName_, Group_Value group_value_)
+std::vector<int> Miyajison::LoadData(std::string fileName_, Group_Value group_value_)
 {
     const nlohmann::json& jsonData = PullJsonData(fileName_);
 
@@ -17890,7 +18066,7 @@ std::vector<int> MiyaJison::LoadData(std::string fileName_, Group_Value group_va
 }
 
 template<>
-std::vector<double> MiyaJison::LoadData(std::string fileName_, Group_Value group_value_)
+std::vector<double> Miyajison::LoadData(std::string fileName_, Group_Value group_value_)
 {
     const nlohmann::json& jsonData = PullJsonData(fileName_);
 
@@ -17898,7 +18074,7 @@ std::vector<double> MiyaJison::LoadData(std::string fileName_, Group_Value group
 }
 
 template<>
-std::vector<bool> MiyaJison::LoadData(std::string fileName_, Group_Value group_value_)
+std::vector<bool> Miyajison::LoadData(std::string fileName_, Group_Value group_value_)
 {
     const nlohmann::json& jsonData = PullJsonData(fileName_);
 
@@ -17906,7 +18082,7 @@ std::vector<bool> MiyaJison::LoadData(std::string fileName_, Group_Value group_v
 }
 
 template<>
-std::vector<std::string> MiyaJison::LoadData(std::string fileName_, Group_Value group_value_)
+std::vector<std::string> Miyajison::LoadData(std::string fileName_, Group_Value group_value_)
 {
     const nlohmann::json& jsonData = PullJsonData(fileName_);
 
@@ -17927,7 +18103,7 @@ std::vector<std::string> MiyaJison::LoadData(std::string fileName_, Group_Value 
 #pragma once
 #include "../../../External/nlohmann/json.hpp"
 
-class MiyaJison
+class Miyajison
 {
 	class DataLoader;
 	class DataLibrary;
@@ -17937,13 +18113,13 @@ public:
 
 	using Group_Value = std::array<std::string, 2>;
 
-	static MiyaJison* Get();
+	static Miyajison* Get();
 
 
-	MiyaJison(const MiyaJison&) = delete;
-	MiyaJison& operator=(const MiyaJison&) = delete;
-	MiyaJison(MiyaJison&&) = delete;
-	MiyaJison& operator=(MiyaJison&&) = delete;
+	Miyajison(const Miyajison&) = delete;
+	Miyajison& operator=(const Miyajison&) = delete;
+	Miyajison(Miyajison&&) = delete;
+	Miyajison& operator=(Miyajison&&) = delete;
 
 	///ジェーソンファイル名(「.json」省略！！！！)、グループ名とキーを入力し目的のデータを引っ張る
 	///ファイル名はすべてAssets/Registryにあるからそこを見るべし
@@ -17953,7 +18129,7 @@ public:
 
 private:
 
-	MiyaJison();
+	Miyajison();
 
 	std::unique_ptr<DataLibrary> jsonDataLibrary;
 
@@ -17969,28 +18145,28 @@ private:
 };
 
 template<>
-int MiyaJison::LoadData(std::string fileName_, Group_Value group_value_);
+int Miyajison::LoadData(std::string fileName_, Group_Value group_value_);
 
 template<>
-double MiyaJison::LoadData(std::string fileName_, Group_Value group_value_);
+double Miyajison::LoadData(std::string fileName_, Group_Value group_value_);
 
 template<>
-bool MiyaJison::LoadData(std::string fileName_, Group_Value group_value_);
+bool Miyajison::LoadData(std::string fileName_, Group_Value group_value_);
 
 template<>
-std::string MiyaJison::LoadData(std::string fileName_, Group_Value group_value_);
+std::string Miyajison::LoadData(std::string fileName_, Group_Value group_value_);
 
 template<>
-std::vector<int> MiyaJison::LoadData(std::string fileName_, Group_Value group_value_);
+std::vector<int> Miyajison::LoadData(std::string fileName_, Group_Value group_value_);
 
 template<>
-std::vector<double> MiyaJison::LoadData(std::string fileName_, Group_Value group_value_);
+std::vector<double> Miyajison::LoadData(std::string fileName_, Group_Value group_value_);
 
 template<>
-std::vector<bool> MiyaJison::LoadData(std::string fileName_, Group_Value group_value_);
+std::vector<bool> Miyajison::LoadData(std::string fileName_, Group_Value group_value_);
 
 template<>
-std::vector<std::string> MiyaJison::LoadData(std::string fileName_, Group_Value group_value_);
+std::vector<std::string> Miyajison::LoadData(std::string fileName_, Group_Value group_value_);
 
 
 
@@ -18008,12 +18184,12 @@ std::vector<std::string> MiyaJison::LoadData(std::string fileName_, Group_Value 
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\MiddleLayer\MiyaJison\JsonDataChecker\JsonDataChecker.h ===
 ========================================
 #pragma once
-#include "../MiyaJison.h"
+#include "../Miyajison.h"
 
 
-class MiyaJison::DataChecker
+class Miyajison::DataChecker
 {
-	friend class MiyaJison;
+	friend class Miyajison;
 
 	///ProjectConfigのテータチェックフラグがオンの時に作動する
 	template<typename DataType>
@@ -18052,19 +18228,19 @@ class MiyaJison::DataChecker
 
 
 
-void MiyaJison::DataLibrary::Import(HandleLicence licence_, std::string fileName_, nlohmann::json jsonData_)
+void Miyajison::DataLibrary::Import(HandleLicence licence_, std::string fileName_, nlohmann::json jsonData_)
 {
 	lib[fileName_] = jsonData_;
 	Logger::Log("Import: " + fileName_, "JsonDataLibrary.h");
 }
 
 
-const nlohmann::json& MiyaJison::DataLibrary::Export(HandleLicence licence_, std::string fileName_)const
+const nlohmann::json& Miyajison::DataLibrary::Export(HandleLicence licence_, std::string fileName_)const
 {
 	ErrorMessageOutput::Assert::DetectError
 	(
 		lib.find(fileName_) != lib.end(),
-		"んなファイル無いんだわ",
+		fileName_ + "\nんなファイル無いんだわ",
 		"JsonDataLibrary.cpp"
 	);
 
@@ -18078,10 +18254,10 @@ const nlohmann::json& MiyaJison::DataLibrary::Export(HandleLicence licence_, std
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\MiddleLayer\MiyaJison\JsonDataLibrary\JsonDataLibrary.h ===
 ========================================
 #pragma once
-#include "../MiyaJison.h"
+#include "../Miyajison.h"
 
 
-class MiyaJison::DataLibrary
+class Miyajison::DataLibrary
 {
 public:
 
@@ -18097,11 +18273,11 @@ private:
 };
 
 
-struct MiyaJison::DataLibrary::HandleLicence
+struct Miyajison::DataLibrary::HandleLicence
 {
 private:
 
-	friend class MiyaJison;
+	friend class Miyajison;
 
 	explicit HandleLicence() = default;
 };
@@ -18124,18 +18300,18 @@ private:
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\MiddleLayer\MiyaJison\JsonDataLoader\JsonDataLoader.h ===
 ========================================
 #pragma once
-#include "../MiyaJison.h"
+#include "../Miyajison.h"
 #include "../JsonDataChecker/JsonDataChecker.h"
 
-class MiyaJison::DataLoader
+class Miyajison::DataLoader
 {
-	friend class MiyaJison;
+	friend class Miyajison;
 
 	template<typename DataType>
 	static DataType Load(const nlohmann::json& jsonData, Group_Value group_value_)
 	{
 		//データ型チェック
-		MiyaJison::DataChecker::Check<DataType>();
+		Miyajison::DataChecker::Check<DataType>();
 
 		auto data = jsonData[group_value_[0]][group_value_[1]];
 		auto value = data.get<DataType>();
@@ -18680,7 +18856,7 @@ template<>
 void Nexus::Init<Nexus::InitSequence::kLoadAllJsonFiles>()
 {
 	//シングルトンだから一度読んでコンストラクタが通ればよし
-	MiyaJison::Get();
+	Miyajison::Get();
 
 }
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -19034,7 +19210,7 @@ void Nexus::Run()
 //プロジェクト設定
 #include "../ProjectConfig.h"
 //ジェーソン読み書き
-#include "../MiddleLayer/MiyaJison/MiyaJison.h"
+#include "../MiddleLayer/Miyajison/Miyajison.h"
 
 
 

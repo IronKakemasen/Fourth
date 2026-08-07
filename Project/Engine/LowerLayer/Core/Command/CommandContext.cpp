@@ -56,7 +56,7 @@ CommandContext::CommandContext
 		(
 			proof_,
 			std::make_unique<CommandProvider>(proof_, resourceUploader.get()),
-			std::make_unique<ToolLender>(proof_, commandQueue.Get(),resourceUploader.get()),
+			std::make_unique<ToolLender>(proof_, commandQueue.Get()),
 			std::make_unique<ExecutionAgent>(proof_, resourceUploader.get())
 		)
 	);

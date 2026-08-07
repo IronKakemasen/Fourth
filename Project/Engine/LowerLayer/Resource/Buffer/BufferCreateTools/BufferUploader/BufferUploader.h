@@ -2,7 +2,7 @@
 #include "../../BufferContext.h"
 
 //外部
-#include "../../../../Core/Command/ResourceUploader/ResourceUploader.h"
+#include "../../../../Core/Command/CommandContextDiplomat/CommandContextCmdProvider/CommandContextCmds.h"
 
 
 class GPUBufferBehavior;
@@ -86,9 +86,9 @@ private:
 	BufferContext::ResourceCreator* resourceCreator;
 	BufferContext::BufferDispatcher* dispatcher;
 	//リソースをアップロードするコマンド
-	CommandContext::ResourceUploader::UploadCommand uploadCommand;
+	CommandContextCmds::UploadCommand uploadCommand;
 	//バリアを張るためのコマンド
-	CommandContext::ResourceUploader::PitchBarrierCommand pitchBarriersCommand;
+	CommandContextCmds::PitchBarrierCommand pitchBarriersCommand;
 
 	//中間リソースのコンテナ
 	std::vector<Microsoft::WRL::ComPtr<ID3D12Resource>> intermediateResources;
