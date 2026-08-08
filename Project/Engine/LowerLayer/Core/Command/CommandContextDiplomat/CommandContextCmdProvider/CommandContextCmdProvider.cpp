@@ -11,14 +11,14 @@ CommandContext::CommandProvider::CommandProvider(NexusFieldProof proof_, Command
 
 template<>
 CommandContextCmds::UploadCommand CommandContext::CommandProvider::Provide<CommandContextCmds::UploadCommand>
-(typename LicenceTypeTraits<CommandContextCmds::UploadCommand>::Type type_)
+(typename LicenceTypeTraits<CommandContextCmds::UploadCommand>::Type licence_)
 {
 	return resourceUploader->ProvideUploadCommand(ProviderKey{});
 }
 
 template<>
 CommandContextCmds::PitchBarrierCommand CommandContext::CommandProvider::Provide<CommandContextCmds::PitchBarrierCommand>
-(typename LicenceTypeTraits<CommandContextCmds::PitchBarrierCommand>::Type type_)
+(typename LicenceTypeTraits<CommandContextCmds::PitchBarrierCommand>::Type licence_)
 {
 	return resourceUploader->ProvideBarrierPitchCommand(ProviderKey{});
 }

@@ -1,6 +1,6 @@
 #pragma once
 #include "../../RootSignatureContext.h"
-#include "RootSignatureCmds.h"
+#include "../../RootSignatureCmds.h"
 
 class RootSignatureContext::CmdProvider
 {
@@ -18,7 +18,7 @@ public:
 
 	///コマンド提供
 	template<typename CmdType>
-	CmdType Provide(typename LicenceTypeTraits<CmdType>::Type type_);
+	CmdType Provide(typename LicenceTypeTraits<CmdType>::Type licence_);
 
 
 private:
@@ -36,4 +36,4 @@ struct RootSignatureContext::CmdProvider::LicenceTypeTraits<RootSignatureCmds::C
 
 template<>
 RootSignatureCmds::CreateGraphicsRootSigCmd RootSignatureContext::CmdProvider::Provide<RootSignatureCmds::CreateGraphicsRootSigCmd>
-(typename LicenceTypeTraits<RootSignatureCmds::CreateGraphicsRootSigCmd>::Type type_);
+(typename LicenceTypeTraits<RootSignatureCmds::CreateGraphicsRootSigCmd>::Type licence_);

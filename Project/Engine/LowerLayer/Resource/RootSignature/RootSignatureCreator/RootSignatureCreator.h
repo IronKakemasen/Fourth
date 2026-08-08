@@ -1,6 +1,6 @@
 #pragma once
 #include "../RootSignatureContext.h"
-#include "../RootSignatureContextDiplomat/RootSignatureCmdProvider/RootSignatureCmds.h"
+#include "../RootSignatureCmds.h"
 
 class RootSignatureContext::RootSignatureCreator
 {

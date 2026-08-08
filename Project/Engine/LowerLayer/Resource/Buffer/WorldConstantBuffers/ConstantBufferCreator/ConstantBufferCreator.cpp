@@ -20,15 +20,14 @@ BufferContext::ConstantBufferCreator::ConstantBufferCreator
 
 }
 
-[[nodiscard]] std::pair<BufferUniqueID, ConstantBuffer*> BufferContext::ConstantBufferCreator::Create
-(const std::string& name_, UINT const realDataSize_, const uint8_t bindSlot_)
+std::pair<BufferUniqueID, ConstantBuffer*> BufferContext::ConstantBufferCreator::Create
+(std::string name_, UINT const realDataSize_, const uint8_t bindSlot_)
 {
 
 	ConstantBufferDescription desc(realDataSize_);
 
 	//バッファユニークIDとコンスタントバッファ
 	auto id_buffer = creator->CreateWithBuffer(desc, name_);
-
 
 	worldConstantBuffers->Import
 	(
@@ -43,5 +42,14 @@ BufferContext::ConstantBufferCreator::ConstantBufferCreator
 
 	return id_buffer;
 }
+
+BufferContextCmds::CreateCBufferCmd BufferContext::ConstantBufferCreator::ProvideCreateCBufferCmd(ProviderKey key_)
+{
+	return [this](std::string name_, UINT const realDataSize_, const uint8_t bindSlot_)
+	{
+		return Create(name_, realDataSize_, bindSlot_);
+	};
+}
+
 
 

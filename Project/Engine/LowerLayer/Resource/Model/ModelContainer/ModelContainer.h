@@ -1,6 +1,6 @@
 #pragma once
 #include "../ModelContext.h"
-#include "../ModelContextDiplomat/ModelContextCmdProvider/ModelContextCmds.h"
+#include "../ModelContextCmds.h"
 
 
 class ModelContext::ModelContainer

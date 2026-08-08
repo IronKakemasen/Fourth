@@ -1,6 +1,6 @@
 #pragma once
 #include "../CommandContext.h"
-#include "../CommandContextDiplomat/CommandContextCmdProvider/CommandContextCmds.h"
+#include "../CommandContextCmds.h"
 
 class CommandContext::ResourceUploader
 {

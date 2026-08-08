@@ -1,5 +1,5 @@
 #pragma once
-#include "CommandContextCmds.h"
+#include "../../CommandContextCmds.h"
 #include "../../CommandContext.h"
 
 class CommandContext::CommandProvider
@@ -20,7 +20,7 @@ public:
 
 	///コマンド提供
 	template<typename CommandType>
-	CommandType Provide(typename LicenceTypeTraits<CommandType>::Type type_);
+	CommandType Provide(typename LicenceTypeTraits<CommandType>::Type licence_);
 
 private:
 
@@ -44,9 +44,9 @@ struct CommandContext::CommandProvider::LicenceTypeTraits<CommandContextCmds::Pi
 
 template<>
 CommandContextCmds::UploadCommand CommandContext::CommandProvider::Provide<CommandContextCmds::UploadCommand>
-(typename LicenceTypeTraits<CommandContextCmds::UploadCommand>::Type type_);
+(typename LicenceTypeTraits<CommandContextCmds::UploadCommand>::Type licence_);
 
 template<>
 CommandContextCmds::PitchBarrierCommand CommandContext::CommandProvider::Provide<CommandContextCmds::PitchBarrierCommand>
-(typename LicenceTypeTraits<CommandContextCmds::PitchBarrierCommand>::Type type_);
+(typename LicenceTypeTraits<CommandContextCmds::PitchBarrierCommand>::Type licence_);
 

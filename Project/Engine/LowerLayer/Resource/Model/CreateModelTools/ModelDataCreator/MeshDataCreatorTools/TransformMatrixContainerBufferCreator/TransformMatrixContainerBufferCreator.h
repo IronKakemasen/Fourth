@@ -1,5 +1,6 @@
 #pragma once
 #include "../../ModelDataCreator.h"
+#include "../../../../../Buffer/BufferContextCmds.h"
 
 class ModelContext::ModelDataCreator::TransformMatrixContainerBufferCreator
 {
@@ -8,7 +9,7 @@ class ModelContext::ModelDataCreator::TransformMatrixContainerBufferCreator
 	static void Create
 	(
 		BufferContext::BufferCreator* bufferCreator_,
-		BufferContext::ConstantBufferCreator* cBufferCreator_,
+		BufferContextCmds::CreateCBufferCmd createCBufferCmd_,
 		ModelDataBatcher* modelDataBatcher_
 	);
 

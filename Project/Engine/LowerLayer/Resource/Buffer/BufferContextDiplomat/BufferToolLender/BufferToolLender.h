@@ -17,7 +17,6 @@ class BufferContext::ToolLender
 		BufferUploader*, 
 		BufferDispatcher*,
 		BufferCollector*,
-		ConstantBufferCreator*,
 		WorldConstantBuffers*
 	> tools;
 
@@ -35,7 +34,6 @@ public:
 		BufferUploader* uploader_,
 		BufferDispatcher* dispatcher_,
 		BufferCollector* collector_,
-		ConstantBufferCreator* cBufferCreator_,
 		WorldConstantBuffers* worldConstantBuffers_
 	);
 
@@ -71,12 +69,6 @@ struct BufferContext::ToolLender::LicenceTypeTraits<BufferContext::BufferDispatc
 
 template<>
 struct BufferContext::ToolLender::LicenceTypeTraits<BufferContext::BufferCollector>
-{
-	using Type = BasicBufferManagementLicence;
-};
-
-template<>
-struct BufferContext::ToolLender::LicenceTypeTraits<BufferContext::ConstantBufferCreator>
 {
 	using Type = BasicBufferManagementLicence;
 };

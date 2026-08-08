@@ -44,7 +44,8 @@ public:
 	struct NexusFieldProof;
 	//エージェント認証キー
 	struct AgentKey;
-
+	//コマンド提供者認証キー
+	struct ProviderKey;
 
 	//BufferAssemblerとBufferCollectorをつかってバッファを作成する
 	class BufferCreator;
@@ -58,6 +59,9 @@ public:
 	class BufferUploader;
 	//ツールの貸し出しを行う
 	class ToolLender;
+	//コマンドの提供を行う
+	class CmdProvider;
+
 	//生成したバッファを回収し分別する
 	class BufferCollector;
 	//代行者
@@ -120,6 +124,15 @@ private:
 	friend class ExecutionAgent;
 	explicit AgentKey() = default;
 };
+
+struct BufferContext::ProviderKey
+{
+private:
+
+	friend class CmdProvider;
+	explicit ProviderKey() = default;
+};
+
 
 
 

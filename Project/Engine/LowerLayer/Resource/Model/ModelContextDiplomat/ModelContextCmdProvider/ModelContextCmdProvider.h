@@ -1,6 +1,6 @@
 #pragma once
 #include "../../ModelContext.h"
-#include "ModelContextCmds.h"
+#include "../../ModelContextCmds.h"
 
 
 class ModelContext::CommandProvider
@@ -17,9 +17,9 @@ public:
 
 	CommandProvider(NexusFieldProof proof_, ModelContainer* modelContainer_);
 
-	
+	///コマンド提供
 	template<typename CmdType>
-	CmdType Provide(typename LicenceTypeTraits<CmdType>::Type type_);
+	CmdType Provide(typename LicenceTypeTraits<CmdType>::Type licence_);
 
 
 private:
@@ -38,5 +38,5 @@ struct ModelContext::CommandProvider::LicenceTypeTraits<ModelContextCmds::WatchM
 
 template<>
 ModelContextCmds::WatchModelContainer ModelContext::CommandProvider::Provide<ModelContextCmds::WatchModelContainer>
-(typename LicenceTypeTraits<ModelContextCmds::WatchModelContainer>::Type type_);
+(typename LicenceTypeTraits<ModelContextCmds::WatchModelContainer>::Type licence_);
 

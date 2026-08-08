@@ -10,7 +10,9 @@ public:
 	(
 		BufferContext::NexusFieldProof proof_,
 		std::unique_ptr<BufferContext::ToolLender>&& toolLender_,
-		std::unique_ptr<BufferContext::ExecutionAgent>&& executionAgent_
+		std::unique_ptr<BufferContext::ExecutionAgent>&& executionAgent_,
+		std::unique_ptr<BufferContext::CmdProvider>&& cmdProvider_
+
 	);
 
 	template<typename ToolType>
@@ -21,7 +23,12 @@ public:
 
 private:
 	//提供するツールのテーブル
-	std::tuple<std::unique_ptr<BufferContext::ToolLender>, std::unique_ptr<BufferContext::ExecutionAgent>> tools;
+	std::tuple
+	<
+		std::unique_ptr<BufferContext::ToolLender>,
+		std::unique_ptr<BufferContext::ExecutionAgent>,
+		std::unique_ptr<BufferContext::CmdProvider>
+	> tools;
 
 };
 

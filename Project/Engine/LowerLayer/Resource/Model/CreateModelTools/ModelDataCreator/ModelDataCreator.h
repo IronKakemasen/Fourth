@@ -13,8 +13,7 @@ class ModelContext::ModelDataCreator
 		BufferContext::BufferCreator*,
 		BufferContext::BufferCollector*,
 		BufferContext::BufferUploader*,
-		BufferContext::BufferDispatcher*,
-		BufferContext::ConstantBufferCreator* 
+		BufferContext::BufferDispatcher*
 	>;
 
 protected:

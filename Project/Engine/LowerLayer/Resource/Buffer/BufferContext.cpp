@@ -6,12 +6,13 @@
 //バッファをアップロード
 #include "BufferCreateTools/BufferUploader/BufferUploader.h"
 //各種ツールを外部へ貸し出します
-#include "BufferContextDiplomat/BufferToolLender/BufferToolLender.h"
 #include "BufferContextDiplomat/BufferContextDiplomat.h"
+#include "BufferContextDiplomat/BufferToolLender/BufferToolLender.h"
+#include "BufferContextDiplomat/BufferContextCmdProvider/BufferContextCmdProvider.h"
+#include "BufferContextDiplomat/BufferContextExecutionAgent/BufferContextExecutionAgent.h"
 //ランタイム処理ツール
 #include "BufferRuntime/BufferDispatcher/BufferDispatcher.h"
 #include "BufferRuntime/BufferInfoExtractor/BufferInfoExtractor.h"
-#include "BufferContextDiplomat/BufferContextExecutionAgent/BufferContextExecutionAgent.h"
 //ワールドコンスタントバッファの生成
 #include "WorldConstantBuffers/ConstantBufferCreator/ConstantBufferCreator.h"
 //から仮想GPUアドレスの保持
@@ -79,16 +80,17 @@ BufferContext::BufferContext
 				bufferUploader.get(),
 				bufferDispatcher.get(),
 				bufferCollector.get(),
-				constantBufferCreator.get(),
 				worldConstantBuffers.get()
 			),
-			std::make_unique<ExecutionAgent>(proof_, this, bufferUploader.get(),worldConstantBuffers.get())
+			std::make_unique<ExecutionAgent>(proof_, this, bufferUploader.get(),worldConstantBuffers.get()),
+			std::make_unique<CmdProvider>(proof_, constantBufferCreator.get())
 		)
 	);
 
 	Logger::Log("Instantiate: ToolLender", fileName);
 	Logger::Log("Instantiate: ExecutionAgent", fileName);
 	Logger::Log("Instantiate: BufferContextDiplomat", fileName);
+	Logger::Log("Instantiate: CmdProvider", fileName);
 
 
 

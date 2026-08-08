@@ -13,11 +13,8 @@
 #include "MeshDataCreatorTools/MeshDataSRVHeapIndexGroupContainerBufferCreator/MeshDataSRVHeapIndexGroupContainerBufferCreator.h"
 #include "MeshDataCreatorTools/TransformMatrixContainerBufferCreator/TransformMatrixContainerBufferCreator.h"
 
-
 //外部
-#include "../../../Buffer/BufferContextDiplomat/BufferContextDiplomat.h"
-#include "../../../Buffer/BufferContextDiplomat/BufferToolLender/BufferToolLender.h"
-#include "../../../Buffer/BufferContextDiplomat/BufferToolLender/BufferToolLenderLicence.h"
+#include "../../../Buffer/BufferContextDiplomat/BufferDiplomatIncludes.h"
 
 #include "RegistryLoader/RegistryLoader.h"
 
@@ -87,8 +84,14 @@ void ModelContext::ModelDataCreator::CreateAllModelData
     std::unordered_map<std::string, ModelDataAggregate*> tmpModelDataLib = LoadAllModelFiles();
 
     //バッファコンテキストのツールレンダーから各種ツールを借りる
-    auto [bufferCreator, bufferCollector, bufferUploader,bufferDispatcher, cBufferCreator] =
+    auto [bufferCreator, bufferCollector, bufferUploader,bufferDispatcher] =
         BorrowBufferContextTools(bufferContextDiplomat_);
+
+    //定数バッファ生成コマンドを提供してもらう
+    BufferContext::CmdProvider::LicenceType<BufferContextCmds::CreateCBufferCmd> licence;
+    auto createCBufferCmd = bufferContextDiplomat_->Access<BufferContext::CmdProvider>()->
+        Provide<BufferContextCmds::CreateCBufferCmd>(licence);
+
 
     for (const auto& [key, value] : tmpModelDataLib)
     {
@@ -131,7 +134,7 @@ void ModelContext::ModelDataCreator::CreateAllModelData
         tmpMeshDataSRVHeapIndexGroupContainer,
         bufferCreator,
         bufferUploader,
-        cBufferCreator
+        createCBufferCmd
     );
 
 
@@ -141,7 +144,7 @@ void ModelContext::ModelDataCreator::CreateAllModelData
     TransformMatrixContainerBufferCreator::Create
     (
         bufferCreator,
-        cBufferCreator,
+        createCBufferCmd,
         modelDataBatcher_
 
     );
@@ -188,8 +191,6 @@ ModelContext::ModelDataCreator::BufferContextTools ModelContext::ModelDataCreato
     auto* bufferCollector = bufferToolLender->Lend<BufferContext::BufferCollector>(licence);
     auto* bufferUploader = bufferToolLender->Lend<BufferContext::BufferUploader>(licence);
     auto* bufferDispatcher = bufferToolLender->Lend<BufferContext::BufferDispatcher>(licence);
-    auto* cBufferCreator = bufferToolLender->Lend<BufferContext::ConstantBufferCreator>(licence);
 
-
-    return std::make_tuple(bufferCreator, bufferCollector, bufferUploader, bufferDispatcher, cBufferCreator);
+    return std::make_tuple(bufferCreator, bufferCollector, bufferUploader, bufferDispatcher);
 }
