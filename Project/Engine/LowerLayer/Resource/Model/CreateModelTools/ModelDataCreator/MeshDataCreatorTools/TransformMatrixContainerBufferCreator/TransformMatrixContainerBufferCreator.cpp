@@ -4,6 +4,7 @@
 
 //外部
 #include "../../../../../Buffer/BufferContextToolsInclude.h"
+
 //ほんとはuploadStructuredBufferDescriptionだけでいいんだけど、文字列制限なのかインクルードできないので
 #include "../../../../../Buffer/BufferDefinition/AllBufferDescsInclude.h"
 #include "../../../../../Buffer/BufferDefinition/AllBuffersInclude.h"
@@ -16,7 +17,7 @@ using namespace ProjectConfig::Render;
 void ModelContext::ModelDataCreator::TransformMatrixContainerBufferCreator::Create
 (
 	BufferContext::BufferCreator* bufferCreator_,
-	BufferContext::ConstantBufferCreator* cBufferCreator_,
+	BufferContextCmds::CreateCBufferCmd createCBufferCmd_,
 	ModelDataBatcher* modelDataBatcher_
 )
 {
@@ -45,12 +46,15 @@ void ModelContext::ModelDataCreator::TransformMatrixContainerBufferCreator::Crea
 	
 	//そのコンスタントバッファを生成し、データを入力する
 	///定数バッファはダブルバッファなので、それぞれに別々のsrvHeapIndexを入力する
+	
 	//バインドしているスロットはジェーソンファイルから読み込む
 	auto const srcJsonFileKey = "WorldConstantBuffers";
+	
+	//バインドスロットを取得
 	int const dstBindSlot = Miyajison::Get()->LoadData<int>(srcJsonFileKey, { bufferName,"BindSlot" });
 
-
-	auto cBufferID_cBuffer = cBufferCreator_->Create(bufferName, UINT(sizeof(SRVHeapIndex)), dstBindSlot);
+	//定数バッファ生成コマンドで生成する
+	auto cBufferID_cBuffer = createCBufferCmd_(bufferName, UINT(sizeof(SRVHeapIndex)), dstBindSlot);
 	for (int i = 0;i < (int)ProjectConfig::Render::NumBuffer::kDoubleBuffer;++i)
 	{
 		auto* mappedPtr = cBufferID_cBuffer.second->GetMappedPtr<SRVHeapIndex>(i);

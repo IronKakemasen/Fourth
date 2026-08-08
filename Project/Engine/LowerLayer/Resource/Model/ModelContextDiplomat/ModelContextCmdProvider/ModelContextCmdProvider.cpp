@@ -12,7 +12,7 @@ ModelContext::CommandProvider::CommandProvider(NexusFieldProof proof_, ModelCont
 
 template<>
 ModelContextCmds::WatchModelContainer ModelContext::CommandProvider::Provide<ModelContextCmds::WatchModelContainer>
-(typename LicenceTypeTraits<ModelContextCmds::WatchModelContainer>::Type type_)
+(typename LicenceTypeTraits<ModelContextCmds::WatchModelContainer>::Type licence_)
 {
 	return modelContainer->WatchDataCmd(ProviderKey{});
 }

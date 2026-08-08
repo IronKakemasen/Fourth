@@ -15,7 +15,7 @@ void ModelContext::ModelDataCreator::MeshDataSRVHeapIndexGroupContainerBufferCre
 	const std::vector<MeshDataSRVHeapIndexGroupGPUCPU>& tmpMeshDataSRVHeapIndexGroupContainer_,
 	BufferContext::BufferCreator* bufferCreator_,
 	BufferContext::BufferUploader* uploader_,
-	BufferContext::ConstantBufferCreator* cBufferCreator_
+	BufferContextCmds::CreateCBufferCmd createCBufferCmd_
 )
 {
 	std::string const bufferName = "MeshDataSRVHeapIndexGroupContainer";
@@ -37,12 +37,15 @@ void ModelContext::ModelDataCreator::MeshDataSRVHeapIndexGroupContainerBufferCre
 
 	//srvHeapIndexを抽出
 	IReadable* readableBuffer = static_cast<IReadable*>(uniqueID_buffer.second);
+	
 	//そのコンスタントバッファを生成し、データを入力する
 	//バインドしているスロットはジェーソンファイルから読み込む
 	auto const srcJsonFileKey = "WorldConstantBuffers";
+	
+	//バインドスロットを取得
 	int const dstBindSlot = Miyajison::Get()->LoadData<int>(srcJsonFileKey, { bufferName,"BindSlot" });
 
-	auto cBufferID_cBuffer = cBufferCreator_->Create(bufferName, UINT(sizeof(SRVHeapIndex)), dstBindSlot);
+	auto cBufferID_cBuffer = createCBufferCmd_(bufferName, UINT(sizeof(SRVHeapIndex)), dstBindSlot);
 	for (int i = 0;i < (int)ProjectConfig::Render::NumBuffer::kDoubleBuffer;++i)
 	{
 		auto* mappedPtr = cBufferID_cBuffer.second->GetMappedPtr<SRVHeapIndex>(i);

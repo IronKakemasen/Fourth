@@ -1,6 +1,6 @@
 #pragma once
 #include "CommandContextCmdProvider.h"
-#include "../../../../Resource/Buffer/BufferCreateTools/BufferUploader/BufferUploader.h"
+#include "../../../../Resource/Buffer/BufferContext.h"
 
 struct CommandContext::CommandProvider::UsesResourceUploadCmdLicence
 {

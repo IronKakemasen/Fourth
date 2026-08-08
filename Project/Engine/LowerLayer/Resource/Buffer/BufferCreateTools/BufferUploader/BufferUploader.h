@@ -2,7 +2,7 @@
 #include "../../BufferContext.h"
 
 //外部
-#include "../../../../Core/Command/CommandContextDiplomat/CommandContextCmdProvider/CommandContextCmds.h"
+#include "../../../../Core/Command/CommandContextCmds.h"
 
 
 class GPUBufferBehavior;

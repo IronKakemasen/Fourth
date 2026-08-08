@@ -1,5 +1,5 @@
 #pragma once
-#include "../../RootSignatureCreator/RootSignatureAssembler/RootSignatureDesc.h"
+#include "RootSignatureCreator/RootSignatureAssembler/RootSignatureDesc.h"
 
 namespace RootSignatureCmds 
 {

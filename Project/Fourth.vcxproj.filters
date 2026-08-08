@@ -552,6 +552,12 @@
     <ClCompile Include="Engine\LowerLayer\Resource\Model\ModelContextDiplomat\ModelContextCmdProvider\ModelContextCmdProvider.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
+    <ClCompile Include="Engine\LowerLayer\Resource\RootSignature\RootSignatureContextDiplomat\RootSignatureCmdProvider\RootSignatureCmdProvider.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\LowerLayer\Resource\Buffer\BufferContextDiplomat\BufferContextCmdProvider\BufferContextCmdProvider.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Engine\LowerLayer\Core\Window\WindowContext.h">
@@ -1178,13 +1184,34 @@
     <ClInclude Include="Engine\LowerLayer\Core\Command\CommandContextDiplomat\CommandContextCmdProvider\CommandContextCmdProviderLicences.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\LowerLayer\Core\Command\CommandContextDiplomat\CommandContextCmdProvider\CommandContextCmds.h">
+    <ClInclude Include="Engine\LowerLayer\Core\Command\CommandContextCmds.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\LowerLayer\Resource\Model\ModelContextDiplomat\ModelContextCmdProvider\ModelContextCmds.h">
+    <ClInclude Include="Engine\LowerLayer\Resource\Model\ModelContextCmds.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
     <ClInclude Include="Engine\LowerLayer\Resource\Model\ModelContextDiplomat\ModelContextCmdProvider\ModelContextCmdProviderLicences.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\LowerLayer\Resource\RootSignature\RootSignatureContextDiplomat\RootSignatureCmdProvider\RootSigCmdProviderLicences.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\LowerLayer\Resource\RootSignature\RootSignatureCmds.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\LowerLayer\Resource\RootSignature\RootSignatureContextDiplomat\RootSignatureCmdProvider\RootSignatureCmdProvider.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\LowerLayer\Resource\Buffer\BufferContextDiplomat\BufferContextCmdProvider\BufferContextCmdProvider.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\LowerLayer\Resource\Buffer\BufferContextDiplomat\BufferContextCmdProvider\BufferContextCmdProviderLicences.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\LowerLayer\Resource\Buffer\BufferContextCmds.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\LowerLayer\Resource\Buffer\BufferContextDiplomat\BufferDiplomatIncludes.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
   </ItemGroup>

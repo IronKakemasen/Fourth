@@ -416,6 +416,28 @@ private:
 
 
 ========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Core\Command\CommandContextCmds.h ===
+========================================
+#pragma once
+
+namespace CommandContextCmds
+{
+	using UploadCommand = std::function<void
+	(
+		ID3D12Resource* dstResource_,
+		ID3D12Resource* intermediateResource_,
+		const D3D12_SUBRESOURCE_DATA* subeResource_,
+		UINT subResourceCount_
+		)>;
+
+	using PitchBarrierCommand = std::function<void(D3D12_RESOURCE_BARRIER*, UINT)>;
+}
+
+
+
+
+
+========================================
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Core\Command\CommandContextDiplomat\CommandContextDiplomat.cpp ===
 ========================================
 #include "PreCompileHeader.h"
@@ -505,14 +527,14 @@ CommandContext::CommandProvider::CommandProvider(NexusFieldProof proof_, Command
 
 template<>
 CommandContextCmds::UploadCommand CommandContext::CommandProvider::Provide<CommandContextCmds::UploadCommand>
-(typename LicenceTypeTraits<CommandContextCmds::UploadCommand>::Type type_)
+(typename LicenceTypeTraits<CommandContextCmds::UploadCommand>::Type licence_)
 {
 	return resourceUploader->ProvideUploadCommand(ProviderKey{});
 }
 
 template<>
 CommandContextCmds::PitchBarrierCommand CommandContext::CommandProvider::Provide<CommandContextCmds::PitchBarrierCommand>
-(typename LicenceTypeTraits<CommandContextCmds::PitchBarrierCommand>::Type type_)
+(typename LicenceTypeTraits<CommandContextCmds::PitchBarrierCommand>::Type licence_)
 {
 	return resourceUploader->ProvideBarrierPitchCommand(ProviderKey{});
 }
@@ -527,7 +549,7 @@ CommandContextCmds::PitchBarrierCommand CommandContext::CommandProvider::Provide
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Core\Command\CommandContextDiplomat\CommandContextCmdProvider\CommandContextCmdProvider.h ===
 ========================================
 #pragma once
-#include "CommandContextCmds.h"
+#include "../../CommandContextCmds.h"
 #include "../../CommandContext.h"
 
 class CommandContext::CommandProvider
@@ -548,7 +570,7 @@ public:
 
 	///コマンド提供
 	template<typename CommandType>
-	CommandType Provide(typename LicenceTypeTraits<CommandType>::Type type_);
+	CommandType Provide(typename LicenceTypeTraits<CommandType>::Type licence_);
 
 private:
 
@@ -572,11 +594,11 @@ struct CommandContext::CommandProvider::LicenceTypeTraits<CommandContextCmds::Pi
 
 template<>
 CommandContextCmds::UploadCommand CommandContext::CommandProvider::Provide<CommandContextCmds::UploadCommand>
-(typename LicenceTypeTraits<CommandContextCmds::UploadCommand>::Type type_);
+(typename LicenceTypeTraits<CommandContextCmds::UploadCommand>::Type licence_);
 
 template<>
 CommandContextCmds::PitchBarrierCommand CommandContext::CommandProvider::Provide<CommandContextCmds::PitchBarrierCommand>
-(typename LicenceTypeTraits<CommandContextCmds::PitchBarrierCommand>::Type type_);
+(typename LicenceTypeTraits<CommandContextCmds::PitchBarrierCommand>::Type licence_);
 
 
 
@@ -587,7 +609,7 @@ CommandContextCmds::PitchBarrierCommand CommandContext::CommandProvider::Provide
 ========================================
 #pragma once
 #include "CommandContextCmdProvider.h"
-#include "../../../../Resource/Buffer/BufferCreateTools/BufferUploader/BufferUploader.h"
+#include "../../../../Resource/Buffer/BufferContext.h"
 
 struct CommandContext::CommandProvider::UsesResourceUploadCmdLicence
 {
@@ -596,28 +618,6 @@ private:
 	friend class BufferContext::BufferUploader;
 	explicit UsesResourceUploadCmdLicence() = default;
 };
-
-
-
-
-
-========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Core\Command\CommandContextDiplomat\CommandContextCmdProvider\CommandContextCmds.h ===
-========================================
-#pragma once
-
-namespace CommandContextCmds
-{
-	using UploadCommand = std::function<void
-	(
-		ID3D12Resource* dstResource_,
-		ID3D12Resource* intermediateResource_,
-		const D3D12_SUBRESOURCE_DATA* subeResource_,
-		UINT subResourceCount_
-		)>;
-
-	using PitchBarrierCommand = std::function<void(D3D12_RESOURCE_BARRIER*, UINT)>;
-}
 
 
 
@@ -874,7 +874,7 @@ CommandContextCmds::PitchBarrierCommand CommandContext::ResourceUploader::Provid
 ========================================
 #pragma once
 #include "../CommandContext.h"
-#include "../CommandContextDiplomat/CommandContextCmdProvider/CommandContextCmds.h"
+#include "../CommandContextCmds.h"
 
 class CommandContext::ResourceUploader
 {
@@ -6403,12 +6403,13 @@ public:
 //バッファをアップロード
 #include "BufferCreateTools/BufferUploader/BufferUploader.h"
 //各種ツールを外部へ貸し出します
-#include "BufferContextDiplomat/BufferToolLender/BufferToolLender.h"
 #include "BufferContextDiplomat/BufferContextDiplomat.h"
+#include "BufferContextDiplomat/BufferToolLender/BufferToolLender.h"
+#include "BufferContextDiplomat/BufferContextCmdProvider/BufferContextCmdProvider.h"
+#include "BufferContextDiplomat/BufferContextExecutionAgent/BufferContextExecutionAgent.h"
 //ランタイム処理ツール
 #include "BufferRuntime/BufferDispatcher/BufferDispatcher.h"
 #include "BufferRuntime/BufferInfoExtractor/BufferInfoExtractor.h"
-#include "BufferContextDiplomat/BufferContextExecutionAgent/BufferContextExecutionAgent.h"
 //ワールドコンスタントバッファの生成
 #include "WorldConstantBuffers/ConstantBufferCreator/ConstantBufferCreator.h"
 //から仮想GPUアドレスの保持
@@ -6476,16 +6477,17 @@ BufferContext::BufferContext
 				bufferUploader.get(),
 				bufferDispatcher.get(),
 				bufferCollector.get(),
-				constantBufferCreator.get(),
 				worldConstantBuffers.get()
 			),
-			std::make_unique<ExecutionAgent>(proof_, this, bufferUploader.get(),worldConstantBuffers.get())
+			std::make_unique<ExecutionAgent>(proof_, this, bufferUploader.get(),worldConstantBuffers.get()),
+			std::make_unique<CmdProvider>(proof_, constantBufferCreator.get())
 		)
 	);
 
 	Logger::Log("Instantiate: ToolLender", fileName);
 	Logger::Log("Instantiate: ExecutionAgent", fileName);
 	Logger::Log("Instantiate: BufferContextDiplomat", fileName);
+	Logger::Log("Instantiate: CmdProvider", fileName);
 
 
 
@@ -6560,7 +6562,8 @@ public:
 	struct NexusFieldProof;
 	//エージェント認証キー
 	struct AgentKey;
-
+	//コマンド提供者認証キー
+	struct ProviderKey;
 
 	//BufferAssemblerとBufferCollectorをつかってバッファを作成する
 	class BufferCreator;
@@ -6574,6 +6577,9 @@ public:
 	class BufferUploader;
 	//ツールの貸し出しを行う
 	class ToolLender;
+	//コマンドの提供を行う
+	class CmdProvider;
+
 	//生成したバッファを回収し分別する
 	class BufferCollector;
 	//代行者
@@ -6637,8 +6643,34 @@ private:
 	explicit AgentKey() = default;
 };
 
+struct BufferContext::ProviderKey
+{
+private:
+
+	friend class CmdProvider;
+	explicit ProviderKey() = default;
+};
 
 
+
+
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Buffer\BufferContextCmds.h ===
+========================================
+#pragma once
+
+class ConstantBuffer;
+
+namespace BufferContextCmds
+{
+	using CreateCBufferCmd = std::function<std::pair<BufferUniqueID, ConstantBuffer*>
+		(std::string name_, UINT const realDataSize_, const uint8_t bindSlot_)>;
+
+}
 
 
 
@@ -6663,17 +6695,24 @@ private:
 #include "BufferContextDiplomat.h"
 #include "BufferToolLender/BufferToolLender.h"
 #include "BufferContextExecutionAgent/BufferContextExecutionAgent.h"
+#include "BufferContextCmdProvider/BufferContextCmdProvider.h"
+
 
 BufferContextDiplomat::BufferContextDiplomat
 (
 	BufferContext::NexusFieldProof proof_,
 	std::unique_ptr<BufferContext::ToolLender>&& toolLender_,
-	std::unique_ptr<BufferContext::ExecutionAgent>&& executionAgent_
+	std::unique_ptr<BufferContext::ExecutionAgent>&& executionAgent_,
+	std::unique_ptr<BufferContext::CmdProvider>&& cmdProvider_
+
 )
 {
 	std::get<std::unique_ptr<BufferContext::ToolLender>>(tools) = std::move(toolLender_);
 	std::get<std::unique_ptr<BufferContext::ExecutionAgent>>(tools) = std::move(executionAgent_);
+	std::get<std::unique_ptr<BufferContext::CmdProvider>>(tools) = std::move(cmdProvider_);
 
+
+	
 }
 
 
@@ -6694,7 +6733,9 @@ public:
 	(
 		BufferContext::NexusFieldProof proof_,
 		std::unique_ptr<BufferContext::ToolLender>&& toolLender_,
-		std::unique_ptr<BufferContext::ExecutionAgent>&& executionAgent_
+		std::unique_ptr<BufferContext::ExecutionAgent>&& executionAgent_,
+		std::unique_ptr<BufferContext::CmdProvider>&& cmdProvider_
+
 	);
 
 	template<typename ToolType>
@@ -6705,9 +6746,120 @@ public:
 
 private:
 	//提供するツールのテーブル
-	std::tuple<std::unique_ptr<BufferContext::ToolLender>, std::unique_ptr<BufferContext::ExecutionAgent>> tools;
+	std::tuple
+	<
+		std::unique_ptr<BufferContext::ToolLender>,
+		std::unique_ptr<BufferContext::ExecutionAgent>,
+		std::unique_ptr<BufferContext::CmdProvider>
+	> tools;
 
 };
+
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Buffer\BufferContextDiplomat\BufferDiplomatIncludes.h ===
+========================================
+#pragma once
+
+//階層が深すぎてインクルードできない応急処置
+#include "BufferContextCmdProvider/BufferContextCmdProvider.h"
+#include "BufferContextCmdProvider/BufferContextCmdProviderLicences.h"
+#include "../BufferContextCmds.h"
+#include "BufferContextDiplomat.h"
+#include "BufferToolLender/BufferToolLender.h"
+#include "BufferToolLender/BufferToolLenderLicence.h"
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Buffer\BufferContextDiplomat\BufferContextCmdProvider\BufferContextCmdProvider.cpp ===
+========================================
+#include "PreCompileHeader.h"
+#include "BufferContextCmdProvider.h"
+#include "../../WorldConstantBuffers/ConstantBufferCreator/ConstantBufferCreator.h"
+#include "BufferContextCmdProviderLicences.h"
+
+BufferContext::CmdProvider::CmdProvider(NexusFieldProof proof_, ConstantBufferCreator* cBufferCreator_)
+	:cBufferCreator(cBufferCreator_)
+{
+
+}
+
+
+template<>
+BufferContextCmds::CreateCBufferCmd BufferContext::CmdProvider::Provide
+(typename LicenceTypeTraits<BufferContextCmds::CreateCBufferCmd>::Type licence_)
+{
+	return cBufferCreator->ProvideCreateCBufferCmd(ProviderKey{});
+}
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Buffer\BufferContextDiplomat\BufferContextCmdProvider\BufferContextCmdProvider.h ===
+========================================
+#pragma once
+#include "../../BufferContext.h"
+#include "../../BufferContextCmds.h"
+
+
+class BufferContext::CmdProvider
+{
+	template<typename CmdType>
+	struct LicenceTypeTraits;
+
+	struct UsesCBufferCreatorLicence;
+
+public:
+
+	template<typename CmdType>
+	using LicenceType = typename LicenceTypeTraits<CmdType>::Type;
+
+	CmdProvider(NexusFieldProof proof_, ConstantBufferCreator* cBufferCreator_);
+
+	///コマンド提供
+	template<typename CmdType>
+	CmdType Provide(typename LicenceTypeTraits<CmdType>::Type licence_);
+
+private:
+
+	ConstantBufferCreator* cBufferCreator;
+};
+
+template<>
+struct BufferContext::CmdProvider::LicenceTypeTraits<BufferContextCmds::CreateCBufferCmd>
+{
+	using Type = UsesCBufferCreatorLicence;
+};
+
+
+template<>
+BufferContextCmds::CreateCBufferCmd BufferContext::CmdProvider::Provide
+(typename LicenceTypeTraits<BufferContextCmds::CreateCBufferCmd>::Type licence_);
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Buffer\BufferContextDiplomat\BufferContextCmdProvider\BufferContextCmdProviderLicences.h ===
+========================================
+#pragma once
+#include "BufferContextCmdProvider.h"
+#include "../../../Model/ModelContext.h"
+
+
+struct BufferContext::CmdProvider::UsesCBufferCreatorLicence
+{
+private:
+
+	friend class ModelContext::ModelDataCreator;
+	explicit UsesCBufferCreatorLicence() = default;
+};
+
 
 
 
@@ -6800,7 +6952,6 @@ BufferContext::ToolLender::ToolLender
 	BufferUploader* uploader_,
 	BufferDispatcher* dispatcher_,
 	BufferCollector* collector_,
-	ConstantBufferCreator* cBufferCreator_,
 	WorldConstantBuffers* worldConstantBuffers_
 
 )
@@ -6809,7 +6960,6 @@ BufferContext::ToolLender::ToolLender
 	std::get<BufferUploader*>(tools) = uploader_;
 	std::get<BufferDispatcher*>(tools) = dispatcher_;
 	std::get<BufferCollector*>(tools) = collector_;
-	std::get<ConstantBufferCreator*>(tools) = cBufferCreator_;
 	std::get<WorldConstantBuffers*>(tools) = worldConstantBuffers_;
 
 }
@@ -6839,7 +6989,6 @@ class BufferContext::ToolLender
 		BufferUploader*, 
 		BufferDispatcher*,
 		BufferCollector*,
-		ConstantBufferCreator*,
 		WorldConstantBuffers*
 	> tools;
 
@@ -6857,7 +7006,6 @@ public:
 		BufferUploader* uploader_,
 		BufferDispatcher* dispatcher_,
 		BufferCollector* collector_,
-		ConstantBufferCreator* cBufferCreator_,
 		WorldConstantBuffers* worldConstantBuffers_
 	);
 
@@ -6893,12 +7041,6 @@ struct BufferContext::ToolLender::LicenceTypeTraits<BufferContext::BufferDispatc
 
 template<>
 struct BufferContext::ToolLender::LicenceTypeTraits<BufferContext::BufferCollector>
-{
-	using Type = BasicBufferManagementLicence;
-};
-
-template<>
-struct BufferContext::ToolLender::LicenceTypeTraits<BufferContext::ConstantBufferCreator>
 {
 	using Type = BasicBufferManagementLicence;
 };
@@ -8780,7 +8922,7 @@ void BufferContext::BufferUploader::EndLog()const
 #include "../../BufferContext.h"
 
 //外部
-#include "../../../../Core/Command/CommandContextDiplomat/CommandContextCmdProvider/CommandContextCmds.h"
+#include "../../../../Core/Command/CommandContextCmds.h"
 
 
 class GPUBufferBehavior;
@@ -11701,15 +11843,14 @@ BufferContext::ConstantBufferCreator::ConstantBufferCreator
 
 }
 
-[[nodiscard]] std::pair<BufferUniqueID, ConstantBuffer*> BufferContext::ConstantBufferCreator::Create
-(const std::string& name_, UINT const realDataSize_, const uint8_t bindSlot_)
+std::pair<BufferUniqueID, ConstantBuffer*> BufferContext::ConstantBufferCreator::Create
+(std::string name_, UINT const realDataSize_, const uint8_t bindSlot_)
 {
 
 	ConstantBufferDescription desc(realDataSize_);
 
 	//バッファユニークIDとコンスタントバッファ
 	auto id_buffer = creator->CreateWithBuffer(desc, name_);
-
 
 	worldConstantBuffers->Import
 	(
@@ -11725,6 +11866,15 @@ BufferContext::ConstantBufferCreator::ConstantBufferCreator
 	return id_buffer;
 }
 
+BufferContextCmds::CreateCBufferCmd BufferContext::ConstantBufferCreator::ProvideCreateCBufferCmd(ProviderKey key_)
+{
+	return [this](std::string name_, UINT const realDataSize_, const uint8_t bindSlot_)
+	{
+		return Create(name_, realDataSize_, bindSlot_);
+	};
+}
+
+
 
 
 
@@ -11735,6 +11885,7 @@ BufferContext::ConstantBufferCreator::ConstantBufferCreator
 ========================================
 #pragma once
 #include "../../BufferContext.h"
+#include "../../BufferContextCmds.h"
 
 class ConstantBuffer;
 
@@ -11749,16 +11900,20 @@ public:
 		BufferCreator* creator_
 	);
 
-	//データのコピーは他者にやってもらいたいから、バッファユニークIDを渡す
-	[[nodiscard]] std::pair<BufferUniqueID, ConstantBuffer*>
-		Create(const std::string& name_, UINT const realDataSize_, const uint8_t bindSlot_);
+	//Cバッファを作成するためのコマンド
+	BufferContextCmds::CreateCBufferCmd ProvideCreateCBufferCmd(ProviderKey key_);
+
 
 
 private:
 
+	//データのコピーは他者にやってもらいたいから、バッファユニークIDを渡す
+	std::pair<BufferUniqueID, ConstantBuffer*>
+		Create(std::string name_, UINT const realDataSize_, const uint8_t bindSlot_);
+
+
 	BufferCreator* creator;
 	WorldConstantBuffers* worldConstantBuffers;
-
 };
 
 
@@ -11969,6 +12124,21 @@ private:
 
 
 ========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Model\ModelContextCmds.h ===
+========================================
+#pragma once
+
+class Model;
+
+namespace ModelContextCmds
+{
+	using WatchModelContainer = std::function<const std::vector<std::unique_ptr<Model>>*()>;
+
+}
+
+
+
+========================================
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Model\TestModelOKIBA.cpp ===
 ========================================
 #include "PreCompileHeader.h"
@@ -12157,11 +12327,8 @@ private:
 #include "MeshDataCreatorTools/MeshDataSRVHeapIndexGroupContainerBufferCreator/MeshDataSRVHeapIndexGroupContainerBufferCreator.h"
 #include "MeshDataCreatorTools/TransformMatrixContainerBufferCreator/TransformMatrixContainerBufferCreator.h"
 
-
 //外部
-#include "../../../Buffer/BufferContextDiplomat/BufferContextDiplomat.h"
-#include "../../../Buffer/BufferContextDiplomat/BufferToolLender/BufferToolLender.h"
-#include "../../../Buffer/BufferContextDiplomat/BufferToolLender/BufferToolLenderLicence.h"
+#include "../../../Buffer/BufferContextDiplomat/BufferDiplomatIncludes.h"
 
 #include "RegistryLoader/RegistryLoader.h"
 
@@ -12231,8 +12398,14 @@ void ModelContext::ModelDataCreator::CreateAllModelData
     std::unordered_map<std::string, ModelDataAggregate*> tmpModelDataLib = LoadAllModelFiles();
 
     //バッファコンテキストのツールレンダーから各種ツールを借りる
-    auto [bufferCreator, bufferCollector, bufferUploader,bufferDispatcher, cBufferCreator] =
+    auto [bufferCreator, bufferCollector, bufferUploader,bufferDispatcher] =
         BorrowBufferContextTools(bufferContextDiplomat_);
+
+    //定数バッファ生成コマンドを提供してもらう
+    BufferContext::CmdProvider::LicenceType<BufferContextCmds::CreateCBufferCmd> licence;
+    auto createCBufferCmd = bufferContextDiplomat_->Access<BufferContext::CmdProvider>()->
+        Provide<BufferContextCmds::CreateCBufferCmd>(licence);
+
 
     for (const auto& [key, value] : tmpModelDataLib)
     {
@@ -12275,7 +12448,7 @@ void ModelContext::ModelDataCreator::CreateAllModelData
         tmpMeshDataSRVHeapIndexGroupContainer,
         bufferCreator,
         bufferUploader,
-        cBufferCreator
+        createCBufferCmd
     );
 
 
@@ -12285,7 +12458,7 @@ void ModelContext::ModelDataCreator::CreateAllModelData
     TransformMatrixContainerBufferCreator::Create
     (
         bufferCreator,
-        cBufferCreator,
+        createCBufferCmd,
         modelDataBatcher_
 
     );
@@ -12332,10 +12505,8 @@ ModelContext::ModelDataCreator::BufferContextTools ModelContext::ModelDataCreato
     auto* bufferCollector = bufferToolLender->Lend<BufferContext::BufferCollector>(licence);
     auto* bufferUploader = bufferToolLender->Lend<BufferContext::BufferUploader>(licence);
     auto* bufferDispatcher = bufferToolLender->Lend<BufferContext::BufferDispatcher>(licence);
-    auto* cBufferCreator = bufferToolLender->Lend<BufferContext::ConstantBufferCreator>(licence);
 
-
-    return std::make_tuple(bufferCreator, bufferCollector, bufferUploader, bufferDispatcher, cBufferCreator);
+    return std::make_tuple(bufferCreator, bufferCollector, bufferUploader, bufferDispatcher);
 }
 
 
@@ -12359,8 +12530,7 @@ class ModelContext::ModelDataCreator
 		BufferContext::BufferCreator*,
 		BufferContext::BufferCollector*,
 		BufferContext::BufferUploader*,
-		BufferContext::BufferDispatcher*,
-		BufferContext::ConstantBufferCreator* 
+		BufferContext::BufferDispatcher*
 	>;
 
 protected:
@@ -12618,7 +12788,6 @@ void ModelContext::ModelDataCreator::MeshDataBufferSRVHeapIndexGroupPackager::Pa
 #pragma once
 #include "../../ModelDataCreator.h"
 
-
 //外部
 #include "../../../../../../../../Assets/Shared/StructuredBuffer.h"
 
@@ -12766,7 +12935,7 @@ void ModelContext::ModelDataCreator::MeshDataSRVHeapIndexGroupContainerBufferCre
 	const std::vector<MeshDataSRVHeapIndexGroupGPUCPU>& tmpMeshDataSRVHeapIndexGroupContainer_,
 	BufferContext::BufferCreator* bufferCreator_,
 	BufferContext::BufferUploader* uploader_,
-	BufferContext::ConstantBufferCreator* cBufferCreator_
+	BufferContextCmds::CreateCBufferCmd createCBufferCmd_
 )
 {
 	std::string const bufferName = "MeshDataSRVHeapIndexGroupContainer";
@@ -12788,12 +12957,15 @@ void ModelContext::ModelDataCreator::MeshDataSRVHeapIndexGroupContainerBufferCre
 
 	//srvHeapIndexを抽出
 	IReadable* readableBuffer = static_cast<IReadable*>(uniqueID_buffer.second);
+	
 	//そのコンスタントバッファを生成し、データを入力する
 	//バインドしているスロットはジェーソンファイルから読み込む
 	auto const srcJsonFileKey = "WorldConstantBuffers";
+	
+	//バインドスロットを取得
 	int const dstBindSlot = Miyajison::Get()->LoadData<int>(srcJsonFileKey, { bufferName,"BindSlot" });
 
-	auto cBufferID_cBuffer = cBufferCreator_->Create(bufferName, UINT(sizeof(SRVHeapIndex)), dstBindSlot);
+	auto cBufferID_cBuffer = createCBufferCmd_(bufferName, UINT(sizeof(SRVHeapIndex)), dstBindSlot);
 	for (int i = 0;i < (int)ProjectConfig::Render::NumBuffer::kDoubleBuffer;++i)
 	{
 		auto* mappedPtr = cBufferID_cBuffer.second->GetMappedPtr<SRVHeapIndex>(i);
@@ -12813,7 +12985,7 @@ void ModelContext::ModelDataCreator::MeshDataSRVHeapIndexGroupContainerBufferCre
 
 //外部
 #include "../../../../../../../../Assets/Shared/StructuredBuffer.h"
-
+#include "../../../../../Buffer/BufferContextCmds.h"
 
 class ModelContext::ModelDataCreator::MeshDataSRVHeapIndexGroupContainerBufferCreator
 {
@@ -12824,7 +12996,7 @@ class ModelContext::ModelDataCreator::MeshDataSRVHeapIndexGroupContainerBufferCr
 		const std::vector<StructuredBufferDataDefinition::MeshDataSRVHeapIndexGroupGPUCPU>& tmpMeshDataSRVHeapIndexGroupContainer_,
 		BufferContext::BufferCreator* bufferCreator_,
 		BufferContext::BufferUploader* uploader_,
-		BufferContext::ConstantBufferCreator* cBufferCreator_
+		BufferContextCmds::CreateCBufferCmd createCBufferCmd_
 	);
 };
 
@@ -12919,6 +13091,7 @@ class ModelContext::ModelDataCreator::DataTransducer
 
 //外部
 #include "../../../../../Buffer/BufferContextToolsInclude.h"
+
 //ほんとはuploadStructuredBufferDescriptionだけでいいんだけど、文字列制限なのかインクルードできないので
 #include "../../../../../Buffer/BufferDefinition/AllBufferDescsInclude.h"
 #include "../../../../../Buffer/BufferDefinition/AllBuffersInclude.h"
@@ -12931,7 +13104,7 @@ using namespace ProjectConfig::Render;
 void ModelContext::ModelDataCreator::TransformMatrixContainerBufferCreator::Create
 (
 	BufferContext::BufferCreator* bufferCreator_,
-	BufferContext::ConstantBufferCreator* cBufferCreator_,
+	BufferContextCmds::CreateCBufferCmd createCBufferCmd_,
 	ModelDataBatcher* modelDataBatcher_
 )
 {
@@ -12960,12 +13133,15 @@ void ModelContext::ModelDataCreator::TransformMatrixContainerBufferCreator::Crea
 	
 	//そのコンスタントバッファを生成し、データを入力する
 	///定数バッファはダブルバッファなので、それぞれに別々のsrvHeapIndexを入力する
+	
 	//バインドしているスロットはジェーソンファイルから読み込む
 	auto const srcJsonFileKey = "WorldConstantBuffers";
+	
+	//バインドスロットを取得
 	int const dstBindSlot = Miyajison::Get()->LoadData<int>(srcJsonFileKey, { bufferName,"BindSlot" });
 
-
-	auto cBufferID_cBuffer = cBufferCreator_->Create(bufferName, UINT(sizeof(SRVHeapIndex)), dstBindSlot);
+	//定数バッファ生成コマンドで生成する
+	auto cBufferID_cBuffer = createCBufferCmd_(bufferName, UINT(sizeof(SRVHeapIndex)), dstBindSlot);
 	for (int i = 0;i < (int)ProjectConfig::Render::NumBuffer::kDoubleBuffer;++i)
 	{
 		auto* mappedPtr = cBufferID_cBuffer.second->GetMappedPtr<SRVHeapIndex>(i);
@@ -12982,6 +13158,7 @@ void ModelContext::ModelDataCreator::TransformMatrixContainerBufferCreator::Crea
 ========================================
 #pragma once
 #include "../../ModelDataCreator.h"
+#include "../../../../../Buffer/BufferContextCmds.h"
 
 class ModelContext::ModelDataCreator::TransformMatrixContainerBufferCreator
 {
@@ -12990,7 +13167,7 @@ class ModelContext::ModelDataCreator::TransformMatrixContainerBufferCreator
 	static void Create
 	(
 		BufferContext::BufferCreator* bufferCreator_,
-		BufferContext::ConstantBufferCreator* cBufferCreator_,
+		BufferContextCmds::CreateCBufferCmd createCBufferCmd_,
 		ModelDataBatcher* modelDataBatcher_
 	);
 
@@ -14035,7 +14212,7 @@ ModelContextCmds::WatchModelContainer ModelContext::ModelContainer::WatchDataCmd
 ========================================
 #pragma once
 #include "../ModelContext.h"
-#include "../ModelContextDiplomat/ModelContextCmdProvider/ModelContextCmds.h"
+#include "../ModelContextCmds.h"
 
 
 class ModelContext::ModelContainer
@@ -14158,7 +14335,7 @@ ModelContext::CommandProvider::CommandProvider(NexusFieldProof proof_, ModelCont
 
 template<>
 ModelContextCmds::WatchModelContainer ModelContext::CommandProvider::Provide<ModelContextCmds::WatchModelContainer>
-(typename LicenceTypeTraits<ModelContextCmds::WatchModelContainer>::Type type_)
+(typename LicenceTypeTraits<ModelContextCmds::WatchModelContainer>::Type licence_)
 {
 	return modelContainer->WatchDataCmd(ProviderKey{});
 }
@@ -14172,7 +14349,7 @@ ModelContextCmds::WatchModelContainer ModelContext::CommandProvider::Provide<Mod
 ========================================
 #pragma once
 #include "../../ModelContext.h"
-#include "ModelContextCmds.h"
+#include "../../ModelContextCmds.h"
 
 
 class ModelContext::CommandProvider
@@ -14189,9 +14366,9 @@ public:
 
 	CommandProvider(NexusFieldProof proof_, ModelContainer* modelContainer_);
 
-	
+	///コマンド提供
 	template<typename CmdType>
-	CmdType Provide(typename LicenceTypeTraits<CmdType>::Type type_);
+	CmdType Provide(typename LicenceTypeTraits<CmdType>::Type licence_);
 
 
 private:
@@ -14210,7 +14387,7 @@ struct ModelContext::CommandProvider::LicenceTypeTraits<ModelContextCmds::WatchM
 
 template<>
 ModelContextCmds::WatchModelContainer ModelContext::CommandProvider::Provide<ModelContextCmds::WatchModelContainer>
-(typename LicenceTypeTraits<ModelContextCmds::WatchModelContainer>::Type type_);
+(typename LicenceTypeTraits<ModelContextCmds::WatchModelContainer>::Type licence_);
 
 
 
@@ -14230,21 +14407,6 @@ private:
 };
 
 
-
-
-
-========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Model\ModelContextDiplomat\ModelContextCmdProvider\ModelContextCmds.h ===
-========================================
-#pragma once
-
-class Model;
-
-namespace ModelContextCmds
-{
-	using WatchModelContainer = std::function<const std::vector<std::unique_ptr<Model>>*()>;
-
-}
 
 
 
@@ -15695,6 +15857,19 @@ private:
 
 
 ========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\RootSignature\RootSignatureCmds.h ===
+========================================
+#pragma once
+#include "RootSignatureCreator/RootSignatureAssembler/RootSignatureDesc.h"
+
+namespace RootSignatureCmds 
+{
+	using CreateGraphicsRootSigCmd = std::function<ID3D12RootSignature* (const RootSignatureDesc::Graphics&)>;
+}
+
+
+
+========================================
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\RootSignature\RootSignatureContext.cpp ===
 ========================================
 #include "RootSignatureContext.h"
@@ -15918,7 +16093,7 @@ RootSignatureContext::CmdProvider::CmdProvider(NexusFieldProof proof_, RootSigna
 
 template<>
 RootSignatureCmds::CreateGraphicsRootSigCmd RootSignatureContext::CmdProvider::Provide<RootSignatureCmds::CreateGraphicsRootSigCmd>
-(typename LicenceTypeTraits<RootSignatureCmds::CreateGraphicsRootSigCmd>::Type type_)
+(typename LicenceTypeTraits<RootSignatureCmds::CreateGraphicsRootSigCmd>::Type licence_)
 {
 	return creator->CreateGraphicsrootSigCmd(CmdProviderKey{});
 }
@@ -15931,7 +16106,7 @@ RootSignatureCmds::CreateGraphicsRootSigCmd RootSignatureContext::CmdProvider::P
 ========================================
 #pragma once
 #include "../../RootSignatureContext.h"
-#include "RootSignatureCmds.h"
+#include "../../RootSignatureCmds.h"
 
 class RootSignatureContext::CmdProvider
 {
@@ -15949,7 +16124,7 @@ public:
 
 	///コマンド提供
 	template<typename CmdType>
-	CmdType Provide(typename LicenceTypeTraits<CmdType>::Type type_);
+	CmdType Provide(typename LicenceTypeTraits<CmdType>::Type licence_);
 
 
 private:
@@ -15967,21 +16142,8 @@ struct RootSignatureContext::CmdProvider::LicenceTypeTraits<RootSignatureCmds::C
 
 template<>
 RootSignatureCmds::CreateGraphicsRootSigCmd RootSignatureContext::CmdProvider::Provide<RootSignatureCmds::CreateGraphicsRootSigCmd>
-(typename LicenceTypeTraits<RootSignatureCmds::CreateGraphicsRootSigCmd>::Type type_);
+(typename LicenceTypeTraits<RootSignatureCmds::CreateGraphicsRootSigCmd>::Type licence_);
 
-
-
-
-========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\RootSignature\RootSignatureContextDiplomat\RootSignatureCmdProvider\RootSignatureCmds.h ===
-========================================
-#pragma once
-#include "../../RootSignatureCreator/RootSignatureAssembler/RootSignatureDesc.h"
-
-namespace RootSignatureCmds 
-{
-	using CreateGraphicsRootSigCmd = std::function<ID3D12RootSignature* (const RootSignatureDesc::Graphics&)>;
-}
 
 
 
@@ -16105,7 +16267,7 @@ ID3D12RootSignature* RootSignatureContext::RootSignatureCreator::Create(const Ro
 ========================================
 #pragma once
 #include "../RootSignatureContext.h"
-#include "../RootSignatureContextDiplomat/RootSignatureCmdProvider/RootSignatureCmds.h"
+#include "../RootSignatureCmds.h"
 
 class RootSignatureContext::RootSignatureCreator
 {

@@ -12,7 +12,7 @@ RootSignatureContext::CmdProvider::CmdProvider(NexusFieldProof proof_, RootSigna
 
 template<>
 RootSignatureCmds::CreateGraphicsRootSigCmd RootSignatureContext::CmdProvider::Provide<RootSignatureCmds::CreateGraphicsRootSigCmd>
-(typename LicenceTypeTraits<RootSignatureCmds::CreateGraphicsRootSigCmd>::Type type_)
+(typename LicenceTypeTraits<RootSignatureCmds::CreateGraphicsRootSigCmd>::Type licence_)
 {
 	return creator->CreateGraphicsrootSigCmd(CmdProviderKey{});
 }
