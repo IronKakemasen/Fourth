@@ -1,9 +1,9 @@
 #include "PreCompileHeader.h"
 #include "BufferContextCmdProvider.h"
-#include "../../WorldConstantBuffers/ConstantBufferCreator/ConstantBufferCreator.h"
+#include "../../GlobalConstantBuffers/GlobalConstantBufferCreator/GlobalConstantBufferCreator.h"
 #include "BufferContextCmdProviderLicences.h"
 
-BufferContext::CmdProvider::CmdProvider(NexusFieldProof proof_, ConstantBufferCreator* cBufferCreator_)
+BufferContext::CmdProvider::CmdProvider(NexusFieldProof proof_, GlobalConstantBufferCreator* cBufferCreator_)
 	:cBufferCreator(cBufferCreator_)
 {
 

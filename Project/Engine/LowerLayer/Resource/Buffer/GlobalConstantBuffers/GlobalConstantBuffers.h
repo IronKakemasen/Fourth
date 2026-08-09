@@ -2,7 +2,7 @@
 #include "../BufferContext.h"
 
 
-class BufferContext::WorldConstantBuffers
+class BufferContext::GlobalConstantBuffers
 {
 public:
 
@@ -11,7 +11,7 @@ public:
 	using DoubleVirtualGPUAddress = std::array
 		<D3D12_GPU_VIRTUAL_ADDRESS, (UINT)ProjectConfig::Render::NumBuffer::kDoubleBuffer>;
 
-	WorldConstantBuffers
+	GlobalConstantBuffers
 	(
 		NexusFieldProof proof_
 	);
@@ -48,11 +48,11 @@ private:
 };
 
 
-struct BufferContext::WorldConstantBuffers::Local_ImportLicence
+struct BufferContext::GlobalConstantBuffers::Local_ImportLicence
 {
 private:
 
-	friend class ConstantBufferCreator;
+	friend class GlobalConstantBufferCreator;
 	explicit Local_ImportLicence() = default;
 };
 

@@ -9,7 +9,7 @@ public:
 		NexusFieldProof proof_,
 		BufferContext* bufferContext_,
 		BufferUploader* bufferUploader_,
-		WorldConstantBuffers* worldConstantBuffers_
+		GlobalConstantBuffers* worldConstantBuffers_
 	);
 
 	//BufferUploaderの削除を代行
@@ -23,7 +23,7 @@ public:
 private:
 	BufferContext* bufferContext;
 	BufferUploader* bufferUploader;
-	WorldConstantBuffers* worldConstantBuffers;
+	GlobalConstantBuffers* globalConstantBuffers;
 
 };
 

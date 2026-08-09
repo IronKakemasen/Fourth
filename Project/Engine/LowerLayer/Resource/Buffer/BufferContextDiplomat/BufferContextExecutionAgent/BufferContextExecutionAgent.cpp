@@ -1,15 +1,15 @@
 #include "PreCompileHeader.h"
 #include "BufferContextExecutionAgent.h"
 #include "../../BufferCreateTools/BufferUploader/BufferUploader.h"
-#include "../../WorldConstantBuffers/WorldConstantBuffers.h"
+#include "../../GlobalConstantBuffers/GlobalConstantBuffers.h"
 
 BufferContext::ExecutionAgent::ExecutionAgent
 (
 	NexusFieldProof proof_,
 	BufferContext* bufferContext_,
 	BufferContext::BufferUploader* bufferUploader_,
-	WorldConstantBuffers* worldConstantBuffers_
-):bufferContext(bufferContext_), bufferUploader(bufferUploader_), worldConstantBuffers(worldConstantBuffers_)
+	GlobalConstantBuffers* worldConstantBuffers_
+):bufferContext(bufferContext_), bufferUploader(bufferUploader_), globalConstantBuffers(worldConstantBuffers_)
 {
 
 }
@@ -26,5 +26,5 @@ void BufferContext::ExecutionAgent::UploadAllBuffer(BufferContext::NexusFieldPro
 
 void BufferContext::ExecutionAgent::PackRuntimeContainer(NexusFieldProof proof_)
 {
-	worldConstantBuffers->PackRuntimeContainer(proof_, BufferContext::AgentKey{});
+	globalConstantBuffers->PackRuntimeContainer(proof_, BufferContext::AgentKey{});
 }

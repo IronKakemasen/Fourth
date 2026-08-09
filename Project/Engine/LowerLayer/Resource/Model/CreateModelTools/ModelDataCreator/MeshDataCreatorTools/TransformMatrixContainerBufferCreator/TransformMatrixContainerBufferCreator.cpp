@@ -46,19 +46,16 @@ void ModelContext::ModelDataCreator::TransformMatrixContainerBufferCreator::Crea
 	
 	//そのコンスタントバッファを生成し、データを入力する
 	///定数バッファはダブルバッファなので、それぞれに別々のsrvHeapIndexを入力する
-	
-	//バインドしているスロットはジェーソンファイルから読み込む
-	auto const srcJsonFileKey = "WorldConstantBuffers";
-	
-	//バインドスロットを取得
-	int const dstBindSlot = Miyajison::Get()->LoadData<int>(srcJsonFileKey, { bufferName,"BindSlot" });
 
 	//定数バッファ生成コマンドで生成する
-	auto cBufferID_cBuffer = createCBufferCmd_(bufferName, UINT(sizeof(SRVHeapIndex)), dstBindSlot);
-	for (int i = 0;i < (int)ProjectConfig::Render::NumBuffer::kDoubleBuffer;++i)
-	{
-		auto* mappedPtr = cBufferID_cBuffer.second->GetMappedPtr<SRVHeapIndex>(i);
-		*mappedPtr = readableBuffer->OutProperSRVHeapIndex(i);
-	}
+	auto cBufferID_cBuffer = createCBufferCmd_(bufferName, UINT(sizeof(SRVHeapIndex)), ConstantBuffers::BindSlot::kTransformMatrixContainer);
+	
+	//その定数バッファのマップしたポインタにデータを書き込む
+	cBufferID_cBuffer.second->WriteInBoth<SRVHeapIndex>
+	(
+		{ readableBuffer->OutProperSRVHeapIndex(0) ,readableBuffer->OutProperSRVHeapIndex(1) }
+	);
+
+
 
 }

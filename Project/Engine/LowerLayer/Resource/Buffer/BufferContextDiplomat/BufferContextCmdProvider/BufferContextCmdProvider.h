@@ -15,7 +15,7 @@ public:
 	template<typename CmdType>
 	using LicenceType = typename LicenceTypeTraits<CmdType>::Type;
 
-	CmdProvider(NexusFieldProof proof_, ConstantBufferCreator* cBufferCreator_);
+	CmdProvider(NexusFieldProof proof_, GlobalConstantBufferCreator* cBufferCreator_);
 
 	///コマンド提供
 	template<typename CmdType>
@@ -23,7 +23,7 @@ public:
 
 private:
 
-	ConstantBufferCreator* cBufferCreator;
+	GlobalConstantBufferCreator* cBufferCreator;
 };
 
 template<>

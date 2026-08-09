@@ -4,14 +4,14 @@
 
 class ConstantBuffer;
 
-class BufferContext::ConstantBufferCreator
+class BufferContext::GlobalConstantBufferCreator
 {
 public:
 
-	ConstantBufferCreator
+	GlobalConstantBufferCreator
 	(
 		NexusFieldProof proof_,
-		WorldConstantBuffers* worldConstantBuffers_,
+		GlobalConstantBuffers* globalConstantBuffers_,
 		BufferCreator* creator_
 	);
 
@@ -24,10 +24,10 @@ private:
 
 	//データのコピーは他者にやってもらいたいから、バッファユニークIDを渡す
 	std::pair<BufferUniqueID, ConstantBuffer*>
-		Create(std::string name_, UINT const realDataSize_, const uint8_t bindSlot_);
+		Create(std::string name_, UINT const realDataSize_, ConstantBuffers::BindSlot const bindSlot_);
 
 
 	BufferCreator* creator;
-	WorldConstantBuffers* worldConstantBuffers;
+	GlobalConstantBuffers* globalConstantBuffers;
 };
 

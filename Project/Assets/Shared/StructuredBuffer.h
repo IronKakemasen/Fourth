@@ -74,21 +74,6 @@ struct Meshlet
     uint primitiveCnt;
 };
 
-struct OriginalIndex
-{
-    uint index;
-};
-
-struct PrimitiveIndex
-{
-    uint packedPrimitiveIndex;
-};
-
-struct UniqueVertexIndex
-{
-    uint index;
-};
-
 struct TransformMatrix
 {
     float4x4 wvp;

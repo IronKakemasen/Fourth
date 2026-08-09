@@ -126,7 +126,7 @@ struct GPUBufferBehavior::ResourceAccessKey
 private:
 	friend class BufferContext::BufferAssembler;
 	friend class BufferContext::BufferUploader;
-	friend class BufferContext::ConstantBufferCreator;
+	friend class BufferContext::GlobalConstantBufferCreator;
 
 
 	explicit ResourceAccessKey() = default;

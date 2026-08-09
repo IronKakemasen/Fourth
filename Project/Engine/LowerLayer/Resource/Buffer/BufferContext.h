@@ -67,9 +67,9 @@ public:
 	//代行者
 	class ExecutionAgent;
 	//ワールドコンスタントバッファ
-	class WorldConstantBuffers;
+	class GlobalConstantBuffers;
 	//コンスタントバッファ専用生成クラス
-	class ConstantBufferCreator;
+	class GlobalConstantBufferCreator;
 
 	BufferContext
 	(
@@ -104,8 +104,8 @@ private:
 	std::unique_ptr<BufferCollector> bufferCollector;
 	//Extractors
 	std::unique_ptr<BufferInfoExtractor> bufferInfoExtractor;
-	std::unique_ptr<WorldConstantBuffers> worldConstantBuffers;
-	std::unique_ptr<ConstantBufferCreator> constantBufferCreator;
+	std::unique_ptr<GlobalConstantBuffers> globalConstantBuffers;
+	std::unique_ptr<GlobalConstantBufferCreator> globalConstantBufferCreator;
 
 };
 

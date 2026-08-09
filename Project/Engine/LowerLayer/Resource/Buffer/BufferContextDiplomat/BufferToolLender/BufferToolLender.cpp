@@ -9,7 +9,7 @@ BufferContext::ToolLender::ToolLender
 	BufferUploader* uploader_,
 	BufferDispatcher* dispatcher_,
 	BufferCollector* collector_,
-	WorldConstantBuffers* worldConstantBuffers_
+	GlobalConstantBuffers* worldConstantBuffers_
 
 )
 {
@@ -17,6 +17,6 @@ BufferContext::ToolLender::ToolLender
 	std::get<BufferUploader*>(tools) = uploader_;
 	std::get<BufferDispatcher*>(tools) = dispatcher_;
 	std::get<BufferCollector*>(tools) = collector_;
-	std::get<WorldConstantBuffers*>(tools) = worldConstantBuffers_;
+	std::get<GlobalConstantBuffers*>(tools) = worldConstantBuffers_;
 
 }

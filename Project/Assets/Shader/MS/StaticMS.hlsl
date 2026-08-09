@@ -1,4 +1,5 @@
 #include "../../Shared/StructuredBuffer.h"
+#include "../../Shared/ConstantBuffers.h"
 
 struct MSOutput
 {
@@ -22,12 +23,13 @@ uint3 UnpackPrimitiveIndex(uint packedIndex_)
 }
 
 
-StructuredBuffer<StandardVertex> vertices : register(t0);
-StructuredBuffer<uint> uniqueIndices : register(t1);
-StructuredBuffer<Meshlet> meshlets : register(t2);
-StructuredBuffer<uint> primitiveIndices : register(t3);
 
-ConstantBuffer<TransformMatrix> transform : register(b0);
+//StructuredBuffer<StandardVertex> vertices : register(t0);
+//StructuredBuffer<uint> uniqueIndices : register(t1);
+//StructuredBuffer<Meshlet> meshlets : register(t2);
+//StructuredBuffer<uint> primitiveIndices : register(t3);
+
+//ConstantBuffer<TransformMatrix> transform : register(b0);
 
 [numthreads(64, 1, 1)]
 [outputtopology("triangle")]
@@ -39,31 +41,31 @@ void main
     out indices uint3 polys_[126]
 )
 {
-    Meshlet meshlet = meshlets[groupID_];
+    //Meshlet meshlet = meshlets[groupID_];
 
-    //スレッドグループの頂点数とポリゴン数を設定
-    //全スレッドが同じ値で呼ぶことで、制御フロー上「必ず先に実行される」ことを保証する
-    SetMeshOutputCounts(meshlet.vertexCnt, meshlet.primitiveCnt);
+    ////スレッドグループの頂点数とポリゴン数を設定
+    ////全スレッドが同じ値で呼ぶことで、制御フロー上「必ず先に実行される」ことを保証する
+    //SetMeshOutputCounts(meshlet.vertexCnt, meshlet.primitiveCnt);
 
-    if (groupThreadID_ < meshlet.vertexCnt)
-    {
-        uint accessID_uniqueIndices = groupThreadID_ + meshlet.vertexOffset;
-        uint vertexIndex = uniqueIndices[accessID_uniqueIndices];
-        StandardVertex dst_vertex = vertices[vertexIndex];
+    //if (groupThreadID_ < meshlet.vertexCnt)
+    //{
+    //    uint accessID_uniqueIndices = groupThreadID_ + meshlet.vertexOffset;
+    //    uint vertexIndex = uniqueIndices[accessID_uniqueIndices];
+    //    StandardVertex dst_vertex = vertices[vertexIndex];
 
-        verts_[groupThreadID_].position = mul(dst_vertex.localPos, transform.wvp);
-        verts_[groupThreadID_].normal = normalize(mul(dst_vertex.normal, transform.world).xyz);
-        verts_[groupThreadID_].texcoord = dst_vertex.texcoord.xy;
-        verts_[groupThreadID_].worldPosition = float3(1, 1, 1);
+    //    verts_[groupThreadID_].position = mul(dst_vertex.localPos, transform.wvp);
+    //    verts_[groupThreadID_].normal = normalize(mul(dst_vertex.normal, transform.world).xyz);
+    //    verts_[groupThreadID_].texcoord = dst_vertex.texcoord.xy;
+    //    verts_[groupThreadID_].worldPosition = float3(1, 1, 1);
 
-    }
+    //}
 
 
-    for (uint i = groupThreadID_; i < meshlet.primitiveCnt; i += 64)
-    {
-        uint accessID_primitiveIndices = meshlet.primitiveOffset + i;
-        uint packedIndex = primitiveIndices[accessID_primitiveIndices];
-        polys_[i] = UnpackPrimitiveIndex(packedIndex);
-    }
+    //for (uint i = groupThreadID_; i < meshlet.primitiveCnt; i += 64)
+    //{
+    //    uint accessID_primitiveIndices = meshlet.primitiveOffset + i;
+    //    uint packedIndex = primitiveIndices[accessID_primitiveIndices];
+    //    polys_[i] = UnpackPrimitiveIndex(packedIndex);
+    //}
 
 }
