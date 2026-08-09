@@ -1,22 +1,26 @@
 #pragma once
-#include "../../Engine/MiddleLayer/Math/Vector/Vector4.h"
 
 #ifdef __cplusplus
+#include "../../Engine/MiddleLayer/Math/Vector/Vector4.h"
 
-constexpr int kNumConstantBufferTypes = 1;
-
-struct SceneCB
+namespace ConstantBuffers
 {
-    //経過時間
-    Vector4<float> passedTime;
-};
+	enum class BindSlot
+	{
+		kMeshDataContainer,
+		kTransformMatrixContainer
+
+		, kCount
+	};
+
+}
 
 
 #else
 
-struct SceneCB
-{
-    float passedTime;
-};
+
+ConstantBuffer<uint> gModelDataContainerIndex: register(b0);
+ConstantBuffer<uint> gTransformMatrixContainerIndex: register(b1);
 
 #endif
+

@@ -14,9 +14,9 @@
 #include "BufferRuntime/BufferDispatcher/BufferDispatcher.h"
 #include "BufferRuntime/BufferInfoExtractor/BufferInfoExtractor.h"
 //ワールドコンスタントバッファの生成
-#include "WorldConstantBuffers/ConstantBufferCreator/ConstantBufferCreator.h"
+#include "GlobalConstantBuffers/GlobalConstantBufferCreator/GlobalConstantBufferCreator.h"
 //から仮想GPUアドレスの保持
-#include "WorldConstantBuffers/WorldConstantBuffers.h"
+#include "GlobalConstantBuffers/GlobalConstantBuffers.h"
 //バッファコレクターがバッファを仕分ける
 #include "BufferPoolSet/BufferPoolSet.h"
 
@@ -62,11 +62,11 @@ BufferContext::BufferContext
 	bufferUploader.reset(new BufferUploader(proof_, resourceCreator.get(),bufferDispatcher.get(), commandContextDiplomat_));
 	Logger::Log("Instantiate: BufferUploader", fileName);
 
-	worldConstantBuffers.reset(new WorldConstantBuffers(proof_));
-	Logger::Log("Instantiate: worldConstantBuffers", fileName);
+	globalConstantBuffers.reset(new GlobalConstantBuffers(proof_));
+	Logger::Log("Instantiate: GlobalConstantBuffers", fileName);
 
-	constantBufferCreator.reset(new ConstantBufferCreator(proof_, worldConstantBuffers.get(),bufferCreator.get()));
-	Logger::Log("Instantiate: constantBufferCreator", fileName);
+	globalConstantBufferCreator.reset(new GlobalConstantBufferCreator(proof_, globalConstantBuffers.get(),bufferCreator.get()));
+	Logger::Log("Instantiate: GlobalConstantBufferCreator", fileName);
 
 	diplomat.reset
 	(
@@ -80,10 +80,10 @@ BufferContext::BufferContext
 				bufferUploader.get(),
 				bufferDispatcher.get(),
 				bufferCollector.get(),
-				worldConstantBuffers.get()
+				globalConstantBuffers.get()
 			),
-			std::make_unique<ExecutionAgent>(proof_, this, bufferUploader.get(),worldConstantBuffers.get()),
-			std::make_unique<CmdProvider>(proof_, constantBufferCreator.get())
+			std::make_unique<ExecutionAgent>(proof_, this, bufferUploader.get(),globalConstantBuffers.get()),
+			std::make_unique<CmdProvider>(proof_, globalConstantBufferCreator.get())
 		)
 	);
 

@@ -58,13 +58,28 @@ struct IUpload
 //CPUから書き込み可能
 struct IWritableCPU
 {
+	//片方だけ書き込む。ランタイム用
 	template<typename DataType>
-	auto* GetMappedPtr(UINT frameIndex_) { return static_cast<DataType*>(mappedPtrs[frameIndex_]); }
+	void Write(const UINT index_,const DataType& data_)
+	{
+		*reinterpret_cast<DataType*>(mappedPtrs[index_]) = data_;
+	}
+	//両方に書き込む。初期化用
+	template<typename DataType>
+	void WriteInBoth
+	(
+		const std::array<DataType, (UINT)ProjectConfig::Render::NumBuffer::kDoubleBuffer>& doubleData_ 
+	)
+	{
+		Write(0, doubleData_[0]);
+		Write(1, doubleData_[1]);
+	}
 
 	virtual ~IWritableCPU() {};
 
 protected:
 
+	//マップ済みポインタ
 	std::array<void*, (UINT)ProjectConfig::Render::NumBuffer::kDoubleBuffer> mappedPtrs;
 	//初期化でマッピングする
 	void Map(std::array<ID3D12Resource*, (UINT)ProjectConfig::Render::NumBuffer::kDoubleBuffer> resources_);
