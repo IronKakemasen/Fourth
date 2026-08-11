@@ -24,7 +24,7 @@ private:
 
 	//データのコピーは他者にやってもらいたいから、バッファユニークIDを渡す
 	std::pair<BufferUniqueID, ConstantBuffer*>
-		Create(std::string name_, UINT const realDataSize_, ConstantBuffers::BindSlot const bindSlot_);
+		Create(std::string name_, UINT const realDataSize_, ConstantBuffers::ConstantBufferBindSlots const bindSlot_);
 
 
 	BufferCreator* creator;

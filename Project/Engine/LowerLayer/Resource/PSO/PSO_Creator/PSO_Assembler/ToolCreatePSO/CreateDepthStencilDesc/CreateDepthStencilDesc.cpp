@@ -1,7 +1,8 @@
 #include "CreateDepthStencilDesc.h"
 
+using namespace PipelineStateComponent;
 
-CD3DX12_DEPTH_STENCIL_DESC CreateDepthStencilDesc::Create(const std::optional<PipelineStateDesc::DepthStencilDesc> srcDesc_)
+CD3DX12_DEPTH_STENCIL_DESC CreateDepthStencilDesc::Create(const std::optional<DepthStencilDesc> srcDesc_)
 {
 	CD3DX12_DEPTH_STENCIL_DESC depthStencilDesc{};
 	
@@ -22,7 +23,7 @@ CD3DX12_DEPTH_STENCIL_DESC CreateDepthStencilDesc::Create(const std::optional<Pi
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-void CreateDepthStencilDesc::SetBranchedDetails(CD3DX12_DEPTH_STENCIL_DESC* desc_, const PipelineStateDesc::DepthStencilDesc& srcDesc_)
+void CreateDepthStencilDesc::SetBranchedDetails(CD3DX12_DEPTH_STENCIL_DESC* desc_, const DepthStencilDesc& srcDesc_)
 {
 	D3D12_DEPTH_WRITE_MASK depthWriteMask{};
 
@@ -50,7 +51,7 @@ void CreateDepthStencilDesc::SetBranchedDetails(CD3DX12_DEPTH_STENCIL_DESC* desc
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-void CreateDepthStencilDesc::SetDetailsDirectly(CD3DX12_DEPTH_STENCIL_DESC* desc_, const PipelineStateDesc::DepthStencilDesc& srcDesc_)
+void CreateDepthStencilDesc::SetDetailsDirectly(CD3DX12_DEPTH_STENCIL_DESC* desc_, const DepthStencilDesc& srcDesc_)
 {
 	desc_->DepthEnable = BOOL(srcDesc_.depthEnable);
 	desc_->DepthFunc = RenderPassComponent ::Convert(srcDesc_.depthTest);

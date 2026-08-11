@@ -5,6 +5,11 @@ class DeviceContextDiplomat;
 
 class PSO_Context
 {
+	//PSOを構築するもの
+	class Assembler;
+	//PSOのユニークを所持するだけ
+	class PSO_Container;
+
 protected:
 
 	using CommandCreateGraphicsPSO = std::function<void(ID3D12PipelineState** doublePtr_pso_, D3D12_PIPELINE_STATE_STREAM_DESC* streamDesc_)>;
@@ -12,8 +17,7 @@ protected:
 
 public:
 
-	//PSOを構築するもの
-	class Assembler;
+	class PSO_Creator;
 
 	//自身のインスタンスキー
 	struct NexusFieldProof;
@@ -29,11 +33,9 @@ public:
 
 private:
 
-	std::unique_ptr<Assembler> assembler;
+	std::unique_ptr<PSO_Creator> psoCreator;
+	std::unique_ptr<PSO_Container> psoContainer;
 
-
-	//ただのpsoのコンテナ
-	std::vector<Microsoft::WRL::ComPtr<ID3D12PipelineState>> psoContainer;
 };
 
 

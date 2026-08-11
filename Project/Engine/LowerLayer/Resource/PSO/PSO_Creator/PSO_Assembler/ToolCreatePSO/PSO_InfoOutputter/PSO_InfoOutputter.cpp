@@ -1,6 +1,5 @@
 
 #include "PSO_InfoOutputter.h"
-#include "../../PipelineStateDesc.h"
 
 
 using namespace RenderStateComponent;

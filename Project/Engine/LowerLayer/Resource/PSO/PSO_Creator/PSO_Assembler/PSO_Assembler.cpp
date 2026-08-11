@@ -1,4 +1,3 @@
-
 #include "PSO_Assembler.h"
 //ツール
 #include "ToolCreatePSO/CreateBlendDesc/CreateBlendDesc.h"
@@ -9,8 +8,8 @@
 
 
 //外部
-#include "../../../Core/Device/DeviceContextDiplomat/DeviceContextDiplomat.h"
-#include "../../../Core/Device/DeviceContextDiplomat/DeviceContextCommandProvider/DeviceContextCommandProvider.h"
+#include "../../../../Core/Device/DeviceContextDiplomat/DeviceContextDiplomat.h"
+#include "../../../../Core/Device/DeviceContextDiplomat/DeviceContextCommandProvider/DeviceContextCommandProvider.h"
 
 namespace
 {
@@ -20,9 +19,8 @@ namespace
 PSO_Context::Assembler::Assembler
 (
 	NexusFieldProof proof_,
-	DeviceContextDiplomat* deviceContextDiplomat_,	
-	std::vector<Microsoft::WRL::ComPtr<ID3D12PipelineState>>* psoContainer_
-): psoContainer(psoContainer_)
+	DeviceContextDiplomat* deviceContextDiplomat_
+)
 {
 	auto cmdProvider = deviceContextDiplomat_->Access<DeviceContext::CommandProvider>();
 	cmdCreateGraphicsPSO = cmdProvider->ProvideCreatePSOCommand<D3D12_PIPELINE_STATE_STREAM_DESC>();
@@ -37,9 +35,12 @@ PSO_Context::Assembler::~Assembler(){}
 ///+//////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+//////////////////////////////////////////////////////////////////////////////////////////////////////
 
-ID3D12PipelineState* PSO_Context::Assembler::AssembleGraphicsPSO
+
+template<>
+Microsoft::WRL::ComPtr<ID3D12PipelineState> PSO_Context::Assembler::Assemble
 (
-	PipelineStateDesc::Graphics& srcDesc_,	
+	Local_AssembleLicence licence_,
+	PipelineStateDesc::Graphics& srcDesc_,
 	ID3D12RootSignature* rootSignature_,
 	std::string debugName_
 )
@@ -95,7 +96,7 @@ ID3D12PipelineState* PSO_Context::Assembler::AssembleGraphicsPSO
 		sampleDesc = creator.Create(srcDesc_.sampleDesc);
 	}
 
-	PipelineStateDesc::MeshShaderPipelineStateStreamDesc pipelineDesc = {};
+	PipelineStateComponent::MeshShaderPipelineStateStreamDesc pipelineDesc = {};
 	D3D12_PIPELINE_STATE_STREAM_DESC streamDesc{};
 	///集約
 	{
@@ -123,17 +124,15 @@ ID3D12PipelineState* PSO_Context::Assembler::AssembleGraphicsPSO
 
 	Logger::End("assembling: " + debugName_);
 
-	auto& dstPso = psoContainer->emplace_back(std::move(pipelineState));
-
-	return dstPso.Get();
+	return pipelineState;
 }
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 void PSO_Context::Assembler::Check
 (
-	const PipelineStateDesc::ShaderSet& shaderSet_,
-	const PipelineStateDesc::RenderTargetDesc& renderTargetDesc_,
+	const PipelineStateComponent::ShaderSet& shaderSet_,
+	const PipelineStateComponent::RenderTargetDesc& renderTargetDesc_,
 	const std::string debugName_
 )const
 {
@@ -150,7 +149,7 @@ void PSO_Context::Assembler::Check
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-CD3DX12_RT_FORMAT_ARRAY PSO_Context::Assembler::SummarizeRenderTargetFormatInfo(const PipelineStateDesc::RenderTargetDesc& renderTargetDesc_)const
+CD3DX12_RT_FORMAT_ARRAY PSO_Context::Assembler::SummarizeRenderTargetFormatInfo(const PipelineStateComponent::RenderTargetDesc& renderTargetDesc_)const
 {
 	CD3DX12_RT_FORMAT_ARRAY renderTargetFormatArray = {};
 	
@@ -165,7 +164,7 @@ CD3DX12_RT_FORMAT_ARRAY PSO_Context::Assembler::SummarizeRenderTargetFormatInfo(
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-PSO_Context::Assembler::MS_PS PSO_Context::Assembler::CreateShaderByteCode(PipelineStateDesc::ShaderSet& shaderSet_)
+PSO_Context::Assembler::MS_PS PSO_Context::Assembler::CreateShaderByteCode(PipelineStateComponent::ShaderSet& shaderSet_)
 {
 	MS_PS pair_byteCode;
 

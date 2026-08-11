@@ -48,7 +48,7 @@ void ModelContext::ModelDataCreator::TransformMatrixContainerBufferCreator::Crea
 	///定数バッファはダブルバッファなので、それぞれに別々のsrvHeapIndexを入力する
 
 	//定数バッファ生成コマンドで生成する
-	auto cBufferID_cBuffer = createCBufferCmd_(bufferName, UINT(sizeof(SRVHeapIndex)), ConstantBuffers::BindSlot::kTransformMatrixContainer);
+	auto cBufferID_cBuffer = createCBufferCmd_(bufferName, UINT(sizeof(SRVHeapIndex)), ConstantBuffers::ConstantBufferBindSlots::kTransformMatrixContainer);
 	
 	//その定数バッファのマップしたポインタにデータを書き込む
 	cBufferID_cBuffer.second->WriteInBoth<SRVHeapIndex>

@@ -3,7 +3,7 @@
 #include "../../../Render/RenderPathStructure/RenderPassComponent.h"
 #include "../../../../External/d3dx12/d3dx12.h"
 
-namespace PipelineStateDesc
+namespace PipelineStateComponent
 {
     struct ShaderSet
     {
@@ -47,15 +47,6 @@ namespace PipelineStateDesc
         ///一旦空
     };
 
-    struct Graphics
-    {
-        ShaderSet shaderSet;
-        RasterizerDesc rasterizerDesc;
-        RenderTargetDesc renderTargetDesc;
-        std::optional<DepthStencilDesc> depthStencilDesc;
-        SampleDesc sampleDesc;
-    };
-
     struct MeshShaderPipelineStateStreamDesc
     {
         CD3DX12_PIPELINE_STATE_STREAM_ROOT_SIGNATURE pRootSignature;
@@ -69,6 +60,21 @@ namespace PipelineStateDesc
         CD3DX12_PIPELINE_STATE_STREAM_RENDER_TARGET_FORMATS RTVFormats;
         CD3DX12_PIPELINE_STATE_STREAM_DEPTH_STENCIL_FORMAT DSVFormat;
     };
+
+}
+
+namespace PipelineStateDesc
+{
+
+    struct Graphics
+    {
+        PipelineStateComponent::ShaderSet shaderSet;
+        PipelineStateComponent::RasterizerDesc rasterizerDesc;
+        PipelineStateComponent::RenderTargetDesc renderTargetDesc;
+        std::optional<PipelineStateComponent::DepthStencilDesc> depthStencilDesc;
+        PipelineStateComponent::SampleDesc sampleDesc;
+    };
+
 
 }
 

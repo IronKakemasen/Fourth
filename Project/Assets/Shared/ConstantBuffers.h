@@ -5,7 +5,7 @@
 
 namespace ConstantBuffers
 {
-	enum class BindSlot
+	enum class ConstantBufferBindSlots
 	{
 		kMeshDataContainer,
 		kTransformMatrixContainer
@@ -13,14 +13,44 @@ namespace ConstantBuffers
 		, kCount
 	};
 
+	enum class RootConstantsBindSlots
+	{
+		kPerDrawIndices = ConstantBufferBindSlots::kCount
+
+
+		,kCount
+	};
+
+	struct PerDrawIndicesCPUGPU
+	{
+		UINT modelDataID;
+		UINT transformMatrixID;
+	};
+
+
 }
 
 
 #else
 
+struct PerDrawIndices
+{
+	uint modelDataID;
+	uint transformMatrixID;
+};
 
-ConstantBuffer<uint> gModelDataContainerIndex: register(b0);
-ConstantBuffer<uint> gTransformMatrixContainerIndex: register(b1);
+
+cbuffer ModelDataContainerIndexCB : register(b0)
+{
+	uint gModelDataContainerIndex;
+}
+
+cbuffer TransformMatrixContainerIndexCB : register(b1)
+{
+	uint gTransformMatrixContainerIndex;
+}
+
+ConstantBuffer<PerDrawIndices> gPerDrawIndices: register(b2);
 
 #endif
 

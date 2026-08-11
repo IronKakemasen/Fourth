@@ -6,6 +6,6 @@ class ConstantBuffer;
 namespace BufferContextCmds
 {
 	using CreateCBufferCmd = std::function<std::pair<BufferUniqueID, ConstantBuffer*>
-		(std::string name_, UINT const realDataSize_, ConstantBuffers::BindSlot const bindSlot_)>;
+		(std::string name_, UINT const realDataSize_, ConstantBuffers::ConstantBufferBindSlots const bindSlot_)>;
 
 }

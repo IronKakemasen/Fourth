@@ -1,19 +1,41 @@
 #include "RootParamCreator.h"
 #include "../../../../../../../../Assets/Shared/ConstantBuffers.h"
 
+using namespace RootSignatureLayoutComponent;
+
 std::vector<D3D12_ROOT_PARAMETER> RootSignatureContext::Assembler::RootParamCreator::CreateRootparamGloballyCommonCBV(const RootSignatureDesc::Graphics& srcDesc_)
 {
 	std::vector<D3D12_ROOT_PARAMETER> rootParams = {};
-	rootParams.resize(size_t(ConstantBuffers::BindSlot::kCount));
+	rootParams.resize(size_t(ConstantBuffers::ConstantBufferBindSlots::kCount));
 
+	//こっちは定数バッファ
 	int i = 0;
-	for (auto& rootparam : rootParams)
+	for (;i < (int)ConstantBuffers::ConstantBufferBindSlots::kCount;++i)
 	{
-		rootparam.ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
-		rootparam.ShaderVisibility = RootSignatureLayoutComponent::Convert(RootSignatureLayoutComponent::ShaderStage::kAll);
-		rootparam.Descriptor.ShaderRegister = i;
-		++i;
+		rootParams[i].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
+		rootParams[i].ShaderVisibility = Convert(ShaderStage::kAll);
+		rootParams[i].Descriptor.ShaderRegister = i	;
 	}
+
+	//こっちはルートコンスタンツ
+	for (;i < (int)ConstantBuffers::RootConstantsBindSlots::kCount;++i)
+	{
+		switch (i)
+		{
+		case (int)ConstantBuffers::RootConstantsBindSlots::kPerDrawIndices:
+
+			rootParams[i].ShaderVisibility = Convert(ShaderStage::kAll);
+
+			rootParams[i].ParameterType = D3D12_ROOT_PARAMETER_TYPE_32BIT_CONSTANTS;
+			rootParams[i].Constants.ShaderRegister = i;
+			rootParams[i].Constants.RegisterSpace = 0;
+			rootParams[i].Constants.Num32BitValues = 2;
+
+			break;
+
+		}
+	}
+
 
 	return rootParams;
 }

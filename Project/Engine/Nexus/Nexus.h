@@ -37,7 +37,7 @@ class Nexus
 		kKickCommands,
 		kDeleteIntermediateResources,
 		kDeleteModelDataCache,
-		kSortOutWorldConstantBuffers
+		kSortOutGlobalConstantBuffers
 
 
 		,kEnd

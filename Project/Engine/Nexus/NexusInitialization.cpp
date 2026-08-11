@@ -237,7 +237,7 @@ void Nexus::Init<Nexus::InitSequence::kDeleteModelDataCache>()
 }
 
 template<>
-void Nexus::Init<Nexus::InitSequence::kSortOutWorldConstantBuffers>()
+void Nexus::Init<Nexus::InitSequence::kSortOutGlobalConstantBuffers>()
 {
 	//bufferContextの代行者
 	auto* agent = bufferContext->diplomat->Access<BufferContext::ExecutionAgent>();
@@ -300,6 +300,6 @@ template
 void Nexus::Init<Nexus::InitSequence::kDeleteModelDataCache>();
 
 template
-void Nexus::Init<Nexus::InitSequence::kSortOutWorldConstantBuffers>();
+void Nexus::Init<Nexus::InitSequence::kSortOutGlobalConstantBuffers>();
 
 
