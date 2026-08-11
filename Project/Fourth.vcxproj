@@ -128,10 +128,10 @@
     <ClCompile Include="Engine\LowerLayer\Resource\RootSignature\RootSignatureCreator\RootSignatureAssembler\RootSignatureAssemblerTool\StaticSamplerDescCreator\StaticSamplerDescCreator.cpp" />
     <ClCompile Include="Engine\LowerLayer\Core\Device\Commands\CreateRootSignature\CommandCreateRootSignature.cpp" />
     <ClCompile Include="Engine\LowerLayer\Core\Device\Commands\CreatePSO\CommandCreatePSO.cpp" />
-    <ClCompile Include="Engine\LowerLayer\Resource\PSO\PSO_Assembler\ToolCreatePSO\CreateSampleDesc\CreateSampleDesc.cpp" />
-    <ClCompile Include="Engine\LowerLayer\Resource\PSO\PSO_Assembler\ToolCreatePSO\CreateRasterizerDesc\CreateRasterizerDesc.cpp" />
-    <ClCompile Include="Engine\LowerLayer\Resource\PSO\PSO_Assembler\ToolCreatePSO\CreateDepthStencilDesc\CreateDepthStencilDesc.cpp" />
-    <ClCompile Include="Engine\LowerLayer\Resource\PSO\PSO_Assembler\ToolCreatePSO\CreateBlendDesc\CreateBlendDesc.cpp" />
+    <ClCompile Include="Engine\LowerLayer\Resource\PSO\PSO_Creator\PSO_Assembler\ToolCreatePSO\CreateSampleDesc\CreateSampleDesc.cpp" />
+    <ClCompile Include="Engine\LowerLayer\Resource\PSO\PSO_Creator\PSO_Assembler\ToolCreatePSO\CreateRasterizerDesc\CreateRasterizerDesc.cpp" />
+    <ClCompile Include="Engine\LowerLayer\Resource\PSO\PSO_Creator\PSO_Assembler\ToolCreatePSO\CreateDepthStencilDesc\CreateDepthStencilDesc.cpp" />
+    <ClCompile Include="Engine\LowerLayer\Resource\PSO\PSO_Creator\PSO_Assembler\ToolCreatePSO\CreateBlendDesc\CreateBlendDesc.cpp" />
     <ClCompile Include="Engine\LowerLayer\Resource\Buffer\BufferRuntime\BufferDispatcher\BufferDispatcher.cpp" />
     <ClCompile Include="Engine\LowerLayer\Resource\Buffer\BufferCreateTools\BufferCreator.cpp" />
     <ClCompile Include="Engine\LowerLayer\Resource\Buffer\BufferCreateTools\BufferCollector\BufferCollector.cpp" />
@@ -306,10 +306,10 @@
     <ClCompile Include="Engine\LowerLayer\Resource\Shader\ShaderLoader\ShaderCompiler\ShaderCompiler.cpp" />
     <ClCompile Include="Engine\LowerLayer\Resource\Shader\ShaderLibrary\ShaderLibrary.cpp" />
     <ClCompile Include="Engine\LowerLayer\Resource\PSO\PSO_Context.cpp" />
-    <ClCompile Include="Engine\LowerLayer\Resource\PSO\PSO_Assembler\PSO_Assembler.cpp" />
+    <ClCompile Include="Engine\LowerLayer\Resource\PSO\PSO_Creator\PSO_Assembler\PSO_Assembler.cpp" />
     <ClCompile Include="Engine\LowerLayer\Resource\RootSignature\RootSignatureContext.cpp" />
     <ClCompile Include="Engine\LowerLayer\Resource\RootSignature\RootSignatureCreator\RootSignatureAssembler\RootSignatureAssembler.cpp" />
-    <ClCompile Include="Engine\LowerLayer\Resource\PSO\PSO_Assembler\ToolCreatePSO\PSO_InfoOutputter\PSO_InfoOutputter.cpp" />
+    <ClCompile Include="Engine\LowerLayer\Resource\PSO\PSO_Creator\PSO_Assembler\ToolCreatePSO\PSO_InfoOutputter\PSO_InfoOutputter.cpp" />
     <ClCompile Include="Engine\LowerLayer\Render\RenderPathStructure\RenderPathComposer\RenderPathComposer.cpp" />
     <ClCompile Include="Engine\LowerLayer\Render\RenderPathStructure\RenderPathComposer\ShaderCombiner\ShaderCombiner.cpp" />
     <ClCompile Include="Engine\LowerLayer\Render\RenderPathStructure\RenderPath.cpp" />
@@ -367,6 +367,8 @@
     <ClCompile Include="Engine\LowerLayer\Resource\Model\ModelContextRuntime\ModelDataBatcher\ModelUploadBufferUniqueIDs\ModelUploadBufferUniqueIDs.cpp" />
     <ClCompile Include="Engine\LowerLayer\Resource\Model\ModelContextDiplomat\ModelContextCmdProvider\ModelContextCmdProvider.cpp" />
     <ClCompile Include="Engine\LowerLayer\Resource\RootSignature\RootSignatureContextDiplomat\RootSignatureCmdProvider\RootSignatureCmdProvider.cpp" />
+    <ClCompile Include="Engine\LowerLayer\Resource\PSO\PSO_Creator\PSO_Creator.cpp" />
+    <ClCompile Include="Engine\LowerLayer\Resource\PSO\PSO_Container\PSO_Container.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Assets\BAKA\ConstantBuffers.h" />
@@ -424,10 +426,10 @@
     <ClInclude Include="Engine\LowerLayer\Resource\RootSignature\RootSignatureCreator\RootSignatureAssembler\RootSignatureAssemblerTool\StaticSamplerDescCreator\StaticSamplerDescCreator.h" />
     <ClInclude Include="Engine\LowerLayer\Core\Device\Commands\CreateRootSignature\CommandCreateRootSignature.h" />
     <ClInclude Include="Engine\LowerLayer\Core\Device\Commands\CreatePSO\CommandCreatePSO.h" />
-    <ClInclude Include="Engine\LowerLayer\Resource\PSO\PSO_Assembler\ToolCreatePSO\CreateSampleDesc\CreateSampleDesc.h" />
-    <ClInclude Include="Engine\LowerLayer\Resource\PSO\PSO_Assembler\ToolCreatePSO\CreateRasterizerDesc\CreateRasterizerDesc.h" />
-    <ClInclude Include="Engine\LowerLayer\Resource\PSO\PSO_Assembler\ToolCreatePSO\CreateDepthStencilDesc\CreateDepthStencilDesc.h" />
-    <ClInclude Include="Engine\LowerLayer\Resource\PSO\PSO_Assembler\ToolCreatePSO\CreateBlendDesc\CreateBlendDesc.h" />
+    <ClInclude Include="Engine\LowerLayer\Resource\PSO\PSO_Creator\PSO_Assembler\ToolCreatePSO\CreateSampleDesc\CreateSampleDesc.h" />
+    <ClInclude Include="Engine\LowerLayer\Resource\PSO\PSO_Creator\PSO_Assembler\ToolCreatePSO\CreateRasterizerDesc\CreateRasterizerDesc.h" />
+    <ClInclude Include="Engine\LowerLayer\Resource\PSO\PSO_Creator\PSO_Assembler\ToolCreatePSO\CreateDepthStencilDesc\CreateDepthStencilDesc.h" />
+    <ClInclude Include="Engine\LowerLayer\Resource\PSO\PSO_Creator\PSO_Assembler\ToolCreatePSO\CreateBlendDesc\CreateBlendDesc.h" />
     <ClInclude Include="Engine\LowerLayer\Resource\Buffer\BufferRuntime\BufferDispatcher\BufferDispatcher.h" />
     <ClInclude Include="Engine\LowerLayer\Resource\Buffer\BufferDefinition\GPUBuffer\BufferInterface.h" />
     <ClInclude Include="Engine\LowerLayer\Resource\Buffer\BufferCreateTools\BufferCreator.h" />
@@ -461,7 +463,7 @@
     <ClInclude Include="Engine\LowerLayer\Core\Device\DeviceContext.h" />
     <ClInclude Include="Engine\LowerLayer\Core\Window\WindowContext.h" />
     <ClInclude Include="Engine\MiddleLayer\Math\Matrix\Matrix4x4.h" />
-    <ClInclude Include="Engine\LowerLayer\Resource\PSO\PSO_Assembler\PipelineStateDesc.h" />
+    <ClInclude Include="Engine\LowerLayer\Resource\PSO\PSO_Creator\PipelineStateDesc.h" />
     <ClInclude Include="Engine\LowerLayer\Debug\ErrorMessageOutput\ErrorMessageOutput.h" />
     <ClInclude Include="Engine\LowerLayer\Resource\Buffer\BufferDefinition\ResourceBarrier.h" />
     <ClInclude Include="Engine\LowerLayer\Render\RenderPathStructure\RenderStateComponent.h" />
@@ -521,10 +523,10 @@
     <ClInclude Include="Engine\LowerLayer\Resource\Shader\ShaderLoader\ShaderCompiler\ShaderCompiler.h" />
     <ClInclude Include="Engine\LowerLayer\Resource\Shader\ShaderLibrary\ShaderLibrary.h" />
     <ClInclude Include="Engine\LowerLayer\Resource\PSO\PSO_Context.h" />
-    <ClInclude Include="Engine\LowerLayer\Resource\PSO\PSO_Assembler\PSO_Assembler.h" />
+    <ClInclude Include="Engine\LowerLayer\Resource\PSO\PSO_Creator\PSO_Assembler\PSO_Assembler.h" />
     <ClInclude Include="Engine\LowerLayer\Resource\RootSignature\RootSignatureContext.h" />
     <ClInclude Include="Engine\LowerLayer\Resource\RootSignature\RootSignatureCreator\RootSignatureAssembler\RootSignatureAssembler.h" />
-    <ClInclude Include="Engine\LowerLayer\Resource\PSO\PSO_Assembler\ToolCreatePSO\PSO_InfoOutputter\PSO_InfoOutputter.h" />
+    <ClInclude Include="Engine\LowerLayer\Resource\PSO\PSO_Creator\PSO_Assembler\ToolCreatePSO\PSO_InfoOutputter\PSO_InfoOutputter.h" />
     <ClInclude Include="Engine\LowerLayer\Render\RenderPathStructure\RenderPathComposer\RenderPathComposer.h" />
     <ClInclude Include="Engine\LowerLayer\Render\RenderPathStructure\RenderPathComposer\ShaderCombiner\ShaderCombiner.h" />
     <ClInclude Include="Engine\LowerLayer\Render\RenderPathStructure\RenderPath.h" />
@@ -587,6 +589,8 @@
     <ClInclude Include="Engine\LowerLayer\Resource\Model\ModelContextRuntime\ModelDataBatcher\ModelUploadBufferUniqueIDs\ModelUploadBufferUniqueIDs.h" />
     <ClInclude Include="Engine\LowerLayer\Resource\Model\ModelContextDiplomat\ModelContextCmdProvider\ModelContextCmdProvider.h" />
     <ClInclude Include="Engine\LowerLayer\Resource\RootSignature\RootSignatureContextDiplomat\RootSignatureCmdProvider\RootSignatureCmdProvider.h" />
+    <ClInclude Include="Engine\LowerLayer\Resource\PSO\PSO_Creator\PSO_Creator.h" />
+    <ClInclude Include="Engine\LowerLayer\Resource\PSO\PSO_Container\PSO_Container.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

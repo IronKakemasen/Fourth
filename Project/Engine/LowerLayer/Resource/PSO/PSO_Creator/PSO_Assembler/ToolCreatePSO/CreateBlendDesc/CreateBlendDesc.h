@@ -1,12 +1,12 @@
 #pragma once
-#include "../../PipelineStateDesc.h"
+#include "../../../PipelineStateDesc.h"
 
 
 //複数のカラーバッファに対応したブレンドディスク生成機
 struct CreateBlendDesc
 {
 	///本丸
-	CD3DX12_BLEND_DESC Create(const PipelineStateDesc::RenderTargetDesc& srcDesc_);
+	CD3DX12_BLEND_DESC Create(const PipelineStateComponent::RenderTargetDesc& srcDesc_);
 
 private:
 

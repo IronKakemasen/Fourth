@@ -2,7 +2,7 @@
 #include "CreateBlendDesc.h"
 
 
-CD3DX12_BLEND_DESC CreateBlendDesc::Create(const PipelineStateDesc::RenderTargetDesc& srcDesc_)
+CD3DX12_BLEND_DESC CreateBlendDesc::Create(const PipelineStateComponent::RenderTargetDesc& srcDesc_)
 {
 	CD3DX12_BLEND_DESC blendDesc;
 

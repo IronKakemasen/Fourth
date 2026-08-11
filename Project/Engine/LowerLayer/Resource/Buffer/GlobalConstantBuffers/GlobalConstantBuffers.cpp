@@ -28,7 +28,7 @@ void BufferContext::GlobalConstantBuffers::PackRuntimeContainer(NexusFieldProof 
 	for (auto [key, value] : gpuVirtualAddressMap)
 	{
 		//念のため重複チェック
-		ErrorMessageOutput::Assert::DetectError(std::ranges::contains(forChecking, key), "定数バッファのスロット設定おかしくね？", fileName);
+		ErrorMessageOutput::Assert::DetectError(!std::ranges::contains(forChecking, key), "定数バッファのスロット設定おかしくね？", fileName);
 		forChecking.emplace_back(key);
 
 		gpuVirtualAddressVector[0].emplace_back(value[0]);
@@ -36,7 +36,7 @@ void BufferContext::GlobalConstantBuffers::PackRuntimeContainer(NexusFieldProof 
 	}
 
 	auto const numActualCBuffers = forChecking.size();
-	auto const numRequiredCBuffers = (size_t)ConstantBuffers::BindSlot::kCount;
+	auto const numRequiredCBuffers = (size_t)ConstantBuffers::ConstantBufferBindSlots::kCount;
 
 	ErrorMessageOutput::Assert::DetectError
 	(

@@ -1,8 +1,8 @@
-
 #include "CreateRasterizerDesc.h"
 
+using namespace PipelineStateComponent;
 
-CD3DX12_RASTERIZER_DESC CreateRasterizerDesc::Create(const PipelineStateDesc::RasterizerDesc& srcDesc_)
+CD3DX12_RASTERIZER_DESC CreateRasterizerDesc::Create(const RasterizerDesc& srcDesc_)
 {
 	CD3DX12_RASTERIZER_DESC rasterizerDesc{};
 
@@ -28,7 +28,7 @@ void CreateRasterizerDesc::SetCommonDetails(CD3DX12_RASTERIZER_DESC* desc_)
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-void CreateRasterizerDesc::SetDetailsDirectly(CD3DX12_RASTERIZER_DESC* desc_, const PipelineStateDesc::RasterizerDesc& srcDesc_)
+void CreateRasterizerDesc::SetDetailsDirectly(CD3DX12_RASTERIZER_DESC* desc_, const RasterizerDesc& srcDesc_)
 {
 	desc_->CullMode = RenderStateComponent::Convert(srcDesc_.cullMode);
 	desc_->FillMode = RenderStateComponent::Convert(srcDesc_.fillMode);

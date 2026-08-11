@@ -6411,9 +6411,9 @@ public:
 #include "BufferRuntime/BufferDispatcher/BufferDispatcher.h"
 #include "BufferRuntime/BufferInfoExtractor/BufferInfoExtractor.h"
 //ワールドコンスタントバッファの生成
-#include "WorldConstantBuffers/ConstantBufferCreator/ConstantBufferCreator.h"
+#include "GlobalConstantBuffers/GlobalConstantBufferCreator/GlobalConstantBufferCreator.h"
 //から仮想GPUアドレスの保持
-#include "WorldConstantBuffers/WorldConstantBuffers.h"
+#include "GlobalConstantBuffers/GlobalConstantBuffers.h"
 //バッファコレクターがバッファを仕分ける
 #include "BufferPoolSet/BufferPoolSet.h"
 
@@ -6459,11 +6459,11 @@ BufferContext::BufferContext
 	bufferUploader.reset(new BufferUploader(proof_, resourceCreator.get(),bufferDispatcher.get(), commandContextDiplomat_));
 	Logger::Log("Instantiate: BufferUploader", fileName);
 
-	worldConstantBuffers.reset(new WorldConstantBuffers(proof_));
-	Logger::Log("Instantiate: worldConstantBuffers", fileName);
+	globalConstantBuffers.reset(new GlobalConstantBuffers(proof_));
+	Logger::Log("Instantiate: GlobalConstantBuffers", fileName);
 
-	constantBufferCreator.reset(new ConstantBufferCreator(proof_, worldConstantBuffers.get(),bufferCreator.get()));
-	Logger::Log("Instantiate: constantBufferCreator", fileName);
+	globalConstantBufferCreator.reset(new GlobalConstantBufferCreator(proof_, globalConstantBuffers.get(),bufferCreator.get()));
+	Logger::Log("Instantiate: GlobalConstantBufferCreator", fileName);
 
 	diplomat.reset
 	(
@@ -6477,10 +6477,10 @@ BufferContext::BufferContext
 				bufferUploader.get(),
 				bufferDispatcher.get(),
 				bufferCollector.get(),
-				worldConstantBuffers.get()
+				globalConstantBuffers.get()
 			),
-			std::make_unique<ExecutionAgent>(proof_, this, bufferUploader.get(),worldConstantBuffers.get()),
-			std::make_unique<CmdProvider>(proof_, constantBufferCreator.get())
+			std::make_unique<ExecutionAgent>(proof_, this, bufferUploader.get(),globalConstantBuffers.get()),
+			std::make_unique<CmdProvider>(proof_, globalConstantBufferCreator.get())
 		)
 	);
 
@@ -6585,9 +6585,9 @@ public:
 	//代行者
 	class ExecutionAgent;
 	//ワールドコンスタントバッファ
-	class WorldConstantBuffers;
+	class GlobalConstantBuffers;
 	//コンスタントバッファ専用生成クラス
-	class ConstantBufferCreator;
+	class GlobalConstantBufferCreator;
 
 	BufferContext
 	(
@@ -6622,8 +6622,8 @@ private:
 	std::unique_ptr<BufferCollector> bufferCollector;
 	//Extractors
 	std::unique_ptr<BufferInfoExtractor> bufferInfoExtractor;
-	std::unique_ptr<WorldConstantBuffers> worldConstantBuffers;
-	std::unique_ptr<ConstantBufferCreator> constantBufferCreator;
+	std::unique_ptr<GlobalConstantBuffers> globalConstantBuffers;
+	std::unique_ptr<GlobalConstantBufferCreator> globalConstantBufferCreator;
 
 };
 
@@ -6662,13 +6662,14 @@ private:
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Buffer\BufferContextCmds.h ===
 ========================================
 #pragma once
+#include "../../../../Assets/Shared/ConstantBuffers.h"
 
 class ConstantBuffer;
 
 namespace BufferContextCmds
 {
 	using CreateCBufferCmd = std::function<std::pair<BufferUniqueID, ConstantBuffer*>
-		(std::string name_, UINT const realDataSize_, const uint8_t bindSlot_)>;
+		(std::string name_, UINT const realDataSize_, ConstantBuffers::ConstantBufferBindSlots const bindSlot_)>;
 
 }
 
@@ -6681,7 +6682,7 @@ namespace BufferContextCmds
 #pragma once
 //階層が深すぎてインクルードできないケースの応急処置
 
-#include "WorldConstantBuffers/ConstantBufferCreator/ConstantBufferCreator.h"
+#include "GlobalConstantBuffers/GlobalConstantBufferCreator/GlobalConstantBufferCreator.h"
 #include "BufferCreateTools/BufferCreator.h"
 #include "BufferCreateTools/BufferUploader/BufferUploader.h"
 
@@ -6779,10 +6780,10 @@ private:
 ========================================
 #include "PreCompileHeader.h"
 #include "BufferContextCmdProvider.h"
-#include "../../WorldConstantBuffers/ConstantBufferCreator/ConstantBufferCreator.h"
+#include "../../GlobalConstantBuffers/GlobalConstantBufferCreator/GlobalConstantBufferCreator.h"
 #include "BufferContextCmdProviderLicences.h"
 
-BufferContext::CmdProvider::CmdProvider(NexusFieldProof proof_, ConstantBufferCreator* cBufferCreator_)
+BufferContext::CmdProvider::CmdProvider(NexusFieldProof proof_, GlobalConstantBufferCreator* cBufferCreator_)
 	:cBufferCreator(cBufferCreator_)
 {
 
@@ -6819,7 +6820,7 @@ public:
 	template<typename CmdType>
 	using LicenceType = typename LicenceTypeTraits<CmdType>::Type;
 
-	CmdProvider(NexusFieldProof proof_, ConstantBufferCreator* cBufferCreator_);
+	CmdProvider(NexusFieldProof proof_, GlobalConstantBufferCreator* cBufferCreator_);
 
 	///コマンド提供
 	template<typename CmdType>
@@ -6827,7 +6828,7 @@ public:
 
 private:
 
-	ConstantBufferCreator* cBufferCreator;
+	GlobalConstantBufferCreator* cBufferCreator;
 };
 
 template<>
@@ -6871,15 +6872,15 @@ private:
 #include "PreCompileHeader.h"
 #include "BufferContextExecutionAgent.h"
 #include "../../BufferCreateTools/BufferUploader/BufferUploader.h"
-#include "../../WorldConstantBuffers/WorldConstantBuffers.h"
+#include "../../GlobalConstantBuffers/GlobalConstantBuffers.h"
 
 BufferContext::ExecutionAgent::ExecutionAgent
 (
 	NexusFieldProof proof_,
 	BufferContext* bufferContext_,
 	BufferContext::BufferUploader* bufferUploader_,
-	WorldConstantBuffers* worldConstantBuffers_
-):bufferContext(bufferContext_), bufferUploader(bufferUploader_), worldConstantBuffers(worldConstantBuffers_)
+	GlobalConstantBuffers* worldConstantBuffers_
+):bufferContext(bufferContext_), bufferUploader(bufferUploader_), globalConstantBuffers(worldConstantBuffers_)
 {
 
 }
@@ -6896,7 +6897,7 @@ void BufferContext::ExecutionAgent::UploadAllBuffer(BufferContext::NexusFieldPro
 
 void BufferContext::ExecutionAgent::PackRuntimeContainer(NexusFieldProof proof_)
 {
-	worldConstantBuffers->PackRuntimeContainer(proof_, BufferContext::AgentKey{});
+	globalConstantBuffers->PackRuntimeContainer(proof_, BufferContext::AgentKey{});
 }
 
 
@@ -6916,7 +6917,7 @@ public:
 		NexusFieldProof proof_,
 		BufferContext* bufferContext_,
 		BufferUploader* bufferUploader_,
-		WorldConstantBuffers* worldConstantBuffers_
+		GlobalConstantBuffers* worldConstantBuffers_
 	);
 
 	//BufferUploaderの削除を代行
@@ -6930,7 +6931,7 @@ public:
 private:
 	BufferContext* bufferContext;
 	BufferUploader* bufferUploader;
-	WorldConstantBuffers* worldConstantBuffers;
+	GlobalConstantBuffers* globalConstantBuffers;
 
 };
 
@@ -6952,7 +6953,7 @@ BufferContext::ToolLender::ToolLender
 	BufferUploader* uploader_,
 	BufferDispatcher* dispatcher_,
 	BufferCollector* collector_,
-	WorldConstantBuffers* worldConstantBuffers_
+	GlobalConstantBuffers* worldConstantBuffers_
 
 )
 {
@@ -6960,7 +6961,7 @@ BufferContext::ToolLender::ToolLender
 	std::get<BufferUploader*>(tools) = uploader_;
 	std::get<BufferDispatcher*>(tools) = dispatcher_;
 	std::get<BufferCollector*>(tools) = collector_;
-	std::get<WorldConstantBuffers*>(tools) = worldConstantBuffers_;
+	std::get<GlobalConstantBuffers*>(tools) = worldConstantBuffers_;
 
 }
 
@@ -6989,7 +6990,7 @@ class BufferContext::ToolLender
 		BufferUploader*, 
 		BufferDispatcher*,
 		BufferCollector*,
-		WorldConstantBuffers*
+		GlobalConstantBuffers*
 	> tools;
 
 
@@ -7006,7 +7007,7 @@ public:
 		BufferUploader* uploader_,
 		BufferDispatcher* dispatcher_,
 		BufferCollector* collector_,
-		WorldConstantBuffers* worldConstantBuffers_
+		GlobalConstantBuffers* worldConstantBuffers_
 	);
 
 
@@ -7046,7 +7047,7 @@ struct BufferContext::ToolLender::LicenceTypeTraits<BufferContext::BufferCollect
 };
 
 template<>
-struct BufferContext::ToolLender::LicenceTypeTraits<BufferContext::WorldConstantBuffers>
+struct BufferContext::ToolLender::LicenceTypeTraits<BufferContext::GlobalConstantBuffers>
 {
 	using Type = BasicBufferManagementLicence;
 };
@@ -10937,7 +10938,7 @@ struct GPUBufferBehavior::ResourceAccessKey
 private:
 	friend class BufferContext::BufferAssembler;
 	friend class BufferContext::BufferUploader;
-	friend class BufferContext::ConstantBufferCreator;
+	friend class BufferContext::GlobalConstantBufferCreator;
 
 
 	explicit ResourceAccessKey() = default;
@@ -11701,18 +11702,21 @@ RenderPath::Pass::RequiredBufferInfo::RenderTarget BufferContext::BufferInfoExtr
 
 
 ========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Buffer\WorldConstantBuffers\WorldConstantBuffers.cpp ===
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Buffer\GlobalConstantBuffers\GlobalConstantBuffers.cpp ===
 ========================================
 #include "PreCompileHeader.h"
-#include "WorldConstantBuffers.h"
+#include "GlobalConstantBuffers.h"
+
+//外部
+#include "../../../../../Assets/Shared/ConstantBuffers.h"
 
 namespace
 {
-	auto const fileName = "WorldConstantBuffers.cpp";
+	auto const fileName = "GlobalConstantBuffers.cpp";
 }
 
 
-BufferContext::WorldConstantBuffers::WorldConstantBuffers
+BufferContext::GlobalConstantBuffers::GlobalConstantBuffers
 (
 	NexusFieldProof proof_
 )
@@ -11720,21 +11724,34 @@ BufferContext::WorldConstantBuffers::WorldConstantBuffers
 
 }
 
-void BufferContext::WorldConstantBuffers::PackRuntimeContainer(NexusFieldProof proof_, AgentKey agentKey_)
+void BufferContext::GlobalConstantBuffers::PackRuntimeContainer(NexusFieldProof proof_, AgentKey agentKey_)
 {
 	//デバッグ用
-	uint8_t slotCnt{};
+	std::vector<uint8_t> forChecking{};
+	
 
 	//昇順は担保されてるはずだからそのまま詰めてく
 	for (auto [key, value] : gpuVirtualAddressMap)
 	{
-		ErrorMessageOutput::Assert::DetectError(slotCnt++ == key, "定数バッファのスロット設定おかしくね？", fileName);
+		//念のため重複チェック
+		ErrorMessageOutput::Assert::DetectError(!std::ranges::contains(forChecking, key), "定数バッファのスロット設定おかしくね？", fileName);
+		forChecking.emplace_back(key);
 
 		gpuVirtualAddressVector[0].emplace_back(value[0]);
 		gpuVirtualAddressVector[1].emplace_back(value[1]);
 	}
 
-	Logger::Log("=====Number Of cBuffer Slots: " + std::to_string(slotCnt) + "=====",fileName);
+	auto const numActualCBuffers = forChecking.size();
+	auto const numRequiredCBuffers = (size_t)ConstantBuffers::ConstantBufferBindSlots::kCount;
+
+	ErrorMessageOutput::Assert::DetectError
+	(
+		numActualCBuffers == numRequiredCBuffers,
+		"定数バッファの生成数が合わない実 " + std::to_string(numActualCBuffers) + " : 必 " + std::to_string(numRequiredCBuffers),
+		fileName
+	);
+
+	Logger::Log("===== Number Of cBuffer Slots =====",fileName);
 	for (auto [key, value] : bufferNameMap)
 	{
 		Logger::Log("Slot[" + std::to_string(key) + "]: " + value);
@@ -11745,7 +11762,7 @@ void BufferContext::WorldConstantBuffers::PackRuntimeContainer(NexusFieldProof p
 }
 
 
-void BufferContext::WorldConstantBuffers::Import
+void BufferContext::GlobalConstantBuffers::Import
 (
 	Local_ImportLicence licence_,
 	std::string const bufferName_,
@@ -11767,13 +11784,13 @@ void BufferContext::WorldConstantBuffers::Import
 
 
 ========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Buffer\WorldConstantBuffers\WorldConstantBuffers.h ===
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Buffer\GlobalConstantBuffers\GlobalConstantBuffers.h ===
 ========================================
 #pragma once
 #include "../BufferContext.h"
 
 
-class BufferContext::WorldConstantBuffers
+class BufferContext::GlobalConstantBuffers
 {
 public:
 
@@ -11782,7 +11799,7 @@ public:
 	using DoubleVirtualGPUAddress = std::array
 		<D3D12_GPU_VIRTUAL_ADDRESS, (UINT)ProjectConfig::Render::NumBuffer::kDoubleBuffer>;
 
-	WorldConstantBuffers
+	GlobalConstantBuffers
 	(
 		NexusFieldProof proof_
 	);
@@ -11819,11 +11836,11 @@ private:
 };
 
 
-struct BufferContext::WorldConstantBuffers::Local_ImportLicence
+struct BufferContext::GlobalConstantBuffers::Local_ImportLicence
 {
 private:
 
-	friend class ConstantBufferCreator;
+	friend class GlobalConstantBufferCreator;
 	explicit Local_ImportLicence() = default;
 };
 
@@ -11834,32 +11851,32 @@ private:
 
 
 ========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Buffer\WorldConstantBuffers\ConstantBufferCreator\ConstantBufferCreator.cpp ===
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Buffer\GlobalConstantBuffers\GlobalConstantBufferCreator\GlobalConstantBufferCreator.cpp ===
 ========================================
 #include "PreCompileHeader.h"
-#include "ConstantBufferCreator.h"
-#include "../WorldConstantBuffers.h"
+#include "GlobalConstantBufferCreator.h"
+#include "../GlobalConstantBuffers.h"
 #include "../../BufferCreateTools/BufferCreator.h"
 #include "../../BufferDefinition/GPUBuffer/ConstantBuffer/ConstantBuffer.h"
 #include "../../BufferDefinition/BufferDescriptions/ConstantBufferDescription/ConstantBufferDescription.h"
 
 namespace
 {
-	auto const fileName = "ConstantBufferCreator.cpp";
+	auto const fileName = "GlobalConstantBufferCreator.cpp";
 }
 
-BufferContext::ConstantBufferCreator::ConstantBufferCreator
+BufferContext::GlobalConstantBufferCreator::GlobalConstantBufferCreator
 (
 	NexusFieldProof proof_,
-	WorldConstantBuffers* worldConstantBuffers_,
+	GlobalConstantBuffers* globalConstantBuffers_,
 	BufferCreator* creator_
-):worldConstantBuffers(worldConstantBuffers_), creator(creator_)
+):globalConstantBuffers(globalConstantBuffers_), creator(creator_)
 {
 
 }
 
-std::pair<BufferUniqueID, ConstantBuffer*> BufferContext::ConstantBufferCreator::Create
-(std::string name_, UINT const realDataSize_, const uint8_t bindSlot_)
+std::pair<BufferUniqueID, ConstantBuffer*> BufferContext::GlobalConstantBufferCreator::Create
+(std::string name_, UINT const realDataSize_, ConstantBuffers::ConstantBufferBindSlots const bindSlot_)
 {
 
 	ConstantBufferDescription desc(realDataSize_);
@@ -11867,11 +11884,11 @@ std::pair<BufferUniqueID, ConstantBuffer*> BufferContext::ConstantBufferCreator:
 	//バッファユニークIDとコンスタントバッファ
 	auto id_buffer = creator->CreateWithBuffer(desc, name_);
 
-	worldConstantBuffers->Import
+	globalConstantBuffers->Import
 	(
-		WorldConstantBuffers::Local_ImportLicence{},
+		GlobalConstantBuffers::Local_ImportLicence{},
 		id_buffer.second->WatchName(),
-		bindSlot_,
+		(UINT)bindSlot_,
 		{
 			id_buffer.second->GetResource(GPUBufferBehavior::ResourceAccessKey{}, 0)->GetGPUVirtualAddress(),
 			id_buffer.second->GetResource(GPUBufferBehavior::ResourceAccessKey{}, 1)->GetGPUVirtualAddress()
@@ -11881,9 +11898,9 @@ std::pair<BufferUniqueID, ConstantBuffer*> BufferContext::ConstantBufferCreator:
 	return id_buffer;
 }
 
-BufferContextCmds::CreateCBufferCmd BufferContext::ConstantBufferCreator::ProvideCreateCBufferCmd(ProviderKey key_)
+BufferContextCmds::CreateCBufferCmd BufferContext::GlobalConstantBufferCreator::ProvideCreateCBufferCmd(ProviderKey key_)
 {
-	return [this](std::string name_, UINT const realDataSize_, const uint8_t bindSlot_)
+	return [this](std::string name_, UINT const realDataSize_, ConstantBuffers::ConstantBufferBindSlots const bindSlot_)
 	{
 		return Create(name_, realDataSize_, bindSlot_);
 	};
@@ -11896,7 +11913,7 @@ BufferContextCmds::CreateCBufferCmd BufferContext::ConstantBufferCreator::Provid
 
 
 ========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Buffer\WorldConstantBuffers\ConstantBufferCreator\ConstantBufferCreator.h ===
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Buffer\GlobalConstantBuffers\GlobalConstantBufferCreator\GlobalConstantBufferCreator.h ===
 ========================================
 #pragma once
 #include "../../BufferContext.h"
@@ -11904,14 +11921,14 @@ BufferContextCmds::CreateCBufferCmd BufferContext::ConstantBufferCreator::Provid
 
 class ConstantBuffer;
 
-class BufferContext::ConstantBufferCreator
+class BufferContext::GlobalConstantBufferCreator
 {
 public:
 
-	ConstantBufferCreator
+	GlobalConstantBufferCreator
 	(
 		NexusFieldProof proof_,
-		WorldConstantBuffers* worldConstantBuffers_,
+		GlobalConstantBuffers* globalConstantBuffers_,
 		BufferCreator* creator_
 	);
 
@@ -11924,11 +11941,11 @@ private:
 
 	//データのコピーは他者にやってもらいたいから、バッファユニークIDを渡す
 	std::pair<BufferUniqueID, ConstantBuffer*>
-		Create(std::string name_, UINT const realDataSize_, const uint8_t bindSlot_);
+		Create(std::string name_, UINT const realDataSize_, ConstantBuffers::ConstantBufferBindSlots const bindSlot_);
 
 
 	BufferCreator* creator;
-	WorldConstantBuffers* worldConstantBuffers;
+	GlobalConstantBuffers* globalConstantBuffers;
 };
 
 
@@ -12973,15 +12990,8 @@ void ModelContext::ModelDataCreator::MeshDataSRVHeapIndexGroupContainerBufferCre
 	//srvHeapIndexを抽出
 	IReadable* readableBuffer = static_cast<IReadable*>(uniqueID_buffer.second);
 	
-	//そのコンスタントバッファを生成し、データを入力する
-	//バインドしているスロットはジェーソンファイルから読み込む
-	auto const srcJsonFileKey = "WorldConstantBuffers";
-	
-	//バインドスロットを取得
-	int const dstBindSlot = Miyajison::Get()->LoadData<int>(srcJsonFileKey, { bufferName,"BindSlot" });
-
 	//定数バッファ生成コマンドで生成する
-	auto cBufferID_cBuffer = createCBufferCmd_(bufferName, UINT(sizeof(SRVHeapIndex)), dstBindSlot);
+	auto cBufferID_cBuffer = createCBufferCmd_(bufferName, UINT(sizeof(SRVHeapIndex)), ConstantBuffers::ConstantBufferBindSlots::kMeshDataContainer);
 
 	//その定数バッファのマップしたポインタにデータを書き込む
 	cBufferID_cBuffer.second->WriteInBoth<SRVHeapIndex>
@@ -13150,15 +13160,9 @@ void ModelContext::ModelDataCreator::TransformMatrixContainerBufferCreator::Crea
 	
 	//そのコンスタントバッファを生成し、データを入力する
 	///定数バッファはダブルバッファなので、それぞれに別々のsrvHeapIndexを入力する
-	
-	//バインドしているスロットはジェーソンファイルから読み込む
-	auto const srcJsonFileKey = "WorldConstantBuffers";
-	
-	//バインドスロットを取得
-	int const dstBindSlot = Miyajison::Get()->LoadData<int>(srcJsonFileKey, { bufferName,"BindSlot" });
 
 	//定数バッファ生成コマンドで生成する
-	auto cBufferID_cBuffer = createCBufferCmd_(bufferName, UINT(sizeof(SRVHeapIndex)), dstBindSlot);
+	auto cBufferID_cBuffer = createCBufferCmd_(bufferName, UINT(sizeof(SRVHeapIndex)), ConstantBuffers::ConstantBufferBindSlots::kTransformMatrixContainer);
 	
 	//その定数バッファのマップしたポインタにデータを書き込む
 	cBufferID_cBuffer.second->WriteInBoth<SRVHeapIndex>
@@ -16497,7 +16501,6 @@ namespace RootSignatureDesc
 {
 	struct Graphics
 	{
-		int numConstantBuffers_{};
 		std::vector<std::pair<RootSignatureLayoutComponent::ShaderStage, RootSignatureLayoutComponent::SamplerState>>
 			pair_shaderStageSamplerStateContainer;
 	};
@@ -16598,14 +16601,13 @@ namespace RootSignatureLayoutComponent
 ========================================
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\RootSignature\RootSignatureCreator\RootSignatureAssembler\RootSignatureAssemblerTool\RootParamCreator\RootParamCreator.cpp ===
 ========================================
-
 #include "RootParamCreator.h"
-
+#include "../../../../../../../../Assets/Shared/ConstantBuffers.h"
 
 std::vector<D3D12_ROOT_PARAMETER> RootSignatureContext::Assembler::RootParamCreator::CreateRootparamGloballyCommonCBV(const RootSignatureDesc::Graphics& srcDesc_)
 {
 	std::vector<D3D12_ROOT_PARAMETER> rootParams = {};
-	rootParams.resize(size_t(srcDesc_.numConstantBuffers_));
+	rootParams.resize(size_t(ConstantBuffers::ConstantBufferBindSlots::kCount));
 
 	int i = 0;
 	for (auto& rootparam : rootParams)
@@ -18950,7 +18952,7 @@ Nexus::Nexus()
 	InitializeInSequence<InitSequence::kKickCommands>();
 	InitializeInSequence<InitSequence::kDeleteIntermediateResources>();
 	InitializeInSequence<InitSequence::kDeleteModelDataCache>();
-	InitializeInSequence<InitSequence::kSortOutWorldConstantBuffers>();
+	InitializeInSequence<InitSequence::kSortOutGlobalConstantBuffers>();
 
 	ErrorMessageOutput::Assert::DetectError(next == InitSequence::kEnd, "初期化が正常に行われていない可能性がある", fileName);
 
@@ -19020,7 +19022,7 @@ class Nexus
 		kKickCommands,
 		kDeleteIntermediateResources,
 		kDeleteModelDataCache,
-		kSortOutWorldConstantBuffers
+		kSortOutGlobalConstantBuffers
 
 
 		,kEnd
@@ -19364,7 +19366,7 @@ void Nexus::Init<Nexus::InitSequence::kDeleteModelDataCache>()
 }
 
 template<>
-void Nexus::Init<Nexus::InitSequence::kSortOutWorldConstantBuffers>()
+void Nexus::Init<Nexus::InitSequence::kSortOutGlobalConstantBuffers>()
 {
 	//bufferContextの代行者
 	auto* agent = bufferContext->diplomat->Access<BufferContext::ExecutionAgent>();
@@ -19427,7 +19429,7 @@ template
 void Nexus::Init<Nexus::InitSequence::kDeleteModelDataCache>();
 
 template
-void Nexus::Init<Nexus::InitSequence::kSortOutWorldConstantBuffers>();
+void Nexus::Init<Nexus::InitSequence::kSortOutGlobalConstantBuffers>();
 
 
 
@@ -19800,7 +19802,6 @@ public:
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Utility\RegistryLoader\RegistryLoader.h ===
 ========================================
 #pragma once
-
 
 class RegistryLoader
 {

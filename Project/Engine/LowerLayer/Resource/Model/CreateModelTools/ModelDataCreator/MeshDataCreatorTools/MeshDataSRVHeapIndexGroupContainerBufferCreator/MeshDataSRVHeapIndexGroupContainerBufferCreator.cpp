@@ -39,7 +39,7 @@ void ModelContext::ModelDataCreator::MeshDataSRVHeapIndexGroupContainerBufferCre
 	IReadable* readableBuffer = static_cast<IReadable*>(uniqueID_buffer.second);
 	
 	//定数バッファ生成コマンドで生成する
-	auto cBufferID_cBuffer = createCBufferCmd_(bufferName, UINT(sizeof(SRVHeapIndex)), ConstantBuffers::BindSlot::kMeshDataContainer);
+	auto cBufferID_cBuffer = createCBufferCmd_(bufferName, UINT(sizeof(SRVHeapIndex)), ConstantBuffers::ConstantBufferBindSlots::kMeshDataContainer);
 
 	//その定数バッファのマップしたポインタにデータを書き込む
 	cBufferID_cBuffer.second->WriteInBoth<SRVHeapIndex>
