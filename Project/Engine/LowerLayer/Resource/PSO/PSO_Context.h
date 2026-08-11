@@ -2,6 +2,7 @@
 
 class Nexus;
 class DeviceContextDiplomat;
+class PSO_ContextDiplomat;
 
 class PSO_Context
 {
@@ -18,6 +19,7 @@ protected:
 public:
 
 	class PSO_Creator;
+	class ToolLender;
 
 	//自身のインスタンスキー
 	struct NexusFieldProof;
@@ -30,6 +32,7 @@ public:
 
 	~PSO_Context();
 
+	std::unique_ptr<PSO_ContextDiplomat> diplomat;
 
 private:
 

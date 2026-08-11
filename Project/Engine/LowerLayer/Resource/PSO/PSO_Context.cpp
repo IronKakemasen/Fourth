@@ -1,10 +1,10 @@
 #include "PSO_Context.h"
-
-//ツール
 #include "PSO_Creator/PSO_Assembler/PSO_Assembler.h"
 #include "PSO_Creator/PSO_Creator.h"
 #include "PSO_Container/PSO_Container.h"
 
+#include "PSO_ContextDiplomat/PSO_ContextDiplomat.h"
+#include "PSO_ContextDiplomat/PSO_ContextToolLender/PSO_ContextToolLender.h"
 
 namespace
 {
@@ -35,6 +35,15 @@ PSO_Context::PSO_Context
 	Logger::Log("Instantiate: PSO_Creator", fileName);
 	Logger::Log("Instantiate: psoAssembler", fileName);
 
+
+	diplomat.reset
+	(
+		new PSO_ContextDiplomat
+		(
+			proof_,
+			std::make_unique<ToolLender>(proof_, psoCreator.get())
+		)
+	);
 
 	Logger::End("PSO_Context: Constructor");
 
