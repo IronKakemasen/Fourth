@@ -7,7 +7,7 @@ class RenderContext
 public:
 	//描画構成Passのビヘイビア
 	class PassBehavior;
-	class PassDescBehavior;
+	class PassDesc;
 	//そのパスで使用するバッファの情報をまとめたもの
 	struct RequiredBufferInfo;
 

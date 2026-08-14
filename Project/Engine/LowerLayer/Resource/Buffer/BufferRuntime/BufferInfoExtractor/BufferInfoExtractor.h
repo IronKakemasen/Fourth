@@ -1,6 +1,6 @@
 #pragma once
 #include "../../BufferContext.h"
-#include "../../../../Render/RenderPass/BufferRequiredInfo.h"
+#include "../../../../Render/RenderPass/PassDesc/BufferRequiredInfo.h"
 
 //class DepthStencilBuffer;
 //class ColorBuffer;

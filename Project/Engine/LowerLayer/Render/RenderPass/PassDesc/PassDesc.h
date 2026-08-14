@@ -1,13 +1,13 @@
 #pragma once
-#include "../BufferRequiredInfo.h"
+#include "BufferRequiredInfo.h"
 #include "../RenderPassComponent.h"
 
 
-class RenderContext::PassDescBehavior
+class RenderContext::PassDesc
 {
 public:
 
-	PassDescBehavior
+	PassDesc
 	(
 		RenderPassComponent::DepthTest depthTest_,
 		RenderPassComponent::DepthEnable depthEnable_,

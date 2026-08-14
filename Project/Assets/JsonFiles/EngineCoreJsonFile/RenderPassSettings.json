@@ -1,6 +1,6 @@
 {
-    "ColorTextureCreator":  {
-                                "ColorFormat":  29,
+    "SceneTextureCreator":  {
+                                "colorFormat":  29,
                                 "clearColor":  [
                                                    0.0,
                                                    0.0,

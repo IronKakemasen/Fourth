@@ -363,8 +363,7 @@
     <ClCompile Include="Engine\LowerLayer\Resource\PSO\PSO_ContextDiplomat\PSO_ContextDiplomat.cpp" />
     <ClCompile Include="Engine\LowerLayer\Resource\PSO\PSO_ContextDiplomat\PSO_ContextToolLender\PSO_ContextToolLender.cpp" />
     <ClCompile Include="Engine\LowerLayer\Render\RenderPass\AllRenderPass\SceneTextureCreator\SceneTextureCreator.cpp" />
-    <ClCompile Include="Engine\LowerLayer\Render\RenderPass\PassDesc\PassDescBehavior.cpp" />
-    <ClCompile Include="Engine\LowerLayer\Render\RenderPass\PassDesc\SceneTextureCreatorDesc\SceneTextureCreatorDesc.cpp" />
+    <ClCompile Include="Engine\LowerLayer\Render\RenderPass\PassDesc\PassDesc.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Assets\BAKA\ConstantBuffers.h" />
@@ -400,7 +399,7 @@
     <ClInclude Include="Engine\LowerLayer\Resource\Buffer\BufferContextDiplomat\BufferToolLender\BufferToolLender.h" />
     <ClInclude Include="Engine\LowerLayer\Resource\Buffer\BufferCreateTools\BufferUploader\BufferUploader.h" />
     <ClInclude Include="Engine\LowerLayer\Core\Device\Commands\UploadResource\CommandUploadResource.h" />
-    <ClInclude Include="Engine\LowerLayer\Render\RenderPass\BufferRequiredInfo.h" />
+    <ClInclude Include="Engine\LowerLayer\Render\RenderPass\PassDesc\BufferRequiredInfo.h" />
     <ClInclude Include="Engine\LowerLayer\Resource\Model\ModelContextCmds.h" />
     <ClInclude Include="Engine\LowerLayer\Resource\Model\ModelContextDiplomat\ModelContextCmdProvider\ModelContextCmdProviderLicences.h" />
     <ClInclude Include="Engine\LowerLayer\Resource\Model\ModelContextDiplomat\ModelContextToolLender\ModelContextToolLenderLicence.h" />
@@ -580,8 +579,7 @@
     <ClInclude Include="Engine\LowerLayer\Resource\PSO\PSO_ContextDiplomat\PSO_ContextDiplomat.h" />
     <ClInclude Include="Engine\LowerLayer\Resource\PSO\PSO_ContextDiplomat\PSO_ContextToolLender\PSO_ContextToolLender.h" />
     <ClInclude Include="Engine\LowerLayer\Render\RenderPass\AllRenderPass\SceneTextureCreator\SceneTextureCreator.h" />
-    <ClInclude Include="Engine\LowerLayer\Render\RenderPass\PassDesc\PassDescBehavior.h" />
-    <ClInclude Include="Engine\LowerLayer\Render\RenderPass\PassDesc\SceneTextureCreatorDesc\SceneTextureCreatorDesc.h" />
+    <ClInclude Include="Engine\LowerLayer\Render\RenderPass\PassDesc\PassDesc.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

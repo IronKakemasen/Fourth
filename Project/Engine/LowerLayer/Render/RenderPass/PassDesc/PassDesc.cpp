@@ -1,12 +1,12 @@
 #include "PreCompileHeader.h"
-#include "PassDescBehavior.h"
+#include "PassDesc.h"
 
 namespace
 {
-	std::string const fileName = "AddDepthStencilBufferInfo.cpp";
+	std::string const fileName = "PassDesc.cpp";
 }
 
-RenderContext::PassDescBehavior::PassDescBehavior
+RenderContext::PassDesc::PassDesc
 (
 	RenderPassComponent::DepthTest depthTest_,
 	RenderPassComponent::DepthEnable depthEnable_,

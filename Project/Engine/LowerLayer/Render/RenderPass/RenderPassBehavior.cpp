@@ -1,9 +1,10 @@
 #include "PreCompileHeader.h"
 #include "RenderPassBehavior.h"
+#include "PassDesc/PassDesc.h"
 
 
-
-RenderContext::PassBehavior::PassBehavior()
+RenderContext::PassBehavior::PassBehavior(std::unique_ptr<RenderContext::PassDesc>&& desc_)
+	:desc(std::move(desc_))
 {
 
 }
