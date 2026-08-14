@@ -4,6 +4,11 @@ class Nexus;
 
 class RenderContext
 {
+	//renderPass生成機
+	class RenderPassCreator;
+	class RenderPassContainer;
+	class RenderPathAssembler;
+
 public:
 	//描画構成Passのビヘイビア
 	class PassBehavior;
@@ -13,6 +18,8 @@ public:
 
 	//ネクサスフィールドの証
 	struct NexusFieldProof;
+	//renderPassの生成許可
+	struct Local_CreateRenderPassLicence;
 
 	RenderContext(NexusFieldProof proof_);
 	~RenderContext();
@@ -23,7 +30,8 @@ private:
 	class PSO_PoolDispatcher;
 
 
-
+	std::unique_ptr<RenderPassContainer> renderPassContainer;
+	std::unique_ptr<RenderPassCreator> renderPassCreator;
 	std::unique_ptr<PSO_PoolDispatcher> pso_PoolDispatcher;
 };
 
@@ -34,6 +42,17 @@ private:
 	friend class Nexus;
 	explicit NexusFieldProof() = default;
 };
+
+
+struct RenderContext::Local_CreateRenderPassLicence
+{
+private:
+	
+	friend class RenderPathAssembler;
+	explicit Local_CreateRenderPassLicence() = default;
+};
+
+
 
 
 //void IColorBuffer::AssembleMatrix(UINT width_, UINT height_)

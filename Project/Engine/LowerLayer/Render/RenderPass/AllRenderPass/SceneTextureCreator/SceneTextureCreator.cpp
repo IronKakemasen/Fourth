@@ -2,8 +2,8 @@
 #include "SceneTextureCreator.h"
 #include "../../PassDesc/PassDesc.h"
 
-SceneTextureCreator::SceneTextureCreator(std::unique_ptr<RenderContext::PassDesc>&& desc_)
-	:RenderContext::PassBehavior(std::move(desc_))
+SceneTextureCreator::SceneTextureCreator(RenderContext::Local_CreateRenderPassLicence licence_, const RenderContext::PassDesc& desc_)
+	:RenderContext::PassBehavior(licence_,desc_)
 {
 
 }

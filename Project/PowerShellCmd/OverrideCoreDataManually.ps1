@@ -2,7 +2,7 @@
     [string]$fileName,  # 1: JSONファイル名（.json なしでOK）
     [string]$groupName, # 2: グループ名
     [string]$keyName,   # 3: キー名
-    [string]$value      # 4: 値（カンマ区切りで配列化）
+    [string]$value      # 4: 値（カンマ/スペース区切りで配列化、[1]のように書けば単一でも強制配列）
 )
 
 # ------------------------------------------
@@ -15,6 +15,7 @@ if ($args.Count -gt 0) {
 $fileName  = $fileName.Trim('"').Trim("'")
 $groupName = $groupName.Trim('"').Trim("'")
 $keyName   = $keyName.Trim('"').Trim("'")
+
 if ($value) {
     $value = $value.Trim('"').Trim("'")
 }
@@ -59,13 +60,30 @@ function Parse-SingleValue([string]$item) {
 }
 
 # ------------------------------------------
-# 値のパース処理（カンマが含まれていれば配列化）
+# 値のパース処理（配列判別）
 # ------------------------------------------
-if ($value -contains ',' -or $value -match ',') {
-    # カンマで分割して要素ごとに型判別
-    $parsedValue = @($value -split ',' | ForEach-Object { Parse-SingleValue $_ })
-} else {
-    $parsedValue = Parse-SingleValue $value
+$parsedValue = $null
+
+if (-not [string]::IsNullOrWhiteSpace($value)) {
+    $forceArray = $false
+    $trimmedValue = $value.Trim()
+
+    # 先頭と末尾が [ ] で囲まれている場合は配列モード
+    if ($trimmedValue.StartsWith("[") -and $trimmedValue.EndsWith("]")) {
+        $forceArray = $true
+        $trimmedValue = $trimmedValue.Substring(1, $trimmedValue.Length - 2)
+    }
+
+    # カンマまたはスペースで分割
+    $rawItems = $trimmedValue -split '[, ]+' | Where-Object { $_ -ne "" }
+
+    if ($rawItems.Count -gt 1 -or $forceArray) {
+        # クリーンな1次元配列を生成
+        $parsedValue = @($rawItems | ForEach-Object { Parse-SingleValue $_ })
+    } else {
+        # 通常の単一値
+        $parsedValue = Parse-SingleValue $trimmedValue
+    }
 }
 
 # ------------------------------------------
@@ -93,7 +111,7 @@ if (-not ($jsonObj.PSObject.Properties[$groupName])) {
 }
 
 # ------------------------------------------
-# 4. バリューを登録（型を判別した値で上書き）
+# 4. バリューを登録（新規キー作成も上書きも安全に行う）
 # ------------------------------------------
 $jsonObj.$groupName | Add-Member -NotePropertyName $keyName -NotePropertyValue $parsedValue -Force
 

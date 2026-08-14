@@ -1,18 +1,26 @@
 {
     "SceneTextureCreator":  {
-                                "colorFormat":  29,
+                                "colorFormat":  [29],
                                 "clearColor":  [
+                                                [
                                                    0.0,
                                                    0.0,
                                                    0.0,
-                                                   0.0
-                                               ],
-                                "width":  -1,
-                                "height":  -1,
+                                                   1.0
+                                                ]
+                                            ],
+                                "width":  [-1],
+                                "height":  [-1],
+
+                                "useDepthStencil": true,
                                 "dsvFormat":  45,
                                 "srvFormat":  46,
-                                "clearDepth":  0,
-                                "clearStencil":0
+                                "clearDepth":  0.0,
+                                "clearStencil":0.0,
+        
 
+                                "depthTest": "kGreaterEqual",
+                                "depthEnable": true
+                                
                             }
 }

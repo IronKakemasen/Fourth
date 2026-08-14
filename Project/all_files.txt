@@ -5164,9 +5164,11 @@ public:
 ========================================
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Render\RenderContext.cpp ===
 ========================================
-
 #include "RenderContext.h"
 #include "RenderContextRuntime/PSO_PoolDispatcher/PSO_PoolDispatcher.h"
+#include "RenderPass/RenderPassContainer/RenderPassContainer.h"
+#include "RenderPass/RenderPassCreator/RenderPassCreator.h"
+#include "RenderPass/RenderPassBehavior.h"
 
 namespace 
 {
@@ -5180,6 +5182,13 @@ RenderContext::RenderContext(NexusFieldProof proof_)
 
 	pso_PoolDispatcher.reset(new PSO_PoolDispatcher(proof_));
 	Logger::Log("Instantiate: PSO_PoolDispatcher", fileName);
+
+	renderPassContainer.reset(new RenderPassContainer(proof_));
+	Logger::Log("Instantiate: renderPassContainer", fileName);
+
+	renderPassCreator.reset(new RenderPassCreator(proof_, renderPassContainer.get()));
+	Logger::Log("Instantiate: renderPassCreator", fileName);
+
 
 
 
@@ -5206,15 +5215,22 @@ class Nexus;
 
 class RenderContext
 {
+	//renderPass生成機
+	class RenderPassCreator;
+	class RenderPassContainer;
+	class RenderPathAssembler;
+
 public:
 	//描画構成Passのビヘイビア
 	class PassBehavior;
-	class PassDescBehavior;
+	class PassDesc;
 	//そのパスで使用するバッファの情報をまとめたもの
 	struct RequiredBufferInfo;
 
 	//ネクサスフィールドの証
 	struct NexusFieldProof;
+	//renderPassの生成許可
+	struct Local_CreateRenderPassLicence;
 
 	RenderContext(NexusFieldProof proof_);
 	~RenderContext();
@@ -5225,7 +5241,8 @@ private:
 	class PSO_PoolDispatcher;
 
 
-
+	std::unique_ptr<RenderPassContainer> renderPassContainer;
+	std::unique_ptr<RenderPassCreator> renderPassCreator;
 	std::unique_ptr<PSO_PoolDispatcher> pso_PoolDispatcher;
 };
 
@@ -5236,6 +5253,17 @@ private:
 	friend class Nexus;
 	explicit NexusFieldProof() = default;
 };
+
+
+struct RenderContext::Local_CreateRenderPassLicence
+{
+private:
+	
+	friend class RenderPathAssembler;
+	explicit Local_CreateRenderPassLicence() = default;
+};
+
+
 
 
 //void IColorBuffer::AssembleMatrix(UINT width_, UINT height_)
@@ -5623,90 +5651,15 @@ private:
 
 
 ========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Render\RenderPass\BufferRequiredInfo.h ===
-========================================
-#pragma once
-#include "../RenderContext.h"
-
-
-///そのパスで使用するバッファの情報をまとめたもの
-struct RenderContext::RequiredBufferInfo
-{
-	struct ColorBuffer
-	{
-		DXGI_FORMAT format;
-		std::vector<float> clearColor{};
-		uint32_t width{};
-		uint32_t height{};
-		BufferUniqueID bufferID;
-
-		ColorBuffer
-		(
-			DXGI_FORMAT format_,
-			std::vector<float> clearColor_,
-			uint32_t width_,
-			uint32_t height_,
-			std::string name_,
-			BufferUniqueID bufferID_
-		) :format(format_), clearColor(clearColor_), width(width_), height(height_), bufferID(bufferID_)
-		{
-
-		}
-	};
-
-	struct DepthStencilBuffer
-	{
-		DepthStencilBuffer
-		(
-			DXGI_FORMAT dsvFormat_,
-			DXGI_FORMAT srvFormat_,
-			float clearDepth_,
-			float clearStencil_,
-			std::string name_,
-			BufferUniqueID bufferID_
-		) :dsvFormat(dsvFormat_), srvFormat(srvFormat_), clearDepth(clearDepth_), clearStencil(clearStencil_), bufferID(bufferID_)
-		{
-
-		}
-		DXGI_FORMAT dsvFormat;
-		DXGI_FORMAT srvFormat;
-		float clearDepth{};
-		float clearStencil{};
-		BufferUniqueID bufferID;
-
-	};
-
-	///テクスチャとして読む	ときに必要
-	struct Texture
-	{
-		//SRVヒープ上のインデックス
-		SRVHeapIndex srvHeapIndex{};
-		//バリアを張るため
-		D3D12_RESOURCE_BARRIER barrier{};
-	};
-
-	///描画先として書き込むときに必要
-	struct RenderTarget
-	{
-		//RTVヒープ上のインデックス
-		D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle{};
-		//バリアを張るため
-		D3D12_RESOURCE_BARRIER barrier{};
-	};
-};
-
-
-
-
-========================================
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Render\RenderPass\RenderPassBehavior.cpp ===
 ========================================
 #include "PreCompileHeader.h"
 #include "RenderPassBehavior.h"
+#include "PassDesc/PassDesc.h"
 
 
-
-RenderContext::PassBehavior::PassBehavior()
+RenderContext::PassBehavior::PassBehavior(Local_CreateRenderPassLicence licence_, const RenderContext::PassDesc& desc_)
+	:desc(desc_)
 {
 
 }
@@ -5722,15 +5675,19 @@ RenderContext::PassBehavior::PassBehavior()
 ========================================
 #pragma once
 #include "../RenderContext.h"
+#include "PassDesc/PassDesc.h"
 
 class RenderContext::PassBehavior
 {
 public:
-	PassBehavior();
+	PassBehavior(Local_CreateRenderPassLicence licence_ , const RenderContext::PassDesc& desc_);
 	virtual ~PassBehavior() = default;
 
 
 protected:
+
+	RenderContext::PassDesc desc;
+
 };
 
 
@@ -5807,10 +5764,35 @@ namespace ShaderPathComponent
 
 
 ========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Render\RenderPass\AllRenderPass\AllPassFwd.h ===
+========================================
+#pragma once
+
+class SceneTextureCreator;
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Render\RenderPass\AllRenderPass\AllPassInclude.h ===
+========================================
+#pragma once
+#include "SceneTextureCreator/SceneTextureCreator.h"
+
+
+
+========================================
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Render\RenderPass\AllRenderPass\SceneTextureCreator\SceneTextureCreator.cpp ===
 ========================================
 #include "PreCompileHeader.h"
 #include "SceneTextureCreator.h"
+#include "../../PassDesc/PassDesc.h"
+
+SceneTextureCreator::SceneTextureCreator(RenderContext::Local_CreateRenderPassLicence licence_, const RenderContext::PassDesc& desc_)
+	:RenderContext::PassBehavior(licence_,desc_)
+{
+
+}
 
 
 
@@ -5823,6 +5805,13 @@ namespace ShaderPathComponent
 
 class SceneTextureCreator :public RenderContext::PassBehavior
 {
+public:
+
+	SceneTextureCreator(RenderContext::Local_CreateRenderPassLicence licence_, const RenderContext::PassDesc& desc_);
+
+private:
+
+
 
 };
 
@@ -5831,23 +5820,73 @@ class SceneTextureCreator :public RenderContext::PassBehavior
 
 
 ========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Render\RenderPass\PassDesc\PassDescBehavior.cpp ===
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Render\RenderPass\PassDesc\BufferRequiredInfo.h ===
+========================================
+#pragma once
+#include "../../RenderContext.h"
+
+
+///そのパスで使用するバッファの情報をまとめたもの
+struct RenderContext::RequiredBufferInfo
+{
+	struct ColorBuffer
+	{
+		DXGI_FORMAT format;
+		std::vector<float> clearColor{};
+		uint32_t width{};
+		uint32_t height{};
+		BufferUniqueID bufferID;
+
+		ColorBuffer() = default;
+	};
+
+	struct DepthStencilBuffer
+	{
+		DepthStencilBuffer() = default;
+
+		DXGI_FORMAT dsvFormat;
+		DXGI_FORMAT srvFormat;
+		float clearDepth{};
+		float clearStencil{};
+		BufferUniqueID bufferID;
+
+	};
+
+	///テクスチャとして読む	ときに必要
+	struct Texture
+	{
+		//SRVヒープ上のインデックス
+		SRVHeapIndex srvHeapIndex{};
+		//バリアを張るため
+		D3D12_RESOURCE_BARRIER barrier{};
+	};
+
+	///描画先として書き込むときに必要
+	struct RenderTarget
+	{
+		//RTVヒープ上のインデックス
+		D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle{};
+		//バリアを張るため
+		D3D12_RESOURCE_BARRIER barrier{};
+	};
+};
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Render\RenderPass\PassDesc\PassDesc.cpp ===
 ========================================
 #include "PreCompileHeader.h"
-#include "PassDescBehavior.h"
+#include "PassDesc.h"
 
 namespace
 {
-	std::string const fileName = "AddDepthStencilBufferInfo.cpp";
+	std::string const fileName = "PassDesc.cpp";
 }
 
-RenderContext::PassDescBehavior::PassDescBehavior
-(
-	RenderPassComponent::DepthTest depthTest_,
-	RenderPassComponent::DepthEnable depthEnable_,
-	std::vector<RequiredBufferInfo::ColorBuffer> colorBuffersInfo_,
-	std::optional<RequiredBufferInfo::DepthStencilBuffer> depthStencilBufferInfo_
-):colorBuffersInfo(colorBuffersInfo_), depthStencilBufferInfo(depthStencilBufferInfo_), depthTest(depthTest_), depthEnable(depthEnable_)
+RenderContext::PassDesc::PassDesc(const PassRequiredInfo& info_)
+	:info(info_)
 {
 
 }
@@ -5861,34 +5900,21 @@ RenderContext::PassDescBehavior::PassDescBehavior
 
 
 ========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Render\RenderPass\PassDesc\PassDescBehavior.h ===
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Render\RenderPass\PassDesc\PassDesc.h ===
 ========================================
 #pragma once
-#include "../BufferRequiredInfo.h"
-#include "../RenderPassComponent.h"
+#include "PassRequiredInfo.h"
 
-
-class RenderContext::PassDescBehavior
+class RenderContext::PassDesc
 {
 public:
 
-	PassDescBehavior
-	(
-		RenderPassComponent::DepthTest depthTest_,
-		RenderPassComponent::DepthEnable depthEnable_,
-		std::vector<RequiredBufferInfo::ColorBuffer> colorBuffersInfo_,
-		std::optional<RequiredBufferInfo::DepthStencilBuffer> depthStencilBufferInfo_
-	);
+	PassDesc(const PassRequiredInfo& info_);
 
 
 protected:
 
-	RenderPassComponent::DepthTest depthTest;
-	RenderPassComponent::DepthEnable depthEnable;
-
-	std::vector<RequiredBufferInfo::ColorBuffer> colorBuffersInfo;
-	std::optional<RequiredBufferInfo::DepthStencilBuffer> depthStencilBufferInfo;
-
+	PassRequiredInfo info;
 
 };
 
@@ -5897,202 +5923,325 @@ protected:
 
 
 ========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Render\RenderPass\PassDesc\SceneTextureCreatorDesc\SceneTextureCreatorDesc.cpp ===
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Render\RenderPass\PassDesc\PassRequiredInfo.h ===
 ========================================
-#include "SceneTextureCreatorDesc.h"
+#pragma once
+#include "BufferRequiredInfo.h"
+#include "../RenderPassComponent.h"
+
+//jsonファイルに登録時のキー
+struct PassRequiredInfo
+{
+private:
+
+	struct DataKeyString
+	{
+		std::string const kColorFormatI =		"colorFormat";
+		std::string const kClearColorV4 =		"clearColor";
+		std::string const kWidthI =				"width";
+		std::string const kHeightI =			"height";
+		
+		std::string const kUseDepthStenciB =	"useDepthStencil";
+		std::string const kDsvFormatI =			"dsvFormat";
+		std::string const kSrvFormatI =			"srvFormat";
+		std::string const kClearDepthF =		"clearDepth";
+		std::string const kClearStencilF =		"clearStenci";
+		
+		std::string const kDepthTestI =			"depthTest";
+		std::string const kDepthEnableB =		"depthEnable";
+
+	};
+
+public:
+
+	static inline DataKeyString dataKeyString;
+
+	RenderPassComponent::DepthTest depthTest;
+	RenderPassComponent::DepthEnable depthEnable;
+	std::vector<RenderContext::RequiredBufferInfo::ColorBuffer> colorBuffersInfo;
+	std::optional<RenderContext::RequiredBufferInfo::DepthStencilBuffer> depthStencilBufferInfo;
+
+};
 
 
 
-SceneTextureCreatorDesc::SceneTextureCreatorDesc
-(
-	RenderPassComponent::DepthTest depthTest_,
-	RenderPassComponent::DepthEnable depthEnable_,
-	std::vector<RenderContext::RequiredBufferInfo::ColorBuffer> colorBuffersInfo_,
-	std::optional<RenderContext::RequiredBufferInfo::DepthStencilBuffer> depthStencilBufferInfo_
-):RenderContext::PassDescBehavior(depthTest_, depthEnable_, colorBuffersInfo_, depthStencilBufferInfo_)
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Render\RenderPass\RenderPassContainer\RenderPassContainer.cpp ===
+========================================
+#include "PreCompileHeader.h"
+#include "RenderPassContainer.h"
+#include "../AllRenderPass/SceneTextureCreator/SceneTextureCreator.h"
+
+
+RenderContext::RenderPassContainer::RenderPassContainer(NexusFieldProof proof_)
 {
 
+}
+
+
+template<>
+SceneTextureCreator* RenderContext::RenderPassContainer::Import
+(
+	Local_CreateRenderPassLicence licence_,
+	std::unique_ptr<SceneTextureCreator>&& pass_
+)
+{
+	auto* passPtr = pass_.get();
+	allPass.emplace_back(std::move(pass_));
+
+	return passPtr;
 }
 
 
 
 
 ========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Render\RenderPass\PassDesc\SceneTextureCreatorDesc\SceneTextureCreatorDesc.h ===
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Render\RenderPass\RenderPassContainer\RenderPassContainer.h ===
 ========================================
 #pragma once
+#include "../../RenderContext.h"
+#include "../AllRenderPass/AllPassFwd.h"
 
-#include "../PassDescBehavior.h"
-
-class SceneTextureCreatorDesc final : public RenderContext::PassDescBehavior
+class RenderContext::RenderPassContainer
 {
 public:
 
-	SceneTextureCreatorDesc
-	(
-		RenderPassComponent::DepthTest depthTest_,
-		RenderPassComponent::DepthEnable depthEnable_,
-		std::vector<RenderContext::RequiredBufferInfo::ColorBuffer> colorBuffersInfo_,
-		std::optional<RenderContext::RequiredBufferInfo::DepthStencilBuffer> depthStencilBufferInfo_
-	);
+	RenderPassContainer(NexusFieldProof proof_);
 
-
+	template<typename PassType>
+	PassType* Import(Local_CreateRenderPassLicence licence_ , std::unique_ptr<PassType>&& pass_);
 
 private:
 
+	std::vector<std::unique_ptr<RenderContext::PassBehavior>> allPass;
 };
 
 
 
-========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Render\RenderPass\RenderPassBluePrint\RenderPassBluePrint.h ===
-========================================
-#pragma once
-#include "../../ShaderPathComponent.h"
-#include "../../RenderPassComponent.h"
-
-
-///レンダーPassの設計図
-namespace RenderPassBluePrint
-{
-	//使用するシェーダーの名前(キー)をShaderComponentをもとに定める
-	struct ShaderTable;
-	//使用するカラーバッファ、ディプスバッファの情報を定める
-	struct BufferTable;
-	//DepthEnable、DepthTestを定める
-	struct RenderPassSettingTable;
-
-};
-
+template<>
+SceneTextureCreator* RenderContext::RenderPassContainer::Import
+(
+	Local_CreateRenderPassLicence licence_,
+	std::unique_ptr<SceneTextureCreator>&& pass_
+);
 
 
 
 
 ========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Render\RenderPass\RenderPassBluePrint\BufferTable\RenderPassBufferTable.cpp ===
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Render\RenderPass\RenderPassCreator\RenderPassCreator.cpp ===
 ========================================
 #include "PreCompileHeader.h"
-#include "RenderPassBufferTable.h"
+#include "RenderPassCreator.h"
+#include "../PassDesc/PassDesc.h"
+#include "../RenderPassContainer/RenderPassContainer.h"
+#include "../AllRenderPass/AllPassInclude.h"
 
-
-//std::unique_ptr<Pass::RequiredBufferInfo> RenderPassBluePrint::BufferTable::BufferInfoTable(RenderPassComponent ::Pass pass_)
-//{
-//	std::unique_ptr<Pass::RequiredBufferInfo> info(new Pass::RequiredBufferInfo);
-//
-//	switch (pass_)
-//	{
-//	case RenderPassComponent ::Pass::kCreateSceneTexture:
-//		
-//		info->Add
-//		(
-//			DXGI_FORMAT_R8G8B8A8_UNORM_SRGB,
-//			{ 0.0f,0.0f, 0.0f, 0.0f },
-//			ProjectConfig::Window::kWidth,
-//			ProjectConfig::Window::kHeight,
-//			"scene"
-//		);
-//
-//		info->Add
-//		(
-//			DXGI_FORMAT_D24_UNORM_S8_UINT,
-//			DXGI_FORMAT_R24_UNORM_X8_TYPELESS,
-//			0.0f,
-//			0.0f,
-//			"scene"
-//		);
-//
-//		break;
-//
-//	case RenderPassComponent ::Pass::kFinal:
-//		///FinalPassは特にすることないかな
-//
-//		break;
-//	
-//	default:
-//
-//		ErrorMessageOutput::Assert::OutputError("不明なPassです", "RequiredBufferInfo.cpp");
-//
-//		break;
-//	}
-//
-//	return std::move(info);
-//}
-//
-//
-//
-
-
-
-
-========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Render\RenderPass\RenderPassBluePrint\BufferTable\RenderPassBufferTable.h ===
-========================================
-#pragma once
-#include "../RenderPassBluePrint.h"
-#include "../../RequiredInfo/BufferRequiredInfo/BufferRequiredInfo.h"
-
-struct RenderPassBluePrint::BufferTable
+RenderContext::RenderPassCreator::RenderPassCreator(NexusFieldProof proof_, RenderPassContainer* container_)
+	:passContainer(container_)
 {
-	std::unique_ptr<RenderContext::PassBehavior::RequiredBufferInfo> BufferInfoTable(RenderPassComponent ::Pass pass_);
 
-};
-
+}
 
 
-
-
-========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Render\RenderPass\RenderPassBluePrint\RenderPassSettingTable\RenderPassSettingTable.cpp ===
-========================================
-#include "PreCompileHeader.h"
-#include "RenderPassSettingTable.h"
-
-
-RenderContext::PassBehavior::PassSettings RenderPassBluePrint::RenderPassSettingTable::SettingTable(RenderPassComponent::Pass pass_)
+template<>
+SceneTextureCreator* RenderContext::RenderPassCreator::Create
+(
+	Local_CreateRenderPassLicence licence_,
+	const PassDesc& desc_
+)
 {
-	RenderContext::PassBehavior::PassSettings settings;
-
-	switch (pass_)
-	{
-	case RenderPassComponent::Pass::kCreateSceneTexture:
-
-		//当然
-		settings.depthEnable = RenderPassComponent::DepthEnable::kEnable;
-		//基本reverseZなんで
-		settings.depthTest = RenderPassComponent::DepthTest::kGreaterEqual;
-
-		break;
-
-	case RenderPassComponent::Pass::kFinal:
-		///ファイナルの責務はrenderContextではないので消す可能性が高い
-
-
-		break;
-
-	default:
-		ErrorMessageOutput::Assert::OutputError("無効なPassです", "RenderPassSettingTable.cpp");
-
-		break;
-
-	}
-
-	return settings;
+	return passContainer->Import(licence_, std::move(std::make_unique<SceneTextureCreator>(licence_, std::move(desc_))));
 }
 
 
 
+
 ========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Render\RenderPass\RenderPassBluePrint\RenderPassSettingTable\RenderPassSettingTable.h ===
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Render\RenderPass\RenderPassCreator\RenderPassCreator.h ===
 ========================================
 #pragma once
-#include "../RenderPassBluePrint.h"
-#include "../../RequiredInfo/PassSettings/PassSettings.h"
+#include "../../RenderContext.h"
+#include "../AllRenderPass/AllPassFwd.h"
 
 
-struct RenderPassBluePrint::RenderPassSettingTable
+class RenderContext::RenderPassCreator
+{
+	class PassDescAssembler;
+
+public:
+
+	RenderPassCreator(NexusFieldProof proof_,RenderPassContainer* container_);
+
+	template<typename PassType>
+	PassType* Create
+	(
+		Local_CreateRenderPassLicence licence_,
+		const PassDesc& desc_
+	);
+
+private:
+
+	RenderPassContainer* passContainer;
+};
+
+template<>
+SceneTextureCreator* RenderContext::RenderPassCreator::Create
+(
+	Local_CreateRenderPassLicence licence_,
+	const PassDesc& desc_
+);
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Render\RenderPass\RenderPassCreator\PassDescAssembler\PassDescAssembler.cpp ===
+========================================
+#include "PreCompileHeader.h"
+#include "PassDescAssembler.h"
+#include "Miyajison.h"
+
+using namespace ProjectConfig::Window;
+
+namespace
+{
+	auto const fileName = "PassDescAssembler.cpp";
+}
+
+
+[[nodiscard]] PassRequiredInfo RenderContext::RenderPassCreator::PassDescAssembler::LoadPassSettings(std::string const passName_)
+{
+	PassRequiredInfo info;
+
+	std::string const srcJsonFileName = "RenderPassSettings";
+	
+	//カラーバッファの設定情報
+	info.colorBuffersInfo= ParseColorBufferInfo(passName_, srcJsonFileName);
+	//深度ステンシルバッファの設定情報
+	info.depthStencilBufferInfo = ParseDepthStencilBufferInfo(passName_, srcJsonFileName);
+
+	///未分類（いつかリファクタ）
+	auto* miyajison = Miyajison::Get();
+	info.depthTest = RenderPassComponent::DepthTest(miyajison->LoadData<int>(srcJsonFileName, { passName_,PassRequiredInfo::dataKeyString.kDepthTestI }));
+	info.depthEnable = RenderPassComponent::DepthEnable(miyajison->LoadData<bool>(srcJsonFileName, { passName_,PassRequiredInfo::dataKeyString.kDepthEnableB }));
+
+
+	return info;
+}
+
+std::vector<RenderContext::RequiredBufferInfo::ColorBuffer> RenderContext::RenderPassCreator::PassDescAssembler::ParseColorBufferInfo
+(
+	std::string const passName_,
+	std::string const jsonFileName_
+)
+{
+	std::vector<RenderContext::RequiredBufferInfo::ColorBuffer> colorBufferInfo;
+
+	auto* miyajison = Miyajison::Get();
+
+	//カラーバッファのフォーマット。以降、こいつの数といくつかのパラメーターは同期している前提で進める
+	auto const colorBufferFormats = 
+		miyajison->LoadData<std::vector<int>>(jsonFileName_, { passName_,PassRequiredInfo::dataKeyString.kColorFormatI });
+	//カラーバッファの数
+	auto const numColorBuffers = colorBufferFormats.size();
+
+	//カラーバッファのクリアカラー
+	auto const clearColors = 
+		miyajison->LoadData<std::vector<std::vector<float>>>(jsonFileName_, { passName_,PassRequiredInfo::dataKeyString.kClearColorV4 });
+
+	//カラーバッファの縦横
+	auto const widthContainer = 
+		miyajison->LoadData<std::vector<int>>(jsonFileName_, { passName_,PassRequiredInfo::dataKeyString.kWidthI });
+	auto const heightContainer =
+		miyajison->LoadData<std::vector<int>>(jsonFileName_, { passName_,PassRequiredInfo::dataKeyString.kHeightI });
+
+	//サイズの比が一致してるかチェック
+	ErrorMessageOutput::Assert::DetectError
+	(
+		numColorBuffers == clearColors.size()		 &&
+		numColorBuffers == widthContainer.size()	 &&
+		numColorBuffers == heightContainer.size(),
+		"カラーバッファの設定が間違っている",
+		fileName
+	);
+
+	colorBufferInfo.resize(numColorBuffers);
+	for (auto i = 0;i < numColorBuffers;++i)
+	{
+		colorBufferInfo[i].format = DXGI_FORMAT(colorBufferFormats[i]);
+		colorBufferInfo[i].clearColor = clearColors[i];
+		colorBufferInfo[i].width = widthContainer[i] == -1 ? kWidth : widthContainer[i];
+		colorBufferInfo[i].height = heightContainer[i] == -1 ? kHeight : heightContainer[i];
+	}
+
+
+	return colorBufferInfo;
+}
+
+
+std::optional<RenderContext::RequiredBufferInfo::DepthStencilBuffer> RenderContext::RenderPassCreator::PassDescAssembler::ParseDepthStencilBufferInfo
+(
+	std::string const passName_,
+	std::string const jsonFileName_
+)
 {
 
-	RenderContext::PassBehavior::PassSettings SettingTable(RenderPassComponent::Pass pass_);
+	std::optional<RenderContext::RequiredBufferInfo::DepthStencilBuffer> depthStencilBufferInfo;
+
+	auto* miyajison = Miyajison::Get();
+
+	//深度バッファ使わんならしらん
+	if (!miyajison->LoadData<bool>(jsonFileName_, { passName_,PassRequiredInfo::dataKeyString.kUseDepthStenciB }))
+		return std::nullopt;
+
+	depthStencilBufferInfo->dsvFormat = 
+		(DXGI_FORMAT)miyajison->LoadData<int>(jsonFileName_, { passName_,PassRequiredInfo::dataKeyString.kDsvFormatI});
+
+	depthStencilBufferInfo->srvFormat = 
+		(DXGI_FORMAT)miyajison->LoadData<int>(jsonFileName_, { passName_,PassRequiredInfo::dataKeyString.kSrvFormatI });
+
+	depthStencilBufferInfo->clearDepth =
+		miyajison->LoadData<float>(jsonFileName_, { passName_,PassRequiredInfo::dataKeyString.kClearDepthF });
+
+	depthStencilBufferInfo->clearStencil =
+		miyajison->LoadData<float>(jsonFileName_, { passName_,PassRequiredInfo::dataKeyString.kClearStencilF });
+
+	return depthStencilBufferInfo;
+}
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Render\RenderPass\RenderPassCreator\PassDescAssembler\PassDescAssembler.h ===
+========================================
+#pragma once
+#include "../RenderPassCreator.h"
+#include "../../PassDesc/PassRequiredInfo.h"
+
+
+class RenderContext::RenderPassCreator::PassDescAssembler
+{
+	friend class RenderPassCreator;
+
+	static [[nodiscard]] PassRequiredInfo LoadPassSettings(std::string const passName_);
+
+	static std::vector<RenderContext::RequiredBufferInfo::ColorBuffer> ParseColorBufferInfo
+	(
+		std::string const passName_,
+		std::string const jsonFileName_
+	);
+
+	static std::optional<RenderContext::RequiredBufferInfo::DepthStencilBuffer> ParseDepthStencilBufferInfo
+	(
+		std::string const passName_,
+		std::string const jsonFileName_
+	);
+
+
 };
 
 
@@ -6100,7 +6249,49 @@ struct RenderPassBluePrint::RenderPassSettingTable
 
 
 ========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Render\RenderPass\RenderPassBluePrint\ShaderTable\ShaderTable.cpp ===
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Render\RenderPath\RenderPathComposer\ShaderCombiner\ShaderCombiner.cpp ===
+========================================
+
+#include "ShaderCombiner.h"
+
+//外部
+#include "../../../../Resource/Shader/ShaderLibrary/ShaderLibrary.h"
+//
+//RenderPath::MS_PS RenderPath::PathComposer::ShaderCombiner::Combine(ShaderContext::ShaderLibrary* lib_, std::string const msKey_, std::string const psKey_)
+//{
+//	return
+//	{
+//		lib_->Export(msKey_) ,
+//		(psKey_.size() > 0) ? lib_->Export(psKey_) : nullptr
+//	};
+//}
+//
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Render\RenderPath\RenderPathComposer\ShaderCombiner\ShaderCombiner.h ===
+========================================
+#pragma once
+//#include "../RenderPathComposer.h"
+//#include "../../ShaderPathComponent.h"
+//
+//
+//#include "../../../../Resource/Shader/ShaderContext.h"
+//
+//struct RenderPath::PathComposer::ShaderCombiner
+//{
+//	RenderPath::MS_PS Combine(ShaderContext::ShaderLibrary* lib_, std::string const msKey_, std::string const psKey_);
+//
+//};
+//
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Render\ShaderTable\ShaderTable.cpp ===
 ========================================
 #include "PreCompileHeader.h"
 #include "ShaderTable.h"
@@ -6174,7 +6365,7 @@ std::string ShaderTable::Watch
 
 
 ========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Render\RenderPass\RenderPassBluePrint\ShaderTable\ShaderTable.h ===
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Render\ShaderTable\ShaderTable.h ===
 ========================================
 #pragma once
 #include "../RenderPassBluePrint.h"
@@ -6202,48 +6393,6 @@ std::string RenderPassBluePrint::ShaderTable::Watch
 	ShaderPathComponent::MaterialType materialType_,
 	RenderPassComponent ::Pass passType_
 );
-
-
-
-
-========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Render\RenderPath\RenderPathComposer\ShaderCombiner\ShaderCombiner.cpp ===
-========================================
-
-#include "ShaderCombiner.h"
-
-//外部
-#include "../../../../Resource/Shader/ShaderLibrary/ShaderLibrary.h"
-//
-//RenderPath::MS_PS RenderPath::PathComposer::ShaderCombiner::Combine(ShaderContext::ShaderLibrary* lib_, std::string const msKey_, std::string const psKey_)
-//{
-//	return
-//	{
-//		lib_->Export(msKey_) ,
-//		(psKey_.size() > 0) ? lib_->Export(psKey_) : nullptr
-//	};
-//}
-//
-
-
-
-
-========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Render\RenderPath\RenderPathComposer\ShaderCombiner\ShaderCombiner.h ===
-========================================
-#pragma once
-//#include "../RenderPathComposer.h"
-//#include "../../ShaderPathComponent.h"
-//
-//
-//#include "../../../../Resource/Shader/ShaderContext.h"
-//
-//struct RenderPath::PathComposer::ShaderCombiner
-//{
-//	RenderPath::MS_PS Combine(ShaderContext::ShaderLibrary* lib_, std::string const msKey_, std::string const psKey_);
-//
-//};
-//
 
 
 
@@ -11510,7 +11659,7 @@ private:
 ========================================
 #pragma once
 #include "../../BufferContext.h"
-#include "../../../../Render/RenderPass/BufferRequiredInfo.h"
+#include "../../../../Render/RenderPass/PassDesc/BufferRequiredInfo.h"
 
 //class DepthStencilBuffer;
 //class ColorBuffer;
@@ -18572,6 +18721,15 @@ std::string Miyajison::LoadData(std::string fileName_, Group_Value group_value_)
 }
 
 template<>
+float Miyajison::LoadData(std::string fileName_, Group_Value group_value_)
+{
+    const nlohmann::json& jsonData = PullJsonData(fileName_);
+
+    return DataLoader::Load<float>(jsonData, group_value_);
+
+}
+
+template<>
 std::vector<int> Miyajison::LoadData(std::string fileName_, Group_Value group_value_)
 {
     const nlohmann::json& jsonData = PullJsonData(fileName_);
@@ -18603,6 +18761,12 @@ std::vector<std::string> Miyajison::LoadData(std::string fileName_, Group_Value 
     return DataLoader::Load<std::vector<std::string>>(jsonData, group_value_);
 }
 
+template<>
+std::vector<std::vector<float>> Miyajison::LoadData(std::string fileName_, Group_Value group_value_)
+{
+    const nlohmann::json& jsonData = PullJsonData(fileName_);
+    return DataLoader::Load<std::vector<std::vector<float>>>(jsonData, group_value_);
+}
 
 
 
@@ -18671,6 +18835,9 @@ template<>
 std::string Miyajison::LoadData(std::string fileName_, Group_Value group_value_);
 
 template<>
+float Miyajison::LoadData(std::string fileName_, Group_Value group_value_);
+
+template<>
 std::vector<int> Miyajison::LoadData(std::string fileName_, Group_Value group_value_);
 
 template<>
@@ -18682,6 +18849,9 @@ std::vector<bool> Miyajison::LoadData(std::string fileName_, Group_Value group_v
 template<>
 std::vector<std::string> Miyajison::LoadData(std::string fileName_, Group_Value group_value_);
 
+
+template<>
+std::vector<std::vector<float>> Miyajison::LoadData(std::string fileName_, Group_Value group_value_);
 
 
 
@@ -18717,10 +18887,12 @@ class Miyajison::DataChecker
 			!std::is_same_v<DataType, int>							&&
 			!std::is_same_v<DataType, bool>							&&
 			!std::is_same_v<DataType, double>						&&
+			!std::is_same_v<DataType, float>						&&
 			!std::is_same_v<DataType, std::vector<std::string>>		&&
 			!std::is_same_v<DataType, std::vector<int>>				&&
 			!std::is_same_v<DataType, std::vector<bool>>			&&
-			!std::is_same_v<DataType, std::vector<double>>
+			!std::is_same_v<DataType, std::vector<double>>			&&
+			!std::is_same_v<DataType, std::vector<std::vector<float>>>
 
 		)
 		{
@@ -18832,6 +19004,8 @@ class Miyajison::DataLoader
 
 		return value;
 	}
+
+
 
 };
 
