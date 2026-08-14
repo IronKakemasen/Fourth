@@ -18,7 +18,7 @@ public:
 
 private:
 
-	std::unique_ptr<Assembler>&& assembler;
+	std::unique_ptr<Assembler> assembler;
 	PSO_Container* container;
 };
 

@@ -234,9 +234,6 @@
     <ClCompile Include="Engine\LowerLayer\Render\RenderContext.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="Engine\LowerLayer\Render\RuntimeRenderingManagementSystems\ModelRenderingInfoOrganizer\ModelRenderingInfoOrganizer.cpp">
-      <Filter>ソース ファイル</Filter>
-    </ClCompile>
     <ClCompile Include="Engine\LowerLayer\Resource\Shader\ShaderContext.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
@@ -273,40 +270,28 @@
     <ClCompile Include="Engine\LowerLayer\Resource\PSO\PSO_Creator\PSO_Assembler\ToolCreatePSO\PSO_InfoOutputter\PSO_InfoOutputter.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="Engine\LowerLayer\Render\RenderPathStructure\RenderPathComposer\RenderPathComposer.cpp">
-      <Filter>ソース ファイル</Filter>
-    </ClCompile>
-    <ClCompile Include="Engine\LowerLayer\Render\RenderPathStructure\RenderPathComposer\ShaderCombiner\ShaderCombiner.cpp">
-      <Filter>ソース ファイル</Filter>
-    </ClCompile>
-    <ClCompile Include="Engine\LowerLayer\Render\RenderPathStructure\RenderPath.cpp">
+    <ClCompile Include="Engine\LowerLayer\Render\RenderPath\RenderPathComposer\ShaderCombiner\ShaderCombiner.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
     <ClCompile Include="Engine\LowerLayer\Resource\RootSignature\RootSignatureLibrary\RootSignatureLibrary.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="Engine\LowerLayer\Render\PSO_PoolDispatcher\PSO_PoolDispatcher.cpp">
+    <ClCompile Include="Engine\LowerLayer\Render\RenderContextRuntime\PSO_PoolDispatcher\PSO_PoolDispatcher.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="Engine\LowerLayer\Render\RenderPathStructure\RenderPass\RenderPassBluePrint\ShaderTable\ShaderTable.cpp">
+    <ClCompile Include="Engine\LowerLayer\Render\RenderPass\RenderPassBluePrint\ShaderTable\ShaderTable.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="Engine\LowerLayer\Render\RenderPathStructure\RenderPass\RenderPassBluePrint\BufferTable\RenderPassBufferTable.cpp">
+    <ClCompile Include="Engine\LowerLayer\Render\RenderPass\RenderPassBluePrint\BufferTable\RenderPassBufferTable.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="Engine\LowerLayer\Render\RenderPathStructure\RenderPass\RequiredInfo\BufferRequiredInfo\BufferRequiredInfo.cpp">
+    <ClCompile Include="Engine\LowerLayer\Render\RenderPass\RequiredInfo\BufferRequiredInfo\BufferRequiredInfo.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="Engine\LowerLayer\Render\RenderPathStructure\RenderPass\RenderPass.cpp">
+    <ClCompile Include="Engine\LowerLayer\Render\RenderPass\RenderPassBehavior.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="Engine\LowerLayer\Render\RenderPathStructure\RenderPass\RenderPassBluePrint\RenderPassSettingTable\RenderPassSettingTable.cpp">
-      <Filter>ソース ファイル</Filter>
-    </ClCompile>
-    <ClCompile Include="Engine\LowerLayer\Render\PassAssembler\PassAssembler.cpp">
-      <Filter>ソース ファイル</Filter>
-    </ClCompile>
-    <ClCompile Include="Engine\LowerLayer\Render\GraphicsPSO_Creator\GraphicsPSO_Creator.cpp">
+    <ClCompile Include="Engine\LowerLayer\Render\RenderPass\RenderPassBluePrint\RenderPassSettingTable\RenderPassSettingTable.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
     <ClCompile Include="Engine\LowerLayer\Resource\Model\ModelContext.cpp">
@@ -564,6 +549,12 @@
     <ClCompile Include="Engine\LowerLayer\Resource\PSO\PSO_Container\PSO_Container.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
+    <ClCompile Include="Engine\LowerLayer\Resource\PSO\PSO_ContextDiplomat\PSO_ContextDiplomat.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\LowerLayer\Resource\PSO\PSO_ContextDiplomat\PSO_ContextToolLender\PSO_ContextToolLender.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Engine\LowerLayer\Core\Window\WindowContext.h">
@@ -779,9 +770,6 @@
     <ClInclude Include="Engine\LowerLayer\Render\RenderContext.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\LowerLayer\Render\RuntimeRenderingManagementSystems\ModelRenderingInfoOrganizer\ModelRenderingInfoOrganizer.h">
-      <Filter>ヘッダー ファイル</Filter>
-    </ClInclude>
     <ClInclude Include="Engine\LowerLayer\Resource\Shader\ShaderContext.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
@@ -821,16 +809,7 @@
     <ClInclude Include="Engine\LowerLayer\Resource\PSO\PSO_Creator\PSO_Assembler\ToolCreatePSO\PSO_InfoOutputter\PSO_InfoOutputter.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\LowerLayer\Render\RenderPathStructure\RenderPathComposer\RenderPathComposer.h">
-      <Filter>ヘッダー ファイル</Filter>
-    </ClInclude>
-    <ClInclude Include="Engine\LowerLayer\Render\RenderPathStructure\RenderPathComposer\ShaderCombiner\ShaderCombiner.h">
-      <Filter>ヘッダー ファイル</Filter>
-    </ClInclude>
-    <ClInclude Include="Engine\LowerLayer\Render\RenderPathStructure\RenderPath.h">
-      <Filter>ヘッダー ファイル</Filter>
-    </ClInclude>
-    <ClInclude Include="Engine\LowerLayer\Render\RenderPathStructure\RenderPathDesc.h">
+    <ClInclude Include="Engine\LowerLayer\Render\RenderPath\RenderPathComposer\ShaderCombiner\ShaderCombiner.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
     <ClInclude Include="Engine\LowerLayer\Resource\RootSignature\RootSignatureLibrary\RootSignatureLibrary.h">
@@ -839,16 +818,16 @@
     <ClInclude Include="Assets\BAKA\ConstantBuffers.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\LowerLayer\Render\PSO_PoolDispatcher\PSO_PoolDispatcher.h">
+    <ClInclude Include="Engine\LowerLayer\Render\RenderContextRuntime\PSO_PoolDispatcher\PSO_PoolDispatcher.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\LowerLayer\Render\RenderPathStructure\RenderStateComponent.h">
+    <ClInclude Include="Engine\LowerLayer\Render\RenderStateComponent.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\LowerLayer\Render\RenderPathStructure\ShaderPathComponent.h">
+    <ClInclude Include="Engine\LowerLayer\Render\RenderPass\ShaderPathComponent.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\LowerLayer\Render\RenderPathStructure\RenderPass\RenderPassBluePrint\RenderPassBluePrint.h">
+    <ClInclude Include="Engine\LowerLayer\Render\RenderPass\RenderPassBluePrint\RenderPassBluePrint.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
     <ClInclude Include="Engine\ProjectConfig.h">
@@ -857,13 +836,13 @@
     <ClInclude Include="Engine\MiddleLayer\kara.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\LowerLayer\Render\RenderPathStructure\RenderPass\RenderPassBluePrint\ShaderTable\ShaderTable.h">
+    <ClInclude Include="Engine\LowerLayer\Render\RenderPass\RenderPassBluePrint\ShaderTable\ShaderTable.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\LowerLayer\Render\RenderPathStructure\RenderPassComponent.h">
+    <ClInclude Include="Engine\LowerLayer\Render\RenderPass\RenderPassComponent.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\LowerLayer\Render\PSO_PoolDispatcher\GraphicsPSO_Key.h">
+    <ClInclude Include="Engine\LowerLayer\Render\RenderContextRuntime\PSO_PoolDispatcher\GraphicsPSO_Key.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
     <ClInclude Include="Engine\Utility\KeyPackager\KeyPackager.h">
@@ -872,25 +851,19 @@
     <ClInclude Include="Engine\Utility\ClosedHashMap\ClosedHashMap.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\LowerLayer\Render\RenderPathStructure\RenderPass\RenderPassBluePrint\BufferTable\RenderPassBufferTable.h">
+    <ClInclude Include="Engine\LowerLayer\Render\RenderPass\RenderPassBluePrint\BufferTable\RenderPassBufferTable.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\LowerLayer\Render\RenderPathStructure\RenderPass\RequiredInfo\BufferRequiredInfo\BufferRequiredInfo.h">
+    <ClInclude Include="Engine\LowerLayer\Render\RenderPass\RequiredInfo\BufferRequiredInfo\BufferRequiredInfo.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\LowerLayer\Render\RenderPathStructure\RenderPass\RenderPass.h">
+    <ClInclude Include="Engine\LowerLayer\Render\RenderPass\RenderPassBehavior.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\LowerLayer\Render\RenderPathStructure\RenderPass\RenderPassBluePrint\RenderPassSettingTable\RenderPassSettingTable.h">
+    <ClInclude Include="Engine\LowerLayer\Render\RenderPass\RenderPassBluePrint\RenderPassSettingTable\RenderPassSettingTable.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\LowerLayer\Render\RenderPathStructure\RenderPass\RequiredInfo\PassSettings\PassSettings.h">
-      <Filter>ヘッダー ファイル</Filter>
-    </ClInclude>
-    <ClInclude Include="Engine\LowerLayer\Render\PassAssembler\PassAssembler.h">
-      <Filter>ヘッダー ファイル</Filter>
-    </ClInclude>
-    <ClInclude Include="Engine\LowerLayer\Render\GraphicsPSO_Creator\GraphicsPSO_Creator.h">
+    <ClInclude Include="Engine\LowerLayer\Render\RenderPass\RequiredInfo\PassSettings\PassSettings.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
     <ClInclude Include="Engine\LowerLayer\Resource\Model\ModelContext.h">
@@ -1224,6 +1197,15 @@
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
     <ClInclude Include="Engine\LowerLayer\Resource\PSO\PSO_Container\PSO_Container.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\LowerLayer\Resource\PSO\PSO_ContextDiplomat\PSO_ContextToolLender\PSO_ContextToolLenderLicences.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\LowerLayer\Resource\PSO\PSO_ContextDiplomat\PSO_ContextDiplomat.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\LowerLayer\Resource\PSO\PSO_ContextDiplomat\PSO_ContextToolLender\PSO_ContextToolLender.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
   </ItemGroup>

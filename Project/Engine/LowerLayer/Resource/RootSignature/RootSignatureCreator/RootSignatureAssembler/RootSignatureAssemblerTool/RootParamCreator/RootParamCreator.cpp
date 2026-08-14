@@ -6,7 +6,7 @@ using namespace RootSignatureLayoutComponent;
 std::vector<D3D12_ROOT_PARAMETER> RootSignatureContext::Assembler::RootParamCreator::CreateRootparamGloballyCommonCBV(const RootSignatureDesc::Graphics& srcDesc_)
 {
 	std::vector<D3D12_ROOT_PARAMETER> rootParams = {};
-	rootParams.resize(size_t(ConstantBuffers::ConstantBufferBindSlots::kCount));
+	rootParams.resize(size_t(ConstantBuffers::RootConstantsBindSlots::kCount));
 
 	//こっちは定数バッファ
 	int i = 0;
