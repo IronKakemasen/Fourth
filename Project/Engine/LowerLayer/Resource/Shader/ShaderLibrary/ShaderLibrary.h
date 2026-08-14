@@ -2,11 +2,6 @@
 #include "../ShaderContext.h"
 
 
-//外部
-#include "../../../Render/RenderPathStructure/RenderPathComposer/RenderPathComposer.h"
-
-struct RenderPath::PathComposer::ShaderCombiner;
-
 class ShaderContext::ShaderLibrary
 {
 public:

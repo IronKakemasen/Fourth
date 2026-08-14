@@ -1,6 +1,6 @@
 #pragma once
-#include "../../../Render/RenderPathStructure/RenderStateComponent.h"
-#include "../../../Render/RenderPathStructure/ShaderPathComponent.h"
+#include "../../../Render/RenderStateComponent.h"
+#include "../../../Render/RenderPass/ShaderPathComponent.h"
 
 
 

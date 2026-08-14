@@ -1,11 +1,13 @@
 #pragma once
 
 class Nexus;
-class ShaderContext;
 
 class RenderContext
 {
 public:
+	//描画構成Passのビヘイビア
+	class PassBehavior;
+
 
 	//ネクサスフィールドの証
 	struct NexusFieldProof;
@@ -13,16 +15,11 @@ public:
 	RenderContext(NexusFieldProof proof_);
 	~RenderContext();
 
-	//モデルの描画情報を収集して整理する
-	class ModelRenderingInfoOrganizer;
-
-
 private:
 
 	//グラフィックス専用のpsoのプール、配布
 	class PSO_PoolDispatcher;
-	//PSO_Assemblerを使ってグラフィックス用のPSOを生成
-	class PSO_Creator;
+
 
 
 	std::unique_ptr<PSO_PoolDispatcher> pso_PoolDispatcher;

@@ -14960,10 +14960,12 @@ struct StandardVertex
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\PSO\PSO_Context.cpp ===
 ========================================
 #include "PSO_Context.h"
+#include "PSO_Creator/PSO_Assembler/PSO_Assembler.h"
+#include "PSO_Creator/PSO_Creator.h"
+#include "PSO_Container/PSO_Container.h"
 
-//ツール
-#include"PSO_Assembler/PSO_Assembler.h"
-
+#include "PSO_ContextDiplomat/PSO_ContextDiplomat.h"
+#include "PSO_ContextDiplomat/PSO_ContextToolLender/PSO_ContextToolLender.h"
 
 namespace
 {
@@ -14979,9 +14981,30 @@ PSO_Context::PSO_Context
 {
 	Logger::Entry("PSO_Context: Constructor");
 	
-	assembler.reset(new Assembler(proof_, deviceContextDiplomat_, &psoContainer));
-	Logger::Log("Instantiate: psoAssembler");
+	psoContainer.reset(new PSO_Container(proof_));
+	Logger::Log("Instantiate: PSO_Container", fileName);
 
+	psoCreator.reset
+	(
+		new PSO_Creator
+		(
+			proof_,
+			std::make_unique<Assembler>(proof_, deviceContextDiplomat_),
+			psoContainer.get()
+		)
+	);
+	Logger::Log("Instantiate: PSO_Creator", fileName);
+	Logger::Log("Instantiate: psoAssembler", fileName);
+
+
+	diplomat.reset
+	(
+		new PSO_ContextDiplomat
+		(
+			proof_,
+			std::make_unique<ToolLender>(proof_, psoCreator.get())
+		)
+	);
 
 	Logger::End("PSO_Context: Constructor");
 
@@ -15004,9 +15027,15 @@ PSO_Context::~PSO_Context()
 
 class Nexus;
 class DeviceContextDiplomat;
+class PSO_ContextDiplomat;
 
 class PSO_Context
 {
+	//PSOを構築するもの
+	class Assembler;
+	//PSOのユニークを所持するだけ
+	class PSO_Container;
+
 protected:
 
 	using CommandCreateGraphicsPSO = std::function<void(ID3D12PipelineState** doublePtr_pso_, D3D12_PIPELINE_STATE_STREAM_DESC* streamDesc_)>;
@@ -15014,8 +15043,8 @@ protected:
 
 public:
 
-	//PSOを構築するもの
-	class Assembler;
+	class PSO_Creator;
+	class ToolLender;
 
 	//自身のインスタンスキー
 	struct NexusFieldProof;
@@ -15028,14 +15057,13 @@ public:
 
 	~PSO_Context();
 
+	std::unique_ptr<PSO_ContextDiplomat> diplomat;
 
 private:
 
-	std::unique_ptr<Assembler> assembler;
+	std::unique_ptr<PSO_Creator> psoCreator;
+	std::unique_ptr<PSO_Container> psoContainer;
 
-
-	//ただのpsoのコンテナ
-	std::vector<Microsoft::WRL::ComPtr<ID3D12PipelineState>> psoContainer;
 };
 
 
@@ -15051,14 +15079,200 @@ private:
 
 
 ========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\PSO\PSO_Assembler\PipelineStateDesc.h ===
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\PSO\PSO_Container\PSO_Container.cpp ===
+========================================
+#include "PreCompileHeader.h"
+#include "PSO_Container.h"
+
+
+PSO_Context::PSO_Container::PSO_Container(NexusFieldProof proof_)
+{
+
+}
+
+ID3D12PipelineState* PSO_Context::PSO_Container::Import(Local_ImportLicence licence_,Microsoft::WRL::ComPtr<ID3D12PipelineState>&& data_)
+{
+	return psoContainer.emplace_back(std::move(data_)).Get();
+}
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\PSO\PSO_Container\PSO_Container.h ===
+========================================
+#pragma once
+#include "../PSO_Context.h"
+
+class PSO_Context::PSO_Container
+{
+public:
+
+	struct Local_ImportLicence;
+
+	PSO_Container(NexusFieldProof proof_);
+
+	ID3D12PipelineState* Import(Local_ImportLicence licence_,Microsoft::WRL::ComPtr<ID3D12PipelineState>&& data_);
+
+private:
+
+	//ただのpsoのコンテナ
+	std::vector<Microsoft::WRL::ComPtr<ID3D12PipelineState>> psoContainer;
+
+};
+
+struct PSO_Context::PSO_Container::Local_ImportLicence
+{
+private:
+
+	friend class PSO_Context::PSO_Creator;
+	explicit Local_ImportLicence() = default;
+};
+
+
+
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\PSO\PSO_ContextDiplomat\PSO_ContextDiplomat.cpp ===
+========================================
+#include "PreCompileHeader.h"
+#include "PSO_ContextDiplomat.h"
+#include "PSO_ContextToolLender/PSO_ContextToolLender.h"
+
+
+
+PSO_ContextDiplomat::PSO_ContextDiplomat
+(
+	PSO_Context::NexusFieldProof proof_,
+	std::unique_ptr<PSO_Context::ToolLender>&& toolLender_
+)
+{
+	std::get<std::unique_ptr<PSO_Context::ToolLender>>(tools) = std::move(toolLender_);
+}
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\PSO\PSO_ContextDiplomat\PSO_ContextDiplomat.h ===
+========================================
+#pragma once
+#include "../PSO_Context.h"
+
+class PSO_ContextDiplomat
+{
+public:
+
+	PSO_ContextDiplomat
+	(
+		PSO_Context::NexusFieldProof proof_,
+		std::unique_ptr<PSO_Context::ToolLender>&& toolLender_
+	);
+
+	template<typename ToolType>
+	auto* Access()
+	{
+		return std::get<std::unique_ptr<ToolType>>(tools).get();
+	}
+
+
+private:
+
+	std::tuple<std::unique_ptr<PSO_Context::ToolLender>> tools;
+};
+
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\PSO\PSO_ContextDiplomat\PSO_ContextToolLender\PSO_ContextToolLender.cpp ===
+========================================
+#include "PreCompileHeader.h"
+#include "PSO_ContextToolLender.h"
+#include "../../PSO_Creator/PSO_Creator.h"
+
+PSO_Context::ToolLender::ToolLender(NexusFieldProof proof_, PSO_Creator* creator_)
+{
+	std::get<PSO_Creator*>(tools) = creator_;
+}
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\PSO\PSO_ContextDiplomat\PSO_ContextToolLender\PSO_ContextToolLender.h ===
+========================================
+#pragma once
+#include "../../PSO_Context.h"
+
+
+class PSO_Context::ToolLender
+{
+	template<typename ToolType>
+	struct LicenceTypeTraits;
+
+	struct UsesPSO_CreatorLicence;
+
+public:
+
+	template<typename ToolType>
+	using LicenceType = typename LicenceTypeTraits<ToolType>::Type;
+
+	ToolLender(NexusFieldProof proof_,PSO_Creator* creator_);
+
+	template<typename ToolType>
+	auto* Lend(typename LicenceTypeTraits<ToolType>::Type licence_)
+	{
+		return std::get<ToolType*>(tools);
+	}
+
+private:
+
+	std::tuple<PSO_Creator*> tools;
+
+};
+
+template<>
+struct PSO_Context::ToolLender::LicenceTypeTraits<PSO_Context::PSO_Creator>
+{
+	using Type = UsesPSO_CreatorLicence;
+};
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\PSO\PSO_ContextDiplomat\PSO_ContextToolLender\PSO_ContextToolLenderLicences.h ===
+========================================
+#pragma once
+#include "PSO_ContextToolLender.h"
+
+
+struct PSO_Context::ToolLender::UsesPSO_CreatorLicence
+{
+private:
+
+	///未定
+	explicit UsesPSO_CreatorLicence() = default;
+
+};
+
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\PSO\PSO_Creator\PipelineStateDesc.h ===
 ========================================
 #pragma once
 #include "../../../Render/RenderPathStructure/RenderStateComponent.h"
 #include "../../../Render/RenderPathStructure/RenderPassComponent.h"
 #include "../../../../External/d3dx12/d3dx12.h"
 
-namespace PipelineStateDesc
+namespace PipelineStateComponent
 {
     struct ShaderSet
     {
@@ -15102,15 +15316,6 @@ namespace PipelineStateDesc
         ///一旦空
     };
 
-    struct Graphics
-    {
-        ShaderSet shaderSet;
-        RasterizerDesc rasterizerDesc;
-        RenderTargetDesc renderTargetDesc;
-        std::optional<DepthStencilDesc> depthStencilDesc;
-        SampleDesc sampleDesc;
-    };
-
     struct MeshShaderPipelineStateStreamDesc
     {
         CD3DX12_PIPELINE_STATE_STREAM_ROOT_SIGNATURE pRootSignature;
@@ -15127,14 +15332,104 @@ namespace PipelineStateDesc
 
 }
 
+namespace PipelineStateDesc
+{
+
+    struct Graphics
+    {
+        PipelineStateComponent::ShaderSet shaderSet;
+        PipelineStateComponent::RasterizerDesc rasterizerDesc;
+        PipelineStateComponent::RenderTargetDesc renderTargetDesc;
+        std::optional<PipelineStateComponent::DepthStencilDesc> depthStencilDesc;
+        PipelineStateComponent::SampleDesc sampleDesc;
+    };
+
+
+}
+
 
 
 
 
 ========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\PSO\PSO_Assembler\PSO_Assembler.cpp ===
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\PSO\PSO_Creator\PSO_Creator.cpp ===
 ========================================
+#include "PreCompileHeader.h"
+#include "PSO_Creator.h"
+#include "PSO_Assembler/PSO_Assembler.h"
+#include "../PSO_Container/PSO_Container.h"
 
+
+
+PSO_Context::PSO_Creator::PSO_Creator
+(
+	NexusFieldProof proof_, 
+	std::unique_ptr<Assembler>&& assembler_, 
+	PSO_Container* container_
+) :assembler(std::move(assembler_)), container(container_)
+{
+
+}
+
+template<>
+ID3D12PipelineState* PSO_Context::PSO_Creator::Create
+(
+	PipelineStateDesc::Graphics& srcDesc_,
+	ID3D12RootSignature* rootSignature_,
+	std::string debugName_
+)
+{
+	return container->Import
+	(
+		PSO_Container::Local_ImportLicence{},
+		assembler->Assemble(Assembler::Local_AssembleLicence{}, srcDesc_, rootSignature_, debugName_)
+	);
+}
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\PSO\PSO_Creator\PSO_Creator.h ===
+========================================
+#pragma once
+#include "../PSO_Context.h"
+#include "PipelineStateDesc.h"
+
+class PSO_Context::PSO_Creator
+{
+public:
+
+	PSO_Creator(NexusFieldProof proof_, std::unique_ptr<Assembler>&& assembler_, PSO_Container* container_);
+	
+	template<typename DescType>
+	ID3D12PipelineState* Create
+	(
+		DescType& srcDesc_,
+		ID3D12RootSignature* rootSignature_,
+		std::string debugName_
+	);
+
+private:
+
+	std::unique_ptr<Assembler>&& assembler;
+	PSO_Container* container;
+};
+
+template<>
+ID3D12PipelineState* PSO_Context::PSO_Creator::Create
+(
+	PipelineStateDesc::Graphics& srcDesc_,
+	ID3D12RootSignature* rootSignature_,
+	std::string debugName_
+);
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\PSO\PSO_Creator\PSO_Assembler\PSO_Assembler.cpp ===
+========================================
 #include "PSO_Assembler.h"
 //ツール
 #include "ToolCreatePSO/CreateBlendDesc/CreateBlendDesc.h"
@@ -15145,8 +15440,8 @@ namespace PipelineStateDesc
 
 
 //外部
-#include "../../../Core/Device/DeviceContextDiplomat/DeviceContextDiplomat.h"
-#include "../../../Core/Device/DeviceContextDiplomat/DeviceContextCommandProvider/DeviceContextCommandProvider.h"
+#include "../../../../Core/Device/DeviceContextDiplomat/DeviceContextDiplomat.h"
+#include "../../../../Core/Device/DeviceContextDiplomat/DeviceContextCommandProvider/DeviceContextCommandProvider.h"
 
 namespace
 {
@@ -15156,9 +15451,8 @@ namespace
 PSO_Context::Assembler::Assembler
 (
 	NexusFieldProof proof_,
-	DeviceContextDiplomat* deviceContextDiplomat_,	
-	std::vector<Microsoft::WRL::ComPtr<ID3D12PipelineState>>* psoContainer_
-): psoContainer(psoContainer_)
+	DeviceContextDiplomat* deviceContextDiplomat_
+)
 {
 	auto cmdProvider = deviceContextDiplomat_->Access<DeviceContext::CommandProvider>();
 	cmdCreateGraphicsPSO = cmdProvider->ProvideCreatePSOCommand<D3D12_PIPELINE_STATE_STREAM_DESC>();
@@ -15173,9 +15467,12 @@ PSO_Context::Assembler::~Assembler(){}
 ///+//////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+//////////////////////////////////////////////////////////////////////////////////////////////////////
 
-ID3D12PipelineState* PSO_Context::Assembler::AssembleGraphicsPSO
+
+template<>
+Microsoft::WRL::ComPtr<ID3D12PipelineState> PSO_Context::Assembler::Assemble
 (
-	PipelineStateDesc::Graphics& srcDesc_,	
+	Local_AssembleLicence licence_,
+	PipelineStateDesc::Graphics& srcDesc_,
 	ID3D12RootSignature* rootSignature_,
 	std::string debugName_
 )
@@ -15231,7 +15528,7 @@ ID3D12PipelineState* PSO_Context::Assembler::AssembleGraphicsPSO
 		sampleDesc = creator.Create(srcDesc_.sampleDesc);
 	}
 
-	PipelineStateDesc::MeshShaderPipelineStateStreamDesc pipelineDesc = {};
+	PipelineStateComponent::MeshShaderPipelineStateStreamDesc pipelineDesc = {};
 	D3D12_PIPELINE_STATE_STREAM_DESC streamDesc{};
 	///集約
 	{
@@ -15259,17 +15556,15 @@ ID3D12PipelineState* PSO_Context::Assembler::AssembleGraphicsPSO
 
 	Logger::End("assembling: " + debugName_);
 
-	auto& dstPso = psoContainer->emplace_back(std::move(pipelineState));
-
-	return dstPso.Get();
+	return pipelineState;
 }
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 void PSO_Context::Assembler::Check
 (
-	const PipelineStateDesc::ShaderSet& shaderSet_,
-	const PipelineStateDesc::RenderTargetDesc& renderTargetDesc_,
+	const PipelineStateComponent::ShaderSet& shaderSet_,
+	const PipelineStateComponent::RenderTargetDesc& renderTargetDesc_,
 	const std::string debugName_
 )const
 {
@@ -15286,7 +15581,7 @@ void PSO_Context::Assembler::Check
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-CD3DX12_RT_FORMAT_ARRAY PSO_Context::Assembler::SummarizeRenderTargetFormatInfo(const PipelineStateDesc::RenderTargetDesc& renderTargetDesc_)const
+CD3DX12_RT_FORMAT_ARRAY PSO_Context::Assembler::SummarizeRenderTargetFormatInfo(const PipelineStateComponent::RenderTargetDesc& renderTargetDesc_)const
 {
 	CD3DX12_RT_FORMAT_ARRAY renderTargetFormatArray = {};
 	
@@ -15301,7 +15596,7 @@ CD3DX12_RT_FORMAT_ARRAY PSO_Context::Assembler::SummarizeRenderTargetFormatInfo(
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-PSO_Context::Assembler::MS_PS PSO_Context::Assembler::CreateShaderByteCode(PipelineStateDesc::ShaderSet& shaderSet_)
+PSO_Context::Assembler::MS_PS PSO_Context::Assembler::CreateShaderByteCode(PipelineStateComponent::ShaderSet& shaderSet_)
 {
 	MS_PS pair_byteCode;
 
@@ -15333,11 +15628,11 @@ PSO_Context::Assembler::MS_PS PSO_Context::Assembler::CreateShaderByteCode(Pipel
 
 
 ========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\PSO\PSO_Assembler\PSO_Assembler.h ===
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\PSO\PSO_Creator\PSO_Assembler\PSO_Assembler.h ===
 ========================================
 #pragma once
-#include "../PSO_Context.h"
-#include "PipelineStateDesc.h"
+#include "../../PSO_Context.h"
+#include "../PipelineStateDesc.h"
 
 
 class PSO_Context::Assembler
@@ -15345,18 +15640,21 @@ class PSO_Context::Assembler
 
 public:
 
+	struct Local_AssembleLicence;
+
 	Assembler
 	(
 		NexusFieldProof proof_,
-		DeviceContextDiplomat* deviceContextDiplomat_, 
-		std::vector<Microsoft::WRL::ComPtr<ID3D12PipelineState>>* psoContainer_
+		DeviceContextDiplomat* deviceContextDiplomat_
 	);
 
 	~Assembler();
 
-	ID3D12PipelineState* AssembleGraphicsPSO
+	template<typename DescType>
+	Microsoft::WRL::ComPtr<ID3D12PipelineState> Assemble
 	(
-		PipelineStateDesc::Graphics& srcDesc_,
+		Local_AssembleLicence licence_,
+		DescType& srcDesc_,
 		ID3D12RootSignature* rootSignature_,
 		std::string debugName_
 	);
@@ -15373,32 +15671,51 @@ private:
 	//要項チェック
 	void Check
 	(
-		const PipelineStateDesc::ShaderSet& shaderSet_,
-		const PipelineStateDesc::RenderTargetDesc& renderTargetDesc_,
+		const PipelineStateComponent::ShaderSet& shaderSet_,
+		const PipelineStateComponent::RenderTargetDesc& renderTargetDesc_,
 		const std::string debugName_
 	)const;
 
 	//レンダーターゲットのフォーマットと総数の情報をまとめる
-	CD3DX12_RT_FORMAT_ARRAY SummarizeRenderTargetFormatInfo(const PipelineStateDesc::RenderTargetDesc& renderTargetDesc_)const;
+	CD3DX12_RT_FORMAT_ARRAY SummarizeRenderTargetFormatInfo(const PipelineStateComponent::RenderTargetDesc& renderTargetDesc_)const;
 	//シェーダーバイトコード作成
-	MS_PS CreateShaderByteCode(PipelineStateDesc::ShaderSet& shaderSet_);
-
-	std::vector<Microsoft::WRL::ComPtr<ID3D12PipelineState>>* psoContainer;
+	MS_PS CreateShaderByteCode(PipelineStateComponent::ShaderSet& shaderSet_);
 
 };
+
+struct PSO_Context::Assembler::Local_AssembleLicence
+{
+private:
+
+	friend class PSO_Creator;
+	explicit Local_AssembleLicence() = default;
+};
+
+
+
+template<>
+Microsoft::WRL::ComPtr<ID3D12PipelineState> PSO_Context::Assembler::Assemble
+(
+	Local_AssembleLicence licence_,
+	PipelineStateDesc::Graphics& srcDesc_,
+	ID3D12RootSignature* rootSignature_,
+	std::string debugName_
+);
+
+
 
 
 
 
 
 ========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\PSO\PSO_Assembler\ToolCreatePSO\CreateBlendDesc\CreateBlendDesc.cpp ===
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\PSO\PSO_Creator\PSO_Assembler\ToolCreatePSO\CreateBlendDesc\CreateBlendDesc.cpp ===
 ========================================
 
 #include "CreateBlendDesc.h"
 
 
-CD3DX12_BLEND_DESC CreateBlendDesc::Create(const PipelineStateDesc::RenderTargetDesc& srcDesc_)
+CD3DX12_BLEND_DESC CreateBlendDesc::Create(const PipelineStateComponent::RenderTargetDesc& srcDesc_)
 {
 	CD3DX12_BLEND_DESC blendDesc;
 
@@ -15468,17 +15785,17 @@ void CreateBlendDesc::SetBranchedDetails(D3D12_RENDER_TARGET_BLEND_DESC* desc_, 
 
 
 ========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\PSO\PSO_Assembler\ToolCreatePSO\CreateBlendDesc\CreateBlendDesc.h ===
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\PSO\PSO_Creator\PSO_Assembler\ToolCreatePSO\CreateBlendDesc\CreateBlendDesc.h ===
 ========================================
 #pragma once
-#include "../../PipelineStateDesc.h"
+#include "../../../PipelineStateDesc.h"
 
 
 //複数のカラーバッファに対応したブレンドディスク生成機
 struct CreateBlendDesc
 {
 	///本丸
-	CD3DX12_BLEND_DESC Create(const PipelineStateDesc::RenderTargetDesc& srcDesc_);
+	CD3DX12_BLEND_DESC Create(const PipelineStateComponent::RenderTargetDesc& srcDesc_);
 
 private:
 
@@ -15493,12 +15810,13 @@ private:
 
 
 ========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\PSO\PSO_Assembler\ToolCreatePSO\CreateDepthStencilDesc\CreateDepthStencilDesc.cpp ===
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\PSO\PSO_Creator\PSO_Assembler\ToolCreatePSO\CreateDepthStencilDesc\CreateDepthStencilDesc.cpp ===
 ========================================
 #include "CreateDepthStencilDesc.h"
 
+using namespace PipelineStateComponent;
 
-CD3DX12_DEPTH_STENCIL_DESC CreateDepthStencilDesc::Create(const std::optional<PipelineStateDesc::DepthStencilDesc> srcDesc_)
+CD3DX12_DEPTH_STENCIL_DESC CreateDepthStencilDesc::Create(const std::optional<DepthStencilDesc> srcDesc_)
 {
 	CD3DX12_DEPTH_STENCIL_DESC depthStencilDesc{};
 	
@@ -15519,7 +15837,7 @@ CD3DX12_DEPTH_STENCIL_DESC CreateDepthStencilDesc::Create(const std::optional<Pi
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-void CreateDepthStencilDesc::SetBranchedDetails(CD3DX12_DEPTH_STENCIL_DESC* desc_, const PipelineStateDesc::DepthStencilDesc& srcDesc_)
+void CreateDepthStencilDesc::SetBranchedDetails(CD3DX12_DEPTH_STENCIL_DESC* desc_, const DepthStencilDesc& srcDesc_)
 {
 	D3D12_DEPTH_WRITE_MASK depthWriteMask{};
 
@@ -15547,7 +15865,7 @@ void CreateDepthStencilDesc::SetBranchedDetails(CD3DX12_DEPTH_STENCIL_DESC* desc
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-void CreateDepthStencilDesc::SetDetailsDirectly(CD3DX12_DEPTH_STENCIL_DESC* desc_, const PipelineStateDesc::DepthStencilDesc& srcDesc_)
+void CreateDepthStencilDesc::SetDetailsDirectly(CD3DX12_DEPTH_STENCIL_DESC* desc_, const DepthStencilDesc& srcDesc_)
 {
 	desc_->DepthEnable = BOOL(srcDesc_.depthEnable);
 	desc_->DepthFunc = RenderPassComponent ::Convert(srcDesc_.depthTest);
@@ -15556,20 +15874,20 @@ void CreateDepthStencilDesc::SetDetailsDirectly(CD3DX12_DEPTH_STENCIL_DESC* desc
 
 
 ========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\PSO\PSO_Assembler\ToolCreatePSO\CreateDepthStencilDesc\CreateDepthStencilDesc.h ===
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\PSO\PSO_Creator\PSO_Assembler\ToolCreatePSO\CreateDepthStencilDesc\CreateDepthStencilDesc.h ===
 ========================================
 #pragma once
-#include "../../PipelineStateDesc.h"
+#include "../../../PipelineStateDesc.h"
 
 
 //DepthStencilDescを生成
 struct CreateDepthStencilDesc
 {
-	CD3DX12_DEPTH_STENCIL_DESC Create(const std::optional<PipelineStateDesc::DepthStencilDesc> srcDesc_);
+	CD3DX12_DEPTH_STENCIL_DESC Create(const std::optional<PipelineStateComponent::DepthStencilDesc> srcDesc_);
 
 private:
-	void SetBranchedDetails(CD3DX12_DEPTH_STENCIL_DESC* desc_, const PipelineStateDesc::DepthStencilDesc& srcDesc_);
-	void SetDetailsDirectly(CD3DX12_DEPTH_STENCIL_DESC* desc_, const PipelineStateDesc::DepthStencilDesc& srcDesc_);
+	void SetBranchedDetails(CD3DX12_DEPTH_STENCIL_DESC* desc_, const PipelineStateComponent::DepthStencilDesc& srcDesc_);
+	void SetDetailsDirectly(CD3DX12_DEPTH_STENCIL_DESC* desc_, const PipelineStateComponent::DepthStencilDesc& srcDesc_);
 };
 
 
@@ -15577,13 +15895,13 @@ private:
 
 
 ========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\PSO\PSO_Assembler\ToolCreatePSO\CreateRasterizerDesc\CreateRasterizerDesc.cpp ===
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\PSO\PSO_Creator\PSO_Assembler\ToolCreatePSO\CreateRasterizerDesc\CreateRasterizerDesc.cpp ===
 ========================================
-
 #include "CreateRasterizerDesc.h"
 
+using namespace PipelineStateComponent;
 
-CD3DX12_RASTERIZER_DESC CreateRasterizerDesc::Create(const PipelineStateDesc::RasterizerDesc& srcDesc_)
+CD3DX12_RASTERIZER_DESC CreateRasterizerDesc::Create(const RasterizerDesc& srcDesc_)
 {
 	CD3DX12_RASTERIZER_DESC rasterizerDesc{};
 
@@ -15609,7 +15927,7 @@ void CreateRasterizerDesc::SetCommonDetails(CD3DX12_RASTERIZER_DESC* desc_)
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-void CreateRasterizerDesc::SetDetailsDirectly(CD3DX12_RASTERIZER_DESC* desc_, const PipelineStateDesc::RasterizerDesc& srcDesc_)
+void CreateRasterizerDesc::SetDetailsDirectly(CD3DX12_RASTERIZER_DESC* desc_, const RasterizerDesc& srcDesc_)
 {
 	desc_->CullMode = RenderStateComponent::Convert(srcDesc_.cullMode);
 	desc_->FillMode = RenderStateComponent::Convert(srcDesc_.fillMode);
@@ -15623,21 +15941,21 @@ void CreateRasterizerDesc::SetDetailsDirectly(CD3DX12_RASTERIZER_DESC* desc_, co
 
 
 ========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\PSO\PSO_Assembler\ToolCreatePSO\CreateRasterizerDesc\CreateRasterizerDesc.h ===
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\PSO\PSO_Creator\PSO_Assembler\ToolCreatePSO\CreateRasterizerDesc\CreateRasterizerDesc.h ===
 ========================================
 #pragma once
-#include "../../PipelineStateDesc.h"
+#include "../../../PipelineStateDesc.h"
 
 
 
 //RasterizerDescを生成
 struct CreateRasterizerDesc
 {
-	CD3DX12_RASTERIZER_DESC Create(const PipelineStateDesc::RasterizerDesc& srcDesc_);
+	CD3DX12_RASTERIZER_DESC Create(const PipelineStateComponent::RasterizerDesc& srcDesc_);
 
 private:
 
-	void SetDetailsDirectly(CD3DX12_RASTERIZER_DESC* desc_, const PipelineStateDesc::RasterizerDesc& srcDesc_);
+	void SetDetailsDirectly(CD3DX12_RASTERIZER_DESC* desc_, const PipelineStateComponent::RasterizerDesc& srcDesc_);
 	void SetCommonDetails(CD3DX12_RASTERIZER_DESC* desc_);
 };
 
@@ -15646,12 +15964,12 @@ private:
 
 
 ========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\PSO\PSO_Assembler\ToolCreatePSO\CreateSampleDesc\CreateSampleDesc.cpp ===
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\PSO\PSO_Creator\PSO_Assembler\ToolCreatePSO\CreateSampleDesc\CreateSampleDesc.cpp ===
 ========================================
 
 #include "CreateSampleDesc.h"
 
-DXGI_SAMPLE_DESC CreateSampleDesc::Create(const PipelineStateDesc::SampleDesc& desc_)
+DXGI_SAMPLE_DESC CreateSampleDesc::Create(const PipelineStateComponent::SampleDesc& desc_)
 {
 	DXGI_SAMPLE_DESC sampleDesc = {};
 	sampleDesc.Count = 1;
@@ -15663,15 +15981,15 @@ DXGI_SAMPLE_DESC CreateSampleDesc::Create(const PipelineStateDesc::SampleDesc& d
 
 
 ========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\PSO\PSO_Assembler\ToolCreatePSO\CreateSampleDesc\CreateSampleDesc.h ===
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\PSO\PSO_Creator\PSO_Assembler\ToolCreatePSO\CreateSampleDesc\CreateSampleDesc.h ===
 ========================================
 #pragma once
-#include "../../PipelineStateDesc.h"
+#include "../../../PipelineStateDesc.h"
 
 
 struct CreateSampleDesc
 {
-	DXGI_SAMPLE_DESC Create(const PipelineStateDesc::SampleDesc& desc_);
+	DXGI_SAMPLE_DESC Create(const PipelineStateComponent::SampleDesc& desc_);
 };
 
 
@@ -15679,11 +15997,10 @@ struct CreateSampleDesc
 
 
 ========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\PSO\PSO_Assembler\ToolCreatePSO\PSO_InfoOutputter\PSO_InfoOutputter.cpp ===
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\PSO\PSO_Creator\PSO_Assembler\ToolCreatePSO\PSO_InfoOutputter\PSO_InfoOutputter.cpp ===
 ========================================
 
 #include "PSO_InfoOutputter.h"
-#include "../../PipelineStateDesc.h"
 
 
 using namespace RenderStateComponent;
@@ -15845,10 +16162,10 @@ std::string const PSO_InfoOutputter::DebugTextTable(DepthTest test_) const
 
 
 ========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\PSO\PSO_Assembler\ToolCreatePSO\PSO_InfoOutputter\PSO_InfoOutputter.h ===
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\PSO\PSO_Creator\PSO_Assembler\ToolCreatePSO\PSO_InfoOutputter\PSO_InfoOutputter.h ===
 ========================================
 #pragma once
-#include "../../PipelineStateDesc.h"
+#include "../../../PipelineStateDesc.h"
 
 class PSO_InfoOutputter
 {
@@ -16604,19 +16921,41 @@ namespace RootSignatureLayoutComponent
 #include "RootParamCreator.h"
 #include "../../../../../../../../Assets/Shared/ConstantBuffers.h"
 
+using namespace RootSignatureLayoutComponent;
+
 std::vector<D3D12_ROOT_PARAMETER> RootSignatureContext::Assembler::RootParamCreator::CreateRootparamGloballyCommonCBV(const RootSignatureDesc::Graphics& srcDesc_)
 {
 	std::vector<D3D12_ROOT_PARAMETER> rootParams = {};
 	rootParams.resize(size_t(ConstantBuffers::ConstantBufferBindSlots::kCount));
 
+	//こっちは定数バッファ
 	int i = 0;
-	for (auto& rootparam : rootParams)
+	for (;i < (int)ConstantBuffers::ConstantBufferBindSlots::kCount;++i)
 	{
-		rootparam.ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
-		rootparam.ShaderVisibility = RootSignatureLayoutComponent::Convert(RootSignatureLayoutComponent::ShaderStage::kAll);
-		rootparam.Descriptor.ShaderRegister = i;
-		++i;
+		rootParams[i].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
+		rootParams[i].ShaderVisibility = Convert(ShaderStage::kAll);
+		rootParams[i].Descriptor.ShaderRegister = i	;
 	}
+
+	//こっちはルートコンスタンツ
+	for (;i < (int)ConstantBuffers::RootConstantsBindSlots::kCount;++i)
+	{
+		switch (i)
+		{
+		case (int)ConstantBuffers::RootConstantsBindSlots::kPerDrawIndices:
+
+			rootParams[i].ShaderVisibility = Convert(ShaderStage::kAll);
+
+			rootParams[i].ParameterType = D3D12_ROOT_PARAMETER_TYPE_32BIT_CONSTANTS;
+			rootParams[i].Constants.ShaderRegister = i;
+			rootParams[i].Constants.RegisterSpace = 0;
+			rootParams[i].Constants.Num32BitValues = 2;
+
+			break;
+
+		}
+	}
+
 
 	return rootParams;
 }

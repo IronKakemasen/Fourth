@@ -1,6 +1,6 @@
 #pragma once
-#include "../../../Render/RenderPathStructure/RenderStateComponent.h"
-#include "../../../Render/RenderPathStructure/RenderPassComponent.h"
+#include "../../../Render/RenderStateComponent.h"
+#include "../../../Render/RenderPass/RenderPassComponent.h"
 #include "../../../../External/d3dx12/d3dx12.h"
 
 namespace PipelineStateComponent

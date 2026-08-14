@@ -1,24 +1,24 @@
 #pragma once
 #include "../../BufferContext.h"
-#include "../../../../Render/RenderPathStructure/RenderPass/RequiredInfo/BufferRequiredInfo/BufferRequiredInfo.h"
+#include "../../../../Render/RenderPass/RequiredInfo/BufferRequiredInfo/BufferRequiredInfo.h"
 
-class DepthStencilBuffer;
-class ColorBuffer;
-struct IRenderTargetBuffer;
-class GPUBufferBehavior;
-
+//class DepthStencilBuffer;
+//class ColorBuffer;
+//struct IRenderTargetBuffer;
+//class GPUBufferBehavior;
+//
 class BufferContext::BufferInfoExtractor
 {
 public:
 
 	BufferInfoExtractor();
 
-	//該当のバッファから描画パス構築に必要な情報を抽出する
-	template<typename InfoType,typename BufferType>
-	InfoType Exstract(BufferType* buffer_);
+	////該当のバッファから描画パス構築に必要な情報を抽出する
+	//template<typename InfoType,typename BufferType>
+	//InfoType Exstract(BufferType* buffer_);
 
-	//ダブルバッファを全てSwapさせる
-	void SwapApplicableBuffer();
+	////ダブルバッファを全てSwapさせる
+	//void SwapApplicableBuffer();
 
 private:
 
@@ -26,20 +26,20 @@ private:
 	std::vector<GPUBufferBehavior*> tmpBufferContainer;
 	int const kBufferContainerSize = 64;
 };
-
-
-///+///////////////////////////////////////////////////////////////////////////////////////////////////////
-///+///////////////////////////////////////////////////////////////////////////////////////////////////////
-///+///////////////////////////////////////////////////////////////////////////////////////////////////////
-template<>
-RenderPath::Pass::RequiredBufferInfo::Texture BufferContext::BufferInfoExtractor::Exstract(ColorBuffer* buffer_);
-
-template<>
-RenderPath::Pass::RequiredBufferInfo::RenderTarget BufferContext::BufferInfoExtractor::Exstract(ColorBuffer* buffer_);
-
-
-template<>
-RenderPath::Pass::RequiredBufferInfo::Texture BufferContext::BufferInfoExtractor::Exstract(DepthStencilBuffer* buffer_);
-
-template<>
-RenderPath::Pass::RequiredBufferInfo::RenderTarget BufferContext::BufferInfoExtractor::Exstract(DepthStencilBuffer* buffer_);
+//
+//
+/////+///////////////////////////////////////////////////////////////////////////////////////////////////////
+/////+///////////////////////////////////////////////////////////////////////////////////////////////////////
+/////+///////////////////////////////////////////////////////////////////////////////////////////////////////
+//template<>
+//Pass::RequiredBufferInfo::Texture BufferContext::BufferInfoExtractor::Exstract(ColorBuffer* buffer_);
+//
+//template<>
+//Pass::RequiredBufferInfo::RenderTarget BufferContext::BufferInfoExtractor::Exstract(ColorBuffer* buffer_);
+//
+//
+//template<>
+//Pass::RequiredBufferInfo::Texture BufferContext::BufferInfoExtractor::Exstract(DepthStencilBuffer* buffer_);
+//
+//template<>
+//Pass::RequiredBufferInfo::RenderTarget BufferContext::BufferInfoExtractor::Exstract(DepthStencilBuffer* buffer_);
