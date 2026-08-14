@@ -7,7 +7,9 @@ class RenderContext
 public:
 	//描画構成Passのビヘイビア
 	class PassBehavior;
-
+	class PassDescBehavior;
+	//そのパスで使用するバッファの情報をまとめたもの
+	struct RequiredBufferInfo;
 
 	//ネクサスフィールドの証
 	struct NexusFieldProof;

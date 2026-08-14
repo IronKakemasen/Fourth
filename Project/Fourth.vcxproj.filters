@@ -279,19 +279,7 @@
     <ClCompile Include="Engine\LowerLayer\Render\RenderContextRuntime\PSO_PoolDispatcher\PSO_PoolDispatcher.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="Engine\LowerLayer\Render\RenderPass\RenderPassBluePrint\ShaderTable\ShaderTable.cpp">
-      <Filter>ソース ファイル</Filter>
-    </ClCompile>
-    <ClCompile Include="Engine\LowerLayer\Render\RenderPass\RenderPassBluePrint\BufferTable\RenderPassBufferTable.cpp">
-      <Filter>ソース ファイル</Filter>
-    </ClCompile>
-    <ClCompile Include="Engine\LowerLayer\Render\RenderPass\RequiredInfo\BufferRequiredInfo\BufferRequiredInfo.cpp">
-      <Filter>ソース ファイル</Filter>
-    </ClCompile>
     <ClCompile Include="Engine\LowerLayer\Render\RenderPass\RenderPassBehavior.cpp">
-      <Filter>ソース ファイル</Filter>
-    </ClCompile>
-    <ClCompile Include="Engine\LowerLayer\Render\RenderPass\RenderPassBluePrint\RenderPassSettingTable\RenderPassSettingTable.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
     <ClCompile Include="Engine\LowerLayer\Resource\Model\ModelContext.cpp">
@@ -553,6 +541,15 @@
       <Filter>ソース ファイル</Filter>
     </ClCompile>
     <ClCompile Include="Engine\LowerLayer\Resource\PSO\PSO_ContextDiplomat\PSO_ContextToolLender\PSO_ContextToolLender.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\LowerLayer\Render\RenderPass\AllRenderPass\SceneTextureCreator\SceneTextureCreator.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\LowerLayer\Render\RenderPass\PassDesc\PassDescBehavior.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\LowerLayer\Render\RenderPass\PassDesc\SceneTextureCreatorDesc\SceneTextureCreatorDesc.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
   </ItemGroup>
@@ -827,16 +824,10 @@
     <ClInclude Include="Engine\LowerLayer\Render\RenderPass\ShaderPathComponent.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\LowerLayer\Render\RenderPass\RenderPassBluePrint\RenderPassBluePrint.h">
-      <Filter>ヘッダー ファイル</Filter>
-    </ClInclude>
     <ClInclude Include="Engine\ProjectConfig.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
     <ClInclude Include="Engine\MiddleLayer\kara.h">
-      <Filter>ヘッダー ファイル</Filter>
-    </ClInclude>
-    <ClInclude Include="Engine\LowerLayer\Render\RenderPass\RenderPassBluePrint\ShaderTable\ShaderTable.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
     <ClInclude Include="Engine\LowerLayer\Render\RenderPass\RenderPassComponent.h">
@@ -851,19 +842,7 @@
     <ClInclude Include="Engine\Utility\ClosedHashMap\ClosedHashMap.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\LowerLayer\Render\RenderPass\RenderPassBluePrint\BufferTable\RenderPassBufferTable.h">
-      <Filter>ヘッダー ファイル</Filter>
-    </ClInclude>
-    <ClInclude Include="Engine\LowerLayer\Render\RenderPass\RequiredInfo\BufferRequiredInfo\BufferRequiredInfo.h">
-      <Filter>ヘッダー ファイル</Filter>
-    </ClInclude>
     <ClInclude Include="Engine\LowerLayer\Render\RenderPass\RenderPassBehavior.h">
-      <Filter>ヘッダー ファイル</Filter>
-    </ClInclude>
-    <ClInclude Include="Engine\LowerLayer\Render\RenderPass\RenderPassBluePrint\RenderPassSettingTable\RenderPassSettingTable.h">
-      <Filter>ヘッダー ファイル</Filter>
-    </ClInclude>
-    <ClInclude Include="Engine\LowerLayer\Render\RenderPass\RequiredInfo\PassSettings\PassSettings.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
     <ClInclude Include="Engine\LowerLayer\Resource\Model\ModelContext.h">
@@ -1206,6 +1185,18 @@
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
     <ClInclude Include="Engine\LowerLayer\Resource\PSO\PSO_ContextDiplomat\PSO_ContextToolLender\PSO_ContextToolLender.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\LowerLayer\Render\RenderPass\BufferRequiredInfo.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\LowerLayer\Render\RenderPass\AllRenderPass\SceneTextureCreator\SceneTextureCreator.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\LowerLayer\Render\RenderPass\PassDesc\PassDescBehavior.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\LowerLayer\Render\RenderPass\PassDesc\SceneTextureCreatorDesc\SceneTextureCreatorDesc.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
   </ItemGroup>
