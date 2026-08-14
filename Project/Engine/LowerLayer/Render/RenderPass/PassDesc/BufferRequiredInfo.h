@@ -1,5 +1,5 @@
 #pragma once
-#include "../RenderContext.h"
+#include "../../RenderContext.h"
 
 
 ///そのパスで使用するバッファの情報をまとめたもの
