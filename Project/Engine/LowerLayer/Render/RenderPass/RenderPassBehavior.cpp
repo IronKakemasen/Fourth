@@ -1,9 +1,6 @@
 #include "PreCompileHeader.h"
 #include "RenderPassBehavior.h"
 
-//Pass構築情報群
-#include "RequiredInfo/BufferRequiredInfo/BufferRequiredInfo.h"
-#include "RequiredInfo/PassSettings/PassSettings.h"
 
 
 RenderContext::PassBehavior::PassBehavior()

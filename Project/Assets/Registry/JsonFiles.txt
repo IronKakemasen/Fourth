@@ -1,1 +1,2 @@
+key: "RenderPassSettings" , value: "Assets/JsonFiles/EngineCoreJsonFile/RenderPassSettings.json"
 key: "ShaderSettings" , value: "Assets/JsonFiles/EngineCoreJsonFile/ShaderSettings.json"

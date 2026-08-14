@@ -122,8 +122,6 @@
     <ClCompile Include="Engine\LowerLayer\Resource\Buffer\BufferContextDiplomat\BufferToolLender\BufferToolLender.cpp" />
     <ClCompile Include="Engine\LowerLayer\Resource\Buffer\BufferCreateTools\BufferUploader\BufferUploader.cpp" />
     <ClCompile Include="Engine\LowerLayer\Core\Device\Commands\UploadResource\CommandUploadResource.cpp" />
-    <ClCompile Include="Engine\LowerLayer\Render\RenderPass\RenderPassBluePrint\RenderPassSettingTable\RenderPassSettingTable.cpp" />
-    <ClCompile Include="Engine\LowerLayer\Render\RenderPass\RequiredInfo\BufferRequiredInfo\BufferRequiredInfo.cpp" />
     <ClCompile Include="Engine\LowerLayer\Resource\RootSignature\RootSignatureCreator\RootSignatureAssembler\RootSignatureAssemblerTool\RootParamCreator\RootParamCreator.cpp" />
     <ClCompile Include="Engine\LowerLayer\Resource\RootSignature\RootSignatureCreator\RootSignatureAssembler\RootSignatureAssemblerTool\StaticSamplerDescCreator\StaticSamplerDescCreator.cpp" />
     <ClCompile Include="Engine\LowerLayer\Core\Device\Commands\CreateRootSignature\CommandCreateRootSignature.cpp" />
@@ -312,8 +310,6 @@
     <ClCompile Include="Engine\LowerLayer\Render\RenderPath\RenderPathComposer\ShaderCombiner\ShaderCombiner.cpp" />
     <ClCompile Include="Engine\LowerLayer\Resource\RootSignature\RootSignatureLibrary\RootSignatureLibrary.cpp" />
     <ClCompile Include="Engine\LowerLayer\Render\RenderContextRuntime\PSO_PoolDispatcher\PSO_PoolDispatcher.cpp" />
-    <ClCompile Include="Engine\LowerLayer\Render\RenderPass\RenderPassBluePrint\ShaderTable\ShaderTable.cpp" />
-    <ClCompile Include="Engine\LowerLayer\Render\RenderPass\RenderPassBluePrint\BufferTable\RenderPassBufferTable.cpp" />
     <ClCompile Include="Engine\LowerLayer\Render\RenderPass\RenderPassBehavior.cpp" />
     <ClCompile Include="Engine\LowerLayer\Resource\Model\ModelContext.cpp" />
     <ClCompile Include="Engine\LowerLayer\Resource\Model\ModelStructure\ModelData\ResourceMesh\ResourceMesh.cpp" />
@@ -366,6 +362,9 @@
     <ClCompile Include="Engine\LowerLayer\Resource\PSO\PSO_Container\PSO_Container.cpp" />
     <ClCompile Include="Engine\LowerLayer\Resource\PSO\PSO_ContextDiplomat\PSO_ContextDiplomat.cpp" />
     <ClCompile Include="Engine\LowerLayer\Resource\PSO\PSO_ContextDiplomat\PSO_ContextToolLender\PSO_ContextToolLender.cpp" />
+    <ClCompile Include="Engine\LowerLayer\Render\RenderPass\AllRenderPass\SceneTextureCreator\SceneTextureCreator.cpp" />
+    <ClCompile Include="Engine\LowerLayer\Render\RenderPass\PassDesc\PassDescBehavior.cpp" />
+    <ClCompile Include="Engine\LowerLayer\Render\RenderPass\PassDesc\SceneTextureCreatorDesc\SceneTextureCreatorDesc.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Assets\BAKA\ConstantBuffers.h" />
@@ -401,9 +400,7 @@
     <ClInclude Include="Engine\LowerLayer\Resource\Buffer\BufferContextDiplomat\BufferToolLender\BufferToolLender.h" />
     <ClInclude Include="Engine\LowerLayer\Resource\Buffer\BufferCreateTools\BufferUploader\BufferUploader.h" />
     <ClInclude Include="Engine\LowerLayer\Core\Device\Commands\UploadResource\CommandUploadResource.h" />
-    <ClInclude Include="Engine\LowerLayer\Render\RenderPass\RenderPassBluePrint\RenderPassSettingTable\RenderPassSettingTable.h" />
-    <ClInclude Include="Engine\LowerLayer\Render\RenderPass\RequiredInfo\BufferRequiredInfo\BufferRequiredInfo.h" />
-    <ClInclude Include="Engine\LowerLayer\Render\RenderPass\RequiredInfo\PassSettings\PassSettings.h" />
+    <ClInclude Include="Engine\LowerLayer\Render\RenderPass\BufferRequiredInfo.h" />
     <ClInclude Include="Engine\LowerLayer\Resource\Model\ModelContextCmds.h" />
     <ClInclude Include="Engine\LowerLayer\Resource\Model\ModelContextDiplomat\ModelContextCmdProvider\ModelContextCmdProviderLicences.h" />
     <ClInclude Include="Engine\LowerLayer\Resource\Model\ModelContextDiplomat\ModelContextToolLender\ModelContextToolLenderLicence.h" />
@@ -524,12 +521,9 @@
     <ClInclude Include="Engine\LowerLayer\Resource\RootSignature\RootSignatureCreator\RootSignatureAssembler\RootSignatureAssembler.h" />
     <ClInclude Include="Engine\LowerLayer\Resource\PSO\PSO_Creator\PSO_Assembler\ToolCreatePSO\PSO_InfoOutputter\PSO_InfoOutputter.h" />
     <ClInclude Include="Engine\LowerLayer\Render\RenderPath\RenderPathComposer\ShaderCombiner\ShaderCombiner.h" />
-    <ClInclude Include="Engine\LowerLayer\Render\RenderPass\RenderPassBluePrint\RenderPassBluePrint.h" />
     <ClInclude Include="Engine\LowerLayer\Resource\RootSignature\RootSignatureLibrary\RootSignatureLibrary.h" />
     <ClInclude Include="Engine\LowerLayer\Render\RenderContextRuntime\PSO_PoolDispatcher\PSO_PoolDispatcher.h" />
-    <ClInclude Include="Engine\LowerLayer\Render\RenderPass\RenderPassBluePrint\ShaderTable\ShaderTable.h" />
     <ClInclude Include="Engine\Utility\KeyPackager\KeyPackager.h" />
-    <ClInclude Include="Engine\LowerLayer\Render\RenderPass\RenderPassBluePrint\BufferTable\RenderPassBufferTable.h" />
     <ClInclude Include="Engine\LowerLayer\Render\RenderPass\RenderPassBehavior.h" />
     <ClInclude Include="Engine\LowerLayer\Resource\Model\ModelContext.h" />
     <ClInclude Include="Engine\LowerLayer\Resource\Model\ModelStructure\ModelData\ResourceMesh\ResourceMesh.h" />
@@ -585,6 +579,9 @@
     <ClInclude Include="Engine\LowerLayer\Resource\PSO\PSO_Container\PSO_Container.h" />
     <ClInclude Include="Engine\LowerLayer\Resource\PSO\PSO_ContextDiplomat\PSO_ContextDiplomat.h" />
     <ClInclude Include="Engine\LowerLayer\Resource\PSO\PSO_ContextDiplomat\PSO_ContextToolLender\PSO_ContextToolLender.h" />
+    <ClInclude Include="Engine\LowerLayer\Render\RenderPass\AllRenderPass\SceneTextureCreator\SceneTextureCreator.h" />
+    <ClInclude Include="Engine\LowerLayer\Render\RenderPass\PassDesc\PassDescBehavior.h" />
+    <ClInclude Include="Engine\LowerLayer\Render\RenderPass\PassDesc\SceneTextureCreatorDesc\SceneTextureCreatorDesc.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
