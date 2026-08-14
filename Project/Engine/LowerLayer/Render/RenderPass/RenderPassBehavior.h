@@ -1,16 +1,17 @@
 #pragma once
 #include "../RenderContext.h"
+#include "PassDesc/PassDesc.h"
 
 class RenderContext::PassBehavior
 {
 public:
-	PassBehavior(std::unique_ptr<RenderContext::PassDesc>&& desc_);
+	PassBehavior(Local_CreateRenderPassLicence licence_ , const RenderContext::PassDesc& desc_);
 	virtual ~PassBehavior() = default;
 
 
 protected:
 
-	std::unique_ptr<RenderContext::PassDesc> desc;
+	RenderContext::PassDesc desc;
 
 };
 

@@ -1,29 +1,16 @@
 #pragma once
-#include "BufferRequiredInfo.h"
-#include "../RenderPassComponent.h"
-
+#include "PassRequiredInfo.h"
 
 class RenderContext::PassDesc
 {
 public:
 
-	PassDesc
-	(
-		RenderPassComponent::DepthTest depthTest_,
-		RenderPassComponent::DepthEnable depthEnable_,
-		std::vector<RequiredBufferInfo::ColorBuffer> colorBuffersInfo_,
-		std::optional<RequiredBufferInfo::DepthStencilBuffer> depthStencilBufferInfo_
-	);
+	PassDesc(const PassRequiredInfo& info_);
 
 
 protected:
 
-	RenderPassComponent::DepthTest depthTest;
-	RenderPassComponent::DepthEnable depthEnable;
-
-	std::vector<RequiredBufferInfo::ColorBuffer> colorBuffersInfo;
-	std::optional<RequiredBufferInfo::DepthStencilBuffer> depthStencilBufferInfo;
-
+	PassRequiredInfo info;
 
 };
 

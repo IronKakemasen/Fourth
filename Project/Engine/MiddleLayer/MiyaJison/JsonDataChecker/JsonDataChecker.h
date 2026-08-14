@@ -18,10 +18,12 @@ class Miyajison::DataChecker
 			!std::is_same_v<DataType, int>							&&
 			!std::is_same_v<DataType, bool>							&&
 			!std::is_same_v<DataType, double>						&&
+			!std::is_same_v<DataType, float>						&&
 			!std::is_same_v<DataType, std::vector<std::string>>		&&
 			!std::is_same_v<DataType, std::vector<int>>				&&
 			!std::is_same_v<DataType, std::vector<bool>>			&&
-			!std::is_same_v<DataType, std::vector<double>>
+			!std::is_same_v<DataType, std::vector<double>>			&&
+			!std::is_same_v<DataType, std::vector<std::vector<float>>>
 
 		)
 		{

@@ -55,6 +55,9 @@ template<>
 std::string Miyajison::LoadData(std::string fileName_, Group_Value group_value_);
 
 template<>
+float Miyajison::LoadData(std::string fileName_, Group_Value group_value_);
+
+template<>
 std::vector<int> Miyajison::LoadData(std::string fileName_, Group_Value group_value_);
 
 template<>
@@ -65,3 +68,7 @@ std::vector<bool> Miyajison::LoadData(std::string fileName_, Group_Value group_v
 
 template<>
 std::vector<std::string> Miyajison::LoadData(std::string fileName_, Group_Value group_value_);
+
+
+template<>
+std::vector<std::vector<float>> Miyajison::LoadData(std::string fileName_, Group_Value group_value_);

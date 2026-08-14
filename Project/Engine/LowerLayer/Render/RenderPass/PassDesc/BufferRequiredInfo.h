@@ -13,34 +13,13 @@ struct RenderContext::RequiredBufferInfo
 		uint32_t height{};
 		BufferUniqueID bufferID;
 
-		ColorBuffer
-		(
-			DXGI_FORMAT format_,
-			std::vector<float> clearColor_,
-			uint32_t width_,
-			uint32_t height_,
-			std::string name_,
-			BufferUniqueID bufferID_
-		) :format(format_), clearColor(clearColor_), width(width_), height(height_), bufferID(bufferID_)
-		{
-
-		}
+		ColorBuffer() = default;
 	};
 
 	struct DepthStencilBuffer
 	{
-		DepthStencilBuffer
-		(
-			DXGI_FORMAT dsvFormat_,
-			DXGI_FORMAT srvFormat_,
-			float clearDepth_,
-			float clearStencil_,
-			std::string name_,
-			BufferUniqueID bufferID_
-		) :dsvFormat(dsvFormat_), srvFormat(srvFormat_), clearDepth(clearDepth_), clearStencil(clearStencil_), bufferID(bufferID_)
-		{
+		DepthStencilBuffer() = default;
 
-		}
 		DXGI_FORMAT dsvFormat;
 		DXGI_FORMAT srvFormat;
 		float clearDepth{};

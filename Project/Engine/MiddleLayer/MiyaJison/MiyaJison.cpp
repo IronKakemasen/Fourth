@@ -99,6 +99,15 @@ std::string Miyajison::LoadData(std::string fileName_, Group_Value group_value_)
 }
 
 template<>
+float Miyajison::LoadData(std::string fileName_, Group_Value group_value_)
+{
+    const nlohmann::json& jsonData = PullJsonData(fileName_);
+
+    return DataLoader::Load<float>(jsonData, group_value_);
+
+}
+
+template<>
 std::vector<int> Miyajison::LoadData(std::string fileName_, Group_Value group_value_)
 {
     const nlohmann::json& jsonData = PullJsonData(fileName_);
@@ -130,6 +139,12 @@ std::vector<std::string> Miyajison::LoadData(std::string fileName_, Group_Value 
     return DataLoader::Load<std::vector<std::string>>(jsonData, group_value_);
 }
 
+template<>
+std::vector<std::vector<float>> Miyajison::LoadData(std::string fileName_, Group_Value group_value_)
+{
+    const nlohmann::json& jsonData = PullJsonData(fileName_);
+    return DataLoader::Load<std::vector<std::vector<float>>>(jsonData, group_value_);
+}
 
 
 

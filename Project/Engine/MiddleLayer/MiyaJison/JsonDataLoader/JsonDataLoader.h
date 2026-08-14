@@ -18,5 +18,7 @@ class Miyajison::DataLoader
 		return value;
 	}
 
+
+
 };
 

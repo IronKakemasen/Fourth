@@ -3,8 +3,8 @@
 #include "PassDesc/PassDesc.h"
 
 
-RenderContext::PassBehavior::PassBehavior(std::unique_ptr<RenderContext::PassDesc>&& desc_)
-	:desc(std::move(desc_))
+RenderContext::PassBehavior::PassBehavior(Local_CreateRenderPassLicence licence_, const RenderContext::PassDesc& desc_)
+	:desc(desc_)
 {
 
 }

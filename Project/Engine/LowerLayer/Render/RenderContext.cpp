@@ -1,6 +1,8 @@
-
 #include "RenderContext.h"
 #include "RenderContextRuntime/PSO_PoolDispatcher/PSO_PoolDispatcher.h"
+#include "RenderPass/RenderPassContainer/RenderPassContainer.h"
+#include "RenderPass/RenderPassCreator/RenderPassCreator.h"
+#include "RenderPass/RenderPassBehavior.h"
 
 namespace 
 {
@@ -14,6 +16,13 @@ RenderContext::RenderContext(NexusFieldProof proof_)
 
 	pso_PoolDispatcher.reset(new PSO_PoolDispatcher(proof_));
 	Logger::Log("Instantiate: PSO_PoolDispatcher", fileName);
+
+	renderPassContainer.reset(new RenderPassContainer(proof_));
+	Logger::Log("Instantiate: renderPassContainer", fileName);
+
+	renderPassCreator.reset(new RenderPassCreator(proof_, renderPassContainer.get()));
+	Logger::Log("Instantiate: renderPassCreator", fileName);
+
 
 
 
