@@ -9,7 +9,7 @@ private:
 
 	struct Param
 	{
-		std::array<float, 4> clearColor = { 9,9,9,9 };
+		std::vector<float> clearColor;
 		UINT width{};
 		UINT height{};
 		DXGI_FORMAT format = DXGI_FORMAT_Error_Detection;
@@ -18,9 +18,11 @@ private:
 
 public:
 
+	ColorBufferDescription() = default;
+
 	ColorBufferDescription
 	(
-		std::array<float, 4> clearColor_,
+		std::vector<float> clearColor_,
 		UINT width_,
 		UINT height_,
 		DXGI_FORMAT format_,

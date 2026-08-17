@@ -178,7 +178,7 @@ void Nexus::Init<Nexus::InitSequence::kRootSignatureContext>()
 template<>
 void Nexus::Init<Nexus::InitSequence::kRenderContext>()
 {
-	renderContext.reset(new RenderContext(RenderContext::NexusFieldProof{}));
+	renderContext.reset(new RenderContext(RenderContext::NexusFieldProof{},*bufferContext->diplomat.get()));
 	Logger::Log("Instantiate: RenderContext", fileName);
 }
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////

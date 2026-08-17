@@ -3,11 +3,11 @@
 #include "../../PassDesc/PassRequiredInfo.h"
 
 
-class RenderContext::RenderPassCreator::PassDescAssembler
+class RenderContext::RenderPassCreator::PassSettingsLoader
 {
 	friend class RenderPassCreator;
 
-	static [[nodiscard]] PassRequiredInfo LoadPassSettings(std::string const passName_);
+	static [[nodiscard]] PassRequiredInfo Load(std::string const passName_);
 
 	static std::vector<RenderContext::RequiredBufferInfo::ColorBuffer> ParseColorBufferInfo
 	(

@@ -1,15 +1,17 @@
 #pragma once
 
 class Nexus;
+class BufferContextDiplomat;
+
 
 class RenderContext
 {
-	//renderPass生成機
-	class RenderPassCreator;
 	class RenderPassContainer;
 	class RenderPathAssembler;
 
 public:
+	//renderPass生成機
+	class RenderPassCreator;
 	//描画構成Passのビヘイビア
 	class PassBehavior;
 	class PassDesc;
@@ -21,7 +23,7 @@ public:
 	//renderPassの生成許可
 	struct Local_CreateRenderPassLicence;
 
-	RenderContext(NexusFieldProof proof_);
+	RenderContext(NexusFieldProof proof_, BufferContextDiplomat& bufferContextDiplomat_);
 	~RenderContext();
 
 private:

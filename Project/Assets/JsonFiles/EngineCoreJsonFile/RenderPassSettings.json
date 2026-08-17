@@ -9,15 +9,18 @@
                                                    1.0
                                                 ]
                                             ],
-                                "width":  [-1],
-                                "height":  [-1],
-
+                                "colorWidth":  [-1],
+                                "colorHeight":  [-1],
+                                "numBuffer_Color":[1],
+                                
                                 "useDepthStencil": true,
                                 "dsvFormat":  45,
                                 "srvFormat":  46,
                                 "clearDepth":  0.0,
                                 "clearStencil":0.0,
-        
+                                "depthWidth": -1,
+                                "depthHeight": -1,
+                                "numBuffer_Depth":1,
 
                                 "depthTest": "kGreaterEqual",
                                 "depthEnable": true

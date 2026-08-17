@@ -11,6 +11,7 @@ struct RenderContext::RequiredBufferInfo
 		std::vector<float> clearColor{};
 		uint32_t width{};
 		uint32_t height{};
+		ProjectConfig::Render::NumBuffer numBuffer{};
 		BufferUniqueID bufferID;
 
 		ColorBuffer() = default;
@@ -24,6 +25,9 @@ struct RenderContext::RequiredBufferInfo
 		DXGI_FORMAT srvFormat;
 		float clearDepth{};
 		float clearStencil{};
+		uint32_t width{};
+		uint32_t height{};
+		ProjectConfig::Render::NumBuffer numBuffer{};
 		BufferUniqueID bufferID;
 
 	};

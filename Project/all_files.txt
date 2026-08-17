@@ -5176,7 +5176,7 @@ namespace
 }
 
 
-RenderContext::RenderContext(NexusFieldProof proof_)
+RenderContext::RenderContext(NexusFieldProof proof_, BufferContextDiplomat& bufferContextDiplomat_)
 {
 	Logger::Entry("RenderContext: Constructor");
 
@@ -5186,7 +5186,7 @@ RenderContext::RenderContext(NexusFieldProof proof_)
 	renderPassContainer.reset(new RenderPassContainer(proof_));
 	Logger::Log("Instantiate: renderPassContainer", fileName);
 
-	renderPassCreator.reset(new RenderPassCreator(proof_, renderPassContainer.get()));
+	renderPassCreator.reset(new RenderPassCreator(proof_, renderPassContainer.get(), bufferContextDiplomat_));
 	Logger::Log("Instantiate: renderPassCreator", fileName);
 
 
@@ -5212,15 +5212,17 @@ RenderContext::~RenderContext()
 #pragma once
 
 class Nexus;
+class BufferContextDiplomat;
+
 
 class RenderContext
 {
-	//renderPass生成機
-	class RenderPassCreator;
 	class RenderPassContainer;
 	class RenderPathAssembler;
 
 public:
+	//renderPass生成機
+	class RenderPassCreator;
 	//描画構成Passのビヘイビア
 	class PassBehavior;
 	class PassDesc;
@@ -5232,7 +5234,7 @@ public:
 	//renderPassの生成許可
 	struct Local_CreateRenderPassLicence;
 
-	RenderContext(NexusFieldProof proof_);
+	RenderContext(NexusFieldProof proof_, BufferContextDiplomat& bufferContextDiplomat_);
 	~RenderContext();
 
 private:
@@ -5835,6 +5837,7 @@ struct RenderContext::RequiredBufferInfo
 		std::vector<float> clearColor{};
 		uint32_t width{};
 		uint32_t height{};
+		ProjectConfig::Render::NumBuffer numBuffer{};
 		BufferUniqueID bufferID;
 
 		ColorBuffer() = default;
@@ -5848,6 +5851,9 @@ struct RenderContext::RequiredBufferInfo
 		DXGI_FORMAT srvFormat;
 		float clearDepth{};
 		float clearStencil{};
+		uint32_t width{};
+		uint32_t height{};
+		ProjectConfig::Render::NumBuffer numBuffer{};
 		BufferUniqueID bufferID;
 
 	};
@@ -5938,15 +5944,19 @@ private:
 	{
 		std::string const kColorFormatI =		"colorFormat";
 		std::string const kClearColorV4 =		"clearColor";
-		std::string const kWidthI =				"width";
-		std::string const kHeightI =			"height";
-		
+		std::string const kColorWidthI =		"colorWidth";
+		std::string const kColorHeightI =		"colorHeight";
+		std::string const kNumBuffer_colorI =	"numBuffer_Color";
+
 		std::string const kUseDepthStenciB =	"useDepthStencil";
 		std::string const kDsvFormatI =			"dsvFormat";
 		std::string const kSrvFormatI =			"srvFormat";
 		std::string const kClearDepthF =		"clearDepth";
-		std::string const kClearStencilF =		"clearStenci";
-		
+		std::string const kClearStencilF =		"clearStencil";
+		std::string const kDepthWidthI =		"depthWidth";
+		std::string const kDepthHeightI =		"depthHeight";
+		std::string const kNumBuffer_depthI =   "numBuffer_Depth";
+
 		std::string const kDepthTestI =			"depthTest";
 		std::string const kDepthEnableB =		"depthEnable";
 
@@ -6038,22 +6048,37 @@ SceneTextureCreator* RenderContext::RenderPassContainer::Import
 #include "../PassDesc/PassDesc.h"
 #include "../RenderPassContainer/RenderPassContainer.h"
 #include "../AllRenderPass/AllPassInclude.h"
+#include "PassSettingsLoader/PassSettingsLoader.h"
+#include "PassBufferCreator/PassBufferCreator.h"
 
-RenderContext::RenderPassCreator::RenderPassCreator(NexusFieldProof proof_, RenderPassContainer* container_)
-	:passContainer(container_)
+RenderContext::RenderPassCreator::RenderPassCreator
+(
+	NexusFieldProof proof_,
+	RenderPassContainer* container_,
+	BufferContextDiplomat& bufferContextDiplomat_
+)
+:passContainer(container_)
 {
 
 }
 
 
 template<>
-SceneTextureCreator* RenderContext::RenderPassCreator::Create
-(
-	Local_CreateRenderPassLicence licence_,
-	const PassDesc& desc_
-)
+SceneTextureCreator* RenderContext::RenderPassCreator::InstantiatePass(Local_CreateRenderPassLicence licence_, PassDesc desc_)
 {
+
 	return passContainer->Import(licence_, std::move(std::make_unique<SceneTextureCreator>(licence_, std::move(desc_))));
+}
+
+RenderContext::PassDesc RenderContext::RenderPassCreator::CreateDesc(std::string const passName_, BufferContext::BufferCreator* bufferCreator_)
+{
+	//パスのセッティングを読み込む
+	PassRequiredInfo passRequiredInfo = PassSettingsLoader::Load(passName_);
+	//その設定をもとにバッファを作成しそのユニークをディスクに記録
+	PassBufferCreator::CreateBuffer(passName_, passRequiredInfo, bufferCreator_);
+
+	return PassDesc(passRequiredInfo);
+
 }
 
 
@@ -6065,54 +6090,159 @@ SceneTextureCreator* RenderContext::RenderPassCreator::Create
 #pragma once
 #include "../../RenderContext.h"
 #include "../AllRenderPass/AllPassFwd.h"
+#include "../PassDesc/PassDesc.h"
+
+
+//外部
+#include "../../../Resource/Buffer/BufferContext.h"
+#include "../../../Resource/Buffer/BufferContextDiplomat/BufferContextDiplomat.h"
+#include "../../../Resource/Buffer/BufferContextDiplomat/BufferToolLender/BufferToolLender.h"
+#include "../../../Resource/Buffer/BufferContextDiplomat/BufferToolLender/BufferToolLenderLicence.h"
 
 
 class RenderContext::RenderPassCreator
 {
-	class PassDescAssembler;
+	class PassSettingsLoader;
+	class PassBufferCreator;
 
 public:
 
-	RenderPassCreator(NexusFieldProof proof_,RenderPassContainer* container_);
+	RenderPassCreator
+	(
+		NexusFieldProof proof_,
+		RenderPassContainer* container_, 
+		BufferContextDiplomat& bufferContextDiplomat_
+	);
 
 	template<typename PassType>
 	PassType* Create
 	(
 		Local_CreateRenderPassLicence licence_,
-		const PassDesc& desc_
-	);
+		std::string const passName_,
+		BufferContextDiplomat& bufferContextDiplomat_
+	)
+	{
+		BufferContext::ToolLender::LicenceType<BufferContext::BufferCreator> borrowLicence;
+		BufferContext::BufferCreator* bufferCreator =
+			bufferContextDiplomat_.Access<BufferContext::ToolLender>()->Lend<BufferContext::BufferCreator>(borrowLicence);
+
+		PassDesc passDesc = CreateDesc(passName_, bufferCreator);
+
+		return InstantiatePass(passDesc);
+	}
+
 
 private:
+
+	PassDesc CreateDesc(std::string const passName_, BufferContext::BufferCreator* bufferCreator_);
+	
+	template<typename PassType>
+	PassType* InstantiatePass(Local_CreateRenderPassLicence licence_,PassDesc desc_);
 
 	RenderPassContainer* passContainer;
 };
 
 template<>
-SceneTextureCreator* RenderContext::RenderPassCreator::Create
-(
-	Local_CreateRenderPassLicence licence_,
-	const PassDesc& desc_
-);
+SceneTextureCreator* RenderContext::RenderPassCreator::InstantiatePass(Local_CreateRenderPassLicence licence_,PassDesc desc_);
 
 
 
 
 ========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Render\RenderPass\RenderPassCreator\PassDescAssembler\PassDescAssembler.cpp ===
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Render\RenderPass\RenderPassCreator\PassBufferCreator\PassBufferCreator.cpp ===
 ========================================
 #include "PreCompileHeader.h"
-#include "PassDescAssembler.h"
-#include "Miyajison.h"
+#include "PassBufferCreator.h"
+#include "../../PassDesc/PassRequiredInfo.h"
 
-using namespace ProjectConfig::Window;
 
-namespace
+//外部
+#include "../../../../Resource/Buffer/BufferCreateTools/BufferCreator.h"
+#include "../../../../Resource/Buffer/BufferDefinition/GPUBuffer/ColorBuffer/ColorBuffer.h"
+#include "../../../../Resource/Buffer/BufferDefinition/BufferDescriptions/ColorBufferDescription/ColorBufferDescription.h"
+#include "../../../../Resource/Buffer/BufferDefinition/BufferDescriptions/DepthStencilBufferDescription/DepthStencilBufferDescription.h"
+
+void RenderContext::RenderPassCreator::PassBufferCreator::CreateBuffer
+(
+	std::string const passName_,
+	PassRequiredInfo& info,
+	BufferContext::BufferCreator* creator_
+)
 {
-	auto const fileName = "PassDescAssembler.cpp";
+	auto const numColorBufferRequired = info.colorBuffersInfo.size();
+
+	std::vector<ColorBufferDescription> colorBufferDescs;
+	for (size_t i = 0;i < numColorBufferRequired;++i)
+	{
+		auto& tmp = info.colorBuffersInfo[i];
+		ColorBufferDescription colorBufferDesc(tmp.clearColor, tmp.width, tmp.height, tmp.format, tmp.numBuffer);
+		
+		tmp.bufferID = creator_->CreateWithBuffer(colorBufferDesc, passName_ + "[" + std::to_string(i) + "]").first;
+	}
+
+	if (info.depthStencilBufferInfo.has_value())
+	{
+		auto& tmp = info.depthStencilBufferInfo;
+
+		DepthStencilBufferDescription desc
+		(
+			tmp->width,
+			tmp->height,
+			tmp->clearDepth,
+			tmp->dsvFormat,
+			tmp->srvFormat,
+			tmp->numBuffer
+		);
+
+		tmp->bufferID = creator_->CreateWithBuffer(desc, passName_).first;
+	}
+
 }
 
 
-[[nodiscard]] PassRequiredInfo RenderContext::RenderPassCreator::PassDescAssembler::LoadPassSettings(std::string const passName_)
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Render\RenderPass\RenderPassCreator\PassBufferCreator\PassBufferCreator.h ===
+========================================
+#pragma once
+#include "../RenderPassCreator.h"
+#include "../../../../Resource/Buffer/BufferContext.h"
+
+struct PassRequiredInfo;
+
+class RenderContext::RenderPassCreator::PassBufferCreator
+{
+	friend class RenderPassCreator;
+
+	static void CreateBuffer
+	(
+		std::string const passName_,
+		PassRequiredInfo& info, 
+		BufferContext::BufferCreator* creator_
+	);
+};
+
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Render\RenderPass\RenderPassCreator\PassSettingsLoader\PassSettingsLoader.cpp ===
+========================================
+#include "PreCompileHeader.h"
+#include "PassSettingsLoader.h"
+
+using namespace ProjectConfig::Window;
+using namespace ProjectConfig::Render;
+
+namespace
+{
+	auto const fileName = "PassSettingsLoader.cpp";
+}
+
+
+[[nodiscard]] PassRequiredInfo RenderContext::RenderPassCreator::PassSettingsLoader::Load(std::string const passName_)
 {
 	PassRequiredInfo info;
 
@@ -6132,7 +6262,7 @@ namespace
 	return info;
 }
 
-std::vector<RenderContext::RequiredBufferInfo::ColorBuffer> RenderContext::RenderPassCreator::PassDescAssembler::ParseColorBufferInfo
+std::vector<RenderContext::RequiredBufferInfo::ColorBuffer> RenderContext::RenderPassCreator::PassSettingsLoader::ParseColorBufferInfo
 (
 	std::string const passName_,
 	std::string const jsonFileName_
@@ -6154,15 +6284,21 @@ std::vector<RenderContext::RequiredBufferInfo::ColorBuffer> RenderContext::Rende
 
 	//カラーバッファの縦横
 	auto const widthContainer = 
-		miyajison->LoadData<std::vector<int>>(jsonFileName_, { passName_,PassRequiredInfo::dataKeyString.kWidthI });
+		miyajison->LoadData<std::vector<int>>(jsonFileName_, { passName_,PassRequiredInfo::dataKeyString.kColorWidthI });
 	auto const heightContainer =
-		miyajison->LoadData<std::vector<int>>(jsonFileName_, { passName_,PassRequiredInfo::dataKeyString.kHeightI });
+		miyajison->LoadData<std::vector<int>>(jsonFileName_, { passName_,PassRequiredInfo::dataKeyString.kColorHeightI });
+
+	//シングルかダブルか
+	auto const numBufferContainer =
+		miyajison->LoadData<std::vector<int>>(jsonFileName_, { passName_,PassRequiredInfo::dataKeyString.kNumBuffer_colorI });
+
 
 	//サイズの比が一致してるかチェック
 	ErrorMessageOutput::Assert::DetectError
 	(
 		numColorBuffers == clearColors.size()		 &&
 		numColorBuffers == widthContainer.size()	 &&
+		numColorBuffers == numBufferContainer.size() &&
 		numColorBuffers == heightContainer.size(),
 		"カラーバッファの設定が間違っている",
 		fileName
@@ -6175,6 +6311,7 @@ std::vector<RenderContext::RequiredBufferInfo::ColorBuffer> RenderContext::Rende
 		colorBufferInfo[i].clearColor = clearColors[i];
 		colorBufferInfo[i].width = widthContainer[i] == -1 ? kWidth : widthContainer[i];
 		colorBufferInfo[i].height = heightContainer[i] == -1 ? kHeight : heightContainer[i];
+		colorBufferInfo[i].numBuffer = NumBuffer(numBufferContainer[i]);
 	}
 
 
@@ -6182,7 +6319,7 @@ std::vector<RenderContext::RequiredBufferInfo::ColorBuffer> RenderContext::Rende
 }
 
 
-std::optional<RenderContext::RequiredBufferInfo::DepthStencilBuffer> RenderContext::RenderPassCreator::PassDescAssembler::ParseDepthStencilBufferInfo
+std::optional<RenderContext::RequiredBufferInfo::DepthStencilBuffer> RenderContext::RenderPassCreator::PassSettingsLoader::ParseDepthStencilBufferInfo
 (
 	std::string const passName_,
 	std::string const jsonFileName_
@@ -6197,6 +6334,8 @@ std::optional<RenderContext::RequiredBufferInfo::DepthStencilBuffer> RenderConte
 	if (!miyajison->LoadData<bool>(jsonFileName_, { passName_,PassRequiredInfo::dataKeyString.kUseDepthStenciB }))
 		return std::nullopt;
 
+	depthStencilBufferInfo.emplace();
+
 	depthStencilBufferInfo->dsvFormat = 
 		(DXGI_FORMAT)miyajison->LoadData<int>(jsonFileName_, { passName_,PassRequiredInfo::dataKeyString.kDsvFormatI});
 
@@ -6209,6 +6348,20 @@ std::optional<RenderContext::RequiredBufferInfo::DepthStencilBuffer> RenderConte
 	depthStencilBufferInfo->clearStencil =
 		miyajison->LoadData<float>(jsonFileName_, { passName_,PassRequiredInfo::dataKeyString.kClearStencilF });
 
+	depthStencilBufferInfo->numBuffer = 
+		(NumBuffer)miyajison->LoadData<int>(jsonFileName_, { passName_,PassRequiredInfo::dataKeyString.kNumBuffer_depthI });
+
+
+	int const widthHeight[2] =
+	{
+		miyajison->LoadData<int>(jsonFileName_, { passName_,PassRequiredInfo::dataKeyString.kDepthWidthI }),
+		miyajison->LoadData<int>(jsonFileName_, { passName_,PassRequiredInfo::dataKeyString.kDepthHeightI})
+	};
+
+	depthStencilBufferInfo->width = widthHeight[0] == -1 ? kWidth : widthHeight[0];
+	depthStencilBufferInfo->height = widthHeight[1] == -1 ? kHeight : widthHeight[1];
+
+
 	return depthStencilBufferInfo;
 }
 
@@ -6216,18 +6369,18 @@ std::optional<RenderContext::RequiredBufferInfo::DepthStencilBuffer> RenderConte
 
 
 ========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Render\RenderPass\RenderPassCreator\PassDescAssembler\PassDescAssembler.h ===
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Render\RenderPass\RenderPassCreator\PassSettingsLoader\PassSettingsLoader.h ===
 ========================================
 #pragma once
 #include "../RenderPassCreator.h"
 #include "../../PassDesc/PassRequiredInfo.h"
 
 
-class RenderContext::RenderPassCreator::PassDescAssembler
+class RenderContext::RenderPassCreator::PassSettingsLoader
 {
 	friend class RenderPassCreator;
 
-	static [[nodiscard]] PassRequiredInfo LoadPassSettings(std::string const passName_);
+	static [[nodiscard]] PassRequiredInfo Load(std::string const passName_);
 
 	static std::vector<RenderContext::RequiredBufferInfo::ColorBuffer> ParseColorBufferInfo
 	(
@@ -7066,13 +7219,14 @@ struct BufferContext::ToolLender::LicenceTypeTraits<BufferContext::GlobalConstan
 #pragma once
 #include "BufferToolLender.h"
 #include "../../../Model/ModelContext.h"
-
+#include "../../../../Render/RenderContext.h"
 
 struct BufferContext::ToolLender::BasicBufferManagementLicence
 {
 private:
 
 	friend class ModelContext::ModelDataCreator;
+	friend class RenderContext::RenderPassCreator;
 
 	explicit BasicBufferManagementLicence() = default;
 };
@@ -9536,7 +9690,7 @@ struct IAssembleDepthStencilBuffer: public IAssembleRenderTarget
 
 ColorBufferDescription::ColorBufferDescription
 (
-	std::array<float, 4> clearColor_,
+	std::vector<float> clearColor_,
 	UINT width_,
 	UINT height_,
 	DXGI_FORMAT format_,
@@ -9649,7 +9803,7 @@ private:
 
 	struct Param
 	{
-		std::array<float, 4> clearColor = { 9,9,9,9 };
+		std::vector<float> clearColor;
 		UINT width{};
 		UINT height{};
 		DXGI_FORMAT format = DXGI_FORMAT_Error_Detection;
@@ -9658,9 +9812,11 @@ private:
 
 public:
 
+	ColorBufferDescription() = default;
+
 	ColorBufferDescription
 	(
-		std::array<float, 4> clearColor_,
+		std::vector<float> clearColor_,
 		UINT width_,
 		UINT height_,
 		DXGI_FORMAT format_,
@@ -19671,7 +19827,7 @@ void Nexus::Init<Nexus::InitSequence::kRootSignatureContext>()
 template<>
 void Nexus::Init<Nexus::InitSequence::kRenderContext>()
 {
-	renderContext.reset(new RenderContext(RenderContext::NexusFieldProof{}));
+	renderContext.reset(new RenderContext(RenderContext::NexusFieldProof{},*bufferContext->diplomat.get()));
 	Logger::Log("Instantiate: RenderContext", fileName);
 }
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
