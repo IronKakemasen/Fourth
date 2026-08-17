@@ -10,7 +10,7 @@ namespace
 }
 
 
-RenderContext::RenderContext(NexusFieldProof proof_)
+RenderContext::RenderContext(NexusFieldProof proof_, BufferContextDiplomat& bufferContextDiplomat_)
 {
 	Logger::Entry("RenderContext: Constructor");
 
@@ -20,7 +20,7 @@ RenderContext::RenderContext(NexusFieldProof proof_)
 	renderPassContainer.reset(new RenderPassContainer(proof_));
 	Logger::Log("Instantiate: renderPassContainer", fileName);
 
-	renderPassCreator.reset(new RenderPassCreator(proof_, renderPassContainer.get()));
+	renderPassCreator.reset(new RenderPassCreator(proof_, renderPassContainer.get(), bufferContextDiplomat_));
 	Logger::Log("Instantiate: renderPassCreator", fileName);
 
 

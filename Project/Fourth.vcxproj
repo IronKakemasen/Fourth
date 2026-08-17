@@ -366,7 +366,8 @@
     <ClCompile Include="Engine\LowerLayer\Render\RenderPass\PassDesc\PassDesc.cpp" />
     <ClCompile Include="Engine\LowerLayer\Render\RenderPass\RenderPassCreator\RenderPassCreator.cpp" />
     <ClCompile Include="Engine\LowerLayer\Render\RenderPass\RenderPassContainer\RenderPassContainer.cpp" />
-    <ClCompile Include="Engine\LowerLayer\Render\RenderPass\RenderPassCreator\PassDescAssembler\PassDescAssembler.cpp" />
+    <ClCompile Include="Engine\LowerLayer\Render\RenderPass\RenderPassCreator\PassSettingsLoader\PassSettingsLoader.cpp" />
+    <ClCompile Include="Engine\LowerLayer\Render\RenderPass\RenderPassCreator\PassBufferCreator\PassBufferCreator.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Assets\BAKA\ConstantBuffers.h" />
@@ -588,7 +589,8 @@
     <ClInclude Include="Engine\LowerLayer\Render\RenderPass\PassDesc\PassDesc.h" />
     <ClInclude Include="Engine\LowerLayer\Render\RenderPass\RenderPassCreator\RenderPassCreator.h" />
     <ClInclude Include="Engine\LowerLayer\Render\RenderPass\RenderPassContainer\RenderPassContainer.h" />
-    <ClInclude Include="Engine\LowerLayer\Render\RenderPass\RenderPassCreator\PassDescAssembler\PassDescAssembler.h" />
+    <ClInclude Include="Engine\LowerLayer\Render\RenderPass\RenderPassCreator\PassSettingsLoader\PassSettingsLoader.h" />
+    <ClInclude Include="Engine\LowerLayer\Render\RenderPass\RenderPassCreator\PassBufferCreator\PassBufferCreator.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

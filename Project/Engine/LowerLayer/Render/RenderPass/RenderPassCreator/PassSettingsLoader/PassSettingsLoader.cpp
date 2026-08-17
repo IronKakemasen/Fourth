@@ -1,16 +1,16 @@
 #include "PreCompileHeader.h"
-#include "PassDescAssembler.h"
-#include "Miyajison.h"
+#include "PassSettingsLoader.h"
 
 using namespace ProjectConfig::Window;
+using namespace ProjectConfig::Render;
 
 namespace
 {
-	auto const fileName = "PassDescAssembler.cpp";
+	auto const fileName = "PassSettingsLoader.cpp";
 }
 
 
-[[nodiscard]] PassRequiredInfo RenderContext::RenderPassCreator::PassDescAssembler::LoadPassSettings(std::string const passName_)
+[[nodiscard]] PassRequiredInfo RenderContext::RenderPassCreator::PassSettingsLoader::Load(std::string const passName_)
 {
 	PassRequiredInfo info;
 
@@ -30,7 +30,7 @@ namespace
 	return info;
 }
 
-std::vector<RenderContext::RequiredBufferInfo::ColorBuffer> RenderContext::RenderPassCreator::PassDescAssembler::ParseColorBufferInfo
+std::vector<RenderContext::RequiredBufferInfo::ColorBuffer> RenderContext::RenderPassCreator::PassSettingsLoader::ParseColorBufferInfo
 (
 	std::string const passName_,
 	std::string const jsonFileName_
@@ -52,15 +52,21 @@ std::vector<RenderContext::RequiredBufferInfo::ColorBuffer> RenderContext::Rende
 
 	//カラーバッファの縦横
 	auto const widthContainer = 
-		miyajison->LoadData<std::vector<int>>(jsonFileName_, { passName_,PassRequiredInfo::dataKeyString.kWidthI });
+		miyajison->LoadData<std::vector<int>>(jsonFileName_, { passName_,PassRequiredInfo::dataKeyString.kColorWidthI });
 	auto const heightContainer =
-		miyajison->LoadData<std::vector<int>>(jsonFileName_, { passName_,PassRequiredInfo::dataKeyString.kHeightI });
+		miyajison->LoadData<std::vector<int>>(jsonFileName_, { passName_,PassRequiredInfo::dataKeyString.kColorHeightI });
+
+	//シングルかダブルか
+	auto const numBufferContainer =
+		miyajison->LoadData<std::vector<int>>(jsonFileName_, { passName_,PassRequiredInfo::dataKeyString.kNumBuffer_colorI });
+
 
 	//サイズの比が一致してるかチェック
 	ErrorMessageOutput::Assert::DetectError
 	(
 		numColorBuffers == clearColors.size()		 &&
 		numColorBuffers == widthContainer.size()	 &&
+		numColorBuffers == numBufferContainer.size() &&
 		numColorBuffers == heightContainer.size(),
 		"カラーバッファの設定が間違っている",
 		fileName
@@ -73,6 +79,7 @@ std::vector<RenderContext::RequiredBufferInfo::ColorBuffer> RenderContext::Rende
 		colorBufferInfo[i].clearColor = clearColors[i];
 		colorBufferInfo[i].width = widthContainer[i] == -1 ? kWidth : widthContainer[i];
 		colorBufferInfo[i].height = heightContainer[i] == -1 ? kHeight : heightContainer[i];
+		colorBufferInfo[i].numBuffer = NumBuffer(numBufferContainer[i]);
 	}
 
 
@@ -80,7 +87,7 @@ std::vector<RenderContext::RequiredBufferInfo::ColorBuffer> RenderContext::Rende
 }
 
 
-std::optional<RenderContext::RequiredBufferInfo::DepthStencilBuffer> RenderContext::RenderPassCreator::PassDescAssembler::ParseDepthStencilBufferInfo
+std::optional<RenderContext::RequiredBufferInfo::DepthStencilBuffer> RenderContext::RenderPassCreator::PassSettingsLoader::ParseDepthStencilBufferInfo
 (
 	std::string const passName_,
 	std::string const jsonFileName_
@@ -95,6 +102,8 @@ std::optional<RenderContext::RequiredBufferInfo::DepthStencilBuffer> RenderConte
 	if (!miyajison->LoadData<bool>(jsonFileName_, { passName_,PassRequiredInfo::dataKeyString.kUseDepthStenciB }))
 		return std::nullopt;
 
+	depthStencilBufferInfo.emplace();
+
 	depthStencilBufferInfo->dsvFormat = 
 		(DXGI_FORMAT)miyajison->LoadData<int>(jsonFileName_, { passName_,PassRequiredInfo::dataKeyString.kDsvFormatI});
 
@@ -106,6 +115,20 @@ std::optional<RenderContext::RequiredBufferInfo::DepthStencilBuffer> RenderConte
 
 	depthStencilBufferInfo->clearStencil =
 		miyajison->LoadData<float>(jsonFileName_, { passName_,PassRequiredInfo::dataKeyString.kClearStencilF });
+
+	depthStencilBufferInfo->numBuffer = 
+		(NumBuffer)miyajison->LoadData<int>(jsonFileName_, { passName_,PassRequiredInfo::dataKeyString.kNumBuffer_depthI });
+
+
+	int const widthHeight[2] =
+	{
+		miyajison->LoadData<int>(jsonFileName_, { passName_,PassRequiredInfo::dataKeyString.kDepthWidthI }),
+		miyajison->LoadData<int>(jsonFileName_, { passName_,PassRequiredInfo::dataKeyString.kDepthHeightI})
+	};
+
+	depthStencilBufferInfo->width = widthHeight[0] == -1 ? kWidth : widthHeight[0];
+	depthStencilBufferInfo->height = widthHeight[1] == -1 ? kHeight : widthHeight[1];
+
 
 	return depthStencilBufferInfo;
 }

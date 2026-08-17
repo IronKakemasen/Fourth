@@ -8,7 +8,7 @@ public:
 	PassDesc(const PassRequiredInfo& info_);
 
 
-protected:
+private:
 
 	PassRequiredInfo info;
 

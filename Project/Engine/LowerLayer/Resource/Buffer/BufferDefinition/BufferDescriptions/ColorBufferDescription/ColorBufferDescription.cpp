@@ -3,7 +3,7 @@
 
 ColorBufferDescription::ColorBufferDescription
 (
-	std::array<float, 4> clearColor_,
+	std::vector<float> clearColor_,
 	UINT width_,
 	UINT height_,
 	DXGI_FORMAT format_,
