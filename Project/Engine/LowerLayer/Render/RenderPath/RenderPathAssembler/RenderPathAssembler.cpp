@@ -32,11 +32,11 @@ void RenderContext::RenderPathAssembler::AddPass
 )
 {
 
+	//静的変数に書き直す。これどうにしたい
 	for (auto const passType_string : passAndNames_)
 	{
 		RenderPassComponent::Pass pass = passType_string.first;
 
-		//静的変数に書き直す。これどうにしたい
 		switch (pass)
 		{
 		case RenderPassComponent::Pass::kSceneTextureCreator:
@@ -63,10 +63,3 @@ void RenderContext::RenderPathAssembler::AddPass
 	}
 }
 
-
-
-template<>
-std::unique_ptr<CreateSceneTexture> RenderContext::RenderPathAssembler::InstantiatePath(NexusFieldProof proof_)
-{
-	return std::make_unique<CreateSceneTexture>(proof_);
-}

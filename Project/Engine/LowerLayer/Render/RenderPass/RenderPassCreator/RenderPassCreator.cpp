@@ -1,7 +1,6 @@
 #include "PreCompileHeader.h"
 #include "RenderPassCreator.h"
 #include "../PassDesc/PassDesc.h"
-#include "../RenderPassContainer/RenderPassContainer.h"
 #include "../AllRenderPass/AllPassInclude.h"
 #include "PassSettingsLoader/PassSettingsLoader.h"
 #include "PassBufferCreator/PassBufferCreator.h"
@@ -20,13 +19,6 @@ RenderContext::RenderPassCreator::RenderPassCreator
 :passContainer(container_)
 {
 
-}
-
-
-template<>
-SceneTextureCreator* RenderContext::RenderPassCreator::InstantiatePass(NexusFieldProof proof_, PassDesc desc_)
-{
-	return passContainer->Import(proof_, std::move(std::make_unique<SceneTextureCreator>(proof_, std::move(desc_))));
 }
 
 BufferContext::BufferCreator* RenderContext::RenderPassCreator::BorrowBufferCreator(BufferContextDiplomat& bufferContextDiplomat_)
