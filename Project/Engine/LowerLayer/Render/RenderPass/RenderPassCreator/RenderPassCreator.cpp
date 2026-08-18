@@ -15,8 +15,7 @@
 RenderContext::RenderPassCreator::RenderPassCreator
 (
 	NexusFieldProof proof_,
-	RenderPassContainer* container_,
-	BufferContextDiplomat& bufferContextDiplomat_
+	RenderPassContainer* container_
 )
 :passContainer(container_)
 {

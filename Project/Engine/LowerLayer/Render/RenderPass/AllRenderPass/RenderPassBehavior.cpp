@@ -1,6 +1,5 @@
 #include "PreCompileHeader.h"
 #include "RenderPassBehavior.h"
-#include "PassDesc/PassDesc.h"
 
 
 RenderContext::PassBehavior::PassBehavior(NexusFieldProof proof_, const RenderContext::PassDesc& desc_)

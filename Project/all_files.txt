@@ -5168,7 +5168,7 @@ public:
 #include "RenderContextRuntime/PSO_PoolDispatcher/PSO_PoolDispatcher.h"
 #include "RenderPass/RenderPassContainer/RenderPassContainer.h"
 #include "RenderPass/RenderPassCreator/RenderPassCreator.h"
-#include "RenderPass/RenderPassBehavior.h"
+#include "RenderPass/AllRenderPass/RenderPassBehavior.h"
 #include "RenderPath/RenderPathAssembler/RenderPathAssembler.h"
 
 namespace 
@@ -5187,10 +5187,10 @@ RenderContext::RenderContext(NexusFieldProof proof_, BufferContextDiplomat& buff
 	renderPassContainer.reset(new RenderPassContainer(proof_));
 	Logger::Log("Instantiate: renderPassContainer", fileName);
 
-	renderPassCreator.reset(new RenderPassCreator(proof_, renderPassContainer.get(), bufferContextDiplomat_));
+	renderPassCreator.reset(new RenderPassCreator(proof_, renderPassContainer.get()));
 	Logger::Log("Instantiate: renderPassCreator", fileName);
 
-	renderPathAssembler.reset(new RenderPathAssembler(proof_, renderPassCreator.get()));
+	renderPathAssembler.reset(new RenderPathAssembler(proof_, renderPassCreator.get(), bufferContextDiplomat_));
 	Logger::Log("Instantiate: renderPathAssembler", fileName);
 
 
@@ -5342,7 +5342,7 @@ namespace RenderStateComponent
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Render\RenderContextRuntime\PSO_PoolDispatcher\GraphicsPSO_Key.h ===
 ========================================
 #pragma once
-#include "../../RenderPass/RenderPassComponent.h"
+#include "../../RenderPass/AllRenderPass/RenderPassComponent.h"
 #include "../../RenderPass/ShaderPathComponent.h"
 #include "../../RenderStateComponent.h"
 
@@ -5649,93 +5649,6 @@ private:
 
 
 ========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Render\RenderPass\RenderPassBehavior.cpp ===
-========================================
-#include "PreCompileHeader.h"
-#include "RenderPassBehavior.h"
-#include "PassDesc/PassDesc.h"
-
-
-RenderContext::PassBehavior::PassBehavior(NexusFieldProof proof_, const RenderContext::PassDesc& desc_)
-	:desc(desc_)
-{
-
-}
-
-///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-
-
-========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Render\RenderPass\RenderPassBehavior.h ===
-========================================
-#pragma once
-#include "../RenderContext.h"
-#include "PassDesc/PassDesc.h"
-
-class RenderContext::PassBehavior
-{
-public:
-	PassBehavior(NexusFieldProof proof_, const RenderContext::PassDesc& desc_);
-	virtual ~PassBehavior() = default;
-
-
-protected:
-
-	RenderContext::PassDesc desc;
-
-};
-
-
-
-
-
-========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Render\RenderPass\RenderPassComponent.h ===
-========================================
-#pragma once
-
-namespace RenderPassComponent  
-{
-	///RenderPathを構成する各ステージ
-	enum class Pass
-	{
-		kCreateSceneTexture,
-
-		
-		kFinal
-		,kCount
-
-	};
-
-    enum class DepthEnable
-    {
-        kDisable,
-        kEnable
-        , kCount
-    };
-
-    enum class DepthTest
-    {
-        kLessEqual,
-        kGreaterEqual
-        , kCount
-    };
-
-    inline D3D12_COMPARISON_FUNC Convert(DepthTest depthTest_)
-    {
-        return (depthTest_ == DepthTest::kGreaterEqual) ? D3D12_COMPARISON_FUNC_GREATER_EQUAL : D3D12_COMPARISON_FUNC_LESS_EQUAL;
-    }
-
-}
-
-
-
-
-
-========================================
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Render\RenderPass\ShaderPathComponent.h ===
 ========================================
 #pragma once
@@ -5780,6 +5693,152 @@ class SceneTextureCreator;
 
 
 ========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Render\RenderPass\AllRenderPass\RenderPassBehavior.cpp ===
+========================================
+#include "PreCompileHeader.h"
+#include "RenderPassBehavior.h"
+
+
+RenderContext::PassBehavior::PassBehavior(NexusFieldProof proof_, const RenderContext::PassDesc& desc_)
+	:desc(desc_)
+{
+
+}
+
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Render\RenderPass\AllRenderPass\RenderPassBehavior.h ===
+========================================
+#pragma once
+#include "../../RenderContext.h"
+#include "../PassDesc/PassDesc.h"
+
+class RenderContext::PassBehavior
+{
+public:
+	PassBehavior(NexusFieldProof proof_, const RenderContext::PassDesc& desc_);
+	virtual ~PassBehavior() = default;
+
+
+protected:
+
+	RenderContext::PassDesc desc;
+
+};
+
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Render\RenderPass\AllRenderPass\RenderPassComponent.cpp ===
+========================================
+#include "RenderPassComponent.h"
+#include "RenderPassName.h"
+
+
+
+RenderPassComponent::Pass RenderPassComponent::PassNameToPassType(std::string const passName_)
+{
+    RenderPassComponent::Pass pass = RenderPassComponent::Pass::kEnd;
+
+    if (passName_ == RenderPassName::PassTypeToName<SceneTextureCreator>::name)
+    {
+        pass = RenderPassComponent::Pass::kSceneTextureCreator;
+    }
+    else
+    {
+        ErrorMessageOutput::Assert::OutputError("そんなパスネームは存在しない", "RenderPassComponent.cpp");
+    }
+
+    return pass;
+}
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Render\RenderPass\AllRenderPass\RenderPassComponent.h ===
+========================================
+#pragma once
+#include "AllPassFwd.h"
+
+namespace RenderPassComponent  
+{
+	///RenderPathを構成する各ステージ
+	enum class Pass
+	{
+		kSceneTextureCreator
+
+		
+		
+		,kCount,
+        kEnd
+	};
+
+    enum class DepthEnable
+    {
+        kDisable,
+        kEnable
+        , kCount
+    };
+
+    enum class DepthTest
+    {
+        kLessEqual,
+        kGreaterEqual
+        , kCount
+    };
+
+    inline D3D12_COMPARISON_FUNC Convert(DepthTest depthTest_)
+    {
+        return (depthTest_ == DepthTest::kGreaterEqual) ? D3D12_COMPARISON_FUNC_GREATER_EQUAL : D3D12_COMPARISON_FUNC_LESS_EQUAL;
+    }
+
+
+    RenderPassComponent::Pass PassNameToPassType(std::string const passName_);
+    
+    template<RenderPassComponent::Pass passType>
+    struct PassTypeToPassClass;
+
+}
+
+template<>
+struct RenderPassComponent::PassTypeToPassClass<RenderPassComponent::Pass::kSceneTextureCreator>
+{
+    using PassClass = SceneTextureCreator;
+};
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Render\RenderPass\AllRenderPass\RenderPassName.h ===
+========================================
+#pragma once
+#include "AllPassFwd.h"
+
+namespace RenderPassName
+{
+	template<typename PassType>
+	struct PassTypeToName;
+
+	template<>
+	struct PassTypeToName<SceneTextureCreator>
+	{
+		static inline const std::string name = "SceneTextureCreator";
+	};
+
+}
+
+
+
+========================================
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Render\RenderPass\AllRenderPass\SceneTextureCreator\SceneTextureCreator.cpp ===
 ========================================
 #include "PreCompileHeader.h"
@@ -5799,7 +5858,7 @@ SceneTextureCreator::SceneTextureCreator(RenderContext::NexusFieldProof proof_ ,
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Render\RenderPass\AllRenderPass\SceneTextureCreator\SceneTextureCreator.h ===
 ========================================
 #pragma once
-#include "../../RenderPassBehavior.h"
+#include "../RenderPassBehavior.h"
 
 class SceneTextureCreator :public RenderContext::PassBehavior
 {
@@ -5929,7 +5988,7 @@ private:
 ========================================
 #pragma once
 #include "BufferRequiredInfo.h"
-#include "../RenderPassComponent.h"
+#include "../AllRenderPass/RenderPassComponent.h"
 
 //jsonファイルに登録時のキー
 struct PassRequiredInfo
@@ -6056,8 +6115,7 @@ SceneTextureCreator* RenderContext::RenderPassContainer::Import
 RenderContext::RenderPassCreator::RenderPassCreator
 (
 	NexusFieldProof proof_,
-	RenderPassContainer* container_,
-	BufferContextDiplomat& bufferContextDiplomat_
+	RenderPassContainer* container_
 )
 :passContainer(container_)
 {
@@ -6115,8 +6173,7 @@ public:
 	RenderPassCreator
 	(
 		NexusFieldProof proof_,
-		RenderPassContainer* container_, 
-		BufferContextDiplomat& bufferContextDiplomat_
+		RenderPassContainer* container_
 	);
 
 	template<typename PassType>
@@ -6132,7 +6189,7 @@ public:
 
 		PassDesc passDesc = CreateDesc(passName_, bufferCreator);
 
-		return InstantiatePass(passDesc);
+		return InstantiatePass<PassType>(proof_, passDesc);
 	}
 
 
@@ -6412,7 +6469,25 @@ class RenderContext::RenderPassCreator::PassSettingsLoader
 
 
 ========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Render\RenderPath\PathBehavior.cpp ===
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Render\RenderPath\AllRenderPath\AllPathFwd.h ===
+========================================
+#pragma once
+
+
+class CreateSceneTexture;
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Render\RenderPath\AllRenderPath\AllPathInclude.h ===
+========================================
+#pragma once
+#include "CreateSceneTexture/CreateSceneTexture.h"
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Render\RenderPath\AllRenderPath\PathBehavior.cpp ===
 ========================================
 #include "PreCompileHeader.h"
 #include "PathBehavior.h"
@@ -6427,20 +6502,21 @@ RenderContext::PathBehavior::PathBehavior(NexusFieldProof proof_)
 
 
 ========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Render\RenderPath\PathBehavior.h ===
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Render\RenderPath\AllRenderPath\PathBehavior.h ===
 ========================================
 #pragma once
-#include "../RenderContext.h"
-#include "../RenderPass/AllRenderPass/AllPassFwd.h"
+#include "../../RenderContext.h"
+#include "../../RenderPass/AllRenderPass/AllPassFwd.h"
 
 class RenderContext::PathBehavior
 {
 public:
 
 	PathBehavior(NexusFieldProof proof_);
-	
+	~PathBehavior() = default;
+
 	template<typename PassType>
-	void SetPass(NexusFieldProof proof_ , PassType* pass_)
+	void AddPass(NexusFieldProof proof_ , PassType* pass_)
 	{
 		std::get<PassType*>(passses) = pass_;
 	}
@@ -6455,18 +6531,138 @@ protected:
 
 
 ========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Render\RenderPath\AllRenderPath\RenderPathName.h ===
+========================================
+#pragma once
+#include "AllPathFwd.h"
+
+namespace RenderPathName
+{
+
+	template<typename PathType>
+	struct PathTypeToName;
+
+	template<>
+	struct PathTypeToName<CreateSceneTexture>
+	{
+		static inline const std::string name = "CreateSceneTexture";
+	};
+
+}
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Render\RenderPath\AllRenderPath\CreateSceneTexture\CreateSceneTexture.cpp ===
+========================================
+#include "PreCompileHeader.h"
+#include "CreateSceneTexture.h"
+
+CreateSceneTexture::CreateSceneTexture(RenderContext::NexusFieldProof proof_)
+	:PathBehavior::PathBehavior(proof_)
+{
+
+}
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Render\RenderPath\AllRenderPath\CreateSceneTexture\CreateSceneTexture.h ===
+========================================
+#pragma once
+#include "../PathBehavior.h"
+
+class CreateSceneTexture:public RenderContext::PathBehavior
+{
+public:
+
+	CreateSceneTexture(RenderContext::NexusFieldProof proof_);
+
+
+private:
+
+};
+
+
+
+
+
+========================================
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Render\RenderPath\RenderPathAssembler\RenderPathAssembler.cpp ===
 ========================================
 #include "PreCompileHeader.h"
 #include "RenderPathAssembler.h"
 #include "../../RenderPass/RenderPassCreator/RenderPassCreator.h"
+#include "../AllRenderPath/AllPathInclude.h"
+#include "PathSettingsLoader/PathSettingsLoader.h"
 
+using namespace RenderPassComponent;
 
-RenderContext::RenderPathAssembler::RenderPathAssembler(NexusFieldProof proof_, RenderPassCreator* passCreator_)
-	:passCreator(passCreator_)
+RenderContext::RenderPathAssembler::RenderPathAssembler
+(
+	NexusFieldProof proof_,
+	RenderPassCreator* passCreator_,
+	BufferContextDiplomat& bufferContextDiplomat_
+)
+:passCreator(passCreator_)
 {
 
 }
+
+std::vector<RenderContext::RenderPathAssembler::PassAndName> RenderContext::RenderPathAssembler::LoadPathSettings(std::string const pathName_)
+{
+	//使用するPassを読み込む
+	return PathSettingsLoader::ParseWhichPassUses(pathName_);
+}
+
+void RenderContext::RenderPathAssembler::AddPass
+(
+	NexusFieldProof proof_,
+	std::vector<PassAndName> const& passAndNames_,
+	PathBehavior& dstPath_,
+	BufferContextDiplomat& bufferContextDiplomat_
+)
+{
+
+	for (auto const passType_string : passAndNames_)
+	{
+		RenderPassComponent::Pass pass = passType_string.first;
+
+		//静的変数に書き直す。これどうにしたい
+		switch (pass)
+		{
+		case RenderPassComponent::Pass::kSceneTextureCreator:
+
+			dstPath_.AddPass
+			(
+				proof_,
+				passCreator->Create<PassTypeToPassClass<RenderPassComponent::Pass::kSceneTextureCreator>::PassClass>
+				(
+					proof_,
+					passType_string.second,
+					bufferContextDiplomat_
+				)
+			);
+
+			break;
+
+		default:
+
+			ErrorMessageOutput::Assert::OutputError("ここに到達するのはおかしい", "RenderPathAssembler.cpp");
+
+			break;
+		}
+	}
+}
+
+
+
+template<>
+std::unique_ptr<CreateSceneTexture> RenderContext::RenderPathAssembler::InstantiatePath(NexusFieldProof proof_)
+{
+	return std::make_unique<CreateSceneTexture>(proof_);
+}
+
 
 
 
@@ -6475,18 +6671,138 @@ RenderContext::RenderPathAssembler::RenderPathAssembler(NexusFieldProof proof_, 
 ========================================
 #pragma once
 #include "../../RenderContext.h"
+#include "../AllRenderPath/AllPathFwd.h"
+#include "../../RenderPass/AllRenderPass/RenderPassComponent.h"
+#include "../AllRenderPath/RenderPathName.h"
 
 class RenderContext::RenderPathAssembler
 {
+	class PathSettingsLoader;
+	using PassAndName = std::pair<RenderPassComponent::Pass, std::string>;
+
 public:
 
-	RenderPathAssembler(NexusFieldProof proof_, RenderPassCreator* passCreator_);
+	RenderPathAssembler
+	(
+		NexusFieldProof proof_, 
+		RenderPassCreator* passCreator_,
+		BufferContextDiplomat& bufferContextDiplomat_
+	);
 
+	template<typename PathType>
+	std::unique_ptr<PathType> Assemble
+	(
+		NexusFieldProof proof_,
+		BufferContextDiplomat& bufferContextDiplomat_
+	)
+	{
+		std::string const pathName = RenderPathName::PathTypeToName<PathType>::name;
+		std::unique_ptr<PathType> path = InstantiatePath<PathType>(proof_);
+
+		std::vector<PassAndName> passAndNames =  LoadPathSettings(pathName);
+
+		AddPass(proof_, passAndNames, path, bufferContextDiplomat_);
+
+		return path;
+	}
 
 
 private:
 
 	RenderPassCreator* passCreator;
+
+	std::vector<PassAndName> LoadPathSettings(std::string const pathName_);
+
+	void AddPass
+	(
+		NexusFieldProof proof_,
+		std::vector<PassAndName> const& passAndNames_,
+		PathBehavior& dstPath_,
+		BufferContextDiplomat& bufferContextDiplomat_
+	);
+
+	template<typename PathType>
+	std::unique_ptr<PathType> InstantiatePath(NexusFieldProof proof_);
+
+};
+
+
+template<>
+std::unique_ptr<CreateSceneTexture> RenderContext::RenderPathAssembler::InstantiatePath(NexusFieldProof proof_);
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Render\RenderPath\RenderPathAssembler\PathSettingsLoader\PathSettingsLoader.cpp ===
+========================================
+#include "PreCompileHeader.h"
+#include "PathSettingsLoader.h"
+
+
+[[nodiscard]] std::vector<RenderContext::RenderPathAssembler::PassAndName> RenderContext::RenderPathAssembler::PathSettingsLoader::
+ParseWhichPassUses(std::string const pathName_)
+{
+
+	//使用するPassを文字列で伝える
+	std::vector<std::string> usesPassContainerString;
+	std::vector<RenderPassComponent::Pass> usesPassContainer;
+	std::vector<PassAndName> passType_string;
+
+	usesPassContainerString = LoadData(pathName_);
+	usesPassContainer = PassNamesToPassTypes(usesPassContainerString);
+	
+	for (size_t i = 0;i < usesPassContainerString.size();++i)
+	{
+		passType_string.emplace_back(std::make_pair(usesPassContainer[i], usesPassContainerString[i]));
+	}
+
+	return passType_string;
+}
+
+
+std::vector<std::string> RenderContext::RenderPathAssembler::PathSettingsLoader::LoadData(std::string const pathName_)
+{
+	Miyajison* miyajison = Miyajison::Get();
+	static std::string const srcJsonFileName = "RenderPathSettings";
+	static std::string const dataName = "UsePass";
+
+	return 	miyajison->LoadData<std::vector<std::string>>(srcJsonFileName, { pathName_,dataName });
+
+}
+
+std::vector<RenderPassComponent::Pass> RenderContext::RenderPathAssembler::PathSettingsLoader::PassNamesToPassTypes(std::vector<std::string> const& passNames_)
+{
+	std::vector<RenderPassComponent::Pass> passTypes;
+
+	for (auto const passName : passNames_)
+	{
+		passTypes.emplace_back(RenderPassComponent::PassNameToPassType(passName));
+	}
+
+	return passTypes;
+}
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Render\RenderPath\RenderPathAssembler\PathSettingsLoader\PathSettingsLoader.h ===
+========================================
+#pragma once
+#include "../RenderPathAssembler.h"
+
+class RenderContext::RenderPathAssembler::PathSettingsLoader
+{
+	friend class RenderPathAssembler;
+
+	///本丸
+	[[nodiscard]] static std::vector<PassAndName> ParseWhichPassUses(std::string const pathName_);
+
+	//Pathの名前からそのPathが使用するPassの名前をjsonファイルから読み込む
+	static std::vector<std::string> LoadData(std::string const pathName_);
+	//パスの名前から列挙型へ変換
+	static std::vector<RenderPassComponent::Pass> PassNamesToPassTypes(std::vector<std::string> const& passNames_);
 };
 
 

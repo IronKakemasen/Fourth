@@ -18,8 +18,7 @@ public:
 	RenderPassCreator
 	(
 		NexusFieldProof proof_,
-		RenderPassContainer* container_, 
-		BufferContextDiplomat& bufferContextDiplomat_
+		RenderPassContainer* container_
 	);
 
 	template<typename PassType>
@@ -35,7 +34,7 @@ public:
 
 		PassDesc passDesc = CreateDesc(passName_, bufferCreator);
 
-		return InstantiatePass(passDesc);
+		return InstantiatePass<PassType>(proof_, passDesc);
 	}
 
 

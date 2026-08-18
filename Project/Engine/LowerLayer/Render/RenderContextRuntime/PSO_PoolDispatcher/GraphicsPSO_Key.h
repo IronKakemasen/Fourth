@@ -1,5 +1,5 @@
 #pragma once
-#include "../../RenderPass/RenderPassComponent.h"
+#include "../../RenderPass/AllRenderPass/RenderPassComponent.h"
 #include "../../RenderPass/ShaderPathComponent.h"
 #include "../../RenderStateComponent.h"
 

@@ -102,6 +102,8 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Engine\LowerLayer\Render\RenderPass\AllRenderPass\RenderPassComponent.cpp" />
+    <ClCompile Include="Engine\LowerLayer\Render\RenderPath\AllRenderPath\CreateSceneTexture\CreateSceneTexture.cpp" />
     <ClCompile Include="Engine\LowerLayer\Resource\Buffer\BufferContextDiplomat\BufferContextCmdProvider\BufferContextCmdProvider.cpp" />
     <ClCompile Include="Engine\LowerLayer\Resource\Buffer\BufferPoolSet\BufferPoolSet.cpp" />
     <ClCompile Include="Engine\LowerLayer\Resource\Buffer\GlobalConstantBuffers\GlobalConstantBufferCreator\GlobalConstantBufferCreator.cpp" />
@@ -310,7 +312,7 @@
     <ClCompile Include="Engine\LowerLayer\Render\RenderPath\RenderPathComposer\ShaderCombiner\ShaderCombiner.cpp" />
     <ClCompile Include="Engine\LowerLayer\Resource\RootSignature\RootSignatureLibrary\RootSignatureLibrary.cpp" />
     <ClCompile Include="Engine\LowerLayer\Render\RenderContextRuntime\PSO_PoolDispatcher\PSO_PoolDispatcher.cpp" />
-    <ClCompile Include="Engine\LowerLayer\Render\RenderPass\RenderPassBehavior.cpp" />
+    <ClCompile Include="Engine\LowerLayer\Render\RenderPass\AllRenderPass\RenderPassBehavior.cpp" />
     <ClCompile Include="Engine\LowerLayer\Resource\Model\ModelContext.cpp" />
     <ClCompile Include="Engine\LowerLayer\Resource\Model\ModelStructure\ModelData\ResourceMesh\ResourceMesh.cpp" />
     <ClCompile Include="Engine\LowerLayer\Resource\Model\CreateModelTools\ModelDataLoader\ModelDataCache\ModelDataCache.cpp" />
@@ -368,15 +370,21 @@
     <ClCompile Include="Engine\LowerLayer\Render\RenderPass\RenderPassContainer\RenderPassContainer.cpp" />
     <ClCompile Include="Engine\LowerLayer\Render\RenderPass\RenderPassCreator\PassSettingsLoader\PassSettingsLoader.cpp" />
     <ClCompile Include="Engine\LowerLayer\Render\RenderPass\RenderPassCreator\PassBufferCreator\PassBufferCreator.cpp" />
-    <ClCompile Include="Engine\LowerLayer\Render\RenderPath\PathBehavior.cpp" />
+    <ClCompile Include="Engine\LowerLayer\Render\RenderPath\AllRenderPath\PathBehavior.cpp" />
     <ClCompile Include="Engine\LowerLayer\Render\RenderPath\RenderPathAssembler\RenderPathAssembler.cpp" />
+    <ClCompile Include="Engine\LowerLayer\Render\RenderPath\RenderPathAssembler\PathSettingsLoader\PathSettingsLoader.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Assets\BAKA\ConstantBuffers.h" />
     <ClInclude Include="Assets\BAKA\StructuredBuffer.h" />
+    <ClInclude Include="Engine\LowerLayer\Render\RenderPath\AllRenderPath\AllPathFwd.h" />
+    <ClInclude Include="Engine\LowerLayer\Render\RenderPath\AllRenderPath\AllPathInclude.h" />
+    <ClInclude Include="Engine\LowerLayer\Render\RenderPath\AllRenderPath\CreateSceneTexture\CreateSceneTexture.h" />
     <ClInclude Include="Engine\LowerLayer\Render\RenderPass\AllRenderPass\AllPassFwd.h" />
     <ClInclude Include="Engine\LowerLayer\Render\RenderPass\AllRenderPass\AllPassInclude.h" />
+    <ClInclude Include="Engine\LowerLayer\Render\RenderPass\AllRenderPass\RenderPassName.h" />
     <ClInclude Include="Engine\LowerLayer\Render\RenderPass\PassDesc\PassRequiredInfo.h" />
+    <ClInclude Include="Engine\LowerLayer\Render\RenderPath\AllRenderPath\RenderPathName.h" />
     <ClInclude Include="Engine\LowerLayer\Resource\Buffer\BufferContextDiplomat\BufferContextCmdProvider\BufferContextCmdProvider.h" />
     <ClInclude Include="Engine\LowerLayer\Core\Command\CommandContextDiplomat\CommandContextCmdProvider\CommandContextCmdProviderLicences.h" />
     <ClInclude Include="Engine\LowerLayer\Core\Command\CommandContextCmds.h" />
@@ -422,7 +430,7 @@
     <ClInclude Include="Engine\LowerLayer\Resource\Shader\ShaderContextDiplomat\ShaderContextToolLender\ShaderContextToolLenderLicences.h" />
     <ClInclude Include="Engine\Utility\ClosedHashMap\ClosedHashMap.h" />
     <ClInclude Include="Engine\LowerLayer\Render\RenderContextRuntime\PSO_PoolDispatcher\GraphicsPSO_Key.h" />
-    <ClInclude Include="Engine\LowerLayer\Render\RenderPass\RenderPassComponent.h" />
+    <ClInclude Include="Engine\LowerLayer\Render\RenderPass\AllRenderPass\RenderPassComponent.h" />
     <ClInclude Include="Engine\LowerLayer\Resource\RootSignature\RootSignatureCreator\RootSignatureAssembler\RootSignatureDesc.h" />
     <ClInclude Include="Engine\LowerLayer\Resource\RootSignature\RootSignatureCreator\RootSignatureAssembler\RootSignatureAssemblerTool\RootParamCreator\RootParamCreator.h" />
     <ClInclude Include="Engine\LowerLayer\Resource\RootSignature\RootSignatureCreator\RootSignatureAssembler\RootSignatureAssemblerTool\StaticSamplerDescCreator\StaticSamplerDescCreator.h" />
@@ -532,7 +540,7 @@
     <ClInclude Include="Engine\LowerLayer\Resource\RootSignature\RootSignatureLibrary\RootSignatureLibrary.h" />
     <ClInclude Include="Engine\LowerLayer\Render\RenderContextRuntime\PSO_PoolDispatcher\PSO_PoolDispatcher.h" />
     <ClInclude Include="Engine\Utility\KeyPackager\KeyPackager.h" />
-    <ClInclude Include="Engine\LowerLayer\Render\RenderPass\RenderPassBehavior.h" />
+    <ClInclude Include="Engine\LowerLayer\Render\RenderPass\AllRenderPass\RenderPassBehavior.h" />
     <ClInclude Include="Engine\LowerLayer\Resource\Model\ModelContext.h" />
     <ClInclude Include="Engine\LowerLayer\Resource\Model\ModelStructure\ModelData\ResourceMesh\ResourceMesh.h" />
     <ClInclude Include="Engine\LowerLayer\Resource\Model\CreateModelTools\ModelDataLoader\ModelDataCache\ModelDataCache.h" />
@@ -593,8 +601,9 @@
     <ClInclude Include="Engine\LowerLayer\Render\RenderPass\RenderPassContainer\RenderPassContainer.h" />
     <ClInclude Include="Engine\LowerLayer\Render\RenderPass\RenderPassCreator\PassSettingsLoader\PassSettingsLoader.h" />
     <ClInclude Include="Engine\LowerLayer\Render\RenderPass\RenderPassCreator\PassBufferCreator\PassBufferCreator.h" />
-    <ClInclude Include="Engine\LowerLayer\Render\RenderPath\PathBehavior.h" />
+    <ClInclude Include="Engine\LowerLayer\Render\RenderPath\AllRenderPath\PathBehavior.h" />
     <ClInclude Include="Engine\LowerLayer\Render\RenderPath\RenderPathAssembler\RenderPathAssembler.h" />
+    <ClInclude Include="Engine\LowerLayer\Render\RenderPath\RenderPathAssembler\PathSettingsLoader\PathSettingsLoader.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

@@ -1,6 +1,6 @@
 #pragma once
-#include "../RenderContext.h"
-#include "PassDesc/PassDesc.h"
+#include "../../RenderContext.h"
+#include "../PassDesc/PassDesc.h"
 
 class RenderContext::PassBehavior
 {
