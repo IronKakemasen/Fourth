@@ -3,6 +3,7 @@
 #include "../AllRenderPath/AllPathInclude.h"
 #include "../AllRenderPath/RenderPathName.h"
 #include "../../RenderPass/AllRenderPass/RenderPassComponent.h"
+#include "../RenderPathContainer/RenderPathContainer.h"
 
 class RenderContext::RenderPathAssembler
 {
@@ -14,12 +15,13 @@ public:
 	RenderPathAssembler
 	(
 		NexusFieldProof proof_, 
-		RenderPassCreator* passCreator_,
+		std::unique_ptr <RenderPassCreator>&& passCreator_,
+		RenderPathContainer* pathContainer_,
 		BufferContextDiplomat& bufferContextDiplomat_
 	);
 
 	template<typename PathType>
-	std::unique_ptr<PathType> Assemble
+	PathType* Assemble
 	(
 		NexusFieldProof proof_,
 		BufferContextDiplomat& bufferContextDiplomat_
@@ -34,13 +36,17 @@ public:
 		//それら情報をもとに、passCreatorでPassを作り追加する
 		AddPass(proof_, passAndNames, *path.get(), bufferContextDiplomat_);
 
-		return path;
+		auto* pathPtr = path.get();
+		pathContainer->Import(proof_, std::move(path));
+
+		return pathPtr;
 	}
 
 
 private:
 
-	RenderPassCreator* passCreator;
+	std::unique_ptr<RenderPassCreator> passCreator;
+	RenderPathContainer* pathContainer;
 
 	std::vector<PassAndName> LoadPathSettings(std::string const pathName_);
 

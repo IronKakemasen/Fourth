@@ -9,10 +9,11 @@ using namespace RenderPassComponent;
 RenderContext::RenderPathAssembler::RenderPathAssembler
 (
 	NexusFieldProof proof_,
-	RenderPassCreator* passCreator_,
+	std::unique_ptr <RenderPassCreator>&& passCreator_,
+	RenderPathContainer* pathContainer_,
 	BufferContextDiplomat& bufferContextDiplomat_
 )
-:passCreator(passCreator_)
+	:passCreator(std::move(passCreator_)), pathContainer(pathContainer_)
 {
 
 }

@@ -54,7 +54,6 @@ private:
 	//bufferCreatorを借りる
 	BufferContext::BufferCreator* BorrowBufferCreator(BufferContextDiplomat& bufferContextDiplomat_);
 
-
 	//パスユニークの保管用
 	RenderPassContainer* passContainer;
 };

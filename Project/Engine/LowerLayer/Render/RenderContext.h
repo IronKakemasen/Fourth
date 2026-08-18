@@ -2,12 +2,15 @@
 
 class Nexus;
 class BufferContextDiplomat;
-
+class RootSignatureContextDiplomat;
 
 class RenderContext
 {
 	class RenderPassContainer;
+	class RenderPathContainer;
 	class RenderPathAssembler;
+	//グラフィックス専用のpsoのプール、配布
+	class PSO_PoolDispatcher;
 
 public:
 	//renderPass生成機
@@ -18,24 +21,28 @@ public:
 	//そのパスで使用するバッファの情報をまとめたもの
 	struct RequiredBufferInfo;
 	class PathBehavior;
-
+	//レンダーパスを設計する強者
+	class RenderGraph;
 
 	//ネクサスフィールドの証
 	struct NexusFieldProof;
 
-	RenderContext(NexusFieldProof proof_, BufferContextDiplomat& bufferContextDiplomat_);
+	RenderContext
+	(
+		NexusFieldProof proof_,
+		BufferContextDiplomat& bufferContextDiplomat_,
+		RootSignatureContextDiplomat& rootSignatureContextDiplomat_
+	);
+
 	~RenderContext();
 
 private:
 
-	//グラフィックス専用のpsoのプール、配布
-	class PSO_PoolDispatcher;
-
-
 	std::unique_ptr<RenderPassContainer> renderPassContainer;
-	std::unique_ptr<RenderPassCreator> renderPassCreator;
+	std::unique_ptr<RenderPathContainer> renderPathContainer;
+	std::unique_ptr<RenderGraph> renderGraph;
 	std::unique_ptr<PSO_PoolDispatcher> pso_PoolDispatcher;
-	std::unique_ptr<RenderPathAssembler> renderPathAssembler;
+
 
 };
 

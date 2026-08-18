@@ -22,7 +22,7 @@ public:
 		BufferContext::RegisterType dstRegisterType = idToType_location.first;
 		uint32_t dstPoolIndex = idToType_location.second;
 
-		return bufferPoolSet->ContainerTable(dstRegisterType)->at(dstPoolIndex).get();
+		return (*bufferPoolSet->ContainerTable(dstRegisterType))[dstPoolIndex].get();
 	}
 
 private:
