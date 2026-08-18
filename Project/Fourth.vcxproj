@@ -368,6 +368,8 @@
     <ClCompile Include="Engine\LowerLayer\Render\RenderPass\RenderPassContainer\RenderPassContainer.cpp" />
     <ClCompile Include="Engine\LowerLayer\Render\RenderPass\RenderPassCreator\PassSettingsLoader\PassSettingsLoader.cpp" />
     <ClCompile Include="Engine\LowerLayer\Render\RenderPass\RenderPassCreator\PassBufferCreator\PassBufferCreator.cpp" />
+    <ClCompile Include="Engine\LowerLayer\Render\RenderPath\PathBehavior.cpp" />
+    <ClCompile Include="Engine\LowerLayer\Render\RenderPath\RenderPathAssembler\RenderPathAssembler.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Assets\BAKA\ConstantBuffers.h" />
@@ -591,6 +593,8 @@
     <ClInclude Include="Engine\LowerLayer\Render\RenderPass\RenderPassContainer\RenderPassContainer.h" />
     <ClInclude Include="Engine\LowerLayer\Render\RenderPass\RenderPassCreator\PassSettingsLoader\PassSettingsLoader.h" />
     <ClInclude Include="Engine\LowerLayer\Render\RenderPass\RenderPassCreator\PassBufferCreator\PassBufferCreator.h" />
+    <ClInclude Include="Engine\LowerLayer\Render\RenderPath\PathBehavior.h" />
+    <ClInclude Include="Engine\LowerLayer\Render\RenderPath\RenderPathAssembler\RenderPathAssembler.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

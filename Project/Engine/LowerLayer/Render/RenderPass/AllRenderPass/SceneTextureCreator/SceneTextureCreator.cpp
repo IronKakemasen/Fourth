@@ -2,8 +2,8 @@
 #include "SceneTextureCreator.h"
 #include "../../PassDesc/PassDesc.h"
 
-SceneTextureCreator::SceneTextureCreator(RenderContext::Local_CreateRenderPassLicence licence_, const RenderContext::PassDesc& desc_)
-	:RenderContext::PassBehavior(licence_,desc_)
+SceneTextureCreator::SceneTextureCreator(RenderContext::NexusFieldProof proof_ , const RenderContext::PassDesc& desc_)
+	:RenderContext::PassBehavior(proof_,desc_)
 {
 
 }

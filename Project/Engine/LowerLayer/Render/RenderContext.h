@@ -17,11 +17,11 @@ public:
 	class PassDesc;
 	//そのパスで使用するバッファの情報をまとめたもの
 	struct RequiredBufferInfo;
+	class PathBehavior;
+
 
 	//ネクサスフィールドの証
 	struct NexusFieldProof;
-	//renderPassの生成許可
-	struct Local_CreateRenderPassLicence;
 
 	RenderContext(NexusFieldProof proof_, BufferContextDiplomat& bufferContextDiplomat_);
 	~RenderContext();
@@ -35,6 +35,8 @@ private:
 	std::unique_ptr<RenderPassContainer> renderPassContainer;
 	std::unique_ptr<RenderPassCreator> renderPassCreator;
 	std::unique_ptr<PSO_PoolDispatcher> pso_PoolDispatcher;
+	std::unique_ptr<RenderPathAssembler> renderPathAssembler;
+
 };
 
 
@@ -43,15 +45,6 @@ struct RenderContext::NexusFieldProof
 private:
 	friend class Nexus;
 	explicit NexusFieldProof() = default;
-};
-
-
-struct RenderContext::Local_CreateRenderPassLicence
-{
-private:
-	
-	friend class RenderPathAssembler;
-	explicit Local_CreateRenderPassLicence() = default;
 };
 
 

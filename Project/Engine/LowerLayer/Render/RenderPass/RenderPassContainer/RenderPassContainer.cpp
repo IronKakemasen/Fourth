@@ -12,7 +12,7 @@ RenderContext::RenderPassContainer::RenderPassContainer(NexusFieldProof proof_)
 template<>
 SceneTextureCreator* RenderContext::RenderPassContainer::Import
 (
-	Local_CreateRenderPassLicence licence_,
+	NexusFieldProof proof_,
 	std::unique_ptr<SceneTextureCreator>&& pass_
 )
 {
