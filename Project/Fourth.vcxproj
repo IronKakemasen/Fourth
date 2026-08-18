@@ -373,6 +373,8 @@
     <ClCompile Include="Engine\LowerLayer\Render\RenderPath\AllRenderPath\PathBehavior.cpp" />
     <ClCompile Include="Engine\LowerLayer\Render\RenderPath\RenderPathAssembler\RenderPathAssembler.cpp" />
     <ClCompile Include="Engine\LowerLayer\Render\RenderPath\RenderPathAssembler\PathSettingsLoader\PathSettingsLoader.cpp" />
+    <ClCompile Include="Engine\LowerLayer\Render\RenderGraph\RenderGraph.cpp" />
+    <ClCompile Include="Engine\LowerLayer\Render\RenderPath\RenderPathContainer\RenderPathContainer.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Assets\BAKA\ConstantBuffers.h" />
@@ -604,6 +606,8 @@
     <ClInclude Include="Engine\LowerLayer\Render\RenderPath\AllRenderPath\PathBehavior.h" />
     <ClInclude Include="Engine\LowerLayer\Render\RenderPath\RenderPathAssembler\RenderPathAssembler.h" />
     <ClInclude Include="Engine\LowerLayer\Render\RenderPath\RenderPathAssembler\PathSettingsLoader\PathSettingsLoader.h" />
+    <ClInclude Include="Engine\LowerLayer\Render\RenderGraph\RenderGraph.h" />
+    <ClInclude Include="Engine\LowerLayer\Render\RenderPath\RenderPathContainer\RenderPathContainer.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
