@@ -1,8 +1,8 @@
 #pragma once
 #include "../../RenderContext.h"
-#include "../AllRenderPath/AllPathFwd.h"
-#include "../../RenderPass/AllRenderPass/RenderPassComponent.h"
+#include "../AllRenderPath/AllPathInclude.h"
 #include "../AllRenderPath/RenderPathName.h"
+#include "../../RenderPass/AllRenderPass/RenderPassComponent.h"
 
 class RenderContext::RenderPathAssembler
 {
@@ -25,11 +25,13 @@ public:
 		BufferContextDiplomat& bufferContextDiplomat_
 	)
 	{
+		//Pathの名前
 		std::string const pathName = RenderPathName::PathTypeToName<PathType>::name;
+		//実体
 		std::unique_ptr<PathType> path = InstantiatePath<PathType>(proof_);
-
+		//そのPathが使用するPassのコンテナ
 		std::vector<PassAndName> passAndNames =  LoadPathSettings(pathName);
-
+		//それら情報をもとに、passCreatorでPassを作り追加する
 		AddPass(proof_, passAndNames, *path.get(), bufferContextDiplomat_);
 
 		return path;
@@ -51,10 +53,10 @@ private:
 	);
 
 	template<typename PathType>
-	std::unique_ptr<PathType> InstantiatePath(NexusFieldProof proof_);
+	std::unique_ptr<PathType> InstantiatePath(NexusFieldProof proof_)
+	{
+		return std::make_unique<CreateSceneTexture>(proof_);
+	}
 
 };
 
-
-template<>
-std::unique_ptr<CreateSceneTexture> RenderContext::RenderPathAssembler::InstantiatePath(NexusFieldProof proof_);
