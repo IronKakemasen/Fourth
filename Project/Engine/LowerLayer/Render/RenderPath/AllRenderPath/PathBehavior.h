@@ -1,15 +1,16 @@
 #pragma once
-#include "../RenderContext.h"
-#include "../RenderPass/AllRenderPass/AllPassFwd.h"
+#include "../../RenderContext.h"
+#include "../../RenderPass/AllRenderPass/AllPassFwd.h"
 
 class RenderContext::PathBehavior
 {
 public:
 
 	PathBehavior(NexusFieldProof proof_);
-	
+	~PathBehavior() = default;
+
 	template<typename PassType>
-	void SetPass(NexusFieldProof proof_ , PassType* pass_)
+	void AddPass(NexusFieldProof proof_ , PassType* pass_)
 	{
 		std::get<PassType*>(passses) = pass_;
 	}

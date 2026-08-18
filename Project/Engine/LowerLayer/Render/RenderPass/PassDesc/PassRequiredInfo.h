@@ -1,6 +1,6 @@
 #pragma once
 #include "BufferRequiredInfo.h"
-#include "../RenderPassComponent.h"
+#include "../AllRenderPass/RenderPassComponent.h"
 
 //jsonファイルに登録時のキー
 struct PassRequiredInfo

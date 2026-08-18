@@ -1,0 +1,7 @@
+﻿{
+    "CreateSceneTexture":  {
+                               "UsePass":  [
+                                               "SceneTextureCreator"
+                                           ]
+                           }
+}
