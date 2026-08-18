@@ -3,7 +3,7 @@
 #include "PassDesc/PassDesc.h"
 
 
-RenderContext::PassBehavior::PassBehavior(Local_CreateRenderPassLicence licence_, const RenderContext::PassDesc& desc_)
+RenderContext::PassBehavior::PassBehavior(NexusFieldProof proof_, const RenderContext::PassDesc& desc_)
 	:desc(desc_)
 {
 

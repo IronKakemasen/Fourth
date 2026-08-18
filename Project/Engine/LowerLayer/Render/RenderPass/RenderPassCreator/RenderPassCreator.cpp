@@ -6,6 +6,12 @@
 #include "PassSettingsLoader/PassSettingsLoader.h"
 #include "PassBufferCreator/PassBufferCreator.h"
 
+//外部
+#include "../../../Resource/Buffer/BufferContextDiplomat/BufferContextDiplomat.h"
+#include "../../../Resource/Buffer/BufferContextDiplomat/BufferToolLender/BufferToolLender.h"
+#include "../../../Resource/Buffer/BufferContextDiplomat/BufferToolLender/BufferToolLenderLicence.h"
+
+
 RenderContext::RenderPassCreator::RenderPassCreator
 (
 	NexusFieldProof proof_,
@@ -19,11 +25,17 @@ RenderContext::RenderPassCreator::RenderPassCreator
 
 
 template<>
-SceneTextureCreator* RenderContext::RenderPassCreator::InstantiatePass(Local_CreateRenderPassLicence licence_, PassDesc desc_)
+SceneTextureCreator* RenderContext::RenderPassCreator::InstantiatePass(NexusFieldProof proof_, PassDesc desc_)
 {
-
-	return passContainer->Import(licence_, std::move(std::make_unique<SceneTextureCreator>(licence_, std::move(desc_))));
+	return passContainer->Import(proof_, std::move(std::make_unique<SceneTextureCreator>(proof_, std::move(desc_))));
 }
+
+BufferContext::BufferCreator* RenderContext::RenderPassCreator::BorrowBufferCreator(BufferContextDiplomat& bufferContextDiplomat_)
+{
+	BufferContext::ToolLender::LicenceType<BufferContext::BufferCreator> borrowLicence;
+	return bufferContextDiplomat_.Access<BufferContext::ToolLender>()->Lend<BufferContext::BufferCreator>(borrowLicence);
+}
+
 
 RenderContext::PassDesc RenderContext::RenderPassCreator::CreateDesc(std::string const passName_, BufferContext::BufferCreator* bufferCreator_)
 {

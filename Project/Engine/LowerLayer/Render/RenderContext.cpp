@@ -3,6 +3,7 @@
 #include "RenderPass/RenderPassContainer/RenderPassContainer.h"
 #include "RenderPass/RenderPassCreator/RenderPassCreator.h"
 #include "RenderPass/RenderPassBehavior.h"
+#include "RenderPath/RenderPathAssembler/RenderPathAssembler.h"
 
 namespace 
 {
@@ -23,6 +24,8 @@ RenderContext::RenderContext(NexusFieldProof proof_, BufferContextDiplomat& buff
 	renderPassCreator.reset(new RenderPassCreator(proof_, renderPassContainer.get(), bufferContextDiplomat_));
 	Logger::Log("Instantiate: renderPassCreator", fileName);
 
+	renderPathAssembler.reset(new RenderPathAssembler(proof_, renderPassCreator.get()));
+	Logger::Log("Instantiate: renderPathAssembler", fileName);
 
 
 

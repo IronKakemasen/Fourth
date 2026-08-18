@@ -45,7 +45,7 @@ void BufferContext::GlobalConstantBuffers::PackRuntimeContainer(NexusFieldProof 
 		fileName
 	);
 
-	Logger::Log("===== Number Of cBuffer Slots =====",fileName);
+	Logger::Log("===== List of cBuffer slots =====",fileName);
 	for (auto [key, value] : bufferNameMap)
 	{
 		Logger::Log("Slot[" + std::to_string(key) + "]: " + value);

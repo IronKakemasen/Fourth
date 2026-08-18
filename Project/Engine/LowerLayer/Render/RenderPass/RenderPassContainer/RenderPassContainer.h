@@ -9,7 +9,7 @@ public:
 	RenderPassContainer(NexusFieldProof proof_);
 
 	template<typename PassType>
-	PassType* Import(Local_CreateRenderPassLicence licence_ , std::unique_ptr<PassType>&& pass_);
+	PassType* Import(NexusFieldProof proof_, std::unique_ptr<PassType>&& pass_);
 
 private:
 
@@ -21,6 +21,6 @@ private:
 template<>
 SceneTextureCreator* RenderContext::RenderPassContainer::Import
 (
-	Local_CreateRenderPassLicence licence_,
+	NexusFieldProof proof_,
 	std::unique_ptr<SceneTextureCreator>&& pass_
 );

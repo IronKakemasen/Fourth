@@ -5169,6 +5169,7 @@ public:
 #include "RenderPass/RenderPassContainer/RenderPassContainer.h"
 #include "RenderPass/RenderPassCreator/RenderPassCreator.h"
 #include "RenderPass/RenderPassBehavior.h"
+#include "RenderPath/RenderPathAssembler/RenderPathAssembler.h"
 
 namespace 
 {
@@ -5189,6 +5190,8 @@ RenderContext::RenderContext(NexusFieldProof proof_, BufferContextDiplomat& buff
 	renderPassCreator.reset(new RenderPassCreator(proof_, renderPassContainer.get(), bufferContextDiplomat_));
 	Logger::Log("Instantiate: renderPassCreator", fileName);
 
+	renderPathAssembler.reset(new RenderPathAssembler(proof_, renderPassCreator.get()));
+	Logger::Log("Instantiate: renderPathAssembler", fileName);
 
 
 
@@ -5228,11 +5231,11 @@ public:
 	class PassDesc;
 	//そのパスで使用するバッファの情報をまとめたもの
 	struct RequiredBufferInfo;
+	class PathBehavior;
+
 
 	//ネクサスフィールドの証
 	struct NexusFieldProof;
-	//renderPassの生成許可
-	struct Local_CreateRenderPassLicence;
 
 	RenderContext(NexusFieldProof proof_, BufferContextDiplomat& bufferContextDiplomat_);
 	~RenderContext();
@@ -5246,6 +5249,8 @@ private:
 	std::unique_ptr<RenderPassContainer> renderPassContainer;
 	std::unique_ptr<RenderPassCreator> renderPassCreator;
 	std::unique_ptr<PSO_PoolDispatcher> pso_PoolDispatcher;
+	std::unique_ptr<RenderPathAssembler> renderPathAssembler;
+
 };
 
 
@@ -5254,15 +5259,6 @@ struct RenderContext::NexusFieldProof
 private:
 	friend class Nexus;
 	explicit NexusFieldProof() = default;
-};
-
-
-struct RenderContext::Local_CreateRenderPassLicence
-{
-private:
-	
-	friend class RenderPathAssembler;
-	explicit Local_CreateRenderPassLicence() = default;
 };
 
 
@@ -5660,7 +5656,7 @@ private:
 #include "PassDesc/PassDesc.h"
 
 
-RenderContext::PassBehavior::PassBehavior(Local_CreateRenderPassLicence licence_, const RenderContext::PassDesc& desc_)
+RenderContext::PassBehavior::PassBehavior(NexusFieldProof proof_, const RenderContext::PassDesc& desc_)
 	:desc(desc_)
 {
 
@@ -5682,7 +5678,7 @@ RenderContext::PassBehavior::PassBehavior(Local_CreateRenderPassLicence licence_
 class RenderContext::PassBehavior
 {
 public:
-	PassBehavior(Local_CreateRenderPassLicence licence_ , const RenderContext::PassDesc& desc_);
+	PassBehavior(NexusFieldProof proof_, const RenderContext::PassDesc& desc_);
 	virtual ~PassBehavior() = default;
 
 
@@ -5790,8 +5786,8 @@ class SceneTextureCreator;
 #include "SceneTextureCreator.h"
 #include "../../PassDesc/PassDesc.h"
 
-SceneTextureCreator::SceneTextureCreator(RenderContext::Local_CreateRenderPassLicence licence_, const RenderContext::PassDesc& desc_)
-	:RenderContext::PassBehavior(licence_,desc_)
+SceneTextureCreator::SceneTextureCreator(RenderContext::NexusFieldProof proof_ , const RenderContext::PassDesc& desc_)
+	:RenderContext::PassBehavior(proof_,desc_)
 {
 
 }
@@ -5809,7 +5805,7 @@ class SceneTextureCreator :public RenderContext::PassBehavior
 {
 public:
 
-	SceneTextureCreator(RenderContext::Local_CreateRenderPassLicence licence_, const RenderContext::PassDesc& desc_);
+	SceneTextureCreator(RenderContext::NexusFieldProof proof_, const RenderContext::PassDesc& desc_);
 
 private:
 
@@ -5918,7 +5914,7 @@ public:
 	PassDesc(const PassRequiredInfo& info_);
 
 
-protected:
+private:
 
 	PassRequiredInfo info;
 
@@ -5994,7 +5990,7 @@ RenderContext::RenderPassContainer::RenderPassContainer(NexusFieldProof proof_)
 template<>
 SceneTextureCreator* RenderContext::RenderPassContainer::Import
 (
-	Local_CreateRenderPassLicence licence_,
+	NexusFieldProof proof_,
 	std::unique_ptr<SceneTextureCreator>&& pass_
 )
 {
@@ -6021,7 +6017,7 @@ public:
 	RenderPassContainer(NexusFieldProof proof_);
 
 	template<typename PassType>
-	PassType* Import(Local_CreateRenderPassLicence licence_ , std::unique_ptr<PassType>&& pass_);
+	PassType* Import(NexusFieldProof proof_, std::unique_ptr<PassType>&& pass_);
 
 private:
 
@@ -6033,7 +6029,7 @@ private:
 template<>
 SceneTextureCreator* RenderContext::RenderPassContainer::Import
 (
-	Local_CreateRenderPassLicence licence_,
+	NexusFieldProof proof_,
 	std::unique_ptr<SceneTextureCreator>&& pass_
 );
 
@@ -6051,6 +6047,12 @@ SceneTextureCreator* RenderContext::RenderPassContainer::Import
 #include "PassSettingsLoader/PassSettingsLoader.h"
 #include "PassBufferCreator/PassBufferCreator.h"
 
+//外部
+#include "../../../Resource/Buffer/BufferContextDiplomat/BufferContextDiplomat.h"
+#include "../../../Resource/Buffer/BufferContextDiplomat/BufferToolLender/BufferToolLender.h"
+#include "../../../Resource/Buffer/BufferContextDiplomat/BufferToolLender/BufferToolLenderLicence.h"
+
+
 RenderContext::RenderPassCreator::RenderPassCreator
 (
 	NexusFieldProof proof_,
@@ -6064,11 +6066,17 @@ RenderContext::RenderPassCreator::RenderPassCreator
 
 
 template<>
-SceneTextureCreator* RenderContext::RenderPassCreator::InstantiatePass(Local_CreateRenderPassLicence licence_, PassDesc desc_)
+SceneTextureCreator* RenderContext::RenderPassCreator::InstantiatePass(NexusFieldProof proof_, PassDesc desc_)
 {
-
-	return passContainer->Import(licence_, std::move(std::make_unique<SceneTextureCreator>(licence_, std::move(desc_))));
+	return passContainer->Import(proof_, std::move(std::make_unique<SceneTextureCreator>(proof_, std::move(desc_))));
 }
+
+BufferContext::BufferCreator* RenderContext::RenderPassCreator::BorrowBufferCreator(BufferContextDiplomat& bufferContextDiplomat_)
+{
+	BufferContext::ToolLender::LicenceType<BufferContext::BufferCreator> borrowLicence;
+	return bufferContextDiplomat_.Access<BufferContext::ToolLender>()->Lend<BufferContext::BufferCreator>(borrowLicence);
+}
+
 
 RenderContext::PassDesc RenderContext::RenderPassCreator::CreateDesc(std::string const passName_, BufferContext::BufferCreator* bufferCreator_)
 {
@@ -6095,9 +6103,6 @@ RenderContext::PassDesc RenderContext::RenderPassCreator::CreateDesc(std::string
 
 //外部
 #include "../../../Resource/Buffer/BufferContext.h"
-#include "../../../Resource/Buffer/BufferContextDiplomat/BufferContextDiplomat.h"
-#include "../../../Resource/Buffer/BufferContextDiplomat/BufferToolLender/BufferToolLender.h"
-#include "../../../Resource/Buffer/BufferContextDiplomat/BufferToolLender/BufferToolLenderLicence.h"
 
 
 class RenderContext::RenderPassCreator
@@ -6117,14 +6122,13 @@ public:
 	template<typename PassType>
 	PassType* Create
 	(
-		Local_CreateRenderPassLicence licence_,
+		NexusFieldProof proof_,
 		std::string const passName_,
 		BufferContextDiplomat& bufferContextDiplomat_
 	)
 	{
-		BufferContext::ToolLender::LicenceType<BufferContext::BufferCreator> borrowLicence;
-		BufferContext::BufferCreator* bufferCreator =
-			bufferContextDiplomat_.Access<BufferContext::ToolLender>()->Lend<BufferContext::BufferCreator>(borrowLicence);
+
+		BufferContext::BufferCreator* bufferCreator = BorrowBufferCreator(bufferContextDiplomat_);
 
 		PassDesc passDesc = CreateDesc(passName_, bufferCreator);
 
@@ -6134,16 +6138,22 @@ public:
 
 private:
 
+	//パスのディスクを生成
 	PassDesc CreateDesc(std::string const passName_, BufferContext::BufferCreator* bufferCreator_);
 	
+	//パスの具現化
 	template<typename PassType>
-	PassType* InstantiatePass(Local_CreateRenderPassLicence licence_,PassDesc desc_);
+	PassType* InstantiatePass(NexusFieldProof proof_,PassDesc desc_);
 
+	//bufferCreatorを借りる
+	BufferContext::BufferCreator* BorrowBufferCreator(BufferContextDiplomat& bufferContextDiplomat_);
+
+	//パスユニークの保管用
 	RenderPassContainer* passContainer;
 };
 
 template<>
-SceneTextureCreator* RenderContext::RenderPassCreator::InstantiatePass(Local_CreateRenderPassLicence licence_,PassDesc desc_);
+SceneTextureCreator* RenderContext::RenderPassCreator::InstantiatePass(NexusFieldProof proof_,PassDesc desc_);
 
 
 
@@ -6395,6 +6405,88 @@ class RenderContext::RenderPassCreator::PassSettingsLoader
 	);
 
 
+};
+
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Render\RenderPath\PathBehavior.cpp ===
+========================================
+#include "PreCompileHeader.h"
+#include "PathBehavior.h"
+
+RenderContext::PathBehavior::PathBehavior(NexusFieldProof proof_)
+{
+
+}
+
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Render\RenderPath\PathBehavior.h ===
+========================================
+#pragma once
+#include "../RenderContext.h"
+#include "../RenderPass/AllRenderPass/AllPassFwd.h"
+
+class RenderContext::PathBehavior
+{
+public:
+
+	PathBehavior(NexusFieldProof proof_);
+	
+	template<typename PassType>
+	void SetPass(NexusFieldProof proof_ , PassType* pass_)
+	{
+		std::get<PassType*>(passses) = pass_;
+	}
+
+protected:
+	//パフォーマンス稼ぎたいのでanyではなくtupleで
+	std::tuple<SceneTextureCreator*> passses;
+};
+
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Render\RenderPath\RenderPathAssembler\RenderPathAssembler.cpp ===
+========================================
+#include "PreCompileHeader.h"
+#include "RenderPathAssembler.h"
+#include "../../RenderPass/RenderPassCreator/RenderPassCreator.h"
+
+
+RenderContext::RenderPathAssembler::RenderPathAssembler(NexusFieldProof proof_, RenderPassCreator* passCreator_)
+	:passCreator(passCreator_)
+{
+
+}
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Render\RenderPath\RenderPathAssembler\RenderPathAssembler.h ===
+========================================
+#pragma once
+#include "../../RenderContext.h"
+
+class RenderContext::RenderPathAssembler
+{
+public:
+
+	RenderPathAssembler(NexusFieldProof proof_, RenderPassCreator* passCreator_);
+
+
+
+private:
+
+	RenderPassCreator* passCreator;
 };
 
 
@@ -11912,7 +12004,7 @@ void BufferContext::GlobalConstantBuffers::PackRuntimeContainer(NexusFieldProof 
 		fileName
 	);
 
-	Logger::Log("===== Number Of cBuffer Slots =====",fileName);
+	Logger::Log("===== List of cBuffer slots =====",fileName);
 	for (auto [key, value] : bufferNameMap)
 	{
 		Logger::Log("Slot[" + std::to_string(key) + "]: " + value);

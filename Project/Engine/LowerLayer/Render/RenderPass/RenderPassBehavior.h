@@ -5,7 +5,7 @@
 class RenderContext::PassBehavior
 {
 public:
-	PassBehavior(Local_CreateRenderPassLicence licence_ , const RenderContext::PassDesc& desc_);
+	PassBehavior(NexusFieldProof proof_, const RenderContext::PassDesc& desc_);
 	virtual ~PassBehavior() = default;
 
 

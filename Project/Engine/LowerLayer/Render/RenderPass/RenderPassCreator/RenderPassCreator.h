@@ -6,9 +6,6 @@
 
 //外部
 #include "../../../Resource/Buffer/BufferContext.h"
-#include "../../../Resource/Buffer/BufferContextDiplomat/BufferContextDiplomat.h"
-#include "../../../Resource/Buffer/BufferContextDiplomat/BufferToolLender/BufferToolLender.h"
-#include "../../../Resource/Buffer/BufferContextDiplomat/BufferToolLender/BufferToolLenderLicence.h"
 
 
 class RenderContext::RenderPassCreator
@@ -28,14 +25,13 @@ public:
 	template<typename PassType>
 	PassType* Create
 	(
-		Local_CreateRenderPassLicence licence_,
+		NexusFieldProof proof_,
 		std::string const passName_,
 		BufferContextDiplomat& bufferContextDiplomat_
 	)
 	{
-		BufferContext::ToolLender::LicenceType<BufferContext::BufferCreator> borrowLicence;
-		BufferContext::BufferCreator* bufferCreator =
-			bufferContextDiplomat_.Access<BufferContext::ToolLender>()->Lend<BufferContext::BufferCreator>(borrowLicence);
+
+		BufferContext::BufferCreator* bufferCreator = BorrowBufferCreator(bufferContextDiplomat_);
 
 		PassDesc passDesc = CreateDesc(passName_, bufferCreator);
 
@@ -45,13 +41,19 @@ public:
 
 private:
 
+	//パスのディスクを生成
 	PassDesc CreateDesc(std::string const passName_, BufferContext::BufferCreator* bufferCreator_);
 	
+	//パスの具現化
 	template<typename PassType>
-	PassType* InstantiatePass(Local_CreateRenderPassLicence licence_,PassDesc desc_);
+	PassType* InstantiatePass(NexusFieldProof proof_,PassDesc desc_);
 
+	//bufferCreatorを借りる
+	BufferContext::BufferCreator* BorrowBufferCreator(BufferContextDiplomat& bufferContextDiplomat_);
+
+	//パスユニークの保管用
 	RenderPassContainer* passContainer;
 };
 
 template<>
-SceneTextureCreator* RenderContext::RenderPassCreator::InstantiatePass(Local_CreateRenderPassLicence licence_,PassDesc desc_);
+SceneTextureCreator* RenderContext::RenderPassCreator::InstantiatePass(NexusFieldProof proof_,PassDesc desc_);
