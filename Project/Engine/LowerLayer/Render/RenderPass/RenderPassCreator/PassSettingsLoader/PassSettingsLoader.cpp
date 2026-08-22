@@ -3,6 +3,7 @@
 
 using namespace ProjectConfig::Window;
 using namespace ProjectConfig::Render;
+using namespace RenderPassComponent;
 
 namespace
 {
@@ -23,8 +24,8 @@ namespace
 
 	///未分類（いつかリファクタ）
 	auto* miyajison = Miyajison::Get();
-	info.depthTest = RenderPassComponent::DepthTest(miyajison->LoadData<int>(srcJsonFileName, { passName_,PassRequiredInfo::dataKeyString.kDepthTestI }));
-	info.depthEnable = RenderPassComponent::DepthEnable(miyajison->LoadData<bool>(srcJsonFileName, { passName_,PassRequiredInfo::dataKeyString.kDepthEnableB }));
+	info.depthTest = DepthTest(miyajison->LoadData<int>(srcJsonFileName, { passName_,PassRequiredInfo::dataKeyString.kDepthTestI }));
+	info.depthEnable = DepthEnable(miyajison->LoadData<bool>(srcJsonFileName, { passName_,PassRequiredInfo::dataKeyString.kDepthEnableB }));
 
 
 	return info;

@@ -66,6 +66,8 @@ D3D12_RESOURCE_DESC ColorBufferDescription::CreateResourceDesc()const
 D3D12_CLEAR_VALUE ColorBufferDescription::WatchClearValue() const
 {
 	D3D12_CLEAR_VALUE clearValue = {};
+	clearValue.Format = param.format;
+
 	for (int i = 0; i < 4;++i) clearValue.Color[i] = param.clearColor[i];
 
 	return clearValue;

@@ -102,6 +102,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Engine\LowerLayer\Render\RenderContextRuntime\RenderGraph\RenderGraphInitialization.cpp" />
     <ClCompile Include="Engine\LowerLayer\Render\RenderPass\AllRenderPass\RenderPassComponent.cpp" />
     <ClCompile Include="Engine\LowerLayer\Render\RenderPath\AllRenderPath\CreateSceneTexture\CreateSceneTexture.cpp" />
     <ClCompile Include="Engine\LowerLayer\Resource\Buffer\BufferContextDiplomat\BufferContextCmdProvider\BufferContextCmdProvider.cpp" />
@@ -373,12 +374,16 @@
     <ClCompile Include="Engine\LowerLayer\Render\RenderPath\AllRenderPath\PathBehavior.cpp" />
     <ClCompile Include="Engine\LowerLayer\Render\RenderPath\RenderPathAssembler\RenderPathAssembler.cpp" />
     <ClCompile Include="Engine\LowerLayer\Render\RenderPath\RenderPathAssembler\PathSettingsLoader\PathSettingsLoader.cpp" />
-    <ClCompile Include="Engine\LowerLayer\Render\RenderGraph\RenderGraph.cpp" />
+    <ClCompile Include="Engine\LowerLayer\Render\RenderContextRuntime\RenderGraph\RenderGraph.cpp" />
     <ClCompile Include="Engine\LowerLayer\Render\RenderPath\RenderPathContainer\RenderPathContainer.cpp" />
+    <ClCompile Include="Engine\LowerLayer\Render\RenderContextRuntime\RenderGraph\RenderGraphSetupper\RenderGraphSetupper.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Assets\BAKA\ConstantBuffers.h" />
     <ClInclude Include="Assets\BAKA\StructuredBuffer.h" />
+    <ClInclude Include="Assets\Shared\ConstantBuffers.h" />
+    <ClInclude Include="Assets\Shared\StaticSampler.h" />
+    <ClInclude Include="Assets\Shared\StructuredBuffer.h" />
     <ClInclude Include="Engine\LowerLayer\Render\RenderPath\AllRenderPath\AllPathFwd.h" />
     <ClInclude Include="Engine\LowerLayer\Render\RenderPath\AllRenderPath\AllPathInclude.h" />
     <ClInclude Include="Engine\LowerLayer\Render\RenderPath\AllRenderPath\CreateSceneTexture\CreateSceneTexture.h" />
@@ -606,8 +611,9 @@
     <ClInclude Include="Engine\LowerLayer\Render\RenderPath\AllRenderPath\PathBehavior.h" />
     <ClInclude Include="Engine\LowerLayer\Render\RenderPath\RenderPathAssembler\RenderPathAssembler.h" />
     <ClInclude Include="Engine\LowerLayer\Render\RenderPath\RenderPathAssembler\PathSettingsLoader\PathSettingsLoader.h" />
-    <ClInclude Include="Engine\LowerLayer\Render\RenderGraph\RenderGraph.h" />
+    <ClInclude Include="Engine\LowerLayer\Render\RenderContextRuntime\RenderGraph\RenderGraph.h" />
     <ClInclude Include="Engine\LowerLayer\Render\RenderPath\RenderPathContainer\RenderPathContainer.h" />
+    <ClInclude Include="Engine\LowerLayer\Render\RenderContextRuntime\RenderGraph\RenderGraphSetupper\RenderGraphSetupper.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

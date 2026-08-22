@@ -26,13 +26,15 @@ CommandCreateGPUResource::~CommandCreateGPUResource()
 	Microsoft::WRL::ComPtr<ID3D12Resource> resource;
 
 	//[ 生成 ]
-	[[maybe_unused]] HRESULT hr = device_->CreateCommittedResource(
+	HRESULT hr = device_->CreateCommittedResource
+	(
 		&heapProperties_,
 		D3D12_HEAP_FLAG_NONE,
 		&resourceDesc_,
 		initialState_,
 		clearValue_,
-		IID_PPV_ARGS(&resource));
+		IID_PPV_ARGS(&resource)
+	);
 
 	ErrorMessageOutput::Abort::DetectError(SUCCEEDED(hr), name_ + ": リソース生成失敗", "CommandOfCreatingGPUBuffer.cpp");
 

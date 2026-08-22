@@ -8,7 +8,7 @@ class RootSignatureContext::Assembler::StaticSamplerDescCreator
 
 	static std::vector<D3D12_STATIC_SAMPLER_DESC> Create(const RootSignatureDesc::Graphics& srcDesc_);
 
-	static void SetBranchedDetails(D3D12_STATIC_SAMPLER_DESC* desc_, RootSignatureLayoutComponent::SamplerState state_);
+	static void SetBranchedDetails(D3D12_STATIC_SAMPLER_DESC* desc_, StaticSampler::SamplerState state_);
 	static void SetCommonDetails(D3D12_STATIC_SAMPLER_DESC* desc_);
 	static void SetDetailsDirectly
 	(

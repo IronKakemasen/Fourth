@@ -22,7 +22,7 @@
                                 "depthHeight": -1,
                                 "numBuffer_Depth":1,
 
-                                "depthTest": "kGreaterEqual",
+                                "depthTest": 1,
                                 "depthEnable": true
                                 
                             }

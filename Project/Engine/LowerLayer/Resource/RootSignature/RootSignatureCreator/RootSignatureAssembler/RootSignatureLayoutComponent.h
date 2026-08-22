@@ -15,15 +15,6 @@ namespace RootSignatureLayoutComponent
         kMS
     };
 
-    enum class SamplerState
-    {
-        kPointWrap,          //ポイントサンプリング - 繰り返し
-        kPointClamp,         //ポイントサンプリング - クランプ
-        kLinearWrap,         //トライリニアサンプリング - 繰り返し
-        kLinearClamp,        //トライリニアサンプリング - クランプ
-        kAnisotropicWrap,    //異方性サンプリング - 繰り返し
-        kAnisotropicClamp,   //異方性サンプリング - クランプ
-    };
 
     enum class Usage
     {

@@ -17,7 +17,7 @@ public:
 	)
 	{
 		auto* passPtr = pass_.get();
-		std::get<std::unique_ptr<PassType>>(allPass) = std::move(pass_);
+		std::get<std::unique_ptr<PassType>>(allPassUnique) = std::move(pass_);
 
 		return passPtr;
 	}
@@ -26,16 +26,13 @@ public:
 	template<typename PassType>
 	PassType* Export(NexusFieldProof proof_)
 	{
-		return std::get<std::unique_ptr<PassType>>(allPass).get() ?
-			std::get<std::unique_ptr<PassType>>(allPass).get() : nullptr;
+		return std::get<std::unique_ptr<PassType>>(allPassUnique).get() ?
+			std::get<std::unique_ptr<PassType>>(allPassUnique).get() : nullptr;
 	}
 
 
 private:
 
-	std::tuple
-	<
-		std::unique_ptr<SceneTextureCreator>
-	>allPass;
+	AllPassUnique allPassUnique;
 };
 

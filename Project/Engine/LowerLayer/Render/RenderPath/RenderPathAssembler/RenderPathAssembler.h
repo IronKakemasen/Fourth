@@ -15,9 +15,8 @@ public:
 	RenderPathAssembler
 	(
 		NexusFieldProof proof_, 
-		std::unique_ptr <RenderPassCreator>&& passCreator_,
-		RenderPathContainer* pathContainer_,
-		BufferContextDiplomat& bufferContextDiplomat_
+		RenderPassCreator& passCreator_,
+		RenderPathContainer& pathContainer_
 	);
 
 	template<typename PathType>
@@ -37,7 +36,7 @@ public:
 		AddPass(proof_, passAndNames, *path.get(), bufferContextDiplomat_);
 
 		auto* pathPtr = path.get();
-		pathContainer->Import(proof_, std::move(path));
+		pathContainer.Import(proof_, std::move(path));
 
 		return pathPtr;
 	}
@@ -45,8 +44,8 @@ public:
 
 private:
 
-	std::unique_ptr<RenderPassCreator> passCreator;
-	RenderPathContainer* pathContainer;
+	RenderPassCreator& passCreator;
+	RenderPathContainer& pathContainer;
 
 	std::vector<PassAndName> LoadPathSettings(std::string const pathName_);
 
@@ -61,7 +60,7 @@ private:
 	template<typename PathType>
 	std::unique_ptr<PathType> InstantiatePath(NexusFieldProof proof_)
 	{
-		return std::make_unique<CreateSceneTexture>(proof_);
+		return std::make_unique<PathType>(proof_);
 	}
 
 };
