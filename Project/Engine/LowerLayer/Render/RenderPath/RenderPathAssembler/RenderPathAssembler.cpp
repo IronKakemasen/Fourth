@@ -9,11 +9,10 @@ using namespace RenderPassComponent;
 RenderContext::RenderPathAssembler::RenderPathAssembler
 (
 	NexusFieldProof proof_,
-	std::unique_ptr <RenderPassCreator>&& passCreator_,
-	RenderPathContainer* pathContainer_,
-	BufferContextDiplomat& bufferContextDiplomat_
+	RenderPassCreator& passCreator_,
+	RenderPathContainer& pathContainer_
 )
-	:passCreator(std::move(passCreator_)), pathContainer(pathContainer_)
+	:passCreator(passCreator_), pathContainer(pathContainer_)
 {
 
 }
@@ -45,7 +44,7 @@ void RenderContext::RenderPathAssembler::AddPass
 			dstPath_.AddPass
 			(
 				proof_,
-				passCreator->Create<PassTypeToPassClass<RenderPassComponent::Pass::kSceneTextureCreator>::PassClass>
+				passCreator.Create<PassTypeToPassClass<RenderPassComponent::Pass::kSceneTextureCreator>::PassClass>
 				(
 					proof_,
 					passType_string.second,

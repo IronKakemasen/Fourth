@@ -13,7 +13,6 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
     //エンジンの交易場
     Nexus nexus;
 
-
     Update(nexus);
 
     return 0;
@@ -137,34 +136,6 @@ enum class ViewType
 	kCount
 };
 
-
-
-
-========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\template.txt ===
-========================================
-
-TTT(const TTT&) = delete;
-TTT& operator=(const TTT&) = delete;
-TTT(TTT&&) = delete;
-TTT& operator=(TTT&&) = delete;
-
-struct TTT::Key
-{
-private:
-	friend class FRIEND;
-	explicit Key() = default;
-};
-
-namespace
-{
-	std::string fileName = "TTT";
-}
-
-
-///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
 
@@ -2709,13 +2680,15 @@ CommandCreateGPUResource::~CommandCreateGPUResource()
 	Microsoft::WRL::ComPtr<ID3D12Resource> resource;
 
 	//[ 生成 ]
-	[[maybe_unused]] HRESULT hr = device_->CreateCommittedResource(
+	HRESULT hr = device_->CreateCommittedResource
+	(
 		&heapProperties_,
 		D3D12_HEAP_FLAG_NONE,
 		&resourceDesc_,
 		initialState_,
 		clearValue_,
-		IID_PPV_ARGS(&resource));
+		IID_PPV_ARGS(&resource)
+	);
 
 	ErrorMessageOutput::Abort::DetectError(SUCCEEDED(hr), name_ + ": リソース生成失敗", "CommandOfCreatingGPUBuffer.cpp");
 
@@ -3720,12 +3693,11 @@ void DeviceContext::Setupper::CreateDevice()
 
 		//採用したアダプタでデバイスを生成
 		HRESULT hr = D3D12CreateDevice(useAdapter.Get(), featureLevels[i], IID_PPV_ARGS(&d3d12Device));
-		ErrorMessageOutput::Abort::DetectError(SUCCEEDED(hr), "デバイスの生成に失敗", fileName);
+		if (!SUCCEEDED(hr)) continue;
 		
 		//型変換
 		hr = d3d12Device.As(&device); 
 		if (FAILED(hr)) continue;
-
 
 		//指定した機能7レベルでデバイスが生成できたか確認
 		if (SUCCEEDED(hr))
@@ -5165,11 +5137,16 @@ public:
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Render\RenderContext.cpp ===
 ========================================
 #include "RenderContext.h"
-#include "RenderContextRuntime/PSO_PoolDispatcher/PSO_PoolDispatcher.h"
+
 #include "RenderPass/RenderPassContainer/RenderPassContainer.h"
 #include "RenderPass/RenderPassCreator/RenderPassCreator.h"
 #include "RenderPass/AllRenderPass/RenderPassBehavior.h"
+
 #include "RenderPath/RenderPathAssembler/RenderPathAssembler.h"
+#include "RenderPath/RenderPathContainer/RenderPathContainer.h"
+
+#include "RenderContextRuntime/RenderGraph/RenderGraph.h"
+#include "RenderContextRuntime/PSO_PoolDispatcher/PSO_PoolDispatcher.h"
 
 namespace 
 {
@@ -5177,7 +5154,12 @@ namespace
 }
 
 
-RenderContext::RenderContext(NexusFieldProof proof_, BufferContextDiplomat& bufferContextDiplomat_)
+RenderContext::RenderContext
+(
+	NexusFieldProof proof_,
+	BufferContextDiplomat& bufferContextDiplomat_,
+	RootSignatureContextDiplomat& rootSignatureContextDiplomat_
+) 
 {
 	Logger::Entry("RenderContext: Constructor");
 
@@ -5187,12 +5169,30 @@ RenderContext::RenderContext(NexusFieldProof proof_, BufferContextDiplomat& buff
 	renderPassContainer.reset(new RenderPassContainer(proof_));
 	Logger::Log("Instantiate: renderPassContainer", fileName);
 
-	renderPassCreator.reset(new RenderPassCreator(proof_, renderPassContainer.get()));
-	Logger::Log("Instantiate: renderPassCreator", fileName);
+	renderPathContainer.reset(new RenderPathContainer(proof_));
+	Logger::Log("Instantiate: renderPathContainer", fileName);
 
-	renderPathAssembler.reset(new RenderPathAssembler(proof_, renderPassCreator.get(), bufferContextDiplomat_));
+	RenderPassCreator passCretor(proof_, renderPassContainer.get());
+	Logger::Log("Instantiate: RenderPassCreator", fileName);
+
+	RenderPathAssembler renderPathAssembler
+	(
+		proof_,
+		passCretor, 
+		*renderPathContainer
+	);
 	Logger::Log("Instantiate: renderPathAssembler", fileName);
 
+	renderGraph.reset
+	(
+		new RenderGraph
+		(
+			proof_,
+			renderPathAssembler,
+			rootSignatureContextDiplomat_,
+			bufferContextDiplomat_
+		)
+	);
 
 
 	Logger::End("RenderContext: Constructor");
@@ -5216,12 +5216,15 @@ RenderContext::~RenderContext()
 
 class Nexus;
 class BufferContextDiplomat;
-
+class RootSignatureContextDiplomat;
 
 class RenderContext
 {
 	class RenderPassContainer;
+	class RenderPathContainer;
 	class RenderPathAssembler;
+	//グラフィックス専用のpsoのプール、配布
+	class PSO_PoolDispatcher;
 
 public:
 	//renderPass生成機
@@ -5232,24 +5235,28 @@ public:
 	//そのパスで使用するバッファの情報をまとめたもの
 	struct RequiredBufferInfo;
 	class PathBehavior;
-
+	//レンダーパスを設計する強者
+	class RenderGraph;
 
 	//ネクサスフィールドの証
 	struct NexusFieldProof;
 
-	RenderContext(NexusFieldProof proof_, BufferContextDiplomat& bufferContextDiplomat_);
+	RenderContext
+	(
+		NexusFieldProof proof_,
+		BufferContextDiplomat& bufferContextDiplomat_,
+		RootSignatureContextDiplomat& rootSignatureContextDiplomat_
+	);
+
 	~RenderContext();
 
 private:
 
-	//グラフィックス専用のpsoのプール、配布
-	class PSO_PoolDispatcher;
-
-
 	std::unique_ptr<RenderPassContainer> renderPassContainer;
-	std::unique_ptr<RenderPassCreator> renderPassCreator;
+	std::unique_ptr<RenderPathContainer> renderPathContainer;
+	std::unique_ptr<RenderGraph> renderGraph;
 	std::unique_ptr<PSO_PoolDispatcher> pso_PoolDispatcher;
-	std::unique_ptr<RenderPathAssembler> renderPathAssembler;
+
 
 };
 
@@ -5649,6 +5656,192 @@ private:
 
 
 ========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Render\RenderContextRuntime\RenderGraph\RenderGraph.cpp ===
+========================================
+#include "PreCompileHeader.h"
+#include "RenderGraph.h"
+
+
+RenderContext::RenderGraph::RenderGraph
+(
+	NexusFieldProof proof_,
+	RenderPathAssembler& pathAssembler_,
+	RootSignatureContextDiplomat& rootSignatureContextDiplomat_,
+	BufferContextDiplomat& bufferContextDiplomat_
+)
+{
+	Logger::Entry("RenderGraph: Constructor");
+
+	Init
+	(
+		proof_,
+		pathAssembler_,
+		rootSignatureContextDiplomat_,
+		bufferContextDiplomat_
+	);
+
+	Logger::End("RenderGraph: Constructor");
+}
+
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Render\RenderContextRuntime\RenderGraph\RenderGraph.h ===
+========================================
+#pragma once
+#include "../../RenderContext.h"
+#include "../../RenderPath/AllRenderPath/AllPathFwd.h"
+
+
+class RenderContext::RenderGraph
+{
+	class Setupper;
+
+public:
+
+	RenderGraph
+	(
+		NexusFieldProof proof_,
+		RenderPathAssembler& pathAssembler_,
+		RootSignatureContextDiplomat& rootSignatureContextDiplomat_,
+		BufferContextDiplomat& bufferContextDiplomat_
+	);
+
+private:
+
+	void Init
+	(
+		NexusFieldProof proof_,
+		RenderPathAssembler& pathAssembler_,
+		RootSignatureContextDiplomat& rootSignatureContextDiplomat_,
+		BufferContextDiplomat& bufferContextDiplomat_
+	);
+
+	//グラフィックス用の巨大共通ルートシグネチャ
+	ID3D12RootSignature* graphicsRootSig;
+	//全てのPathのアドレス。本体は別コンテナクラスが所有
+	AllPathPtr allPathPtr;
+
+
+};
+
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Render\RenderContextRuntime\RenderGraph\RenderGraphInitialization.cpp ===
+========================================
+#include "RenderGraph.h"
+#include "RenderGraphSetupper/RenderGraphSetupper.h"
+
+void RenderContext::RenderGraph::Init
+(
+	NexusFieldProof proof_,
+	RenderPathAssembler& pathAssembler_,
+	RootSignatureContextDiplomat& rootSignatureContextDiplomat_,
+	BufferContextDiplomat& bufferContextDiplomat_
+)
+{
+	//全てのPathを生成する
+	Setupper::InstantiateAllPath(proof_, pathAssembler_, bufferContextDiplomat_);
+	
+
+	//ルートシグネチャの生成
+	graphicsRootSig = Setupper::CreateGraphicsRootSig(rootSignatureContextDiplomat_);
+
+}
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Render\RenderContextRuntime\RenderGraph\RenderGraphSetupper\RenderGraphSetupper.cpp ===
+========================================
+#include "PreCompileHeader.h"
+#include "RenderGraphSetupper.h"
+#include "../../../RenderPath/RenderPathAssembler/RenderPathAssembler.h"
+
+
+//外部
+#include "../../../../Resource/RootSignature/RootSignatureContextDiplomat/RootSignatureContextDiplomat.h"
+#include "../../../../Resource/RootSignature/RootSignatureContextDiplomat/RootSignatureCmdProvider/RootSignatureCmdProvider.h"
+#include "../../../../Resource/RootSignature/RootSignatureContextDiplomat/RootSignatureCmdProvider/RootSigCmdProviderLicences.h"
+#include "../../../../Resource/RootSignature/RootSignatureCmds.h"
+
+namespace
+{
+	auto const fileName = "RenderGraphSetupper.cpp";
+}
+
+[[nodiscard]] AllPathPtr RenderContext::RenderGraph::Setupper::InstantiateAllPath
+(
+	NexusFieldProof proof_,
+	RenderPathAssembler& pathAssembler_,
+	BufferContextDiplomat& bufferContextDiplomat_
+) 
+{
+	AllPathPtr allPathPtr;
+
+	std::get<CreateSceneTexture*>(allPathPtr) = pathAssembler_.Assemble<CreateSceneTexture>(proof_, bufferContextDiplomat_);
+	Logger::Log("Create: CreateSceneTexture", fileName);
+
+	return allPathPtr;
+}
+
+[[nodiscard]] ID3D12RootSignature* RenderContext::RenderGraph::Setupper::CreateGraphicsRootSig(RootSignatureContextDiplomat& rootSignatureContextDiplomat_)
+{
+	using namespace RootSignatureLayoutComponent;
+	using namespace StaticSampler;
+
+	//rootSig生成コマンドをもらう
+	auto* rootSigCmdProvider = rootSignatureContextDiplomat_.Access<RootSignatureContext::CmdProvider>();
+	RootSignatureContext::CmdProvider::LicenceType<RootSignatureCmds::CreateGraphicsRootSigCmd> licenece;
+	auto createRootSigCmd = rootSigCmdProvider->Provide<RootSignatureCmds::CreateGraphicsRootSigCmd>(licenece);
+
+	RootSignatureDesc::Graphics desc;
+
+	//とりあえずある程度の定義した静的サンプラーは全部作る
+	for (int i = 0;i < (int)SamplerState::kCount;++i)
+	{
+		desc.pairshaderStage_samplerStateContainer.emplace_back(ShaderStage::kAll, SamplerState(i));
+	}
+
+	Logger::Log("Create: GraphicsRootSig", fileName);
+
+	//ルートシグネチャを生成してそのポインタはもらっちゃう
+	return createRootSigCmd(desc);
+}
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Render\RenderContextRuntime\RenderGraph\RenderGraphSetupper\RenderGraphSetupper.h ===
+========================================
+#pragma once
+#include "../RenderGraph.h"
+
+class RenderContext::RenderGraph::Setupper
+{
+	friend class RenderGraph;
+
+	static [[nodiscard]] AllPathPtr InstantiateAllPath
+	(
+		NexusFieldProof proof_,
+		RenderPathAssembler& pathAssembler_,
+		BufferContextDiplomat& bufferContextDiplomat_
+	);
+	static [[nodiscard]] ID3D12RootSignature* CreateGraphicsRootSig(RootSignatureContextDiplomat& rootSignatureContextDiplomat_);
+};
+
+
+
+
+
+========================================
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Render\RenderPass\ShaderPathComponent.h ===
 ========================================
 #pragma once
@@ -5688,7 +5881,16 @@ class SceneTextureCreator;
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Render\RenderPass\AllRenderPass\AllPassInclude.h ===
 ========================================
 #pragma once
+
 #include "SceneTextureCreator/SceneTextureCreator.h"
+
+
+
+
+
+
+using AllPassUnique = std::tuple<std::unique_ptr<SceneTextureCreator>>;
+
 
 
 
@@ -6037,26 +6239,10 @@ public:
 ========================================
 #include "PreCompileHeader.h"
 #include "RenderPassContainer.h"
-#include "../AllRenderPass/SceneTextureCreator/SceneTextureCreator.h"
-
 
 RenderContext::RenderPassContainer::RenderPassContainer(NexusFieldProof proof_)
 {
 
-}
-
-
-template<>
-SceneTextureCreator* RenderContext::RenderPassContainer::Import
-(
-	NexusFieldProof proof_,
-	std::unique_ptr<SceneTextureCreator>&& pass_
-)
-{
-	auto* passPtr = pass_.get();
-	allPass.emplace_back(std::move(pass_));
-
-	return passPtr;
 }
 
 
@@ -6067,30 +6253,42 @@ SceneTextureCreator* RenderContext::RenderPassContainer::Import
 ========================================
 #pragma once
 #include "../../RenderContext.h"
-#include "../AllRenderPass/AllPassFwd.h"
+#include "../AllRenderPass/AllPassInclude.h"
 
 class RenderContext::RenderPassContainer
 {
 public:
 
 	RenderPassContainer(NexusFieldProof proof_);
+	~RenderPassContainer() = default;
 
 	template<typename PassType>
-	PassType* Import(NexusFieldProof proof_, std::unique_ptr<PassType>&& pass_);
+	PassType* Import
+	(
+		NexusFieldProof proof_,
+		std::unique_ptr<PassType>&& pass_
+	)
+	{
+		auto* passPtr = pass_.get();
+		std::get<std::unique_ptr<PassType>>(allPassUnique) = std::move(pass_);
+
+		return passPtr;
+	}
+
+	//被った時に渡す用
+	template<typename PassType>
+	PassType* Export(NexusFieldProof proof_)
+	{
+		return std::get<std::unique_ptr<PassType>>(allPassUnique).get() ?
+			std::get<std::unique_ptr<PassType>>(allPassUnique).get() : nullptr;
+	}
+
 
 private:
 
-	std::vector<std::unique_ptr<RenderContext::PassBehavior>> allPass;
+	AllPassUnique allPassUnique;
 };
 
-
-
-template<>
-SceneTextureCreator* RenderContext::RenderPassContainer::Import
-(
-	NexusFieldProof proof_,
-	std::unique_ptr<SceneTextureCreator>&& pass_
-);
 
 
 
@@ -6101,7 +6299,6 @@ SceneTextureCreator* RenderContext::RenderPassContainer::Import
 #include "PreCompileHeader.h"
 #include "RenderPassCreator.h"
 #include "../PassDesc/PassDesc.h"
-#include "../RenderPassContainer/RenderPassContainer.h"
 #include "../AllRenderPass/AllPassInclude.h"
 #include "PassSettingsLoader/PassSettingsLoader.h"
 #include "PassBufferCreator/PassBufferCreator.h"
@@ -6120,13 +6317,6 @@ RenderContext::RenderPassCreator::RenderPassCreator
 :passContainer(container_)
 {
 
-}
-
-
-template<>
-SceneTextureCreator* RenderContext::RenderPassCreator::InstantiatePass(NexusFieldProof proof_, PassDesc desc_)
-{
-	return passContainer->Import(proof_, std::move(std::make_unique<SceneTextureCreator>(proof_, std::move(desc_))));
 }
 
 BufferContext::BufferCreator* RenderContext::RenderPassCreator::BorrowBufferCreator(BufferContextDiplomat& bufferContextDiplomat_)
@@ -6155,9 +6345,8 @@ RenderContext::PassDesc RenderContext::RenderPassCreator::CreateDesc(std::string
 ========================================
 #pragma once
 #include "../../RenderContext.h"
-#include "../AllRenderPass/AllPassFwd.h"
 #include "../PassDesc/PassDesc.h"
-
+#include "../RenderPassContainer/RenderPassContainer.h"
 
 //外部
 #include "../../../Resource/Buffer/BufferContext.h"
@@ -6184,6 +6373,8 @@ public:
 		BufferContextDiplomat& bufferContextDiplomat_
 	)
 	{
+		//すでに作成済みであればコンテナから渡す
+		if (passContainer->Export<PassType>(proof_)) return passContainer->Export<PassType>(proof_);
 
 		BufferContext::BufferCreator* bufferCreator = BorrowBufferCreator(bufferContextDiplomat_);
 
@@ -6200,7 +6391,10 @@ private:
 	
 	//パスの具現化
 	template<typename PassType>
-	PassType* InstantiatePass(NexusFieldProof proof_,PassDesc desc_);
+	PassType* InstantiatePass(NexusFieldProof proof_, PassDesc desc_)
+	{
+		return passContainer->Import(proof_, std::move(std::make_unique<SceneTextureCreator>(proof_, std::move(desc_))));
+	}
 
 	//bufferCreatorを借りる
 	BufferContext::BufferCreator* BorrowBufferCreator(BufferContextDiplomat& bufferContextDiplomat_);
@@ -6209,8 +6403,6 @@ private:
 	RenderPassContainer* passContainer;
 };
 
-template<>
-SceneTextureCreator* RenderContext::RenderPassCreator::InstantiatePass(NexusFieldProof proof_,PassDesc desc_);
 
 
 
@@ -6302,6 +6494,7 @@ class RenderContext::RenderPassCreator::PassBufferCreator
 
 using namespace ProjectConfig::Window;
 using namespace ProjectConfig::Render;
+using namespace RenderPassComponent;
 
 namespace
 {
@@ -6322,8 +6515,8 @@ namespace
 
 	///未分類（いつかリファクタ）
 	auto* miyajison = Miyajison::Get();
-	info.depthTest = RenderPassComponent::DepthTest(miyajison->LoadData<int>(srcJsonFileName, { passName_,PassRequiredInfo::dataKeyString.kDepthTestI }));
-	info.depthEnable = RenderPassComponent::DepthEnable(miyajison->LoadData<bool>(srcJsonFileName, { passName_,PassRequiredInfo::dataKeyString.kDepthEnableB }));
+	info.depthTest = DepthTest(miyajison->LoadData<int>(srcJsonFileName, { passName_,PassRequiredInfo::dataKeyString.kDepthTestI }));
+	info.depthEnable = DepthEnable(miyajison->LoadData<bool>(srcJsonFileName, { passName_,PassRequiredInfo::dataKeyString.kDepthEnableB }));
 
 
 	return info;
@@ -6473,8 +6666,12 @@ class RenderContext::RenderPassCreator::PassSettingsLoader
 ========================================
 #pragma once
 
-
 class CreateSceneTexture;
+
+
+
+using AllPathPtr = std::tuple<CreateSceneTexture*>;
+
 
 
 
@@ -6483,6 +6680,10 @@ class CreateSceneTexture;
 ========================================
 #pragma once
 #include "CreateSceneTexture/CreateSceneTexture.h"
+
+
+
+
 
 
 
@@ -6601,10 +6802,10 @@ using namespace RenderPassComponent;
 RenderContext::RenderPathAssembler::RenderPathAssembler
 (
 	NexusFieldProof proof_,
-	RenderPassCreator* passCreator_,
-	BufferContextDiplomat& bufferContextDiplomat_
+	RenderPassCreator& passCreator_,
+	RenderPathContainer& pathContainer_
 )
-:passCreator(passCreator_)
+	:passCreator(passCreator_), pathContainer(pathContainer_)
 {
 
 }
@@ -6624,11 +6825,11 @@ void RenderContext::RenderPathAssembler::AddPass
 )
 {
 
+	//静的変数に書き直す。これどうにしたい
 	for (auto const passType_string : passAndNames_)
 	{
 		RenderPassComponent::Pass pass = passType_string.first;
 
-		//静的変数に書き直す。これどうにしたい
 		switch (pass)
 		{
 		case RenderPassComponent::Pass::kSceneTextureCreator:
@@ -6636,7 +6837,7 @@ void RenderContext::RenderPathAssembler::AddPass
 			dstPath_.AddPass
 			(
 				proof_,
-				passCreator->Create<PassTypeToPassClass<RenderPassComponent::Pass::kSceneTextureCreator>::PassClass>
+				passCreator.Create<PassTypeToPassClass<RenderPassComponent::Pass::kSceneTextureCreator>::PassClass>
 				(
 					proof_,
 					passType_string.second,
@@ -6657,13 +6858,6 @@ void RenderContext::RenderPathAssembler::AddPass
 
 
 
-template<>
-std::unique_ptr<CreateSceneTexture> RenderContext::RenderPathAssembler::InstantiatePath(NexusFieldProof proof_)
-{
-	return std::make_unique<CreateSceneTexture>(proof_);
-}
-
-
 
 
 ========================================
@@ -6671,9 +6865,10 @@ std::unique_ptr<CreateSceneTexture> RenderContext::RenderPathAssembler::Instanti
 ========================================
 #pragma once
 #include "../../RenderContext.h"
-#include "../AllRenderPath/AllPathFwd.h"
-#include "../../RenderPass/AllRenderPass/RenderPassComponent.h"
+#include "../AllRenderPath/AllPathInclude.h"
 #include "../AllRenderPath/RenderPathName.h"
+#include "../../RenderPass/AllRenderPass/RenderPassComponent.h"
+#include "../RenderPathContainer/RenderPathContainer.h"
 
 class RenderContext::RenderPathAssembler
 {
@@ -6685,31 +6880,37 @@ public:
 	RenderPathAssembler
 	(
 		NexusFieldProof proof_, 
-		RenderPassCreator* passCreator_,
-		BufferContextDiplomat& bufferContextDiplomat_
+		RenderPassCreator& passCreator_,
+		RenderPathContainer& pathContainer_
 	);
 
 	template<typename PathType>
-	std::unique_ptr<PathType> Assemble
+	PathType* Assemble
 	(
 		NexusFieldProof proof_,
 		BufferContextDiplomat& bufferContextDiplomat_
 	)
 	{
+		//Pathの名前
 		std::string const pathName = RenderPathName::PathTypeToName<PathType>::name;
+		//実体
 		std::unique_ptr<PathType> path = InstantiatePath<PathType>(proof_);
-
+		//そのPathが使用するPassのコンテナ
 		std::vector<PassAndName> passAndNames =  LoadPathSettings(pathName);
+		//それら情報をもとに、passCreatorでPassを作り追加する
+		AddPass(proof_, passAndNames, *path.get(), bufferContextDiplomat_);
 
-		AddPass(proof_, passAndNames, path, bufferContextDiplomat_);
+		auto* pathPtr = path.get();
+		pathContainer.Import(proof_, std::move(path));
 
-		return path;
+		return pathPtr;
 	}
 
 
 private:
 
-	RenderPassCreator* passCreator;
+	RenderPassCreator& passCreator;
+	RenderPathContainer& pathContainer;
 
 	std::vector<PassAndName> LoadPathSettings(std::string const pathName_);
 
@@ -6722,13 +6923,13 @@ private:
 	);
 
 	template<typename PathType>
-	std::unique_ptr<PathType> InstantiatePath(NexusFieldProof proof_);
+	std::unique_ptr<PathType> InstantiatePath(NexusFieldProof proof_)
+	{
+		return std::make_unique<PathType>(proof_);
+	}
 
 };
 
-
-template<>
-std::unique_ptr<CreateSceneTexture> RenderContext::RenderPathAssembler::InstantiatePath(NexusFieldProof proof_);
 
 
 
@@ -6847,6 +7048,51 @@ class RenderContext::RenderPathAssembler::PathSettingsLoader
 //
 //};
 //
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Render\RenderPath\RenderPathContainer\RenderPathContainer.cpp ===
+========================================
+#include "PreCompileHeader.h"
+#include "RenderPathContainer.h"
+#include "../AllRenderPath/AllPathInclude.h"
+
+
+RenderContext::RenderPathContainer::RenderPathContainer(NexusFieldProof proof_)
+{
+
+}
+
+
+void RenderContext::RenderPathContainer::Import(NexusFieldProof proof_, std::unique_ptr<PathBehavior>&& path_)
+{
+	container.emplace_back(std::move(path_));
+}
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Render\RenderPath\RenderPathContainer\RenderPathContainer.h ===
+========================================
+#pragma once
+#include "../../RenderContext.h"
+
+class RenderContext::RenderPathContainer
+{
+public:
+
+	RenderPathContainer(NexusFieldProof proof_);
+
+	void Import(NexusFieldProof proof_ , std::unique_ptr<PathBehavior>&& path_);
+
+private:
+
+	std::vector<std::unique_ptr<PathBehavior>> container;
+};
+
 
 
 
@@ -7750,7 +7996,7 @@ public:
 
 	//生成したバッファの管理はしません。あとは任せました状態
 	template<typename DescType>
-	[[nodiscard]] std::unique_ptr<DescTypeTraits<DescType>>::Type CreateBeyondMyJurisdiction(const DescType& desc_, const std::string& name_)
+	[[nodiscard]] std::unique_ptr<typename DescTypeTraits<DescType>::Type> CreateBeyondMyJurisdiction(const DescType& desc_, const std::string& name_)
 	{
 		using ActualBufferType = typename DescTypeTraits<DescType>::Type;
 
@@ -9833,7 +10079,7 @@ BufferContext::ResourceCreator::ResourceCreator(NexusFieldProof proof_, DeviceCo
 	createResourceCommand = cmdProvider->ProvideCreateResourceCommand();
 }
 
-BufferContext::ResourceCreator::ResourceCreator::~ResourceCreator()
+BufferContext::ResourceCreator::~ResourceCreator()
 {
 
 }
@@ -10161,6 +10407,8 @@ D3D12_RESOURCE_DESC ColorBufferDescription::CreateResourceDesc()const
 D3D12_CLEAR_VALUE ColorBufferDescription::WatchClearValue() const
 {
 	D3D12_CLEAR_VALUE clearValue = {};
+	clearValue.Format = param.format;
+
 	for (int i = 0; i < 4;++i) clearValue.Color[i] = param.clearColor[i];
 
 	return clearValue;
@@ -12128,7 +12376,7 @@ public:
 		BufferContext::RegisterType dstRegisterType = idToType_location.first;
 		uint32_t dstPoolIndex = idToType_location.second;
 
-		return bufferPoolSet->ContainerTable(dstRegisterType)->at(dstPoolIndex).get();
+		return (*bufferPoolSet->ContainerTable(dstRegisterType))[dstPoolIndex].get();
 	}
 
 private:
@@ -15838,7 +16086,7 @@ private:
 ========================================
 #pragma once
 #include "../../../Render/RenderStateComponent.h"
-#include "../../../Render/RenderPass/RenderPassComponent.h"
+#include "../../../Render/RenderPass/AllRenderPass/RenderPassComponent.h"
 #include "../../../../External/d3dx12/d3dx12.h"
 
 namespace PipelineStateComponent
@@ -16137,7 +16385,7 @@ void PSO_Context::Assembler::Check
 	const std::string debugName_
 )const
 {
-	std::string errorMsg = debugName_ + "\n";
+	std::string errorMsg{};
 
 	if (!shaderSet_.meshShader) errorMsg += "[MeshShaderがぬるぽ]";
 	
@@ -16145,7 +16393,7 @@ void PSO_Context::Assembler::Check
 		errorMsg += "[renderTargetDescの不備]";
 
 
-	ErrorMessageOutput::Assert::DetectError(errorMsg.size() == 0, errorMsg, fileName);
+	ErrorMessageOutput::Assert::DetectError(errorMsg.size() == 0, debugName_ + "\n" + errorMsg, fileName);
 }
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -16957,6 +17205,12 @@ public:
 
 	);
 
+	template<typename ToolType>
+	auto* Access()
+	{
+		return std::get < std::unique_ptr<ToolType>>(tools).get();
+	}
+
 
 private:
 
@@ -16977,12 +17231,18 @@ private:
 ========================================
 #pragma once
 #include "RootSignatureCmdProvider.h"
+#include "../../../../Render/RenderContext.h"
 
 
 struct RootSignatureContext::CmdProvider::UsesCreateGraphicsRootSigCmdLicence
 {
+private:
+
+	friend class RenderContext::RenderGraph;
+	explicit UsesCreateGraphicsRootSigCmdLicence() = default;
 
 };
+
 
 
 
@@ -17209,24 +17469,6 @@ ID3D12RootSignature* RootSignatureContext::RootSignatureCreator::Create(const Ro
 
 
 
-//
-//RootSignatureDesc::Graphics srcGraphicsDesc;
-////コンスタントバッファの種類を計測
-//srcGraphicsDesc.numConstantBuffers_ = kNumConstantBufferTypes;
-//
-/////カラーテクスチャなど一般
-//srcGraphicsDesc.pair_shaderStageSamplerStateContainer.emplace_back(ShaderStage::kAll, SamplerState::kLinearWrap);
-//Logger::Log("SamplerSlot0: kLinearWrap", fileName);
-/////法線テクスチャなど
-//srcGraphicsDesc.pair_shaderStageSamplerStateContainer.emplace_back(ShaderStage::kAll, SamplerState::kAnisotropicWrap);
-//Logger::Log("SamplerSlot1: kAnisotropicWrap", fileName);
-//
-/////輝度テクスチャなど
-//srcGraphicsDesc.pair_shaderStageSamplerStateContainer.emplace_back(ShaderStage::kAll, SamplerState::kPointWrap);
-//Logger::Log("SamplerSlot2: kPointWrap", fileName);
-//
-//
-//data.at((int)Usage::kGraphics) = assembler_->Assemble(srcGraphicsDesc);
 
 
 
@@ -17381,14 +17623,14 @@ Microsoft::WRL::ComPtr<ID3D12RootSignature> RootSignatureContext::Assembler::Ass
 ========================================
 #pragma once
 #include "RootSignatureLayoutComponent.h"
-
+#include "../../../../../../Assets/Shared/StaticSampler.h"
 
 namespace RootSignatureDesc
 {
 	struct Graphics
 	{
-		std::vector<std::pair<RootSignatureLayoutComponent::ShaderStage, RootSignatureLayoutComponent::SamplerState>>
-			pair_shaderStageSamplerStateContainer;
+		std::vector<std::pair<RootSignatureLayoutComponent::ShaderStage, StaticSampler::SamplerState>>
+			pairshaderStage_samplerStateContainer;
 	};
 
 
@@ -17418,15 +17660,6 @@ namespace RootSignatureLayoutComponent
         kMS
     };
 
-    enum class SamplerState
-    {
-        kPointWrap,          //ポイントサンプリング - 繰り返し
-        kPointClamp,         //ポイントサンプリング - クランプ
-        kLinearWrap,         //トライリニアサンプリング - 繰り返し
-        kLinearClamp,        //トライリニアサンプリング - クランプ
-        kAnisotropicWrap,    //異方性サンプリング - 繰り返し
-        kAnisotropicClamp,   //異方性サンプリング - クランプ
-    };
 
     enum class Usage
     {
@@ -17560,19 +17793,20 @@ class RootSignatureContext::Assembler::RootParamCreator
 
 
 using namespace RootSignatureLayoutComponent;
+using namespace StaticSampler;
 
 std::vector<D3D12_STATIC_SAMPLER_DESC> RootSignatureContext::Assembler::StaticSamplerDescCreator::Create(const RootSignatureDesc::Graphics& srcDesc_)
 {
 	std::vector<D3D12_STATIC_SAMPLER_DESC> descContainer;
-	auto const sizeEntry = srcDesc_.pair_shaderStageSamplerStateContainer.size();
+	auto const sizeEntry = srcDesc_.pairshaderStage_samplerStateContainer.size();
 
 	descContainer.resize(sizeEntry);
 
 	for (int i = 0;i < sizeEntry;++i)
 	{
 		SetCommonDetails(&descContainer[i]);
-		SetBranchedDetails(&descContainer[i], srcDesc_.pair_shaderStageSamplerStateContainer[i].second);
-		SetDetailsDirectly(&descContainer[i], srcDesc_.pair_shaderStageSamplerStateContainer[i].first, i);
+		SetBranchedDetails(&descContainer[i], srcDesc_.pairshaderStage_samplerStateContainer[i].second);
+		SetDetailsDirectly(&descContainer[i], srcDesc_.pairshaderStage_samplerStateContainer[i].first, i);
 	}
 
 	return descContainer;
@@ -17686,7 +17920,7 @@ class RootSignatureContext::Assembler::StaticSamplerDescCreator
 
 	static std::vector<D3D12_STATIC_SAMPLER_DESC> Create(const RootSignatureDesc::Graphics& srcDesc_);
 
-	static void SetBranchedDetails(D3D12_STATIC_SAMPLER_DESC* desc_, RootSignatureLayoutComponent::SamplerState state_);
+	static void SetBranchedDetails(D3D12_STATIC_SAMPLER_DESC* desc_, StaticSampler::SamplerState state_);
 	static void SetCommonDetails(D3D12_STATIC_SAMPLER_DESC* desc_);
 	static void SetDetailsDirectly
 	(
@@ -18462,7 +18696,7 @@ Microsoft::WRL::ComPtr<IDxcBlob> ShaderContext::Compiler::CheckResult(IDxcResult
 
 	shaderResult_->GetOutput(DXC_OUT_ERRORS, IID_PPV_ARGS(shaderError.GetAddressOf()), nullptr);
 
-	OutputDebugStringA(shaderError->GetStringPointer());
+	if (shaderError) OutputDebugStringA(shaderError->GetStringPointer());
 
 	ErrorMessageOutput::Abort::DetectError
 	(
@@ -20235,7 +20469,15 @@ void Nexus::Init<Nexus::InitSequence::kRootSignatureContext>()
 template<>
 void Nexus::Init<Nexus::InitSequence::kRenderContext>()
 {
-	renderContext.reset(new RenderContext(RenderContext::NexusFieldProof{},*bufferContext->diplomat.get()));
+	renderContext.reset
+	(
+		new RenderContext
+		(
+			RenderContext::NexusFieldProof{},
+			*bufferContext->diplomat,
+			*rootSignatureContext->diplomat
+		)
+	);
 	Logger::Log("Instantiate: RenderContext", fileName);
 }
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////

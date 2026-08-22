@@ -11,7 +11,7 @@ BufferContext::ResourceCreator::ResourceCreator(NexusFieldProof proof_, DeviceCo
 	createResourceCommand = cmdProvider->ProvideCreateResourceCommand();
 }
 
-BufferContext::ResourceCreator::ResourceCreator::~ResourceCreator()
+BufferContext::ResourceCreator::~ResourceCreator()
 {
 
 }

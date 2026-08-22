@@ -154,7 +154,7 @@ Microsoft::WRL::ComPtr<IDxcBlob> ShaderContext::Compiler::CheckResult(IDxcResult
 
 	shaderResult_->GetOutput(DXC_OUT_ERRORS, IID_PPV_ARGS(shaderError.GetAddressOf()), nullptr);
 
-	OutputDebugStringA(shaderError->GetStringPointer());
+	if (shaderError) OutputDebugStringA(shaderError->GetStringPointer());
 
 	ErrorMessageOutput::Abort::DetectError
 	(

@@ -1,11 +1,14 @@
 #include "RenderContext.h"
-#include "RenderContextRuntime/PSO_PoolDispatcher/PSO_PoolDispatcher.h"
+
 #include "RenderPass/RenderPassContainer/RenderPassContainer.h"
 #include "RenderPass/RenderPassCreator/RenderPassCreator.h"
 #include "RenderPass/AllRenderPass/RenderPassBehavior.h"
+
 #include "RenderPath/RenderPathAssembler/RenderPathAssembler.h"
 #include "RenderPath/RenderPathContainer/RenderPathContainer.h"
-#include "RenderGraph/RenderGraph.h"
+
+#include "RenderContextRuntime/RenderGraph/RenderGraph.h"
+#include "RenderContextRuntime/PSO_PoolDispatcher/PSO_PoolDispatcher.h"
 
 namespace 
 {
@@ -31,14 +34,15 @@ RenderContext::RenderContext
 	renderPathContainer.reset(new RenderPathContainer(proof_));
 	Logger::Log("Instantiate: renderPathContainer", fileName);
 
-	std::unique_ptr<RenderPathAssembler> renderPathAssembler = std::make_unique<RenderPathAssembler>
+	RenderPassCreator passCretor(proof_, renderPassContainer.get());
+	Logger::Log("Instantiate: RenderPassCreator", fileName);
+
+	RenderPathAssembler renderPathAssembler
 	(
 		proof_,
-		std::make_unique<RenderPassCreator>(proof_, renderPassContainer.get()),
-		renderPathContainer.get(),
-		bufferContextDiplomat_
+		passCretor, 
+		*renderPathContainer
 	);
-	Logger::Log("Instantiate: RenderPassCreator", fileName);
 	Logger::Log("Instantiate: renderPathAssembler", fileName);
 
 	renderGraph.reset
@@ -46,8 +50,9 @@ RenderContext::RenderContext
 		new RenderGraph
 		(
 			proof_,
-			std::move(renderPathAssembler),
-			rootSignatureContextDiplomat_
+			renderPathAssembler,
+			rootSignatureContextDiplomat_,
+			bufferContextDiplomat_
 		)
 	);
 

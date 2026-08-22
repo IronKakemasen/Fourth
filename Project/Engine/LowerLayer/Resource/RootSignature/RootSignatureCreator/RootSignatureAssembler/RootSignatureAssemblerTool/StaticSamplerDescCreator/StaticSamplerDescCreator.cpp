@@ -2,19 +2,20 @@
 
 
 using namespace RootSignatureLayoutComponent;
+using namespace StaticSampler;
 
 std::vector<D3D12_STATIC_SAMPLER_DESC> RootSignatureContext::Assembler::StaticSamplerDescCreator::Create(const RootSignatureDesc::Graphics& srcDesc_)
 {
 	std::vector<D3D12_STATIC_SAMPLER_DESC> descContainer;
-	auto const sizeEntry = srcDesc_.pair_shaderStageSamplerStateContainer.size();
+	auto const sizeEntry = srcDesc_.pairshaderStage_samplerStateContainer.size();
 
 	descContainer.resize(sizeEntry);
 
 	for (int i = 0;i < sizeEntry;++i)
 	{
 		SetCommonDetails(&descContainer[i]);
-		SetBranchedDetails(&descContainer[i], srcDesc_.pair_shaderStageSamplerStateContainer[i].second);
-		SetDetailsDirectly(&descContainer[i], srcDesc_.pair_shaderStageSamplerStateContainer[i].first, i);
+		SetBranchedDetails(&descContainer[i], srcDesc_.pairshaderStage_samplerStateContainer[i].second);
+		SetDetailsDirectly(&descContainer[i], srcDesc_.pairshaderStage_samplerStateContainer[i].first, i);
 	}
 
 	return descContainer;

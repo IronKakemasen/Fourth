@@ -136,7 +136,7 @@ void PSO_Context::Assembler::Check
 	const std::string debugName_
 )const
 {
-	std::string errorMsg = debugName_ + "\n";
+	std::string errorMsg{};
 
 	if (!shaderSet_.meshShader) errorMsg += "[MeshShaderがぬるぽ]";
 	
@@ -144,7 +144,7 @@ void PSO_Context::Assembler::Check
 		errorMsg += "[renderTargetDescの不備]";
 
 
-	ErrorMessageOutput::Assert::DetectError(errorMsg.size() == 0, errorMsg, fileName);
+	ErrorMessageOutput::Assert::DetectError(errorMsg.size() == 0, debugName_ + "\n" + errorMsg, fileName);
 }
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
