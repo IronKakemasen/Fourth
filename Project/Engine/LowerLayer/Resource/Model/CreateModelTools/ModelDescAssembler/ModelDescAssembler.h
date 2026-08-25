@@ -1,6 +1,6 @@
 #pragma once
 #include "../../ModelContext.h"
-#include "../../ModelStructure/ModelDescription.h"
+#include "../../ModelStructure/ModelDescription/ModelDescription.h"
 
 class ModelContext::ModelDescAssembler
 {
@@ -14,7 +14,7 @@ public:
 		ModelContext::ModelSlotAllocator* slotAllocator_
 	);
 
-	//モデルクラスのConfigurable以外のディスクリプションを作ってあげる
+	//モデルクラスのRenderStates以外のディスクリプションを作ってあげる
 	ModelDescSet Assemble(std::string modelFileName_);
 
 private:

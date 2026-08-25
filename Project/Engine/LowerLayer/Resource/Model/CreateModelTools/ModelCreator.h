@@ -1,6 +1,6 @@
 #pragma once
 #include "../ModelContext.h"
-#include "../ModelStructure/ModelDescription.h"
+#include "../ModelStructure/ModelDescription/ModelDescription.h"
 
 class Model;
 
@@ -19,7 +19,7 @@ public:
 	Model* Create
 	(
 		std::string modelFileName_, 
-		const std::vector<ModelDescription::Configurable>& modelDataConfigurables_,
+		const std::vector<ModelDescription::RenderStates>& modelRenderStates_,
 		std::string modelName_ = "nameLess"
 	);
 

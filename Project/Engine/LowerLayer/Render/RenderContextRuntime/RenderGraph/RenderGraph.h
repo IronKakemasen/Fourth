@@ -13,8 +13,11 @@ public:
 	(
 		NexusFieldProof proof_,
 		RenderPathAssembler& pathAssembler_,
+		PSO_PoolDispatcher& psoDispatcher_,
 		RootSignatureContextDiplomat& rootSignatureContextDiplomat_,
-		BufferContextDiplomat& bufferContextDiplomat_
+		BufferContextDiplomat& bufferContextDiplomat_,
+		ModelContextDiplomat& modelContextDiplomat_
+
 	);
 
 private:
@@ -23,8 +26,11 @@ private:
 	(
 		NexusFieldProof proof_,
 		RenderPathAssembler& pathAssembler_,
+		PSO_PoolDispatcher& psoDispatcher_,
 		RootSignatureContextDiplomat& rootSignatureContextDiplomat_,
-		BufferContextDiplomat& bufferContextDiplomat_
+		BufferContextDiplomat& bufferContextDiplomat_,
+		ModelContextDiplomat& modelContextDiplomat_
+
 	);
 
 	//グラフィックス用の巨大共通ルートシグネチャ
