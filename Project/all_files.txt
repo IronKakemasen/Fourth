@@ -5323,6 +5323,15 @@ namespace RenderStateComponent
         ,kCount
     };
 
+    //モデルクラス専用の描画パス選択。全てのパスで描画するわけじゃないからさ
+    enum class RenderPass : uint32_t
+    {
+        kNone = 0,
+        kSceneTexture = 1 << 0,  
+        kShadow = 1 << 1,  
+
+
+    };
 
     inline D3D12_FILL_MODE Convert(FillMode fillMode_)
     {
@@ -5339,6 +5348,32 @@ namespace RenderStateComponent
         return cullMode;
     }
 
+    constexpr RenderPass operator&(RenderPass lhs_, RenderPass rhs_)
+    {
+        return RenderPass(uint32_t(lhs_) & uint32_t(rhs_));
+    }
+
+    constexpr RenderPass operator|(RenderPass lhs_, RenderPass rhs_)
+    {
+        return RenderPass(uint32_t(lhs_) | uint32_t(rhs_));
+    }
+
+    constexpr RenderPass& operator&=(RenderPass& lhs_, RenderPass rhs_)
+    {
+        lhs_ = lhs_ & rhs_;
+        return lhs_;
+    }
+
+    constexpr RenderPass& operator|=(RenderPass& lhs_, RenderPass rhs_)
+    {
+        lhs_ = lhs_ | rhs_;
+        return lhs_;
+    }
+
+    constexpr bool Any(RenderPass flags_)
+    {
+        return flags_ != RenderPass::kNone;
+    }
 }
 
 
@@ -12806,8 +12841,7 @@ ModelContext::ModelContext(NexusFieldProof proof_,BufferContextDiplomat* bufferC
 	modelSlotAllocator.reset(new ModelSlotAllocator(proof_));
 	Logger::Log("Instantiate: modelSlotAllocator", fileName);
 
-	std::unique_ptr<ModelDataLoader> modelDataLoader(std::make_unique<ModelDataLoader>(proof_));
-	ModelDataLoader* modelDataLoaderPtr = modelDataLoader.get();
+	ModelDataLoader modelDataLoader(proof_);
 	Logger::Log("Instantiate: ModelDataLoader", fileName);
 
 	modelContainer.reset(new ModelContainer(proof_));
@@ -12829,17 +12863,13 @@ ModelContext::ModelContext(NexusFieldProof proof_,BufferContextDiplomat* bufferC
 	modelDataBatcher.reset(new ModelDataBatcher(proof_));
 	Logger::Log("Instantiate: modelDataBatcher", fileName);
 
-
-	modelDataCreator.reset
+	ModelDataCreator modelDataCreator
 	(
-		new ModelDataCreator
-		(
-			proof_, 
-			std::move(modelDataLoader),
-			modelSlotAllocator.get(),
-			modelDataBatcher.get(),
-			bufferContextDiplomat_
-		)
+		proof_,
+		modelDataLoader,
+		modelSlotAllocator.get(),
+		modelDataBatcher.get(),
+		bufferContextDiplomat_
 	);
 	Logger::Log("Instantiate: ModelDataCreator", fileName);
 
@@ -12848,7 +12878,7 @@ ModelContext::ModelContext(NexusFieldProof proof_,BufferContextDiplomat* bufferC
 		new ModelContextDiplomat
 		(
 			proof_,
-			std::make_unique<ExecutionAgent>(proof_, modelDataLoaderPtr),
+			std::make_unique<ExecutionAgent>(proof_),
 			std::make_unique<ToolLender>(proof_),
 			std::make_unique<CommandProvider>(proof_, modelContainer.get())
 		)
@@ -13000,12 +13030,15 @@ namespace ModelContextCmds
 using namespace RenderStateComponent;
 using namespace ShaderPathComponent;
 
+
 TestModelOKIBA::TestModelOKIBA(ModelContext::ModelCreator* modelCreator_)
 {
 	Logger::Log("TESTOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOO");
 
 	ModelDescription::Configurable cP;
 	cP.blendModes.emplace_back(BlendMode::kOpaque);
+	cP.passes |= RenderPass::kSceneTexture;
+
 	cP.cullMode = CullMode::kBack;
 	cP.meshType = ShaderPathComponent::MeshType::kStatic;
 	cP.materialType = ShaderPathComponent::MaterialType::kStandard;
@@ -13018,6 +13051,7 @@ TestModelOKIBA::TestModelOKIBA(ModelContext::ModelCreator* modelCreator_)
 
 	ModelDescription::Configurable cC;
 	cC.blendModes.emplace_back(BlendMode::kOpaque);
+	cC.passes|= RenderPass::kSceneTexture;
 	cC.cullMode = CullMode::kBack;
 	cC.meshType = ShaderPathComponent::MeshType::kStatic;
 	cC.materialType = ShaderPathComponent::MaterialType::kStandard;
@@ -13087,6 +13121,17 @@ Model* ModelContext::ModelCreator::Create
 	std::string modelName_
 )
 {
+	//modelDataConfigurables_の中身がちゃんと埋まってるかチェック
+	for (auto const& data : modelDataConfigurables_)
+	{
+		ErrorMessageOutput::Assert::DetectError
+		(
+			(data.blendModes.size() > 0) && (data.passes != RenderStateComponent::RenderPass::kNone),
+			modelName_ + "のModelDescription::Configurableのデータがちゃんと埋まってない",
+			fileName
+		);
+	}
+
 	//commonとuniqueのディスクリプション
 	auto commons_uniques = modelDescAssembler->Assemble(modelFileName_);
 
@@ -13192,15 +13237,15 @@ namespace
 ModelContext::ModelDataCreator::ModelDataCreator
 (
     NexusFieldProof proof_,
-    std::unique_ptr<ModelDataLoader>&& modelDataLoader_,
+    ModelDataLoader& modelDataLoader_,
     ModelSlotAllocator* allocator_,
     ModelDataBatcher* modelDataBatcher_,
     BufferContextDiplomat* bufferContextDiplomat_
-) :modelDataLoader(std::move(modelDataLoader_))
+)
 {
 	Logger::Entry("ModelDataCreator: Constructor");
 
-    CreateAllModelData(proof_, allocator_, modelDataBatcher_,bufferContextDiplomat_);
+    CreateAllModelData(proof_, modelDataLoader_, allocator_, modelDataBatcher_,bufferContextDiplomat_);
 
 	Logger::End("ModelDataCreator: Constructor");
 }
@@ -13216,9 +13261,11 @@ ModelContext::ModelDataCreator::~ModelDataCreator()
 void ModelContext::ModelDataCreator::CreateAllModelData
 (
     NexusFieldProof proof_,
+    ModelDataLoader& modelDataLoader_,
     ModelContext::ModelSlotAllocator* allocator_,
     ModelDataBatcher* modelDataBatcher_,
     BufferContextDiplomat* bufferContextDiplomat_
+
 )
 {
     ///＜目標＞
@@ -13244,7 +13291,7 @@ void ModelContext::ModelDataCreator::CreateAllModelData
 
 
     //モデルデータライブラリー
-    std::unordered_map<std::string, ModelDataAggregate*> tmpModelDataLib = LoadAllModelFiles();
+    std::unordered_map<std::string, ModelDataAggregate*> tmpModelDataLib = LoadAllModelFiles(modelDataLoader_);
 
     //バッファコンテキストのツールレンダーから各種ツールを借りる
     auto [bufferCreator, bufferCollector, bufferUploader,bufferDispatcher] =
@@ -13320,7 +13367,7 @@ void ModelContext::ModelDataCreator::CreateAllModelData
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-std::unordered_map<std::string , ModelDataAggregate*> ModelContext::ModelDataCreator::LoadAllModelFiles()
+std::unordered_map<std::string , ModelDataAggregate*> ModelContext::ModelDataCreator::LoadAllModelFiles(ModelDataLoader& modelDataLoader_)
 {
     std::unordered_map<std::string, ModelDataAggregate*> modelDataLib;
 
@@ -13336,7 +13383,7 @@ std::unordered_map<std::string , ModelDataAggregate*> ModelContext::ModelDataCre
             fileName
         );
 
-        modelDataLib[key] = modelDataLoader->Load(key, value);
+        modelDataLib[key] = modelDataLoader_.Load(key, value);
     }
 
     return modelDataLib;
@@ -13418,6 +13465,7 @@ public:
 	void CreateAllModelData
 	(
 		NexusFieldProof proof_,
+		ModelDataLoader& modelDataLoader_,
 		ModelContext::ModelSlotAllocator* allocator_,
 		ModelDataBatcher* modelDataBatcher_,
 		BufferContextDiplomat* bufferContextDiplomat_
@@ -13426,7 +13474,7 @@ public:
 	ModelDataCreator
 	(
 		NexusFieldProof proof_,
-		std::unique_ptr<ModelDataLoader>&& modelDataLoader_,
+		ModelDataLoader& modelDataLoader_,
 		ModelSlotAllocator* allocator_, 
 		ModelDataBatcher* modelDataBatcher_,
 		BufferContextDiplomat* bufferContextDiplomat_
@@ -13442,7 +13490,7 @@ private:
 
 	//ローダーが全モデルファイルを読み込み、そのモデルデータのポインタを返す
 	///被り無しのはず設計なので、被りがあった場合はアサートでとまる
-	std::unordered_map<std::string, ModelDataAggregate*> LoadAllModelFiles();
+	std::unordered_map<std::string, ModelDataAggregate*> LoadAllModelFiles(ModelDataLoader& modelDataLoader_);
 	
 	//バッファコンテキストクラスからツールをお借りする
 	BufferContextTools BorrowBufferContextTools(BufferContextDiplomat* bufferContextDiplomat_);
@@ -14053,7 +14101,8 @@ ModelContext::ModelDataLoader::ModelDataLoader(NexusFieldProof proof_)
 
 ModelContext::ModelDataLoader::~ModelDataLoader()
 {
-
+    Logger::Log("ModelDataLoader Destructor runs", fileName);
+    Logger::Log("Delete modelData cache", fileName);
 }
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -14121,11 +14170,6 @@ ModelDataAggregate* ModelContext::ModelDataLoader::Load(std::string fileName_ , 
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-void ModelContext::ModelDataLoader::DeleteModelDataCache(ModelContext::NexusFieldProof proof_, ModelContext::AgentKey agentKey_)
-{
-    modelDataCache.reset();
-    Logger::Log("Delete: modelDataCache", fileName);
-}
 
 
 
@@ -14149,10 +14193,6 @@ public:
 	///ファイルの名前から実メッシュデータのアドレスを生成
 	///既に読み込み済みの場合はアサートで止める
 	ModelDataAggregate* Load(std::string fileName_ , std::string filePath_);
-
-	//不要になったモデルデータのキャッシュの削除を代行してもらう
-	void DeleteModelDataCache(ModelContext::NexusFieldProof proof_, ModelContext::AgentKey agentKey_);
-
 
 
 private:
@@ -15239,11 +15279,13 @@ ModelContextCmds::WatchModelContainer ModelContext::CommandProvider::Provide<Mod
 ========================================
 #pragma once
 #include "ModelContextCmdProvider.h"
+#include "../../../../Render/RenderContext.h"
 
 struct ModelContext::CommandProvider::WatchModelContainerLicence
 {
 private:
 
+	friend class RenderContext::RenderGraph;
 	explicit WatchModelContainerLicence() = default;
 };
 
@@ -15261,17 +15303,13 @@ private:
 
 ModelContext::ExecutionAgent::ExecutionAgent
 (
-	ModelContext::NexusFieldProof proof_,
-	ModelContext::ModelDataLoader* modelDataLoader_
-): modelDataLoader(modelDataLoader_)
+	ModelContext::NexusFieldProof proof_
+)
 {
 	
 }
 
-void ModelContext::ExecutionAgent::DeleteModelDataCache(ModelContext::NexusFieldProof proof_)
-{
-	modelDataLoader->DeleteModelDataCache(proof_, ModelContext::AgentKey{});
-}
+
 
 
 
@@ -15288,14 +15326,12 @@ class ModelContext::ExecutionAgent
 public:
 	ExecutionAgent
 	(
-		ModelContext::NexusFieldProof proof_,
-		ModelContext::ModelDataLoader* modelDataLoader_
+		ModelContext::NexusFieldProof proof_
 	);
 
-	void DeleteModelDataCache(ModelContext::NexusFieldProof proof_);
 
 private:
-	ModelContext::ModelDataLoader* modelDataLoader;
+
 };
 
 
@@ -15543,7 +15579,7 @@ Model::Model
 	
 }
 
-std::string Model::WatchName()const
+std::string const& Model::WatchName()const
 {
 	return modelName;
 }
@@ -15555,7 +15591,6 @@ std::string Model::WatchName()const
 ========================================
 #pragma once
 #include "ModelDescription.h"
-#include "../ModelContext.h"
 
 class Model
 {
@@ -15569,14 +15604,19 @@ public:
 		std::string modelName_
 	);
 
-	std::string WatchName()const;
+	 std::string const& WatchName()const;
+
+	const std::vector<ModelDescription::Configurable>& WatchConfigurableData()const
+	{
+		return modelDescConfigurables;
+	}
 
 private:
 
 	//ModelDescAssemblerに設定してもらう
 	std::vector<ModelDescription::Common> modelDescCommons;
 	std::vector<ModelDescription::Unique> modelDescUniques;
-	//これだけは自分で決める
+	//これ以下は自分で決める
 	std::string modelName;
 	std::vector<ModelDescription::Configurable> modelDescConfigurables;
 
@@ -15594,7 +15634,6 @@ private:
 #include "../../../Render/RenderPass/ShaderPathComponent.h"
 
 
-
 ///2回のフェーズに分けてモデルクラスのデータを埋めていく
 ///上位層でモデルのファイル名と、サブメッシュ分も含めてConfigurableをコンストラクタにセット
 ///モデルファイル名→Commonが定まり、Uniqueを必要数分割り当てる。
@@ -15606,9 +15645,15 @@ struct ModelDescription
 	{
 		Configurable() {};
 
+		//ブレンドモード複数可
 		std::vector<RenderStateComponent::BlendMode> blendModes;
+		//どの描画パス(ステージ)で描画するか複数可
+		RenderStateComponent::RenderPass passes;
+		//どの面をカリングするか
 		RenderStateComponent::CullMode cullMode;
+		//頂点処理方法
 		ShaderPathComponent::MeshType meshType;
+		//メッシュ描画方法
 		ShaderPathComponent::MaterialType materialType;
 	};
 
@@ -15629,7 +15674,6 @@ struct ModelDescription
 		Common(MeshDataID meshDataID_) :meshDataID(meshDataID_) {};
 
 		MeshDataID meshDataID{};
-
 	};
 
 };
@@ -20113,7 +20157,6 @@ Nexus::Nexus()
 	InitializeInSequence<InitSequence::kUploadAllResources>();
 	InitializeInSequence<InitSequence::kKickCommands>();
 	InitializeInSequence<InitSequence::kDeleteIntermediateResources>();
-	InitializeInSequence<InitSequence::kDeleteModelDataCache>();
 	InitializeInSequence<InitSequence::kSortOutGlobalConstantBuffers>();
 
 	ErrorMessageOutput::Assert::DetectError(next == InitSequence::kEnd, "初期化が正常に行われていない可能性がある", fileName);
@@ -20183,7 +20226,6 @@ class Nexus
 		kUploadAllResources,
 		kKickCommands,
 		kDeleteIntermediateResources,
-		kDeleteModelDataCache,
 		kSortOutGlobalConstantBuffers
 
 
@@ -20526,16 +20568,6 @@ void Nexus::Init<Nexus::InitSequence::kUploadAllResources>()
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 template<>
-void Nexus::Init<Nexus::InitSequence::kDeleteModelDataCache>()
-{
-	//ModelContextの代行者
-	auto* agent = modelContext->diplomat->Access<ModelContext::ExecutionAgent>();
-	//モデルデータのキャッシュを削除
-	agent->DeleteModelDataCache(ModelContext::NexusFieldProof{});
-
-}
-
-template<>
 void Nexus::Init<Nexus::InitSequence::kSortOutGlobalConstantBuffers>()
 {
 	//bufferContextの代行者
@@ -20594,9 +20626,6 @@ void Nexus::Init<Nexus::InitSequence::kKickCommands>();
 
 template
 void Nexus::Init<Nexus::InitSequence::kDeleteIntermediateResources>();
-
-template
-void Nexus::Init<Nexus::InitSequence::kDeleteModelDataCache>();
 
 template
 void Nexus::Init<Nexus::InitSequence::kSortOutGlobalConstantBuffers>();

@@ -10,6 +10,7 @@ public:
 	struct AccessKey;
 
 	ModelDataCache(NexusFieldProof proof_);
+	~ModelDataCache();
 
 	//ダブりチェック
 	void FindDuplication(AccessKey key_, std::string fileName_);

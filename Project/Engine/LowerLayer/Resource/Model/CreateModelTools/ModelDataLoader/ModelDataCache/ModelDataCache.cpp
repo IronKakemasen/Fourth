@@ -8,6 +8,12 @@ ModelContext::ModelDataLoader::ModelDataCache::ModelDataCache(NexusFieldProof pr
 
 }
 
+ModelContext::ModelDataLoader::ModelDataCache::~ModelDataCache()
+{
+	Logger::Log("ModelDataCache Destructor runs", "ModelDataCache.cpp");
+	Logger::Log("Delete modelData cache", "ModelDataCache.cpp");
+}
+
 void ModelContext::ModelDataLoader::ModelDataCache::FindDuplication(AccessKey key_, std::string fileName_)
 {
 	ErrorMessageOutput::Assert::DetectError

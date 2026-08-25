@@ -15,10 +15,6 @@ public:
 	///既に読み込み済みの場合はアサートで止める
 	ModelDataAggregate* Load(std::string fileName_ , std::string filePath_);
 
-	//不要になったモデルデータのキャッシュの削除を代行してもらう
-	void DeleteModelDataCache(ModelContext::NexusFieldProof proof_, ModelContext::AgentKey agentKey_);
-
-
 
 private:
 

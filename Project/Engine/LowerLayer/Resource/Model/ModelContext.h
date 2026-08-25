@@ -50,7 +50,6 @@ public:
 private:
 
 
-	std::unique_ptr<ModelDataCreator> modelDataCreator;
 	std::unique_ptr<ModelSlotAllocator> modelSlotAllocator;
 	std::unique_ptr<ModelContainer> modelContainer;
 	std::unique_ptr<ModelCreator> modelCreator;

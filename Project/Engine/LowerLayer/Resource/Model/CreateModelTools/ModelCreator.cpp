@@ -28,6 +28,17 @@ Model* ModelContext::ModelCreator::Create
 	std::string modelName_
 )
 {
+	//modelDataConfigurables_の中身がちゃんと埋まってるかチェック
+	for (auto const& data : modelDataConfigurables_)
+	{
+		ErrorMessageOutput::Assert::DetectError
+		(
+			(data.blendModes.size() > 0) && (data.passes != RenderStateComponent::RenderPass::kNone),
+			modelName_ + "のModelDescription::Configurableのデータがちゃんと埋まってない",
+			fileName
+		);
+	}
+
 	//commonとuniqueのディスクリプション
 	auto commons_uniques = modelDescAssembler->Assemble(modelFileName_);
 

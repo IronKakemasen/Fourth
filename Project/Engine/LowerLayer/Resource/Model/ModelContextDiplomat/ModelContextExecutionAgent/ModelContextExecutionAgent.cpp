@@ -5,14 +5,9 @@
 
 ModelContext::ExecutionAgent::ExecutionAgent
 (
-	ModelContext::NexusFieldProof proof_,
-	ModelContext::ModelDataLoader* modelDataLoader_
-): modelDataLoader(modelDataLoader_)
+	ModelContext::NexusFieldProof proof_
+)
 {
 	
 }
 
-void ModelContext::ExecutionAgent::DeleteModelDataCache(ModelContext::NexusFieldProof proof_)
-{
-	modelDataLoader->DeleteModelDataCache(proof_, ModelContext::AgentKey{});
-}

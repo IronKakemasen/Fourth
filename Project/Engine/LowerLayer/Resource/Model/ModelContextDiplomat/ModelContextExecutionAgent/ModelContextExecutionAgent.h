@@ -8,13 +8,11 @@ class ModelContext::ExecutionAgent
 public:
 	ExecutionAgent
 	(
-		ModelContext::NexusFieldProof proof_,
-		ModelContext::ModelDataLoader* modelDataLoader_
+		ModelContext::NexusFieldProof proof_
 	);
 
-	void DeleteModelDataCache(ModelContext::NexusFieldProof proof_);
 
 private:
-	ModelContext::ModelDataLoader* modelDataLoader;
+
 };
 

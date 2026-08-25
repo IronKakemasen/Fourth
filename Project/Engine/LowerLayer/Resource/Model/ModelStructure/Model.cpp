@@ -13,7 +13,7 @@ Model::Model
 	
 }
 
-std::string Model::WatchName()const
+std::string const& Model::WatchName()const
 {
 	return modelName;
 }
