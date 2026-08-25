@@ -63,7 +63,7 @@ void RenderContext::PSO_PoolDispatcher::DefinePackageLayout()
 ///psoのアドレスを格納
 void RenderContext::PSO_PoolDispatcher::Register
 (
-	RegisterLicense license_, 
+	NexusFieldProof proof_,
 	uint32_t dstMapIndex_,
 	uint32_t packedKey_ ,
 	ID3D12PipelineState* graphicsPSO_

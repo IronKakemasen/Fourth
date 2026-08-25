@@ -2,7 +2,7 @@
 #include "TestModelOKIBA.h"
 
 #include "CreateModelTools/ModelCreator.h"
-#include "ModelStructure/ModelDescription.h"
+#include "ModelStructure/ModelDescription/ModelDescription.h"
 
 
 using namespace RenderStateComponent;
@@ -13,7 +13,7 @@ TestModelOKIBA::TestModelOKIBA(ModelContext::ModelCreator* modelCreator_)
 {
 	Logger::Log("TESTOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOO");
 
-	ModelDescription::Configurable cP;
+	ModelDescription::RenderStates cP;
 	cP.blendModes.emplace_back(BlendMode::kOpaque);
 	cP.passes |= RenderPass::kSceneTexture;
 
@@ -21,20 +21,20 @@ TestModelOKIBA::TestModelOKIBA(ModelContext::ModelCreator* modelCreator_)
 	cP.meshType = ShaderPathComponent::MeshType::kStatic;
 	cP.materialType = ShaderPathComponent::MaterialType::kStandard;
 
-	std::vector<ModelDescription::Configurable> playerC;
+	std::vector<ModelDescription::RenderStates> playerC;
 	playerC.emplace_back(std::move(cP));
 
 	player = modelCreator_->Create("PlayerObj", playerC,"Player");
 
 
-	ModelDescription::Configurable cC;
+	ModelDescription::RenderStates cC;
 	cC.blendModes.emplace_back(BlendMode::kOpaque);
 	cC.passes|= RenderPass::kSceneTexture;
 	cC.cullMode = CullMode::kBack;
 	cC.meshType = ShaderPathComponent::MeshType::kStatic;
 	cC.materialType = ShaderPathComponent::MaterialType::kStandard;
 
-	std::vector<ModelDescription::Configurable> cubeC;
+	std::vector<ModelDescription::RenderStates> cubeC;
 	cubeC.emplace_back(std::move(cC));
 
 	cube = modelCreator_->Create("CubeGltf", cubeC,"Cube");

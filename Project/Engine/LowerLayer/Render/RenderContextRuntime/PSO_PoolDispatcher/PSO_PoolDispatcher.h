@@ -29,8 +29,6 @@ public:
 
 	//psoのアドレスにアクセスする許可証
 	struct DataAccessLicense;
-	//psoを登録するための許可証
-	struct RegisterLicense;
 
 	PSO_PoolDispatcher(NexusFieldProof proof_);
 	~PSO_PoolDispatcher();
@@ -52,7 +50,7 @@ public:
 	///CheckDuplicationが返すインデックスを引数へ
 	void Register
 	(
-		RegisterLicense license_,
+		NexusFieldProof proof_,
 		uint32_t dstMapIndex_,
 		uint32_t packedKey_,
 		ID3D12PipelineState* graphicsPSO_
@@ -83,11 +81,3 @@ private:
 
 };
 
-struct RenderContext::PSO_PoolDispatcher::RegisterLicense
-{
-private:
-
-
-	explicit RegisterLicense() = default;
-
-};

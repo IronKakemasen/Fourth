@@ -1,4 +1,5 @@
 #pragma once
+#include "RenderPass/AllRenderPass/RenderPassComponent.h"
 
 namespace RenderStateComponent
 {
@@ -29,11 +30,23 @@ namespace RenderStateComponent
     enum class RenderPass : uint32_t
     {
         kNone = 0,
-        kSceneTexture = 1 << 0,  
-        kShadow = 1 << 1,  
+        kSceneTexture = 1 << 0
+        //kShadow = 1 << 1,  
 
 
     };
+
+    ///本物のRenderPassと一致させるため
+    template<RenderPass pass>
+    struct MatchPassFormat;
+
+    ///しんどいがここも追加や
+    template<>
+    struct MatchPassFormat<RenderPass::kSceneTexture>
+    {
+        static constexpr RenderPassComponent::Pass pass = RenderPassComponent::Pass::kSceneTextureCreator;
+    };
+
 
     inline D3D12_FILL_MODE Convert(FillMode fillMode_)
     {

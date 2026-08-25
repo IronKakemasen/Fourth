@@ -3,6 +3,7 @@
 class Nexus;
 class BufferContextDiplomat;
 class RootSignatureContextDiplomat;
+class ModelContextDiplomat;
 
 class RenderContext
 {
@@ -31,7 +32,8 @@ public:
 	(
 		NexusFieldProof proof_,
 		BufferContextDiplomat& bufferContextDiplomat_,
-		RootSignatureContextDiplomat& rootSignatureContextDiplomat_
+		RootSignatureContextDiplomat& rootSignatureContextDiplomat_,
+		ModelContextDiplomat& modelContextDiplomat_
 	);
 
 	~RenderContext();

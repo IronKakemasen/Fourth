@@ -20,7 +20,8 @@ RenderContext::RenderContext
 (
 	NexusFieldProof proof_,
 	BufferContextDiplomat& bufferContextDiplomat_,
-	RootSignatureContextDiplomat& rootSignatureContextDiplomat_
+	RootSignatureContextDiplomat& rootSignatureContextDiplomat_,
+	ModelContextDiplomat& modelContextDiplomat_
 ) 
 {
 	Logger::Entry("RenderContext: Constructor");
@@ -51,8 +52,10 @@ RenderContext::RenderContext
 		(
 			proof_,
 			renderPathAssembler,
+			*pso_PoolDispatcher,
 			rootSignatureContextDiplomat_,
-			bufferContextDiplomat_
+			bufferContextDiplomat_,
+			modelContextDiplomat_
 		)
 	);
 

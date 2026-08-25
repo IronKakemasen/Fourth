@@ -5158,7 +5158,8 @@ RenderContext::RenderContext
 (
 	NexusFieldProof proof_,
 	BufferContextDiplomat& bufferContextDiplomat_,
-	RootSignatureContextDiplomat& rootSignatureContextDiplomat_
+	RootSignatureContextDiplomat& rootSignatureContextDiplomat_,
+	ModelContextDiplomat& modelContextDiplomat_
 ) 
 {
 	Logger::Entry("RenderContext: Constructor");
@@ -5189,8 +5190,10 @@ RenderContext::RenderContext
 		(
 			proof_,
 			renderPathAssembler,
+			*pso_PoolDispatcher,
 			rootSignatureContextDiplomat_,
-			bufferContextDiplomat_
+			bufferContextDiplomat_,
+			modelContextDiplomat_
 		)
 	);
 
@@ -5217,6 +5220,7 @@ RenderContext::~RenderContext()
 class Nexus;
 class BufferContextDiplomat;
 class RootSignatureContextDiplomat;
+class ModelContextDiplomat;
 
 class RenderContext
 {
@@ -5245,7 +5249,8 @@ public:
 	(
 		NexusFieldProof proof_,
 		BufferContextDiplomat& bufferContextDiplomat_,
-		RootSignatureContextDiplomat& rootSignatureContextDiplomat_
+		RootSignatureContextDiplomat& rootSignatureContextDiplomat_,
+		ModelContextDiplomat& modelContextDiplomat_
 	);
 
 	~RenderContext();
@@ -5297,6 +5302,7 @@ private:
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Render\RenderStateComponent.h ===
 ========================================
 #pragma once
+#include "RenderPass/AllRenderPass/RenderPassComponent.h"
 
 namespace RenderStateComponent
 {
@@ -5327,11 +5333,23 @@ namespace RenderStateComponent
     enum class RenderPass : uint32_t
     {
         kNone = 0,
-        kSceneTexture = 1 << 0,  
-        kShadow = 1 << 1,  
+        kSceneTexture = 1 << 0
+        //kShadow = 1 << 1,  
 
 
     };
+
+    ///本物のRenderPassと一致させるため
+    template<RenderPass pass>
+    struct MatchPassFormat;
+
+    ///しんどいがここも追加や
+    template<>
+    struct MatchPassFormat<RenderPass::kSceneTexture>
+    {
+        static constexpr RenderPassComponent::Pass pass = RenderPassComponent::Pass::kSceneTextureCreator;
+    };
+
 
     inline D3D12_FILL_MODE Convert(FillMode fillMode_)
     {
@@ -5543,7 +5561,7 @@ void RenderContext::PSO_PoolDispatcher::DefinePackageLayout()
 ///psoのアドレスを格納
 void RenderContext::PSO_PoolDispatcher::Register
 (
-	RegisterLicense license_, 
+	NexusFieldProof proof_,
 	uint32_t dstMapIndex_,
 	uint32_t packedKey_ ,
 	ID3D12PipelineState* graphicsPSO_
@@ -5624,8 +5642,6 @@ public:
 
 	//psoのアドレスにアクセスする許可証
 	struct DataAccessLicense;
-	//psoを登録するための許可証
-	struct RegisterLicense;
 
 	PSO_PoolDispatcher(NexusFieldProof proof_);
 	~PSO_PoolDispatcher();
@@ -5647,7 +5663,7 @@ public:
 	///CheckDuplicationが返すインデックスを引数へ
 	void Register
 	(
-		RegisterLicense license_,
+		NexusFieldProof proof_,
 		uint32_t dstMapIndex_,
 		uint32_t packedKey_,
 		ID3D12PipelineState* graphicsPSO_
@@ -5678,14 +5694,6 @@ private:
 
 };
 
-struct RenderContext::PSO_PoolDispatcher::RegisterLicense
-{
-private:
-
-
-	explicit RegisterLicense() = default;
-
-};
 
 
 
@@ -5701,8 +5709,10 @@ RenderContext::RenderGraph::RenderGraph
 (
 	NexusFieldProof proof_,
 	RenderPathAssembler& pathAssembler_,
+	PSO_PoolDispatcher& psoDispatcher_,
 	RootSignatureContextDiplomat& rootSignatureContextDiplomat_,
-	BufferContextDiplomat& bufferContextDiplomat_
+	BufferContextDiplomat& bufferContextDiplomat_,
+	ModelContextDiplomat& modelContextDiplomat_
 )
 {
 	Logger::Entry("RenderGraph: Constructor");
@@ -5711,8 +5721,10 @@ RenderContext::RenderGraph::RenderGraph
 	(
 		proof_,
 		pathAssembler_,
+		psoDispatcher_,
 		rootSignatureContextDiplomat_,
-		bufferContextDiplomat_
+		bufferContextDiplomat_,
+		modelContextDiplomat_
 	);
 
 	Logger::End("RenderGraph: Constructor");
@@ -5740,8 +5752,11 @@ public:
 	(
 		NexusFieldProof proof_,
 		RenderPathAssembler& pathAssembler_,
+		PSO_PoolDispatcher& psoDispatcher_,
 		RootSignatureContextDiplomat& rootSignatureContextDiplomat_,
-		BufferContextDiplomat& bufferContextDiplomat_
+		BufferContextDiplomat& bufferContextDiplomat_,
+		ModelContextDiplomat& modelContextDiplomat_
+
 	);
 
 private:
@@ -5750,8 +5765,11 @@ private:
 	(
 		NexusFieldProof proof_,
 		RenderPathAssembler& pathAssembler_,
+		PSO_PoolDispatcher& psoDispatcher_,
 		RootSignatureContextDiplomat& rootSignatureContextDiplomat_,
-		BufferContextDiplomat& bufferContextDiplomat_
+		BufferContextDiplomat& bufferContextDiplomat_,
+		ModelContextDiplomat& modelContextDiplomat_
+
 	);
 
 	//グラフィックス用の巨大共通ルートシグネチャ
@@ -5776,16 +5794,21 @@ void RenderContext::RenderGraph::Init
 (
 	NexusFieldProof proof_,
 	RenderPathAssembler& pathAssembler_,
+	PSO_PoolDispatcher& psoDispatcher_,
 	RootSignatureContextDiplomat& rootSignatureContextDiplomat_,
-	BufferContextDiplomat& bufferContextDiplomat_
+	BufferContextDiplomat& bufferContextDiplomat_,
+	ModelContextDiplomat& modelContextDiplomat_
+
 )
 {
 	//全てのPathを生成する
 	Setupper::InstantiateAllPath(proof_, pathAssembler_, bufferContextDiplomat_);
 	
-
 	//ルートシグネチャの生成
 	graphicsRootSig = Setupper::CreateGraphicsRootSig(rootSignatureContextDiplomat_);
+
+	//存在しなければならない全てのPSOを生成
+	Setupper::CreateAllGraphicsPSO(psoDispatcher_, modelContextDiplomat_);
 
 }
 
@@ -5806,6 +5829,13 @@ void RenderContext::RenderGraph::Init
 #include "../../../../Resource/RootSignature/RootSignatureContextDiplomat/RootSignatureCmdProvider/RootSigCmdProviderLicences.h"
 #include "../../../../Resource/RootSignature/RootSignatureCmds.h"
 
+#include "../../../../Resource/Model/ModelContextDiplomat/ModelContextDiplomat.h"
+#include "../../../../Resource/Model/ModelContextDiplomat/ModelContextCmdProvider/ModelContextCmdProvider.h"
+#include "../../../../Resource/Model/ModelContextDiplomat/ModelContextCmdProvider/ModelContextCmdProviderLicences.h"
+#include "../../../../Resource/Model/ModelContextCmds.h"
+#include "../../../../Resource/Model/ModelStructure/Model.h"
+
+
 namespace
 {
 	auto const fileName = "RenderGraphSetupper.cpp";
@@ -5825,6 +5855,43 @@ namespace
 
 	return allPathPtr;
 }
+
+void RenderContext::RenderGraph::Setupper::CreateAllGraphicsPSO
+(
+	PSO_PoolDispatcher& psoDispatcher_, 
+	ModelContextDiplomat& modelContextDiplomat_
+)
+{
+	using namespace ModelContextCmds;
+
+	//モデルコンテナの中身を覗くコマンドをもらう
+	auto* modelContextCmdProvider = modelContextDiplomat_.Access<ModelContext::CommandProvider>();
+	ModelContext::CommandProvider::LicenceType<WatchModelContainer> licence;
+	auto watchModelContainer = modelContextCmdProvider->Provide<WatchModelContainer>(licence);
+	
+	const std::vector<std::unique_ptr<Model>>* modelDataContainer = watchModelContainer();
+	std::vector<ModelDescription const*> modelDescs;
+
+	//全てのモデルクラスのDescを抽出
+	ExtractModelDescription(modelDescs, modelDataContainer);
+
+}
+
+void RenderContext::RenderGraph::Setupper::ExtractModelDescription
+(
+	std::vector<ModelDescription const*>& dst_,
+	const std::vector<std::unique_ptr<Model>>* modelData_
+) 
+{
+	//モデルクラスを全走査し、全ModelDescription
+	for (auto itr = modelData_->begin();itr != modelData_->end();++itr)
+	{
+		//そのモデルクラスのModelDescを回収
+		dst_.emplace_back((*itr)->WatchModelDesc());
+	}
+
+}
+
 
 [[nodiscard]] ID3D12RootSignature* RenderContext::RenderGraph::Setupper::CreateGraphicsRootSig(RootSignatureContextDiplomat& rootSignatureContextDiplomat_)
 {
@@ -5859,17 +5926,38 @@ namespace
 #pragma once
 #include "../RenderGraph.h"
 
+struct ModelDescription;
+class Model;
+
 class RenderContext::RenderGraph::Setupper
 {
 	friend class RenderGraph;
 
+	//全てのPathを生成
 	static [[nodiscard]] AllPathPtr InstantiateAllPath
 	(
 		NexusFieldProof proof_,
 		RenderPathAssembler& pathAssembler_,
 		BufferContextDiplomat& bufferContextDiplomat_
 	);
+
+	//グラフィックス用のルートシグの生成
 	static [[nodiscard]] ID3D12RootSignature* CreateGraphicsRootSig(RootSignatureContextDiplomat& rootSignatureContextDiplomat_);
+
+	//全ての存在せねばならんPSOを生成
+	static void CreateAllGraphicsPSO(PSO_PoolDispatcher& psoDispatcher_,ModelContextDiplomat& modelContextDiplomat_);
+
+
+	//以下ヘルパー
+private:
+	
+	//全モデルデータを受け取ってそのモデルデータのRenderStateのベクタを取り出す
+	static void ExtractModelDescription
+	(
+		std::vector<ModelDescription const*>& dst_,
+		const std::vector<std::unique_ptr<Model>>* modelData_
+	);
+
 };
 
 
@@ -12960,7 +13048,6 @@ public:
 private:
 
 
-	std::unique_ptr<ModelDataCreator> modelDataCreator;
 	std::unique_ptr<ModelSlotAllocator> modelSlotAllocator;
 	std::unique_ptr<ModelContainer> modelContainer;
 	std::unique_ptr<ModelCreator> modelCreator;
@@ -13024,7 +13111,7 @@ namespace ModelContextCmds
 #include "TestModelOKIBA.h"
 
 #include "CreateModelTools/ModelCreator.h"
-#include "ModelStructure/ModelDescription.h"
+#include "ModelStructure/ModelDescription/ModelDescription.h"
 
 
 using namespace RenderStateComponent;
@@ -13035,7 +13122,7 @@ TestModelOKIBA::TestModelOKIBA(ModelContext::ModelCreator* modelCreator_)
 {
 	Logger::Log("TESTOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOO");
 
-	ModelDescription::Configurable cP;
+	ModelDescription::RenderStates cP;
 	cP.blendModes.emplace_back(BlendMode::kOpaque);
 	cP.passes |= RenderPass::kSceneTexture;
 
@@ -13043,20 +13130,20 @@ TestModelOKIBA::TestModelOKIBA(ModelContext::ModelCreator* modelCreator_)
 	cP.meshType = ShaderPathComponent::MeshType::kStatic;
 	cP.materialType = ShaderPathComponent::MaterialType::kStandard;
 
-	std::vector<ModelDescription::Configurable> playerC;
+	std::vector<ModelDescription::RenderStates> playerC;
 	playerC.emplace_back(std::move(cP));
 
 	player = modelCreator_->Create("PlayerObj", playerC,"Player");
 
 
-	ModelDescription::Configurable cC;
+	ModelDescription::RenderStates cC;
 	cC.blendModes.emplace_back(BlendMode::kOpaque);
 	cC.passes|= RenderPass::kSceneTexture;
 	cC.cullMode = CullMode::kBack;
 	cC.meshType = ShaderPathComponent::MeshType::kStatic;
 	cC.materialType = ShaderPathComponent::MaterialType::kStandard;
 
-	std::vector<ModelDescription::Configurable> cubeC;
+	std::vector<ModelDescription::RenderStates> cubeC;
 	cubeC.emplace_back(std::move(cC));
 
 	cube = modelCreator_->Create("CubeGltf", cubeC,"Cube");
@@ -13117,40 +13204,25 @@ ModelContext::ModelCreator::ModelCreator
 Model* ModelContext::ModelCreator::Create
 (
 	std::string modelFileName_,
-	const std::vector<ModelDescription::Configurable>& modelDataConfigurables_,
+	const std::vector<ModelDescription::RenderStates>& modelRenderStates_,
 	std::string modelName_
 )
 {
-	//modelDataConfigurables_の中身がちゃんと埋まってるかチェック
-	for (auto const& data : modelDataConfigurables_)
-	{
-		ErrorMessageOutput::Assert::DetectError
-		(
-			(data.blendModes.size() > 0) && (data.passes != RenderStateComponent::RenderPass::kNone),
-			modelName_ + "のModelDescription::Configurableのデータがちゃんと埋まってない",
-			fileName
-		);
-	}
-
 	//commonとuniqueのディスクリプション
 	auto commons_uniques = modelDescAssembler->Assemble(modelFileName_);
 
-	std::unique_ptr<Model> model = std::make_unique<Model>
+
+	///一つのDescに詰める
+	ModelDescription modelDesc
 	(
-		modelDataConfigurables_,
 		commons_uniques.first,
 		commons_uniques.second,
-		modelName_ + std::to_string(numCreate++)
+		modelName_ + std::to_string(numCreate++),
+		modelRenderStates_
 	);
+	///モデルクラスのインスタンス化
+	std::unique_ptr<Model> model = std::make_unique<Model>(modelDesc);
 
-	//比がおなじかチェックしておく
-	ErrorMessageOutput::Assert::DetectError
-	(
-		((modelDataConfigurables_.size() == commons_uniques.first.size()) &&
-		(modelDataConfigurables_.size() == commons_uniques.second.size())),
-		"なんかサイズがちげーど？",
-		fileName
-	);
 
 	Model* modelPtr = model.get();
 
@@ -13168,7 +13240,7 @@ Model* ModelContext::ModelCreator::Create
 ========================================
 #pragma once
 #include "../ModelContext.h"
-#include "../ModelStructure/ModelDescription.h"
+#include "../ModelStructure/ModelDescription/ModelDescription.h"
 
 class Model;
 
@@ -13187,7 +13259,7 @@ public:
 	Model* Create
 	(
 		std::string modelFileName_, 
-		const std::vector<ModelDescription::Configurable>& modelDataConfigurables_,
+		const std::vector<ModelDescription::RenderStates>& modelRenderStates_,
 		std::string modelName_ = "nameLess"
 	);
 
@@ -14101,8 +14173,7 @@ ModelContext::ModelDataLoader::ModelDataLoader(NexusFieldProof proof_)
 
 ModelContext::ModelDataLoader::~ModelDataLoader()
 {
-    Logger::Log("ModelDataLoader Destructor runs", fileName);
-    Logger::Log("Delete modelData cache", fileName);
+
 }
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -14606,6 +14677,12 @@ ModelContext::ModelDataLoader::ModelDataCache::ModelDataCache(NexusFieldProof pr
 
 }
 
+ModelContext::ModelDataLoader::ModelDataCache::~ModelDataCache()
+{
+	Logger::Log("ModelDataCache Destructor runs", "ModelDataCache.cpp");
+	Logger::Log("Delete modelData cache", "ModelDataCache.cpp");
+}
+
 void ModelContext::ModelDataLoader::ModelDataCache::FindDuplication(AccessKey key_, std::string fileName_)
 {
 	ErrorMessageOutput::Assert::DetectError
@@ -14642,6 +14719,7 @@ public:
 	struct AccessKey;
 
 	ModelDataCache(NexusFieldProof proof_);
+	~ModelDataCache();
 
 	//ダブりチェック
 	void FindDuplication(AccessKey key_, std::string fileName_);
@@ -14739,7 +14817,7 @@ std::vector<ModelDescription::Unique> ModelContext::ModelDescAssembler::PackUniq
 ========================================
 #pragma once
 #include "../../ModelContext.h"
-#include "../../ModelStructure/ModelDescription.h"
+#include "../../ModelStructure/ModelDescription/ModelDescription.h"
 
 class ModelContext::ModelDescAssembler
 {
@@ -14753,7 +14831,7 @@ public:
 		ModelContext::ModelSlotAllocator* slotAllocator_
 	);
 
-	//モデルクラスのConfigurable以外のディスクリプションを作ってあげる
+	//モデルクラスのRenderStates以外のディスクリプションを作ってあげる
 	ModelDescSet Assemble(std::string modelFileName_);
 
 private:
@@ -15568,20 +15646,15 @@ struct ModelContext::ModelDataBatcher::ModelUploadBufferUniqueIDs::BufferTypeTra
 #include "Model.h"
 
 
-Model::Model
-(
-	const std::vector<ModelDescription::Configurable>& modelDescConfigurables_,
-	const std::vector<ModelDescription::Common>& modelDescCommons_,
-	const std::vector<ModelDescription::Unique>& modelDescUniques_,
-	std::string modelName_
-) :modelDescConfigurables(modelDescConfigurables_), modelDescUniques(modelDescUniques_), modelDescCommons(modelDescCommons_), modelName(modelName_)
+Model::Model(const ModelDescription& modelDesc_)
+	:modelDesc(modelDesc_)
 {
 	
 }
 
 std::string const& Model::WatchName()const
 {
-	return modelName;
+	return modelDesc.modelName;
 }
 
 
@@ -15590,93 +15663,28 @@ std::string const& Model::WatchName()const
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Model\ModelStructure\Model.h ===
 ========================================
 #pragma once
-#include "ModelDescription.h"
+#include "ModelDescription/ModelDescription.h"
 
 class Model
 {
 public:
 
-	Model
-	(
-		const std::vector<ModelDescription::Configurable>& modelDescConfigurables_,
-		const std::vector<ModelDescription::Common>& modelDescCommons_,
-		const std::vector<ModelDescription::Unique>& modelDescUniques_,
-		std::string modelName_
-	);
+	Model(const ModelDescription& modelDesc_);
 
 	 std::string const& WatchName()const;
 
-	const std::vector<ModelDescription::Configurable>& WatchConfigurableData()const
+	const ModelDescription* WatchModelDesc()const
 	{
-		return modelDescConfigurables;
+		return &modelDesc;
 	}
 
 private:
 
-	//ModelDescAssemblerに設定してもらう
-	std::vector<ModelDescription::Common> modelDescCommons;
-	std::vector<ModelDescription::Unique> modelDescUniques;
-	//これ以下は自分で決める
-	std::string modelName;
-	std::vector<ModelDescription::Configurable> modelDescConfigurables;
+	ModelDescription modelDesc;
 
 };
 
 
-
-
-
-========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Model\ModelStructure\ModelDescription.h ===
-========================================
-#pragma once
-#include "../../../Render/RenderStateComponent.h"
-#include "../../../Render/RenderPass/ShaderPathComponent.h"
-
-
-///2回のフェーズに分けてモデルクラスのデータを埋めていく
-///上位層でモデルのファイル名と、サブメッシュ分も含めてConfigurableをコンストラクタにセット
-///モデルファイル名→Commonが定まり、Uniqueを必要数分割り当てる。
-///その後Configurableもセットする
-struct ModelDescription
-{
-	//コンストラクタで設置可能
-	struct Configurable
-	{
-		Configurable() {};
-
-		//ブレンドモード複数可
-		std::vector<RenderStateComponent::BlendMode> blendModes;
-		//どの描画パス(ステージ)で描画するか複数可
-		RenderStateComponent::RenderPass passes;
-		//どの面をカリングするか
-		RenderStateComponent::CullMode cullMode;
-		//頂点処理方法
-		ShaderPathComponent::MeshType meshType;
-		//メッシュ描画方法
-		ShaderPathComponent::MaterialType materialType;
-	};
-
-	//そのモデルクラス固有の
-	struct Unique
-	{
-		Unique() {};
-		Unique(uint32_t dispatchedTransformedMatrixID_) :dispatchedTransformedMatrixID(dispatchedTransformedMatrixID_) {};
-
-		//トランスフォームID
-		uint32_t dispatchedTransformedMatrixID{};
-	};
-
-	//そのモデルクラス共通
-	struct Common
-	{
-		Common() {};
-		Common(MeshDataID meshDataID_) :meshDataID(meshDataID_) {};
-
-		MeshDataID meshDataID{};
-	};
-
-};
 
 
 
@@ -15813,6 +15821,129 @@ struct StandardVertex
 	Vector3 normal;
 	Vector3 tangent;
 	Vector2 texcoord;
+};
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Model\ModelStructure\ModelDescription\ModelDescription.cpp ===
+========================================
+#include "ModelDescription.h"
+
+namespace
+{
+	auto const fileName = "ModelDescription.cpp";
+}
+
+ModelDescription::ModelDescription
+(
+	std::vector<ModelDescription::Common> const& modelDescCommons_,
+	std::vector<ModelDescription::Unique> const& modelDescUniques_,
+	std::string modelName_,
+	std::vector<ModelDescription::RenderStates> const& modelDescRenderStates_
+) :modelDescCommons(modelDescCommons_), modelDescUniques(modelDescUniques_), modelName(modelName_), modelDescRenderStates(modelDescRenderStates_)
+{
+	//空チェック
+	ErrorMessageOutput::Assert::DetectError
+	(
+		(modelDescRenderStates.size() > 0 && modelDescUniques.size() > 0 && modelDescCommons.size() > 0),
+		modelName_ + "のDescのどれかが空だすね",
+		fileName
+	);
+
+	//renderStatesのチェック
+	for (auto const& state : modelDescRenderStates)
+	{
+		ErrorMessageOutput::Assert::DetectError
+		(
+			(state.blendModes.size() > 0) && (state.passes != RenderStateComponent::RenderPass::kNone),
+			modelName_ + "のModelDescription::RenderStatesのデータがちゃんと埋まってない(あなたのせい)",
+			fileName
+		);
+	}
+
+	//ユニークと共通の比がおなじかチェックしておく
+	ErrorMessageOutput::Assert::DetectError
+	(
+		modelDescUniques.size() == modelDescCommons.size(),
+		"ユニークと共通のサイズが違う(おおかたエンジンのせい)",
+		fileName
+	);
+
+}
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Model\ModelStructure\ModelDescription\ModelDescription.h ===
+========================================
+#pragma once
+#include "../../../../Render/RenderStateComponent.h"
+#include "../../../../Render/RenderPass/ShaderPathComponent.h"
+
+
+///2回のフェーズに分けてモデルクラスのデータを埋めていく
+///上位層でモデルのファイル名と、サブメッシュ分も含めてRenderStatesをコンストラクタにセット
+///モデルファイル名→Commonが定まり、Uniqueを必要数分割り当てる。
+///その後RenderStatesもセットする
+struct ModelDescription
+{
+
+	//コンストラクタで設置可能
+	struct RenderStates
+	{
+		RenderStates()  = default;
+
+		//ブレンドモード複数可
+		std::vector<RenderStateComponent::BlendMode> blendModes;
+		//どの描画パス(ステージ)で描画するか複数可
+		RenderStateComponent::RenderPass passes = RenderStateComponent::RenderPass::kNone;
+		//どの面をカリングするか
+		RenderStateComponent::CullMode cullMode = RenderStateComponent::CullMode::kBack;
+		//頂点処理方法
+		ShaderPathComponent::MeshType meshType = ShaderPathComponent::MeshType::kStatic;
+		//メッシュ描画方法
+		ShaderPathComponent::MaterialType materialType = ShaderPathComponent::MaterialType::kStandard;
+	};
+
+	//そのモデルクラス固有の
+	struct Unique
+	{
+		Unique() = default;
+		Unique(uint32_t dispatchedTransformedMatrixID_) :dispatchedTransformedMatrixID(dispatchedTransformedMatrixID_) {};
+
+		//トランスフォームID
+		uint32_t dispatchedTransformedMatrixID{};
+	};
+
+	//そのモデルクラス共通
+	struct Common
+	{
+		Common() = default;
+		Common(MeshDataID meshDataID_) :meshDataID(meshDataID_) {};
+
+		MeshDataID meshDataID{};
+	};
+
+	ModelDescription() {};
+	//中はただの入力チェック
+	ModelDescription
+	(
+		std::vector<ModelDescription::Common> const& modelDescCommons_,
+		std::vector<ModelDescription::Unique> const& modelDescUniques_,
+		std::string modelName_,
+		std::vector<ModelDescription::RenderStates> const& modelDescRenderStates_
+	);
+
+	//ModelDescAssemblerに設定してもらう
+	std::vector<ModelDescription::Common> modelDescCommons;
+	std::vector<ModelDescription::Unique> modelDescUniques;
+
+	//これ以下は自分で決める
+	std::string modelName;
+	std::vector<ModelDescription::RenderStates> modelDescRenderStates;
+
 };
 
 
@@ -20077,23 +20208,15 @@ public:
 #include "Nexus.h"
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 #include "../LowerLayer/Core/Device/DeviceContext.h"
-///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 #include "../LowerLayer/Core/DescriptorHeap/DescriptorHeapContext.h"
-///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 #include "../LowerLayer/Core/Window/WindowContext.h"
-///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 #include "../LowerLayer/Core/SwapChain/SwapChainContext.h"
-///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 #include "../LowerLayer/Core/Command/CommandContext.h"
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 #include "../LowerLayer/Resource/Shader/ShaderContext.h"
-///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 #include "../LowerLayer/Resource/Buffer/BufferContext.h"
-///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 #include "../LowerLayer/Resource/PSO/PSO_Context.h"
-///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 #include "../LowerLayer/Resource/RootSignature/RootSignatureContext.h"
-///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 #include "../LowerLayer/Resource/Model/ModelContext.h"
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 #include "../LowerLayer/Render/RenderContext.h"
@@ -20517,7 +20640,8 @@ void Nexus::Init<Nexus::InitSequence::kRenderContext>()
 		(
 			RenderContext::NexusFieldProof{},
 			*bufferContext->diplomat,
-			*rootSignatureContext->diplomat
+			*rootSignatureContext->diplomat,
+			*modelContext->diplomat
 		)
 	);
 	Logger::Log("Instantiate: RenderContext", fileName);
