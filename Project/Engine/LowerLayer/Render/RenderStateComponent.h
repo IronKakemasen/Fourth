@@ -25,6 +25,15 @@ namespace RenderStateComponent
         ,kCount
     };
 
+    //モデルクラス専用の描画パス選択。全てのパスで描画するわけじゃないからさ
+    enum class RenderPass : uint32_t
+    {
+        kNone = 0,
+        kSceneTexture = 1 << 0,  
+        kShadow = 1 << 1,  
+
+
+    };
 
     inline D3D12_FILL_MODE Convert(FillMode fillMode_)
     {
@@ -41,5 +50,31 @@ namespace RenderStateComponent
         return cullMode;
     }
 
+    constexpr RenderPass operator&(RenderPass lhs_, RenderPass rhs_)
+    {
+        return RenderPass(uint32_t(lhs_) & uint32_t(rhs_));
+    }
+
+    constexpr RenderPass operator|(RenderPass lhs_, RenderPass rhs_)
+    {
+        return RenderPass(uint32_t(lhs_) | uint32_t(rhs_));
+    }
+
+    constexpr RenderPass& operator&=(RenderPass& lhs_, RenderPass rhs_)
+    {
+        lhs_ = lhs_ & rhs_;
+        return lhs_;
+    }
+
+    constexpr RenderPass& operator|=(RenderPass& lhs_, RenderPass rhs_)
+    {
+        lhs_ = lhs_ | rhs_;
+        return lhs_;
+    }
+
+    constexpr bool Any(RenderPass flags_)
+    {
+        return flags_ != RenderPass::kNone;
+    }
 }
 

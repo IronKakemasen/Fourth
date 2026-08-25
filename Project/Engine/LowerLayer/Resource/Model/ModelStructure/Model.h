@@ -1,6 +1,5 @@
 #pragma once
 #include "ModelDescription.h"
-#include "../ModelContext.h"
 
 class Model
 {
@@ -14,14 +13,19 @@ public:
 		std::string modelName_
 	);
 
-	std::string WatchName()const;
+	 std::string const& WatchName()const;
+
+	const std::vector<ModelDescription::Configurable>& WatchConfigurableData()const
+	{
+		return modelDescConfigurables;
+	}
 
 private:
 
 	//ModelDescAssemblerに設定してもらう
 	std::vector<ModelDescription::Common> modelDescCommons;
 	std::vector<ModelDescription::Unique> modelDescUniques;
-	//これだけは自分で決める
+	//これ以下は自分で決める
 	std::string modelName;
 	std::vector<ModelDescription::Configurable> modelDescConfigurables;
 

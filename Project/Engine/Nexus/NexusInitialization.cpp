@@ -235,16 +235,6 @@ void Nexus::Init<Nexus::InitSequence::kUploadAllResources>()
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 template<>
-void Nexus::Init<Nexus::InitSequence::kDeleteModelDataCache>()
-{
-	//ModelContextの代行者
-	auto* agent = modelContext->diplomat->Access<ModelContext::ExecutionAgent>();
-	//モデルデータのキャッシュを削除
-	agent->DeleteModelDataCache(ModelContext::NexusFieldProof{});
-
-}
-
-template<>
 void Nexus::Init<Nexus::InitSequence::kSortOutGlobalConstantBuffers>()
 {
 	//bufferContextの代行者
@@ -303,9 +293,6 @@ void Nexus::Init<Nexus::InitSequence::kKickCommands>();
 
 template
 void Nexus::Init<Nexus::InitSequence::kDeleteIntermediateResources>();
-
-template
-void Nexus::Init<Nexus::InitSequence::kDeleteModelDataCache>();
 
 template
 void Nexus::Init<Nexus::InitSequence::kSortOutGlobalConstantBuffers>();

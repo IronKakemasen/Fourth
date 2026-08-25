@@ -32,8 +32,7 @@ ModelContext::ModelContext(NexusFieldProof proof_,BufferContextDiplomat* bufferC
 	modelSlotAllocator.reset(new ModelSlotAllocator(proof_));
 	Logger::Log("Instantiate: modelSlotAllocator", fileName);
 
-	std::unique_ptr<ModelDataLoader> modelDataLoader(std::make_unique<ModelDataLoader>(proof_));
-	ModelDataLoader* modelDataLoaderPtr = modelDataLoader.get();
+	ModelDataLoader modelDataLoader(proof_);
 	Logger::Log("Instantiate: ModelDataLoader", fileName);
 
 	modelContainer.reset(new ModelContainer(proof_));
@@ -55,17 +54,13 @@ ModelContext::ModelContext(NexusFieldProof proof_,BufferContextDiplomat* bufferC
 	modelDataBatcher.reset(new ModelDataBatcher(proof_));
 	Logger::Log("Instantiate: modelDataBatcher", fileName);
 
-
-	modelDataCreator.reset
+	ModelDataCreator modelDataCreator
 	(
-		new ModelDataCreator
-		(
-			proof_, 
-			std::move(modelDataLoader),
-			modelSlotAllocator.get(),
-			modelDataBatcher.get(),
-			bufferContextDiplomat_
-		)
+		proof_,
+		modelDataLoader,
+		modelSlotAllocator.get(),
+		modelDataBatcher.get(),
+		bufferContextDiplomat_
 	);
 	Logger::Log("Instantiate: ModelDataCreator", fileName);
 
@@ -74,7 +69,7 @@ ModelContext::ModelContext(NexusFieldProof proof_,BufferContextDiplomat* bufferC
 		new ModelContextDiplomat
 		(
 			proof_,
-			std::make_unique<ExecutionAgent>(proof_, modelDataLoaderPtr),
+			std::make_unique<ExecutionAgent>(proof_),
 			std::make_unique<ToolLender>(proof_),
 			std::make_unique<CommandProvider>(proof_, modelContainer.get())
 		)

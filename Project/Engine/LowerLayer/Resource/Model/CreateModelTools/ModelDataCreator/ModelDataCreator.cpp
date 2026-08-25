@@ -29,15 +29,15 @@ namespace
 ModelContext::ModelDataCreator::ModelDataCreator
 (
     NexusFieldProof proof_,
-    std::unique_ptr<ModelDataLoader>&& modelDataLoader_,
+    ModelDataLoader& modelDataLoader_,
     ModelSlotAllocator* allocator_,
     ModelDataBatcher* modelDataBatcher_,
     BufferContextDiplomat* bufferContextDiplomat_
-) :modelDataLoader(std::move(modelDataLoader_))
+)
 {
 	Logger::Entry("ModelDataCreator: Constructor");
 
-    CreateAllModelData(proof_, allocator_, modelDataBatcher_,bufferContextDiplomat_);
+    CreateAllModelData(proof_, modelDataLoader_, allocator_, modelDataBatcher_,bufferContextDiplomat_);
 
 	Logger::End("ModelDataCreator: Constructor");
 }
@@ -53,9 +53,11 @@ ModelContext::ModelDataCreator::~ModelDataCreator()
 void ModelContext::ModelDataCreator::CreateAllModelData
 (
     NexusFieldProof proof_,
+    ModelDataLoader& modelDataLoader_,
     ModelContext::ModelSlotAllocator* allocator_,
     ModelDataBatcher* modelDataBatcher_,
     BufferContextDiplomat* bufferContextDiplomat_
+
 )
 {
     ///＜目標＞
@@ -81,7 +83,7 @@ void ModelContext::ModelDataCreator::CreateAllModelData
 
 
     //モデルデータライブラリー
-    std::unordered_map<std::string, ModelDataAggregate*> tmpModelDataLib = LoadAllModelFiles();
+    std::unordered_map<std::string, ModelDataAggregate*> tmpModelDataLib = LoadAllModelFiles(modelDataLoader_);
 
     //バッファコンテキストのツールレンダーから各種ツールを借りる
     auto [bufferCreator, bufferCollector, bufferUploader,bufferDispatcher] =
@@ -157,7 +159,7 @@ void ModelContext::ModelDataCreator::CreateAllModelData
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-std::unordered_map<std::string , ModelDataAggregate*> ModelContext::ModelDataCreator::LoadAllModelFiles()
+std::unordered_map<std::string , ModelDataAggregate*> ModelContext::ModelDataCreator::LoadAllModelFiles(ModelDataLoader& modelDataLoader_)
 {
     std::unordered_map<std::string, ModelDataAggregate*> modelDataLib;
 
@@ -173,7 +175,7 @@ std::unordered_map<std::string , ModelDataAggregate*> ModelContext::ModelDataCre
             fileName
         );
 
-        modelDataLib[key] = modelDataLoader->Load(key, value);
+        modelDataLib[key] = modelDataLoader_.Load(key, value);
     }
 
     return modelDataLib;

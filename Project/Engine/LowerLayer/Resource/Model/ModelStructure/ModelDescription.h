@@ -3,7 +3,6 @@
 #include "../../../Render/RenderPass/ShaderPathComponent.h"
 
 
-
 ///2回のフェーズに分けてモデルクラスのデータを埋めていく
 ///上位層でモデルのファイル名と、サブメッシュ分も含めてConfigurableをコンストラクタにセット
 ///モデルファイル名→Commonが定まり、Uniqueを必要数分割り当てる。
@@ -15,9 +14,15 @@ struct ModelDescription
 	{
 		Configurable() {};
 
+		//ブレンドモード複数可
 		std::vector<RenderStateComponent::BlendMode> blendModes;
+		//どの描画パス(ステージ)で描画するか複数可
+		RenderStateComponent::RenderPass passes;
+		//どの面をカリングするか
 		RenderStateComponent::CullMode cullMode;
+		//頂点処理方法
 		ShaderPathComponent::MeshType meshType;
+		//メッシュ描画方法
 		ShaderPathComponent::MaterialType materialType;
 	};
 
@@ -38,7 +43,6 @@ struct ModelDescription
 		Common(MeshDataID meshDataID_) :meshDataID(meshDataID_) {};
 
 		MeshDataID meshDataID{};
-
 	};
 
 };
