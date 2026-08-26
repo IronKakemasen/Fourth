@@ -16,8 +16,12 @@ D3D12_RESOURCE_STATES IColorBuffer::ResourceStateTable(Usage usage_)const
 ///+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 void IWritableCPU::Map(std::array<ID3D12Resource*, (UINT)ProjectConfig::Render::NumBuffer::kDoubleBuffer> resources_)
 {
-	resources_[0]->Map(0, nullptr, &mappedPtrs[0]);
-	resources_[1]->Map(0, nullptr, &mappedPtrs[1]);
+	HRESULT hr = resources_[0]->Map(0, nullptr, &mappedPtrs[0]);
+	ErrorMessageOutput::Assert::DetectError(SUCCEEDED(hr), "リソースのマッピングに失敗", "BufferInterface.cpp");
+	
+	hr = resources_[1]->Map(0, nullptr, &mappedPtrs[1]);
+	ErrorMessageOutput::Assert::DetectError(SUCCEEDED(hr), "リソースのマッピングに失敗", "BufferInterface.cpp");
+
 }
 
 ///+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
