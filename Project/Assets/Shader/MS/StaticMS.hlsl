@@ -37,11 +37,11 @@ void main
 )
 {
     StructuredBuffer<TransformMatrix> transformMatrixContainer = ResourceDescriptorHeap[gTransformMatrixContainerIndex];
-    StructuredBuffer<MeshDataSRVHeapIndexGroup> meshDataSRVContainer = ResourceDescriptorHeap[gModelDataContainerIndex];
+    StructuredBuffer<MeshDataSRVHeapIndexGroup> meshDataSRVContainer = ResourceDescriptorHeap[gMeshDataIDDataContainerIndex];
 
     
     TransformMatrix transformMatrix = transformMatrixContainer[gPerDrawIndices.transformMatrixID];
-    MeshDataSRVHeapIndexGroup srcMeshDataSrvGroup = meshDataSRVContainer[gPerDrawIndices.modelDataID];
+    MeshDataSRVHeapIndexGroup srcMeshDataSrvGroup = meshDataSRVContainer[gPerDrawIndices.meshDataID];
 
     StructuredBuffer<StandardVertex> vertices = ResourceDescriptorHeap[srcMeshDataSrvGroup.vertices];
     StructuredBuffer<uint> uniqueIndices = ResourceDescriptorHeap[srcMeshDataSrvGroup.uniqueVertexIndices];

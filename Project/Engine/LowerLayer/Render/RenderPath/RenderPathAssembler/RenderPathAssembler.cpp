@@ -3,8 +3,12 @@
 #include "../../RenderPass/RenderPassCreator/RenderPassCreator.h"
 #include "../AllRenderPath/AllPathInclude.h"
 #include "PathSettingsLoader/PathSettingsLoader.h"
+#include "../../RenderPass/AllRenderPass/RenderPassTraits.h"
+
+#include "../../../../../External/AI/PassCreationHelper/RenderPassFactoryTable.h"
 
 using namespace RenderPassComponent;
+using namespace RenderPassTraits;
 
 RenderContext::RenderPathAssembler::RenderPathAssembler
 (
@@ -31,35 +35,19 @@ void RenderContext::RenderPathAssembler::AddPass
 	BufferContextDiplomat& bufferContextDiplomat_
 )
 {
+	auto const& factoryTable = RenderPassTraitsAI::PassFactoryTable();
 
-	//静的変数に書き直す。これどうにしたい
-	for (auto const passType_string : passAndNames_)
+	for (auto const& passType_string : passAndNames_)
 	{
-		RenderPassComponent::Pass pass = passType_string.first;
+		auto* factory = factoryTable[(size_t)passType_string.first];
 
-		switch (pass)
-		{
-		case RenderPassComponent::Pass::kSceneTextureCreator:
+		ErrorMessageOutput::Assert::DetectError
+		(
+			factory != nullptr,
+			"対応するPassFactoryが登録されていない: " + passType_string.second,
+			"RenderPathAssembler.cpp"
+		);
 
-			dstPath_.AddPass
-			(
-				proof_,
-				passCreator.Create<PassTypeToPassClass<RenderPassComponent::Pass::kSceneTextureCreator>::PassClass>
-				(
-					proof_,
-					passType_string.second,
-					bufferContextDiplomat_
-				)
-			);
-
-			break;
-
-		default:
-
-			ErrorMessageOutput::Assert::OutputError("ここに到達するのはおかしい", "RenderPathAssembler.cpp");
-
-			break;
-		}
+		if(factory) factory(passCreator, dstPath_, proof_, passType_string.second, bufferContextDiplomat_);
 	}
 }
-

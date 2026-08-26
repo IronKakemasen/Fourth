@@ -1,3 +1,7 @@
 #pragma once
 
-class SceneTextureCreator;
+class SceneTextureCreatorOpaque;
+class SceneTextureCompositor;
+
+using AllPassPtr = std::tuple<SceneTextureCreatorOpaque*, SceneTextureCompositor*>;
+using AllPassTypes = std::tuple<SceneTextureCreatorOpaque, SceneTextureCompositor>;

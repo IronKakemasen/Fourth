@@ -1,13 +1,12 @@
 #pragma once
-#include "AllPassFwd.h"
 
 namespace RenderPassComponent  
 {
 	///RenderPathを構成する各ステージ
 	enum class Pass
 	{
-		kSceneTextureCreator
-
+		kSceneTextureCreatorOpaque,
+        kSceneTextureCompositor
 		
 		
 		,kCount,
@@ -34,15 +33,6 @@ namespace RenderPassComponent
     }
 
 
-    RenderPassComponent::Pass PassNameToPassType(std::string const passName_);
-    
-    template<RenderPassComponent::Pass passType>
-    struct PassTypeToPassClass;
 
 }
 
-template<>
-struct RenderPassComponent::PassTypeToPassClass<RenderPassComponent::Pass::kSceneTextureCreator>
-{
-    using PassClass = SceneTextureCreator;
-};

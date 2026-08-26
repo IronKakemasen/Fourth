@@ -1,6 +1,8 @@
 #include "PreCompileHeader.h"
 #include "PathSettingsLoader.h"
+#include "../../../RenderPass/AllRenderPass/RenderPassTraits.h"
 
+using namespace RenderPassTraits;
 
 [[nodiscard]] std::vector<RenderContext::RenderPathAssembler::PassAndName> RenderContext::RenderPathAssembler::PathSettingsLoader::
 ParseWhichPassUses(std::string const pathName_)
@@ -39,7 +41,7 @@ std::vector<RenderPassComponent::Pass> RenderContext::RenderPathAssembler::PathS
 
 	for (auto const passName : passNames_)
 	{
-		passTypes.emplace_back(RenderPassComponent::PassNameToPassType(passName));
+		passTypes.emplace_back(PassNameToPassType(passName));
 	}
 
 	return passTypes;

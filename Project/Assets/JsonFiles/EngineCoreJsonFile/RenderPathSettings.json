@@ -1,7 +1,8 @@
 ﻿{
     "CreateSceneTexture":  {
                                "UsePass":  [
-                                               "SceneTextureCreator"
+                                               "SceneTextureCreatorOpaque",
+                                               "SceneTextureCompositor"
                                            ]
                            }
 }

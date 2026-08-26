@@ -30,7 +30,7 @@ namespace RenderStateComponent
     enum class RenderPass : uint32_t
     {
         kNone = 0,
-        kSceneTexture = 1 << 0
+        kSceneTextureOpaque = 1 << 0
         //kShadow = 1 << 1,  
 
 
@@ -42,9 +42,9 @@ namespace RenderStateComponent
 
     ///しんどいがここも追加や
     template<>
-    struct MatchPassFormat<RenderPass::kSceneTexture>
+    struct MatchPassFormat<RenderPass::kSceneTextureOpaque>
     {
-        static constexpr RenderPassComponent::Pass pass = RenderPassComponent::Pass::kSceneTextureCreator;
+        static constexpr RenderPassComponent::Pass pass = RenderPassComponent::Pass::kSceneTextureCreatorOpaque;
     };
 
 

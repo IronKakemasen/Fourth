@@ -1,5 +1,27 @@
 {
-    "SceneTextureCreator":  {
+    "SceneTextureCompositor": 
+    {
+                                "colorFormat":  [29],
+                                "clearColor":  [
+                                                [
+                                                   0.0,
+                                                   0.0,
+                                                   0.0,
+                                                   1.0
+                                                ]
+                                            ],
+                                "colorWidth":  [-1],
+                                "colorHeight":  [-1],
+                                "numBuffer_Color":[1],
+                                
+                                "useDepthStencil": false,
+
+                                "depthTest": 0,
+                                "depthEnable": false
+                                
+    },
+    "SceneTextureCreatorOpaque": 
+     {
                                 "colorFormat":  [29],
                                 "clearColor":  [
                                                 [

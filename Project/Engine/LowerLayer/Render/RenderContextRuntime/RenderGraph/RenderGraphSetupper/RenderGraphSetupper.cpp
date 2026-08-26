@@ -33,6 +33,7 @@ namespace
 	std::get<CreateSceneTexture*>(allPathPtr) = pathAssembler_.Assemble<CreateSceneTexture>(proof_, bufferContextDiplomat_);
 	Logger::Log("Create: CreateSceneTexture", fileName);
 
+
 	return allPathPtr;
 }
 
