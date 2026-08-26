@@ -17,6 +17,6 @@ public:
 
 protected:
 	//パフォーマンス稼ぎたいのでanyではなくtupleで
-	std::tuple<SceneTextureCreator*> passses;
+	AllPassPtr passses;
 };
 

@@ -5333,7 +5333,7 @@ namespace RenderStateComponent
     enum class RenderPass : uint32_t
     {
         kNone = 0,
-        kSceneTexture = 1 << 0
+        kSceneTextureOpaque = 1 << 0
         //kShadow = 1 << 1,  
 
 
@@ -5345,9 +5345,9 @@ namespace RenderStateComponent
 
     ///しんどいがここも追加や
     template<>
-    struct MatchPassFormat<RenderPass::kSceneTexture>
+    struct MatchPassFormat<RenderPass::kSceneTextureOpaque>
     {
-        static constexpr RenderPassComponent::Pass pass = RenderPassComponent::Pass::kSceneTextureCreator;
+        static constexpr RenderPassComponent::Pass pass = RenderPassComponent::Pass::kSceneTextureCreatorOpaque;
     };
 
 
@@ -5853,6 +5853,7 @@ namespace
 	std::get<CreateSceneTexture*>(allPathPtr) = pathAssembler_.Assemble<CreateSceneTexture>(proof_, bufferContextDiplomat_);
 	Logger::Log("Create: CreateSceneTexture", fileName);
 
+
 	return allPathPtr;
 }
 
@@ -5995,7 +5996,10 @@ namespace ShaderPathComponent
 ========================================
 #pragma once
 
-class SceneTextureCreator;
+class SceneTextureCreatorOpaque;
+class SceneTextureCompositor;
+
+using AllPassPtr = std::tuple<SceneTextureCreatorOpaque*, SceneTextureCompositor*>;
 
 
 
@@ -6005,14 +6009,18 @@ class SceneTextureCreator;
 ========================================
 #pragma once
 
-#include "SceneTextureCreator/SceneTextureCreator.h"
+#include "SceneTextureCreatorOpaque/SceneTextureCreatorOpaque.h"
+#include "SceneTextureCompositor/SceneTextureCompositor.h"
 
 
 
 
 
-
-using AllPassUnique = std::tuple<std::unique_ptr<SceneTextureCreator>>;
+using AllPassUnique = std::tuple
+<
+	std::unique_ptr<SceneTextureCreatorOpaque>,
+	std::unique_ptr<SceneTextureCompositor>
+>;
 
 
 
@@ -6061,45 +6069,17 @@ protected:
 
 
 ========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Render\RenderPass\AllRenderPass\RenderPassComponent.cpp ===
-========================================
-#include "RenderPassComponent.h"
-#include "RenderPassName.h"
-
-
-
-RenderPassComponent::Pass RenderPassComponent::PassNameToPassType(std::string const passName_)
-{
-    RenderPassComponent::Pass pass = RenderPassComponent::Pass::kEnd;
-
-    if (passName_ == RenderPassName::PassTypeToName<SceneTextureCreator>::name)
-    {
-        pass = RenderPassComponent::Pass::kSceneTextureCreator;
-    }
-    else
-    {
-        ErrorMessageOutput::Assert::OutputError("そんなパスネームは存在しない", "RenderPassComponent.cpp");
-    }
-
-    return pass;
-}
-
-
-
-
-========================================
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Render\RenderPass\AllRenderPass\RenderPassComponent.h ===
 ========================================
 #pragma once
-#include "AllPassFwd.h"
 
 namespace RenderPassComponent  
 {
 	///RenderPathを構成する各ステージ
 	enum class Pass
 	{
-		kSceneTextureCreator
-
+		kSceneTextureCreatorOpaque,
+        kSceneTextureCompositor
 		
 		
 		,kCount,
@@ -6126,51 +6106,151 @@ namespace RenderPassComponent
     }
 
 
-    RenderPassComponent::Pass PassNameToPassType(std::string const passName_);
-    
-    template<RenderPassComponent::Pass passType>
-    struct PassTypeToPassClass;
 
 }
 
-template<>
-struct RenderPassComponent::PassTypeToPassClass<RenderPassComponent::Pass::kSceneTextureCreator>
-{
-    using PassClass = SceneTextureCreator;
-};
 
 
 
 
 ========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Render\RenderPass\AllRenderPass\RenderPassName.h ===
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Render\RenderPass\AllRenderPass\RenderPassTraits.h ===
 ========================================
 #pragma once
 #include "AllPassFwd.h"
+#include "RenderPassComponent.h"
 
-namespace RenderPassName
+namespace RenderPassTraits
 {
+	//クラスから名前と列挙型を
 	template<typename PassType>
-	struct PassTypeToName;
+	struct PassClassTraits;
 
 	template<>
-	struct PassTypeToName<SceneTextureCreator>
+	struct PassClassTraits<SceneTextureCreatorOpaque>
 	{
-		static inline const std::string name = "SceneTextureCreator";
+		static inline const std::string name = "SceneTextureCreatorOpaque";
+		static constexpr RenderPassComponent::Pass passEnum = RenderPassComponent::Pass::kSceneTextureCreatorOpaque;
+
+	};
+
+	template<>
+	struct PassClassTraits<SceneTextureCompositor>
+	{
+		static inline const std::string name = "SceneTextureCompositor";
+		static constexpr RenderPassComponent::Pass passEnum = RenderPassComponent::Pass::kSceneTextureCompositor;
+
+	};
+
+	//名前から列挙型を特定
+	constexpr RenderPassComponent::Pass PassNameToPassType(std::string const passName_)
+	{
+		RenderPassComponent::Pass pass = RenderPassComponent::Pass::kEnd;
+
+		if (passName_ == PassClassTraits<SceneTextureCreatorOpaque>::name)
+		{
+			pass = PassClassTraits<SceneTextureCreatorOpaque>::passEnum;
+		}
+		else if (passName_ == PassClassTraits<SceneTextureCompositor>::name)
+		{
+			pass = PassClassTraits<SceneTextureCompositor>::passEnum;
+		}
+		else
+		{
+			ErrorMessageOutput::Assert::OutputError(passName_ + "こんなパスネームは存在しない", "RenderPassComponent.cpp");
+		}
+
+		return pass;
+	}
+
+
+	//クラスから列挙型を特定
+    template<RenderPassComponent::Pass passType>
+    struct PassTypeToPassClass;
+
+	template<>
+	struct PassTypeToPassClass<RenderPassComponent::Pass::kSceneTextureCreatorOpaque>
+	{
+		using PassClass = SceneTextureCreatorOpaque;
+	};
+
+	template<>
+	struct PassTypeToPassClass<RenderPassComponent::Pass::kSceneTextureCompositor>
+	{
+		using PassClass = SceneTextureCompositor;
 	};
 
 }
 
 
 
+
 ========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Render\RenderPass\AllRenderPass\SceneTextureCreator\SceneTextureCreator.cpp ===
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Render\RenderPass\AllRenderPass\whenMakeNewPass.txt ===
+========================================
+
+
+新しくPassを作るときの手順
+
+
+1.クラスの定義
+2.一括前方宣言ファイルに追記
+3.一括インクルードファイルに追記
+4.RenderPassTraitsに追記
+5.jsonファイルにデータを追記
+6.必要であればRenderStateようのPassに追記
+
+多すぎて覚醒しそう
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Render\RenderPass\AllRenderPass\SceneTextureCompositor\SceneTextureCompositor.cpp ===
 ========================================
 #include "PreCompileHeader.h"
-#include "SceneTextureCreator.h"
+#include "SceneTextureCompositor.h"
 #include "../../PassDesc/PassDesc.h"
 
-SceneTextureCreator::SceneTextureCreator(RenderContext::NexusFieldProof proof_ , const RenderContext::PassDesc& desc_)
+SceneTextureCompositor::SceneTextureCompositor(RenderContext::NexusFieldProof proof_, const RenderContext::PassDesc& desc_)
+	:RenderContext::PassBehavior(proof_, desc_)
+{
+
+}
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Render\RenderPass\AllRenderPass\SceneTextureCompositor\SceneTextureCompositor.h ===
+========================================
+#pragma once
+#include "../RenderPassBehavior.h"
+
+
+class SceneTextureCompositor :public RenderContext::PassBehavior
+{
+public:
+
+	SceneTextureCompositor(RenderContext::NexusFieldProof proof_, const RenderContext::PassDesc& desc_);
+
+private:
+
+
+
+};
+
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Render\RenderPass\AllRenderPass\SceneTextureCreatorOpaque\SceneTextureCreatorOpaque.cpp ===
+========================================
+#include "PreCompileHeader.h"
+#include "SceneTextureCreatorOpaque.h"
+#include "../../PassDesc/PassDesc.h"
+
+SceneTextureCreatorOpaque::SceneTextureCreatorOpaque(RenderContext::NexusFieldProof proof_ , const RenderContext::PassDesc& desc_)
 	:RenderContext::PassBehavior(proof_,desc_)
 {
 
@@ -6180,16 +6260,16 @@ SceneTextureCreator::SceneTextureCreator(RenderContext::NexusFieldProof proof_ ,
 
 
 ========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Render\RenderPass\AllRenderPass\SceneTextureCreator\SceneTextureCreator.h ===
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Render\RenderPass\AllRenderPass\SceneTextureCreatorOpaque\SceneTextureCreatorOpaque.h ===
 ========================================
 #pragma once
 #include "../RenderPassBehavior.h"
 
-class SceneTextureCreator :public RenderContext::PassBehavior
+class SceneTextureCreatorOpaque :public RenderContext::PassBehavior
 {
 public:
 
-	SceneTextureCreator(RenderContext::NexusFieldProof proof_, const RenderContext::PassDesc& desc_);
+	SceneTextureCreatorOpaque(RenderContext::NexusFieldProof proof_, const RenderContext::PassDesc& desc_);
 
 private:
 
@@ -6516,7 +6596,7 @@ private:
 	template<typename PassType>
 	PassType* InstantiatePass(NexusFieldProof proof_, PassDesc desc_)
 	{
-		return passContainer->Import(proof_, std::move(std::make_unique<SceneTextureCreator>(proof_, std::move(desc_))));
+		return passContainer->Import(proof_, std::move(std::make_unique<PassType>(proof_, std::move(desc_))));
 	}
 
 	//bufferCreatorを借りる
@@ -6847,7 +6927,7 @@ public:
 
 protected:
 	//パフォーマンス稼ぎたいのでanyではなくtupleで
-	std::tuple<SceneTextureCreator*> passses;
+	AllPassPtr passses;
 };
 
 
@@ -6919,8 +6999,10 @@ private:
 #include "../../RenderPass/RenderPassCreator/RenderPassCreator.h"
 #include "../AllRenderPath/AllPathInclude.h"
 #include "PathSettingsLoader/PathSettingsLoader.h"
+#include "../../RenderPass/AllRenderPass/RenderPassTraits.h"
 
 using namespace RenderPassComponent;
+using namespace RenderPassTraits;
 
 RenderContext::RenderPathAssembler::RenderPathAssembler
 (
@@ -6955,12 +7037,27 @@ void RenderContext::RenderPathAssembler::AddPass
 
 		switch (pass)
 		{
-		case RenderPassComponent::Pass::kSceneTextureCreator:
+		case RenderPassComponent::Pass::kSceneTextureCreatorOpaque:
 
 			dstPath_.AddPass
 			(
 				proof_,
-				passCreator.Create<PassTypeToPassClass<RenderPassComponent::Pass::kSceneTextureCreator>::PassClass>
+				passCreator.Create<PassTypeToPassClass<RenderPassComponent::Pass::kSceneTextureCreatorOpaque>::PassClass>
+				(
+					proof_,
+					passType_string.second,
+					bufferContextDiplomat_
+				)
+			);
+
+			break;
+
+		case RenderPassComponent::Pass::kSceneTextureCompositor:
+
+			dstPath_.AddPass
+			(
+				proof_,
+				passCreator.Create<PassTypeToPassClass<RenderPassComponent::Pass::kSceneTextureCompositor>::PassClass>
 				(
 					proof_,
 					passType_string.second,
@@ -7062,7 +7159,9 @@ private:
 ========================================
 #include "PreCompileHeader.h"
 #include "PathSettingsLoader.h"
+#include "../../../RenderPass/AllRenderPass/RenderPassTraits.h"
 
+using namespace RenderPassTraits;
 
 [[nodiscard]] std::vector<RenderContext::RenderPathAssembler::PassAndName> RenderContext::RenderPathAssembler::PathSettingsLoader::
 ParseWhichPassUses(std::string const pathName_)
@@ -7101,7 +7200,7 @@ std::vector<RenderPassComponent::Pass> RenderContext::RenderPathAssembler::PathS
 
 	for (auto const passName : passNames_)
 	{
-		passTypes.emplace_back(RenderPassComponent::PassNameToPassType(passName));
+		passTypes.emplace_back(PassNameToPassType(passName));
 	}
 
 	return passTypes;
@@ -13124,7 +13223,7 @@ TestModelOKIBA::TestModelOKIBA(ModelContext::ModelCreator* modelCreator_)
 
 	ModelDescription::RenderStates cP;
 	cP.blendModes.emplace_back(BlendMode::kOpaque);
-	cP.passes |= RenderPass::kSceneTexture;
+	cP.passes |= RenderPass::kSceneTextureOpaque;
 
 	cP.cullMode = CullMode::kBack;
 	cP.meshType = ShaderPathComponent::MeshType::kStatic;
@@ -13138,7 +13237,7 @@ TestModelOKIBA::TestModelOKIBA(ModelContext::ModelCreator* modelCreator_)
 
 	ModelDescription::RenderStates cC;
 	cC.blendModes.emplace_back(BlendMode::kOpaque);
-	cC.passes|= RenderPass::kSceneTexture;
+	cC.passes|= RenderPass::kSceneTextureOpaque;
 	cC.cullMode = CullMode::kBack;
 	cC.meshType = ShaderPathComponent::MeshType::kStatic;
 	cC.materialType = ShaderPathComponent::MaterialType::kStandard;
@@ -17930,6 +18029,26 @@ std::vector<D3D12_ROOT_PARAMETER> RootSignatureContext::Assembler::RootParamCrea
 
 			break;
 
+		case (int)ConstantBuffers::RootConstantsBindSlots::kPassBufferIndexRange:
+
+			rootParams[i].ShaderVisibility = Convert(ShaderStage::kAll);
+
+			rootParams[i].ParameterType = D3D12_ROOT_PARAMETER_TYPE_32BIT_CONSTANTS;
+			rootParams[i].Constants.ShaderRegister = i;
+			rootParams[i].Constants.RegisterSpace = 0;
+			rootParams[i].Constants.Num32BitValues = 2;
+
+			break;
+
+		default:
+
+			ErrorMessageOutput::Assert::OutputError
+			(
+				"ここに到達するのはおかしい。ルート定数の設定が足りてないっしょ",
+				"RootParamCreator.cpp"
+			);
+
+			break;
 		}
 	}
 

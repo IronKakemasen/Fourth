@@ -48,7 +48,7 @@ private:
 	template<typename PassType>
 	PassType* InstantiatePass(NexusFieldProof proof_, PassDesc desc_)
 	{
-		return passContainer->Import(proof_, std::move(std::make_unique<SceneTextureCreator>(proof_, std::move(desc_))));
+		return passContainer->Import(proof_, std::move(std::make_unique<PassType>(proof_, std::move(desc_))));
 	}
 
 	//bufferCreatorを借りる

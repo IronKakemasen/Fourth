@@ -15,18 +15,23 @@ namespace ConstantBuffers
 
 	enum class RootConstantsBindSlots
 	{
-		kPerDrawIndices = ConstantBufferBindSlots::kCount
-
+		kPerDrawIndices = ConstantBufferBindSlots::kCount,
+		kPassBufferIndexRange
 
 		,kCount
 	};
 
 	struct PerDrawIndicesCPUGPU
 	{
-		UINT modelDataID;
-		UINT transformMatrixID;
+		MeshDataID meshDataID;
+		uint32_t transformMatrixID;
 	};
 
+	struct PassBufferIndexRangeCPUGPU
+	{
+		uint32_t offset;
+		uint32_t numTextureUse;
+	};
 
 }
 
@@ -35,14 +40,20 @@ namespace ConstantBuffers
 
 struct PerDrawIndices
 {
-	uint modelDataID;
+	uint meshDataID;
 	uint transformMatrixID;
+};
+
+struct PassBufferIndexRange
+{
+	uint offset;
+	uint numTextureUse;
 };
 
 
 cbuffer ModelDataContainerIndexCB : register(b0)
 {
-	uint gModelDataContainerIndex;
+	uint gMeshDataIDDataContainerIndex;
 }
 
 cbuffer TransformMatrixContainerIndexCB : register(b1)
@@ -51,6 +62,8 @@ cbuffer TransformMatrixContainerIndexCB : register(b1)
 }
 
 ConstantBuffer<PerDrawIndices> gPerDrawIndices: register(b2);
+
+ConstantBuffer<PassBufferIndexRange> gPassBufferIndexRange: register(b3);
 
 #endif
 
