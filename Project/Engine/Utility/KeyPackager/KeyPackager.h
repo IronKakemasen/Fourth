@@ -7,6 +7,7 @@ private:
     struct BitAndLocation
     {
         uint32_t shift{};
+        uint32_t bits{};
 
         inline void Init(uint32_t count_, uint32_t shift_)
         {
@@ -22,7 +23,6 @@ private:
 
     private:
 
-        uint32_t bits{};
 
         inline void CalcBitWidth(uint32_t count_) { bits = count_ <= 1 ? 1 : std::bit_width(count_ - 1); }
         inline void CalcShiftNum(uint32_t shift_) { shift = shift_; }
@@ -69,6 +69,13 @@ public:
         uint32_t packedKey{};
         for (size_t i = 0;i < sizeContainer;++i)
         {
+            //入力キー値が設定した値を超過してないかチェック
+            const auto& bitInfo = bitAndLocationContainer.at(i);
+            const uint32_t bits = bitInfo.bits;
+            //そのビット数で表現できる最大値
+            const uint32_t maxValue = (1u << bits) - 1;
+            ErrorMessageOutput::Assert::DetectError(keyArr[i] <= maxValue,"入力キー値が設定した値を超過", "KeyPackager.h");
+
             packedKey |= uint32_t(keyArr[i] << bitAndLocationContainer.at(i).shift);
         }
 

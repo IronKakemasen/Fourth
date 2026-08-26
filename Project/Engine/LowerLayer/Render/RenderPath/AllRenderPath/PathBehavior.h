@@ -7,7 +7,7 @@ class RenderContext::PathBehavior
 public:
 
 	PathBehavior(NexusFieldProof proof_);
-	~PathBehavior() = default;
+	virtual ~PathBehavior() = default;
 
 	template<typename PassType>
 	void AddPass(NexusFieldProof proof_ , PassType* pass_)
