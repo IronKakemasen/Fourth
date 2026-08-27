@@ -36,6 +36,7 @@ void RenderContext::RenderPassCreator::PassBufferCreator::CreateBuffer
 			tmp->width,
 			tmp->height,
 			tmp->clearDepth,
+			tmp->clearStencil,
 			tmp->dsvFormat,
 			tmp->srvFormat,
 			tmp->numBuffer

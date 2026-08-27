@@ -39,7 +39,7 @@
                                 "dsvFormat":  45,
                                 "srvFormat":  46,
                                 "clearDepth":  0.0,
-                                "clearStencil":0.0,
+                                "clearStencil":0,
                                 "depthWidth": -1,
                                 "depthHeight": -1,
                                 "numBuffer_Depth":1,

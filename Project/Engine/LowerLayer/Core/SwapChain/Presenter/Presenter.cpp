@@ -19,5 +19,6 @@ UINT SwapChainContext::Presenter::GetFrameIndex()const
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 void SwapChainContext::Presenter::Present()const
 {
-	swapChain->Present(1, 0);
+	HRESULT hr = swapChain->Present(1, 0);
+	ErrorMessageOutput::Assert::DetectError(SUCCEEDED(hr), "swapChain->Presentでエラー", "Presenter.cpp");
 }

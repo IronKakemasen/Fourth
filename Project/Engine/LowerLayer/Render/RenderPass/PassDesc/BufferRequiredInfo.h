@@ -24,7 +24,7 @@ struct RenderContext::RequiredBufferInfo
 		DXGI_FORMAT dsvFormat;
 		DXGI_FORMAT srvFormat;
 		float clearDepth{};
-		float clearStencil{};
+		int clearStencil{};
 		uint32_t width{};
 		uint32_t height{};
 		ProjectConfig::Render::NumBuffer numBuffer{};
