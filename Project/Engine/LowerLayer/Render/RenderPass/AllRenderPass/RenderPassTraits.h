@@ -1,6 +1,6 @@
 #pragma once
 #include "AllPassFwd.h"
-#include "RenderPassComponent.h"
+#include "../RenderPassComponent.h"
 
 namespace RenderPassTraits
 {

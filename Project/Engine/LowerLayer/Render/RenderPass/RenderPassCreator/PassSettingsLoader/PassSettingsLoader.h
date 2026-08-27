@@ -1,14 +1,17 @@
 #pragma once
 #include "../RenderPassCreator.h"
-#include "../../PassDesc/PassRequiredInfo.h"
+#include "../../PassDesc/PassDesc.h"
 
 
 class RenderContext::RenderPassCreator::PassSettingsLoader
 {
 	friend class RenderPassCreator;
 
-	static [[nodiscard]] PassRequiredInfo Load(std::string const passName_);
+	static [[nodiscard]] PassDesc Load(std::string const passName_);
 
+
+	//以下ヘルパー
+private:
 	static std::vector<RenderContext::RequiredBufferInfo::ColorBuffer> ParseColorBufferInfo
 	(
 		std::string const passName_,

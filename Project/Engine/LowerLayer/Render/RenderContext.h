@@ -18,12 +18,13 @@ public:
 	class RenderPassCreator;
 	//描画構成Passのビヘイビア
 	class PassBehavior;
-	class PassDesc;
+	struct PassDesc;
 	//そのパスで使用するバッファの情報をまとめたもの
 	struct RequiredBufferInfo;
 	class PathBehavior;
 	//レンダーパスを設計する強者
 	class RenderGraph;
+	struct RenderPassState;
 
 	//ネクサスフィールドの証
 	struct NexusFieldProof;

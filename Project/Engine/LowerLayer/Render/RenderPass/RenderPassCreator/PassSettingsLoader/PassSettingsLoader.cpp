@@ -11,24 +11,21 @@ namespace
 }
 
 
-[[nodiscard]] PassRequiredInfo RenderContext::RenderPassCreator::PassSettingsLoader::Load(std::string const passName_)
+[[nodiscard]] RenderContext::PassDesc RenderContext::RenderPassCreator::PassSettingsLoader::Load(std::string const passName_)
 {
-	PassRequiredInfo info;
-
 	std::string const srcJsonFileName = "RenderPassSettings";
 	
-	//カラーバッファの設定情報
-	info.colorBuffersInfo= ParseColorBufferInfo(passName_, srcJsonFileName);
-	//深度ステンシルバッファの設定情報
-	info.depthStencilBufferInfo = ParseDepthStencilBufferInfo(passName_, srcJsonFileName);
-
-	///未分類（いつかリファクタ）
 	auto* miyajison = Miyajison::Get();
-	info.depthTest = DepthTest(miyajison->LoadData<int>(srcJsonFileName, { passName_,PassRequiredInfo::dataKeyString.kDepthTestI }));
-	info.depthEnable = DepthEnable(miyajison->LoadData<bool>(srcJsonFileName, { passName_,PassRequiredInfo::dataKeyString.kDepthEnableB }));
 
+	PassDesc desc
+	(
+		DepthTest(miyajison->LoadData<int>(srcJsonFileName, { passName_,PassDesc::dataKeyString.kDepthTestI })),
+		DepthEnable(miyajison->LoadData<bool>(srcJsonFileName, { passName_,PassDesc::dataKeyString.kDepthEnableB })),
+		ParseColorBufferInfo(passName_, srcJsonFileName),
+		ParseDepthStencilBufferInfo(passName_, srcJsonFileName)
+	);
 
-	return info;
+	return desc;
 }
 
 std::vector<RenderContext::RequiredBufferInfo::ColorBuffer> RenderContext::RenderPassCreator::PassSettingsLoader::ParseColorBufferInfo
@@ -43,23 +40,23 @@ std::vector<RenderContext::RequiredBufferInfo::ColorBuffer> RenderContext::Rende
 
 	//カラーバッファのフォーマット。以降、こいつの数といくつかのパラメーターは同期している前提で進める
 	auto const colorBufferFormats = 
-		miyajison->LoadData<std::vector<int>>(jsonFileName_, { passName_,PassRequiredInfo::dataKeyString.kColorFormatI });
+		miyajison->LoadData<std::vector<int>>(jsonFileName_, { passName_,PassDesc::dataKeyString.kColorFormatI });
 	//カラーバッファの数
 	auto const numColorBuffers = colorBufferFormats.size();
 
 	//カラーバッファのクリアカラー
 	auto const clearColors = 
-		miyajison->LoadData<std::vector<std::vector<float>>>(jsonFileName_, { passName_,PassRequiredInfo::dataKeyString.kClearColorV4 });
+		miyajison->LoadData<std::vector<std::vector<float>>>(jsonFileName_, { passName_,PassDesc::dataKeyString.kClearColorV4 });
 
 	//カラーバッファの縦横
 	auto const widthContainer = 
-		miyajison->LoadData<std::vector<int>>(jsonFileName_, { passName_,PassRequiredInfo::dataKeyString.kColorWidthI });
+		miyajison->LoadData<std::vector<int>>(jsonFileName_, { passName_,PassDesc::dataKeyString.kColorWidthI });
 	auto const heightContainer =
-		miyajison->LoadData<std::vector<int>>(jsonFileName_, { passName_,PassRequiredInfo::dataKeyString.kColorHeightI });
+		miyajison->LoadData<std::vector<int>>(jsonFileName_, { passName_,PassDesc::dataKeyString.kColorHeightI });
 
 	//シングルかダブルか
 	auto const numBufferContainer =
-		miyajison->LoadData<std::vector<int>>(jsonFileName_, { passName_,PassRequiredInfo::dataKeyString.kNumBuffer_colorI });
+		miyajison->LoadData<std::vector<int>>(jsonFileName_, { passName_,PassDesc::dataKeyString.kNumBuffer_colorI });
 
 
 	//サイズの比が一致してるかチェック
@@ -100,31 +97,31 @@ std::optional<RenderContext::RequiredBufferInfo::DepthStencilBuffer> RenderConte
 	auto* miyajison = Miyajison::Get();
 
 	//深度バッファ使わんならしらん
-	if (!miyajison->LoadData<bool>(jsonFileName_, { passName_,PassRequiredInfo::dataKeyString.kUseDepthStenciB }))
+	if (!miyajison->LoadData<bool>(jsonFileName_, { passName_,PassDesc::dataKeyString.kUseDepthStenciB }))
 		return std::nullopt;
 
 	depthStencilBufferInfo.emplace();
 
 	depthStencilBufferInfo->dsvFormat = 
-		(DXGI_FORMAT)miyajison->LoadData<int>(jsonFileName_, { passName_,PassRequiredInfo::dataKeyString.kDsvFormatI});
+		(DXGI_FORMAT)miyajison->LoadData<int>(jsonFileName_, { passName_,PassDesc::dataKeyString.kDsvFormatI});
 
 	depthStencilBufferInfo->srvFormat = 
-		(DXGI_FORMAT)miyajison->LoadData<int>(jsonFileName_, { passName_,PassRequiredInfo::dataKeyString.kSrvFormatI });
+		(DXGI_FORMAT)miyajison->LoadData<int>(jsonFileName_, { passName_,PassDesc::dataKeyString.kSrvFormatI });
 
 	depthStencilBufferInfo->clearDepth =
-		miyajison->LoadData<float>(jsonFileName_, { passName_,PassRequiredInfo::dataKeyString.kClearDepthF });
+		miyajison->LoadData<float>(jsonFileName_, { passName_,PassDesc::dataKeyString.kClearDepthF });
 
 	depthStencilBufferInfo->clearStencil =
-		miyajison->LoadData<float>(jsonFileName_, { passName_,PassRequiredInfo::dataKeyString.kClearStencilF });
+		miyajison->LoadData<float>(jsonFileName_, { passName_,PassDesc::dataKeyString.kClearStencilF });
 
 	depthStencilBufferInfo->numBuffer = 
-		(NumBuffer)miyajison->LoadData<int>(jsonFileName_, { passName_,PassRequiredInfo::dataKeyString.kNumBuffer_depthI });
+		(NumBuffer)miyajison->LoadData<int>(jsonFileName_, { passName_,PassDesc::dataKeyString.kNumBuffer_depthI });
 
 
 	int const widthHeight[2] =
 	{
-		miyajison->LoadData<int>(jsonFileName_, { passName_,PassRequiredInfo::dataKeyString.kDepthWidthI }),
-		miyajison->LoadData<int>(jsonFileName_, { passName_,PassRequiredInfo::dataKeyString.kDepthHeightI})
+		miyajison->LoadData<int>(jsonFileName_, { passName_,PassDesc::dataKeyString.kDepthWidthI }),
+		miyajison->LoadData<int>(jsonFileName_, { passName_,PassDesc::dataKeyString.kDepthHeightI})
 	};
 
 	depthStencilBufferInfo->width = widthHeight[0] == -1 ? kWidth : widthHeight[0];

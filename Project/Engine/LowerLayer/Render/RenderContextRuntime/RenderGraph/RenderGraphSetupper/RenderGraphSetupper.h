@@ -1,7 +1,7 @@
 #pragma once
 #include "../RenderGraph.h"
+#include "../../../../Resource/Model/ModelStructure/ModelDescription/ModelDescription.h"
 
-struct ModelDescription;
 class Model;
 
 class RenderContext::RenderGraph::Setupper
@@ -17,21 +17,32 @@ class RenderContext::RenderGraph::Setupper
 	);
 
 	//グラフィックス用のルートシグの生成
-	static [[nodiscard]] ID3D12RootSignature* CreateGraphicsRootSig(RootSignatureContextDiplomat& rootSignatureContextDiplomat_);
+	static [[nodiscard]] ID3D12RootSignature* CreateGraphicsRootSig
+	(
+		NexusFieldProof proof_,
+		RootSignatureContextDiplomat& rootSignatureContextDiplomat_
+	);
 
 	//全ての存在せねばならんPSOを生成
-	static void CreateAllGraphicsPSO(PSO_PoolDispatcher& psoDispatcher_,ModelContextDiplomat& modelContextDiplomat_);
+	static void CreateAllGraphicsPSO
+	(
+		NexusFieldProof proof_,
+		PSO_PoolDispatcher& psoDispatcher_,
+		RenderPassContainer& passContainer_,
+		ModelContextDiplomat& modelContextDiplomat_
+	);
 
 
 	//以下ヘルパー
 private:
 	
 	//全モデルデータを受け取ってそのモデルデータのRenderStateのベクタを取り出す
-	static void ExtractModelDescription
-	(
-		std::vector<ModelDescription const*>& dst_,
-		const std::vector<std::unique_ptr<Model>>* modelData_
-	);
+	static std::vector<ModelDescription::RenderState> 
+		CollectAllRenderStates(const std::vector<std::unique_ptr<Model>>* modelData_);
+
+	//全PassからRenderPassComponentの情報を収集する
+	static std::unordered_map < RenderPassComponent::Pass, RenderContext::RenderPassState>
+		CollectAllRenderPassStates(NexusFieldProof proof_, RenderPassContainer& passContainer_);
 
 };
 

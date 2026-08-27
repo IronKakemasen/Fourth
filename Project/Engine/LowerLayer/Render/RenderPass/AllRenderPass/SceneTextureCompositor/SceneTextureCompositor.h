@@ -6,7 +6,7 @@ class SceneTextureCompositor :public RenderContext::PassBehavior
 {
 public:
 
-	SceneTextureCompositor(RenderContext::NexusFieldProof proof_, const RenderContext::PassDesc& desc_);
+	SceneTextureCompositor(RenderContext::NexusFieldProof proof_, const RenderContext::PassDesc& desc_, RenderPassComponent::Pass pass_);
 
 private:
 

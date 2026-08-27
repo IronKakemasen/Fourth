@@ -1,5 +1,5 @@
 #pragma once
-#include "../../RenderPass/AllRenderPass/RenderPassComponent.h"
+#include "../../RenderPass/RenderPassComponent.h"
 #include "../../RenderPass/ShaderPathComponent.h"
 #include "../../RenderStateComponent.h"
 
@@ -9,8 +9,6 @@ struct GraphicsPSO_Key
     enum Sequence
     {
         kPass,
-        kDepthEnable,
-        kDepthTest,
         kMeshType,
         kMaterialType,
         kBlendMode,
@@ -23,8 +21,6 @@ private:
     int const kInvalid = -1;
 
     RenderPassComponent::Pass pass =                RenderPassComponent::Pass(kInvalid);
-    RenderPassComponent::DepthEnable depthEnable =  RenderPassComponent::DepthEnable(kInvalid);
-    RenderPassComponent::DepthTest depthTest =      RenderPassComponent::DepthTest(kInvalid);
     ShaderPathComponent::MeshType mesh =            ShaderPathComponent::MeshType(kInvalid);
     ShaderPathComponent::MaterialType material =    ShaderPathComponent::MaterialType(kInvalid);
     RenderStateComponent::BlendMode blend =         RenderStateComponent::BlendMode(kInvalid);
@@ -35,8 +31,6 @@ private:
     static constexpr auto sequenceToType()
     {
         if      constexpr (sequence == kPass)         return RenderPassComponent::Pass{};
-        else if constexpr (sequence == kDepthEnable)  return RenderPassComponent::DepthEnable{};
-        else if constexpr (sequence == kDepthTest)    return RenderPassComponent::DepthTest{};
         else if constexpr (sequence == kMeshType)     return ShaderPathComponent::MeshType{};
         else if constexpr (sequence == kMaterialType) return ShaderPathComponent::MaterialType{};
         else if constexpr (sequence == kBlendMode)    return RenderStateComponent::BlendMode{};
@@ -53,14 +47,12 @@ public:
     GraphicsPSO_Key
     (
         RenderPassComponent::Pass pass_,
-        RenderPassComponent::DepthEnable depthEnable_,
-        RenderPassComponent::DepthTest depthTest_,
         ShaderPathComponent::MeshType mesh_,
         ShaderPathComponent::MaterialType material_,
         RenderStateComponent::BlendMode blend_,
         RenderStateComponent::FillMode fill_,
         RenderStateComponent::CullMode cull_
-    ) :pass(pass_), depthEnable(depthEnable_), depthTest(depthTest_), mesh(mesh_), material(material_), blend(blend_), fill(fill_), cull(cull_)
+    ) :pass(pass_), mesh(mesh_), material(material_), blend(blend_), fill(fill_), cull(cull_)
     {
 
     }
@@ -69,8 +61,6 @@ public:
      constexpr auto Get() const
      {
          if      constexpr (sequence == kPass)         return pass;
-         else if constexpr (sequence == kDepthEnable)  return depthEnable;
-         else if constexpr (sequence == kDepthTest)    return depthTest;
          else if constexpr (sequence == kMeshType)     return mesh;
          else if constexpr (sequence == kMaterialType) return material;
          else if constexpr (sequence == kBlendMode)    return blend;

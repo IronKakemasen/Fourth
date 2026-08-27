@@ -24,7 +24,7 @@ ModelContext::ModelCreator::ModelCreator
 Model* ModelContext::ModelCreator::Create
 (
 	std::string modelFileName_,
-	const std::vector<ModelDescription::RenderStates>& modelRenderStates_,
+	const std::vector<ModelDescription::RenderState>& modelRenderStates_,
 	std::string modelName_
 )
 {

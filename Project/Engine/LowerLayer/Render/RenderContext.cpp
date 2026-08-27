@@ -53,6 +53,7 @@ RenderContext::RenderContext
 			proof_,
 			renderPathAssembler,
 			*pso_PoolDispatcher,
+			*renderPassContainer,
 			rootSignatureContextDiplomat_,
 			bufferContextDiplomat_,
 			modelContextDiplomat_

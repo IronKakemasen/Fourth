@@ -1,11 +1,11 @@
 #include "PreCompileHeader.h"
 #include "RenderPassBehavior.h"
+#include "RenderPassTraits.h"
 
-
-RenderContext::PassBehavior::PassBehavior(NexusFieldProof proof_, const RenderContext::PassDesc& desc_)
-	:desc(desc_)
+RenderContext::PassBehavior::PassBehavior(NexusFieldProof proof_, const RenderContext::PassDesc& desc_, RenderPassComponent::Pass pass_)
+	:desc(desc_), pass(pass_)
 {
-
+	
 }
 
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

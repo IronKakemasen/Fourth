@@ -386,12 +386,12 @@
     <ClInclude Include="Assets\Shared\StaticSampler.h" />
     <ClInclude Include="Assets\Shared\StructuredBuffer.h" />
     <ClInclude Include="Engine\LowerLayer\Render\RenderPass\AllRenderPass\RenderPassTraits.h" />
+    <ClInclude Include="Engine\LowerLayer\Render\RenderPass\PassDesc\RenderPassState.h" />
     <ClInclude Include="Engine\LowerLayer\Render\RenderPath\AllRenderPath\AllPathFwd.h" />
     <ClInclude Include="Engine\LowerLayer\Render\RenderPath\AllRenderPath\AllPathInclude.h" />
     <ClInclude Include="Engine\LowerLayer\Render\RenderPath\AllRenderPath\CreateSceneTexture\CreateSceneTexture.h" />
     <ClInclude Include="Engine\LowerLayer\Render\RenderPass\AllRenderPass\AllPassFwd.h" />
     <ClInclude Include="Engine\LowerLayer\Render\RenderPass\AllRenderPass\AllPassInclude.h" />
-    <ClInclude Include="Engine\LowerLayer\Render\RenderPass\PassDesc\PassRequiredInfo.h" />
     <ClInclude Include="Engine\LowerLayer\Render\RenderPath\AllRenderPath\RenderPathName.h" />
     <ClInclude Include="Engine\LowerLayer\Resource\Buffer\BufferContextDiplomat\BufferContextCmdProvider\BufferContextCmdProvider.h" />
     <ClInclude Include="Engine\LowerLayer\Core\Command\CommandContextDiplomat\CommandContextCmdProvider\CommandContextCmdProviderLicences.h" />
@@ -438,7 +438,7 @@
     <ClInclude Include="Engine\LowerLayer\Resource\Shader\ShaderContextDiplomat\ShaderContextToolLender\ShaderContextToolLenderLicences.h" />
     <ClInclude Include="Engine\Utility\ClosedHashMap\ClosedHashMap.h" />
     <ClInclude Include="Engine\LowerLayer\Render\RenderContextRuntime\PSO_PoolDispatcher\GraphicsPSO_Key.h" />
-    <ClInclude Include="Engine\LowerLayer\Render\RenderPass\AllRenderPass\RenderPassComponent.h" />
+    <ClInclude Include="Engine\LowerLayer\Render\RenderPass\RenderPassComponent.h" />
     <ClInclude Include="Engine\LowerLayer\Resource\RootSignature\RootSignatureCreator\RootSignatureAssembler\RootSignatureDesc.h" />
     <ClInclude Include="Engine\LowerLayer\Resource\RootSignature\RootSignatureCreator\RootSignatureAssembler\RootSignatureAssemblerTool\RootParamCreator\RootParamCreator.h" />
     <ClInclude Include="Engine\LowerLayer\Resource\RootSignature\RootSignatureCreator\RootSignatureAssembler\RootSignatureAssemblerTool\StaticSamplerDescCreator\StaticSamplerDescCreator.h" />

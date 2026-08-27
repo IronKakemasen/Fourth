@@ -1,16 +1,64 @@
 #pragma once
-#include "PassRequiredInfo.h"
+#include "BufferRequiredInfo.h"
+#include "RenderPassState.h"
 
-class RenderContext::PassDesc
+struct RenderContext::PassDesc
 {
+private:
+
+	struct DataKeyString
+	{
+		std::string const kColorFormatI = "colorFormat";
+		std::string const kClearColorV4 = "clearColor";
+		std::string const kColorWidthI = "colorWidth";
+		std::string const kColorHeightI = "colorHeight";
+		std::string const kNumBuffer_colorI = "numBuffer_Color";
+
+		std::string const kUseDepthStenciB = "useDepthStencil";
+		std::string const kDsvFormatI = "dsvFormat";
+		std::string const kSrvFormatI = "srvFormat";
+		std::string const kClearDepthF = "clearDepth";
+		std::string const kClearStencilF = "clearStencil";
+		std::string const kDepthWidthI = "depthWidth";
+		std::string const kDepthHeightI = "depthHeight";
+		std::string const kNumBuffer_depthI = "numBuffer_Depth";
+
+		std::string const kDepthTestI = "depthTest";
+		std::string const kDepthEnableB = "depthEnable";
+
+	};
+
 public:
 
-	PassDesc(const PassRequiredInfo& info_);
+	static inline DataKeyString dataKeyString;
 
+	PassDesc
+	(
+		RenderPassComponent::DepthTest depthTest_,
+		RenderPassComponent::DepthEnable depthEnable_,
+		std::vector<RenderContext::RequiredBufferInfo::ColorBuffer> colorBuffersInfo_,
+		std::optional<RenderContext::RequiredBufferInfo::DepthStencilBuffer> depthStencilBufferInfo_
+	);
+
+	
+	RenderPassState const& WatchRenderPassState()const;
+	std::vector<RenderContext::RequiredBufferInfo::ColorBuffer> const& WatchColorBuffersInfo()const;
+	std::optional<RenderContext::RequiredBufferInfo::DepthStencilBuffer> const& WatchDepthStencilBufferInfo()const;
+
+	bool DoesDepthStencilBufferInfoContains()const;
+
+	void SetColorBufferUniqueID(BufferUniqueID id_, size_t index_);
+	void SetDepthStencilBufferUniqueID(BufferUniqueID id_);
 
 private:
 
-	PassRequiredInfo info;
+	//renderPassComponentの塊
+	RenderPassState renderPassState;
+
+	//必要なバッファの情報
+	std::vector<RenderContext::RequiredBufferInfo::ColorBuffer> colorBuffersInfo;
+	std::optional<RenderContext::RequiredBufferInfo::DepthStencilBuffer> depthStencilBufferInfo;
+
 
 };
 

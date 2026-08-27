@@ -7,11 +7,11 @@ public:
 
 	Model(const ModelDescription& modelDesc_);
 
-	 std::string const& WatchName()const;
+	 std::string const WatchName()const;
 
-	const ModelDescription* WatchModelDesc()const
+	auto const& WatchRenderStates()const
 	{
-		return &modelDesc;
+		return modelDesc.WatchRenderStates();
 	}
 
 private:

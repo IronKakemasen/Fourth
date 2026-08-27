@@ -31,8 +31,6 @@ void RenderContext::PSO_PoolDispatcher::DefinePackageLayout()
 		new KeyPackager
 		(
 			GraphicsPSO_Key::Count<GraphicsPSO_Key::Sequence::kPass>(),
-			GraphicsPSO_Key::Count<GraphicsPSO_Key::Sequence::kDepthEnable>(),
-			GraphicsPSO_Key::Count<GraphicsPSO_Key::Sequence::kDepthTest>(),
 			GraphicsPSO_Key::Count<GraphicsPSO_Key::Sequence::kMeshType>(),
 			GraphicsPSO_Key::Count<GraphicsPSO_Key::Sequence::kMaterialType>(),
 			GraphicsPSO_Key::Count<GraphicsPSO_Key::Sequence::kBlendMode>(),

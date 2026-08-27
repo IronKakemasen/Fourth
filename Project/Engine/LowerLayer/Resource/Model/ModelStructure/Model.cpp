@@ -8,7 +8,7 @@ Model::Model(const ModelDescription& modelDesc_)
 	
 }
 
-std::string const& Model::WatchName()const
+std::string const Model::WatchName()const
 {
-	return modelDesc.modelName;
+	return modelDesc.WatchName();
 }

@@ -1,7 +1,8 @@
 #include "PreCompileHeader.h"
 #include "RenderGraphSetupper.h"
 #include "../../../RenderPath/RenderPathAssembler/RenderPathAssembler.h"
-
+#include "../../PSO_PoolDispatcher/PSO_PoolDispatcher.h"
+#include "../../../RenderPass/RenderPassContainer/RenderPassContainer.h"
 
 //外部
 #include "../../../../Resource/RootSignature/RootSignatureContextDiplomat/RootSignatureContextDiplomat.h"
@@ -39,7 +40,9 @@ namespace
 
 void RenderContext::RenderGraph::Setupper::CreateAllGraphicsPSO
 (
+	NexusFieldProof proof_,
 	PSO_PoolDispatcher& psoDispatcher_, 
+	RenderPassContainer& passContainer_,
 	ModelContextDiplomat& modelContextDiplomat_
 )
 {
@@ -50,31 +53,59 @@ void RenderContext::RenderGraph::Setupper::CreateAllGraphicsPSO
 	ModelContext::CommandProvider::LicenceType<WatchModelContainer> licence;
 	auto watchModelContainer = modelContextCmdProvider->Provide<WatchModelContainer>(licence);
 	
+	//全てのモデルクラスのRenderStatesを集計
 	const std::vector<std::unique_ptr<Model>>* modelDataContainer = watchModelContainer();
-	std::vector<ModelDescription const*> modelDescs;
+	std::vector<ModelDescription::RenderState> allModelRenderStates = CollectAllRenderStates(modelDataContainer);
 
-	//全てのモデルクラスのDescを抽出
-	ExtractModelDescription(modelDescs, modelDataContainer);
-
+	//全renderPassのRenderPassStatesを集計
+	std::unordered_map < RenderPassComponent::Pass, RenderContext::RenderPassState> allRenderPassStates =
+		CollectAllRenderPassStates(proof_, passContainer_);
 }
 
-void RenderContext::RenderGraph::Setupper::ExtractModelDescription
+std::vector<ModelDescription::RenderState> RenderContext::RenderGraph::Setupper::CollectAllRenderStates
 (
-	std::vector<ModelDescription const*>& dst_,
 	const std::vector<std::unique_ptr<Model>>* modelData_
 ) 
 {
-	//モデルクラスを全走査し、全ModelDescription
+	std::vector<ModelDescription::RenderState> allModelRenderStates;
+
+	//モデルクラスを全走査し、全ModelDescriptionを見る
 	for (auto itr = modelData_->begin();itr != modelData_->end();++itr)
 	{
-		//そのモデルクラスのModelDescを回収
-		dst_.emplace_back((*itr)->WatchModelDesc());
+		//そのモデルクラスのModelDescのrenderStatesを回収
+		for (auto const& renderState : (*itr)->WatchRenderStates())
+		{
+			allModelRenderStates.emplace_back(renderState);
+		}
 	}
+
+	return allModelRenderStates;
+}
+
+std::unordered_map < RenderPassComponent::Pass, RenderContext::RenderPassState>
+RenderContext::RenderGraph::Setupper::CollectAllRenderPassStates(NexusFieldProof proof_, RenderPassContainer& passContainer_)
+{
+	std::unordered_map < RenderPassComponent::Pass, RenderContext::RenderPassState> allRenderPassStatesMap;
+
+	//全てのPassが入ってるコンテナから、そのPassの情報があるDescを収集
+	//その中のRenderPassStateをかき集める
+	auto const& allPassPtrMap = passContainer_.AccessAllPassPtrMap(proof_);
+
+	for (auto[key,value ]: allPassPtrMap)
+	{
+		allRenderPassStatesMap[key] = value->WatchDesc().WatchRenderPassState();
+	}
+
+	return allRenderPassStatesMap;
 
 }
 
 
-[[nodiscard]] ID3D12RootSignature* RenderContext::RenderGraph::Setupper::CreateGraphicsRootSig(RootSignatureContextDiplomat& rootSignatureContextDiplomat_)
+[[nodiscard]] ID3D12RootSignature* RenderContext::RenderGraph::Setupper::CreateGraphicsRootSig
+(
+	NexusFieldProof proof_,
+	RootSignatureContextDiplomat& rootSignatureContextDiplomat_
+)
 {
 	using namespace RootSignatureLayoutComponent;
 	using namespace StaticSampler;
@@ -86,7 +117,7 @@ void RenderContext::RenderGraph::Setupper::ExtractModelDescription
 
 	RootSignatureDesc::Graphics desc;
 
-	//とりあえずある程度の定義した静的サンプラーは全部作る
+	//とりあえずEnumで定義したある程度の静的サンプラーは全部作る
 	for (int i = 0;i < (int)SamplerState::kCount;++i)
 	{
 		desc.pairshaderStage_samplerStateContainer.emplace_back(ShaderStage::kAll, SamplerState(i));
