@@ -14,7 +14,8 @@ private:
 	{
 		UINT width{};
 		UINT height{};
-		FLOAT clearColor = -1.0f;
+		FLOAT clearDepth = -1.0f;
+		UINT8  clearStencil = 0;
 		DXGI_FORMAT dsvFormat = DXGI_FORMAT::DXGI_FORMAT_Error_Detection;
 		DXGI_FORMAT srvFormat = DXGI_FORMAT::DXGI_FORMAT_Error_Detection;
 
@@ -26,7 +27,8 @@ public:
 	(
 		UINT width_,
 		UINT height_,
-		FLOAT clearColor_,
+		FLOAT clearDepth_,
+		UINT8  clearStencil_,
 		DXGI_FORMAT dsvFormat_,
 		DXGI_FORMAT srvFormat_,
 		ProjectConfig::Render::NumBuffer numBuffer_ = ProjectConfig::Render::NumBuffer::kSingleBuffer

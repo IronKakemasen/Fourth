@@ -18,7 +18,7 @@ private:
 		std::string const kDsvFormatI = "dsvFormat";
 		std::string const kSrvFormatI = "srvFormat";
 		std::string const kClearDepthF = "clearDepth";
-		std::string const kClearStencilF = "clearStencil";
+		std::string const kClearStencilI = "clearStencil";
 		std::string const kDepthWidthI = "depthWidth";
 		std::string const kDepthHeightI = "depthHeight";
 		std::string const kNumBuffer_depthI = "numBuffer_Depth";

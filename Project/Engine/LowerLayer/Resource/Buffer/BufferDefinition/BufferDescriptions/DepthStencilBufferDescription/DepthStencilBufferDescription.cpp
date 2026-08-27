@@ -6,7 +6,8 @@ DepthStencilBufferDescription::DepthStencilBufferDescription
 (
 	UINT width_,
 	UINT height_,
-	FLOAT clearColor_,
+	FLOAT clearDepth_,
+	UINT8  clearStencil_,
 	DXGI_FORMAT dsvFormat_,
 	DXGI_FORMAT srvFormat_,
 	ProjectConfig::Render::NumBuffer numBuffer_
@@ -14,7 +15,8 @@ DepthStencilBufferDescription::DepthStencilBufferDescription
 {
 	param.width = width_;
 	param.height = height_;
-	param.clearColor = clearColor_;
+	param.clearDepth = clearDepth_;
+	param.clearStencil = clearStencil_;
 	param.dsvFormat = dsvFormat_;
 	param.srvFormat = srvFormat_;
 
@@ -28,7 +30,7 @@ void DepthStencilBufferDescription::CheckRequirementsFilled() const
 	if (param.height == 0)errorMess += "[height]";
 	if (param.srvFormat == DXGI_FORMAT_Error_Detection) errorMess += "[SRVformat]";
 	if (param.dsvFormat == DXGI_FORMAT_Error_Detection) errorMess += "[DSVformat]";
-	if ((param.clearColor != 1.0f) && (param.clearColor != 0.0f)) errorMess += "[clearColor]";
+	if ((param.clearDepth != 1.0f) && (param.clearDepth != 0.0f)) errorMess += "[clearColor]";
 
 	ErrorMessageOutput::Assert::DetectError((errorMess.length() == 0), errorMess + "の情報が未設定です", "DepthStencilBufferDescription.cpp");
 }
@@ -104,9 +106,9 @@ D3D12_CLEAR_VALUE DepthStencilBufferDescription::WatchClearValue() const
 {
 	D3D12_CLEAR_VALUE clearValue = {};
 
-	clearValue.DepthStencil.Depth = param.clearColor;
+	clearValue.DepthStencil.Depth = param.clearDepth;
 	clearValue.Format = param.dsvFormat;
-	clearValue.DepthStencil.Stencil = 0;
+	clearValue.DepthStencil.Stencil = param.clearStencil;
 
 	return clearValue;
 }

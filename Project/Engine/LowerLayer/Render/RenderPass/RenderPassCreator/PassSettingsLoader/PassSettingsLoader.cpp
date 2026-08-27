@@ -112,7 +112,7 @@ std::optional<RenderContext::RequiredBufferInfo::DepthStencilBuffer> RenderConte
 		miyajison->LoadData<float>(jsonFileName_, { passName_,PassDesc::dataKeyString.kClearDepthF });
 
 	depthStencilBufferInfo->clearStencil =
-		miyajison->LoadData<float>(jsonFileName_, { passName_,PassDesc::dataKeyString.kClearStencilF });
+		miyajison->LoadData<int>(jsonFileName_, { passName_,PassDesc::dataKeyString.kClearStencilI });
 
 	depthStencilBufferInfo->numBuffer = 
 		(NumBuffer)miyajison->LoadData<int>(jsonFileName_, { passName_,PassDesc::dataKeyString.kNumBuffer_depthI });

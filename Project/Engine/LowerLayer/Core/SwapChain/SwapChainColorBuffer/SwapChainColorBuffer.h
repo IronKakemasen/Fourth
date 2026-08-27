@@ -42,7 +42,7 @@ private:
 		Microsoft::WRL::ComPtr <ID3D12Resource> resource;
 		D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle{};
 		//初期化ステートはこれ以外無いと思うので決め打ち
-		D3D12_RESOURCE_STATES resourceState = D3D12_RESOURCE_STATE_COMMON;
+		D3D12_RESOURCE_STATES resourceState = D3D12_RESOURCE_STATE_PRESENT;
 
 		D3D12_RESOURCE_BARRIER CreateBarrier(D3D12_RESOURCE_STATES after_);
 	};

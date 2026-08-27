@@ -9,6 +9,7 @@ private:
 
 	struct Param
 	{
+		//最初はarrayにしてたけどいろいろあって応急処置
 		std::vector<float> clearColor;
 		UINT width{};
 		UINT height{};

@@ -4143,7 +4143,8 @@ UINT SwapChainContext::Presenter::GetFrameIndex()const
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 void SwapChainContext::Presenter::Present()const
 {
-	swapChain->Present(1, 0);
+	HRESULT hr = swapChain->Present(1, 0);
+	ErrorMessageOutput::Assert::DetectError(SUCCEEDED(hr), "swapChain->Presentでエラー", "Presenter.cpp");
 }
 
 
@@ -4440,7 +4441,7 @@ private:
 		Microsoft::WRL::ComPtr <ID3D12Resource> resource;
 		D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle{};
 		//初期化ステートはこれ以外無いと思うので決め打ち
-		D3D12_RESOURCE_STATES resourceState = D3D12_RESOURCE_STATE_COMMON;
+		D3D12_RESOURCE_STATES resourceState = D3D12_RESOURCE_STATE_PRESENT;
 
 		D3D12_RESOURCE_BARRIER CreateBarrier(D3D12_RESOURCE_STATES after_);
 	};
@@ -5194,6 +5195,7 @@ RenderContext::RenderContext
 			proof_,
 			renderPathAssembler,
 			*pso_PoolDispatcher,
+			*renderPassContainer,
 			rootSignatureContextDiplomat_,
 			bufferContextDiplomat_,
 			modelContextDiplomat_
@@ -5238,12 +5240,13 @@ public:
 	class RenderPassCreator;
 	//描画構成Passのビヘイビア
 	class PassBehavior;
-	class PassDesc;
+	struct PassDesc;
 	//そのパスで使用するバッファの情報をまとめたもの
 	struct RequiredBufferInfo;
 	class PathBehavior;
 	//レンダーパスを設計する強者
 	class RenderGraph;
+	struct RenderPassState;
 
 	//ネクサスフィールドの証
 	struct NexusFieldProof;
@@ -5305,7 +5308,7 @@ private:
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Render\RenderStateComponent.h ===
 ========================================
 #pragma once
-#include "RenderPass/AllRenderPass/RenderPassComponent.h"
+#include "RenderPass/RenderPassComponent.h"
 
 namespace RenderStateComponent
 {
@@ -5405,7 +5408,7 @@ namespace RenderStateComponent
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Render\RenderContextRuntime\PSO_PoolDispatcher\GraphicsPSO_Key.h ===
 ========================================
 #pragma once
-#include "../../RenderPass/AllRenderPass/RenderPassComponent.h"
+#include "../../RenderPass/RenderPassComponent.h"
 #include "../../RenderPass/ShaderPathComponent.h"
 #include "../../RenderStateComponent.h"
 
@@ -5415,8 +5418,6 @@ struct GraphicsPSO_Key
     enum Sequence
     {
         kPass,
-        kDepthEnable,
-        kDepthTest,
         kMeshType,
         kMaterialType,
         kBlendMode,
@@ -5429,8 +5430,6 @@ private:
     int const kInvalid = -1;
 
     RenderPassComponent::Pass pass =                RenderPassComponent::Pass(kInvalid);
-    RenderPassComponent::DepthEnable depthEnable =  RenderPassComponent::DepthEnable(kInvalid);
-    RenderPassComponent::DepthTest depthTest =      RenderPassComponent::DepthTest(kInvalid);
     ShaderPathComponent::MeshType mesh =            ShaderPathComponent::MeshType(kInvalid);
     ShaderPathComponent::MaterialType material =    ShaderPathComponent::MaterialType(kInvalid);
     RenderStateComponent::BlendMode blend =         RenderStateComponent::BlendMode(kInvalid);
@@ -5441,8 +5440,6 @@ private:
     static constexpr auto sequenceToType()
     {
         if      constexpr (sequence == kPass)         return RenderPassComponent::Pass{};
-        else if constexpr (sequence == kDepthEnable)  return RenderPassComponent::DepthEnable{};
-        else if constexpr (sequence == kDepthTest)    return RenderPassComponent::DepthTest{};
         else if constexpr (sequence == kMeshType)     return ShaderPathComponent::MeshType{};
         else if constexpr (sequence == kMaterialType) return ShaderPathComponent::MaterialType{};
         else if constexpr (sequence == kBlendMode)    return RenderStateComponent::BlendMode{};
@@ -5459,14 +5456,12 @@ public:
     GraphicsPSO_Key
     (
         RenderPassComponent::Pass pass_,
-        RenderPassComponent::DepthEnable depthEnable_,
-        RenderPassComponent::DepthTest depthTest_,
         ShaderPathComponent::MeshType mesh_,
         ShaderPathComponent::MaterialType material_,
         RenderStateComponent::BlendMode blend_,
         RenderStateComponent::FillMode fill_,
         RenderStateComponent::CullMode cull_
-    ) :pass(pass_), depthEnable(depthEnable_), depthTest(depthTest_), mesh(mesh_), material(material_), blend(blend_), fill(fill_), cull(cull_)
+    ) :pass(pass_), mesh(mesh_), material(material_), blend(blend_), fill(fill_), cull(cull_)
     {
 
     }
@@ -5475,8 +5470,6 @@ public:
      constexpr auto Get() const
      {
          if      constexpr (sequence == kPass)         return pass;
-         else if constexpr (sequence == kDepthEnable)  return depthEnable;
-         else if constexpr (sequence == kDepthTest)    return depthTest;
          else if constexpr (sequence == kMeshType)     return mesh;
          else if constexpr (sequence == kMaterialType) return material;
          else if constexpr (sequence == kBlendMode)    return blend;
@@ -5532,8 +5525,6 @@ void RenderContext::PSO_PoolDispatcher::DefinePackageLayout()
 		new KeyPackager
 		(
 			GraphicsPSO_Key::Count<GraphicsPSO_Key::Sequence::kPass>(),
-			GraphicsPSO_Key::Count<GraphicsPSO_Key::Sequence::kDepthEnable>(),
-			GraphicsPSO_Key::Count<GraphicsPSO_Key::Sequence::kDepthTest>(),
 			GraphicsPSO_Key::Count<GraphicsPSO_Key::Sequence::kMeshType>(),
 			GraphicsPSO_Key::Count<GraphicsPSO_Key::Sequence::kMaterialType>(),
 			GraphicsPSO_Key::Count<GraphicsPSO_Key::Sequence::kBlendMode>(),
@@ -5631,8 +5622,6 @@ class RenderContext::PSO_PoolDispatcher
 		return keyPackager->Pack
 		(
 			psoKey_.Get<GraphicsPSO_Key::Sequence::kPass>(),
-			psoKey_.Get<GraphicsPSO_Key::Sequence::kDepthEnable>(),
-			psoKey_.Get<GraphicsPSO_Key::Sequence::kDepthTest>(),
 			psoKey_.Get<GraphicsPSO_Key::Sequence::kMeshType>(),
 			psoKey_.Get<GraphicsPSO_Key::Sequence::kMaterialType>(),
 			psoKey_.Get<GraphicsPSO_Key::Sequence::kBlendMode>(),
@@ -5713,6 +5702,7 @@ RenderContext::RenderGraph::RenderGraph
 	NexusFieldProof proof_,
 	RenderPathAssembler& pathAssembler_,
 	PSO_PoolDispatcher& psoDispatcher_,
+	RenderPassContainer& passContainer_,
 	RootSignatureContextDiplomat& rootSignatureContextDiplomat_,
 	BufferContextDiplomat& bufferContextDiplomat_,
 	ModelContextDiplomat& modelContextDiplomat_
@@ -5725,6 +5715,7 @@ RenderContext::RenderGraph::RenderGraph
 		proof_,
 		pathAssembler_,
 		psoDispatcher_,
+		passContainer_,
 		rootSignatureContextDiplomat_,
 		bufferContextDiplomat_,
 		modelContextDiplomat_
@@ -5756,6 +5747,7 @@ public:
 		NexusFieldProof proof_,
 		RenderPathAssembler& pathAssembler_,
 		PSO_PoolDispatcher& psoDispatcher_,
+		RenderPassContainer& passContainer_,
 		RootSignatureContextDiplomat& rootSignatureContextDiplomat_,
 		BufferContextDiplomat& bufferContextDiplomat_,
 		ModelContextDiplomat& modelContextDiplomat_
@@ -5769,6 +5761,7 @@ private:
 		NexusFieldProof proof_,
 		RenderPathAssembler& pathAssembler_,
 		PSO_PoolDispatcher& psoDispatcher_,
+		RenderPassContainer& passContainer_,
 		RootSignatureContextDiplomat& rootSignatureContextDiplomat_,
 		BufferContextDiplomat& bufferContextDiplomat_,
 		ModelContextDiplomat& modelContextDiplomat_
@@ -5798,6 +5791,7 @@ void RenderContext::RenderGraph::Init
 	NexusFieldProof proof_,
 	RenderPathAssembler& pathAssembler_,
 	PSO_PoolDispatcher& psoDispatcher_,
+	RenderPassContainer& passContainer,
 	RootSignatureContextDiplomat& rootSignatureContextDiplomat_,
 	BufferContextDiplomat& bufferContextDiplomat_,
 	ModelContextDiplomat& modelContextDiplomat_
@@ -5805,13 +5799,13 @@ void RenderContext::RenderGraph::Init
 )
 {
 	//全てのPathを生成する
-	Setupper::InstantiateAllPath(proof_, pathAssembler_, bufferContextDiplomat_);
+	allPathPtr = Setupper::InstantiateAllPath(proof_, pathAssembler_, bufferContextDiplomat_);
 	
 	//ルートシグネチャの生成
-	graphicsRootSig = Setupper::CreateGraphicsRootSig(rootSignatureContextDiplomat_);
+	graphicsRootSig = Setupper::CreateGraphicsRootSig(proof_ , rootSignatureContextDiplomat_);
 
 	//存在しなければならない全てのPSOを生成
-	Setupper::CreateAllGraphicsPSO(psoDispatcher_, modelContextDiplomat_);
+	Setupper::CreateAllGraphicsPSO(proof_ , psoDispatcher_, passContainer,modelContextDiplomat_);
 
 }
 
@@ -5824,7 +5818,8 @@ void RenderContext::RenderGraph::Init
 #include "PreCompileHeader.h"
 #include "RenderGraphSetupper.h"
 #include "../../../RenderPath/RenderPathAssembler/RenderPathAssembler.h"
-
+#include "../../PSO_PoolDispatcher/PSO_PoolDispatcher.h"
+#include "../../../RenderPass/RenderPassContainer/RenderPassContainer.h"
 
 //外部
 #include "../../../../Resource/RootSignature/RootSignatureContextDiplomat/RootSignatureContextDiplomat.h"
@@ -5862,7 +5857,9 @@ namespace
 
 void RenderContext::RenderGraph::Setupper::CreateAllGraphicsPSO
 (
+	NexusFieldProof proof_,
 	PSO_PoolDispatcher& psoDispatcher_, 
+	RenderPassContainer& passContainer_,
 	ModelContextDiplomat& modelContextDiplomat_
 )
 {
@@ -5873,31 +5870,59 @@ void RenderContext::RenderGraph::Setupper::CreateAllGraphicsPSO
 	ModelContext::CommandProvider::LicenceType<WatchModelContainer> licence;
 	auto watchModelContainer = modelContextCmdProvider->Provide<WatchModelContainer>(licence);
 	
+	//全てのモデルクラスのRenderStatesを集計
 	const std::vector<std::unique_ptr<Model>>* modelDataContainer = watchModelContainer();
-	std::vector<ModelDescription const*> modelDescs;
+	std::vector<ModelDescription::RenderState> allModelRenderStates = CollectAllRenderStates(modelDataContainer);
 
-	//全てのモデルクラスのDescを抽出
-	ExtractModelDescription(modelDescs, modelDataContainer);
-
+	//全renderPassのRenderPassStatesを集計
+	std::unordered_map < RenderPassComponent::Pass, RenderContext::RenderPassState> allRenderPassStates =
+		CollectAllRenderPassStates(proof_, passContainer_);
 }
 
-void RenderContext::RenderGraph::Setupper::ExtractModelDescription
+std::vector<ModelDescription::RenderState> RenderContext::RenderGraph::Setupper::CollectAllRenderStates
 (
-	std::vector<ModelDescription const*>& dst_,
 	const std::vector<std::unique_ptr<Model>>* modelData_
 ) 
 {
-	//モデルクラスを全走査し、全ModelDescription
+	std::vector<ModelDescription::RenderState> allModelRenderStates;
+
+	//モデルクラスを全走査し、全ModelDescriptionを見る
 	for (auto itr = modelData_->begin();itr != modelData_->end();++itr)
 	{
-		//そのモデルクラスのModelDescを回収
-		dst_.emplace_back((*itr)->WatchModelDesc());
+		//そのモデルクラスのModelDescのrenderStatesを回収
+		for (auto const& renderState : (*itr)->WatchRenderStates())
+		{
+			allModelRenderStates.emplace_back(renderState);
+		}
 	}
+
+	return allModelRenderStates;
+}
+
+std::unordered_map < RenderPassComponent::Pass, RenderContext::RenderPassState>
+RenderContext::RenderGraph::Setupper::CollectAllRenderPassStates(NexusFieldProof proof_, RenderPassContainer& passContainer_)
+{
+	std::unordered_map < RenderPassComponent::Pass, RenderContext::RenderPassState> allRenderPassStatesMap;
+
+	//全てのPassが入ってるコンテナから、そのPassの情報があるDescを収集
+	//その中のRenderPassStateをかき集める
+	auto const& allPassPtrMap = passContainer_.AccessAllPassPtrMap(proof_);
+
+	for (auto[key,value ]: allPassPtrMap)
+	{
+		allRenderPassStatesMap[key] = value->WatchDesc().WatchRenderPassState();
+	}
+
+	return allRenderPassStatesMap;
 
 }
 
 
-[[nodiscard]] ID3D12RootSignature* RenderContext::RenderGraph::Setupper::CreateGraphicsRootSig(RootSignatureContextDiplomat& rootSignatureContextDiplomat_)
+[[nodiscard]] ID3D12RootSignature* RenderContext::RenderGraph::Setupper::CreateGraphicsRootSig
+(
+	NexusFieldProof proof_,
+	RootSignatureContextDiplomat& rootSignatureContextDiplomat_
+)
 {
 	using namespace RootSignatureLayoutComponent;
 	using namespace StaticSampler;
@@ -5909,7 +5934,7 @@ void RenderContext::RenderGraph::Setupper::ExtractModelDescription
 
 	RootSignatureDesc::Graphics desc;
 
-	//とりあえずある程度の定義した静的サンプラーは全部作る
+	//とりあえずEnumで定義したある程度の静的サンプラーは全部作る
 	for (int i = 0;i < (int)SamplerState::kCount;++i)
 	{
 		desc.pairshaderStage_samplerStateContainer.emplace_back(ShaderStage::kAll, SamplerState(i));
@@ -5929,8 +5954,8 @@ void RenderContext::RenderGraph::Setupper::ExtractModelDescription
 ========================================
 #pragma once
 #include "../RenderGraph.h"
+#include "../../../../Resource/Model/ModelStructure/ModelDescription/ModelDescription.h"
 
-struct ModelDescription;
 class Model;
 
 class RenderContext::RenderGraph::Setupper
@@ -5946,23 +5971,81 @@ class RenderContext::RenderGraph::Setupper
 	);
 
 	//グラフィックス用のルートシグの生成
-	static [[nodiscard]] ID3D12RootSignature* CreateGraphicsRootSig(RootSignatureContextDiplomat& rootSignatureContextDiplomat_);
+	static [[nodiscard]] ID3D12RootSignature* CreateGraphicsRootSig
+	(
+		NexusFieldProof proof_,
+		RootSignatureContextDiplomat& rootSignatureContextDiplomat_
+	);
 
 	//全ての存在せねばならんPSOを生成
-	static void CreateAllGraphicsPSO(PSO_PoolDispatcher& psoDispatcher_,ModelContextDiplomat& modelContextDiplomat_);
+	static void CreateAllGraphicsPSO
+	(
+		NexusFieldProof proof_,
+		PSO_PoolDispatcher& psoDispatcher_,
+		RenderPassContainer& passContainer_,
+		ModelContextDiplomat& modelContextDiplomat_
+	);
 
 
 	//以下ヘルパー
 private:
 	
 	//全モデルデータを受け取ってそのモデルデータのRenderStateのベクタを取り出す
-	static void ExtractModelDescription
-	(
-		std::vector<ModelDescription const*>& dst_,
-		const std::vector<std::unique_ptr<Model>>* modelData_
-	);
+	static std::vector<ModelDescription::RenderState> 
+		CollectAllRenderStates(const std::vector<std::unique_ptr<Model>>* modelData_);
+
+	//全PassからRenderPassComponentの情報を収集する
+	static std::unordered_map < RenderPassComponent::Pass, RenderContext::RenderPassState>
+		CollectAllRenderPassStates(NexusFieldProof proof_, RenderPassContainer& passContainer_);
 
 };
+
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Render\RenderPass\RenderPassComponent.h ===
+========================================
+#pragma once
+
+namespace RenderPassComponent  
+{
+	///RenderPathを構成する各ステージ
+    ///PSOを一意に決定するため、Pass生成でクラスを紐づけるために利用
+    ///これにバッファの情報から深度テスト方法などの情報が詰まってるといっていい
+	enum class Pass
+	{
+		kSceneTextureCreatorOpaque,
+        kSceneTextureCompositor
+		
+		
+		,kCount,
+        kEnd
+	};
+
+    enum class DepthEnable
+    {
+        kDisable,
+        kEnable
+        , kCount
+    };
+
+    enum class DepthTest
+    {
+        kLessEqual,
+        kGreaterEqual
+        , kCount
+    };
+
+    inline D3D12_COMPARISON_FUNC Convert(DepthTest depthTest_)
+    {
+        return (depthTest_ == DepthTest::kGreaterEqual) ? D3D12_COMPARISON_FUNC_GREATER_EQUAL : D3D12_COMPARISON_FUNC_LESS_EQUAL;
+    }
+
+
+
+}
 
 
 
@@ -6011,11 +6094,8 @@ using AllPassTypes = std::tuple<SceneTextureCreatorOpaque, SceneTextureComposito
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Render\RenderPass\AllRenderPass\AllPassInclude.h ===
 ========================================
 #pragma once
-
 #include "SceneTextureCreatorOpaque/SceneTextureCreatorOpaque.h"
 #include "SceneTextureCompositor/SceneTextureCompositor.h"
-
-
 
 
 
@@ -6033,12 +6113,12 @@ using AllPassUnique = std::tuple
 ========================================
 #include "PreCompileHeader.h"
 #include "RenderPassBehavior.h"
+#include "RenderPassTraits.h"
 
-
-RenderContext::PassBehavior::PassBehavior(NexusFieldProof proof_, const RenderContext::PassDesc& desc_)
-	:desc(desc_)
+RenderContext::PassBehavior::PassBehavior(NexusFieldProof proof_, const RenderContext::PassDesc& desc_, RenderPassComponent::Pass pass_)
+	:desc(desc_), pass(pass_)
 {
-
+	
 }
 
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -6054,63 +6134,23 @@ RenderContext::PassBehavior::PassBehavior(NexusFieldProof proof_, const RenderCo
 #include "../../RenderContext.h"
 #include "../PassDesc/PassDesc.h"
 
+
 class RenderContext::PassBehavior
 {
 public:
-	PassBehavior(NexusFieldProof proof_, const RenderContext::PassDesc& desc_);
+	PassBehavior(NexusFieldProof proof_, const PassDesc& desc_,RenderPassComponent::Pass pass_);
 	virtual ~PassBehavior() = default;
+
+	PassDesc const& WatchDesc() const { return desc; }
 
 
 protected:
 
-	RenderContext::PassDesc desc;
+	//PSO特定のためにもっておく。PassDescの簡略キーみたいな。
+	RenderPassComponent::Pass pass;
 
+	PassDesc desc;
 };
-
-
-
-
-
-========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Render\RenderPass\AllRenderPass\RenderPassComponent.h ===
-========================================
-#pragma once
-
-namespace RenderPassComponent  
-{
-	///RenderPathを構成する各ステージ
-	enum class Pass
-	{
-		kSceneTextureCreatorOpaque,
-        kSceneTextureCompositor
-		
-		
-		,kCount,
-        kEnd
-	};
-
-    enum class DepthEnable
-    {
-        kDisable,
-        kEnable
-        , kCount
-    };
-
-    enum class DepthTest
-    {
-        kLessEqual,
-        kGreaterEqual
-        , kCount
-    };
-
-    inline D3D12_COMPARISON_FUNC Convert(DepthTest depthTest_)
-    {
-        return (depthTest_ == DepthTest::kGreaterEqual) ? D3D12_COMPARISON_FUNC_GREATER_EQUAL : D3D12_COMPARISON_FUNC_LESS_EQUAL;
-    }
-
-
-
-}
 
 
 
@@ -6121,7 +6161,7 @@ namespace RenderPassComponent
 ========================================
 #pragma once
 #include "AllPassFwd.h"
-#include "RenderPassComponent.h"
+#include "../RenderPassComponent.h"
 
 namespace RenderPassTraits
 {
@@ -6199,9 +6239,9 @@ namespace RenderPassTraits
 1.クラスの定義
 2.一括前方宣言ファイルに追記
 3.一括インクルードファイルに追記
-4.RenderPassTraitsに追記
-5.jsonファイルにデータを追記
-6.必要であればRenderStateようのPassに追記
+4.RenderPassComponentに追記、必要であればRenderStateようのPassにも追記
+5.RenderPassTraitsに追記
+6.jsonファイルにデータを追記
 
 多すぎて覚醒しそう
 
@@ -6214,8 +6254,8 @@ namespace RenderPassTraits
 #include "SceneTextureCompositor.h"
 #include "../../PassDesc/PassDesc.h"
 
-SceneTextureCompositor::SceneTextureCompositor(RenderContext::NexusFieldProof proof_, const RenderContext::PassDesc& desc_)
-	:RenderContext::PassBehavior(proof_, desc_)
+SceneTextureCompositor::SceneTextureCompositor(RenderContext::NexusFieldProof proof_, const RenderContext::PassDesc& desc_, RenderPassComponent::Pass pass_)
+	:RenderContext::PassBehavior(proof_, desc_,pass_)
 {
 
 }
@@ -6234,7 +6274,7 @@ class SceneTextureCompositor :public RenderContext::PassBehavior
 {
 public:
 
-	SceneTextureCompositor(RenderContext::NexusFieldProof proof_, const RenderContext::PassDesc& desc_);
+	SceneTextureCompositor(RenderContext::NexusFieldProof proof_, const RenderContext::PassDesc& desc_, RenderPassComponent::Pass pass_);
 
 private:
 
@@ -6253,8 +6293,8 @@ private:
 #include "SceneTextureCreatorOpaque.h"
 #include "../../PassDesc/PassDesc.h"
 
-SceneTextureCreatorOpaque::SceneTextureCreatorOpaque(RenderContext::NexusFieldProof proof_ , const RenderContext::PassDesc& desc_)
-	:RenderContext::PassBehavior(proof_,desc_)
+SceneTextureCreatorOpaque::SceneTextureCreatorOpaque(RenderContext::NexusFieldProof proof_ , const RenderContext::PassDesc& desc_, RenderPassComponent::Pass pass_)
+	:RenderContext::PassBehavior(proof_,desc_,pass_)
 {
 
 }
@@ -6272,7 +6312,7 @@ class SceneTextureCreatorOpaque :public RenderContext::PassBehavior
 {
 public:
 
-	SceneTextureCreatorOpaque(RenderContext::NexusFieldProof proof_, const RenderContext::PassDesc& desc_);
+	SceneTextureCreatorOpaque(RenderContext::NexusFieldProof proof_, const RenderContext::PassDesc& desc_, RenderPassComponent::Pass pass_);
 
 private:
 
@@ -6313,7 +6353,7 @@ struct RenderContext::RequiredBufferInfo
 		DXGI_FORMAT dsvFormat;
 		DXGI_FORMAT srvFormat;
 		float clearDepth{};
-		float clearStencil{};
+		int clearStencil{};
 		uint32_t width{};
 		uint32_t height{};
 		ProjectConfig::Render::NumBuffer numBuffer{};
@@ -6354,15 +6394,48 @@ namespace
 	std::string const fileName = "PassDesc.cpp";
 }
 
-RenderContext::PassDesc::PassDesc(const PassRequiredInfo& info_)
-	:info(info_)
+RenderContext::PassDesc::PassDesc
+(
+	RenderPassComponent::DepthTest depthTest_,
+	RenderPassComponent::DepthEnable depthEnable_,
+	std::vector<RenderContext::RequiredBufferInfo::ColorBuffer> colorBuffersInfo_,
+	std::optional<RenderContext::RequiredBufferInfo::DepthStencilBuffer> depthStencilBufferInfo_
+):colorBuffersInfo(colorBuffersInfo_), depthStencilBufferInfo(depthStencilBufferInfo_)
 {
+	renderPassState.depthTest = depthTest_;
+	renderPassState.depthEnable = depthEnable_;
+}
 
+bool RenderContext::PassDesc::DoesDepthStencilBufferInfoContains()const
+{
+	return depthStencilBufferInfo.has_value() ? 1 : 0;
 }
 
 
+void RenderContext::PassDesc::SetColorBufferUniqueID(BufferUniqueID id_, size_t index_)
+{
+	colorBuffersInfo[index_].bufferID = id_;
+}
 
+void RenderContext::PassDesc::SetDepthStencilBufferUniqueID(BufferUniqueID id_)
+{
+	depthStencilBufferInfo->bufferID = id_;
+}
 
+std::vector<RenderContext::RequiredBufferInfo::ColorBuffer> const& RenderContext::PassDesc::WatchColorBuffersInfo()const
+{
+	return colorBuffersInfo;
+}
+
+std::optional<RenderContext::RequiredBufferInfo::DepthStencilBuffer> const& RenderContext::PassDesc::WatchDepthStencilBufferInfo()const
+{
+	return depthStencilBufferInfo;
+}
+
+RenderContext::RenderPassState const& RenderContext::PassDesc::WatchRenderPassState()const
+{
+	return renderPassState;
+}
 
 
 
@@ -6372,56 +6445,32 @@ RenderContext::PassDesc::PassDesc(const PassRequiredInfo& info_)
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Render\RenderPass\PassDesc\PassDesc.h ===
 ========================================
 #pragma once
-#include "PassRequiredInfo.h"
-
-class RenderContext::PassDesc
-{
-public:
-
-	PassDesc(const PassRequiredInfo& info_);
-
-
-private:
-
-	PassRequiredInfo info;
-
-};
-
-
-
-
-
-========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Render\RenderPass\PassDesc\PassRequiredInfo.h ===
-========================================
-#pragma once
 #include "BufferRequiredInfo.h"
-#include "../AllRenderPass/RenderPassComponent.h"
+#include "RenderPassState.h"
 
-//jsonファイルに登録時のキー
-struct PassRequiredInfo
+struct RenderContext::PassDesc
 {
 private:
 
 	struct DataKeyString
 	{
-		std::string const kColorFormatI =		"colorFormat";
-		std::string const kClearColorV4 =		"clearColor";
-		std::string const kColorWidthI =		"colorWidth";
-		std::string const kColorHeightI =		"colorHeight";
-		std::string const kNumBuffer_colorI =	"numBuffer_Color";
+		std::string const kColorFormatI = "colorFormat";
+		std::string const kClearColorV4 = "clearColor";
+		std::string const kColorWidthI = "colorWidth";
+		std::string const kColorHeightI = "colorHeight";
+		std::string const kNumBuffer_colorI = "numBuffer_Color";
 
-		std::string const kUseDepthStenciB =	"useDepthStencil";
-		std::string const kDsvFormatI =			"dsvFormat";
-		std::string const kSrvFormatI =			"srvFormat";
-		std::string const kClearDepthF =		"clearDepth";
-		std::string const kClearStencilF =		"clearStencil";
-		std::string const kDepthWidthI =		"depthWidth";
-		std::string const kDepthHeightI =		"depthHeight";
-		std::string const kNumBuffer_depthI =   "numBuffer_Depth";
+		std::string const kUseDepthStenciB = "useDepthStencil";
+		std::string const kDsvFormatI = "dsvFormat";
+		std::string const kSrvFormatI = "srvFormat";
+		std::string const kClearDepthF = "clearDepth";
+		std::string const kClearStencilI = "clearStencil";
+		std::string const kDepthWidthI = "depthWidth";
+		std::string const kDepthHeightI = "depthHeight";
+		std::string const kNumBuffer_depthI = "numBuffer_Depth";
 
-		std::string const kDepthTestI =			"depthTest";
-		std::string const kDepthEnableB =		"depthEnable";
+		std::string const kDepthTestI = "depthTest";
+		std::string const kDepthEnableB = "depthEnable";
 
 	};
 
@@ -6429,13 +6478,53 @@ public:
 
 	static inline DataKeyString dataKeyString;
 
-	RenderPassComponent::DepthTest depthTest;
-	RenderPassComponent::DepthEnable depthEnable;
+	PassDesc
+	(
+		RenderPassComponent::DepthTest depthTest_,
+		RenderPassComponent::DepthEnable depthEnable_,
+		std::vector<RenderContext::RequiredBufferInfo::ColorBuffer> colorBuffersInfo_,
+		std::optional<RenderContext::RequiredBufferInfo::DepthStencilBuffer> depthStencilBufferInfo_
+	);
+
+	
+	RenderPassState const& WatchRenderPassState()const;
+	std::vector<RenderContext::RequiredBufferInfo::ColorBuffer> const& WatchColorBuffersInfo()const;
+	std::optional<RenderContext::RequiredBufferInfo::DepthStencilBuffer> const& WatchDepthStencilBufferInfo()const;
+
+	bool DoesDepthStencilBufferInfoContains()const;
+
+	void SetColorBufferUniqueID(BufferUniqueID id_, size_t index_);
+	void SetDepthStencilBufferUniqueID(BufferUniqueID id_);
+
+private:
+
+	//renderPassComponentの塊
+	RenderPassState renderPassState;
+
+	//必要なバッファの情報
 	std::vector<RenderContext::RequiredBufferInfo::ColorBuffer> colorBuffersInfo;
 	std::optional<RenderContext::RequiredBufferInfo::DepthStencilBuffer> depthStencilBufferInfo;
 
+
 };
 
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Render\RenderPass\PassDesc\RenderPassState.h ===
+========================================
+#pragma once
+#include "../RenderPassComponent.h"
+#include "../../RenderContext.h"
+
+struct RenderContext::RenderPassState
+{
+	RenderPassComponent::DepthTest depthTest = RenderPassComponent::DepthTest::kGreaterEqual;
+	RenderPassComponent::DepthEnable depthEnable = RenderPassComponent::DepthEnable::kEnable;
+
+};
 
 
 
@@ -6451,6 +6540,12 @@ RenderContext::RenderPassContainer::RenderPassContainer(NexusFieldProof proof_)
 
 }
 
+std::unordered_map<RenderPassComponent::Pass, RenderContext::PassBehavior*> const& 
+RenderContext::RenderPassContainer::AccessAllPassPtrMap(NexusFieldProof proof_)const
+{
+	return allPassPtrMap;
+}
+
 
 
 
@@ -6459,7 +6554,10 @@ RenderContext::RenderPassContainer::RenderPassContainer(NexusFieldProof proof_)
 ========================================
 #pragma once
 #include "../../RenderContext.h"
+#include "../AllRenderPass/AllPassFwd.h"
 #include "../AllRenderPass/AllPassInclude.h"
+#include "../AllRenderPass/RenderPassTraits.h"
+
 
 class RenderContext::RenderPassContainer
 {
@@ -6476,6 +6574,8 @@ public:
 	)
 	{
 		auto* passPtr = pass_.get();
+		allPassPtrMap[RenderPassTraits::PassClassTraits<PassType>::passEnum] = passPtr;
+
 		std::get<std::unique_ptr<PassType>>(allPassUnique) = std::move(pass_);
 
 		return passPtr;
@@ -6483,16 +6583,19 @@ public:
 
 	//被った時に渡す用
 	template<typename PassType>
-	PassType* Export(NexusFieldProof proof_)
+	PassType* Export(NexusFieldProof proof_)const
 	{
-		return std::get<std::unique_ptr<PassType>>(allPassUnique).get() ?
+		return std::get<std::unique_ptr<PassType>>(allPassUnique) ? 
 			std::get<std::unique_ptr<PassType>>(allPassUnique).get() : nullptr;
 	}
 
+	//RenderGraphさんに全てのパスの情報を渡してPSOを作ってもらう
+	std::unordered_map<RenderPassComponent::Pass,PassBehavior*> const& AccessAllPassPtrMap(NexusFieldProof proof_)const;
 
 private:
 
 	AllPassUnique allPassUnique;
+	std::unordered_map<RenderPassComponent::Pass, PassBehavior*> allPassPtrMap;
 };
 
 
@@ -6535,11 +6638,11 @@ BufferContext::BufferCreator* RenderContext::RenderPassCreator::BorrowBufferCrea
 RenderContext::PassDesc RenderContext::RenderPassCreator::CreateDesc(std::string const passName_, BufferContext::BufferCreator* bufferCreator_)
 {
 	//パスのセッティングを読み込む
-	PassRequiredInfo passRequiredInfo = PassSettingsLoader::Load(passName_);
+	PassDesc desc = PassSettingsLoader::Load(passName_);
 	//その設定をもとにバッファを作成しそのユニークをディスクに記録
-	PassBufferCreator::CreateBuffer(passName_, passRequiredInfo, bufferCreator_);
+	PassBufferCreator::CreateBuffer(passName_, desc, bufferCreator_);
 
-	return PassDesc(passRequiredInfo);
+	return desc;
 
 }
 
@@ -6553,6 +6656,7 @@ RenderContext::PassDesc RenderContext::RenderPassCreator::CreateDesc(std::string
 #include "../../RenderContext.h"
 #include "../PassDesc/PassDesc.h"
 #include "../RenderPassContainer/RenderPassContainer.h"
+#include "../AllRenderPass/RenderPassTraits.h"
 
 //外部
 #include "../../../Resource/Buffer/BufferContext.h"
@@ -6599,7 +6703,11 @@ private:
 	template<typename PassType>
 	PassType* InstantiatePass(NexusFieldProof proof_, PassDesc desc_)
 	{
-		return passContainer->Import(proof_, std::move(std::make_unique<PassType>(proof_, std::move(desc_))));
+		return passContainer->Import
+		(
+			proof_, 
+			std::move(std::make_unique<PassType>(proof_, std::move(desc_), RenderPassTraits::PassClassTraits<PassType>::passEnum))
+		);
 	}
 
 	//bufferCreatorを借りる
@@ -6618,7 +6726,6 @@ private:
 ========================================
 #include "PreCompileHeader.h"
 #include "PassBufferCreator.h"
-#include "../../PassDesc/PassRequiredInfo.h"
 
 
 //外部
@@ -6630,36 +6737,38 @@ private:
 void RenderContext::RenderPassCreator::PassBufferCreator::CreateBuffer
 (
 	std::string const passName_,
-	PassRequiredInfo& info,
+	PassDesc& desc_,
 	BufferContext::BufferCreator* creator_
 )
 {
-	auto const numColorBufferRequired = info.colorBuffersInfo.size();
+	auto const& colorBuffersInfo = desc_.WatchColorBuffersInfo();
+	auto const numColorBufferRequired = colorBuffersInfo.size();
 
 	std::vector<ColorBufferDescription> colorBufferDescs;
 	for (size_t i = 0;i < numColorBufferRequired;++i)
 	{
-		auto& tmp = info.colorBuffersInfo[i];
+		auto const& tmp = colorBuffersInfo[i];
 		ColorBufferDescription colorBufferDesc(tmp.clearColor, tmp.width, tmp.height, tmp.format, tmp.numBuffer);
 		
-		tmp.bufferID = creator_->CreateWithBuffer(colorBufferDesc, passName_ + "[" + std::to_string(i) + "]").first;
+		desc_.SetColorBufferUniqueID(creator_->CreateWithBuffer(colorBufferDesc, passName_ + "[" + std::to_string(i) + "]").first, i);
 	}
 
-	if (info.depthStencilBufferInfo.has_value())
+	if (desc_.DoesDepthStencilBufferInfoContains())
 	{
-		auto& tmp = info.depthStencilBufferInfo;
+		auto const& tmp = desc_.WatchDepthStencilBufferInfo();
 
 		DepthStencilBufferDescription desc
 		(
 			tmp->width,
 			tmp->height,
 			tmp->clearDepth,
+			tmp->clearStencil,
 			tmp->dsvFormat,
 			tmp->srvFormat,
 			tmp->numBuffer
 		);
 
-		tmp->bufferID = creator_->CreateWithBuffer(desc, passName_).first;
+		desc_.SetDepthStencilBufferUniqueID(creator_->CreateWithBuffer(desc, passName_).first);
 	}
 
 }
@@ -6674,8 +6783,6 @@ void RenderContext::RenderPassCreator::PassBufferCreator::CreateBuffer
 #include "../RenderPassCreator.h"
 #include "../../../../Resource/Buffer/BufferContext.h"
 
-struct PassRequiredInfo;
-
 class RenderContext::RenderPassCreator::PassBufferCreator
 {
 	friend class RenderPassCreator;
@@ -6683,7 +6790,7 @@ class RenderContext::RenderPassCreator::PassBufferCreator
 	static void CreateBuffer
 	(
 		std::string const passName_,
-		PassRequiredInfo& info, 
+		PassDesc& desc_,
 		BufferContext::BufferCreator* creator_
 	);
 };
@@ -6708,24 +6815,21 @@ namespace
 }
 
 
-[[nodiscard]] PassRequiredInfo RenderContext::RenderPassCreator::PassSettingsLoader::Load(std::string const passName_)
+[[nodiscard]] RenderContext::PassDesc RenderContext::RenderPassCreator::PassSettingsLoader::Load(std::string const passName_)
 {
-	PassRequiredInfo info;
-
 	std::string const srcJsonFileName = "RenderPassSettings";
 	
-	//カラーバッファの設定情報
-	info.colorBuffersInfo= ParseColorBufferInfo(passName_, srcJsonFileName);
-	//深度ステンシルバッファの設定情報
-	info.depthStencilBufferInfo = ParseDepthStencilBufferInfo(passName_, srcJsonFileName);
-
-	///未分類（いつかリファクタ）
 	auto* miyajison = Miyajison::Get();
-	info.depthTest = DepthTest(miyajison->LoadData<int>(srcJsonFileName, { passName_,PassRequiredInfo::dataKeyString.kDepthTestI }));
-	info.depthEnable = DepthEnable(miyajison->LoadData<bool>(srcJsonFileName, { passName_,PassRequiredInfo::dataKeyString.kDepthEnableB }));
 
+	PassDesc desc
+	(
+		DepthTest(miyajison->LoadData<int>(srcJsonFileName, { passName_,PassDesc::dataKeyString.kDepthTestI })),
+		DepthEnable(miyajison->LoadData<bool>(srcJsonFileName, { passName_,PassDesc::dataKeyString.kDepthEnableB })),
+		ParseColorBufferInfo(passName_, srcJsonFileName),
+		ParseDepthStencilBufferInfo(passName_, srcJsonFileName)
+	);
 
-	return info;
+	return desc;
 }
 
 std::vector<RenderContext::RequiredBufferInfo::ColorBuffer> RenderContext::RenderPassCreator::PassSettingsLoader::ParseColorBufferInfo
@@ -6740,23 +6844,23 @@ std::vector<RenderContext::RequiredBufferInfo::ColorBuffer> RenderContext::Rende
 
 	//カラーバッファのフォーマット。以降、こいつの数といくつかのパラメーターは同期している前提で進める
 	auto const colorBufferFormats = 
-		miyajison->LoadData<std::vector<int>>(jsonFileName_, { passName_,PassRequiredInfo::dataKeyString.kColorFormatI });
+		miyajison->LoadData<std::vector<int>>(jsonFileName_, { passName_,PassDesc::dataKeyString.kColorFormatI });
 	//カラーバッファの数
 	auto const numColorBuffers = colorBufferFormats.size();
 
 	//カラーバッファのクリアカラー
 	auto const clearColors = 
-		miyajison->LoadData<std::vector<std::vector<float>>>(jsonFileName_, { passName_,PassRequiredInfo::dataKeyString.kClearColorV4 });
+		miyajison->LoadData<std::vector<std::vector<float>>>(jsonFileName_, { passName_,PassDesc::dataKeyString.kClearColorV4 });
 
 	//カラーバッファの縦横
 	auto const widthContainer = 
-		miyajison->LoadData<std::vector<int>>(jsonFileName_, { passName_,PassRequiredInfo::dataKeyString.kColorWidthI });
+		miyajison->LoadData<std::vector<int>>(jsonFileName_, { passName_,PassDesc::dataKeyString.kColorWidthI });
 	auto const heightContainer =
-		miyajison->LoadData<std::vector<int>>(jsonFileName_, { passName_,PassRequiredInfo::dataKeyString.kColorHeightI });
+		miyajison->LoadData<std::vector<int>>(jsonFileName_, { passName_,PassDesc::dataKeyString.kColorHeightI });
 
 	//シングルかダブルか
 	auto const numBufferContainer =
-		miyajison->LoadData<std::vector<int>>(jsonFileName_, { passName_,PassRequiredInfo::dataKeyString.kNumBuffer_colorI });
+		miyajison->LoadData<std::vector<int>>(jsonFileName_, { passName_,PassDesc::dataKeyString.kNumBuffer_colorI });
 
 
 	//サイズの比が一致してるかチェック
@@ -6797,31 +6901,31 @@ std::optional<RenderContext::RequiredBufferInfo::DepthStencilBuffer> RenderConte
 	auto* miyajison = Miyajison::Get();
 
 	//深度バッファ使わんならしらん
-	if (!miyajison->LoadData<bool>(jsonFileName_, { passName_,PassRequiredInfo::dataKeyString.kUseDepthStenciB }))
+	if (!miyajison->LoadData<bool>(jsonFileName_, { passName_,PassDesc::dataKeyString.kUseDepthStenciB }))
 		return std::nullopt;
 
 	depthStencilBufferInfo.emplace();
 
 	depthStencilBufferInfo->dsvFormat = 
-		(DXGI_FORMAT)miyajison->LoadData<int>(jsonFileName_, { passName_,PassRequiredInfo::dataKeyString.kDsvFormatI});
+		(DXGI_FORMAT)miyajison->LoadData<int>(jsonFileName_, { passName_,PassDesc::dataKeyString.kDsvFormatI});
 
 	depthStencilBufferInfo->srvFormat = 
-		(DXGI_FORMAT)miyajison->LoadData<int>(jsonFileName_, { passName_,PassRequiredInfo::dataKeyString.kSrvFormatI });
+		(DXGI_FORMAT)miyajison->LoadData<int>(jsonFileName_, { passName_,PassDesc::dataKeyString.kSrvFormatI });
 
 	depthStencilBufferInfo->clearDepth =
-		miyajison->LoadData<float>(jsonFileName_, { passName_,PassRequiredInfo::dataKeyString.kClearDepthF });
+		miyajison->LoadData<float>(jsonFileName_, { passName_,PassDesc::dataKeyString.kClearDepthF });
 
 	depthStencilBufferInfo->clearStencil =
-		miyajison->LoadData<float>(jsonFileName_, { passName_,PassRequiredInfo::dataKeyString.kClearStencilF });
+		miyajison->LoadData<int>(jsonFileName_, { passName_,PassDesc::dataKeyString.kClearStencilI });
 
 	depthStencilBufferInfo->numBuffer = 
-		(NumBuffer)miyajison->LoadData<int>(jsonFileName_, { passName_,PassRequiredInfo::dataKeyString.kNumBuffer_depthI });
+		(NumBuffer)miyajison->LoadData<int>(jsonFileName_, { passName_,PassDesc::dataKeyString.kNumBuffer_depthI });
 
 
 	int const widthHeight[2] =
 	{
-		miyajison->LoadData<int>(jsonFileName_, { passName_,PassRequiredInfo::dataKeyString.kDepthWidthI }),
-		miyajison->LoadData<int>(jsonFileName_, { passName_,PassRequiredInfo::dataKeyString.kDepthHeightI})
+		miyajison->LoadData<int>(jsonFileName_, { passName_,PassDesc::dataKeyString.kDepthWidthI }),
+		miyajison->LoadData<int>(jsonFileName_, { passName_,PassDesc::dataKeyString.kDepthHeightI})
 	};
 
 	depthStencilBufferInfo->width = widthHeight[0] == -1 ? kWidth : widthHeight[0];
@@ -6839,15 +6943,18 @@ std::optional<RenderContext::RequiredBufferInfo::DepthStencilBuffer> RenderConte
 ========================================
 #pragma once
 #include "../RenderPassCreator.h"
-#include "../../PassDesc/PassRequiredInfo.h"
+#include "../../PassDesc/PassDesc.h"
 
 
 class RenderContext::RenderPassCreator::PassSettingsLoader
 {
 	friend class RenderPassCreator;
 
-	static [[nodiscard]] PassRequiredInfo Load(std::string const passName_);
+	static [[nodiscard]] PassDesc Load(std::string const passName_);
 
+
+	//以下ヘルパー
+private:
 	static std::vector<RenderContext::RequiredBufferInfo::ColorBuffer> ParseColorBufferInfo
 	(
 		std::string const passName_,
@@ -7061,7 +7168,7 @@ void RenderContext::RenderPathAssembler::AddPass
 #include "../../RenderContext.h"
 #include "../AllRenderPath/AllPathInclude.h"
 #include "../AllRenderPath/RenderPathName.h"
-#include "../../RenderPass/AllRenderPass/RenderPassComponent.h"
+#include "../../RenderPass/RenderPassComponent.h"
 #include "../RenderPathContainer/RenderPathContainer.h"
 
 class RenderContext::RenderPathAssembler
@@ -7289,113 +7396,6 @@ private:
 	std::vector<std::unique_ptr<PathBehavior>> container;
 };
 
-
-
-
-
-========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Render\ShaderTable\ShaderTable.cpp ===
-========================================
-#include "PreCompileHeader.h"
-#include "ShaderTable.h"
-
-
-namespace
-{
-	auto const fileName = "RenderPassBluePrint.cpp";
-}
-
-using namespace RenderPassBluePrint;
-using namespace ShaderPathComponent;
-using namespace RenderPassComponent ;
-
-
-template<>
-std::string ShaderTable::Watch
-(
-	MeshType meshType_,
-	Pass passType_
-)
-{
-	std::string shaderKey{};
-
-	switch (passType_)
-	{
-	case Pass::kCreateSceneTexture:
-
-		//if (meshType_ == MeshType::kTest) shaderKey = "TestMS";
-
-		break;
-
-	default:
-		ErrorMessageOutput::Assert::OutputError("シェーダーテーブルのパターンとして定義されていない(MS)", fileName);
-
-		break;
-	}
-
-	return shaderKey;
-}
-///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-template<>
-std::string ShaderTable::Watch
-(
-	MaterialType materialType_,
-	Pass passType_
-)
-{
-	std::string shaderKey{};
-
-	switch (passType_)
-	{
-	case Pass::kCreateSceneTexture:
-
-		//if (materialType_ == MaterialType::kTest) shaderKey = "TestPS";
-
-		break;
-
-	default:
-		ErrorMessageOutput::Assert::OutputError("シェーダーテーブルのパターンとして定義されていない(PS)", fileName);
-
-		break;
-	}
-
-	return shaderKey;
-}
-
-
-
-
-========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Render\ShaderTable\ShaderTable.h ===
-========================================
-#pragma once
-#include "../RenderPassBluePrint.h"
-
-
-
-//使用するシェーダーの名前をテーブルから読み取ります
-struct RenderPassBluePrint::ShaderTable
-{
-	template<typename ShaderComponent>
-	std::string Watch(ShaderComponent shaderComponent_, RenderPassComponent ::Pass passType_);
-
-};
-
-template<>
-std::string RenderPassBluePrint::ShaderTable::Watch
-(
-	ShaderPathComponent::MeshType meshType_,
-	RenderPassComponent ::Pass passType_
-);
-
-template<>
-std::string RenderPassBluePrint::ShaderTable::Watch
-(
-	ShaderPathComponent::MaterialType materialType_,
-	RenderPassComponent ::Pass passType_
-);
 
 
 
@@ -10561,6 +10561,7 @@ void ColorBufferDescription::CheckRequirementsFilled() const
 	if (param.width == 0)errorMess += "[width]";
 	if (param.height == 0)errorMess += "[height]";
 	if (param.format == DXGI_FORMAT_Error_Detection) errorMess += "[format]";
+	if (param.clearColor.size()!= 4)errorMess += "[color]";
 
 	ErrorMessageOutput::Assert::DetectError((errorMess.length() == 0), errorMess + "の情報が未設定です", "ColorBufferDescription.cpp");
 
@@ -10655,6 +10656,7 @@ private:
 
 	struct Param
 	{
+		//最初はarrayにしてたけどいろいろあって応急処置
 		std::vector<float> clearColor;
 		UINT width{};
 		UINT height{};
@@ -10955,7 +10957,8 @@ DepthStencilBufferDescription::DepthStencilBufferDescription
 (
 	UINT width_,
 	UINT height_,
-	FLOAT clearColor_,
+	FLOAT clearDepth_,
+	UINT8  clearStencil_,
 	DXGI_FORMAT dsvFormat_,
 	DXGI_FORMAT srvFormat_,
 	ProjectConfig::Render::NumBuffer numBuffer_
@@ -10963,7 +10966,8 @@ DepthStencilBufferDescription::DepthStencilBufferDescription
 {
 	param.width = width_;
 	param.height = height_;
-	param.clearColor = clearColor_;
+	param.clearDepth = clearDepth_;
+	param.clearStencil = clearStencil_;
 	param.dsvFormat = dsvFormat_;
 	param.srvFormat = srvFormat_;
 
@@ -10977,7 +10981,7 @@ void DepthStencilBufferDescription::CheckRequirementsFilled() const
 	if (param.height == 0)errorMess += "[height]";
 	if (param.srvFormat == DXGI_FORMAT_Error_Detection) errorMess += "[SRVformat]";
 	if (param.dsvFormat == DXGI_FORMAT_Error_Detection) errorMess += "[DSVformat]";
-	if ((param.clearColor != 1.0f) && (param.clearColor != 0.0f)) errorMess += "[clearColor]";
+	if ((param.clearDepth != 1.0f) && (param.clearDepth != 0.0f)) errorMess += "[clearColor]";
 
 	ErrorMessageOutput::Assert::DetectError((errorMess.length() == 0), errorMess + "の情報が未設定です", "DepthStencilBufferDescription.cpp");
 }
@@ -11053,9 +11057,9 @@ D3D12_CLEAR_VALUE DepthStencilBufferDescription::WatchClearValue() const
 {
 	D3D12_CLEAR_VALUE clearValue = {};
 
-	clearValue.DepthStencil.Depth = param.clearColor;
+	clearValue.DepthStencil.Depth = param.clearDepth;
 	clearValue.Format = param.dsvFormat;
-	clearValue.DepthStencil.Stencil = 0;
+	clearValue.DepthStencil.Stencil = param.clearStencil;
 
 	return clearValue;
 }
@@ -11099,7 +11103,8 @@ private:
 	{
 		UINT width{};
 		UINT height{};
-		FLOAT clearColor = -1.0f;
+		FLOAT clearDepth = -1.0f;
+		UINT8  clearStencil = 0;
 		DXGI_FORMAT dsvFormat = DXGI_FORMAT::DXGI_FORMAT_Error_Detection;
 		DXGI_FORMAT srvFormat = DXGI_FORMAT::DXGI_FORMAT_Error_Detection;
 
@@ -11111,7 +11116,8 @@ public:
 	(
 		UINT width_,
 		UINT height_,
-		FLOAT clearColor_,
+		FLOAT clearDepth_,
+		UINT8  clearStencil_,
 		DXGI_FORMAT dsvFormat_,
 		DXGI_FORMAT srvFormat_,
 		ProjectConfig::Render::NumBuffer numBuffer_ = ProjectConfig::Render::NumBuffer::kSingleBuffer
@@ -13199,7 +13205,7 @@ TestModelOKIBA::TestModelOKIBA(ModelContext::ModelCreator* modelCreator_)
 {
 	Logger::Log("TESTOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOO");
 
-	ModelDescription::RenderStates cP;
+	ModelDescription::RenderState cP;
 	cP.blendModes.emplace_back(BlendMode::kOpaque);
 	cP.passes |= RenderPass::kSceneTextureOpaque;
 
@@ -13207,20 +13213,20 @@ TestModelOKIBA::TestModelOKIBA(ModelContext::ModelCreator* modelCreator_)
 	cP.meshType = ShaderPathComponent::MeshType::kStatic;
 	cP.materialType = ShaderPathComponent::MaterialType::kStandard;
 
-	std::vector<ModelDescription::RenderStates> playerC;
+	std::vector<ModelDescription::RenderState> playerC;
 	playerC.emplace_back(std::move(cP));
 
 	player = modelCreator_->Create("PlayerObj", playerC,"Player");
 
 
-	ModelDescription::RenderStates cC;
+	ModelDescription::RenderState cC;
 	cC.blendModes.emplace_back(BlendMode::kOpaque);
 	cC.passes|= RenderPass::kSceneTextureOpaque;
 	cC.cullMode = CullMode::kBack;
 	cC.meshType = ShaderPathComponent::MeshType::kStatic;
 	cC.materialType = ShaderPathComponent::MaterialType::kStandard;
 
-	std::vector<ModelDescription::RenderStates> cubeC;
+	std::vector<ModelDescription::RenderState> cubeC;
 	cubeC.emplace_back(std::move(cC));
 
 	cube = modelCreator_->Create("CubeGltf", cubeC,"Cube");
@@ -13281,7 +13287,7 @@ ModelContext::ModelCreator::ModelCreator
 Model* ModelContext::ModelCreator::Create
 (
 	std::string modelFileName_,
-	const std::vector<ModelDescription::RenderStates>& modelRenderStates_,
+	const std::vector<ModelDescription::RenderState>& modelRenderStates_,
 	std::string modelName_
 )
 {
@@ -13336,7 +13342,7 @@ public:
 	Model* Create
 	(
 		std::string modelFileName_, 
-		const std::vector<ModelDescription::RenderStates>& modelRenderStates_,
+		const std::vector<ModelDescription::RenderState>& modelRenderStates_,
 		std::string modelName_ = "nameLess"
 	);
 
@@ -15729,9 +15735,9 @@ Model::Model(const ModelDescription& modelDesc_)
 	
 }
 
-std::string const& Model::WatchName()const
+std::string const Model::WatchName()const
 {
-	return modelDesc.modelName;
+	return modelDesc.WatchName();
 }
 
 
@@ -15748,11 +15754,11 @@ public:
 
 	Model(const ModelDescription& modelDesc_);
 
-	 std::string const& WatchName()const;
+	 std::string const WatchName()const;
 
-	const ModelDescription* WatchModelDesc()const
+	auto const& WatchRenderStates()const
 	{
-		return &modelDesc;
+		return modelDesc.WatchRenderStates();
 	}
 
 private:
@@ -15917,19 +15923,19 @@ ModelDescription::ModelDescription
 	std::vector<ModelDescription::Common> const& modelDescCommons_,
 	std::vector<ModelDescription::Unique> const& modelDescUniques_,
 	std::string modelName_,
-	std::vector<ModelDescription::RenderStates> const& modelDescRenderStates_
-) :modelDescCommons(modelDescCommons_), modelDescUniques(modelDescUniques_), modelName(modelName_), modelDescRenderStates(modelDescRenderStates_)
+	std::vector<ModelDescription::RenderState> const& modelDescRenderStates_
+) :commons(modelDescCommons_), uniques(modelDescUniques_), modelName(modelName_), renderStates(modelDescRenderStates_)
 {
 	//空チェック
 	ErrorMessageOutput::Assert::DetectError
 	(
-		(modelDescRenderStates.size() > 0 && modelDescUniques.size() > 0 && modelDescCommons.size() > 0),
+		(renderStates.size() > 0 && uniques.size() > 0 && commons.size() > 0),
 		modelName_ + "のDescのどれかが空だすね",
 		fileName
 	);
 
 	//renderStatesのチェック
-	for (auto const& state : modelDescRenderStates)
+	for (auto const& state : renderStates)
 	{
 		ErrorMessageOutput::Assert::DetectError
 		(
@@ -15942,7 +15948,7 @@ ModelDescription::ModelDescription
 	//ユニークと共通の比がおなじかチェックしておく
 	ErrorMessageOutput::Assert::DetectError
 	(
-		modelDescUniques.size() == modelDescCommons.size(),
+		uniques.size() == commons.size(),
 		"ユニークと共通のサイズが違う(おおかたエンジンのせい)",
 		fileName
 	);
@@ -15966,11 +15972,20 @@ ModelDescription::ModelDescription
 ///その後RenderStatesもセットする
 struct ModelDescription
 {
-
-	//コンストラクタで設置可能
-	struct RenderStates
+	//モデルクラスのコンストラクタで設置可能
+	struct RenderState
 	{
-		RenderStates()  = default;
+		RenderState() = default;
+
+		RenderState
+		(
+			std::vector<RenderStateComponent::BlendMode> blendModes,
+			RenderStateComponent::RenderPass passes_,
+			RenderStateComponent::CullMode cullMode_,
+			ShaderPathComponent::MeshType meshType_,
+			ShaderPathComponent::MaterialType materialType_
+		): blendModes(std::move(blendModes)),passes(passes),cullMode(cullMode),meshType(meshType),materialType(materialType)
+		{}
 
 		//ブレンドモード複数可
 		std::vector<RenderStateComponent::BlendMode> blendModes;
@@ -16010,16 +16025,21 @@ struct ModelDescription
 		std::vector<ModelDescription::Common> const& modelDescCommons_,
 		std::vector<ModelDescription::Unique> const& modelDescUniques_,
 		std::string modelName_,
-		std::vector<ModelDescription::RenderStates> const& modelDescRenderStates_
+		std::vector<ModelDescription::RenderState> const& modelDescRenderStates_
 	);
 
+	inline std::string const WatchName()const { return modelName; }
+	inline std::vector<ModelDescription::RenderState> const& WatchRenderStates()const { return renderStates; }
+
+private:
+
 	//ModelDescAssemblerに設定してもらう
-	std::vector<ModelDescription::Common> modelDescCommons;
-	std::vector<ModelDescription::Unique> modelDescUniques;
+	std::vector<ModelDescription::Common> commons;
+	std::vector<ModelDescription::Unique> uniques;
 
 	//これ以下は自分で決める
 	std::string modelName;
-	std::vector<ModelDescription::RenderStates> modelDescRenderStates;
+	std::vector<ModelDescription::RenderState> renderStates;
 
 };
 
@@ -16338,7 +16358,7 @@ private:
 ========================================
 #pragma once
 #include "../../../Render/RenderStateComponent.h"
-#include "../../../Render/RenderPass/AllRenderPass/RenderPassComponent.h"
+#include "../../../Render/RenderPass/RenderPassComponent.h"
 #include "../../../../External/d3dx12/d3dx12.h"
 
 namespace PipelineStateComponent
@@ -16640,8 +16660,8 @@ void PSO_Context::Assembler::Check
 	std::string errorMsg{};
 
 	if (!shaderSet_.meshShader) errorMsg += "[MeshShaderがぬるぽ]";
-	
-	if(renderTargetDesc_.blendModeContainer.size() != renderTargetDesc_.rtvFormatContainer.size())
+	if (renderTargetDesc_.rtvFormatContainer.size() > D3D12_SIMULTANEOUS_RENDER_TARGET_COUNT) errorMsg += "rtvが上限越え";
+	if (renderTargetDesc_.blendModeContainer.size() != renderTargetDesc_.rtvFormatContainer.size())
 		errorMsg += "[renderTargetDescの不備]";
 
 

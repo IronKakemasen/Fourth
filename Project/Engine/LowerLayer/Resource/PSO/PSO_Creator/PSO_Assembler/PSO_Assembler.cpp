@@ -139,8 +139,8 @@ void PSO_Context::Assembler::Check
 	std::string errorMsg{};
 
 	if (!shaderSet_.meshShader) errorMsg += "[MeshShaderがぬるぽ]";
-	
-	if(renderTargetDesc_.blendModeContainer.size() != renderTargetDesc_.rtvFormatContainer.size())
+	if (renderTargetDesc_.rtvFormatContainer.size() > D3D12_SIMULTANEOUS_RENDER_TARGET_COUNT) errorMsg += "rtvが上限越え";
+	if (renderTargetDesc_.blendModeContainer.size() != renderTargetDesc_.rtvFormatContainer.size())
 		errorMsg += "[renderTargetDescの不備]";
 
 
