@@ -2,8 +2,6 @@
 #include "../RenderPassCreator.h"
 #include "../../../../Resource/Buffer/BufferContext.h"
 
-struct PassRequiredInfo;
-
 class RenderContext::RenderPassCreator::PassBufferCreator
 {
 	friend class RenderPassCreator;
@@ -11,7 +9,7 @@ class RenderContext::RenderPassCreator::PassBufferCreator
 	static void CreateBuffer
 	(
 		std::string const passName_,
-		PassRequiredInfo& info, 
+		PassDesc& desc_,
 		BufferContext::BufferCreator* creator_
 	);
 };

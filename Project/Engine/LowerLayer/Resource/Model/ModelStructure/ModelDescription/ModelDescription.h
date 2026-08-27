@@ -9,11 +9,20 @@
 ///その後RenderStatesもセットする
 struct ModelDescription
 {
-
-	//コンストラクタで設置可能
-	struct RenderStates
+	//モデルクラスのコンストラクタで設置可能
+	struct RenderState
 	{
-		RenderStates()  = default;
+		RenderState() = default;
+
+		RenderState
+		(
+			std::vector<RenderStateComponent::BlendMode> blendModes,
+			RenderStateComponent::RenderPass passes_,
+			RenderStateComponent::CullMode cullMode_,
+			ShaderPathComponent::MeshType meshType_,
+			ShaderPathComponent::MaterialType materialType_
+		): blendModes(std::move(blendModes)),passes(passes),cullMode(cullMode),meshType(meshType),materialType(materialType)
+		{}
 
 		//ブレンドモード複数可
 		std::vector<RenderStateComponent::BlendMode> blendModes;
@@ -53,15 +62,20 @@ struct ModelDescription
 		std::vector<ModelDescription::Common> const& modelDescCommons_,
 		std::vector<ModelDescription::Unique> const& modelDescUniques_,
 		std::string modelName_,
-		std::vector<ModelDescription::RenderStates> const& modelDescRenderStates_
+		std::vector<ModelDescription::RenderState> const& modelDescRenderStates_
 	);
 
+	inline std::string const WatchName()const { return modelName; }
+	inline std::vector<ModelDescription::RenderState> const& WatchRenderStates()const { return renderStates; }
+
+private:
+
 	//ModelDescAssemblerに設定してもらう
-	std::vector<ModelDescription::Common> modelDescCommons;
-	std::vector<ModelDescription::Unique> modelDescUniques;
+	std::vector<ModelDescription::Common> commons;
+	std::vector<ModelDescription::Unique> uniques;
 
 	//これ以下は自分で決める
 	std::string modelName;
-	std::vector<ModelDescription::RenderStates> modelDescRenderStates;
+	std::vector<ModelDescription::RenderState> renderStates;
 
 };

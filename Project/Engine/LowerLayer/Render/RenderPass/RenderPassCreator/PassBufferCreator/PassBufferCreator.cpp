@@ -1,6 +1,5 @@
 #include "PreCompileHeader.h"
 #include "PassBufferCreator.h"
-#include "../../PassDesc/PassRequiredInfo.h"
 
 
 //外部
@@ -12,24 +11,25 @@
 void RenderContext::RenderPassCreator::PassBufferCreator::CreateBuffer
 (
 	std::string const passName_,
-	PassRequiredInfo& info,
+	PassDesc& desc_,
 	BufferContext::BufferCreator* creator_
 )
 {
-	auto const numColorBufferRequired = info.colorBuffersInfo.size();
+	auto const& colorBuffersInfo = desc_.WatchColorBuffersInfo();
+	auto const numColorBufferRequired = colorBuffersInfo.size();
 
 	std::vector<ColorBufferDescription> colorBufferDescs;
 	for (size_t i = 0;i < numColorBufferRequired;++i)
 	{
-		auto& tmp = info.colorBuffersInfo[i];
+		auto const& tmp = colorBuffersInfo[i];
 		ColorBufferDescription colorBufferDesc(tmp.clearColor, tmp.width, tmp.height, tmp.format, tmp.numBuffer);
 		
-		tmp.bufferID = creator_->CreateWithBuffer(colorBufferDesc, passName_ + "[" + std::to_string(i) + "]").first;
+		desc_.SetColorBufferUniqueID(creator_->CreateWithBuffer(colorBufferDesc, passName_ + "[" + std::to_string(i) + "]").first, i);
 	}
 
-	if (info.depthStencilBufferInfo.has_value())
+	if (desc_.DoesDepthStencilBufferInfoContains())
 	{
-		auto& tmp = info.depthStencilBufferInfo;
+		auto const& tmp = desc_.WatchDepthStencilBufferInfo();
 
 		DepthStencilBufferDescription desc
 		(
@@ -41,7 +41,7 @@ void RenderContext::RenderPassCreator::PassBufferCreator::CreateBuffer
 			tmp->numBuffer
 		);
 
-		tmp->bufferID = creator_->CreateWithBuffer(desc, passName_).first;
+		desc_.SetDepthStencilBufferUniqueID(creator_->CreateWithBuffer(desc, passName_).first);
 	}
 
 }

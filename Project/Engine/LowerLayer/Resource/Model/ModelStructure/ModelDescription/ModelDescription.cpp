@@ -10,19 +10,19 @@ ModelDescription::ModelDescription
 	std::vector<ModelDescription::Common> const& modelDescCommons_,
 	std::vector<ModelDescription::Unique> const& modelDescUniques_,
 	std::string modelName_,
-	std::vector<ModelDescription::RenderStates> const& modelDescRenderStates_
-) :modelDescCommons(modelDescCommons_), modelDescUniques(modelDescUniques_), modelName(modelName_), modelDescRenderStates(modelDescRenderStates_)
+	std::vector<ModelDescription::RenderState> const& modelDescRenderStates_
+) :commons(modelDescCommons_), uniques(modelDescUniques_), modelName(modelName_), renderStates(modelDescRenderStates_)
 {
 	//空チェック
 	ErrorMessageOutput::Assert::DetectError
 	(
-		(modelDescRenderStates.size() > 0 && modelDescUniques.size() > 0 && modelDescCommons.size() > 0),
+		(renderStates.size() > 0 && uniques.size() > 0 && commons.size() > 0),
 		modelName_ + "のDescのどれかが空だすね",
 		fileName
 	);
 
 	//renderStatesのチェック
-	for (auto const& state : modelDescRenderStates)
+	for (auto const& state : renderStates)
 	{
 		ErrorMessageOutput::Assert::DetectError
 		(
@@ -35,7 +35,7 @@ ModelDescription::ModelDescription
 	//ユニークと共通の比がおなじかチェックしておく
 	ErrorMessageOutput::Assert::DetectError
 	(
-		modelDescUniques.size() == modelDescCommons.size(),
+		uniques.size() == commons.size(),
 		"ユニークと共通のサイズが違う(おおかたエンジンのせい)",
 		fileName
 	);

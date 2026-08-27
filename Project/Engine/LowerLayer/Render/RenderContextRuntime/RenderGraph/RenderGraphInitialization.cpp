@@ -6,6 +6,7 @@ void RenderContext::RenderGraph::Init
 	NexusFieldProof proof_,
 	RenderPathAssembler& pathAssembler_,
 	PSO_PoolDispatcher& psoDispatcher_,
+	RenderPassContainer& passContainer,
 	RootSignatureContextDiplomat& rootSignatureContextDiplomat_,
 	BufferContextDiplomat& bufferContextDiplomat_,
 	ModelContextDiplomat& modelContextDiplomat_
@@ -13,12 +14,12 @@ void RenderContext::RenderGraph::Init
 )
 {
 	//全てのPathを生成する
-	Setupper::InstantiateAllPath(proof_, pathAssembler_, bufferContextDiplomat_);
+	allPathPtr = Setupper::InstantiateAllPath(proof_, pathAssembler_, bufferContextDiplomat_);
 	
 	//ルートシグネチャの生成
-	graphicsRootSig = Setupper::CreateGraphicsRootSig(rootSignatureContextDiplomat_);
+	graphicsRootSig = Setupper::CreateGraphicsRootSig(proof_ , rootSignatureContextDiplomat_);
 
 	//存在しなければならない全てのPSOを生成
-	Setupper::CreateAllGraphicsPSO(psoDispatcher_, modelContextDiplomat_);
+	Setupper::CreateAllGraphicsPSO(proof_ , psoDispatcher_, passContainer,modelContextDiplomat_);
 
 }

@@ -15,8 +15,6 @@ class RenderContext::PSO_PoolDispatcher
 		return keyPackager->Pack
 		(
 			psoKey_.Get<GraphicsPSO_Key::Sequence::kPass>(),
-			psoKey_.Get<GraphicsPSO_Key::Sequence::kDepthEnable>(),
-			psoKey_.Get<GraphicsPSO_Key::Sequence::kDepthTest>(),
 			psoKey_.Get<GraphicsPSO_Key::Sequence::kMeshType>(),
 			psoKey_.Get<GraphicsPSO_Key::Sequence::kMaterialType>(),
 			psoKey_.Get<GraphicsPSO_Key::Sequence::kBlendMode>(),

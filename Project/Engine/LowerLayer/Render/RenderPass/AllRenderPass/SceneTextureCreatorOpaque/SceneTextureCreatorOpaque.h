@@ -5,7 +5,7 @@ class SceneTextureCreatorOpaque :public RenderContext::PassBehavior
 {
 public:
 
-	SceneTextureCreatorOpaque(RenderContext::NexusFieldProof proof_, const RenderContext::PassDesc& desc_);
+	SceneTextureCreatorOpaque(RenderContext::NexusFieldProof proof_, const RenderContext::PassDesc& desc_, RenderPassComponent::Pass pass_);
 
 private:
 

@@ -2,16 +2,21 @@
 #include "../../RenderContext.h"
 #include "../PassDesc/PassDesc.h"
 
+
 class RenderContext::PassBehavior
 {
 public:
-	PassBehavior(NexusFieldProof proof_, const RenderContext::PassDesc& desc_);
+	PassBehavior(NexusFieldProof proof_, const PassDesc& desc_,RenderPassComponent::Pass pass_);
 	virtual ~PassBehavior() = default;
+
+	PassDesc const& WatchDesc() const { return desc; }
 
 
 protected:
 
-	RenderContext::PassDesc desc;
+	//PSO特定のためにもっておく。PassDescの簡略キーみたいな。
+	RenderPassComponent::Pass pass;
 
+	PassDesc desc;
 };
 

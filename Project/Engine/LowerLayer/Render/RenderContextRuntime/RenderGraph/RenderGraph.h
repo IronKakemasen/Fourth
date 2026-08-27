@@ -14,6 +14,7 @@ public:
 		NexusFieldProof proof_,
 		RenderPathAssembler& pathAssembler_,
 		PSO_PoolDispatcher& psoDispatcher_,
+		RenderPassContainer& passContainer_,
 		RootSignatureContextDiplomat& rootSignatureContextDiplomat_,
 		BufferContextDiplomat& bufferContextDiplomat_,
 		ModelContextDiplomat& modelContextDiplomat_
@@ -27,6 +28,7 @@ private:
 		NexusFieldProof proof_,
 		RenderPathAssembler& pathAssembler_,
 		PSO_PoolDispatcher& psoDispatcher_,
+		RenderPassContainer& passContainer_,
 		RootSignatureContextDiplomat& rootSignatureContextDiplomat_,
 		BufferContextDiplomat& bufferContextDiplomat_,
 		ModelContextDiplomat& modelContextDiplomat_

@@ -4529,14 +4529,17 @@ LRESULT CALLBACK WindowContext::WndProc(HWND hWnd_, UINT msg_, WPARAM wParam_, L
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 void WindowContext::Finalize()
 {
+	if (setupParam.m_hWnd)
+	{
+		DestroyWindow(setupParam.m_hWnd);
+		setupParam.m_hWnd = nullptr;
+	}
+
 	//ウィンドウの登録を解除
 	if (setupParam.m_hInst)
 	{
 		UnregisterClass(setupParam.m_windowName, setupParam.m_hInst);
 	}
-
-	setupParam.m_hInst = nullptr;
-	setupParam.m_hWnd = nullptr;
 }
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -6917,7 +6920,7 @@ class RenderContext::PathBehavior
 public:
 
 	PathBehavior(NexusFieldProof proof_);
-	~PathBehavior() = default;
+	virtual ~PathBehavior() = default;
 
 	template<typename PassType>
 	void AddPass(NexusFieldProof proof_ , PassType* pass_)
@@ -11432,8 +11435,12 @@ D3D12_RESOURCE_STATES IColorBuffer::ResourceStateTable(Usage usage_)const
 ///+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 void IWritableCPU::Map(std::array<ID3D12Resource*, (UINT)ProjectConfig::Render::NumBuffer::kDoubleBuffer> resources_)
 {
-	resources_[0]->Map(0, nullptr, &mappedPtrs[0]);
-	resources_[1]->Map(0, nullptr, &mappedPtrs[1]);
+	HRESULT hr = resources_[0]->Map(0, nullptr, &mappedPtrs[0]);
+	ErrorMessageOutput::Assert::DetectError(SUCCEEDED(hr), "リソースのマッピングに失敗", "BufferInterface.cpp");
+	
+	hr = resources_[1]->Map(0, nullptr, &mappedPtrs[1]);
+	ErrorMessageOutput::Assert::DetectError(SUCCEEDED(hr), "リソースのマッピングに失敗", "BufferInterface.cpp");
+
 }
 
 ///+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -21138,6 +21145,7 @@ private:
     struct BitAndLocation
     {
         uint32_t shift{};
+        uint32_t bits{};
 
         inline void Init(uint32_t count_, uint32_t shift_)
         {
@@ -21153,7 +21161,6 @@ private:
 
     private:
 
-        uint32_t bits{};
 
         inline void CalcBitWidth(uint32_t count_) { bits = count_ <= 1 ? 1 : std::bit_width(count_ - 1); }
         inline void CalcShiftNum(uint32_t shift_) { shift = shift_; }
@@ -21200,6 +21207,13 @@ public:
         uint32_t packedKey{};
         for (size_t i = 0;i < sizeContainer;++i)
         {
+            //入力キー値が設定した値を超過してないかチェック
+            const auto& bitInfo = bitAndLocationContainer.at(i);
+            const uint32_t bits = bitInfo.bits;
+            //そのビット数で表現できる最大値
+            const uint32_t maxValue = (1u << bits) - 1;
+            ErrorMessageOutput::Assert::DetectError(keyArr[i] <= maxValue,"入力キー値が設定した値を超過", "KeyPackager.h");
+
             packedKey |= uint32_t(keyArr[i] << bitAndLocationContainer.at(i).shift);
         }
 

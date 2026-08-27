@@ -3,6 +3,7 @@
 namespace RenderPassComponent  
 {
 	///RenderPathを構成する各ステージ
+    ///PSOを一意に決定するため、Pass生成でクラスを紐づけるために利用
 	enum class Pass
 	{
 		kSceneTextureCreatorOpaque,

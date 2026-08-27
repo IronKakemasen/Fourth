@@ -1232,9 +1232,6 @@
     <ClInclude Include="Engine\LowerLayer\Render\RenderPass\AllRenderPass\AllPassInclude.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\LowerLayer\Render\RenderPass\PassDesc\PassRequiredInfo.h">
-      <Filter>ヘッダー ファイル</Filter>
-    </ClInclude>
     <ClInclude Include="Engine\LowerLayer\Render\RenderPass\RenderPassCreator\RenderPassCreator.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
@@ -1262,7 +1259,7 @@
     <ClInclude Include="Engine\LowerLayer\Render\RenderPath\AllRenderPath\RenderPathName.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\LowerLayer\Render\RenderPass\AllRenderPass\RenderPassComponent.h">
+    <ClInclude Include="Engine\LowerLayer\Render\RenderPass\RenderPassComponent.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
     <ClInclude Include="Engine\LowerLayer\Render\RenderPass\AllRenderPass\RenderPassBehavior.h">
@@ -1299,6 +1296,9 @@
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
     <ClInclude Include="External\AI\PassCreationHelper\RenderPassFactoryTable.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\LowerLayer\Render\RenderPass\PassDesc\RenderPassState.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
   </ItemGroup>

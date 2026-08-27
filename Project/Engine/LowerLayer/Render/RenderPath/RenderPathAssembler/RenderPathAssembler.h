@@ -2,7 +2,7 @@
 #include "../../RenderContext.h"
 #include "../AllRenderPath/AllPathInclude.h"
 #include "../AllRenderPath/RenderPathName.h"
-#include "../../RenderPass/AllRenderPass/RenderPassComponent.h"
+#include "../../RenderPass/RenderPassComponent.h"
 #include "../RenderPathContainer/RenderPathContainer.h"
 
 class RenderContext::RenderPathAssembler

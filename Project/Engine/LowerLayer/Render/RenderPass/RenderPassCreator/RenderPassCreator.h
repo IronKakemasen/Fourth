@@ -2,6 +2,7 @@
 #include "../../RenderContext.h"
 #include "../PassDesc/PassDesc.h"
 #include "../RenderPassContainer/RenderPassContainer.h"
+#include "../AllRenderPass/RenderPassTraits.h"
 
 //外部
 #include "../../../Resource/Buffer/BufferContext.h"
@@ -48,7 +49,11 @@ private:
 	template<typename PassType>
 	PassType* InstantiatePass(NexusFieldProof proof_, PassDesc desc_)
 	{
-		return passContainer->Import(proof_, std::move(std::make_unique<PassType>(proof_, std::move(desc_))));
+		return passContainer->Import
+		(
+			proof_, 
+			std::move(std::make_unique<PassType>(proof_, std::move(desc_), RenderPassTraits::PassClassTraits<PassType>::passEnum))
+		);
 	}
 
 	//bufferCreatorを借りる

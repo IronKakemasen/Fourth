@@ -1,5 +1,5 @@
 #pragma once
-#include "RenderPass/AllRenderPass/RenderPassComponent.h"
+#include "RenderPass/RenderPassComponent.h"
 
 namespace RenderStateComponent
 {

@@ -31,10 +31,10 @@ BufferContext::BufferCreator* RenderContext::RenderPassCreator::BorrowBufferCrea
 RenderContext::PassDesc RenderContext::RenderPassCreator::CreateDesc(std::string const passName_, BufferContext::BufferCreator* bufferCreator_)
 {
 	//パスのセッティングを読み込む
-	PassRequiredInfo passRequiredInfo = PassSettingsLoader::Load(passName_);
+	PassDesc desc = PassSettingsLoader::Load(passName_);
 	//その設定をもとにバッファを作成しそのユニークをディスクに記録
-	PassBufferCreator::CreateBuffer(passName_, passRequiredInfo, bufferCreator_);
+	PassBufferCreator::CreateBuffer(passName_, desc, bufferCreator_);
 
-	return PassDesc(passRequiredInfo);
+	return desc;
 
 }

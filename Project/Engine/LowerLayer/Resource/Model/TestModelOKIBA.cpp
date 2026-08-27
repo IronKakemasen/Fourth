@@ -13,7 +13,7 @@ TestModelOKIBA::TestModelOKIBA(ModelContext::ModelCreator* modelCreator_)
 {
 	Logger::Log("TESTOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOO");
 
-	ModelDescription::RenderStates cP;
+	ModelDescription::RenderState cP;
 	cP.blendModes.emplace_back(BlendMode::kOpaque);
 	cP.passes |= RenderPass::kSceneTextureOpaque;
 
@@ -21,20 +21,20 @@ TestModelOKIBA::TestModelOKIBA(ModelContext::ModelCreator* modelCreator_)
 	cP.meshType = ShaderPathComponent::MeshType::kStatic;
 	cP.materialType = ShaderPathComponent::MaterialType::kStandard;
 
-	std::vector<ModelDescription::RenderStates> playerC;
+	std::vector<ModelDescription::RenderState> playerC;
 	playerC.emplace_back(std::move(cP));
 
 	player = modelCreator_->Create("PlayerObj", playerC,"Player");
 
 
-	ModelDescription::RenderStates cC;
+	ModelDescription::RenderState cC;
 	cC.blendModes.emplace_back(BlendMode::kOpaque);
 	cC.passes|= RenderPass::kSceneTextureOpaque;
 	cC.cullMode = CullMode::kBack;
 	cC.meshType = ShaderPathComponent::MeshType::kStatic;
 	cC.materialType = ShaderPathComponent::MaterialType::kStandard;
 
-	std::vector<ModelDescription::RenderStates> cubeC;
+	std::vector<ModelDescription::RenderState> cubeC;
 	cubeC.emplace_back(std::move(cC));
 
 	cube = modelCreator_->Create("CubeGltf", cubeC,"Cube");

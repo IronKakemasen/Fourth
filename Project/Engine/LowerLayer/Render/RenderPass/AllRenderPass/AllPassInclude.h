@@ -1,9 +1,6 @@
 #pragma once
-
 #include "SceneTextureCreatorOpaque/SceneTextureCreatorOpaque.h"
 #include "SceneTextureCompositor/SceneTextureCompositor.h"
-
-
 
 
 
