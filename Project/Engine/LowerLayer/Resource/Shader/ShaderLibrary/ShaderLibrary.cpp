@@ -2,7 +2,7 @@
 #include "../ShaderLoader/ShaderCompiler/ShaderCompiler.h"
 
 #include <regex>
-#include <iostream>
+
 
 namespace
 {

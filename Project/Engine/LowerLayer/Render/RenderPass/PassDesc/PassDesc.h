@@ -52,6 +52,9 @@ public:
 
 private:
 
+	//オフスクリーンパスの場合、シェーダーファイルは1つに限定される
+	std::optional<std::pair<std::string, std::string >> ms_psFileName;
+
 	//renderPassComponentの塊
 	RenderPassState renderPassState;
 

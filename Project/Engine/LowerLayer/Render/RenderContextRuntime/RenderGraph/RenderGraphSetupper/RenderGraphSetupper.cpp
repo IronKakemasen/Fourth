@@ -60,6 +60,9 @@ void RenderContext::RenderGraph::Setupper::CreateAllGraphicsPSO
 	//全renderPassのRenderPassStatesを集計
 	std::unordered_map < RenderPassComponent::Pass, RenderContext::RenderPassState> allRenderPassStates =
 		CollectAllRenderPassStates(proof_, passContainer_);
+
+	///これら二つのデータの塊からPSOを生成していく
+	
 }
 
 std::vector<ModelDescription::RenderState> RenderContext::RenderGraph::Setupper::CollectAllRenderStates

@@ -485,7 +485,7 @@
     <ClInclude Include="Engine\LowerLayer\Debug\ErrorMessageOutput\ErrorMessageOutput.h" />
     <ClInclude Include="Engine\LowerLayer\Resource\Buffer\BufferDefinition\ResourceBarrier.h" />
     <ClInclude Include="Engine\LowerLayer\Render\RenderStateComponent.h" />
-    <ClInclude Include="Engine\LowerLayer\Render\RenderPass\ShaderPathComponent.h" />
+    <ClInclude Include="Engine\LowerLayer\Resource\Shader\ShaderPathComponent.h" />
     <ClInclude Include="Engine\LowerLayer\Resource\RootSignature\RootSignatureCreator\RootSignatureAssembler\RootSignatureLayoutComponent.h" />
     <ClInclude Include="Engine\MiddleLayer\kara.h" />
     <ClInclude Include="Engine\ProjectConfig.h" />

@@ -1,1 +1,2 @@
-﻿key: "StaticMS" , value: "Assets/Shader/MS/"
+﻿key: "FullScreenMS" , value: "Assets/Shader/MS/"
+key: "StaticMS" , value: "Assets/Shader/MS/"

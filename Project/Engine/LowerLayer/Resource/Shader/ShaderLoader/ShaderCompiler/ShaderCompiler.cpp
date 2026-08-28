@@ -81,6 +81,10 @@ Microsoft::WRL::ComPtr<IDxcResult> ShaderContext::Compiler::Compile
 		//すべてのリソースがバインド済みとして最適化
 		arguments.emplace_back(L"-all-resources-bound");
 
+		//sharedフォルダーからインクルードする
+		arguments.emplace_back(L"-I");
+		arguments.emplace_back(L"Assets/Shared");
+
 		//外部から渡された追加引数を合流させる
 		for (auto const& arg : extraArguments_)
 		{

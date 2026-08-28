@@ -1,6 +1,6 @@
 #pragma once
 #include "../../../../Render/RenderStateComponent.h"
-#include "../../../../Render/RenderPass/ShaderPathComponent.h"
+#include "../../../../Resource/Shader/ShaderPathComponent.h"
 
 
 ///2回のフェーズに分けてモデルクラスのデータを埋めていく

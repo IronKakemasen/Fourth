@@ -1,28 +1,35 @@
-﻿# ========================================
+﻿# ==============================================================================
 # Generate Registry Files
-# ========================================
+# ==============================================================================
 
-if ($PSScriptRoot)
+# --- 1. プロジェクトルートフォルダ（Assetsが存在する階層）の自動検出 ---
+$currentDir = if ($PSScriptRoot) { $PSScriptRoot } else { (Get-Location).Path }
+$projectFolder = $currentDir
+
+while ($projectFolder -and -not (Test-Path (Join-Path $projectFolder "Assets")))
 {
-    $projectFolder = (Resolve-Path "$PSScriptRoot\..").Path
+    $parent = Split-Path -Path $projectFolder -Parent
+    if ($parent -eq $projectFolder) { break }
+    $projectFolder = $parent
 }
-else
+
+if (-not (Test-Path (Join-Path $projectFolder "Assets")))
 {
-    $projectFolder = (Get-Location).Path
+    $projectFolder = $currentDir
 }
 
+# パス定義
+$RegistryFolder     = Join-Path $projectFolder "Assets\Registry"
+$ShaderFolder       = Join-Path $projectFolder "Assets\Shader"
+$ModelFolder        = Join-Path $projectFolder "Assets\Model"
+$JsonFolder         = Join-Path $projectFolder "Assets\JsonFiles"
+$ShaderSettingsPath = Join-Path $projectFolder "Assets\JsonFiles\EngineCoreJsonFile\ShaderSettings.json"
 
-$RegistryFolder = Join-Path $projectFolder "Assets\Registry"
 
-$ShaderFolder = Join-Path $projectFolder "Assets\Shader"
-$ModelFolder  = Join-Path $projectFolder "Assets\Model"
-$JsonFolder   = Join-Path $projectFolder "Assets\JsonFiles"
-
-
-# Registryフォルダ作成
+# Registry フォルダ作成
 if (-not (Test-Path $RegistryFolder))
 {
-    New-Item -ItemType Directory -Path $RegistryFolder | Out-Null
+    New-Item -ItemType Directory -Path $RegistryFolder -Force | Out-Null
 }
 
 
@@ -35,47 +42,35 @@ $OutputFilePS = Join-Path $RegistryFolder "PSFiles.txt"
 $OutputFileMS = Join-Path $RegistryFolder "MSFiles.txt"
 $OutputFileCS = Join-Path $RegistryFolder "CSFiles.txt"
 
-
 $linesPS = @()
 $linesMS = @()
 $linesCS = @()
+
+$registeredShaderKeys = New-Object System.Collections.ArrayList
 
 
 if (Test-Path $ShaderFolder)
 {
     $baseUri = New-Object System.Uri ($projectFolder + "\")
-
-    $files = Get-ChildItem `
-        -Path $ShaderFolder `
-        -Recurse `
-        -File
-
+    $files   = Get-ChildItem -Path $ShaderFolder -Recurse -File
 
     foreach ($file in $files)
     {
         # hlsli除外
-        if ($file.Extension -eq ".hlsli")
+        if ($file.Extension.ToLower() -eq ".hlsli")
         {
             continue
         }
 
-
         $key = $file.BaseName
+        if (-not $registeredShaderKeys.Contains($key))
+        {
+            $null = $registeredShaderKeys.Add($key)
+        }
 
-
-        $fileDirUri = New-Object System.Uri (
-            $file.DirectoryName + "\"
-        )
-
-        $relativeUri = $baseUri.MakeRelativeUri(
-            $fileDirUri
-        )
-
-
-        $value = [System.Uri]::UnescapeDataString(
-            $relativeUri.ToString()
-        )
-
+        $fileDirUri  = New-Object System.Uri ($file.DirectoryName + "\")
+        $relativeUri = $baseUri.MakeRelativeUri($fileDirUri)
+        $value       = [System.Uri]::UnescapeDataString($relativeUri.ToString())
 
         if ($value -eq "./" -or $value -eq ".")
         {
@@ -86,9 +81,7 @@ if (Test-Path $ShaderFolder)
             $value += "/"
         }
 
-
         $line = "key: `"$key`" , value: `"$value`""
-
 
         if ($key -like "*PS*")
         {
@@ -104,18 +97,73 @@ if (Test-Path $ShaderFolder)
         }
     }
 
+    $linesPS | Out-File -FilePath $OutputFilePS -Encoding utf8
+    $linesMS | Out-File -FilePath $OutputFileMS -Encoding utf8
+    $linesCS | Out-File -FilePath $OutputFileCS -Encoding utf8
+}
 
-    $linesPS | Out-File `
-        -FilePath $OutputFilePS `
-        -Encoding utf8
 
-    $linesMS | Out-File `
-        -FilePath $OutputFileMS `
-        -Encoding utf8
 
-    $linesCS | Out-File `
-        -FilePath $OutputFileCS `
-        -Encoding utf8
+########################################
+# Update ShaderSettings.json
+########################################
+
+$shaderSettingsDir = Split-Path -Path $ShaderSettingsPath -Parent
+if (-not (Test-Path $shaderSettingsDir))
+{
+    New-Item -ItemType Directory -Path $shaderSettingsDir -Force | Out-Null
+}
+
+$shaderDict = [ordered]@{}
+
+# 既存データのロード
+if (Test-Path $ShaderSettingsPath)
+{
+    $rawShaderSettings = Get-Content -Path $ShaderSettingsPath -Raw -Encoding UTF8
+    if (-not [string]::IsNullOrWhiteSpace($rawShaderSettings))
+    {
+        try
+        {
+            $parsed = $rawShaderSettings | ConvertFrom-Json
+            if ($parsed -is [PSCustomObject])
+            {
+                foreach ($prop in $parsed.psobject.Properties)
+                {
+                    $shaderDict[$prop.Name] = $prop.Value
+                }
+            }
+        }
+        catch
+        {
+            Write-Warning "ShaderSettings.json の読み込みに失敗したため再構築します。"
+        }
+    }
+}
+
+# キーが存在しないシェーダーのみ "Args": ["none"] を追加
+$isUpdated = $false
+foreach ($shaderKey in $registeredShaderKeys)
+{
+    if (-not $shaderDict.Contains($shaderKey))
+    {
+        $shaderDict[$shaderKey] = [ordered]@{
+            "Args" = @("none")
+        }
+        $isUpdated = $true
+    }
+}
+
+# 変更があった場合のみ保存
+if ($isUpdated -or -not (Test-Path $ShaderSettingsPath))
+{
+    $jsonOutput = $shaderDict | ConvertTo-Json -Depth 100
+    if (-not [string]::IsNullOrWhiteSpace($jsonOutput) -and $jsonOutput -ne "{}")
+    {
+        $jsonOutput = [regex]::Replace($jsonOutput, '"Args":\s*"([^"]*)"', '"Args": [ "$1" ]')
+    }
+
+    $utf8NoBom = New-Object System.Text.UTF8Encoding($false)
+    [System.IO.File]::WriteAllText($ShaderSettingsPath, $jsonOutput, $utf8NoBom)
 }
 
 
@@ -124,110 +172,66 @@ if (Test-Path $ShaderFolder)
 # Model Registry
 ########################################
 
-$OutputFileModel = Join-Path `
-    $RegistryFolder `
-    "ModelFiles.txt"
-
+$OutputFileModel = Join-Path $RegistryFolder "ModelFiles.txt"
 
 if (Test-Path $OutputFileModel)
 {
     Remove-Item $OutputFileModel
 }
 
-
 if (Test-Path $ModelFolder)
 {
-    Get-ChildItem `
-        -Path $ModelFolder `
-        -Recurse `
-        -File |
+    Get-ChildItem -Path $ModelFolder -Recurse -File |
     Where-Object {
-        $_.Extension -eq ".obj" -or
-        $_.Extension -eq ".gltf"
+        $_.Extension.ToLower() -eq ".obj" -or
+        $_.Extension.ToLower() -eq ".gltf"
     } |
     ForEach-Object {
 
         $name = $_.BaseName
 
-
         switch ($_.Extension.ToLower())
         {
-            ".obj"
-            {
-                $suffix = "Obj"
-            }
-
-            ".gltf"
-            {
-                $suffix = "Gltf"
-            }
+            ".obj"  { $suffix = "Obj" }
+            ".gltf" { $suffix = "Gltf" }
         }
 
+        $key          = $name + $suffix
+        $relativePath = $_.FullName.Substring($projectFolder.Length + 1).Replace("\", "/")
 
-        $key = $name + $suffix
-
-
-        $relativePath = $_.FullName.Substring(
-            $projectFolder.Length + 1
-        )
-
-
-        $relativePath = $relativePath.Replace(
-            "\",
-            "/"
-        )
-
-
-        Add-Content `
-            -Path $OutputFileModel `
-            -Value "key: `"$key`" , value: `"$relativePath`""
+        Add-Content -Path $OutputFileModel -Value "key: `"$key`" , value: `"$relativePath`""
     }
 }
 
 
 
 ########################################
-# JSON Registry (追加部分)
+# JSON Registry
 ########################################
 
-$OutputFileJson = Join-Path `
-    $RegistryFolder `
-    "JsonFiles.txt"
-
+$OutputFileJson = Join-Path $RegistryFolder "JsonFiles.txt"
 
 if (Test-Path $OutputFileJson)
 {
     Remove-Item $OutputFileJson
 }
 
-
 if (Test-Path $JsonFolder)
 {
-    Get-ChildItem `
-        -Path $JsonFolder `
-        -Recurse `
-        -File |
+    Get-ChildItem -Path $JsonFolder -Recurse -File |
     Where-Object {
-        $_.Extension -eq ".json"
+        $_.Extension.ToLower() -eq ".json"
     } |
     ForEach-Object {
 
-        $key = $_.BaseName
+        # JsonFiles.txt へのパス登録のみ実施
+        $key          = $_.BaseName
+        $relativePath = $_.FullName.Substring($projectFolder.Length + 1).Replace("\", "/")
 
-
-        $relativePath = $_.FullName.Substring(
-            $projectFolder.Length + 1
-        ).Replace("\", "/")
-
-
-        Add-Content `
-            -Path $OutputFileJson `
-            -Value "key: `"$key`" , value: `"$relativePath`""
+        Add-Content -Path $OutputFileJson -Value "key: `"$key`" , value: `"$relativePath`""
     }
 }
 
-
-
 Write-Host ""
 Write-Host "Registry generated successfully."
-Write-Host $RegistryFolder
+Write-Host "出力先: $RegistryFolder"

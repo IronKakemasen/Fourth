@@ -5,6 +5,12 @@
 #include "StringConverter/StringConverter.h"
 #include "RegistryLoader/RegistryLoader.h"
 
+ namespace
+{
+    //シェーダーのセッティングが記述されているジェーソンファイルのキー
+    auto const srcJsonFileKey = "ShaderSettings";
+    auto const commonSetings = "CommonSetings";
+}
 
 
 ShaderContext::ShaderLoader::ShaderLoader
@@ -72,8 +78,6 @@ std::unordered_map<std::string, std::vector<std::wstring>> ShaderContext::Shader
 
     auto* Miyajison = Miyajison::Get();
 
-    //シェーダーのセッティングが記述されているジェーソンファイルのキー
-    auto const srcJsonFileKey = "ShaderSettings";
     std::unordered_map<std::string, std::vector<std::string>> argsMap;
 
     for (auto const& key : allShaderFileNames)
@@ -82,6 +86,8 @@ std::unordered_map<std::string, std::vector<std::wstring>> ShaderContext::Shader
 
         std::vector<std::string> args =
             Miyajison->LoadData<std::vector<std::string>>(srcJsonFileKey, { groupName ,"Args" });
+
+        if (args[0] == "none") continue;
 
         argsMap[key] = args;
     }
