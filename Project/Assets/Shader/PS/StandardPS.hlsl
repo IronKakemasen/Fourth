@@ -1,6 +1,6 @@
 #include "../../Shared/StructuredBuffer.h"
+#include "../../Shared/StaticSampler.h"
 
-SamplerState samp : register(s0);
 
 struct MeshShaderOutput
 {
@@ -20,5 +20,6 @@ PixelShaderOutput main(MeshShaderOutput input_)
     PixelShaderOutput output;
     
     output.color = float4(1,1,0.5,1);
+    
     return output;
 }

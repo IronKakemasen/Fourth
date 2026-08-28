@@ -860,7 +860,7 @@
     <ClInclude Include="Engine\LowerLayer\Render\RenderStateComponent.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\LowerLayer\Render\RenderPass\ShaderPathComponent.h">
+    <ClInclude Include="Engine\LowerLayer\Resource\Shader\ShaderPathComponent.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
     <ClInclude Include="Engine\ProjectConfig.h">

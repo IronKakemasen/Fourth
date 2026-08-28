@@ -5409,7 +5409,7 @@ namespace RenderStateComponent
 ========================================
 #pragma once
 #include "../../RenderPass/RenderPassComponent.h"
-#include "../../RenderPass/ShaderPathComponent.h"
+#include "../../../Resource/Shader/ShaderPathComponent.h"
 #include "../../RenderStateComponent.h"
 
 struct GraphicsPSO_Key
@@ -5877,6 +5877,9 @@ void RenderContext::RenderGraph::Setupper::CreateAllGraphicsPSO
 	//全renderPassのRenderPassStatesを集計
 	std::unordered_map < RenderPassComponent::Pass, RenderContext::RenderPassState> allRenderPassStates =
 		CollectAllRenderPassStates(proof_, passContainer_);
+
+	///これら二つのデータの塊からPSOを生成していく
+	
 }
 
 std::vector<ModelDescription::RenderState> RenderContext::RenderGraph::Setupper::CollectAllRenderStates
@@ -6048,32 +6051,6 @@ namespace RenderPassComponent
 }
 
 
-
-
-
-========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Render\RenderPass\ShaderPathComponent.h ===
-========================================
-#pragma once
-
-
-namespace ShaderPathComponent
-{
-	enum class MeshType
-	{
-		kStatic
-
-		,kCount
-	};
-
-	enum class MaterialType
-	{
-		kStandard
-
-		,kCount
-	};
-
-};
 
 
 
@@ -6497,6 +6474,9 @@ public:
 	void SetDepthStencilBufferUniqueID(BufferUniqueID id_);
 
 private:
+
+	//オフスクリーンパスの場合、シェーダーファイルは1つに限定される
+	std::optional<std::pair<std::string, std::string >> ms_psFileName;
 
 	//renderPassComponentの塊
 	RenderPassState renderPassState;
@@ -15963,7 +15943,7 @@ ModelDescription::ModelDescription
 ========================================
 #pragma once
 #include "../../../../Render/RenderStateComponent.h"
-#include "../../../../Render/RenderPass/ShaderPathComponent.h"
+#include "../../../../Resource/Shader/ShaderPathComponent.h"
 
 
 ///2回のフェーズに分けてモデルクラスのデータを埋めていく
@@ -18463,6 +18443,34 @@ private:
 
 
 ========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Shader\ShaderPathComponent.h ===
+========================================
+#pragma once
+
+
+namespace ShaderPathComponent
+{
+	enum class MeshType
+	{
+		kOffscreen,
+		kStatic
+
+		,kCount
+	};
+
+	enum class MaterialType
+	{
+		kOffscreen,
+		kStandard
+
+		,kCount
+	};
+
+};
+
+
+
+========================================
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Shader\ShaderContextDiplomat\ShaderContextDiplomat.cpp ===
 ========================================
 #include "PreCompileHeader.h"
@@ -18613,7 +18621,7 @@ private:
 #include "../ShaderLoader/ShaderCompiler/ShaderCompiler.h"
 
 #include <regex>
-#include <iostream>
+
 
 namespace
 {
@@ -18702,6 +18710,12 @@ private:
 #include "StringConverter/StringConverter.h"
 #include "RegistryLoader/RegistryLoader.h"
 
+ namespace
+{
+    //シェーダーのセッティングが記述されているジェーソンファイルのキー
+    auto const srcJsonFileKey = "ShaderSettings";
+    auto const commonSetings = "CommonSetings";
+}
 
 
 ShaderContext::ShaderLoader::ShaderLoader
@@ -18769,8 +18783,6 @@ std::unordered_map<std::string, std::vector<std::wstring>> ShaderContext::Shader
 
     auto* Miyajison = Miyajison::Get();
 
-    //シェーダーのセッティングが記述されているジェーソンファイルのキー
-    auto const srcJsonFileKey = "ShaderSettings";
     std::unordered_map<std::string, std::vector<std::string>> argsMap;
 
     for (auto const& key : allShaderFileNames)
@@ -18779,6 +18791,8 @@ std::unordered_map<std::string, std::vector<std::wstring>> ShaderContext::Shader
 
         std::vector<std::string> args =
             Miyajison->LoadData<std::vector<std::string>>(srcJsonFileKey, { groupName ,"Args" });
+
+        if (args[0] == "none") continue;
 
         argsMap[key] = args;
     }
@@ -18914,6 +18928,10 @@ Microsoft::WRL::ComPtr<IDxcResult> ShaderContext::Compiler::Compile
 		arguments.emplace_back(L"-res-may-alias");
 		//すべてのリソースがバインド済みとして最適化
 		arguments.emplace_back(L"-all-resources-bound");
+
+		//sharedフォルダーからインクルードする
+		arguments.emplace_back(L"-I");
+		arguments.emplace_back(L"Assets/Shared");
 
 		//外部から渡された追加引数を合流させる
 		for (auto const& arg : extraArguments_)

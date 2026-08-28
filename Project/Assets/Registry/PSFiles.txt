@@ -1,1 +1,2 @@
-﻿key: "StandardPS" , value: "Assets/Shader/PS/"
+﻿key: "CompositorPS" , value: "Assets/Shader/PS/"
+key: "StandardPS" , value: "Assets/Shader/PS/"

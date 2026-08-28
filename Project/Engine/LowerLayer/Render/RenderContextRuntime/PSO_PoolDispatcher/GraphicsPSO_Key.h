@@ -1,6 +1,6 @@
 #pragma once
 #include "../../RenderPass/RenderPassComponent.h"
-#include "../../RenderPass/ShaderPathComponent.h"
+#include "../../../Resource/Shader/ShaderPathComponent.h"
 #include "../../RenderStateComponent.h"
 
 struct GraphicsPSO_Key

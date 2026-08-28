@@ -1,14 +1,14 @@
-﻿{
-    "StaticMS":  {
-                     "Args":  [
-                                  "-I",
-                                  "Assets/Shared"
-                              ]
-                 },
-    "StandardPS":  {
-                       "Args":  [
-                                    "-I",
-                                    "Assets/Shared"
-                                ]
-                   }
+{
+    "CompositorPS": {
+        "Args": ["none"]
+    },
+    "FullScreenMS": {
+        "Args": ["none"]
+    },
+    "StandardPS": {
+        "Args": ["none"]
+    },
+    "StaticMS": {
+        "Args": ["none"]
+    }
 }
