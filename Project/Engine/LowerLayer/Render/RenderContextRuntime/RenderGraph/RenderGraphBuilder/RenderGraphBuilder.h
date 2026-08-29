@@ -2,9 +2,10 @@
 #include "../RenderGraph.h"
 #include "../../../../Resource/Model/ModelStructure/ModelDescription/ModelDescription.h"
 
+
 class Model;
 
-class RenderContext::RenderGraph::Setupper
+class RenderContext::RenderGraph::Builder
 {
 	friend class RenderGraph;
 
@@ -29,7 +30,9 @@ class RenderContext::RenderGraph::Setupper
 		NexusFieldProof proof_,
 		PSO_PoolDispatcher& psoDispatcher_,
 		RenderPassContainer& passContainer_,
-		ModelContextDiplomat& modelContextDiplomat_
+		ModelContextDiplomat& modelContextDiplomat_,
+		PSO_ContextDiplomat& pso_ContextDiplomat_,
+		ShaderContextDiplomat& shaderContextDiplomat_
 	);
 
 
@@ -37,8 +40,8 @@ class RenderContext::RenderGraph::Setupper
 private:
 	
 	//全モデルデータを受け取ってそのモデルデータのRenderStateのベクタを取り出す
-	static std::vector<ModelDescription::RenderState> 
-		CollectAllRenderStates(const std::vector<std::unique_ptr<Model>>* modelData_);
+	static std::vector<ModelDescription::RenderState> CollectAllRenderStates(ModelContextDiplomat& modelContextDiplomat_);
+
 
 
 };

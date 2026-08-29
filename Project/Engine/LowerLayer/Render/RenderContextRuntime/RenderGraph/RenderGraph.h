@@ -5,7 +5,7 @@
 
 class RenderContext::RenderGraph
 {
-	class Setupper;
+	class Builder;
 
 public:
 
@@ -17,13 +17,14 @@ public:
 		RenderPassContainer& passContainer_,
 		RootSignatureContextDiplomat& rootSignatureContextDiplomat_,
 		BufferContextDiplomat& bufferContextDiplomat_,
-		ModelContextDiplomat& modelContextDiplomat_
-
+		ModelContextDiplomat& modelContextDiplomat_,
+		PSO_ContextDiplomat& pso_ContextDiplomat_,
+		ShaderContextDiplomat& shaderContextDiplomat_
 	);
 
 private:
 
-	void Init
+	void Build
 	(
 		NexusFieldProof proof_,
 		RenderPathAssembler& pathAssembler_,
@@ -31,8 +32,9 @@ private:
 		RenderPassContainer& passContainer_,
 		RootSignatureContextDiplomat& rootSignatureContextDiplomat_,
 		BufferContextDiplomat& bufferContextDiplomat_,
-		ModelContextDiplomat& modelContextDiplomat_
-
+		ModelContextDiplomat& modelContextDiplomat_,
+		PSO_ContextDiplomat& pso_ContextDiplomat_,
+		ShaderContextDiplomat& shaderContextDiplomat_
 	);
 
 	//グラフィックス用の巨大共通ルートシグネチャ

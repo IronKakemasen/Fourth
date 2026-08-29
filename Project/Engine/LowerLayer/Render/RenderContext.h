@@ -4,6 +4,8 @@ class Nexus;
 class BufferContextDiplomat;
 class RootSignatureContextDiplomat;
 class ModelContextDiplomat;
+class PSO_ContextDiplomat;
+class ShaderContextDiplomat;
 
 class RenderContext
 {
@@ -22,9 +24,9 @@ public:
 	//そのパスで使用するバッファの情報をまとめたもの
 	struct RequiredBufferInfo;
 	class PathBehavior;
-	//レンダーパスを設計する強者
-	class RenderGraph;
 	struct RenderPassState;
+	//レンダーパス(Path)を設計し、描画コマンドを叩く強者
+	class RenderGraph;
 
 	//ネクサスフィールドの証
 	struct NexusFieldProof;
@@ -34,7 +36,9 @@ public:
 		NexusFieldProof proof_,
 		BufferContextDiplomat& bufferContextDiplomat_,
 		RootSignatureContextDiplomat& rootSignatureContextDiplomat_,
-		ModelContextDiplomat& modelContextDiplomat_
+		ModelContextDiplomat& modelContextDiplomat_,
+		PSO_ContextDiplomat& pso_ContextDiplomat_,
+		ShaderContextDiplomat& shaderContextDiplomat_
 	);
 
 	~RenderContext();

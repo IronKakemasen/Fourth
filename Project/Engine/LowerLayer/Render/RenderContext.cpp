@@ -21,7 +21,9 @@ RenderContext::RenderContext
 	NexusFieldProof proof_,
 	BufferContextDiplomat& bufferContextDiplomat_,
 	RootSignatureContextDiplomat& rootSignatureContextDiplomat_,
-	ModelContextDiplomat& modelContextDiplomat_
+	ModelContextDiplomat& modelContextDiplomat_,
+	PSO_ContextDiplomat& pso_ContextDiplomat_,
+	ShaderContextDiplomat& shaderContextDiplomat_
 ) 
 {
 	Logger::Entry("RenderContext: Constructor");
@@ -56,7 +58,9 @@ RenderContext::RenderContext
 			*renderPassContainer,
 			rootSignatureContextDiplomat_,
 			bufferContextDiplomat_,
-			modelContextDiplomat_
+			modelContextDiplomat_,
+			pso_ContextDiplomat_,
+			shaderContextDiplomat_
 		)
 	);
 
