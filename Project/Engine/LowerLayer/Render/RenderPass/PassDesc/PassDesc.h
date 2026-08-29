@@ -8,6 +8,10 @@ private:
 
 	struct DataKeyString
 	{
+		std::string const kIsOffScreenB = "isOffScreen";
+		std::string const kMS = "ms";
+		std::string const kPS = "ps";
+
 		std::string const kColorFormatI = "colorFormat";
 		std::string const kClearColorV4 = "clearColor";
 		std::string const kColorWidthI = "colorWidth";
@@ -34,8 +38,8 @@ public:
 
 	PassDesc
 	(
-		RenderPassComponent::DepthTest depthTest_,
-		RenderPassComponent::DepthEnable depthEnable_,
+		std::optional<std::pair<std::string, std::string >> ms_psFileName_,
+		RenderPassState renderPassState_,
 		std::vector<RenderContext::RequiredBufferInfo::ColorBuffer> colorBuffersInfo_,
 		std::optional<RenderContext::RequiredBufferInfo::DepthStencilBuffer> depthStencilBufferInfo_
 	);

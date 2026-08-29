@@ -5308,7 +5308,6 @@ private:
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Render\RenderStateComponent.h ===
 ========================================
 #pragma once
-#include "RenderPass/RenderPassComponent.h"
 
 namespace RenderStateComponent
 {
@@ -5335,28 +5334,6 @@ namespace RenderStateComponent
         ,kCount
     };
 
-    //モデルクラス専用の描画パス選択。全てのパスで描画するわけじゃないからさ
-    enum class RenderPass : uint32_t
-    {
-        kNone = 0,
-        kSceneTextureOpaque = 1 << 0
-        //kShadow = 1 << 1,  
-
-
-    };
-
-    ///本物のRenderPassと一致させるため
-    template<RenderPass pass>
-    struct MatchPassFormat;
-
-    ///しんどいがここも追加や
-    template<>
-    struct MatchPassFormat<RenderPass::kSceneTextureOpaque>
-    {
-        static constexpr RenderPassComponent::Pass pass = RenderPassComponent::Pass::kSceneTextureCreatorOpaque;
-    };
-
-
     inline D3D12_FILL_MODE Convert(FillMode fillMode_)
     {
         return (fillMode_ == FillMode::kSolid) ? D3D12_FILL_MODE_SOLID : D3D12_FILL_MODE_WIREFRAME;
@@ -5367,37 +5344,11 @@ namespace RenderStateComponent
         D3D12_CULL_MODE cullMode = D3D12_CULL_MODE_BACK;
 
         if (cullMode_ == CullMode::kFront) cullMode = D3D12_CULL_MODE_FRONT;
-        else if(cullMode_ == CullMode::kNone) cullMode = D3D12_CULL_MODE_NONE;
+        else if (cullMode_ == CullMode::kNone) cullMode = D3D12_CULL_MODE_NONE;
 
         return cullMode;
     }
 
-    constexpr RenderPass operator&(RenderPass lhs_, RenderPass rhs_)
-    {
-        return RenderPass(uint32_t(lhs_) & uint32_t(rhs_));
-    }
-
-    constexpr RenderPass operator|(RenderPass lhs_, RenderPass rhs_)
-    {
-        return RenderPass(uint32_t(lhs_) | uint32_t(rhs_));
-    }
-
-    constexpr RenderPass& operator&=(RenderPass& lhs_, RenderPass rhs_)
-    {
-        lhs_ = lhs_ & rhs_;
-        return lhs_;
-    }
-
-    constexpr RenderPass& operator|=(RenderPass& lhs_, RenderPass rhs_)
-    {
-        lhs_ = lhs_ | rhs_;
-        return lhs_;
-    }
-
-    constexpr bool Any(RenderPass flags_)
-    {
-        return flags_ != RenderPass::kNone;
-    }
 }
 
 
@@ -5433,8 +5384,8 @@ private:
     ShaderPathComponent::MeshType mesh =            ShaderPathComponent::MeshType(kInvalid);
     ShaderPathComponent::MaterialType material =    ShaderPathComponent::MaterialType(kInvalid);
     RenderStateComponent::BlendMode blend =         RenderStateComponent::BlendMode(kInvalid);
-    RenderStateComponent::FillMode fill =           RenderStateComponent::FillMode(kInvalid);
     RenderStateComponent::CullMode cull =           RenderStateComponent::CullMode(kInvalid);
+    RenderStateComponent::FillMode fill =           RenderStateComponent::FillMode(kInvalid);
 
     template <Sequence sequence>
     static constexpr auto sequenceToType()
@@ -5874,9 +5825,8 @@ void RenderContext::RenderGraph::Setupper::CreateAllGraphicsPSO
 	const std::vector<std::unique_ptr<Model>>* modelDataContainer = watchModelContainer();
 	std::vector<ModelDescription::RenderState> allModelRenderStates = CollectAllRenderStates(modelDataContainer);
 
-	//全renderPassのRenderPassStatesを集計
-	std::unordered_map < RenderPassComponent::Pass, RenderContext::RenderPassState> allRenderPassStates =
-		CollectAllRenderPassStates(proof_, passContainer_);
+	//全てのPassが入ってるコンテナを参照
+	auto const& allPassPtrMap = passContainer_.AccessAllPassPtrMap(proof_);
 
 	///これら二つのデータの塊からPSOを生成していく
 	
@@ -5902,23 +5852,6 @@ std::vector<ModelDescription::RenderState> RenderContext::RenderGraph::Setupper:
 	return allModelRenderStates;
 }
 
-std::unordered_map < RenderPassComponent::Pass, RenderContext::RenderPassState>
-RenderContext::RenderGraph::Setupper::CollectAllRenderPassStates(NexusFieldProof proof_, RenderPassContainer& passContainer_)
-{
-	std::unordered_map < RenderPassComponent::Pass, RenderContext::RenderPassState> allRenderPassStatesMap;
-
-	//全てのPassが入ってるコンテナから、そのPassの情報があるDescを収集
-	//その中のRenderPassStateをかき集める
-	auto const& allPassPtrMap = passContainer_.AccessAllPassPtrMap(proof_);
-
-	for (auto[key,value ]: allPassPtrMap)
-	{
-		allRenderPassStatesMap[key] = value->WatchDesc().WatchRenderPassState();
-	}
-
-	return allRenderPassStatesMap;
-
-}
 
 
 [[nodiscard]] ID3D12RootSignature* RenderContext::RenderGraph::Setupper::CreateGraphicsRootSig
@@ -5997,9 +5930,6 @@ private:
 	static std::vector<ModelDescription::RenderState> 
 		CollectAllRenderStates(const std::vector<std::unique_ptr<Model>>* modelData_);
 
-	//全PassからRenderPassComponentの情報を収集する
-	static std::unordered_map < RenderPassComponent::Pass, RenderContext::RenderPassState>
-		CollectAllRenderPassStates(NexusFieldProof proof_, RenderPassContainer& passContainer_);
 
 };
 
@@ -6208,8 +6138,6 @@ namespace RenderPassTraits
 ========================================
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Render\RenderPass\AllRenderPass\whenMakeNewPass.txt ===
 ========================================
-
-
 新しくPassを作るときの手順
 
 
@@ -6373,14 +6301,13 @@ namespace
 
 RenderContext::PassDesc::PassDesc
 (
-	RenderPassComponent::DepthTest depthTest_,
-	RenderPassComponent::DepthEnable depthEnable_,
+	std::optional<std::pair<std::string, std::string >> ms_psFileName_,
+	RenderPassState renderPassState_,
 	std::vector<RenderContext::RequiredBufferInfo::ColorBuffer> colorBuffersInfo_,
 	std::optional<RenderContext::RequiredBufferInfo::DepthStencilBuffer> depthStencilBufferInfo_
-):colorBuffersInfo(colorBuffersInfo_), depthStencilBufferInfo(depthStencilBufferInfo_)
+):renderPassState(renderPassState_) , colorBuffersInfo(colorBuffersInfo_), depthStencilBufferInfo(depthStencilBufferInfo_), ms_psFileName(ms_psFileName_)
 {
-	renderPassState.depthTest = depthTest_;
-	renderPassState.depthEnable = depthEnable_;
+
 }
 
 bool RenderContext::PassDesc::DoesDepthStencilBufferInfoContains()const
@@ -6431,6 +6358,10 @@ private:
 
 	struct DataKeyString
 	{
+		std::string const kIsOffScreenB = "isOffScreen";
+		std::string const kMS = "ms";
+		std::string const kPS = "ps";
+
 		std::string const kColorFormatI = "colorFormat";
 		std::string const kClearColorV4 = "clearColor";
 		std::string const kColorWidthI = "colorWidth";
@@ -6457,8 +6388,8 @@ public:
 
 	PassDesc
 	(
-		RenderPassComponent::DepthTest depthTest_,
-		RenderPassComponent::DepthEnable depthEnable_,
+		std::optional<std::pair<std::string, std::string >> ms_psFileName_,
+		RenderPassState renderPassState_,
 		std::vector<RenderContext::RequiredBufferInfo::ColorBuffer> colorBuffersInfo_,
 		std::optional<RenderContext::RequiredBufferInfo::DepthStencilBuffer> depthStencilBufferInfo_
 	);
@@ -6501,6 +6432,15 @@ private:
 
 struct RenderContext::RenderPassState
 {
+	RenderPassState() = default;
+
+	RenderPassState
+	(
+		RenderPassComponent::DepthTest depthTest_,
+		RenderPassComponent::DepthEnable depthEnable_
+	):depthTest(depthTest_), depthEnable(depthEnable_)
+	{ }
+
 	RenderPassComponent::DepthTest depthTest = RenderPassComponent::DepthTest::kGreaterEqual;
 	RenderPassComponent::DepthEnable depthEnable = RenderPassComponent::DepthEnable::kEnable;
 
@@ -6799,12 +6739,10 @@ namespace
 {
 	std::string const srcJsonFileName = "RenderPassSettings";
 	
-	auto* miyajison = Miyajison::Get();
-
 	PassDesc desc
 	(
-		DepthTest(miyajison->LoadData<int>(srcJsonFileName, { passName_,PassDesc::dataKeyString.kDepthTestI })),
-		DepthEnable(miyajison->LoadData<bool>(srcJsonFileName, { passName_,PassDesc::dataKeyString.kDepthEnableB })),
+		ParseShaderFile(passName_, srcJsonFileName),
+		ParseRenderPassState(passName_, srcJsonFileName),
 		ParseColorBufferInfo(passName_, srcJsonFileName),
 		ParseDepthStencilBufferInfo(passName_, srcJsonFileName)
 	);
@@ -6915,6 +6853,45 @@ std::optional<RenderContext::RequiredBufferInfo::DepthStencilBuffer> RenderConte
 	return depthStencilBufferInfo;
 }
 
+RenderContext::RenderPassState RenderContext::RenderPassCreator::PassSettingsLoader::ParseRenderPassState
+(
+	std::string const passName_,
+	std::string const jsonFileName_
+)
+{
+	auto* miyajison = Miyajison::Get();
+
+	return RenderPassState
+	(
+		DepthTest(miyajison->LoadData<int>(jsonFileName_, { passName_,PassDesc::dataKeyString.kDepthTestI })),
+		DepthEnable(miyajison->LoadData<bool>(jsonFileName_, { passName_,PassDesc::dataKeyString.kDepthEnableB }))
+	);
+}
+
+std::optional<std::pair<std::string, std::string >> RenderContext::RenderPassCreator::PassSettingsLoader::ParseShaderFile
+(
+	std::string const passName_,
+	std::string const jsonFileName_
+)
+{
+	std::optional<std::pair<std::string, std::string >> ms_psOpt;
+	std::pair<std::string, std::string > ms_ps;
+
+	auto* miyajison = Miyajison::Get();
+	bool isOffScreen = miyajison->LoadData<bool>(jsonFileName_, { passName_,PassDesc::dataKeyString.kIsOffScreenB });
+
+	if (isOffScreen)
+	{
+		ms_ps.first = miyajison->LoadData<std::string>(jsonFileName_, { passName_,PassDesc::dataKeyString.kMS });
+		ms_ps.second = miyajison->LoadData<std::string>(jsonFileName_, { passName_,PassDesc::dataKeyString.kPS });
+		ms_psOpt = ms_ps;
+	}
+
+
+	return ms_psOpt;
+}
+
+
 
 
 
@@ -6947,6 +6924,17 @@ private:
 		std::string const jsonFileName_
 	);
 
+	static RenderPassState ParseRenderPassState
+	(
+		std::string const passName_,
+		std::string const jsonFileName_
+	);
+
+	static std::optional<std::pair<std::string, std::string >> ParseShaderFile
+	(
+		std::string const passName_,
+		std::string const jsonFileName_
+	);
 
 };
 
@@ -13187,7 +13175,7 @@ TestModelOKIBA::TestModelOKIBA(ModelContext::ModelCreator* modelCreator_)
 
 	ModelDescription::RenderState cP;
 	cP.blendModes.emplace_back(BlendMode::kOpaque);
-	cP.passes |= RenderPass::kSceneTextureOpaque;
+	cP.pass = RenderPassComponent::Pass::kSceneTextureCreatorOpaque;
 
 	cP.cullMode = CullMode::kBack;
 	cP.meshType = ShaderPathComponent::MeshType::kStatic;
@@ -13201,7 +13189,7 @@ TestModelOKIBA::TestModelOKIBA(ModelContext::ModelCreator* modelCreator_)
 
 	ModelDescription::RenderState cC;
 	cC.blendModes.emplace_back(BlendMode::kOpaque);
-	cC.passes|= RenderPass::kSceneTextureOpaque;
+	cP.pass = RenderPassComponent::Pass::kSceneTextureCreatorOpaque;
 	cC.cullMode = CullMode::kBack;
 	cC.meshType = ShaderPathComponent::MeshType::kStatic;
 	cC.materialType = ShaderPathComponent::MaterialType::kStandard;
@@ -13285,7 +13273,6 @@ Model* ModelContext::ModelCreator::Create
 	);
 	///モデルクラスのインスタンス化
 	std::unique_ptr<Model> model = std::make_unique<Model>(modelDesc);
-
 
 	Model* modelPtr = model.get();
 
@@ -15898,41 +15885,40 @@ namespace
 	auto const fileName = "ModelDescription.cpp";
 }
 
+ModelDescription::RenderState::RenderState
+(
+	RenderPassComponent::Pass pass_,
+	std::vector<RenderStateComponent::BlendMode> blendModes_,
+	RenderStateComponent::CullMode cullMode_,
+	ShaderPathComponent::MeshType meshType_,
+	ShaderPathComponent::MaterialType materialType_
+) : blendModes(std::move(blendModes_)), pass(pass_), cullMode(cullMode_), meshType(meshType_), materialType(materialType_)
+{
+	std::string errorMsg{};
+
+	if (blendModes.size() == 0) errorMsg += "「ブレンドモードが1つも設定されてない」";
+
+	ErrorMessageOutput::Assert::DetectError(errorMsg.length() == 0, errorMsg, fileName);
+}
+
+
 ModelDescription::ModelDescription
 (
-	std::vector<ModelDescription::Common> const& modelDescCommons_,
-	std::vector<ModelDescription::Unique> const& modelDescUniques_,
+	std::vector<ModelDescription::Common> const& commons_,
+	std::vector<ModelDescription::Unique> const& uniques_,
 	std::string modelName_,
-	std::vector<ModelDescription::RenderState> const& modelDescRenderStates_
-) :commons(modelDescCommons_), uniques(modelDescUniques_), modelName(modelName_), renderStates(modelDescRenderStates_)
+	std::vector<ModelDescription::RenderState> const& renderStates_
+) :commons(commons_), uniques(uniques_), modelName(modelName_), renderStates(renderStates_)
 {
-	//空チェック
-	ErrorMessageOutput::Assert::DetectError
-	(
-		(renderStates.size() > 0 && uniques.size() > 0 && commons.size() > 0),
-		modelName_ + "のDescのどれかが空だすね",
-		fileName
-	);
+	std::string errorMsg{};
 
-	//renderStatesのチェック
-	for (auto const& state : renderStates)
-	{
-		ErrorMessageOutput::Assert::DetectError
-		(
-			(state.blendModes.size() > 0) && (state.passes != RenderStateComponent::RenderPass::kNone),
-			modelName_ + "のModelDescription::RenderStatesのデータがちゃんと埋まってない(あなたのせい)",
-			fileName
-		);
-	}
+	if (renderStates.size() == 0)			errorMsg += "「renderStatesが空」";
+	if (uniques.size() == 0)				errorMsg += "「uniquesが空」";
+	if (commons.size() == 0)				errorMsg += "「commonsが空」";
+	if(uniques.size() != commons.size())	errorMsg += "「uniquesとcommonsのサイズが違う(恐らくエンジンのせい)」";
 
-	//ユニークと共通の比がおなじかチェックしておく
-	ErrorMessageOutput::Assert::DetectError
-	(
-		uniques.size() == commons.size(),
-		"ユニークと共通のサイズが違う(おおかたエンジンのせい)",
-		fileName
-	);
 
+	ErrorMessageOutput::Assert::DetectError(errorMsg.length() == 0, modelName_ +  errorMsg, fileName);
 }
 
 
@@ -15944,12 +15930,13 @@ ModelDescription::ModelDescription
 #pragma once
 #include "../../../../Render/RenderStateComponent.h"
 #include "../../../../Resource/Shader/ShaderPathComponent.h"
+#include "../../../../Render/RenderPass/RenderPassComponent.h"
 
 
 ///2回のフェーズに分けてモデルクラスのデータを埋めていく
 ///上位層でモデルのファイル名と、サブメッシュ分も含めてRenderStatesをコンストラクタにセット
 ///モデルファイル名→Commonが定まり、Uniqueを必要数分割り当てる。
-///その後RenderStatesもセットする
+///その後RenderStatesを参加するPassの種類分セットする
 struct ModelDescription
 {
 	//モデルクラスのコンストラクタで設置可能
@@ -15959,18 +15946,18 @@ struct ModelDescription
 
 		RenderState
 		(
-			std::vector<RenderStateComponent::BlendMode> blendModes,
-			RenderStateComponent::RenderPass passes_,
+			RenderPassComponent::Pass pass_,
+			std::vector<RenderStateComponent::BlendMode> blendModes_,
 			RenderStateComponent::CullMode cullMode_,
 			ShaderPathComponent::MeshType meshType_,
 			ShaderPathComponent::MaterialType materialType_
-		): blendModes(std::move(blendModes)),passes(passes),cullMode(cullMode),meshType(meshType),materialType(materialType)
-		{}
+		);
+	
 
+		//どの描画パス(ステージ)で描画するか
+		RenderPassComponent::Pass pass = RenderPassComponent::Pass::kEnd;
 		//ブレンドモード複数可
 		std::vector<RenderStateComponent::BlendMode> blendModes;
-		//どの描画パス(ステージ)で描画するか複数可
-		RenderStateComponent::RenderPass passes = RenderStateComponent::RenderPass::kNone;
 		//どの面をカリングするか
 		RenderStateComponent::CullMode cullMode = RenderStateComponent::CullMode::kBack;
 		//頂点処理方法
@@ -15999,13 +15986,13 @@ struct ModelDescription
 	};
 
 	ModelDescription() {};
-	//中はただの入力チェック
+	//中で入力チェック
 	ModelDescription
 	(
-		std::vector<ModelDescription::Common> const& modelDescCommons_,
-		std::vector<ModelDescription::Unique> const& modelDescUniques_,
+		std::vector<ModelDescription::Common> const& commons_,
+		std::vector<ModelDescription::Unique> const& uniques_,
 		std::string modelName_,
-		std::vector<ModelDescription::RenderState> const& modelDescRenderStates_
+		std::vector<ModelDescription::RenderState> const& renderStates_
 	);
 
 	inline std::string const WatchName()const { return modelName; }
@@ -16014,11 +16001,14 @@ struct ModelDescription
 private:
 
 	//ModelDescAssemblerに設定してもらう
+	//可変長になっているのは、マルチメッシュのため！！！！
 	std::vector<ModelDescription::Common> commons;
 	std::vector<ModelDescription::Unique> uniques;
 
 	//これ以下は自分で決める
 	std::string modelName;
+	//可変長になっているのは、複数分のPassに参加できるようにするため。理由がちゃう
+	//つまり、サブメッシュもすべて同じ設定
 	std::vector<ModelDescription::RenderState> renderStates;
 
 };

@@ -1,12 +1,10 @@
-
-
 新しくPassを作るときの手順
 
 
 1.クラスの定義
 2.一括前方宣言ファイルに追記
 3.一括インクルードファイルに追記
-4.RenderPassComponentに追記、必要であればRenderStateようのPassにも追記
+4.RenderPassComponentに追記
 5.RenderPassTraitsに追記
 6.jsonファイルにデータを追記
 

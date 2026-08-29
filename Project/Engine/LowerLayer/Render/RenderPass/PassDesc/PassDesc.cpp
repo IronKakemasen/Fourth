@@ -8,14 +8,13 @@ namespace
 
 RenderContext::PassDesc::PassDesc
 (
-	RenderPassComponent::DepthTest depthTest_,
-	RenderPassComponent::DepthEnable depthEnable_,
+	std::optional<std::pair<std::string, std::string >> ms_psFileName_,
+	RenderPassState renderPassState_,
 	std::vector<RenderContext::RequiredBufferInfo::ColorBuffer> colorBuffersInfo_,
 	std::optional<RenderContext::RequiredBufferInfo::DepthStencilBuffer> depthStencilBufferInfo_
-):colorBuffersInfo(colorBuffersInfo_), depthStencilBufferInfo(depthStencilBufferInfo_)
+):renderPassState(renderPassState_) , colorBuffersInfo(colorBuffersInfo_), depthStencilBufferInfo(depthStencilBufferInfo_), ms_psFileName(ms_psFileName_)
 {
-	renderPassState.depthTest = depthTest_;
-	renderPassState.depthEnable = depthEnable_;
+
 }
 
 bool RenderContext::PassDesc::DoesDepthStencilBufferInfoContains()const

@@ -40,9 +40,6 @@ private:
 	static std::vector<ModelDescription::RenderState> 
 		CollectAllRenderStates(const std::vector<std::unique_ptr<Model>>* modelData_);
 
-	//全PassからRenderPassComponentの情報を収集する
-	static std::unordered_map < RenderPassComponent::Pass, RenderContext::RenderPassState>
-		CollectAllRenderPassStates(NexusFieldProof proof_, RenderPassContainer& passContainer_);
 
 };
 

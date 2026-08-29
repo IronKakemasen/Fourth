@@ -15,12 +15,10 @@ namespace
 {
 	std::string const srcJsonFileName = "RenderPassSettings";
 	
-	auto* miyajison = Miyajison::Get();
-
 	PassDesc desc
 	(
-		DepthTest(miyajison->LoadData<int>(srcJsonFileName, { passName_,PassDesc::dataKeyString.kDepthTestI })),
-		DepthEnable(miyajison->LoadData<bool>(srcJsonFileName, { passName_,PassDesc::dataKeyString.kDepthEnableB })),
+		ParseShaderFile(passName_, srcJsonFileName),
+		ParseRenderPassState(passName_, srcJsonFileName),
 		ParseColorBufferInfo(passName_, srcJsonFileName),
 		ParseDepthStencilBufferInfo(passName_, srcJsonFileName)
 	);
@@ -130,3 +128,42 @@ std::optional<RenderContext::RequiredBufferInfo::DepthStencilBuffer> RenderConte
 
 	return depthStencilBufferInfo;
 }
+
+RenderContext::RenderPassState RenderContext::RenderPassCreator::PassSettingsLoader::ParseRenderPassState
+(
+	std::string const passName_,
+	std::string const jsonFileName_
+)
+{
+	auto* miyajison = Miyajison::Get();
+
+	return RenderPassState
+	(
+		DepthTest(miyajison->LoadData<int>(jsonFileName_, { passName_,PassDesc::dataKeyString.kDepthTestI })),
+		DepthEnable(miyajison->LoadData<bool>(jsonFileName_, { passName_,PassDesc::dataKeyString.kDepthEnableB }))
+	);
+}
+
+std::optional<std::pair<std::string, std::string >> RenderContext::RenderPassCreator::PassSettingsLoader::ParseShaderFile
+(
+	std::string const passName_,
+	std::string const jsonFileName_
+)
+{
+	std::optional<std::pair<std::string, std::string >> ms_psOpt;
+	std::pair<std::string, std::string > ms_ps;
+
+	auto* miyajison = Miyajison::Get();
+	bool isOffScreen = miyajison->LoadData<bool>(jsonFileName_, { passName_,PassDesc::dataKeyString.kIsOffScreenB });
+
+	if (isOffScreen)
+	{
+		ms_ps.first = miyajison->LoadData<std::string>(jsonFileName_, { passName_,PassDesc::dataKeyString.kMS });
+		ms_ps.second = miyajison->LoadData<std::string>(jsonFileName_, { passName_,PassDesc::dataKeyString.kPS });
+		ms_psOpt = ms_ps;
+	}
+
+
+	return ms_psOpt;
+}
+

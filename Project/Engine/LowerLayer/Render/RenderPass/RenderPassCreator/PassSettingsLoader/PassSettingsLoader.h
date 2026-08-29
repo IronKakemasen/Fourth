@@ -24,6 +24,17 @@ private:
 		std::string const jsonFileName_
 	);
 
+	static RenderPassState ParseRenderPassState
+	(
+		std::string const passName_,
+		std::string const jsonFileName_
+	);
+
+	static std::optional<std::pair<std::string, std::string >> ParseShaderFile
+	(
+		std::string const passName_,
+		std::string const jsonFileName_
+	);
 
 };
 
