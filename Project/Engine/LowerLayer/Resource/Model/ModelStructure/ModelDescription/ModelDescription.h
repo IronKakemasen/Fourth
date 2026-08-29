@@ -1,12 +1,13 @@
 #pragma once
 #include "../../../../Render/RenderStateComponent.h"
 #include "../../../../Resource/Shader/ShaderPathComponent.h"
+#include "../../../../Render/RenderPass/RenderPassComponent.h"
 
 
 ///2回のフェーズに分けてモデルクラスのデータを埋めていく
 ///上位層でモデルのファイル名と、サブメッシュ分も含めてRenderStatesをコンストラクタにセット
 ///モデルファイル名→Commonが定まり、Uniqueを必要数分割り当てる。
-///その後RenderStatesもセットする
+///その後RenderStatesを参加するPassの種類分セットする
 struct ModelDescription
 {
 	//モデルクラスのコンストラクタで設置可能
@@ -16,18 +17,18 @@ struct ModelDescription
 
 		RenderState
 		(
-			std::vector<RenderStateComponent::BlendMode> blendModes,
-			RenderStateComponent::RenderPass passes_,
+			RenderPassComponent::Pass pass_,
+			std::vector<RenderStateComponent::BlendMode> blendModes_,
 			RenderStateComponent::CullMode cullMode_,
 			ShaderPathComponent::MeshType meshType_,
 			ShaderPathComponent::MaterialType materialType_
-		): blendModes(std::move(blendModes)),passes(passes),cullMode(cullMode),meshType(meshType),materialType(materialType)
-		{}
+		);
+	
 
+		//どの描画パス(ステージ)で描画するか
+		RenderPassComponent::Pass pass = RenderPassComponent::Pass::kEnd;
 		//ブレンドモード複数可
 		std::vector<RenderStateComponent::BlendMode> blendModes;
-		//どの描画パス(ステージ)で描画するか複数可
-		RenderStateComponent::RenderPass passes = RenderStateComponent::RenderPass::kNone;
 		//どの面をカリングするか
 		RenderStateComponent::CullMode cullMode = RenderStateComponent::CullMode::kBack;
 		//頂点処理方法
@@ -56,13 +57,13 @@ struct ModelDescription
 	};
 
 	ModelDescription() {};
-	//中はただの入力チェック
+	//中で入力チェック
 	ModelDescription
 	(
-		std::vector<ModelDescription::Common> const& modelDescCommons_,
-		std::vector<ModelDescription::Unique> const& modelDescUniques_,
+		std::vector<ModelDescription::Common> const& commons_,
+		std::vector<ModelDescription::Unique> const& uniques_,
 		std::string modelName_,
-		std::vector<ModelDescription::RenderState> const& modelDescRenderStates_
+		std::vector<ModelDescription::RenderState> const& renderStates_
 	);
 
 	inline std::string const WatchName()const { return modelName; }
@@ -71,11 +72,14 @@ struct ModelDescription
 private:
 
 	//ModelDescAssemblerに設定してもらう
+	//可変長になっているのは、マルチメッシュのため！！！！
 	std::vector<ModelDescription::Common> commons;
 	std::vector<ModelDescription::Unique> uniques;
 
 	//これ以下は自分で決める
 	std::string modelName;
+	//可変長になっているのは、複数分のPassに参加できるようにするため。理由がちゃう
+	//つまり、サブメッシュもすべて同じ設定
 	std::vector<ModelDescription::RenderState> renderStates;
 
 };

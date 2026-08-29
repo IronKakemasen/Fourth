@@ -57,9 +57,8 @@ void RenderContext::RenderGraph::Setupper::CreateAllGraphicsPSO
 	const std::vector<std::unique_ptr<Model>>* modelDataContainer = watchModelContainer();
 	std::vector<ModelDescription::RenderState> allModelRenderStates = CollectAllRenderStates(modelDataContainer);
 
-	//全renderPassのRenderPassStatesを集計
-	std::unordered_map < RenderPassComponent::Pass, RenderContext::RenderPassState> allRenderPassStates =
-		CollectAllRenderPassStates(proof_, passContainer_);
+	//全てのPassが入ってるコンテナを参照
+	auto const& allPassPtrMap = passContainer_.AccessAllPassPtrMap(proof_);
 
 	///これら二つのデータの塊からPSOを生成していく
 	
@@ -85,23 +84,6 @@ std::vector<ModelDescription::RenderState> RenderContext::RenderGraph::Setupper:
 	return allModelRenderStates;
 }
 
-std::unordered_map < RenderPassComponent::Pass, RenderContext::RenderPassState>
-RenderContext::RenderGraph::Setupper::CollectAllRenderPassStates(NexusFieldProof proof_, RenderPassContainer& passContainer_)
-{
-	std::unordered_map < RenderPassComponent::Pass, RenderContext::RenderPassState> allRenderPassStatesMap;
-
-	//全てのPassが入ってるコンテナから、そのPassの情報があるDescを収集
-	//その中のRenderPassStateをかき集める
-	auto const& allPassPtrMap = passContainer_.AccessAllPassPtrMap(proof_);
-
-	for (auto[key,value ]: allPassPtrMap)
-	{
-		allRenderPassStatesMap[key] = value->WatchDesc().WatchRenderPassState();
-	}
-
-	return allRenderPassStatesMap;
-
-}
 
 
 [[nodiscard]] ID3D12RootSignature* RenderContext::RenderGraph::Setupper::CreateGraphicsRootSig

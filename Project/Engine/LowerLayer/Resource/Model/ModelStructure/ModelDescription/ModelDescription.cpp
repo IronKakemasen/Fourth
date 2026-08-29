@@ -5,39 +5,38 @@ namespace
 	auto const fileName = "ModelDescription.cpp";
 }
 
+ModelDescription::RenderState::RenderState
+(
+	RenderPassComponent::Pass pass_,
+	std::vector<RenderStateComponent::BlendMode> blendModes_,
+	RenderStateComponent::CullMode cullMode_,
+	ShaderPathComponent::MeshType meshType_,
+	ShaderPathComponent::MaterialType materialType_
+) : blendModes(std::move(blendModes_)), pass(pass_), cullMode(cullMode_), meshType(meshType_), materialType(materialType_)
+{
+	std::string errorMsg{};
+
+	if (blendModes.size() == 0) errorMsg += "「ブレンドモードが1つも設定されてない」";
+
+	ErrorMessageOutput::Assert::DetectError(errorMsg.length() == 0, errorMsg, fileName);
+}
+
+
 ModelDescription::ModelDescription
 (
-	std::vector<ModelDescription::Common> const& modelDescCommons_,
-	std::vector<ModelDescription::Unique> const& modelDescUniques_,
+	std::vector<ModelDescription::Common> const& commons_,
+	std::vector<ModelDescription::Unique> const& uniques_,
 	std::string modelName_,
-	std::vector<ModelDescription::RenderState> const& modelDescRenderStates_
-) :commons(modelDescCommons_), uniques(modelDescUniques_), modelName(modelName_), renderStates(modelDescRenderStates_)
+	std::vector<ModelDescription::RenderState> const& renderStates_
+) :commons(commons_), uniques(uniques_), modelName(modelName_), renderStates(renderStates_)
 {
-	//空チェック
-	ErrorMessageOutput::Assert::DetectError
-	(
-		(renderStates.size() > 0 && uniques.size() > 0 && commons.size() > 0),
-		modelName_ + "のDescのどれかが空だすね",
-		fileName
-	);
+	std::string errorMsg{};
 
-	//renderStatesのチェック
-	for (auto const& state : renderStates)
-	{
-		ErrorMessageOutput::Assert::DetectError
-		(
-			(state.blendModes.size() > 0) && (state.passes != RenderStateComponent::RenderPass::kNone),
-			modelName_ + "のModelDescription::RenderStatesのデータがちゃんと埋まってない(あなたのせい)",
-			fileName
-		);
-	}
+	if (renderStates.size() == 0)			errorMsg += "「renderStatesが空」";
+	if (uniques.size() == 0)				errorMsg += "「uniquesが空」";
+	if (commons.size() == 0)				errorMsg += "「commonsが空」";
+	if(uniques.size() != commons.size())	errorMsg += "「uniquesとcommonsのサイズが違う(恐らくエンジンのせい)」";
 
-	//ユニークと共通の比がおなじかチェックしておく
-	ErrorMessageOutput::Assert::DetectError
-	(
-		uniques.size() == commons.size(),
-		"ユニークと共通のサイズが違う(おおかたエンジンのせい)",
-		fileName
-	);
 
+	ErrorMessageOutput::Assert::DetectError(errorMsg.length() == 0, modelName_ +  errorMsg, fileName);
 }

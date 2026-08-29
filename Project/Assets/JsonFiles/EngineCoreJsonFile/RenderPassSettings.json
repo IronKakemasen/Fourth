@@ -1,6 +1,10 @@
 {
     "SceneTextureCompositor": 
     {
+                                "isOffScreen" : true,
+                                "ms" : "FullScreenMS",
+                                "ps" : "CompositorPS",
+
                                 "colorFormat":  [29],
                                 "clearColor":  [
                                                 [
@@ -22,6 +26,8 @@
     },
     "SceneTextureCreatorOpaque": 
      {
+                                "isOffScreen" : false,
+
                                 "colorFormat":  [29],
                                 "clearColor":  [
                                                 [

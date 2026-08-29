@@ -43,7 +43,6 @@ Model* ModelContext::ModelCreator::Create
 	///モデルクラスのインスタンス化
 	std::unique_ptr<Model> model = std::make_unique<Model>(modelDesc);
 
-
 	Model* modelPtr = model.get();
 
 	//実体はモデルコンテナが握る

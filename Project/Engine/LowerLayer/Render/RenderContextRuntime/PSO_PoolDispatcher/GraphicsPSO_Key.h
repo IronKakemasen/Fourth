@@ -24,8 +24,8 @@ private:
     ShaderPathComponent::MeshType mesh =            ShaderPathComponent::MeshType(kInvalid);
     ShaderPathComponent::MaterialType material =    ShaderPathComponent::MaterialType(kInvalid);
     RenderStateComponent::BlendMode blend =         RenderStateComponent::BlendMode(kInvalid);
-    RenderStateComponent::FillMode fill =           RenderStateComponent::FillMode(kInvalid);
     RenderStateComponent::CullMode cull =           RenderStateComponent::CullMode(kInvalid);
+    RenderStateComponent::FillMode fill =           RenderStateComponent::FillMode(kInvalid);
 
     template <Sequence sequence>
     static constexpr auto sequenceToType()
