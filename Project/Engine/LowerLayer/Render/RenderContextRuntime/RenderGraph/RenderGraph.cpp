@@ -10,12 +10,14 @@ RenderContext::RenderGraph::RenderGraph
 	RenderPassContainer& passContainer_,
 	RootSignatureContextDiplomat& rootSignatureContextDiplomat_,
 	BufferContextDiplomat& bufferContextDiplomat_,
-	ModelContextDiplomat& modelContextDiplomat_
+	ModelContextDiplomat& modelContextDiplomat_,
+	PSO_ContextDiplomat& pso_ContextDiplomat_,
+	ShaderContextDiplomat& shaderContextDiplomat_
 )
 {
 	Logger::Entry("RenderGraph: Constructor");
 
-	Init
+	Build
 	(
 		proof_,
 		pathAssembler_,
@@ -23,7 +25,9 @@ RenderContext::RenderGraph::RenderGraph
 		passContainer_,
 		rootSignatureContextDiplomat_,
 		bufferContextDiplomat_,
-		modelContextDiplomat_
+		modelContextDiplomat_,
+		pso_ContextDiplomat_,
+		shaderContextDiplomat_
 	);
 
 	Logger::End("RenderGraph: Constructor");

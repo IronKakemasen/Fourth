@@ -25,7 +25,7 @@ public:
 	);
 
 	template<typename ToolType>
-	auto* Lend(typename LicenceTypeTraits<ToolType>::Type type_)
+	auto* Lend(typename LicenceTypeTraits<ToolType>::Type licence_)
 	{
 		return std::get<ToolType*>(tools);
 	}

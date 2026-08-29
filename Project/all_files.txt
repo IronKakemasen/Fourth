@@ -5163,7 +5163,9 @@ RenderContext::RenderContext
 	NexusFieldProof proof_,
 	BufferContextDiplomat& bufferContextDiplomat_,
 	RootSignatureContextDiplomat& rootSignatureContextDiplomat_,
-	ModelContextDiplomat& modelContextDiplomat_
+	ModelContextDiplomat& modelContextDiplomat_,
+	PSO_ContextDiplomat& pso_ContextDiplomat_,
+	ShaderContextDiplomat& shaderContextDiplomat_
 ) 
 {
 	Logger::Entry("RenderContext: Constructor");
@@ -5198,7 +5200,9 @@ RenderContext::RenderContext
 			*renderPassContainer,
 			rootSignatureContextDiplomat_,
 			bufferContextDiplomat_,
-			modelContextDiplomat_
+			modelContextDiplomat_,
+			pso_ContextDiplomat_,
+			shaderContextDiplomat_
 		)
 	);
 
@@ -5226,6 +5230,8 @@ class Nexus;
 class BufferContextDiplomat;
 class RootSignatureContextDiplomat;
 class ModelContextDiplomat;
+class PSO_ContextDiplomat;
+class ShaderContextDiplomat;
 
 class RenderContext
 {
@@ -5244,9 +5250,9 @@ public:
 	//そのパスで使用するバッファの情報をまとめたもの
 	struct RequiredBufferInfo;
 	class PathBehavior;
-	//レンダーパスを設計する強者
-	class RenderGraph;
 	struct RenderPassState;
+	//レンダーパス(Path)を設計し、描画コマンドを叩く強者
+	class RenderGraph;
 
 	//ネクサスフィールドの証
 	struct NexusFieldProof;
@@ -5256,7 +5262,9 @@ public:
 		NexusFieldProof proof_,
 		BufferContextDiplomat& bufferContextDiplomat_,
 		RootSignatureContextDiplomat& rootSignatureContextDiplomat_,
-		ModelContextDiplomat& modelContextDiplomat_
+		ModelContextDiplomat& modelContextDiplomat_,
+		PSO_ContextDiplomat& pso_ContextDiplomat_,
+		ShaderContextDiplomat& shaderContextDiplomat_
 	);
 
 	~RenderContext();
@@ -5656,12 +5664,14 @@ RenderContext::RenderGraph::RenderGraph
 	RenderPassContainer& passContainer_,
 	RootSignatureContextDiplomat& rootSignatureContextDiplomat_,
 	BufferContextDiplomat& bufferContextDiplomat_,
-	ModelContextDiplomat& modelContextDiplomat_
+	ModelContextDiplomat& modelContextDiplomat_,
+	PSO_ContextDiplomat& pso_ContextDiplomat_,
+	ShaderContextDiplomat& shaderContextDiplomat_
 )
 {
 	Logger::Entry("RenderGraph: Constructor");
 
-	Init
+	Build
 	(
 		proof_,
 		pathAssembler_,
@@ -5669,7 +5679,9 @@ RenderContext::RenderGraph::RenderGraph
 		passContainer_,
 		rootSignatureContextDiplomat_,
 		bufferContextDiplomat_,
-		modelContextDiplomat_
+		modelContextDiplomat_,
+		pso_ContextDiplomat_,
+		shaderContextDiplomat_
 	);
 
 	Logger::End("RenderGraph: Constructor");
@@ -5689,7 +5701,7 @@ RenderContext::RenderGraph::RenderGraph
 
 class RenderContext::RenderGraph
 {
-	class Setupper;
+	class Builder;
 
 public:
 
@@ -5701,13 +5713,14 @@ public:
 		RenderPassContainer& passContainer_,
 		RootSignatureContextDiplomat& rootSignatureContextDiplomat_,
 		BufferContextDiplomat& bufferContextDiplomat_,
-		ModelContextDiplomat& modelContextDiplomat_
-
+		ModelContextDiplomat& modelContextDiplomat_,
+		PSO_ContextDiplomat& pso_ContextDiplomat_,
+		ShaderContextDiplomat& shaderContextDiplomat_
 	);
 
 private:
 
-	void Init
+	void Build
 	(
 		NexusFieldProof proof_,
 		RenderPathAssembler& pathAssembler_,
@@ -5715,8 +5728,9 @@ private:
 		RenderPassContainer& passContainer_,
 		RootSignatureContextDiplomat& rootSignatureContextDiplomat_,
 		BufferContextDiplomat& bufferContextDiplomat_,
-		ModelContextDiplomat& modelContextDiplomat_
-
+		ModelContextDiplomat& modelContextDiplomat_,
+		PSO_ContextDiplomat& pso_ContextDiplomat_,
+		ShaderContextDiplomat& shaderContextDiplomat_
 	);
 
 	//グラフィックス用の巨大共通ルートシグネチャ
@@ -5735,9 +5749,9 @@ private:
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Render\RenderContextRuntime\RenderGraph\RenderGraphInitialization.cpp ===
 ========================================
 #include "RenderGraph.h"
-#include "RenderGraphSetupper/RenderGraphSetupper.h"
+#include "RenderGraphBuilder/RenderGraphBuilder.h"
 
-void RenderContext::RenderGraph::Init
+void RenderContext::RenderGraph::Build
 (
 	NexusFieldProof proof_,
 	RenderPathAssembler& pathAssembler_,
@@ -5745,18 +5759,27 @@ void RenderContext::RenderGraph::Init
 	RenderPassContainer& passContainer,
 	RootSignatureContextDiplomat& rootSignatureContextDiplomat_,
 	BufferContextDiplomat& bufferContextDiplomat_,
-	ModelContextDiplomat& modelContextDiplomat_
-
+	ModelContextDiplomat& modelContextDiplomat_,
+	PSO_ContextDiplomat& pso_ContextDiplomat_,
+	ShaderContextDiplomat& shaderContextDiplomat_
 )
 {
 	//全てのPathを生成する
-	allPathPtr = Setupper::InstantiateAllPath(proof_, pathAssembler_, bufferContextDiplomat_);
+	allPathPtr = Builder::InstantiateAllPath(proof_, pathAssembler_, bufferContextDiplomat_);
 	
 	//ルートシグネチャの生成
-	graphicsRootSig = Setupper::CreateGraphicsRootSig(proof_ , rootSignatureContextDiplomat_);
+	graphicsRootSig = Builder::CreateGraphicsRootSig(proof_ , rootSignatureContextDiplomat_);
 
 	//存在しなければならない全てのPSOを生成
-	Setupper::CreateAllGraphicsPSO(proof_ , psoDispatcher_, passContainer,modelContextDiplomat_);
+	Builder::CreateAllGraphicsPSO
+	(
+		proof_ , 
+		psoDispatcher_, 
+		passContainer,
+		modelContextDiplomat_, 
+		pso_ContextDiplomat_, 
+		shaderContextDiplomat_
+	);
 
 }
 
@@ -5764,13 +5787,14 @@ void RenderContext::RenderGraph::Init
 
 
 ========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Render\RenderContextRuntime\RenderGraph\RenderGraphSetupper\RenderGraphSetupper.cpp ===
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Render\RenderContextRuntime\RenderGraph\RenderGraphBuilder\RenderGraphBuilder.cpp ===
 ========================================
 #include "PreCompileHeader.h"
-#include "RenderGraphSetupper.h"
+#include "RenderGraphBuilder.h"
 #include "../../../RenderPath/RenderPathAssembler/RenderPathAssembler.h"
 #include "../../PSO_PoolDispatcher/PSO_PoolDispatcher.h"
 #include "../../../RenderPass/RenderPassContainer/RenderPassContainer.h"
+#include "../../../RenderPass/AllRenderPass/AllPassInclude.h"
 
 //外部
 #include "../../../../Resource/RootSignature/RootSignatureContextDiplomat/RootSignatureContextDiplomat.h"
@@ -5784,13 +5808,22 @@ void RenderContext::RenderGraph::Init
 #include "../../../../Resource/Model/ModelContextCmds.h"
 #include "../../../../Resource/Model/ModelStructure/Model.h"
 
+#include "../../../../Resource/PSO/PSO_ContextDiplomat/PSO_ContextDiplomat.h"
+#include "../../../../Resource/PSO/PSO_ContextDiplomat/PSO_ContextToolLender/PSO_ContextToolLender.h"
+#include "../../../../Resource/PSO/PSO_ContextDiplomat/PSO_ContextToolLender/PSO_ContextToolLenderLicences.h"
+#include "../../../../Resource/PSO/PSO_Creator/PSO_Creator.h"
+
+#include "../../../../Resource/Shader/ShaderContextDiplomat/ShaderContextDiplomat.h"
+#include "../../../../Resource/Shader/ShaderContextDiplomat/ShaderContextToolLender/ShaderContextToolLender.h"
+#include "../../../../Resource/Shader/ShaderContextDiplomat/ShaderContextToolLender/ShaderContextToolLenderLicences.h"
+#include "../../../../Resource/Shader/ShaderLibrary/ShaderLibrary.h"
 
 namespace
 {
-	auto const fileName = "RenderGraphSetupper.cpp";
+	auto const fileName = "RenderGraphBuilder.cpp";
 }
 
-[[nodiscard]] AllPathPtr RenderContext::RenderGraph::Setupper::InstantiateAllPath
+[[nodiscard]] AllPathPtr RenderContext::RenderGraph::Builder::InstantiateAllPath
 (
 	NexusFieldProof proof_,
 	RenderPathAssembler& pathAssembler_,
@@ -5806,13 +5839,82 @@ namespace
 	return allPathPtr;
 }
 
-void RenderContext::RenderGraph::Setupper::CreateAllGraphicsPSO
+void RenderContext::RenderGraph::Builder::CreateAllGraphicsPSO
 (
 	NexusFieldProof proof_,
 	PSO_PoolDispatcher& psoDispatcher_, 
 	RenderPassContainer& passContainer_,
-	ModelContextDiplomat& modelContextDiplomat_
+	ModelContextDiplomat& modelContextDiplomat_,
+	PSO_ContextDiplomat& pso_ContextDiplomat_,
+	ShaderContextDiplomat& shaderContextDiplomat_	
 )
+{
+	using namespace RenderPassComponent;
+
+	//全てのモデルのRenderStatesを集計
+	std::vector<ModelDescription::RenderState> allModelRenderStates = 
+		CollectAllRenderStates(modelContextDiplomat_);
+
+	//全てのPassが入ってるコンテナを参照
+	auto const& allPassPtrMap = passContainer_.AccessAllPassPtrMap(proof_);
+
+	//PSO生成ツールを借りる
+	auto* psoCOntextToolLender = pso_ContextDiplomat_.Access<PSO_Context::ToolLender>();
+	PSO_Context::ToolLender::LicenceType<PSO_Context::PSO_Creator> usesPsoCreatorLicence;
+	auto* psoCreator = psoCOntextToolLender->Lend<PSO_Context::PSO_Creator>(usesPsoCreatorLicence);
+
+	//シェーダーライブラリを借りる
+	auto* shaderContextToolLender = shaderContextDiplomat_.Access<ShaderContext::ToolLender>();
+	ShaderContext::ToolLender::LicenceType<ShaderContext::ShaderLibrary> usesShaderLibLicence;
+	auto* shaderLib = shaderContextToolLender->Lend<ShaderContext::ShaderLibrary>(usesShaderLibLicence);
+
+
+	///これら二つのデータの塊からPSOを生成していく
+	///全Passを捜査して、PassDescのms_ps(シェーダファイル)の有無でrenderStateと
+	///からめるかどうかを分岐させる
+	for (UINT i = 0u; i < (UINT)Pass::kCount;++i)
+	{
+		//そのPassのDesc
+		auto const& passDesc = allPassPtrMap.at(Pass(i))->WatchDesc();
+		
+		//そのPass専用のシェーダーファイル
+		auto const& ms_psFile = passDesc.WatchMs_PsFileName();
+
+		//それが存在していれば、モデルのどーたら関係なしにPSOを作成
+		if (ms_psFile.has_value())
+		{
+			//PSO生成のためのディスク
+			PipelineStateDesc::Graphics psoDesc;
+
+			//使用するシェーダーファイルのバイナリデータのポインタ
+			psoDesc.shaderSet.meshShader = shaderLib->Export(ms_psFile->first);
+			psoDesc.shaderSet.meshShaderName = ms_psFile->first;
+			//ピクセルシェーダーを通さないパターンもあるので"none"でチェックする
+			if (ms_psFile->second != "none")
+			{
+				psoDesc.shaderSet.pixelShader = shaderLib->Export(ms_psFile->second);
+				psoDesc.shaderSet.pixelShaderName = ms_psFile->second;
+			}
+
+		}
+		//モデル描画パスなのでrenderStateの情報とともにPSOを作成
+		else
+		{
+			//PipelineStateComponent::ShaderSet shaderSet;
+			//PipelineStateComponent::RasterizerDesc rasterizerDesc;
+			//PipelineStateComponent::RenderTargetDesc renderTargetDesc;
+			//std::optional<PipelineStateComponent::DepthStencilDesc> depthStencilDesc;
+			//PipelineStateComponent::SampleDesc sampleDesc;
+
+		}
+
+	}
+}
+
+std::vector<ModelDescription::RenderState> RenderContext::RenderGraph::Builder::CollectAllRenderStates
+(
+	ModelContextDiplomat& modelContextDiplomat_
+) 
 {
 	using namespace ModelContextCmds;
 
@@ -5820,27 +5922,14 @@ void RenderContext::RenderGraph::Setupper::CreateAllGraphicsPSO
 	auto* modelContextCmdProvider = modelContextDiplomat_.Access<ModelContext::CommandProvider>();
 	ModelContext::CommandProvider::LicenceType<WatchModelContainer> licence;
 	auto watchModelContainer = modelContextCmdProvider->Provide<WatchModelContainer>(licence);
-	
+
 	//全てのモデルクラスのRenderStatesを集計
 	const std::vector<std::unique_ptr<Model>>* modelDataContainer = watchModelContainer();
-	std::vector<ModelDescription::RenderState> allModelRenderStates = CollectAllRenderStates(modelDataContainer);
 
-	//全てのPassが入ってるコンテナを参照
-	auto const& allPassPtrMap = passContainer_.AccessAllPassPtrMap(proof_);
-
-	///これら二つのデータの塊からPSOを生成していく
-	
-}
-
-std::vector<ModelDescription::RenderState> RenderContext::RenderGraph::Setupper::CollectAllRenderStates
-(
-	const std::vector<std::unique_ptr<Model>>* modelData_
-) 
-{
 	std::vector<ModelDescription::RenderState> allModelRenderStates;
 
 	//モデルクラスを全走査し、全ModelDescriptionを見る
-	for (auto itr = modelData_->begin();itr != modelData_->end();++itr)
+	for (auto itr = modelDataContainer->begin();itr != modelDataContainer->end();++itr)
 	{
 		//そのモデルクラスのModelDescのrenderStatesを回収
 		for (auto const& renderState : (*itr)->WatchRenderStates())
@@ -5854,7 +5943,7 @@ std::vector<ModelDescription::RenderState> RenderContext::RenderGraph::Setupper:
 
 
 
-[[nodiscard]] ID3D12RootSignature* RenderContext::RenderGraph::Setupper::CreateGraphicsRootSig
+[[nodiscard]] ID3D12RootSignature* RenderContext::RenderGraph::Builder::CreateGraphicsRootSig
 (
 	NexusFieldProof proof_,
 	RootSignatureContextDiplomat& rootSignatureContextDiplomat_
@@ -5886,15 +5975,16 @@ std::vector<ModelDescription::RenderState> RenderContext::RenderGraph::Setupper:
 
 
 ========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Render\RenderContextRuntime\RenderGraph\RenderGraphSetupper\RenderGraphSetupper.h ===
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Render\RenderContextRuntime\RenderGraph\RenderGraphBuilder\RenderGraphBuilder.h ===
 ========================================
 #pragma once
 #include "../RenderGraph.h"
 #include "../../../../Resource/Model/ModelStructure/ModelDescription/ModelDescription.h"
 
+
 class Model;
 
-class RenderContext::RenderGraph::Setupper
+class RenderContext::RenderGraph::Builder
 {
 	friend class RenderGraph;
 
@@ -5919,7 +6009,9 @@ class RenderContext::RenderGraph::Setupper
 		NexusFieldProof proof_,
 		PSO_PoolDispatcher& psoDispatcher_,
 		RenderPassContainer& passContainer_,
-		ModelContextDiplomat& modelContextDiplomat_
+		ModelContextDiplomat& modelContextDiplomat_,
+		PSO_ContextDiplomat& pso_ContextDiplomat_,
+		ShaderContextDiplomat& shaderContextDiplomat_
 	);
 
 
@@ -5927,8 +6019,8 @@ class RenderContext::RenderGraph::Setupper
 private:
 	
 	//全モデルデータを受け取ってそのモデルデータのRenderStateのベクタを取り出す
-	static std::vector<ModelDescription::RenderState> 
-		CollectAllRenderStates(const std::vector<std::unique_ptr<Model>>* modelData_);
+	static std::vector<ModelDescription::RenderState> CollectAllRenderStates(ModelContextDiplomat& modelContextDiplomat_);
+
 
 
 };
@@ -6144,7 +6236,7 @@ namespace RenderPassTraits
 1.クラスの定義
 2.一括前方宣言ファイルに追記
 3.一括インクルードファイルに追記
-4.RenderPassComponentに追記、必要であればRenderStateようのPassにも追記
+4.RenderPassComponentに追記
 5.RenderPassTraitsに追記
 6.jsonファイルにデータを追記
 
@@ -6310,12 +6402,6 @@ RenderContext::PassDesc::PassDesc
 
 }
 
-bool RenderContext::PassDesc::DoesDepthStencilBufferInfoContains()const
-{
-	return depthStencilBufferInfo.has_value() ? 1 : 0;
-}
-
-
 void RenderContext::PassDesc::SetColorBufferUniqueID(BufferUniqueID id_, size_t index_)
 {
 	colorBuffersInfo[index_].bufferID = id_;
@@ -6334,6 +6420,11 @@ std::vector<RenderContext::RequiredBufferInfo::ColorBuffer> const& RenderContext
 std::optional<RenderContext::RequiredBufferInfo::DepthStencilBuffer> const& RenderContext::PassDesc::WatchDepthStencilBufferInfo()const
 {
 	return depthStencilBufferInfo;
+}
+
+std::optional<std::pair<std::string, std::string >> const& RenderContext::PassDesc::WatchMs_PsFileName()const
+{
+	return ms_psFileName;
 }
 
 RenderContext::RenderPassState const& RenderContext::PassDesc::WatchRenderPassState()const
@@ -6398,8 +6489,7 @@ public:
 	RenderPassState const& WatchRenderPassState()const;
 	std::vector<RenderContext::RequiredBufferInfo::ColorBuffer> const& WatchColorBuffersInfo()const;
 	std::optional<RenderContext::RequiredBufferInfo::DepthStencilBuffer> const& WatchDepthStencilBufferInfo()const;
-
-	bool DoesDepthStencilBufferInfoContains()const;
+	std::optional<std::pair<std::string, std::string >> const& WatchMs_PsFileName()const;
 
 	void SetColorBufferUniqueID(BufferUniqueID id_, size_t index_);
 	void SetDepthStencilBufferUniqueID(BufferUniqueID id_);
@@ -6673,7 +6763,7 @@ void RenderContext::RenderPassCreator::PassBufferCreator::CreateBuffer
 		desc_.SetColorBufferUniqueID(creator_->CreateWithBuffer(colorBufferDesc, passName_ + "[" + std::to_string(i) + "]").first, i);
 	}
 
-	if (desc_.DoesDepthStencilBufferInfoContains())
+	if (desc_.WatchDepthStencilBufferInfo().has_value())
 	{
 		auto const& tmp = desc_.WatchDepthStencilBufferInfo();
 
@@ -16308,13 +16398,14 @@ struct PSO_Context::ToolLender::LicenceTypeTraits<PSO_Context::PSO_Creator>
 ========================================
 #pragma once
 #include "PSO_ContextToolLender.h"
+#include "../../../../Render/RenderContext.h"
 
 
 struct PSO_Context::ToolLender::UsesPSO_CreatorLicence
 {
 private:
 
-	///未定
+	friend class RenderContext::RenderGraph;
 	explicit UsesPSO_CreatorLicence() = default;
 
 };
@@ -16335,10 +16426,10 @@ namespace PipelineStateComponent
 {
     struct ShaderSet
     {
-        IDxcBlob* meshShader;
-        IDxcBlob* pixelShader;
-        std::string meshShaderName;
-        std::string pixelShaderName;
+        IDxcBlob* meshShader = nullptr;
+        IDxcBlob* pixelShader = nullptr;
+        std::string meshShaderName = "notSet";
+        std::string pixelShaderName = "none";
 
     };
 
@@ -18565,7 +18656,7 @@ public:
 	);
 
 	template<typename ToolType>
-	auto* Lend(typename LicenceTypeTraits<ToolType>::Type type_)
+	auto* Lend(typename LicenceTypeTraits<ToolType>::Type licence_)
 	{
 		return std::get<ToolType*>(tools);
 	}
@@ -18588,14 +18679,14 @@ struct ShaderContext::ToolLender::LicenceTypeTraits<ShaderContext::ShaderLibrary
 ========================================
 #pragma once
 #include "ShaderContextToolLender.h"
+#include "../../../../Render/RenderContext.h"
 
-class PSO_Context;
 
 struct ShaderContext::ToolLender::UsesShaderLibraryLicence
 {
 private:
 
-	friend class PSO_Context;
+	friend class RenderContext::RenderGraph;
 	explicit UsesShaderLibraryLicence() = default;
 
 };
@@ -18642,7 +18733,7 @@ IDxcBlob* ShaderContext::ShaderLibrary::Export(std::string fileName_)
         fileName
     );
 
-    return data.at(fileName_).Get();
+    return data[fileName_].Get();
 }
 ///+//////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+//////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -20766,7 +20857,9 @@ void Nexus::Init<Nexus::InitSequence::kRenderContext>()
 			RenderContext::NexusFieldProof{},
 			*bufferContext->diplomat,
 			*rootSignatureContext->diplomat,
-			*modelContext->diplomat
+			*modelContext->diplomat,
+			*pso_context->diplomat,
+			*shaderContext->diplomat
 		)
 	);
 	Logger::Log("Instantiate: RenderContext", fileName);

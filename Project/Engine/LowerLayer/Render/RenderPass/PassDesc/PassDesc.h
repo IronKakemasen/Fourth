@@ -48,8 +48,7 @@ public:
 	RenderPassState const& WatchRenderPassState()const;
 	std::vector<RenderContext::RequiredBufferInfo::ColorBuffer> const& WatchColorBuffersInfo()const;
 	std::optional<RenderContext::RequiredBufferInfo::DepthStencilBuffer> const& WatchDepthStencilBufferInfo()const;
-
-	bool DoesDepthStencilBufferInfoContains()const;
+	std::optional<std::pair<std::string, std::string >> const& WatchMs_PsFileName()const;
 
 	void SetColorBufferUniqueID(BufferUniqueID id_, size_t index_);
 	void SetDepthStencilBufferUniqueID(BufferUniqueID id_);

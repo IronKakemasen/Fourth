@@ -185,7 +185,9 @@ void Nexus::Init<Nexus::InitSequence::kRenderContext>()
 			RenderContext::NexusFieldProof{},
 			*bufferContext->diplomat,
 			*rootSignatureContext->diplomat,
-			*modelContext->diplomat
+			*modelContext->diplomat,
+			*pso_context->diplomat,
+			*shaderContext->diplomat
 		)
 	);
 	Logger::Log("Instantiate: RenderContext", fileName);

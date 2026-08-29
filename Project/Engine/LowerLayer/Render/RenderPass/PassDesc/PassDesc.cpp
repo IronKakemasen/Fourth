@@ -17,12 +17,6 @@ RenderContext::PassDesc::PassDesc
 
 }
 
-bool RenderContext::PassDesc::DoesDepthStencilBufferInfoContains()const
-{
-	return depthStencilBufferInfo.has_value() ? 1 : 0;
-}
-
-
 void RenderContext::PassDesc::SetColorBufferUniqueID(BufferUniqueID id_, size_t index_)
 {
 	colorBuffersInfo[index_].bufferID = id_;
@@ -41,6 +35,11 @@ std::vector<RenderContext::RequiredBufferInfo::ColorBuffer> const& RenderContext
 std::optional<RenderContext::RequiredBufferInfo::DepthStencilBuffer> const& RenderContext::PassDesc::WatchDepthStencilBufferInfo()const
 {
 	return depthStencilBufferInfo;
+}
+
+std::optional<std::pair<std::string, std::string >> const& RenderContext::PassDesc::WatchMs_PsFileName()const
+{
+	return ms_psFileName;
 }
 
 RenderContext::RenderPassState const& RenderContext::PassDesc::WatchRenderPassState()const

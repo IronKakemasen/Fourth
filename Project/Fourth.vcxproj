@@ -376,7 +376,7 @@
     <ClCompile Include="Engine\LowerLayer\Render\RenderPath\RenderPathAssembler\PathSettingsLoader\PathSettingsLoader.cpp" />
     <ClCompile Include="Engine\LowerLayer\Render\RenderContextRuntime\RenderGraph\RenderGraph.cpp" />
     <ClCompile Include="Engine\LowerLayer\Render\RenderPath\RenderPathContainer\RenderPathContainer.cpp" />
-    <ClCompile Include="Engine\LowerLayer\Render\RenderContextRuntime\RenderGraph\RenderGraphSetupper\RenderGraphSetupper.cpp" />
+    <ClCompile Include="Engine\LowerLayer\Render\RenderContextRuntime\RenderGraph\RenderGraphBuilder\RenderGraphBuilder.cpp" />
     <ClCompile Include="Engine\LowerLayer\Render\RenderPass\AllRenderPass\SceneTextureCompositor\SceneTextureCompositor.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -614,7 +614,7 @@
     <ClInclude Include="Engine\LowerLayer\Render\RenderPath\RenderPathAssembler\PathSettingsLoader\PathSettingsLoader.h" />
     <ClInclude Include="Engine\LowerLayer\Render\RenderContextRuntime\RenderGraph\RenderGraph.h" />
     <ClInclude Include="Engine\LowerLayer\Render\RenderPath\RenderPathContainer\RenderPathContainer.h" />
-    <ClInclude Include="Engine\LowerLayer\Render\RenderContextRuntime\RenderGraph\RenderGraphSetupper\RenderGraphSetupper.h" />
+    <ClInclude Include="Engine\LowerLayer\Render\RenderContextRuntime\RenderGraph\RenderGraphBuilder\RenderGraphBuilder.h" />
     <ClInclude Include="Engine\LowerLayer\Render\RenderPass\AllRenderPass\SceneTextureCompositor\SceneTextureCompositor.h" />
   </ItemGroup>
   <ItemGroup>

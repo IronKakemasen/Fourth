@@ -7,10 +7,10 @@ namespace PipelineStateComponent
 {
     struct ShaderSet
     {
-        IDxcBlob* meshShader;
-        IDxcBlob* pixelShader;
-        std::string meshShaderName;
-        std::string pixelShaderName;
+        IDxcBlob* meshShader = nullptr;
+        IDxcBlob* pixelShader = nullptr;
+        std::string meshShaderName = "notSet";
+        std::string pixelShaderName = "none";
 
     };
 

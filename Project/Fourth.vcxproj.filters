@@ -579,7 +579,7 @@
     <ClCompile Include="Engine\LowerLayer\Render\RenderPath\RenderPathContainer\RenderPathContainer.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="Engine\LowerLayer\Render\RenderContextRuntime\RenderGraph\RenderGraphSetupper\RenderGraphSetupper.cpp">
+    <ClCompile Include="Engine\LowerLayer\Render\RenderContextRuntime\RenderGraph\RenderGraphBuilder\RenderGraphBuilder.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
     <ClCompile Include="Engine\LowerLayer\Render\RenderContextRuntime\RenderGraph\RenderGraphInitialization.cpp">
@@ -1286,7 +1286,7 @@
     <ClInclude Include="Assets\Shared\StructuredBuffer.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\LowerLayer\Render\RenderContextRuntime\RenderGraph\RenderGraphSetupper\RenderGraphSetupper.h">
+    <ClInclude Include="Engine\LowerLayer\Render\RenderContextRuntime\RenderGraph\RenderGraphBuilder\RenderGraphBuilder.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
     <ClInclude Include="Engine\LowerLayer\Render\RenderPass\AllRenderPass\SceneTextureCompositor\SceneTextureCompositor.h">

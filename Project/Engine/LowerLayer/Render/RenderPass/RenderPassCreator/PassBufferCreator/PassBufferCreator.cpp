@@ -27,7 +27,7 @@ void RenderContext::RenderPassCreator::PassBufferCreator::CreateBuffer
 		desc_.SetColorBufferUniqueID(creator_->CreateWithBuffer(colorBufferDesc, passName_ + "[" + std::to_string(i) + "]").first, i);
 	}
 
-	if (desc_.DoesDepthStencilBufferInfoContains())
+	if (desc_.WatchDepthStencilBufferInfo().has_value())
 	{
 		auto const& tmp = desc_.WatchDepthStencilBufferInfo();
 
