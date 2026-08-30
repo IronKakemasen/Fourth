@@ -579,9 +579,6 @@
     <ClCompile Include="Engine\LowerLayer\Render\RenderPath\RenderPathContainer\RenderPathContainer.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="Engine\LowerLayer\Render\RenderContextRuntime\RenderGraph\RenderGraphBuilder\RenderGraphBuilder.cpp">
-      <Filter>ソース ファイル</Filter>
-    </ClCompile>
     <ClCompile Include="Engine\LowerLayer\Render\RenderContextRuntime\RenderGraph\RenderGraphInitialization.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
@@ -589,6 +586,15 @@
       <Filter>ソース ファイル</Filter>
     </ClCompile>
     <ClCompile Include="Engine\LowerLayer\Render\RenderPass\AllRenderPass\SceneTextureCompositor\SceneTextureCompositor.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\LowerLayer\Render\RenderContextRuntime\RenderGraph\RenderGraphBuilder\GraphicsRootSigBuilder\GraphicsRootSigBuilder.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\LowerLayer\Render\RenderContextRuntime\RenderGraph\RenderGraphBuilder\RenderPathBuilder\RenderPathBuilder.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\LowerLayer\Render\RenderContextRuntime\RenderGraph\RenderGraphBuilder\GraphicsPSO_Builder\GraphicsPSO_Builder.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
   </ItemGroup>
@@ -1286,9 +1292,6 @@
     <ClInclude Include="Assets\Shared\StructuredBuffer.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\LowerLayer\Render\RenderContextRuntime\RenderGraph\RenderGraphBuilder\RenderGraphBuilder.h">
-      <Filter>ヘッダー ファイル</Filter>
-    </ClInclude>
     <ClInclude Include="Engine\LowerLayer\Render\RenderPass\AllRenderPass\SceneTextureCompositor\SceneTextureCompositor.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
@@ -1299,6 +1302,18 @@
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
     <ClInclude Include="Engine\LowerLayer\Render\RenderPass\PassDesc\RenderPassState.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\LowerLayer\Render\RenderContextRuntime\RenderGraph\RenderGraphBuilder\GraphicsRootSigBuilder\GraphicsRootSigBuilder.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\LowerLayer\Render\RenderContextRuntime\RenderGraph\RenderGraphBuilder\RenderPathBuilder\RenderPathBuilder.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\LowerLayer\Render\RenderContextRuntime\RenderGraph\RenderGraphBuilder\GraphicsPSO_Builder\GraphicsPSO_Builder.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\LowerLayer\Resource\RootSignature\RootSigDiplomatIncludes.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
   </ItemGroup>
