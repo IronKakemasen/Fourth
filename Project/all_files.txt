@@ -5735,6 +5735,9 @@ RenderContext::RenderGraph::RenderGraph
 class RenderContext::RenderGraph
 {
 	class Builder;
+	class PSO_Builder;
+	class PathBuilder;
+	class RootSigBuilder;
 
 public:
 
@@ -5782,7 +5785,9 @@ private:
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Render\RenderContextRuntime\RenderGraph\RenderGraphInitialization.cpp ===
 ========================================
 #include "RenderGraph.h"
-#include "RenderGraphBuilder/RenderGraphBuilder.h"
+#include "RenderGraphBuilder/GraphicsPSO_Builder/GraphicsPSO_Builder.h"
+#include "RenderGraphBuilder/GraphicsRootSigBuilder/GraphicsRootSigBuilder.h"
+#include "RenderGraphBuilder/RenderPathBuilder/RenderPathBuilder.h"
 
 void RenderContext::RenderGraph::Build
 (
@@ -5798,13 +5803,13 @@ void RenderContext::RenderGraph::Build
 )
 {
 	//全てのPathを生成する
-	allPathPtr = Builder::InstantiateAllPath(proof_, pathAssembler_, bufferContextDiplomat_);
+	allPathPtr = PathBuilder::InstantiateAllPath(proof_, pathAssembler_, bufferContextDiplomat_);
 	
 	//ルートシグネチャの生成
-	graphicsRootSig = Builder::CreateGraphicsRootSig(proof_ , rootSignatureContextDiplomat_);
+	graphicsRootSig = RootSigBuilder::CreateGraphicsRootSig(proof_ , rootSignatureContextDiplomat_);
 
 	//存在しなければならない全てのPSOを生成
-	Builder::CreateAllGraphicsPSO
+	PSO_Builder::CreateAllGraphicsPSO
 	(
 		proof_ , 
 		psoDispatcher_, 
@@ -5820,72 +5825,50 @@ void RenderContext::RenderGraph::Build
 
 
 ========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Render\RenderContextRuntime\RenderGraph\RenderGraphBuilder\RenderGraphBuilder.cpp ===
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Render\RenderContextRuntime\RenderGraph\RenderGraphBuilder\GraphicsPSO_Builder\GraphicsPSO_Builder.cpp ===
 ========================================
 #include "PreCompileHeader.h"
-#include "RenderGraphBuilder.h"
-#include "../../../RenderPath/RenderPathAssembler/RenderPathAssembler.h"
-#include "../../PSO_PoolDispatcher/PSO_PoolDispatcher.h"
-#include "../../../RenderPass/RenderPassContainer/RenderPassContainer.h"
-#include "../../../RenderPass/AllRenderPass/AllPassInclude.h"
+#include "GraphicsPSO_Builder.h"
+#include "../../../PSO_PoolDispatcher/PSO_PoolDispatcher.h"
+#include "../../../../RenderPass/RenderPassContainer/RenderPassContainer.h"
+#include "../../../../RenderPass/AllRenderPass/AllPassInclude.h"
 
-//外部
-#include "../../../../Resource/RootSignature/RootSignatureContextDiplomat/RootSignatureContextDiplomat.h"
-#include "../../../../Resource/RootSignature/RootSignatureContextDiplomat/RootSignatureCmdProvider/RootSignatureCmdProvider.h"
-#include "../../../../Resource/RootSignature/RootSignatureContextDiplomat/RootSignatureCmdProvider/RootSigCmdProviderLicences.h"
-#include "../../../../Resource/RootSignature/RootSignatureCmds.h"
+#include "../../../../../Resource/Model/ModelContextDiplomat/ModelContextDiplomat.h"
+#include "../../../../../Resource/Model/ModelContextDiplomat/ModelContextCmdProvider/ModelContextCmdProvider.h"
+#include "../../../../../Resource/Model/ModelContextDiplomat/ModelContextCmdProvider/ModelContextCmdProviderLicences.h"
+#include "../../../../../Resource/Model/ModelContextCmds.h"
+#include "../../../../../Resource/Model/ModelStructure/Model.h"
 
-#include "../../../../Resource/Model/ModelContextDiplomat/ModelContextDiplomat.h"
-#include "../../../../Resource/Model/ModelContextDiplomat/ModelContextCmdProvider/ModelContextCmdProvider.h"
-#include "../../../../Resource/Model/ModelContextDiplomat/ModelContextCmdProvider/ModelContextCmdProviderLicences.h"
-#include "../../../../Resource/Model/ModelContextCmds.h"
-#include "../../../../Resource/Model/ModelStructure/Model.h"
+#include "../../../../../Resource/PSO/PSO_ContextDiplomat/PSO_ContextDiplomat.h"
+#include "../../../../../Resource/PSO/PSO_ContextDiplomat/PSO_ContextToolLender/PSO_ContextToolLender.h"
+#include "../../../../../Resource/PSO/PSO_ContextDiplomat/PSO_ContextToolLender/PSO_ContextToolLenderLicences.h"
+#include "../../../../../Resource/PSO/PSO_Creator/PSO_Creator.h"
+		  
+#include "../../../../../Resource/Shader/ShaderContextDiplomat/ShaderContextDiplomat.h"
+#include "../../../../../Resource/Shader/ShaderContextDiplomat/ShaderContextToolLender/ShaderContextToolLender.h"
+#include "../../../../../Resource/Shader/ShaderContextDiplomat/ShaderContextToolLender/ShaderContextToolLenderLicences.h"
+#include "../../../../../Resource/Shader/ShaderLibrary/ShaderLibrary.h"
 
-#include "../../../../Resource/PSO/PSO_ContextDiplomat/PSO_ContextDiplomat.h"
-#include "../../../../Resource/PSO/PSO_ContextDiplomat/PSO_ContextToolLender/PSO_ContextToolLender.h"
-#include "../../../../Resource/PSO/PSO_ContextDiplomat/PSO_ContextToolLender/PSO_ContextToolLenderLicences.h"
-#include "../../../../Resource/PSO/PSO_Creator/PSO_Creator.h"
-
-#include "../../../../Resource/Shader/ShaderContextDiplomat/ShaderContextDiplomat.h"
-#include "../../../../Resource/Shader/ShaderContextDiplomat/ShaderContextToolLender/ShaderContextToolLender.h"
-#include "../../../../Resource/Shader/ShaderContextDiplomat/ShaderContextToolLender/ShaderContextToolLenderLicences.h"
-#include "../../../../Resource/Shader/ShaderLibrary/ShaderLibrary.h"
 
 namespace
 {
-	auto const fileName = "RenderGraphBuilder.cpp";
+	auto const fileName = "GraphicsPSO_Builder.cpp";
 }
 
-[[nodiscard]] AllPathPtr RenderContext::RenderGraph::Builder::InstantiateAllPath
+void RenderContext::RenderGraph::PSO_Builder::CreateAllGraphicsPSO
 (
 	NexusFieldProof proof_,
-	RenderPathAssembler& pathAssembler_,
-	BufferContextDiplomat& bufferContextDiplomat_
-) 
-{
-	AllPathPtr allPathPtr;
-
-	std::get<CreateSceneTexture*>(allPathPtr) = pathAssembler_.Assemble<CreateSceneTexture>(proof_, bufferContextDiplomat_);
-	Logger::Log("Create: CreateSceneTexture", fileName);
-
-
-	return allPathPtr;
-}
-
-void RenderContext::RenderGraph::Builder::CreateAllGraphicsPSO
-(
-	NexusFieldProof proof_,
-	PSO_PoolDispatcher& psoDispatcher_, 
+	PSO_PoolDispatcher& psoDispatcher_,
 	RenderPassContainer& passContainer_,
 	ModelContextDiplomat& modelContextDiplomat_,
 	PSO_ContextDiplomat& pso_ContextDiplomat_,
-	ShaderContextDiplomat& shaderContextDiplomat_	
+	ShaderContextDiplomat& shaderContextDiplomat_
 )
 {
 	using namespace RenderPassComponent;
 
 	//全てのモデルのRenderStatesを集計
-	std::vector<ModelDescription::RenderState> allModelRenderStates = 
+	std::vector<ModelDescription::RenderState> allModelRenderStates =
 		CollectAllRenderStates(modelContextDiplomat_);
 
 	//全てのPassが入ってるコンテナを参照
@@ -5950,10 +5933,10 @@ void RenderContext::RenderGraph::Builder::CreateAllGraphicsPSO
 
 }
 
-std::vector<ModelDescription::RenderState> RenderContext::RenderGraph::Builder::CollectAllRenderStates
+std::vector<ModelDescription::RenderState> RenderContext::RenderGraph::PSO_Builder::CollectAllRenderStates
 (
 	ModelContextDiplomat& modelContextDiplomat_
-) 
+)
 {
 	using namespace ModelContextCmds;
 
@@ -5982,7 +5965,63 @@ std::vector<ModelDescription::RenderState> RenderContext::RenderGraph::Builder::
 
 
 
-[[nodiscard]] ID3D12RootSignature* RenderContext::RenderGraph::Builder::CreateGraphicsRootSig
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Render\RenderContextRuntime\RenderGraph\RenderGraphBuilder\GraphicsPSO_Builder\GraphicsPSO_Builder.h ===
+========================================
+#pragma once
+#include "../../RenderGraph.h"
+#include "../../../../../Resource/Model/ModelStructure/ModelDescription/ModelDescription.h"
+
+class Model;
+
+class RenderContext::RenderGraph::PSO_Builder
+{
+	friend class RenderGraph;
+
+	//全ての存在せねばならんPSOを生成
+	static void CreateAllGraphicsPSO
+	(
+		NexusFieldProof proof_,
+		PSO_PoolDispatcher& psoDispatcher_,
+		RenderPassContainer& passContainer_,
+		ModelContextDiplomat& modelContextDiplomat_,
+		PSO_ContextDiplomat& pso_ContextDiplomat_,
+		ShaderContextDiplomat& shaderContextDiplomat_
+	);
+
+
+	//以下ヘルパー
+private:
+
+	//全モデルデータを受け取ってそのモデルデータのRenderStateのベクタを取り出す
+	static std::vector<ModelDescription::RenderState> CollectAllRenderStates(ModelContextDiplomat& modelContextDiplomat_);
+
+
+
+};
+
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Render\RenderContextRuntime\RenderGraph\RenderGraphBuilder\GraphicsRootSigBuilder\GraphicsRootSigBuilder.cpp ===
+========================================
+#include "PreCompileHeader.h"
+#include "GraphicsRootSigBuilder.h"
+
+
+//外部
+#include "../../../../../Resource/RootSignature/RootSigDiplomatIncludes.h"
+
+namespace
+{
+	auto const fileName = "GraphicsRootSigBuilder.cpp";
+}
+
+
+[[nodiscard]] ID3D12RootSignature* RenderContext::RenderGraph::RootSigBuilder::CreateGraphicsRootSig
 (
 	NexusFieldProof proof_,
 	RootSignatureContextDiplomat& rootSignatureContextDiplomat_
@@ -6014,26 +6053,14 @@ std::vector<ModelDescription::RenderState> RenderContext::RenderGraph::Builder::
 
 
 ========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Render\RenderContextRuntime\RenderGraph\RenderGraphBuilder\RenderGraphBuilder.h ===
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Render\RenderContextRuntime\RenderGraph\RenderGraphBuilder\GraphicsRootSigBuilder\GraphicsRootSigBuilder.h ===
 ========================================
 #pragma once
-#include "../RenderGraph.h"
-#include "../../../../Resource/Model/ModelStructure/ModelDescription/ModelDescription.h"
+#include "../../RenderGraph.h"
 
-
-class Model;
-
-class RenderContext::RenderGraph::Builder
+class RenderContext::RenderGraph::RootSigBuilder
 {
 	friend class RenderGraph;
-
-	//全てのPathを生成
-	static [[nodiscard]] AllPathPtr InstantiateAllPath
-	(
-		NexusFieldProof proof_,
-		RenderPathAssembler& pathAssembler_,
-		BufferContextDiplomat& bufferContextDiplomat_
-	);
 
 	//グラフィックス用のルートシグの生成
 	static [[nodiscard]] ID3D12RootSignature* CreateGraphicsRootSig
@@ -6042,25 +6069,71 @@ class RenderContext::RenderGraph::Builder
 		RootSignatureContextDiplomat& rootSignatureContextDiplomat_
 	);
 
-	//全ての存在せねばならんPSOを生成
-	static void CreateAllGraphicsPSO
-	(
-		NexusFieldProof proof_,
-		PSO_PoolDispatcher& psoDispatcher_,
-		RenderPassContainer& passContainer_,
-		ModelContextDiplomat& modelContextDiplomat_,
-		PSO_ContextDiplomat& pso_ContextDiplomat_,
-		ShaderContextDiplomat& shaderContextDiplomat_
-	);
+
+	//以下ヘルパー
+private:
+
+};
+
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Render\RenderContextRuntime\RenderGraph\RenderGraphBuilder\RenderPathBuilder\RenderPathBuilder.cpp ===
+========================================
+#include "PreCompileHeader.h"
+#include "RenderPathBuilder.h"
+#include "../../../../RenderPath/RenderPathAssembler/RenderPathAssembler.h"
+
+
+namespace
+{
+	auto const fileName = "RenderPathBuilder.cpp";
+}
+
+
+[[nodiscard]] AllPathPtr RenderContext::RenderGraph::PathBuilder::InstantiateAllPath
+(
+	NexusFieldProof proof_,
+	RenderPathAssembler& pathAssembler_,
+	BufferContextDiplomat& bufferContextDiplomat_
+)
+{
+	AllPathPtr allPathPtr;
+
+	std::get<CreateSceneTexture*>(allPathPtr) = pathAssembler_.Assemble<CreateSceneTexture>(proof_, bufferContextDiplomat_);
+	Logger::Log("Create: CreateSceneTexture", fileName);
+
+
+	return allPathPtr;
+}
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Render\RenderContextRuntime\RenderGraph\RenderGraphBuilder\RenderPathBuilder\RenderPathBuilder.h ===
+========================================
+#pragma once
+#include "../../RenderGraph.h"
+
+class RenderContext::RenderGraph::PathBuilder
+{
+	friend class RenderGraph;
+
 
 
 	//以下ヘルパー
 private:
-	
-	//全モデルデータを受け取ってそのモデルデータのRenderStateのベクタを取り出す
-	static std::vector<ModelDescription::RenderState> CollectAllRenderStates(ModelContextDiplomat& modelContextDiplomat_);
 
-
+	//全てのPathを生成
+	static AllPathPtr InstantiateAllPath
+	(
+		NexusFieldProof proof_,
+		RenderPathAssembler& pathAssembler_,
+		BufferContextDiplomat& bufferContextDiplomat_
+	);
 
 };
 
@@ -17454,6 +17527,18 @@ private:
 };
 
 
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\RootSignature\RootSigDiplomatIncludes.h ===
+========================================
+#pragma once
+#include "RootSignatureContextDiplomat/RootSignatureCmdProvider/RootSignatureCmdProvider.h"
+#include "RootSignatureContextDiplomat/RootSignatureCmdProvider/RootSigCmdProviderLicences.h"
+#include "RootSignatureContextDiplomat/RootSignatureContextDiplomat.h"
+#include "RootSignatureContextDiplomat/RootSignatureToolLender/RootSignatureToolLender.h"
+#include "RootSignatureContextDiplomat/RootSignatureToolLender/RootSigToolLenderLicences.h"
 
 
 

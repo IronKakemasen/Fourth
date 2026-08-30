@@ -6,6 +6,9 @@
 class RenderContext::RenderGraph
 {
 	class Builder;
+	class PSO_Builder;
+	class PathBuilder;
+	class RootSigBuilder;
 
 public:
 

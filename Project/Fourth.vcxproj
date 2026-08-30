@@ -376,8 +376,10 @@
     <ClCompile Include="Engine\LowerLayer\Render\RenderPath\RenderPathAssembler\PathSettingsLoader\PathSettingsLoader.cpp" />
     <ClCompile Include="Engine\LowerLayer\Render\RenderContextRuntime\RenderGraph\RenderGraph.cpp" />
     <ClCompile Include="Engine\LowerLayer\Render\RenderPath\RenderPathContainer\RenderPathContainer.cpp" />
-    <ClCompile Include="Engine\LowerLayer\Render\RenderContextRuntime\RenderGraph\RenderGraphBuilder\RenderGraphBuilder.cpp" />
     <ClCompile Include="Engine\LowerLayer\Render\RenderPass\AllRenderPass\SceneTextureCompositor\SceneTextureCompositor.cpp" />
+    <ClCompile Include="Engine\LowerLayer\Render\RenderContextRuntime\RenderGraph\RenderGraphBuilder\GraphicsRootSigBuilder\GraphicsRootSigBuilder.cpp" />
+    <ClCompile Include="Engine\LowerLayer\Render\RenderContextRuntime\RenderGraph\RenderGraphBuilder\RenderPathBuilder\RenderPathBuilder.cpp" />
+    <ClCompile Include="Engine\LowerLayer\Render\RenderContextRuntime\RenderGraph\RenderGraphBuilder\GraphicsPSO_Builder\GraphicsPSO_Builder.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Assets\BAKA\ConstantBuffers.h" />
@@ -432,6 +434,7 @@
     <ClInclude Include="Engine\LowerLayer\Resource\Model\ModelStructure\ModelData\ResourceMaterial\StandardMaterial.h" />
     <ClInclude Include="Engine\LowerLayer\Resource\Model\ModelStructure\ModelData\ResourceMesh\StandardVertex.h" />
     <ClInclude Include="Engine\LowerLayer\Resource\PSO\PSO_ContextDiplomat\PSO_ContextToolLender\PSO_ContextToolLenderLicences.h" />
+    <ClInclude Include="Engine\LowerLayer\Resource\RootSignature\RootSigDiplomatIncludes.h" />
     <ClInclude Include="Engine\LowerLayer\Resource\RootSignature\RootSignatureContextDiplomat\RootSignatureCmdProvider\RootSigCmdProviderLicences.h" />
     <ClInclude Include="Engine\LowerLayer\Resource\RootSignature\RootSignatureCmds.h" />
     <ClInclude Include="Engine\LowerLayer\Resource\RootSignature\RootSignatureContextDiplomat\RootSignatureToolLender\RootSigToolLenderLicences.h" />
@@ -614,8 +617,10 @@
     <ClInclude Include="Engine\LowerLayer\Render\RenderPath\RenderPathAssembler\PathSettingsLoader\PathSettingsLoader.h" />
     <ClInclude Include="Engine\LowerLayer\Render\RenderContextRuntime\RenderGraph\RenderGraph.h" />
     <ClInclude Include="Engine\LowerLayer\Render\RenderPath\RenderPathContainer\RenderPathContainer.h" />
-    <ClInclude Include="Engine\LowerLayer\Render\RenderContextRuntime\RenderGraph\RenderGraphBuilder\RenderGraphBuilder.h" />
     <ClInclude Include="Engine\LowerLayer\Render\RenderPass\AllRenderPass\SceneTextureCompositor\SceneTextureCompositor.h" />
+    <ClInclude Include="Engine\LowerLayer\Render\RenderContextRuntime\RenderGraph\RenderGraphBuilder\GraphicsRootSigBuilder\GraphicsRootSigBuilder.h" />
+    <ClInclude Include="Engine\LowerLayer\Render\RenderContextRuntime\RenderGraph\RenderGraphBuilder\RenderPathBuilder\RenderPathBuilder.h" />
+    <ClInclude Include="Engine\LowerLayer\Render\RenderContextRuntime\RenderGraph\RenderGraphBuilder\GraphicsPSO_Builder\GraphicsPSO_Builder.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

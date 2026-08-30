@@ -1,5 +1,7 @@
 #include "RenderGraph.h"
-#include "RenderGraphBuilder/RenderGraphBuilder.h"
+#include "RenderGraphBuilder/GraphicsPSO_Builder/GraphicsPSO_Builder.h"
+#include "RenderGraphBuilder/GraphicsRootSigBuilder/GraphicsRootSigBuilder.h"
+#include "RenderGraphBuilder/RenderPathBuilder/RenderPathBuilder.h"
 
 void RenderContext::RenderGraph::Build
 (
@@ -15,13 +17,13 @@ void RenderContext::RenderGraph::Build
 )
 {
 	//全てのPathを生成する
-	allPathPtr = Builder::InstantiateAllPath(proof_, pathAssembler_, bufferContextDiplomat_);
+	allPathPtr = PathBuilder::InstantiateAllPath(proof_, pathAssembler_, bufferContextDiplomat_);
 	
 	//ルートシグネチャの生成
-	graphicsRootSig = Builder::CreateGraphicsRootSig(proof_ , rootSignatureContextDiplomat_);
+	graphicsRootSig = RootSigBuilder::CreateGraphicsRootSig(proof_ , rootSignatureContextDiplomat_);
 
 	//存在しなければならない全てのPSOを生成
-	Builder::CreateAllGraphicsPSO
+	PSO_Builder::CreateAllGraphicsPSO
 	(
 		proof_ , 
 		psoDispatcher_, 

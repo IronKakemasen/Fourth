@@ -1,0 +1,6 @@
+#pragma once
+#include "RootSignatureContextDiplomat/RootSignatureCmdProvider/RootSignatureCmdProvider.h"
+#include "RootSignatureContextDiplomat/RootSignatureCmdProvider/RootSigCmdProviderLicences.h"
+#include "RootSignatureContextDiplomat/RootSignatureContextDiplomat.h"
+#include "RootSignatureContextDiplomat/RootSignatureToolLender/RootSignatureToolLender.h"
+#include "RootSignatureContextDiplomat/RootSignatureToolLender/RootSigToolLenderLicences.h"
