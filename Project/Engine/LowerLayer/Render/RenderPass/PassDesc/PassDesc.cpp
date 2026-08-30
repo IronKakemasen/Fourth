@@ -8,11 +8,12 @@ namespace
 
 RenderContext::PassDesc::PassDesc
 (
+	std::string name_,
 	std::optional<std::pair<std::string, std::string >> ms_psFileName_,
 	RenderPassState renderPassState_,
 	std::vector<RenderContext::RequiredBufferInfo::ColorBuffer> colorBuffersInfo_,
 	std::optional<RenderContext::RequiredBufferInfo::DepthStencilBuffer> depthStencilBufferInfo_
-):renderPassState(renderPassState_) , colorBuffersInfo(colorBuffersInfo_), depthStencilBufferInfo(depthStencilBufferInfo_), ms_psFileName(ms_psFileName_)
+):renderPassState(renderPassState_) , colorBuffersInfo(colorBuffersInfo_), depthStencilBufferInfo(depthStencilBufferInfo_), ms_psFileName(ms_psFileName_),passName(name_)
 {
 
 }
@@ -47,3 +48,38 @@ RenderContext::RenderPassState const& RenderContext::PassDesc::WatchRenderPassSt
 	return renderPassState;
 }
 
+void RenderContext::PassDesc::DebugLog()const
+{
+	std::string log;
+
+	log += "---" + passName + "---\n";
+	log += "<ColorBuffersInfo[" + std::to_string(colorBuffersInfo.size()) + "] " + ">\n";
+	for (auto const& info : colorBuffersInfo)
+	{
+		log += "Name: " + info.bufferName + "\n";
+		log += "BufferUnique: " + std::to_string((UINT)info.bufferID) + "\n";
+		log += "Format: " + std::to_string((UINT)info.format) + "\n";
+		log += "Width x Height: " + std::to_string(info.width) + " x " + std::to_string(info.height) + "\n";
+		log += "NumBuffer: " + std::to_string((UINT)info.numBuffer) + "\n";
+		log += "BlendMode: " + RenderStateComponent::BlendModeToString(info.blendMode) + "\n\n";
+	}
+
+	log += "<DepthStencilBufferInfo>\n";
+
+	if (depthStencilBufferInfo.has_value())
+	{
+		auto const& info = *depthStencilBufferInfo;
+
+		log += "Name: " + info.bufferName + "\n";
+		log += "BufferUnique: " + std::to_string((UINT)info.bufferID) + "\n";
+		log += "Format: " + std::to_string((UINT)info.dsvFormat) + "\n";
+		log += "Width x Height: " + std::to_string(info.width) + " x " + std::to_string(info.height) + "\n";
+		log += "NumBuffer: " + std::to_string((UINT)info.numBuffer) + "\n";
+	}
+	else
+	{
+		log += "None";
+	}
+
+	Logger::Log(log);
+}

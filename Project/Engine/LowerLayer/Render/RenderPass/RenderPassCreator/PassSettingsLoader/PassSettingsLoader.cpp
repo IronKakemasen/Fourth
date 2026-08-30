@@ -17,6 +17,7 @@ namespace
 	
 	PassDesc desc
 	(
+		passName_,
 		ParseShaderFile(passName_, srcJsonFileName),
 		ParseRenderPassState(passName_, srcJsonFileName),
 		ParseColorBufferInfo(passName_, srcJsonFileName),
@@ -56,6 +57,20 @@ std::vector<RenderContext::RequiredBufferInfo::ColorBuffer> RenderContext::Rende
 	auto const numBufferContainer =
 		miyajison->LoadData<std::vector<int>>(jsonFileName_, { passName_,PassDesc::dataKeyString.kNumBuffer_colorI });
 
+	//バッファの名前
+	auto const bufferNames = 
+		miyajison->LoadData<std::vector<std::string>>(jsonFileName_, { passName_,PassDesc::dataKeyString.kColorBufferName });
+
+	//ブレンドモード
+	auto const blendModesString =
+		miyajison->LoadData<std::vector<std::string>>(jsonFileName_, { passName_,PassDesc::dataKeyString.kBlendMode});
+	//名前からenumへ変換
+	std::vector<RenderStateComponent::BlendMode> blendModes;
+	for (auto const& string : blendModesString)
+	{
+		blendModes.emplace_back(RenderStateComponent::BlendModeToEnum(string));
+	}
+
 
 	//サイズの比が一致してるかチェック
 	ErrorMessageOutput::Assert::DetectError
@@ -63,21 +78,25 @@ std::vector<RenderContext::RequiredBufferInfo::ColorBuffer> RenderContext::Rende
 		numColorBuffers == clearColors.size()		 &&
 		numColorBuffers == widthContainer.size()	 &&
 		numColorBuffers == numBufferContainer.size() &&
-		numColorBuffers == heightContainer.size(),
+		numColorBuffers == heightContainer.size()	 &&
+		numColorBuffers == bufferNames.size()		 &&
+		numColorBuffers == blendModes.size(), 
 		"カラーバッファの設定が間違っている",
 		fileName
 	);
+	
 
 	colorBufferInfo.resize(numColorBuffers);
 	for (auto i = 0;i < numColorBuffers;++i)
 	{
+		colorBufferInfo[i].bufferName = bufferNames[i];
+		colorBufferInfo[i].blendMode = blendModes[i];
 		colorBufferInfo[i].format = DXGI_FORMAT(colorBufferFormats[i]);
 		colorBufferInfo[i].clearColor = clearColors[i];
 		colorBufferInfo[i].width = widthContainer[i] == -1 ? kWidth : widthContainer[i];
 		colorBufferInfo[i].height = heightContainer[i] == -1 ? kHeight : heightContainer[i];
 		colorBufferInfo[i].numBuffer = NumBuffer(numBufferContainer[i]);
 	}
-
 
 	return colorBufferInfo;
 }
@@ -114,6 +133,10 @@ std::optional<RenderContext::RequiredBufferInfo::DepthStencilBuffer> RenderConte
 
 	depthStencilBufferInfo->numBuffer = 
 		(NumBuffer)miyajison->LoadData<int>(jsonFileName_, { passName_,PassDesc::dataKeyString.kNumBuffer_depthI });
+
+	depthStencilBufferInfo->bufferName =
+		miyajison->LoadData<std::string>(jsonFileName_, { passName_,PassDesc::dataKeyString.kDepthBufferName });
+
 
 
 	int const widthHeight[2] =
@@ -162,7 +185,6 @@ std::optional<std::pair<std::string, std::string >> RenderContext::RenderPassCre
 		ms_ps.second = miyajison->LoadData<std::string>(jsonFileName_, { passName_,PassDesc::dataKeyString.kPS });
 		ms_psOpt = ms_ps;
 	}
-
 
 	return ms_psOpt;
 }

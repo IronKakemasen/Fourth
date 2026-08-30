@@ -5319,12 +5319,16 @@ private:
 
 namespace RenderStateComponent
 {
+    //追加したら下の変換関数もね
     enum class BlendMode
     {
         kOpaque,
         kAlphaBlend,
         kAdditive
-        ,kCount
+        ,kCount,
+
+        ///RenderPass専用！！！
+        kDependsModel,
     };
 
     enum class FillMode
@@ -5342,6 +5346,35 @@ namespace RenderStateComponent
         ,kCount
     };
 
+    inline BlendMode const BlendModeToEnum(std::string blendModeString_)
+    {
+        BlendMode blendMode = BlendMode::kCount;
+
+        if      (blendModeString_ == "kOpaque")         blendMode = BlendMode::kOpaque;
+        else if (blendModeString_ == "kAlphaBlend")     blendMode = BlendMode::kAlphaBlend;
+        else if (blendModeString_ == "kAdditive")       blendMode = BlendMode::kAdditive;
+        else if (blendModeString_ == "kDependsModel")   blendMode = BlendMode::kDependsModel;
+
+        
+        ErrorMessageOutput::Assert::DetectError(blendMode != BlendMode::kCount, "ブレンドモードの文字変換失敗", "RenderStateComponent.h");
+        
+        return blendMode;
+    }
+
+    inline const std::string BlendModeToString(BlendMode mode_)
+    {
+        std::string blendMode = "";
+
+        if      (mode_ == BlendMode::kOpaque)            blendMode = "kOpaque";
+        else if (mode_ == BlendMode::kAlphaBlend)        blendMode = "kAlphaBlend";
+        else if (mode_ == BlendMode::kAdditive)          blendMode = "kAdditive";
+        else if (mode_ == BlendMode::kDependsModel)      blendMode = "kDependsModel";
+
+        ErrorMessageOutput::Assert::DetectError(blendMode.size()> 0 , "ブレンドモードの文字変換失敗", "RenderStateComponent.h");
+
+        return blendMode;
+    }
+
     inline D3D12_FILL_MODE Convert(FillMode fillMode_)
     {
         return (fillMode_ == FillMode::kSolid) ? D3D12_FILL_MODE_SOLID : D3D12_FILL_MODE_WIREFRAME;
@@ -5351,8 +5384,8 @@ namespace RenderStateComponent
     {
         D3D12_CULL_MODE cullMode = D3D12_CULL_MODE_BACK;
 
-        if (cullMode_ == CullMode::kFront) cullMode = D3D12_CULL_MODE_FRONT;
-        else if (cullMode_ == CullMode::kNone) cullMode = D3D12_CULL_MODE_NONE;
+        if      (cullMode_ == CullMode::kFront) cullMode = D3D12_CULL_MODE_FRONT;
+        else if (cullMode_ == CullMode::kNone)  cullMode = D3D12_CULL_MODE_NONE;
 
         return cullMode;
     }
@@ -5872,11 +5905,15 @@ void RenderContext::RenderGraph::Builder::CreateAllGraphicsPSO
 	///これら二つのデータの塊からPSOを生成していく
 	///全Passを捜査して、PassDescのms_ps(シェーダファイル)の有無でrenderStateと
 	///からめるかどうかを分岐させる
+	Logger::Entry("PSO creation start");
+
 	for (UINT i = 0u; i < (UINT)Pass::kCount;++i)
 	{
 		//そのPassのDesc
 		auto const& passDesc = allPassPtrMap.at(Pass(i))->WatchDesc();
-		
+		//パスの中身をログ出力。頼りはログのみ
+		passDesc.DebugLog();
+
 		//そのPass専用のシェーダーファイル
 		auto const& ms_psFile = passDesc.WatchMs_PsFileName();
 
@@ -5907,8 +5944,10 @@ void RenderContext::RenderGraph::Builder::CreateAllGraphicsPSO
 			//PipelineStateComponent::SampleDesc sampleDesc;
 
 		}
-
 	}
+
+	Logger::Entry("PSO creation end");
+
 }
 
 std::vector<ModelDescription::RenderState> RenderContext::RenderGraph::Builder::CollectAllRenderStates
@@ -6326,6 +6365,7 @@ private:
 ========================================
 #pragma once
 #include "../../RenderContext.h"
+#include "../../RenderStateComponent.h"
 
 
 ///そのパスで使用するバッファの情報をまとめたもの
@@ -6333,11 +6373,14 @@ struct RenderContext::RequiredBufferInfo
 {
 	struct ColorBuffer
 	{
+		std::string bufferName;
 		DXGI_FORMAT format;
 		std::vector<float> clearColor{};
 		uint32_t width{};
 		uint32_t height{};
+		//シングル化ダブルか
 		ProjectConfig::Render::NumBuffer numBuffer{};
+		RenderStateComponent::BlendMode blendMode = RenderStateComponent::BlendMode::kDependsModel;
 		BufferUniqueID bufferID;
 
 		ColorBuffer() = default;
@@ -6347,6 +6390,7 @@ struct RenderContext::RequiredBufferInfo
 	{
 		DepthStencilBuffer() = default;
 
+		std::string bufferName;
 		DXGI_FORMAT dsvFormat;
 		DXGI_FORMAT srvFormat;
 		float clearDepth{};
@@ -6393,11 +6437,12 @@ namespace
 
 RenderContext::PassDesc::PassDesc
 (
+	std::string name_,
 	std::optional<std::pair<std::string, std::string >> ms_psFileName_,
 	RenderPassState renderPassState_,
 	std::vector<RenderContext::RequiredBufferInfo::ColorBuffer> colorBuffersInfo_,
 	std::optional<RenderContext::RequiredBufferInfo::DepthStencilBuffer> depthStencilBufferInfo_
-):renderPassState(renderPassState_) , colorBuffersInfo(colorBuffersInfo_), depthStencilBufferInfo(depthStencilBufferInfo_), ms_psFileName(ms_psFileName_)
+):renderPassState(renderPassState_) , colorBuffersInfo(colorBuffersInfo_), depthStencilBufferInfo(depthStencilBufferInfo_), ms_psFileName(ms_psFileName_),passName(name_)
 {
 
 }
@@ -6432,7 +6477,41 @@ RenderContext::RenderPassState const& RenderContext::PassDesc::WatchRenderPassSt
 	return renderPassState;
 }
 
+void RenderContext::PassDesc::DebugLog()const
+{
+	std::string log;
 
+	log += "---" + passName + "---\n";
+	log += "<ColorBuffersInfo[" + std::to_string(colorBuffersInfo.size()) + "] " + ">\n";
+	for (auto const& info : colorBuffersInfo)
+	{
+		log += "Name: " + info.bufferName + "\n";
+		log += "BufferUnique: " + std::to_string((UINT)info.bufferID) + "\n";
+		log += "Format: " + std::to_string((UINT)info.format) + "\n";
+		log += "Width x Height: " + std::to_string(info.width) + " x " + std::to_string(info.height) + "\n";
+		log += "NumBuffer: " + std::to_string((UINT)info.numBuffer) + "\n";
+		log += "BlendMode: " + RenderStateComponent::BlendModeToString(info.blendMode) + "\n\n";
+	}
+
+	log += "<DepthStencilBufferInfo>\n";
+
+	if (depthStencilBufferInfo.has_value())
+	{
+		auto const& info = *depthStencilBufferInfo;
+
+		log += "Name: " + info.bufferName + "\n";
+		log += "BufferUnique: " + std::to_string((UINT)info.bufferID) + "\n";
+		log += "Format: " + std::to_string((UINT)info.dsvFormat) + "\n";
+		log += "Width x Height: " + std::to_string(info.width) + " x " + std::to_string(info.height) + "\n";
+		log += "NumBuffer: " + std::to_string((UINT)info.numBuffer) + "\n";
+	}
+	else
+	{
+		log += "None";
+	}
+
+	Logger::Log(log);
+}
 
 
 
@@ -6449,27 +6528,30 @@ private:
 
 	struct DataKeyString
 	{
-		std::string const kIsOffScreenB = "isOffScreen";
-		std::string const kMS = "ms";
-		std::string const kPS = "ps";
+		std::string const kIsOffScreenB			= "isOffScreen";
+		std::string const kMS					= "ms";
+		std::string const kPS					= "ps";
 
-		std::string const kColorFormatI = "colorFormat";
-		std::string const kClearColorV4 = "clearColor";
-		std::string const kColorWidthI = "colorWidth";
-		std::string const kColorHeightI = "colorHeight";
-		std::string const kNumBuffer_colorI = "numBuffer_Color";
+		std::string const kColorBufferName		= "colorBufferName";
+		std::string const kBlendMode			= "blendMode";
+		std::string const kColorFormatI			= "colorFormat";
+		std::string const kClearColorV4			= "clearColor";
+		std::string const kColorWidthI			= "colorWidth";
+		std::string const kColorHeightI			= "colorHeight";
+		std::string const kNumBuffer_colorI		= "numBuffer_Color";
 
-		std::string const kUseDepthStenciB = "useDepthStencil";
-		std::string const kDsvFormatI = "dsvFormat";
-		std::string const kSrvFormatI = "srvFormat";
-		std::string const kClearDepthF = "clearDepth";
-		std::string const kClearStencilI = "clearStencil";
-		std::string const kDepthWidthI = "depthWidth";
-		std::string const kDepthHeightI = "depthHeight";
-		std::string const kNumBuffer_depthI = "numBuffer_Depth";
+		std::string const kDepthBufferName		= "depthBufferName";
+		std::string const kUseDepthStenciB		= "useDepthStencil";
+		std::string const kDsvFormatI			= "dsvFormat";
+		std::string const kSrvFormatI			= "srvFormat";
+		std::string const kClearDepthF			= "clearDepth";
+		std::string const kClearStencilI		= "clearStencil";
+		std::string const kDepthWidthI			= "depthWidth";
+		std::string const kDepthHeightI			= "depthHeight";
+		std::string const kNumBuffer_depthI		= "numBuffer_Depth";
 
-		std::string const kDepthTestI = "depthTest";
-		std::string const kDepthEnableB = "depthEnable";
+		std::string const kDepthTestI			= "depthTest";
+		std::string const kDepthEnableB			= "depthEnable";
 
 	};
 
@@ -6479,6 +6561,7 @@ public:
 
 	PassDesc
 	(
+		std::string name_,
 		std::optional<std::pair<std::string, std::string >> ms_psFileName_,
 		RenderPassState renderPassState_,
 		std::vector<RenderContext::RequiredBufferInfo::ColorBuffer> colorBuffersInfo_,
@@ -6494,6 +6577,8 @@ public:
 	void SetColorBufferUniqueID(BufferUniqueID id_, size_t index_);
 	void SetDepthStencilBufferUniqueID(BufferUniqueID id_);
 
+	void DebugLog()const;
+
 private:
 
 	//オフスクリーンパスの場合、シェーダーファイルは1つに限定される
@@ -6506,6 +6591,8 @@ private:
 	std::vector<RenderContext::RequiredBufferInfo::ColorBuffer> colorBuffersInfo;
 	std::optional<RenderContext::RequiredBufferInfo::DepthStencilBuffer> depthStencilBufferInfo;
 
+	//デバッグ用
+	std::string passName;
 
 };
 
@@ -6760,7 +6847,9 @@ void RenderContext::RenderPassCreator::PassBufferCreator::CreateBuffer
 		auto const& tmp = colorBuffersInfo[i];
 		ColorBufferDescription colorBufferDesc(tmp.clearColor, tmp.width, tmp.height, tmp.format, tmp.numBuffer);
 		
-		desc_.SetColorBufferUniqueID(creator_->CreateWithBuffer(colorBufferDesc, passName_ + "[" + std::to_string(i) + "]").first, i);
+		std::string const bufferName = passName_ + "<" + tmp.bufferName + ">" + "[" + std::to_string(i) + "]";
+		
+		desc_.SetColorBufferUniqueID(creator_->CreateWithBuffer(colorBufferDesc, bufferName).first, i);
 	}
 
 	if (desc_.WatchDepthStencilBufferInfo().has_value())
@@ -6778,7 +6867,9 @@ void RenderContext::RenderPassCreator::PassBufferCreator::CreateBuffer
 			tmp->numBuffer
 		);
 
-		desc_.SetDepthStencilBufferUniqueID(creator_->CreateWithBuffer(desc, passName_).first);
+		auto const bufferName = passName_ + "<" + tmp->bufferName + ">";
+
+		desc_.SetDepthStencilBufferUniqueID(creator_->CreateWithBuffer(desc, bufferName).first);
 	}
 
 }
@@ -6831,6 +6922,7 @@ namespace
 	
 	PassDesc desc
 	(
+		passName_,
 		ParseShaderFile(passName_, srcJsonFileName),
 		ParseRenderPassState(passName_, srcJsonFileName),
 		ParseColorBufferInfo(passName_, srcJsonFileName),
@@ -6870,6 +6962,20 @@ std::vector<RenderContext::RequiredBufferInfo::ColorBuffer> RenderContext::Rende
 	auto const numBufferContainer =
 		miyajison->LoadData<std::vector<int>>(jsonFileName_, { passName_,PassDesc::dataKeyString.kNumBuffer_colorI });
 
+	//バッファの名前
+	auto const bufferNames = 
+		miyajison->LoadData<std::vector<std::string>>(jsonFileName_, { passName_,PassDesc::dataKeyString.kColorBufferName });
+
+	//ブレンドモード
+	auto const blendModesString =
+		miyajison->LoadData<std::vector<std::string>>(jsonFileName_, { passName_,PassDesc::dataKeyString.kBlendMode});
+	//名前からenumへ変換
+	std::vector<RenderStateComponent::BlendMode> blendModes;
+	for (auto const& string : blendModesString)
+	{
+		blendModes.emplace_back(RenderStateComponent::BlendModeToEnum(string));
+	}
+
 
 	//サイズの比が一致してるかチェック
 	ErrorMessageOutput::Assert::DetectError
@@ -6877,21 +6983,25 @@ std::vector<RenderContext::RequiredBufferInfo::ColorBuffer> RenderContext::Rende
 		numColorBuffers == clearColors.size()		 &&
 		numColorBuffers == widthContainer.size()	 &&
 		numColorBuffers == numBufferContainer.size() &&
-		numColorBuffers == heightContainer.size(),
+		numColorBuffers == heightContainer.size()	 &&
+		numColorBuffers == bufferNames.size()		 &&
+		numColorBuffers == blendModes.size(), 
 		"カラーバッファの設定が間違っている",
 		fileName
 	);
+	
 
 	colorBufferInfo.resize(numColorBuffers);
 	for (auto i = 0;i < numColorBuffers;++i)
 	{
+		colorBufferInfo[i].bufferName = bufferNames[i];
+		colorBufferInfo[i].blendMode = blendModes[i];
 		colorBufferInfo[i].format = DXGI_FORMAT(colorBufferFormats[i]);
 		colorBufferInfo[i].clearColor = clearColors[i];
 		colorBufferInfo[i].width = widthContainer[i] == -1 ? kWidth : widthContainer[i];
 		colorBufferInfo[i].height = heightContainer[i] == -1 ? kHeight : heightContainer[i];
 		colorBufferInfo[i].numBuffer = NumBuffer(numBufferContainer[i]);
 	}
-
 
 	return colorBufferInfo;
 }
@@ -6928,6 +7038,10 @@ std::optional<RenderContext::RequiredBufferInfo::DepthStencilBuffer> RenderConte
 
 	depthStencilBufferInfo->numBuffer = 
 		(NumBuffer)miyajison->LoadData<int>(jsonFileName_, { passName_,PassDesc::dataKeyString.kNumBuffer_depthI });
+
+	depthStencilBufferInfo->bufferName =
+		miyajison->LoadData<std::string>(jsonFileName_, { passName_,PassDesc::dataKeyString.kDepthBufferName });
+
 
 
 	int const widthHeight[2] =
@@ -6976,7 +7090,6 @@ std::optional<std::pair<std::string, std::string >> RenderContext::RenderPassCre
 		ms_ps.second = miyajison->LoadData<std::string>(jsonFileName_, { passName_,PassDesc::dataKeyString.kPS });
 		ms_psOpt = ms_ps;
 	}
-
 
 	return ms_psOpt;
 }
@@ -16484,7 +16597,6 @@ namespace PipelineStateComponent
 
 namespace PipelineStateDesc
 {
-
     struct Graphics
     {
         PipelineStateComponent::ShaderSet shaderSet;
@@ -16493,8 +16605,6 @@ namespace PipelineStateDesc
         std::optional<PipelineStateComponent::DepthStencilDesc> depthStencilDesc;
         PipelineStateComponent::SampleDesc sampleDesc;
     };
-
-
 }
 
 

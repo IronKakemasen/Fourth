@@ -5,6 +5,8 @@
                                 "ms" : "FullScreenMS",
                                 "ps" : "CompositorPS",
 
+                                "colorBufferName":["CompositedTex "],
+                                "blendMode": ["kOpaque"], 
                                 "colorFormat":  [29],
                                 "clearColor":  [
                                                 [
@@ -28,6 +30,8 @@
      {
                                 "isOffScreen" : false,
 
+                                "colorBufferName":["SceneTexOpaque"],
+                                "blendMode": ["kDependsModel"], 
                                 "colorFormat":  [29],
                                 "clearColor":  [
                                                 [
@@ -42,6 +46,7 @@
                                 "numBuffer_Color":[1],
                                 
                                 "useDepthStencil": true,
+                                "depthBufferName": "sceneTexDepthOpa",
                                 "dsvFormat":  45,
                                 "srvFormat":  46,
                                 "clearDepth":  0.0,

@@ -65,7 +65,6 @@ namespace PipelineStateComponent
 
 namespace PipelineStateDesc
 {
-
     struct Graphics
     {
         PipelineStateComponent::ShaderSet shaderSet;
@@ -74,7 +73,5 @@ namespace PipelineStateDesc
         std::optional<PipelineStateComponent::DepthStencilDesc> depthStencilDesc;
         PipelineStateComponent::SampleDesc sampleDesc;
     };
-
-
 }
 

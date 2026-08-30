@@ -81,11 +81,15 @@ void RenderContext::RenderGraph::Builder::CreateAllGraphicsPSO
 	///これら二つのデータの塊からPSOを生成していく
 	///全Passを捜査して、PassDescのms_ps(シェーダファイル)の有無でrenderStateと
 	///からめるかどうかを分岐させる
+	Logger::Entry("PSO creation start");
+
 	for (UINT i = 0u; i < (UINT)Pass::kCount;++i)
 	{
 		//そのPassのDesc
 		auto const& passDesc = allPassPtrMap.at(Pass(i))->WatchDesc();
-		
+		//パスの中身をログ出力。頼りはログのみ
+		passDesc.DebugLog();
+
 		//そのPass専用のシェーダーファイル
 		auto const& ms_psFile = passDesc.WatchMs_PsFileName();
 
@@ -116,8 +120,10 @@ void RenderContext::RenderGraph::Builder::CreateAllGraphicsPSO
 			//PipelineStateComponent::SampleDesc sampleDesc;
 
 		}
-
 	}
+
+	Logger::Entry("PSO creation end");
+
 }
 
 std::vector<ModelDescription::RenderState> RenderContext::RenderGraph::Builder::CollectAllRenderStates
