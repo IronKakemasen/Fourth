@@ -6,7 +6,7 @@
 struct CreateBlendDesc
 {
 	///本丸
-	CD3DX12_BLEND_DESC Create(const PipelineStateComponent::RenderTargetDesc& srcDesc_);
+	CD3DX12_BLEND_DESC Create(const std::vector<PipelineStateComponent::RenderTargetDesc>& renderTargetDescs_);
 
 private:
 

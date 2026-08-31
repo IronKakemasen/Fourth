@@ -5,7 +5,10 @@ namespace ShaderPathComponent
 {
 	enum class MeshType
 	{
+		//RenderPass専用！！
 		kOffscreen,
+
+
 		kStatic
 
 		,kCount
@@ -13,7 +16,10 @@ namespace ShaderPathComponent
 
 	enum class MaterialType
 	{
+		//RenderPass専用！！
 		kOffscreen,
+
+
 		kStandard
 
 		,kCount

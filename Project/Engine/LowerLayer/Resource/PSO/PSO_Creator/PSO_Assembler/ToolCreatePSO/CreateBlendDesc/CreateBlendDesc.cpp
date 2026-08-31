@@ -2,19 +2,19 @@
 #include "CreateBlendDesc.h"
 
 
-CD3DX12_BLEND_DESC CreateBlendDesc::Create(const PipelineStateComponent::RenderTargetDesc& srcDesc_)
+CD3DX12_BLEND_DESC CreateBlendDesc::Create(const std::vector<PipelineStateComponent::RenderTargetDesc>& renderTargetDescs_)
 {
 	CD3DX12_BLEND_DESC blendDesc;
 
 	blendDesc.IndependentBlendEnable = TRUE;
 	blendDesc.AlphaToCoverageEnable = FALSE;
 
-	for (size_t i = 0;i < srcDesc_.blendModeContainer.size();++i)
+	for (size_t i = 0;i < renderTargetDescs_.size();++i)
 	{
 		//共通設定
 		SetCommonDetails(&blendDesc.RenderTarget[i]);
 		//ブレンドモードごとの設定
-		SetBranchedDetails(&blendDesc.RenderTarget[i], srcDesc_.blendModeContainer[i]);
+		SetBranchedDetails(&blendDesc.RenderTarget[i], renderTargetDescs_[i].blendMode);
 	}
 
 	return blendDesc;

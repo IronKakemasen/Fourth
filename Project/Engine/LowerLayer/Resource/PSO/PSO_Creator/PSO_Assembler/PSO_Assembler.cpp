@@ -59,11 +59,11 @@ Microsoft::WRL::ComPtr<ID3D12PipelineState> PSO_Context::Assembler::Assemble
 
 
 	//要項チェック
-	Check(srcDesc_.shaderSet, srcDesc_.renderTargetDesc, debugName_);
+	Check(srcDesc_.shaderSet, srcDesc_.renderTargetDescs, debugName_);
 
 	//使用するレンダーターゲットの数とそのフォーマットを入力
 	CD3DX12_RT_FORMAT_ARRAY renderTargetFormatArray{};
-	renderTargetFormatArray = SummarizeRenderTargetFormatInfo(srcDesc_.renderTargetDesc);
+	renderTargetFormatArray = SummarizeRenderTargetFormatInfo(srcDesc_.renderTargetDescs);
 
 	//シェーダーバイトコードの生成
 	MS_PS ms_ps = CreateShaderByteCode(srcDesc_.shaderSet);
@@ -79,7 +79,7 @@ Microsoft::WRL::ComPtr<ID3D12PipelineState> PSO_Context::Assembler::Assemble
 	CD3DX12_BLEND_DESC blendDesc{};
 	{
 		CreateBlendDesc creator;
-		blendDesc = creator.Create(srcDesc_.renderTargetDesc);
+		blendDesc = creator.Create(srcDesc_.renderTargetDescs);
 	}
 
 	//ディプスステンシルディスク
@@ -105,7 +105,7 @@ Microsoft::WRL::ComPtr<ID3D12PipelineState> PSO_Context::Assembler::Assemble
 		if (ms_ps.second)pipelineDesc.PS = *ms_ps.second;			///PSは存在する場合のみ
 		pipelineDesc.BlendState = blendDesc;
 		pipelineDesc.DepthStencilState = depthStencilDesc;
-		pipelineDesc.DSVFormat = (srcDesc_.depthStencilDesc) ? srcDesc_.depthStencilDesc->dsvFormat : DXGI_FORMAT_UNKNOWN;
+		pipelineDesc.DSVFormat = srcDesc_.depthStencilDesc.doesUseBuffer ? srcDesc_.depthStencilDesc.dsvFormat : DXGI_FORMAT_UNKNOWN;
 		pipelineDesc.RasterizerState = rasterizerDesc;
 		pipelineDesc.SampleDesc = sampleDesc;
 		pipelineDesc.SampleMask = UINT_MAX;
@@ -132,32 +132,34 @@ Microsoft::WRL::ComPtr<ID3D12PipelineState> PSO_Context::Assembler::Assemble
 void PSO_Context::Assembler::Check
 (
 	const PipelineStateComponent::ShaderSet& shaderSet_,
-	const PipelineStateComponent::RenderTargetDesc& renderTargetDesc_,
+	const std::vector<PipelineStateComponent::RenderTargetDesc>& renderTargetDescs_,
 	const std::string debugName_
 )const
 {
 	std::string errorMsg{};
 
 	if (!shaderSet_.meshShader) errorMsg += "[MeshShaderがぬるぽ]";
-	if (renderTargetDesc_.rtvFormatContainer.size() > D3D12_SIMULTANEOUS_RENDER_TARGET_COUNT) errorMsg += "rtvが上限越え";
-	if (renderTargetDesc_.blendModeContainer.size() != renderTargetDesc_.rtvFormatContainer.size())
-		errorMsg += "[renderTargetDescの不備]";
-
+	if (renderTargetDescs_.size() > D3D12_SIMULTANEOUS_RENDER_TARGET_COUNT) errorMsg += "rtが上限越え";
 
 	ErrorMessageOutput::Assert::DetectError(errorMsg.size() == 0, debugName_ + "\n" + errorMsg, fileName);
 }
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-CD3DX12_RT_FORMAT_ARRAY PSO_Context::Assembler::SummarizeRenderTargetFormatInfo(const PipelineStateComponent::RenderTargetDesc& renderTargetDesc_)const
+CD3DX12_RT_FORMAT_ARRAY PSO_Context::Assembler::SummarizeRenderTargetFormatInfo
+(const std::vector<PipelineStateComponent::RenderTargetDesc>& renderTargetDescs_)const
 {
 	CD3DX12_RT_FORMAT_ARRAY renderTargetFormatArray = {};
 	
-	size_t const kNumRenderTargets = renderTargetDesc_.rtvFormatContainer.size();
-	renderTargetFormatArray.NumRenderTargets = (UINT)renderTargetDesc_.rtvFormatContainer.size();
-
-	for (size_t i = 0;i < kNumRenderTargets;++i) renderTargetFormatArray.RTFormats[i] = renderTargetDesc_.rtvFormatContainer[i];
-
+	size_t const kNumRenderTargets = renderTargetDescs_.size();
+	//レンダーターゲットの総数を入力
+	renderTargetFormatArray.NumRenderTargets = (UINT)kNumRenderTargets;
+	
+	UINT cnt{};
+	for (auto const& desc : renderTargetDescs_)
+	{
+		renderTargetFormatArray.RTFormats[cnt++] = desc.rtvFormat;
+	}
 
 	return renderTargetFormatArray;
 }

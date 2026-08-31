@@ -26,19 +26,22 @@ namespace PipelineStateComponent
 
     struct RenderTargetDesc
     {
-        std::vector<DXGI_FORMAT> rtvFormatContainer;
-        std::vector<RenderStateComponent::BlendMode> blendModeContainer;
-        std::vector<std::string> bufferNameContainer;
-
+        DXGI_FORMAT rtvFormat;
+        RenderStateComponent::BlendMode blendMode;
+        std::string bufferName;
     };
 
     struct DepthStencilDesc
     {
+        //ちょっと対症療法的だが…
+        bool doesUseBuffer = true;
+
         DXGI_FORMAT dsvFormat;
         RenderStateComponent::BlendMode blendMode = RenderStateComponent::BlendMode::kOpaque;
         RenderPassComponent::DepthEnable depthEnable = RenderPassComponent::DepthEnable::kEnable;
         RenderPassComponent::DepthTest depthTest = RenderPassComponent::DepthTest::kGreaterEqual;
         float clearDepth = 0.0f;
+        int clearStencil = 0;
         std::string bufferName;
     };
 
@@ -67,10 +70,22 @@ namespace PipelineStateDesc
 {
     struct Graphics
     {
+        Graphics() = default;
+
+        Graphics
+        (
+            PipelineStateComponent::ShaderSet const& shaderSet,
+            PipelineStateComponent::RasterizerDesc const& rasterizerDesc,
+            std::vector<PipelineStateComponent::RenderTargetDesc> const& renderTargetDescs,
+            PipelineStateComponent::DepthStencilDesc const& depthStencilDesc,
+            PipelineStateComponent::SampleDesc const& sampleDesc
+        ):shaderSet(shaderSet),rasterizerDesc(rasterizerDesc),renderTargetDescs(renderTargetDescs),depthStencilDesc(depthStencilDesc),sampleDesc(sampleDesc)
+        {
+        }
         PipelineStateComponent::ShaderSet shaderSet;
         PipelineStateComponent::RasterizerDesc rasterizerDesc;
-        PipelineStateComponent::RenderTargetDesc renderTargetDesc;
-        std::optional<PipelineStateComponent::DepthStencilDesc> depthStencilDesc;
+        std::vector<PipelineStateComponent::RenderTargetDesc> renderTargetDescs;
+        PipelineStateComponent::DepthStencilDesc depthStencilDesc;
         PipelineStateComponent::SampleDesc sampleDesc;
     };
 }

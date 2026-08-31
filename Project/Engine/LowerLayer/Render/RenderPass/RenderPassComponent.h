@@ -29,12 +29,15 @@ namespace RenderPassComponent
         , kCount
     };
 
-    inline D3D12_COMPARISON_FUNC Convert(DepthTest depthTest_)
+    inline const D3D12_COMPARISON_FUNC Convert(DepthTest depthTest_)
     {
         return (depthTest_ == DepthTest::kGreaterEqual) ? D3D12_COMPARISON_FUNC_GREATER_EQUAL : D3D12_COMPARISON_FUNC_LESS_EQUAL;
     }
 
-
+    inline std::string const DepthTestString(DepthTest depthTest_)
+    {
+        return (depthTest_ == DepthTest::kGreaterEqual) ? "GreaterEqual" : "LessEqual";
+    }
 
 }
 

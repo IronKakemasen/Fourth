@@ -1,0 +1,8 @@
+
+新しくシェーダーファイルを作るときのお作法
+
+1.まずシェーダーファイルをアセットに追加
+2.alt + Windowボタンでアセット更新コマンドを叩く
+3.ShaderComponent.hのenumに追記
+4.必要であれば、ShaderTable.hに追記
+5.必要であれば、ShaderSettings.jsonに追記

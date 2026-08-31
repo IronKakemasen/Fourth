@@ -8,30 +8,33 @@ private:
 
 	struct DataKeyString
 	{
-		std::string const kIsOffScreenB			= "isOffScreen";
-		std::string const kMS					= "ms";
-		std::string const kPS					= "ps";
+		std::string const kIsOffScreenB				= "isOffScreen";
+		std::string const kMS						= "ms";
+		std::string const kPS						= "ps";
 
-		std::string const kColorBufferName		= "colorBufferName";
-		std::string const kBlendMode			= "blendMode";
-		std::string const kColorFormatI			= "colorFormat";
-		std::string const kClearColorV4			= "clearColor";
-		std::string const kColorWidthI			= "colorWidth";
-		std::string const kColorHeightI			= "colorHeight";
-		std::string const kNumBuffer_colorI		= "numBuffer_Color";
+		std::string const kColorBufferName			= "colorBufferName";
+		std::string const kBlendMode				= "blendMode";
+		std::string const kColorFormatI				= "colorFormat";
+		std::string const kClearColorV4				= "clearColor";
+		std::string const kColorWidthI				= "colorWidth";
+		std::string const kColorHeightI				= "colorHeight";
+		std::string const kNumBuffer_colorI			= "numBuffer_Color";
 
-		std::string const kDepthBufferName		= "depthBufferName";
-		std::string const kUseDepthStenciB		= "useDepthStencil";
-		std::string const kDsvFormatI			= "dsvFormat";
-		std::string const kSrvFormatI			= "srvFormat";
-		std::string const kClearDepthF			= "clearDepth";
-		std::string const kClearStencilI		= "clearStencil";
-		std::string const kDepthWidthI			= "depthWidth";
-		std::string const kDepthHeightI			= "depthHeight";
-		std::string const kNumBuffer_depthI		= "numBuffer_Depth";
+		std::string const kDepthBufferName			= "depthBufferName";
+		std::string const kUseDepthStenciB			= "useDepthStencil";
+		std::string const kDsvFormatI				= "dsvFormat";
+		std::string const kSrvFormatI				= "srvFormat";
+		std::string const kClearDepthF				= "clearDepth";
+		std::string const kClearStencilI			= "clearStencil";
+		std::string const kDepthWidthI				= "depthWidth";
+		std::string const kDepthHeightI				= "depthHeight";
+		std::string const kNumBuffer_depthI			= "numBuffer_Depth";
 
-		std::string const kDepthTestI			= "depthTest";
-		std::string const kDepthEnableB			= "depthEnable";
+		std::string const kDepthTestI				= "depthTest";
+		std::string const kDepthEnableB				= "depthEnable";
+		std::string const kDepthBiasI				= "depthBias";
+		std::string const kDepthBiasClampF			= "depthBiasClamp";
+		std::string const kSlopeScaledDepthBiasF	= "slopeScaledDepthBias";
 
 	};
 
@@ -58,7 +61,7 @@ public:
 	void SetDepthStencilBufferUniqueID(BufferUniqueID id_);
 
 	void DebugLog()const;
-
+	std::string const WatchName()const;
 private:
 
 	//オフスクリーンパスの場合、シェーダーファイルは1つに限定される

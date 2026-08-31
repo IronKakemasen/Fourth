@@ -4,8 +4,6 @@
 #include "ShaderContextDiplomat/ShaderContextDiplomat.h"
 #include "ShaderContextDiplomat/ShaderContextToolLender/ShaderContextToolLender.h"
 
-
-
 namespace
 {
 	auto fileName = "ShaderContext.cpp";

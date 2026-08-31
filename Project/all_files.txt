@@ -5848,6 +5848,7 @@ void RenderContext::RenderGraph::Build
 #include "../../../../../Resource/Shader/ShaderContextDiplomat/ShaderContextToolLender/ShaderContextToolLender.h"
 #include "../../../../../Resource/Shader/ShaderContextDiplomat/ShaderContextToolLender/ShaderContextToolLenderLicences.h"
 #include "../../../../../Resource/Shader/ShaderLibrary/ShaderLibrary.h"
+#include "../../../../../Resource/Shader/ShaderTable.h"
 
 
 namespace
@@ -5868,8 +5869,7 @@ void RenderContext::RenderGraph::PSO_Builder::CreateAllGraphicsPSO
 	using namespace RenderPassComponent;
 
 	//全てのモデルのRenderStatesを集計
-	std::vector<ModelDescription::RenderState> allModelRenderStates =
-		CollectAllRenderStates(modelContextDiplomat_);
+	std::vector<ModelDescription::RenderState> allModelRenderStates = CollectAllRenderStates(modelContextDiplomat_);
 
 	//全てのPassが入ってるコンテナを参照
 	auto const& allPassPtrMap = passContainer_.AccessAllPassPtrMap(proof_);
@@ -5879,10 +5879,6 @@ void RenderContext::RenderGraph::PSO_Builder::CreateAllGraphicsPSO
 	PSO_Context::ToolLender::LicenceType<PSO_Context::PSO_Creator> usesPsoCreatorLicence;
 	auto* psoCreator = psoCOntextToolLender->Lend<PSO_Context::PSO_Creator>(usesPsoCreatorLicence);
 
-	//シェーダーライブラリを借りる
-	auto* shaderContextToolLender = shaderContextDiplomat_.Access<ShaderContext::ToolLender>();
-	ShaderContext::ToolLender::LicenceType<ShaderContext::ShaderLibrary> usesShaderLibLicence;
-	auto* shaderLib = shaderContextToolLender->Lend<ShaderContext::ShaderLibrary>(usesShaderLibLicence);
 
 
 	///これら二つのデータの塊からPSOを生成していく
@@ -5897,41 +5893,169 @@ void RenderContext::RenderGraph::PSO_Builder::CreateAllGraphicsPSO
 		//パスの中身をログ出力。頼りはログのみ
 		passDesc.DebugLog();
 
-		//そのPass専用のシェーダーファイル
-		auto const& ms_psFile = passDesc.WatchMs_PsFileName();
+		//PSO生成のためのディスク
+		PipelineStateDesc::Graphics psoDesc;
 
-		//それが存在していれば、モデルのどーたら関係なしにPSOを作成
-		if (ms_psFile.has_value())
-		{
-			//PSO生成のためのディスク
-			PipelineStateDesc::Graphics psoDesc;
+		///まずはオフスクリーン用かどうか関わらず、共通の設定
+		InputCommonInfo(psoDesc, passDesc);
 
-			//使用するシェーダーファイルのバイナリデータのポインタ
-			psoDesc.shaderSet.meshShader = shaderLib->Export(ms_psFile->first);
-			psoDesc.shaderSet.meshShaderName = ms_psFile->first;
-			//ピクセルシェーダーを通さないパターンもあるので"none"でチェックする
-			if (ms_psFile->second != "none")
-			{
-				psoDesc.shaderSet.pixelShader = shaderLib->Export(ms_psFile->second);
-				psoDesc.shaderSet.pixelShaderName = ms_psFile->second;
-			}
+		///オフスクリーンパスであれば、renderPassの設定がPSOにダイレクトに反映
+		InputPassOnlyInfo(shaderContextDiplomat_, psoDesc, passDesc);
 
-		}
-		//モデル描画パスなのでrenderStateの情報とともにPSOを作成
-		else
-		{
-			//PipelineStateComponent::ShaderSet shaderSet;
-			//PipelineStateComponent::RasterizerDesc rasterizerDesc;
-			//PipelineStateComponent::RenderTargetDesc renderTargetDesc;
-			//std::optional<PipelineStateComponent::DepthStencilDesc> depthStencilDesc;
-			//PipelineStateComponent::SampleDesc sampleDesc;
+		///モデル描画パスであればモデルクラスの情報とパスの情報の二つで設定が決まる
+		auto const psoDescs = InputDependingModelsInfo
+		(
+			shaderContextDiplomat_,
+			psoDesc,
+			passDesc,
+			Pass(i),
+			allModelRenderStates
+		);
 
-		}
 	}
 
 	Logger::Entry("PSO creation end");
 
 }
+
+void RenderContext::RenderGraph::PSO_Builder::InputCommonInfo
+(
+	PipelineStateDesc::Graphics& psoDesc_,
+	PassDesc const& passDesc_
+)
+{
+	auto const& renderStates = passDesc_.WatchRenderPassState();
+	auto const& depthStencilBufferInfo = passDesc_.WatchDepthStencilBufferInfo();
+
+	//完全にPass依存
+	{
+		//ラスタライザー関係
+		psoDesc_.rasterizerDesc.depthBias = renderStates.depthBias;
+		psoDesc_.rasterizerDesc.depthBiasClamp = renderStates.depthBiasClamp;
+		psoDesc_.rasterizerDesc.slopeScaledDepthBias = renderStates.slopeScaledDepthBias;
+
+		//深度設定
+		psoDesc_.depthStencilDesc.depthEnable = renderStates.depthEnable;
+		psoDesc_.depthStencilDesc.depthTest = renderStates.depthTest;
+
+		//深度バッファの情報
+		if (depthStencilBufferInfo.has_value())
+		{
+			psoDesc_.depthStencilDesc.bufferName = depthStencilBufferInfo->bufferName;
+			psoDesc_.depthStencilDesc.clearDepth = depthStencilBufferInfo->clearDepth;
+			psoDesc_.depthStencilDesc.clearStencil = depthStencilBufferInfo->clearStencil;
+			psoDesc_.depthStencilDesc.dsvFormat = depthStencilBufferInfo->dsvFormat;
+		}
+		else
+		{
+			psoDesc_.depthStencilDesc.doesUseBuffer = false;
+		}
+
+		//カラーバッファの情報
+		auto const& colorBuffersInfo = passDesc_.WatchColorBuffersInfo();
+		auto const numRenderTarget = colorBuffersInfo.size();
+		psoDesc_.renderTargetDescs.resize(numRenderTarget);
+		for (size_t i = 0;i < numRenderTarget;++i)
+		{
+			auto& tmp = psoDesc_.renderTargetDescs[i];
+
+			tmp.bufferName = colorBuffersInfo[i].bufferName;
+			tmp.rtvFormat = colorBuffersInfo[i].format;
+		}		
+	}
+}
+
+//モデルクラスとレンダーパスの二つで残りのPSOの要素を定める
+std::vector<PipelineStateDesc::Graphics> RenderContext::RenderGraph::PSO_Builder::InputDependingModelsInfo
+(
+	ShaderContextDiplomat& shaderContextDiplomat_,
+	PipelineStateDesc::Graphics& psoDescCommon_,
+	PassDesc const& passDesc_,
+	RenderPassComponent::Pass const renderPass_,
+	std::vector<ModelDescription::RenderState> const& allRenderStates_
+) 
+{
+	std::vector<PipelineStateDesc::Graphics> psoDescs;
+
+	///レンダーパスがオフスクリーンで専用のシェーダーファイルを持って ” いなければ ”
+	///それはモデル描画パス " である " 証拠
+	if (passDesc_.WatchMs_PsFileName().has_value()) return psoDescs;
+
+	//シェーダーライブラリを借りる
+	auto* shaderContextToolLender = shaderContextDiplomat_.Access<ShaderContext::ToolLender>();
+	ShaderContext::ToolLender::LicenceType<ShaderContext::ShaderLibrary> usesShaderLibLicence;
+	auto* shaderLib = shaderContextToolLender->Lend<ShaderContext::ShaderLibrary>(usesShaderLibLicence);
+
+	psoDescs.assign(allRenderStates_.size(), psoDescCommon_);
+
+	/////全renderState分ぶんまわす
+	//for (auto const& renderState : allRenderStates_)
+	//{
+	//	renderState.
+	//}
+
+	/////使用するシェーダーはMeshType X Pass , MaterialType X Passで決まる
+	//ShaderTable::GetMeshShader(renderPass_,)
+
+	return psoDescs;
+}
+
+//レンダーパスオンリーで残りのPSOの要素を定める
+void RenderContext::RenderGraph::PSO_Builder::InputPassOnlyInfo
+(
+	ShaderContextDiplomat& shaderContextDiplomat_,
+	PipelineStateDesc::Graphics& psoDesc_,
+	PassDesc const& passDesc_
+) 
+{
+	///レンダーパスがオフスクリーンで専用のシェーダーファイルを持って ” いれば ”
+	///それはモデル描画パス " でない " 証拠
+	if (!passDesc_.WatchMs_PsFileName().has_value()) return;
+
+	//シェーダーライブラリを借りる
+	auto* shaderContextToolLender = shaderContextDiplomat_.Access<ShaderContext::ToolLender>();
+	ShaderContext::ToolLender::LicenceType<ShaderContext::ShaderLibrary> usesShaderLibLicence;
+	auto* shaderLib = shaderContextToolLender->Lend<ShaderContext::ShaderLibrary>(usesShaderLibLicence);
+
+	//そのPass専用のシェーダーファイル(Optional)
+	auto const& ms_psFile = passDesc_.WatchMs_PsFileName();
+
+	//使用するシェーダーファイルのバイナリデータのポインタ
+	psoDesc_.shaderSet.meshShader = shaderLib->Export(ms_psFile->first);
+	psoDesc_.shaderSet.meshShaderName = ms_psFile->first;
+	//ピクセルシェーダーを通さないパターンもあるので"none"でチェックする
+	if (ms_psFile->second != "none")
+	{
+		psoDesc_.shaderSet.pixelShader = shaderLib->Export(ms_psFile->second);
+		psoDesc_.shaderSet.pixelShaderName = ms_psFile->second;
+	}
+
+	//深度ステンシルのdepthWriteMaskの分岐に関わるもの。kOpaque固定
+	psoDesc_.depthStencilDesc.blendMode = RenderStateComponent::BlendMode::kOpaque;
+	
+	//背面カリング固定
+	psoDesc_.rasterizerDesc.cullMode = RenderStateComponent::CullMode::kBack;
+	
+	//レンダーターゲットの設定
+	auto const& colorBuffersInfo = passDesc_.WatchColorBuffersInfo();
+	size_t const numRT = colorBuffersInfo.size();
+	for (size_t i = 0; i < numRT; ++i)
+	{
+		auto& tmp = psoDesc_.renderTargetDescs[i];
+
+		//ここでcolorBuffersInfoのブレンドモードがkDependsModelだとおかしい
+		ErrorMessageOutput::Assert::DetectError
+		(
+			colorBuffersInfo[i].blendMode != RenderStateComponent::BlendMode::kDependsModel,
+			passDesc_.WatchName() + "はオフスクリーンパスなのにブレンドモードがkDependsModel",
+			fileName
+		);
+
+		//パス固定のブレンドモードを詰めていく
+		tmp.blendMode = colorBuffersInfo[i].blendMode;
+	}	
+}
+
 
 std::vector<ModelDescription::RenderState> RenderContext::RenderGraph::PSO_Builder::CollectAllRenderStates
 (
@@ -5945,9 +6069,9 @@ std::vector<ModelDescription::RenderState> RenderContext::RenderGraph::PSO_Build
 	ModelContext::CommandProvider::LicenceType<WatchModelContainer> licence;
 	auto watchModelContainer = modelContextCmdProvider->Provide<WatchModelContainer>(licence);
 
-	//全てのモデルクラスのRenderStatesを集計
+	//全てのモデルクラスのコンテナ
 	const std::vector<std::unique_ptr<Model>>* modelDataContainer = watchModelContainer();
-
+	//全てのモデルクラスのRenderStates
 	std::vector<ModelDescription::RenderState> allModelRenderStates;
 
 	//モデルクラスを全走査し、全ModelDescriptionを見る
@@ -5972,8 +6096,8 @@ std::vector<ModelDescription::RenderState> RenderContext::RenderGraph::PSO_Build
 #pragma once
 #include "../../RenderGraph.h"
 #include "../../../../../Resource/Model/ModelStructure/ModelDescription/ModelDescription.h"
+#include "../../../../../Resource/PSO/PSO_Creator/PipelineStateDesc.h"
 
-class Model;
 
 class RenderContext::RenderGraph::PSO_Builder
 {
@@ -5997,7 +6121,28 @@ private:
 	//全モデルデータを受け取ってそのモデルデータのRenderStateのベクタを取り出す
 	static std::vector<ModelDescription::RenderState> CollectAllRenderStates(ModelContextDiplomat& modelContextDiplomat_);
 
+	//モデルクラスの情報が必要か否か関係なく埋めれる情報を埋める
+	static void InputCommonInfo(PipelineStateDesc::Graphics& psoDesc_,PassDesc const& passDesc_);
 
+	//モデルクラスとレンダーパスの二つで残りのPSOの要素を定める
+	///ちょいとややこしいんだが、引数のpsoDescCommon_には既に共通設定項目が入力されていて、
+	///それをベースにRenderStateの数分のPSO_Descを作って返す
+	static std::vector<PipelineStateDesc::Graphics> InputDependingModelsInfo
+	(
+		ShaderContextDiplomat& shaderContextDiplomat_,
+		PipelineStateDesc::Graphics& psoDescCommon_,
+		PassDesc const& passDesc_,
+		RenderPassComponent::Pass const renderPass_,
+		std::vector<ModelDescription::RenderState> const& allRenderStates_
+	);
+
+	//レンダーパスオンリーで残りのPSOの要素を定める
+	static void InputPassOnlyInfo
+	(
+		ShaderContextDiplomat& shaderContextDiplomat_, 
+		PipelineStateDesc::Graphics& psoDesc_,
+		PassDesc const& passDesc_
+	);
 
 };
 
@@ -6175,12 +6320,15 @@ namespace RenderPassComponent
         , kCount
     };
 
-    inline D3D12_COMPARISON_FUNC Convert(DepthTest depthTest_)
+    inline const D3D12_COMPARISON_FUNC Convert(DepthTest depthTest_)
     {
         return (depthTest_ == DepthTest::kGreaterEqual) ? D3D12_COMPARISON_FUNC_GREATER_EQUAL : D3D12_COMPARISON_FUNC_LESS_EQUAL;
     }
 
-
+    inline std::string const DepthTestString(DepthTest depthTest_)
+    {
+        return (depthTest_ == DepthTest::kGreaterEqual) ? "GreaterEqual" : "LessEqual";
+    }
 
 }
 
@@ -6549,24 +6697,30 @@ RenderContext::RenderPassState const& RenderContext::PassDesc::WatchRenderPassSt
 {
 	return renderPassState;
 }
+std::string const RenderContext::PassDesc::WatchName()const
+{
+	return passName;
+}
 
 void RenderContext::PassDesc::DebugLog()const
 {
 	std::string log;
 
-	log += "---" + passName + "---\n";
-	log += "<ColorBuffersInfo[" + std::to_string(colorBuffersInfo.size()) + "] " + ">\n";
+	log += "----- " + passName + " -----\n";
+	log += "< ColorBuffersInfo(size = " + std::to_string(colorBuffersInfo.size()) + ")" + " >\n";
+	int cnt{};
 	for (auto const& info : colorBuffersInfo)
 	{
-		log += "Name: " + info.bufferName + "\n";
+		log += "Name: " + info.bufferName + "[" + std::to_string(cnt) + "]\n";
 		log += "BufferUnique: " + std::to_string((UINT)info.bufferID) + "\n";
 		log += "Format: " + std::to_string((UINT)info.format) + "\n";
 		log += "Width x Height: " + std::to_string(info.width) + " x " + std::to_string(info.height) + "\n";
 		log += "NumBuffer: " + std::to_string((UINT)info.numBuffer) + "\n";
-		log += "BlendMode: " + RenderStateComponent::BlendModeToString(info.blendMode) + "\n\n";
+		log += "BlendMode: " + RenderStateComponent::BlendModeToString(info.blendMode);
+		log += "\n\n";
 	}
 
-	log += "<DepthStencilBufferInfo>\n";
+	log += "< DepthStencilBufferInfo >\n";
 
 	if (depthStencilBufferInfo.has_value())
 	{
@@ -6576,11 +6730,29 @@ void RenderContext::PassDesc::DebugLog()const
 		log += "BufferUnique: " + std::to_string((UINT)info.bufferID) + "\n";
 		log += "Format: " + std::to_string((UINT)info.dsvFormat) + "\n";
 		log += "Width x Height: " + std::to_string(info.width) + " x " + std::to_string(info.height) + "\n";
-		log += "NumBuffer: " + std::to_string((UINT)info.numBuffer) + "\n";
+		log += "NumBuffer: " + std::to_string((UINT)info.numBuffer);
+		log += "\n\n";
 	}
 	else
 	{
 		log += "None";
+		log += "\n\n";
+
+	}
+
+	log += "< RenderState >";
+	if (depthStencilBufferInfo.has_value())
+	{
+		log += "\nDepthEnable: " + std::to_string((int)renderPassState.depthEnable);
+		log += "\nDepthTest: " + RenderPassComponent::DepthTestString(renderPassState.depthTest);
+		log += "\nDepthBias: " + std::to_string((int)renderPassState.depthBias);
+		log += "\nDepthBiasClamp: " + std::to_string((float)renderPassState.depthBiasClamp);
+		log += "\nSlopeScaledDepthBias: " + std::to_string((float)renderPassState.slopeScaledDepthBias);
+		log += "\n";
+	}
+	else
+	{
+		log += "\nDammy Value has been set\n";
 	}
 
 	Logger::Log(log);
@@ -6601,30 +6773,33 @@ private:
 
 	struct DataKeyString
 	{
-		std::string const kIsOffScreenB			= "isOffScreen";
-		std::string const kMS					= "ms";
-		std::string const kPS					= "ps";
+		std::string const kIsOffScreenB				= "isOffScreen";
+		std::string const kMS						= "ms";
+		std::string const kPS						= "ps";
 
-		std::string const kColorBufferName		= "colorBufferName";
-		std::string const kBlendMode			= "blendMode";
-		std::string const kColorFormatI			= "colorFormat";
-		std::string const kClearColorV4			= "clearColor";
-		std::string const kColorWidthI			= "colorWidth";
-		std::string const kColorHeightI			= "colorHeight";
-		std::string const kNumBuffer_colorI		= "numBuffer_Color";
+		std::string const kColorBufferName			= "colorBufferName";
+		std::string const kBlendMode				= "blendMode";
+		std::string const kColorFormatI				= "colorFormat";
+		std::string const kClearColorV4				= "clearColor";
+		std::string const kColorWidthI				= "colorWidth";
+		std::string const kColorHeightI				= "colorHeight";
+		std::string const kNumBuffer_colorI			= "numBuffer_Color";
 
-		std::string const kDepthBufferName		= "depthBufferName";
-		std::string const kUseDepthStenciB		= "useDepthStencil";
-		std::string const kDsvFormatI			= "dsvFormat";
-		std::string const kSrvFormatI			= "srvFormat";
-		std::string const kClearDepthF			= "clearDepth";
-		std::string const kClearStencilI		= "clearStencil";
-		std::string const kDepthWidthI			= "depthWidth";
-		std::string const kDepthHeightI			= "depthHeight";
-		std::string const kNumBuffer_depthI		= "numBuffer_Depth";
+		std::string const kDepthBufferName			= "depthBufferName";
+		std::string const kUseDepthStenciB			= "useDepthStencil";
+		std::string const kDsvFormatI				= "dsvFormat";
+		std::string const kSrvFormatI				= "srvFormat";
+		std::string const kClearDepthF				= "clearDepth";
+		std::string const kClearStencilI			= "clearStencil";
+		std::string const kDepthWidthI				= "depthWidth";
+		std::string const kDepthHeightI				= "depthHeight";
+		std::string const kNumBuffer_depthI			= "numBuffer_Depth";
 
-		std::string const kDepthTestI			= "depthTest";
-		std::string const kDepthEnableB			= "depthEnable";
+		std::string const kDepthTestI				= "depthTest";
+		std::string const kDepthEnableB				= "depthEnable";
+		std::string const kDepthBiasI				= "depthBias";
+		std::string const kDepthBiasClampF			= "depthBiasClamp";
+		std::string const kSlopeScaledDepthBiasF	= "slopeScaledDepthBias";
 
 	};
 
@@ -6651,7 +6826,7 @@ public:
 	void SetDepthStencilBufferUniqueID(BufferUniqueID id_);
 
 	void DebugLog()const;
-
+	std::string const WatchName()const;
 private:
 
 	//オフスクリーンパスの場合、シェーダーファイルは1つに限定される
@@ -6687,13 +6862,18 @@ struct RenderContext::RenderPassState
 	RenderPassState
 	(
 		RenderPassComponent::DepthTest depthTest_,
-		RenderPassComponent::DepthEnable depthEnable_
-	):depthTest(depthTest_), depthEnable(depthEnable_)
+		RenderPassComponent::DepthEnable depthEnable_,
+		INT depthBias_,
+		FLOAT depthBiasClamp_,
+		FLOAT slopeScaledDepthBias_
+	):depthTest(depthTest_), depthEnable(depthEnable_), depthBias(depthBias_), depthBiasClamp(depthBiasClamp_), slopeScaledDepthBias(slopeScaledDepthBias_)
 	{ }
 
 	RenderPassComponent::DepthTest depthTest = RenderPassComponent::DepthTest::kGreaterEqual;
 	RenderPassComponent::DepthEnable depthEnable = RenderPassComponent::DepthEnable::kEnable;
-
+	INT depthBias = 0;
+	FLOAT depthBiasClamp = 0.0f;
+	FLOAT slopeScaledDepthBias = 0.0f;
 };
 
 
@@ -7138,11 +7318,19 @@ RenderContext::RenderPassState RenderContext::RenderPassCreator::PassSettingsLoa
 {
 	auto* miyajison = Miyajison::Get();
 
-	return RenderPassState
+	bool doesUseDepthBuffer =
+		miyajison->LoadData<bool>(jsonFileName_, { passName_,PassDesc::dataKeyString.kUseDepthStenciB });
+
+	return doesUseDepthBuffer ? RenderPassState
 	(
 		DepthTest(miyajison->LoadData<int>(jsonFileName_, { passName_,PassDesc::dataKeyString.kDepthTestI })),
-		DepthEnable(miyajison->LoadData<bool>(jsonFileName_, { passName_,PassDesc::dataKeyString.kDepthEnableB }))
-	);
+		DepthEnable(miyajison->LoadData<bool>(jsonFileName_, { passName_,PassDesc::dataKeyString.kDepthEnableB })),
+		INT(miyajison->LoadData<int>(jsonFileName_, { passName_,PassDesc::dataKeyString.kDepthBiasI })),
+		FLOAT(miyajison->LoadData<float>(jsonFileName_, { passName_,PassDesc::dataKeyString.kDepthBiasClampF })),
+		FLOAT(miyajison->LoadData<float>(jsonFileName_, { passName_,PassDesc::dataKeyString.kSlopeScaledDepthBiasF }))
+	)
+	: RenderPassState{};	//深度バッファ使わないならダミー値で構わん
+
 }
 
 std::optional<std::pair<std::string, std::string >> RenderContext::RenderPassCreator::PassSettingsLoader::ParseShaderFile
@@ -16631,19 +16819,22 @@ namespace PipelineStateComponent
 
     struct RenderTargetDesc
     {
-        std::vector<DXGI_FORMAT> rtvFormatContainer;
-        std::vector<RenderStateComponent::BlendMode> blendModeContainer;
-        std::vector<std::string> bufferNameContainer;
-
+        DXGI_FORMAT rtvFormat;
+        RenderStateComponent::BlendMode blendMode;
+        std::string bufferName;
     };
 
     struct DepthStencilDesc
     {
+        //ちょっと対症療法的だが…
+        bool doesUseBuffer = true;
+
         DXGI_FORMAT dsvFormat;
         RenderStateComponent::BlendMode blendMode = RenderStateComponent::BlendMode::kOpaque;
         RenderPassComponent::DepthEnable depthEnable = RenderPassComponent::DepthEnable::kEnable;
         RenderPassComponent::DepthTest depthTest = RenderPassComponent::DepthTest::kGreaterEqual;
         float clearDepth = 0.0f;
+        int clearStencil = 0;
         std::string bufferName;
     };
 
@@ -16672,10 +16863,22 @@ namespace PipelineStateDesc
 {
     struct Graphics
     {
+        Graphics() = default;
+
+        Graphics
+        (
+            PipelineStateComponent::ShaderSet const& shaderSet,
+            PipelineStateComponent::RasterizerDesc const& rasterizerDesc,
+            std::vector<PipelineStateComponent::RenderTargetDesc> const& renderTargetDescs,
+            PipelineStateComponent::DepthStencilDesc const& depthStencilDesc,
+            PipelineStateComponent::SampleDesc const& sampleDesc
+        ):shaderSet(shaderSet),rasterizerDesc(rasterizerDesc),renderTargetDescs(renderTargetDescs),depthStencilDesc(depthStencilDesc),sampleDesc(sampleDesc)
+        {
+        }
         PipelineStateComponent::ShaderSet shaderSet;
         PipelineStateComponent::RasterizerDesc rasterizerDesc;
-        PipelineStateComponent::RenderTargetDesc renderTargetDesc;
-        std::optional<PipelineStateComponent::DepthStencilDesc> depthStencilDesc;
+        std::vector<PipelineStateComponent::RenderTargetDesc> renderTargetDescs;
+        PipelineStateComponent::DepthStencilDesc depthStencilDesc;
         PipelineStateComponent::SampleDesc sampleDesc;
     };
 }
@@ -16824,11 +17027,11 @@ Microsoft::WRL::ComPtr<ID3D12PipelineState> PSO_Context::Assembler::Assemble
 
 
 	//要項チェック
-	Check(srcDesc_.shaderSet, srcDesc_.renderTargetDesc, debugName_);
+	Check(srcDesc_.shaderSet, srcDesc_.renderTargetDescs, debugName_);
 
 	//使用するレンダーターゲットの数とそのフォーマットを入力
 	CD3DX12_RT_FORMAT_ARRAY renderTargetFormatArray{};
-	renderTargetFormatArray = SummarizeRenderTargetFormatInfo(srcDesc_.renderTargetDesc);
+	renderTargetFormatArray = SummarizeRenderTargetFormatInfo(srcDesc_.renderTargetDescs);
 
 	//シェーダーバイトコードの生成
 	MS_PS ms_ps = CreateShaderByteCode(srcDesc_.shaderSet);
@@ -16844,7 +17047,7 @@ Microsoft::WRL::ComPtr<ID3D12PipelineState> PSO_Context::Assembler::Assemble
 	CD3DX12_BLEND_DESC blendDesc{};
 	{
 		CreateBlendDesc creator;
-		blendDesc = creator.Create(srcDesc_.renderTargetDesc);
+		blendDesc = creator.Create(srcDesc_.renderTargetDescs);
 	}
 
 	//ディプスステンシルディスク
@@ -16870,7 +17073,7 @@ Microsoft::WRL::ComPtr<ID3D12PipelineState> PSO_Context::Assembler::Assemble
 		if (ms_ps.second)pipelineDesc.PS = *ms_ps.second;			///PSは存在する場合のみ
 		pipelineDesc.BlendState = blendDesc;
 		pipelineDesc.DepthStencilState = depthStencilDesc;
-		pipelineDesc.DSVFormat = (srcDesc_.depthStencilDesc) ? srcDesc_.depthStencilDesc->dsvFormat : DXGI_FORMAT_UNKNOWN;
+		pipelineDesc.DSVFormat = srcDesc_.depthStencilDesc.doesUseBuffer ? srcDesc_.depthStencilDesc.dsvFormat : DXGI_FORMAT_UNKNOWN;
 		pipelineDesc.RasterizerState = rasterizerDesc;
 		pipelineDesc.SampleDesc = sampleDesc;
 		pipelineDesc.SampleMask = UINT_MAX;
@@ -16897,32 +17100,34 @@ Microsoft::WRL::ComPtr<ID3D12PipelineState> PSO_Context::Assembler::Assemble
 void PSO_Context::Assembler::Check
 (
 	const PipelineStateComponent::ShaderSet& shaderSet_,
-	const PipelineStateComponent::RenderTargetDesc& renderTargetDesc_,
+	const std::vector<PipelineStateComponent::RenderTargetDesc>& renderTargetDescs_,
 	const std::string debugName_
 )const
 {
 	std::string errorMsg{};
 
 	if (!shaderSet_.meshShader) errorMsg += "[MeshShaderがぬるぽ]";
-	if (renderTargetDesc_.rtvFormatContainer.size() > D3D12_SIMULTANEOUS_RENDER_TARGET_COUNT) errorMsg += "rtvが上限越え";
-	if (renderTargetDesc_.blendModeContainer.size() != renderTargetDesc_.rtvFormatContainer.size())
-		errorMsg += "[renderTargetDescの不備]";
-
+	if (renderTargetDescs_.size() > D3D12_SIMULTANEOUS_RENDER_TARGET_COUNT) errorMsg += "rtが上限越え";
 
 	ErrorMessageOutput::Assert::DetectError(errorMsg.size() == 0, debugName_ + "\n" + errorMsg, fileName);
 }
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-CD3DX12_RT_FORMAT_ARRAY PSO_Context::Assembler::SummarizeRenderTargetFormatInfo(const PipelineStateComponent::RenderTargetDesc& renderTargetDesc_)const
+CD3DX12_RT_FORMAT_ARRAY PSO_Context::Assembler::SummarizeRenderTargetFormatInfo
+(const std::vector<PipelineStateComponent::RenderTargetDesc>& renderTargetDescs_)const
 {
 	CD3DX12_RT_FORMAT_ARRAY renderTargetFormatArray = {};
 	
-	size_t const kNumRenderTargets = renderTargetDesc_.rtvFormatContainer.size();
-	renderTargetFormatArray.NumRenderTargets = (UINT)renderTargetDesc_.rtvFormatContainer.size();
-
-	for (size_t i = 0;i < kNumRenderTargets;++i) renderTargetFormatArray.RTFormats[i] = renderTargetDesc_.rtvFormatContainer[i];
-
+	size_t const kNumRenderTargets = renderTargetDescs_.size();
+	//レンダーターゲットの総数を入力
+	renderTargetFormatArray.NumRenderTargets = (UINT)kNumRenderTargets;
+	
+	UINT cnt{};
+	for (auto const& desc : renderTargetDescs_)
+	{
+		renderTargetFormatArray.RTFormats[cnt++] = desc.rtvFormat;
+	}
 
 	return renderTargetFormatArray;
 }
@@ -17005,12 +17210,13 @@ private:
 	void Check
 	(
 		const PipelineStateComponent::ShaderSet& shaderSet_,
-		const PipelineStateComponent::RenderTargetDesc& renderTargetDesc_,
+		const std::vector<PipelineStateComponent::RenderTargetDesc>& renderTargetDescs_,
 		const std::string debugName_
 	)const;
 
 	//レンダーターゲットのフォーマットと総数の情報をまとめる
-	CD3DX12_RT_FORMAT_ARRAY SummarizeRenderTargetFormatInfo(const PipelineStateComponent::RenderTargetDesc& renderTargetDesc_)const;
+	CD3DX12_RT_FORMAT_ARRAY SummarizeRenderTargetFormatInfo
+	(const std::vector<PipelineStateComponent::RenderTargetDesc>& renderTargetDescs_)const;
 	//シェーダーバイトコード作成
 	MS_PS CreateShaderByteCode(PipelineStateComponent::ShaderSet& shaderSet_);
 
@@ -17048,19 +17254,19 @@ Microsoft::WRL::ComPtr<ID3D12PipelineState> PSO_Context::Assembler::Assemble
 #include "CreateBlendDesc.h"
 
 
-CD3DX12_BLEND_DESC CreateBlendDesc::Create(const PipelineStateComponent::RenderTargetDesc& srcDesc_)
+CD3DX12_BLEND_DESC CreateBlendDesc::Create(const std::vector<PipelineStateComponent::RenderTargetDesc>& renderTargetDescs_)
 {
 	CD3DX12_BLEND_DESC blendDesc;
 
 	blendDesc.IndependentBlendEnable = TRUE;
 	blendDesc.AlphaToCoverageEnable = FALSE;
 
-	for (size_t i = 0;i < srcDesc_.blendModeContainer.size();++i)
+	for (size_t i = 0;i < renderTargetDescs_.size();++i)
 	{
 		//共通設定
 		SetCommonDetails(&blendDesc.RenderTarget[i]);
 		//ブレンドモードごとの設定
-		SetBranchedDetails(&blendDesc.RenderTarget[i], srcDesc_.blendModeContainer[i]);
+		SetBranchedDetails(&blendDesc.RenderTarget[i], renderTargetDescs_[i].blendMode);
 	}
 
 	return blendDesc;
@@ -17128,7 +17334,7 @@ void CreateBlendDesc::SetBranchedDetails(D3D12_RENDER_TARGET_BLEND_DESC* desc_, 
 struct CreateBlendDesc
 {
 	///本丸
-	CD3DX12_BLEND_DESC Create(const PipelineStateComponent::RenderTargetDesc& srcDesc_);
+	CD3DX12_BLEND_DESC Create(const std::vector<PipelineStateComponent::RenderTargetDesc>& renderTargetDescs_);
 
 private:
 
@@ -17352,26 +17558,26 @@ void PSO_InfoOutputter::OutputGraphicsPSOInfo
 		debugText += "---RenderTarget---\n";
 
 		//rtvフォーマットとブレンドモード
-		auto const kRtSize = srcDesc_.renderTargetDesc.rtvFormatContainer.size();
-		for (size_t i = 0;i < kRtSize;++i)
+		for (auto const& desc : srcDesc_.renderTargetDescs)
 		{
-			debugText += "[ " + srcDesc_.renderTargetDesc.bufferNameContainer[i] + " ]\n";
-			debugText += "Format: " + DebugTextTable(srcDesc_.renderTargetDesc.rtvFormatContainer[i]) + "\n";
-			debugText += "BlendMode: " + DebugTextTable(srcDesc_.renderTargetDesc.blendModeContainer[i]) + "\n";
+			debugText += "[ " + desc.bufferName + " ]\n";
+			debugText += "Format: " + DebugTextTable(desc.rtvFormat) + "\n";
+			debugText += "BlendMode: " + DebugTextTable(desc.blendMode) + "\n";
 		}
+
 		debugText += "\n";
 	}
 
 	//ディプスバッファ関連
-	if(srcDesc_.depthStencilDesc)
+	if(srcDesc_.depthStencilDesc.doesUseBuffer)
 	{
 		debugText += "---DepthStencilBuffer---";
 
-		debugText += "[ " + srcDesc_.depthStencilDesc->bufferName + " ]\n";
-		(srcDesc_.depthStencilDesc->blendMode == BlendMode::kOpaque) ? debugText += "DepthWriteMask: MASK_ALL" : debugText += "DepthWriteMask: MASK_ZERO";
-		debugText += "DepthStencilFormat: " + DebugTextTable(srcDesc_.depthStencilDesc->dsvFormat) + "\n";
-		debugText += "DepthEnable: " + DebugTextTable(srcDesc_.depthStencilDesc->depthEnable) + "\n";
-		debugText += "DepthTest: " + DebugTextTable(srcDesc_.depthStencilDesc->depthTest) + "\n";
+		debugText += "[ " + srcDesc_.depthStencilDesc.bufferName + " ]\n";
+		(srcDesc_.depthStencilDesc.blendMode == BlendMode::kOpaque) ? debugText += "DepthWriteMask: MASK_ALL" : debugText += "DepthWriteMask: MASK_ZERO";
+		debugText += "DepthStencilFormat: " + DebugTextTable(srcDesc_.depthStencilDesc.dsvFormat) + "\n";
+		debugText += "DepthEnable: " + DebugTextTable(srcDesc_.depthStencilDesc.depthEnable) + "\n";
+		debugText += "DepthTest: " + DebugTextTable(srcDesc_.depthStencilDesc.depthTest) + "\n";
 	}
 
 	//シェーダー
@@ -17380,11 +17586,6 @@ void PSO_InfoOutputter::OutputGraphicsPSOInfo
 		debugText += "MeshShader: " + srcDesc_.shaderSet.meshShaderName + "\n";
 		if (srcDesc_.shaderSet.pixelShader) debugText += "pixelShader: " + srcDesc_.shaderSet.pixelShaderName + "\n";
 	}
-
-	{
-
-	}
-
 
 }
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -18621,8 +18822,6 @@ private:
 #include "ShaderContextDiplomat/ShaderContextDiplomat.h"
 #include "ShaderContextDiplomat/ShaderContextToolLender/ShaderContextToolLender.h"
 
-
-
 namespace
 {
 	auto fileName = "ShaderContext.cpp";
@@ -18728,7 +18927,10 @@ namespace ShaderPathComponent
 {
 	enum class MeshType
 	{
+		//RenderPass専用！！
 		kOffscreen,
+
+
 		kStatic
 
 		,kCount
@@ -18736,13 +18938,116 @@ namespace ShaderPathComponent
 
 	enum class MaterialType
 	{
+		//RenderPass専用！！
 		kOffscreen,
+
+
 		kStandard
 
 		,kCount
 	};
 
 };
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Shader\ShaderTable.h ===
+========================================
+#pragma once
+#include "ShaderPathComponent.h"
+#include "../../Render/RenderPass/RenderPassComponent.h"
+
+///MeshType X Pass = MeshShader
+///MaterialType X Pass = PixelShader
+
+namespace ShaderTable
+{
+	std::string const GetMeshShader(RenderPassComponent::Pass pass_, ShaderPathComponent::MeshType meshType_)
+	{
+		std::string meshShader;
+
+		switch (pass_)
+		{
+		case RenderPassComponent::Pass::kSceneTextureCreatorOpaque:
+
+			if (meshType_ == ShaderPathComponent::MeshType::kStatic)meshShader = "StaticMS";
+
+			break;
+
+		default:
+
+			ErrorMessageOutput::Assert::DetectError
+			(
+				meshShader.size() > 0,
+				"指定したRenderPassもしかしてオフスク用じゃない？(メッシュシェーダ)",
+				"ShaderTable.h"
+			);
+
+			break;
+		}
+
+		ErrorMessageOutput::Assert::OutputError
+		(
+			"shaderTableにて設定外の組み合わせがきた(メッシュシェーダ)",
+			"ShaderTable.h"
+		);
+
+		return meshShader;
+	}
+
+	std::string const GetPixelShader(RenderPassComponent::Pass pass_, ShaderPathComponent::MaterialType materialType_)
+	{
+		std::string pixelShader;
+
+		switch (pass_)
+		{
+		case RenderPassComponent::Pass::kSceneTextureCreatorOpaque:
+
+			if (materialType_ == ShaderPathComponent::MaterialType::kStandard)pixelShader = "StandardPS";
+
+			break;
+
+		default:
+
+			ErrorMessageOutput::Assert::OutputError
+			(
+				"指定したRenderPassもしかしてオフスク用じゃない？(ピクセルシェーダ)",
+				"ShaderTable.h"
+			);
+
+			break;
+		}
+
+
+		ErrorMessageOutput::Assert::DetectError
+		(
+			pixelShader.size() > 0,
+			"shaderTableにて設定外の組み合わせがきた(ピクセルシェーダ)",
+			"ShaderTable.h"
+		);
+
+		return pixelShader;
+	}
+
+
+
+}
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Shader\whenMakeNewShaderFile.txt ===
+========================================
+
+新しくシェーダーファイルを作るときのお作法
+
+1.まずシェーダーファイルをアセットに追加
+2.alt + Windowボタンでアセット更新コマンドを叩く
+3.ShaderComponent.hのenumに追記
+4.必要であれば、ShaderTable.hに追記
+5.必要であれば、ShaderSettings.jsonに追記
+
 
 
 

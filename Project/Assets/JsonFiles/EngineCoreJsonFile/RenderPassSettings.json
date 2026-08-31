@@ -20,11 +20,7 @@
                                 "colorHeight":  [-1],
                                 "numBuffer_Color":[1],
                                 
-                                "useDepthStencil": false,
-
-                                "depthTest": 0,
-                                "depthEnable": false
-                                
+                                "useDepthStencil": false
     },
     "SceneTextureCreatorOpaque": 
      {
@@ -56,7 +52,11 @@
                                 "numBuffer_Depth":1,
 
                                 "depthTest": 1,
-                                "depthEnable": true
+                                "depthEnable": true,
+                                "depthBias":  0,
+                                "depthBiasClamp": 0.0,
+                                "slopeScaledDepthBias": 0.0
+
                                 
                             }
 }

@@ -160,11 +160,19 @@ RenderContext::RenderPassState RenderContext::RenderPassCreator::PassSettingsLoa
 {
 	auto* miyajison = Miyajison::Get();
 
-	return RenderPassState
+	bool doesUseDepthBuffer =
+		miyajison->LoadData<bool>(jsonFileName_, { passName_,PassDesc::dataKeyString.kUseDepthStenciB });
+
+	return doesUseDepthBuffer ? RenderPassState
 	(
 		DepthTest(miyajison->LoadData<int>(jsonFileName_, { passName_,PassDesc::dataKeyString.kDepthTestI })),
-		DepthEnable(miyajison->LoadData<bool>(jsonFileName_, { passName_,PassDesc::dataKeyString.kDepthEnableB }))
-	);
+		DepthEnable(miyajison->LoadData<bool>(jsonFileName_, { passName_,PassDesc::dataKeyString.kDepthEnableB })),
+		INT(miyajison->LoadData<int>(jsonFileName_, { passName_,PassDesc::dataKeyString.kDepthBiasI })),
+		FLOAT(miyajison->LoadData<float>(jsonFileName_, { passName_,PassDesc::dataKeyString.kDepthBiasClampF })),
+		FLOAT(miyajison->LoadData<float>(jsonFileName_, { passName_,PassDesc::dataKeyString.kSlopeScaledDepthBiasF }))
+	)
+	: RenderPassState{};	//深度バッファ使わないならダミー値で構わん
+
 }
 
 std::optional<std::pair<std::string, std::string >> RenderContext::RenderPassCreator::PassSettingsLoader::ParseShaderFile
