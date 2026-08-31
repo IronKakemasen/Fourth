@@ -40,12 +40,13 @@ private:
 	void Check
 	(
 		const PipelineStateComponent::ShaderSet& shaderSet_,
-		const PipelineStateComponent::RenderTargetDesc& renderTargetDesc_,
+		const std::vector<PipelineStateComponent::RenderTargetDesc>& renderTargetDescs_,
 		const std::string debugName_
 	)const;
 
 	//レンダーターゲットのフォーマットと総数の情報をまとめる
-	CD3DX12_RT_FORMAT_ARRAY SummarizeRenderTargetFormatInfo(const PipelineStateComponent::RenderTargetDesc& renderTargetDesc_)const;
+	CD3DX12_RT_FORMAT_ARRAY SummarizeRenderTargetFormatInfo
+	(const std::vector<PipelineStateComponent::RenderTargetDesc>& renderTargetDescs_)const;
 	//シェーダーバイトコード作成
 	MS_PS CreateShaderByteCode(PipelineStateComponent::ShaderSet& shaderSet_);
 

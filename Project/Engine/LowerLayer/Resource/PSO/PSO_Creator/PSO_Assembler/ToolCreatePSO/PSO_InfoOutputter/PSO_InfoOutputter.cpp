@@ -18,26 +18,26 @@ void PSO_InfoOutputter::OutputGraphicsPSOInfo
 		debugText += "---RenderTarget---\n";
 
 		//rtvフォーマットとブレンドモード
-		auto const kRtSize = srcDesc_.renderTargetDesc.rtvFormatContainer.size();
-		for (size_t i = 0;i < kRtSize;++i)
+		for (auto const& desc : srcDesc_.renderTargetDescs)
 		{
-			debugText += "[ " + srcDesc_.renderTargetDesc.bufferNameContainer[i] + " ]\n";
-			debugText += "Format: " + DebugTextTable(srcDesc_.renderTargetDesc.rtvFormatContainer[i]) + "\n";
-			debugText += "BlendMode: " + DebugTextTable(srcDesc_.renderTargetDesc.blendModeContainer[i]) + "\n";
+			debugText += "[ " + desc.bufferName + " ]\n";
+			debugText += "Format: " + DebugTextTable(desc.rtvFormat) + "\n";
+			debugText += "BlendMode: " + DebugTextTable(desc.blendMode) + "\n";
 		}
+
 		debugText += "\n";
 	}
 
 	//ディプスバッファ関連
-	if(srcDesc_.depthStencilDesc)
+	if(srcDesc_.depthStencilDesc.doesUseBuffer)
 	{
 		debugText += "---DepthStencilBuffer---";
 
-		debugText += "[ " + srcDesc_.depthStencilDesc->bufferName + " ]\n";
-		(srcDesc_.depthStencilDesc->blendMode == BlendMode::kOpaque) ? debugText += "DepthWriteMask: MASK_ALL" : debugText += "DepthWriteMask: MASK_ZERO";
-		debugText += "DepthStencilFormat: " + DebugTextTable(srcDesc_.depthStencilDesc->dsvFormat) + "\n";
-		debugText += "DepthEnable: " + DebugTextTable(srcDesc_.depthStencilDesc->depthEnable) + "\n";
-		debugText += "DepthTest: " + DebugTextTable(srcDesc_.depthStencilDesc->depthTest) + "\n";
+		debugText += "[ " + srcDesc_.depthStencilDesc.bufferName + " ]\n";
+		(srcDesc_.depthStencilDesc.blendMode == BlendMode::kOpaque) ? debugText += "DepthWriteMask: MASK_ALL" : debugText += "DepthWriteMask: MASK_ZERO";
+		debugText += "DepthStencilFormat: " + DebugTextTable(srcDesc_.depthStencilDesc.dsvFormat) + "\n";
+		debugText += "DepthEnable: " + DebugTextTable(srcDesc_.depthStencilDesc.depthEnable) + "\n";
+		debugText += "DepthTest: " + DebugTextTable(srcDesc_.depthStencilDesc.depthTest) + "\n";
 	}
 
 	//シェーダー
@@ -46,11 +46,6 @@ void PSO_InfoOutputter::OutputGraphicsPSOInfo
 		debugText += "MeshShader: " + srcDesc_.shaderSet.meshShaderName + "\n";
 		if (srcDesc_.shaderSet.pixelShader) debugText += "pixelShader: " + srcDesc_.shaderSet.pixelShaderName + "\n";
 	}
-
-	{
-
-	}
-
 
 }
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

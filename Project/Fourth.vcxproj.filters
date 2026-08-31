@@ -1316,8 +1316,14 @@
     <ClInclude Include="Engine\LowerLayer\Resource\RootSignature\RootSigDiplomatIncludes.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
+    <ClInclude Include="Engine\LowerLayer\Resource\Shader\ShaderTable.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="Engine\LowerLayer\Resource\Shader\whenMakeNewShaderFile.txt" />
   </ItemGroup>
 </Project>

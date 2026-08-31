@@ -439,6 +439,7 @@
     <ClInclude Include="Engine\LowerLayer\Resource\RootSignature\RootSignatureCmds.h" />
     <ClInclude Include="Engine\LowerLayer\Resource\RootSignature\RootSignatureContextDiplomat\RootSignatureToolLender\RootSigToolLenderLicences.h" />
     <ClInclude Include="Engine\LowerLayer\Resource\Shader\ShaderContextDiplomat\ShaderContextToolLender\ShaderContextToolLenderLicences.h" />
+    <ClInclude Include="Engine\LowerLayer\Resource\Shader\ShaderTable.h" />
     <ClInclude Include="Engine\Utility\ClosedHashMap\ClosedHashMap.h" />
     <ClInclude Include="Engine\LowerLayer\Render\RenderContextRuntime\PSO_PoolDispatcher\GraphicsPSO_Key.h" />
     <ClInclude Include="Engine\LowerLayer\Render\RenderPass\RenderPassComponent.h" />
@@ -624,6 +625,9 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="Engine\LowerLayer\Resource\Shader\whenMakeNewShaderFile.txt" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
