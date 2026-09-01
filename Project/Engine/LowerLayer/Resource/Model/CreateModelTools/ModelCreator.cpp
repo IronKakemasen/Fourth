@@ -35,9 +35,9 @@ Model* ModelContext::ModelCreator::Create
 	///一つのDescに詰める
 	ModelDescription modelDesc
 	(
+		modelName_ + std::to_string(numCreate++),
 		commons_uniques.first,
 		commons_uniques.second,
-		modelName_ + std::to_string(numCreate++),
 		modelRenderStates_
 	);
 	///モデルクラスのインスタンス化

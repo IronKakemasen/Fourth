@@ -87,6 +87,9 @@ namespace PipelineStateDesc
         std::vector<PipelineStateComponent::RenderTargetDesc> renderTargetDescs;
         PipelineStateComponent::DepthStencilDesc depthStencilDesc;
         PipelineStateComponent::SampleDesc sampleDesc;
+
+        //デバッグ用
+        std::string psoName;
     };
 }
 

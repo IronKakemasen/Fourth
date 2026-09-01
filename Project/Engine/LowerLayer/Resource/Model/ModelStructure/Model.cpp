@@ -10,5 +10,5 @@ Model::Model(const ModelDescription& modelDesc_)
 
 std::string const Model::WatchName()const
 {
-	return modelDesc.WatchName();
+	return modelDesc.WatchRenderStates()[0].modelName;
 }

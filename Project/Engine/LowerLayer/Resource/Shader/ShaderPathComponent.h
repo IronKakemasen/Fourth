@@ -12,17 +12,21 @@ namespace ShaderPathComponent
 		kStatic
 
 		,kCount
+
 	};
 
 	enum class MaterialType
 	{
 		//RenderPass専用！！
 		kOffscreen,
+		//ピクセルシェーダーを通さないケースはあるので
+		kNone,
 
 
 		kStandard
 
 		,kCount
+
 	};
 
 };

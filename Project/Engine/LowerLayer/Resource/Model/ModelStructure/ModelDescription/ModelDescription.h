@@ -15,18 +15,8 @@ struct ModelDescription
 	{
 		RenderState() = default;
 
-		RenderState
-		(
-			RenderPassComponent::Pass pass_,
-			std::vector<RenderStateComponent::BlendMode> blendModes_,
-			RenderStateComponent::CullMode cullMode_,
-			ShaderPathComponent::MeshType meshType_,
-			ShaderPathComponent::MaterialType materialType_
-		);
-	
-
 		//どの描画パス(ステージ)で描画するか
-		RenderPassComponent::Pass pass = RenderPassComponent::Pass::kEnd;
+		RenderPassComponent::Pass pass = RenderPassComponent::Pass::kSceneTextureCreatorOpaque;
 		//ブレンドモード複数可
 		std::vector<RenderStateComponent::BlendMode> blendModes;
 		//どの面をカリングするか
@@ -35,6 +25,10 @@ struct ModelDescription
 		ShaderPathComponent::MeshType meshType = ShaderPathComponent::MeshType::kStatic;
 		//メッシュ描画方法
 		ShaderPathComponent::MaterialType materialType = ShaderPathComponent::MaterialType::kStandard;
+
+		//デバッグ用
+		std::string modelName;
+
 	};
 
 	//そのモデルクラス固有の
@@ -60,13 +54,12 @@ struct ModelDescription
 	//中で入力チェック
 	ModelDescription
 	(
+		std::string modelName_,
 		std::vector<ModelDescription::Common> const& commons_,
 		std::vector<ModelDescription::Unique> const& uniques_,
-		std::string modelName_,
 		std::vector<ModelDescription::RenderState> const& renderStates_
 	);
 
-	inline std::string const WatchName()const { return modelName; }
 	inline std::vector<ModelDescription::RenderState> const& WatchRenderStates()const { return renderStates; }
 
 private:
@@ -77,7 +70,6 @@ private:
 	std::vector<ModelDescription::Unique> uniques;
 
 	//これ以下は自分で決める
-	std::string modelName;
 	//可変長になっているのは、複数分のPassに参加できるようにするため。理由がちゃう
 	//つまり、サブメッシュもすべて同じ設定
 	std::vector<ModelDescription::RenderState> renderStates;
