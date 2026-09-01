@@ -21,9 +21,8 @@ namespace ShaderTable
 
 		default:
 
-			ErrorMessageOutput::Assert::DetectError
+			ErrorMessageOutput::Assert::OutputError
 			(
-				meshShader.size() > 0,
 				"指定したRenderPassもしかしてオフスク用じゃない？(メッシュシェーダ)",
 				"ShaderTable.h"
 			);
@@ -31,8 +30,9 @@ namespace ShaderTable
 			break;
 		}
 
-		ErrorMessageOutput::Assert::OutputError
+		ErrorMessageOutput::Assert::DetectError
 		(
+			meshShader.size() > 0,
 			"shaderTableにて設定外の組み合わせがきた(メッシュシェーダ)",
 			"ShaderTable.h"
 		);
@@ -43,6 +43,8 @@ namespace ShaderTable
 	std::string const GetPixelShader(RenderPassComponent::Pass pass_, ShaderPathComponent::MaterialType materialType_)
 	{
 		std::string pixelShader;
+
+		if (materialType_ == ShaderPathComponent::MaterialType::kNone) return "none";
 
 		switch (pass_)
 		{

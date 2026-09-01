@@ -27,26 +27,29 @@ private:
 	static std::vector<ModelDescription::RenderState> CollectAllRenderStates(ModelContextDiplomat& modelContextDiplomat_);
 
 	//モデルクラスの情報が必要か否か関係なく埋めれる情報を埋める
-	static void InputCommonInfo(PipelineStateDesc::Graphics& psoDesc_,PassDesc const& passDesc_);
+	static PipelineStateDesc::Graphics InputCommonInfo(PassDesc const& passDesc_, RenderStateComponent::FillMode const fillMode_);
 
 	//モデルクラスとレンダーパスの二つで残りのPSOの要素を定める
-	///ちょいとややこしいんだが、引数のpsoDescCommon_には既に共通設定項目が入力されていて、
-	///それをベースにRenderStateの数分のPSO_Descを作って返す
-	static std::vector<PipelineStateDesc::Graphics> InputDependingModelsInfo
+	///引数のpsoDescCommon_には既に共通設定項目が入力されていて、
+	///それをベースにRenderStateの数分のPSO_Descを作って追加していく
+	static void InputDependingModelsInfo
 	(
 		ShaderContextDiplomat& shaderContextDiplomat_,
 		PipelineStateDesc::Graphics& psoDescCommon_,
 		PassDesc const& passDesc_,
 		RenderPassComponent::Pass const renderPass_,
-		std::vector<ModelDescription::RenderState> const& allRenderStates_
+		std::vector<ModelDescription::RenderState> const& allRenderStates_,
+		std::vector<PipelineStateDesc::Graphics>& allPsoDesc_
 	);
 
+	//上と同じ要領
 	//レンダーパスオンリーで残りのPSOの要素を定める
 	static void InputPassOnlyInfo
 	(
 		ShaderContextDiplomat& shaderContextDiplomat_, 
-		PipelineStateDesc::Graphics& psoDesc_,
-		PassDesc const& passDesc_
+		PipelineStateDesc::Graphics const& psoCommonDesc_,
+		PassDesc const& passDesc_,
+		std::vector<PipelineStateDesc::Graphics>& allPsoDesc_
 	);
 
 };

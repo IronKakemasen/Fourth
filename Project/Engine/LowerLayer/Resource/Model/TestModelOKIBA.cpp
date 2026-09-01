@@ -15,6 +15,9 @@ TestModelOKIBA::TestModelOKIBA(ModelContext::ModelCreator* modelCreator_)
 
 	ModelDescription::RenderState cP;
 	cP.blendModes.emplace_back(BlendMode::kOpaque);
+	cP.blendModes.emplace_back(BlendMode::kAlphaBlend);
+	cP.blendModes.emplace_back(BlendMode::kAdditive);
+
 	cP.pass = RenderPassComponent::Pass::kSceneTextureCreatorOpaque;
 
 	cP.cullMode = CullMode::kBack;
@@ -29,7 +32,7 @@ TestModelOKIBA::TestModelOKIBA(ModelContext::ModelCreator* modelCreator_)
 
 	ModelDescription::RenderState cC;
 	cC.blendModes.emplace_back(BlendMode::kOpaque);
-	cP.pass = RenderPassComponent::Pass::kSceneTextureCreatorOpaque;
+	cC.pass = RenderPassComponent::Pass::kSceneTextureCreatorOpaque;
 	cC.cullMode = CullMode::kBack;
 	cC.meshType = ShaderPathComponent::MeshType::kStatic;
 	cC.materialType = ShaderPathComponent::MaterialType::kStandard;

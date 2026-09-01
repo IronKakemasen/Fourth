@@ -39,29 +39,57 @@ namespace RenderStateComponent
         else if (blendModeString_ == "kDependsModel")   blendMode = BlendMode::kDependsModel;
 
         
-        ErrorMessageOutput::Assert::DetectError(blendMode != BlendMode::kCount, "ブレンドモードの文字変換失敗", "RenderStateComponent.h");
+        ErrorMessageOutput::Assert::DetectError
+        (
+            blendMode != BlendMode::kCount, 
+            blendModeString_ + "この文字列は対応してない(BlendMode)",
+            "RenderStateComponent.h"
+        );
         
         return blendMode;
     }
 
     inline const std::string BlendModeToString(BlendMode mode_)
     {
-        std::string blendMode = "";
+        std::string blendModeString = "";
 
-        if      (mode_ == BlendMode::kOpaque)            blendMode = "kOpaque";
-        else if (mode_ == BlendMode::kAlphaBlend)        blendMode = "kAlphaBlend";
-        else if (mode_ == BlendMode::kAdditive)          blendMode = "kAdditive";
-        else if (mode_ == BlendMode::kDependsModel)      blendMode = "kDependsModel";
+        if      (mode_ == BlendMode::kOpaque)           blendModeString = "kOpaque";
+        else if (mode_ == BlendMode::kAlphaBlend)       blendModeString = "kAlphaBlend";
+        else if (mode_ == BlendMode::kAdditive)         blendModeString = "kAdditive";
+        else if (mode_ == BlendMode::kDependsModel)     blendModeString = "kDependsModel";
 
-        ErrorMessageOutput::Assert::DetectError(blendMode.size()> 0 , "ブレンドモードの文字変換失敗", "RenderStateComponent.h");
+        ErrorMessageOutput::Assert::DetectError
+        (
+            mode_ != BlendMode::kCount,
+            "そいつぁ指定できねぇぜ(BlendMode)", 
+            "RenderStateComponent.h"
+        );
 
-        return blendMode;
+        return blendModeString;
     }
 
     inline D3D12_FILL_MODE Convert(FillMode fillMode_)
     {
         return (fillMode_ == FillMode::kSolid) ? D3D12_FILL_MODE_SOLID : D3D12_FILL_MODE_WIREFRAME;
     }
+
+    inline const std::string FillModeToString(FillMode mode_)
+    {
+        std::string fillModeString = "";
+
+        if (mode_ == FillMode::kSolid)              fillModeString = "kSolid";
+        else if (mode_ == FillMode::kWireFrame)     fillModeString = "kWireFrame";
+
+        ErrorMessageOutput::Assert::DetectError
+        (
+            mode_ != FillMode::kCount,
+            "そいつぁ指定できねぇぜ(FillMode)",
+            "RenderStateComponent.h"
+        );
+
+        return fillModeString;
+    }
+
 
     inline D3D12_CULL_MODE Convert(CullMode cullMode_)
     {
@@ -72,6 +100,8 @@ namespace RenderStateComponent
 
         return cullMode;
     }
+
+
 
 }
 
