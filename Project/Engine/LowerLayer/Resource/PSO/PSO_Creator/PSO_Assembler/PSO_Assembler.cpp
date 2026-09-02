@@ -45,8 +45,6 @@ Microsoft::WRL::ComPtr<ID3D12PipelineState> PSO_Context::Assembler::Assemble
 	std::string debugName_
 )
 {
-	Logger::Entry("assembling: " + debugName_);
-
 	Microsoft::WRL::ComPtr<ID3D12PipelineState> pipelineState;
 
 	//情報をデバッグ出力
@@ -122,7 +120,6 @@ Microsoft::WRL::ComPtr<ID3D12PipelineState> PSO_Context::Assembler::Assemble
 		cmdCreateGraphicsPSO(pipelineState.GetAddressOf(), &streamDesc);
 	}
 
-	Logger::End("assembling: " + debugName_);
 
 	return pipelineState;
 }

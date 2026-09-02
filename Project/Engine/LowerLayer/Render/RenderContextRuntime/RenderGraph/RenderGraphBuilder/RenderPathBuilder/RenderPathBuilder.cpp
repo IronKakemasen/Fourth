@@ -9,7 +9,7 @@ namespace
 }
 
 
-[[nodiscard]] AllPathPtr RenderContext::RenderGraph::PathBuilder::InstantiateAllPath
+[[nodiscard]] AllPathPtr RenderContext::RenderGraph::PathBuilder::Build
 (
 	NexusFieldProof proof_,
 	RenderPathAssembler& pathAssembler_,

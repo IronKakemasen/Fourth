@@ -4,7 +4,7 @@
 
 CD3DX12_BLEND_DESC CreateBlendDesc::Create(const std::vector<PipelineStateComponent::RenderTargetDesc>& renderTargetDescs_)
 {
-	CD3DX12_BLEND_DESC blendDesc;
+	CD3DX12_BLEND_DESC blendDesc(CD3DX12_DEFAULT{});
 
 	blendDesc.IndependentBlendEnable = TRUE;
 	blendDesc.AlphaToCoverageEnable = FALSE;

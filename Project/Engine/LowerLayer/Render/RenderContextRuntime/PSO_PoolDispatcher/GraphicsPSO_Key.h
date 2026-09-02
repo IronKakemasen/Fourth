@@ -3,8 +3,11 @@
 #include "../../../Resource/Shader/ShaderPathComponent.h"
 #include "../../RenderStateComponent.h"
 
+
+
 struct GraphicsPSO_Key
 {
+
     ///シーケンス
     enum Sequence
     {
@@ -19,13 +22,6 @@ struct GraphicsPSO_Key
 private:
 
     int const kInvalid = -1;
-
-    RenderPassComponent::Pass pass =                RenderPassComponent::Pass(kInvalid);
-    ShaderPathComponent::MeshType mesh =            ShaderPathComponent::MeshType(kInvalid);
-    ShaderPathComponent::MaterialType material =    ShaderPathComponent::MaterialType(kInvalid);
-    RenderStateComponent::BlendMode blend =         RenderStateComponent::BlendMode(kInvalid);
-    RenderStateComponent::CullMode cull =           RenderStateComponent::CullMode(kInvalid);
-    RenderStateComponent::FillMode fill =           RenderStateComponent::FillMode(kInvalid);
 
     template <Sequence sequence>
     static constexpr auto sequenceToType()
@@ -43,6 +39,7 @@ public:
     template <Sequence sequence>
     using SequenceToType = decltype(sequenceToType<sequence>());
 
+    GraphicsPSO_Key() = default;
 
     GraphicsPSO_Key
     (
@@ -56,6 +53,14 @@ public:
     {
 
     }
+
+    RenderPassComponent::Pass pass = RenderPassComponent::Pass(kInvalid);
+    ShaderPathComponent::MeshType mesh = ShaderPathComponent::MeshType(kInvalid);
+    ShaderPathComponent::MaterialType material = ShaderPathComponent::MaterialType(kInvalid);
+    RenderStateComponent::BlendMode blend = RenderStateComponent::BlendMode(kInvalid);
+    RenderStateComponent::CullMode cull = RenderStateComponent::CullMode(kInvalid);
+    RenderStateComponent::FillMode fill = RenderStateComponent::FillMode(kInvalid);
+
 
      template<Sequence sequence>
      constexpr auto Get() const
@@ -73,7 +78,4 @@ public:
      {
          return (UINT)SequenceToType<sequence>::kCount;
      }
-
-
-
 };

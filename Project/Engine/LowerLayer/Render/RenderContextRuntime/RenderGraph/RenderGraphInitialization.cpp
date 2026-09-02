@@ -8,7 +8,7 @@ void RenderContext::RenderGraph::Build
 	NexusFieldProof proof_,
 	RenderPathAssembler& pathAssembler_,
 	PSO_PoolDispatcher& psoDispatcher_,
-	RenderPassContainer& passContainer,
+	RenderPassContainer& passContainer_,
 	RootSignatureContextDiplomat& rootSignatureContextDiplomat_,
 	BufferContextDiplomat& bufferContextDiplomat_,
 	ModelContextDiplomat& modelContextDiplomat_,
@@ -16,18 +16,19 @@ void RenderContext::RenderGraph::Build
 	ShaderContextDiplomat& shaderContextDiplomat_
 )
 {
-	//全てのPathを生成する
-	allPathPtr = PathBuilder::InstantiateAllPath(proof_, pathAssembler_, bufferContextDiplomat_);
+	//全てのPathを生成し、つなげる
+	allPathPtr = PathBuilder::Build(proof_, pathAssembler_, bufferContextDiplomat_);
 	
-	//ルートシグネチャの生成
-	graphicsRootSig = RootSigBuilder::CreateGraphicsRootSig(proof_ , rootSignatureContextDiplomat_);
+	//グラフィックス用の巨大共通ルートシグネチャ
+	ID3D12RootSignature* graphicsRootSig = RootSigBuilder::Build(proof_ , rootSignatureContextDiplomat_);
 
 	//存在しなければならない全てのPSOを生成
-	PSO_Builder::CreateAllGraphicsPSO
+	PSO_Builder::Build
 	(
 		proof_ , 
 		psoDispatcher_, 
-		passContainer,
+		passContainer_,
+		graphicsRootSig,
 		modelContextDiplomat_, 
 		pso_ContextDiplomat_, 
 		shaderContextDiplomat_

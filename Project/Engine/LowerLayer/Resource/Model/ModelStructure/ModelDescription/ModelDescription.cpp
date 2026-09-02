@@ -26,7 +26,11 @@ ModelDescription::ModelDescription
 		{
 			for (auto const& blendMode : renderState.blendModes)
 			{
-				if ((UINT)blendMode >= (UINT)RenderStateComponent::BlendMode::kCount)errorMsg += "そのブレンドモードは選択不可";
+				if 
+				(
+					((UINT)blendMode >= (UINT)RenderStateComponent::BlendMode::kCount) ||
+					(blendMode == RenderStateComponent::BlendMode::kOffScreen)
+				)errorMsg += "そのブレンドモードは選択不可";
 			}
 		}
 
@@ -34,6 +38,26 @@ ModelDescription::ModelDescription
 		{
 			errorMsg += "「そのパスは選択不可(最低限処置)」";
 		}
+
+		if
+		(
+			renderState.meshType == ShaderPathComponent::MeshType::kOffscreen ||
+			(UINT)renderState.meshType >= (UINT)ShaderPathComponent::MeshType::kCount
+		)
+		{
+			errorMsg += "「そのMeshTypeは選択不可(最低限処置)」";
+		}
+
+		if
+		(
+			renderState.materialType == ShaderPathComponent::MaterialType::kOffscreen ||
+			(UINT)renderState.materialType >= (UINT)ShaderPathComponent::MaterialType::kCount
+		)
+		{
+			errorMsg += "「そのMaterialTypeは選択不可(最低限処置)」";
+		}
+
+
 	}
 
 	ErrorMessageOutput::Assert::DetectError(errorMsg.length() == 0, modelName_ + errorMsg, fileName);

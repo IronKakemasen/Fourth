@@ -50,7 +50,7 @@ public:
 	(
 		NexusFieldProof proof_,
 		uint32_t dstMapIndex_,
-		uint32_t packedKey_,
+		const GraphicsPSO_Key& psoKey_,
 		ID3D12PipelineState* graphicsPSO_
 	);
 

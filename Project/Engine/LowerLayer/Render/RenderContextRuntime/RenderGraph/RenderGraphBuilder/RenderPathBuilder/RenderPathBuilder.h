@@ -11,7 +11,7 @@ class RenderContext::RenderGraph::PathBuilder
 private:
 
 	//全てのPathを生成
-	static AllPathPtr InstantiateAllPath
+	static AllPathPtr Build
 	(
 		NexusFieldProof proof_,
 		RenderPathAssembler& pathAssembler_,

@@ -63,7 +63,7 @@ void RenderContext::PSO_PoolDispatcher::Register
 (
 	NexusFieldProof proof_,
 	uint32_t dstMapIndex_,
-	uint32_t packedKey_ ,
+	const GraphicsPSO_Key& psoKey_,
 	ID3D12PipelineState* graphicsPSO_
 )
 {
@@ -71,36 +71,15 @@ void RenderContext::PSO_PoolDispatcher::Register
 
 	graphicsPSO_pool.emplace_back(graphicsPSO_);
 
+	//psoコンテナのインデックス
 	uint32_t const insertedIndex = uint32_t(graphicsPSO_pool.size() - 1);
 	
+	//psoキーをuint32_tにパックする
+	uint32_t const packedKey = PackKey(psoKey_);
+	
 	///insertedIndexを検索用マップに追加
-	closedHashMap->Insert(dstMapIndex_, packedKey_, insertedIndex);
+	closedHashMap->Insert(dstMapIndex_, packedKey, insertedIndex);
 
 }
 
 
-
-
-
-
-
-
-
-
-//void RenderContext::PSO_PoolDispatcher::Register(RegisterLicense license_, GraphicsPSO_Key key_, ID3D12PipelineState* graphicsPSO_)
-//{
-//	//auto packedKey = graphicsPSO_KeyPackager->CreateKey(key_);
-//	//uint32_t const index = graphicsPSO_Index->FindIndex(packedKey);
-//
-//	/////既に登録済みか確認
-//	//if (index == GraphicsPSO_Index::InvalidIndex) return;
-//
-//	/////プールに登録
-//	//graphicsPSO_pool.emplace_back(graphicsPSO_);
-//
-//	////プールの次のインデックスを取得
-//	//size_t const nextPoolIndex = graphicsPSO_pool.size();
-//
-//	//graphicsPSO_Index->Insert(packedKey, uint32_t(nextPoolIndex));
-//}
-//
