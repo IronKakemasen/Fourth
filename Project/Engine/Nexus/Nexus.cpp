@@ -50,6 +50,9 @@ bool Nexus::InstanceLimiter::CanInstantiate()
 
 Nexus::Nexus()
 {
+	//COMの初期化
+	CoInitializeEx(0, COINITBASE_MULTITHREADED);
+
 	Logger::Entry("Nexus: Constructor");
 
 	//自身のインスタンス制限

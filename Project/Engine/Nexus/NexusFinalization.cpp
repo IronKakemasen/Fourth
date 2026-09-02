@@ -12,4 +12,8 @@ void Nexus::Finalize()
 {
 	commandContext->Finalize(CommandContext::NexusFieldProof{});
 	windowContext->Finalize();
+
+	//COMの終了
+	CoUninitialize();
+
 }
