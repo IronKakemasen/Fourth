@@ -10,8 +10,6 @@ class CommandContext
 	class RuntimeCommandController;
 	//FenceでCPUとGPUを同期させる
 	class Synchronizer;
-	//コマンドリストの処理のラッパークラス
-	class RuntimeWrapper;
 
 public:
 
@@ -26,6 +24,8 @@ public:
 
 	//リソースのアップロードを行う
 	class ResourceUploader;
+	//コマンドリストの処理のラッパークラス
+	class RuntimeWrapper;
 	//コマンドを提供する
 	class CommandProvider;
 	//ツールを貸す

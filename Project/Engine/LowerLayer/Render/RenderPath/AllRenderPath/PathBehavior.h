@@ -9,6 +9,7 @@ public:
 	PathBehavior(NexusFieldProof proof_);
 	virtual ~PathBehavior() = default;
 
+	//PathCreatorがジェーソンファイルから使用するPassを詰めてくれる
 	template<typename PassType>
 	void AddPass(NexusFieldProof proof_ , PassType* pass_)
 	{

@@ -79,7 +79,12 @@ void RenderContext::PSO_PoolDispatcher::Register
 	
 	///insertedIndexを検索用マップに追加
 	closedHashMap->Insert(dstMapIndex_, packedKey, insertedIndex);
-
 }
+
+size_t const RenderContext::PSO_PoolDispatcher::WatchPSO_Size()const
+{
+	return graphicsPSO_pool.size();
+}
+
 
 

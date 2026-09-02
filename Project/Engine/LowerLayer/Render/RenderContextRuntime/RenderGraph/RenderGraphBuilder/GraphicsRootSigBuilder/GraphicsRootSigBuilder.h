@@ -16,5 +16,6 @@ class RenderContext::RenderGraph::RootSigBuilder
 	//以下ヘルパー
 private:
 
+
 };
 

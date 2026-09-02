@@ -66,6 +66,9 @@ void RenderContext::RenderGraph::PSO_Builder::CreateAllPSO
 	PSO_Context::ToolLender::LicenceType<PSO_Context::PSO_Creator> usesPsoCreatorLicence;
 	auto* psoCreator = psoContextToolLender->Lend<PSO_Context::PSO_Creator>(usesPsoCreatorLicence);
 
+	//デバッグ用。PSO_Keyの被った個数(スキップしたPSO作成回数)
+	size_t duplicatedCnt{};
+
 	for (auto& desc : allDesc_)
 	{
 		//PSO_PoolDispatcherで被りチェック
@@ -75,7 +78,9 @@ void RenderContext::RenderGraph::PSO_Builder::CreateAllPSO
 		//被ってたらスキップ
 		if (!dstInputSlot.has_value())
 		{
-			Logger::Log(desc.first.psoName + " has Duplicated", fileName);
+			duplicatedCnt++;
+
+			Logger::Log("[ [ Duplicated ] ]" + desc.first.psoName, fileName);
 			continue;
 		}
 		//生成。本体はPSO_Context側が管理している。
@@ -83,10 +88,21 @@ void RenderContext::RenderGraph::PSO_Builder::CreateAllPSO
 
 		//dispatcherにキーとともに登録
 		psoDispatcher_.Register(proof_, *dstInputSlot, desc.second, psoPtr);
-
 	}
-}
 
+	//デバッグ出力。問題なければ、Desc作成数 = pso数 + duplicatedCntになるはず
+	auto const equationPsoAmount = psoDispatcher_.WatchPSO_Size() + duplicatedCnt;
+
+	ErrorMessageOutput::Assert::DetectError
+	(
+		equationPsoAmount == allDesc_.size(),
+		"Desc作成数 = pso数 + duplicatedCnt じゃない",
+		fileName
+	);
+
+	Logger::Log("\nnumPso(" + std::to_string(psoDispatcher_.WatchPSO_Size()) + ") = numPsoDescs(" + std::to_string(allDesc_.size()) + ") - duplicatedCnt(" + std::to_string(duplicatedCnt) + ")");
+
+}
 
 
 std::vector<RenderContext::RenderGraph::PSO_Builder::PsoDesc_Key> RenderContext::RenderGraph::PSO_Builder::CreateAllPSO_Desc
@@ -149,7 +165,6 @@ std::vector<RenderContext::RenderGraph::PSO_Builder::PsoDesc_Key> RenderContext:
 				allModelRenderStates,
 				allPsoDesc
 			);
-
 		}
 	}
 

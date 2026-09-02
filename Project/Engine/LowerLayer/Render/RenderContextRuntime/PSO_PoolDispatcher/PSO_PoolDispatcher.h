@@ -54,6 +54,9 @@ public:
 		ID3D12PipelineState* graphicsPSO_
 	);
 
+	//デバッグ用。PSO総数
+	size_t const WatchPSO_Size()const;
+
 private:
 
 	//PSOキーをuint32_tに詰める
