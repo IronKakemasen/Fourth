@@ -49,7 +49,7 @@ public:
 		temporaryBufferInfoStorage.id = id_;
 		temporaryBufferInfoStorage.resourceSize = resourceSize;
 		temporaryBufferInfoStorage.intermediateResource = CreateInterMediateResource(resourceSize);
-		temporaryBufferInfoStorage.subResource = CreateBufferSubResource(realData_, resourceSize);
+
 		//デバッグのため
 		temporaryBufferInfoStorage.numData = numDataContaines_;
 		temporaryBufferInfoStorage.dataSize = sizeof(RealDataType);

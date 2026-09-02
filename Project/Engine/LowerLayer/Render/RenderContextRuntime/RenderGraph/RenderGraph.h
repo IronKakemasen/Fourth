@@ -40,8 +40,6 @@ private:
 		ShaderContextDiplomat& shaderContextDiplomat_
 	);
 
-	//グラフィックス用の巨大共通ルートシグネチャ
-	ID3D12RootSignature* graphicsRootSig;
 	//全てのPathのアドレス。本体は別コンテナクラスが所有
 	AllPathPtr allPathPtr;
 

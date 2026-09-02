@@ -5,6 +5,9 @@ namespace RenderStateComponent
     //追加したら下の変換関数もね
     enum class BlendMode
     {
+        ///RenderPass専用！！！
+        kOffScreen,
+
         kOpaque,
         kAlphaBlend,
         kAdditive

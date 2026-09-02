@@ -11,7 +11,7 @@ namespace
 }
 
 
-[[nodiscard]] ID3D12RootSignature* RenderContext::RenderGraph::RootSigBuilder::CreateGraphicsRootSig
+[[nodiscard]] ID3D12RootSignature* RenderContext::RenderGraph::RootSigBuilder::Build
 (
 	NexusFieldProof proof_,
 	RootSignatureContextDiplomat& rootSignatureContextDiplomat_

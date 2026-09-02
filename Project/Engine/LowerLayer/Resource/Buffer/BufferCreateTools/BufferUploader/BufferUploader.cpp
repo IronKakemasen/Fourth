@@ -113,6 +113,8 @@ std::tuple<GPUBufferBehavior*, ID3D12Resource*> BufferContext::BufferUploader::P
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 void BufferContext::BufferUploader::Flush(std::string log_)
 {
+	if (barriers.empty()) return;
+
 	pitchBarriersCommand(barriers.data(), UINT(barriers.size()));
 	Logger::Log(log_ + "(" + std::to_string((UINT)barriers.size()) + ")", fileName);
 	barriers.clear();

@@ -21,8 +21,8 @@ TestModelOKIBA::TestModelOKIBA(ModelContext::ModelCreator* modelCreator_)
 	cP.pass = RenderPassComponent::Pass::kSceneTextureCreatorOpaque;
 
 	cP.cullMode = CullMode::kBack;
-	cP.meshType = ShaderPathComponent::MeshType::kStatic;
-	cP.materialType = ShaderPathComponent::MaterialType::kStandard;
+	cP.meshType = MeshType::kStatic;
+	cP.materialType = MaterialType::kStandard;
 
 	std::vector<ModelDescription::RenderState> playerC;
 	playerC.emplace_back(std::move(cP));
@@ -34,8 +34,8 @@ TestModelOKIBA::TestModelOKIBA(ModelContext::ModelCreator* modelCreator_)
 	cC.blendModes.emplace_back(BlendMode::kOpaque);
 	cC.pass = RenderPassComponent::Pass::kSceneTextureCreatorOpaque;
 	cC.cullMode = CullMode::kBack;
-	cC.meshType = ShaderPathComponent::MeshType::kStatic;
-	cC.materialType = ShaderPathComponent::MaterialType::kStandard;
+	cC.meshType = MeshType::kStatic;
+	cC.materialType = MaterialType::kStandard;
 
 	std::vector<ModelDescription::RenderState> cubeC;
 	cubeC.emplace_back(std::move(cC));
