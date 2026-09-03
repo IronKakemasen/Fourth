@@ -289,8 +289,6 @@ class CommandContext
 	class RuntimeCommandController;
 	//FenceでCPUとGPUを同期させる
 	class Synchronizer;
-	//コマンドリストの処理のラッパークラス
-	class RuntimeWrapper;
 
 public:
 
@@ -305,6 +303,8 @@ public:
 
 	//リソースのアップロードを行う
 	class ResourceUploader;
+	//コマンドリストの処理のラッパークラス
+	class RuntimeWrapper;
 	//コマンドを提供する
 	class CommandProvider;
 	//ツールを貸す
@@ -5322,6 +5322,9 @@ namespace RenderStateComponent
     //追加したら下の変換関数もね
     enum class BlendMode
     {
+        ///RenderPass専用！！！
+        kOffScreen,
+
         kOpaque,
         kAlphaBlend,
         kAdditive
@@ -5329,7 +5332,6 @@ namespace RenderStateComponent
 
         ///RenderPass専用！！！
         kDependsModel,
-        kOffScreen
     };
 
     enum class FillMode
@@ -5598,8 +5600,13 @@ void RenderContext::PSO_PoolDispatcher::Register
 	
 	///insertedIndexを検索用マップに追加
 	closedHashMap->Insert(dstMapIndex_, packedKey, insertedIndex);
-
 }
+
+size_t const RenderContext::PSO_PoolDispatcher::WatchPSO_Size()const
+{
+	return graphicsPSO_pool.size();
+}
+
 
 
 
@@ -5664,6 +5671,9 @@ public:
 		const GraphicsPSO_Key& psoKey_,
 		ID3D12PipelineState* graphicsPSO_
 	);
+
+	//デバッグ用。PSO総数
+	size_t const WatchPSO_Size()const;
 
 private:
 
@@ -5906,6 +5916,9 @@ void RenderContext::RenderGraph::PSO_Builder::CreateAllPSO
 	PSO_Context::ToolLender::LicenceType<PSO_Context::PSO_Creator> usesPsoCreatorLicence;
 	auto* psoCreator = psoContextToolLender->Lend<PSO_Context::PSO_Creator>(usesPsoCreatorLicence);
 
+	//デバッグ用。PSO_Keyの被った個数(スキップしたPSO作成回数)
+	size_t duplicatedCnt{};
+
 	for (auto& desc : allDesc_)
 	{
 		//PSO_PoolDispatcherで被りチェック
@@ -5913,17 +5926,33 @@ void RenderContext::RenderGraph::PSO_Builder::CreateAllPSO
 		std::optional<uint32_t> dstInputSlot = psoDispatcher_.CheckDuplication(desc.second);
 
 		//被ってたらスキップ
-		if (!dstInputSlot.has_value()) continue;
+		if (!dstInputSlot.has_value())
+		{
+			duplicatedCnt++;
 
+			Logger::Log("[ [ Duplicated ] ]" + desc.first.psoName, fileName);
+			continue;
+		}
 		//生成。本体はPSO_Context側が管理している。
 		auto* psoPtr = psoCreator->Create(desc.first, rootSignature_, desc.first.psoName);
 
 		//dispatcherにキーとともに登録
 		psoDispatcher_.Register(proof_, *dstInputSlot, desc.second, psoPtr);
-
 	}
-}
 
+	//デバッグ出力。問題なければ、Desc作成数 = pso数 + duplicatedCntになるはず
+	auto const equationPsoAmount = psoDispatcher_.WatchPSO_Size() + duplicatedCnt;
+
+	ErrorMessageOutput::Assert::DetectError
+	(
+		equationPsoAmount == allDesc_.size(),
+		"Desc作成数 = pso数 + duplicatedCnt じゃない",
+		fileName
+	);
+
+	Logger::Log("\nnumPso(" + std::to_string(psoDispatcher_.WatchPSO_Size()) + ") = numPsoDescs(" + std::to_string(allDesc_.size()) + ") - duplicatedCnt(" + std::to_string(duplicatedCnt) + ")");
+
+}
 
 
 std::vector<RenderContext::RenderGraph::PSO_Builder::PsoDesc_Key> RenderContext::RenderGraph::PSO_Builder::CreateAllPSO_Desc
@@ -5986,11 +6015,10 @@ std::vector<RenderContext::RenderGraph::PSO_Builder::PsoDesc_Key> RenderContext:
 				allModelRenderStates,
 				allPsoDesc
 			);
-
 		}
 	}
 
-	std::string allPsoDescName = "= = = = All PSO List = = = = \n";
+	std::string allPsoDescName = "= = = = All PSO_Desc List = = = = \n";
 
 	//生成されたPSODescのデバッグ出力
 	for (auto const& psoDesc : allPsoDesc)
@@ -6432,6 +6460,7 @@ class RenderContext::RenderGraph::RootSigBuilder
 	//以下ヘルパー
 private:
 
+
 };
 
 
@@ -6607,15 +6636,24 @@ RenderContext::PassBehavior::PassBehavior(NexusFieldProof proof_, const RenderCo
 #include "../../RenderContext.h"
 #include "../PassDesc/PassDesc.h"
 
+#include "../../../Core/Command/CommandContext.h"
+
+class Model;
 
 class RenderContext::PassBehavior
 {
 public:
+
 	PassBehavior(NexusFieldProof proof_, const PassDesc& desc_,RenderPassComponent::Pass pass_);
 	virtual ~PassBehavior() = default;
 
 	PassDesc const& WatchDesc() const { return desc; }
 
+	virtual void Update
+	(
+		[[maybe_unused]] std::vector<Model> const& modelContainer_,
+		CommandContext::RuntimeWrapper& cmdWrapper_
+	) = 0;
 
 protected:
 
@@ -6725,8 +6763,22 @@ namespace RenderPassTraits
 #include "SceneTextureCompositor.h"
 #include "../../PassDesc/PassDesc.h"
 
+
+//外部
+#include "../../../../Resource/Model/ModelStructure/Model.h"
+#include "../../../../Core/Command/RuntimeWrapper/RuntimeWrapper.h"
+
 SceneTextureCompositor::SceneTextureCompositor(RenderContext::NexusFieldProof proof_, const RenderContext::PassDesc& desc_, RenderPassComponent::Pass pass_)
 	:RenderContext::PassBehavior(proof_, desc_,pass_)
+{
+
+}
+
+void SceneTextureCompositor::Update
+(
+	[[maybe_unused]] std::vector<Model> const& modelContainer_,
+	CommandContext::RuntimeWrapper& cmdWrapper_
+)
 {
 
 }
@@ -6746,6 +6798,13 @@ class SceneTextureCompositor :public RenderContext::PassBehavior
 public:
 
 	SceneTextureCompositor(RenderContext::NexusFieldProof proof_, const RenderContext::PassDesc& desc_, RenderPassComponent::Pass pass_);
+	
+	virtual void Update
+	(
+		[[maybe_unused]] std::vector<Model> const& modelContainer_,
+		CommandContext::RuntimeWrapper& cmdWrapper_
+	)override;
+
 
 private:
 
@@ -6764,8 +6823,21 @@ private:
 #include "SceneTextureCreatorOpaque.h"
 #include "../../PassDesc/PassDesc.h"
 
+//外部
+#include "../../../../Resource/Model/ModelStructure/Model.h"
+#include "../../../../Core/Command/RuntimeWrapper/RuntimeWrapper.h"
+
 SceneTextureCreatorOpaque::SceneTextureCreatorOpaque(RenderContext::NexusFieldProof proof_ , const RenderContext::PassDesc& desc_, RenderPassComponent::Pass pass_)
 	:RenderContext::PassBehavior(proof_,desc_,pass_)
+{
+
+}
+
+void SceneTextureCreatorOpaque::Update
+(
+	[[maybe_unused]] std::vector<Model> const& modelContainer_,
+	CommandContext::RuntimeWrapper& cmdWrapper_
+)
 {
 
 }
@@ -6785,9 +6857,13 @@ public:
 
 	SceneTextureCreatorOpaque(RenderContext::NexusFieldProof proof_, const RenderContext::PassDesc& desc_, RenderPassComponent::Pass pass_);
 
+	virtual void Update
+	(
+		[[maybe_unused]] std::vector<Model> const& modelContainer_,
+		CommandContext::RuntimeWrapper& cmdWrapper_
+	)override;
+
 private:
-
-
 
 };
 
@@ -7675,6 +7751,7 @@ public:
 	PathBehavior(NexusFieldProof proof_);
 	virtual ~PathBehavior() = default;
 
+	//PathCreatorがジェーソンファイルから使用するPassを詰めてくれる
 	template<typename PassType>
 	void AddPass(NexusFieldProof proof_ , PassType* pass_)
 	{
@@ -11928,6 +12005,60 @@ public:
 	virtual D3D12_SHADER_RESOURCE_VIEW_DESC CreateSRV_Desc()const override;
 
 };
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Buffer\BufferDefinition\BufferDescriptions\TextureBufferDescription\TextureBufferDescription.cpp ===
+========================================
+#include "PreCompileHeader.h"
+#include "TextureBufferDescription.h"
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Buffer\BufferDefinition\BufferDescriptions\TextureBufferDescription\TextureBufferDescription.h ===
+========================================
+#pragma once
+#include "../BufferDescriptionBehavior.h"
+
+
+//読み書き
+struct TextureBufferDescription final :public BufferDescriptionBehavior, IAssembleShaderResource
+{
+private:
+	struct Param
+	{
+		UINT structureByte{};
+		UINT numElements{};
+		UINT firstElement = -1;
+
+	}param;
+
+public:
+
+	TextureBufferDescription
+	(
+		UINT structureByte_,
+		UINT numElements_,
+		UINT firstElement_
+	);
+
+	//パラーメーターチェック
+	virtual void CheckRequirementsFilled() const override;
+	//リソースディスクの生成
+	virtual D3D12_RESOURCE_DESC CreateResourceDesc()const override;
+	//ヒーププロパティの生成
+	virtual D3D12_HEAP_PROPERTIES CreateHeapProperties()const override;
+	//SRVDesc生成
+	virtual D3D12_SHADER_RESOURCE_VIEW_DESC CreateSRV_Desc()const override;
+
+};
+
+
+
 
 
 
@@ -16589,7 +16720,11 @@ ModelDescription::ModelDescription
 		{
 			for (auto const& blendMode : renderState.blendModes)
 			{
-				if ((UINT)blendMode >= (UINT)RenderStateComponent::BlendMode::kCount)errorMsg += "そのブレンドモードは選択不可";
+				if 
+				(
+					((UINT)blendMode >= (UINT)RenderStateComponent::BlendMode::kCount) ||
+					(blendMode == RenderStateComponent::BlendMode::kOffScreen)
+				)errorMsg += "そのブレンドモードは選択不可";
 			}
 		}
 
@@ -17257,8 +17392,6 @@ Microsoft::WRL::ComPtr<ID3D12PipelineState> PSO_Context::Assembler::Assemble
 	std::string debugName_
 )
 {
-	Logger::Entry("assembling: " + debugName_);
-
 	Microsoft::WRL::ComPtr<ID3D12PipelineState> pipelineState;
 
 	//情報をデバッグ出力
@@ -17334,7 +17467,6 @@ Microsoft::WRL::ComPtr<ID3D12PipelineState> PSO_Context::Assembler::Assemble
 		cmdCreateGraphicsPSO(pipelineState.GetAddressOf(), &streamDesc);
 	}
 
-	Logger::End("assembling: " + debugName_);
 
 	return pipelineState;
 }
@@ -17500,7 +17632,7 @@ Microsoft::WRL::ComPtr<ID3D12PipelineState> PSO_Context::Assembler::Assemble
 
 CD3DX12_BLEND_DESC CreateBlendDesc::Create(const std::vector<PipelineStateComponent::RenderTargetDesc>& renderTargetDescs_)
 {
-	CD3DX12_BLEND_DESC blendDesc;
+	CD3DX12_BLEND_DESC blendDesc(CD3DX12_DEFAULT{});
 
 	blendDesc.IndependentBlendEnable = TRUE;
 	blendDesc.AlphaToCoverageEnable = FALSE;
@@ -21223,6 +21355,9 @@ bool Nexus::InstanceLimiter::CanInstantiate()
 
 Nexus::Nexus()
 {
+	//COMの初期化
+	CoInitializeEx(0, COINITBASE_MULTITHREADED);
+
 	Logger::Entry("Nexus: Constructor");
 
 	//自身のインスタンス制限
@@ -21412,6 +21547,10 @@ void Nexus::Finalize()
 {
 	commandContext->Finalize(CommandContext::NexusFieldProof{});
 	windowContext->Finalize();
+
+	//COMの終了
+	CoUninitialize();
+
 }
 
 

@@ -7,7 +7,7 @@ class CommandContext::ToolLender
 {
 	//貸し出すツールのデータ型とそれに対応したLicenceのデータ型を結び付ける
 	template<typename ToolType>
-	struct LicenceTypeTraits;
+	struct CmdTypeTraits;
 
 	//CommandQueueを扱う資格
 	struct CommandQueueAccessLicence;
@@ -20,7 +20,7 @@ public:
 
 	//ただのエイリアステンプレート
 	template<typename ToolType>
-	using LicenceType = typename LicenceTypeTraits<ToolType>::Type;
+	using LicenceType = typename CmdTypeTraits<ToolType>::Type;
 
 	ToolLender
 	(
@@ -31,7 +31,7 @@ public:
 
 	///ツールの貸し出し
 	template<typename ToolType>
-	auto* Lend(typename LicenceTypeTraits<ToolType>::Type licence_)
+	auto* Lend(typename CmdTypeTraits<ToolType>::Type licence_)
 	{
 		return std::get<ToolType*>(tools);
 	}
@@ -58,13 +58,13 @@ private:
 
 
 template<>
-struct CommandContext::ToolLender::LicenceTypeTraits<ID3D12CommandQueue>
+struct CommandContext::ToolLender::CmdTypeTraits<ID3D12CommandQueue>
 {
 	using Type = CommandQueueAccessLicence;
 };
 
 template<>
-struct CommandContext::ToolLender::LicenceTypeTraits<CommandContext::ResourceUploader>
+struct CommandContext::ToolLender::CmdTypeTraits<CommandContext::ResourceUploader>
 {
 	using Type = ResourceUploaderAccessLicence;
 };

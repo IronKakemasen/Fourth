@@ -6,7 +6,7 @@ class CommandContext::CommandProvider
 {
 	//コマンドのタイプと許可を紐づける
 	template<typename CommandType>
-	struct LicenceTypeTraits;
+	struct CmdTypeTraits;
 
 	//ResourceUploadコマンドの利用許可
 	struct UsesResourceUploadCmdLicence;
@@ -14,13 +14,13 @@ class CommandContext::CommandProvider
 public:
 
 	template<typename CommandType>
-	using LicenceType = typename LicenceTypeTraits<CommandType>::Type;
+	using LicenceType = typename CmdTypeTraits<CommandType>::Type;
 
 	CommandProvider(NexusFieldProof proof_, CommandContext::ResourceUploader* resourceUploader_);
 
 	///コマンド提供
 	template<typename CommandType>
-	CommandType Provide(typename LicenceTypeTraits<CommandType>::Type licence_);
+	CommandType Provide(typename CmdTypeTraits<CommandType>::Type licence_);
 
 private:
 
@@ -29,13 +29,13 @@ private:
 
 
 template<>
-struct CommandContext::CommandProvider::LicenceTypeTraits<CommandContextCmds::UploadCommand>
+struct CommandContext::CommandProvider::CmdTypeTraits<CommandContextCmds::UploadCommand>
 {
 	using Type = CommandContext::CommandProvider::UsesResourceUploadCmdLicence;
 };
 
 template<>
-struct CommandContext::CommandProvider::LicenceTypeTraits<CommandContextCmds::PitchBarrierCommand>
+struct CommandContext::CommandProvider::CmdTypeTraits<CommandContextCmds::PitchBarrierCommand>
 {
 	using Type = CommandContext::CommandProvider::UsesResourceUploadCmdLicence;
 };
@@ -44,9 +44,9 @@ struct CommandContext::CommandProvider::LicenceTypeTraits<CommandContextCmds::Pi
 
 template<>
 CommandContextCmds::UploadCommand CommandContext::CommandProvider::Provide<CommandContextCmds::UploadCommand>
-(typename LicenceTypeTraits<CommandContextCmds::UploadCommand>::Type licence_);
+(typename CmdTypeTraits<CommandContextCmds::UploadCommand>::Type licence_);
 
 template<>
 CommandContextCmds::PitchBarrierCommand CommandContext::CommandProvider::Provide<CommandContextCmds::PitchBarrierCommand>
-(typename LicenceTypeTraits<CommandContextCmds::PitchBarrierCommand>::Type licence_);
+(typename CmdTypeTraits<CommandContextCmds::PitchBarrierCommand>::Type licence_);
 

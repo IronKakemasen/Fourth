@@ -5,20 +5,20 @@
 class RootSignatureContext::CmdProvider
 {
 	template<typename CmdType>
-	struct LicenceTypeTraits;
+	struct CmdTypeTraits;
 
 	struct UsesCreateGraphicsRootSigCmdLicence;
 
 public:
 
 	template<typename CmdType>
-	using LicenceType = typename LicenceTypeTraits<CmdType>::Type;
+	using LicenceType = typename CmdTypeTraits<CmdType>::Type;
 
 	CmdProvider(NexusFieldProof proof_, RootSignatureCreator* creator_);
 
 	///コマンド提供
 	template<typename CmdType>
-	CmdType Provide(typename LicenceTypeTraits<CmdType>::Type licence_);
+	CmdType Provide(typename CmdTypeTraits<CmdType>::Type licence_);
 
 
 private:
@@ -28,7 +28,7 @@ private:
 
 
 template<>
-struct RootSignatureContext::CmdProvider::LicenceTypeTraits<RootSignatureCmds::CreateGraphicsRootSigCmd>
+struct RootSignatureContext::CmdProvider::CmdTypeTraits<RootSignatureCmds::CreateGraphicsRootSigCmd>
 {
 	using Type = UsesCreateGraphicsRootSigCmdLicence;
 };
@@ -36,4 +36,4 @@ struct RootSignatureContext::CmdProvider::LicenceTypeTraits<RootSignatureCmds::C
 
 template<>
 RootSignatureCmds::CreateGraphicsRootSigCmd RootSignatureContext::CmdProvider::Provide<RootSignatureCmds::CreateGraphicsRootSigCmd>
-(typename LicenceTypeTraits<RootSignatureCmds::CreateGraphicsRootSigCmd>::Type licence_);
+(typename CmdTypeTraits<RootSignatureCmds::CreateGraphicsRootSigCmd>::Type licence_);

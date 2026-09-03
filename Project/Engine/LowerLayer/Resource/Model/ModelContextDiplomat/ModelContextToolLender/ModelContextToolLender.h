@@ -4,18 +4,18 @@
 class ModelContext::ToolLender
 {
 	template<typename ToolType>
-	struct LicenceTypeTraits;
+	struct CmdTypeTraits;
 
 
 public:
 
 	template<typename ToolType>
-	using LicenceType = typename LicenceTypeTraits<ToolType>::Type;
+	using LicenceType = typename CmdTypeTraits<ToolType>::Type;
 
 	ToolLender(NexusFieldProof proof_);
 
 	template<typename ToolType>
-	auto* Lend(typename LicenceTypeTraits<ToolType>::Type licence_)
+	auto* Lend(typename CmdTypeTraits<ToolType>::Type licence_)
 	{
 		return std::get<ToolType*>(tools).get();
 	}
@@ -29,7 +29,7 @@ private:
 
 
 //template<>
-//struct ModelContext::ToolLender::LicenceTypeTraits<ModelContext::ModelContainer>
+//struct ModelContext::ToolLender::CmdTypeTraits<ModelContext::ModelContainer>
 //{
 //	using Type = ModelContainerAccessLicence;
 //};

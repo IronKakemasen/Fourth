@@ -66,8 +66,6 @@ private:
 
 
 
-
-
 //生成できるのはNexusのみ
 struct DescriptorHeapContext::NexusFieldProof
 {

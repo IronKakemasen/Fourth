@@ -1,5 +1,6 @@
 #pragma once
 #include "../../DeviceContext.h"
+#include "../../DeviceContextCmds.h"
 
 class DeviceContextCommandBehavior;
 
@@ -7,6 +8,10 @@ class DeviceContextCommandBehavior;
 //初期化生成しか使用しないかつ引数がほぼない場合は、CommandExecutorが行う
 class DeviceContext::CommandProvider
 {
+	template<typename CmdType>
+	struct CmdTypeTraits;
+
+
 public:
 
 	CommandProvider
@@ -15,7 +20,15 @@ public:
 		std::function< ID3D12Device8* (DeviceContext::AccessKey)> deviceGetter_,
 		std::function< IDXGIFactory7* (DeviceContext::AccessKey)> dxgiFactoryGetter_
 	);
+
+	template<typename CmdType>
+	using LicenceType = typename CmdTypeTraits<CmdType>::Type;
+
+	template<typename CmdType>
+	CmdType Provide(typename CmdTypeTraits<CmdType>::Type licence_);
+
 	
+
 	//リソースを生成するコマンドを返す関数(ConstantBufferDescription , ColorBufferDescription)
 	[[nodiscard]] std::function<Microsoft::WRL::ComPtr<ID3D12Resource>
 	(

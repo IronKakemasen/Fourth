@@ -5,7 +5,7 @@
 class ShaderContext::ToolLender
 {
 	template<typename ToolType>
-	struct LicenceTypeTraits;
+	struct CmdTypeTraits;
 
 
 	//ShaderLibraryへのアクセス許可
@@ -16,7 +16,7 @@ class ShaderContext::ToolLender
 public:
 
 	template<typename ToolType>
-	using LicenceType = typename LicenceTypeTraits<ToolType>::Type;
+	using LicenceType = typename CmdTypeTraits<ToolType>::Type;
 
 	ToolLender
 	(
@@ -25,7 +25,7 @@ public:
 	);
 
 	template<typename ToolType>
-	auto* Lend(typename LicenceTypeTraits<ToolType>::Type licence_)
+	auto* Lend(typename CmdTypeTraits<ToolType>::Type licence_)
 	{
 		return std::get<ToolType*>(tools);
 	}
@@ -34,7 +34,7 @@ public:
 
 
 template<>
-struct ShaderContext::ToolLender::LicenceTypeTraits<ShaderContext::ShaderLibrary>
+struct ShaderContext::ToolLender::CmdTypeTraits<ShaderContext::ShaderLibrary>
 {
 	using Type = UsesShaderLibraryLicence;
 };
