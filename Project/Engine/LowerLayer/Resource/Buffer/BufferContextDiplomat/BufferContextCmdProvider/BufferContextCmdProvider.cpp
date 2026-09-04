@@ -12,7 +12,7 @@ BufferContext::CmdProvider::CmdProvider(NexusFieldProof proof_, GlobalConstantBu
 
 template<>
 BufferContextCmds::CreateCBufferCmd BufferContext::CmdProvider::Provide
-(typename LicenceTypeTraits<BufferContextCmds::CreateCBufferCmd>::Type licence_)
+(typename CmdTypeTraits<BufferContextCmds::CreateCBufferCmd>::Type licence_)
 {
 	return cBufferCreator->ProvideCreateCBufferCmd(ProviderKey{});
 }

@@ -7,7 +7,7 @@ class SwapChainContext;
 class DescriptorHeapContext::ToolLender
 {
 	template<typename ToolType>
-	struct LicenceTypeTraits;
+	struct CmdTypeTraits;
 
 	struct BasicViewManagementLicence;
 
@@ -19,13 +19,13 @@ public:
 
 	//ただのエイリアステンプレート
 	template<typename ToolType>
-	using LicenceType = typename LicenceTypeTraits<ToolType>::Type;
+	using LicenceType = typename CmdTypeTraits<ToolType>::Type;
 
 	ToolLender(NexusFieldProof proof_, DescriptorHeapContext::ViewCreator* viewCretator_);
 	
 	///ツールの貸し出し
 	template<typename ToolType>
-	auto* Lend(typename LicenceTypeTraits<ToolType>::Type licence_)
+	auto* Lend(typename CmdTypeTraits<ToolType>::Type licence_)
 	{
 		return std::get<ToolType*>(tools);
 	}
@@ -42,7 +42,7 @@ private:
 };
 
 template<>
-struct DescriptorHeapContext::ToolLender::LicenceTypeTraits<DescriptorHeapContext::ViewCreator>
+struct DescriptorHeapContext::ToolLender::CmdTypeTraits<DescriptorHeapContext::ViewCreator>
 {
 	using Type = BasicViewManagementLicence;
 };

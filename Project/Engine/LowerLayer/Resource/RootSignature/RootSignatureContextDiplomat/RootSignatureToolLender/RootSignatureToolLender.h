@@ -4,17 +4,17 @@
 class RootSignatureContext::ToolLender
 {
 	template<typename ToolType>
-	struct LicenceTypeTraits;
+	struct CmdTypeTraits;
 
 public:
 
 	template<typename ToolType>
-	using LicenceType = typename LicenceTypeTraits<ToolType>::Type;
+	using LicenceType = typename CmdTypeTraits<ToolType>::Type;
 
 	ToolLender(NexusFieldProof proof_);
 
 	template<typename ToolType>
-	auto* Lend(typename LicenceTypeTraits<ToolType>::Type type_)
+	auto* Lend(typename CmdTypeTraits<ToolType>::Type type_)
 	{
 		return std::get<ToolType*>(tools);
 	}
@@ -26,7 +26,7 @@ private:
 };
 
 //template<>
-//struct RootSignatureContext::ToolLender::LicenceTypeTraits<RootSignatureContext::RootSignatureCreator>
+//struct RootSignatureContext::ToolLender::CmdTypeTraits<RootSignatureContext::RootSignatureCreator>
 //{
 //	using Type = UsesRootSigCreatorLicence;
 //};

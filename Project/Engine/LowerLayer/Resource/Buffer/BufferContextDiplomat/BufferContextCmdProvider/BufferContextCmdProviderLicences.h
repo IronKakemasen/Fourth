@@ -1,13 +1,13 @@
 #pragma once
 #include "BufferContextCmdProvider.h"
-#include "../../../Model/ModelContext.h"
 
+class ModelContext;
 
 struct BufferContext::CmdProvider::UsesCBufferCreatorLicence
 {
 private:
 
-	friend class ModelContext::ModelDataCreator;
+	friend class ModelContext;
 	explicit UsesCBufferCreatorLicence() = default;
 };
 

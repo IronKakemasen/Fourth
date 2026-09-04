@@ -1,13 +1,13 @@
 #pragma once
 #include "PSO_ContextToolLender.h"
-#include "../../../../Render/RenderContext.h"
 
+class RenderContext;
 
 struct PSO_Context::ToolLender::UsesPSO_CreatorLicence
 {
 private:
 
-	friend class RenderContext::RenderGraph;
+	friend class RenderContext;
 	explicit UsesPSO_CreatorLicence() = default;
 
 };

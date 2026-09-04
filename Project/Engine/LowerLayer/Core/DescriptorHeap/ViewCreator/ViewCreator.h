@@ -1,6 +1,6 @@
 #pragma once
-#include "../DescriptorHeapContext.h"
-#include "../DescriptorHeapPool/DescriptorHeapPool.h"
+#include "../DescriptorHeapPoolContainer/DescriptorHeapPoolContainer.h"
+#include "../../../Core/Device/DeviceContextCmds.h"
 
 class GPUBufferBehavior;
 
@@ -16,13 +16,13 @@ class DescriptorHeapContext::ViewCreator
 	};
 
 	//DescriptorHeapPoolのアドレス
-	std::array < DescriptorHeapPool*, UINT(HeapType::kCount) > DescriptorHeapPool_Library;
+	std::array < DescriptorHeapPool*, UINT(HeapType::kCount) > descriptorHeapPoolArray;
 
 	//コマンド
-	DescriptorHeapContext::CreateRTVCommand rtvCmd;
-	DescriptorHeapContext::CreateSRVCommand srvCmd;
-	DescriptorHeapContext::CreateDSVCommand dsvCmd;
-	DescriptorHeapContext::CreateUAVCommand uavCmd;
+	DeviceContextCmds::CreateView<D3D12_RENDER_TARGET_VIEW_DESC> rtvCmd;
+	DeviceContextCmds::CreateView<D3D12_SHADER_RESOURCE_VIEW_DESC> srvCmd;
+	DeviceContextCmds::CreateView<D3D12_DEPTH_STENCIL_VIEW_DESC> dsvCmd;
+	DeviceContextCmds::CreateUAV uavCmd;
 
 	template<typename ViewDescType>
 	struct DescTypeTraits;
@@ -34,13 +34,8 @@ public:
 	ViewCreator
 	(
 		NexusFieldProof proof_,
-		DescriptorHeapPool* RTVdescriptorHeapPool_,
-		DescriptorHeapPool* SRVUAVdescriptorHeapPool_,
-		DescriptorHeapPool* DSVdescriptorHeapPool_,
-		DescriptorHeapContext::CreateRTVCommand rtvCmd_,
-		DescriptorHeapContext::CreateSRVCommand srvCmd_,
-		DescriptorHeapContext::CreateDSVCommand dsvCmd_,
-		DescriptorHeapContext::CreateUAVCommand uavCmd_
+		DescriptorHeapPoolContainer& descriptorHeapPoolContainer_,
+		DeviceContextDiplomat& deviceContextDiplomat_
 	);
 
 	///VIEWを生成し、インデックスやハンドルを返す。
@@ -48,9 +43,9 @@ public:
 	std::tuple<uint32_t, D3D12_CPU_DESCRIPTOR_HANDLE, D3D12_GPU_DESCRIPTOR_HANDLE> CreateView(ID3D12Resource* resource_, const ViewDescType* viewDesc, ID3D12Resource* counterResource_ = nullptr)
 	{
 		//ViewTypeどのヒープを使うべきか分岐
-		HeapType type = DescTypeTraits<ViewDescType>::heapType;
+		constexpr HeapType type = DescTypeTraits<ViewDescType>::heapType;
 		//ディスクリプタヒープを取り出す
-		auto* targetHeap = DescriptorHeapPool_Library.at(UINT(type));
+		DescriptorHeapPool* targetHeap = descriptorHeapPoolArray.at((UINT)type);
 
 		//空きヒープインデックスを割り当てる
 		auto[allocateIndex, handleCPU, handleGPU] = targetHeap->DistributeFreeHeapIndex(DescriptorHeapPool::CreateViewKey{});
@@ -109,9 +104,6 @@ struct DescriptorHeapContext::ViewCreator::DescTypeTraits<D3D12_DEPTH_STENCIL_VI
 {
 	static constexpr HeapType heapType = HeapType::kDSV;
 };
-
-
-
 
 
 

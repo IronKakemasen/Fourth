@@ -6,20 +6,20 @@
 class BufferContext::CmdProvider
 {
 	template<typename CmdType>
-	struct LicenceTypeTraits;
+	struct CmdTypeTraits;
 
 	struct UsesCBufferCreatorLicence;
 
 public:
 
 	template<typename CmdType>
-	using LicenceType = typename LicenceTypeTraits<CmdType>::Type;
+	using LicenceType = typename CmdTypeTraits<CmdType>::Type;
 
 	CmdProvider(NexusFieldProof proof_, GlobalConstantBufferCreator* cBufferCreator_);
 
 	///コマンド提供
 	template<typename CmdType>
-	CmdType Provide(typename LicenceTypeTraits<CmdType>::Type licence_);
+	CmdType Provide(typename CmdTypeTraits<CmdType>::Type licence_);
 
 private:
 
@@ -27,7 +27,7 @@ private:
 };
 
 template<>
-struct BufferContext::CmdProvider::LicenceTypeTraits<BufferContextCmds::CreateCBufferCmd>
+struct BufferContext::CmdProvider::CmdTypeTraits<BufferContextCmds::CreateCBufferCmd>
 {
 	using Type = UsesCBufferCreatorLicence;
 };
@@ -35,4 +35,4 @@ struct BufferContext::CmdProvider::LicenceTypeTraits<BufferContextCmds::CreateCB
 
 template<>
 BufferContextCmds::CreateCBufferCmd BufferContext::CmdProvider::Provide
-(typename LicenceTypeTraits<BufferContextCmds::CreateCBufferCmd>::Type licence_);
+(typename CmdTypeTraits<BufferContextCmds::CreateCBufferCmd>::Type licence_);

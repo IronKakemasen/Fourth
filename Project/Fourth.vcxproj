@@ -102,6 +102,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Engine\LowerLayer\Core\DescriptorHeap\DescriptorHeapPoolContainer\DescriptorHeapPoolContainer.cpp" />
     <ClCompile Include="Engine\LowerLayer\Render\RenderContextRuntime\RenderGraph\RenderGraphInitialization.cpp" />
     <ClCompile Include="Engine\LowerLayer\Render\RenderPath\AllRenderPath\CreateSceneTexture\CreateSceneTexture.cpp" />
     <ClCompile Include="Engine\LowerLayer\Resource\Buffer\BufferContextDiplomat\BufferContextCmdProvider\BufferContextCmdProvider.cpp" />
@@ -388,6 +389,10 @@
     <ClInclude Include="Assets\Shared\ConstantBuffers.h" />
     <ClInclude Include="Assets\Shared\StaticSampler.h" />
     <ClInclude Include="Assets\Shared\StructuredBuffer.h" />
+    <ClInclude Include="Engine\LowerLayer\Core\Command\CommandContextDiplomat\CommandContextToolLender\CmdContextToolLenderLicences.h" />
+    <ClInclude Include="Engine\LowerLayer\Core\DescriptorHeap\DescriptorHeapPoolContainer\DescriptorHeapPoolContainer.h" />
+    <ClInclude Include="Engine\LowerLayer\Core\Device\DeviceContextCmds.h" />
+    <ClInclude Include="Engine\LowerLayer\Core\Device\DeviceContextDiplomat\DeviceContextCommandProvider\DeviceContextCmdLicences.h" />
     <ClInclude Include="Engine\LowerLayer\Render\RenderPass\AllRenderPass\RenderPassTraits.h" />
     <ClInclude Include="Engine\LowerLayer\Render\RenderPass\PassDesc\RenderPassState.h" />
     <ClInclude Include="Engine\LowerLayer\Render\RenderPath\AllRenderPath\AllPathFwd.h" />

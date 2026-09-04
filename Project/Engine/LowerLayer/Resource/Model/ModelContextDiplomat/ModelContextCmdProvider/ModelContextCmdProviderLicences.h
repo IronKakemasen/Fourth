@@ -1,12 +1,13 @@
 #pragma once
 #include "ModelContextCmdProvider.h"
-#include "../../../../Render/RenderContext.h"
+
+class RenderContext;
 
 struct ModelContext::CommandProvider::WatchModelContainerLicence
 {
 private:
 
-	friend class RenderContext::RenderGraph;
+	friend class RenderContext;
 	explicit WatchModelContainerLicence() = default;
 };
 

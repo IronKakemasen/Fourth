@@ -6,20 +6,20 @@
 class ModelContext::CommandProvider
 {
 	template<typename CmdType>
-	struct LicenceTypeTraits;
+	struct CmdTypeTraits;
 	
 	struct WatchModelContainerLicence;
 
 public:
 
 	template<typename CmdType>
-	using LicenceType = typename LicenceTypeTraits<CmdType>::Type;
+	using LicenceType = typename CmdTypeTraits<CmdType>::Type;
 
 	CommandProvider(NexusFieldProof proof_, ModelContainer* modelContainer_);
 
 	///コマンド提供
 	template<typename CmdType>
-	CmdType Provide(typename LicenceTypeTraits<CmdType>::Type licence_);
+	CmdType Provide(typename CmdTypeTraits<CmdType>::Type licence_);
 
 
 private:
@@ -29,7 +29,7 @@ private:
 };
 
 template<>
-struct ModelContext::CommandProvider::LicenceTypeTraits<ModelContextCmds::WatchModelContainer>
+struct ModelContext::CommandProvider::CmdTypeTraits<ModelContextCmds::WatchModelContainer>
 {
 	using Type = WatchModelContainerLicence;
 };
@@ -38,5 +38,5 @@ struct ModelContext::CommandProvider::LicenceTypeTraits<ModelContextCmds::WatchM
 
 template<>
 ModelContextCmds::WatchModelContainer ModelContext::CommandProvider::Provide<ModelContextCmds::WatchModelContainer>
-(typename LicenceTypeTraits<ModelContextCmds::WatchModelContainer>::Type licence_);
+(typename CmdTypeTraits<ModelContextCmds::WatchModelContainer>::Type licence_);
 
