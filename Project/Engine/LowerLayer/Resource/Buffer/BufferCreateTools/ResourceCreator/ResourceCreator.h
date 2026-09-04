@@ -1,5 +1,6 @@
 #pragma once
 #include "../../BufferContext.h"
+#include "../../../../Core/Device/DeviceContextCmds.h"
 
 class BufferContext::ResourceCreator
 {
@@ -22,7 +23,7 @@ public:
 private:
 
 	//リソース生成コマンド
-	BufferContext::CreateResourceCommand createResourceCommand;
+	DeviceContextCmds::CreateResource createResourceCommand;
 
 
 };
