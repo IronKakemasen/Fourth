@@ -14,11 +14,11 @@ class BufferContext
 	//生リソース生成
 	class ResourceCreator;
 
-	//テクスチャファイルを読み込み、バッファを作成する
-	//読み込み方から運用方法までやや特殊なので別途専門機構を用意する
+	//全てのテクスチャファイルを読み込み、バッファを作成する
+	//そしてlibraryにつめていく。そしてsrvをひとまとまりにしたものをstructuredBufferとして作成し、アップロード
+	//そのバッファのsrvIndexをさらにGlobalConstantBufferで送るまでやる
 	class TextureBufferCreator;
-	class TextureLoader;
-	class textureBufferLibrary;
+	class TextureBufferLibrary;
 
 
 protected:

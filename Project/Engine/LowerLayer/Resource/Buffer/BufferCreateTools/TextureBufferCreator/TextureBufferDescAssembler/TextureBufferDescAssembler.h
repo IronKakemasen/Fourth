@@ -1,9 +1,7 @@
 #pragma once
 #include "../TextureBufferCreator.h"
 
-
-
-class BufferContext::TextureBufferCreator::TextureLoader
+class BufferContext::TextureBufferCreator::TextureBufferDescAssembler
 {
 	friend class BufferContext::TextureBufferCreator;
 

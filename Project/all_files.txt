@@ -4125,7 +4125,7 @@ SwapChainContext::~SwapChainContext()
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 void SwapChainContext::CreateSwapChain
 (
-	CommandCreateSwapChain cmdCreateSwapChain_,
+	DeviceContextCmds::CreateSwapChain cmdCreateSwapChain_,
 	const DXGI_SWAP_CHAIN_DESC1& desc_,
 	const HWND hWnd_,
 	ID3D12CommandQueue* commandQueue_
@@ -4241,17 +4241,12 @@ class CommandContextDiplomat;
 class DeviceContextDiplomat;
 class DescriptorHeapContextDiplomat;
 
+//外部
+///リファクタ認定
+#include "../Device/DeviceContextCmds.h"
+
 class SwapChainContext
 {
-	//swapChain生成コマンド
-	using CommandCreateSwapChain = std::function< void
-	(
-		ID3D12CommandQueue* commandQueue_,
-		DXGI_SWAP_CHAIN_DESC1 desc_,
-		IDXGISwapChain4** swapChainDoublePtr_,
-		const HWND hWnd_
-	)>;
-
 	//画面の表示、バックバッファの切り替えを担う
 	class Presenter;
 
@@ -4299,7 +4294,7 @@ private:
 	//スワップチェーンの生成
 	void CreateSwapChain
 	(
-		CommandCreateSwapChain cmdCreateSwapChain_, 
+		DeviceContextCmds::CreateSwapChain cmdCreateSwapChain_,
 		const DXGI_SWAP_CHAIN_DESC1& desc_, 
 		const HWND hWnd_, 
 		ID3D12CommandQueue* commandQueue_
@@ -8483,17 +8478,14 @@ class BufferContext
 	//生リソース生成
 	class ResourceCreator;
 
-protected:
+	//全てのテクスチャファイルを読み込み、バッファを作成する
+	//そしてlibraryにつめていく。そしてsrvをひとまとまりにしたものをstructuredBufferとして作成し、アップロード
+	//そのバッファのsrvIndexをさらにGlobalConstantBufferで送るまでやる
+	class TextureBufferCreator;
+	class TextureBufferLibrary;
 
-	//リソース生成コマンド
-	using CreateResourceCommand = std::function<Microsoft::WRL::ComPtr<ID3D12Resource>
-	(
-		const D3D12_RESOURCE_DESC& resourceDesc_,
-		const D3D12_HEAP_PROPERTIES& heapProperties_,
-		const D3D12_CLEAR_VALUE* clearValue_,
-		D3D12_RESOURCE_STATES initialState_,
-		const std::string& name_
-	)>;
+
+protected:
 
 	//登録先識別用
 	enum class RegisterType
@@ -11264,6 +11256,7 @@ BufferContext::ResourceCreator::~ResourceCreator()
 ========================================
 #pragma once
 #include "../../BufferContext.h"
+#include "../../../../Core/Device/DeviceContextCmds.h"
 
 class BufferContext::ResourceCreator
 {
@@ -11286,10 +11279,136 @@ public:
 private:
 
 	//リソース生成コマンド
-	BufferContext::CreateResourceCommand createResourceCommand;
+	DeviceContextCmds::CreateResource createResourceCommand;
 
 
 };
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Buffer\BufferCreateTools\TextureBufferCreator\TextureBufferCreator.cpp ===
+========================================
+#include "PreCompileHeader.h"
+#include "TextureBufferCreator.h"
+#include "../BufferCreator.h"
+#include "../BufferCollector/BufferCollector.h"
+#include "../BufferUploader/BufferUploader.h"
+#include "TextureLoader/TextureLoader.h"
+#include "TextureBufferDescAssembler/TextureBufferDescAssembler.h"
+
+
+
+BufferContext::TextureBufferCreator::TextureBufferCreator
+(
+	NexusFieldProof proof_,
+	BufferCreator& bufferCreator_,
+	BufferCollector& bufferCollector_,
+	BufferUploader& bufferUploader_,
+	GlobalConstantBufferCreator& globalConstantBufferCreator_,
+	TextureLoader& textureLoader_,
+	TextureBufferLibrary& textureBufferLibrary_
+)
+{
+	///目標
+	//全てのテクスチャファイルを読み込み、バッファを作成してlibraryにつめていく。
+	//全バッファのsrvをひとまとまりにしたものをStaticStructuredBufferとして作成し、アップロード
+	//そのバッファのsrvIndexをさらにGlobalConstantBufferで送る
+
+
+
+
+
+
+}
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Buffer\BufferCreateTools\TextureBufferCreator\TextureBufferCreator.h ===
+========================================
+#pragma once
+#include "../../BufferContext.h"
+
+class BufferContext::TextureBufferCreator
+{
+	//テクスチャファイルを読み込み、
+	class TextureLoader;
+	//パルスして、テクスチャバッファのDescを作る
+	class TextureBufferDescAssembler;
+
+public:
+	TextureBufferCreator
+	(
+		NexusFieldProof proof_,
+		BufferCreator& bufferCreator_,
+		BufferCollector& bufferCollector_,
+		BufferUploader& bufferUploader_,
+		GlobalConstantBufferCreator& globalConstantBufferCreator_,
+		TextureLoader& textureLoader_,
+		TextureBufferLibrary& textureBufferLibrary_
+	);
+
+};
+
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Buffer\BufferCreateTools\TextureBufferCreator\TextureBufferDescAssembler\TextureBufferDescAssembler.cpp ===
+========================================
+#include "PreCompileHeader.h"
+#include "TextureBufferDescAssembler.h"
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Buffer\BufferCreateTools\TextureBufferCreator\TextureBufferDescAssembler\TextureBufferDescAssembler.h ===
+========================================
+#pragma once
+#include "../TextureBufferCreator.h"
+
+class BufferContext::TextureBufferCreator::TextureBufferDescAssembler
+{
+	friend class BufferContext::TextureBufferCreator;
+
+
+
+};
+
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Buffer\BufferCreateTools\TextureBufferCreator\TextureLoader\TextureLoader.cpp ===
+========================================
+#include "PreCompileHeader.h"
+#include "TextureLoader.h"
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Buffer\BufferCreateTools\TextureBufferCreator\TextureLoader\TextureLoader.h ===
+========================================
+#pragma once
+#include "../TextureBufferCreator.h"
+
+
+
+class BufferContext::TextureBufferCreator::TextureLoader
+{
+	friend class BufferContext::TextureBufferCreator;
+
+
+
+};
+
+
 
 
 
@@ -13974,6 +14093,41 @@ private:
 
 	BufferCreator* creator;
 	GlobalConstantBuffers* globalConstantBuffers;
+};
+
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Buffer\TextureBufferLibrary\TextureBufferLibrary.cpp ===
+========================================
+#include "PreCompileHeader.h"
+#include "TextureBufferLibrary.h"
+
+BufferContext::TextureBufferLibrary::TextureBufferLibrary(NexusFieldProof proof_)
+{
+
+}
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Buffer\TextureBufferLibrary\TextureBufferLibrary.h ===
+========================================
+#pragma once
+#include "../BufferContext.h"
+
+class BufferContext::TextureBufferLibrary
+{
+public:
+	TextureBufferLibrary(NexusFieldProof proof_);
+
+
+private:
+
+
 };
 
 
@@ -18438,9 +18592,6 @@ class RootSignatureContextDiplomat;
 
 class RootSignatureContext
 {
-protected:
-
-	using CommandCreateRootSignature = std::function<void(UINT nodeMask_, Microsoft::WRL::ComPtr<ID3DBlob>& signatureBlob_, ID3D12RootSignature** doublePtr_rootSignature_)>;
 
 public:
 
@@ -18928,7 +19079,8 @@ Microsoft::WRL::ComPtr<ID3D12RootSignature> RootSignatureContext::Assembler::Cre
 #include "../../RootSignatureContext.h"
 #include "RootSignatureDesc.h"
 
-
+//外部
+#include "../../../../Core/Device/DeviceContextCmds.h"
 class RootSignatureContext::Assembler
 {
 public:
@@ -18945,7 +19097,7 @@ private:
 	class StaticSamplerDescCreator;
 	class RootParamCreator;
 
-	RootSignatureContext::CommandCreateRootSignature cmdCreateRootSignature;
+	DeviceContextCmds::CreateRootSig cmdCreateRootSignature;
 
 	Microsoft::WRL::ComPtr<ID3D12RootSignature> CreateRootSignature(D3D12_ROOT_SIGNATURE_DESC* desc_);
 };
@@ -21309,8 +21461,6 @@ class Miyajison::DataLoader
 
 		return value;
 	}
-
-
 
 };
 
