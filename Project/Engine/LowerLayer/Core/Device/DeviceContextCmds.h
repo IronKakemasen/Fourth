@@ -43,10 +43,8 @@ namespace DeviceContextCmds
 	)>;
 
 	//PSOを生成するコマンド
-	using CreateGraphicsPSO = std::function<void(ID3D12PipelineState** doublePtr_pipelineState_, D3D12_PIPELINE_STATE_STREAM_DESC* desc_)>;
-
-	//PSOを生成するコマンド
-	using CreateComputePSO = std::function<void(ID3D12PipelineState** doublePtr_pipelineState_, D3D12_COMPUTE_PIPELINE_STATE_DESC* desc_)>;
+	template<typename DescType>
+	using CreatePSO = std::function<void(ID3D12PipelineState** doublePtr_pipelineState_, DescType* desc_)>;
 
 	//ルートシグネチャを生成するコマンド
 	using CreateRootSig = std::function<void
@@ -56,14 +54,6 @@ namespace DeviceContextCmds
 		ID3D12RootSignature** doublePtr_rootSignature_
 	)>;
 
-	//リソースのViewを作成するコマンドを返す関数
-	template<typename ViewType>
-	using CreateView = std::function<void
-	(
-		ID3D12Resource* resource_,
-		const ViewType* desc_,
-		D3D12_CPU_DESCRIPTOR_HANDLE descriptorHandleCPU_
-	)>;
 
 }
 

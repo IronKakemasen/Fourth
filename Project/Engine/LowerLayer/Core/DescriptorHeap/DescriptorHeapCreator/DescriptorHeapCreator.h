@@ -2,9 +2,42 @@
 #include "../DescriptorHeapContext.h"
 #include "../DescriptorHeapPool/DescriptorHeapPool.h"
 
+//外部
+#include "../../Device/DeviceContextCmds.h"
 
 class DescriptorHeapContext::DescriptorHeapCreator
 {
+
+public:
+
+	DescriptorHeapCreator
+	(
+		NexusFieldProof proof_, 
+		DescriptorHeapPoolContainer& container_,
+		DeviceContextDiplomat& deviceContextDiplomat_
+	);
+
+	template<D3D12_DESCRIPTOR_HEAP_TYPE heapType>
+	inline std::unique_ptr<DescriptorHeapPool> Create
+	(
+		DeviceContextCmds::CreateDescriptorHeap cmdCreateDescriptorHeap_,
+		UINT numDescriptors_, 
+		bool shaderVisible_,
+		UINT handleIncSize_
+	)
+	{
+		return std::make_unique<DescriptorHeapPool>
+		(
+			std::move(cmdCreateDescriptorHeap_(heapType, numDescriptors_, shaderVisible_)),
+			handleIncSize_,
+			numDescriptors_,
+			shaderVisible_,
+			DescriptorName<heapType>()
+		);
+	}
+
+private:
+
 	template<D3D12_DESCRIPTOR_HEAP_TYPE heapType>
 	inline std::string DescriptorName()const
 	{
@@ -19,32 +52,6 @@ class DescriptorHeapContext::DescriptorHeapCreator
 		return descriptorHeapString;
 	}
 
-
-public:
-
-	DescriptorHeapCreator(NexusFieldProof proof_, CreateDescriptorHeapCommand cmd_) :createCmd(cmd_) {}
-
-
-	template<D3D12_DESCRIPTOR_HEAP_TYPE heapType>
-	inline std::unique_ptr<DescriptorHeapPool> Create(UINT numDescriptors_, bool shaderVisible_, UINT handleIncSize_)const
-	{
-		return std::make_unique<DescriptorHeapPool>
-		(
-			std::move(createCmd(heapType, numDescriptors_, shaderVisible_)),
-			handleIncSize_,
-			numDescriptors_,
-			shaderVisible_,
-			DescriptorName<heapType>()
-		);
-
-	}
-
-
-private:
-
-
-	//DescriptorHeapを生成するコマンド
-	CreateDescriptorHeapCommand createCmd;
 
 };
 

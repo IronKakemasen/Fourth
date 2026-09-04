@@ -1,14 +1,15 @@
 #pragma once
 #include "BufferToolLender.h"
-#include "../../../Model/ModelContext.h"
-#include "../../../../Render/RenderContext.h"
+
+class ModelContext;
+class RenderContext;
 
 struct BufferContext::ToolLender::BasicBufferManagementLicence
 {
 private:
 
-	friend class ModelContext::ModelDataCreator;
-	friend class RenderContext::RenderPassCreator;
+	friend class ModelContext;
+	friend class RenderContext;
 
 	explicit BasicBufferManagementLicence() = default;
 };

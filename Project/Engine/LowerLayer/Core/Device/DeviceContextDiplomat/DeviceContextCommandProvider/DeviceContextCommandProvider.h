@@ -11,12 +11,20 @@ class DeviceContext::CommandProvider
 	template<typename CmdType>
 	struct CmdTypeTraits;
 
+	struct CreateResourceLicence;
+	struct CreateViewLicence;
+	struct CreateDescriptorHeapLicence;
+	struct CommandContextProof;
+	struct CreateSwapChainLicence;
+	struct CreateRootSigLicence;
+	struct CreatePSO_Licence;
+
 
 public:
 
 	CommandProvider
 	(
-		NexusFieldProof proof_,
+		NexusFieldProof licence_,
 		std::function< ID3D12Device8* (DeviceContext::AccessKey)> deviceGetter_,
 		std::function< IDXGIFactory7* (DeviceContext::AccessKey)> dxgiFactoryGetter_
 	);
@@ -25,58 +33,9 @@ public:
 	using LicenceType = typename CmdTypeTraits<CmdType>::Type;
 
 	template<typename CmdType>
-	CmdType Provide(typename CmdTypeTraits<CmdType>::Type licence_);
+	[[nodiscard]] CmdType Provide(typename CmdTypeTraits<CmdType>::Type licence_);
 
 	
-
-	//リソースを生成するコマンドを返す関数(ConstantBufferDescription , ColorBufferDescription)
-	[[nodiscard]] std::function<Microsoft::WRL::ComPtr<ID3D12Resource>
-	(
-		const D3D12_RESOURCE_DESC& resourceDesc_,
-		const D3D12_HEAP_PROPERTIES& heapProperties_,
-		const D3D12_CLEAR_VALUE* clearValue_,
-		D3D12_RESOURCE_STATES initialState_,
-		const std::string& name_
-	)>
-	ProvideCreateResourceCommand();
-
-	//DescriptorHeapを生成するコマンドを返す関数
-	[[nodiscard]] std::function<Microsoft::WRL::ComPtr<ID3D12DescriptorHeap>(D3D12_DESCRIPTOR_HEAP_TYPE , UINT , bool )>
-		ProvideCreateDescriptorHeapCommand();
-
-	//リソースのViewを作成するコマンドを返す関数
-	template<typename ViewType>
-	[[nodiscard]] std::function<void(ID3D12Resource* resource_, const ViewType* desc_, D3D12_CPU_DESCRIPTOR_HANDLE descriptorHandleCPU_)>
-		ProvideCreateViewCommand();
-
-	//UAV作成コマンドのみ引数が異なるため別途用意
-	[[nodiscard]] std::function<void(ID3D12Resource* resource_, const D3D12_UNORDERED_ACCESS_VIEW_DESC* desc_, D3D12_CPU_DESCRIPTOR_HANDLE descriptorHandleCPU_, ID3D12Resource* CounterResource_)>
-		ProvideCreateUAVCommand();
-	
-	//スワップチェーンを生成するためのコマンド
-	[[nodiscard]] std::function<void
-	(
-		ID3D12CommandQueue* commandQueue_,
-		DXGI_SWAP_CHAIN_DESC1 desc_,
-		IDXGISwapChain4** swapChainDoublePtr_,
-		const HWND hWnd_
-	)>
-	ProvideCreateSwapChainCommand();
-
-	//PSOを生成するコマンド
-	template<typename PSO_DescType>
-	std::function<void(ID3D12PipelineState** doublePtr_pipelineState_, PSO_DescType* descType_)>
-	ProvideCreatePSOCommand();
-
-	//ルートシグネチャを生成するコマンド
-	std::function<void
-	(
-		UINT nodeMask_,
-		Microsoft::WRL::ComPtr<ID3DBlob>& signatureBlob_,
-		ID3D12RootSignature** doublePtr_rootSignature_
-	)>
-	ProvideCommandCreateRootSignature();
-
 
 
 private:
@@ -87,20 +46,108 @@ private:
 
 };
 
-
-
-///+/////////////////////////////////////////////////////////////////////////////////////////////////////////
 template<>
-std::function<void(ID3D12PipelineState** doublePtr_pipelineState_, D3D12_COMPUTE_PIPELINE_STATE_DESC* descType_)>
-DeviceContext::CommandProvider::ProvideCreatePSOCommand();
+struct DeviceContext::CommandProvider::CmdTypeTraits<DeviceContextCmds::CreateResource>
+{
+	using Type = CreateResourceLicence;
+};
 
 template<>
-std::function<void(ID3D12PipelineState** doublePtr_pipelineState_, D3D12_PIPELINE_STATE_STREAM_DESC* descType_)>
-DeviceContext::CommandProvider::ProvideCreatePSOCommand();
-///+/////////////////////////////////////////////////////////////////////////////////////////////////////////
+struct DeviceContext::CommandProvider::CmdTypeTraits<DeviceContextCmds::CreateDescriptorHeap>
+{
+	using Type = CreateDescriptorHeapLicence;
+};
+
+template<>
+struct DeviceContext::CommandProvider::CmdTypeTraits<DeviceContextCmds::CreateView<D3D12_RENDER_TARGET_VIEW_DESC>>
+{
+	using Type = CreateViewLicence;
+};
+
+template<>
+struct DeviceContext::CommandProvider::CmdTypeTraits<DeviceContextCmds::CreateView<D3D12_SHADER_RESOURCE_VIEW_DESC>>
+{
+	using Type = CreateViewLicence;
+};
+
+template<>
+struct DeviceContext::CommandProvider::CmdTypeTraits<DeviceContextCmds::CreateView<D3D12_DEPTH_STENCIL_VIEW_DESC>>
+{
+	using Type = CreateViewLicence;
+};
+
+template<>
+struct DeviceContext::CommandProvider::CmdTypeTraits<DeviceContextCmds::CreateUAV>
+{
+	using Type = CreateViewLicence;
+};
 
 
+template<>
+struct DeviceContext::CommandProvider::CmdTypeTraits<DeviceContextCmds::CreateSwapChain>
+{
+	using Type = CreateSwapChainLicence;
+};
 
 
+template<>
+struct DeviceContext::CommandProvider::CmdTypeTraits<DeviceContextCmds::CreatePSO<D3D12_COMPUTE_PIPELINE_STATE_DESC>>
+{
+	using Type = CreatePSO_Licence;
+};
+
+template<>
+struct DeviceContext::CommandProvider::CmdTypeTraits<DeviceContextCmds::CreatePSO<D3D12_PIPELINE_STATE_STREAM_DESC>>
+{
+	using Type = CreatePSO_Licence;
+};
+
+ 
+template<>
+struct DeviceContext::CommandProvider::CmdTypeTraits<DeviceContextCmds::CreateRootSig>
+{
+	using Type = CreateRootSigLicence;
+};
+
+
+template<>
+[[nodiscard]] DeviceContextCmds::CreateResource DeviceContext::CommandProvider::Provide
+(typename CmdTypeTraits<DeviceContextCmds::CreateResource>::Type licence_);
+
+template<>
+[[nodiscard]] DeviceContextCmds::CreateDescriptorHeap DeviceContext::CommandProvider::Provide
+(typename CmdTypeTraits<DeviceContextCmds::CreateDescriptorHeap>::Type licence_);
+
+template<>
+[[nodiscard]] DeviceContextCmds::CreateSwapChain DeviceContext::CommandProvider::Provide
+(typename CmdTypeTraits<DeviceContextCmds::CreateSwapChain>::Type licence_);
+
+template<>
+[[nodiscard]] DeviceContextCmds::CreateView<D3D12_RENDER_TARGET_VIEW_DESC> DeviceContext::CommandProvider::Provide
+(typename CmdTypeTraits<DeviceContextCmds::CreateView<D3D12_RENDER_TARGET_VIEW_DESC>>::Type licence_);
+
+template<>
+[[nodiscard]] DeviceContextCmds::CreateView<D3D12_SHADER_RESOURCE_VIEW_DESC> DeviceContext::CommandProvider::Provide
+(typename CmdTypeTraits<DeviceContextCmds::CreateView<D3D12_SHADER_RESOURCE_VIEW_DESC>>::Type licence_);
+
+template<>
+[[nodiscard]] DeviceContextCmds::CreateView<D3D12_DEPTH_STENCIL_VIEW_DESC> DeviceContext::CommandProvider::Provide
+(typename CmdTypeTraits<DeviceContextCmds::CreateView<D3D12_DEPTH_STENCIL_VIEW_DESC>>::Type licence_);
+
+template<>
+[[nodiscard]] DeviceContextCmds::CreateUAV DeviceContext::CommandProvider::Provide
+(typename CmdTypeTraits<DeviceContextCmds::CreateUAV>::Type licence_);
+
+template<>
+[[nodiscard]] DeviceContextCmds::CreatePSO<D3D12_COMPUTE_PIPELINE_STATE_DESC> DeviceContext::CommandProvider::Provide
+(typename CmdTypeTraits<DeviceContextCmds::CreatePSO<D3D12_COMPUTE_PIPELINE_STATE_DESC>>::Type licence_);
+
+template<>
+[[nodiscard]] DeviceContextCmds::CreatePSO<D3D12_PIPELINE_STATE_STREAM_DESC> DeviceContext::CommandProvider::Provide
+(typename CmdTypeTraits<DeviceContextCmds::CreatePSO<D3D12_PIPELINE_STATE_STREAM_DESC>>::Type licence_);
+
+template<>
+[[nodiscard]] DeviceContextCmds::CreateRootSig DeviceContext::CommandProvider::Provide
+(typename CmdTypeTraits<DeviceContextCmds::CreateRootSig>::Type licence_);
 
 

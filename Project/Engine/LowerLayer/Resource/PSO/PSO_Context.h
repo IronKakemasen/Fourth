@@ -11,11 +11,6 @@ class PSO_Context
 	//PSOのユニークを所持するだけ
 	class PSO_Container;
 
-protected:
-
-	using CommandCreateGraphicsPSO = std::function<void(ID3D12PipelineState** doublePtr_pso_, D3D12_PIPELINE_STATE_STREAM_DESC* streamDesc_)>;
-	using CommandCreateComputePSO = std::function<void(ID3D12PipelineState** doublePtr_pso_, D3D12_COMPUTE_PIPELINE_STATE_DESC* computeDesc_)>;
-
 public:
 
 	class PSO_Creator;

@@ -4,11 +4,16 @@
 //外部
 #include "../../../../Core/Device/DeviceContextDiplomat/DeviceContextDiplomat.h"
 #include "../../../../Core/Device/DeviceContextDiplomat/DeviceContextCommandProvider/DeviceContextCommandProvider.h"
+#include "../../../../Core/Device/DeviceContextDiplomat/DeviceContextCommandProvider/DeviceContextCmdLicences.h"
+#include "../../../../Core/Device/DeviceContextCmds.h"
 
 BufferContext::ResourceCreator::ResourceCreator(NexusFieldProof proof_, DeviceContextDiplomat* deviceContextDiplomat_)
 {
+	//生リソース生成コマンドを受け取る
 	auto* cmdProvider = deviceContextDiplomat_->Access<DeviceContext::CommandProvider>();
-	createResourceCommand = cmdProvider->ProvideCreateResourceCommand();
+	DeviceContext::CommandProvider::LicenceType<DeviceContextCmds::CreateResource> licence;
+
+	createResourceCommand = cmdProvider->Provide<DeviceContextCmds::CreateResource>(licence);
 }
 
 BufferContext::ResourceCreator::~ResourceCreator()

@@ -10,6 +10,8 @@
 //外部
 #include "../../../../Core/Device/DeviceContextDiplomat/DeviceContextDiplomat.h"
 #include "../../../../Core/Device/DeviceContextDiplomat/DeviceContextCommandProvider/DeviceContextCommandProvider.h"
+#include "../../../../Core/Device/DeviceContextDiplomat/DeviceContextCommandProvider/DeviceContextCmdLicences.h"
+
 
 namespace
 {
@@ -23,9 +25,11 @@ PSO_Context::Assembler::Assembler
 )
 {
 	auto cmdProvider = deviceContextDiplomat_->Access<DeviceContext::CommandProvider>();
-	cmdCreateGraphicsPSO = cmdProvider->ProvideCreatePSOCommand<D3D12_PIPELINE_STATE_STREAM_DESC>();
-	cmdCreateComputePSO = cmdProvider->ProvideCreatePSOCommand<D3D12_COMPUTE_PIPELINE_STATE_DESC>();
+	DeviceContext::CommandProvider::LicenceType<DeviceContextCmds::CreatePSO<D3D12_PIPELINE_STATE_STREAM_DESC>> licenceCreateGraphicsPso;
+	DeviceContext::CommandProvider::LicenceType<DeviceContextCmds::CreatePSO<D3D12_COMPUTE_PIPELINE_STATE_DESC>> licenceCreateComputePso;
 
+	cmdCreateGraphicsPSO = cmdProvider->Provide<DeviceContextCmds::CreatePSO<D3D12_PIPELINE_STATE_STREAM_DESC>>(licenceCreateGraphicsPso);
+	cmdCreateComputePSO = cmdProvider->Provide<DeviceContextCmds::CreatePSO<D3D12_COMPUTE_PIPELINE_STATE_DESC>>(licenceCreateComputePso);
 
 }
 

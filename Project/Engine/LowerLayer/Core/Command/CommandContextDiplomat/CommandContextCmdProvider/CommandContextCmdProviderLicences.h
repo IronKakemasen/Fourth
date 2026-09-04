@@ -1,12 +1,13 @@
 #pragma once
 #include "CommandContextCmdProvider.h"
-#include "../../../../Resource/Buffer/BufferContext.h"
+
+class BufferContext;
 
 struct CommandContext::CommandProvider::UsesResourceUploadCmdLicence
 {
 private:
 
-	friend class BufferContext::BufferUploader;
+	friend class BufferContext;
 	explicit UsesResourceUploadCmdLicence() = default;
 };
 

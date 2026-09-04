@@ -498,14 +498,14 @@ CommandContext::CommandProvider::CommandProvider(NexusFieldProof proof_, Command
 
 template<>
 CommandContextCmds::UploadCommand CommandContext::CommandProvider::Provide<CommandContextCmds::UploadCommand>
-(typename LicenceTypeTraits<CommandContextCmds::UploadCommand>::Type licence_)
+(typename CmdTypeTraits<CommandContextCmds::UploadCommand>::Type licence_)
 {
 	return resourceUploader->ProvideUploadCommand(ProviderKey{});
 }
 
 template<>
 CommandContextCmds::PitchBarrierCommand CommandContext::CommandProvider::Provide<CommandContextCmds::PitchBarrierCommand>
-(typename LicenceTypeTraits<CommandContextCmds::PitchBarrierCommand>::Type licence_)
+(typename CmdTypeTraits<CommandContextCmds::PitchBarrierCommand>::Type licence_)
 {
 	return resourceUploader->ProvideBarrierPitchCommand(ProviderKey{});
 }
@@ -527,7 +527,7 @@ class CommandContext::CommandProvider
 {
 	//コマンドのタイプと許可を紐づける
 	template<typename CommandType>
-	struct LicenceTypeTraits;
+	struct CmdTypeTraits;
 
 	//ResourceUploadコマンドの利用許可
 	struct UsesResourceUploadCmdLicence;
@@ -535,13 +535,13 @@ class CommandContext::CommandProvider
 public:
 
 	template<typename CommandType>
-	using LicenceType = typename LicenceTypeTraits<CommandType>::Type;
+	using LicenceType = typename CmdTypeTraits<CommandType>::Type;
 
 	CommandProvider(NexusFieldProof proof_, CommandContext::ResourceUploader* resourceUploader_);
 
 	///コマンド提供
 	template<typename CommandType>
-	CommandType Provide(typename LicenceTypeTraits<CommandType>::Type licence_);
+	CommandType Provide(typename CmdTypeTraits<CommandType>::Type licence_);
 
 private:
 
@@ -550,13 +550,13 @@ private:
 
 
 template<>
-struct CommandContext::CommandProvider::LicenceTypeTraits<CommandContextCmds::UploadCommand>
+struct CommandContext::CommandProvider::CmdTypeTraits<CommandContextCmds::UploadCommand>
 {
 	using Type = CommandContext::CommandProvider::UsesResourceUploadCmdLicence;
 };
 
 template<>
-struct CommandContext::CommandProvider::LicenceTypeTraits<CommandContextCmds::PitchBarrierCommand>
+struct CommandContext::CommandProvider::CmdTypeTraits<CommandContextCmds::PitchBarrierCommand>
 {
 	using Type = CommandContext::CommandProvider::UsesResourceUploadCmdLicence;
 };
@@ -565,11 +565,11 @@ struct CommandContext::CommandProvider::LicenceTypeTraits<CommandContextCmds::Pi
 
 template<>
 CommandContextCmds::UploadCommand CommandContext::CommandProvider::Provide<CommandContextCmds::UploadCommand>
-(typename LicenceTypeTraits<CommandContextCmds::UploadCommand>::Type licence_);
+(typename CmdTypeTraits<CommandContextCmds::UploadCommand>::Type licence_);
 
 template<>
 CommandContextCmds::PitchBarrierCommand CommandContext::CommandProvider::Provide<CommandContextCmds::PitchBarrierCommand>
-(typename LicenceTypeTraits<CommandContextCmds::PitchBarrierCommand>::Type licence_);
+(typename CmdTypeTraits<CommandContextCmds::PitchBarrierCommand>::Type licence_);
 
 
 
@@ -580,13 +580,14 @@ CommandContextCmds::PitchBarrierCommand CommandContext::CommandProvider::Provide
 ========================================
 #pragma once
 #include "CommandContextCmdProvider.h"
-#include "../../../../Resource/Buffer/BufferContext.h"
+
+class BufferContext;
 
 struct CommandContext::CommandProvider::UsesResourceUploadCmdLicence
 {
 private:
 
-	friend class BufferContext::BufferUploader;
+	friend class BufferContext;
 	explicit UsesResourceUploadCmdLicence() = default;
 };
 
@@ -641,6 +642,26 @@ private:
 
 
 ========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Core\Command\CommandContextDiplomat\CommandContextToolLender\CmdContextToolLenderLicences.h ===
+========================================
+#pragma once
+#include "CommandContextToolLender.h"
+
+
+class SwapChainContext;
+
+struct CommandContext::ToolLender::AccessCommandQueueLicence
+{
+private:
+
+	friend class SwapChainContext;
+	explicit AccessCommandQueueLicence() = default;
+};
+
+
+
+
+========================================
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Core\Command\CommandContextDiplomat\CommandContextToolLender\CommandContextToolLender.cpp ===
 ========================================
 #include "PreCompileHeader.h"
@@ -655,7 +676,6 @@ CommandContext::ToolLender::ToolLender
 {
 	std::get<ID3D12CommandQueue*>(tools) = cmdQueue_;
 
-
 }
 
 
@@ -666,17 +686,15 @@ CommandContext::ToolLender::ToolLender
 #pragma once
 #include "../../CommandContext.h"
 
-class SwapChainContext;
 
 class CommandContext::ToolLender
 {
 	//貸し出すツールのデータ型とそれに対応したLicenceのデータ型を結び付ける
 	template<typename ToolType>
-	struct LicenceTypeTraits;
+	struct CmdTypeTraits;
 
 	//CommandQueueを扱う資格
-	struct CommandQueueAccessLicence;
-	struct ResourceUploaderAccessLicence;
+	struct AccessCommandQueueLicence;
 
 	///貸し出せるツール
 	std::tuple<ID3D12CommandQueue*> tools;
@@ -685,7 +703,7 @@ public:
 
 	//ただのエイリアステンプレート
 	template<typename ToolType>
-	using LicenceType = typename LicenceTypeTraits<ToolType>::Type;
+	using LicenceType = typename CmdTypeTraits<ToolType>::Type;
 
 	ToolLender
 	(
@@ -696,43 +714,20 @@ public:
 
 	///ツールの貸し出し
 	template<typename ToolType>
-	auto* Lend(typename LicenceTypeTraits<ToolType>::Type licence_)
+	auto* Lend(typename CmdTypeTraits<ToolType>::Type licence_)
 	{
 		return std::get<ToolType*>(tools);
 	}
 
-
-};
-
-
-struct CommandContext::ToolLender::CommandQueueAccessLicence
-{
-private:
-
-	friend class SwapChainContext;
-	explicit CommandQueueAccessLicence() = default;
-};
-
-struct CommandContext::ToolLender::ResourceUploaderAccessLicence
-{
-private:
-
-	friend class Nexus;
-	explicit ResourceUploaderAccessLicence() = default;
 };
 
 
 template<>
-struct CommandContext::ToolLender::LicenceTypeTraits<ID3D12CommandQueue>
+struct CommandContext::ToolLender::CmdTypeTraits<ID3D12CommandQueue>
 {
-	using Type = CommandQueueAccessLicence;
+	using Type = AccessCommandQueueLicence;
 };
 
-template<>
-struct CommandContext::ToolLender::LicenceTypeTraits<CommandContext::ResourceUploader>
-{
-	using Type = ResourceUploaderAccessLicence;
-};
 
 
 
@@ -1341,6 +1336,8 @@ private:
 #include "DescriptorHeapCreator/DescriptorHeapCreator.h"
 #include "DescriptorHeapPool/DescriptorHeapPool.h"
 #include "ViewCreator/ViewCreator.h"
+#include "DescriptorHeapPoolContainer/DescriptorHeapPoolContainer.h"
+
 #include "DescriptorHeapContextDiplomat/DescriptorHeapToolLender/DescriptorHeapToolLender.h"
 #include "DescriptorHeapContextDiplomat/DescriptorHeapContextDiplomat.h"
 
@@ -1358,17 +1355,28 @@ using namespace ProjectConfig::Core;
 
 DescriptorHeapContext::DescriptorHeapContext
 (
-	DescriptorHeapContext::NexusFieldProof proof_,
-	DeviceContextDiplomat* deviceContextDiplomat_
+	NexusFieldProof proof_,
+	DeviceContextDiplomat& deviceContextDiplomat_
 )
 {
 	Logger::Entry("DescriptorHeapContext: Constructor");
 
 	
 	//各種DescriptorHeapを生成する
-	CreateDescriptorHeaps(proof_, deviceContextDiplomat_);
-	//ViewCreatorを生成して、中にview生成コマンドを積む
-	SetCreateViewCommand(proof_, deviceContextDiplomat_);
+	descriptorHeapPoolContainer.reset(new DescriptorHeapPoolContainer(proof_));
+	DescriptorHeapCreator descriptorHeapCreator(proof_, *descriptorHeapPoolContainer.get(), deviceContextDiplomat_);
+
+	viewCreator.reset
+	(
+		new ViewCreator
+		(
+			proof_,
+			*descriptorHeapPoolContainer.get(),
+			deviceContextDiplomat_
+		)
+	);
+	Logger::Log("Instantiate: ViewCreator", fileName);
+
 
 	diplomat.reset
 	(
@@ -1392,68 +1400,6 @@ DescriptorHeapContext::~DescriptorHeapContext()
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-void DescriptorHeapContext::CreateDescriptorHeaps(DescriptorHeapContext::NexusFieldProof proof_, DeviceContextDiplomat* deviceContextDiplomat_)
-{
-	auto* cmdExecutor = deviceContextDiplomat_->Access<DeviceContext::CommandExecutor>();
-	auto* cmdProvider = deviceContextDiplomat_->Access<DeviceContext::CommandProvider>();
-
-	auto createDescriptorHeapCmd = cmdProvider->ProvideCreateDescriptorHeapCommand();
-
-	UINT rtvDHIncrementSIze = cmdExecutor->CalcDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
-	UINT srvDHIncrementSIze = cmdExecutor->CalcDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
-	UINT dsvDHIncrementSIze = cmdExecutor->CalcDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_DSV);
-
-	DescriptorHeapCreator creator(proof_, createDescriptorHeapCmd);
-	Logger::Log("Instantiate: DescriptorHeapCreator", fileName);
-
-	descriptorHeapContainer[D3D12_DESCRIPTOR_HEAP_TYPE::D3D12_DESCRIPTOR_HEAP_TYPE_RTV] = 
-		std::move(creator.Create<D3D12_DESCRIPTOR_HEAP_TYPE_RTV>(kNumDescriptorsRTVHeap, false, rtvDHIncrementSIze));
-	
-	Logger::Log("Create: DescriptorHeapRTV", fileName);
-
-	descriptorHeapContainer[D3D12_DESCRIPTOR_HEAP_TYPE::D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV] =
-		std::move(creator.Create<D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV>(kNumDescriptorSRVHeap, true, srvDHIncrementSIze));
-	Logger::Log("Create: DescriptorHeapSRV", fileName);
-
-	descriptorHeapContainer[D3D12_DESCRIPTOR_HEAP_TYPE::D3D12_DESCRIPTOR_HEAP_TYPE_DSV] =
-		std::move(creator.Create<D3D12_DESCRIPTOR_HEAP_TYPE_DSV>(kNumDescriptorsDSVHeap, false, dsvDHIncrementSIze));
-	Logger::Log("Create: DescriptorHeapDSV", fileName);
-
-
-}
-///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-void DescriptorHeapContext::SetCreateViewCommand
-(
-	NexusFieldProof proof_,
-	DeviceContextDiplomat* deviceContextDiplomat_
-)
-{
-	auto* cmdProvider = deviceContextDiplomat_->Access<DeviceContext::CommandProvider>();
-
-	viewCreator.reset
-	(
-		new ViewCreator
-		(
-			proof_,
-			descriptorHeapContainer[D3D12_DESCRIPTOR_HEAP_TYPE::D3D12_DESCRIPTOR_HEAP_TYPE_RTV].get(),
-			descriptorHeapContainer[D3D12_DESCRIPTOR_HEAP_TYPE::D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV].get(),
-			descriptorHeapContainer[D3D12_DESCRIPTOR_HEAP_TYPE::D3D12_DESCRIPTOR_HEAP_TYPE_DSV].get(),
-			std::move(cmdProvider->ProvideCreateViewCommand<D3D12_RENDER_TARGET_VIEW_DESC>()),
-			std::move(cmdProvider->ProvideCreateViewCommand<D3D12_SHADER_RESOURCE_VIEW_DESC>()),
-			std::move(cmdProvider->ProvideCreateViewCommand<D3D12_DEPTH_STENCIL_VIEW_DESC>()),
-			std::move(cmdProvider->ProvideCreateUAVCommand())
-		)
-	);
-
-	Logger::Log("Instantiate: ViewCreator", fileName);
-	Logger::Log("Set: commandCreateView", fileName);
-
-}
-///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
 
@@ -1470,41 +1416,26 @@ class DescriptorHeapContextDiplomat;
 
 class DescriptorHeapContext
 {
+
+	//ディスクリプタヒープコンテナ
+	class DescriptorHeapPoolContainer;
+
+public:
+
 	//DescriptorHeap生成クラス
 	class DescriptorHeapCreator;
-
-protected:
-
-	//DescriptorHeapを生成するコマンド
-	using CreateDescriptorHeapCommand =
-		std::function<Microsoft::WRL::ComPtr<ID3D12DescriptorHeap>(D3D12_DESCRIPTOR_HEAP_TYPE, UINT, bool)>;
-	//ディスクリプタヒープコンテナ
-	using DescriptorHeapContainer = std::unordered_map < D3D12_DESCRIPTOR_HEAP_TYPE, std::unique_ptr<DescriptorHeapPool>>;
-	//RTVを生成するコマンド
-	using CreateRTVCommand =
-		std::function<void(ID3D12Resource* resource_, const D3D12_RENDER_TARGET_VIEW_DESC* desc_, D3D12_CPU_DESCRIPTOR_HANDLE descriptorHandleCPU_)>;
-	//SRVを生成するコマンド
-	using CreateSRVCommand =
-		std::function<void(ID3D12Resource* resource_, const D3D12_SHADER_RESOURCE_VIEW_DESC* desc_, D3D12_CPU_DESCRIPTOR_HANDLE descriptorHandleCPU_)>;
-	//DSVを生成するコマンド
-	using CreateDSVCommand =
-		std::function<void(ID3D12Resource* resource_, const D3D12_DEPTH_STENCIL_VIEW_DESC* desc_, D3D12_CPU_DESCRIPTOR_HANDLE descriptorHandleCPU_)>;
-	//UAVを生成するコマンド
-	using CreateUAVCommand =
-		std::function<void(ID3D12Resource* resource_, const D3D12_UNORDERED_ACCESS_VIEW_DESC* desc_, D3D12_CPU_DESCRIPTOR_HANDLE descriptorHandleCPU_, ID3D12Resource* CounterResource_)>;
-public:
+	//view生成
+	class ViewCreator;
 
 	//Nexusフィールドである証
 	struct NexusFieldProof;
-	//view生成
-	class ViewCreator;
 	//ツール貸し出しクラス
 	class ToolLender;
 
 	DescriptorHeapContext
 	(
 		NexusFieldProof proof_,
-		DeviceContextDiplomat* deviceContextDiplomat_
+		DeviceContextDiplomat& deviceContextDiplomat_
 	);
 
 	~DescriptorHeapContext();
@@ -1514,20 +1445,11 @@ public:
 private:
 
 	//DescriptorHeapPoolのコンテナ
-	DescriptorHeapContainer descriptorHeapContainer;
+	std::unique_ptr<DescriptorHeapPoolContainer> descriptorHeapPoolContainer;
 	//ビュー生成機関
 	std::unique_ptr<ViewCreator> viewCreator;
-	
-
-	//各種ディスクリプターヒープの作成
-	void CreateDescriptorHeaps(DescriptorHeapContext::NexusFieldProof proof_, DeviceContextDiplomat* deviceContextDiplomat_);
-
-	//ビュークリエイターの使用するコマンドをセット
-	void SetCreateViewCommand(DescriptorHeapContext::NexusFieldProof proof_ , DeviceContextDiplomat* deviceContextDiplomat_);
 
 };
-
-
 
 
 
@@ -1624,7 +1546,7 @@ class SwapChainContext;
 class DescriptorHeapContext::ToolLender
 {
 	template<typename ToolType>
-	struct LicenceTypeTraits;
+	struct CmdTypeTraits;
 
 	struct BasicViewManagementLicence;
 
@@ -1636,13 +1558,13 @@ public:
 
 	//ただのエイリアステンプレート
 	template<typename ToolType>
-	using LicenceType = typename LicenceTypeTraits<ToolType>::Type;
+	using LicenceType = typename CmdTypeTraits<ToolType>::Type;
 
 	ToolLender(NexusFieldProof proof_, DescriptorHeapContext::ViewCreator* viewCretator_);
 	
 	///ツールの貸し出し
 	template<typename ToolType>
-	auto* Lend(typename LicenceTypeTraits<ToolType>::Type licence_)
+	auto* Lend(typename CmdTypeTraits<ToolType>::Type licence_)
 	{
 		return std::get<ToolType*>(tools);
 	}
@@ -1659,7 +1581,7 @@ private:
 };
 
 template<>
-struct DescriptorHeapContext::ToolLender::LicenceTypeTraits<DescriptorHeapContext::ViewCreator>
+struct DescriptorHeapContext::ToolLender::CmdTypeTraits<DescriptorHeapContext::ViewCreator>
 {
 	using Type = BasicViewManagementLicence;
 };
@@ -1670,9 +1592,61 @@ struct DescriptorHeapContext::ToolLender::LicenceTypeTraits<DescriptorHeapContex
 ========================================
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Core\DescriptorHeap\DescriptorHeapCreator\DescriptorHeapCreator.cpp ===
 ========================================
-
 #include "DescriptorHeapCreator.h"
+#include "../DescriptorHeapPoolContainer/DescriptorHeapPoolContainer.h"
 
+//外部
+#include "../../Device/DeviceContextDiplomat/DeviceContextDiplomat.h"
+#include "../../Device/DeviceContextDiplomat/DeviceContextCommandProvider/DeviceContextCmdLicences.h"
+#include "../../Device/DeviceContextDiplomat/DeviceContextCommandProvider/DeviceContextCommandProvider.h"
+#include "../../Device/DeviceContextDiplomat/DeviceContextCommandExecutor/DeviceContextCommandExecutor.h"
+
+using namespace ProjectConfig::Core;
+
+namespace
+{
+	auto const fileName = "DescriptorHeapCreator.cpp";
+}
+
+DescriptorHeapContext::DescriptorHeapCreator::DescriptorHeapCreator
+(
+	NexusFieldProof proof_,
+	DescriptorHeapPoolContainer& container_,
+	DeviceContextDiplomat& deviceContextDiplomat_
+) {
+	//deviceContextからディスクリプタヒープ生成コマンドを渡してもらう
+	auto* deviceContextCmdProvider = deviceContextDiplomat_.Access<DeviceContext::CommandProvider>();
+	DeviceContext::CommandProvider::LicenceType<DeviceContextCmds::CreateDescriptorHeap> licenceCreateDescriptorHeap;
+	auto createDescriptorHeapCmd = deviceContextCmdProvider->Provide<DeviceContextCmds::CreateDescriptorHeap>(licenceCreateDescriptorHeap);
+
+	//deviceContextのコマンド実行クラスから、各種descriptorHeapのインクリメントサイズを教えてもらう
+	auto* cmdExecutor = deviceContextDiplomat_.Access<DeviceContext::CommandExecutor>();
+	UINT rtvDHIncrementSIze = cmdExecutor->CalcDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
+	UINT srvDHIncrementSIze = cmdExecutor->CalcDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+	UINT dsvDHIncrementSIze = cmdExecutor->CalcDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_DSV);
+
+	container_.Import<D3D12_DESCRIPTOR_HEAP_TYPE_RTV>
+	(
+		proof_,
+		std::move(Create<D3D12_DESCRIPTOR_HEAP_TYPE_RTV>(createDescriptorHeapCmd,kNumDescriptorsRTVHeap, false, rtvDHIncrementSIze))
+	);
+	Logger::Log("Create: DescriptorHeapRTV", fileName);
+
+	container_.Import<D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV>
+	(
+		proof_,
+		std::move(Create<D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV>(createDescriptorHeapCmd,kNumDescriptorSRVHeap, false, srvDHIncrementSIze))
+	);
+	Logger::Log("Create: DescriptorHeapSRV", fileName);
+
+	container_.Import<D3D12_DESCRIPTOR_HEAP_TYPE_DSV>
+	(
+		proof_,
+		std::move(Create<D3D12_DESCRIPTOR_HEAP_TYPE_DSV>(createDescriptorHeapCmd,kNumDescriptorsDSVHeap, false, dsvDHIncrementSIze))
+	);
+	Logger::Log("Create: DescriptorHeapDSV", fileName);
+
+}
 
 
 
@@ -1684,9 +1658,42 @@ struct DescriptorHeapContext::ToolLender::LicenceTypeTraits<DescriptorHeapContex
 #include "../DescriptorHeapContext.h"
 #include "../DescriptorHeapPool/DescriptorHeapPool.h"
 
+//外部
+#include "../../Device/DeviceContextCmds.h"
 
 class DescriptorHeapContext::DescriptorHeapCreator
 {
+
+public:
+
+	DescriptorHeapCreator
+	(
+		NexusFieldProof proof_, 
+		DescriptorHeapPoolContainer& container_,
+		DeviceContextDiplomat& deviceContextDiplomat_
+	);
+
+	template<D3D12_DESCRIPTOR_HEAP_TYPE heapType>
+	inline std::unique_ptr<DescriptorHeapPool> Create
+	(
+		DeviceContextCmds::CreateDescriptorHeap cmdCreateDescriptorHeap_,
+		UINT numDescriptors_, 
+		bool shaderVisible_,
+		UINT handleIncSize_
+	)
+	{
+		return std::make_unique<DescriptorHeapPool>
+		(
+			std::move(cmdCreateDescriptorHeap_(heapType, numDescriptors_, shaderVisible_)),
+			handleIncSize_,
+			numDescriptors_,
+			shaderVisible_,
+			DescriptorName<heapType>()
+		);
+	}
+
+private:
+
 	template<D3D12_DESCRIPTOR_HEAP_TYPE heapType>
 	inline std::string DescriptorName()const
 	{
@@ -1701,32 +1708,6 @@ class DescriptorHeapContext::DescriptorHeapCreator
 		return descriptorHeapString;
 	}
 
-
-public:
-
-	DescriptorHeapCreator(NexusFieldProof proof_, CreateDescriptorHeapCommand cmd_) :createCmd(cmd_) {}
-
-
-	template<D3D12_DESCRIPTOR_HEAP_TYPE heapType>
-	inline std::unique_ptr<DescriptorHeapPool> Create(UINT numDescriptors_, bool shaderVisible_, UINT handleIncSize_)const
-	{
-		return std::make_unique<DescriptorHeapPool>
-		(
-			std::move(createCmd(heapType, numDescriptors_, shaderVisible_)),
-			handleIncSize_,
-			numDescriptors_,
-			shaderVisible_,
-			DescriptorName<heapType>()
-		);
-
-	}
-
-
-private:
-
-
-	//DescriptorHeapを生成するコマンド
-	CreateDescriptorHeapCommand createCmd;
 
 };
 
@@ -1832,8 +1813,15 @@ public:
 	//ヒープインデックスを触るための許可証
 	struct CollectHeapIndexKey;
 
-	DescriptorHeapPool(Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> descriptorHeap_,
-		UINT handleIncrementSize_, uint32_t kMaxDescriptor_,bool shaderVisible_ ,std::string name_);
+	DescriptorHeapPool
+	(
+		Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> descriptorHeap_,
+		UINT handleIncrementSize_, 
+		uint32_t kMaxDescriptor_,
+		bool shaderVisible_ ,
+		std::string name_
+	);
+
 	~DescriptorHeapPool();
 	
 	//フリーヒープインデックスを割り当てる
@@ -1892,9 +1880,84 @@ template<>
 
 
 ========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Core\DescriptorHeap\DescriptorHeapPoolContainer\DescriptorHeapPoolContainer.cpp ===
+========================================
+#include "PreCompileHeader.h"
+#include "DescriptorHeapPoolContainer.h"
+
+
+namespace
+{
+	auto const fileName = "DescriptorHeapPoolContainer.cpp";
+}
+
+
+DescriptorHeapContext::DescriptorHeapPoolContainer::DescriptorHeapPoolContainer(NexusFieldProof proof_)
+{
+
+}
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Core\DescriptorHeap\DescriptorHeapPoolContainer\DescriptorHeapPoolContainer.h ===
+========================================
+#pragma once
+#include "../DescriptorHeapContext.h"
+#include "../DescriptorHeapPool/DescriptorHeapPool.h"
+
+class DescriptorHeapContext::DescriptorHeapPoolContainer
+{
+public:
+	DescriptorHeapPoolContainer(NexusFieldProof proof_);
+
+	template<D3D12_DESCRIPTOR_HEAP_TYPE heapType>
+	void Import(NexusFieldProof proof_, std::unique_ptr<DescriptorHeapPool>&& data_)
+	{
+		ErrorMessageOutput::Assert::DetectError
+		(
+			container.find(heapType) == container.end(),
+			"すでにそこにはでーたがある",
+			"DescriptorHeapPoolContainer.h"
+		);
+
+		container[heapType] = std::move(data_);
+	}
+
+
+	template<D3D12_DESCRIPTOR_HEAP_TYPE heapType>
+	DescriptorHeapPool* Export(NexusFieldProof proof_)
+	{
+		ErrorMessageOutput::Assert::DetectError
+		(
+			container.find(heapType) != container.end(),
+			"DescriptorHeapPoolContainerに設定していない識別子を検出",
+			"DescriptorHeapPoolContainer.h"
+		);
+
+		return container[heapType].get();
+	}
+
+
+private:
+
+	std::unordered_map < D3D12_DESCRIPTOR_HEAP_TYPE, std::unique_ptr<DescriptorHeapPool>> container;
+};
+
+
+
+
+
+========================================
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Core\DescriptorHeap\ViewCreator\ViewCreator.cpp ===
 ========================================
 #include "ViewCreator.h"
+
+//外部
+#include "../../Device/DeviceContextDiplomat/DeviceContextCommandProvider/DeviceContextCmdLicences.h"
+#include "../../Device/DeviceContextDiplomat/DeviceContextCommandProvider/DeviceContextCommandProvider.h"
+#include "../../Device/DeviceContextDiplomat/DeviceContextDiplomat.h"
 
 namespace 
 {
@@ -1905,19 +1968,37 @@ namespace
 DescriptorHeapContext::ViewCreator::ViewCreator
 (
 	DescriptorHeapContext::NexusFieldProof proof_,
-	DescriptorHeapPool* RTVdescriptorHeapPool_,
-	DescriptorHeapPool* SRVUAVdescriptorHeapPool_,
-	DescriptorHeapPool* DSVdescriptorHeapPool_,
-	DescriptorHeapContext::CreateRTVCommand rtvCmd_,
-	DescriptorHeapContext::CreateSRVCommand srvCmd_,
-	DescriptorHeapContext::CreateDSVCommand dsvCmd_,
-	DescriptorHeapContext::CreateUAVCommand uavCmd_
-) :rtvCmd(rtvCmd_), srvCmd(srvCmd_), dsvCmd(dsvCmd_), uavCmd(uavCmd_)
+	DescriptorHeapPoolContainer& descriptorHeapPoolContainer_,
+	DeviceContextDiplomat& deviceContextDiplomat_
+)
 {
-	DescriptorHeapPool_Library.at(UINT(DescriptorHeapContext::ViewCreator::HeapType::kRTV))= RTVdescriptorHeapPool_;
-	DescriptorHeapPool_Library.at(UINT(DescriptorHeapContext::ViewCreator::HeapType::kSRVUAV)) = SRVUAVdescriptorHeapPool_;
-	DescriptorHeapPool_Library.at(UINT(DescriptorHeapContext::ViewCreator::HeapType::kDSV)) = DSVdescriptorHeapPool_;
+	//deviceContextからビュー生成のコマンドを渡してももらう
+	auto* deviceContextCmdProvider = deviceContextDiplomat_.Access<DeviceContext::CommandProvider>();
+	DeviceContext::CommandProvider::LicenceType<DeviceContextCmds::CreateView<D3D12_RENDER_TARGET_VIEW_DESC>> licenceRTV;
+	DeviceContext::CommandProvider::LicenceType<DeviceContextCmds::CreateView<D3D12_SHADER_RESOURCE_VIEW_DESC>> licenceSRV;
+	DeviceContext::CommandProvider::LicenceType<DeviceContextCmds::CreateView<D3D12_DEPTH_STENCIL_VIEW_DESC>> licenceDSV;
+	DeviceContext::CommandProvider::LicenceType<DeviceContextCmds::CreateUAV> licenceUAV;
+
+	rtvCmd = deviceContextCmdProvider->Provide<DeviceContextCmds::CreateView<D3D12_RENDER_TARGET_VIEW_DESC>>(licenceRTV);
+	srvCmd = deviceContextCmdProvider->Provide<DeviceContextCmds::CreateView<D3D12_SHADER_RESOURCE_VIEW_DESC>>(licenceSRV);
+	dsvCmd = deviceContextCmdProvider->Provide<DeviceContextCmds::CreateView<D3D12_DEPTH_STENCIL_VIEW_DESC>>(licenceDSV);
+	uavCmd = deviceContextCmdProvider->Provide<DeviceContextCmds::CreateUAV>(licenceUAV);
+	
+
+	//取り出し識別子が異なるので移し替える
+	descriptorHeapPoolArray.at(UINT(DescriptorHeapContext::ViewCreator::HeapType::kRTV)) =
+		descriptorHeapPoolContainer_.Export<D3D12_DESCRIPTOR_HEAP_TYPE_RTV>(proof_);
+
+	descriptorHeapPoolArray.at(UINT(DescriptorHeapContext::ViewCreator::HeapType::kSRVUAV)) =
+		descriptorHeapPoolContainer_.Export<D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV>(proof_);
+
+	descriptorHeapPoolArray.at(UINT(DescriptorHeapContext::ViewCreator::HeapType::kDSV)) =
+		descriptorHeapPoolContainer_.Export<D3D12_DESCRIPTOR_HEAP_TYPE_DSV>(proof_);
+
+	Logger::Log("Set: commandCreateView", fileName);
+
 }
+
 
 template<>
 void DescriptorHeapContext::ViewCreator::Log<DescriptorHeapContext::ViewCreator::HeapType::kRTV>
@@ -1941,9 +2022,6 @@ void DescriptorHeapContext::ViewCreator::Log<DescriptorHeapContext::ViewCreator:
 }
 
 
-
-
-
 template
 void DescriptorHeapContext::ViewCreator::Log<DescriptorHeapContext::ViewCreator::HeapType::kRTV>
 (const uint32_t handle_)const;
@@ -1965,8 +2043,8 @@ void DescriptorHeapContext::ViewCreator::Log<DescriptorHeapContext::ViewCreator:
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Core\DescriptorHeap\ViewCreator\ViewCreator.h ===
 ========================================
 #pragma once
-#include "../DescriptorHeapContext.h"
-#include "../DescriptorHeapPool/DescriptorHeapPool.h"
+#include "../DescriptorHeapPoolContainer/DescriptorHeapPoolContainer.h"
+#include "../../../Core/Device/DeviceContextCmds.h"
 
 class GPUBufferBehavior;
 
@@ -1982,13 +2060,13 @@ class DescriptorHeapContext::ViewCreator
 	};
 
 	//DescriptorHeapPoolのアドレス
-	std::array < DescriptorHeapPool*, UINT(HeapType::kCount) > DescriptorHeapPool_Library;
+	std::array < DescriptorHeapPool*, UINT(HeapType::kCount) > descriptorHeapPoolArray;
 
 	//コマンド
-	DescriptorHeapContext::CreateRTVCommand rtvCmd;
-	DescriptorHeapContext::CreateSRVCommand srvCmd;
-	DescriptorHeapContext::CreateDSVCommand dsvCmd;
-	DescriptorHeapContext::CreateUAVCommand uavCmd;
+	DeviceContextCmds::CreateView<D3D12_RENDER_TARGET_VIEW_DESC> rtvCmd;
+	DeviceContextCmds::CreateView<D3D12_SHADER_RESOURCE_VIEW_DESC> srvCmd;
+	DeviceContextCmds::CreateView<D3D12_DEPTH_STENCIL_VIEW_DESC> dsvCmd;
+	DeviceContextCmds::CreateUAV uavCmd;
 
 	template<typename ViewDescType>
 	struct DescTypeTraits;
@@ -2000,13 +2078,8 @@ public:
 	ViewCreator
 	(
 		NexusFieldProof proof_,
-		DescriptorHeapPool* RTVdescriptorHeapPool_,
-		DescriptorHeapPool* SRVUAVdescriptorHeapPool_,
-		DescriptorHeapPool* DSVdescriptorHeapPool_,
-		DescriptorHeapContext::CreateRTVCommand rtvCmd_,
-		DescriptorHeapContext::CreateSRVCommand srvCmd_,
-		DescriptorHeapContext::CreateDSVCommand dsvCmd_,
-		DescriptorHeapContext::CreateUAVCommand uavCmd_
+		DescriptorHeapPoolContainer& descriptorHeapPoolContainer_,
+		DeviceContextDiplomat& deviceContextDiplomat_
 	);
 
 	///VIEWを生成し、インデックスやハンドルを返す。
@@ -2014,9 +2087,9 @@ public:
 	std::tuple<uint32_t, D3D12_CPU_DESCRIPTOR_HANDLE, D3D12_GPU_DESCRIPTOR_HANDLE> CreateView(ID3D12Resource* resource_, const ViewDescType* viewDesc, ID3D12Resource* counterResource_ = nullptr)
 	{
 		//ViewTypeどのヒープを使うべきか分岐
-		HeapType type = DescTypeTraits<ViewDescType>::heapType;
+		constexpr HeapType type = DescTypeTraits<ViewDescType>::heapType;
 		//ディスクリプタヒープを取り出す
-		auto* targetHeap = DescriptorHeapPool_Library.at(UINT(type));
+		DescriptorHeapPool* targetHeap = descriptorHeapPoolArray.at((UINT)type);
 
 		//空きヒープインデックスを割り当てる
 		auto[allocateIndex, handleCPU, handleGPU] = targetHeap->DistributeFreeHeapIndex(DescriptorHeapPool::CreateViewKey{});
@@ -2075,9 +2148,6 @@ struct DescriptorHeapContext::ViewCreator::DescTypeTraits<D3D12_DEPTH_STENCIL_VI
 {
 	static constexpr HeapType heapType = HeapType::kDSV;
 };
-
-
-
 
 
 
@@ -2269,6 +2339,72 @@ private:
 };
 
 
+
+
+
+
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Core\Device\DeviceContextCmds.h ===
+========================================
+#pragma once
+
+namespace DeviceContextCmds
+{
+	//リソースを生成するコマンドを返す関数(ConstantBufferDescription , ColorBufferDescription)
+	using CreateResource = std::function<Microsoft::WRL::ComPtr<ID3D12Resource>
+	(
+		const D3D12_RESOURCE_DESC& resourceDesc_,
+		const D3D12_HEAP_PROPERTIES& heapProperties_,
+		const D3D12_CLEAR_VALUE* clearValue_,
+		D3D12_RESOURCE_STATES initialState_,
+		const std::string& name_
+	)>;
+
+	//DescriptorHeapを生成するコマンドを返す関数
+	using CreateDescriptorHeap = std::function<Microsoft::WRL::ComPtr<ID3D12DescriptorHeap>(D3D12_DESCRIPTOR_HEAP_TYPE, UINT, bool)>;
+
+	//リソースのViewを作成するコマンドを返す関数
+	template<typename ViewType>
+	using CreateView = std::function<void
+	(
+		ID3D12Resource* resource_,
+		const ViewType* desc_,
+		D3D12_CPU_DESCRIPTOR_HANDLE descriptorHandleCPU_
+	)>;
+
+	//UAV作成コマンドのみ引数が異なるため別途用意
+	using CreateUAV =  std::function<void
+	(
+		ID3D12Resource* resource_, 
+		const D3D12_UNORDERED_ACCESS_VIEW_DESC* desc_,
+		D3D12_CPU_DESCRIPTOR_HANDLE descriptorHandleCPU_, 
+		ID3D12Resource* CounterResource_
+	)>;
+
+	//スワップチェーンを生成するためのコマンド
+	using CreateSwapChain = std::function<void
+	(
+		ID3D12CommandQueue* commandQueue_,
+		DXGI_SWAP_CHAIN_DESC1 desc_,
+		IDXGISwapChain4** swapChainDoublePtr_,
+		const HWND hWnd_
+	)>;
+
+	//PSOを生成するコマンド
+	template<typename DescType>
+	using CreatePSO = std::function<void(ID3D12PipelineState** doublePtr_pipelineState_, DescType* desc_)>;
+
+	//ルートシグネチャを生成するコマンド
+	using CreateRootSig = std::function<void
+	(
+		UINT nodeMask_,
+		Microsoft::WRL::ComPtr<ID3DBlob>& signatureBlob_,
+		ID3D12RootSignature** doublePtr_rootSignature_
+	)>;
+
+
+}
 
 
 
@@ -3206,10 +3342,79 @@ private:
 
 
 ========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Core\Device\DeviceContextDiplomat\DeviceContextCommandProvider\DeviceContextCmdLicences.h ===
+========================================
+#pragma once
+#include "DeviceContextCommandProvider.h"
+
+
+class DescriptorHeapContext;
+class BufferContext;
+class CommandContext;
+class SwapChainContext;
+class RootSignatureContext;
+class PSO_Context;
+
+struct DeviceContext::CommandProvider::CreateResourceLicence
+{
+private:
+
+	friend class BufferContext;
+	explicit CreateResourceLicence() = default;
+};
+
+struct DeviceContext::CommandProvider::CreateViewLicence
+{
+private:
+
+	friend class DescriptorHeapContext;
+	explicit CreateViewLicence() = default;
+};
+
+struct DeviceContext::CommandProvider::CreateDescriptorHeapLicence
+{
+private:
+
+	friend class DescriptorHeapContext;
+	explicit CreateDescriptorHeapLicence() = default;
+};
+
+struct DeviceContext::CommandProvider::CreateSwapChainLicence
+{
+private:
+
+	friend class SwapChainContext;
+	explicit CreateSwapChainLicence() = default;
+};
+
+struct DeviceContext::CommandProvider::CreateRootSigLicence
+{
+private:
+
+	friend class RootSignatureContext;
+	explicit CreateRootSigLicence() = default;
+};
+
+struct DeviceContext::CommandProvider::CreatePSO_Licence
+{
+private:
+
+	friend class PSO_Context;
+	explicit CreatePSO_Licence() = default;
+};
+
+
+
+
+
+
+
+========================================
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Core\Device\DeviceContextDiplomat\DeviceContextCommandProvider\DeviceContextCommandProvider.cpp ===
 ========================================
-
 #include "DeviceContextCommandProvider.h"
+#include "DeviceContextCmdLicences.h"
+
 
 //コマンド群
 #include "../../Commands/CreatGPUBuffer/CommandOfCreatingGPUBuffer.h"
@@ -3225,138 +3430,22 @@ namespace
 	auto const fileName = "CommandProvider.cpp";
 }
 
-///+/ C_ = Command
-using C_CreateRTV = std::function<void(ID3D12Resource* resource_, const D3D12_RENDER_TARGET_VIEW_DESC* desc_, D3D12_CPU_DESCRIPTOR_HANDLE descriptorHandleCPU_)>;
-using C_CreateSRV = std::function<void(ID3D12Resource* resource_, const D3D12_SHADER_RESOURCE_VIEW_DESC* desc_, D3D12_CPU_DESCRIPTOR_HANDLE descriptorHandleCPU_)>;
-using C_CreateUAV = std::function<void(ID3D12Resource* resource_, const D3D12_UNORDERED_ACCESS_VIEW_DESC* desc_, D3D12_CPU_DESCRIPTOR_HANDLE descriptorHandleCPU_, ID3D12Resource* CounterResource_)>;
-using C_CreateDSV = std::function<void(ID3D12Resource* resource_, const D3D12_DEPTH_STENCIL_VIEW_DESC* desc_, D3D12_CPU_DESCRIPTOR_HANDLE descriptorHandleCPU_)>;
-
-using C_CreateDescriptorHeap = std::function<Microsoft::WRL::ComPtr<ID3D12DescriptorHeap>(D3D12_DESCRIPTOR_HEAP_TYPE, UINT, bool)>;
-
-using C_CreateResource = std::function<Microsoft::WRL::ComPtr<ID3D12Resource>
-(
-	const D3D12_RESOURCE_DESC& resourceDesc_,
-	const D3D12_HEAP_PROPERTIES& heapProperties_,
-	const D3D12_CLEAR_VALUE* clearValue_,
-	D3D12_RESOURCE_STATES initialState_,
-	const std::string& name_
-)>;
-
-using C_CreateSwapChain = std::function< void
-(
-	ID3D12CommandQueue* commandQueue_,
-	DXGI_SWAP_CHAIN_DESC1 desc_,
-	IDXGISwapChain4** swapChainDoublePtr_,
-	const HWND hWnd_
-)>;
-
 DeviceContext::CommandProvider::CommandProvider
 (
-	NexusFieldProof proof_,
+	NexusFieldProof licence_,
 	std::function< ID3D12Device8* (DeviceContext::AccessKey)> deviceGetter_,
 	std::function< IDXGIFactory7* (DeviceContext::AccessKey)> dxgiFactoryGetter_
 ) : deviceGetter(deviceGetter_), dxgiFactoryGetter(dxgiFactoryGetter_)
 {
 
 }
-///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-template<>
-[[nodiscard]] C_CreateRTV DeviceContext::CommandProvider::ProvideCreateViewCommand()
-{
-	auto retFunc = [this](ID3D12Resource* resource_, const D3D12_RENDER_TARGET_VIEW_DESC* desc_, D3D12_CPU_DESCRIPTOR_HANDLE descriptorHandleCPU_)
-	{
-		auto* device = deviceGetter(DeviceContext::AccessKey{});
-		CommandCreateView command(DeviceContext::GenerateKey{});
 
-		return command.CreateRTV(device, resource_, desc_, descriptorHandleCPU_);
-	};
-
-	return retFunc;
-}
-template<>
-[[nodiscard]] C_CreateSRV DeviceContext::CommandProvider::ProvideCreateViewCommand()
-{
-	auto retFunc = [this](ID3D12Resource* resource_, const D3D12_SHADER_RESOURCE_VIEW_DESC* desc_, D3D12_CPU_DESCRIPTOR_HANDLE descriptorHandleCPU_)
-	{
-		auto* device = deviceGetter(DeviceContext::AccessKey{});
-		CommandCreateView command(DeviceContext::GenerateKey{});
-
-		return command.CreateSRV(device, resource_, desc_, descriptorHandleCPU_);
-	};
-
-	return retFunc;
-}
 
 template<>
-[[nodiscard]] C_CreateDSV DeviceContext::CommandProvider::ProvideCreateViewCommand()
+[[nodiscard]] DeviceContextCmds::CreateResource DeviceContext::CommandProvider::Provide
+(typename CmdTypeTraits<DeviceContextCmds::CreateResource>::Type licence_)
 {
-	auto retFunc = [this](ID3D12Resource* resource_, const D3D12_DEPTH_STENCIL_VIEW_DESC* desc_, D3D12_CPU_DESCRIPTOR_HANDLE descriptorHandleCPU_)
-	{
-		auto* device = deviceGetter(DeviceContext::AccessKey{});
-		CommandCreateView command(DeviceContext::GenerateKey{});
-
-		return command.CreateDSV(device, resource_, desc_, descriptorHandleCPU_);
-	};
-
-	return retFunc;
-}
-
-[[nodiscard]] C_CreateUAV DeviceContext::CommandProvider::ProvideCreateUAVCommand()
-{
-	auto retFunc = [this](ID3D12Resource* resource_, const D3D12_UNORDERED_ACCESS_VIEW_DESC* desc_, D3D12_CPU_DESCRIPTOR_HANDLE descriptorHandleCPU_, ID3D12Resource* CounterResource_)
-		{
-			auto* device = deviceGetter(DeviceContext::AccessKey{});
-			CommandCreateView command(DeviceContext::GenerateKey{});
-
-			return command.CreateUAV(device, resource_, desc_, descriptorHandleCPU_, CounterResource_);
-		};
-
-	return retFunc;
-}
-///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-[[nodiscard]] C_CreateSwapChain DeviceContext::CommandProvider::ProvideCreateSwapChainCommand()
-{
-	auto retFunc = [this]
-	(
-		ID3D12CommandQueue* commandQueue_,
-		DXGI_SWAP_CHAIN_DESC1 desc_,
-		IDXGISwapChain4** swapChainDoublePtr_,
-		const HWND hWnd_
-	)
-	{
-		auto* dxgiFactory = dxgiFactoryGetter(DeviceContext::AccessKey{});
-		CommandStructureSwapChain command(DeviceContext::GenerateKey{});
-
-		command.CreateSwapChain(*dxgiFactory, commandQueue_,desc_, swapChainDoublePtr_, hWnd_);
-	};
-
-	return retFunc;
-}
-///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-[[nodiscard]] C_CreateDescriptorHeap DeviceContext::CommandProvider::ProvideCreateDescriptorHeapCommand()
-{
-	auto retFunc = [this](D3D12_DESCRIPTOR_HEAP_TYPE heapType_, UINT numDescriptors_, bool shaderVisible_)
-	{
-		auto* device = deviceGetter(DeviceContext::AccessKey{});
-		CommandCreateDescriptorHeap command(DeviceContext::GenerateKey{});
-
-		return command.Create(device, heapType_,numDescriptors_, shaderVisible_);
-	};
-
-	return retFunc;
-}
-///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-[[nodiscard]] C_CreateResource DeviceContext::CommandProvider::ProvideCreateResourceCommand()
-{
-	auto retFunc = [this]
+	return[this]
 	(
 		const D3D12_RESOURCE_DESC& resourceDesc_,
 		const D3D12_HEAP_PROPERTIES& heapProperties_,
@@ -3370,7 +3459,7 @@ template<>
 
 		return command.CreateResource
 		(
-			device, 
+			device,
 			resourceDesc_,
 			heapProperties_,
 			clearValue_,
@@ -3378,69 +3467,131 @@ template<>
 			name_
 		);
 	};
-
-	return retFunc;
 }
-///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
 template<>
-std::function<void(ID3D12PipelineState** doublePtr_pipelineState_, D3D12_COMPUTE_PIPELINE_STATE_DESC* descType_)>
-DeviceContext::CommandProvider::ProvideCreatePSOCommand()
+[[nodiscard]] DeviceContextCmds::CreateDescriptorHeap DeviceContext::CommandProvider::Provide
+(typename CmdTypeTraits<DeviceContextCmds::CreateDescriptorHeap>::Type licence_)
 {
-	auto retFunc = [this](ID3D12PipelineState** doublePtr_pipelineState_, D3D12_COMPUTE_PIPELINE_STATE_DESC* descType_)
+	return [this](D3D12_DESCRIPTOR_HEAP_TYPE heapType_, UINT numDescriptors_, bool shaderVisible_)
+	{
+		auto* device = deviceGetter(DeviceContext::AccessKey{});
+		CommandCreateDescriptorHeap command(DeviceContext::GenerateKey{});
+
+		return command.Create(device, heapType_,numDescriptors_, shaderVisible_);
+	};
+}
+
+template<>
+[[nodiscard]] DeviceContextCmds::CreateSwapChain DeviceContext::CommandProvider::Provide
+(typename CmdTypeTraits<DeviceContextCmds::CreateSwapChain>::Type licence_)
+{
+	return [this]
+	(
+		ID3D12CommandQueue* commandQueue_,
+		DXGI_SWAP_CHAIN_DESC1 desc_,
+		IDXGISwapChain4** swapChainDoublePtr_,
+		const HWND hWnd_
+	)
+	{
+		auto* dxgiFactory = dxgiFactoryGetter(DeviceContext::AccessKey{});
+		CommandStructureSwapChain command(DeviceContext::GenerateKey{});
+
+		command.CreateSwapChain(*dxgiFactory, commandQueue_,desc_, swapChainDoublePtr_, hWnd_);
+	};
+
+}
+
+template<>
+[[nodiscard]] DeviceContextCmds::CreateView<D3D12_RENDER_TARGET_VIEW_DESC> DeviceContext::CommandProvider::Provide
+(typename CmdTypeTraits<DeviceContextCmds::CreateView<D3D12_RENDER_TARGET_VIEW_DESC>>::Type licence_)
+{
+	return [this](ID3D12Resource* resource_, const D3D12_RENDER_TARGET_VIEW_DESC* desc_, D3D12_CPU_DESCRIPTOR_HANDLE descriptorHandleCPU_)
+	{
+		auto* device = deviceGetter(DeviceContext::AccessKey{});
+		CommandCreateView command(DeviceContext::GenerateKey{});
+
+		return command.CreateRTV(device, resource_, desc_, descriptorHandleCPU_);
+	};
+}
+
+template<>
+[[nodiscard]] DeviceContextCmds::CreateView<D3D12_SHADER_RESOURCE_VIEW_DESC> DeviceContext::CommandProvider::Provide
+(typename CmdTypeTraits<DeviceContextCmds::CreateView<D3D12_SHADER_RESOURCE_VIEW_DESC>>::Type licence_)
+{
+	return [this](ID3D12Resource* resource_, const D3D12_SHADER_RESOURCE_VIEW_DESC* desc_, D3D12_CPU_DESCRIPTOR_HANDLE descriptorHandleCPU_)
+	{
+		auto* device = deviceGetter(DeviceContext::AccessKey{});
+		CommandCreateView command(DeviceContext::GenerateKey{});
+
+		return command.CreateSRV(device, resource_, desc_, descriptorHandleCPU_);
+	};
+}
+
+template<>
+[[nodiscard]] DeviceContextCmds::CreateView<D3D12_DEPTH_STENCIL_VIEW_DESC> DeviceContext::CommandProvider::Provide
+(typename CmdTypeTraits<DeviceContextCmds::CreateView<D3D12_DEPTH_STENCIL_VIEW_DESC>>::Type licence_)
+{
+	return [this](ID3D12Resource* resource_, const D3D12_DEPTH_STENCIL_VIEW_DESC* desc_, D3D12_CPU_DESCRIPTOR_HANDLE descriptorHandleCPU_)
+	{
+		auto* device = deviceGetter(DeviceContext::AccessKey{});
+		CommandCreateView command(DeviceContext::GenerateKey{});
+
+		return command.CreateDSV(device, resource_, desc_, descriptorHandleCPU_);
+	};
+}
+
+template<>
+[[nodiscard]] DeviceContextCmds::CreateUAV DeviceContext::CommandProvider::Provide
+(typename CmdTypeTraits<DeviceContextCmds::CreateUAV>::Type licence_)
+{
+	return [this](ID3D12Resource* resource_, const D3D12_UNORDERED_ACCESS_VIEW_DESC* desc_, D3D12_CPU_DESCRIPTOR_HANDLE descriptorHandleCPU_, ID3D12Resource* CounterResource_)
+	{
+		auto* device = deviceGetter(DeviceContext::AccessKey{});
+		CommandCreateView command(DeviceContext::GenerateKey{});
+
+		return command.CreateUAV(device, resource_, desc_, descriptorHandleCPU_, CounterResource_);
+	};
+}
+
+template<>
+[[nodiscard]] DeviceContextCmds::CreatePSO<D3D12_COMPUTE_PIPELINE_STATE_DESC> DeviceContext::CommandProvider::Provide
+(typename CmdTypeTraits<DeviceContextCmds::CreatePSO<D3D12_COMPUTE_PIPELINE_STATE_DESC>>::Type licence_)
+{
+	return [this](ID3D12PipelineState** doublePtr_pipelineState_, D3D12_COMPUTE_PIPELINE_STATE_DESC* descType_)
 	{
 		auto* device = deviceGetter(DeviceContext::AccessKey{});
 		CommandCreatePSO command(DeviceContext::GenerateKey{});
 
 		command.CreateComputePipelineState(device, doublePtr_pipelineState_, descType_);
 	};
-
-	return retFunc;
 }
 
 template<>
-std::function<void(ID3D12PipelineState** doublePtr_pipelineState_, D3D12_PIPELINE_STATE_STREAM_DESC* descType_)>
-DeviceContext::CommandProvider::ProvideCreatePSOCommand()
+[[nodiscard]] DeviceContextCmds::CreatePSO<D3D12_PIPELINE_STATE_STREAM_DESC> DeviceContext::CommandProvider::Provide
+(typename CmdTypeTraits<DeviceContextCmds::CreatePSO<D3D12_PIPELINE_STATE_STREAM_DESC>>::Type licence_)
 {
-	auto retFunc = [this](ID3D12PipelineState** doublePtr_pipelineState_, D3D12_PIPELINE_STATE_STREAM_DESC* descType_)
+	return [this](ID3D12PipelineState** doublePtr_pipelineState_, D3D12_PIPELINE_STATE_STREAM_DESC* descType_)
 	{
 		auto* device = deviceGetter(DeviceContext::AccessKey{});
 		CommandCreatePSO command(DeviceContext::GenerateKey{});
 
 		command.CreateGraphicsPipelineState(device, doublePtr_pipelineState_, descType_);
 	};
-
-	return retFunc;
 }
-///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-std::function<void
-(
-	UINT nodeMask_,
-	Microsoft::WRL::ComPtr<ID3DBlob>& signatureBlob_,
-	ID3D12RootSignature** doublePtr_rootSignature_
-)>
-DeviceContext::CommandProvider::ProvideCommandCreateRootSignature()
+
+template<>
+[[nodiscard]] DeviceContextCmds::CreateRootSig DeviceContext::CommandProvider::Provide
+(typename CmdTypeTraits<DeviceContextCmds::CreateRootSig>::Type licence_)
 {
-	auto retFunc = [this](UINT nodeMask_,Microsoft::WRL::ComPtr<ID3DBlob>& signatureBlob_,ID3D12RootSignature** doublePtr_rootSignature_)
+	return [this](UINT nodeMask_,Microsoft::WRL::ComPtr<ID3DBlob>& signatureBlob_,ID3D12RootSignature** doublePtr_rootSignature_)
 	{
 		auto* device = deviceGetter(DeviceContext::AccessKey{});
 		CommandCreateRootSignature command(DeviceContext::GenerateKey{});
 
 		command.CreateRootSignature(device, nodeMask_, signatureBlob_, doublePtr_rootSignature_);
 	};
-
-	return retFunc;
-
 }
-///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-
-
 
 
 
@@ -3449,6 +3600,7 @@ DeviceContext::CommandProvider::ProvideCommandCreateRootSignature()
 ========================================
 #pragma once
 #include "../../DeviceContext.h"
+#include "../../DeviceContextCmds.h"
 
 class DeviceContextCommandBehavior;
 
@@ -3456,63 +3608,34 @@ class DeviceContextCommandBehavior;
 //初期化生成しか使用しないかつ引数がほぼない場合は、CommandExecutorが行う
 class DeviceContext::CommandProvider
 {
+	template<typename CmdType>
+	struct CmdTypeTraits;
+
+	struct CreateResourceLicence;
+	struct CreateViewLicence;
+	struct CreateDescriptorHeapLicence;
+	struct CommandContextProof;
+	struct CreateSwapChainLicence;
+	struct CreateRootSigLicence;
+	struct CreatePSO_Licence;
+
+
 public:
 
 	CommandProvider
 	(
-		NexusFieldProof proof_,
+		NexusFieldProof licence_,
 		std::function< ID3D12Device8* (DeviceContext::AccessKey)> deviceGetter_,
 		std::function< IDXGIFactory7* (DeviceContext::AccessKey)> dxgiFactoryGetter_
 	);
+
+	template<typename CmdType>
+	using LicenceType = typename CmdTypeTraits<CmdType>::Type;
+
+	template<typename CmdType>
+	[[nodiscard]] CmdType Provide(typename CmdTypeTraits<CmdType>::Type licence_);
+
 	
-	//リソースを生成するコマンドを返す関数(ConstantBufferDescription , ColorBufferDescription)
-	[[nodiscard]] std::function<Microsoft::WRL::ComPtr<ID3D12Resource>
-	(
-		const D3D12_RESOURCE_DESC& resourceDesc_,
-		const D3D12_HEAP_PROPERTIES& heapProperties_,
-		const D3D12_CLEAR_VALUE* clearValue_,
-		D3D12_RESOURCE_STATES initialState_,
-		const std::string& name_
-	)>
-	ProvideCreateResourceCommand();
-
-	//DescriptorHeapを生成するコマンドを返す関数
-	[[nodiscard]] std::function<Microsoft::WRL::ComPtr<ID3D12DescriptorHeap>(D3D12_DESCRIPTOR_HEAP_TYPE , UINT , bool )>
-		ProvideCreateDescriptorHeapCommand();
-
-	//リソースのViewを作成するコマンドを返す関数
-	template<typename ViewType>
-	[[nodiscard]] std::function<void(ID3D12Resource* resource_, const ViewType* desc_, D3D12_CPU_DESCRIPTOR_HANDLE descriptorHandleCPU_)>
-		ProvideCreateViewCommand();
-
-	//UAV作成コマンドのみ引数が異なるため別途用意
-	[[nodiscard]] std::function<void(ID3D12Resource* resource_, const D3D12_UNORDERED_ACCESS_VIEW_DESC* desc_, D3D12_CPU_DESCRIPTOR_HANDLE descriptorHandleCPU_, ID3D12Resource* CounterResource_)>
-		ProvideCreateUAVCommand();
-	
-	//スワップチェーンを生成するためのコマンド
-	[[nodiscard]] std::function<void
-	(
-		ID3D12CommandQueue* commandQueue_,
-		DXGI_SWAP_CHAIN_DESC1 desc_,
-		IDXGISwapChain4** swapChainDoublePtr_,
-		const HWND hWnd_
-	)>
-	ProvideCreateSwapChainCommand();
-
-	//PSOを生成するコマンド
-	template<typename PSO_DescType>
-	std::function<void(ID3D12PipelineState** doublePtr_pipelineState_, PSO_DescType* descType_)>
-	ProvideCreatePSOCommand();
-
-	//ルートシグネチャを生成するコマンド
-	std::function<void
-	(
-		UINT nodeMask_,
-		Microsoft::WRL::ComPtr<ID3DBlob>& signatureBlob_,
-		ID3D12RootSignature** doublePtr_rootSignature_
-	)>
-	ProvideCommandCreateRootSignature();
-
 
 
 private:
@@ -3523,21 +3646,109 @@ private:
 
 };
 
-
-
-///+/////////////////////////////////////////////////////////////////////////////////////////////////////////
 template<>
-std::function<void(ID3D12PipelineState** doublePtr_pipelineState_, D3D12_COMPUTE_PIPELINE_STATE_DESC* descType_)>
-DeviceContext::CommandProvider::ProvideCreatePSOCommand();
+struct DeviceContext::CommandProvider::CmdTypeTraits<DeviceContextCmds::CreateResource>
+{
+	using Type = CreateResourceLicence;
+};
 
 template<>
-std::function<void(ID3D12PipelineState** doublePtr_pipelineState_, D3D12_PIPELINE_STATE_STREAM_DESC* descType_)>
-DeviceContext::CommandProvider::ProvideCreatePSOCommand();
-///+/////////////////////////////////////////////////////////////////////////////////////////////////////////
+struct DeviceContext::CommandProvider::CmdTypeTraits<DeviceContextCmds::CreateDescriptorHeap>
+{
+	using Type = CreateDescriptorHeapLicence;
+};
+
+template<>
+struct DeviceContext::CommandProvider::CmdTypeTraits<DeviceContextCmds::CreateView<D3D12_RENDER_TARGET_VIEW_DESC>>
+{
+	using Type = CreateViewLicence;
+};
+
+template<>
+struct DeviceContext::CommandProvider::CmdTypeTraits<DeviceContextCmds::CreateView<D3D12_SHADER_RESOURCE_VIEW_DESC>>
+{
+	using Type = CreateViewLicence;
+};
+
+template<>
+struct DeviceContext::CommandProvider::CmdTypeTraits<DeviceContextCmds::CreateView<D3D12_DEPTH_STENCIL_VIEW_DESC>>
+{
+	using Type = CreateViewLicence;
+};
+
+template<>
+struct DeviceContext::CommandProvider::CmdTypeTraits<DeviceContextCmds::CreateUAV>
+{
+	using Type = CreateViewLicence;
+};
 
 
+template<>
+struct DeviceContext::CommandProvider::CmdTypeTraits<DeviceContextCmds::CreateSwapChain>
+{
+	using Type = CreateSwapChainLicence;
+};
 
 
+template<>
+struct DeviceContext::CommandProvider::CmdTypeTraits<DeviceContextCmds::CreatePSO<D3D12_COMPUTE_PIPELINE_STATE_DESC>>
+{
+	using Type = CreatePSO_Licence;
+};
+
+template<>
+struct DeviceContext::CommandProvider::CmdTypeTraits<DeviceContextCmds::CreatePSO<D3D12_PIPELINE_STATE_STREAM_DESC>>
+{
+	using Type = CreatePSO_Licence;
+};
+
+ 
+template<>
+struct DeviceContext::CommandProvider::CmdTypeTraits<DeviceContextCmds::CreateRootSig>
+{
+	using Type = CreateRootSigLicence;
+};
+
+
+template<>
+[[nodiscard]] DeviceContextCmds::CreateResource DeviceContext::CommandProvider::Provide
+(typename CmdTypeTraits<DeviceContextCmds::CreateResource>::Type licence_);
+
+template<>
+[[nodiscard]] DeviceContextCmds::CreateDescriptorHeap DeviceContext::CommandProvider::Provide
+(typename CmdTypeTraits<DeviceContextCmds::CreateDescriptorHeap>::Type licence_);
+
+template<>
+[[nodiscard]] DeviceContextCmds::CreateSwapChain DeviceContext::CommandProvider::Provide
+(typename CmdTypeTraits<DeviceContextCmds::CreateSwapChain>::Type licence_);
+
+template<>
+[[nodiscard]] DeviceContextCmds::CreateView<D3D12_RENDER_TARGET_VIEW_DESC> DeviceContext::CommandProvider::Provide
+(typename CmdTypeTraits<DeviceContextCmds::CreateView<D3D12_RENDER_TARGET_VIEW_DESC>>::Type licence_);
+
+template<>
+[[nodiscard]] DeviceContextCmds::CreateView<D3D12_SHADER_RESOURCE_VIEW_DESC> DeviceContext::CommandProvider::Provide
+(typename CmdTypeTraits<DeviceContextCmds::CreateView<D3D12_SHADER_RESOURCE_VIEW_DESC>>::Type licence_);
+
+template<>
+[[nodiscard]] DeviceContextCmds::CreateView<D3D12_DEPTH_STENCIL_VIEW_DESC> DeviceContext::CommandProvider::Provide
+(typename CmdTypeTraits<DeviceContextCmds::CreateView<D3D12_DEPTH_STENCIL_VIEW_DESC>>::Type licence_);
+
+template<>
+[[nodiscard]] DeviceContextCmds::CreateUAV DeviceContext::CommandProvider::Provide
+(typename CmdTypeTraits<DeviceContextCmds::CreateUAV>::Type licence_);
+
+template<>
+[[nodiscard]] DeviceContextCmds::CreatePSO<D3D12_COMPUTE_PIPELINE_STATE_DESC> DeviceContext::CommandProvider::Provide
+(typename CmdTypeTraits<DeviceContextCmds::CreatePSO<D3D12_COMPUTE_PIPELINE_STATE_DESC>>::Type licence_);
+
+template<>
+[[nodiscard]] DeviceContextCmds::CreatePSO<D3D12_PIPELINE_STATE_STREAM_DESC> DeviceContext::CommandProvider::Provide
+(typename CmdTypeTraits<DeviceContextCmds::CreatePSO<D3D12_PIPELINE_STATE_STREAM_DESC>>::Type licence_);
+
+template<>
+[[nodiscard]] DeviceContextCmds::CreateRootSig DeviceContext::CommandProvider::Provide
+(typename CmdTypeTraits<DeviceContextCmds::CreateRootSig>::Type licence_);
 
 
 
@@ -3858,8 +4069,16 @@ private:
 //外部
 #include "../Command/CommandContextDiplomat/CommandContextDiplomat.h"
 #include "../Command/CommandContextDiplomat/CommandContextToolLender/CommandContextToolLender.h"
+#include "../Command/CommandContextDiplomat/CommandContextToolLender/CmdContextToolLenderLicences.h"
+
+
 #include "../Device/DeviceContextDiplomat/DeviceContextDiplomat.h"
 #include "../Device/DeviceContextDiplomat/DeviceContextCommandProvider/DeviceContextCommandProvider.h"
+#include "../Device/DeviceContextDiplomat/DeviceContextCommandProvider/DeviceContextCmdLicences.h"
+#include "../Device/DeviceContextCmds.h"
+
+
+
 #include "../DescriptorHeap/DescriptorHeapContextDiplomat/DescriptorHeapContextDiplomat.h"
 #include "../DescriptorHeap/DescriptorHeapContextDiplomat/DescriptorHeapToolLender/DescriptorHeapToolLender.h"
 #include "../DescriptorHeap/ViewCreator/ViewCreator.h"
@@ -3943,7 +4162,8 @@ void SwapChainContext::AssembleCoreParts
 
 	//スワップチェーン生成
 	auto commandProvider = deviceContextDiplomat_->Access<DeviceContext::CommandProvider>();
-	auto createSwapChainCmd = commandProvider->ProvideCreateSwapChainCommand();
+	DeviceContext::CommandProvider::LicenceType<DeviceContextCmds::CreateSwapChain> licence;
+	auto createSwapChainCmd = commandProvider->Provide<DeviceContextCmds::CreateSwapChain>(licence);
 	CreateSwapChain(createSwapChainCmd, swapChainDesc, hWnd_, commandQueue);
 
 	//スワップチェーンからリソースを引っ張る
@@ -8523,7 +8743,7 @@ BufferContext::CmdProvider::CmdProvider(NexusFieldProof proof_, GlobalConstantBu
 
 template<>
 BufferContextCmds::CreateCBufferCmd BufferContext::CmdProvider::Provide
-(typename LicenceTypeTraits<BufferContextCmds::CreateCBufferCmd>::Type licence_)
+(typename CmdTypeTraits<BufferContextCmds::CreateCBufferCmd>::Type licence_)
 {
 	return cBufferCreator->ProvideCreateCBufferCmd(ProviderKey{});
 }
@@ -8542,20 +8762,20 @@ BufferContextCmds::CreateCBufferCmd BufferContext::CmdProvider::Provide
 class BufferContext::CmdProvider
 {
 	template<typename CmdType>
-	struct LicenceTypeTraits;
+	struct CmdTypeTraits;
 
 	struct UsesCBufferCreatorLicence;
 
 public:
 
 	template<typename CmdType>
-	using LicenceType = typename LicenceTypeTraits<CmdType>::Type;
+	using LicenceType = typename CmdTypeTraits<CmdType>::Type;
 
 	CmdProvider(NexusFieldProof proof_, GlobalConstantBufferCreator* cBufferCreator_);
 
 	///コマンド提供
 	template<typename CmdType>
-	CmdType Provide(typename LicenceTypeTraits<CmdType>::Type licence_);
+	CmdType Provide(typename CmdTypeTraits<CmdType>::Type licence_);
 
 private:
 
@@ -8563,7 +8783,7 @@ private:
 };
 
 template<>
-struct BufferContext::CmdProvider::LicenceTypeTraits<BufferContextCmds::CreateCBufferCmd>
+struct BufferContext::CmdProvider::CmdTypeTraits<BufferContextCmds::CreateCBufferCmd>
 {
 	using Type = UsesCBufferCreatorLicence;
 };
@@ -8571,7 +8791,7 @@ struct BufferContext::CmdProvider::LicenceTypeTraits<BufferContextCmds::CreateCB
 
 template<>
 BufferContextCmds::CreateCBufferCmd BufferContext::CmdProvider::Provide
-(typename LicenceTypeTraits<BufferContextCmds::CreateCBufferCmd>::Type licence_);
+(typename CmdTypeTraits<BufferContextCmds::CreateCBufferCmd>::Type licence_);
 
 
 
@@ -8581,14 +8801,14 @@ BufferContextCmds::CreateCBufferCmd BufferContext::CmdProvider::Provide
 ========================================
 #pragma once
 #include "BufferContextCmdProvider.h"
-#include "../../../Model/ModelContext.h"
 
+class ModelContext;
 
 struct BufferContext::CmdProvider::UsesCBufferCreatorLicence
 {
 private:
 
-	friend class ModelContext::ModelDataCreator;
+	friend class ModelContext;
 	explicit UsesCBufferCreatorLicence() = default;
 };
 
@@ -8709,7 +8929,7 @@ class BufferContext::ToolLender
 {
 	//貸し出すツールのデータ型とそれに対応したLicenceのデータ型を結び付ける
 	template<typename ToolType>
-	struct LicenceTypeTraits;
+	struct CmdTypeTraits;
 
 	//バッファクリエイターやアップローダー、ディスパッチャーを触ってもいい資格
 	struct BasicBufferManagementLicence;
@@ -8729,7 +8949,7 @@ public:
 
 	//ただのエイリアステンプレート
 	template<typename ToolType>
-	using LicenceType = typename LicenceTypeTraits<ToolType>::Type;
+	using LicenceType = typename CmdTypeTraits<ToolType>::Type;
 
 	ToolLender
 	(
@@ -8744,7 +8964,7 @@ public:
 
 	///ツールの貸し出し
 	template<typename ToolType>
-	auto* Lend(typename LicenceTypeTraits<ToolType>::Type licence_)
+	auto* Lend(typename CmdTypeTraits<ToolType>::Type licence_)
 	{
 		return std::get<ToolType*>(tools);
 	}
@@ -8754,31 +8974,31 @@ public:
 
 
 template<>
-struct BufferContext::ToolLender::LicenceTypeTraits<BufferContext::BufferCreator>
+struct BufferContext::ToolLender::CmdTypeTraits<BufferContext::BufferCreator>
 {
 	using Type = BasicBufferManagementLicence;
 };
 
 template<>
-struct BufferContext::ToolLender::LicenceTypeTraits<BufferContext::BufferUploader>
+struct BufferContext::ToolLender::CmdTypeTraits<BufferContext::BufferUploader>
 {
 	using Type = BasicBufferManagementLicence;
 };
 
 template<>
-struct BufferContext::ToolLender::LicenceTypeTraits<BufferContext::BufferDispatcher>
+struct BufferContext::ToolLender::CmdTypeTraits<BufferContext::BufferDispatcher>
 {
 	using Type = BasicBufferManagementLicence;
 };
 
 template<>
-struct BufferContext::ToolLender::LicenceTypeTraits<BufferContext::BufferCollector>
+struct BufferContext::ToolLender::CmdTypeTraits<BufferContext::BufferCollector>
 {
 	using Type = BasicBufferManagementLicence;
 };
 
 template<>
-struct BufferContext::ToolLender::LicenceTypeTraits<BufferContext::GlobalConstantBuffers>
+struct BufferContext::ToolLender::CmdTypeTraits<BufferContext::GlobalConstantBuffers>
 {
 	using Type = BasicBufferManagementLicence;
 };
@@ -8791,15 +9011,16 @@ struct BufferContext::ToolLender::LicenceTypeTraits<BufferContext::GlobalConstan
 ========================================
 #pragma once
 #include "BufferToolLender.h"
-#include "../../../Model/ModelContext.h"
-#include "../../../../Render/RenderContext.h"
+
+class ModelContext;
+class RenderContext;
 
 struct BufferContext::ToolLender::BasicBufferManagementLicence
 {
 private:
 
-	friend class ModelContext::ModelDataCreator;
-	friend class RenderContext::RenderPassCreator;
+	friend class ModelContext;
+	friend class RenderContext;
 
 	explicit BasicBufferManagementLicence() = default;
 };
@@ -10993,11 +11214,16 @@ class BufferContext::BufferUploader::IntermediateResourceCreator
 //外部
 #include "../../../../Core/Device/DeviceContextDiplomat/DeviceContextDiplomat.h"
 #include "../../../../Core/Device/DeviceContextDiplomat/DeviceContextCommandProvider/DeviceContextCommandProvider.h"
+#include "../../../../Core/Device/DeviceContextDiplomat/DeviceContextCommandProvider/DeviceContextCmdLicences.h"
+#include "../../../../Core/Device/DeviceContextCmds.h"
 
 BufferContext::ResourceCreator::ResourceCreator(NexusFieldProof proof_, DeviceContextDiplomat* deviceContextDiplomat_)
 {
+	//生リソース生成コマンドを受け取る
 	auto* cmdProvider = deviceContextDiplomat_->Access<DeviceContext::CommandProvider>();
-	createResourceCommand = cmdProvider->ProvideCreateResourceCommand();
+	DeviceContext::CommandProvider::LicenceType<DeviceContextCmds::CreateResource> licence;
+
+	createResourceCommand = cmdProvider->Provide<DeviceContextCmds::CreateResource>(licence);
 }
 
 BufferContext::ResourceCreator::~ResourceCreator()
@@ -16158,7 +16384,7 @@ ModelContext::CommandProvider::CommandProvider(NexusFieldProof proof_, ModelCont
 
 template<>
 ModelContextCmds::WatchModelContainer ModelContext::CommandProvider::Provide<ModelContextCmds::WatchModelContainer>
-(typename LicenceTypeTraits<ModelContextCmds::WatchModelContainer>::Type licence_)
+(typename CmdTypeTraits<ModelContextCmds::WatchModelContainer>::Type licence_)
 {
 	return modelContainer->WatchDataCmd(ProviderKey{});
 }
@@ -16178,20 +16404,20 @@ ModelContextCmds::WatchModelContainer ModelContext::CommandProvider::Provide<Mod
 class ModelContext::CommandProvider
 {
 	template<typename CmdType>
-	struct LicenceTypeTraits;
+	struct CmdTypeTraits;
 	
 	struct WatchModelContainerLicence;
 
 public:
 
 	template<typename CmdType>
-	using LicenceType = typename LicenceTypeTraits<CmdType>::Type;
+	using LicenceType = typename CmdTypeTraits<CmdType>::Type;
 
 	CommandProvider(NexusFieldProof proof_, ModelContainer* modelContainer_);
 
 	///コマンド提供
 	template<typename CmdType>
-	CmdType Provide(typename LicenceTypeTraits<CmdType>::Type licence_);
+	CmdType Provide(typename CmdTypeTraits<CmdType>::Type licence_);
 
 
 private:
@@ -16201,7 +16427,7 @@ private:
 };
 
 template<>
-struct ModelContext::CommandProvider::LicenceTypeTraits<ModelContextCmds::WatchModelContainer>
+struct ModelContext::CommandProvider::CmdTypeTraits<ModelContextCmds::WatchModelContainer>
 {
 	using Type = WatchModelContainerLicence;
 };
@@ -16210,7 +16436,7 @@ struct ModelContext::CommandProvider::LicenceTypeTraits<ModelContextCmds::WatchM
 
 template<>
 ModelContextCmds::WatchModelContainer ModelContext::CommandProvider::Provide<ModelContextCmds::WatchModelContainer>
-(typename LicenceTypeTraits<ModelContextCmds::WatchModelContainer>::Type licence_);
+(typename CmdTypeTraits<ModelContextCmds::WatchModelContainer>::Type licence_);
 
 
 
@@ -16221,13 +16447,14 @@ ModelContextCmds::WatchModelContainer ModelContext::CommandProvider::Provide<Mod
 ========================================
 #pragma once
 #include "ModelContextCmdProvider.h"
-#include "../../../../Render/RenderContext.h"
+
+class RenderContext;
 
 struct ModelContext::CommandProvider::WatchModelContainerLicence
 {
 private:
 
-	friend class RenderContext::RenderGraph;
+	friend class RenderContext;
 	explicit WatchModelContainerLicence() = default;
 };
 
@@ -16306,18 +16533,18 @@ ModelContext::ToolLender::ToolLender
 class ModelContext::ToolLender
 {
 	template<typename ToolType>
-	struct LicenceTypeTraits;
+	struct CmdTypeTraits;
 
 
 public:
 
 	template<typename ToolType>
-	using LicenceType = typename LicenceTypeTraits<ToolType>::Type;
+	using LicenceType = typename CmdTypeTraits<ToolType>::Type;
 
 	ToolLender(NexusFieldProof proof_);
 
 	template<typename ToolType>
-	auto* Lend(typename LicenceTypeTraits<ToolType>::Type licence_)
+	auto* Lend(typename CmdTypeTraits<ToolType>::Type licence_)
 	{
 		return std::get<ToolType*>(tools).get();
 	}
@@ -16331,7 +16558,7 @@ private:
 
 
 //template<>
-//struct ModelContext::ToolLender::LicenceTypeTraits<ModelContext::ModelContainer>
+//struct ModelContext::ToolLender::CmdTypeTraits<ModelContext::ModelContainer>
 //{
 //	using Type = ModelContainerAccessLicence;
 //};
@@ -16935,11 +17162,6 @@ class PSO_Context
 	//PSOのユニークを所持するだけ
 	class PSO_Container;
 
-protected:
-
-	using CommandCreateGraphicsPSO = std::function<void(ID3D12PipelineState** doublePtr_pso_, D3D12_PIPELINE_STATE_STREAM_DESC* streamDesc_)>;
-	using CommandCreateComputePSO = std::function<void(ID3D12PipelineState** doublePtr_pso_, D3D12_COMPUTE_PIPELINE_STATE_DESC* computeDesc_)>;
-
 public:
 
 	class PSO_Creator;
@@ -17111,19 +17333,19 @@ PSO_Context::ToolLender::ToolLender(NexusFieldProof proof_, PSO_Creator* creator
 class PSO_Context::ToolLender
 {
 	template<typename ToolType>
-	struct LicenceTypeTraits;
+	struct CmdTypeTraits;
 
 	struct UsesPSO_CreatorLicence;
 
 public:
 
 	template<typename ToolType>
-	using LicenceType = typename LicenceTypeTraits<ToolType>::Type;
+	using LicenceType = typename CmdTypeTraits<ToolType>::Type;
 
 	ToolLender(NexusFieldProof proof_,PSO_Creator* creator_);
 
 	template<typename ToolType>
-	auto* Lend(typename LicenceTypeTraits<ToolType>::Type licence_)
+	auto* Lend(typename CmdTypeTraits<ToolType>::Type licence_)
 	{
 		return std::get<ToolType*>(tools);
 	}
@@ -17135,7 +17357,7 @@ private:
 };
 
 template<>
-struct PSO_Context::ToolLender::LicenceTypeTraits<PSO_Context::PSO_Creator>
+struct PSO_Context::ToolLender::CmdTypeTraits<PSO_Context::PSO_Creator>
 {
 	using Type = UsesPSO_CreatorLicence;
 };
@@ -17148,14 +17370,14 @@ struct PSO_Context::ToolLender::LicenceTypeTraits<PSO_Context::PSO_Creator>
 ========================================
 #pragma once
 #include "PSO_ContextToolLender.h"
-#include "../../../../Render/RenderContext.h"
 
+class RenderContext;
 
 struct PSO_Context::ToolLender::UsesPSO_CreatorLicence
 {
 private:
 
-	friend class RenderContext::RenderGraph;
+	friend class RenderContext;
 	explicit UsesPSO_CreatorLicence() = default;
 
 };
@@ -17357,6 +17579,8 @@ ID3D12PipelineState* PSO_Context::PSO_Creator::Create
 //外部
 #include "../../../../Core/Device/DeviceContextDiplomat/DeviceContextDiplomat.h"
 #include "../../../../Core/Device/DeviceContextDiplomat/DeviceContextCommandProvider/DeviceContextCommandProvider.h"
+#include "../../../../Core/Device/DeviceContextDiplomat/DeviceContextCommandProvider/DeviceContextCmdLicences.h"
+
 
 namespace
 {
@@ -17370,9 +17594,11 @@ PSO_Context::Assembler::Assembler
 )
 {
 	auto cmdProvider = deviceContextDiplomat_->Access<DeviceContext::CommandProvider>();
-	cmdCreateGraphicsPSO = cmdProvider->ProvideCreatePSOCommand<D3D12_PIPELINE_STATE_STREAM_DESC>();
-	cmdCreateComputePSO = cmdProvider->ProvideCreatePSOCommand<D3D12_COMPUTE_PIPELINE_STATE_DESC>();
+	DeviceContext::CommandProvider::LicenceType<DeviceContextCmds::CreatePSO<D3D12_PIPELINE_STATE_STREAM_DESC>> licenceCreateGraphicsPso;
+	DeviceContext::CommandProvider::LicenceType<DeviceContextCmds::CreatePSO<D3D12_COMPUTE_PIPELINE_STATE_DESC>> licenceCreateComputePso;
 
+	cmdCreateGraphicsPSO = cmdProvider->Provide<DeviceContextCmds::CreatePSO<D3D12_PIPELINE_STATE_STREAM_DESC>>(licenceCreateGraphicsPso);
+	cmdCreateComputePSO = cmdProvider->Provide<DeviceContextCmds::CreatePSO<D3D12_COMPUTE_PIPELINE_STATE_DESC>>(licenceCreateComputePso);
 
 }
 
@@ -17549,6 +17775,9 @@ PSO_Context::Assembler::MS_PS PSO_Context::Assembler::CreateShaderByteCode(Pipel
 #include "../PipelineStateDesc.h"
 
 
+//外部
+#include "../../../../Core/Device/DeviceContextCmds.h"
+
 class PSO_Context::Assembler
 {
 
@@ -17579,8 +17808,8 @@ private:
 	using MS_PS = std::pair<CD3DX12_SHADER_BYTECODE, std::optional<CD3DX12_SHADER_BYTECODE>>;
 
 	//PSO生成コマンド
-	CommandCreateGraphicsPSO cmdCreateGraphicsPSO;
-	CommandCreateComputePSO cmdCreateComputePSO;
+	DeviceContextCmds::CreatePSO<D3D12_PIPELINE_STATE_STREAM_DESC> cmdCreateGraphicsPSO;
+	DeviceContextCmds::CreatePSO<D3D12_COMPUTE_PIPELINE_STATE_DESC> cmdCreateComputePSO;
 
 	//要項チェック
 	void Check
@@ -18368,7 +18597,7 @@ RootSignatureContext::CmdProvider::CmdProvider(NexusFieldProof proof_, RootSigna
 
 template<>
 RootSignatureCmds::CreateGraphicsRootSigCmd RootSignatureContext::CmdProvider::Provide<RootSignatureCmds::CreateGraphicsRootSigCmd>
-(typename LicenceTypeTraits<RootSignatureCmds::CreateGraphicsRootSigCmd>::Type licence_)
+(typename CmdTypeTraits<RootSignatureCmds::CreateGraphicsRootSigCmd>::Type licence_)
 {
 	return creator->CreateGraphicsrootSigCmd(CmdProviderKey{});
 }
@@ -18386,20 +18615,20 @@ RootSignatureCmds::CreateGraphicsRootSigCmd RootSignatureContext::CmdProvider::P
 class RootSignatureContext::CmdProvider
 {
 	template<typename CmdType>
-	struct LicenceTypeTraits;
+	struct CmdTypeTraits;
 
 	struct UsesCreateGraphicsRootSigCmdLicence;
 
 public:
 
 	template<typename CmdType>
-	using LicenceType = typename LicenceTypeTraits<CmdType>::Type;
+	using LicenceType = typename CmdTypeTraits<CmdType>::Type;
 
 	CmdProvider(NexusFieldProof proof_, RootSignatureCreator* creator_);
 
 	///コマンド提供
 	template<typename CmdType>
-	CmdType Provide(typename LicenceTypeTraits<CmdType>::Type licence_);
+	CmdType Provide(typename CmdTypeTraits<CmdType>::Type licence_);
 
 
 private:
@@ -18409,7 +18638,7 @@ private:
 
 
 template<>
-struct RootSignatureContext::CmdProvider::LicenceTypeTraits<RootSignatureCmds::CreateGraphicsRootSigCmd>
+struct RootSignatureContext::CmdProvider::CmdTypeTraits<RootSignatureCmds::CreateGraphicsRootSigCmd>
 {
 	using Type = UsesCreateGraphicsRootSigCmdLicence;
 };
@@ -18417,7 +18646,7 @@ struct RootSignatureContext::CmdProvider::LicenceTypeTraits<RootSignatureCmds::C
 
 template<>
 RootSignatureCmds::CreateGraphicsRootSigCmd RootSignatureContext::CmdProvider::Provide<RootSignatureCmds::CreateGraphicsRootSigCmd>
-(typename LicenceTypeTraits<RootSignatureCmds::CreateGraphicsRootSigCmd>::Type licence_);
+(typename CmdTypeTraits<RootSignatureCmds::CreateGraphicsRootSigCmd>::Type licence_);
 
 
 
@@ -18446,17 +18675,17 @@ RootSignatureContext::ToolLender::ToolLender(NexusFieldProof proof_)
 class RootSignatureContext::ToolLender
 {
 	template<typename ToolType>
-	struct LicenceTypeTraits;
+	struct CmdTypeTraits;
 
 public:
 
 	template<typename ToolType>
-	using LicenceType = typename LicenceTypeTraits<ToolType>::Type;
+	using LicenceType = typename CmdTypeTraits<ToolType>::Type;
 
 	ToolLender(NexusFieldProof proof_);
 
 	template<typename ToolType>
-	auto* Lend(typename LicenceTypeTraits<ToolType>::Type type_)
+	auto* Lend(typename CmdTypeTraits<ToolType>::Type type_)
 	{
 		return std::get<ToolType*>(tools);
 	}
@@ -18468,7 +18697,7 @@ private:
 };
 
 //template<>
-//struct RootSignatureContext::ToolLender::LicenceTypeTraits<RootSignatureContext::RootSignatureCreator>
+//struct RootSignatureContext::ToolLender::CmdTypeTraits<RootSignatureContext::RootSignatureCreator>
 //{
 //	using Type = UsesRootSigCreatorLicence;
 //};
@@ -18590,6 +18819,8 @@ ID3D12RootSignature* RootSignatureContext::RootSignatureCreator::Create(const Ro
 //外部
 #include "../../../../Core/Device/DeviceContextDiplomat/DeviceContextDiplomat.h"
 #include "../../../../Core/Device/DeviceContextDiplomat/DeviceContextCommandProvider/DeviceContextCommandProvider.h"
+#include "../../../../Core/Device/DeviceContextDiplomat/DeviceContextCommandProvider/DeviceContextCmdLicences.h"
+#include "../../../../Core/Device/DeviceContextCmds.h"
 
 namespace
 {
@@ -18601,8 +18832,11 @@ using namespace RootSignatureLayoutComponent;
 
 RootSignatureContext::Assembler::Assembler(NexusFieldProof proof_, DeviceContextDiplomat* deviceContextDiplomat_)
 {
+	//ルートシグネチャ生成コマンドをもらう
 	auto cmdProvider = deviceContextDiplomat_->Access<DeviceContext::CommandProvider>();
-	cmdCreateRootSignature = cmdProvider->ProvideCommandCreateRootSignature();
+	DeviceContext::CommandProvider::LicenceType<DeviceContextCmds::CreateRootSig> licence;
+
+	cmdCreateRootSignature = cmdProvider->Provide<DeviceContextCmds::CreateRootSig>(licence);
 }
 
 RootSignatureContext::Assembler::~Assembler() {};
@@ -19518,7 +19752,7 @@ ShaderContext::ToolLender::ToolLender
 class ShaderContext::ToolLender
 {
 	template<typename ToolType>
-	struct LicenceTypeTraits;
+	struct CmdTypeTraits;
 
 
 	//ShaderLibraryへのアクセス許可
@@ -19529,7 +19763,7 @@ class ShaderContext::ToolLender
 public:
 
 	template<typename ToolType>
-	using LicenceType = typename LicenceTypeTraits<ToolType>::Type;
+	using LicenceType = typename CmdTypeTraits<ToolType>::Type;
 
 	ToolLender
 	(
@@ -19538,7 +19772,7 @@ public:
 	);
 
 	template<typename ToolType>
-	auto* Lend(typename LicenceTypeTraits<ToolType>::Type licence_)
+	auto* Lend(typename CmdTypeTraits<ToolType>::Type licence_)
 	{
 		return std::get<ToolType*>(tools);
 	}
@@ -19547,7 +19781,7 @@ public:
 
 
 template<>
-struct ShaderContext::ToolLender::LicenceTypeTraits<ShaderContext::ShaderLibrary>
+struct ShaderContext::ToolLender::CmdTypeTraits<ShaderContext::ShaderLibrary>
 {
 	using Type = UsesShaderLibraryLicence;
 };
@@ -19561,14 +19795,14 @@ struct ShaderContext::ToolLender::LicenceTypeTraits<ShaderContext::ShaderLibrary
 ========================================
 #pragma once
 #include "ShaderContextToolLender.h"
-#include "../../../../Render/RenderContext.h"
 
+class RenderContext;
 
 struct ShaderContext::ToolLender::UsesShaderLibraryLicence
 {
 private:
 
-	friend class RenderContext::RenderGraph;
+	friend class RenderContext;
 	explicit UsesShaderLibraryLicence() = default;
 
 };
@@ -21637,7 +21871,7 @@ void Nexus::Init<Nexus::InitSequence::kDescriptorHeapContext>()
 		new DescriptorHeapContext
 		(
 			DescriptorHeapContext::NexusFieldProof{},
-			deviceContext->diplomat.get()
+			*deviceContext->diplomat.get()
 		)
 	);
 

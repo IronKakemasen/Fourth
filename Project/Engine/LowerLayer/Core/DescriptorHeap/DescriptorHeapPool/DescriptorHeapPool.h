@@ -12,8 +12,15 @@ public:
 	//ヒープインデックスを触るための許可証
 	struct CollectHeapIndexKey;
 
-	DescriptorHeapPool(Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> descriptorHeap_,
-		UINT handleIncrementSize_, uint32_t kMaxDescriptor_,bool shaderVisible_ ,std::string name_);
+	DescriptorHeapPool
+	(
+		Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> descriptorHeap_,
+		UINT handleIncrementSize_, 
+		uint32_t kMaxDescriptor_,
+		bool shaderVisible_ ,
+		std::string name_
+	);
+
 	~DescriptorHeapPool();
 	
 	//フリーヒープインデックスを割り当てる

@@ -7,8 +7,16 @@
 //外部
 #include "../Command/CommandContextDiplomat/CommandContextDiplomat.h"
 #include "../Command/CommandContextDiplomat/CommandContextToolLender/CommandContextToolLender.h"
+#include "../Command/CommandContextDiplomat/CommandContextToolLender/CmdContextToolLenderLicences.h"
+
+
 #include "../Device/DeviceContextDiplomat/DeviceContextDiplomat.h"
 #include "../Device/DeviceContextDiplomat/DeviceContextCommandProvider/DeviceContextCommandProvider.h"
+#include "../Device/DeviceContextDiplomat/DeviceContextCommandProvider/DeviceContextCmdLicences.h"
+#include "../Device/DeviceContextCmds.h"
+
+
+
 #include "../DescriptorHeap/DescriptorHeapContextDiplomat/DescriptorHeapContextDiplomat.h"
 #include "../DescriptorHeap/DescriptorHeapContextDiplomat/DescriptorHeapToolLender/DescriptorHeapToolLender.h"
 #include "../DescriptorHeap/ViewCreator/ViewCreator.h"
@@ -92,7 +100,8 @@ void SwapChainContext::AssembleCoreParts
 
 	//スワップチェーン生成
 	auto commandProvider = deviceContextDiplomat_->Access<DeviceContext::CommandProvider>();
-	auto createSwapChainCmd = commandProvider->ProvideCreateSwapChainCommand();
+	DeviceContext::CommandProvider::LicenceType<DeviceContextCmds::CreateSwapChain> licence;
+	auto createSwapChainCmd = commandProvider->Provide<DeviceContextCmds::CreateSwapChain>(licence);
 	CreateSwapChain(createSwapChainCmd, swapChainDesc, hWnd_, commandQueue);
 
 	//スワップチェーンからリソースを引っ張る

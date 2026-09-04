@@ -3,6 +3,9 @@
 #include "../PipelineStateDesc.h"
 
 
+//外部
+#include "../../../../Core/Device/DeviceContextCmds.h"
+
 class PSO_Context::Assembler
 {
 
@@ -33,8 +36,8 @@ private:
 	using MS_PS = std::pair<CD3DX12_SHADER_BYTECODE, std::optional<CD3DX12_SHADER_BYTECODE>>;
 
 	//PSO生成コマンド
-	CommandCreateGraphicsPSO cmdCreateGraphicsPSO;
-	CommandCreateComputePSO cmdCreateComputePSO;
+	DeviceContextCmds::CreatePSO<D3D12_PIPELINE_STATE_STREAM_DESC> cmdCreateGraphicsPSO;
+	DeviceContextCmds::CreatePSO<D3D12_COMPUTE_PIPELINE_STATE_DESC> cmdCreateComputePSO;
 
 	//要項チェック
 	void Check

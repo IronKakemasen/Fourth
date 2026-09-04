@@ -1,7 +1,6 @@
 #pragma once
 #include "../../CommandContext.h"
 
-class SwapChainContext;
 
 class CommandContext::ToolLender
 {
@@ -10,8 +9,7 @@ class CommandContext::ToolLender
 	struct CmdTypeTraits;
 
 	//CommandQueueを扱う資格
-	struct CommandQueueAccessLicence;
-	struct ResourceUploaderAccessLicence;
+	struct AccessCommandQueueLicence;
 
 	///貸し出せるツール
 	std::tuple<ID3D12CommandQueue*> tools;
@@ -36,35 +34,12 @@ public:
 		return std::get<ToolType*>(tools);
 	}
 
-
-};
-
-
-struct CommandContext::ToolLender::CommandQueueAccessLicence
-{
-private:
-
-	friend class SwapChainContext;
-	explicit CommandQueueAccessLicence() = default;
-};
-
-struct CommandContext::ToolLender::ResourceUploaderAccessLicence
-{
-private:
-
-	friend class Nexus;
-	explicit ResourceUploaderAccessLicence() = default;
 };
 
 
 template<>
 struct CommandContext::ToolLender::CmdTypeTraits<ID3D12CommandQueue>
 {
-	using Type = CommandQueueAccessLicence;
+	using Type = AccessCommandQueueLicence;
 };
 
-template<>
-struct CommandContext::ToolLender::CmdTypeTraits<CommandContext::ResourceUploader>
-{
-	using Type = ResourceUploaderAccessLicence;
-};

@@ -1,13 +1,13 @@
 #pragma once
 #include "ShaderContextToolLender.h"
-#include "../../../../Render/RenderContext.h"
 
+class RenderContext;
 
 struct ShaderContext::ToolLender::UsesShaderLibraryLicence
 {
 private:
 
-	friend class RenderContext::RenderGraph;
+	friend class RenderContext;
 	explicit UsesShaderLibraryLicence() = default;
 
 };

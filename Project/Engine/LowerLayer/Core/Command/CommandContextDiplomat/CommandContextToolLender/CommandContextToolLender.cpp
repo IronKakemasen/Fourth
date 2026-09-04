@@ -10,5 +10,4 @@ CommandContext::ToolLender::ToolLender
 {
 	std::get<ID3D12CommandQueue*>(tools) = cmdQueue_;
 
-
 }

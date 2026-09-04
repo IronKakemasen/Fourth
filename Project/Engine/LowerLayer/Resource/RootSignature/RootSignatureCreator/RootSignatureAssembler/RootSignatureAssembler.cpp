@@ -7,6 +7,8 @@
 //外部
 #include "../../../../Core/Device/DeviceContextDiplomat/DeviceContextDiplomat.h"
 #include "../../../../Core/Device/DeviceContextDiplomat/DeviceContextCommandProvider/DeviceContextCommandProvider.h"
+#include "../../../../Core/Device/DeviceContextDiplomat/DeviceContextCommandProvider/DeviceContextCmdLicences.h"
+#include "../../../../Core/Device/DeviceContextCmds.h"
 
 namespace
 {
@@ -18,8 +20,11 @@ using namespace RootSignatureLayoutComponent;
 
 RootSignatureContext::Assembler::Assembler(NexusFieldProof proof_, DeviceContextDiplomat* deviceContextDiplomat_)
 {
+	//ルートシグネチャ生成コマンドをもらう
 	auto cmdProvider = deviceContextDiplomat_->Access<DeviceContext::CommandProvider>();
-	cmdCreateRootSignature = cmdProvider->ProvideCommandCreateRootSignature();
+	DeviceContext::CommandProvider::LicenceType<DeviceContextCmds::CreateRootSig> licence;
+
+	cmdCreateRootSignature = cmdProvider->Provide<DeviceContextCmds::CreateRootSig>(licence);
 }
 
 RootSignatureContext::Assembler::~Assembler() {};

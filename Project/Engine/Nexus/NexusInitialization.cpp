@@ -76,7 +76,7 @@ void Nexus::Init<Nexus::InitSequence::kDescriptorHeapContext>()
 		new DescriptorHeapContext
 		(
 			DescriptorHeapContext::NexusFieldProof{},
-			deviceContext->diplomat.get()
+			*deviceContext->diplomat.get()
 		)
 	);
 
