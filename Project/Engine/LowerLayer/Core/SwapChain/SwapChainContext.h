@@ -5,17 +5,12 @@ class CommandContextDiplomat;
 class DeviceContextDiplomat;
 class DescriptorHeapContextDiplomat;
 
+//外部
+///リファクタ認定
+#include "../Device/DeviceContextCmds.h"
+
 class SwapChainContext
 {
-	//swapChain生成コマンド
-	using CommandCreateSwapChain = std::function< void
-	(
-		ID3D12CommandQueue* commandQueue_,
-		DXGI_SWAP_CHAIN_DESC1 desc_,
-		IDXGISwapChain4** swapChainDoublePtr_,
-		const HWND hWnd_
-	)>;
-
 	//画面の表示、バックバッファの切り替えを担う
 	class Presenter;
 
@@ -63,7 +58,7 @@ private:
 	//スワップチェーンの生成
 	void CreateSwapChain
 	(
-		CommandCreateSwapChain cmdCreateSwapChain_, 
+		DeviceContextCmds::CreateSwapChain cmdCreateSwapChain_,
 		const DXGI_SWAP_CHAIN_DESC1& desc_, 
 		const HWND hWnd_, 
 		ID3D12CommandQueue* commandQueue_

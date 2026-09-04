@@ -14,17 +14,14 @@ class BufferContext
 	//生リソース生成
 	class ResourceCreator;
 
-protected:
+	//テクスチャファイルを読み込み、バッファを作成する
+	//読み込み方から運用方法までやや特殊なので別途専門機構を用意する
+	class TextureBufferCreator;
+	class TextureLoader;
+	class textureBufferLibrary;
 
-	//リソース生成コマンド
-	using CreateResourceCommand = std::function<Microsoft::WRL::ComPtr<ID3D12Resource>
-	(
-		const D3D12_RESOURCE_DESC& resourceDesc_,
-		const D3D12_HEAP_PROPERTIES& heapProperties_,
-		const D3D12_CLEAR_VALUE* clearValue_,
-		D3D12_RESOURCE_STATES initialState_,
-		const std::string& name_
-	)>;
+
+protected:
 
 	//登録先識別用
 	enum class RegisterType

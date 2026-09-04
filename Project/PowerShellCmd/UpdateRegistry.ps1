@@ -23,7 +23,7 @@ $RegistryFolder     = Join-Path $projectFolder "Assets\Registry"
 $ShaderFolder       = Join-Path $projectFolder "Assets\Shader"
 $ModelFolder        = Join-Path $projectFolder "Assets\Model"
 $JsonFolder         = Join-Path $projectFolder "Assets\JsonFiles"
-$ShaderSettingsPath = Join-Path $projectFolder "Assets\JsonFiles\EngineCoreJsonFile\ShaderSettings.json"
+$ShaderSettingsPath = Join-Path $projectFolder "Assets\JsonFiles\AssetsJsonFile\ShaderSettings.json"
 
 
 # Registry フォルダ作成
@@ -229,6 +229,51 @@ if (Test-Path $JsonFolder)
         $relativePath = $_.FullName.Substring($projectFolder.Length + 1).Replace("\", "/")
 
         Add-Content -Path $OutputFileJson -Value "key: `"$key`" , value: `"$relativePath`""
+    }
+}
+
+
+
+########################################
+# Texture Registry
+########################################
+
+$OutputFileTexture = Join-Path $RegistryFolder "TextureFiles.txt"
+$TextureAlbedoFolder = Join-Path $projectFolder "Assets\Texture\albedo"
+$TextureNormalFolder = Join-Path $projectFolder "Assets\Texture\normal"
+
+if (Test-Path $OutputFileTexture)
+{
+    Remove-Item $OutputFileTexture
+}
+
+$TextureFolders = @(
+    @{ Path = $TextureAlbedoFolder; Suffix = "albedo" }
+    @{ Path = $TextureNormalFolder; Suffix = "normal" }
+)
+
+foreach ($textureFolderInfo in $TextureFolders)
+{
+    $textureFolder = $textureFolderInfo.Path
+    $suffix        = $textureFolderInfo.Suffix
+
+    if (-not (Test-Path $textureFolder))
+    {
+        continue
+    }
+
+    Get-ChildItem -Path $textureFolder -Recurse -File |
+    Where-Object {
+        $_.Extension.ToLower() -eq ".png" -or
+        $_.Extension.ToLower() -eq ".jpg" -or
+        $_.Extension.ToLower() -eq ".dds"
+    } |
+    ForEach-Object {
+
+        $key = $_.BaseName + "_" + $suffix
+        $relativePath = $_.FullName.Substring($projectFolder.Length + 1).Replace("\", "/")
+
+        Add-Content -Path $OutputFileTexture -Value "key: `"$key`" , value: `"$relativePath`""
     }
 }
 

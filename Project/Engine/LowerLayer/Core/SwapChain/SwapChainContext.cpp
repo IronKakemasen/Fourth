@@ -63,7 +63,7 @@ SwapChainContext::~SwapChainContext()
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 void SwapChainContext::CreateSwapChain
 (
-	CommandCreateSwapChain cmdCreateSwapChain_,
+	DeviceContextCmds::CreateSwapChain cmdCreateSwapChain_,
 	const DXGI_SWAP_CHAIN_DESC1& desc_,
 	const HWND hWnd_,
 	ID3D12CommandQueue* commandQueue_

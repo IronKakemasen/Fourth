@@ -6,9 +6,6 @@ class RootSignatureContextDiplomat;
 
 class RootSignatureContext
 {
-protected:
-
-	using CommandCreateRootSignature = std::function<void(UINT nodeMask_, Microsoft::WRL::ComPtr<ID3DBlob>& signatureBlob_, ID3D12RootSignature** doublePtr_rootSignature_)>;
 
 public:
 

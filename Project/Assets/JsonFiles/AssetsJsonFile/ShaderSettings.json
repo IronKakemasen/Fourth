@@ -1,0 +1,22 @@
+{
+    "FullScreenMS":  {
+                         "Args":  [
+                                      "none"
+                                  ]
+                     },
+    "StaticMS":  {
+                     "Args":  [
+                                  "none"
+                              ]
+                 },
+    "CompositorPS":  {
+                         "Args":  [
+                                      "none"
+                                  ]
+                     },
+    "StandardPS":  {
+                       "Args":  [
+                                    "none"
+                                ]
+                   }
+}

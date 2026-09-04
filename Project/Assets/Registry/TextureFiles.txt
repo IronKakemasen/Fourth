@@ -1,0 +1,2 @@
+key: "white2x2_albedo" , value: "Assets/Texture/albedo/white2x2.png"
+key: "white2x2_normal" , value: "Assets/Texture/normal/white2x2.png"
