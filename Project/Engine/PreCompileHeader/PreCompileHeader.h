@@ -44,7 +44,7 @@
 #include "../ProjectConfig.h"
 //ジェーソン読み書き
 #include "../MiddleLayer/Miyajison/Miyajison.h"
-
+#include "../Utility/Comparison/Comparison.h"
 
 
 
