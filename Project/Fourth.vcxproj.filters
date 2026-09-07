@@ -597,7 +597,7 @@
     <ClCompile Include="Engine\LowerLayer\Render\RenderContextRuntime\RenderGraph\RenderGraphBuilder\GraphicsPSO_Builder\GraphicsPSO_Builder.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="Engine\LowerLayer\Resource\Buffer\BufferDefinition\BufferDescriptions\TextureBufferDescription\TextureBufferDescription.cpp">
+    <ClCompile Include="Engine\LowerLayer\Resource\Buffer\BufferDefinition\BufferDescriptions\Texture2DBufferDescription\Texture2DBufferDescription.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
     <ClCompile Include="Engine\LowerLayer\Core\DescriptorHeap\DescriptorHeapPoolContainer\DescriptorHeapPoolContainer.cpp">
@@ -1337,7 +1337,7 @@
     <ClInclude Include="Engine\LowerLayer\Resource\Shader\ShaderTable.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\LowerLayer\Resource\Buffer\BufferDefinition\BufferDescriptions\TextureBufferDescription\TextureBufferDescription.h">
+    <ClInclude Include="Engine\LowerLayer\Resource\Buffer\BufferDefinition\BufferDescriptions\Texture2DBufferDescription\Texture2DBufferDescription.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
     <ClInclude Include="Engine\LowerLayer\Core\Device\DeviceContextCmds.h">
@@ -1362,6 +1362,12 @@
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
     <ClInclude Include="Engine\LowerLayer\Resource\Buffer\TextureBufferLibrary\TextureBufferLibrary.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\LowerLayer\Resource\Buffer\BufferDefinition\TextureType.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Utility\Comparison\Comparison.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
   </ItemGroup>
