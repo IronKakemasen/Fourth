@@ -10,7 +10,8 @@ public:
         kPSFiles,
         kCSFiles,
         kModelFiles,
-        kJsonFiles
+        kJsonFiles,
+        kTextureFiles
 
         , kCount
     };
@@ -21,15 +22,16 @@ private:
     static std::string FilePathtable()
     {
         static std::string const commonTo = "Assets/Registry/";
-        static std::string const commonFormat = ".txt";
+        static std::string const commonFormat = "Files.txt";
 
         static const std::string pathTable[(UINT)RegistryFileType::kCount]
         {
-            "MSFiles",
-            "PSFiles",
-            "CSFiles",
-            "ModelFiles",
-            "JsonFiles"
+            "MS",
+            "PS",
+            "CS",
+            "Model",
+            "Json",
+            "Texture"
         };
 
         return commonTo + pathTable[(UINT)fileType] + commonFormat;
@@ -43,7 +45,7 @@ public:
     {
         std::string const registryFilePath = FilePathtable<fileType>();
 
-        std::unordered_map<std::string, std::string > modelFileName_pathLib;
+        std::unordered_map<std::string, std::string > keyToPath;
         std::ifstream file(registryFilePath);
 
         ErrorMessageOutput::Abort::DetectError
@@ -103,11 +105,11 @@ public:
                 valueEnd - valueStart
             );
 
-            modelFileName_pathLib.emplace(key, value);
+            keyToPath.emplace(key, value);
         }
 
         Logger::Log("Load: " + registryFilePath, "RegistryLoader.h");
-        return modelFileName_pathLib;
+        return keyToPath;
     }
 
     ///キーのみ取得

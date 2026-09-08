@@ -103,7 +103,9 @@ private:
 	std::unique_ptr<BufferInfoExtractor> bufferInfoExtractor;
 	std::unique_ptr<GlobalConstantBuffers> globalConstantBuffers;
 	std::unique_ptr<GlobalConstantBufferCreator> globalConstantBufferCreator;
+	std::unique_ptr<TextureBufferLibrary> textureBufferLibrary;
 
+	
 };
 
 struct BufferContext::NexusFieldProof

@@ -3,7 +3,7 @@
 #include "../BufferCreator.h"
 #include "../BufferCollector/BufferCollector.h"
 #include "../BufferUploader/BufferUploader.h"
-#include "TextureLoader/TextureLoader.h"
+#include "TextureDataLoader/TextureDataLoader.h"
 #include "TextureBufferDescAssembler/TextureBufferDescAssembler.h"
 
 
@@ -12,10 +12,8 @@ BufferContext::TextureBufferCreator::TextureBufferCreator
 (
 	NexusFieldProof proof_,
 	BufferCreator& bufferCreator_,
-	BufferCollector& bufferCollector_,
 	BufferUploader& bufferUploader_,
 	GlobalConstantBufferCreator& globalConstantBufferCreator_,
-	TextureLoader& textureLoader_,
 	TextureBufferLibrary& textureBufferLibrary_
 )
 {
@@ -24,6 +22,8 @@ BufferContext::TextureBufferCreator::TextureBufferCreator
 	//全バッファのsrvをひとまとまりにしたものをStaticStructuredBufferとして作成し、アップロード
 	//そのバッファのsrvIndexをさらにGlobalConstantBufferで送る
 
+	//まずテクスチャファイルのジェーソンファイルからデータを読む
+	std::map<std::string, Texture2DState> texture2DStateMap =  TextureDataLoader::LoadAll();
 
 
 

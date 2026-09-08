@@ -1,6 +1,6 @@
 #pragma once
 #include "../BufferDescriptionBehavior.h"
-#include "../../TextureType.h"
+#include "../../TextureComponent.h"
 
 
 //外部
@@ -11,21 +11,14 @@
 //読み書き
 struct Texture2DBufferDescription final :public BufferDescriptionBehavior, IAssembleShaderResource
 {
-	enum class TextureQuality
-	{
-		kLow		= 512,
-		kMedium		= 1024,
-		kHigh		= 2048,
-		kUltra		= 0
-	};
 
 private:
 
 	//いつかデバッグ用に使うかもと思い、一応、実体を作っとく
 	struct Param
 	{
-		TextureType textureType;
-		TextureQuality textureQuality;
+		Texture2DState texture2DState;
+
 	}param;
 
 public:
@@ -33,8 +26,8 @@ public:
 	Texture2DBufferDescription
 	(
 		DirectX::ScratchImage scratchImage_,
-		TextureType textureType_,
-		TextureQuality textureQuality_
+		TextureComponent::TextureType textureType_,
+		TextureComponent::TextureQuality textureQuality_
 	);
 
 	//パラーメーターチェック
@@ -61,6 +54,6 @@ private:
 
 	void ExtractParams(DirectX::TexMetadata const& metaData_);
 
-	DXGI_FORMAT FormatTable(TextureType type_)const;
+	DXGI_FORMAT FormatTable(TextureComponent::TextureType type_)const;
 };
 
