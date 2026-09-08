@@ -3,10 +3,10 @@
 
 class BufferContext::TextureBufferCreator
 {
-	//テクスチャファイルを読み込み、
+	//テクスチャファイルのデータが詰まったジェーソンファイルを読み込む
 	class TextureDataLoader;
-	//パルスして、テクスチャバッファのDescを作る
-	class TextureBufferDescAssembler;
+	//テクスチャファイルを読み込む
+	class TextureFileLoader;
 
 public:
 	TextureBufferCreator

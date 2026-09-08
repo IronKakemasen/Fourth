@@ -26,7 +26,7 @@ class BufferContext::TextureBufferCreator::TextureDataLoader
 
 	///レジストリーに登録されている全てのテクスチャファイルの、
 	///Texture2DBufferDescriptionを構成する要素があるジェーソンファイルからデータを読む
-	static std::map<std::string, Texture2DState> LoadAll();
+	static Texture2DState LoadTextureState(std::string const key_);
 
 
 	//以下ヘルパー
