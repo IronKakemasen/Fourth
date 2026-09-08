@@ -6,6 +6,7 @@ namespace
     auto const fileName = "Texture2DBufferDescription.cpp";
 }
 
+using namespace TextureComponent;
 
 Texture2DBufferDescription::Texture2DBufferDescription
 (
@@ -14,8 +15,8 @@ Texture2DBufferDescription::Texture2DBufferDescription
 	TextureQuality textureQuality_
 ):BufferDescriptionBehavior(D3D12_RESOURCE_STATE_COPY_DEST, ProjectConfig::Render::NumBuffer::kSingleBuffer)
 {
-    param.textureType = textureType_;
-    param.textureQuality = textureQuality_;
+    param.texture2DState.type = textureType_;
+    param.texture2DState.quality = textureQuality_;
 
     //メタデータから必要情報を抽出
     auto const& metaData = scratchImage_.GetMetadata();
@@ -121,10 +122,10 @@ void Texture2DBufferDescription::ExtractParams(DirectX::TexMetadata const& metaD
     textureParams.isTextureQube = metaData_.IsCubemap();
 
     //TextureTypeによるフォーマット
-    textureParams.format = FormatTable(param.textureType);
+    textureParams.format = FormatTable(param.texture2DState.type);
 
     //TextureQualityによる最大解像度
-    float maxResolution = float(param.textureQuality);
+    float maxResolution = float(param.texture2DState.quality);
 
     //出力解像度
     float srcWidth = float(metaData_.width);
@@ -151,7 +152,7 @@ void Texture2DBufferDescription::ExtractParams(DirectX::TexMetadata const& metaD
     }
 
     //Spriteはmipmapを生成しない
-    if (param.textureType == TextureType::kSprite) return;
+    if (param.texture2DState.type == TextureType::kSprite) return;
 
     //通常テクスチャはmipmapを生成
     uint32_t const maxDimension = Comparison::Max(textureParams.width, textureParams.height);

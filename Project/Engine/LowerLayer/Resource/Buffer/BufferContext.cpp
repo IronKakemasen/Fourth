@@ -19,8 +19,8 @@
 #include "GlobalConstantBuffers/GlobalConstantBuffers.h"
 //バッファコレクターがバッファを仕分ける
 #include "BufferPoolSet/BufferPoolSet.h"
-
-
+#include "BufferCreateTools/TextureBufferCreator/TextureBufferCreator.h"
+#include "TextureBufferLibrary/TextureBufferLibrary.h"
 
 
 namespace
@@ -42,7 +42,7 @@ BufferContext::BufferContext
 	Logger::Log("Create: bufferPoolSet", fileName);
 
 	bufferCollector.reset(new BufferContext::BufferCollector(proof_, bufferPoolSet.get()));
-	Logger::Log("Instantiate: bufferCollector", "BufferCreator.cpp");
+	Logger::Log("Instantiate: bufferCollector", fileName);
 
 	resourceCreator.reset(new BufferContext::ResourceCreator(proof_, deviceContextDiplomat_));
 	Logger::Log("Instantiate: ResourceCreator", fileName);
@@ -67,6 +67,20 @@ BufferContext::BufferContext
 
 	globalConstantBufferCreator.reset(new GlobalConstantBufferCreator(proof_, globalConstantBuffers.get(),bufferCreator.get()));
 	Logger::Log("Instantiate: GlobalConstantBufferCreator", fileName);
+
+	textureBufferLibrary.reset(new TextureBufferLibrary(proof_));
+	Logger::Log("Instantiate: TextureBufferLibrary", fileName);
+
+	//中でテクスチャファイルを読み込んで、そのバッファを作成する
+	TextureBufferCreator textureBufferCreator
+	(
+		proof_,
+		*bufferCreator.get(),
+		*bufferUploader.get(),
+		*globalConstantBufferCreator.get(),
+		*textureBufferLibrary
+	);
+	Logger::Log("Instantiate: TextureBufferCreator", fileName);
 
 	diplomat.reset
 	(

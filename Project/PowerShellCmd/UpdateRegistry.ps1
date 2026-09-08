@@ -262,7 +262,7 @@ if (Test-Path $TextureFolder)
         # Texture フォルダから見た相対パス
         $relativeTexturePath = $_.FullName.Substring($TextureFolder.Length + 1)
 
-        # 最初のフォルダ名を取得
+        # 最初のフォルダ名を suffix に使用
         $parts = $relativeTexturePath -split '[\\/]'
 
         if ($parts.Count -ge 2)
@@ -351,21 +351,10 @@ if ($null -ne $textureSettingsDict)
                     continue
                 }
 
-                # 最後の "_" より後ろを TextureType として取得
-                $textureType = ""
-
-                $lastUnderscoreIndex = $textureKey.LastIndexOf("_")
-
-                if ($lastUnderscoreIndex -ge 0 -and
-                    $lastUnderscoreIndex -lt ($textureKey.Length - 1))
-                {
-                    $textureType = $textureKey.Substring($lastUnderscoreIndex + 1)
-                }
-
                 # 未登録テクスチャのデフォルト設定
+                # TextureType は記述しない
                 $textureSettingsDict[$textureKey] = [ordered]@{
-                    "TextureType" = $textureType
-                    "Quality"     = "High"
+                    "Quality" = "High"
                 }
 
                 $isTextureSettingsUpdated = $true
