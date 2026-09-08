@@ -13,15 +13,14 @@ namespace
 
 [[nodiscard]] RenderContext::PassDesc RenderContext::RenderPassCreator::PassSettingsLoader::Load(std::string const passName_)
 {
-	std::string const srcJsonFileName = "RenderPassSettings";
 	
 	PassDesc desc
 	(
 		passName_,
-		ParseShaderFile(passName_, srcJsonFileName),
-		ParseRenderPassState(passName_, srcJsonFileName),
-		ParseColorBufferInfo(passName_, srcJsonFileName),
-		ParseDepthStencilBufferInfo(passName_, srcJsonFileName)
+		ParseShaderFile(passName_),
+		ParseRenderPassState(passName_),
+		ParseColorBufferInfo(passName_),
+		ParseDepthStencilBufferInfo(passName_)
 	);
 
 	return desc;
@@ -29,8 +28,7 @@ namespace
 
 std::vector<RenderContext::RequiredBufferInfo::ColorBuffer> RenderContext::RenderPassCreator::PassSettingsLoader::ParseColorBufferInfo
 (
-	std::string const passName_,
-	std::string const jsonFileName_
+	std::string const passName_
 )
 {
 	std::vector<RenderContext::RequiredBufferInfo::ColorBuffer> colorBufferInfo;
@@ -39,31 +37,31 @@ std::vector<RenderContext::RequiredBufferInfo::ColorBuffer> RenderContext::Rende
 
 	//カラーバッファのフォーマット。以降、こいつの数といくつかのパラメーターは同期している前提で進める
 	auto const colorBufferFormats = 
-		miyajison->LoadData<std::vector<int>>(jsonFileName_, { passName_,PassDesc::dataKeyString.kColorFormatI });
+		miyajison->LoadData<std::vector<int>>(DataKeyString::kSrcJsonFileName, { passName_,DataKeyString::kColorFormatI });
 	//カラーバッファの数
 	auto const numColorBuffers = colorBufferFormats.size();
 
 	//カラーバッファのクリアカラー
 	auto const clearColors = 
-		miyajison->LoadData<std::vector<std::vector<float>>>(jsonFileName_, { passName_,PassDesc::dataKeyString.kClearColorV4 });
+		miyajison->LoadData<std::vector<std::vector<float>>>(DataKeyString::kSrcJsonFileName, { passName_,DataKeyString::kClearColorV4 });
 
 	//カラーバッファの縦横
 	auto const widthContainer = 
-		miyajison->LoadData<std::vector<int>>(jsonFileName_, { passName_,PassDesc::dataKeyString.kColorWidthI });
+		miyajison->LoadData<std::vector<int>>(DataKeyString::kSrcJsonFileName, { passName_,DataKeyString::kColorWidthI });
 	auto const heightContainer =
-		miyajison->LoadData<std::vector<int>>(jsonFileName_, { passName_,PassDesc::dataKeyString.kColorHeightI });
+		miyajison->LoadData<std::vector<int>>(DataKeyString::kSrcJsonFileName, { passName_,DataKeyString::kColorHeightI });
 
 	//シングルかダブルか
 	auto const numBufferContainer =
-		miyajison->LoadData<std::vector<int>>(jsonFileName_, { passName_,PassDesc::dataKeyString.kNumBuffer_colorI });
+		miyajison->LoadData<std::vector<int>>(DataKeyString::kSrcJsonFileName, { passName_,DataKeyString::kNumBuffer_colorI });
 
 	//バッファの名前
 	auto const bufferNames = 
-		miyajison->LoadData<std::vector<std::string>>(jsonFileName_, { passName_,PassDesc::dataKeyString.kColorBufferName });
+		miyajison->LoadData<std::vector<std::string>>(DataKeyString::kSrcJsonFileName, { passName_,DataKeyString::kColorBufferName });
 
 	//ブレンドモード
 	auto const blendModesString =
-		miyajison->LoadData<std::vector<std::string>>(jsonFileName_, { passName_,PassDesc::dataKeyString.kBlendMode});
+		miyajison->LoadData<std::vector<std::string>>(DataKeyString::kSrcJsonFileName, { passName_,DataKeyString::kBlendMode});
 	//名前からenumへ変換
 	std::vector<RenderStateComponent::BlendMode> blendModes;
 	for (auto const& string : blendModesString)
@@ -104,8 +102,7 @@ std::vector<RenderContext::RequiredBufferInfo::ColorBuffer> RenderContext::Rende
 
 std::optional<RenderContext::RequiredBufferInfo::DepthStencilBuffer> RenderContext::RenderPassCreator::PassSettingsLoader::ParseDepthStencilBufferInfo
 (
-	std::string const passName_,
-	std::string const jsonFileName_
+	std::string const passName_
 )
 {
 
@@ -114,35 +111,35 @@ std::optional<RenderContext::RequiredBufferInfo::DepthStencilBuffer> RenderConte
 	auto* miyajison = Miyajison::Get();
 
 	//深度バッファ使わんならしらん
-	if (!miyajison->LoadData<bool>(jsonFileName_, { passName_,PassDesc::dataKeyString.kUseDepthStenciB }))
+	if (!miyajison->LoadData<bool>(DataKeyString::kSrcJsonFileName, { passName_,DataKeyString::kUseDepthStenciB }))
 		return std::nullopt;
 
 	depthStencilBufferInfo.emplace();
 
 	depthStencilBufferInfo->dsvFormat = 
-		(DXGI_FORMAT)miyajison->LoadData<int>(jsonFileName_, { passName_,PassDesc::dataKeyString.kDsvFormatI});
+		(DXGI_FORMAT)miyajison->LoadData<int>(DataKeyString::kSrcJsonFileName, { passName_,DataKeyString::kDsvFormatI});
 
 	depthStencilBufferInfo->srvFormat = 
-		(DXGI_FORMAT)miyajison->LoadData<int>(jsonFileName_, { passName_,PassDesc::dataKeyString.kSrvFormatI });
+		(DXGI_FORMAT)miyajison->LoadData<int>(DataKeyString::kSrcJsonFileName, { passName_,DataKeyString::kSrvFormatI });
 
 	depthStencilBufferInfo->clearDepth =
-		miyajison->LoadData<float>(jsonFileName_, { passName_,PassDesc::dataKeyString.kClearDepthF });
+		miyajison->LoadData<float>(DataKeyString::kSrcJsonFileName, { passName_,DataKeyString::kClearDepthF });
 
 	depthStencilBufferInfo->clearStencil =
-		miyajison->LoadData<int>(jsonFileName_, { passName_,PassDesc::dataKeyString.kClearStencilI });
+		miyajison->LoadData<int>(DataKeyString::kSrcJsonFileName, { passName_,DataKeyString::kClearStencilI });
 
 	depthStencilBufferInfo->numBuffer = 
-		(NumBuffer)miyajison->LoadData<int>(jsonFileName_, { passName_,PassDesc::dataKeyString.kNumBuffer_depthI });
+		(NumBuffer)miyajison->LoadData<int>(DataKeyString::kSrcJsonFileName, { passName_,DataKeyString::kNumBuffer_depthI });
 
 	depthStencilBufferInfo->bufferName =
-		miyajison->LoadData<std::string>(jsonFileName_, { passName_,PassDesc::dataKeyString.kDepthBufferName });
+		miyajison->LoadData<std::string>(DataKeyString::kSrcJsonFileName, { passName_,DataKeyString::kDepthBufferName });
 
 
 
 	int const widthHeight[2] =
 	{
-		miyajison->LoadData<int>(jsonFileName_, { passName_,PassDesc::dataKeyString.kDepthWidthI }),
-		miyajison->LoadData<int>(jsonFileName_, { passName_,PassDesc::dataKeyString.kDepthHeightI})
+		miyajison->LoadData<int>(DataKeyString::kSrcJsonFileName, { passName_,DataKeyString::kDepthWidthI }),
+		miyajison->LoadData<int>(DataKeyString::kSrcJsonFileName, { passName_,DataKeyString::kDepthHeightI})
 	};
 
 	depthStencilBufferInfo->width = widthHeight[0] == -1 ? kWidth : widthHeight[0];
@@ -154,22 +151,21 @@ std::optional<RenderContext::RequiredBufferInfo::DepthStencilBuffer> RenderConte
 
 RenderContext::RenderPassState RenderContext::RenderPassCreator::PassSettingsLoader::ParseRenderPassState
 (
-	std::string const passName_,
-	std::string const jsonFileName_
+	std::string const passName_
 )
 {
 	auto* miyajison = Miyajison::Get();
 
 	bool doesUseDepthBuffer =
-		miyajison->LoadData<bool>(jsonFileName_, { passName_,PassDesc::dataKeyString.kUseDepthStenciB });
+		miyajison->LoadData<bool>(DataKeyString::kSrcJsonFileName, { passName_,DataKeyString::kUseDepthStenciB });
 
 	return doesUseDepthBuffer ? RenderPassState
 	(
-		DepthTest(miyajison->LoadData<int>(jsonFileName_, { passName_,PassDesc::dataKeyString.kDepthTestI })),
-		DepthEnable(miyajison->LoadData<bool>(jsonFileName_, { passName_,PassDesc::dataKeyString.kDepthEnableB })),
-		INT(miyajison->LoadData<int>(jsonFileName_, { passName_,PassDesc::dataKeyString.kDepthBiasI })),
-		FLOAT(miyajison->LoadData<float>(jsonFileName_, { passName_,PassDesc::dataKeyString.kDepthBiasClampF })),
-		FLOAT(miyajison->LoadData<float>(jsonFileName_, { passName_,PassDesc::dataKeyString.kSlopeScaledDepthBiasF }))
+		DepthTest(miyajison->LoadData<int>(DataKeyString::kSrcJsonFileName, { passName_,DataKeyString::kDepthTestI })),
+		DepthEnable(miyajison->LoadData<bool>(DataKeyString::kSrcJsonFileName, { passName_,DataKeyString::kDepthEnableB })),
+		INT(miyajison->LoadData<int>(DataKeyString::kSrcJsonFileName, { passName_,DataKeyString::kDepthBiasI })),
+		FLOAT(miyajison->LoadData<float>(DataKeyString::kSrcJsonFileName, { passName_,DataKeyString::kDepthBiasClampF })),
+		FLOAT(miyajison->LoadData<float>(DataKeyString::kSrcJsonFileName, { passName_,DataKeyString::kSlopeScaledDepthBiasF }))
 	)
 	: RenderPassState{};	//深度バッファ使わないならダミー値で構わん
 
@@ -177,20 +173,19 @@ RenderContext::RenderPassState RenderContext::RenderPassCreator::PassSettingsLoa
 
 std::optional<std::pair<std::string, std::string >> RenderContext::RenderPassCreator::PassSettingsLoader::ParseShaderFile
 (
-	std::string const passName_,
-	std::string const jsonFileName_
+	std::string const passName_
 )
 {
 	std::optional<std::pair<std::string, std::string >> ms_psOpt;
 	std::pair<std::string, std::string > ms_ps;
 
 	auto* miyajison = Miyajison::Get();
-	bool isOffScreen = miyajison->LoadData<bool>(jsonFileName_, { passName_,PassDesc::dataKeyString.kIsOffScreenB });
+	bool isOffScreen = miyajison->LoadData<bool>(DataKeyString::kSrcJsonFileName, { passName_,DataKeyString::kIsOffScreenB });
 
 	if (isOffScreen)
 	{
-		ms_ps.first = miyajison->LoadData<std::string>(jsonFileName_, { passName_,PassDesc::dataKeyString.kMS });
-		ms_ps.second = miyajison->LoadData<std::string>(jsonFileName_, { passName_,PassDesc::dataKeyString.kPS });
+		ms_ps.first = miyajison->LoadData<std::string>(DataKeyString::kSrcJsonFileName, { passName_,DataKeyString::kMS });
+		ms_ps.second = miyajison->LoadData<std::string>(DataKeyString::kSrcJsonFileName, { passName_,DataKeyString::kPS });
 		ms_psOpt = ms_ps;
 	}
 

@@ -5,7 +5,7 @@ enum class TextureType
 {
 	kAlbedo,
 	kNormal,
-	kSprite,
 	kEmissive,
+	kSprite,
 	kCount
 };

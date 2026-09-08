@@ -100,14 +100,15 @@ D3D12_SHADER_RESOURCE_VIEW_DESC Texture2DBufferDescription::CreateSRV_Desc()cons
 
 DXGI_FORMAT Texture2DBufferDescription::FormatTable(TextureType type_)const
 {
-    ErrorMessageOutput::Assert::OutputError("kCountを指定", fileName);
+    //ほぼないだろうが一応ね
+    ErrorMessageOutput::Assert::DetectError(type_ != TextureType::kCount , "kCountを指定", fileName);
 
     static DXGI_FORMAT table[UINT(TextureType::kCount)]
     {
         DXGI_FORMAT_BC7_UNORM_SRGB,
         DXGI_FORMAT_BC5_UNORM,
         DXGI_FORMAT_BC7_UNORM_SRGB,
-        DXGI_FORMAT_R8G8B8A8_UNORM_SRGB
+        DXGI_FORMAT_BC7_UNORM_SRGB
     };
 
     return table[UINT(type_)];
@@ -150,12 +151,7 @@ void Texture2DBufferDescription::ExtractParams(DirectX::TexMetadata const& metaD
     }
 
     //Spriteはmipmapを生成しない
-    if (param.textureType == TextureType::kSprite)
-    {
-        textureParams.mipLevels = 1;
-
-        return;
-    }
+    if (param.textureType == TextureType::kSprite) return;
 
     //通常テクスチャはmipmapを生成
     uint32_t const maxDimension = Comparison::Max(textureParams.width, textureParams.height);

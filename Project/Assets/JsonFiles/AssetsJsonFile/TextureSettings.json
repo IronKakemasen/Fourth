@@ -1,0 +1,18 @@
+{
+    "white2x2_albedo":  {
+                            "TextureType":  "albedo",
+                            "Quality":  "High"
+                        },
+    "white2x2_normal":  {
+                            "TextureType":  "normal",
+                            "Quality":  "High"
+                        },
+    "white2x2_emissive":  {
+                              "TextureType":  "emissive",
+                              "Quality":  "High"
+                          },
+    "white2x2_sprite":  {
+                            "TextureType":  "sprite",
+                            "Quality":  "High"
+                        }
+}
