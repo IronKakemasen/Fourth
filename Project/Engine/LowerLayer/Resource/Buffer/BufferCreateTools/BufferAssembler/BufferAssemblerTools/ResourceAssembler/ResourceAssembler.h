@@ -26,6 +26,9 @@ class BufferContext::BufferAssembler::ResourceAssembler
         );
     }
 
+    //以下ヘルパー
+private:
+
     //生リソース生成に必要な情報を組み立てる
     static std::pair<D3D12_RESOURCE_DESC, D3D12_HEAP_PROPERTIES> CreateRequirements(const BufferDescriptionBehavior& desc_);
 
@@ -70,3 +73,7 @@ BufferContext::BufferAssembler::ResourceAssembler::GetClearValue(const UploadStr
 template<>
 std::optional<D3D12_CLEAR_VALUE>
 BufferContext::BufferAssembler::ResourceAssembler::GetClearValue(const ComputeBufferDescription& desc_);
+
+template<>
+std::optional<D3D12_CLEAR_VALUE>
+BufferContext::BufferAssembler::ResourceAssembler::GetClearValue(const Texture2DBufferDescription& desc_);

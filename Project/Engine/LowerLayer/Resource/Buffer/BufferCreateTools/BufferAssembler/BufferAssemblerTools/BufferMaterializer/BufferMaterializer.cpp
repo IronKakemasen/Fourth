@@ -134,5 +134,26 @@ static [[nodiscard]] std::unique_ptr<ConstantBuffer> BufferContext::BufferAssemb
 		std::move(resourceContainer_),
 		desc_
 	);
+}
+
+template<>
+static [[nodiscard]] std::unique_ptr<Texture2DBuffer> BufferContext::BufferAssembler::BufferMaterializer::Materialize
+(
+	ResourceContainer resourceContainer_,
+	const BufferDescriptionBehavior& desc_,
+	std::string nameCnv_
+)
+{
+	Logger::Log("BufferType: Texture2DBuffer", fileName);
+
+	//バッファ生成
+	return std::make_unique<Texture2DBuffer>
+	(
+		Texture2DBuffer::InstanceKey{},
+		nameCnv_,
+		std::move(resourceContainer_),
+		desc_
+	);
 
 }
+

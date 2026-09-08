@@ -62,3 +62,11 @@ static [[nodiscard]] std::unique_ptr<ConstantBuffer> BufferContext::BufferAssemb
 	const BufferDescriptionBehavior& desc_,
 	std::string nameCnv_
 );
+
+template<>
+static [[nodiscard]] std::unique_ptr<Texture2DBuffer> BufferContext::BufferAssembler::BufferMaterializer::Materialize
+(
+	ResourceContainer resourceContainer_,
+	const BufferDescriptionBehavior& desc_,
+	std::string nameCnv_
+);

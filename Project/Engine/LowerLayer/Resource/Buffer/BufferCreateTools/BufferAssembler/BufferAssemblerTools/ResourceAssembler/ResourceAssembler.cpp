@@ -9,7 +9,6 @@ namespace
 }
 
 
-
 BufferContext::BufferAssembler::ResourceContainer BufferContext::BufferAssembler::ResourceAssembler::CreateResource
 (
     const BufferContext::ResourceCreator& resourceCreator_,
@@ -92,4 +91,9 @@ BufferContext::BufferAssembler::ResourceAssembler::GetClearValue(const ComputeBu
     return std::nullopt;
 }
 
-
+template<>
+std::optional<D3D12_CLEAR_VALUE>
+BufferContext::BufferAssembler::ResourceAssembler::GetClearValue(const Texture2DBufferDescription& desc_)
+{
+    return std::nullopt;
+}

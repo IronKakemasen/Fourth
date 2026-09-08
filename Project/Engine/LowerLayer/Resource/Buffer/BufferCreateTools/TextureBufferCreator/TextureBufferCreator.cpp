@@ -47,6 +47,11 @@ BufferContext::TextureBufferCreator::TextureBufferCreator
 		descEntries[key].scratchImage = TextureFileLoader::LoadTextureFile(value, descEntries[key].texture2DState.type);
 	}
 
+	//Texture2DBufferDescriptionを作成し、それをもとにバッファを作成。アップロードしていく
+	for (auto const& [key, value] : descEntries)
+	{
+
+	}
 
 
 

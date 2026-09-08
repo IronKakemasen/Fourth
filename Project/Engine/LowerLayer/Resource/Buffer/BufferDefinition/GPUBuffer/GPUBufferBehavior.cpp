@@ -30,7 +30,6 @@ GPUBufferBehavior::GPUBufferBehavior
 		fileName
 	);
 
-
 	buffers.resize(bufferSize);
 
 	for (size_t i = 0;i < bufferSize;++i)
