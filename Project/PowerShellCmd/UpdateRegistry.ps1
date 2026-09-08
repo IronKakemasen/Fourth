@@ -239,44 +239,152 @@ if (Test-Path $JsonFolder)
 ########################################
 
 $OutputFileTexture = Join-Path $RegistryFolder "TextureFiles.txt"
-$TextureAlbedoFolder = Join-Path $projectFolder "Assets\Texture\albedo"
-$TextureNormalFolder = Join-Path $projectFolder "Assets\Texture\normal"
+$TextureFolder = Join-Path $projectFolder "Assets\Texture"
 
 if (Test-Path $OutputFileTexture)
 {
     Remove-Item $OutputFileTexture
 }
 
-$TextureFolders = @(
-    @{ Path = $TextureAlbedoFolder; Suffix = "albedo" }
-    @{ Path = $TextureNormalFolder; Suffix = "normal" }
-)
-
-foreach ($textureFolderInfo in $TextureFolders)
+if (Test-Path $TextureFolder)
 {
-    $textureFolder = $textureFolderInfo.Path
-    $suffix        = $textureFolderInfo.Suffix
-
-    if (-not (Test-Path $textureFolder))
-    {
-        continue
-    }
-
-    Get-ChildItem -Path $textureFolder -Recurse -File |
+    Get-ChildItem -Path $TextureFolder -Recurse -File |
     Where-Object {
         $_.Extension.ToLower() -eq ".png" -or
         $_.Extension.ToLower() -eq ".jpg" -or
-        $_.Extension.ToLower() -eq ".dds"
+        $_.Extension.ToLower() -eq ".jpeg" -or
+        $_.Extension.ToLower() -eq ".dds" -or
+        $_.Extension.ToLower() -eq ".tga" -or
+        $_.Extension.ToLower() -eq ".psd"
     } |
     ForEach-Object {
 
-        $key = $_.BaseName + "_" + $suffix
+        # Texture フォルダから見た相対パス
+        $relativeTexturePath = $_.FullName.Substring($TextureFolder.Length + 1)
+
+        # 最初のフォルダ名を取得
+        $parts = $relativeTexturePath -split '[\\/]'
+
+        if ($parts.Count -ge 2)
+        {
+            $suffix = $parts[0]
+            $key = "$($_.BaseName)_$suffix"
+        }
+        else
+        {
+            # Texture直下にあるファイルはファイル名のみ
+            $key = $_.BaseName
+        }
+
+        # Projectフォルダからの相対パス
         $relativePath = $_.FullName.Substring($projectFolder.Length + 1).Replace("\", "/")
 
         Add-Content -Path $OutputFileTexture -Value "key: `"$key`" , value: `"$relativePath`""
     }
 }
 
-Write-Host ""
-Write-Host "Registry generated successfully."
-Write-Host "出力先: $RegistryFolder"
+########################################
+# Update TextureSettings.json
+########################################
+
+# TextureSettings.json のパス
+$TextureSettingsPath = Join-Path $projectFolder "Assets\JsonFiles\AssetsJsonFile\TextureSettings.json"
+
+# 保存先フォルダ作成
+$textureSettingsDir = Split-Path -Path $TextureSettingsPath -Parent
+
+if (-not (Test-Path $textureSettingsDir))
+{
+    New-Item -ItemType Directory -Path $textureSettingsDir -Force | Out-Null
+}
+
+# TextureSettings の既存データ
+$textureSettingsDict = [ordered]@{}
+
+# 既存 TextureSettings.json を読み込み
+if (Test-Path $TextureSettingsPath)
+{
+    $rawTextureSettings = Get-Content -Path $TextureSettingsPath -Raw -Encoding UTF8
+
+    if (-not [string]::IsNullOrWhiteSpace($rawTextureSettings))
+    {
+        try
+        {
+            $parsedTextureSettings = $rawTextureSettings | ConvertFrom-Json
+
+            if ($parsedTextureSettings -is [PSCustomObject])
+            {
+                foreach ($prop in $parsedTextureSettings.psobject.Properties)
+                {
+                    $textureSettingsDict[$prop.Name] = $prop.Value
+                }
+            }
+        }
+        catch
+        {
+            Write-Warning "TextureSettings.json の読み込みに失敗したため、既存データを変更せず処理を中止します。"
+            $textureSettingsDict = $null
+        }
+    }
+}
+
+# JSON が壊れている場合は既存データを上書きしない
+if ($null -ne $textureSettingsDict)
+{
+    $isTextureSettingsUpdated = $false
+
+    # TextureFiles.txt に登録されているキーを確認
+    if (Test-Path $OutputFileTexture)
+    {
+        $textureLines = Get-Content -Path $OutputFileTexture -Encoding UTF8
+
+        foreach ($textureLine in $textureLines)
+        {
+            # key: "Sample_albedo" , value: "Assets/Texture/albedo/Sample.png"
+            if ($textureLine -match 'key:\s*"([^"]+)"')
+            {
+                $textureKey = $Matches[1]
+
+                # 既に登録済みなら何もしない
+                if ($textureSettingsDict.Contains($textureKey))
+                {
+                    continue
+                }
+
+                # 最後の "_" より後ろを TextureType として取得
+                $textureType = ""
+
+                $lastUnderscoreIndex = $textureKey.LastIndexOf("_")
+
+                if ($lastUnderscoreIndex -ge 0 -and
+                    $lastUnderscoreIndex -lt ($textureKey.Length - 1))
+                {
+                    $textureType = $textureKey.Substring($lastUnderscoreIndex + 1)
+                }
+
+                # 未登録テクスチャのデフォルト設定
+                $textureSettingsDict[$textureKey] = [ordered]@{
+                    "TextureType" = $textureType
+                    "Quality"     = "High"
+                }
+
+                $isTextureSettingsUpdated = $true
+
+                Write-Host "TextureSettings 追加: $textureKey"
+            }
+        }
+    }
+
+    # 新規登録があった場合のみ保存
+    if ($isTextureSettingsUpdated -or -not (Test-Path $TextureSettingsPath))
+    {
+        $textureJsonOutput = $textureSettingsDict | ConvertTo-Json -Depth 100
+
+        $utf8NoBom = New-Object System.Text.UTF8Encoding($false)
+        [System.IO.File]::WriteAllText(
+            $TextureSettingsPath,
+            $textureJsonOutput,
+            $utf8NoBom
+        )
+    }
+}

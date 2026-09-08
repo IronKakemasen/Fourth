@@ -2,6 +2,8 @@
 #include "../BufferDescriptionBehavior.h"
 #include "../../TextureType.h"
 
+
+//外部
 #include "../../../../../../../External/DirectXTex/DirectXTex.h"
 
 

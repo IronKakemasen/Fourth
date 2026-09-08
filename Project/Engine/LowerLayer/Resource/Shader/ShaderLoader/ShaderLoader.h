@@ -19,5 +19,10 @@ private:
 	//シェーダファイルのArgsをjsonファイルから読み取る
 	std::unordered_map<std::string, std::vector<std::wstring>> GetArgs();
 
+	struct DataStrings
+	{
+		static inline std::string const kArgs			= "Args";
+		static inline std::string const kNone			= "none";
+		static inline std::string const kSrcJsonFileKey = "ShaderSettings";
+	};
 };
-

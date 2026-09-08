@@ -6,3 +6,4 @@ struct DepthStencilBufferDescription;
 struct ComputeBufferDescription;
 struct UploadStructuredBufferDescription;
 struct StaticStructuredBufferDescription;
+struct Texture2DBufferDescription;

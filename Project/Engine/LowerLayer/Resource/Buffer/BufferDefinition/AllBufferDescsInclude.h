@@ -5,3 +5,4 @@
 #include "BufferDescriptions/DepthStencilBufferDescription/DepthStencilBufferDescription.h"
 #include "BufferDescriptions/StaticStructuredBufferDescription/StaticStructuredBufferDescription.h"
 #include "BufferDescriptions/UploadStructuredBufferDescription/UploadStructuredBufferDescription.h"
+#include "BufferDescriptions/Texture2DBufferDescription/Texture2DBufferDescription.h"
