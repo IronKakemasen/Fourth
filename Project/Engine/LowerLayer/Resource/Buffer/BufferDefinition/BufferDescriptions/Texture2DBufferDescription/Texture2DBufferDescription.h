@@ -25,9 +25,8 @@ public:
 
 	Texture2DBufferDescription
 	(
-		DirectX::ScratchImage scratchImage_,
-		TextureComponent::TextureType textureType_,
-		TextureComponent::TextureQuality textureQuality_
+		DirectX::ScratchImage& scratchImage_,
+		Texture2DState texture2DState_
 	);
 
 	//パラーメーターチェック

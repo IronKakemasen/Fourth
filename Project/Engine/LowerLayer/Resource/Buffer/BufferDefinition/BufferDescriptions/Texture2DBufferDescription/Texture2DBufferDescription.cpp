@@ -10,13 +10,12 @@ using namespace TextureComponent;
 
 Texture2DBufferDescription::Texture2DBufferDescription
 (
-	DirectX::ScratchImage scratchImage_,
-	TextureType textureType_,
-	TextureQuality textureQuality_
+    DirectX::ScratchImage& scratchImage_,
+    Texture2DState texture2DState_
 ):BufferDescriptionBehavior(D3D12_RESOURCE_STATE_COPY_DEST, ProjectConfig::Render::NumBuffer::kSingleBuffer)
 {
-    param.texture2DState.type = textureType_;
-    param.texture2DState.quality = textureQuality_;
+    param.texture2DState.type = texture2DState_.type;
+    param.texture2DState.quality = texture2DState_.quality;
 
     //メタデータから必要情報を抽出
     auto const& metaData = scratchImage_.GetMetadata();

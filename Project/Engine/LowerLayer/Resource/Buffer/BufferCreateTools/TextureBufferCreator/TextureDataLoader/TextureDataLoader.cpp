@@ -1,8 +1,7 @@
 #include "PreCompileHeader.h"
 #include "TextureDataLoader.h"
 
-
-#include "RegistryLoader/RegistryLoader.h"
+//外部
 #include "StringProcessing/StringProcessing.h"
 
 
@@ -13,32 +12,24 @@ namespace
 
 using namespace TextureComponent;
 
-std::map<std::string, Texture2DState> BufferContext::TextureBufferCreator::TextureDataLoader::LoadAll()
+Texture2DState BufferContext::TextureBufferCreator::TextureDataLoader::LoadTextureState(std::string const key_)
 {
-	std::map<std::string, Texture2DState> texture2DStateMap;
+	Texture2DState texture2DState;
 
 	auto* miyaJison = Miyajison::Get();
 
-	Logger::Log("Load textureData Starts",fileName);
+	//keyからアンダーバーの先がテクスチャータイプ
+	auto const textureTypeString = StringProcessing::SkipFetch(key_, '_');
+	//クォリティは、まあそのまま読み込む
+	auto const qualityString = miyaJison->LoadData<std::string>(DataStrings::kJsonFile, { key_ , DataStrings::kQuality });
 
-	//Registryに登録されているテクスチャファイルのキーを走査する
-	auto const allKeys = RegistryLoader::LoadRegistryKeys<RegistryLoader::RegistryFileType::kTextureFiles>();
-	for (auto const& key : allKeys)
-	{
+	Logger::Log("TextureState: " + key_ + "{ " + textureTypeString + "," + qualityString + " }");
 
-		//keyからアンダーバーの先がテクスチャータイプ
-		auto const textureTypeString = StringProcessing::SkipFetch(key, '_');
-		//クォリティは、まあそのまま読み込む
-		auto const qualityString = miyaJison->LoadData<std::string>(DataStrings::kJsonFile, { key , DataStrings::kQuality });
+	//文字列からenumに変換
+	texture2DState.type = ToTextureType(textureTypeString);
+	texture2DState.quality = ToTextureQuality(qualityString);
 
-		Logger::Log("Load: " + key + "{ " + textureTypeString + "," + qualityString + " }");
-
-		//文字列からenumに変換
-		texture2DStateMap[key].type = ToTextureType(textureTypeString);
-		texture2DStateMap[key].quality = ToTextureQuality(qualityString);
-	}
-
-	return texture2DStateMap;
+	return texture2DState;
 }
 
 

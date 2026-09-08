@@ -108,7 +108,7 @@ public:
             keyToPath.emplace(key, value);
         }
 
-        Logger::Log("Load: " + registryFilePath, "RegistryLoader.h");
+        Logger::Log("Load: " + registryFilePath , "RegistryLoader.h\n");
         return keyToPath;
     }
 
