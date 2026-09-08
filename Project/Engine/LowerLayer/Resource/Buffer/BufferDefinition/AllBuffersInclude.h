@@ -5,3 +5,4 @@
 #include "GPUBuffer/DepthStencilBuffer/DepthStencilBuffer.h"
 #include "GPUBuffer/StaticStructuredBuffer/StaticStructuredBuffer.h"
 #include "GPUBuffer/UploadStructuredBuffer/UploadStructuredBuffer.h"
+#include "GPUBuffer/Texture2DBuffer/Texture2DBuffer.h"

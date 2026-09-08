@@ -17,6 +17,7 @@ class BufferContext::BufferAssembler::BufferNameConverter
         else if constexpr (std::is_same_v<BufferType, ComputeBuffer>)           attach = "Compute";
         else if constexpr (std::is_same_v<BufferType, UploadStructuredBuffer>)  attach = "UploadStructured";
         else if constexpr (std::is_same_v<BufferType, StaticStructuredBuffer>)  attach = "StaticStructured";
+        else if constexpr (std::is_same_v<BufferType, Texture2DBuffer>)         attach = "Texture2DBuffer";
 
         return attach + "Buffer" + "[ " + srcName_ + " ] ";
     }

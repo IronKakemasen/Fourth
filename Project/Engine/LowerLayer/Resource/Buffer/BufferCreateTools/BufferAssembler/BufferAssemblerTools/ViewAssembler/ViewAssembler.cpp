@@ -126,6 +126,24 @@ void BufferContext::BufferAssembler::ViewAssembler::AssembleView
     Logger::Log("Create: srv", fileName);
 }
 
+template<>
+void BufferContext::BufferAssembler::ViewAssembler::AssembleView
+(
+    GPUBufferBehavior::ResourceAccessKey accessKey_,
+    GPUBufferBehavior::InstanceKey instanceKey_,
+    DescriptorHeapContext::ViewCreator& viewCreator_,
+    GPUBufferBehavior* buffer_,
+    const Texture2DBufferDescription& desc_
+)
+{
+    auto srvDesc = desc_.CreateSRV_Desc();
+
+    //srv作成
+    CreateView(accessKey_, instanceKey_, viewCreator_, buffer_, srvDesc, 0);
+    Logger::Log("Create: srv", fileName);
+
+}
+
 
 
 template<>

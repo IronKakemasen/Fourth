@@ -128,6 +128,22 @@ BufferContext::BufferAssembler::ResourceContainer BufferContext::BufferAssembler
 		desc_
 	);
 }
+
+template<>
+BufferContext::BufferAssembler::ResourceContainer BufferContext::BufferAssembler::AssembleResource
+(
+	const std::string& nameCnv_,
+	const Texture2DBufferDescription& desc_
+)
+{
+	return ResourceAssembler::AssembleResource
+	(
+		*resourceCreator,
+		nameCnv_,
+		desc_
+	);
+}
+
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -164,6 +180,13 @@ std::string BufferContext::BufferAssembler::ConvertName<ComputeBuffer>(const std
 {
 	return BufferNameConverter::ConvertName<ComputeBuffer>(srcName_);
 }
+
+template<>
+std::string BufferContext::BufferAssembler::ConvertName<Texture2DBuffer>(const std::string& srcName_)
+{
+	return BufferNameConverter::ConvertName<Texture2DBuffer>(srcName_);
+}
+
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -290,4 +313,24 @@ void BufferContext::BufferAssembler::AssembleView
 		buffer_,
 		desc_
 	);
+}
+
+template<>
+void BufferContext::BufferAssembler::AssembleView
+(
+	GPUBufferBehavior::ResourceAccessKey accessKey_,
+	GPUBufferBehavior::InstanceKey instanceKey_,
+	GPUBufferBehavior* buffer_,
+	const Texture2DBufferDescription& desc_
+)
+{
+	return ViewAssembler::AssembleView
+	(
+		accessKey_,
+		instanceKey_,
+		*viewCreator,
+		buffer_,
+		desc_
+	);
+
 }

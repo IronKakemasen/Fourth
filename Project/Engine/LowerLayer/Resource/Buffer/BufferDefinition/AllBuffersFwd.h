@@ -7,3 +7,4 @@ class DepthStencilBuffer;
 class ComputeBuffer;
 class UploadStructuredBuffer;
 class StaticStructuredBuffer;
+class Texture2DBuffer;

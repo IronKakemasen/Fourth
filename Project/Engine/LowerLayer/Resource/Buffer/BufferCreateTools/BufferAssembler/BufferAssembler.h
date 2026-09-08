@@ -10,8 +10,6 @@
 #include "../../../../Core/DescriptorHeap/DescriptorHeapContext.h"
 
 
-//ビュー生成ツール
-class DescriptorHeapContext::ViewCreator;
 
 
 //バッファとディスクを特定のクラスに限定して組み立てる
@@ -145,6 +143,13 @@ BufferContext::BufferAssembler::ResourceContainer BufferContext::BufferAssembler
     const std::string& nameCnv_,
     const UploadStructuredBufferDescription& desc_
 );
+template<>
+BufferContext::BufferAssembler::ResourceContainer BufferContext::BufferAssembler::AssembleResource
+(
+    const std::string& nameCnv_,
+    const Texture2DBufferDescription& desc_
+);
+
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -160,6 +165,9 @@ template<>
 std::string BufferContext::BufferAssembler::ConvertName<UploadStructuredBuffer>(const std::string& srcName_);
 template<>
 std::string BufferContext::BufferAssembler::ConvertName<ComputeBuffer>(const std::string& srcName_);
+template<>
+std::string BufferContext::BufferAssembler::ConvertName<Texture2DBuffer>(const std::string& srcName_);
+
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -217,4 +225,12 @@ void BufferContext::BufferAssembler::AssembleView
     GPUBufferBehavior::InstanceKey instanceKey_,
     GPUBufferBehavior* buffer_,
     const StaticStructuredBufferDescription& desc_
+);
+template<>
+void BufferContext::BufferAssembler::AssembleView
+(
+    GPUBufferBehavior::ResourceAccessKey accessKey_,
+    GPUBufferBehavior::InstanceKey instanceKey_,
+    GPUBufferBehavior* buffer_,
+    const Texture2DBufferDescription& desc_
 );
