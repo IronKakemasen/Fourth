@@ -6,12 +6,6 @@ CommandStructureSwapChain::CommandStructureSwapChain(DeviceContext::GenerateKey 
 
 }
 
-CommandStructureSwapChain::~CommandStructureSwapChain()
-{
-
-}
-
-
 void CommandStructureSwapChain::CreateSwapChain
 (
 	IDXGIFactory7& dxgiFactory_,

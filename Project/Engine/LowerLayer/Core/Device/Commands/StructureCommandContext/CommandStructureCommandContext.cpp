@@ -11,11 +11,6 @@ CommandStructureCommandContext::CommandStructureCommandContext (DeviceContext::G
 
 }
 
-CommandStructureCommandContext::~CommandStructureCommandContext ()
-{
-
-}
-
 [[nodiscard]] Microsoft::WRL::ComPtr <ID3D12CommandQueue> CommandStructureCommandContext::CreateCommandQueue
 (
 	ID3D12Device* device_,

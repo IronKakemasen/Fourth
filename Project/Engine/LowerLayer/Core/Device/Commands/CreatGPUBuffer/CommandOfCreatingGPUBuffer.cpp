@@ -8,10 +8,6 @@ CommandCreateGPUResource::CommandCreateGPUResource(DeviceContext::GenerateKey ge
 
 }
 
-CommandCreateGPUResource::~CommandCreateGPUResource()
-{
-
-}
 
 [[nodiscard]] Microsoft::WRL::ComPtr<ID3D12Resource> CommandCreateGPUResource::CreateResource
 (

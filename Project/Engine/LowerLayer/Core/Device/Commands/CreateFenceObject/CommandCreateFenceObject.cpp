@@ -6,11 +6,6 @@ CommandCreateFenceObject::CommandCreateFenceObject(DeviceContext::GenerateKey ge
 
 }
 
-CommandCreateFenceObject::~CommandCreateFenceObject()
-{
-
-}
-
 [[nodiscard]] Microsoft::WRL::ComPtr<ID3D12Fence> CommandCreateFenceObject::CreateFenceObj(ID3D12Device8* device_)
 {
 	Microsoft::WRL::ComPtr<ID3D12Fence> fence;

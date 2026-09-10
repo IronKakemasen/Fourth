@@ -9,6 +9,7 @@ class SwapChainContext;
 class RootSignatureContext;
 class PSO_Context;
 
+
 struct DeviceContext::CommandProvider::CreateResourceLicence
 {
 private:
@@ -55,6 +56,14 @@ private:
 
 	friend class PSO_Context;
 	explicit CreatePSO_Licence() = default;
+};
+
+struct DeviceContext::CommandProvider::UploadTextureBufferLicence
+{
+private:
+
+	friend class BufferContext;
+	explicit UploadTextureBufferLicence() = default;
 };
 
 

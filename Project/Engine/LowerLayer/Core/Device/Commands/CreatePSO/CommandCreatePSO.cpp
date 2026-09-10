@@ -12,30 +12,26 @@ CommandCreatePSO::CommandCreatePSO(DeviceContext::GenerateKey generateKey_) :Dev
 
 }
 
-CommandCreatePSO::~CommandCreatePSO()
-{
-
-}
-
-
-void CommandCreatePSO::CreateComputePipelineState
+template<>
+void CommandCreatePSO::CreatePipelineState
 (
 	ID3D12Device8* device_,
 	ID3D12PipelineState** doublePtr_pso_,
-	D3D12_COMPUTE_PIPELINE_STATE_DESC* computeDesc_
+	D3D12_COMPUTE_PIPELINE_STATE_DESC* desc_
 )
 {
-	HRESULT hr = device_->CreateComputePipelineState(computeDesc_, IID_PPV_ARGS(doublePtr_pso_));
+	HRESULT hr = device_->CreateComputePipelineState(desc_, IID_PPV_ARGS(doublePtr_pso_));
 	ErrorMessageOutput::Abort::DetectError(SUCCEEDED(hr), "Compute用のPSO生成失敗", fileName);
 }
 
-void CommandCreatePSO::CreateGraphicsPipelineState
+template<>
+void CommandCreatePSO::CreatePipelineState
 (
 	ID3D12Device8* device_,
 	ID3D12PipelineState** doublePtr_pso_,
-	D3D12_PIPELINE_STATE_STREAM_DESC* streamDesc_
+	D3D12_PIPELINE_STATE_STREAM_DESC* desc_
 )
 {
-	HRESULT hr = device_->CreatePipelineState(streamDesc_,IID_PPV_ARGS(doublePtr_pso_));
+	HRESULT hr = device_->CreatePipelineState(desc_, IID_PPV_ARGS(doublePtr_pso_));
 	ErrorMessageOutput::Abort::DetectError(SUCCEEDED(hr), "Graphics用のPSO生成失敗", fileName);
 }

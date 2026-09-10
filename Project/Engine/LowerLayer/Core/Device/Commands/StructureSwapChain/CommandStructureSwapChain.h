@@ -7,7 +7,6 @@
 struct CommandStructureSwapChain : public DeviceContextCommandBehavior
 {
 	CommandStructureSwapChain(DeviceContext::GenerateKey generateKey_);
-	~CommandStructureSwapChain();
 
 	//スワップチェーンを生成する
 	void CreateSwapChain

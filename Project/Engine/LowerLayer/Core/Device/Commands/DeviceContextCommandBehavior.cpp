@@ -6,7 +6,3 @@ DeviceContextCommandBehavior::DeviceContextCommandBehavior(DeviceContext::Genera
 
 }
 
-DeviceContextCommandBehavior::~DeviceContextCommandBehavior()
-{
-
-}

@@ -7,7 +7,6 @@ struct CommandCreateRootSignature : public DeviceContextCommandBehavior
 {
 	//DeviceContext::CommandProviderクラスのみ生成可能
 	CommandCreateRootSignature(DeviceContext::GenerateKey generateKey_);
-	~CommandCreateRootSignature();
 
 	void CreateRootSignature
 	(

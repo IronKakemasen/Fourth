@@ -18,7 +18,7 @@ class DeviceContext::CommandProvider
 	struct CreateSwapChainLicence;
 	struct CreateRootSigLicence;
 	struct CreatePSO_Licence;
-
+	struct UploadTextureBufferLicence;
 
 public:
 
@@ -101,13 +101,19 @@ struct DeviceContext::CommandProvider::CmdTypeTraits<DeviceContextCmds::CreatePS
 {
 	using Type = CreatePSO_Licence;
 };
-
  
 template<>
 struct DeviceContext::CommandProvider::CmdTypeTraits<DeviceContextCmds::CreateRootSig>
 {
 	using Type = CreateRootSigLicence;
 };
+
+template<>
+struct DeviceContext::CommandProvider::CmdTypeTraits<DeviceContextCmds::UploadTextureBufferCommand>
+{
+	using Type = UploadTextureBufferLicence;
+};
+
 
 
 template<>
@@ -149,5 +155,9 @@ template<>
 template<>
 [[nodiscard]] DeviceContextCmds::CreateRootSig DeviceContext::CommandProvider::Provide
 (typename CmdTypeTraits<DeviceContextCmds::CreateRootSig>::Type licence_);
+
+template<>
+[[nodiscard]] DeviceContextCmds::UploadTextureBufferCommand DeviceContext::CommandProvider::Provide
+(typename CmdTypeTraits<DeviceContextCmds::UploadTextureBufferCommand>::Type licence_);
 
 
