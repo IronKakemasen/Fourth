@@ -21,7 +21,7 @@ public:
 	void KickAndSynchronize(const NexusFieldProof& nexusFieldProof_, AgentKey agentKey_);
 
 	///commandListをラップしたアップロードコマンド
-	CommandContextCmds::UploadCommand ProvideUploadCommand(ProviderKey providerKey_);
+	CommandContextCmds::UploadBufferCommand ProvideUploadCommand(ProviderKey providerKey_);
 
 	///commandListをラップした、バリア張りコマンド
 	CommandContextCmds::PitchBarrierCommand ProvideBarrierPitchCommand(ProviderKey providerKey_);

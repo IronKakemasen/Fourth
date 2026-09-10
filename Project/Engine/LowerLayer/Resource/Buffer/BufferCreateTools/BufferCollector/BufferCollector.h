@@ -5,6 +5,9 @@
 
 class BufferContext::BufferCollector
 {
+	template<typename BufferType>
+	struct BufferTypeTraits;
+
 public:
 
 	struct RegisterLicence;
@@ -21,7 +24,7 @@ public:
 	template<typename BufferType>
 	void Register(RegisterLicence licence_, std::unique_ptr<BufferType> buffer_,BufferUniqueID id_)
 	{
-		auto registerType = Identify<BufferType>();
+		auto registerType = BufferTypeTraits<BufferType>::type;
 
 		TempSaveFormat tmpSaveFormat;
 		tmpSaveFormat.type = registerType;
@@ -43,7 +46,6 @@ private:
 		BufferUniqueID id;
 	};
 
-
 	//一時保管用
 	std::vector<TempSaveFormat> tmp_bufferContainer;
 
@@ -54,39 +56,6 @@ private:
 	template<typename BufferType>
 	std::unique_ptr<GPUBufferBehavior> CastBuffer(std::unique_ptr<BufferType> buffer_);
 
-	//バッファのデータ型に応じて登録先識別用のタイプを返す
-	template<typename BufferType>
-	RegisterType Identify()
-	{
-		RegisterType type = RegisterType::kComputeBuffer;
-
-		if constexpr 
-		(
-			std::is_same_v<BufferType, UploadStructuredBuffer>  ||
-			std::is_same_v<BufferType, ConstantBuffer>
-		)
-		{
-			type = RegisterType::kFrameBuffer;
-		}
-		else if constexpr
-		(
-			std::is_same_v<BufferType, ColorBuffer>				||
-			std::is_same_v<BufferType, DepthStencilBuffer>		
-		)
-		{
-			type = RegisterType::kRenderTarget;
-		}
-		else if constexpr
-		(
-			std::is_same_v<BufferType, StaticStructuredBuffer> 
-		)
-		{
-			type = RegisterType::kReadOnlyBuffer;
-		}
-
-		return type;
-	}
-
 };
 
 
@@ -96,6 +65,42 @@ private:
 
 	friend class BufferContext::BufferCreator;
 	explicit RegisterLicence() = default;
+};
+
+template<>
+struct BufferContext::BufferCollector::BufferTypeTraits<UploadStructuredBuffer>
+{
+	constexpr static RegisterType type = RegisterType::kFrameBuffer;
+};
+
+template<>
+struct BufferContext::BufferCollector::BufferTypeTraits<ConstantBuffer>
+{
+	constexpr static RegisterType type = RegisterType::kFrameBuffer;
+};
+
+template<>
+struct BufferContext::BufferCollector::BufferTypeTraits<ColorBuffer>
+{
+	constexpr static RegisterType type = RegisterType::kRenderTarget;
+};
+
+template<>
+struct BufferContext::BufferCollector::BufferTypeTraits<DepthStencilBuffer>
+{
+	constexpr static RegisterType type = RegisterType::kRenderTarget;
+};
+
+template<>
+struct BufferContext::BufferCollector::BufferTypeTraits<StaticStructuredBuffer>
+{
+	constexpr static RegisterType type = RegisterType::kReadOnlyBuffer;
+};
+
+template<>
+struct BufferContext::BufferCollector::BufferTypeTraits<Texture2DBuffer>
+{
+	constexpr static RegisterType type = RegisterType::kReadOnlyBuffer;
 };
 
 
@@ -116,3 +121,6 @@ std::unique_ptr<GPUBufferBehavior> BufferContext::BufferCollector::CastBuffer(st
 
 template<>
 std::unique_ptr<GPUBufferBehavior> BufferContext::BufferCollector::CastBuffer(std::unique_ptr<StaticStructuredBuffer> buffer_);
+
+template<>
+std::unique_ptr<GPUBufferBehavior> BufferContext::BufferCollector::CastBuffer(std::unique_ptr<Texture2DBuffer> buffer_);

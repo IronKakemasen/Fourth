@@ -82,3 +82,10 @@ std::unique_ptr<GPUBufferBehavior> BufferContext::BufferCollector::CastBuffer(st
 {
 	return std::unique_ptr<GPUBufferBehavior>(std::move(buffer_));
 }
+
+template<>
+std::unique_ptr<GPUBufferBehavior> BufferContext::BufferCollector::CastBuffer(std::unique_ptr<Texture2DBuffer> buffer_)
+{
+	return std::unique_ptr<GPUBufferBehavior>(std::move(buffer_));
+}
+

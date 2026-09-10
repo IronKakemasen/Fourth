@@ -26,9 +26,9 @@ BufferContext::BufferUploader::BufferUploader
 {
 	//コマンドプロバイダーにアクセス
 	auto* commandProvider = commandContextDiplomat_->Access<CommandContext::CommandProvider>();
-	CommandContext::CommandProvider::LicenceType<CommandContextCmds::UploadCommand> licence{};
+	CommandContext::CommandProvider::LicenceType<CommandContextCmds::UploadBufferCommand> licence{};
 
-	uploadCommand = commandProvider->Provide<CommandContextCmds::UploadCommand>(licence);
+	uploadCommand = commandProvider->Provide<CommandContextCmds::UploadBufferCommand>(licence);
 	pitchBarriersCommand = commandProvider->Provide<CommandContextCmds::PitchBarrierCommand>(licence);
 }
 

@@ -18,7 +18,7 @@ class BufferContext
 	//そしてlibraryにつめていく。そしてsrvをひとまとまりにしたものをstructuredBufferとして作成し、アップロード
 	//そのバッファのsrvIndexをさらにGlobalConstantBufferで送るまでやる
 	class TextureBufferCreator;
-	class TextureBufferLibrary;
+	class TextureIndexLibrary;
 
 
 protected:
@@ -103,7 +103,7 @@ private:
 	std::unique_ptr<BufferInfoExtractor> bufferInfoExtractor;
 	std::unique_ptr<GlobalConstantBuffers> globalConstantBuffers;
 	std::unique_ptr<GlobalConstantBufferCreator> globalConstantBufferCreator;
-	std::unique_ptr<TextureBufferLibrary> textureBufferLibrary;
+	std::unique_ptr<TextureIndexLibrary> textureIndexLibrary;
 
 	
 };

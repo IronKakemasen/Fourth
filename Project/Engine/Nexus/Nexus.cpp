@@ -51,7 +51,9 @@ bool Nexus::InstanceLimiter::CanInstantiate()
 Nexus::Nexus()
 {
 	//COMの初期化
-	CoInitializeEx(0, COINITBASE_MULTITHREADED);
+	HRESULT hr = CoInitializeEx(0, COINITBASE_MULTITHREADED);
+	ErrorMessageOutput::Abort::DetectError(SUCCEEDED(hr), "CoInitializeEx()でエラー", fileName);
+
 
 	Logger::Entry("Nexus: Constructor");
 

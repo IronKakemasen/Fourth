@@ -41,7 +41,7 @@ DescriptorHeapContext::DescriptorHeapCreator::DescriptorHeapCreator
 	container_.Import<D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV>
 	(
 		proof_,
-		std::move(Create<D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV>(createDescriptorHeapCmd,kNumDescriptorSRVHeap, false, srvDHIncrementSIze))
+		std::move(Create<D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV>(createDescriptorHeapCmd,kNumDescriptorSRVHeap, true, srvDHIncrementSIze))
 	);
 	Logger::Log("Create: DescriptorHeapSRV", fileName);
 

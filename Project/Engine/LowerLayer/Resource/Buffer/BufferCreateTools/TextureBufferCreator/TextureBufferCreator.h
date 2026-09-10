@@ -7,6 +7,8 @@ class BufferContext::TextureBufferCreator
 	class TextureDataLoader;
 	//テクスチャファイルを読み込む
 	class TextureFileLoader;
+	//バッファを作りアップロードし(厳密には追加)、そのsrvHeapIndexを返す
+	class BufferAssembler;
 
 public:
 	TextureBufferCreator
@@ -15,7 +17,7 @@ public:
 		BufferCreator& bufferCreator_,
 		BufferUploader& bufferUploader_,
 		GlobalConstantBufferCreator& globalConstantBufferCreator_,
-		TextureBufferLibrary& textureBufferLibrary_
+		TextureIndexLibrary& textureBufferLibrary_
 	);
 
 };

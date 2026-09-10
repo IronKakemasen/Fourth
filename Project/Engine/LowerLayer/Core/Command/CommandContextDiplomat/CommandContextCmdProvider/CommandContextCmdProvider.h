@@ -29,7 +29,7 @@ private:
 
 
 template<>
-struct CommandContext::CommandProvider::CmdTypeTraits<CommandContextCmds::UploadCommand>
+struct CommandContext::CommandProvider::CmdTypeTraits<CommandContextCmds::UploadBufferCommand >
 {
 	using Type = CommandContext::CommandProvider::UsesResourceUploadCmdLicence;
 };
@@ -43,8 +43,8 @@ struct CommandContext::CommandProvider::CmdTypeTraits<CommandContextCmds::PitchB
 
 
 template<>
-CommandContextCmds::UploadCommand CommandContext::CommandProvider::Provide<CommandContextCmds::UploadCommand>
-(typename CmdTypeTraits<CommandContextCmds::UploadCommand>::Type licence_);
+CommandContextCmds::UploadBufferCommand  CommandContext::CommandProvider::Provide<CommandContextCmds::UploadBufferCommand >
+(typename CmdTypeTraits<CommandContextCmds::UploadBufferCommand >::Type licence_);
 
 template<>
 CommandContextCmds::PitchBarrierCommand CommandContext::CommandProvider::Provide<CommandContextCmds::PitchBarrierCommand>

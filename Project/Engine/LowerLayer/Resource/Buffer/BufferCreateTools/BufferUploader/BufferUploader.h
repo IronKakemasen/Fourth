@@ -3,7 +3,7 @@
 
 //外部
 #include "../../../../Core/Command/CommandContextCmds.h"
-
+#include "../../../../../../External/DirectXTex/DirectXTex.h"
 
 class GPUBufferBehavior;
 
@@ -19,6 +19,14 @@ class BufferContext::BufferUploader
 		UINT dataSize;
 		UINT numData;
 		std::vector<std::byte> ownedData;
+	};
+
+	//そのテクスチャバッファバージョン
+	struct TemporaryTextureBufferInfoStorage
+	{
+		BufferUniqueID id;
+		ID3D12Resource* intermediateResource;
+		std::vector<D3D12_SUBRESOURCE_DATA> subResources;
 	};
 
 
@@ -68,6 +76,21 @@ public:
 		temporaryBufferInfoStorageContainer.emplace_back(std::move(temporaryBufferInfoStorage));
 	}
 
+	//テクスチャバッファ専用
+	void RegisterTextureBuffer
+	(
+		DirectX::ScratchImage const& image_,
+		const BufferUniqueID id_
+	)
+	{
+		TemporaryTextureBufferInfoStorage temporaryTextureBufferInfoStorage;
+		std::vector<D3D12_SUBRESOURCE_DATA> subresources;
+
+
+		temporaryTextureBufferInfoStorage.id = id_;
+
+
+	}
 
 	///バッファをアップロードする(テクスチャバッファはまた別。あとで共通窓口を作る)
 	///Nexusフィールド限定、代行者限定
@@ -83,10 +106,12 @@ private:
 	//コピーからシェーダーリソースに遷移するためのバリアを抽出
 	class BarrierExtractor;
 
+	//ツール
 	BufferContext::ResourceCreator* resourceCreator;
 	BufferContext::BufferDispatcher* dispatcher;
+
 	//リソースをアップロードするコマンド
-	CommandContextCmds::UploadCommand uploadCommand;
+	CommandContextCmds::UploadBufferCommand uploadCommand;
 	//バリアを張るためのコマンド
 	CommandContextCmds::PitchBarrierCommand pitchBarriersCommand;
 
@@ -94,7 +119,11 @@ private:
 	std::vector<Microsoft::WRL::ComPtr<ID3D12Resource>> intermediateResources;
 	//バリアのコンテナ
 	std::vector<D3D12_RESOURCE_BARRIER> barriers;
+	//バッファの情報を一時的に保管する
 	std::vector<TemporaryBufferInfoStorage> temporaryBufferInfoStorageContainer;
+	//そのテクスチャバッファバージョン
+	std::vector<TemporaryTextureBufferInfoStorage> temporaryTextureBufferInfoStorage;
+
 
 
 	//中間リソースの生成
@@ -113,6 +142,7 @@ private:
 	//終わりの一言
 	void EndLog()const;
 
+	//サブリソース生成
 	template<typename RealDataType>
 	D3D12_SUBRESOURCE_DATA CreateBufferSubResource(RealDataType* realData_ , UINT const resourceSize_)const
 	{

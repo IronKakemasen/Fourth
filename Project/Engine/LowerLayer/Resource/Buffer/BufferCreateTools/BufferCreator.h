@@ -121,3 +121,9 @@ struct BufferContext::BufferCreator::DescTypeTraits<ComputeBufferDescription>
 {
 	using Type = ComputeBuffer;
 };
+
+template<>
+struct BufferContext::BufferCreator::DescTypeTraits<Texture2DBufferDescription>
+{
+	using Type = Texture2DBuffer;
+};
