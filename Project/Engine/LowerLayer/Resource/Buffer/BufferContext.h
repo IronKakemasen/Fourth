@@ -19,6 +19,7 @@ class BufferContext
 	//そのバッファのsrvIndexをさらにGlobalConstantBufferで送るまでやる
 	class TextureBufferCreator;
 	class TextureIndexLibrary;
+	struct BufferPoolSet;
 
 
 protected:
@@ -33,7 +34,6 @@ protected:
 		kCount
 	};
 
-	struct BufferPoolSet;
 
 public:
 

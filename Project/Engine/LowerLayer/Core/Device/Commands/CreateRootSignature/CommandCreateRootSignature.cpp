@@ -12,12 +12,6 @@ CommandCreateRootSignature::CommandCreateRootSignature(DeviceContext::GenerateKe
 
 }
 
-CommandCreateRootSignature::~CommandCreateRootSignature()
-{
-
-}
-
-
 void CommandCreateRootSignature::CreateRootSignature
 (
 	ID3D12Device8* device_,

@@ -397,6 +397,7 @@
     <ClInclude Include="Assets\Shared\StructuredBuffer.h" />
     <ClInclude Include="Engine\LowerLayer\Core\Command\CommandContextDiplomat\CommandContextToolLender\CmdContextToolLenderLicences.h" />
     <ClInclude Include="Engine\LowerLayer\Core\DescriptorHeap\DescriptorHeapPoolContainer\DescriptorHeapPoolContainer.h" />
+    <ClInclude Include="Engine\LowerLayer\Core\Device\Commands\AllDeviceContextCmds.h" />
     <ClInclude Include="Engine\LowerLayer\Core\Device\DeviceContextCmds.h" />
     <ClInclude Include="Engine\LowerLayer\Core\Device\DeviceContextDiplomat\DeviceContextCommandProvider\DeviceContextCmdLicences.h" />
     <ClInclude Include="Engine\LowerLayer\Render\RenderPass\AllRenderPass\RenderPassTraits.h" />

@@ -3,12 +3,8 @@
 
 
 //コマンド群
-#include "../../Commands/CreatGPUBuffer/CommandOfCreatingGPUBuffer.h"
-#include "../../Commands/CreateDescriptorHeap/CommandCreateDescriptorHeap.h"
-#include "../../Commands/CreateView/CommandCreateView.h"
-#include "../../Commands/StructureSwapChain/CommandStructureSwapChain.h"
-#include "../../Commands/CreatePSO/CommandCreatePSO.h"
-#include "../../Commands/CreateRootSignature/CommandCreateRootSignature.h"
+#include "../../Commands/AllDeviceContextCmds.h"
+
 
 
 namespace
@@ -97,7 +93,7 @@ template<>
 		auto* device = deviceGetter(DeviceContext::AccessKey{});
 		CommandCreateView command(DeviceContext::GenerateKey{});
 
-		return command.CreateRTV(device, resource_, desc_, descriptorHandleCPU_);
+		return command.CreateView(device, resource_, desc_, descriptorHandleCPU_);
 	};
 }
 
@@ -110,7 +106,7 @@ template<>
 		auto* device = deviceGetter(DeviceContext::AccessKey{});
 		CommandCreateView command(DeviceContext::GenerateKey{});
 
-		return command.CreateSRV(device, resource_, desc_, descriptorHandleCPU_);
+		return command.CreateView(device, resource_, desc_, descriptorHandleCPU_);
 	};
 }
 
@@ -123,7 +119,7 @@ template<>
 		auto* device = deviceGetter(DeviceContext::AccessKey{});
 		CommandCreateView command(DeviceContext::GenerateKey{});
 
-		return command.CreateDSV(device, resource_, desc_, descriptorHandleCPU_);
+		return command.CreateView(device, resource_, desc_, descriptorHandleCPU_);
 	};
 }
 
@@ -149,7 +145,7 @@ template<>
 		auto* device = deviceGetter(DeviceContext::AccessKey{});
 		CommandCreatePSO command(DeviceContext::GenerateKey{});
 
-		command.CreateComputePipelineState(device, doublePtr_pipelineState_, descType_);
+		command.CreatePipelineState(device, doublePtr_pipelineState_, descType_);
 	};
 }
 
@@ -162,7 +158,7 @@ template<>
 		auto* device = deviceGetter(DeviceContext::AccessKey{});
 		CommandCreatePSO command(DeviceContext::GenerateKey{});
 
-		command.CreateGraphicsPipelineState(device, doublePtr_pipelineState_, descType_);
+		command.CreatePipelineState(device, doublePtr_pipelineState_, descType_);
 	};
 }
 
@@ -177,4 +173,18 @@ template<>
 
 		command.CreateRootSignature(device, nodeMask_, signatureBlob_, doublePtr_rootSignature_);
 	};
+}
+
+template<>
+[[nodiscard]] DeviceContextCmds::UploadTextureBufferCommand DeviceContext::CommandProvider::Provide
+(typename CmdTypeTraits<DeviceContextCmds::UploadTextureBufferCommand>::Type licence_)
+{
+	return [this](DirectX::ScratchImage const& image_, std::vector<D3D12_SUBRESOURCE_DATA>& subResources_)
+	{
+		auto* device = deviceGetter(DeviceContext::AccessKey{});
+		CommandUploadResource command(DeviceContext::GenerateKey{});
+
+		command.UploadTextureResource(device, image_, subResources_);
+	};
+
 }

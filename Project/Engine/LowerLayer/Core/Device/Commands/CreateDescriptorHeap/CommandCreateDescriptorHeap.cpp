@@ -7,12 +7,6 @@ CommandCreateDescriptorHeap::CommandCreateDescriptorHeap(DeviceContext::Generate
 
 }
 
-CommandCreateDescriptorHeap::~CommandCreateDescriptorHeap()
-{
-
-}
-
-
 Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> CommandCreateDescriptorHeap::Create(ID3D12Device8* device_, D3D12_DESCRIPTOR_HEAP_TYPE heapType_, UINT numDescriptors_, bool shaderVisible)
 {
 	Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> ret_descriptorHeap = nullptr;

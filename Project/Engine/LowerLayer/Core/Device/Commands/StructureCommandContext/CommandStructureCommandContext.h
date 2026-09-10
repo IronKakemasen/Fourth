@@ -7,7 +7,6 @@
 struct CommandStructureCommandContext : public DeviceContextCommandBehavior
 {
 	CommandStructureCommandContext(DeviceContext::GenerateKey generateKey_);
-	~CommandStructureCommandContext();
 
 	[[nodiscard]] Microsoft::WRL::ComPtr<ID3D12CommandQueue> CreateCommandQueue
 	(

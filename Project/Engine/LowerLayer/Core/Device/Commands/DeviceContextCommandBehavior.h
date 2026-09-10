@@ -8,6 +8,6 @@ public:
 
 
 	DeviceContextCommandBehavior(DeviceContext::GenerateKey generateKey_);
-	~DeviceContextCommandBehavior();
+	virtual ~DeviceContextCommandBehavior() = default;
 };
 

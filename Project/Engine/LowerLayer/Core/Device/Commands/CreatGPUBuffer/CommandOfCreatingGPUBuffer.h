@@ -6,7 +6,6 @@ struct CommandCreateGPUResource : public DeviceContextCommandBehavior
 {
 	//DeviceContext::CommandProviderクラスのみ生成可能
 	CommandCreateGPUResource(DeviceContext::GenerateKey generateKey_);
-	~CommandCreateGPUResource();
 
 	[[nodiscard]] Microsoft::WRL::ComPtr<ID3D12Resource> CreateResource
 	(
