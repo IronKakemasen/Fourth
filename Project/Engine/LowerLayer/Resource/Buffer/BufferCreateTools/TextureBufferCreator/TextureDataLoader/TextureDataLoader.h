@@ -5,7 +5,7 @@
 
 class BufferContext::TextureBufferCreator::TextureDataLoader
 {
-	friend class BufferContext::TextureBufferCreator;
+	friend class TextureBufferCreator;
 
 	struct DataStrings
 	{

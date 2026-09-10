@@ -8,7 +8,7 @@
 
 class BufferContext::TextureBufferCreator::TextureFileLoader
 {
-	friend class BufferContext::TextureBufferCreator;
+	friend class TextureBufferCreator;
 
 	static DirectX::ScratchImage LoadTextureFile(std::string const filePath_, TextureComponent::TextureType textureType_);
 

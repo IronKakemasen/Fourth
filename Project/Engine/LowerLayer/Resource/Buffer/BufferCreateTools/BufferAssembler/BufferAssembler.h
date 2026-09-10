@@ -183,6 +183,8 @@ template<>
 std::unique_ptr<UploadStructuredBuffer> BufferContext::BufferAssembler::Materialize(ResourceContainer resourceContainer_, const BufferDescriptionBehavior& desc_, std::string nameCnv_);
 template<>
 std::unique_ptr<ComputeBuffer> BufferContext::BufferAssembler::Materialize(ResourceContainer resourceContainer_, const BufferDescriptionBehavior& desc_, std::string nameCnv_);
+template<>
+std::unique_ptr<Texture2DBuffer> BufferContext::BufferAssembler::Materialize(ResourceContainer resourceContainer_, const BufferDescriptionBehavior& desc_, std::string nameCnv_);
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////

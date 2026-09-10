@@ -10,8 +10,8 @@ CommandContext::CommandProvider::CommandProvider(NexusFieldProof proof_, Command
 }
 
 template<>
-CommandContextCmds::UploadCommand CommandContext::CommandProvider::Provide<CommandContextCmds::UploadCommand>
-(typename CmdTypeTraits<CommandContextCmds::UploadCommand>::Type licence_)
+CommandContextCmds::UploadBufferCommand  CommandContext::CommandProvider::Provide<CommandContextCmds::UploadBufferCommand >
+(typename CmdTypeTraits<CommandContextCmds::UploadBufferCommand >::Type licence_)
 {
 	return resourceUploader->ProvideUploadCommand(ProviderKey{});
 }
