@@ -388,6 +388,7 @@
     <ClCompile Include="Engine\LowerLayer\Resource\Buffer\TextureIndexLibrary\TextureIndexLibrary.cpp" />
     <ClCompile Include="Engine\LowerLayer\Resource\Buffer\BufferDefinition\GPUBuffer\Texture2DBuffer\Texture2DBuffer.cpp" />
     <ClCompile Include="Engine\LowerLayer\Resource\Buffer\BufferCreateTools\TextureBufferCreator\TextureBufferAssembler\TextureBufferAssembler.cpp" />
+    <ClCompile Include="Engine\LowerLayer\Core\Window\WindowContextBuilder\WindowContextBuilder.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Assets\BAKA\ConstantBuffers.h" />
@@ -645,6 +646,7 @@
     <ClInclude Include="Engine\LowerLayer\Resource\Buffer\TextureIndexLibrary\TextureIndexLibrary.h" />
     <ClInclude Include="Engine\LowerLayer\Resource\Buffer\BufferDefinition\GPUBuffer\Texture2DBuffer\Texture2DBuffer.h" />
     <ClInclude Include="Engine\LowerLayer\Resource\Buffer\BufferCreateTools\TextureBufferCreator\TextureBufferAssembler\TextureBufferAssembler.h" />
+    <ClInclude Include="Engine\LowerLayer\Core\Window\WindowContextBuilder\WindowContextBuilder.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

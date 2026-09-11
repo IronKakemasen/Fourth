@@ -4,6 +4,17 @@ class Nexus;
 
 class WindowContext
 {
+	class Builder;
+
+	struct CoreParts
+	{
+		HINSTANCE hInst;
+		HWND hWnd;
+		UINT width;
+		UINT height;
+		LPCWSTR windowName;
+	}coreParts;
+
 public:
 
 	struct NexusFieldProof;
@@ -14,16 +25,6 @@ public:
 
 private:
 
-	struct Param
-	{
-		HINSTANCE m_hInst;
-		HWND m_hWnd;
-		UINT m_width;
-		UINT m_height;
-		LPCWSTR m_windowName;
-	};
-
-	Param setupParam;
 	static LRESULT CALLBACK WndProc(HWND hWnd_, UINT msg_, WPARAM wParam_, LPARAM lParam_);
 };
 

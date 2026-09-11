@@ -15,7 +15,6 @@ Texture2DBufferDescription::Texture2DBufferDescription
 ):BufferDescriptionBehavior(D3D12_RESOURCE_STATE_COPY_DEST, ProjectConfig::Render::NumBuffer::kSingleBuffer)
 {
     param.texture2DState.type = texture2DState_.type;
-    param.texture2DState.quality = texture2DState_.quality;
 
     //メタデータから必要情報を抽出
     auto const& metaData = scratchImage_.GetMetadata();
@@ -123,8 +122,6 @@ void Texture2DBufferDescription::ExtractParams(DirectX::TexMetadata const& metaD
     //TextureTypeによるフォーマット
     textureParams.format = FormatTable(param.texture2DState.type);
 
-    //TextureQualityによる最大解像度
-    float maxResolution = float(param.texture2DState.quality);
 
     //出力解像度
     float srcWidth = float(metaData_.width);
@@ -132,33 +129,5 @@ void Texture2DBufferDescription::ExtractParams(DirectX::TexMetadata const& metaD
 
     textureParams.width = uint32_t(srcWidth);
     textureParams.height = uint32_t(srcHeight);
-
-    //最大解像度を設定せず、画像ファイルのありのままの姿ならスルー
-    if (maxResolution > (float)TextureQuality::kUltra)
-    {
-        //縦横のうちデカいほうのサイズ
-        float const maxSize = Comparison::Max(srcWidth, srcHeight);
-
-        //それが最大解像度を超えていたら縮小しなくてはいけない
-        if (maxSize > maxResolution)
-        {
-            //maxSizeをmaxResolutionに合わせるためのスケール
-            float const adjustScale = maxResolution / maxSize;
-
-            textureParams.width = uint32_t(srcWidth * adjustScale);
-            textureParams.height = uint32_t(srcHeight * adjustScale);
-        }
-    }
-
-    //Spriteはmipmapを生成しない
-    if (param.texture2DState.type == TextureType::kSprite) return;
-
-    //通常テクスチャはmipmapを生成
-    uint32_t const maxDimension = Comparison::Max(textureParams.width, textureParams.height);
-    //何枚の縮小画像を用意するか計算
-    for (uint32_t size = maxDimension; size > 1; size /= 2)
-    {
-        ++textureParams.mipLevels;
-    }
 
 }

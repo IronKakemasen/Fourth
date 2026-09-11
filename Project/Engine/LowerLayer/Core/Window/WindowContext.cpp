@@ -1,5 +1,5 @@
 #include "WindowContext.h"
-#include <strsafe.h>
+#include "WindowContextBuilder/WindowContextBuilder.h"
 #include "DumpExporter.h"
 
 LRESULT CALLBACK WindowContext::WndProc(HWND hWnd_, UINT msg_, WPARAM wParam_, LPARAM lParam_)
@@ -31,16 +31,16 @@ LRESULT CALLBACK WindowContext::WndProc(HWND hWnd_, UINT msg_, WPARAM wParam_, L
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 void WindowContext::Finalize()
 {
-	if (setupParam.m_hWnd)
+	if (coreParts.hWnd)
 	{
-		DestroyWindow(setupParam.m_hWnd);
-		setupParam.m_hWnd = nullptr;
+		DestroyWindow(coreParts.hWnd);
+		coreParts.hWnd = nullptr;
 	}
 
 	//ウィンドウの登録を解除
-	if (setupParam.m_hInst)
+	if (coreParts.hInst)
 	{
-		UnregisterClass(setupParam.m_windowName, setupParam.m_hInst);
+		UnregisterClass(coreParts.windowName, coreParts.hInst);
 	}
 }
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -48,73 +48,21 @@ void WindowContext::Finalize()
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 HWND WindowContext::WatchHWND()
 {
-	return setupParam.m_hWnd;
+	return coreParts.hWnd;
 }
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 WindowContext::WindowContext(NexusFieldProof proof_)
 {
-	using namespace ProjectConfig::Window;
+	//コアパーツを生成
+	coreParts =  Builder::Build(proof_);
 
-	auto hInst = GetModuleHandle(nullptr);
-
-	assert(!(!hInst) && "hInstがぬるぽ");
-
-	// ウィンドウクラスの登録
-	WNDCLASSEX wc = {};
-
-	setupParam.m_windowName = kTitle;
-	setupParam.m_width = kWidth;
-	setupParam.m_height = kHeight;
-
-	wc.cbSize = sizeof(WNDCLASSEX);
-	wc.style = CS_HREDRAW | CS_VREDRAW;
-	wc.lpfnWndProc = WindowContext::WndProc;
-	wc.hIcon = LoadIcon(hInst, IDI_APPLICATION);
-	wc.hCursor = LoadCursor(hInst, IDC_ARROW);
-	wc.hbrBackground = GetSysColorBrush(COLOR_BACKGROUND);
-	wc.lpszMenuName = nullptr;
-	wc.lpszClassName = kTitle;
-	wc.hIconSm = LoadIcon(hInst, IDI_APPLICATION);
-
-	//ウィンドウの登録
-	ErrorMessageOutput::Abort::DetectError(RegisterClassEx(&wc), "ウィンドウの登録失敗", "WindowContext.cpp");
-
-	//インスタンスハンドルの設定
-	setupParam.m_hInst = hInst;
-
-	//WindowSize
-	RECT rc = {};
-	rc.right = static_cast<LONG>(setupParam.m_width);
-	rc.bottom = static_cast<LONG>(setupParam.m_height);
-	auto style = WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU;
-	AdjustWindowRect(&rc, style, FALSE);
-
-	// ウィンドウの作成
-	setupParam.m_hWnd = CreateWindowEx(
-		0,                              // Optional window styles.
-		kTitle,                   // Window class
-		kTitle,					// Window text
-		style,							// Window style
-		// Size and position
-		CW_USEDEFAULT,
-		CW_USEDEFAULT,
-		rc.right - rc.left,
-		rc.bottom - rc.top,
-		nullptr,							// Parent window    
-		nullptr,							// Menu
-		setupParam.m_hInst,						// Instance handle
-		nullptr							// Additional application data
-	);
-
-	ErrorMessageOutput::Abort::DetectError((setupParam.m_hWnd != NULL), "m_hWndがぬるぽ","WindowContext.cpp");
-
-	// ウィンドウの表示
-	if(setupParam.m_hWnd != 0 ) ShowWindow(setupParam.m_hWnd, SW_SHOWNORMAL);
+	//ウィンドウの表示
+	if (coreParts.hWnd != 0) ShowWindow(coreParts.hWnd, SW_SHOWNORMAL);
 
 	//ウィンドウにフォーカスを設定
-	SetFocus(setupParam.m_hWnd);
+	SetFocus(coreParts.hWnd);
 
 	//誰も捕捉しなかった場合に(Unhandled)、補足する関数を登録
 	SetUnhandledExceptionFilter(ExportDump);

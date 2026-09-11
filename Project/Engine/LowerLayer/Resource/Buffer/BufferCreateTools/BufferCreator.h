@@ -16,7 +16,7 @@ public:
 	(
 		BufferContext::NexusFieldProof proof_,
 		BufferContext::ResourceCreator* resourceCreator_,
-		DescriptorHeapContextDiplomat* descriptorheapContextDiplomat_,
+		DescriptorHeapContextDiplomat& descriptorheapContextDiplomat_,
 		BufferCollector* collector_,
 		BufferDispatcher* dispatcher_
 	);

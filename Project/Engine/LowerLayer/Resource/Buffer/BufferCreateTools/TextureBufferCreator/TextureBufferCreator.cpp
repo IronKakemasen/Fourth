@@ -18,6 +18,7 @@ BufferContext::TextureBufferCreator::TextureBufferCreator
 	BufferUploader& bufferUploader_,
 	GlobalConstantBufferCreator& globalConstantBufferCreator_,
 	TextureIndexLibrary& textureBufferLibrary_
+
 )
 {
 	///目標
@@ -25,7 +26,7 @@ BufferContext::TextureBufferCreator::TextureBufferCreator
 	//全バッファのsrvをひとまとまりにしたものをStaticStructuredBufferとして作成し、アップロード
 	//そのバッファのsrvIndexをさらにGlobalConstantBufferで送る
 
-	Logger::Log("- - - - Create All TextureBuffer - - - -","TextureBufferCreator.cpp\n");
+	Logger::Log("- - - - Create All TextureBuffer - - - -","TextureBufferCreator.cpp");
 
 	struct DescEntry
 	{
@@ -55,6 +56,7 @@ BufferContext::TextureBufferCreator::TextureBufferCreator
 	}
 
 
+	Logger::Log("\n- - - - - - - - - - - - - - - - - - - - -", "TextureBufferCreator.cpp");
 
 
 

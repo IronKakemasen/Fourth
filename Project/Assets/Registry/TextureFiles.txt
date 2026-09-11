@@ -1,4 +1,4 @@
-key: "white2x2_albedo" , value: "Assets/Texture/albedo/white2x2.png"
-key: "white2x2_emissive" , value: "Assets/Texture/emissive/white2x2.png"
-key: "white2x2_normal" , value: "Assets/Texture/normal/white2x2.png"
-key: "white2x2_sprite" , value: "Assets/Texture/sprite/white2x2.png"
+key: "white2x2_albedo" , value: "Assets/Texture/Compiled/white2x2_albedo.dds"
+key: "white2x2_emissive" , value: "Assets/Texture/Compiled/white2x2_emissive.dds"
+key: "white2x2_normal" , value: "Assets/Texture/Compiled/white2x2_normal.dds"
+key: "white2x2_sprite" , value: "Assets/Texture/Compiled/white2x2_sprite.dds"
