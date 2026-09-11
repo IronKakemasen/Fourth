@@ -235,11 +235,121 @@ if (Test-Path $JsonFolder)
 
 
 ########################################
+# Texture Compile (Original -> Compiled)
+########################################
+
+$TexConvPath       = Join-Path $projectFolder "texconv.exe"
+$TextureOriginal   = Join-Path $projectFolder "Assets\Texture\Original"
+$TextureCompiled   = Join-Path $projectFolder "Assets\Texture\Compiled"
+
+$TextureFormatMap = @{
+    "albedo"   = "BC7_UNORM_SRGB"
+    "normal"   = "BC5_UNORM"
+    "sprite"   = "BC7_UNORM_SRGB"
+    "emissive" = "BC7_UNORM_SRGB"
+}
+
+if (-not (Test-Path -LiteralPath $TexConvPath))
+{
+    throw "texconv.exe が見つかりません: $TexConvPath"
+}
+
+if (Test-Path -LiteralPath $TextureOriginal)
+{
+    New-Item -ItemType Directory -Path $TextureCompiled -Force | Out-Null
+
+    # 出力済みファイル名を記録。同名衝突時は最初の1枚だけ採用する。
+    $compiledNames = New-Object 'System.Collections.Generic.HashSet[string]' ([System.StringComparer]::OrdinalIgnoreCase)
+
+    Get-ChildItem -Path $TextureOriginal -Recurse -File |
+        Where-Object {
+            $_.Extension -ceq ".png" -or $_.Extension -ceq ".jpg"
+        } |
+        ForEach-Object {
+            $file = $_
+
+            # Original直下からの相対パスを分解し、最初のフォルダ名をカテゴリにする。
+            $relativeToOriginal = $file.FullName.Substring($TextureOriginal.Length).TrimStart('\')
+            $relativeParts = $relativeToOriginal -split '[\\/]'
+            $category = $relativeParts[0]
+
+            # 対応外カテゴリは警告してスキップ。
+            if (-not $TextureFormatMap.ContainsKey($category))
+            {
+                Write-Warning "対応外フォルダのためスキップ: $($file.FullName)"
+                return
+            }
+
+            $outputName = "{0}_{1}.dds" -f $file.BaseName, $category
+            $outputPath = Join-Path $TextureCompiled $outputName
+
+            # 既存ファイル、または今回の処理中に発生した同名衝突はスキップ。
+            if (Test-Path -LiteralPath $outputPath)
+            {
+                Write-Host "既存ファイルのためスキップ: $outputName"
+                return
+            }
+
+            if (-not $compiledNames.Add($outputName))
+            {
+                Write-Warning "同名衝突のためスキップ: $($file.FullName) -> $outputName"
+                return
+            }
+
+            $format = $TextureFormatMap[$category]
+            $mipCount = if ($category -ceq "sprite") { "1" } else { "0" }
+
+            # texconvは入力ファイルのベース名でDDSを書き出すため、画像ごとに一時フォルダを使う。
+            $tempDir = Join-Path $TextureCompiled (".texconv_tmp_{0}" -f ([guid]::NewGuid().ToString("N")))
+            New-Item -ItemType Directory -Path $tempDir -Force | Out-Null
+
+            try
+            {
+                Write-Host "DDS変換中: $($file.FullName) -> $outputName"
+
+                & $TexConvPath `
+                    -y `
+                    -ft dds `
+                    -f $format `
+                    -m $mipCount `
+                    -o $tempDir `
+                    $file.FullName
+
+                if ($LASTEXITCODE -ne 0)
+                {
+                    throw "DDS変換に失敗しました: $($file.FullName)"
+                }
+
+                # texconvの出力拡張子は通常 .DDS。大文字小文字を問わず検索する。
+                $generatedFile = Get-ChildItem -LiteralPath $tempDir -File |
+                    Where-Object { $_.Extension -ieq ".dds" } |
+                    Select-Object -First 1
+
+                if ($null -eq $generatedFile)
+                {
+                    throw "texconvの出力ファイルが見つかりません: $($file.FullName)"
+                }
+
+                Move-Item `
+                    -LiteralPath $generatedFile.FullName `
+                    -Destination $outputPath
+            }
+            finally
+            {
+                if (Test-Path -LiteralPath $tempDir)
+                {
+                    Remove-Item -LiteralPath $tempDir -Recurse -Force
+                }
+            }
+        }
+}
+
+########################################
 # Texture Registry
 ########################################
 
 $OutputFileTexture = Join-Path $RegistryFolder "TextureFiles.txt"
-$TextureFolder = Join-Path $projectFolder "Assets\Texture"
+$TextureFolder = Join-Path $projectFolder "Assets\Texture\Compiled"
 
 if (Test-Path $OutputFileTexture)
 {
@@ -259,22 +369,8 @@ if (Test-Path $TextureFolder)
     } |
     ForEach-Object {
 
-        # Texture フォルダから見た相対パス
-        $relativeTexturePath = $_.FullName.Substring($TextureFolder.Length + 1)
-
-        # 最初のフォルダ名を suffix に使用
-        $parts = $relativeTexturePath -split '[\\/]'
-
-        if ($parts.Count -ge 2)
-        {
-            $suffix = $parts[0]
-            $key = "$($_.BaseName)_$suffix"
-        }
-        else
-        {
-            # Texture直下にあるファイルはファイル名のみ
-            $key = $_.BaseName
-        }
+        # サブフォルダ名による接尾辞を廃止し、ファイル名をそのままキーに使用
+        $key = $_.BaseName
 
         # Projectフォルダからの相対パス
         $relativePath = $_.FullName.Substring($projectFolder.Length + 1).Replace("\", "/")

@@ -27,7 +27,7 @@ public:
     (
         BufferContext::NexusFieldProof proof_,
         ResourceCreator* resourceCreator_,
-        DescriptorHeapContextDiplomat* descriptorheapContextDiplomat_
+        DescriptorHeapContextDiplomat& descriptorheapContextDiplomat_
     );
 
     ///☆☆☆バッファ生成関数（本丸）☆☆☆

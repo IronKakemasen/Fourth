@@ -22,12 +22,12 @@ BufferContext::BufferAssembler::BufferAssembler
 (
 	BufferContext::NexusFieldProof proof_,
 	ResourceCreator* resourceCreator_, 
-	DescriptorHeapContextDiplomat* descriptorheapContextDiplomat_
+	DescriptorHeapContextDiplomat& descriptorheapContextDiplomat_
 )
 	:resourceCreator(resourceCreator_)
 {
 	//ビュークリエイターを借りる
-	auto* toolLender = descriptorheapContextDiplomat_->Access<DescriptorHeapContext::ToolLender>();
+	auto* toolLender = descriptorheapContextDiplomat_.Access<DescriptorHeapContext::ToolLender>();
 	DescriptorHeapContext::ToolLender::LicenceType<DescriptorHeapContext::ViewCreator> licence;
 	viewCreator = toolLender->Lend<DescriptorHeapContext::ViewCreator>(licence);
 

@@ -20,33 +20,14 @@ DirectX::ScratchImage BufferContext::TextureBufferCreator::TextureFileLoader::Lo
 	std::wstring filePathW = StringConverter::ConvertString(filePath_);
 	HRESULT hr;
 
-	///ddsファイルであれば
-	if
+	///ddsファイルであれば（のみに変更）
+	hr = DirectX::LoadFromDDSFile
 	(
-		StringProcessing::CheckFileExtension(filePath_, ".dds") ||
-		StringProcessing::CheckFileExtension(filePath_, ".DDS")
-	)
-	{
-		hr = DirectX::LoadFromDDSFile
-		(
-			filePathW.c_str(),
-			DDS_FLAGS_Table(textureType_),
-			nullptr,
-			image
-		);
-
-	}
-	///そうでなければ
-	else
-	{
-		hr = DirectX::LoadFromWICFile
-		(
-			filePathW.c_str(),
-			WIC_FLAGS_Table(textureType_),
-			nullptr,
-			image
-		);
-	}
+		filePathW.c_str(),
+		DDS_FLAGS_Table(textureType_),
+		nullptr,
+		image
+	);
 
 	ErrorMessageOutput::Assert::DetectError
 	(
@@ -56,7 +37,6 @@ DirectX::ScratchImage BufferContext::TextureBufferCreator::TextureFileLoader::Lo
 	);
 
 	Logger::Log("Load TextureFile: " + filePath_, fileName);
-	Logger::Log("\n");
 
 	return image;
 }
@@ -66,12 +46,10 @@ void BufferContext::TextureBufferCreator::TextureFileLoader::CheckExtension(std:
 	if
 	(
 		!StringProcessing::CheckFileExtension(filePath_, ".dds") &&
-		!StringProcessing::CheckFileExtension(filePath_, ".DDS") &&
-		!StringProcessing::CheckFileExtension(filePath_, ".png") &&
-		!StringProcessing::CheckFileExtension(filePath_, ".jpg")
+		!StringProcessing::CheckFileExtension(filePath_, ".DDS") 
 	)
 	{
-		ErrorMessageOutput::Assert::OutputError(filePath_ + "のファイル指定子おかしいっす", fileName);
+		ErrorMessageOutput::Assert::OutputError(filePath_ + "のファイル指定子がdds以外っす", fileName);
 	}
 }
 

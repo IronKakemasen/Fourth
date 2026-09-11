@@ -31,9 +31,9 @@ namespace
 BufferContext::BufferContext
 (
 	NexusFieldProof proof_,
-	DeviceContextDiplomat* deviceContextDiplomat_,
-	DescriptorHeapContextDiplomat* descriptorheapContextDiplomat_,
-	CommandContextDiplomat* commandContextDiplomat_
+	DeviceContextDiplomat& deviceContextDiplomat_,
+	DescriptorHeapContextDiplomat& descriptorheapContextDiplomat_,
+	CommandContextDiplomat& commandContextDiplomat_
 )
 {
 	Logger::Entry("BufferContext: Constructor");
@@ -59,7 +59,7 @@ BufferContext::BufferContext
 	);
 	Logger::Log("Instantiate: BufferCreator", fileName);
 
-	bufferUploader.reset(new BufferUploader(proof_, resourceCreator.get(),bufferDispatcher.get(), commandContextDiplomat_));
+	bufferUploader.reset(new BufferUploader(proof_, resourceCreator.get(),bufferDispatcher.get(), commandContextDiplomat_, deviceContextDiplomat_));
 	Logger::Log("Instantiate: BufferUploader", fileName);
 
 	globalConstantBuffers.reset(new GlobalConstantBuffers(proof_));

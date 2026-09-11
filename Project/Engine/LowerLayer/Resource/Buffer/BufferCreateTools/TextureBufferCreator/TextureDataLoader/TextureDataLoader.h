@@ -9,8 +9,6 @@ class BufferContext::TextureBufferCreator::TextureDataLoader
 
 	struct DataStrings
 	{
-		static inline const std::string kJsonFile		= "TextureSettings";
-
 		static inline const std::string	kQuality		= "Quality";
 		static inline const std::string	kQualityLow		= "Low";
 		static inline const std::string kQualityMidium	= "Mid";
@@ -33,7 +31,6 @@ class BufferContext::TextureBufferCreator::TextureDataLoader
 private:
 
 	static TextureComponent::TextureType ToTextureType(std::string const typeString_);
-	static TextureComponent::TextureQuality ToTextureQuality(std::string const qualityString_);
 	
 };
 

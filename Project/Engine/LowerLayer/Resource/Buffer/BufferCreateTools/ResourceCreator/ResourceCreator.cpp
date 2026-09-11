@@ -7,10 +7,10 @@
 #include "../../../../Core/Device/DeviceContextDiplomat/DeviceContextCommandProvider/DeviceContextCmdLicences.h"
 #include "../../../../Core/Device/DeviceContextCmds.h"
 
-BufferContext::ResourceCreator::ResourceCreator(NexusFieldProof proof_, DeviceContextDiplomat* deviceContextDiplomat_)
+BufferContext::ResourceCreator::ResourceCreator(NexusFieldProof proof_, DeviceContextDiplomat& deviceContextDiplomat_)
 {
 	//生リソース生成コマンドを受け取る
-	auto* cmdProvider = deviceContextDiplomat_->Access<DeviceContext::CommandProvider>();
+	auto* cmdProvider = deviceContextDiplomat_.Access<DeviceContext::CommandProvider>();
 	DeviceContext::CommandProvider::LicenceType<DeviceContextCmds::CreateResource> licence;
 
 	createResourceCommand = cmdProvider->Provide<DeviceContextCmds::CreateResource>(licence);

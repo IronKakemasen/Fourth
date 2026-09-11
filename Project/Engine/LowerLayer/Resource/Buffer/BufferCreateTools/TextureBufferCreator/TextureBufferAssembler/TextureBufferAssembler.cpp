@@ -5,6 +5,7 @@
 #include "../../BufferUploader/BufferUploader.h"
 
 
+
 SRVHeapIndex BufferContext::TextureBufferCreator::BufferAssembler::AssembleTexture2DBuffer
 (
 	std::string const name_,

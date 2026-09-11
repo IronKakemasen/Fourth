@@ -11,6 +11,13 @@
 #include "../../../../Core/Command/CommandContextDiplomat/CommandContextCmdProvider/CommandContextCmdProvider.h"
 #include "../../../../Core/Command/CommandContextDiplomat/CommandContextCmdProvider/CommandContextCmdProviderLicences.h"
 
+//外部
+#include "../../../../Core/Device/DeviceContextCmds.h"
+#include "../../../../Core/Device/DeviceContextDiplomat/DeviceContextDiplomat.h"
+#include "../../../../Core/Device/DeviceContextDiplomat/DeviceContextCommandProvider/DeviceContextCmdLicences.h"
+#include "../../../../Core/Device/DeviceContextDiplomat/DeviceContextCommandProvider/DeviceContextCommandProvider.h"
+
+
 namespace
 {
 	auto const fileName = "BufferUploader.cpp";
@@ -21,11 +28,12 @@ BufferContext::BufferUploader::BufferUploader
 	BufferContext::NexusFieldProof proof_,
 	BufferContext::ResourceCreator* resourceCreator_,
 	BufferContext::BufferDispatcher* dispatcher_,
-	CommandContextDiplomat* commandContextDiplomat_
+	CommandContextDiplomat& commandContextDiplomat_,
+	DeviceContextDiplomat& deviceContextDiplomat_
 ):resourceCreator(resourceCreator_), dispatcher(dispatcher_)
 {
 	//コマンドプロバイダーにアクセス
-	auto* commandProvider = commandContextDiplomat_->Access<CommandContext::CommandProvider>();
+	auto* commandProvider = commandContextDiplomat_.Access<CommandContext::CommandProvider>();
 	CommandContext::CommandProvider::LicenceType<CommandContextCmds::UploadBufferCommand> licence{};
 
 	uploadCommand = commandProvider->Provide<CommandContextCmds::UploadBufferCommand>(licence);

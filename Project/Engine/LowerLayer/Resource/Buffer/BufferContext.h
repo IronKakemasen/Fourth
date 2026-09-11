@@ -71,9 +71,9 @@ public:
 	BufferContext
 	(
 		NexusFieldProof proof_,
-		DeviceContextDiplomat* deviceContextDiplomat_,
-		DescriptorHeapContextDiplomat* descriptorheapContextDiplomat_,
-		CommandContextDiplomat* commandContextDiplomat_
+		DeviceContextDiplomat& deviceContextDiplomat_,
+		DescriptorHeapContextDiplomat& descriptorheapContextDiplomat_,
+		CommandContextDiplomat& commandContextDiplomat_
 	);
 
 	~BufferContext();

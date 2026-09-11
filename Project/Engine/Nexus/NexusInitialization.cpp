@@ -88,7 +88,7 @@ void Nexus::Init<Nexus::InitSequence::kDescriptorHeapContext>()
 template<>
 void Nexus::Init<Nexus::InitSequence::kBufferContext>()
 {
-	bufferContext.reset(new BufferContext(BufferContext::NexusFieldProof{}, deviceContext->diplomat.get(), descriptorHeapContext->diplomat.get(), commandContext->diplomat.get()));
+	bufferContext.reset(new BufferContext(BufferContext::NexusFieldProof{}, *deviceContext->diplomat, *descriptorHeapContext->diplomat, *commandContext->diplomat));
 	Logger::Log("Instantiate: bufferContext", fileName);
 }
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////

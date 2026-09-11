@@ -37,7 +37,8 @@ public:
 		BufferContext::NexusFieldProof proof_,
 		BufferContext::ResourceCreator* resourceCreator_,
 		BufferContext::BufferDispatcher* dispatcher_,
-		CommandContextDiplomat* commandContextDiplomat_
+		CommandContextDiplomat& commandContextDiplomat_,
+		DeviceContextDiplomat& deviceContextDiplomat_
 	);
 
 	~BufferUploader();
