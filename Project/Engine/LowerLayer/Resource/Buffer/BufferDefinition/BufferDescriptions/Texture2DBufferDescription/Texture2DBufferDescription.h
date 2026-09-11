@@ -46,7 +46,7 @@ private:
 		DXGI_FORMAT format{};
 		uint32_t width{};
 		uint32_t height{};
-        uint32_t mipLevels =  1;
+        size_t mipLevels =  1;
 		bool isTextureQube{};
 
     }textureParams;

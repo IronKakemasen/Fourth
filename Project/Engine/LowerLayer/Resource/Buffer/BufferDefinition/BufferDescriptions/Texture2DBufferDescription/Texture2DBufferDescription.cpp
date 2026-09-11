@@ -77,7 +77,7 @@ D3D12_SHADER_RESOURCE_VIEW_DESC Texture2DBufferDescription::CreateSRV_Desc()cons
         //一番細かいMipから使用
         srvDesc.TextureCube.MostDetailedMip = 0;
         //MipMap数
-        srvDesc.TextureCube.MipLevels = textureParams.mipLevels;
+        srvDesc.TextureCube.MipLevels = (UINT)textureParams.mipLevels;
         //MipMapのLOD Clamp
         srvDesc.TextureCube.ResourceMinLODClamp = 0.0f;
 
@@ -86,7 +86,7 @@ D3D12_SHADER_RESOURCE_VIEW_DESC Texture2DBufferDescription::CreateSRV_Desc()cons
     {
         srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
         //MipMap数
-        srvDesc.Texture2D.MipLevels = textureParams.mipLevels;
+        srvDesc.Texture2D.MipLevels = (UINT)textureParams.mipLevels;
         //Plane
         srvDesc.Texture2D.PlaneSlice = 0;
         //一番細かいMipから使用
@@ -129,5 +129,7 @@ void Texture2DBufferDescription::ExtractParams(DirectX::TexMetadata const& metaD
 
     textureParams.width = uint32_t(srcWidth);
     textureParams.height = uint32_t(srcHeight);
+
+    textureParams.mipLevels = metaData_.mipLevels;
 
 }

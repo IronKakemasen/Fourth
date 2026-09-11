@@ -56,7 +56,7 @@ namespace DeviceContextCmds
 	)>;
 
 	//テクスチャバッファ専用のアップロードコマンド
-	using UploadTextureBufferCommand = std::function<void
+	using PrepareUploadCommand = std::function<void
 	(
 		DirectX::ScratchImage const& image_,
 		std::vector<D3D12_SUBRESOURCE_DATA>& subResources_

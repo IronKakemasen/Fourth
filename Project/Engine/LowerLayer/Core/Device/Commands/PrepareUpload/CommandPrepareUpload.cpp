@@ -1,12 +1,12 @@
 #include "PreCompileHeader.h"
-#include "CommandUploadResource.h"
+#include "CommandPrepareUpload.h"
 
-CommandUploadResource::CommandUploadResource(DeviceContext::GenerateKey generateKey_) :DeviceContextCommandBehavior(generateKey_)
+CommandPrepareUpload::CommandPrepareUpload(DeviceContext::GenerateKey generateKey_) :DeviceContextCommandBehavior(generateKey_)
 {
 
 }
 
-void CommandUploadResource::UploadTextureResource
+void CommandPrepareUpload::PrepareUpload
 (
 	ID3D12Device8* device_,
 	DirectX::ScratchImage const& image_,
@@ -26,6 +26,6 @@ void CommandUploadResource::UploadTextureResource
 	(
 		SUCCEEDED(hr),
 		"DirectX::PrepareUpload()からのエラーです",
-		"CommandUploadResource.cpp"
+		"CommandPrepareUpload.cpp"
 	);
 }

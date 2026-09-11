@@ -109,7 +109,7 @@ struct DeviceContext::CommandProvider::CmdTypeTraits<DeviceContextCmds::CreateRo
 };
 
 template<>
-struct DeviceContext::CommandProvider::CmdTypeTraits<DeviceContextCmds::UploadTextureBufferCommand>
+struct DeviceContext::CommandProvider::CmdTypeTraits<DeviceContextCmds::PrepareUploadCommand>
 {
 	using Type = UploadTextureBufferLicence;
 };
@@ -157,7 +157,7 @@ template<>
 (typename CmdTypeTraits<DeviceContextCmds::CreateRootSig>::Type licence_);
 
 template<>
-[[nodiscard]] DeviceContextCmds::UploadTextureBufferCommand DeviceContext::CommandProvider::Provide
-(typename CmdTypeTraits<DeviceContextCmds::UploadTextureBufferCommand>::Type licence_);
+[[nodiscard]] DeviceContextCmds::PrepareUploadCommand DeviceContext::CommandProvider::Provide
+(typename CmdTypeTraits<DeviceContextCmds::PrepareUploadCommand>::Type licence_);
 
 

@@ -3,6 +3,7 @@
 
 //外部
 #include "../../../../Core/Command/CommandContextCmds.h"
+#include "../../../../Core/Device/DeviceContextCmds.h"
 #include "../../../../../../External/DirectXTex/DirectXTex.h"
 
 class GPUBufferBehavior;
@@ -24,9 +25,9 @@ class BufferContext::BufferUploader
 	//そのテクスチャバッファバージョン
 	struct TemporaryTextureBufferInfoStorage
 	{
-		BufferUniqueID id;
-		ID3D12Resource* intermediateResource;
-		std::vector<D3D12_SUBRESOURCE_DATA> subResources;
+		BufferUniqueID id{};
+		ID3D12Resource* intermediateResource{nullptr};
+		std::vector<D3D12_SUBRESOURCE_DATA> subResources{};
 	};
 
 
@@ -78,20 +79,7 @@ public:
 	}
 
 	//テクスチャバッファ専用
-	void RegisterTextureBuffer
-	(
-		DirectX::ScratchImage const& image_,
-		const BufferUniqueID id_
-	)
-	{
-		TemporaryTextureBufferInfoStorage temporaryTextureBufferInfoStorage;
-		std::vector<D3D12_SUBRESOURCE_DATA> subresources;
-
-
-		temporaryTextureBufferInfoStorage.id = id_;
-
-
-	}
+	void RegisterTextureBuffer(DirectX::ScratchImage& image_,const BufferUniqueID id_);
 
 	///バッファをアップロードする(テクスチャバッファはまた別。あとで共通窓口を作る)
 	///Nexusフィールド限定、代行者限定
@@ -113,6 +101,8 @@ private:
 
 	//リソースをアップロードするコマンド
 	CommandContextCmds::UploadBufferCommand uploadCommand;
+	//テクスチャバッファをアップロード可能にする(サブリソースをScratchImageから作成する)
+	DeviceContextCmds::PrepareUploadCommand prepareUploadCommand;
 	//バリアを張るためのコマンド
 	CommandContextCmds::PitchBarrierCommand pitchBarriersCommand;
 
@@ -123,8 +113,7 @@ private:
 	//バッファの情報を一時的に保管する
 	std::vector<TemporaryBufferInfoStorage> temporaryBufferInfoStorageContainer;
 	//そのテクスチャバッファバージョン
-	std::vector<TemporaryTextureBufferInfoStorage> temporaryTextureBufferInfoStorage;
-
+	std::vector<TemporaryTextureBufferInfoStorage> temporaryTextureBufferInfoStorageContainer;
 
 
 	//中間リソースの生成
@@ -143,7 +132,7 @@ private:
 	//終わりの一言
 	void EndLog()const;
 
-	//サブリソース生成
+	//バッファのサブリソース生成
 	template<typename RealDataType>
 	D3D12_SUBRESOURCE_DATA CreateBufferSubResource(RealDataType* realData_ , UINT const resourceSize_)const
 	{

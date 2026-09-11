@@ -19,6 +19,8 @@ SRVHeapIndex BufferContext::TextureBufferCreator::BufferAssembler::AssembleTextu
 	Texture2DBufferDescription desc(scratchImage_, texture2DState_);
 	auto id_bufferPtr =  bufferCreator_.CreateWithBuffer(desc, name_);
 
+	//作成したテクスチャバッファをアップロードリストに追加
+	bufferUploader_.RegisterTextureBuffer(scratchImage_, id_bufferPtr.first);
 
 
 	return SRVHeapIndex{};
