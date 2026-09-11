@@ -40,7 +40,19 @@ class Nexus
 
 
 		,kEnd
-	}next = InitSequence(0);
+	}nextInit = InitSequence(0);
+
+	//終了処理順序
+	enum class FinalizeSequence
+	{
+		kCommandContext,
+		kWindowContext,
+		kCoUninitialize
+
+
+
+		,kEnd
+	}nextFin = FinalizeSequence(0);
 
 public:
 
@@ -88,24 +100,41 @@ private:
 	template<InitSequence initSequence>
 	void Init();
 
-
 	///簡易だけども初期化順序制御を行いながら初期化する
 	template<InitSequence next_>
 	void InitializeInSequence()
 	{
 		ErrorMessageOutput::Assert::DetectError
 		(
-			next == next_ , 
+			nextInit == next_ ,
 			"初期化が正常に行われていない可能性がある",
 			"Nexus.h"
 		);
 
 		Init<next_>();
 
-		next = InitSequence((UINT)next + 1);
+		nextInit = InitSequence((UINT)nextInit + 1);
 	}
 
+	//終了処理を行う
+	template<FinalizeSequence finalizeSequence>
 	void Finalize();
+
+	///終了処理バージョン
+	template<FinalizeSequence next_>
+	void FinalizeInSequence()
+	{
+		ErrorMessageOutput::Assert::DetectError
+		(
+			nextFin == next_,
+			"終了処理が正常に行われていない可能性がある",
+			"Nexus.h"
+		);
+
+		Finalize<next_>();
+
+		nextFin = FinalizeSequence((UINT)nextFin + 1);
+	}
 
 };
 

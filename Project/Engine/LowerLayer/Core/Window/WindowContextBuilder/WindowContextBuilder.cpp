@@ -1,13 +1,17 @@
 #include "PreCompileHeader.h"
 #include "WindowContextBuilder.h"
+#include "DumpExporter.h"
+
+
+//外部
+#include "StringConverter/StringConverter.h"
 
 namespace
 {
 	auto const fileName = "WindowContextBuilder.cpp";
 }
 
-
-WindowContext::CoreParts WindowContext::Builder::Build(NexusFieldProof proof_)
+WindowContext::CoreParts WindowContext::Builder::CreateCoreParts()
 {
 	CoreParts coreParts;
 
@@ -49,22 +53,44 @@ WindowContext::CoreParts WindowContext::Builder::Build(NexusFieldProof proof_)
 	// ウィンドウの作成
 	coreParts.hWnd = CreateWindowEx
 	(
-		0,                              
-		kTitle,               
-		kTitle,					
-		style,					
+		0,
+		kTitle,
+		kTitle,
+		style,
 		CW_USEDEFAULT,
 		CW_USEDEFAULT,
 		rc.right - rc.left,
 		rc.bottom - rc.top,
-		nullptr,				
-		nullptr,				
-		coreParts.hInst,		
-		nullptr					
+		nullptr,
+		nullptr,
+		coreParts.hInst,
+		nullptr
 	);
 
 	ErrorMessageOutput::Abort::DetectError((coreParts.hWnd != NULL), "m_hWndがぬるぽ", fileName);
 
+	return coreParts;
+}
+
+
+WindowContext::CoreParts WindowContext::Builder::Build(NexusFieldProof proof_)
+{
+	auto coreParts = CreateCoreParts();
+	Logger::Log("Create: CoreParts", fileName);
+	Logger::Log(StringConverter::ConvertString(coreParts.windowName) + " " + std::to_string(coreParts.width) + "x" + std::to_string(coreParts.height), fileName);
+
+
+	//ウィンドウの表示
+	ShowWindow(coreParts.hWnd, SW_SHOWNORMAL);
+	Logger::Log("Display Window", fileName);
+
+	//ウィンドウにフォーカスを設定
+	SetFocus(coreParts.hWnd);
+	Logger::Log("Forcus on Window", fileName);
+
+	//誰も捕捉しなかった場合に(Unhandled)、補足する関数を登録
+	SetUnhandledExceptionFilter(ExportDump);
+	Logger::Log("Set Unhandled Exception Filter", fileName);
 
 	return coreParts;
 }

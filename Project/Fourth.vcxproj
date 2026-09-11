@@ -389,6 +389,9 @@
     <ClCompile Include="Engine\LowerLayer\Resource\Buffer\BufferDefinition\GPUBuffer\Texture2DBuffer\Texture2DBuffer.cpp" />
     <ClCompile Include="Engine\LowerLayer\Resource\Buffer\BufferCreateTools\TextureBufferCreator\TextureBufferAssembler\TextureBufferAssembler.cpp" />
     <ClCompile Include="Engine\LowerLayer\Core\Window\WindowContextBuilder\WindowContextBuilder.cpp" />
+    <ClCompile Include="Engine\LowerLayer\Core\Window\WindowContextDiplomat\WindowContextDiplomat.cpp" />
+    <ClCompile Include="Engine\LowerLayer\Core\Window\WindowContextDiplomat\WindowContextToolLender\WindowContextToolLender.cpp" />
+    <ClCompile Include="Engine\LowerLayer\Core\Window\WindowContextDiplomat\WindowContextExecutionAgent\WindowContextExecutionAgent.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Assets\BAKA\ConstantBuffers.h" />
@@ -401,6 +404,7 @@
     <ClInclude Include="Engine\LowerLayer\Core\Device\Commands\AllDeviceContextCmds.h" />
     <ClInclude Include="Engine\LowerLayer\Core\Device\DeviceContextCmds.h" />
     <ClInclude Include="Engine\LowerLayer\Core\Device\DeviceContextDiplomat\DeviceContextCommandProvider\DeviceContextCmdLicences.h" />
+    <ClInclude Include="Engine\LowerLayer\Core\Window\WindowContextDiplomat\WindowContextToolLender\WindowContextToolLenderLicences.h" />
     <ClInclude Include="Engine\LowerLayer\Render\RenderPass\AllRenderPass\RenderPassTraits.h" />
     <ClInclude Include="Engine\LowerLayer\Render\RenderPass\PassDesc\RenderPassState.h" />
     <ClInclude Include="Engine\LowerLayer\Render\RenderPath\AllRenderPath\AllPathFwd.h" />
@@ -495,7 +499,7 @@
     <ClInclude Include="Engine\LowerLayer\Resource\Buffer\BufferDefinition\BufferDescriptions\ColorBufferDescription\ColorBufferDescription.h" />
     <ClInclude Include="Engine\LowerLayer\Resource\Buffer\BufferDefinition\BufferDescriptions\ConstantBufferDescription\ConstantBufferDescription.h" />
     <ClInclude Include="Engine\LowerLayer\Resource\Buffer\BufferDefinition\BufferDescriptions\BufferDescriptionBehavior.h" />
-    <ClInclude Include="Engine\LowerLayer\Core\Window\DumpExporter.h" />
+    <ClInclude Include="Engine\LowerLayer\Core\Window\WindowContextBuilder\DumpExporter.h" />
     <ClInclude Include="Engine\LowerLayer\Debug\RuntimeDebugger\DebugSystems\DebugLayer\DebugLayer.h" />
     <ClInclude Include="Engine\LowerLayer\Resource\Buffer\BufferDefinition\GPUBuffer\ConstantBuffer\ConstantBuffer.h" />
     <ClInclude Include="Engine\LowerLayer\Core\Device\DeviceContext.h" />
@@ -647,6 +651,9 @@
     <ClInclude Include="Engine\LowerLayer\Resource\Buffer\BufferDefinition\GPUBuffer\Texture2DBuffer\Texture2DBuffer.h" />
     <ClInclude Include="Engine\LowerLayer\Resource\Buffer\BufferCreateTools\TextureBufferCreator\TextureBufferAssembler\TextureBufferAssembler.h" />
     <ClInclude Include="Engine\LowerLayer\Core\Window\WindowContextBuilder\WindowContextBuilder.h" />
+    <ClInclude Include="Engine\LowerLayer\Core\Window\WindowContextDiplomat\WindowContextDiplomat.h" />
+    <ClInclude Include="Engine\LowerLayer\Core\Window\WindowContextDiplomat\WindowContextToolLender\WindowContextToolLender.h" />
+    <ClInclude Include="Engine\LowerLayer\Core\Window\WindowContextDiplomat\WindowContextExecutionAgent\WindowContextExecutionAgent.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
