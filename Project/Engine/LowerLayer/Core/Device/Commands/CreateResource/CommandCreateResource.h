@@ -2,10 +2,10 @@
 #include "../DeviceContextCommandBehavior.h"
 
 //各バッファのId3d12Resourceを作るコマンド群
-struct CommandCreateGPUResource : public DeviceContextCommandBehavior
+struct CommandCreateResource : public DeviceContextCommandBehavior
 {
 	//DeviceContext::CommandProviderクラスのみ生成可能
-	CommandCreateGPUResource(DeviceContext::GenerateKey generateKey_);
+	CommandCreateResource(DeviceContext::GenerateKey generateKey_);
 
 	[[nodiscard]] Microsoft::WRL::ComPtr<ID3D12Resource> CreateResource
 	(

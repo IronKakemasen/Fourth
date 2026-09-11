@@ -37,7 +37,7 @@ template<>
 	)
 	{
 		auto* device = deviceGetter(DeviceContext::AccessKey{});
-		CommandCreateGPUResource command(DeviceContext::GenerateKey{});
+		CommandCreateResource command(DeviceContext::GenerateKey{});
 
 		return command.CreateResource
 		(
@@ -176,15 +176,15 @@ template<>
 }
 
 template<>
-[[nodiscard]] DeviceContextCmds::UploadTextureBufferCommand DeviceContext::CommandProvider::Provide
-(typename CmdTypeTraits<DeviceContextCmds::UploadTextureBufferCommand>::Type licence_)
+[[nodiscard]] DeviceContextCmds::PrepareUploadCommand DeviceContext::CommandProvider::Provide
+(typename CmdTypeTraits<DeviceContextCmds::PrepareUploadCommand>::Type licence_)
 {
 	return [this](DirectX::ScratchImage const& image_, std::vector<D3D12_SUBRESOURCE_DATA>& subResources_)
 	{
 		auto* device = deviceGetter(DeviceContext::AccessKey{});
-		CommandUploadResource command(DeviceContext::GenerateKey{});
+		CommandPrepareUpload command(DeviceContext::GenerateKey{});
 
-		command.UploadTextureResource(device, image_, subResources_);
+		command.PrepareUpload(device, image_, subResources_);
 	};
 
 }

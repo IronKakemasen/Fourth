@@ -4,7 +4,7 @@
 
 
 //2Dテクスチャバッファ
-class Texture2DBuffer final : public GPUBufferBehavior, IReadable
+class Texture2DBuffer final : public GPUBufferBehavior, IReadable, public IReadOnly
 {
 	friend class BufferContext::BufferInfoExtractor;
 
@@ -22,6 +22,8 @@ public:
 private:
 	//適切なSRVヒープインデックスを出す
 	virtual SRVHeapIndex OutProperSRVHeapIndex(int frameIndex_ = 0)const override;
+	virtual D3D12_RESOURCE_BARRIER CreateBarrierAsReading()override;
+
 };
 
 

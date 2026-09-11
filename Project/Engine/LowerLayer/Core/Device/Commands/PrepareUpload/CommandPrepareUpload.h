@@ -4,12 +4,12 @@
 
 
 //リソースをアップロードするためのもの
-struct CommandUploadResource : public DeviceContextCommandBehavior
+struct CommandPrepareUpload : public DeviceContextCommandBehavior
 {
 	//DeviceContext::CommandProviderクラスのみ生成可能
-	CommandUploadResource(DeviceContext::GenerateKey generateKey_);
+	CommandPrepareUpload(DeviceContext::GenerateKey generateKey_);
 
-	void UploadTextureResource
+	void PrepareUpload
 	(
 		ID3D12Device8* device_,
 		DirectX::ScratchImage const& image_,

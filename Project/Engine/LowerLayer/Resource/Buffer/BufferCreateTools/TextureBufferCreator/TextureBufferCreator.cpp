@@ -1,10 +1,12 @@
 #include "PreCompileHeader.h"
 #include "TextureBufferCreator.h"
+#include "TextureDataLoader/TextureDataLoader.h"
+#include "TextureFileLoader/TextureFileLoader.h"
+#include "TextureBufferAssembler/TextureBufferAssembler.h"
+
 #include "../BufferCreator.h"
 #include "../BufferCollector/BufferCollector.h"
 #include "../BufferUploader/BufferUploader.h"
-#include "TextureDataLoader/TextureDataLoader.h"
-#include "TextureFileLoader/TextureFileLoader.h"
 #include "../../BufferDefinition/BufferDescriptions/Texture2DBufferDescription/Texture2DBufferDescription.h"
 
 //外部
@@ -52,7 +54,7 @@ BufferContext::TextureBufferCreator::TextureBufferCreator
 	//Texture2DBufferDescriptionを作成し、それをもとにバッファを作成。アップロードしていく
 	for (auto& [key, value] : descEntries)
 	{
-
+		BufferAssembler::AssembleTexture2DBuffer(key, value.scratchImage, value.texture2DState, bufferCreator_, bufferUploader_);
 	}
 
 

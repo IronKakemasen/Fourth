@@ -84,12 +84,12 @@ static [[nodiscard]] std::unique_ptr<UploadStructuredBuffer> BufferContext::Buff
 
 	//バッファ生成
 	return std::make_unique<UploadStructuredBuffer>
-		(
-			UploadStructuredBuffer::InstanceKey{},
-			nameCnv_,
-			std::move(resourceContainer_),
-			desc_
-		);
+	(
+		UploadStructuredBuffer::InstanceKey{},
+		nameCnv_,
+		std::move(resourceContainer_),
+		desc_
+	);
 
 }
 

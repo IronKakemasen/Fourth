@@ -1,15 +1,14 @@
-
-#include "CommandOfCreatingGPUBuffer.h"
+#include "CommandCreateResource.h"
  
 
 
-CommandCreateGPUResource::CommandCreateGPUResource(DeviceContext::GenerateKey generateKey_) :DeviceContextCommandBehavior(generateKey_)
+CommandCreateResource::CommandCreateResource(DeviceContext::GenerateKey generateKey_) :DeviceContextCommandBehavior(generateKey_)
 {
 
 }
 
 
-[[nodiscard]] Microsoft::WRL::ComPtr<ID3D12Resource> CommandCreateGPUResource::CreateResource
+[[nodiscard]] Microsoft::WRL::ComPtr<ID3D12Resource> CommandCreateResource::CreateResource
 (
 	ID3D12Device8* device_,
 	const D3D12_RESOURCE_DESC& resourceDesc_,

@@ -125,7 +125,7 @@
     <ClCompile Include="Engine\LowerLayer\Core\DescriptorHeap\DescriptorHeapContextDiplomat\DescriptorHeapToolLender\DescriptorHeapToolLender.cpp" />
     <ClCompile Include="Engine\LowerLayer\Resource\Buffer\BufferContextDiplomat\BufferToolLender\BufferToolLender.cpp" />
     <ClCompile Include="Engine\LowerLayer\Resource\Buffer\BufferCreateTools\BufferUploader\BufferUploader.cpp" />
-    <ClCompile Include="Engine\LowerLayer\Core\Device\Commands\UploadResource\CommandUploadResource.cpp" />
+    <ClCompile Include="Engine\LowerLayer\Core\Device\Commands\PrepareUpload\CommandPrepareUpload.cpp" />
     <ClCompile Include="Engine\LowerLayer\Resource\Model\ModelStructure\ModelDescription\ModelDescription.cpp" />
     <ClCompile Include="Engine\LowerLayer\Resource\RootSignature\RootSignatureCreator\RootSignatureAssembler\RootSignatureAssemblerTool\RootParamCreator\RootParamCreator.cpp" />
     <ClCompile Include="Engine\LowerLayer\Resource\RootSignature\RootSignatureCreator\RootSignatureAssembler\RootSignatureAssemblerTool\StaticSamplerDescCreator\StaticSamplerDescCreator.cpp" />
@@ -164,7 +164,7 @@
     <ClCompile Include="Engine\LowerLayer\Core\Device\DeviceContextDiplomat\DeviceContextCommandProvider\DeviceContextCommandProvider.cpp" />
     <ClCompile Include="Engine\LowerLayer\Resource\Buffer\BufferDefinition\BufferDescriptions\ColorBufferDescription\ColorBufferDescription.cpp" />
     <ClCompile Include="Engine\LowerLayer\Resource\Buffer\BufferDefinition\BufferDescriptions\ConstantBufferDescription\ConstantBufferDescription.cpp" />
-    <ClCompile Include="Engine\LowerLayer\Core\Device\Commands\CreatGPUBuffer\CommandOfCreatingGPUBuffer.cpp" />
+    <ClCompile Include="Engine\LowerLayer\Core\Device\Commands\CreateResource\CommandCreateResource.cpp" />
     <ClCompile Include="Engine\LowerLayer\Debug\RuntimeDebugger\DebugSystems\DebugLayer\DebugLayer.cpp" />
     <ClCompile Include="Engine\LowerLayer\Resource\Buffer\BufferDefinition\GPUBuffer\ConstantBuffer\ConstantBuffer.cpp" />
     <ClCompile Include="Engine\LowerLayer\Core\Device\DeviceContext.cpp">
@@ -441,7 +441,7 @@
     <ClInclude Include="Engine\LowerLayer\Resource\Buffer\BufferDefinition\AllBuffersInclude.h" />
     <ClInclude Include="Engine\LowerLayer\Resource\Buffer\BufferContextDiplomat\BufferToolLender\BufferToolLender.h" />
     <ClInclude Include="Engine\LowerLayer\Resource\Buffer\BufferCreateTools\BufferUploader\BufferUploader.h" />
-    <ClInclude Include="Engine\LowerLayer\Core\Device\Commands\UploadResource\CommandUploadResource.h" />
+    <ClInclude Include="Engine\LowerLayer\Core\Device\Commands\PrepareUpload\CommandPrepareUpload.h" />
     <ClInclude Include="Engine\LowerLayer\Render\RenderPass\PassDesc\BufferRequiredInfo.h" />
     <ClInclude Include="Engine\LowerLayer\Resource\Model\ModelContextCmds.h" />
     <ClInclude Include="Engine\LowerLayer\Resource\Model\ModelContextDiplomat\ModelContextCmdProvider\ModelContextCmdProviderLicences.h" />
@@ -489,7 +489,7 @@
     <ClInclude Include="Engine\LowerLayer\Core\DescriptorHeap\DescriptorHeapContext.h" />
     <ClInclude Include="Engine\LowerLayer\Resource\Buffer\BufferDefinition\GPUBuffer\ColorBuffer\ColorBuffer.h" />
     <ClInclude Include="Engine\LowerLayer\Core\Device\Commands\DeviceContextCommandBehavior.h" />
-    <ClInclude Include="Engine\LowerLayer\Core\Device\Commands\CreatGPUBuffer\CommandOfCreatingGPUBuffer.h" />
+    <ClInclude Include="Engine\LowerLayer\Core\Device\Commands\CreateResource\CommandCreateResource.h" />
     <ClInclude Include="Engine\LowerLayer\Core\Device\DeviceSetupper\DeviceContextSetupper.h" />
     <ClInclude Include="Engine\LowerLayer\Core\Device\DeviceContextDiplomat\DeviceContextCommandProvider\DeviceContextCommandProvider.h" />
     <ClInclude Include="Engine\LowerLayer\Resource\Buffer\BufferDefinition\BufferDescriptions\ColorBufferDescription\ColorBufferDescription.h" />

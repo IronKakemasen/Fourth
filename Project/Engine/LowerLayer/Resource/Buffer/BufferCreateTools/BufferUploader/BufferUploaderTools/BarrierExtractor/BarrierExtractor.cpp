@@ -24,6 +24,18 @@ ExtractBarrier<D3D12_RESOURCE_STATE_ALL_SHADER_RESOURCE>(GPUBufferBehavior* dstB
 	return readOnlyBuffer->CreateBarrierAsReading();
 }
 
+///テクスチャ専門はこちら
+template<>
+[[nodiscard]] D3D12_RESOURCE_BARRIER BufferContext::BufferUploader::BarrierExtractor::
+ExtractBarrier<D3D12_RESOURCE_STATE_GENERIC_READ>(GPUBufferBehavior* dstBuffer_)
+{
+	IReadOnly* readOnlyBuffer = dynamic_cast<IReadOnly*>(dstBuffer_);
+	ErrorMessageOutput::Assert::DetectError(readOnlyBuffer, "リードオンリーなバッファじゃない", "BufferUploader.h");
+
+	//コピーからジェネリックリードに遷移させるバリアを吐かせる
+	return readOnlyBuffer->CreateBarrierAsReading();
+}
+
 
 
 
@@ -34,3 +46,7 @@ ExtractBarrier<D3D12_RESOURCE_STATE_COPY_DEST>(GPUBufferBehavior* dstBuffer_);
 template
 [[nodiscard]] D3D12_RESOURCE_BARRIER BufferContext::BufferUploader::BarrierExtractor::
 ExtractBarrier<D3D12_RESOURCE_STATE_ALL_SHADER_RESOURCE>(GPUBufferBehavior* dstBuffer_);
+
+template
+[[nodiscard]] D3D12_RESOURCE_BARRIER BufferContext::BufferUploader::BarrierExtractor::
+ExtractBarrier<D3D12_RESOURCE_STATE_GENERIC_READ>(GPUBufferBehavior* dstBuffer_);
