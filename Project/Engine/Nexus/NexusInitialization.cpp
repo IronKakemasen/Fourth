@@ -31,7 +31,7 @@
 
 namespace
 {
-	std::string const fileName = "Nexus.cpp";
+	std::string const fileName = "NexusInitialization.cpp";
 }
 
 
@@ -122,7 +122,7 @@ void Nexus::Init<Nexus::InitSequence::kSwapChainContext>()
 			descriptorHeapContext->diplomat.get(),
 			commandContext->diplomat.get(),
 			deviceContext->diplomat.get(),
-			windowContext->WatchHWND()
+			*windowContext->diplomat
 		)
 	);
 

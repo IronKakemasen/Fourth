@@ -16,10 +16,14 @@
 #include "../Device/DeviceContextCmds.h"
 
 
-
 #include "../DescriptorHeap/DescriptorHeapContextDiplomat/DescriptorHeapContextDiplomat.h"
 #include "../DescriptorHeap/DescriptorHeapContextDiplomat/DescriptorHeapToolLender/DescriptorHeapToolLender.h"
 #include "../DescriptorHeap/ViewCreator/ViewCreator.h"
+
+#include "../Window/WindowContextDiplomat/WindowContextDiplomat.h"
+#include "../Window/WindowContextDiplomat/WindowContextToolLender/WindowContextToolLender.h"
+#include "../Window/WindowContextDiplomat/WindowContextToolLender/WindowContextToolLenderLicences.h"
+
 
 using namespace ProjectConfig::Render;
 using namespace ProjectConfig::Window;
@@ -35,13 +39,18 @@ SwapChainContext::SwapChainContext
 	DescriptorHeapContextDiplomat* descriptorheapContextDiplomat_,
 	CommandContextDiplomat* commandContextDiplomat_,
 	DeviceContextDiplomat* deviceContextDiplomat_,
-	const HWND hWnd_
+	WindowContextDiplomat& windowContextDiplomat_
 )
 {
 	Logger::Entry("SwapChainContext: Constructor");
 
+	//
+	auto toolLender = windowContextDiplomat_.Access<WindowContext::ToolLender>();
+	WindowContext::ToolLender::LicenceType<HWND> licence;
+	auto& hwnd = toolLender.Lend<HWND>(licence);
+
 	//コアパーツを組み立てる
-	AssembleCoreParts(proof_, descriptorheapContextDiplomat_, commandContextDiplomat_, deviceContextDiplomat_, hWnd_);
+	AssembleCoreParts(proof_, descriptorheapContextDiplomat_, commandContextDiplomat_, deviceContextDiplomat_, hwnd);
 	Logger::Log("Assemble: core parts", fileName);
 
 	presenter.reset(new Presenter(swapChain.Get()));

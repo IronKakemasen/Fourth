@@ -3089,6 +3089,9 @@ private:
 #include "../DescriptorHeap/DescriptorHeapContextDiplomat/DescriptorHeapContextDiplomat.h"
 #include "../DescriptorHeap/DescriptorHeapContextDiplomat/DescriptorHeapToolLender/DescriptorHeapToolLender.h"
 #include "../DescriptorHeap/ViewCreator/ViewCreator.h"
+#include "../Window/WindowContextDiplomat/WindowContextDiplomat.h"
+#include "../Window/WindowContextDiplomat/WindowContextToolLender/WindowContextToolLender.h"
+#include "../Window/WindowContextDiplomat/WindowContextToolLender/WindowContextToolLenderLicences.h"
 using namespace ProjectConfig::Render;
 using namespace ProjectConfig::Window;
 namespace
@@ -3101,12 +3104,16 @@ SwapChainContext::SwapChainContext
 	DescriptorHeapContextDiplomat* descriptorheapContextDiplomat_,
 	CommandContextDiplomat* commandContextDiplomat_,
 	DeviceContextDiplomat* deviceContextDiplomat_,
-	const HWND hWnd_
+	WindowContextDiplomat& windowContextDiplomat_
 )
 {
 	Logger::Entry("SwapChainContext: Constructor");
+	//
+	auto toolLender = windowContextDiplomat_.Access<WindowContext::ToolLender>();
+	WindowContext::ToolLender::LicenceType<HWND> licence;
+	auto& hwnd = toolLender.Lend<HWND>(licence);
 	//コアパーツを組み立てる
-	AssembleCoreParts(proof_, descriptorheapContextDiplomat_, commandContextDiplomat_, deviceContextDiplomat_, hWnd_);
+	AssembleCoreParts(proof_, descriptorheapContextDiplomat_, commandContextDiplomat_, deviceContextDiplomat_, hwnd);
 	Logger::Log("Assemble: core parts", fileName);
 	presenter.reset(new Presenter(swapChain.Get()));
 	Logger::Log("Instantiate: Presenter", fileName);
@@ -3215,6 +3222,7 @@ class Nexus;
 class CommandContextDiplomat;
 class DeviceContextDiplomat;
 class DescriptorHeapContextDiplomat;
+class WindowContextDiplomat;
 //外部
 ///リファクタ認定
 #include "../Device/DeviceContextCmds.h"
@@ -3239,7 +3247,7 @@ public:
 		DescriptorHeapContextDiplomat* descriptorheapContextDiplomat_,
 		CommandContextDiplomat* commandContextDiplomat_,
 		DeviceContextDiplomat* deviceContextDiplomat_,
-		const HWND hWnd_
+		WindowContextDiplomat& windowContextDiplomat_
 	);
 	~SwapChainContext();
 private:
@@ -3544,7 +3552,125 @@ private:
 };
 
 ========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Core\Window\DumpExporter.h ===
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Core\Window\WindowContext.cpp ===
+========================================
+#include "WindowContext.h"
+#include "WindowContextBuilder/WindowContextBuilder.h"
+#include "WindowContextDiplomat/WindowContextToolLender/WindowContextToolLender.h"
+#include "WindowContextDiplomat/WindowContextDiplomat.h"
+#include "WindowContextDiplomat/WindowContextExecutionAgent/WindowContextExecutionAgent.h"
+namespace
+{
+	auto const fileName = "WindowContext.cpp";
+}
+LRESULT CALLBACK WindowContext::WndProc(HWND hWnd_, UINT msg_, WPARAM wParam_, LPARAM lParam_)
+{
+//#ifdef USE_IMGUI
+//	//ImGuiにメッセージを渡す
+//	if (ImGui_ImplWin32_WndProcHandler(hWnd_, msg_, wParam_, lParam_))
+//	{
+//		return true;
+//	}
+//#endif
+	//メッセージに応じてゲーム固有の処理を行う
+	switch (msg_)
+	{
+		//ウィンドウが破棄された
+	case WM_DESTROY:
+		//OSに対して、アプリの終了を伝える
+		PostQuitMessage(0);
+		return 0;
+	}
+	//標準メッセージの処理を行う
+	return DefWindowProc(hWnd_, msg_, wParam_, lParam_);
+}
+WindowContext::WindowContext(NexusFieldProof proof_)
+{
+	Logger::Entry("WindowContext: Constructor");
+	//コアパーツを生成
+	coreParts = Builder::Build(proof_);
+	diplomat.reset
+	(
+		new WindowContextDiplomat
+		(
+			proof_,
+			std::make_unique<ToolLender>(proof_, coreParts.hWnd),
+			std::make_unique<ExecutionAgent>(proof_, *this)
+		)
+	);
+	Logger::Log("Instantiate: Diplomat", fileName);
+	Logger::Log("Instantiate: ToolLender", fileName);
+	Logger::End("WindowContext: Constructor");
+}
+WindowContext::~WindowContext()
+{
+}
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+void WindowContext::Finalize(NexusFieldProof proof_, AgentKey agentKey_)
+{
+	if (coreParts.hWnd)
+	{
+		DestroyWindow(coreParts.hWnd);
+		coreParts.hWnd = nullptr;
+	}
+	Logger::Log("DestroyWindow", fileName);
+	//ウィンドウの登録を解除
+	if (coreParts.hInst)
+	{
+		UnregisterClass(coreParts.windowName, coreParts.hInst);
+	}
+	Logger::Log("Unregister window", fileName);
+}
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Core\Window\WindowContext.h ===
+========================================
+#pragma once
+class Nexus;
+class WindowContextDiplomat;
+class WindowContext
+{
+	class Builder;
+	struct CoreParts
+	{
+		HINSTANCE hInst;
+		HWND hWnd;
+		UINT width;
+		UINT height;
+		LPCWSTR windowName;
+	}coreParts;
+public:
+	class ToolLender;
+	class ExecutionAgent;
+	struct NexusFieldProof;
+	struct AgentKey;
+	WindowContext(NexusFieldProof proof_);
+	~WindowContext();
+	void Finalize(NexusFieldProof proof_, AgentKey agentKey_);
+	std::unique_ptr<WindowContextDiplomat> diplomat;
+private:
+	static LRESULT CALLBACK WndProc(HWND hWnd_, UINT msg_, WPARAM wParam_, LPARAM lParam_);
+};
+struct WindowContext::NexusFieldProof
+{
+private:
+	friend class Nexus;
+	explicit NexusFieldProof() = default;
+};
+struct WindowContext::AgentKey
+{
+private:
+	friend class ExecutionAgent;
+	explicit AgentKey() = default;
+};
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Core\Window\WindowContextBuilder\DumpExporter.h ===
 ========================================
 #pragma once
 #include <strsafe.h>
@@ -3576,111 +3702,18 @@ LONG WINAPI ExportDump(EXCEPTION_POINTERS* exception)
 }
 
 ========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Core\Window\WindowContext.cpp ===
-========================================
-#include "WindowContext.h"
-#include "WindowContextBuilder/WindowContextBuilder.h"
-#include "DumpExporter.h"
-LRESULT CALLBACK WindowContext::WndProc(HWND hWnd_, UINT msg_, WPARAM wParam_, LPARAM lParam_)
-{
-//#ifdef USE_IMGUI
-//	//ImGuiにメッセージを渡す
-//	if (ImGui_ImplWin32_WndProcHandler(hWnd_, msg_, wParam_, lParam_))
-//	{
-//		return true;
-//	}
-//#endif
-	//メッセージに応じてゲーム固有の処理を行う
-	switch (msg_)
-	{
-		//ウィンドウが破棄された
-	case WM_DESTROY:
-		//OSに対して、アプリの終了を伝える
-		PostQuitMessage(0);
-		return 0;
-	}
-	//標準メッセージの処理を行う
-	return DefWindowProc(hWnd_, msg_, wParam_, lParam_);
-}
-///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-void WindowContext::Finalize()
-{
-	if (coreParts.hWnd)
-	{
-		DestroyWindow(coreParts.hWnd);
-		coreParts.hWnd = nullptr;
-	}
-	//ウィンドウの登録を解除
-	if (coreParts.hInst)
-	{
-		UnregisterClass(coreParts.windowName, coreParts.hInst);
-	}
-}
-///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-HWND WindowContext::WatchHWND()
-{
-	return coreParts.hWnd;
-}
-///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-WindowContext::WindowContext(NexusFieldProof proof_)
-{
-	//コアパーツを生成
-	coreParts =  Builder::Build(proof_);
-	//ウィンドウの表示
-	if (coreParts.hWnd != 0) ShowWindow(coreParts.hWnd, SW_SHOWNORMAL);
-	//ウィンドウにフォーカスを設定
-	SetFocus(coreParts.hWnd);
-	//誰も捕捉しなかった場合に(Unhandled)、補足する関数を登録
-	SetUnhandledExceptionFilter(ExportDump);
-}
-
-========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Core\Window\WindowContext.h ===
-========================================
-#pragma once
-class Nexus;
-class WindowContext
-{
-	class Builder;
-	struct CoreParts
-	{
-		HINSTANCE hInst;
-		HWND hWnd;
-		UINT width;
-		UINT height;
-		LPCWSTR windowName;
-	}coreParts;
-public:
-	struct NexusFieldProof;
-	WindowContext(NexusFieldProof proof_);
-	void Finalize();
-	HWND WatchHWND();
-private:
-	static LRESULT CALLBACK WndProc(HWND hWnd_, UINT msg_, WPARAM wParam_, LPARAM lParam_);
-};
-struct WindowContext::NexusFieldProof
-{
-private:
-	friend class Nexus;
-	explicit NexusFieldProof() = default;
-};
-
-========================================
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Core\Window\WindowContextBuilder\WindowContextBuilder.cpp ===
 ========================================
 #include "PreCompileHeader.h"
 #include "WindowContextBuilder.h"
+#include "DumpExporter.h"
+//外部
+#include "StringConverter/StringConverter.h"
 namespace
 {
 	auto const fileName = "WindowContextBuilder.cpp";
 }
-WindowContext::CoreParts WindowContext::Builder::Build(NexusFieldProof proof_)
+WindowContext::CoreParts WindowContext::Builder::CreateCoreParts()
 {
 	CoreParts coreParts;
 	using namespace ProjectConfig::Window;
@@ -3713,20 +3746,36 @@ WindowContext::CoreParts WindowContext::Builder::Build(NexusFieldProof proof_)
 	// ウィンドウの作成
 	coreParts.hWnd = CreateWindowEx
 	(
-		0,                              
-		kTitle,               
-		kTitle,					
-		style,					
+		0,
+		kTitle,
+		kTitle,
+		style,
 		CW_USEDEFAULT,
 		CW_USEDEFAULT,
 		rc.right - rc.left,
 		rc.bottom - rc.top,
-		nullptr,				
-		nullptr,				
-		coreParts.hInst,		
-		nullptr					
+		nullptr,
+		nullptr,
+		coreParts.hInst,
+		nullptr
 	);
 	ErrorMessageOutput::Abort::DetectError((coreParts.hWnd != NULL), "m_hWndがぬるぽ", fileName);
+	return coreParts;
+}
+WindowContext::CoreParts WindowContext::Builder::Build(NexusFieldProof proof_)
+{
+	auto coreParts = CreateCoreParts();
+	Logger::Log("Create: CoreParts", fileName);
+	Logger::Log(StringConverter::ConvertString(coreParts.windowName) + " " + std::to_string(coreParts.width) + "x" + std::to_string(coreParts.height), fileName);
+	//ウィンドウの表示
+	ShowWindow(coreParts.hWnd, SW_SHOWNORMAL);
+	Logger::Log("Display Window", fileName);
+	//ウィンドウにフォーカスを設定
+	SetFocus(coreParts.hWnd);
+	Logger::Log("Forcus on Window", fileName);
+	//誰も捕捉しなかった場合に(Unhandled)、補足する関数を登録
+	SetUnhandledExceptionFilter(ExportDump);
+	Logger::Log("Set Unhandled Exception Filter", fileName);
 	return coreParts;
 }
 
@@ -3739,6 +3788,141 @@ class WindowContext::Builder
 {
 	friend class WindowContext;
 	static CoreParts Build(NexusFieldProof proof_);
+	//以下ヘルパー
+private:
+	static CoreParts CreateCoreParts();
+};
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Core\Window\WindowContextDiplomat\WindowContextDiplomat.cpp ===
+========================================
+#include "PreCompileHeader.h"
+#include "WindowContextDiplomat.h"
+#include "WindowContextToolLender/WindowContextToolLender.h"
+#include "WindowContextExecutionAgent/WindowContextExecutionAgent.h"
+WindowContextDiplomat::WindowContextDiplomat
+(
+	WindowContext::NexusFieldProof proof_,
+	std::unique_ptr<WindowContext::ToolLender>&& toolLender_,
+	std::unique_ptr<WindowContext::ExecutionAgent>&& executionAgent_
+)
+{
+	std::get<std::unique_ptr<WindowContext::ToolLender>>(tools) = std::move(toolLender_);
+	std::get<std::unique_ptr<WindowContext::ExecutionAgent>>(tools) = std::move(executionAgent_);
+}
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Core\Window\WindowContextDiplomat\WindowContextDiplomat.h ===
+========================================
+#pragma once
+#include "../WindowContext.h"
+class WindowContextDiplomat
+{
+public:
+	WindowContextDiplomat
+	(
+		WindowContext::NexusFieldProof proof_,
+		std::unique_ptr<WindowContext::ToolLender>&& toolLender_,
+		std::unique_ptr<WindowContext::ExecutionAgent>&& executionAgent_
+	);
+	template<typename ToolType>
+	ToolType& Access()
+	{
+		return *std::get<std::unique_ptr<ToolType>>(tools);
+	}
+private:
+	std::tuple
+	<
+		std::unique_ptr<WindowContext::ToolLender>,
+		std::unique_ptr<WindowContext::ExecutionAgent>
+	> tools;
+};
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Core\Window\WindowContextDiplomat\WindowContextExecutionAgent\WindowContextExecutionAgent.cpp ===
+========================================
+#include "PreCompileHeader.h"
+#include "WindowContextExecutionAgent.h"
+WindowContext::ExecutionAgent::ExecutionAgent(NexusFieldProof proof_, WindowContext& windowContext_)
+	:windowContext(windowContext_)
+{
+}
+void WindowContext::ExecutionAgent::WindowContextFinalize(NexusFieldProof proof_)
+{
+	windowContext.Finalize(proof_, AgentKey{});
+}
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Core\Window\WindowContextDiplomat\WindowContextExecutionAgent\WindowContextExecutionAgent.h ===
+========================================
+#pragma once
+#include "../../WindowContext.h"
+class WindowContext::ExecutionAgent
+{
+public:
+	ExecutionAgent(NexusFieldProof proof_, WindowContext& windowContext_);
+	void WindowContextFinalize(NexusFieldProof proof_);
+private:
+	WindowContext& windowContext;
+};
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Core\Window\WindowContextDiplomat\WindowContextToolLender\WindowContextToolLender.cpp ===
+========================================
+#include "PreCompileHeader.h"
+#include "WindowContextToolLender.h"
+WindowContext::ToolLender::ToolLender
+(
+	NexusFieldProof proof_,
+	HWND const& HWND_
+)
+{
+	std::get<HWND>(tools) = HWND_;
+}
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Core\Window\WindowContextDiplomat\WindowContextToolLender\WindowContextToolLender.h ===
+========================================
+#pragma once
+#include "../../WindowContext.h"
+class WindowContext::ToolLender
+{
+	template<typename ToolType>
+	struct ToolTypeTraits;
+	struct UsesHWNDLicence;
+public:
+	template<typename ToolType>
+	using LicenceType = typename ToolTypeTraits<ToolType>::Type;
+	ToolLender
+	(
+		NexusFieldProof proof_,
+		HWND const& HWND_
+	);
+	template<typename ToolType>
+	ToolType& Lend(typename ToolTypeTraits<ToolType>::Type licence_)
+	{
+		return std::get<ToolType>(tools);
+	}
+private:
+	std::tuple<HWND> tools;
+};
+template<>
+struct WindowContext::ToolLender::ToolTypeTraits<HWND>
+{
+	using Type = UsesHWNDLicence;
+};
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Core\Window\WindowContextDiplomat\WindowContextToolLender\WindowContextToolLenderLicences.h ===
+========================================
+#pragma once
+#include "WindowContextToolLender.h"
+class SwapChainContext;
+struct WindowContext::ToolLender::UsesHWNDLicence
+{
+private:
+	friend class SwapChainContext;
+	explicit UsesHWNDLicence() = default;
 };
 
 ========================================
@@ -17077,12 +17261,17 @@ Nexus::Nexus()
 	InitializeInSequence<InitSequence::kKickCommands>();
 	InitializeInSequence<InitSequence::kDeleteIntermediateResources>();
 	InitializeInSequence<InitSequence::kSortOutGlobalConstantBuffers>();
-	ErrorMessageOutput::Assert::DetectError(next == InitSequence::kEnd, "初期化が正常に行われていない可能性がある", fileName);
+	ErrorMessageOutput::Assert::DetectError(nextInit == InitSequence::kEnd, "初期化が正常に行われていない可能性がある", fileName);
 	Logger::End("Nexus: Constructor");
 }
 Nexus::~Nexus()
 {
-	Finalize();
+	Logger::Entry("Nexus: Destructor");
+	FinalizeInSequence<FinalizeSequence::kCommandContext>();
+	FinalizeInSequence<FinalizeSequence::kWindowContext>();
+	FinalizeInSequence<FinalizeSequence::kCoUninitialize>();
+	ErrorMessageOutput::Assert::DetectError(nextFin == FinalizeSequence::kEnd, "終了処理が正常に行われていない可能性がある", fileName);
+	Logger::End("Nexus: Destructor");
 }
 
 ========================================
@@ -17123,7 +17312,15 @@ class Nexus
 		kDeleteIntermediateResources,
 		kSortOutGlobalConstantBuffers
 		,kEnd
-	}next = InitSequence(0);
+	}nextInit = InitSequence(0);
+	//終了処理順序
+	enum class FinalizeSequence
+	{
+		kCommandContext,
+		kWindowContext,
+		kCoUninitialize
+		,kEnd
+	}nextFin = FinalizeSequence(0);
 public:
 	~Nexus();
 	Nexus();
@@ -17166,14 +17363,29 @@ private:
 	{
 		ErrorMessageOutput::Assert::DetectError
 		(
-			next == next_ , 
+			nextInit == next_ ,
 			"初期化が正常に行われていない可能性がある",
 			"Nexus.h"
 		);
 		Init<next_>();
-		next = InitSequence((UINT)next + 1);
+		nextInit = InitSequence((UINT)nextInit + 1);
 	}
+	//終了処理を行う
+	template<FinalizeSequence finalizeSequence>
 	void Finalize();
+	///終了処理バージョン
+	template<FinalizeSequence next_>
+	void FinalizeInSequence()
+	{
+		ErrorMessageOutput::Assert::DetectError
+		(
+			nextFin == next_,
+			"終了処理が正常に行われていない可能性がある",
+			"Nexus.h"
+		);
+		Finalize<next_>();
+		nextFin = FinalizeSequence((UINT)nextFin + 1);
+	}
 };
 
 ========================================
@@ -17181,17 +17393,30 @@ private:
 ========================================
 #include "Nexus.h"
 #include "../LowerLayer/Core/Command/CommandContext.h"
-#include "../LowerLayer/Core/Window/WindowContext.h"
+#include "../LowerLayer/Core/Window/WindowContextDiplomat/WindowContextExecutionAgent/WindowContextExecutionAgent.h"
+#include "../LowerLayer/Core/Window/WindowContextDiplomat/WindowContextDiplomat.h"
 namespace
 {
-	std::string const fileName = "Nexus.cpp";
+	std::string const fileName = "NexusFinalization.cpp";
 }
-void Nexus::Finalize()
+template<>
+void Nexus::Finalize<Nexus::FinalizeSequence::kCommandContext>()
 {
 	commandContext->Finalize(CommandContext::NexusFieldProof{});
-	windowContext->Finalize();
+}
+template<>
+void Nexus::Finalize<Nexus::FinalizeSequence::kWindowContext>()
+{
+	//ウィンドウコンテキストの終了処理を代行してもらう
+	auto& agent = windowContext->diplomat->Access<WindowContext::ExecutionAgent>();
+	agent.WindowContextFinalize(WindowContext::NexusFieldProof{});
+}
+template<>
+void Nexus::Finalize<Nexus::FinalizeSequence::kCoUninitialize>()
+{
 	//COMの終了
 	CoUninitialize();
+	Logger::Log("CoUninitialize", fileName);
 }
 
 ========================================
@@ -17229,7 +17454,7 @@ void Nexus::Finalize()
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 namespace
 {
-	std::string const fileName = "Nexus.cpp";
+	std::string const fileName = "NexusInitialization.cpp";
 }
 template<>
 void Nexus::Init<Nexus::InitSequence::kDeviceContext>()
@@ -17313,7 +17538,7 @@ void Nexus::Init<Nexus::InitSequence::kSwapChainContext>()
 			descriptorHeapContext->diplomat.get(),
 			commandContext->diplomat.get(),
 			deviceContext->diplomat.get(),
-			windowContext->WatchHWND()
+			*windowContext->diplomat
 		)
 	);
 	Logger::Log("Instantiate: swapChainContext", fileName);
@@ -18020,5 +18245,5 @@ namespace StringProcessing
 ========================================
 === SUMMARY ===
 ========================================
-Total Files      : 417
-Effective Lines  : 12993
+Total Files      : 424
+Effective Lines  : 13162

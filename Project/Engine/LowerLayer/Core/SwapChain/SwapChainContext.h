@@ -4,6 +4,7 @@ class Nexus;
 class CommandContextDiplomat;
 class DeviceContextDiplomat;
 class DescriptorHeapContextDiplomat;
+class WindowContextDiplomat;
 
 //外部
 ///リファクタ認定
@@ -34,7 +35,7 @@ public:
 		DescriptorHeapContextDiplomat* descriptorheapContextDiplomat_,
 		CommandContextDiplomat* commandContextDiplomat_,
 		DeviceContextDiplomat* deviceContextDiplomat_,
-		const HWND hWnd_
+		WindowContextDiplomat& windowContextDiplomat_
 	);
 
 	~SwapChainContext();

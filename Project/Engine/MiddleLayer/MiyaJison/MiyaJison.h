@@ -13,7 +13,6 @@ public:
 
 	static Miyajison* Get();
 
-
 	Miyajison(const Miyajison&) = delete;
 	Miyajison& operator=(const Miyajison&) = delete;
 	Miyajison(Miyajison&&) = delete;

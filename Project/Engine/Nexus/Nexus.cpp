@@ -62,6 +62,7 @@ Nexus::Nexus()
 
 	InitializeInSequence<InitSequence::kLoadAllJsonFiles>();
 
+
 	InitializeInSequence<InitSequence::kDeviceContext>();
 	InitializeInSequence<InitSequence::kWindowContext>();
 	InitializeInSequence<InitSequence::kDescriptorHeapContext>();
@@ -80,7 +81,7 @@ Nexus::Nexus()
 	InitializeInSequence<InitSequence::kDeleteIntermediateResources>();
 	InitializeInSequence<InitSequence::kSortOutGlobalConstantBuffers>();
 
-	ErrorMessageOutput::Assert::DetectError(next == InitSequence::kEnd, "初期化が正常に行われていない可能性がある", fileName);
+	ErrorMessageOutput::Assert::DetectError(nextInit == InitSequence::kEnd, "初期化が正常に行われていない可能性がある", fileName);
 
 
 	Logger::End("Nexus: Constructor");
@@ -89,7 +90,17 @@ Nexus::Nexus()
 
 Nexus::~Nexus()
 {
-	Finalize();
+	Logger::Entry("Nexus: Destructor");
+
+
+	FinalizeInSequence<FinalizeSequence::kCommandContext>();
+	FinalizeInSequence<FinalizeSequence::kWindowContext>();
+	FinalizeInSequence<FinalizeSequence::kCoUninitialize>();
+
+	ErrorMessageOutput::Assert::DetectError(nextFin == FinalizeSequence::kEnd, "終了処理が正常に行われていない可能性がある", fileName);
+
+	Logger::End("Nexus: Destructor");
+
 }
 
 
