@@ -14,11 +14,6 @@ class BufferContext
 	//生リソース生成
 	class ResourceCreator;
 
-	//全てのテクスチャファイルを読み込み、バッファを作成する
-	//そしてlibraryにつめていく。そしてsrvをひとまとまりにしたものをstructuredBufferとして作成し、アップロード
-	//そのバッファのsrvIndexをさらにGlobalConstantBufferで送るまでやる
-	class TextureBufferCreator;
-	class TextureIndexLibrary;
 	struct BufferPoolSet;
 
 
@@ -103,8 +98,6 @@ private:
 	std::unique_ptr<BufferInfoExtractor> bufferInfoExtractor;
 	std::unique_ptr<GlobalConstantBuffers> globalConstantBuffers;
 	std::unique_ptr<GlobalConstantBufferCreator> globalConstantBufferCreator;
-	std::unique_ptr<TextureIndexLibrary> textureIndexLibrary;
-
 	
 };
 

@@ -1,9 +1,11 @@
 #pragma once
 #include "../TextureBufferCreator.h"
-#include "../../../BufferDefinition/TextureComponent.h"
+
+//外部
+#include "../../../Buffer/BufferDefinition/TextureComponent.h"
 
 
-class BufferContext::TextureBufferCreator::TextureDataLoader
+class TextureContext::TextureBufferCreator::TextureDataLoader
 {
 	friend class TextureBufferCreator;
 

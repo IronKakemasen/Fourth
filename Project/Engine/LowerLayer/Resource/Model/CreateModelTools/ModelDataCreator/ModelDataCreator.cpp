@@ -2,7 +2,6 @@
 #include "ModelDataCreator.h"
 
 #include "../../ModelStructure/ModelData/ModelDataAggregate.h"
-
 #include "../ModelDataLoader/ModelDataLoader.h"
 #include "../ModelSlotAllocator/MeshDataIDLibrary/MeshDataIDLibrary.h"
 
@@ -15,7 +14,6 @@
 
 //外部
 #include "../../../Buffer/BufferContextDiplomat/BufferDiplomatIncludes.h"
-
 #include "RegistryLoader/RegistryLoader.h"
 
 using namespace StructuredBufferDataDefinition;
@@ -86,8 +84,7 @@ void ModelContext::ModelDataCreator::CreateAllModelData
     std::unordered_map<std::string, ModelDataAggregate*> tmpModelDataLib = LoadAllModelFiles(modelDataLoader_);
 
     //バッファコンテキストのツールレンダーから各種ツールを借りる
-    auto [bufferCreator, bufferCollector, bufferUploader,bufferDispatcher] =
-        BorrowBufferContextTools(bufferContextDiplomat_);
+    auto [bufferCreator, bufferCollector, bufferUploader,bufferDispatcher] = BorrowBufferContextTools(bufferContextDiplomat_);
 
     //定数バッファ生成コマンドを提供してもらう
     BufferContext::CmdProvider::LicenceType<BufferContextCmds::CreateCBufferCmd> licence;

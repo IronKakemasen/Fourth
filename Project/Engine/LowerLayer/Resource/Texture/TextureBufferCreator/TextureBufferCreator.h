@@ -1,7 +1,7 @@
 #pragma once
-#include "../../BufferContext.h"
+#include "../TextureContext.h"
 
-class BufferContext::TextureBufferCreator
+class TextureContext::TextureBufferCreator
 {
 	//テクスチャファイルのデータが詰まったジェーソンファイルを読み込む
 	class TextureDataLoader;
@@ -17,10 +17,8 @@ public:
 	TextureBufferCreator
 	(
 		NexusFieldProof proof_,
-		BufferCreator& bufferCreator_,
-		BufferUploader& bufferUploader_,
-		GlobalConstantBufferCreator& globalConstantBufferCreator_,
-		TextureIndexLibrary& textureBufferLibrary_
+		TextureLibrary& textureLibrary_,
+		BufferContextDiplomat& bufferContextDiplomat_
 	);
 
 };

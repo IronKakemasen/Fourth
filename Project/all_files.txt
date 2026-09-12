@@ -6535,8 +6535,6 @@ private:
 #include "GlobalConstantBuffers/GlobalConstantBuffers.h"
 //バッファコレクターがバッファを仕分ける
 #include "BufferPoolSet/BufferPoolSet.h"
-#include "BufferCreateTools/TextureBufferCreator/TextureBufferCreator.h"
-#include "TextureIndexLibrary/TextureIndexLibrary.h"
 namespace
 {
 	std::string fileName = "BufferContext.cpp";
@@ -6572,18 +6570,6 @@ BufferContext::BufferContext
 	Logger::Log("Instantiate: GlobalConstantBuffers", fileName);
 	globalConstantBufferCreator.reset(new GlobalConstantBufferCreator(proof_, globalConstantBuffers.get(),bufferCreator.get()));
 	Logger::Log("Instantiate: GlobalConstantBufferCreator", fileName);
-	textureIndexLibrary.reset(new TextureIndexLibrary(proof_));
-	Logger::Log("Instantiate: TextureIndexLibrary", fileName);
-	//中でテクスチャファイルを読み込んで、そのバッファを作成する
-	TextureBufferCreator textureBufferCreator
-	(
-		proof_,
-		*bufferCreator,
-		*bufferUploader,
-		*globalConstantBufferCreator,
-		*textureIndexLibrary
-	);
-	Logger::Log("Instantiate: TextureBufferCreator", fileName);
 	diplomat.reset
 	(
 		new BufferContextDiplomat
@@ -6636,11 +6622,6 @@ class BufferContext
 	class BufferDeferredReleaser;
 	//生リソース生成
 	class ResourceCreator;
-	//全てのテクスチャファイルを読み込み、バッファを作成する
-	//そしてlibraryにつめていく。そしてsrvをひとまとまりにしたものをstructuredBufferとして作成し、アップロード
-	//そのバッファのsrvIndexをさらにGlobalConstantBufferで送るまでやる
-	class TextureBufferCreator;
-	class TextureIndexLibrary;
 	struct BufferPoolSet;
 protected:
 	//登録先識別用
@@ -6710,7 +6691,6 @@ private:
 	std::unique_ptr<BufferInfoExtractor> bufferInfoExtractor;
 	std::unique_ptr<GlobalConstantBuffers> globalConstantBuffers;
 	std::unique_ptr<GlobalConstantBufferCreator> globalConstantBufferCreator;
-	std::unique_ptr<TextureIndexLibrary> textureIndexLibrary;
 };
 struct BufferContext::NexusFieldProof
 {
@@ -6870,10 +6850,12 @@ BufferContextCmds::CreateCBufferCmd BufferContext::CmdProvider::Provide
 #pragma once
 #include "BufferContextCmdProvider.h"
 class ModelContext;
+class TextureContext;
 struct BufferContext::CmdProvider::UsesCBufferCreatorLicence
 {
 private:
 	friend class ModelContext;
+	friend class TextureContext;
 	explicit UsesCBufferCreatorLicence() = default;
 };
 
@@ -7029,11 +7011,13 @@ struct BufferContext::ToolLender::CmdTypeTraits<BufferContext::GlobalConstantBuf
 #include "BufferToolLender.h"
 class ModelContext;
 class RenderContext;
+class TextureContext;
 struct BufferContext::ToolLender::BasicBufferManagementLicence
 {
 private:
 	friend class ModelContext;
 	friend class RenderContext;
+	friend class TextureContext;
 	explicit BasicBufferManagementLicence() = default;
 };
 
@@ -9119,300 +9103,6 @@ private:
 };
 
 ========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Buffer\BufferCreateTools\TextureBufferCreator\TextureBufferCreator.cpp ===
-========================================
-#include "PreCompileHeader.h"
-#include "TextureBufferCreator.h"
-#include "TextureDataLoader/TextureDataLoader.h"
-#include "TextureFileLoader/TextureFileLoader.h"
-#include "TextureBufferAssembler/TextureBufferAssembler.h"
-#include "../BufferCreator.h"
-#include "../BufferCollector/BufferCollector.h"
-#include "../BufferUploader/BufferUploader.h"
-#include "../../TextureIndexLibrary/TextureIndexLibrary.h"
-//外部
-#include "RegistryLoader/RegistryLoader.h"
-BufferContext::TextureBufferCreator::TextureBufferCreator
-(
-	NexusFieldProof proof_,
-	BufferCreator& bufferCreator_,
-	BufferUploader& bufferUploader_,
-	GlobalConstantBufferCreator& globalConstantBufferCreator_,
-	TextureIndexLibrary& textureBufferLibrary_
-)
-{
-	///目標
-	//全てのテクスチャファイルを読み込み、バッファを作成してlibraryにつめていく。
-	//全バッファのsrvをひとまとまりにしたものをStaticStructuredBufferとして作成し、アップロード
-	//そのバッファのsrvIndexをさらにGlobalConstantBufferで送る
-	Logger::Log("\n- - - - Create All TextureBuffer - - - -","TextureBufferCreator.cpp\n");
-	struct DescEntry
-	{
-		DirectX::ScratchImage scratchImage;
-		Texture2DState texture2DState;
-	};
-	std::map<std::string, DescEntry> descEntries;
-	//Registryに登録されているテクスチャファイルのキーを走査する
-	auto const allKey_values = RegistryLoader::Load<RegistryLoader::RegistryFileType::kTextureFiles>();
-	for (auto const&[ key,value ]: allKey_values)
-	{
-		//まずテクスチャファイルのジェーソンファイルからデータを読む
-		descEntries[key].texture2DState = TextureDataLoader::LoadTextureState(key);
-		//DirectTex様を利用してファイルを読み込み、DirectX::ScratchImageを取得
-		descEntries[key].scratchImage = TextureFileLoader::LoadTextureFile(value, descEntries[key].texture2DState.type);
-	}
-	//Texture2DBufferDescriptionを作成し、それをもとにバッファを作成。アップロードしていく
-	for (auto& [key, value] : descEntries)
-	{
-		//作成したテクスチャバッファのSRVHeapIndex
-		SRVHeapIndex const dstIndex = 
-			BufferAssembler::AssembleTexture2DBuffer(key, value.scratchImage, value.texture2DState, bufferCreator_, bufferUploader_);
-		//テクスチャファイル名をキーとして追加していく
-		textureBufferLibrary_.Import(proof_, key, dstIndex);
-	}
-	//デバッグ出力
-	textureBufferLibrary_.Log();
-	Logger::Log("\n- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -", "TextureBufferCreator.cpp");
-}
-
-========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Buffer\BufferCreateTools\TextureBufferCreator\TextureBufferCreator.h ===
-========================================
-#pragma once
-#include "../../BufferContext.h"
-class BufferContext::TextureBufferCreator
-{
-	//テクスチャファイルのデータが詰まったジェーソンファイルを読み込む
-	class TextureDataLoader;
-	//テクスチャファイルを読み込む
-	class TextureFileLoader;
-	//バッファを作りアップロードし(厳密には追加)、そのsrvHeapIndexを返す
-	class BufferAssembler;
-public:
-	TextureBufferCreator
-	(
-		NexusFieldProof proof_,
-		BufferCreator& bufferCreator_,
-		BufferUploader& bufferUploader_,
-		GlobalConstantBufferCreator& globalConstantBufferCreator_,
-		TextureIndexLibrary& textureBufferLibrary_
-	);
-};
-
-========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Buffer\BufferCreateTools\TextureBufferCreator\TextureBufferAssembler\TextureBufferAssembler.cpp ===
-========================================
-#include "PreCompileHeader.h"
-#include "TextureBufferAssembler.h"
-#include "../../../BufferDefinition/BufferDescriptions/Texture2DBufferDescription/Texture2DBufferDescription.h"
-#include "../../BufferCreator.h"
-#include "../../BufferUploader/BufferUploader.h"
-#include "../../../BufferDefinition/AllBuffersInclude.h"
-SRVHeapIndex BufferContext::TextureBufferCreator::BufferAssembler::AssembleTexture2DBuffer
-(
-	std::string const name_,
-	DirectX::ScratchImage& scratchImage_,
-	Texture2DState texture2DState_,
-	BufferCreator& bufferCreator_,
-	BufferUploader& bufferUploader_
-)
-{
-	//ディスクを組み立ててバッファを生成
-	Texture2DBufferDescription desc(scratchImage_, texture2DState_);
-	auto id_bufferPtr =  bufferCreator_.CreateWithBuffer(desc, name_);
-	//作成したテクスチャバッファをアップロードリストに追加
-	bufferUploader_.RegisterTextureBuffer(scratchImage_, id_bufferPtr.first);
-	//最後にこのバッファのsrvHeapIndexをかえす
-	Texture2DBuffer* tex2DBuffer = static_cast<Texture2DBuffer*>(id_bufferPtr.second);
-	IReadable* readableBuffer = dynamic_cast<IReadable*>(tex2DBuffer);
-	ErrorMessageOutput::Assert::DetectError
-	(
-		readableBuffer,
-		id_bufferPtr.second->WatchName() + "がIReadableじゃない",
-		"TextureBufferAssembler.cpp"
-	);
-	return readableBuffer->OutProperSRVHeapIndex(0);
-}
-
-========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Buffer\BufferCreateTools\TextureBufferCreator\TextureBufferAssembler\TextureBufferAssembler.h ===
-========================================
-#pragma once
-#include "../TextureBufferCreator.h"
-#include "../../../BufferDefinition/TextureComponent.h"
-//外部
-#include "../../../../../../../External/DirectXTex/DirectXTex.h"
-class BufferContext::TextureBufferCreator::BufferAssembler
-{
-	friend class TextureBufferCreator;
-	static SRVHeapIndex AssembleTexture2DBuffer
-	(
-		std::string const name_,
-		DirectX::ScratchImage& scratchImage_,
-		Texture2DState texture2DState_,
-		BufferCreator& bufferCreator_,
-		BufferUploader& bufferUploader_
-	);
-};
-
-========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Buffer\BufferCreateTools\TextureBufferCreator\TextureDataLoader\TextureDataLoader.cpp ===
-========================================
-#include "PreCompileHeader.h"
-#include "TextureDataLoader.h"
-//外部
-#include "StringProcessing/StringProcessing.h"
-namespace
-{
-	auto const fileName = "TextureDataLoader.cpp";
-}
-using namespace TextureComponent;
-Texture2DState BufferContext::TextureBufferCreator::TextureDataLoader::LoadTextureState(std::string const key_)
-{
-	Texture2DState texture2DState;
-	//keyからアンダーバーの先がテクスチャータイプ
-	auto const textureTypeString = StringProcessing::SkipFetch(key_, '_');
-	//文字列からenumに変換
-	texture2DState.type = ToTextureType(textureTypeString);
-	return texture2DState;
-}
-TextureType BufferContext::TextureBufferCreator::TextureDataLoader::ToTextureType(std::string const typeString_)
-{
-	TextureType type = TextureType::kCount;
-	if		(typeString_ == DataStrings::kAlbedo)		type = TextureType::kAlbedo;
-	else if (typeString_ == DataStrings::kEmissive)		type = TextureType::kEmissive;
-	else if (typeString_ == DataStrings::kNormal)		type = TextureType::kNormal;
-	else if (typeString_ == DataStrings::kSprite)		type = TextureType::kSprite;
-	ErrorMessageOutput::Assert::DetectError
-	(
-		type != TextureType::kCount,
-		typeString_ + ": そんなテクスチャタイプは設定されていない",
-		fileName
-	);
-	return type;
-}
-
-========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Buffer\BufferCreateTools\TextureBufferCreator\TextureDataLoader\TextureDataLoader.h ===
-========================================
-#pragma once
-#include "../TextureBufferCreator.h"
-#include "../../../BufferDefinition/TextureComponent.h"
-class BufferContext::TextureBufferCreator::TextureDataLoader
-{
-	friend class TextureBufferCreator;
-	struct DataStrings
-	{
-		static inline const std::string	kQuality		= "Quality";
-		static inline const std::string	kQualityLow		= "Low";
-		static inline const std::string kQualityMidium	= "Mid";
-		static inline const std::string kQualityHigh	= "High";
-		static inline const std::string kQualityUltra	= "Ultra";
-		static inline const std::string	kAlbedo			= "albedo";
-		static inline const std::string kNormal			= "normal";
-		static inline const std::string kEmissive		= "emissive";
-		static inline const std::string kSprite			= "sprite";
-	};
-	///レジストリーに登録されている全てのテクスチャファイルの、
-	///Texture2DBufferDescriptionを構成する要素があるジェーソンファイルからデータを読む
-	static Texture2DState LoadTextureState(std::string const key_);
-	//以下ヘルパー
-private:
-	static TextureComponent::TextureType ToTextureType(std::string const typeString_);
-};
-
-========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Buffer\BufferCreateTools\TextureBufferCreator\TextureFileLoader\TextureFileLoader.cpp ===
-========================================
-#include "PreCompileHeader.h"
-#include "TextureFileLoader.h"
-//外部
-#include "StringProcessing/StringProcessing.h"
-#include "StringConverter/StringConverter.h"
-namespace
-{
-	auto const fileName = "TextureFileLoader.cpp";
-}
-DirectX::ScratchImage BufferContext::TextureBufferCreator::TextureFileLoader::LoadTextureFile(std::string const filePath_, TextureComponent::TextureType textureType_)
-{
-	CheckExtension(filePath_);
-	DirectX::ScratchImage image{};
-	std::wstring filePathW = StringConverter::ConvertString(filePath_);
-	HRESULT hr;
-	///ddsファイルであれば（のみに変更）
-	hr = DirectX::LoadFromDDSFile
-	(
-		filePathW.c_str(),
-		DDS_FLAGS_Table(textureType_),
-		nullptr,
-		image
-	);
-	ErrorMessageOutput::Assert::DetectError
-	(
-		SUCCEEDED(hr),
-		filePath_ + "このファイルの読み込みに失敗",
-		fileName
-	);
-	Logger::Log("Load TextureFile: " + filePath_, fileName);
-	return image;
-}
-void BufferContext::TextureBufferCreator::TextureFileLoader::CheckExtension(std::string const filePath_)
-{
-	if
-	(
-		!StringProcessing::CheckFileExtension(filePath_, ".dds") &&
-		!StringProcessing::CheckFileExtension(filePath_, ".DDS") 
-	)
-	{
-		ErrorMessageOutput::Assert::OutputError(filePath_ + "のファイル指定子がdds以外っす", fileName);
-	}
-}
-DirectX::WIC_FLAGS BufferContext::TextureBufferCreator::TextureFileLoader::WIC_FLAGS_Table(TextureComponent::TextureType textureType_)
-{
-	static DirectX::WIC_FLAGS table[(UINT)TextureComponent::TextureType::kCount]
-	{
-		DirectX::WIC_FLAGS_FORCE_SRGB,
-		DirectX::WIC_FLAGS_IGNORE_SRGB,
-		DirectX::WIC_FLAGS_FORCE_SRGB,
-		DirectX::WIC_FLAGS_FORCE_SRGB
-	};
-	return table[(UINT)textureType_];
-}
-DirectX::DDS_FLAGS BufferContext::TextureBufferCreator::TextureFileLoader::DDS_FLAGS_Table(TextureComponent::TextureType textureType_)
-{
-	static DirectX::DDS_FLAGS table[(UINT)TextureComponent::TextureType::kCount]
-	{
-		DirectX::DDS_FLAGS_NONE,
-		DirectX::DDS_FLAGS_NONE,
-		DirectX::DDS_FLAGS_NONE,
-		DirectX::DDS_FLAGS_NONE
-	};
-	return table[(UINT)textureType_];
-}
-
-========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Buffer\BufferCreateTools\TextureBufferCreator\TextureFileLoader\TextureFileLoader.h ===
-========================================
-#pragma once
-#include "../TextureBufferCreator.h"
-#include "../../../BufferDefinition/TextureComponent.h"
-//外部
-#include "../../../../../../../External/DirectXTex/DirectXTex.h"
-class BufferContext::TextureBufferCreator::TextureFileLoader
-{
-	friend class TextureBufferCreator;
-	static DirectX::ScratchImage LoadTextureFile(std::string const filePath_, TextureComponent::TextureType textureType_);
-	//以下ヘルパー
-private:
-	//念のためのファイル指定子チェック
-	static void CheckExtension(std::string const filePath_);
-	//textureType別にWIC_FLAGSを設定したテーブル
-	static DirectX::WIC_FLAGS WIC_FLAGS_Table(TextureComponent::TextureType textureType_);
-	//そのDDS版
-	static DirectX::DDS_FLAGS DDS_FLAGS_Table(TextureComponent::TextureType textureType_);
-};
-
-========================================
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Buffer\BufferDefinition\AllBufferDescsIFwd.h ===
 ========================================
 #pragma once
@@ -9833,7 +9523,7 @@ void ConstantBufferDescription::CheckRequirementsFilled() const
 D3D12_RESOURCE_DESC ConstantBufferDescription::CreateResourceDesc()const
 {
 	D3D12_RESOURCE_DESC resourceDesc = {};
-	resourceDesc.Width = param.sizeInByte;
+	resourceDesc.Width = (param.sizeInByte + 255) & ~255;
 	resourceDesc.Dimension = D3D12_RESOURCE_DIMENSION_BUFFER;
 	resourceDesc.Height = 1;
 	resourceDesc.DepthOrArraySize = 1;
@@ -11635,61 +11325,6 @@ private:
 };
 
 ========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Buffer\TextureIndexLibrary\TextureIndexLibrary.cpp ===
-========================================
-#include "PreCompileHeader.h"
-#include "TextureIndexLibrary.h"
-BufferContext::TextureIndexLibrary::TextureIndexLibrary(NexusFieldProof proof_)
-{
-}
-namespace
-{
-	auto const fileName = "TextureIndexLibrary.cpp";
-}
-void BufferContext::TextureIndexLibrary::Import(NexusFieldProof proof_, std::string const name_, SRVHeapIndex const index_)
-{
-	data[name_] = index_;
-}
-SRVHeapIndex BufferContext::TextureIndexLibrary::Export(std::string const name_)const
-{
-	ErrorMessageOutput::Assert::DetectError
-	(
-		data.find(name_) != data.end(),
-		name_ + "こんなテクスチャインデックスは管理してまへん",
-		fileName
-	);
-	return data.at(name_);
-}
-void BufferContext::TextureIndexLibrary::Log()
-{
-	std::string log = "\n- - - - - - - - - - TextureIndexLibrary - - - - - - - - - -\n\n";
-	for (auto const& [key, value] : data)
-	{
-		log += key + "[" + std::to_string(value) + "]\n";
-	}
-	log += "\n- - - - - - - - - - - - - - - - - - - -";
-	Logger::Log(log);
-	Logger::Log("", fileName);
-}
-
-========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Buffer\TextureIndexLibrary\TextureIndexLibrary.h ===
-========================================
-#pragma once
-#include "../BufferContext.h"
-class BufferContext::TextureIndexLibrary
-{
-public:
-	TextureIndexLibrary(NexusFieldProof proof_);
-	void Import(NexusFieldProof proof_,std::string const name_, SRVHeapIndex const index_);
-	SRVHeapIndex Export(std::string const name_)const;
-	//中身確認用
-	void Log();
-private:
-	std::unordered_map<std::string, SRVHeapIndex> data;
-};
-
-========================================
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Model\ModelContext.cpp ===
 ========================================
 #include "PreCompileHeader.h"
@@ -12032,8 +11667,7 @@ void ModelContext::ModelDataCreator::CreateAllModelData
     //モデルデータライブラリー
     std::unordered_map<std::string, ModelDataAggregate*> tmpModelDataLib = LoadAllModelFiles(modelDataLoader_);
     //バッファコンテキストのツールレンダーから各種ツールを借りる
-    auto [bufferCreator, bufferCollector, bufferUploader,bufferDispatcher] =
-        BorrowBufferContextTools(bufferContextDiplomat_);
+    auto [bufferCreator, bufferCollector, bufferUploader,bufferDispatcher] = BorrowBufferContextTools(bufferContextDiplomat_);
     //定数バッファ生成コマンドを提供してもらう
     BufferContext::CmdProvider::LicenceType<BufferContextCmds::CreateCBufferCmd> licence;
     auto createCBufferCmd = bufferContextDiplomat_->Access<BufferContext::CmdProvider>()->
@@ -16330,6 +15964,477 @@ private:
 };
 
 ========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Texture\TextureContext.cpp ===
+========================================
+#include "PreCompileHeader.h"
+#include "TextureContext.h"
+#include "TextureLibrary/TextureLibrary.h"
+#include "TextureBufferCreator/TextureBufferCreator.h"
+namespace
+{
+	auto fileName = "TextureContext.cpp";
+}
+TextureContext::TextureContext
+(
+	NexusFieldProof proof_,
+	BufferContextDiplomat& bufferContextDiplomat_
+)
+{
+	Logger::Entry("ShaderContext: Constructor");
+	textureLibrary.reset(new TextureLibrary(proof_));
+	Logger::Log("Instantiate: TextureLibrary", fileName);
+	TextureBufferCreator textureBufferCreator(proof_, *textureLibrary, bufferContextDiplomat_);
+	Logger::End("ShaderContext: Constructor");
+}
+TextureContext::~TextureContext()
+{
+}
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Texture\TextureContext.h ===
+========================================
+#pragma once
+class Nexus;
+class BufferContextDiplomat;
+class TextureContext
+{
+	//全てのテクスチャファイルを読み込み、バッファを作成する
+	//そしてlibraryにつめていく。そしてsrvをひとまとまりにしたものをstructuredBufferとして作成し、アップロード
+	//そのバッファのsrvIndexをさらにGlobalConstantBufferで送るまでやる
+	class TextureBufferCreator;
+public:
+	///テクスチャファイル名をキーとしてsrvHeapIndexを管理する
+	class TextureLibrary;
+	//ネクサスフィールドの証
+	struct NexusFieldProof;
+	TextureContext
+	(
+		NexusFieldProof proof_, 
+		BufferContextDiplomat& bufferContextDiplomat_
+	);
+	~TextureContext();
+private:
+	std::unique_ptr<TextureLibrary> textureLibrary;
+};
+struct TextureContext::NexusFieldProof
+{
+private:
+	friend class Nexus;
+	explicit NexusFieldProof() = default;
+};
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Texture\TextureBufferCreator\TextureBufferCreator.cpp ===
+========================================
+#include "PreCompileHeader.h"
+#include "TextureBufferCreator.h"
+#include "../TextureLibrary/TextureLibrary.h"
+#include "TextureBufferAssembler/TextureBufferAssembler.h"
+#include "TextureDataLoader/TextureDataLoader.h"
+#include "TextureFileLoader/TextureFileLoader.h"
+#include "GlobalConstantBufferPackager/GlobalConstantBufferPackager.h"
+//外部
+#include "../../../../../External/DirectXTex/DirectXTex.h"
+#include "../../Buffer/BufferDefinition/TextureComponent.h"
+#include "RegistryLoader/RegistryLoader.h"
+TextureContext::TextureBufferCreator::TextureBufferCreator
+(
+	NexusFieldProof proof_,
+	TextureLibrary& textureLibrary_,
+	BufferContextDiplomat& bufferContextDiplomat_
+)
+{
+	///目標
+	//全てのテクスチャファイルを読み込み、バッファを作成してlibraryにつめていく。
+	//全バッファのsrvをひとまとまりにしたものをStaticStructuredBufferとして作成し、アップロード
+	//そのバッファのsrvIndexをさらにGlobalConstantBufferで送る
+	Logger::Log("\n- - - - Create All TextureBuffer - - - -", "TextureBufferCreator.cpp\n");
+	struct DescEntry
+	{
+		DirectX::ScratchImage scratchImage;
+		Texture2DState texture2DState;
+	};
+	std::map<std::string, DescEntry> descEntries;
+	std::vector<SRVHeapIndex> tmpIndices;
+	//Registryに登録されているテクスチャファイルのキーを走査する
+	auto const allKey_values = RegistryLoader::Load<RegistryLoader::RegistryFileType::kTextureFiles>();
+	for (auto const& [key, value] : allKey_values)
+	{
+		//まずテクスチャファイルのジェーソンファイルからデータを読む
+		descEntries[key].texture2DState = TextureDataLoader::LoadTextureState(key);
+		//DirectTex様を利用してファイルを読み込み、DirectX::ScratchImageを取得
+		descEntries[key].scratchImage = TextureFileLoader::LoadTextureFile(value, descEntries[key].texture2DState.type);
+	}
+	//Texture2DBufferDescriptionを作成し、それをもとにバッファを作成。アップロードしていく
+	for (auto& [key, value] : descEntries)
+	{
+		//作成したテクスチャバッファのSRVHeapIndex
+		SRVHeapIndex const dstIndex =
+			BufferAssembler::AssembleTexture2DBuffer(key, value.scratchImage, value.texture2DState, bufferContextDiplomat_);
+		//テクスチャファイル名をキーとして追加していく
+		textureLibrary_.Import(proof_, key, dstIndex);
+		tmpIndices.emplace_back(dstIndex);
+	}
+	//最後に全部のsrvHeapIndexを配列にしてそのStaticStructuredBufferを作成し、
+	//そのsrvHeapIndexのGlobalConstantBufferを作成
+	GlobalConstantBufferPackager::Package(tmpIndices, bufferContextDiplomat_);
+	//デバッグ出力
+	textureLibrary_.Log();
+	Logger::Log("\n- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -", "TextureBufferCreator.cpp");
+}
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Texture\TextureBufferCreator\TextureBufferCreator.h ===
+========================================
+#pragma once
+#include "../TextureContext.h"
+class TextureContext::TextureBufferCreator
+{
+	//テクスチャファイルのデータが詰まったジェーソンファイルを読み込む
+	class TextureDataLoader;
+	//テクスチャファイルを読み込む
+	class TextureFileLoader;
+	//バッファを作りアップロードし(厳密には追加)、そのsrvHeapIndexを返す
+	class BufferAssembler;
+	//テクスチャバッファのsrvをひとまとまりにしたもののバッファを作成。
+	//そのバッファのsrvHeapIndexのグローバル定数バッファを作成
+	class GlobalConstantBufferPackager;
+public:
+	TextureBufferCreator
+	(
+		NexusFieldProof proof_,
+		TextureLibrary& textureLibrary_,
+		BufferContextDiplomat& bufferContextDiplomat_
+	);
+};
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Texture\TextureBufferCreator\GlobalConstantBufferPackager\GlobalConstantBufferPackager.cpp ===
+========================================
+#include "PreCompileHeader.h"
+#include "GlobalConstantBufferPackager.h"
+//外部
+#include "../../../Buffer/BufferCreateTools/BufferUploader/BufferUploader.h"
+#include "../../../Buffer/BufferCreateTools/BufferCreator.h"
+#include "../../../Buffer/GlobalConstantBuffers/GlobalConstantBufferCreator/GlobalConstantBufferCreator.h"
+#include "../../../Buffer/BufferDefinition/BufferDescriptions/StaticStructuredBufferDescription/StaticStructuredBufferDescription.h"
+#include "../../../Buffer/BufferDefinition/GPUBuffer/StaticStructuredBuffer/StaticStructuredBuffer.h"
+#include "../../../Buffer/BufferContextDiplomat/BufferDiplomatIncludes.h"
+void TextureContext::TextureBufferCreator::GlobalConstantBufferPackager::Package
+(
+	std::vector<SRVHeapIndex> const& indices_,
+	BufferContextDiplomat& bufferContextDiplomat_
+)
+{
+	//バッファコンテキストのツールレンダーからいろんなツールを借りる
+	auto toolLender = bufferContextDiplomat_.Access<BufferContext::ToolLender>();
+	BufferContext::ToolLender::LicenceType<BufferContext::BufferCreator> licenceManageBuffer{};
+	auto* bufferCreator = toolLender->Lend<BufferContext::BufferCreator>(licenceManageBuffer);
+	auto* bufferUploader = toolLender->Lend<BufferContext::BufferUploader>(licenceManageBuffer);
+	//定数バッファ生成コマンドを提供してもらう
+	BufferContext::CmdProvider::LicenceType<BufferContextCmds::CreateCBufferCmd> licenceCmd;
+	auto* cmdProvider = bufferContextDiplomat_.Access<BufferContext::CmdProvider>();
+	auto createCBufferCmd = cmdProvider->Provide<BufferContextCmds::CreateCBufferCmd>(licenceCmd);
+	//まずはindicesのstaticStructuredBufferを作ってアップロードする
+	//ディスク作って
+	StaticStructuredBufferDescription desc((UINT)sizeof(SRVHeapIndex), (UINT)indices_.size(), 0);
+	std::string const bufferName = "TextureIndices";
+	//バッファ生成して
+	auto id_buffer = bufferCreator->CreateWithBuffer(desc, bufferName);
+	//srvHeapIndexを抽出
+	IReadable* readableBuffer = static_cast<IReadable*>(id_buffer.second);
+	//アップロードリストに登録
+	bufferUploader->RegisterBuffer(id_buffer.first, (UINT)indices_.size(), indices_.data());
+	//そのバッファのコンスタントバッファを生成し
+	auto cBufferID_cBuffer = 
+		createCBufferCmd(bufferName, (UINT)(sizeof(SRVHeapIndex)), ConstantBuffers::ConstantBufferBindSlots::kTextureContainer);
+	//データを書き込む
+	//その定数バッファのマップしたポインタにデータを書き込む
+	///定数バッファはダブルバッファなので、それぞれに別々のsrvHeapIndexを入力する
+	cBufferID_cBuffer.second->WriteInBoth<SRVHeapIndex>
+	(
+		{ readableBuffer->OutProperSRVHeapIndex(0) ,readableBuffer->OutProperSRVHeapIndex(1) }
+	);
+}
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Texture\TextureBufferCreator\GlobalConstantBufferPackager\GlobalConstantBufferPackager.h ===
+========================================
+#pragma once
+#include "../TextureBufferCreator.h"
+class TextureContext::TextureBufferCreator::GlobalConstantBufferPackager
+{
+	friend class TextureBufferCreator;
+	static void Package
+	(
+		std::vector<SRVHeapIndex> const& indices_,
+		BufferContextDiplomat& bufferContextDiplomat_
+	);
+};
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Texture\TextureBufferCreator\TextureBufferAssembler\TextureBufferAssembler.cpp ===
+========================================
+#include "PreCompileHeader.h"
+#include "TextureBufferAssembler.h"
+//外部
+#include "../../../Buffer/BufferDefinition/TextureComponent.h"
+#include "../../../Buffer/BufferDefinition/GPUBuffer/Texture2DBuffer/Texture2DBuffer.h"
+#include "../../../Buffer/BufferDefinition/BufferDescriptions/Texture2DBufferDescription/Texture2DBufferDescription.h"
+#include "../../../Buffer/BufferCreateTools/BufferCreator.h"
+#include "../../../Buffer/BufferCreateTools/BufferUploader/BufferUploader.h"
+#include "../../../Buffer/BufferContextDiplomat/BufferDiplomatIncludes.h"
+SRVHeapIndex TextureContext::TextureBufferCreator::BufferAssembler::AssembleTexture2DBuffer
+(
+	std::string const name_,
+	DirectX::ScratchImage& scratchImage_,
+	Texture2DState const& texture2DState_,
+	BufferContextDiplomat& bufferContextDiplomat_
+)
+{
+	//バッファコンテキストのツールレンダーからいろんなツールを借りる
+	auto bufferToolLender = bufferContextDiplomat_.Access<BufferContext::ToolLender>();
+	BufferContext::ToolLender::LicenceType<BufferContext::BufferCreator> licence{};
+	auto* bufferCreator = bufferToolLender->Lend<BufferContext::BufferCreator>(licence);
+	auto* bufferUploader = bufferToolLender->Lend<BufferContext::BufferUploader>(licence);
+	//ディスクを組み立ててバッファを生成
+	Texture2DBufferDescription desc(scratchImage_, texture2DState_);
+	auto id_bufferPtr =  bufferCreator->CreateWithBuffer(desc, name_);
+	//作成したテクスチャバッファをアップロードリストに追加
+	bufferUploader->RegisterTextureBuffer(scratchImage_, id_bufferPtr.first);
+	//最後にこのバッファのsrvHeapIndexをかえす
+	Texture2DBuffer* tex2DBuffer = static_cast<Texture2DBuffer*>(id_bufferPtr.second);
+	IReadable* readableBuffer = dynamic_cast<IReadable*>(tex2DBuffer);
+	ErrorMessageOutput::Assert::DetectError
+	(
+		readableBuffer,
+		id_bufferPtr.second->WatchName() + "がIReadableじゃない",
+		"TextureBufferAssembler.cpp"
+	);
+	return readableBuffer->OutProperSRVHeapIndex(0);
+}
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Texture\TextureBufferCreator\TextureBufferAssembler\TextureBufferAssembler.h ===
+========================================
+#pragma once
+#include "../TextureBufferCreator.h"
+//外部
+#include "../../../../../../External/DirectXTex/DirectXTex.h"
+struct Texture2DState;
+class TextureContext::TextureBufferCreator::BufferAssembler
+{
+	friend class TextureBufferCreator;
+	static SRVHeapIndex AssembleTexture2DBuffer
+	(
+		std::string const name_,
+		DirectX::ScratchImage& scratchImage_,
+		Texture2DState const& texture2DState_,
+		BufferContextDiplomat& bufferContextDiplomat_
+	);
+};
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Texture\TextureBufferCreator\TextureDataLoader\TextureDataLoader.cpp ===
+========================================
+#include "PreCompileHeader.h"
+#include "TextureDataLoader.h"
+//外部
+#include "StringProcessing/StringProcessing.h"
+namespace
+{
+	auto const fileName = "TextureDataLoader.cpp";
+}
+using namespace TextureComponent;
+Texture2DState TextureContext::TextureBufferCreator::TextureDataLoader::LoadTextureState(std::string const key_)
+{
+	Texture2DState texture2DState;
+	//keyからアンダーバーの先がテクスチャータイプ
+	auto const textureTypeString = StringProcessing::SkipFetch(key_, '_');
+	//文字列からenumに変換
+	texture2DState.type = ToTextureType(textureTypeString);
+	return texture2DState;
+}
+TextureType TextureContext::TextureBufferCreator::TextureDataLoader::ToTextureType(std::string const typeString_)
+{
+	TextureType type = TextureType::kCount;
+	if		(typeString_ == DataStrings::kAlbedo)		type = TextureType::kAlbedo;
+	else if (typeString_ == DataStrings::kEmissive)		type = TextureType::kEmissive;
+	else if (typeString_ == DataStrings::kNormal)		type = TextureType::kNormal;
+	else if (typeString_ == DataStrings::kSprite)		type = TextureType::kSprite;
+	ErrorMessageOutput::Assert::DetectError
+	(
+		type != TextureType::kCount,
+		typeString_ + ": そんなテクスチャタイプは設定されていない",
+		fileName
+	);
+	return type;
+}
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Texture\TextureBufferCreator\TextureDataLoader\TextureDataLoader.h ===
+========================================
+#pragma once
+#include "../TextureBufferCreator.h"
+//外部
+#include "../../../Buffer/BufferDefinition/TextureComponent.h"
+class TextureContext::TextureBufferCreator::TextureDataLoader
+{
+	friend class TextureBufferCreator;
+	struct DataStrings
+	{
+		static inline const std::string	kQuality		= "Quality";
+		static inline const std::string	kQualityLow		= "Low";
+		static inline const std::string kQualityMidium	= "Mid";
+		static inline const std::string kQualityHigh	= "High";
+		static inline const std::string kQualityUltra	= "Ultra";
+		static inline const std::string	kAlbedo			= "albedo";
+		static inline const std::string kNormal			= "normal";
+		static inline const std::string kEmissive		= "emissive";
+		static inline const std::string kSprite			= "sprite";
+	};
+	///レジストリーに登録されている全てのテクスチャファイルの、
+	///Texture2DBufferDescriptionを構成する要素があるジェーソンファイルからデータを読む
+	static Texture2DState LoadTextureState(std::string const key_);
+	//以下ヘルパー
+private:
+	static TextureComponent::TextureType ToTextureType(std::string const typeString_);
+};
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Texture\TextureBufferCreator\TextureFileLoader\TextureFileLoader.cpp ===
+========================================
+#include "PreCompileHeader.h"
+#include "TextureFileLoader.h"
+//外部
+#include "StringProcessing/StringProcessing.h"
+#include "StringConverter/StringConverter.h"
+namespace
+{
+	auto const fileName = "TextureFileLoader.cpp";
+}
+DirectX::ScratchImage TextureContext::TextureBufferCreator::TextureFileLoader::LoadTextureFile(std::string const filePath_, TextureComponent::TextureType textureType_)
+{
+	CheckExtension(filePath_);
+	DirectX::ScratchImage image{};
+	std::wstring filePathW = StringConverter::ConvertString(filePath_);
+	HRESULT hr;
+	///ddsファイルであれば（のみに変更）
+	hr = DirectX::LoadFromDDSFile
+	(
+		filePathW.c_str(),
+		DDS_FLAGS_Table(textureType_),
+		nullptr,
+		image
+	);
+	ErrorMessageOutput::Assert::DetectError
+	(
+		SUCCEEDED(hr),
+		filePath_ + "このファイルの読み込みに失敗",
+		fileName
+	);
+	Logger::Log("Load TextureFile: " + filePath_, fileName);
+	return image;
+}
+void TextureContext::TextureBufferCreator::TextureFileLoader::CheckExtension(std::string const filePath_)
+{
+	if
+	(
+		!StringProcessing::CheckFileExtension(filePath_, ".dds") &&
+		!StringProcessing::CheckFileExtension(filePath_, ".DDS") 
+	)
+	{
+		ErrorMessageOutput::Assert::OutputError(filePath_ + "のファイル指定子がdds以外っす", fileName);
+	}
+}
+DirectX::DDS_FLAGS TextureContext::TextureBufferCreator::TextureFileLoader::DDS_FLAGS_Table(TextureComponent::TextureType textureType_)
+{
+	static DirectX::DDS_FLAGS table[(UINT)TextureComponent::TextureType::kCount]
+	{
+		DirectX::DDS_FLAGS_NONE,
+		DirectX::DDS_FLAGS_NONE,
+		DirectX::DDS_FLAGS_NONE,
+		DirectX::DDS_FLAGS_NONE
+	};
+	return table[(UINT)textureType_];
+}
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Texture\TextureBufferCreator\TextureFileLoader\TextureFileLoader.h ===
+========================================
+#pragma once
+#include "../TextureBufferCreator.h"
+//外部
+#include "../../../Buffer/BufferDefinition/TextureComponent.h"
+#include "../../../../../../External/DirectXTex/DirectXTex.h"
+class TextureContext::TextureBufferCreator::TextureFileLoader
+{
+	friend class TextureBufferCreator;
+	static DirectX::ScratchImage LoadTextureFile(std::string const filePath_, TextureComponent::TextureType textureType_);
+	//以下ヘルパー
+private:
+	//念のためのファイル指定子チェック
+	static void CheckExtension(std::string const filePath_);
+	//textureType別のDDS_FLAGSテーブル
+	static DirectX::DDS_FLAGS DDS_FLAGS_Table(TextureComponent::TextureType textureType_);
+};
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Texture\TextureLibrary\TextureLibrary.cpp ===
+========================================
+#include "PreCompileHeader.h"
+#include "TextureLibrary.h"
+TextureContext::TextureLibrary::TextureLibrary(NexusFieldProof proof_)
+{
+}
+namespace
+{
+	auto const fileName = "TextureLibrary.cpp";
+}
+void TextureContext::TextureLibrary::Import(NexusFieldProof proof_, std::string const name_, SRVHeapIndex const index_)
+{
+	data[name_] = index_;
+}
+SRVHeapIndex TextureContext::TextureLibrary::Export(std::string const name_)const
+{
+	ErrorMessageOutput::Assert::DetectError
+	(
+		data.find(name_) != data.end(),
+		name_ + "こんなテクスチャインデックスは管理してまへん",
+		fileName
+	);
+	return data.at(name_);
+}
+void TextureContext::TextureLibrary::Log()
+{
+	std::string log = "\n- - - - - - - - - - TextureLibrary - - - - - - - - - -\n\n";
+	for (auto const& [key, value] : data)
+	{
+		log += key + "[" + std::to_string(value) + "]\n";
+	}
+	log += "\n- - - - - - - - - - - - - - - - - - - -";
+	Logger::Log(log);
+	Logger::Log("", fileName);
+}
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Texture\TextureLibrary\TextureLibrary.h ===
+========================================
+#pragma once
+#include "../TextureContext.h"
+class TextureContext::TextureLibrary
+{
+public:
+	TextureLibrary(NexusFieldProof proof_);
+	void Import(NexusFieldProof proof_, std::string const name_, SRVHeapIndex const index_);
+	SRVHeapIndex Export(std::string const name_)const;
+	//中身確認用
+	void Log();
+private:
+	std::unordered_map<std::string, SRVHeapIndex> data;
+};
+
+========================================
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\MiddleLayer\kara.h ===
 ========================================
 #pragma once
@@ -17259,6 +17364,7 @@ public:
 #include "../LowerLayer/Resource/PSO/PSO_Context.h"
 #include "../LowerLayer/Resource/RootSignature/RootSignatureContext.h"
 #include "../LowerLayer/Resource/Model/ModelContext.h"
+#include "../LowerLayer/Resource/Texture/TextureContext.h"
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 #include "../LowerLayer/Render/RenderContext.h"
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -17305,7 +17411,8 @@ Nexus::Nexus()
 	InitializeInSequence<InitSequence::kShaderContext>();
 	InitializeInSequence<InitSequence::kPSO_Context>();
 	InitializeInSequence<InitSequence::kRootSignatureContext>();
-	InitializeInSequence<InitSequence::kMeshContext>();
+	InitializeInSequence<InitSequence::kTextureContext>();
+	InitializeInSequence<InitSequence::kModelContext>();
 	InitializeInSequence<InitSequence::kRenderContext>();
 	InitializeInSequence<InitSequence::kUploadAllResources>();
 	InitializeInSequence<InitSequence::kKickCommands>();
@@ -17339,6 +17446,7 @@ class PSO_Context;
 class RootSignatureContext;
 class RenderContext;
 class ModelContext;
+class TextureContext;
 //交易場
 class Nexus
 {
@@ -17355,7 +17463,8 @@ class Nexus
 		kShaderContext,
 		kPSO_Context,
 		kRootSignatureContext,
-		kMeshContext,
+		kTextureContext,
+		kModelContext,
 		kRenderContext,
 		kUploadAllResources,
 		kKickCommands,
@@ -17404,6 +17513,8 @@ private:
 	std::unique_ptr<RenderContext> renderContext;
 	//モデルクラスの生成、管理
 	std::unique_ptr<ModelContext> modelContext;
+	//テクスチャファイルの読み込み、データ保持
+	std::unique_ptr<TextureContext> textureContext;
 	//各Contextクラスの具現化、初期化を行う
 	template<InitSequence initSequence>
 	void Init();
@@ -17502,6 +17613,7 @@ void Nexus::Finalize<Nexus::FinalizeSequence::kCoUninitialize>()
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 #include "../LowerLayer/Render/RenderContext.h"
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+#include "../LowerLayer/Resource/Texture/TextureContext.h"
 namespace
 {
 	std::string const fileName = "NexusInitialization.cpp";
@@ -17638,6 +17750,22 @@ void Nexus::Init<Nexus::InitSequence::kRootSignatureContext>()
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 template<>
+void Nexus::Init<Nexus::InitSequence::kTextureContext>()
+{
+	textureContext.reset
+	(
+		new TextureContext
+		(
+			TextureContext::NexusFieldProof{},
+			*bufferContext->diplomat
+		)
+	);
+	Logger::Log("Instantiate: TextureContext", fileName);
+}
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+template<>
 void Nexus::Init<Nexus::InitSequence::kRenderContext>()
 {
 	renderContext.reset
@@ -17658,7 +17786,7 @@ void Nexus::Init<Nexus::InitSequence::kRenderContext>()
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 template<>
-void Nexus::Init<Nexus::InitSequence::kMeshContext>()
+void Nexus::Init<Nexus::InitSequence::kModelContext>()
 {
 	modelContext.reset(new ModelContext(ModelContext::NexusFieldProof{},bufferContext->diplomat.get()));
 	Logger::Log("Instantiate: ModelContext", fileName);
@@ -17728,7 +17856,9 @@ void Nexus::Init<Nexus::InitSequence::kPSO_Context>();
 template
 void Nexus::Init<Nexus::InitSequence::kRootSignatureContext>();
 template
-void Nexus::Init<Nexus::InitSequence::kMeshContext>();
+void Nexus::Init<Nexus::InitSequence::kTextureContext>();
+template
+void Nexus::Init<Nexus::InitSequence::kModelContext>();
 template
 void Nexus::Init<Nexus::InitSequence::kRenderContext>();
 template
@@ -18295,5 +18425,5 @@ namespace StringProcessing
 ========================================
 === SUMMARY ===
 ========================================
-Total Files      : 426
-Effective Lines  : 13193
+Total Files      : 430
+Effective Lines  : 13268

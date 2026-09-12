@@ -6,7 +6,16 @@ class BufferContextDiplomat;
 
 class TextureContext
 {
+	//全てのテクスチャファイルを読み込み、バッファを作成する
+	//そしてlibraryにつめていく。そしてsrvをひとまとまりにしたものをstructuredBufferとして作成し、アップロード
+	//そのバッファのsrvIndexをさらにGlobalConstantBufferで送るまでやる
+	class TextureBufferCreator;
+
 public:
+
+	///テクスチャファイル名をキーとしてsrvHeapIndexを管理する
+	class TextureLibrary;
+	
 
 	//ネクサスフィールドの証
 	struct NexusFieldProof;
@@ -21,6 +30,7 @@ public:
 
 private:
 
+	std::unique_ptr<TextureLibrary> textureLibrary;
 
 };
 

@@ -12,7 +12,7 @@ namespace
 
 using namespace TextureComponent;
 
-Texture2DState BufferContext::TextureBufferCreator::TextureDataLoader::LoadTextureState(std::string const key_)
+Texture2DState TextureContext::TextureBufferCreator::TextureDataLoader::LoadTextureState(std::string const key_)
 {
 	Texture2DState texture2DState;
 
@@ -26,7 +26,7 @@ Texture2DState BufferContext::TextureBufferCreator::TextureDataLoader::LoadTextu
 }
 
 
-TextureType BufferContext::TextureBufferCreator::TextureDataLoader::ToTextureType(std::string const typeString_)
+TextureType TextureContext::TextureBufferCreator::TextureDataLoader::ToTextureType(std::string const typeString_)
 {
 	TextureType type = TextureType::kCount;
 
