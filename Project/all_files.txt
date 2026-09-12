@@ -3563,27 +3563,6 @@ namespace
 {
 	auto const fileName = "WindowContext.cpp";
 }
-LRESULT CALLBACK WindowContext::WndProc(HWND hWnd_, UINT msg_, WPARAM wParam_, LPARAM lParam_)
-{
-//#ifdef USE_IMGUI
-//	//ImGuiにメッセージを渡す
-//	if (ImGui_ImplWin32_WndProcHandler(hWnd_, msg_, wParam_, lParam_))
-//	{
-//		return true;
-//	}
-//#endif
-	//メッセージに応じてゲーム固有の処理を行う
-	switch (msg_)
-	{
-		//ウィンドウが破棄された
-	case WM_DESTROY:
-		//OSに対して、アプリの終了を伝える
-		PostQuitMessage(0);
-		return 0;
-	}
-	//標準メッセージの処理を行う
-	return DefWindowProc(hWnd_, msg_, wParam_, lParam_);
-}
 WindowContext::WindowContext(NexusFieldProof proof_)
 {
 	Logger::Entry("WindowContext: Constructor");
@@ -3636,6 +3615,8 @@ class WindowContextDiplomat;
 class WindowContext
 {
 	class Builder;
+	class WindowProcedure;
+	struct AgentKey;
 	struct CoreParts
 	{
 		HINSTANCE hInst;
@@ -3648,13 +3629,10 @@ public:
 	class ToolLender;
 	class ExecutionAgent;
 	struct NexusFieldProof;
-	struct AgentKey;
 	WindowContext(NexusFieldProof proof_);
 	~WindowContext();
 	void Finalize(NexusFieldProof proof_, AgentKey agentKey_);
 	std::unique_ptr<WindowContextDiplomat> diplomat;
-private:
-	static LRESULT CALLBACK WndProc(HWND hWnd_, UINT msg_, WPARAM wParam_, LPARAM lParam_);
 };
 struct WindowContext::NexusFieldProof
 {
@@ -3707,6 +3685,7 @@ LONG WINAPI ExportDump(EXCEPTION_POINTERS* exception)
 #include "PreCompileHeader.h"
 #include "WindowContextBuilder.h"
 #include "DumpExporter.h"
+#include "../WindowProcedure/WindowProcedure.h"
 //外部
 #include "StringConverter/StringConverter.h"
 namespace
@@ -3726,7 +3705,7 @@ WindowContext::CoreParts WindowContext::Builder::CreateCoreParts()
 	coreParts.height = kHeight;
 	wc.cbSize = sizeof(WNDCLASSEX);
 	wc.style = CS_HREDRAW | CS_VREDRAW;
-	wc.lpfnWndProc = WindowContext::WndProc;
+	wc.lpfnWndProc = WindowContext::WindowProcedure::WndProc;
 	wc.hIcon = LoadIcon(hInst, IDI_APPLICATION);
 	wc.hCursor = LoadCursor(hInst, IDC_ARROW);
 	wc.hbrBackground = GetSysColorBrush(COLOR_BACKGROUND);
@@ -3923,6 +3902,44 @@ struct WindowContext::ToolLender::UsesHWNDLicence
 private:
 	friend class SwapChainContext;
 	explicit UsesHWNDLicence() = default;
+};
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Core\Window\WindowProcedure\WindowProcedure.cpp ===
+========================================
+#include "PreCompileHeader.h"
+#include "WindowProcedure.h"
+LRESULT CALLBACK WindowContext::WindowProcedure::WndProc(HWND hWnd_, UINT msg_, WPARAM wParam_, LPARAM lParam_)
+{
+	//#ifdef USE_IMGUI
+	//	//ImGuiにメッセージを渡す
+	//	if (ImGui_ImplWin32_WndProcHandler(hWnd_, msg_, wParam_, lParam_))
+	//	{
+	//		return true;
+	//	}
+	//#endif
+		//メッセージに応じてゲーム固有の処理を行う
+	switch (msg_)
+	{
+		//ウィンドウが破棄された
+	case WM_DESTROY:
+		//OSに対して、アプリの終了を伝える
+		PostQuitMessage(0);
+		return 0;
+	}
+	//標準メッセージの処理を行う
+	return DefWindowProc(hWnd_, msg_, wParam_, lParam_);
+}
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Core\Window\WindowProcedure\WindowProcedure.h ===
+========================================
+#pragma once
+#include "../WindowContext.h"
+class WindowContext::WindowProcedure
+{
+	friend class WindowContext::Builder;
+	static LRESULT CALLBACK WndProc(HWND hWnd_, UINT msg_, WPARAM wParam_, LPARAM lParam_);
 };
 
 ========================================
@@ -9112,7 +9129,7 @@ private:
 #include "../BufferCreator.h"
 #include "../BufferCollector/BufferCollector.h"
 #include "../BufferUploader/BufferUploader.h"
-#include "../../BufferDefinition/BufferDescriptions/Texture2DBufferDescription/Texture2DBufferDescription.h"
+#include "../../TextureIndexLibrary/TextureIndexLibrary.h"
 //外部
 #include "RegistryLoader/RegistryLoader.h"
 BufferContext::TextureBufferCreator::TextureBufferCreator
@@ -9128,7 +9145,7 @@ BufferContext::TextureBufferCreator::TextureBufferCreator
 	//全てのテクスチャファイルを読み込み、バッファを作成してlibraryにつめていく。
 	//全バッファのsrvをひとまとまりにしたものをStaticStructuredBufferとして作成し、アップロード
 	//そのバッファのsrvIndexをさらにGlobalConstantBufferで送る
-	Logger::Log("- - - - Create All TextureBuffer - - - -","TextureBufferCreator.cpp");
+	Logger::Log("\n- - - - Create All TextureBuffer - - - -","TextureBufferCreator.cpp\n");
 	struct DescEntry
 	{
 		DirectX::ScratchImage scratchImage;
@@ -9147,9 +9164,15 @@ BufferContext::TextureBufferCreator::TextureBufferCreator
 	//Texture2DBufferDescriptionを作成し、それをもとにバッファを作成。アップロードしていく
 	for (auto& [key, value] : descEntries)
 	{
-		BufferAssembler::AssembleTexture2DBuffer(key, value.scratchImage, value.texture2DState, bufferCreator_, bufferUploader_);
+		//作成したテクスチャバッファのSRVHeapIndex
+		SRVHeapIndex const dstIndex = 
+			BufferAssembler::AssembleTexture2DBuffer(key, value.scratchImage, value.texture2DState, bufferCreator_, bufferUploader_);
+		//テクスチャファイル名をキーとして追加していく
+		textureBufferLibrary_.Import(proof_, key, dstIndex);
 	}
-	Logger::Log("\n- - - - - - - - - - - - - - - - - - - - -", "TextureBufferCreator.cpp");
+	//デバッグ出力
+	textureBufferLibrary_.Log();
+	Logger::Log("\n- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -", "TextureBufferCreator.cpp");
 }
 
 ========================================
@@ -9184,6 +9207,7 @@ public:
 #include "../../../BufferDefinition/BufferDescriptions/Texture2DBufferDescription/Texture2DBufferDescription.h"
 #include "../../BufferCreator.h"
 #include "../../BufferUploader/BufferUploader.h"
+#include "../../../BufferDefinition/AllBuffersInclude.h"
 SRVHeapIndex BufferContext::TextureBufferCreator::BufferAssembler::AssembleTexture2DBuffer
 (
 	std::string const name_,
@@ -9198,7 +9222,16 @@ SRVHeapIndex BufferContext::TextureBufferCreator::BufferAssembler::AssembleTextu
 	auto id_bufferPtr =  bufferCreator_.CreateWithBuffer(desc, name_);
 	//作成したテクスチャバッファをアップロードリストに追加
 	bufferUploader_.RegisterTextureBuffer(scratchImage_, id_bufferPtr.first);
-	return SRVHeapIndex{};
+	//最後にこのバッファのsrvHeapIndexをかえす
+	Texture2DBuffer* tex2DBuffer = static_cast<Texture2DBuffer*>(id_bufferPtr.second);
+	IReadable* readableBuffer = dynamic_cast<IReadable*>(tex2DBuffer);
+	ErrorMessageOutput::Assert::DetectError
+	(
+		readableBuffer,
+		id_bufferPtr.second->WatchName() + "がIReadableじゃない",
+		"TextureBufferAssembler.cpp"
+	);
+	return readableBuffer->OutProperSRVHeapIndex(0);
 }
 
 ========================================
@@ -11129,7 +11162,7 @@ D3D12_RESOURCE_BARRIER Texture2DBuffer::CreateBarrierAsReading()
 #pragma once
 #include "../BufferInterface.h"
 //2Dテクスチャバッファ
-class Texture2DBuffer final : public GPUBufferBehavior, IReadable, public IReadOnly
+class Texture2DBuffer final : public GPUBufferBehavior, public IReadable, public IReadOnly
 {
 	friend class BufferContext::BufferInfoExtractor;
 public:
@@ -11609,6 +11642,10 @@ private:
 BufferContext::TextureIndexLibrary::TextureIndexLibrary(NexusFieldProof proof_)
 {
 }
+namespace
+{
+	auto const fileName = "TextureIndexLibrary.cpp";
+}
 void BufferContext::TextureIndexLibrary::Import(NexusFieldProof proof_, std::string const name_, SRVHeapIndex const index_)
 {
 	data[name_] = index_;
@@ -11619,9 +11656,20 @@ SRVHeapIndex BufferContext::TextureIndexLibrary::Export(std::string const name_)
 	(
 		data.find(name_) != data.end(),
 		name_ + "こんなテクスチャインデックスは管理してまへん",
-		"TextureIndexLibrary.cpp"
+		fileName
 	);
 	return data.at(name_);
+}
+void BufferContext::TextureIndexLibrary::Log()
+{
+	std::string log = "\n- - - - - - - - - - TextureIndexLibrary - - - - - - - - - -\n\n";
+	for (auto const& [key, value] : data)
+	{
+		log += key + "[" + std::to_string(value) + "]\n";
+	}
+	log += "\n- - - - - - - - - - - - - - - - - - - -";
+	Logger::Log(log);
+	Logger::Log("", fileName);
 }
 
 ========================================
@@ -11635,6 +11683,8 @@ public:
 	TextureIndexLibrary(NexusFieldProof proof_);
 	void Import(NexusFieldProof proof_,std::string const name_, SRVHeapIndex const index_);
 	SRVHeapIndex Export(std::string const name_)const;
+	//中身確認用
+	void Log();
 private:
 	std::unordered_map<std::string, SRVHeapIndex> data;
 };
@@ -18245,5 +18295,5 @@ namespace StringProcessing
 ========================================
 === SUMMARY ===
 ========================================
-Total Files      : 424
-Effective Lines  : 13162
+Total Files      : 426
+Effective Lines  : 13193

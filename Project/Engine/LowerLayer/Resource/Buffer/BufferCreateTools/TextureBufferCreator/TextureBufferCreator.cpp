@@ -7,7 +7,7 @@
 #include "../BufferCreator.h"
 #include "../BufferCollector/BufferCollector.h"
 #include "../BufferUploader/BufferUploader.h"
-#include "../../BufferDefinition/BufferDescriptions/Texture2DBufferDescription/Texture2DBufferDescription.h"
+#include "../../TextureIndexLibrary/TextureIndexLibrary.h"
 
 //外部
 #include "RegistryLoader/RegistryLoader.h"
@@ -28,7 +28,7 @@ BufferContext::TextureBufferCreator::TextureBufferCreator
 	//全バッファのsrvをひとまとまりにしたものをStaticStructuredBufferとして作成し、アップロード
 	//そのバッファのsrvIndexをさらにGlobalConstantBufferで送る
 
-	Logger::Log("- - - - Create All TextureBuffer - - - -","TextureBufferCreator.cpp");
+	Logger::Log("\n- - - - Create All TextureBuffer - - - -","TextureBufferCreator.cpp\n");
 
 	struct DescEntry
 	{
@@ -38,6 +38,7 @@ BufferContext::TextureBufferCreator::TextureBufferCreator
 
 	
 	std::map<std::string, DescEntry> descEntries;
+	std::vector<SRVHeapIndex> tmpIndices;
 
 	//Registryに登録されているテクスチャファイルのキーを走査する
 	auto const allKey_values = RegistryLoader::Load<RegistryLoader::RegistryFileType::kTextureFiles>();
@@ -54,12 +55,26 @@ BufferContext::TextureBufferCreator::TextureBufferCreator
 	//Texture2DBufferDescriptionを作成し、それをもとにバッファを作成。アップロードしていく
 	for (auto& [key, value] : descEntries)
 	{
-		BufferAssembler::AssembleTexture2DBuffer(key, value.scratchImage, value.texture2DState, bufferCreator_, bufferUploader_);
+		//作成したテクスチャバッファのSRVHeapIndex
+		SRVHeapIndex const dstIndex = 
+			BufferAssembler::AssembleTexture2DBuffer(key, value.scratchImage, value.texture2DState, bufferCreator_, bufferUploader_);
+
+		//テクスチャファイル名をキーとして追加していく
+		textureBufferLibrary_.Import(proof_, key, dstIndex);
+		tmpIndices.emplace_back(dstIndex);
 	}
 
+	//最後に全部のsrvHeapIndexを配列にしてそのStaticStructuredBufferを作成し、
+	//そのsrvHeapIndexのGlobalConstantBufferを作成
 
-	Logger::Log("\n- - - - - - - - - - - - - - - - - - - - -", "TextureBufferCreator.cpp");
 
+
+	//デバッグ出力
+	textureBufferLibrary_.Log();
+
+	Logger::Log("\n- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -", "TextureBufferCreator.cpp");
+
+	
 
 
 }

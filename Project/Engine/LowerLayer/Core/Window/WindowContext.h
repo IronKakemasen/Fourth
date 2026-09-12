@@ -6,6 +6,8 @@ class WindowContextDiplomat;
 class WindowContext
 {
 	class Builder;
+	class WindowProcedure;
+	struct AgentKey;
 
 	struct CoreParts
 	{
@@ -21,7 +23,6 @@ public:
 	class ExecutionAgent;
 
 	struct NexusFieldProof;
-	struct AgentKey;
 
 	WindowContext(NexusFieldProof proof_);
 	~WindowContext();
@@ -30,9 +31,6 @@ public:
 
 	std::unique_ptr<WindowContextDiplomat> diplomat;
 
-private:
-
-	static LRESULT CALLBACK WndProc(HWND hWnd_, UINT msg_, WPARAM wParam_, LPARAM lParam_);
 };
 
 

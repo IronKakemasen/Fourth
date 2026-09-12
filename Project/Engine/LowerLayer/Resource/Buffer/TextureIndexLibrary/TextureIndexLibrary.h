@@ -8,6 +8,9 @@ public:
 
 	void Import(NexusFieldProof proof_,std::string const name_, SRVHeapIndex const index_);
 	SRVHeapIndex Export(std::string const name_)const;
+	
+	//中身確認用
+	void Log();
 
 private:
 

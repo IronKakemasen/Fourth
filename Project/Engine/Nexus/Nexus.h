@@ -11,6 +11,7 @@ class PSO_Context;
 class RootSignatureContext;
 class RenderContext;
 class ModelContext;
+class TextureContext;
 
 
 //交易場
@@ -20,6 +21,7 @@ class Nexus
 	enum class InitSequence
 	{
 		kLoadAllJsonFiles,
+
 		kDeviceContext,
 		kWindowContext,
 		kDescriptorHeapContext,
@@ -29,7 +31,8 @@ class Nexus
 		kShaderContext,
 		kPSO_Context,
 		kRootSignatureContext,
-		kMeshContext,
+		kTextureContext,
+		kModelContext,
 		kRenderContext,
 
 
@@ -94,6 +97,9 @@ private:
 	std::unique_ptr<RenderContext> renderContext;
 	//モデルクラスの生成、管理
 	std::unique_ptr<ModelContext> modelContext;
+	//テクスチャファイルの読み込み、データ保持
+	std::unique_ptr<TextureContext> textureContext;
+
 
 	
 	//各Contextクラスの具現化、初期化を行う

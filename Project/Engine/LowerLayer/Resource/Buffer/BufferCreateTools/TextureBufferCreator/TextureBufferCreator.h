@@ -9,6 +9,9 @@ class BufferContext::TextureBufferCreator
 	class TextureFileLoader;
 	//バッファを作りアップロードし(厳密には追加)、そのsrvHeapIndexを返す
 	class BufferAssembler;
+	//テクスチャバッファのsrvをひとまとまりにしたもののバッファを作成。
+	//そのバッファのsrvHeapIndexのグローバル定数バッファを作成
+	class GlobalConstantBufferPackager;
 
 public:
 	TextureBufferCreator
