@@ -8,7 +8,8 @@ namespace ConstantBuffers
 	enum class ConstantBufferBindSlots
 	{
 		kMeshDataContainer,
-		kTransformMatrixContainer
+		kTransformMatrixContainer,
+		kTextureContainer
 
 		, kCount
 	};
@@ -61,9 +62,14 @@ cbuffer TransformMatrixContainerIndexCB : register(b1)
 	uint gTransformMatrixContainerIndex;
 }
 
-ConstantBuffer<PerDrawIndices> gPerDrawIndices: register(b2);
+cbuffer TextureContainerIndexCB : register(b2)
+{
+	uint gTextureContainerIndex;
+}
 
-ConstantBuffer<PassBufferIndexRange> gPassBufferIndexRange: register(b3);
+ConstantBuffer<PerDrawIndices> gPerDrawIndices: register(b3);
+
+ConstantBuffer<PassBufferIndexRange> gPassBufferIndexRange: register(b4);
 
 #endif
 

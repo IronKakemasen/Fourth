@@ -11,7 +11,7 @@ namespace
 }
 
 
-DirectX::ScratchImage BufferContext::TextureBufferCreator::TextureFileLoader::LoadTextureFile(std::string const filePath_, TextureComponent::TextureType textureType_)
+DirectX::ScratchImage TextureContext::TextureBufferCreator::TextureFileLoader::LoadTextureFile(std::string const filePath_, TextureComponent::TextureType textureType_)
 {
 	CheckExtension(filePath_);
 
@@ -41,7 +41,7 @@ DirectX::ScratchImage BufferContext::TextureBufferCreator::TextureFileLoader::Lo
 	return image;
 }
 
-void BufferContext::TextureBufferCreator::TextureFileLoader::CheckExtension(std::string const filePath_)
+void TextureContext::TextureBufferCreator::TextureFileLoader::CheckExtension(std::string const filePath_)
 {
 	if
 	(
@@ -53,20 +53,7 @@ void BufferContext::TextureBufferCreator::TextureFileLoader::CheckExtension(std:
 	}
 }
 
-DirectX::WIC_FLAGS BufferContext::TextureBufferCreator::TextureFileLoader::WIC_FLAGS_Table(TextureComponent::TextureType textureType_)
-{
-	static DirectX::WIC_FLAGS table[(UINT)TextureComponent::TextureType::kCount]
-	{
-		DirectX::WIC_FLAGS_FORCE_SRGB,
-		DirectX::WIC_FLAGS_IGNORE_SRGB,
-		DirectX::WIC_FLAGS_FORCE_SRGB,
-		DirectX::WIC_FLAGS_FORCE_SRGB
-	};
-
-	return table[(UINT)textureType_];
-}
-
-DirectX::DDS_FLAGS BufferContext::TextureBufferCreator::TextureFileLoader::DDS_FLAGS_Table(TextureComponent::TextureType textureType_)
+DirectX::DDS_FLAGS TextureContext::TextureBufferCreator::TextureFileLoader::DDS_FLAGS_Table(TextureComponent::TextureType textureType_)
 {
 	static DirectX::DDS_FLAGS table[(UINT)TextureComponent::TextureType::kCount]
 	{

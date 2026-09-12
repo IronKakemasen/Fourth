@@ -24,7 +24,7 @@ D3D12_RESOURCE_DESC ConstantBufferDescription::CreateResourceDesc()const
 {
 	D3D12_RESOURCE_DESC resourceDesc = {};
 
-	resourceDesc.Width = param.sizeInByte;
+	resourceDesc.Width = (param.sizeInByte + 255) & ~255;
 
 	resourceDesc.Dimension = D3D12_RESOURCE_DIMENSION_BUFFER;
 	resourceDesc.Height = 1;

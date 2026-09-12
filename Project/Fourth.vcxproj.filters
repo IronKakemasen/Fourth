@@ -603,22 +603,16 @@
     <ClCompile Include="Engine\LowerLayer\Core\DescriptorHeap\DescriptorHeapPoolContainer\DescriptorHeapPoolContainer.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="Engine\LowerLayer\Resource\Buffer\BufferCreateTools\TextureBufferCreator\TextureBufferCreator.cpp">
+    <ClCompile Include="Engine\LowerLayer\Resource\Texture\TextureBufferCreator\TextureDataLoader\TextureDataLoader.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="Engine\LowerLayer\Resource\Buffer\BufferCreateTools\TextureBufferCreator\TextureDataLoader\TextureDataLoader.cpp">
-      <Filter>ソース ファイル</Filter>
-    </ClCompile>
-    <ClCompile Include="Engine\LowerLayer\Resource\Buffer\TextureIndexLibrary\TextureIndexLibrary.cpp">
-      <Filter>ソース ファイル</Filter>
-    </ClCompile>
-    <ClCompile Include="Engine\LowerLayer\Resource\Buffer\BufferCreateTools\TextureBufferCreator\TextureFileLoader\TextureFileLoader.cpp">
+    <ClCompile Include="Engine\LowerLayer\Resource\Texture\TextureBufferCreator\TextureFileLoader\TextureFileLoader.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
     <ClCompile Include="Engine\LowerLayer\Resource\Buffer\BufferDefinition\GPUBuffer\Texture2DBuffer\Texture2DBuffer.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="Engine\LowerLayer\Resource\Buffer\BufferCreateTools\TextureBufferCreator\TextureBufferAssembler\TextureBufferAssembler.cpp">
+    <ClCompile Include="Engine\LowerLayer\Resource\Texture\TextureBufferCreator\TextureBufferAssembler\TextureBufferAssembler.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
     <ClCompile Include="Engine\LowerLayer\Core\Window\WindowContextBuilder\WindowContextBuilder.cpp">
@@ -636,10 +630,16 @@
     <ClCompile Include="Engine\LowerLayer\Core\Window\WindowProcedure\WindowProcedure.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="Engine\LowerLayer\Resource\Buffer\BufferCreateTools\TextureBufferCreator\GlobalConstantBufferPackager\GlobalConstantBufferPackager.cpp">
+    <ClCompile Include="Engine\LowerLayer\Resource\Texture\TextureBufferCreator\GlobalConstantBufferPackager\GlobalConstantBufferPackager.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
     <ClCompile Include="Engine\LowerLayer\Resource\Texture\TextureContext.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\LowerLayer\Resource\Texture\TextureLibrary\TextureLibrary.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\LowerLayer\Resource\Texture\TextureBufferCreator\TextureBufferCreator.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
   </ItemGroup>
@@ -1379,13 +1379,7 @@
     <ClInclude Include="Engine\LowerLayer\Core\Command\CommandContextDiplomat\CommandContextToolLender\CmdContextToolLenderLicences.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\LowerLayer\Resource\Buffer\BufferCreateTools\TextureBufferCreator\TextureBufferCreator.h">
-      <Filter>ヘッダー ファイル</Filter>
-    </ClInclude>
-    <ClInclude Include="Engine\LowerLayer\Resource\Buffer\BufferCreateTools\TextureBufferCreator\TextureDataLoader\TextureDataLoader.h">
-      <Filter>ヘッダー ファイル</Filter>
-    </ClInclude>
-    <ClInclude Include="Engine\LowerLayer\Resource\Buffer\TextureIndexLibrary\TextureIndexLibrary.h">
+    <ClInclude Include="Engine\LowerLayer\Resource\Texture\TextureBufferCreator\TextureDataLoader\TextureDataLoader.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
     <ClInclude Include="Engine\LowerLayer\Resource\Buffer\BufferDefinition\TextureComponent.h">
@@ -1397,13 +1391,13 @@
     <ClInclude Include="Engine\Utility\StringProcessing\StringProcessing.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\LowerLayer\Resource\Buffer\BufferCreateTools\TextureBufferCreator\TextureFileLoader\TextureFileLoader.h">
+    <ClInclude Include="Engine\LowerLayer\Resource\Texture\TextureBufferCreator\TextureFileLoader\TextureFileLoader.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
     <ClInclude Include="Engine\LowerLayer\Resource\Buffer\BufferDefinition\GPUBuffer\Texture2DBuffer\Texture2DBuffer.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\LowerLayer\Resource\Buffer\BufferCreateTools\TextureBufferCreator\TextureBufferAssembler\TextureBufferAssembler.h">
+    <ClInclude Include="Engine\LowerLayer\Resource\Texture\TextureBufferCreator\TextureBufferAssembler\TextureBufferAssembler.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
     <ClInclude Include="Engine\LowerLayer\Core\Device\Commands\AllDeviceContextCmds.h">
@@ -1427,10 +1421,16 @@
     <ClInclude Include="Engine\LowerLayer\Core\Window\WindowProcedure\WindowProcedure.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\LowerLayer\Resource\Buffer\BufferCreateTools\TextureBufferCreator\GlobalConstantBufferPackager\GlobalConstantBufferPackager.h">
+    <ClInclude Include="Engine\LowerLayer\Resource\Texture\TextureBufferCreator\GlobalConstantBufferPackager\GlobalConstantBufferPackager.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
     <ClInclude Include="Engine\LowerLayer\Resource\Texture\TextureContext.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\LowerLayer\Resource\Texture\TextureLibrary\TextureLibrary.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\LowerLayer\Resource\Texture\TextureBufferCreator\TextureBufferCreator.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
   </ItemGroup>

@@ -19,9 +19,6 @@
 #include "GlobalConstantBuffers/GlobalConstantBuffers.h"
 //バッファコレクターがバッファを仕分ける
 #include "BufferPoolSet/BufferPoolSet.h"
-#include "BufferCreateTools/TextureBufferCreator/TextureBufferCreator.h"
-#include "TextureIndexLibrary/TextureIndexLibrary.h"
-
 
 namespace
 {
@@ -67,20 +64,6 @@ BufferContext::BufferContext
 
 	globalConstantBufferCreator.reset(new GlobalConstantBufferCreator(proof_, globalConstantBuffers.get(),bufferCreator.get()));
 	Logger::Log("Instantiate: GlobalConstantBufferCreator", fileName);
-
-	textureIndexLibrary.reset(new TextureIndexLibrary(proof_));
-	Logger::Log("Instantiate: TextureIndexLibrary", fileName);
-
-	//中でテクスチャファイルを読み込んで、そのバッファを作成する
-	TextureBufferCreator textureBufferCreator
-	(
-		proof_,
-		*bufferCreator,
-		*bufferUploader,
-		*globalConstantBufferCreator,
-		*textureIndexLibrary
-	);
-	Logger::Log("Instantiate: TextureBufferCreator", fileName);
 
 	diplomat.reset
 	(
