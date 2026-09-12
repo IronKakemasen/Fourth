@@ -45,8 +45,6 @@ public:
 	class BufferAssembler;
 	//BufferUniqueIDから該当のバッファのアドレスを渡す
 	class BufferDispatcher;
-	//ランタイムパス構築に必要な情報の抽出とそのリソースのSwapを行う
-	class BufferInfoExtractor;
 	//バッファをアップロードする
 	class BufferUploader;
 	//ツールの貸し出しを行う
@@ -94,8 +92,6 @@ private:
 	std::unique_ptr<BufferDispatcher> bufferDispatcher;
 	//コレクター
 	std::unique_ptr<BufferCollector> bufferCollector;
-	//Extractors
-	std::unique_ptr<BufferInfoExtractor> bufferInfoExtractor;
 	std::unique_ptr<GlobalConstantBuffers> globalConstantBuffers;
 	std::unique_ptr<GlobalConstantBufferCreator> globalConstantBufferCreator;
 	

@@ -1,16 +1,13 @@
 #pragma once
 #include "../BufferInterface.h"
 
-
-
-//2Dテクスチャバッファ
-class Texture2DBuffer final : public GPUBufferBehavior, public IReadable, public IReadOnly
+//カラーバッファクラス
+class ColorBuffer final : public GPUBufferBehavior,IColorBuffer,IRenderTargetBuffer,IReadable
 {
-	friend class BufferContext::BufferInfoExtractor;
 
 public:
 
-	Texture2DBuffer
+	ColorBuffer
 	(
 		const InstanceKey& instanceKey_,
 		std::string name_,
@@ -20,10 +17,12 @@ public:
 
 
 private:
+	//バリア生成
+	virtual D3D12_RESOURCE_BARRIER CreateBarrier(Usage usage_) override;
+	//適切なRTVヒープインデックスを出す
+	virtual D3D12_CPU_DESCRIPTOR_HANDLE OutProperRTVHeapHandle()const override;
 	//適切なSRVヒープインデックスを出す
 	virtual SRVHeapIndex OutProperSRVHeapIndex(int frameIndex_ = 0)const override;
-	virtual D3D12_RESOURCE_BARRIER CreateBarrierAsReading()override;
-
 };
 
 

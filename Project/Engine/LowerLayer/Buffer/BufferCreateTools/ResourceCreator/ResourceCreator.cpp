@@ -1,11 +1,11 @@
 #include "ResourceCreator.h"
-#include "../../../../../Utility/StringConverter/StringConverter.h"
 
 //外部
-#include "../../../../Core/Device/DeviceContextDiplomat/DeviceContextDiplomat.h"
-#include "../../../../Core/Device/DeviceContextDiplomat/DeviceContextCommandProvider/DeviceContextCommandProvider.h"
-#include "../../../../Core/Device/DeviceContextDiplomat/DeviceContextCommandProvider/DeviceContextCmdLicences.h"
-#include "../../../../Core/Device/DeviceContextCmds.h"
+#include "StringConverter/StringConverter.h"
+#include "../../../Core/Device/DeviceContextDiplomat/DeviceContextDiplomat.h"
+#include "../../../Core/Device/DeviceContextDiplomat/DeviceContextCommandProvider/DeviceContextCommandProvider.h"
+#include "../../../Core/Device/DeviceContextDiplomat/DeviceContextCommandProvider/DeviceContextCmdLicences.h"
+#include "../../../Core/Device/DeviceContextCmds.h"
 
 BufferContext::ResourceCreator::ResourceCreator(NexusFieldProof proof_, DeviceContextDiplomat& deviceContextDiplomat_)
 {

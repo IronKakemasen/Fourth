@@ -3,11 +3,11 @@
 #include "../../../../ModelContextRuntime/ModelDataBatcher/ModelDataBatcher.h"
 
 //外部
-#include "../../../../../Buffer/BufferContextToolsInclude.h"
+#include "../../../../../../Buffer/BufferContextToolsInclude.h"
 
 //ほんとはuploadStructuredBufferDescriptionだけでいいんだけど、文字列制限なのかインクルードできないので
-#include "../../../../../Buffer/BufferDefinition/AllBufferDescsInclude.h"
-#include "../../../../../Buffer/BufferDefinition/AllBuffersInclude.h"
+#include "../../../../../../Buffer/BufferDefinition/AllBufferDescsInclude.h"
+#include "../../../../../../Buffer/BufferDefinition/AllBuffersInclude.h"
 #include "../../../../../../../../Assets/Shared/StructuredBuffer.h"
 
 

@@ -3,7 +3,6 @@
 class Nexus;
 class BufferContextDiplomat;
 
-
 class TextureContext
 {
 	//全てのテクスチャファイルを読み込み、バッファを作成する

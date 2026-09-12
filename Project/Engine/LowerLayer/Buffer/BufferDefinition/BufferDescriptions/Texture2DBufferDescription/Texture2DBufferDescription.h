@@ -4,7 +4,7 @@
 
 
 //外部
-#include "../../../../../../../External/DirectXTex/DirectXTex.h"
+#include "../../../../../../External/DirectXTex/DirectXTex.h"
 
 
 

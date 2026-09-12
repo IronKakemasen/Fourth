@@ -9,7 +9,7 @@
 
 //外部
 #include "../../../../../External/DirectXTex/DirectXTex.h"
-#include "../../Buffer/BufferDefinition/TextureComponent.h"
+#include "../../../Buffer/BufferDefinition/TextureComponent.h"
 #include "RegistryLoader/RegistryLoader.h"
 
 TextureContext::TextureBufferCreator::TextureBufferCreator

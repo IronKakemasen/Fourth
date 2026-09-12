@@ -7,15 +7,15 @@
 #include "BufferUploaderTools/BufferAndResourcePicker/BufferAndResourcePicker.h"
 
 //外部
-#include "../../../../Core/Command/CommandContextDiplomat/CommandContextDiplomat.h"
-#include "../../../../Core/Command/CommandContextDiplomat/CommandContextCmdProvider/CommandContextCmdProvider.h"
-#include "../../../../Core/Command/CommandContextDiplomat/CommandContextCmdProvider/CommandContextCmdProviderLicences.h"
+#include "../../../Core/Command/CommandContextDiplomat/CommandContextDiplomat.h"
+#include "../../../Core/Command/CommandContextDiplomat/CommandContextCmdProvider/CommandContextCmdProvider.h"
+#include "../../../Core/Command/CommandContextDiplomat/CommandContextCmdProvider/CommandContextCmdProviderLicences.h"
 
 //外部
-#include "../../../../Core/Device/DeviceContextCmds.h"
-#include "../../../../Core/Device/DeviceContextDiplomat/DeviceContextDiplomat.h"
-#include "../../../../Core/Device/DeviceContextDiplomat/DeviceContextCommandProvider/DeviceContextCmdLicences.h"
-#include "../../../../Core/Device/DeviceContextDiplomat/DeviceContextCommandProvider/DeviceContextCommandProvider.h"
+#include "../../../Core/Device/DeviceContextCmds.h"
+#include "../../../Core/Device/DeviceContextDiplomat/DeviceContextDiplomat.h"
+#include "../../../Core/Device/DeviceContextDiplomat/DeviceContextCommandProvider/DeviceContextCmdLicences.h"
+#include "../../../Core/Device/DeviceContextDiplomat/DeviceContextCommandProvider/DeviceContextCommandProvider.h"
 
 
 namespace

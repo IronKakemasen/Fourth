@@ -6,9 +6,9 @@
 #include "PassBufferCreator/PassBufferCreator.h"
 
 //外部
-#include "../../../Resource/Buffer/BufferContextDiplomat/BufferContextDiplomat.h"
-#include "../../../Resource/Buffer/BufferContextDiplomat/BufferToolLender/BufferToolLender.h"
-#include "../../../Resource/Buffer/BufferContextDiplomat/BufferToolLender/BufferToolLenderLicence.h"
+#include "../../../Buffer/BufferContextDiplomat/BufferContextDiplomat.h"
+#include "../../../Buffer/BufferContextDiplomat/BufferToolLender/BufferToolLender.h"
+#include "../../../Buffer/BufferContextDiplomat/BufferToolLender/BufferToolLenderLicence.h"
 
 
 RenderContext::RenderPassCreator::RenderPassCreator

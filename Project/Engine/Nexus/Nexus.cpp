@@ -7,7 +7,7 @@
 #include "../LowerLayer/Core/Command/CommandContext.h"
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 #include "../LowerLayer/Resource/Shader/ShaderContext.h"
-#include "../LowerLayer/Resource/Buffer/BufferContext.h"
+#include "../LowerLayer/Buffer/BufferContext.h"
 #include "../LowerLayer/Resource/PSO/PSO_Context.h"
 #include "../LowerLayer/Resource/RootSignature/RootSignatureContext.h"
 #include "../LowerLayer/Resource/Model/ModelContext.h"
