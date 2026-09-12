@@ -3,7 +3,7 @@
 
 //外部
 #include "../../../../../../../../Assets/Shared/StructuredBuffer.h"
-#include "../../../../../Buffer/BufferContextCmds.h"
+#include "../../../../../../Buffer/BufferContextCmds.h"
 
 class ModelContext::ModelDataCreator::MeshDataSRVHeapIndexGroupContainerBufferCreator
 {

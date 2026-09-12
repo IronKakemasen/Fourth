@@ -13,7 +13,7 @@
 #include "MeshDataCreatorTools/TransformMatrixContainerBufferCreator/TransformMatrixContainerBufferCreator.h"
 
 //外部
-#include "../../../Buffer/BufferContextDiplomat/BufferDiplomatIncludes.h"
+#include "../../../../Buffer/BufferContextDiplomat/BufferDiplomatIncludes.h"
 #include "RegistryLoader/RegistryLoader.h"
 
 using namespace StructuredBufferDataDefinition;

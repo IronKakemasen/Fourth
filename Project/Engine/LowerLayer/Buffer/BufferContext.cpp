@@ -12,7 +12,6 @@
 #include "BufferContextDiplomat/BufferContextExecutionAgent/BufferContextExecutionAgent.h"
 //ランタイム処理ツール
 #include "BufferRuntime/BufferDispatcher/BufferDispatcher.h"
-#include "BufferRuntime/BufferInfoExtractor/BufferInfoExtractor.h"
 //ワールドコンスタントバッファの生成
 #include "GlobalConstantBuffers/GlobalConstantBufferCreator/GlobalConstantBufferCreator.h"
 //から仮想GPUアドレスの保持

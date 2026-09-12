@@ -2,10 +2,10 @@
 #include "MeshDataSRVHeapIndexGroupContainerBufferCreator.h"
 
 //外部
-#include "../../../../../Buffer/BufferContextToolsInclude.h"
+#include "../../../../../../Buffer/BufferContextToolsInclude.h"
 //ほんとはstaticStructuredBufferDescriptionだけでいいんだけど、文字列制限なのかインクルードできないので
-#include "../../../../../Buffer/BufferDefinition/AllBufferDescsInclude.h"
-#include "../../../../../Buffer/BufferDefinition/GPUBuffer/BufferInterface.h"
+#include "../../../../../../Buffer/BufferDefinition/AllBufferDescsInclude.h"
+#include "../../../../../../Buffer/BufferDefinition/GPUBuffer/BufferInterface.h"
 
 
 using namespace StructuredBufferDataDefinition;

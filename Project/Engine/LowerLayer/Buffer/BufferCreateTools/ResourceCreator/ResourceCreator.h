@@ -1,6 +1,6 @@
 #pragma once
 #include "../../BufferContext.h"
-#include "../../../../Core/Device/DeviceContextCmds.h"
+#include "../../../Core/Device/DeviceContextCmds.h"
 
 class BufferContext::ResourceCreator
 {

@@ -3,10 +3,10 @@
 
 
 //外部
-#include "../../../../Resource/Buffer/BufferCreateTools/BufferCreator.h"
-#include "../../../../Resource/Buffer/BufferDefinition/GPUBuffer/ColorBuffer/ColorBuffer.h"
-#include "../../../../Resource/Buffer/BufferDefinition/BufferDescriptions/ColorBufferDescription/ColorBufferDescription.h"
-#include "../../../../Resource/Buffer/BufferDefinition/BufferDescriptions/DepthStencilBufferDescription/DepthStencilBufferDescription.h"
+#include "../../../../Buffer/BufferCreateTools/BufferCreator.h"
+#include "../../../../Buffer/BufferDefinition/GPUBuffer/ColorBuffer/ColorBuffer.h"
+#include "../../../../Buffer/BufferDefinition/BufferDescriptions/ColorBufferDescription/ColorBufferDescription.h"
+#include "../../../../Buffer/BufferDefinition/BufferDescriptions/DepthStencilBufferDescription/DepthStencilBufferDescription.h"
 
 void RenderContext::RenderPassCreator::PassBufferCreator::CreateBuffer
 (

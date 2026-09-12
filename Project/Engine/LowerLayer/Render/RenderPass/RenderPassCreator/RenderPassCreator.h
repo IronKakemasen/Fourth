@@ -5,7 +5,7 @@
 #include "../AllRenderPass/RenderPassTraits.h"
 
 //外部
-#include "../../../Resource/Buffer/BufferContext.h"
+#include "../../../Buffer/BufferContext.h"
 
 
 class RenderContext::RenderPassCreator

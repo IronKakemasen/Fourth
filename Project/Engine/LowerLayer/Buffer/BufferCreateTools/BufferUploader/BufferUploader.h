@@ -2,9 +2,9 @@
 #include "../../BufferContext.h"
 
 //外部
-#include "../../../../Core/Command/CommandContextCmds.h"
-#include "../../../../Core/Device/DeviceContextCmds.h"
-#include "../../../../../../External/DirectXTex/DirectXTex.h"
+#include "../../../Core/Command/CommandContextCmds.h"
+#include "../../../Core/Device/DeviceContextCmds.h"
+#include "../../../../../External/DirectXTex/DirectXTex.h"
 
 class GPUBufferBehavior;
 

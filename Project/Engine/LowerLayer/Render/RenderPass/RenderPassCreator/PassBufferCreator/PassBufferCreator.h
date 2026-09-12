@@ -1,6 +1,6 @@
 #pragma once
 #include "../RenderPassCreator.h"
-#include "../../../../Resource/Buffer/BufferContext.h"
+#include "../../../../Buffer/BufferContext.h"
 
 class RenderContext::RenderPassCreator::PassBufferCreator
 {

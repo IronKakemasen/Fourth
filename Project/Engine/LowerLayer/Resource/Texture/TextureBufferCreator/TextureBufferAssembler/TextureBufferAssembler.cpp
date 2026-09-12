@@ -3,12 +3,12 @@
 
 
 //外部
-#include "../../../Buffer/BufferDefinition/TextureComponent.h"
-#include "../../../Buffer/BufferDefinition/GPUBuffer/Texture2DBuffer/Texture2DBuffer.h"
-#include "../../../Buffer/BufferDefinition/BufferDescriptions/Texture2DBufferDescription/Texture2DBufferDescription.h"
-#include "../../../Buffer/BufferCreateTools/BufferCreator.h"
-#include "../../../Buffer/BufferCreateTools/BufferUploader/BufferUploader.h"
-#include "../../../Buffer/BufferContextDiplomat/BufferDiplomatIncludes.h"
+#include "../../../../Buffer/BufferDefinition/TextureComponent.h"
+#include "../../../../Buffer/BufferDefinition/GPUBuffer/Texture2DBuffer/Texture2DBuffer.h"
+#include "../../../../Buffer/BufferDefinition/BufferDescriptions/Texture2DBufferDescription/Texture2DBufferDescription.h"
+#include "../../../../Buffer/BufferCreateTools/BufferCreator.h"
+#include "../../../../Buffer/BufferCreateTools/BufferUploader/BufferUploader.h"
+#include "../../../../Buffer/BufferContextDiplomat/BufferDiplomatIncludes.h"
 
 
 SRVHeapIndex TextureContext::TextureBufferCreator::BufferAssembler::AssembleTexture2DBuffer

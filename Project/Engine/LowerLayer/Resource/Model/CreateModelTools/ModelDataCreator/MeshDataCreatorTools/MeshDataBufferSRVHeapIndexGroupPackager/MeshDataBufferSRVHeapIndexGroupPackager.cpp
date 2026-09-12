@@ -2,8 +2,8 @@
 #include "MeshDataBufferSRVHeapIndexGroupPackager.h"
 
 //外部
-#include "../../../../../Buffer/BufferDefinition/GPUBuffer/BufferInterface.h"
-#include "../../../../../Buffer/BufferRuntime/BufferDispatcher/BufferDispatcher.h"
+#include "../../../../../../Buffer/BufferDefinition/GPUBuffer/BufferInterface.h"
+#include "../../../../../../Buffer/BufferRuntime/BufferDispatcher/BufferDispatcher.h"
 
 
 namespace

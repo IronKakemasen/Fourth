@@ -2,7 +2,7 @@
 #include "../TextureBufferCreator.h"
 
 //外部
-#include "../../../Buffer/BufferDefinition/TextureComponent.h"
+#include "../../../../Buffer/BufferDefinition/TextureComponent.h"
 #include "../../../../../../External/DirectXTex/DirectXTex.h"
 
 

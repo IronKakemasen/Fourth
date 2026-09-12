@@ -3,12 +3,12 @@
 
 
 //外部
-#include "../../../Buffer/BufferCreateTools/BufferUploader/BufferUploader.h"
-#include "../../../Buffer/BufferCreateTools/BufferCreator.h"
-#include "../../../Buffer/GlobalConstantBuffers/GlobalConstantBufferCreator/GlobalConstantBufferCreator.h"
-#include "../../../Buffer/BufferDefinition/BufferDescriptions/StaticStructuredBufferDescription/StaticStructuredBufferDescription.h"
-#include "../../../Buffer/BufferDefinition/GPUBuffer/StaticStructuredBuffer/StaticStructuredBuffer.h"
-#include "../../../Buffer/BufferContextDiplomat/BufferDiplomatIncludes.h"
+#include "../../../../Buffer/BufferCreateTools/BufferUploader/BufferUploader.h"
+#include "../../../../Buffer/BufferCreateTools/BufferCreator.h"
+#include "../../../../Buffer/GlobalConstantBuffers/GlobalConstantBufferCreator/GlobalConstantBufferCreator.h"
+#include "../../../../Buffer/BufferDefinition/AllBufferDescsInclude.h"
+#include "../../../../Buffer/BufferDefinition/GPUBuffer/StaticStructuredBuffer/StaticStructuredBuffer.h"
+#include "../../../../Buffer/BufferContextDiplomat/BufferDiplomatIncludes.h"
 
 void TextureContext::TextureBufferCreator::GlobalConstantBufferPackager::Package
 (

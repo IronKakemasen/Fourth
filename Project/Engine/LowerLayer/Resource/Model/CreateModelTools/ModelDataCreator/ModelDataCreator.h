@@ -2,7 +2,7 @@
 #include "../../ModelContext.h"
 
 //外部
-#include "../../../Buffer/BufferContext.h"
+#include "../../../../Buffer/BufferContext.h"
 
 struct ModelDataAggregate;
 

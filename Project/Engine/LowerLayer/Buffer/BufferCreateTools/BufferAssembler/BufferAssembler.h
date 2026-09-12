@@ -7,7 +7,7 @@
 #include "../../BufferDefinition/AllBufferDescsIFwd.h"
 
 //外部
-#include "../../../../Core/DescriptorHeap/DescriptorHeapContext.h"
+#include "../../../Core/DescriptorHeap/DescriptorHeapContext.h"
 
 
 
