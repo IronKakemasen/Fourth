@@ -3,7 +3,7 @@
 #include "../../../BufferDefinition/BufferDescriptions/Texture2DBufferDescription/Texture2DBufferDescription.h"
 #include "../../BufferCreator.h"
 #include "../../BufferUploader/BufferUploader.h"
-
+#include "../../../BufferDefinition/AllBuffersInclude.h"
 
 
 SRVHeapIndex BufferContext::TextureBufferCreator::BufferAssembler::AssembleTexture2DBuffer
@@ -22,7 +22,16 @@ SRVHeapIndex BufferContext::TextureBufferCreator::BufferAssembler::AssembleTextu
 	//作成したテクスチャバッファをアップロードリストに追加
 	bufferUploader_.RegisterTextureBuffer(scratchImage_, id_bufferPtr.first);
 
+	//最後にこのバッファのsrvHeapIndexをかえす
+	Texture2DBuffer* tex2DBuffer = static_cast<Texture2DBuffer*>(id_bufferPtr.second);
+	IReadable* readableBuffer = dynamic_cast<IReadable*>(tex2DBuffer);
+	ErrorMessageOutput::Assert::DetectError
+	(
+		readableBuffer,
+		id_bufferPtr.second->WatchName() + "がIReadableじゃない",
+		"TextureBufferAssembler.cpp"
+	);
 
-	return SRVHeapIndex{};
+	return readableBuffer->OutProperSRVHeapIndex(0);
 }
 

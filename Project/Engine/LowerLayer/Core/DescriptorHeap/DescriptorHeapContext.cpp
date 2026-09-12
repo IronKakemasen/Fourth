@@ -27,7 +27,6 @@ DescriptorHeapContext::DescriptorHeapContext
 {
 	Logger::Entry("DescriptorHeapContext: Constructor");
 
-	
 	//各種DescriptorHeapを生成する
 	descriptorHeapPoolContainer.reset(new DescriptorHeapPoolContainer(proof_));
 	DescriptorHeapCreator descriptorHeapCreator(proof_, *descriptorHeapPoolContainer.get(), deviceContextDiplomat_);

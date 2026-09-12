@@ -360,12 +360,7 @@ if (Test-Path $TextureFolder)
 {
     Get-ChildItem -Path $TextureFolder -Recurse -File |
     Where-Object {
-        $_.Extension.ToLower() -eq ".png" -or
-        $_.Extension.ToLower() -eq ".jpg" -or
-        $_.Extension.ToLower() -eq ".jpeg" -or
-        $_.Extension.ToLower() -eq ".dds" -or
-        $_.Extension.ToLower() -eq ".tga" -or
-        $_.Extension.ToLower() -eq ".psd"
+               $_.Extension.ToLower() -eq ".dds"
     } |
     ForEach-Object {
 

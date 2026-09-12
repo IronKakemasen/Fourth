@@ -1,7 +1,7 @@
 #include "PreCompileHeader.h"
 #include "WindowContextBuilder.h"
 #include "DumpExporter.h"
-
+#include "../WindowProcedure/WindowProcedure.h"
 
 //外部
 #include "StringConverter/StringConverter.h"
@@ -29,7 +29,7 @@ WindowContext::CoreParts WindowContext::Builder::CreateCoreParts()
 
 	wc.cbSize = sizeof(WNDCLASSEX);
 	wc.style = CS_HREDRAW | CS_VREDRAW;
-	wc.lpfnWndProc = WindowContext::WndProc;
+	wc.lpfnWndProc = WindowContext::WindowProcedure::WndProc;
 	wc.hIcon = LoadIcon(hInst, IDI_APPLICATION);
 	wc.hCursor = LoadCursor(hInst, IDC_ARROW);
 	wc.hbrBackground = GetSysColorBrush(COLOR_BACKGROUND);

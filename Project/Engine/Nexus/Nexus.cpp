@@ -11,6 +11,7 @@
 #include "../LowerLayer/Resource/PSO/PSO_Context.h"
 #include "../LowerLayer/Resource/RootSignature/RootSignatureContext.h"
 #include "../LowerLayer/Resource/Model/ModelContext.h"
+#include "../LowerLayer/Resource/Texture/TextureContext.h"
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 #include "../LowerLayer/Render/RenderContext.h"
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -72,7 +73,8 @@ Nexus::Nexus()
 	InitializeInSequence<InitSequence::kShaderContext>();
 	InitializeInSequence<InitSequence::kPSO_Context>();
 	InitializeInSequence<InitSequence::kRootSignatureContext>();
-	InitializeInSequence<InitSequence::kMeshContext>();
+	InitializeInSequence<InitSequence::kTextureContext>();
+	InitializeInSequence<InitSequence::kModelContext>();
 	InitializeInSequence<InitSequence::kRenderContext>();
 
 
@@ -102,14 +104,4 @@ Nexus::~Nexus()
 	Logger::End("Nexus: Destructor");
 
 }
-
-
-
-
-
-
-
-
-
-
 

@@ -392,6 +392,9 @@
     <ClCompile Include="Engine\LowerLayer\Core\Window\WindowContextDiplomat\WindowContextDiplomat.cpp" />
     <ClCompile Include="Engine\LowerLayer\Core\Window\WindowContextDiplomat\WindowContextToolLender\WindowContextToolLender.cpp" />
     <ClCompile Include="Engine\LowerLayer\Core\Window\WindowContextDiplomat\WindowContextExecutionAgent\WindowContextExecutionAgent.cpp" />
+    <ClCompile Include="Engine\LowerLayer\Core\Window\WindowProcedure\WindowProcedure.cpp" />
+    <ClCompile Include="Engine\LowerLayer\Resource\Buffer\BufferCreateTools\TextureBufferCreator\GlobalConstantBufferPackager\GlobalConstantBufferPackager.cpp" />
+    <ClCompile Include="Engine\LowerLayer\Resource\Texture\TextureContext.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Assets\BAKA\ConstantBuffers.h" />
@@ -654,6 +657,9 @@
     <ClInclude Include="Engine\LowerLayer\Core\Window\WindowContextDiplomat\WindowContextDiplomat.h" />
     <ClInclude Include="Engine\LowerLayer\Core\Window\WindowContextDiplomat\WindowContextToolLender\WindowContextToolLender.h" />
     <ClInclude Include="Engine\LowerLayer\Core\Window\WindowContextDiplomat\WindowContextExecutionAgent\WindowContextExecutionAgent.h" />
+    <ClInclude Include="Engine\LowerLayer\Core\Window\WindowProcedure\WindowProcedure.h" />
+    <ClInclude Include="Engine\LowerLayer\Resource\Buffer\BufferCreateTools\TextureBufferCreator\GlobalConstantBufferPackager\GlobalConstantBufferPackager.h" />
+    <ClInclude Include="Engine\LowerLayer\Resource\Texture\TextureContext.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

@@ -4,7 +4,7 @@
 
 
 //2Dテクスチャバッファ
-class Texture2DBuffer final : public GPUBufferBehavior, IReadable, public IReadOnly
+class Texture2DBuffer final : public GPUBufferBehavior, public IReadable, public IReadOnly
 {
 	friend class BufferContext::BufferInfoExtractor;
 
