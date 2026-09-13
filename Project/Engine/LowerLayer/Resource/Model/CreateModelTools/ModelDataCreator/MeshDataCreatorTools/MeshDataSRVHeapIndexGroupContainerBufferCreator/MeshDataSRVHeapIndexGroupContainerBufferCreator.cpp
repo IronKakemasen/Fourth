@@ -8,7 +8,7 @@
 #include "../../../../../../Buffer/BufferDefinition/GPUBuffer/BufferInterface.h"
 
 
-using namespace StructuredBufferDataDefinition;
+using namespace StructuredBufferModelData;
 
 void ModelContext::ModelDataCreator::MeshDataSRVHeapIndexGroupContainerBufferCreator::Create
 (

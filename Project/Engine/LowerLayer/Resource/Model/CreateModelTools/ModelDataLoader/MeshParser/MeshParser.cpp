@@ -1,7 +1,8 @@
 #include "PreCompileHeader.h"
 #include "MeshParser.h"
-#include "../../../ModelStructure/ModelData/ResourceMesh/ResourceMesh.h"
+#include "../../../ModelStructure/ModelData/ModelData.h"
 
+//外部
 #include ".././../../../External/assimp/include/assimp/scene.h"
 #include "../../../../External/MeshOptimizer/meshoptimizer.h"
 
@@ -10,8 +11,8 @@ namespace
     auto const fileName = "MeshParser.cpp";
 }
 
-
-void ModelContext::ModelDataLoader::MeshParser::ParseMesh(ResourceMesh& dstMesh_, const aiMesh* pSrcMesh_)
+using namespace StructuredBufferModelData;
+void ModelContext::ModelDataLoader::MeshParser::ParseMesh(MeshCPU& dstMesh_, const aiMesh* pSrcMesh_)
 {
     //マテリアル番号を設定
     //dstMesh.materialId = pSrcMesh->mMaterialIndex;
@@ -29,7 +30,7 @@ void ModelContext::ModelDataLoader::MeshParser::ParseMesh(ResourceMesh& dstMesh_
         auto pTexCoord = (pSrcMesh_->HasTextureCoords(0)) ? &(pSrcMesh_->mTextureCoords[0][i]) : &zero3D;
         auto pTangent = (pSrcMesh_->HasTangentsAndBitangents()) ? &(pSrcMesh_->mTangents[i]) : &zero3D;
 
-        dstMesh_.vertices[i] = StandardVertex
+        dstMesh_.vertices[i] = StandardVertexCPU
         (
             Vector3(pPosition->x, pPosition->y, pPosition->z),
             Vector3(pNormal->x, pNormal->y, pNormal->z),
@@ -65,10 +66,10 @@ void ModelContext::ModelDataLoader::MeshParser::ParseMesh(ResourceMesh& dstMesh_
             originalIndices.size(),
             dstMesh_.vertices.data(),
             dstMesh_.vertices.size(),
-            sizeof(StandardVertex)
+            sizeof(StandardVertexCPU)
         );
 
-        std::vector<StandardVertex> vertices(vertexCnt);
+        std::vector<StandardVertexCPU> vertices(vertexCnt);
         std::vector<uint32_t> indicesBuf(originalIndices.size());
 
 
@@ -85,7 +86,7 @@ void ModelContext::ModelDataLoader::MeshParser::ParseMesh(ResourceMesh& dstMesh_
             vertices.data(),
             dstMesh_.vertices.data(),
             dstMesh_.vertices.size(),
-            sizeof(StandardVertex),
+            sizeof(StandardVertexCPU),
             remapIndices.data());
 
 
@@ -110,7 +111,7 @@ void ModelContext::ModelDataLoader::MeshParser::ParseMesh(ResourceMesh& dstMesh_
             originalIndices.size(),
             vertices.data(),
             vertices.size(),
-            sizeof(StandardVertex)
+            sizeof(StandardVertexCPU)
         );
 
         //頂点フェッチ最適化後の実際の頂点数へ縮小
@@ -147,7 +148,7 @@ void ModelContext::ModelDataLoader::MeshParser::ParseMesh(ResourceMesh& dstMesh_
             originalIndices.size(),
             &dstMesh_.vertices[0].localPos.data.x, //頂点データの座標ポインタの先頭
             dstMesh_.vertices.size(),
-            sizeof(StandardVertex),                //頂点構造体1つあたりのバイトサイズ
+            sizeof(StandardVertexCPU),                //頂点構造体1つあたりのバイトサイズ
             kMaxVertices,
             kMaxPrimitives,
             kConeWeight
@@ -172,7 +173,7 @@ void ModelContext::ModelDataLoader::MeshParser::ParseMesh(ResourceMesh& dstMesh_
         for (size_t i = 0; i < meshletCount; ++i)
         {
             const meshopt_Meshlet& src = temp_meshlets[i];
-            StructuredBufferDataDefinition::MeshletCPUGPU& dstMeshlet = dstMesh_.meshlets[i];
+            StructuredBufferModelData::MeshletCPUGPU& dstMeshlet = dstMesh_.meshlets[i];
 
             //各スレッドグループが担当する箇所を算出
             dstMeshlet.vertexOffset = static_cast<uint32_t>(dstMesh_.uniqueVertexIndices.size());
@@ -184,7 +185,7 @@ void ModelContext::ModelDataLoader::MeshParser::ParseMesh(ResourceMesh& dstMesh_
             for (unsigned int v = 0; v < src.vertex_count; ++v)
             {
                 uint32_t global_vertex_idx = temp_meshlet_vertices[src.vertex_offset + v];
-                dstMesh_.uniqueVertexIndices.emplace_back(StructuredBufferDataDefinition::UniqueVertexIndexCPUGPU(global_vertex_idx));
+                dstMesh_.uniqueVertexIndices.emplace_back(StructuredBufferModelData::UniqueVertexIndexCPUGPU(global_vertex_idx));
             }
 
             //ポリゴン頂点情報をパッキング
@@ -192,7 +193,7 @@ void ModelContext::ModelDataLoader::MeshParser::ParseMesh(ResourceMesh& dstMesh_
             {
                 size_t prim_base_idx = src.triangle_offset + t * 3;
 
-                StructuredBufferDataDefinition::PrimitiveIndexCPUGPU tris = {};
+                StructuredBufferModelData::PrimitiveIndexCPUGPU tris = {};
 
                 tris.index2 = temp_meshlet_triangles[prim_base_idx + 0];
                 tris.index0 = temp_meshlet_triangles[prim_base_idx + 1];

@@ -1,7 +1,7 @@
 #pragma once
 #include "../../ModelContext.h"
 
-struct ModelDataAggregate;
+struct ModelData;
 struct aiScene;
 
 class ModelContext::ModelDataLoader
@@ -13,7 +13,7 @@ public:
 
 	///ファイルの名前から実メッシュデータのアドレスを生成
 	///既に読み込み済みの場合はアサートで止める
-	ModelDataAggregate* Load(std::string fileName_ , std::string filePath_);
+	ModelData* Load(std::string fileName_ , std::string filePath_);
 
 
 private:

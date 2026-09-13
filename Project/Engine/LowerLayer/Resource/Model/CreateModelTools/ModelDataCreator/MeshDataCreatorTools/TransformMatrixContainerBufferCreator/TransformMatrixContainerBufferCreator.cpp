@@ -8,10 +8,10 @@
 //ほんとはuploadStructuredBufferDescriptionだけでいいんだけど、文字列制限なのかインクルードできないので
 #include "../../../../../../Buffer/BufferDefinition/AllBufferDescsInclude.h"
 #include "../../../../../../Buffer/BufferDefinition/AllBuffersInclude.h"
-#include "../../../../../../../../Assets/Shared/StructuredBuffer.h"
+#include "../../../../../../../../Assets/Shared/StructuredBufferModelData.h"
 
 
-using namespace StructuredBufferDataDefinition;
+using namespace StructuredBufferModelData;
 using namespace ProjectConfig::Render;
 
 void ModelContext::ModelDataCreator::TransformMatrixContainerBufferCreator::Create

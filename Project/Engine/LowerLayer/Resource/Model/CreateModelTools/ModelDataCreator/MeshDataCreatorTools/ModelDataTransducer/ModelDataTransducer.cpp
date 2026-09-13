@@ -1,15 +1,14 @@
 #include "PreCompileHeader.h"
 #include "ModelDataTransducer.h"
-#include "../../../../ModelStructure/ModelData/ResourceMesh/StandardVertex.h"
 
 //外部
 #include "../../../../../../Buffer/BufferRuntime/BufferDispatcher/BufferDispatcher.h"
 #include "../../../../../../Buffer/BufferDefinition/GPUBuffer/StaticStructuredBuffer/StaticStructuredBuffer.h"
 
-using namespace StructuredBufferDataDefinition;
+using namespace StructuredBufferModelData;
 
 
-std::vector<StandardVertexGPU> ModelContext::ModelDataCreator::DataTransducer::TransferVertexDataTypeToGPU(const std::vector<StandardVertex>& vertices_)
+std::vector<StandardVertexGPU> ModelContext::ModelDataCreator::DataTransducer::TransferVertexDataTypeToGPU(const std::vector<StandardVertexCPU>& vertices_)
 {
     std::vector<StandardVertexGPU> standardVertexGPUContainer;
 

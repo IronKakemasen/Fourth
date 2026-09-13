@@ -1,6 +1,5 @@
 #include "PreCompileHeader.h"
 #include "MaterialParser.h"
-#include "../../../ModelStructure/ModelData/ResourceMaterial/ResourceMaterial.h"
 
 
 #include ".././../../../External/assimp/include/assimp/Importer.hpp"
@@ -15,9 +14,9 @@ namespace
     auto const fileName = "MaterialParser.cpp";
 }
 
+using namespace StructuredBufferModelData;
 
-
-void ModelContext::ModelDataLoader::MaterialParser::ParseMaterial(ResourceMaterial& dstMaterial_, const aiMaterial* pSrcMaterial_)
+void ModelContext::ModelDataLoader::MaterialParser::ParseMaterial(MaterialCPU& dstMaterial_, const aiMaterial* pSrcMaterial_)
 {
     // 拡散反射成分
     {
@@ -25,78 +24,51 @@ void ModelContext::ModelDataLoader::MaterialParser::ParseMaterial(ResourceMateri
 
         if (pSrcMaterial_->Get(AI_MATKEY_COLOR_DIFFUSE, color) == AI_SUCCESS)
         {
-            dstMaterial_.standardMaterial.diffuse.data.x = color.r;
-            dstMaterial_.standardMaterial.diffuse.data.y = color.g;
-            dstMaterial_.standardMaterial.diffuse.data.z = color.b;
+            dstMaterial_.baseColor.x = color.r;
+            dstMaterial_.baseColor.y = color.g;
+            dstMaterial_.baseColor.z = color.b;
         }
     }
 
-    // 鏡面反射成分
-    {
-        aiColor3D color(0.0f, 0.0f, 0.0f);
-
-        if (pSrcMaterial_->Get(AI_MATKEY_COLOR_SPECULAR, color) == AI_SUCCESS)
-        {
-            dstMaterial_.standardMaterial.specular = { color.r,color.g,color.b };
-        }
-    }
-
-    // 鏡面反射強度
-    {
-        auto shininess = 0.0f;
-        if (pSrcMaterial_->Get(AI_MATKEY_SHININESS, shininess) == AI_SUCCESS)
-        {
-            dstMaterial_.standardMaterial.shininess = shininess;
-        }
-    }
-
-    // colorマップ
+    //colorマップ
     {
         aiString path;
         if (pSrcMaterial_->Get(AI_MATKEY_TEXTURE_DIFFUSE(0), path) == AI_SUCCESS)
         {
-            dstMaterial_.standardMaterial.colorMap = StringConverter::ConvertString(Convert(path));
+            dstMaterial_.albedoTexture = StringConverter::ConvertString(Convert(path));
         }
     }
 
-    // スペキュラーマップ
-    {
-        aiString path;
-        if (pSrcMaterial_->Get(AI_MATKEY_TEXTURE_SPECULAR(0), path) == AI_SUCCESS)
-        {
-            dstMaterial_.standardMaterial.specularMap = StringConverter::ConvertString(Convert(path));
-        }
-    }
-
-    // シャイネスマップ
-    {
-        aiString path;
-
-        if (pSrcMaterial_->Get(AI_MATKEY_TEXTURE_SHININESS(0), path) == AI_SUCCESS)
-        {
-            dstMaterial_.standardMaterial.shininessMap = StringConverter::ConvertString(Convert(path));
-        }
-    }
-
-    // 法線マップ
+    //法線マップ
     {
         aiString path;
         if (pSrcMaterial_->Get(AI_MATKEY_TEXTURE_NORMALS(0), path) == AI_SUCCESS)
         {
-            dstMaterial_.standardMaterial.normalMap = StringConverter::ConvertString(Convert(path));
+            dstMaterial_.normalTexture = StringConverter::ConvertString(Convert(path));
         }
         else
         {
             if (pSrcMaterial_->Get(AI_MATKEY_TEXTURE_HEIGHT(0), path) == AI_SUCCESS)
             {
-                dstMaterial_.standardMaterial.normalMap = StringConverter::ConvertString(Convert(path));
+                dstMaterial_.normalTexture = StringConverter::ConvertString(Convert(path));
             }
             else
             {
-                dstMaterial_.standardMaterial.normalMap.clear();
+                dstMaterial_.normalTexture.clear();
             }
         }
     }
+
+    //colorマップ
+    {
+        aiString path;
+        if (pSrcMaterial_->Get(AI_MATKEY_TEXTURE_EMISSIVE(0), path) == AI_SUCCESS)
+        {
+            dstMaterial_.emissiveTexture = StringConverter::ConvertString(Convert(path));
+        }
+    }
+
+
 }
 
 
