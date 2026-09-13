@@ -4,8 +4,10 @@
 #include "MeshParser/MeshParser.h"
 #include "MaterialParser/MaterialParser.h"
 #include "ModelDataCache/ModelDataCache.h"
-#include "../../ModelStructure/ModelData/ModelDataAggregate.h"
+#include "../../ModelStructure/ModelData/ModelData.h"
 
+
+//外部
 #include "StringConverter/StringConverter.h"
 
 #include ".././../../../External/assimp/include/assimp/Importer.hpp"
@@ -35,9 +37,9 @@ ModelContext::ModelDataLoader::~ModelDataLoader()
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-ModelDataAggregate* ModelContext::ModelDataLoader::Load(std::string fileName_ , std::string filePath_)
+ModelData* ModelContext::ModelDataLoader::Load(std::string fileName_ , std::string filePath_)
 {
-    std::unique_ptr<ModelDataAggregate> modelDataAggregate = std::make_unique<ModelDataAggregate>();
+    std::unique_ptr<ModelData> modelData = std::make_unique<ModelData>();
 
 	///同じモデルファイルを読み込んでいる場合は何かおかしいのでアサート
 	modelDataCache->FindDuplication(ModelDataCache::AccessKey{},fileName_);
@@ -62,30 +64,30 @@ ModelDataAggregate* ModelContext::ModelDataLoader::Load(std::string fileName_ , 
     ErrorMessageOutput::Abort::DetectError(scene, "シーンデータが無い", fileName);
 
     //メッシュのメモリを確保
-    modelDataAggregate->resourceMesh.clear();
-    if(scene) modelDataAggregate->resourceMesh.resize(scene->mNumMeshes);
+    modelData->resourceMesh.clear();
+    if(scene) modelData->resourceMesh.resize(scene->mNumMeshes);
 
     // メッシュデータを変換.
-    for (size_t i = 0; i < modelDataAggregate->resourceMesh.size(); ++i)
+    for (size_t i = 0; i < modelData->resourceMesh.size(); ++i)
     {
         const auto pMesh = scene->mMeshes[i];
-        MeshParser::ParseMesh(modelDataAggregate->resourceMesh[i], pMesh);
+        MeshParser::ParseMesh(modelData->resourceMesh[i], pMesh);
     }
 
     //マテリアルのメモリを確保
-    modelDataAggregate->resourceMaterial.clear();
-    if(scene)modelDataAggregate->resourceMaterial.resize(scene->mNumMaterials);
+    modelData->resourceMaterial.clear();
+    if(scene)modelData->resourceMaterial.resize(scene->mNumMaterials);
 
     //マテリアルデータを変換
-    for (size_t i = 0; i < modelDataAggregate->resourceMaterial.size(); ++i)
+    for (size_t i = 0; i < modelData->resourceMaterial.size(); ++i)
     {
         const auto pMaterial = (scene) ? scene->mMaterials[i] : nullptr;
-        MaterialParser::ParseMaterial(modelDataAggregate->resourceMaterial[i], pMaterial);
+        MaterialParser::ParseMaterial(modelData->resourceMaterial[i], pMaterial);
     }
 
     //キャッシュデータに登録
-    auto returnPtr = modelDataAggregate.get();
-    modelDataCache->StoreTemporarily(ModelContext::ModelDataLoader::ModelDataCache::AccessKey{}, fileName_, std::move(modelDataAggregate));
+    auto returnPtr = modelData.get();
+    modelDataCache->StoreTemporarily(ModelContext::ModelDataLoader::ModelDataCache::AccessKey{}, fileName_, std::move(modelData));
 
     //不要になったのでクリア
     importer.FreeScene();

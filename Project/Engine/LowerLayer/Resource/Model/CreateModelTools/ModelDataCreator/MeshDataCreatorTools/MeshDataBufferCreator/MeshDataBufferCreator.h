@@ -1,8 +1,7 @@
 #pragma once
 #include "../../ModelDataCreator.h"
+#include "../../../../../../../../Assets/Shared/StructuredBufferModelData.h"
 
-struct ResourceMesh;
-struct ResourrceMatrilal;
 
 class ModelContext::ModelDataCreator::MeshDataBufferCreator
 {
@@ -12,7 +11,7 @@ class ModelContext::ModelDataCreator::MeshDataBufferCreator
 	[[nodiscard]] static std::vector<MeshDataBufferUniqueIDGroup> CreateMeshDataBuffer
 	(
 		ModelContext::ModelSlotAllocator* allocator_, 
-		const std::vector<ResourceMesh>& data_,
+		const std::vector<StructuredBufferModelData::MeshCPU>& data_,
 		BufferContext::BufferCreator* bufferCreator_,
 		BufferContext::BufferCollector* bufferCollector_,
 		std::string modelFileName_,

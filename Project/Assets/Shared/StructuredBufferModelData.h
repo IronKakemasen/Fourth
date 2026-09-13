@@ -2,10 +2,12 @@
 
 #ifdef __cplusplus
 
+#include "../../Engine/MiddleLayer/Math/Vector/Vector2.h"
+#include "../../Engine/MiddleLayer/Math/Vector/Vector3.h"
 #include "../../Engine/MiddleLayer/Math/Vector/Vector4.h"
 #include "../../Engine/MiddleLayer/Math/Matrix/Matrix4x4.h"
 
-namespace StructuredBufferDataDefinition
+namespace StructuredBufferModelData
 {
     struct StandardVertexGPU
     {
@@ -13,6 +15,43 @@ namespace StructuredBufferDataDefinition
         Vector4<float> normal;
         Vector4<float> tangent;
         Vector4<float> texcoord;
+    };
+
+    struct StandardVertexCPU
+    {
+        StandardVertexCPU() {};
+
+        StandardVertexCPU
+        (
+            Vector3 localPos_,
+            Vector3 normal_,
+            Vector3 tangent_,
+            Vector2 texcoord_
+        ) :localPos(localPos_), normal(normal_), tangent(tangent_), texcoord(texcoord_) {}
+
+        Vector3 localPos;
+        Vector3 normal;
+        Vector3 tangent;
+        Vector2 texcoord;
+    };
+
+    struct MaterialCPU
+    {
+        std::string albedoTexture;
+        std::string normalTexture;
+        std::string emissiveTexture;
+        Vector4<float> baseColor;
+        float roughness;
+        float metallic;
+    };
+
+    struct MaterialGPU
+    {
+        SRVHeapIndex albedoTexture;
+        SRVHeapIndex normalTexture;
+        SRVHeapIndex emissiveTexture;
+        float roughness;
+        float metallic;
     };
 
     struct MeshletCPUGPU
@@ -38,8 +77,16 @@ namespace StructuredBufferDataDefinition
         }
 
         uint32_t index{};
-
     };
+
+    struct MeshCPU
+    {
+        std::vector<StandardVertexCPU> vertices;
+        std::vector<UniqueVertexIndexCPUGPU> uniqueVertexIndices;
+        std::vector<MeshletCPUGPU> meshlets;
+        std::vector<PrimitiveIndexCPUGPU> primitiveIndices;
+    };
+
 
     struct TransformMatrixCPUGPU
     {
@@ -54,6 +101,8 @@ namespace StructuredBufferDataDefinition
         SRVHeapIndex meshlets{};
         SRVHeapIndex primitiveIndices{};
     };
+
+
 }
 
 #else
@@ -64,6 +113,16 @@ struct StandardVertex
     float4 normal;
     float4 tangent;
     float4 texcoord;
+};
+
+struct Material
+{
+    uint albedoIndex;
+    uint normalIndex;
+    uint emissiveIndex;
+    float4 baseColor;
+    float roughness;
+    float metallic;
 };
 
 struct Meshlet

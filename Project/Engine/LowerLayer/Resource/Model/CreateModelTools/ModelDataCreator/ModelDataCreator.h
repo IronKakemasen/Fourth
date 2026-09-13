@@ -4,7 +4,7 @@
 //外部
 #include "../../../../Buffer/BufferContext.h"
 
-struct ModelDataAggregate;
+struct ModelData;
 
 class ModelContext::ModelDataCreator
 {
@@ -77,7 +77,7 @@ private:
 
 	//ローダーが全モデルファイルを読み込み、そのモデルデータのポインタを返す
 	///被り無しのはず設計なので、被りがあった場合はアサートでとまる
-	std::unordered_map<std::string, ModelDataAggregate*> LoadAllModelFiles(ModelDataLoader& modelDataLoader_);
+	std::unordered_map<std::string, ModelData*> LoadAllModelFiles(ModelDataLoader& modelDataLoader_);
 	
 	//バッファコンテキストクラスからツールをお借りする
 	BufferContextTools BorrowBufferContextTools(BufferContextDiplomat* bufferContextDiplomat_);

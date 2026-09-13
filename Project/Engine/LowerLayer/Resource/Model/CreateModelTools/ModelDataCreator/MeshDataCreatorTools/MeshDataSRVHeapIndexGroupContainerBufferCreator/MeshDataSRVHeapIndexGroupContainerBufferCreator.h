@@ -2,7 +2,7 @@
 #include "../../ModelDataCreator.h"
 
 //外部
-#include "../../../../../../../../Assets/Shared/StructuredBuffer.h"
+#include "../../../../../../../../Assets/Shared/StructuredBufferModelData.h"
 #include "../../../../../../Buffer/BufferContextCmds.h"
 
 class ModelContext::ModelDataCreator::MeshDataSRVHeapIndexGroupContainerBufferCreator
@@ -11,7 +11,7 @@ class ModelContext::ModelDataCreator::MeshDataSRVHeapIndexGroupContainerBufferCr
 
 	static void Create
 	(
-		const std::vector<StructuredBufferDataDefinition::MeshDataSRVHeapIndexGroupGPUCPU>& tmpMeshDataSRVHeapIndexGroupContainer_,
+		const std::vector<StructuredBufferModelData::MeshDataSRVHeapIndexGroupGPUCPU>& tmpMeshDataSRVHeapIndexGroupContainer_,
 		BufferContext::BufferCreator* bufferCreator_,
 		BufferContext::BufferUploader* uploader_,
 		BufferContextCmds::CreateCBufferCmd createCBufferCmd_

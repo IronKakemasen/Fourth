@@ -2,15 +2,17 @@
 #include "../ModelDataLoader.h"
 
 
+//外部
+#include "../../../../../../../Assets/Shared/StructuredBufferModelData.h"
+
 struct aiMaterial;
-struct ResourceMaterial;
 struct aiString;
 
 class  ModelContext::ModelDataLoader::MaterialParser
 {
 	friend class ModelContext::ModelDataLoader;
 
-	static void ParseMaterial(ResourceMaterial& dstMaterial_, const aiMaterial* pSrcMaterial_);
+	static void ParseMaterial(StructuredBufferModelData::MaterialCPU& dstMaterial_, const aiMaterial* pSrcMaterial_);
 
 	static std::wstring Convert(const aiString& path_);
 

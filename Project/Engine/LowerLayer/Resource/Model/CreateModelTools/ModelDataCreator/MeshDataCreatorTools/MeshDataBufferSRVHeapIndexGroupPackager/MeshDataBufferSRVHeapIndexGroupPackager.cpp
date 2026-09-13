@@ -11,7 +11,7 @@ namespace
 	auto const fileName = "MeshDataBufferSRVHeapIndexGroupPackager.cpp";
 }
 
-using namespace StructuredBufferDataDefinition;
+using namespace StructuredBufferModelData;
 
 
 void ModelContext::ModelDataCreator::MeshDataBufferSRVHeapIndexGroupPackager::PackMeshDataBufferSRVHeapIndex

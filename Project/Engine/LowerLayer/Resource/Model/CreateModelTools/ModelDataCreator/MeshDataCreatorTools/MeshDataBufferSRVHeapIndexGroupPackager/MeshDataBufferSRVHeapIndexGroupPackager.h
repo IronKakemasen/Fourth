@@ -2,7 +2,7 @@
 #include "../../ModelDataCreator.h"
 
 //外部
-#include "../../../../../../../../Assets/Shared/StructuredBuffer.h"
+#include "../../../../../../../../Assets/Shared/StructuredBufferModelData.h"
 
 
 class ModelContext::ModelDataCreator::MeshDataBufferSRVHeapIndexGroupPackager
@@ -12,7 +12,7 @@ class ModelContext::ModelDataCreator::MeshDataBufferSRVHeapIndexGroupPackager
 	static void PackMeshDataBufferSRVHeapIndex
 	(
 		const std::vector<MeshDataBufferUniqueIDGroup>& uniqueIDGroupContainer_,
-		std::vector<StructuredBufferDataDefinition::MeshDataSRVHeapIndexGroupGPUCPU>& tmpMeshDataSRVHeapIndexGroupContainer_,
+		std::vector<StructuredBufferModelData::MeshDataSRVHeapIndexGroupGPUCPU>& tmpMeshDataSRVHeapIndexGroupContainer_,
 		BufferContext::BufferDispatcher* dispatcher_
 	);
 

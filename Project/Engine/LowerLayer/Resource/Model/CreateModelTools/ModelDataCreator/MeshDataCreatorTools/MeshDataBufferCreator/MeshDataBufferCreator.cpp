@@ -1,21 +1,21 @@
 #include "PreCompileHeader.h"
 #include "MeshDataBufferCreator.h"
-#include "../../../../ModelStructure/ModelData/ResourceMesh/ResourceMesh.h"
+#include "../../../../ModelStructure/ModelData/ModelData.h"
 #include "../../../ModelSlotAllocator/MeshDataIDLibrary/MeshDataIDLibrary.h"
 
 //外部
 #include "../../../../../../Buffer/BufferCreateTools/BufferCreator.h"
 //ほんとはstaticStructuredBufferDescriptionだけでいいんだけど、文字列制限なのかインクルードできないので
 #include "../../../../../../Buffer/BufferDefinition/AllBufferDescsInclude.h"
-#include "../../../../../../../../Assets/Shared/StructuredBuffer.h"
+#include "../../../../../../../../Assets/Shared/StructuredBufferModelData.h"
 
-using namespace StructuredBufferDataDefinition;
+using namespace StructuredBufferModelData;
 
 [[nodiscard]] std::vector<ModelContext::ModelDataCreator::MeshDataBufferUniqueIDGroup> 
 ModelContext::ModelDataCreator::MeshDataBufferCreator::CreateMeshDataBuffer
 (
     ModelContext::ModelSlotAllocator* allocator_, 
-    const std::vector<ResourceMesh>& data_,
+    const std::vector<MeshCPU>& data_,
 	BufferContext::BufferCreator* bufferCreator_,
 	BufferContext::BufferCollector* bufferCollector_,
 	std::string modelFileName_,

@@ -1,7 +1,6 @@
 #include "PreCompileHeader.h"
 #include "MeshDataBufferUploader.h"
 #include "../ModelDataTransducer/ModelDataTransducer.h"
-#include "../../../../ModelStructure/ModelData/ResourceMesh/ResourceMesh.h"
 
 
 //外部
@@ -12,11 +11,11 @@ namespace
     auto const fileName = "MeshDataBufferUploader.cpp";
 }
 
-using namespace StructuredBufferDataDefinition;
+using namespace StructuredBufferModelData;
 
 void ModelContext::ModelDataCreator::MeshDataBufferUploader::CopyAndUploadBuffer
 (
-	const std::vector<ResourceMesh>& data_,
+	const std::vector<MeshCPU>& data_,
     const std::vector<MeshDataBufferUniqueIDGroup>& meshDataBufferUniqueIDGroupContainer_,
     BufferContext::BufferUploader* bufferUploader_
 )
