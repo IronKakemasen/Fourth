@@ -3,7 +3,7 @@
 
 struct ModelData;
 
-class ModelContext::ModelDataLoader::ModelDataCache
+class ModelContext::ModelDataCache
 {
 public:
 
@@ -22,7 +22,7 @@ private:
 	std::unordered_map<std::string, std::unique_ptr<ModelData>> modelDataCache;
 };
 
-struct ModelContext::ModelDataLoader::ModelDataCache::AccessKey
+struct ModelContext::ModelDataCache::AccessKey
 {
 private:
 	friend class ModelContext::ModelDataLoader;

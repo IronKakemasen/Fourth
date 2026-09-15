@@ -41,8 +41,8 @@ namespace StructuredBufferModelData
         std::string normalTexture;
         std::string emissiveTexture;
         Vector4<float> baseColor;
-        float roughness;
-        float metallic;
+        float roughness{};
+        float metallic{};
     };
 
     struct MaterialGPU
@@ -50,8 +50,9 @@ namespace StructuredBufferModelData
         SRVHeapIndex albedoTexture;
         SRVHeapIndex normalTexture;
         SRVHeapIndex emissiveTexture;
-        float roughness;
-        float metallic;
+        Vector4<float> baseColor;
+        float roughness{};
+        float metallic{};
     };
 
     struct MeshletCPUGPU

@@ -7,7 +7,6 @@
 #include "../LowerLayer/Core/Command/CommandContext.h"
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 #include "../LowerLayer/Resource/Shader/ShaderContext.h"
-#include "../LowerLayer/Buffer/BufferContext.h"
 #include "../LowerLayer/Resource/PSO/PSO_Context.h"
 #include "../LowerLayer/Resource/RootSignature/RootSignatureContext.h"
 #include "../LowerLayer/Resource/Model/ModelContext.h"
@@ -15,6 +14,7 @@
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 #include "../LowerLayer/Render/RenderContext.h"
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+#include "../LowerLayer/Buffer/BufferContext.h"
 
 namespace
 {
@@ -82,6 +82,8 @@ Nexus::Nexus()
 	InitializeInSequence<InitSequence::kKickCommands>();
 	InitializeInSequence<InitSequence::kDeleteIntermediateResources>();
 	InitializeInSequence<InitSequence::kSortOutGlobalConstantBuffers>();
+	InitializeInSequence<InitSequence::kDeleteModelDataCache>();
+
 
 	ErrorMessageOutput::Assert::DetectError(nextInit == InitSequence::kEnd, "初期化が正常に行われていない可能性がある", fileName);
 

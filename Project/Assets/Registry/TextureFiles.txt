@@ -1,3 +1,5 @@
+key: "Cube_albedo" , value: "Assets/Texture/Compiled/Cube_albedo.dds"
+key: "noData_albedo" , value: "Assets/Texture/Compiled/noData_albedo.dds"
 key: "white2x2_albedo" , value: "Assets/Texture/Compiled/white2x2_albedo.dds"
 key: "white2x2_emissive" , value: "Assets/Texture/Compiled/white2x2_emissive.dds"
 key: "white2x2_normal" , value: "Assets/Texture/Compiled/white2x2_normal.dds"

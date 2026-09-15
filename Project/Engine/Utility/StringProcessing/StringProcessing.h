@@ -35,6 +35,18 @@ namespace StringProcessing
 		return extension == extension_;
 	}
 
+    ///ファイル指定子を消す
+    static std::string RemoveFileExtension(std::string const path_)
+    {
+        std::size_t const dotPos = path_.find_last_of('.');
+
+        if (dotPos == std::string::npos)
+        {
+            return path_;
+        }
+
+        return path_.substr(0, dotPos);
+    }
 
 }
 

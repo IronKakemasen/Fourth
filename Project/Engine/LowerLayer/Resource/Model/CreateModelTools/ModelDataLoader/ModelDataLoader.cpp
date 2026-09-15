@@ -19,12 +19,12 @@ namespace
     auto const fileName = "ModelDataLoader.cpp";
 }
 
-ModelContext::ModelDataLoader::ModelDataLoader(NexusFieldProof proof_)
+ModelContext::ModelDataLoader::ModelDataLoader(NexusFieldProof proof_, ModelDataCache& modelDataCache_)
+    :modelDataCache(modelDataCache_)
 {
     Logger::Entry("ModelDataLoader: Constructor");
 
 
-	modelDataCache.reset(new ModelDataCache(proof_));
     Logger::Log("Instantiate: ModelDataCache",fileName);
 
     Logger::End("ModelDataLoader: Constructor");
@@ -42,9 +42,9 @@ ModelData* ModelContext::ModelDataLoader::Load(std::string fileName_ , std::stri
     std::unique_ptr<ModelData> modelData = std::make_unique<ModelData>();
 
 	///同じモデルファイルを読み込んでいる場合は何かおかしいのでアサート
-	modelDataCache->FindDuplication(ModelDataCache::AccessKey{},fileName_);
+	modelDataCache.FindDuplication(ModelDataCache::AccessKey{},fileName_);
 
-    // wchar_t から char型(UTF-8)に変換
+    //wchar_tからUTF-8に変換
     auto path = StringConverter::ToUTF8(StringConverter::ConvertString(filePath_));
 
     Assimp::Importer importer;
@@ -67,7 +67,7 @@ ModelData* ModelContext::ModelDataLoader::Load(std::string fileName_ , std::stri
     modelData->resourceMesh.clear();
     if(scene) modelData->resourceMesh.resize(scene->mNumMeshes);
 
-    // メッシュデータを変換.
+    //メッシュデータを変換.
     for (size_t i = 0; i < modelData->resourceMesh.size(); ++i)
     {
         const auto pMesh = scene->mMeshes[i];
@@ -87,7 +87,7 @@ ModelData* ModelContext::ModelDataLoader::Load(std::string fileName_ , std::stri
 
     //キャッシュデータに登録
     auto returnPtr = modelData.get();
-    modelDataCache->StoreTemporarily(ModelContext::ModelDataLoader::ModelDataCache::AccessKey{}, fileName_, std::move(modelData));
+    modelDataCache.StoreTemporarily(ModelContext::ModelDataCache::AccessKey{}, fileName_, std::move(modelData));
 
     //不要になったのでクリア
     importer.FreeScene();

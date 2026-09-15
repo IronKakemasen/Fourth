@@ -16,25 +16,16 @@ public:
         , kCount
     };
 
+    template<RegistryFileType type>
+    struct RegistryFileTypeTraits;
+
 private:
 
+    //レジストリーファイルのテーブル
     template<RegistryFileType fileType>
     static std::string FilePathtable()
     {
-        static std::string const commonTo = "Assets/Registry/";
-        static std::string const commonFormat = "Files.txt";
-
-        static const std::string pathTable[(UINT)RegistryFileType::kCount]
-        {
-            "MS",
-            "PS",
-            "CS",
-            "Model",
-            "Json",
-            "Texture"
-        };
-
-        return commonTo + pathTable[(UINT)fileType] + commonFormat;
+        return RegistryFileTypeTraits<fileType>::kFilePath;
     }
 
 public:
@@ -161,7 +152,66 @@ public:
         return keys;
     }
 
+    //バリューからキーを検索
+    template<RegistryFileType fileType>
+    static std::string ValueToKey(std::string const value_)
+    {
+
+        std::string filekKey;
+
+        //レジストリファイルを読み込む
+        std::unordered_map<std::string, std::string> const keyToPath = Load<fileType>();
+
+        // キーとバリューを検索
+        for (auto const& [key, value] : keyToPath)
+        {
+            if (value == value_)
+            {
+                filekKey = key;
+                break;
+            }
+        }
+
+        return filekKey;
+    }
+
 };
 
+
+template<>
+struct RegistryLoader::RegistryFileTypeTraits<RegistryLoader::RegistryFileType::kJsonFiles>
+{
+    static inline std::string const kFilePath = "Assets/Registry/JsonFiles.txt";
+};
+
+template<>
+struct RegistryLoader::RegistryFileTypeTraits<RegistryLoader::RegistryFileType::kMSFiles>
+{
+    static inline std::string const kFilePath = "Assets/Registry/MSFiles.txt";
+};
+
+template<>
+struct RegistryLoader::RegistryFileTypeTraits<RegistryLoader::RegistryFileType::kPSFiles>
+{
+    static inline std::string const kFilePath = "Assets/Registry/PSFiles.txt";
+};
+
+template<>
+struct RegistryLoader::RegistryFileTypeTraits<RegistryLoader::RegistryFileType::kCSFiles>
+{
+    static inline std::string const kFilePath = "Assets/Registry/CSFiles.txt";
+};
+
+template<>
+struct RegistryLoader::RegistryFileTypeTraits<RegistryLoader::RegistryFileType::kModelFiles>
+{
+    static inline std::string const kFilePath = "Assets/Registry/ModelFiles.txt";
+};
+
+template<>
+struct RegistryLoader::RegistryFileTypeTraits<RegistryLoader::RegistryFileType::kTextureFiles>
+{
+    static inline std::string const kFilePath = "Assets/Registry/TextureFiles.txt";
+};
 
 

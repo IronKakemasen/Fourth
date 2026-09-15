@@ -18,6 +18,10 @@ class ModelContext
 	class ModelSlotAllocator;
 	//インスタンス化されたモデルクラスのモデルファイル名をもとに中身を構築してあげる
 	class ModelDescAssembler;
+	//モデルデータの一時キャッシュ
+	class ModelDataCache;
+
+
 
 public:
 	//全てのモデルファイルのモデルデータのバッファを生成する。
@@ -44,6 +48,10 @@ public:
 	ModelContext(NexusFieldProof proof_, BufferContextDiplomat* bufferContextDiplomat_);
 	~ModelContext();
 
+	///代役に、モデルデータのキャッシュを消してもらう
+	void DeleteModelDataCache(NexusFieldProof proof_, AgentKey agentKey_);
+
+
 	//外交官
 	std::unique_ptr<ModelContextDiplomat> diplomat;
 
@@ -54,6 +62,8 @@ private:
 	std::unique_ptr<ModelContainer> modelContainer;
 	std::unique_ptr<ModelCreator> modelCreator;
 	std::unique_ptr<ModelDataBatcher> modelDataBatcher;
+	std::unique_ptr<ModelDataCache> modelDataCache;
+
 
 	std::unique_ptr<TestModelOKIBA> testModelOKIBA;
 };

@@ -41,6 +41,8 @@ private:
 	class MeshDataSRVHeapIndexGroupContainerBufferCreator;
 	//TransformMatrixContainerBufferを作り、そのsrvHeapIndexをallocatorが保存
 	class TransformMatrixContainerBufferCreator;
+	//それのMaterialバージョン
+	class MaterialContainerBufferCreator;
 
 public:
 

@@ -392,6 +392,7 @@
     <ClCompile Include="Engine\LowerLayer\Resource\Texture\TextureContext.cpp" />
     <ClCompile Include="Engine\LowerLayer\Resource\Texture\TextureLibrary\TextureLibrary.cpp" />
     <ClCompile Include="Engine\LowerLayer\Resource\Texture\TextureBufferCreator\TextureBufferCreator.cpp" />
+    <ClCompile Include="Engine\LowerLayer\Resource\Model\CreateModelTools\ModelDataCreator\MeshDataCreatorTools\MaterialContainerBufferCreator\MaterialContainerBufferCreator.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Assets\BAKA\ConstantBuffers.h" />
@@ -652,6 +653,7 @@
     <ClInclude Include="Engine\LowerLayer\Resource\Texture\TextureContext.h" />
     <ClInclude Include="Engine\LowerLayer\Resource\Texture\TextureLibrary\TextureLibrary.h" />
     <ClInclude Include="Engine\LowerLayer\Resource\Texture\TextureBufferCreator\TextureBufferCreator.h" />
+    <ClInclude Include="Engine\LowerLayer\Resource\Model\CreateModelTools\ModelDataCreator\MeshDataCreatorTools\MaterialContainerBufferCreator\MaterialContainerBufferCreator.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

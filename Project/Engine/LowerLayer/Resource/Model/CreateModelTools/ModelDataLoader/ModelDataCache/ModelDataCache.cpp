@@ -3,18 +3,18 @@
 #include "../../../ModelStructure/ModelData/ModelData.h"
 
 
-ModelContext::ModelDataLoader::ModelDataCache::ModelDataCache(NexusFieldProof proof_)
+ModelContext::ModelDataCache::ModelDataCache(NexusFieldProof proof_)
 {
 
 }
 
-ModelContext::ModelDataLoader::ModelDataCache::~ModelDataCache()
+ModelContext::ModelDataCache::~ModelDataCache()
 {
 	Logger::Log("ModelDataCache Destructor runs", "ModelDataCache.cpp");
 	Logger::Log("Delete modelData cache", "ModelDataCache.cpp");
 }
 
-void ModelContext::ModelDataLoader::ModelDataCache::FindDuplication(AccessKey key_, std::string fileName_)
+void ModelContext::ModelDataCache::FindDuplication(AccessKey key_, std::string fileName_)
 {
 	ErrorMessageOutput::Assert::DetectError
 	(
@@ -25,7 +25,7 @@ void ModelContext::ModelDataLoader::ModelDataCache::FindDuplication(AccessKey ke
 
 }
 
-void ModelContext::ModelDataLoader::ModelDataCache::StoreTemporarily(AccessKey key_, std::string fileName_, std::unique_ptr<ModelData>&& data_)
+void ModelContext::ModelDataCache::StoreTemporarily(AccessKey key_, std::string fileName_, std::unique_ptr<ModelData>&& data_)
 {
 	Logger::Log("Regieter: " + fileName_, "ModelDataCache.cpp");
 
