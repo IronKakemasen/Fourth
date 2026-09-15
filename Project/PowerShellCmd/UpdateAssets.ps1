@@ -235,7 +235,7 @@ if (Test-Path $JsonFolder)
 
 
 ########################################
-# Texture Compile (Original -> Compiled)
+# Texture Compile (Original & Model -> Compiled)
 ########################################
 
 $TexConvPath       = Join-Path $projectFolder "texconv.exe"
@@ -254,95 +254,136 @@ if (-not (Test-Path -LiteralPath $TexConvPath))
     throw "texconv.exe が見つかりません: $TexConvPath"
 }
 
+New-Item -ItemType Directory -Path $TextureCompiled -Force | Out-Null
+$compiledNames = New-Object 'System.Collections.Generic.HashSet[string]' ([System.StringComparer]::OrdinalIgnoreCase)
+
+# 検索対象ファイルを一括収集（参照元区分を保持）
+$targets = @()
+
 if (Test-Path -LiteralPath $TextureOriginal)
 {
-    New-Item -ItemType Directory -Path $TextureCompiled -Force | Out-Null
-
-    # 出力済みファイル名を記録。同名衝突時は最初の1枚だけ採用する。
-    $compiledNames = New-Object 'System.Collections.Generic.HashSet[string]' ([System.StringComparer]::OrdinalIgnoreCase)
-
     Get-ChildItem -Path $TextureOriginal -Recurse -File |
-        Where-Object {
-            $_.Extension -ceq ".png" -or $_.Extension -ceq ".jpg"
-        } |
+        Where-Object { $_.Extension -ceq ".png" -or $_.Extension -ceq ".jpg" } |
         ForEach-Object {
-            $file = $_
-
-            # Original直下からの相対パスを分解し、最初のフォルダ名をカテゴリにする。
-            $relativeToOriginal = $file.FullName.Substring($TextureOriginal.Length).TrimStart('\')
-            $relativeParts = $relativeToOriginal -split '[\\/]'
-            $category = $relativeParts[0]
-
-            # 対応外カテゴリは警告してスキップ。
-            if (-not $TextureFormatMap.ContainsKey($category))
-            {
-                Write-Warning "対応外フォルダのためスキップ: $($file.FullName)"
-                return
-            }
-
-            $outputName = "{0}_{1}.dds" -f $file.BaseName, $category
-            $outputPath = Join-Path $TextureCompiled $outputName
-
-            # 既存ファイル、または今回の処理中に発生した同名衝突はスキップ。
-            if (Test-Path -LiteralPath $outputPath)
-            {
-                Write-Host "既存ファイルのためスキップ: $outputName"
-                return
-            }
-
-            if (-not $compiledNames.Add($outputName))
-            {
-                Write-Warning "同名衝突のためスキップ: $($file.FullName) -> $outputName"
-                return
-            }
-
-            $format = $TextureFormatMap[$category]
-            $mipCount = if ($category -ceq "sprite") { "1" } else { "0" }
-
-            # texconvは入力ファイルのベース名でDDSを書き出すため、画像ごとに一時フォルダを使う。
-            $tempDir = Join-Path $TextureCompiled (".texconv_tmp_{0}" -f ([guid]::NewGuid().ToString("N")))
-            New-Item -ItemType Directory -Path $tempDir -Force | Out-Null
-
-            try
-            {
-                Write-Host "DDS変換中: $($file.FullName) -> $outputName"
-
-                & $TexConvPath `
-                    -y `
-                    -ft dds `
-                    -f $format `
-                    -m $mipCount `
-                    -o $tempDir `
-                    $file.FullName
-
-                if ($LASTEXITCODE -ne 0)
-                {
-                    throw "DDS変換に失敗しました: $($file.FullName)"
-                }
-
-                # texconvの出力拡張子は通常 .DDS。大文字小文字を問わず検索する。
-                $generatedFile = Get-ChildItem -LiteralPath $tempDir -File |
-                    Where-Object { $_.Extension -ieq ".dds" } |
-                    Select-Object -First 1
-
-                if ($null -eq $generatedFile)
-                {
-                    throw "texconvの出力ファイルが見つかりません: $($file.FullName)"
-                }
-
-                Move-Item `
-                    -LiteralPath $generatedFile.FullName `
-                    -Destination $outputPath
-            }
-            finally
-            {
-                if (Test-Path -LiteralPath $tempDir)
-                {
-                    Remove-Item -LiteralPath $tempDir -Recurse -Force
-                }
-            }
+            $targets += [PSCustomObject]@{ File = $_; Source = "Original" }
         }
 }
+
+if (Test-Path -LiteralPath $ModelFolder)
+{
+    Get-ChildItem -Path $ModelFolder -Recurse -File |
+        Where-Object { $_.Extension -ceq ".png" -or $_.Extension -ceq ".jpg" } |
+        ForEach-Object {
+            $targets += [PSCustomObject]@{ File = $_; Source = "Model" }
+        }
+}
+
+foreach ($item in $targets)
+{
+    $file   = $item.File
+    $source = $item.Source
+    $category = $null
+
+    if ($source -eq "Original")
+    {
+        # Original: 直下フォルダ名からカテゴリ取得
+        $relativeToOriginal = $file.FullName.Substring($TextureOriginal.Length).TrimStart('\')
+        $relativeParts      = $relativeToOriginal -split '[\\/]'
+        $category           = $relativeParts[0].ToLower()
+    }
+    else
+    {
+        # Model: ファイル名の末尾（_albedo, _normal 等）からカテゴリ検出
+        foreach ($key in $TextureFormatMap.Keys)
+        {
+            if ($file.BaseName.ToLower() -like "*_$key")
+            {
+                $category = $key
+                break
+            }
+        }
+    }
+
+    # 対応外カテゴリは警告してスキップ
+    if (-not $category -or -not $TextureFormatMap.ContainsKey($category))
+    {
+        Write-Warning "対応外フォルダまたは未対応の命名規則のためスキップ: $($file.FullName)"
+        continue
+    }
+
+    # DDS出力ファイル名の生成（二重付与を防止）
+    $baseNameLower = $file.BaseName.ToLower()
+    if ($baseNameLower.EndsWith("_$category"))
+    {
+        $outputName = "{0}.dds" -f $file.BaseName
+    }
+    else
+    {
+        $outputName = "{0}_{1}.dds" -f $file.BaseName, $category
+    }
+
+    $outputPath = Join-Path $TextureCompiled $outputName
+
+    # 既存ファイルおよび同名競合のスキップ
+    if (Test-Path -LiteralPath $outputPath)
+    {
+        Write-Host "既存ファイルのためスキップ: $outputName"
+        continue
+    }
+
+    if (-not $compiledNames.Add($outputName))
+    {
+        Write-Warning "同名衝突のためスキップ: $($file.FullName) -> $outputName"
+        continue
+    }
+
+    $format   = $TextureFormatMap[$category]
+    $mipCount = if ($category -ceq "sprite") { "1" } else { "0" }
+
+    # 一時フォルダ作成と DDS 変換処理
+    $tempDir = Join-Path $TextureCompiled (".texconv_tmp_{0}" -f ([guid]::NewGuid().ToString("N")))
+    New-Item -ItemType Directory -Path $tempDir -Force | Out-Null
+
+    try
+    {
+        Write-Host "DDS変換中 ($source): $($file.FullName) -> $outputName"
+
+        & $TexConvPath `
+            -y `
+            -ft dds `
+            -f $format `
+            -m $mipCount `
+            -o $tempDir `
+            $file.FullName
+
+        if ($LASTEXITCODE -ne 0)
+        {
+            throw "DDS変換に失敗しました: $($file.FullName)"
+        }
+
+        $generatedFile = Get-ChildItem -LiteralPath $tempDir -File |
+            Where-Object { $_.Extension -ieq ".dds" } |
+            Select-Object -First 1
+
+        if ($null -eq $generatedFile)
+        {
+            throw "texconvの出力ファイルが見つかりません: $($file.FullName)"
+        }
+
+        Move-Item `
+            -LiteralPath $generatedFile.FullName `
+            -Destination $outputPath
+    }
+    finally
+    {
+        if (Test-Path -LiteralPath $tempDir)
+        {
+            Remove-Item -LiteralPath $tempDir -Recurse -Force
+        }
+    }
+}
+
+
 
 ########################################
 # Texture Registry
@@ -373,4 +414,3 @@ if (Test-Path $TextureFolder)
         Add-Content -Path $OutputFileTexture -Value "key: `"$key`" , value: `"$relativePath`""
     }
 }
-

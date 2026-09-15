@@ -265,6 +265,19 @@ void Nexus::Init<Nexus::InitSequence::kSortOutGlobalConstantBuffers>()
 	agent->PackRuntimeContainer(BufferContext::NexusFieldProof{});
 
 }
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+template<>
+void Nexus::Init<Nexus::InitSequence::kDeleteModelDataCache>()
+{
+	//bufferContextの代行者
+	auto* agent = modelContext->diplomat->Access<ModelContext::ExecutionAgent>();
+	//ランタイム用のベクターコンテナに詰め変える(全てのコンスタントバッファの生成が終わった後)
+	agent->DeleteModelDataCache(ModelContext::NexusFieldProof{});
+
+}
+
 
 
 
@@ -322,5 +335,7 @@ void Nexus::Init<Nexus::InitSequence::kDeleteIntermediateResources>();
 template
 void Nexus::Init<Nexus::InitSequence::kSortOutGlobalConstantBuffers>();
 
+template
+void Nexus::Init<Nexus::InitSequence::kDeleteModelDataCache>();
 
 

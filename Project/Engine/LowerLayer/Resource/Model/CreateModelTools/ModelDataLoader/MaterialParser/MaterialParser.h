@@ -14,7 +14,10 @@ class  ModelContext::ModelDataLoader::MaterialParser
 
 	static void ParseMaterial(StructuredBufferModelData::MaterialCPU& dstMaterial_, const aiMaterial* pSrcMaterial_);
 
-	static std::wstring Convert(const aiString& path_);
+
+	//以下ヘルパー
+private:
+	static std::string Convert(const aiString& path_);
 
 };
 

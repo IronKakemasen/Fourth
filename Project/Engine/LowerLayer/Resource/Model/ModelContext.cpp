@@ -4,8 +4,10 @@
 #include "CreateModelTools/ModelDataCreator/ModelDataCreator.h"
 #include "CreateModelTools/ModelSlotAllocator/ModelSlotAllocator.h"
 #include "CreateModelTools/ModelDataLoader/ModelDataLoader.h"
+#include "CreateModelTools/ModelDataLoader/ModelDataCache/ModelDataCache.h"
 #include "CreateModelTools/ModelDescAssembler/ModelDescAssembler.h"
 #include "CreateModelTools/ModelCreator.h"
+
 
 #include "ModelContainer/ModelContainer.h"
 
@@ -32,7 +34,10 @@ ModelContext::ModelContext(NexusFieldProof proof_,BufferContextDiplomat* bufferC
 	modelSlotAllocator.reset(new ModelSlotAllocator(proof_));
 	Logger::Log("Instantiate: modelSlotAllocator", fileName);
 
-	ModelDataLoader modelDataLoader(proof_);
+	modelDataCache.reset(new ModelDataCache(proof_));
+	Logger::Log("Instantiate: ModelDataCache", fileName);
+
+	ModelDataLoader modelDataLoader(proof_, *modelDataCache);
 	Logger::Log("Instantiate: ModelDataLoader", fileName);
 
 	modelContainer.reset(new ModelContainer(proof_));
@@ -69,7 +74,7 @@ ModelContext::ModelContext(NexusFieldProof proof_,BufferContextDiplomat* bufferC
 		new ModelContextDiplomat
 		(
 			proof_,
-			std::make_unique<ExecutionAgent>(proof_),
+			std::make_unique<ExecutionAgent>(proof_,*this),
 			std::make_unique<ToolLender>(proof_),
 			std::make_unique<CommandProvider>(proof_, modelContainer.get())
 		)
@@ -91,4 +96,9 @@ ModelContext::ModelContext(NexusFieldProof proof_,BufferContextDiplomat* bufferC
 ModelContext::~ModelContext()
 {
 
+}
+
+void ModelContext::DeleteModelDataCache(NexusFieldProof proof_, AgentKey agentKey_)
+{
+	modelDataCache.reset();
 }

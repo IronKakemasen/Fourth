@@ -8,7 +8,7 @@ class ModelContext::ModelDataLoader
 {
 public:
 
-	ModelDataLoader(NexusFieldProof proof_);
+	ModelDataLoader(NexusFieldProof proof_, ModelDataCache& modelDataCache_);
 	~ModelDataLoader();
 
 	///ファイルの名前から実メッシュデータのアドレスを生成
@@ -18,11 +18,10 @@ public:
 
 private:
 
-	class ModelDataCache;
 	class MeshParser;
 	class MaterialParser;
 
-	std::unique_ptr<ModelDataCache> modelDataCache;
+	ModelDataCache& modelDataCache;
 	//シーンデータ
 	const aiScene* scene = nullptr;   
 

@@ -39,7 +39,8 @@ class Nexus
 		kUploadAllResources,
 		kKickCommands,
 		kDeleteIntermediateResources,
-		kSortOutGlobalConstantBuffers
+		kSortOutGlobalConstantBuffers,
+		kDeleteModelDataCache					///モデルデータキャッシュの削除は、アプリ層の初期化が終わったあと
 
 
 		,kEnd
