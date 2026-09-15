@@ -26,6 +26,7 @@ namespace ConstantBuffers
 	{
 		MeshDataID meshDataID;
 		uint32_t transformMatrixID;
+		uint32_t materialID;
 	};
 
 	struct PassBufferIndexRangeCPUGPU
@@ -43,6 +44,7 @@ struct PerDrawIndices
 {
 	uint meshDataID;
 	uint transformMatrixID;
+	uint materialID;
 };
 
 struct PassBufferIndexRange

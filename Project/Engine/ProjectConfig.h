@@ -42,7 +42,7 @@ namespace ProjectConfig
 			kDoubleBuffer = 2
 		};
 
-		enum class GlobalBufferTableSetting
+		enum class CBufferSize
 		{
 			//TransformMatrixBufferの同時存在最大数
 			kSizeOfTransformMatrixContainerBuffer = 100,

@@ -11,7 +11,7 @@ namespace
 ModelContext::ModelSlotAllocator::TransformMatrixSlot::TransformMatrixSlot(NexusFieldProof proof_)
 {
 	//使いまわしTransformMatrixのスロットのサイズを確保する
-	transformMatrixSlotList.Resize((UINT)ProjectConfig::Render::GlobalBufferTableSetting::kSizeOfTransformMatrixContainerBuffer);
+	transformMatrixSlotList.Resize((UINT)ProjectConfig::Render::CBufferSize::kSizeOfTransformMatrixContainerBuffer);
 
 }
 
