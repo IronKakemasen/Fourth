@@ -1,5 +1,5 @@
 #include "PreCompileHeader.h"
-#include "TransformMatrixContainerBufferCreator.h"
+#include "PerDrawDataBufferCreator.h"
 #include "../../../../ModelContextRuntime/ModelDataBatcher/ModelDataBatcher.h"
 
 //外部
@@ -14,7 +14,7 @@
 using namespace StructuredBufferModelData;
 using namespace ProjectConfig::Render;
 
-void ModelContext::ModelDataCreator::TransformMatrixContainerBufferCreator::Create
+void ModelContext::ModelDataCreator::PerDrawDataBufferCreator::Create
 (
 	BufferContext::BufferCreator* bufferCreator_,
 	BufferContextCmds::CreateCBufferCmd createCBufferCmd_,
@@ -23,12 +23,12 @@ void ModelContext::ModelDataCreator::TransformMatrixContainerBufferCreator::Crea
 {
 	//まずTransformMatrixのUploadStructuredBufferを作成するためのディスクリプションの生成
 	///データ型はTransformMatrixCPUGPU
-	///用意する数はkSizeOfTransformMatrixBufferArray個分 = 最大でモデルを描画できる数
+	///用意する数はkSizeOfTransformMatrixArrayBuffer個分 = 最大でモデルを描画できる数
 	///！！！！！UploadStructuredBufferはダブルバッファなのでsrvは2個作られる！！！！！
 	UploadStructuredBufferDescription desc
 	(
 		UINT(sizeof(TransformMatrixCPUGPU)),
-		UINT(GlobalBufferTableSetting::kSizeOfTransformMatrixBufferArray),
+		UINT(GlobalBufferTableSetting::kSizeOfTransformMatrixContainerBuffer),
 		0
 	);
 
@@ -38,7 +38,7 @@ void ModelContext::ModelDataCreator::TransformMatrixContainerBufferCreator::Crea
 
 	///ランタイムでTransformMatrixはもちろん更新するから、その索引用として
 	///こいつのIDは頂戴する
-	modelDataBatcher_->ImportBufferID<ModelDataBatcher::BufferIDType::kTransformMatrixContainer>
+	modelDataBatcher_->ImportPerDrawBufferID<ModelDataBatcher::BufferType::kTransformMatrixContainer>
 		(ModelDataBatcher::Local_InputBufferUniqueIDLicence{}, bufferUnique_buffer.first);
 
 	//SRVHeapIndexを抽出

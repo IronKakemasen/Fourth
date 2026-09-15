@@ -343,7 +343,7 @@
     <ClCompile Include="Engine\LowerLayer\Resource\Model\ModelContainer\ModelContainer.cpp" />
     <ClCompile Include="Engine\LowerLayer\Resource\Model\CreateModelTools\ModelSlotAllocator\TransformMatrixSlot\TransformMatrixSlot.cpp" />
     <ClCompile Include="Engine\LowerLayer\Resource\Model\TestModelOKIBA.cpp" />
-    <ClCompile Include="Engine\LowerLayer\Resource\Model\CreateModelTools\ModelDataCreator\MeshDataCreatorTools\TransformMatrixContainerBufferCreator\TransformMatrixContainerBufferCreator.cpp" />
+    <ClCompile Include="Engine\LowerLayer\Resource\Model\CreateModelTools\ModelDataCreator\MeshDataCreatorTools\PerDrawDataBufferCreator\PerDrawDataBufferCreator.cpp" />
     <ClCompile Include="Engine\LowerLayer\Resource\Model\ModelContextDiplomat\ModelContextToolLender\ModelContextToolLender.cpp" />
     <ClCompile Include="Engine\MiddleLayer\MiyaJison\JsonDataLoader\JsonDataLoader.cpp" />
     <ClCompile Include="Engine\MiddleLayer\MiyaJison\MiyaJison.cpp" />
@@ -357,7 +357,7 @@
     <ClCompile Include="Engine\LowerLayer\Resource\RootSignature\RootSignatureContextDiplomat\RootSignatureContextDiplomat.cpp" />
     <ClCompile Include="Engine\LowerLayer\Resource\RootSignature\RootSignatureContextDiplomat\RootSignatureToolLender\RootSignatureToolLender.cpp" />
     <ClCompile Include="Engine\LowerLayer\Resource\Model\ModelContextRuntime\ModelDataBatcher\ModelDataBatcher.cpp" />
-    <ClCompile Include="Engine\LowerLayer\Resource\Model\ModelContextRuntime\ModelDataBatcher\ModelUploadBufferUniqueIDs\ModelUploadBufferUniqueIDs.cpp" />
+    <ClCompile Include="Engine\LowerLayer\Resource\Model\ModelContextRuntime\ModelDataBatcher\PerDrawBufferLibrary\PerDrawBufferLibrary.cpp" />
     <ClCompile Include="Engine\LowerLayer\Resource\Model\ModelContextDiplomat\ModelContextCmdProvider\ModelContextCmdProvider.cpp" />
     <ClCompile Include="Engine\LowerLayer\Resource\RootSignature\RootSignatureContextDiplomat\RootSignatureCmdProvider\RootSignatureCmdProvider.cpp" />
     <ClCompile Include="Engine\LowerLayer\Resource\PSO\PSO_Creator\PSO_Creator.cpp" />
@@ -392,7 +392,6 @@
     <ClCompile Include="Engine\LowerLayer\Resource\Texture\TextureContext.cpp" />
     <ClCompile Include="Engine\LowerLayer\Resource\Texture\TextureLibrary\TextureLibrary.cpp" />
     <ClCompile Include="Engine\LowerLayer\Resource\Texture\TextureBufferCreator\TextureBufferCreator.cpp" />
-    <ClCompile Include="Engine\LowerLayer\Resource\Model\CreateModelTools\ModelDataCreator\MeshDataCreatorTools\MaterialContainerBufferCreator\MaterialContainerBufferCreator.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Assets\BAKA\ConstantBuffers.h" />
@@ -604,7 +603,7 @@
     <ClInclude Include="Engine\LowerLayer\Resource\Model\ModelContainer\ModelContainer.h" />
     <ClInclude Include="Engine\LowerLayer\Resource\Model\CreateModelTools\ModelSlotAllocator\TransformMatrixSlot\TransformMatrixSlot.h" />
     <ClInclude Include="Engine\LowerLayer\Resource\Model\TestModelOKIBA.h" />
-    <ClInclude Include="Engine\LowerLayer\Resource\Model\CreateModelTools\ModelDataCreator\MeshDataCreatorTools\TransformMatrixContainerBufferCreator\TransformMatrixContainerBufferCreator.h" />
+    <ClInclude Include="Engine\LowerLayer\Resource\Model\CreateModelTools\ModelDataCreator\MeshDataCreatorTools\PerDrawDataBufferCreator\PerDrawDataBufferCreator.h" />
     <ClInclude Include="Engine\LowerLayer\Resource\Model\ModelContextDiplomat\ModelContextToolLender\ModelContextToolLender.h" />
     <ClInclude Include="Engine\MiddleLayer\MiyaJison\JsonDataLoader\JsonDataLoader.h" />
     <ClInclude Include="Engine\MiddleLayer\MiyaJison\MiyaJison.h" />
@@ -618,7 +617,7 @@
     <ClInclude Include="Engine\LowerLayer\Resource\RootSignature\RootSignatureContextDiplomat\RootSignatureContextDiplomat.h" />
     <ClInclude Include="Engine\LowerLayer\Resource\RootSignature\RootSignatureContextDiplomat\RootSignatureToolLender\RootSignatureToolLender.h" />
     <ClInclude Include="Engine\LowerLayer\Resource\Model\ModelContextRuntime\ModelDataBatcher\ModelDataBatcher.h" />
-    <ClInclude Include="Engine\LowerLayer\Resource\Model\ModelContextRuntime\ModelDataBatcher\ModelUploadBufferUniqueIDs\ModelUploadBufferUniqueIDs.h" />
+    <ClInclude Include="Engine\LowerLayer\Resource\Model\ModelContextRuntime\ModelDataBatcher\PerDrawBufferLibrary\PerDrawBufferLibrary.h" />
     <ClInclude Include="Engine\LowerLayer\Resource\Model\ModelContextDiplomat\ModelContextCmdProvider\ModelContextCmdProvider.h" />
     <ClInclude Include="Engine\LowerLayer\Resource\RootSignature\RootSignatureContextDiplomat\RootSignatureCmdProvider\RootSignatureCmdProvider.h" />
     <ClInclude Include="Engine\LowerLayer\Resource\PSO\PSO_Creator\PSO_Creator.h" />
@@ -653,7 +652,6 @@
     <ClInclude Include="Engine\LowerLayer\Resource\Texture\TextureContext.h" />
     <ClInclude Include="Engine\LowerLayer\Resource\Texture\TextureLibrary\TextureLibrary.h" />
     <ClInclude Include="Engine\LowerLayer\Resource\Texture\TextureBufferCreator\TextureBufferCreator.h" />
-    <ClInclude Include="Engine\LowerLayer\Resource\Model\CreateModelTools\ModelDataCreator\MeshDataCreatorTools\MaterialContainerBufferCreator\MaterialContainerBufferCreator.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

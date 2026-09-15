@@ -4,16 +4,17 @@
 
 class ModelContext::ModelDataBatcher
 {
-	class ModelUploadBufferUniqueIDs;
+	class PerDrawBufferLibrary;
 
 public:
 
 	struct Local_InputBufferUniqueIDLicence;
 
-	enum class BufferIDType
+	enum class BufferType
 	{
-		kTransformMatrixContainer
-
+		kTransformMatrixContainer,
+		kMaterialContainer
+		
 
 		,kCount
 	};
@@ -21,13 +22,13 @@ public:
 	ModelDataBatcher(NexusFieldProof proof_);
 	~ModelDataBatcher();
 
-	template<BufferIDType idType>
-	void ImportBufferID(Local_InputBufferUniqueIDLicence licence_,BufferUniqueID id_);
+	template<BufferType idType>
+	void ImportPerDrawBufferID(Local_InputBufferUniqueIDLicence licence_,BufferUniqueID id_);
 
 
 private:
 
-	std::unique_ptr<ModelUploadBufferUniqueIDs> modelUploadBufferUniqueIDs;
+	std::unique_ptr<PerDrawBufferLibrary> perDrawBufferLibrary;
 
 };
 
