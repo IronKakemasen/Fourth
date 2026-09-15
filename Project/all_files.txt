@@ -11686,6 +11686,8 @@ private:
 	class MeshDataSRVHeapIndexGroupContainerBufferCreator;
 	//TransformMatrixContainerBufferを作り、そのsrvHeapIndexをallocatorが保存
 	class TransformMatrixContainerBufferCreator;
+	//それのMaterialバージョン
+	class MaterialContainerBufferCreator;
 public:
 	///全てのメッシュデータのバッファを作成してアップロードし、
 	///キー(ファイル名)とメッシュデータバッファのsrvHapIndex群を紐づける
@@ -11716,6 +11718,22 @@ private:
 	std::unordered_map<std::string, ModelData*> LoadAllModelFiles(ModelDataLoader& modelDataLoader_);
 	//バッファコンテキストクラスからツールをお借りする
 	BufferContextTools BorrowBufferContextTools(BufferContextDiplomat* bufferContextDiplomat_);
+};
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Model\CreateModelTools\ModelDataCreator\MeshDataCreatorTools\MaterialContainerBufferCreator\MaterialContainerBufferCreator.cpp ===
+========================================
+#include "PreCompileHeader.h"
+#include "MaterialContainerBufferCreator.h"
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Model\CreateModelTools\ModelDataCreator\MeshDataCreatorTools\MaterialContainerBufferCreator\MaterialContainerBufferCreator.h ===
+========================================
+#pragma once
+#include "../../ModelDataCreator.h"
+class ModelContext::ModelDataCreator::MaterialContainerBufferCreator
+{
+	friend class ModelDataCreator;
 };
 
 ========================================
@@ -18282,5 +18300,5 @@ namespace StringProcessing
 ========================================
 === SUMMARY ===
 ========================================
-Total Files      : 422
-Effective Lines  : 13262
+Total Files      : 424
+Effective Lines  : 13267

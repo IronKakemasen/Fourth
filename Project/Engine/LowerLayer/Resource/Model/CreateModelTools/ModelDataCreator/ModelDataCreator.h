@@ -39,8 +39,9 @@ private:
 	class MeshDataBufferSRVHeapIndexGroupPackager;
 	//メッシュデータバッファsrvHeapIndexGroup配列のバッファを作る
 	class MeshDataSRVHeapIndexGroupContainerBufferCreator;
-	//TransformMatrixContainerBufferを作り、そのsrvHeapIndexをallocatorが保存
-	class TransformMatrixContainerBufferCreator;
+	//TransformMatrixなドロー(モデル)ごとに必要とされるデータのコンテナのバッファを作り、
+	//そのバッファのContainerBufferを作る
+	class PerDrawDataBufferCreator;
 	//それのMaterialバージョン
 	class MaterialContainerBufferCreator;
 

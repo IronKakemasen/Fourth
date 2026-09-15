@@ -2,7 +2,7 @@
 #include "../../ModelDataCreator.h"
 #include "../../../../../../Buffer/BufferContextCmds.h"
 
-class ModelContext::ModelDataCreator::TransformMatrixContainerBufferCreator
+class ModelContext::ModelDataCreator::PerDrawDataBufferCreator
 {
 	friend class ModelContext::ModelDataCreator;
 

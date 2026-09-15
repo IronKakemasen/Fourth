@@ -14,9 +14,6 @@ namespace
 using namespace StructuredBufferModelData;
 void ModelContext::ModelDataLoader::MeshParser::ParseMesh(MeshCPU& dstMesh_, const aiMesh* pSrcMesh_)
 {
-    //マテリアル番号を設定
-    //dstMesh.materialId = pSrcMesh->mMaterialIndex;
-
     aiVector3D zero3D(0.0f, 0.0f, 0.0f);
     std::vector<uint32_t> originalIndices;
 

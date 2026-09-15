@@ -10,7 +10,7 @@
 #include "MeshDataCreatorTools/MeshDataBufferUploader/MeshDataBufferUploader.h"
 #include "MeshDataCreatorTools/MeshDataBufferSRVHeapIndexGroupPackager/MeshDataBufferSRVHeapIndexGroupPackager.h"
 #include "MeshDataCreatorTools/MeshDataSRVHeapIndexGroupContainerBufferCreator/MeshDataSRVHeapIndexGroupContainerBufferCreator.h"
-#include "MeshDataCreatorTools/TransformMatrixContainerBufferCreator/TransformMatrixContainerBufferCreator.h"
+#include "MeshDataCreatorTools/PerDrawDataBufferCreator/PerDrawDataBufferCreator.h"
 
 //外部
 #include "../../../../Buffer/BufferContextDiplomat/BufferDiplomatIncludes.h"
@@ -137,10 +137,10 @@ void ModelContext::ModelDataCreator::CreateAllModelData
     );
 
 
-    ///TransformMatrixのコンテナのUploadStructuredBufferを作成し、
-    ///そのsrvHeapIndexの定数バッファも作成する。
+    ///「TransformMatrix」と「Material」（現状）
+    ///のコンテナのUploadStructuredBufferを作成し、そのsrvHeapIndexの定数バッファも作成する。
     ///ランタイム用にTransformMatrixのコンテナのバッファのユニークIDをmodelDataBatcherが保管する
-    TransformMatrixContainerBufferCreator::Create
+    PerDrawDataBufferCreator::Create
     (
         bufferCreator,
         createCBufferCmd,

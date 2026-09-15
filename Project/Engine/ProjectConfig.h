@@ -45,7 +45,9 @@ namespace ProjectConfig
 		enum class GlobalBufferTableSetting
 		{
 			//TransformMatrixBufferの同時存在最大数
-			kSizeOfTransformMatrixBufferArray = 100,
+			kSizeOfTransformMatrixContainerBuffer = 100,
+			//そのマテリアルバージョン
+			kSizeOfMaterialContainerBuffer = 100,
 
 		};
 
