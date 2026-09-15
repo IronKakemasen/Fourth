@@ -43,7 +43,7 @@ void TextureContext::TextureBufferCreator::GlobalConstantBufferPackager::Package
 
 	//そのバッファのコンスタントバッファを生成し
 	auto cBufferID_cBuffer = 
-		createCBufferCmd(bufferName, (UINT)(sizeof(SRVHeapIndex)), ConstantBuffers::ConstantBufferBindSlots::kTextureContainer);
+		createCBufferCmd(bufferName, (UINT)(sizeof(SRVHeapIndex)), (UINT)ConstantBuffers::ConstantBufferBindSlots::kTextureContainer);
 
 	//データを書き込む
 	//その定数バッファのマップしたポインタにデータを書き込む

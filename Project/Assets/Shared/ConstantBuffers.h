@@ -9,6 +9,7 @@ namespace ConstantBuffers
 	{
 		kMeshDataContainer,
 		kTransformMatrixContainer,
+		kMaterialContainer,
 		kTextureContainer
 
 		, kCount
@@ -26,6 +27,7 @@ namespace ConstantBuffers
 	{
 		MeshDataID meshDataID;
 		uint32_t transformMatrixID;
+		uint32_t materialID;
 	};
 
 	struct PassBufferIndexRangeCPUGPU
@@ -43,6 +45,7 @@ struct PerDrawIndices
 {
 	uint meshDataID;
 	uint transformMatrixID;
+	uint materialID;
 };
 
 struct PassBufferIndexRange
@@ -62,14 +65,19 @@ cbuffer TransformMatrixContainerIndexCB : register(b1)
 	uint gTransformMatrixContainerIndex;
 }
 
-cbuffer TextureContainerIndexCB : register(b2)
+cbuffer MaterialContainerIndexCB : register(b2)
+{
+	uint gMaterialContainerIndex;
+}
+
+cbuffer TextureContainerIndexCB : register(b3)
 {
 	uint gTextureContainerIndex;
 }
 
-ConstantBuffer<PerDrawIndices> gPerDrawIndices: register(b3);
+ConstantBuffer<PerDrawIndices> gPerDrawIndices: register(b4);
 
-ConstantBuffer<PassBufferIndexRange> gPassBufferIndexRange: register(b4);
+ConstantBuffer<PassBufferIndexRange> gPassBufferIndexRange: register(b5);
 
 #endif
 

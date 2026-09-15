@@ -140,12 +140,11 @@ void ModelContext::ModelDataCreator::CreateAllModelData
     ///「TransformMatrix」と「Material」（現状）
     ///のコンテナのUploadStructuredBufferを作成し、そのsrvHeapIndexの定数バッファも作成する。
     ///ランタイム用にTransformMatrixのコンテナのバッファのユニークIDをmodelDataBatcherが保管する
-    PerDrawDataBufferCreator::Create
+    PerDrawDataBufferCreator::CreatePerDrawConstntBuffer
     (
         bufferCreator,
-        createCBufferCmd,
-        modelDataBatcher_
-
+        modelDataBatcher_,
+        createCBufferCmd
     );
 
     //meshDataIDLibraryの中身をログ出力

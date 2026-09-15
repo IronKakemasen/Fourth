@@ -8,54 +8,89 @@
 //ほんとはuploadStructuredBufferDescriptionだけでいいんだけど、文字列制限なのかインクルードできないので
 #include "../../../../../../Buffer/BufferDefinition/AllBufferDescsInclude.h"
 #include "../../../../../../Buffer/BufferDefinition/AllBuffersInclude.h"
-#include "../../../../../../../../Assets/Shared/StructuredBufferModelData.h"
 
 
+using namespace ConstantBuffers;
 using namespace StructuredBufferModelData;
 using namespace ProjectConfig::Render;
+using namespace BufferContextCmds;
 
-void ModelContext::ModelDataCreator::PerDrawDataBufferCreator::Create
+void ModelContext::ModelDataCreator::PerDrawDataBufferCreator::CreatePerDrawConstntBuffer
 (
 	BufferContext::BufferCreator* bufferCreator_,
-	BufferContextCmds::CreateCBufferCmd createCBufferCmd_,
-	ModelDataBatcher* modelDataBatcher_
+	ModelDataBatcher* modelDataBatcher_,
+	CreateCBufferCmd& createCBufferCmd_
 )
 {
-	//まずTransformMatrixのUploadStructuredBufferを作成するためのディスクリプションの生成
-	///データ型はTransformMatrixCPUGPU
-	///用意する数はkSizeOfTransformMatrixArrayBuffer個分 = 最大でモデルを描画できる数
-	///！！！！！UploadStructuredBufferはダブルバッファなのでsrvは2個作られる！！！！！
-	UploadStructuredBufferDescription desc
+	Create<ConstantBufferBindSlots::kTransformMatrixContainer>(bufferCreator_, modelDataBatcher_, createCBufferCmd_);
+	Create<ConstantBufferBindSlots::kMaterialContainer>(bufferCreator_, modelDataBatcher_, createCBufferCmd_);
+
+
+	//最後に、perDrawDataのコンスタントバッファを作る
+	CreatePerDrawCBuffer(createCBufferCmd_);
+
+}
+
+void ModelContext::ModelDataCreator::PerDrawDataBufferCreator::CreatePerDrawCBuffer(CreateCBufferCmd& createCBufferCmd_)
+{
+	auto cBufferID_cBuffer = createCBufferCmd_
 	(
-		UINT(sizeof(TransformMatrixCPUGPU)),
-		UINT(GlobalBufferTableSetting::kSizeOfTransformMatrixContainerBuffer),
-		0
+		"PerDrawIndices",
+		UINT(sizeof(PerDrawIndicesCPUGPU)),
+		(UINT)RootConstantsBindSlots::kPerDrawIndices
 	);
 
-	//UploadStructuredBufferとして生成
-	std::string const bufferName = "TransformMatrixContainer";
-	auto bufferUnique_buffer = bufferCreator_->CreateWithBuffer(desc, bufferName);
+}
 
-	///ランタイムでTransformMatrixはもちろん更新するから、その索引用として
-	///こいつのIDは頂戴する
-	modelDataBatcher_->ImportPerDrawBufferID<ModelDataBatcher::BufferType::kTransformMatrixContainer>
-		(ModelDataBatcher::Local_InputBufferUniqueIDLicence{}, bufferUnique_buffer.first);
 
+
+std::array<SRVHeapIndex, UINT(NumBuffer::kDoubleBuffer)>
+ModelContext::ModelDataCreator::PerDrawDataBufferCreator::ExtractSrvHeapIndices(UploadStructuredBuffer* srcBuffer_)
+{
 	//SRVHeapIndexを抽出
-	auto* readableBuffer = static_cast<IReadable*>(bufferUnique_buffer.second);
-	
-	//そのコンスタントバッファを生成し、データを入力する
+	auto* readableBuffer = static_cast<IReadable*>(srcBuffer_);
+
+	return 	{ readableBuffer->OutProperSRVHeapIndex(0) ,readableBuffer->OutProperSRVHeapIndex(1) };
+}
+
+void ModelContext::ModelDataCreator::PerDrawDataBufferCreator::PackageInConstanrBuffer
+(
+	UploadStructuredBuffer* dstBuffer_,
+	CreateCBufferCmd& createCBufferCmd_,
+	ConstantBufferBindSlots dstSlot_
+)
+{
 	///定数バッファはダブルバッファなので、それぞれに別々のsrvHeapIndexを入力する
 
 	//定数バッファ生成コマンドで生成する
-	auto cBufferID_cBuffer = createCBufferCmd_(bufferName, UINT(sizeof(SRVHeapIndex)), ConstantBuffers::ConstantBufferBindSlots::kTransformMatrixContainer);
-	
-	//その定数バッファのマップしたポインタにデータを書き込む
-	cBufferID_cBuffer.second->WriteInBoth<SRVHeapIndex>
+	auto cBufferID_cBuffer = createCBufferCmd_
 	(
-		{ readableBuffer->OutProperSRVHeapIndex(0) ,readableBuffer->OutProperSRVHeapIndex(1) }
+		dstBuffer_->WatchName(),
+		UINT(sizeof(SRVHeapIndex)),
+		(UINT)dstSlot_
 	);
 
+	//定数バッファにデータを書き込む
+	cBufferID_cBuffer.second->WriteInBoth<SRVHeapIndex>(ExtractSrvHeapIndices(dstBuffer_));
+}
 
 
+std::pair<BufferUniqueID,UploadStructuredBuffer*> ModelContext::ModelDataCreator::PerDrawDataBufferCreator::CreateBuffer
+(
+	DescParam const& descParam_,
+	BufferContext::BufferCreator* bufferCreator_
+)
+{
+	//まずTransformMatrixのUploadStructuredBufferを作成するためのディスクリプションの生成
+	///！！！！！UploadStructuredBufferはダブルバッファなのでsrvは2個作られる！！！！！
+	UploadStructuredBufferDescription desc
+	(
+		descParam_.sizeOfStructure,
+		descParam_.sizeOfArr,
+		0
+	);
+
+	auto bufferUnique_buffer = bufferCreator_->CreateWithBuffer(desc, descParam_.bufferName);
+
+	return bufferUnique_buffer;
 }

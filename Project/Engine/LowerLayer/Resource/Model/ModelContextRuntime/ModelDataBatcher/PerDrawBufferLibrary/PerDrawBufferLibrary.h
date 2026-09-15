@@ -4,42 +4,28 @@
 class ModelContext::ModelDataBatcher::PerDrawBufferLibrary
 {
 public:
+
 	PerDrawBufferLibrary(NexusFieldProof proof_);
 
-	template<BufferType idType>
+	template<ConstantBuffers::ConstantBufferBindSlots bufferType>
 	void Import(BufferUniqueID uniqueID_)
 	{
-		bufferIDs.at(UINT(idType)) = uniqueID_;
-		std::string bufferName = BufferTypeTraits<idType>::kBufferName;
+		bufferIDMap[bufferType] = uniqueID_;
+		std::string bufferName = BufferTypeTraits<bufferType>::kBufferName;
+
 		Logger::Log("Import " + bufferName + " UniqueID: " + std::to_string(UINT(uniqueID_)), "PerDrawBufferLibrary.h");
 	}
 
-	template<BufferType idType>
+	template<ConstantBuffers::ConstantBufferBindSlots bufferType>
 	BufferUniqueID Export()
 	{
-		return bufferIDs[(idType)];
+		return bufferIDMap[bufferType];
 	}
 
 
 private:
 
-	template<BufferType idType>
-	struct BufferTypeTraits;
-
-	std::array<BufferUniqueID, (UINT)BufferType::kCount> bufferIDs;
+	std::unordered_map<ConstantBuffers::ConstantBufferBindSlots,BufferUniqueID> bufferIDMap;
 
 };
 
-template<>
-struct ModelContext::ModelDataBatcher::PerDrawBufferLibrary::BufferTypeTraits
-<ModelContext::ModelDataBatcher::BufferType::kTransformMatrixContainer>
-{
-	static inline std::string const kBufferName = "TransformMatrixContainer";
-};
-
-template<>
-struct ModelContext::ModelDataBatcher::PerDrawBufferLibrary::BufferTypeTraits
-	<ModelContext::ModelDataBatcher::BufferType::kMaterialContainer>
-{
-	static inline std::string const kBufferName = "MaterialContainer";
-};

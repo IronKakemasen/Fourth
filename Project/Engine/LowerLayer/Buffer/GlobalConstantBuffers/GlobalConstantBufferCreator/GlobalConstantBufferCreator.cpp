@@ -21,7 +21,11 @@ BufferContext::GlobalConstantBufferCreator::GlobalConstantBufferCreator
 }
 
 std::pair<BufferUniqueID, ConstantBuffer*> BufferContext::GlobalConstantBufferCreator::Create
-(std::string name_, UINT const realDataSize_, ConstantBuffers::ConstantBufferBindSlots const bindSlot_)
+(
+	std::string name_, 
+	UINT const realDataSize_, 
+	UINT const bindSlot_
+)
 {
 
 	ConstantBufferDescription desc(realDataSize_);
@@ -33,7 +37,7 @@ std::pair<BufferUniqueID, ConstantBuffer*> BufferContext::GlobalConstantBufferCr
 	(
 		GlobalConstantBuffers::Local_ImportLicence{},
 		id_buffer.second->WatchName(),
-		(UINT)bindSlot_,
+		bindSlot_,
 		{
 			id_buffer.second->GetResource(GPUBufferBehavior::ResourceAccessKey{}, 0)->GetGPUVirtualAddress(),
 			id_buffer.second->GetResource(GPUBufferBehavior::ResourceAccessKey{}, 1)->GetGPUVirtualAddress()
@@ -45,7 +49,7 @@ std::pair<BufferUniqueID, ConstantBuffer*> BufferContext::GlobalConstantBufferCr
 
 BufferContextCmds::CreateCBufferCmd BufferContext::GlobalConstantBufferCreator::ProvideCreateCBufferCmd(ProviderKey key_)
 {
-	return [this](std::string name_, UINT const realDataSize_, ConstantBuffers::ConstantBufferBindSlots const bindSlot_)
+	return [this](std::string name_, UINT const realDataSize_, UINT const bindSlot_)
 	{
 		return Create(name_, realDataSize_, bindSlot_);
 	};
