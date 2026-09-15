@@ -143,8 +143,8 @@ void ModelContext::ModelDataCreator::CreateAllModelData
     PerDrawDataBufferCreator::CreatePerDrawConstntBuffer
     (
         bufferCreator,
-        createCBufferCmd,
-        modelDataBatcher_
+        modelDataBatcher_,
+        createCBufferCmd
     );
 
     //meshDataIDLibraryの中身をログ出力

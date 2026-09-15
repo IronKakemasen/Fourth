@@ -12,6 +12,20 @@ class ModelContext::ModelDataCreator::PerDrawDataBufferCreator
 {
 	friend class ModelContext::ModelDataCreator;
 
+	///モデルの個体ごとに送るデータの大本データのバッファを作成する
+	///meshDataのほうは別クラスで作成済みなので、それ以外。
+	///TransformMatrixContainer,MaterialContainer
+	///そしてモデルの個体ごとに送るperDrawDataはルートコンスタンツなので、それの定数バッファも作成しちゃう
+	static void CreatePerDrawConstntBuffer
+	(
+		BufferContext::BufferCreator* bufferCreator_,
+		ModelDataBatcher* modelDataBatcher_,
+		BufferContextCmds::CreateCBufferCmd& createCBufferCmd_
+	);
+
+		//以下ヘルパー
+private:
+
 	//ディスクの引数と同じだが、余計にインクルードしたくないため
 	struct DescParam
 	{
@@ -20,22 +34,14 @@ class ModelContext::ModelDataCreator::PerDrawDataBufferCreator
 		std::string const bufferName;
 	};
 
-	static void CreatePerDrawConstntBuffer
-	(
-		BufferContext::BufferCreator* bufferCreator_,
-		BufferContextCmds::CreateCBufferCmd createCBufferCmd_,
-		ModelDataBatcher* modelDataBatcher_
-	);
-
-		//以下ヘルパー
-private:
-
 	//バッファのディスクを作って、uploadStructuredBuffer(ダブルバッファ)を作成
-	template<ModelDataBatcher::BufferType bufferType>
-	static std::array<SRVHeapIndex, UINT(ProjectConfig::Render::NumBuffer::kDoubleBuffer)> Create
+	//そのSrvHeapIndexのコンスタントバッファを作成
+	template<ConstantBuffers::ConstantBufferBindSlots bufferType>
+	static void Create
 	(
 		BufferContext::BufferCreator* bufferCreator_,
-		ModelDataBatcher* modelDataBatcher_
+		ModelDataBatcher* modelDataBatcher_,
+		BufferContextCmds::CreateCBufferCmd& createCBufferCmd_
 	)
 	{
 		//バッファのディスク(厳密にはイミテーション)
@@ -48,15 +54,13 @@ private:
 		modelDataBatcher_->ImportPerDrawBufferID<bufferType>
 			(ModelDataBatcher::Local_InputBufferUniqueIDLicence{}, bufferID_bufferPtr.first);
 
-		//作成したバッファのsrvHeapIndexを出力
-		///あとで、perDrawBufferの定数バッファを作成するために必要
+		//作成したバッファのsrvHeapIndexをマッピングした定数バッファを作成
+		PackageInConstanrBuffer(bufferID_bufferPtr.second, createCBufferCmd_, bufferType);
 
-		//SRVHeapIndexを抽出
-		return 	ExtractSrvHeapIndices(bufferID_bufferPtr.second);
 	}
 
-
-	template<ModelDataBatcher::BufferType bufferType>
+	//UploadStructuredBufferDescのイミテーションを作成
+	template<ConstantBuffers::ConstantBufferBindSlots bufferType>
 	static DescParam CreateDesc()
 	{
 		return DescParam
@@ -67,12 +71,14 @@ private:
 		);
 	}
 
+	//巨大データバッファ(UploadStructuredBuffer)を作成
 	static std::pair<BufferUniqueID, UploadStructuredBuffer*> CreateBuffer
 	(
 		DescParam const& descParam_,
 		BufferContext::BufferCreator* bufferCreator_
 	);
 
+	//巨大データバッファのsrvHeapIndexを定数バッファに梱包
 	static void PackageInConstanrBuffer
 	(
 		UploadStructuredBuffer* dstBuffer_,
@@ -80,8 +86,12 @@ private:
 		ConstantBuffers::ConstantBufferBindSlots dstSlot_
 	);
 
+	//srvHeapIndex抽出
 	static std::array<SRVHeapIndex, UINT(ProjectConfig::Render::NumBuffer::kDoubleBuffer)>
 		ExtractSrvHeapIndices(UploadStructuredBuffer* srcBuffer_);
+
+	//ルートコンスタンツであるPerDrawIndicesの定数バッファを作成する
+	static void CreatePerDrawCBuffer(BufferContextCmds::CreateCBufferCmd& createCBufferCmd_);
 
 };
 

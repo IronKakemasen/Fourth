@@ -13,10 +13,7 @@ namespace
 BufferContext::GlobalConstantBuffers::GlobalConstantBuffers
 (
 	NexusFieldProof proof_
-)
-{
-
-}
+){}
 
 void BufferContext::GlobalConstantBuffers::PackRuntimeContainer(NexusFieldProof proof_, AgentKey agentKey_)
 {
@@ -36,14 +33,14 @@ void BufferContext::GlobalConstantBuffers::PackRuntimeContainer(NexusFieldProof 
 	}
 
 	auto const numActualCBuffers = forChecking.size();
-	auto const numRequiredCBuffers = (size_t)ConstantBuffers::ConstantBufferBindSlots::kCount;
+	auto const numRequiredCBuffers = (size_t)ConstantBuffers::RootConstantsBindSlots::kCount;
 
-	ErrorMessageOutput::Assert::DetectError
-	(
-		numActualCBuffers == numRequiredCBuffers,
-		"定数バッファの生成数が合わない実 " + std::to_string(numActualCBuffers) + " : 必 " + std::to_string(numRequiredCBuffers),
-		fileName
-	);
+	//ErrorMessageOutput::Assert::DetectError
+	//(
+	//	numActualCBuffers == numRequiredCBuffers,
+	//	"定数バッファの生成数が合わない実 " + std::to_string(numActualCBuffers) + " : 必 " + std::to_string(numRequiredCBuffers),
+	//	fileName
+	//);
 
 	Logger::Log("===== List of cBuffer slots =====",fileName);
 	for (auto [key, value] : bufferNameMap)

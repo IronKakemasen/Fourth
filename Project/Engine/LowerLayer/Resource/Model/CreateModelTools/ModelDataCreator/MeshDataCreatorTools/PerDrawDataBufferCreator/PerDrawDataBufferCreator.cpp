@@ -8,27 +8,43 @@
 //ほんとはuploadStructuredBufferDescriptionだけでいいんだけど、文字列制限なのかインクルードできないので
 #include "../../../../../../Buffer/BufferDefinition/AllBufferDescsInclude.h"
 #include "../../../../../../Buffer/BufferDefinition/AllBuffersInclude.h"
-#include "../../../../../../../../Assets/Shared/StructuredBufferModelData.h"
 
 
+using namespace ConstantBuffers;
 using namespace StructuredBufferModelData;
 using namespace ProjectConfig::Render;
+using namespace BufferContextCmds;
 
 void ModelContext::ModelDataCreator::PerDrawDataBufferCreator::CreatePerDrawConstntBuffer
 (
 	BufferContext::BufferCreator* bufferCreator_,
-	BufferContextCmds::CreateCBufferCmd createCBufferCmd_,
-	ModelDataBatcher* modelDataBatcher_
+	ModelDataBatcher* modelDataBatcher_,
+	CreateCBufferCmd& createCBufferCmd_
 )
 {
-	Create<ModelDataBatcher::BufferType::kTransformMatrixContainer>(bufferCreator_, modelDataBatcher_);
-	Create<ModelDataBatcher::BufferType::kMaterialContainer>(bufferCreator_, modelDataBatcher_);
+	Create<ConstantBufferBindSlots::kTransformMatrixContainer>(bufferCreator_, modelDataBatcher_, createCBufferCmd_);
+	Create<ConstantBufferBindSlots::kMaterialContainer>(bufferCreator_, modelDataBatcher_, createCBufferCmd_);
+
+
+	//最後に、perDrawDataのコンスタントバッファを作る
+	CreatePerDrawCBuffer(createCBufferCmd_);
+
+}
+
+void ModelContext::ModelDataCreator::PerDrawDataBufferCreator::CreatePerDrawCBuffer(CreateCBufferCmd& createCBufferCmd_)
+{
+	auto cBufferID_cBuffer = createCBufferCmd_
+	(
+		"PerDrawIndices",
+		UINT(sizeof(PerDrawIndicesCPUGPU)),
+		(UINT)RootConstantsBindSlots::kPerDrawIndices
+	);
 
 }
 
 
 
-std::array<SRVHeapIndex, UINT(ProjectConfig::Render::NumBuffer::kDoubleBuffer)>
+std::array<SRVHeapIndex, UINT(NumBuffer::kDoubleBuffer)>
 ModelContext::ModelDataCreator::PerDrawDataBufferCreator::ExtractSrvHeapIndices(UploadStructuredBuffer* srcBuffer_)
 {
 	//SRVHeapIndexを抽出
@@ -40,14 +56,10 @@ ModelContext::ModelDataCreator::PerDrawDataBufferCreator::ExtractSrvHeapIndices(
 void ModelContext::ModelDataCreator::PerDrawDataBufferCreator::PackageInConstanrBuffer
 (
 	UploadStructuredBuffer* dstBuffer_,
-	BufferContextCmds::CreateCBufferCmd& createCBufferCmd_,
-	ConstantBuffers::ConstantBufferBindSlots dstSlot_
+	CreateCBufferCmd& createCBufferCmd_,
+	ConstantBufferBindSlots dstSlot_
 )
 {
-	//SRVHeapIndexを抽出
-	auto* readableBuffer = static_cast<IReadable*>(dstBuffer_);
-
-	//そのコンスタントバッファを生成し、データを入力する
 	///定数バッファはダブルバッファなので、それぞれに別々のsrvHeapIndexを入力する
 
 	//定数バッファ生成コマンドで生成する
@@ -55,15 +67,11 @@ void ModelContext::ModelDataCreator::PerDrawDataBufferCreator::PackageInConstanr
 	(
 		dstBuffer_->WatchName(),
 		UINT(sizeof(SRVHeapIndex)),
-		dstSlot_
+		(UINT)dstSlot_
 	);
 
-	//その定数バッファのマップしたポインタにデータを書き込む
-	cBufferID_cBuffer.second->WriteInBoth<SRVHeapIndex>
-	(
-		{ readableBuffer->OutProperSRVHeapIndex(0) ,readableBuffer->OutProperSRVHeapIndex(1) }
-	);
-
+	//定数バッファにデータを書き込む
+	cBufferID_cBuffer.second->WriteInBoth<SRVHeapIndex>(ExtractSrvHeapIndices(dstBuffer_));
 }
 
 

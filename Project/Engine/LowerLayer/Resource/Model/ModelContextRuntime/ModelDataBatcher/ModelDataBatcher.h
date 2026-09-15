@@ -15,22 +15,13 @@ public:
 
 	struct Local_InputBufferUniqueIDLicence;
 
-	enum class BufferType
-	{
-		kTransformMatrixContainer,
-		kMaterialContainer
-		
-
-		,kCount
-	};
-
 	ModelDataBatcher(NexusFieldProof proof_);
 	~ModelDataBatcher();
 
-	template<BufferType idType>
+	template<ConstantBuffers::ConstantBufferBindSlots bufferType>
 	void ImportPerDrawBufferID(Local_InputBufferUniqueIDLicence licence_,BufferUniqueID id_);
 
-	template<BufferType idType>
+	template<ConstantBuffers::ConstantBufferBindSlots bufferType>
 	struct BufferTypeTraits;
 
 private:
@@ -51,22 +42,19 @@ private:
 
 template<>
 struct ModelContext::ModelDataBatcher::BufferTypeTraits
-	<ModelContext::ModelDataBatcher::BufferType::kTransformMatrixContainer>
+	<ConstantBuffers::ConstantBufferBindSlots::kTransformMatrixContainer>
 {
 	static inline std::string const kBufferName = "TransformMatrixContainer";
 	static constexpr UINT kArrSize = (UINT)ProjectConfig::Render::CBufferSize::kSizeOfTransformMatrixContainerBuffer;
 	static constexpr UINT kStructureSize = (UINT)sizeof(StructuredBufferModelData::TransformMatrixCPUGPU);
-	//static constexpr UINT kConstantBufferSlot = (UINT)ConstantBuffers::ConstantBufferBindSlots::kTransformMatrixContainer;
 };
 
 template<>
 struct ModelContext::ModelDataBatcher::BufferTypeTraits
-	<ModelContext::ModelDataBatcher::BufferType::kMaterialContainer>
+	<ConstantBuffers::ConstantBufferBindSlots::kMaterialContainer>
 {
 	static inline std::string const kBufferName = "MaterialContainer";
 	static constexpr UINT kArrSize = (UINT)ProjectConfig::Render::CBufferSize::kSizeOfMaterialContainerBuffer;
 	static constexpr UINT kStructureSize = (UINT)sizeof(StructuredBufferModelData::MaterialGPU);
-	//static constexpr UINT kConstantBufferSlot = (UINT)ConstantBuffers::ConstantBufferBindSlots::kTransformMatrixContainer;
-
 };
 

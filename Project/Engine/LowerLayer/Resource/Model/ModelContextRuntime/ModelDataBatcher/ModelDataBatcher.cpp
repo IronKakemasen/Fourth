@@ -15,24 +15,24 @@ ModelContext::ModelDataBatcher::~ModelDataBatcher()
 }
 
 template<>
-void ModelContext::ModelDataBatcher::ImportPerDrawBufferID<ModelContext::ModelDataBatcher::BufferType::kTransformMatrixContainer>
+void ModelContext::ModelDataBatcher::ImportPerDrawBufferID<ConstantBuffers::ConstantBufferBindSlots::kTransformMatrixContainer>
 (Local_InputBufferUniqueIDLicence licence_, BufferUniqueID id_)
 {
-	perDrawBufferLibrary->Import<ModelContext::ModelDataBatcher::BufferType::kTransformMatrixContainer>(id_);
+	perDrawBufferLibrary->Import<ConstantBuffers::ConstantBufferBindSlots::kTransformMatrixContainer>(id_);
 }
 
 template<>
-void ModelContext::ModelDataBatcher::ImportPerDrawBufferID<ModelContext::ModelDataBatcher::BufferType::kMaterialContainer>
+void ModelContext::ModelDataBatcher::ImportPerDrawBufferID<ConstantBuffers::ConstantBufferBindSlots::kMaterialContainer>
 (Local_InputBufferUniqueIDLicence licence_, BufferUniqueID id_)
 {
-	perDrawBufferLibrary->Import<ModelContext::ModelDataBatcher::BufferType::kMaterialContainer>(id_);
+	perDrawBufferLibrary->Import<ConstantBuffers::ConstantBufferBindSlots::kMaterialContainer>(id_);
 }
 
 
 template
-void ModelContext::ModelDataBatcher::ImportPerDrawBufferID<ModelContext::ModelDataBatcher::BufferType::kTransformMatrixContainer>
+void ModelContext::ModelDataBatcher::ImportPerDrawBufferID<ConstantBuffers::ConstantBufferBindSlots::kTransformMatrixContainer>
 (Local_InputBufferUniqueIDLicence licence_, BufferUniqueID id_);
 
 template
-void ModelContext::ModelDataBatcher::ImportPerDrawBufferID<ModelContext::ModelDataBatcher::BufferType::kMaterialContainer>
+void ModelContext::ModelDataBatcher::ImportPerDrawBufferID<ConstantBuffers::ConstantBufferBindSlots::kMaterialContainer>
 (Local_InputBufferUniqueIDLicence licence_, BufferUniqueID id_);
