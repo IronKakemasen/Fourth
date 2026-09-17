@@ -33,16 +33,16 @@ Model* ModelContext::ModelCreator::Create
 )
 {
 	//commonとuniqueのディスクリプション
-	auto commons_uniques = modelDescAssembler->Assemble(modelFileName_, materials_);
+	auto [commons,uniques,materialsGPU] = modelDescAssembler->Assemble(modelFileName_, materials_);
 
 	///一つのDescに詰める
 	ModelDescription modelDesc
 	(
 		modelName_ + std::to_string(numCreate++),
-		commons_uniques.first,
-		commons_uniques.second,
+		commons,
+		uniques,
 		modelRenderStates_,
-		std::vector<MaterialGPU>{}
+		materialsGPU
 	);
 
 	///モデルクラスのインスタンス化

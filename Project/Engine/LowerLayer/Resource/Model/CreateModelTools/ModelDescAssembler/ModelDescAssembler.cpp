@@ -1,6 +1,6 @@
 #include "PreCompileHeader.h"
 #include "ModelDescAssembler.h"
-#include "../../CreateModelTools/ModelSlotAllocator/MeshDataIDLibrary/MeshDataIDLibrary.h"
+#include "../../CreateModelTools/ModelSlotAllocator/ModelDataLibrary/ModelDataLibrary.h"
 
 
 //外部
@@ -28,18 +28,27 @@ using namespace StructuredBufferModelData;
 ModelContext::ModelDescAssembler::ModelDescSet ModelContext::ModelDescAssembler::Assemble
 (
 	std::string modelFileName_,
-	std::vector<MaterialCPU> const& materials_
+	std::vector<MaterialCPU> const& inputMaterials_
 )
 {
-	auto& meshDataIDLib = slotAllocator->AccessMeshDataIDLibrary(ModelContext::ModelSlotAllocator::HandleLicence{});
+	//modelDataLibraryにアクセス
+	auto& modelDataLibrary = slotAllocator->AccessModelDataLibrary(ModelContext::ModelSlotAllocator::HandleLicence{});
 	
-	//モデルファイル名からメッシュデータのユニークIDを検索
-	const std::vector<MeshDataID>& meshDataIDs = meshDataIDLib.Find(modelFileName_);
-	
+	//モデルファイル名からサブメッシュ分含む、メッシュデータのユニークIDを検索
+	std::vector<MeshDataID> const& meshDataIDs = modelDataLibrary.Find<MeshDataID>(modelFileName_);
+	//マテリアルも同様
+	std::vector<MaterialCPU> const& materialsFromFile = modelDataLibrary.Find<MaterialCPU>(modelFileName_);
+
 	//サブメッシュ含む、メッシュの総数
 	size_t const kNumMeshData = meshDataIDs.size();
 
-	return std::make_pair(PackCommonData(meshDataIDs, kNumMeshData), PackUniqueData(kNumMeshData));
+	return ModelDescSet
+	(
+		PackCommonData(meshDataIDs, kNumMeshData),
+		PackUniqueData(kNumMeshData),
+		ConvertMaterialData(kNumMeshData, materialsFromFile, inputMaterials_)
+	);
+
 }
 
 std::vector<ModelDescription::Common> ModelContext::ModelDescAssembler::PackCommonData
@@ -74,7 +83,6 @@ std::vector<ModelDescription::Unique> ModelContext::ModelDescAssembler::PackUniq
 		ModelDescription::Unique unique;
 		auto const licence = ModelContext::ModelSlotAllocator::AllocateLicence{};
 
-
 		//トランスフォームIDを割り当てる
 		unique.dispatchedTransformedMatrixID =
 			slotAllocator->AllocateSlot<ModelContext::ModelSlotAllocator::TransformMatrixSlot>(licence);
@@ -93,31 +101,47 @@ std::vector<ModelDescription::Unique> ModelContext::ModelDescAssembler::PackUniq
 std::vector<MaterialGPU> ModelContext::ModelDescAssembler::ConvertMaterialData
 (
 	size_t const kNumMeshData_,
-	std::vector<MaterialCPU> const& materials_
+	std::vector<MaterialCPU> const& materialsFromFile_,
+	std::vector<MaterialCPU> const& inputMaterials
 )
 {
 	//テクスチャファイルパスから、テクスチャファイル名へ変換
 	std::vector<MaterialGPU> materialGPUContainer;
 
-	//送られてきたデータのサイズ
-	auto const sizeOfSrc = materials_.size();
-
+	//サブメッシュ分も拡張する
 	materialGPUContainer.resize(kNumMeshData_);
 
 	for (size_t i = 0;i < kNumMeshData_;++i)
 	{
-		//データが入力されているのなら
-		if (i < sizeOfSrc)
+		//データの手動入力があれば
+		if (i < inputMaterials.size())
 		{
-			materialGPUContainer[i].albedoTexture = textureLib->Export(materials_[i].albedoTexture);
-			materialGPUContainer[i].normalTexture = textureLib->Export(materials_[i].normalTexture);
-			materialGPUContainer[i].emissiveTexture = textureLib->Export(materials_[i].emissiveTexture);
-			materialGPUContainer[i].roughness = materials_[i].roughness;
-			materialGPUContainer[i].metallic = materials_[i].metallic;
+			materialGPUContainer[i].albedoTexture = textureLib->Export(inputMaterials[i].albedoTexture);
+			materialGPUContainer[i].normalTexture = textureLib->Export(inputMaterials[i].normalTexture);
+			materialGPUContainer[i].emissiveTexture = textureLib->Export(inputMaterials[i].emissiveTexture);
+			materialGPUContainer[i].roughness = inputMaterials[i].roughness;
+			materialGPUContainer[i].metallic = inputMaterials[i].metallic;
 		}
 		//入力されてないなら、モデル名に紐づけられているデータから入力する
 		else
 		{
+			if (i < materialsFromFile_.size())
+			{
+				materialGPUContainer[i].albedoTexture = textureLib->Export(materialsFromFile_[i].albedoTexture);
+				materialGPUContainer[i].normalTexture = textureLib->Export(materialsFromFile_[i].normalTexture);
+				materialGPUContainer[i].emissiveTexture = textureLib->Export(materialsFromFile_[i].emissiveTexture);
+				materialGPUContainer[i].roughness = materialsFromFile_[i].roughness;
+				materialGPUContainer[i].metallic = materialsFromFile_[i].metallic;
+			}
+			//ファイルからフェッチしたマテリアルデータがないなら適当な値を入れておく
+			else
+			{
+				materialGPUContainer[i].albedoTexture = textureLib->Export("");
+				materialGPUContainer[i].normalTexture = textureLib->Export("");
+				materialGPUContainer[i].emissiveTexture = textureLib->Export("");
+				materialGPUContainer[i].roughness = 0.1f;
+				materialGPUContainer[i].metallic = 1.0f;
+			}
 
 		}
 	}

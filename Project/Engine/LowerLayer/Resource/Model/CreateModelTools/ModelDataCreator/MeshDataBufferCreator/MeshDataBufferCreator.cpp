@@ -1,13 +1,13 @@
 #include "PreCompileHeader.h"
 #include "MeshDataBufferCreator.h"
-#include "../../../../ModelStructure/ModelData/ModelData.h"
-#include "../../../ModelSlotAllocator/MeshDataIDLibrary/MeshDataIDLibrary.h"
+#include "../../../ModelStructure/ModelData/ModelData.h"
+#include "../../ModelSlotAllocator/ModelDataLibrary/ModelDataLibrary.h"
 
 //外部
-#include "../../../../../../Buffer/BufferCreateTools/BufferCreator.h"
+#include "../../../../../Buffer/BufferCreateTools/BufferCreator.h"
 //ほんとはstaticStructuredBufferDescriptionだけでいいんだけど、文字列制限なのかインクルードできないので
-#include "../../../../../../Buffer/BufferDefinition/AllBufferDescsInclude.h"
-#include "../../../../../../../../Assets/Shared/StructuredBufferModelData.h"
+#include "../../../../../Buffer/BufferDefinition/AllBufferDescsInclude.h"
+#include "../../../../../../../Assets/Shared/StructuredBufferModelData.h"
 
 using namespace StructuredBufferModelData;
 
@@ -69,13 +69,8 @@ ModelContext::ModelDataCreator::MeshDataBufferCreator::CreateMeshDataBuffer
     }
 
     //モデルのファイル名とメッシュデータIDを紐づける
-    auto& meshDataIDLibrary = allocator_->AccessMeshDataIDLibrary(ModelContext::ModelSlotAllocator::HandleLicence{});
-
-    meshDataIDLibrary.LinkModelFileNameToMeshDataID
-    (
-        modelFileName_, 
-        meshDataIDContainer
-    );
+    auto& ModelDataLibrary = allocator_->AccessModelDataLibrary(ModelContext::ModelSlotAllocator::HandleLicence{});
+    ModelDataLibrary.Link(modelFileName_, meshDataIDContainer);
 
     //バッファコレクターに生成したバッファを仕分けしてもらう
     bufferCollector_->Distribute();

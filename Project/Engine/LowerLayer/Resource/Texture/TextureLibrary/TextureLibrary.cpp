@@ -24,6 +24,13 @@ SRVHeapIndex TextureContext::TextureLibrary::Export(std::string const name_)cons
 {
 	std::string actualName = name_;
 
+	//引数のテクスチャファイル名またはパス名が空だった場合は、noNameテクスチャを埋め込む
+	if (actualName.size() == 0)
+	{
+		actualName = kNoDataTex;
+		return data.at(actualName);
+	}
+
 	//まずリスト内に存在しているかチェック
 	if (data.find(name_) == data.end())
 	{

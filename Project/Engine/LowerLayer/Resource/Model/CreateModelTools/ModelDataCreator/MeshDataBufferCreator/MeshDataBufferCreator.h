@@ -1,6 +1,6 @@
 #pragma once
-#include "../../ModelDataCreator.h"
-#include "../../../../../../../../Assets/Shared/StructuredBufferModelData.h"
+#include "../ModelDataCreator.h"
+#include "../../../../../../../Assets/Shared/StructuredBufferModelData.h"
 
 
 class ModelContext::ModelDataCreator::MeshDataBufferCreator

@@ -3,14 +3,14 @@
 
 #include "../../ModelStructure/ModelData/ModelData.h"
 #include "../ModelDataLoader/ModelDataLoader.h"
-#include "../ModelSlotAllocator/MeshDataIDLibrary/MeshDataIDLibrary.h"
+#include "../ModelSlotAllocator/ModelDataLibrary/ModelDataLibrary.h"
 
-#include "MeshDataCreatorTools/ModelDataTransducer/ModelDataTransducer.h"
-#include "MeshDataCreatorTools/MeshDataBufferCreator/MeshDataBufferCreator.h"
-#include "MeshDataCreatorTools/MeshDataBufferUploader/MeshDataBufferUploader.h"
-#include "MeshDataCreatorTools/MeshDataBufferSRVHeapIndexGroupPackager/MeshDataBufferSRVHeapIndexGroupPackager.h"
-#include "MeshDataCreatorTools/MeshDataSRVHeapIndexGroupContainerBufferCreator/MeshDataSRVHeapIndexGroupContainerBufferCreator.h"
-#include "MeshDataCreatorTools/PerDrawDataBufferCreator/PerDrawDataBufferCreator.h"
+#include "ModelDataTransducer/ModelDataTransducer.h"
+#include "MeshDataBufferCreator/MeshDataBufferCreator.h"
+#include "MeshDataBufferUploader/MeshDataBufferUploader.h"
+#include "MeshDataBufferSRVHeapIndexGroupPackager/MeshDataBufferSRVHeapIndexGroupPackager.h"
+#include "MeshDataSRVHeapIndexGroupContainerBufferCreator/MeshDataSRVHeapIndexGroupContainerBufferCreator.h"
+#include "PerDrawDataBufferCreator/PerDrawDataBufferCreator.h"
 
 //外部
 #include "../../../../Buffer/BufferContextDiplomat/BufferDiplomatIncludes.h"
@@ -79,7 +79,6 @@ void ModelContext::ModelDataCreator::CreateAllModelData
     ///そのバッファのsrvHeapIndexは配列に詰められ、コンスタントバッファとして転送される。
     std::vector<MeshDataSRVHeapIndexGroupGPUCPU> tmpMeshDataSRVHeapIndexGroupContainer;
 
-
     //モデルデータライブラリー
     std::unordered_map<std::string, ModelData*> tmpModelDataLib = LoadAllModelFiles(modelDataLoader_);
 
@@ -91,6 +90,8 @@ void ModelContext::ModelDataCreator::CreateAllModelData
     auto createCBufferCmd = bufferContextDiplomat_.Access<BufferContext::CmdProvider>()->
         Provide<BufferContextCmds::CreateCBufferCmd>(licence);
 
+    //modelDataLibraryにアクセス
+    auto& modelDataLibrary = allocator_->AccessModelDataLibrary(ModelContext::ModelSlotAllocator::HandleLicence{});
 
     for (const auto& [key, value] : tmpModelDataLib)
     {
@@ -124,6 +125,9 @@ void ModelContext::ModelDataCreator::CreateAllModelData
             tmpMeshDataSRVHeapIndexGroupContainer,
             bufferDispatcher
         );
+
+        //モデルファイルから読み込んだマテリアルデータとモデルファイル名を紐づける
+        modelDataLibrary.Link(key, value->resourceMaterial);
     }
 
     ///tmpMeshDataSRVHeapIndexGroupContainerのバッファを作る
@@ -147,9 +151,8 @@ void ModelContext::ModelDataCreator::CreateAllModelData
         createCBufferCmd
     );
 
-    //meshDataIDLibraryの中身をログ出力
-    auto& meshDataIDLibrary = allocator_->AccessMeshDataIDLibrary(ModelContext::ModelSlotAllocator::HandleLicence{});
-    meshDataIDLibrary.Log();
+    //ModelDataLibraryの中身をログ出力
+    modelDataLibrary.Log();
 }
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
