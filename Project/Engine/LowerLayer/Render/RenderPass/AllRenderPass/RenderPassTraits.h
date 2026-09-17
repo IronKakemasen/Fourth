@@ -9,18 +9,18 @@ namespace RenderPassTraits
 	struct PassClassTraits;
 
 	template<>
-	struct PassClassTraits<SceneTextureCreatorOpaque>
+	struct PassClassTraits<SceneOpaque>
 	{
-		static inline const std::string name = "SceneTextureCreatorOpaque";
-		static constexpr RenderPassComponent::Pass passEnum = RenderPassComponent::Pass::kSceneTextureCreatorOpaque;
+		static inline const std::string name = "SceneOpaque";
+		static constexpr RenderPassComponent::Pass passEnum = RenderPassComponent::Pass::kSceneOpaque;
 
 	};
 
 	template<>
-	struct PassClassTraits<SceneTextureCompositor>
+	struct PassClassTraits<SceneCompositor>
 	{
-		static inline const std::string name = "SceneTextureCompositor";
-		static constexpr RenderPassComponent::Pass passEnum = RenderPassComponent::Pass::kSceneTextureCompositor;
+		static inline const std::string name = "SceneCompositor";
+		static constexpr RenderPassComponent::Pass passEnum = RenderPassComponent::Pass::kSceneCompositor;
 
 	};
 
@@ -29,13 +29,13 @@ namespace RenderPassTraits
 	{
 		RenderPassComponent::Pass pass = RenderPassComponent::Pass::kEnd;
 
-		if (passName_ == PassClassTraits<SceneTextureCreatorOpaque>::name)
+		if (passName_ == PassClassTraits<SceneOpaque>::name)
 		{
-			pass = PassClassTraits<SceneTextureCreatorOpaque>::passEnum;
+			pass = PassClassTraits<SceneOpaque>::passEnum;
 		}
-		else if (passName_ == PassClassTraits<SceneTextureCompositor>::name)
+		else if (passName_ == PassClassTraits<SceneCompositor>::name)
 		{
-			pass = PassClassTraits<SceneTextureCompositor>::passEnum;
+			pass = PassClassTraits<SceneCompositor>::passEnum;
 		}
 		else
 		{
@@ -51,15 +51,15 @@ namespace RenderPassTraits
     struct PassTypeToPassClass;
 
 	template<>
-	struct PassTypeToPassClass<RenderPassComponent::Pass::kSceneTextureCreatorOpaque>
+	struct PassTypeToPassClass<RenderPassComponent::Pass::kSceneOpaque>
 	{
-		using PassClass = SceneTextureCreatorOpaque;
+		using PassClass = SceneOpaque;
 	};
 
 	template<>
-	struct PassTypeToPassClass<RenderPassComponent::Pass::kSceneTextureCompositor>
+	struct PassTypeToPassClass<RenderPassComponent::Pass::kSceneCompositor>
 	{
-		using PassClass = SceneTextureCompositor;
+		using PassClass = SceneCompositor;
 	};
 
 }

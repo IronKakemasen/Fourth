@@ -62,7 +62,8 @@ if (Test-Path $ShaderFolder)
             continue
         }
 
-        $key = $file.BaseName
+        $folderName = $file.Directory.Name
+        $key = $file.BaseName + $folderName
         if (-not $registeredShaderKeys.Contains($key))
         {
             $null = $registeredShaderKeys.Add($key)
@@ -83,15 +84,15 @@ if (Test-Path $ShaderFolder)
 
         $line = "key: `"$key`" , value: `"$value`""
 
-        if ($key -like "*PS*")
+        if ($folderName -eq "PS")
         {
             $linesPS += $line
         }
-        elseif ($key -like "*MS*")
+        elseif ($folderName -eq "MS")
         {
             $linesMS += $line
         }
-        elseif ($key -like "*CS*")
+        elseif ($folderName -eq "CS")
         {
             $linesCS += $line
         }

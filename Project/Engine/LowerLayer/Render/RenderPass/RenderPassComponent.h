@@ -7,8 +7,8 @@ namespace RenderPassComponent
     ///これにバッファの情報から深度テスト方法などの情報が詰まってるといっていい
 	enum class Pass
 	{
-		kSceneTextureCreatorOpaque,
-        kSceneTextureCompositor
+		kSceneOpaque,
+        kSceneCompositor
 		
 		
 		,kCount,

@@ -13,7 +13,7 @@ namespace ShaderTable
 
 		switch (pass_)
 		{
-		case RenderPassComponent::Pass::kSceneTextureCreatorOpaque:
+		case RenderPassComponent::Pass::kSceneOpaque:
 
 			if (meshType_ == ShaderPathComponent::MeshType::kStatic)meshShader = "StaticMS";
 
@@ -48,7 +48,7 @@ namespace ShaderTable
 
 		switch (pass_)
 		{
-		case RenderPassComponent::Pass::kSceneTextureCreatorOpaque:
+		case RenderPassComponent::Pass::kSceneOpaque:
 
 			if (materialType_ == ShaderPathComponent::MaterialType::kStandard)pixelShader = "StandardPS";
 

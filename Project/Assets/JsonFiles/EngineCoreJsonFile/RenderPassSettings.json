@@ -1,9 +1,9 @@
 {
-    "SceneTextureCompositor": 
+    "SceneCompositor": 
     {
                                 "isOffScreen" : true,
                                 "ms" : "FullScreenMS",
-                                "ps" : "CompositorPS",
+                                "ps" : "SceneCompositorPS",
 
                                 "colorBufferName":["CompositedTex "],
                                 "blendMode": ["kOpaque"], 
@@ -22,7 +22,7 @@
                                 
                                 "useDepthStencil": false
     },
-    "SceneTextureCreatorOpaque": 
+    "SceneOpaque": 
      {
                                 "isOffScreen" : false,
 

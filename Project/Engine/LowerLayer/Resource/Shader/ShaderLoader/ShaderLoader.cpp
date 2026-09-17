@@ -5,6 +5,8 @@
 #include "StringConverter/StringConverter.h"
 #include "RegistryLoader/RegistryLoader.h"
 
+//外部
+#include "StringProcessing/StringProcessing.h"
 
 ShaderContext::ShaderLoader::ShaderLoader
 (
@@ -36,12 +38,18 @@ void ShaderContext::ShaderLoader::CompileAllShaderFiles(NexusFieldProof proof_, 
 
     for (const auto& [key, value] : shaderRegistryMS)
     {
-        shaderLibrary_->Import(proof_, key, compiler.CompileShader(value, key, msProfile, shaderFileNameToArgs[key]));
+        //MSやPSなどの文字列は本来のファイルネームには存在しないのでカットしている
+        std::string const actualFileName = StringProcessing::Cut(key, 2);
+
+        shaderLibrary_->Import(proof_, key, compiler.CompileShader(value, actualFileName, msProfile, shaderFileNameToArgs[key]));
     }
 
     for (const auto& [key, value] : shaderRegistryPS)
     {
-        shaderLibrary_->Import(proof_, key, compiler.CompileShader(value, key, psProfile, shaderFileNameToArgs[key]));
+        //MSやPSなどの文字列は本来のファイルネームには存在しないのでカットしている
+        std::string const actualFileName = StringProcessing::Cut(key, 2);
+
+        shaderLibrary_->Import(proof_, key, compiler.CompileShader(value, actualFileName, psProfile, shaderFileNameToArgs[key]));
     }
 
     Logger::Log("Complete Load All Shaders", "ShaderLoader.cpp");

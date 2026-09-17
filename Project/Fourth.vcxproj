@@ -364,7 +364,7 @@
     <ClCompile Include="Engine\LowerLayer\Resource\PSO\PSO_Container\PSO_Container.cpp" />
     <ClCompile Include="Engine\LowerLayer\Resource\PSO\PSO_ContextDiplomat\PSO_ContextDiplomat.cpp" />
     <ClCompile Include="Engine\LowerLayer\Resource\PSO\PSO_ContextDiplomat\PSO_ContextToolLender\PSO_ContextToolLender.cpp" />
-    <ClCompile Include="Engine\LowerLayer\Render\RenderPass\AllRenderPass\SceneTextureCreatorOpaque\SceneTextureCreatorOpaque.cpp" />
+    <ClCompile Include="Engine\LowerLayer\Render\RenderPass\AllRenderPass\SceneOpaque\SceneOpaque.cpp" />
     <ClCompile Include="Engine\LowerLayer\Render\RenderPass\PassDesc\PassDesc.cpp" />
     <ClCompile Include="Engine\LowerLayer\Render\RenderPass\RenderPassCreator\RenderPassCreator.cpp" />
     <ClCompile Include="Engine\LowerLayer\Render\RenderPass\RenderPassContainer\RenderPassContainer.cpp" />
@@ -375,7 +375,7 @@
     <ClCompile Include="Engine\LowerLayer\Render\RenderPath\RenderPathAssembler\PathSettingsLoader\PathSettingsLoader.cpp" />
     <ClCompile Include="Engine\LowerLayer\Render\RenderContextRuntime\RenderGraph\RenderGraph.cpp" />
     <ClCompile Include="Engine\LowerLayer\Render\RenderPath\RenderPathContainer\RenderPathContainer.cpp" />
-    <ClCompile Include="Engine\LowerLayer\Render\RenderPass\AllRenderPass\SceneTextureCompositor\SceneTextureCompositor.cpp" />
+    <ClCompile Include="Engine\LowerLayer\Render\RenderPass\AllRenderPass\SceneCompositor\SceneCompositor.cpp" />
     <ClCompile Include="Engine\LowerLayer\Render\RenderContextRuntime\RenderGraph\RenderGraphBuilder\GraphicsRootSigBuilder\GraphicsRootSigBuilder.cpp" />
     <ClCompile Include="Engine\LowerLayer\Render\RenderContextRuntime\RenderGraph\RenderGraphBuilder\RenderPathBuilder\RenderPathBuilder.cpp" />
     <ClCompile Include="Engine\LowerLayer\Render\RenderContextRuntime\RenderGraph\RenderGraphBuilder\GraphicsPSO_Builder\GraphicsPSO_Builder.cpp" />
@@ -628,7 +628,7 @@
     <ClInclude Include="Engine\LowerLayer\Resource\PSO\PSO_Container\PSO_Container.h" />
     <ClInclude Include="Engine\LowerLayer\Resource\PSO\PSO_ContextDiplomat\PSO_ContextDiplomat.h" />
     <ClInclude Include="Engine\LowerLayer\Resource\PSO\PSO_ContextDiplomat\PSO_ContextToolLender\PSO_ContextToolLender.h" />
-    <ClInclude Include="Engine\LowerLayer\Render\RenderPass\AllRenderPass\SceneTextureCreatorOpaque\SceneTextureCreatorOpaque.h" />
+    <ClInclude Include="Engine\LowerLayer\Render\RenderPass\AllRenderPass\SceneOpaque\SceneOpaque.h" />
     <ClInclude Include="Engine\LowerLayer\Render\RenderPass\PassDesc\PassDesc.h" />
     <ClInclude Include="Engine\LowerLayer\Render\RenderPass\RenderPassCreator\RenderPassCreator.h" />
     <ClInclude Include="Engine\LowerLayer\Render\RenderPass\RenderPassContainer\RenderPassContainer.h" />
@@ -639,7 +639,7 @@
     <ClInclude Include="Engine\LowerLayer\Render\RenderPath\RenderPathAssembler\PathSettingsLoader\PathSettingsLoader.h" />
     <ClInclude Include="Engine\LowerLayer\Render\RenderContextRuntime\RenderGraph\RenderGraph.h" />
     <ClInclude Include="Engine\LowerLayer\Render\RenderPath\RenderPathContainer\RenderPathContainer.h" />
-    <ClInclude Include="Engine\LowerLayer\Render\RenderPass\AllRenderPass\SceneTextureCompositor\SceneTextureCompositor.h" />
+    <ClInclude Include="Engine\LowerLayer\Render\RenderPass\AllRenderPass\SceneCompositor\SceneCompositor.h" />
     <ClInclude Include="Engine\LowerLayer\Render\RenderContextRuntime\RenderGraph\RenderGraphBuilder\GraphicsRootSigBuilder\GraphicsRootSigBuilder.h" />
     <ClInclude Include="Engine\LowerLayer\Render\RenderContextRuntime\RenderGraph\RenderGraphBuilder\RenderPathBuilder\RenderPathBuilder.h" />
     <ClInclude Include="Engine\LowerLayer\Render\RenderContextRuntime\RenderGraph\RenderGraphBuilder\GraphicsPSO_Builder\GraphicsPSO_Builder.h" />
@@ -664,7 +664,6 @@
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
-    <Text Include="Assets\AssetsRule.txt" />
     <Text Include="Engine\LowerLayer\Resource\Shader\whenMakeNewShaderFile.txt" />
   </ItemGroup>
   <ItemGroup>

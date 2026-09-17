@@ -1,11 +1,11 @@
 #pragma once
-#include "SceneTextureCreatorOpaque/SceneTextureCreatorOpaque.h"
-#include "SceneTextureCompositor/SceneTextureCompositor.h"
+#include "SceneOpaque/SceneOpaque.h"
+#include "SceneCompositor/SceneCompositor.h"
 
 
 
 using AllPassUnique = std::tuple
 <
-	std::unique_ptr<SceneTextureCreatorOpaque>,
-	std::unique_ptr<SceneTextureCompositor>
+	std::unique_ptr<SceneOpaque>,
+	std::unique_ptr<SceneCompositor>
 >;
