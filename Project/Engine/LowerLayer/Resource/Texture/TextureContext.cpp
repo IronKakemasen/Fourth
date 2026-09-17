@@ -2,6 +2,10 @@
 #include "TextureContext.h"
 #include "TextureLibrary/TextureLibrary.h"
 #include "TextureBufferCreator/TextureBufferCreator.h"
+#include "TextureContextDiplomat/TextureContextDiplomat.h"
+#include "TextureContextDiplomat/TextureContextToolLender/TextureContextToolLender.h"
+
+
 
 namespace
 {
@@ -21,8 +25,19 @@ TextureContext::TextureContext
 	textureLibrary.reset(new TextureLibrary(proof_));
 	Logger::Log("Instantiate: TextureLibrary", fileName);
 
+	//ここですべてのコンパイルされたテクスチャファイルを読み込んで、バッファを作る
 	TextureBufferCreator textureBufferCreator(proof_, *textureLibrary, bufferContextDiplomat_);
 
+	diplomat.reset
+	(
+		new TextureContextDiplomat
+		(
+			proof_,
+			std::make_unique<ToolLender>(proof_, textureLibrary.get())
+		)
+	);
+	Logger::Log("Instantiate: TextureContextDiplomat", fileName);
+	Logger::Log("Instantiate: ToolLender", fileName);
 
 
 

@@ -217,7 +217,7 @@ void Nexus::Init<Nexus::InitSequence::kRenderContext>()
 template<>
 void Nexus::Init<Nexus::InitSequence::kModelContext>()
 {
-	modelContext.reset(new ModelContext(ModelContext::NexusFieldProof{},bufferContext->diplomat.get()));
+	modelContext.reset(new ModelContext(ModelContext::NexusFieldProof{},*bufferContext->diplomat,*textureContext->diplomat));
 	Logger::Log("Instantiate: ModelContext", fileName);
 }
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////

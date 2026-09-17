@@ -30,7 +30,7 @@ ModelContext::ModelDataCreator::ModelDataCreator
     ModelDataLoader& modelDataLoader_,
     ModelSlotAllocator* allocator_,
     ModelDataBatcher* modelDataBatcher_,
-    BufferContextDiplomat* bufferContextDiplomat_
+    BufferContextDiplomat& bufferContextDiplomat_
 )
 {
 	Logger::Entry("ModelDataCreator: Constructor");
@@ -54,7 +54,7 @@ void ModelContext::ModelDataCreator::CreateAllModelData
     ModelDataLoader& modelDataLoader_,
     ModelContext::ModelSlotAllocator* allocator_,
     ModelDataBatcher* modelDataBatcher_,
-    BufferContextDiplomat* bufferContextDiplomat_
+    BufferContextDiplomat& bufferContextDiplomat_
 
 )
 {
@@ -88,7 +88,7 @@ void ModelContext::ModelDataCreator::CreateAllModelData
 
     //定数バッファ生成コマンドを提供してもらう
     BufferContext::CmdProvider::LicenceType<BufferContextCmds::CreateCBufferCmd> licence;
-    auto createCBufferCmd = bufferContextDiplomat_->Access<BufferContext::CmdProvider>()->
+    auto createCBufferCmd = bufferContextDiplomat_.Access<BufferContext::CmdProvider>()->
         Provide<BufferContextCmds::CreateCBufferCmd>(licence);
 
 
@@ -179,10 +179,10 @@ std::unordered_map<std::string , ModelData*> ModelContext::ModelDataCreator::Loa
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-ModelContext::ModelDataCreator::BufferContextTools ModelContext::ModelDataCreator::BorrowBufferContextTools(BufferContextDiplomat* bufferContextDiplomat_)
+ModelContext::ModelDataCreator::BufferContextTools ModelContext::ModelDataCreator::BorrowBufferContextTools(BufferContextDiplomat& bufferContextDiplomat_)
 {
     //バッファコンテキストのツールレンダーからいろんなツールを借りる
-    auto bufferToolLender = bufferContextDiplomat_->Access<BufferContext::ToolLender>();
+    auto bufferToolLender = bufferContextDiplomat_.Access<BufferContext::ToolLender>();
     BufferContext::ToolLender::LicenceType<BufferContext::BufferCreator> licence{};
     
     auto* bufferCreator = bufferToolLender->Lend<BufferContext::BufferCreator>(licence);

@@ -11,13 +11,13 @@ namespace
 ModelContext::ModelSlotAllocator::TransformMatrixSlot::TransformMatrixSlot(NexusFieldProof proof_)
 {
 	//使いまわしTransformMatrixのスロットのサイズを確保する
-	transformMatrixSlotList.Resize((UINT)ProjectConfig::Render::CBufferSize::kSizeOfTransformMatrixContainerBuffer);
+	slotList.Resize((UINT)ProjectConfig::Render::CBufferSize::kSizeOfTransformMatrixContainerBuffer);
 
 }
 
 uint32_t ModelContext::ModelSlotAllocator::TransformMatrixSlot::AllocateFreeSlot()
 {
-	uint32_t const numAllocated = transformMatrixSlotList.Distribute();
+	uint32_t const numAllocated = slotList.Distribute();
 	Logger::Log("Allocate: TransformMatrixSlot[" + std::to_string(numAllocated) + "]", fileName);
 
 	return numAllocated;

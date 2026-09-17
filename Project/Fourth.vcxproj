@@ -392,6 +392,9 @@
     <ClCompile Include="Engine\LowerLayer\Resource\Texture\TextureContext.cpp" />
     <ClCompile Include="Engine\LowerLayer\Resource\Texture\TextureLibrary\TextureLibrary.cpp" />
     <ClCompile Include="Engine\LowerLayer\Resource\Texture\TextureBufferCreator\TextureBufferCreator.cpp" />
+    <ClCompile Include="Engine\LowerLayer\Resource\Model\CreateModelTools\ModelSlotAllocator\MaterialSlot\MaterialSlot.cpp" />
+    <ClCompile Include="Engine\LowerLayer\Resource\Texture\TextureContextDiplomat\TextureContextDiplomat.cpp" />
+    <ClCompile Include="Engine\LowerLayer\Resource\Texture\TextureContextDiplomat\TextureContextToolLender\TextureContextToolLender.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Assets\BAKA\ConstantBuffers.h" />
@@ -458,6 +461,7 @@
     <ClInclude Include="Engine\LowerLayer\Resource\RootSignature\RootSignatureContextDiplomat\RootSignatureToolLender\RootSigToolLenderLicences.h" />
     <ClInclude Include="Engine\LowerLayer\Resource\Shader\ShaderContextDiplomat\ShaderContextToolLender\ShaderContextToolLenderLicences.h" />
     <ClInclude Include="Engine\LowerLayer\Resource\Shader\ShaderTable.h" />
+    <ClInclude Include="Engine\LowerLayer\Resource\Texture\TextureContextDiplomat\TextureContextToolLender\TextureContextToolLenderLicences.h" />
     <ClInclude Include="Engine\Utility\ClosedHashMap\ClosedHashMap.h" />
     <ClInclude Include="Engine\LowerLayer\Render\RenderContextRuntime\PSO_PoolDispatcher\GraphicsPSO_Key.h" />
     <ClInclude Include="Engine\LowerLayer\Render\RenderPass\RenderPassComponent.h" />
@@ -652,11 +656,15 @@
     <ClInclude Include="Engine\LowerLayer\Resource\Texture\TextureContext.h" />
     <ClInclude Include="Engine\LowerLayer\Resource\Texture\TextureLibrary\TextureLibrary.h" />
     <ClInclude Include="Engine\LowerLayer\Resource\Texture\TextureBufferCreator\TextureBufferCreator.h" />
+    <ClInclude Include="Engine\LowerLayer\Resource\Model\CreateModelTools\ModelSlotAllocator\MaterialSlot\MaterialSlot.h" />
+    <ClInclude Include="Engine\LowerLayer\Resource\Texture\TextureContextDiplomat\TextureContextDiplomat.h" />
+    <ClInclude Include="Engine\LowerLayer\Resource\Texture\TextureContextDiplomat\TextureContextToolLender\TextureContextToolLender.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
+    <Text Include="Assets\AssetsRule.txt" />
     <Text Include="Engine\LowerLayer\Resource\Shader\whenMakeNewShaderFile.txt" />
   </ItemGroup>
   <ItemGroup>

@@ -9,10 +9,7 @@ public:
 
 	 std::string const WatchName()const;
 
-	auto const& WatchRenderStates()const
-	{
-		return modelDesc.WatchRenderStates();
-	}
+	 auto const& WatchRenderStates()const { return modelDesc.WatchRenderStates(); }
 
 private:
 

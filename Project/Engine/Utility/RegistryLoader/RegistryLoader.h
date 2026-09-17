@@ -156,7 +156,6 @@ public:
     template<RegistryFileType fileType>
     static std::string ValueToKey(std::string const value_)
     {
-
         std::string filekKey;
 
         //レジストリファイルを読み込む
@@ -171,6 +170,13 @@ public:
                 break;
             }
         }
+
+        ErrorMessageOutput::Assert::DetectError
+        (
+            filekKey.size() > 0,
+            value_ + "これに対応するキーが無い",
+            "ModelRegistryLoader.h"
+        );
 
         return filekKey;
     }

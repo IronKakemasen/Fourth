@@ -40,11 +40,11 @@ namespace ShaderTable
 		return meshShader;
 	}
 
-	std::string const GetPixelShader(RenderPassComponent::Pass pass_, ShaderPathComponent::MaterialType materialType_)
+	std::optional<std::string> const GetPixelShader(RenderPassComponent::Pass pass_, ShaderPathComponent::MaterialType materialType_)
 	{
-		std::string pixelShader;
+		std::optional<std::string> pixelShader;
 
-		if (materialType_ == ShaderPathComponent::MaterialType::kNone) return "none";
+		return std::nullopt;
 
 		switch (pass_)
 		{
@@ -68,7 +68,7 @@ namespace ShaderTable
 
 		ErrorMessageOutput::Assert::DetectError
 		(
-			pixelShader.size() > 0,
+			pixelShader.has_value(),
 			"shaderTableにて設定外の組み合わせがきた(ピクセルシェーダ)",
 			"ShaderTable.h"
 		);

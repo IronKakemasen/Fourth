@@ -4,7 +4,6 @@
 
 class Model;
 
-
 class ModelContext::ModelCreator
 {
 public:
@@ -13,21 +12,25 @@ public:
 	(
 		NexusFieldProof proof_, 
 		std::unique_ptr<ModelContext::ModelDescAssembler>&& modelAssembler_,
-		ModelContext::ModelContainer* modelContainer_
+		ModelContext::ModelContainer& modelContainer_
 	);
 
 	Model* Create
 	(
-		std::string modelFileName_, 
-		const std::vector<ModelDescription::RenderState>& modelRenderStates_,
-		std::string modelName_ = "nameLess"
+		std::string const modelFileName_,
+		std::vector<ModelDescription::RenderState> const& modelRenderStates_,
+		std::vector<StructuredBufferModelData::MaterialCPU> const& materials_,
+		std::string const modelName_ = "nameLess"
 	);
 
 private:
 
 	//生成数。ネーミング用
 	UINT numCreate{};
+	//モデルディスク組み立て役
 	std::unique_ptr<ModelContext::ModelDescAssembler> modelDescAssembler;
-	ModelContext::ModelContainer* modelContainer;
+	//生成したユニークはこいつが管理する
+	ModelContext::ModelContainer& modelContainer;
+	
 };
 

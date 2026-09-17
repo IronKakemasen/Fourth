@@ -7,7 +7,8 @@
 
 using namespace RenderStateComponent;
 using namespace ShaderPathComponent;
-
+using namespace RenderPassComponent;
+using namespace StructuredBufferModelData;
 
 TestModelOKIBA::TestModelOKIBA(ModelContext::ModelCreator* modelCreator_)
 {
@@ -18,16 +19,17 @@ TestModelOKIBA::TestModelOKIBA(ModelContext::ModelCreator* modelCreator_)
 	cP.blendModes.emplace_back(BlendMode::kAlphaBlend);
 	cP.blendModes.emplace_back(BlendMode::kAdditive);
 
-	cP.pass = RenderPassComponent::Pass::kSceneTextureCreatorOpaque;
-
+	cP.pass = Pass::kSceneTextureCreatorOpaque;
 	cP.cullMode = CullMode::kBack;
 	cP.meshType = MeshType::kStatic;
 	cP.materialType = MaterialType::kStandard;
-
 	std::vector<ModelDescription::RenderState> playerC;
 	playerC.emplace_back(std::move(cP));
 
-	player = modelCreator_->Create("PlayerObj", playerC,"Player");
+	MaterialCPU materialCPU;
+	std::vector<MaterialCPU> materials;
+
+	player = modelCreator_->Create("PlayerObj", playerC, materials,"Player");
 
 
 	ModelDescription::RenderState cC;
@@ -40,6 +42,6 @@ TestModelOKIBA::TestModelOKIBA(ModelContext::ModelCreator* modelCreator_)
 	std::vector<ModelDescription::RenderState> cubeC;
 	cubeC.emplace_back(std::move(cC));
 
-	cube = modelCreator_->Create("CubeGltf", cubeC,"Cube");
+	cube = modelCreator_->Create("CubeGltf", cubeC, materials,"Cube");
 
 }

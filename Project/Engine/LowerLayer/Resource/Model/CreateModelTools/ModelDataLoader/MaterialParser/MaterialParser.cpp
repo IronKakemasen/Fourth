@@ -65,7 +65,23 @@ void ModelContext::ModelDataLoader::MaterialParser::ParseMaterial(MaterialCPU& d
         }
     }
 
+    //ラフネス
+    {
+        float roughness{};
+        if (pSrcMaterial_->Get(AI_MATKEY_ROUGHNESS_FACTOR, roughness) == AI_SUCCESS)
+        {
+            dstMaterial_.roughness = roughness;
+        }
+    }
 
+    //メタリック
+    {
+        float metallic{};
+        if (pSrcMaterial_->Get(AI_MATKEY_METALLIC_FACTOR, metallic) == AI_SUCCESS)
+        {
+            dstMaterial_.metallic = metallic;
+        }
+    }
 }
 
 

@@ -13,7 +13,6 @@ public:
 	//中身確認用
 	void Log();
 
-
 private:
 
 	std::unordered_map<std::string, SRVHeapIndex> data;
