@@ -48,5 +48,13 @@ namespace StringProcessing
         return path_.substr(0, dotPos);
     }
 
+    ///けつからn番目の文字をカットする
+    inline std::string Cut(std::string const dstString_, size_t const removeStartPos_)
+    {
+        auto const stringEndPos = dstString_.size() - removeStartPos_;
+
+        return dstString_.substr(0, stringEndPos);
+    }
+
 }
 

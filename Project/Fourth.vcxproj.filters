@@ -531,7 +531,7 @@
     <ClCompile Include="Engine\LowerLayer\Resource\PSO\PSO_ContextDiplomat\PSO_ContextToolLender\PSO_ContextToolLender.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="Engine\LowerLayer\Render\RenderPass\AllRenderPass\SceneTextureCreatorOpaque\SceneTextureCreatorOpaque.cpp">
+    <ClCompile Include="Engine\LowerLayer\Render\RenderPass\AllRenderPass\SceneOpaque\SceneOpaque.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
     <ClCompile Include="Engine\LowerLayer\Render\RenderPass\PassDesc\PassDesc.cpp">
@@ -576,7 +576,7 @@
     <ClCompile Include="Engine\LowerLayer\Resource\Model\ModelStructure\ModelDescription\ModelDescription.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="Engine\LowerLayer\Render\RenderPass\AllRenderPass\SceneTextureCompositor\SceneTextureCompositor.cpp">
+    <ClCompile Include="Engine\LowerLayer\Render\RenderPass\AllRenderPass\SceneCompositor\SceneCompositor.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
     <ClCompile Include="Engine\LowerLayer\Render\RenderContextRuntime\RenderGraph\RenderGraphBuilder\GraphicsRootSigBuilder\GraphicsRootSigBuilder.cpp">
@@ -1256,7 +1256,7 @@
     <ClInclude Include="Engine\LowerLayer\Render\RenderPass\PassDesc\BufferRequiredInfo.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\LowerLayer\Render\RenderPass\AllRenderPass\SceneTextureCreatorOpaque\SceneTextureCreatorOpaque.h">
+    <ClInclude Include="Engine\LowerLayer\Render\RenderPass\AllRenderPass\SceneOpaque\SceneOpaque.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
     <ClInclude Include="Engine\LowerLayer\Render\RenderPass\PassDesc\PassDesc.h">
@@ -1322,7 +1322,7 @@
     <ClInclude Include="Assets\Shared\StructuredBufferModelData.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\LowerLayer\Render\RenderPass\AllRenderPass\SceneTextureCompositor\SceneTextureCompositor.h">
+    <ClInclude Include="Engine\LowerLayer\Render\RenderPass\AllRenderPass\SceneCompositor\SceneCompositor.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
     <ClInclude Include="Engine\LowerLayer\Render\RenderPass\AllRenderPass\RenderPassTraits.h">
@@ -1436,6 +1436,5 @@
   </ItemGroup>
   <ItemGroup>
     <Text Include="Engine\LowerLayer\Resource\Shader\whenMakeNewShaderFile.txt" />
-    <Text Include="Assets\AssetsRule.txt" />
   </ItemGroup>
 </Project>

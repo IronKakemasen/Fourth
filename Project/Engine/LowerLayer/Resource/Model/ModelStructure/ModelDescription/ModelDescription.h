@@ -20,7 +20,7 @@ struct ModelDescription
 		RenderState() = default;
 
 		//どの描画パス(ステージ)で描画するか
-		RenderPassComponent::Pass pass = RenderPassComponent::Pass::kSceneTextureCreatorOpaque;
+		RenderPassComponent::Pass pass = RenderPassComponent::Pass::kSceneOpaque;
 		//ブレンドモード複数可
 		std::vector<RenderStateComponent::BlendMode> blendModes;
 		//どの面をカリングするか

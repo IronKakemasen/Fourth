@@ -9,11 +9,11 @@
                                   "none"
                               ]
                  },
-    "CompositorPS":  {
-                         "Args":  [
-                                      "none"
-                                  ]
-                     },
+    "SceneCompositorPS":  {
+                              "Args":  [
+                                           "none"
+                                       ]
+                          },
     "StandardPS":  {
                        "Args":  [
                                     "none"
