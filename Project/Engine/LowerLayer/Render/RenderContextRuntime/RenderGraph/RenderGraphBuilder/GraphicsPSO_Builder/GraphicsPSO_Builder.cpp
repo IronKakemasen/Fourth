@@ -50,7 +50,9 @@ void RenderContext::RenderGraph::PSO_Builder::Build
 	//そのディスクをもとにpsoを生成
 	CreateAllPSO(proof_, psoDispatcher_, allPSODesc, rootSignature_, pso_ContextDiplomat_);
 }
-
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 void RenderContext::RenderGraph::PSO_Builder::CreateAllPSO
 (
 	NexusFieldProof proof_,
@@ -103,8 +105,9 @@ void RenderContext::RenderGraph::PSO_Builder::CreateAllPSO
 	Logger::Log("\nnumPso(" + std::to_string(psoDispatcher_.WatchPSO_Size()) + ") = numPsoDescs(" + std::to_string(allDesc_.size()) + ") - duplicatedCnt(" + std::to_string(duplicatedCnt) + ")");
 
 }
-
-
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 std::vector<RenderContext::RenderGraph::PSO_Builder::PsoDesc_Key> RenderContext::RenderGraph::PSO_Builder::CreateAllPSO_Desc
 (
 	NexusFieldProof proof_,
@@ -287,17 +290,17 @@ void RenderContext::RenderGraph::PSO_Builder::InputDependingModelsInfo
 
 			///使用するシェーダーはPass X MeshType , Pass X MaterialType で決まる
 			std::string const msFileName = ShaderTable::GetMeshShader(renderPass_, renderState.meshType);
-			std::string const psFileName = ShaderTable::GetPixelShader(renderPass_, renderState.materialType);
+			std::optional<std::string> const psFileName = ShaderTable::GetPixelShader(renderPass_, renderState.materialType);
 
 			//ファイル名からBlobのポインタを引っ張る
 			renderStateCommon.first.shaderSet.meshShader = shaderLib->Export(msFileName);
 			renderStateCommon.first.shaderSet.meshShaderName = msFileName;
 
 			//ピクセルシェーダーを通さないケースもあるのでチェック
-			if (psFileName != "none")
+			if (psFileName.has_value())
 			{
-				renderStateCommon.first.shaderSet.pixelShader = shaderLib->Export(psFileName);
-				renderStateCommon.first.shaderSet.pixelShaderName = psFileName;
+				renderStateCommon.first.shaderSet.pixelShader = shaderLib->Export(*psFileName);
+				renderStateCommon.first.shaderSet.pixelShaderName = *psFileName;
 			}
 
 			//ラスタライザー関連
@@ -413,8 +416,9 @@ void RenderContext::RenderGraph::PSO_Builder::InputPassOnlyInfo
 	//出来上がったものを追加
 	allPsoDesc_.emplace_back(offscreenPassPsoDesc);
 }
-
-
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 std::vector<ModelDescription::RenderState> RenderContext::RenderGraph::PSO_Builder::CollectAllRenderStates
 (
 	ModelContextDiplomat& modelContextDiplomat_

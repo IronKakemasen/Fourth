@@ -27,7 +27,12 @@ namespace
 }
 
 
-ModelContext::ModelContext(NexusFieldProof proof_,BufferContextDiplomat* bufferContextDiplomat_)
+ModelContext::ModelContext
+(
+	NexusFieldProof proof_,
+	BufferContextDiplomat& bufferContextDiplomat_,
+	TextureContextDiplomat& textureContextDiplomat_
+) 
 {
 	Logger::Entry("ModelContext: Constructor");
 
@@ -48,8 +53,8 @@ ModelContext::ModelContext(NexusFieldProof proof_,BufferContextDiplomat* bufferC
 		new ModelCreator
 		(
 			proof_,
-			std::make_unique<ModelDescAssembler>(proof_, modelSlotAllocator.get()),
-			modelContainer.get()
+			std::make_unique<ModelDescAssembler>(proof_, modelSlotAllocator.get(), textureContextDiplomat_),
+			*modelContainer
 		)
 	);
 

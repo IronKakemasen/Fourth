@@ -47,9 +47,9 @@ namespace StructuredBufferModelData
 
     struct MaterialGPU
     {
-        SRVHeapIndex albedoTexture;
-        SRVHeapIndex normalTexture;
-        SRVHeapIndex emissiveTexture;
+        SRVHeapIndex albedoTexture{};
+        SRVHeapIndex normalTexture{};
+        SRVHeapIndex emissiveTexture{};
         Vector4<float> baseColor;
         float roughness{};
         float metallic{};

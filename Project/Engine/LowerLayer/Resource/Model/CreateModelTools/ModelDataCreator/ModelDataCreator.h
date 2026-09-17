@@ -58,7 +58,7 @@ public:
 		ModelDataLoader& modelDataLoader_,
 		ModelContext::ModelSlotAllocator* allocator_,
 		ModelDataBatcher* modelDataBatcher_,
-		BufferContextDiplomat* bufferContextDiplomat_
+		BufferContextDiplomat& bufferContextDiplomat_
 	);
 
 	ModelDataCreator
@@ -67,7 +67,7 @@ public:
 		ModelDataLoader& modelDataLoader_,
 		ModelSlotAllocator* allocator_, 
 		ModelDataBatcher* modelDataBatcher_,
-		BufferContextDiplomat* bufferContextDiplomat_
+		BufferContextDiplomat& bufferContextDiplomat_
 	);
 
 	~ModelDataCreator();
@@ -83,7 +83,7 @@ private:
 	std::unordered_map<std::string, ModelData*> LoadAllModelFiles(ModelDataLoader& modelDataLoader_);
 	
 	//バッファコンテキストクラスからツールをお借りする
-	BufferContextTools BorrowBufferContextTools(BufferContextDiplomat* bufferContextDiplomat_);
+	BufferContextTools BorrowBufferContextTools(BufferContextDiplomat& bufferContextDiplomat_);
 
 };
 

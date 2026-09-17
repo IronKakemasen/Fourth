@@ -79,7 +79,14 @@ CommandContextCmds::UploadBufferCommand CommandContext::ResourceUploader::Provid
 		UINT subResourceCount_
 	)
 	{
-		UpdateSubresources(commandList.Get(), dstResource_, intermediateResource_, 0, 0, subResourceCount_, subeResource_);
+		UINT64 result = UpdateSubresources(commandList.Get(), dstResource_, intermediateResource_, 0, 0, subResourceCount_, subeResource_);
+		
+		ErrorMessageOutput::Assert::DetectError
+		(
+			result != UINT64(-1),
+			"UpdateSubresources()でエラー",
+			fileName
+		);
 	};
 
 }

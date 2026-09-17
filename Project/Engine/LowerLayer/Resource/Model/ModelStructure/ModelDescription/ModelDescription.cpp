@@ -11,8 +11,9 @@ ModelDescription::ModelDescription
 	std::string modelName_,
 	std::vector<ModelDescription::Common> const& commons_,
 	std::vector<ModelDescription::Unique> const& uniques_,
-	std::vector<ModelDescription::RenderState> const& renderStates_
-) :commons(commons_), uniques(uniques_), renderStates(renderStates_)
+	std::vector<ModelDescription::RenderState> const& renderStates_,
+	std::vector<StructuredBufferModelData::MaterialGPU> materials_
+) :commons(commons_), uniques(uniques_), renderStates(renderStates_), materials(materials_)
 {
 	std::string errorMsg{};
 

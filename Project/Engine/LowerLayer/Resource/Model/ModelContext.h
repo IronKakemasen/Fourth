@@ -3,6 +3,7 @@
 class Nexus;
 class BufferContextDiplomat;
 class ModelContextDiplomat;
+class TextureContextDiplomat;
 
 ///tesutooooooooooooooooooooooooooooooooooo
 struct TestModelOKIBA;
@@ -45,7 +46,12 @@ public:
 	struct ProviderKey;
 
 
-	ModelContext(NexusFieldProof proof_, BufferContextDiplomat* bufferContextDiplomat_);
+	ModelContext
+	(
+		NexusFieldProof proof_, 
+		BufferContextDiplomat& bufferContextDiplomat_,
+		TextureContextDiplomat& textureContextDiplomat_
+	);
 	~ModelContext();
 
 	///代役に、モデルデータのキャッシュを消してもらう

@@ -13,8 +13,8 @@ public:
 
 private:
 
-	//TransformMatrixの空きインデックスのリスト
-	SimpleFreeList transformMatrixSlotList;
+	//TransformMatrixContainerの空きインデックスのリスト
+	SimpleFreeList slotList;
 
 };
 

@@ -2,6 +2,7 @@
 
 class Nexus;
 class BufferContextDiplomat;
+class TextureContextDiplomat;
 
 class TextureContext
 {
@@ -14,7 +15,8 @@ public:
 
 	///テクスチャファイル名をキーとしてsrvHeapIndexを管理する
 	class TextureLibrary;
-	
+	class ToolLender;
+
 
 	//ネクサスフィールドの証
 	struct NexusFieldProof;
@@ -26,6 +28,8 @@ public:
 	);
 
 	~TextureContext();
+
+	std::unique_ptr<TextureContextDiplomat> diplomat;
 
 private:
 

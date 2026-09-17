@@ -4,6 +4,10 @@
 #include "../../../../Render/RenderPass/RenderPassComponent.h"
 
 
+//外部
+#include "../../../../../../Assets/Shared/StructuredBufferModelData.h"
+
+
 ///2回のフェーズに分けてモデルクラスのデータを埋めていく
 ///上位層でモデルのファイル名と、サブメッシュ分も含めてRenderStatesをコンストラクタにセット
 ///モデルファイル名→Commonが定まり、Uniqueを必要数分割り当てる。
@@ -39,6 +43,8 @@ struct ModelDescription
 
 		//トランスフォームID
 		uint32_t dispatchedTransformedMatrixID{};
+		//マテリアルID
+		uint32_t dispatchedMaterialID{};
 	};
 
 	//そのモデルクラス共通
@@ -57,7 +63,8 @@ struct ModelDescription
 		std::string modelName_,
 		std::vector<ModelDescription::Common> const& commons_,
 		std::vector<ModelDescription::Unique> const& uniques_,
-		std::vector<ModelDescription::RenderState> const& renderStates_
+		std::vector<ModelDescription::RenderState> const& renderStates_,
+		std::vector<StructuredBufferModelData::MaterialGPU> materials_
 	);
 
 	inline std::vector<ModelDescription::RenderState> const& WatchRenderStates()const { return renderStates; }
@@ -70,8 +77,10 @@ private:
 	std::vector<ModelDescription::Unique> uniques;
 
 	//これ以下は自分で決める
-	//可変長になっているのは、複数分のPassに参加できるようにするため。理由がちゃう
+	//可変長になっているのは、複数分のPassに参加できるようにするため
 	//つまり、サブメッシュもすべて同じ設定
 	std::vector<ModelDescription::RenderState> renderStates;
 
+	//マテリアル。可変長になっているのは、サブメッシュ分用意しているから
+	std::vector<StructuredBufferModelData::MaterialGPU> materials;
 };
