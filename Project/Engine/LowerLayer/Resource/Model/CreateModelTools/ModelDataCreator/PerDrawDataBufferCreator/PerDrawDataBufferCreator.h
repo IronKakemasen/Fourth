@@ -1,9 +1,9 @@
 #pragma once
-#include "../../ModelDataCreator.h"
-#include "../../../../ModelContextRuntime/ModelDataBatcher/ModelDataBatcher.h"
+#include "../ModelDataCreator.h"
+#include "../../../ModelContextRuntime/ModelDataBatcher/ModelDataBatcher.h"
 
 //外部
-#include "../../../../../../Buffer/BufferContextCmds.h"
+#include "../../../../../Buffer/BufferContextCmds.h"
 
 class UploadStructuredBuffer;
 struct UploadStructuredBufferDescription;
@@ -27,7 +27,7 @@ class ModelContext::ModelDataCreator::PerDrawDataBufferCreator
 private:
 
 	//ディスクの引数と同じだが、余計にインクルードしたくないため
-	struct DescParam
+	struct DescImitation
 	{
 		UINT const sizeOfStructure;
 		UINT const sizeOfArr;
@@ -61,9 +61,9 @@ private:
 
 	//UploadStructuredBufferDescのイミテーションを作成
 	template<ConstantBuffers::ConstantBufferBindSlots bufferType>
-	static DescParam CreateDesc()
+	static DescImitation CreateDesc()
 	{
-		return DescParam
+		return DescImitation
 		(
 			ModelDataBatcher::BufferTypeTraits<bufferType>::kStructureSize,
 			ModelDataBatcher::BufferTypeTraits<bufferType>::kArrSize,
@@ -74,7 +74,7 @@ private:
 	//巨大データバッファ(UploadStructuredBuffer)を作成
 	static std::pair<BufferUniqueID, UploadStructuredBuffer*> CreateBuffer
 	(
-		DescParam const& descParam_,
+		DescImitation const& descImitation,
 		BufferContext::BufferCreator* bufferCreator_
 	);
 

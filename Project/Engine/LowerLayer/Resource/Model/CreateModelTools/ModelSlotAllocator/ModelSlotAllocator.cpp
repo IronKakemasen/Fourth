@@ -1,6 +1,6 @@
 #include "PreCompileHeader.h"
 #include "ModelSlotAllocator.h"
-#include "MeshDataIDLibrary/MeshDataIDLibrary.h"
+#include "ModelDataLibrary/ModelDataLibrary.h"
 #include "TransformMatrixSlot/TransformMatrixSlot.h"
 #include "MaterialSlot/MaterialSlot.h"
 
@@ -12,9 +12,8 @@ namespace
 
 ModelContext::ModelSlotAllocator::ModelSlotAllocator(NexusFieldProof proof_)
 {
-
-	meshDataIDLibrary.reset(new MeshDataIDLibrary(proof_));
-	Logger::Log("Instantiate: MeshDataIDLibrary", fileName);
+	modelDataLibrary.reset(new ModelDataLibrary(proof_));
+	Logger::Log("Instantiate: ModelDataLibrary", fileName);
 
 	transformMatrixSlot.reset(new TransformMatrixSlot(proof_));
 	Logger::Log("Instantiate: transformMatrixSlot", fileName);
@@ -47,8 +46,8 @@ uint32_t ModelContext::ModelSlotAllocator::AllocateSlot
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-ModelContext::ModelSlotAllocator::MeshDataIDLibrary& ModelContext::ModelSlotAllocator::AccessMeshDataIDLibrary(HandleLicence licence_)
+ModelContext::ModelSlotAllocator::ModelDataLibrary& ModelContext::ModelSlotAllocator::AccessModelDataLibrary(HandleLicence licence_)
 {
-	return *meshDataIDLibrary;
+	return *modelDataLibrary;
 }
 

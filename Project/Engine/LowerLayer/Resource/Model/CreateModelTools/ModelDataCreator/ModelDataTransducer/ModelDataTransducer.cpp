@@ -2,8 +2,8 @@
 #include "ModelDataTransducer.h"
 
 //外部
-#include "../../../../../../Buffer/BufferRuntime/BufferDispatcher/BufferDispatcher.h"
-#include "../../../../../../Buffer/BufferDefinition/GPUBuffer/StaticStructuredBuffer/StaticStructuredBuffer.h"
+#include "../../../../../Buffer/BufferRuntime/BufferDispatcher/BufferDispatcher.h"
+#include "../../../../../Buffer/BufferDefinition/GPUBuffer/StaticStructuredBuffer/StaticStructuredBuffer.h"
 
 using namespace StructuredBufferModelData;
 

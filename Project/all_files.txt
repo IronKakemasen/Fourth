@@ -11421,7 +11421,6 @@ TestModelOKIBA::TestModelOKIBA(ModelContext::ModelCreator* modelCreator_)
 	cP.materialType = MaterialType::kStandard;
 	std::vector<ModelDescription::RenderState> playerC;
 	playerC.emplace_back(std::move(cP));
-	MaterialCPU materialCPU;
 	std::vector<MaterialCPU> materials;
 	player = modelCreator_->Create("PlayerObj", playerC, materials,"Player");
 	ModelDescription::RenderState cC;
@@ -11478,15 +11477,15 @@ Model* ModelContext::ModelCreator::Create
 )
 {
 	//commonとuniqueのディスクリプション
-	auto commons_uniques = modelDescAssembler->Assemble(modelFileName_, materials_);
+	auto [commons,uniques,materialsGPU] = modelDescAssembler->Assemble(modelFileName_, materials_);
 	///一つのDescに詰める
 	ModelDescription modelDesc
 	(
 		modelName_ + std::to_string(numCreate++),
-		commons_uniques.first,
-		commons_uniques.second,
+		commons,
+		uniques,
 		modelRenderStates_,
-		std::vector<MaterialGPU>{}
+		materialsGPU
 	);
 	///モデルクラスのインスタンス化
 	std::unique_ptr<Model> model = std::make_unique<Model>(modelDesc);
@@ -11535,13 +11534,13 @@ private:
 #include "ModelDataCreator.h"
 #include "../../ModelStructure/ModelData/ModelData.h"
 #include "../ModelDataLoader/ModelDataLoader.h"
-#include "../ModelSlotAllocator/MeshDataIDLibrary/MeshDataIDLibrary.h"
-#include "MeshDataCreatorTools/ModelDataTransducer/ModelDataTransducer.h"
-#include "MeshDataCreatorTools/MeshDataBufferCreator/MeshDataBufferCreator.h"
-#include "MeshDataCreatorTools/MeshDataBufferUploader/MeshDataBufferUploader.h"
-#include "MeshDataCreatorTools/MeshDataBufferSRVHeapIndexGroupPackager/MeshDataBufferSRVHeapIndexGroupPackager.h"
-#include "MeshDataCreatorTools/MeshDataSRVHeapIndexGroupContainerBufferCreator/MeshDataSRVHeapIndexGroupContainerBufferCreator.h"
-#include "MeshDataCreatorTools/PerDrawDataBufferCreator/PerDrawDataBufferCreator.h"
+#include "../ModelSlotAllocator/ModelDataLibrary/ModelDataLibrary.h"
+#include "ModelDataTransducer/ModelDataTransducer.h"
+#include "MeshDataBufferCreator/MeshDataBufferCreator.h"
+#include "MeshDataBufferUploader/MeshDataBufferUploader.h"
+#include "MeshDataBufferSRVHeapIndexGroupPackager/MeshDataBufferSRVHeapIndexGroupPackager.h"
+#include "MeshDataSRVHeapIndexGroupContainerBufferCreator/MeshDataSRVHeapIndexGroupContainerBufferCreator.h"
+#include "PerDrawDataBufferCreator/PerDrawDataBufferCreator.h"
 //外部
 #include "../../../../Buffer/BufferContextDiplomat/BufferDiplomatIncludes.h"
 #include "RegistryLoader/RegistryLoader.h"
@@ -11603,6 +11602,8 @@ void ModelContext::ModelDataCreator::CreateAllModelData
     BufferContext::CmdProvider::LicenceType<BufferContextCmds::CreateCBufferCmd> licence;
     auto createCBufferCmd = bufferContextDiplomat_.Access<BufferContext::CmdProvider>()->
         Provide<BufferContextCmds::CreateCBufferCmd>(licence);
+    //modelDataLibraryにアクセス
+    auto& modelDataLibrary = allocator_->AccessModelDataLibrary(ModelContext::ModelSlotAllocator::HandleLicence{});
     for (const auto& [key, value] : tmpModelDataLib)
     {
         //メッシュデータのバッファを生成する
@@ -11633,6 +11634,8 @@ void ModelContext::ModelDataCreator::CreateAllModelData
             tmpMeshDataSRVHeapIndexGroupContainer,
             bufferDispatcher
         );
+        //モデルファイルから読み込んだマテリアルデータとモデルファイル名を紐づける
+        modelDataLibrary.Link(key, value->resourceMaterial);
     }
     ///tmpMeshDataSRVHeapIndexGroupContainerのバッファを作る
     ///そのsrvHeapIndexの定数バッファも作成する
@@ -11652,9 +11655,8 @@ void ModelContext::ModelDataCreator::CreateAllModelData
         modelDataBatcher_,
         createCBufferCmd
     );
-    //meshDataIDLibraryの中身をログ出力
-    auto& meshDataIDLibrary = allocator_->AccessMeshDataIDLibrary(ModelContext::ModelSlotAllocator::HandleLicence{});
-    meshDataIDLibrary.Log();
+    //ModelDataLibraryの中身をログ出力
+    modelDataLibrary.Log();
 }
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -11766,17 +11768,17 @@ private:
 };
 
 ========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Model\CreateModelTools\ModelDataCreator\MeshDataCreatorTools\MeshDataBufferCreator\MeshDataBufferCreator.cpp ===
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Model\CreateModelTools\ModelDataCreator\MeshDataBufferCreator\MeshDataBufferCreator.cpp ===
 ========================================
 #include "PreCompileHeader.h"
 #include "MeshDataBufferCreator.h"
-#include "../../../../ModelStructure/ModelData/ModelData.h"
-#include "../../../ModelSlotAllocator/MeshDataIDLibrary/MeshDataIDLibrary.h"
+#include "../../../ModelStructure/ModelData/ModelData.h"
+#include "../../ModelSlotAllocator/ModelDataLibrary/ModelDataLibrary.h"
 //外部
-#include "../../../../../../Buffer/BufferCreateTools/BufferCreator.h"
+#include "../../../../../Buffer/BufferCreateTools/BufferCreator.h"
 //ほんとはstaticStructuredBufferDescriptionだけでいいんだけど、文字列制限なのかインクルードできないので
-#include "../../../../../../Buffer/BufferDefinition/AllBufferDescsInclude.h"
-#include "../../../../../../../../Assets/Shared/StructuredBufferModelData.h"
+#include "../../../../../Buffer/BufferDefinition/AllBufferDescsInclude.h"
+#include "../../../../../../../Assets/Shared/StructuredBufferModelData.h"
 using namespace StructuredBufferModelData;
 [[nodiscard]] std::vector<ModelContext::ModelDataCreator::MeshDataBufferUniqueIDGroup> 
 ModelContext::ModelDataCreator::MeshDataBufferCreator::CreateMeshDataBuffer
@@ -11824,12 +11826,8 @@ ModelContext::ModelDataCreator::MeshDataBufferCreator::CreateMeshDataBuffer
         meshDataID_ += MeshDataID(1);
     }
     //モデルのファイル名とメッシュデータIDを紐づける
-    auto& meshDataIDLibrary = allocator_->AccessMeshDataIDLibrary(ModelContext::ModelSlotAllocator::HandleLicence{});
-    meshDataIDLibrary.LinkModelFileNameToMeshDataID
-    (
-        modelFileName_, 
-        meshDataIDContainer
-    );
+    auto& ModelDataLibrary = allocator_->AccessModelDataLibrary(ModelContext::ModelSlotAllocator::HandleLicence{});
+    ModelDataLibrary.Link(modelFileName_, meshDataIDContainer);
     //バッファコレクターに生成したバッファを仕分けしてもらう
     bufferCollector_->Distribute();
     //メッシュデータのバッファユニークID群を返す
@@ -11837,11 +11835,11 @@ ModelContext::ModelDataCreator::MeshDataBufferCreator::CreateMeshDataBuffer
 }
 
 ========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Model\CreateModelTools\ModelDataCreator\MeshDataCreatorTools\MeshDataBufferCreator\MeshDataBufferCreator.h ===
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Model\CreateModelTools\ModelDataCreator\MeshDataBufferCreator\MeshDataBufferCreator.h ===
 ========================================
 #pragma once
-#include "../../ModelDataCreator.h"
-#include "../../../../../../../../Assets/Shared/StructuredBufferModelData.h"
+#include "../ModelDataCreator.h"
+#include "../../../../../../../Assets/Shared/StructuredBufferModelData.h"
 class ModelContext::ModelDataCreator::MeshDataBufferCreator
 {
 	friend class ModelContext::ModelDataCreator;
@@ -11858,13 +11856,13 @@ class ModelContext::ModelDataCreator::MeshDataBufferCreator
 };
 
 ========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Model\CreateModelTools\ModelDataCreator\MeshDataCreatorTools\MeshDataBufferSRVHeapIndexGroupPackager\MeshDataBufferSRVHeapIndexGroupPackager.cpp ===
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Model\CreateModelTools\ModelDataCreator\MeshDataBufferSRVHeapIndexGroupPackager\MeshDataBufferSRVHeapIndexGroupPackager.cpp ===
 ========================================
 #include "PreCompileHeader.h"
 #include "MeshDataBufferSRVHeapIndexGroupPackager.h"
 //外部
-#include "../../../../../../Buffer/BufferDefinition/GPUBuffer/BufferInterface.h"
-#include "../../../../../../Buffer/BufferRuntime/BufferDispatcher/BufferDispatcher.h"
+#include "../../../../../Buffer/BufferDefinition/GPUBuffer/BufferInterface.h"
+#include "../../../../../Buffer/BufferRuntime/BufferDispatcher/BufferDispatcher.h"
 namespace
 {
 	auto const fileName = "MeshDataBufferSRVHeapIndexGroupPackager.cpp";
@@ -11897,12 +11895,12 @@ void ModelContext::ModelDataCreator::MeshDataBufferSRVHeapIndexGroupPackager::Pa
 }
 
 ========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Model\CreateModelTools\ModelDataCreator\MeshDataCreatorTools\MeshDataBufferSRVHeapIndexGroupPackager\MeshDataBufferSRVHeapIndexGroupPackager.h ===
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Model\CreateModelTools\ModelDataCreator\MeshDataBufferSRVHeapIndexGroupPackager\MeshDataBufferSRVHeapIndexGroupPackager.h ===
 ========================================
 #pragma once
-#include "../../ModelDataCreator.h"
+#include "../ModelDataCreator.h"
 //外部
-#include "../../../../../../../../Assets/Shared/StructuredBufferModelData.h"
+#include "../../../../../../../Assets/Shared/StructuredBufferModelData.h"
 class ModelContext::ModelDataCreator::MeshDataBufferSRVHeapIndexGroupPackager
 {
 	friend class ModelContext::ModelDataCreator;
@@ -11915,13 +11913,13 @@ class ModelContext::ModelDataCreator::MeshDataBufferSRVHeapIndexGroupPackager
 };
 
 ========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Model\CreateModelTools\ModelDataCreator\MeshDataCreatorTools\MeshDataBufferUploader\MeshDataBufferUploader.cpp ===
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Model\CreateModelTools\ModelDataCreator\MeshDataBufferUploader\MeshDataBufferUploader.cpp ===
 ========================================
 #include "PreCompileHeader.h"
 #include "MeshDataBufferUploader.h"
 #include "../ModelDataTransducer/ModelDataTransducer.h"
 //外部
-#include "../../../../../../Buffer/BufferCreateTools/BufferUploader/BufferUploader.h"
+#include "../../../../../Buffer/BufferCreateTools/BufferUploader/BufferUploader.h"
 namespace
 {
     auto const fileName = "MeshDataBufferUploader.cpp";
@@ -11979,12 +11977,12 @@ void ModelContext::ModelDataCreator::MeshDataBufferUploader::CopyAndUploadBuffer
 }
 
 ========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Model\CreateModelTools\ModelDataCreator\MeshDataCreatorTools\MeshDataBufferUploader\MeshDataBufferUploader.h ===
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Model\CreateModelTools\ModelDataCreator\MeshDataBufferUploader\MeshDataBufferUploader.h ===
 ========================================
 #pragma once
-#include "../../ModelDataCreator.h"
+#include "../ModelDataCreator.h"
 //外部
-#include "../../../../../../../../Assets/Shared/StructuredBufferModelData.h"
+#include "../../../../../../../Assets/Shared/StructuredBufferModelData.h"
 class ModelContext::ModelDataCreator::MeshDataBufferUploader
 {
 	friend class ModelContext::ModelDataCreator;
@@ -11998,15 +11996,15 @@ class ModelContext::ModelDataCreator::MeshDataBufferUploader
 };
 
 ========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Model\CreateModelTools\ModelDataCreator\MeshDataCreatorTools\MeshDataSRVHeapIndexGroupContainerBufferCreator\MeshDataSRVHeapIndexGroupContainerBufferCreator.cpp ===
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Model\CreateModelTools\ModelDataCreator\MeshDataSRVHeapIndexGroupContainerBufferCreator\MeshDataSRVHeapIndexGroupContainerBufferCreator.cpp ===
 ========================================
 #include "PreCompileHeader.h"
 #include "MeshDataSRVHeapIndexGroupContainerBufferCreator.h"
 //外部
-#include "../../../../../../Buffer/BufferContextToolsInclude.h"
+#include "../../../../../Buffer/BufferContextToolsInclude.h"
 //ほんとはstaticStructuredBufferDescriptionだけでいいんだけど、文字列制限なのかインクルードできないので
-#include "../../../../../../Buffer/BufferDefinition/AllBufferDescsInclude.h"
-#include "../../../../../../Buffer/BufferDefinition/GPUBuffer/BufferInterface.h"
+#include "../../../../../Buffer/BufferDefinition/AllBufferDescsInclude.h"
+#include "../../../../../Buffer/BufferDefinition/GPUBuffer/BufferInterface.h"
 using namespace StructuredBufferModelData;
 void ModelContext::ModelDataCreator::MeshDataSRVHeapIndexGroupContainerBufferCreator::Create
 (
@@ -12040,13 +12038,13 @@ void ModelContext::ModelDataCreator::MeshDataSRVHeapIndexGroupContainerBufferCre
 }
 
 ========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Model\CreateModelTools\ModelDataCreator\MeshDataCreatorTools\MeshDataSRVHeapIndexGroupContainerBufferCreator\MeshDataSRVHeapIndexGroupContainerBufferCreator.h ===
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Model\CreateModelTools\ModelDataCreator\MeshDataSRVHeapIndexGroupContainerBufferCreator\MeshDataSRVHeapIndexGroupContainerBufferCreator.h ===
 ========================================
 #pragma once
-#include "../../ModelDataCreator.h"
+#include "../ModelDataCreator.h"
 //外部
-#include "../../../../../../../../Assets/Shared/StructuredBufferModelData.h"
-#include "../../../../../../Buffer/BufferContextCmds.h"
+#include "../../../../../../../Assets/Shared/StructuredBufferModelData.h"
+#include "../../../../../Buffer/BufferContextCmds.h"
 class ModelContext::ModelDataCreator::MeshDataSRVHeapIndexGroupContainerBufferCreator
 {
 	friend class ModelContext::ModelDataCreator;
@@ -12060,13 +12058,13 @@ class ModelContext::ModelDataCreator::MeshDataSRVHeapIndexGroupContainerBufferCr
 };
 
 ========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Model\CreateModelTools\ModelDataCreator\MeshDataCreatorTools\ModelDataTransducer\ModelDataTransducer.cpp ===
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Model\CreateModelTools\ModelDataCreator\ModelDataTransducer\ModelDataTransducer.cpp ===
 ========================================
 #include "PreCompileHeader.h"
 #include "ModelDataTransducer.h"
 //外部
-#include "../../../../../../Buffer/BufferRuntime/BufferDispatcher/BufferDispatcher.h"
-#include "../../../../../../Buffer/BufferDefinition/GPUBuffer/StaticStructuredBuffer/StaticStructuredBuffer.h"
+#include "../../../../../Buffer/BufferRuntime/BufferDispatcher/BufferDispatcher.h"
+#include "../../../../../Buffer/BufferDefinition/GPUBuffer/StaticStructuredBuffer/StaticStructuredBuffer.h"
 using namespace StructuredBufferModelData;
 std::vector<StandardVertexGPU> ModelContext::ModelDataCreator::DataTransducer::TransferVertexDataTypeToGPU(const std::vector<StandardVertexCPU>& vertices_)
 {
@@ -12098,12 +12096,11 @@ std::vector<StandardVertexGPU> ModelContext::ModelDataCreator::DataTransducer::T
 }
 
 ========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Model\CreateModelTools\ModelDataCreator\MeshDataCreatorTools\ModelDataTransducer\ModelDataTransducer.h ===
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Model\CreateModelTools\ModelDataCreator\ModelDataTransducer\ModelDataTransducer.h ===
 ========================================
 #pragma once
-#include "../../ModelDataCreator.h"
-#include "../../../../../../../../Assets/Shared/StructuredBufferModelData.h"
-struct StandardVertex;
+#include "../ModelDataCreator.h"
+#include "../../../../../../../Assets/Shared/StructuredBufferModelData.h"
 class ModelContext::ModelDataCreator::DataTransducer
 {
 	friend class ModelContext::ModelDataCreator;
@@ -12113,16 +12110,16 @@ class ModelContext::ModelDataCreator::DataTransducer
 };
 
 ========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Model\CreateModelTools\ModelDataCreator\MeshDataCreatorTools\PerDrawDataBufferCreator\PerDrawDataBufferCreator.cpp ===
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Model\CreateModelTools\ModelDataCreator\PerDrawDataBufferCreator\PerDrawDataBufferCreator.cpp ===
 ========================================
 #include "PreCompileHeader.h"
 #include "PerDrawDataBufferCreator.h"
-#include "../../../../ModelContextRuntime/ModelDataBatcher/ModelDataBatcher.h"
+#include "../../../ModelContextRuntime/ModelDataBatcher/ModelDataBatcher.h"
 //外部
-#include "../../../../../../Buffer/BufferContextToolsInclude.h"
+#include "../../../../../Buffer/BufferContextToolsInclude.h"
 //ほんとはuploadStructuredBufferDescriptionだけでいいんだけど、文字列制限なのかインクルードできないので
-#include "../../../../../../Buffer/BufferDefinition/AllBufferDescsInclude.h"
-#include "../../../../../../Buffer/BufferDefinition/AllBuffersInclude.h"
+#include "../../../../../Buffer/BufferDefinition/AllBufferDescsInclude.h"
+#include "../../../../../Buffer/BufferDefinition/AllBuffersInclude.h"
 using namespace ConstantBuffers;
 using namespace StructuredBufferModelData;
 using namespace ProjectConfig::Render;
@@ -12145,7 +12142,7 @@ void ModelContext::ModelDataCreator::PerDrawDataBufferCreator::CreatePerDrawCBuf
 	(
 		"PerDrawIndices",
 		UINT(sizeof(PerDrawIndicesCPUGPU)),
-		(UINT)RootConstantsBindSlots::kPerDrawIndices
+		UINT(RootConstantsBindSlots::kPerDrawIndices)
 	);
 }
 std::array<SRVHeapIndex, UINT(NumBuffer::kDoubleBuffer)>
@@ -12175,7 +12172,7 @@ void ModelContext::ModelDataCreator::PerDrawDataBufferCreator::PackageInConstanr
 }
 std::pair<BufferUniqueID,UploadStructuredBuffer*> ModelContext::ModelDataCreator::PerDrawDataBufferCreator::CreateBuffer
 (
-	DescParam const& descParam_,
+	DescImitation const& descImitation_,
 	BufferContext::BufferCreator* bufferCreator_
 )
 {
@@ -12183,22 +12180,22 @@ std::pair<BufferUniqueID,UploadStructuredBuffer*> ModelContext::ModelDataCreator
 	///！！！！！UploadStructuredBufferはダブルバッファなのでsrvは2個作られる！！！！！
 	UploadStructuredBufferDescription desc
 	(
-		descParam_.sizeOfStructure,
-		descParam_.sizeOfArr,
+		descImitation_.sizeOfStructure,
+		descImitation_.sizeOfArr,
 		0
 	);
-	auto bufferUnique_buffer = bufferCreator_->CreateWithBuffer(desc, descParam_.bufferName);
+	auto bufferUnique_buffer = bufferCreator_->CreateWithBuffer(desc, descImitation_.bufferName);
 	return bufferUnique_buffer;
 }
 
 ========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Model\CreateModelTools\ModelDataCreator\MeshDataCreatorTools\PerDrawDataBufferCreator\PerDrawDataBufferCreator.h ===
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Model\CreateModelTools\ModelDataCreator\PerDrawDataBufferCreator\PerDrawDataBufferCreator.h ===
 ========================================
 #pragma once
-#include "../../ModelDataCreator.h"
-#include "../../../../ModelContextRuntime/ModelDataBatcher/ModelDataBatcher.h"
+#include "../ModelDataCreator.h"
+#include "../../../ModelContextRuntime/ModelDataBatcher/ModelDataBatcher.h"
 //外部
-#include "../../../../../../Buffer/BufferContextCmds.h"
+#include "../../../../../Buffer/BufferContextCmds.h"
 class UploadStructuredBuffer;
 struct UploadStructuredBufferDescription;
 class ModelContext::ModelDataCreator::PerDrawDataBufferCreator
@@ -12217,7 +12214,7 @@ class ModelContext::ModelDataCreator::PerDrawDataBufferCreator
 		//以下ヘルパー
 private:
 	//ディスクの引数と同じだが、余計にインクルードしたくないため
-	struct DescParam
+	struct DescImitation
 	{
 		UINT const sizeOfStructure;
 		UINT const sizeOfArr;
@@ -12245,9 +12242,9 @@ private:
 	}
 	//UploadStructuredBufferDescのイミテーションを作成
 	template<ConstantBuffers::ConstantBufferBindSlots bufferType>
-	static DescParam CreateDesc()
+	static DescImitation CreateDesc()
 	{
-		return DescParam
+		return DescImitation
 		(
 			ModelDataBatcher::BufferTypeTraits<bufferType>::kStructureSize,
 			ModelDataBatcher::BufferTypeTraits<bufferType>::kArrSize,
@@ -12257,7 +12254,7 @@ private:
 	//巨大データバッファ(UploadStructuredBuffer)を作成
 	static std::pair<BufferUniqueID, UploadStructuredBuffer*> CreateBuffer
 	(
-		DescParam const& descParam_,
+		DescImitation const& descImitation,
 		BufferContext::BufferCreator* bufferCreator_
 	);
 	//巨大データバッファのsrvHeapIndexを定数バッファに梱包
@@ -12437,6 +12434,22 @@ void ModelContext::ModelDataLoader::MaterialParser::ParseMaterial(MaterialCPU& d
         if (pSrcMaterial_->Get(AI_MATKEY_TEXTURE_EMISSIVE(0), path) == AI_SUCCESS)
         {
             dstMaterial_.emissiveTexture = Convert(path);
+        }
+    }
+    //ラフネス
+    {
+        float roughness{};
+        if (pSrcMaterial_->Get(AI_MATKEY_ROUGHNESS_FACTOR, roughness) == AI_SUCCESS)
+        {
+            dstMaterial_.roughness = roughness;
+        }
+    }
+    //メタリック
+    {
+        float metallic{};
+        if (pSrcMaterial_->Get(AI_MATKEY_METALLIC_FACTOR, metallic) == AI_SUCCESS)
+        {
+            dstMaterial_.metallic = metallic;
         }
     }
 }
@@ -12714,7 +12727,7 @@ private:
 ========================================
 #include "PreCompileHeader.h"
 #include "ModelDescAssembler.h"
-#include "../../CreateModelTools/ModelSlotAllocator/MeshDataIDLibrary/MeshDataIDLibrary.h"
+#include "../../CreateModelTools/ModelSlotAllocator/ModelDataLibrary/ModelDataLibrary.h"
 //外部
 #include "../../../Texture/TextureContextDiplomat/TextureContextDiplomat.h"
 #include "../../../Texture/TextureContextDiplomat/TextureContextToolLender/TextureContextToolLender.h"
@@ -12736,15 +12749,23 @@ using namespace StructuredBufferModelData;
 ModelContext::ModelDescAssembler::ModelDescSet ModelContext::ModelDescAssembler::Assemble
 (
 	std::string modelFileName_,
-	std::vector<MaterialCPU> const& materials_
+	std::vector<MaterialCPU> const& inputMaterials_
 )
 {
-	auto& meshDataIDLib = slotAllocator->AccessMeshDataIDLibrary(ModelContext::ModelSlotAllocator::HandleLicence{});
-	//モデルファイル名からメッシュデータのユニークIDを検索
-	const std::vector<MeshDataID>& meshDataIDs = meshDataIDLib.Find(modelFileName_);
+	//modelDataLibraryにアクセス
+	auto& modelDataLibrary = slotAllocator->AccessModelDataLibrary(ModelContext::ModelSlotAllocator::HandleLicence{});
+	//モデルファイル名からサブメッシュ分含む、メッシュデータのユニークIDを検索
+	std::vector<MeshDataID> const& meshDataIDs = modelDataLibrary.Find<MeshDataID>(modelFileName_);
+	//マテリアルも同様
+	std::vector<MaterialCPU> const& materialsFromFile = modelDataLibrary.Find<MaterialCPU>(modelFileName_);
 	//サブメッシュ含む、メッシュの総数
 	size_t const kNumMeshData = meshDataIDs.size();
-	return std::make_pair(PackCommonData(meshDataIDs, kNumMeshData), PackUniqueData(kNumMeshData));
+	return ModelDescSet
+	(
+		PackCommonData(meshDataIDs, kNumMeshData),
+		PackUniqueData(kNumMeshData),
+		ConvertMaterialData(kNumMeshData, materialsFromFile, inputMaterials_)
+	);
 }
 std::vector<ModelDescription::Common> ModelContext::ModelDescAssembler::PackCommonData
 (
@@ -12783,28 +12804,45 @@ std::vector<ModelDescription::Unique> ModelContext::ModelDescAssembler::PackUniq
 std::vector<MaterialGPU> ModelContext::ModelDescAssembler::ConvertMaterialData
 (
 	size_t const kNumMeshData_,
-	std::vector<MaterialCPU> const& materials_
+	std::vector<MaterialCPU> const& materialsFromFile_,
+	std::vector<MaterialCPU> const& inputMaterials
 )
 {
 	//テクスチャファイルパスから、テクスチャファイル名へ変換
 	std::vector<MaterialGPU> materialGPUContainer;
-	//送られてきたデータのサイズ
-	auto const sizeOfSrc = materials_.size();
+	//サブメッシュ分も拡張する
 	materialGPUContainer.resize(kNumMeshData_);
 	for (size_t i = 0;i < kNumMeshData_;++i)
 	{
-		//データが入力されているのなら
-		if (i < sizeOfSrc)
+		//データの手動入力があれば
+		if (i < inputMaterials.size())
 		{
-			materialGPUContainer[i].albedoTexture = textureLib->Export(materials_[i].albedoTexture);
-			materialGPUContainer[i].normalTexture = textureLib->Export(materials_[i].normalTexture);
-			materialGPUContainer[i].emissiveTexture = textureLib->Export(materials_[i].emissiveTexture);
-			materialGPUContainer[i].roughness = materials_[i].roughness;
-			materialGPUContainer[i].metallic = materials_[i].metallic;
+			materialGPUContainer[i].albedoTexture = textureLib->Export(inputMaterials[i].albedoTexture);
+			materialGPUContainer[i].normalTexture = textureLib->Export(inputMaterials[i].normalTexture);
+			materialGPUContainer[i].emissiveTexture = textureLib->Export(inputMaterials[i].emissiveTexture);
+			materialGPUContainer[i].roughness = inputMaterials[i].roughness;
+			materialGPUContainer[i].metallic = inputMaterials[i].metallic;
 		}
 		//入力されてないなら、モデル名に紐づけられているデータから入力する
 		else
 		{
+			if (i < materialsFromFile_.size())
+			{
+				materialGPUContainer[i].albedoTexture = textureLib->Export(materialsFromFile_[i].albedoTexture);
+				materialGPUContainer[i].normalTexture = textureLib->Export(materialsFromFile_[i].normalTexture);
+				materialGPUContainer[i].emissiveTexture = textureLib->Export(materialsFromFile_[i].emissiveTexture);
+				materialGPUContainer[i].roughness = materialsFromFile_[i].roughness;
+				materialGPUContainer[i].metallic = materialsFromFile_[i].metallic;
+			}
+			//ファイルからフェッチしたマテリアルデータがないなら適当な値を入れておく
+			else
+			{
+				materialGPUContainer[i].albedoTexture = textureLib->Export("");
+				materialGPUContainer[i].normalTexture = textureLib->Export("");
+				materialGPUContainer[i].emissiveTexture = textureLib->Export("");
+				materialGPUContainer[i].roughness = 0.1f;
+				materialGPUContainer[i].metallic = 1.0f;
+			}
 		}
 	}
 	return materialGPUContainer;
@@ -12821,7 +12859,12 @@ std::vector<MaterialGPU> ModelContext::ModelDescAssembler::ConvertMaterialData
 #include "../../../Texture/TextureContext.h"
 class ModelContext::ModelDescAssembler
 {
-	using ModelDescSet = std::pair<std::vector<ModelDescription::Common>, std::vector<ModelDescription::Unique>>;
+	using ModelDescSet = std::tuple
+	<
+		std::vector<ModelDescription::Common>,
+		std::vector<ModelDescription::Unique>,
+		std::vector<StructuredBufferModelData::MaterialGPU>
+	>;
 public:
 	ModelDescAssembler
 	(
@@ -12833,7 +12876,7 @@ public:
 	ModelDescSet Assemble
 	(
 		std::string modelFileName_,
-		std::vector<StructuredBufferModelData::MaterialCPU> const& materials_
+		std::vector<StructuredBufferModelData::MaterialCPU> const& inputMaterials_
 	);
 private:
 	//PerDrawIndicesのうち、モデル種共通のパラメーターを詰める
@@ -12849,7 +12892,8 @@ private:
 	std::vector<StructuredBufferModelData::MaterialGPU> ConvertMaterialData
 	(
 		size_t const kNumMeshData_,
-		std::vector<StructuredBufferModelData::MaterialCPU> const& materials_
+		std::vector<StructuredBufferModelData::MaterialCPU> const& materialsFromFile_,
+		std::vector<StructuredBufferModelData::MaterialCPU> const& inputMaterials
 	);
 	//TransformやMaterialのスロットを割り当てる
 	ModelContext::ModelSlotAllocator* slotAllocator;
@@ -12862,7 +12906,7 @@ private:
 ========================================
 #include "PreCompileHeader.h"
 #include "ModelSlotAllocator.h"
-#include "MeshDataIDLibrary/MeshDataIDLibrary.h"
+#include "ModelDataLibrary/ModelDataLibrary.h"
 #include "TransformMatrixSlot/TransformMatrixSlot.h"
 #include "MaterialSlot/MaterialSlot.h"
 namespace
@@ -12871,8 +12915,8 @@ namespace
 }
 ModelContext::ModelSlotAllocator::ModelSlotAllocator(NexusFieldProof proof_)
 {
-	meshDataIDLibrary.reset(new MeshDataIDLibrary(proof_));
-	Logger::Log("Instantiate: MeshDataIDLibrary", fileName);
+	modelDataLibrary.reset(new ModelDataLibrary(proof_));
+	Logger::Log("Instantiate: ModelDataLibrary", fileName);
 	transformMatrixSlot.reset(new TransformMatrixSlot(proof_));
 	Logger::Log("Instantiate: transformMatrixSlot", fileName);
 	materialSlot.reset(new MaterialSlot(proof_));
@@ -12899,9 +12943,9 @@ uint32_t ModelContext::ModelSlotAllocator::AllocateSlot
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-ModelContext::ModelSlotAllocator::MeshDataIDLibrary& ModelContext::ModelSlotAllocator::AccessMeshDataIDLibrary(HandleLicence licence_)
+ModelContext::ModelSlotAllocator::ModelDataLibrary& ModelContext::ModelSlotAllocator::AccessModelDataLibrary(HandleLicence licence_)
 {
-	return *meshDataIDLibrary;
+	return *modelDataLibrary;
 }
 
 ========================================
@@ -12913,7 +12957,7 @@ class ModelContext::ModelSlotAllocator
 {
 	///そのモデルファイル名が、
 	///「メッシュデータバッファのsrvHeapIndexが詰まったもの」の配列の何番目に該当するのかを索引するため
-	class MeshDataIDLibrary;
+	class ModelDataLibrary;
 public:
 	//TransformMatrixContainerBufferのスロットの割り当てを行う
 	class TransformMatrixSlot;
@@ -12926,9 +12970,9 @@ public:
 	//空きスロットを分配する
 	template<typename SlotType>
 	uint32_t AllocateSlot(AllocateLicence licence_);
-	MeshDataIDLibrary& AccessMeshDataIDLibrary(HandleLicence licence_);
+	ModelDataLibrary& AccessModelDataLibrary(HandleLicence licence_);
 private:
-	std::unique_ptr<MeshDataIDLibrary> meshDataIDLibrary;
+	std::unique_ptr<ModelDataLibrary> modelDataLibrary;
 	std::unique_ptr<TransformMatrixSlot> transformMatrixSlot;
 	std::unique_ptr<MaterialSlot> materialSlot;
 };
@@ -12991,32 +13035,24 @@ private:
 };
 
 ========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Model\CreateModelTools\ModelSlotAllocator\MeshDataIDLibrary\MeshDataIDLibrary.cpp ===
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Model\CreateModelTools\ModelSlotAllocator\ModelDataLibrary\ModelDataLibrary.cpp ===
 ========================================
 #include "PreCompileHeader.h"
-#include "MeshDataIDLibrary.h"
+#include "ModelDataLibrary.h"
 namespace
 {
-	auto const fileName = "MeshDataIDLibrary.cpp";
+	auto const fileName = "ModelDataLibrary.cpp";
 }
-ModelContext::ModelSlotAllocator::MeshDataIDLibrary::MeshDataIDLibrary(NexusFieldProof proof_)
+ModelContext::ModelSlotAllocator::ModelDataLibrary::ModelDataLibrary(NexusFieldProof proof_)
 {
 }
-void ModelContext::ModelSlotAllocator::MeshDataIDLibrary::LinkModelFileNameToMeshDataID
-(
-	std::string modelFileName_,
-	const std::vector<MeshDataID>& idContainer_
-)
+using namespace StructuredBufferModelData;
+void ModelContext::ModelSlotAllocator::ModelDataLibrary::Log()const
 {
-	//いちおう
-	ErrorMessageOutput::Assert::DetectError(idContainer_.size() > 0, "中身すっからかんやん！", fileName);
-	meshDataIDLib[modelFileName_] = idContainer_;
-	Logger::Log("Register: " + modelFileName_ + " MeshDataIDs", fileName);
-}
-void ModelContext::ModelSlotAllocator::MeshDataIDLibrary::Log()const
-{
-	Logger::Log("Check MeshDataIdLibrary Contents", fileName);
-	for (auto [key, value] : meshDataIDLib)
+	Logger::Log("Check ModelDataLibrary Contents", fileName);
+	auto const& meshIDlib= std::get<std::unordered_map<std::string, std::vector<MeshDataID>>>(libTuple);
+	auto const& materialLib = std::get<std::unordered_map<std::string, std::vector<MaterialCPU>>>(libTuple);
+	for (auto const& [key, value] : meshIDlib)
 	{
 		std::string mess = key + "::MeshDataID: { ";
 		for (size_t i = 0;i < value.size();++i)
@@ -13024,43 +13060,75 @@ void ModelContext::ModelSlotAllocator::MeshDataIDLibrary::Log()const
 			mess += std::to_string((UINT)value[i]);
 			mess += (i + 1) < value.size() ? +"," : "";
 		}
-		Logger::Log(mess + " }");
+		mess += " }";
+		mess += " Num Materials From File:" + std::to_string(materialLib.at(key).size());
+		Logger::Log(mess);
 	}
-}
-[[nodiscard]] const std::vector<MeshDataID>& ModelContext::ModelSlotAllocator::MeshDataIDLibrary::Find(std::string fileName_)const
-{
-	ErrorMessageOutput::Assert::DetectError
-	(
-		meshDataIDLib.find(fileName_) != meshDataIDLib.end(),
-		"そないなキーはありません",
-		fileName
-	);
-	return meshDataIDLib.at(fileName_);
 }
 
 ========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Model\CreateModelTools\ModelSlotAllocator\MeshDataIDLibrary\MeshDataIDLibrary.h ===
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Model\CreateModelTools\ModelSlotAllocator\ModelDataLibrary\ModelDataLibrary.h ===
 ========================================
 #pragma once
 #include "../ModelSlotAllocator.h"
-class ModelContext::ModelSlotAllocator::MeshDataIDLibrary
+//外部
+#include "../../../../../../../Assets/Shared/StructuredBufferModelData.h"
+class ModelContext::ModelSlotAllocator::ModelDataLibrary
 {
+	template<typename DataType>
+	struct DataTypeTraits;
 public:
-	MeshDataIDLibrary(NexusFieldProof proof_);
-	//メッシュファイル名に対してMeshDataID(複数)を紐づける
-	void LinkModelFileNameToMeshDataID
+	ModelDataLibrary(NexusFieldProof proof_);
+	//モデルファイル名に対してデータを紐づける
+	template<typename DataType>
+	void Link
 	(
 		std::string modelFileName_,
-		const std::vector<MeshDataID>& idContainer_
-	);
+		std::vector<DataType> const& data_
+	)
+	{
+		auto& lib = std::get<std::unordered_map<std::string, std::vector<DataType>>>(libTuple);
+		if constexpr (std::is_same_v<DataType, MeshDataID>)
+		{
+			ErrorMessageOutput::Assert::DetectError(data_.size() > 0, "中身すっからかんやん！", "ModelDataLibrary.h");
+		}
+		lib[modelFileName_] = data_;
+		Logger::Log("Register: " + modelFileName_ + DataTypeTraits<DataType>::kName, "ModelDataLibrary.h");
+	}
+	//検索
+	template<typename DataType>
+	[[nodiscard]] std::vector<DataType> const& Find(std::string fileName_)const
+	{
+		auto const& lib = std::get<std::unordered_map<std::string, std::vector<DataType>>>(libTuple);
+		ErrorMessageOutput::Assert::DetectError
+		(
+			lib.find(fileName_) != lib.end(),
+			"そないなキーはありません",
+			"ModelDataLibrary.h"
+		);
+		return lib.at(fileName_);
+	}
 	//ライブラリーの中身をログファイルに出力
 	void Log()const;
-	//検索
-	[[nodiscard]] const std::vector<MeshDataID>& Find(std::string fileName_)const;
 private:
-	///そのモデルファイル名が、
-	///「メッシュデータバッファのsrvHeapIndexが詰まったもの」の配列の何番目に該当するのかを索引するため
-	std::unordered_map<std::string, std::vector<MeshDataID>> meshDataIDLib;
+	///モデルファイル名から、サブメッシュまで含んだ情報を索引する
+	std::tuple
+	<
+		///「メッシュデータバッファのsrvHeapIndexが詰まったもの」の配列の何番目に該当するのかを索引するため
+		std::unordered_map<std::string, std::vector<MeshDataID>>,
+		//モデルファイルから仕入れたマテリアル情報
+		std::unordered_map<std::string, std::vector<StructuredBufferModelData::MaterialCPU>>
+	>libTuple;
+};
+template<>
+struct ModelContext::ModelSlotAllocator::ModelDataLibrary::DataTypeTraits<MeshDataID>
+{
+	static inline const std::string kName = "MeshDataID";
+};
+template<>
+struct ModelContext::ModelSlotAllocator::ModelDataLibrary::DataTypeTraits<StructuredBufferModelData::MaterialCPU>
+{
+	static inline const std::string kName = "MaterialCPU";
 };
 
 ========================================
@@ -16595,6 +16663,12 @@ void TextureContext::TextureLibrary::Import(NexusFieldProof proof_, std::string 
 SRVHeapIndex TextureContext::TextureLibrary::Export(std::string const name_)const
 {
 	std::string actualName = name_;
+	//引数のテクスチャファイル名またはパス名が空だった場合は、noNameテクスチャを埋め込む
+	if (actualName.size() == 0)
+	{
+		actualName = kNoDataTex;
+		return data.at(actualName);
+	}
 	//まずリスト内に存在しているかチェック
 	if (data.find(name_) == data.end())
 	{
@@ -16636,6 +16710,8 @@ public:
 	void Log();
 private:
 	std::unordered_map<std::string, SRVHeapIndex> data;
+	//ノーデータテクスチャのファイル名
+	std::string const kNoDataTex = "noData_albedo";
 };
 
 ========================================
@@ -18701,4 +18777,4 @@ namespace StringProcessing
 === SUMMARY ===
 ========================================
 Total Files      : 429
-Effective Lines  : 13562
+Effective Lines  : 13627

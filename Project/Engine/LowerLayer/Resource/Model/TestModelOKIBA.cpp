@@ -26,7 +26,6 @@ TestModelOKIBA::TestModelOKIBA(ModelContext::ModelCreator* modelCreator_)
 	std::vector<ModelDescription::RenderState> playerC;
 	playerC.emplace_back(std::move(cP));
 
-	MaterialCPU materialCPU;
 	std::vector<MaterialCPU> materials;
 
 	player = modelCreator_->Create("PlayerObj", playerC, materials,"Player");

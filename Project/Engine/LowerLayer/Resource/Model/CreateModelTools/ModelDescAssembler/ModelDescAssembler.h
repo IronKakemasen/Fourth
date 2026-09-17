@@ -10,7 +10,12 @@
 
 class ModelContext::ModelDescAssembler
 {
-	using ModelDescSet = std::pair<std::vector<ModelDescription::Common>, std::vector<ModelDescription::Unique>>;
+	using ModelDescSet = std::tuple
+	<
+		std::vector<ModelDescription::Common>,
+		std::vector<ModelDescription::Unique>,
+		std::vector<StructuredBufferModelData::MaterialGPU>
+	>;
 
 public:
 
@@ -25,7 +30,7 @@ public:
 	ModelDescSet Assemble
 	(
 		std::string modelFileName_,
-		std::vector<StructuredBufferModelData::MaterialCPU> const& materials_
+		std::vector<StructuredBufferModelData::MaterialCPU> const& inputMaterials_
 	);
 
 private:
@@ -45,7 +50,8 @@ private:
 	std::vector<StructuredBufferModelData::MaterialGPU> ConvertMaterialData
 	(
 		size_t const kNumMeshData_,
-		std::vector<StructuredBufferModelData::MaterialCPU> const& materials_
+		std::vector<StructuredBufferModelData::MaterialCPU> const& materialsFromFile_,
+		std::vector<StructuredBufferModelData::MaterialCPU> const& inputMaterials
 	);
 
 

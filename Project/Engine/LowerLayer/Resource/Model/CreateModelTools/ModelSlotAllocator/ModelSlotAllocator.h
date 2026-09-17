@@ -7,8 +7,7 @@ class ModelContext::ModelSlotAllocator
 {
 	///そのモデルファイル名が、
 	///「メッシュデータバッファのsrvHeapIndexが詰まったもの」の配列の何番目に該当するのかを索引するため
-	class MeshDataIDLibrary;
-
+	class ModelDataLibrary;
 
 public:
 
@@ -27,11 +26,11 @@ public:
 	template<typename SlotType>
 	uint32_t AllocateSlot(AllocateLicence licence_);
 
-	MeshDataIDLibrary& AccessMeshDataIDLibrary(HandleLicence licence_);
+	ModelDataLibrary& AccessModelDataLibrary(HandleLicence licence_);
 
 private:
 
-	std::unique_ptr<MeshDataIDLibrary> meshDataIDLibrary;
+	std::unique_ptr<ModelDataLibrary> modelDataLibrary;
 	std::unique_ptr<TransformMatrixSlot> transformMatrixSlot;
 	std::unique_ptr<MaterialSlot> materialSlot;
 

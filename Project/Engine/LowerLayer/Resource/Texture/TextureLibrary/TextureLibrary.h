@@ -16,6 +16,8 @@ public:
 private:
 
 	std::unordered_map<std::string, SRVHeapIndex> data;
+	//ノーデータテクスチャのファイル名
+	std::string const kNoDataTex = "noData_albedo";
 
 };
 

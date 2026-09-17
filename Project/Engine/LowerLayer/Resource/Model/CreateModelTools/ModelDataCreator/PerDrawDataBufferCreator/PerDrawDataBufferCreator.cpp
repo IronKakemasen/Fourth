@@ -1,13 +1,13 @@
 #include "PreCompileHeader.h"
 #include "PerDrawDataBufferCreator.h"
-#include "../../../../ModelContextRuntime/ModelDataBatcher/ModelDataBatcher.h"
+#include "../../../ModelContextRuntime/ModelDataBatcher/ModelDataBatcher.h"
 
 //外部
-#include "../../../../../../Buffer/BufferContextToolsInclude.h"
+#include "../../../../../Buffer/BufferContextToolsInclude.h"
 
 //ほんとはuploadStructuredBufferDescriptionだけでいいんだけど、文字列制限なのかインクルードできないので
-#include "../../../../../../Buffer/BufferDefinition/AllBufferDescsInclude.h"
-#include "../../../../../../Buffer/BufferDefinition/AllBuffersInclude.h"
+#include "../../../../../Buffer/BufferDefinition/AllBufferDescsInclude.h"
+#include "../../../../../Buffer/BufferDefinition/AllBuffersInclude.h"
 
 
 using namespace ConstantBuffers;
@@ -25,7 +25,6 @@ void ModelContext::ModelDataCreator::PerDrawDataBufferCreator::CreatePerDrawCons
 	Create<ConstantBufferBindSlots::kTransformMatrixContainer>(bufferCreator_, modelDataBatcher_, createCBufferCmd_);
 	Create<ConstantBufferBindSlots::kMaterialContainer>(bufferCreator_, modelDataBatcher_, createCBufferCmd_);
 
-
 	//最後に、perDrawDataのコンスタントバッファを作る
 	CreatePerDrawCBuffer(createCBufferCmd_);
 
@@ -37,7 +36,7 @@ void ModelContext::ModelDataCreator::PerDrawDataBufferCreator::CreatePerDrawCBuf
 	(
 		"PerDrawIndices",
 		UINT(sizeof(PerDrawIndicesCPUGPU)),
-		(UINT)RootConstantsBindSlots::kPerDrawIndices
+		UINT(RootConstantsBindSlots::kPerDrawIndices)
 	);
 
 }
@@ -77,7 +76,7 @@ void ModelContext::ModelDataCreator::PerDrawDataBufferCreator::PackageInConstanr
 
 std::pair<BufferUniqueID,UploadStructuredBuffer*> ModelContext::ModelDataCreator::PerDrawDataBufferCreator::CreateBuffer
 (
-	DescParam const& descParam_,
+	DescImitation const& descImitation_,
 	BufferContext::BufferCreator* bufferCreator_
 )
 {
@@ -85,12 +84,12 @@ std::pair<BufferUniqueID,UploadStructuredBuffer*> ModelContext::ModelDataCreator
 	///！！！！！UploadStructuredBufferはダブルバッファなのでsrvは2個作られる！！！！！
 	UploadStructuredBufferDescription desc
 	(
-		descParam_.sizeOfStructure,
-		descParam_.sizeOfArr,
+		descImitation_.sizeOfStructure,
+		descImitation_.sizeOfArr,
 		0
 	);
 
-	auto bufferUnique_buffer = bufferCreator_->CreateWithBuffer(desc, descParam_.bufferName);
+	auto bufferUnique_buffer = bufferCreator_->CreateWithBuffer(desc, descImitation_.bufferName);
 
 	return bufferUnique_buffer;
 }
