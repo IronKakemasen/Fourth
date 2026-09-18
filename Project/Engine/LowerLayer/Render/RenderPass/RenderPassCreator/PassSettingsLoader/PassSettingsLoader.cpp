@@ -1,5 +1,6 @@
 #include "PreCompileHeader.h"
 #include "PassSettingsLoader.h"
+#include "../../PassDesc/PassDesc.h"
 
 using namespace ProjectConfig::Window;
 using namespace ProjectConfig::Render;
@@ -11,10 +12,9 @@ namespace
 }
 
 
-[[nodiscard]] RenderContext::PassDesc RenderContext::RenderPassCreator::PassSettingsLoader::Load(std::string const passName_)
+[[nodiscard]] std::unique_ptr<RenderContext::PassDesc> RenderContext::RenderPassCreator::PassSettingsLoader::Load(std::string const passName_)
 {
-	
-	PassDesc desc
+	return std::make_unique<PassDesc>
 	(
 		passName_,
 		ParseShaderFile(passName_),
@@ -23,8 +23,6 @@ namespace
 		ParseDepthStencilBufferInfo(passName_),
 		ParseReferenceBufferNames(passName_)
 	);
-
-	return desc;
 }
 
 std::vector<RenderContext::RequiredBufferInfo::ColorBuffer> RenderContext::RenderPassCreator::PassSettingsLoader::ParseColorBufferInfo

@@ -3,6 +3,7 @@
 #include "../../../PSO_PoolDispatcher/PSO_PoolDispatcher.h"
 #include "../../../../RenderPass/RenderPassContainer/RenderPassContainer.h"
 #include "../../../../RenderPass/AllRenderPass/AllPassInclude.h"
+#include "../../../../RenderPass/PassDesc/PassDesc.h"
 
 #include "../../../../../Resource/Model/ModelContextDiplomat/ModelContextDiplomat.h"
 #include "../../../../../Resource/Model/ModelContextDiplomat/ModelContextCmdProvider/ModelContextCmdProvider.h"
@@ -146,7 +147,7 @@ std::vector<RenderContext::RenderGraph::PSO_Builder::PsoDesc_Key> RenderContext:
 			//オフスクリーンパスでかつワイヤーフレームならスキップ
 			if
 			(
-				passDesc.WatchMs_PsFileName().has_value() &&
+				passDesc.ms_psFileName.has_value() &&
 				k == (UINT)RenderStateComponent::FillMode::kWireFrame
 			) continue;
 
@@ -196,8 +197,8 @@ RenderContext::RenderGraph::PSO_Builder::PsoDesc_Key RenderContext::RenderGraph:
 	RenderStateComponent::FillMode const fillMode_
 )
 {
-	auto const& renderPassStates = passDesc_.WatchRenderPassState();
-	auto const& depthStencilBufferInfo = passDesc_.WatchDepthStencilBufferInfo();
+	auto const& renderPassStates = passDesc_.renderPassState;
+	auto const& depthStencilBufferInfo = passDesc_.depthStencilBufferInfo;
 
 	PsoDesc_Key psoCommon;
 
@@ -232,7 +233,7 @@ RenderContext::RenderGraph::PSO_Builder::PsoDesc_Key RenderContext::RenderGraph:
 		}
 
 		//カラーバッファの情報
-		auto const& colorBuffersInfo = passDesc_.WatchColorBuffersInfo();
+		auto const& colorBuffersInfo = passDesc_.colorBuffersInfo;
 		auto const numRenderTarget = colorBuffersInfo.size();
 		psoCommon.first.renderTargetDescs.resize(numRenderTarget);
 		for (size_t i = 0;i < numRenderTarget;++i)
@@ -243,7 +244,7 @@ RenderContext::RenderGraph::PSO_Builder::PsoDesc_Key RenderContext::RenderGraph:
 			tmp.rtvFormat = colorBuffersInfo[i].format;
 		}		
 
-		psoCommon.first.psoName += passDesc_.WatchName() + " X " + RenderStateComponent::FillModeToString(fillMode_);
+		psoCommon.first.psoName += passDesc_.passName + " X " + RenderStateComponent::FillModeToString(fillMode_);
 	}
 
 	return psoCommon;
@@ -266,7 +267,7 @@ void RenderContext::RenderGraph::PSO_Builder::InputDependingModelsInfo
 {
 	///レンダーパスがオフスクリーンで専用のシェーダーファイルを持って ” いなければ ”
 	///それはモデル描画パス " である " 証拠
-	if (passDesc_.WatchMs_PsFileName().has_value()) return;
+	if (passDesc_.ms_psFileName.has_value()) return;
 
 	//シェーダーライブラリを借りる
 	auto* shaderContextToolLender = shaderContextDiplomat_.Access<ShaderContext::ToolLender>();
@@ -354,15 +355,16 @@ void RenderContext::RenderGraph::PSO_Builder::InputPassOnlyInfo
 {
 	///レンダーパスがオフスクリーンで専用のシェーダーファイルを持って ” いれば ”
 	///それはモデル描画パス " でない " 証拠
-	if (!passDesc_.WatchMs_PsFileName().has_value()) return;
+	//そのPass専用のシェーダーファイル(Optional)
+	auto const& ms_psFile = passDesc_.ms_psFileName;
+
+	if (!ms_psFile.has_value()) return;
 
 	//シェーダーライブラリを借りる
 	auto* shaderContextToolLender = shaderContextDiplomat_.Access<ShaderContext::ToolLender>();
 	ShaderContext::ToolLender::LicenceType<ShaderContext::ShaderLibrary> usesShaderLibLicence;
 	auto* shaderLib = shaderContextToolLender->Lend<ShaderContext::ShaderLibrary>(usesShaderLibLicence);
 
-	//そのPass専用のシェーダーファイル(Optional)
-	auto const& ms_psFile = passDesc_.WatchMs_PsFileName();
 
 	//共通設定をコピー
 	PsoDesc_Key offscreenPassPsoDesc(psoCommonDesc_);
@@ -393,7 +395,7 @@ void RenderContext::RenderGraph::PSO_Builder::InputPassOnlyInfo
 	offscreenPassPsoDesc.first.rasterizerDesc.cullMode = RenderStateComponent::CullMode::kBack;
 	
 	//レンダーターゲットの設定
-	auto const& colorBuffersInfo = passDesc_.WatchColorBuffersInfo();
+	auto const& colorBuffersInfo = passDesc_.colorBuffersInfo;
 	size_t const numRT = colorBuffersInfo.size();
 	for (size_t i = 0; i < numRT; ++i)
 	{
@@ -403,7 +405,7 @@ void RenderContext::RenderGraph::PSO_Builder::InputPassOnlyInfo
 		ErrorMessageOutput::Assert::DetectError
 		(
 			colorBuffersInfo[i].blendMode != RenderStateComponent::BlendMode::kDependsModel,
-			passDesc_.WatchName() + "はオフスクリーンパスなのにブレンドモードがkDependsModel",
+			passDesc_.passName + "はオフスクリーンパスなのにブレンドモードがkDependsModel",
 			fileName
 		);
 

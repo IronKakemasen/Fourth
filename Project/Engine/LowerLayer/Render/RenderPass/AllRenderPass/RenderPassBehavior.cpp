@@ -1,9 +1,12 @@
 #include "PreCompileHeader.h"
 #include "RenderPassBehavior.h"
 #include "RenderPassTraits.h"
+#include "../PassDesc/PassDesc.h"
+#include "../RuntimePassInfo/RuntimePassInfo.h"
 
-RenderContext::PassBehavior::PassBehavior(NexusFieldProof proof_, const RenderContext::PassDesc& desc_, RenderPassComponent::Pass pass_)
-	:desc(desc_), pass(pass_)
+
+RenderContext::PassBehavior::PassBehavior(NexusFieldProof proof_, std::unique_ptr<PassDesc>&& desc_)
+	:desc(std::move(desc_))
 {
 	
 }

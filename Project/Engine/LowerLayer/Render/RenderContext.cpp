@@ -37,7 +37,7 @@ RenderContext::RenderContext
 	renderPathContainer.reset(new RenderPathContainer(proof_));
 	Logger::Log("Instantiate: renderPathContainer", fileName);
 
-	RenderPassCreator passCretor(proof_, renderPassContainer.get());
+	RenderPassCreator passCretor(proof_, *renderPassContainer);
 	Logger::Log("Instantiate: RenderPassCreator", fileName);
 
 	RenderPathAssembler renderPathAssembler

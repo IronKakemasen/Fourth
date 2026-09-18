@@ -395,6 +395,7 @@
     <ClCompile Include="Engine\LowerLayer\Resource\Model\CreateModelTools\ModelSlotAllocator\MaterialSlot\MaterialSlot.cpp" />
     <ClCompile Include="Engine\LowerLayer\Resource\Texture\TextureContextDiplomat\TextureContextDiplomat.cpp" />
     <ClCompile Include="Engine\LowerLayer\Resource\Texture\TextureContextDiplomat\TextureContextToolLender\TextureContextToolLender.cpp" />
+    <ClCompile Include="Engine\LowerLayer\Render\RenderPass\RuntimePassInfo\RuntimePassInfo.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Assets\BAKA\ConstantBuffers.h" />
@@ -409,7 +410,7 @@
     <ClInclude Include="Engine\LowerLayer\Core\Device\DeviceContextDiplomat\DeviceContextCommandProvider\DeviceContextCmdLicences.h" />
     <ClInclude Include="Engine\LowerLayer\Core\Window\WindowContextDiplomat\WindowContextToolLender\WindowContextToolLenderLicences.h" />
     <ClInclude Include="Engine\LowerLayer\Render\RenderPass\AllRenderPass\RenderPassTraits.h" />
-    <ClInclude Include="Engine\LowerLayer\Render\RenderPass\PassDesc\RenderPassState.h" />
+    <ClInclude Include="Engine\LowerLayer\Render\RenderPass\RenderPassState.h" />
     <ClInclude Include="Engine\LowerLayer\Render\RenderPath\AllRenderPath\AllPathFwd.h" />
     <ClInclude Include="Engine\LowerLayer\Render\RenderPath\AllRenderPath\AllPathInclude.h" />
     <ClInclude Include="Engine\LowerLayer\Render\RenderPath\AllRenderPath\CreateSceneTexture\CreateSceneTexture.h" />
@@ -659,6 +660,7 @@
     <ClInclude Include="Engine\LowerLayer\Resource\Model\CreateModelTools\ModelSlotAllocator\MaterialSlot\MaterialSlot.h" />
     <ClInclude Include="Engine\LowerLayer\Resource\Texture\TextureContextDiplomat\TextureContextDiplomat.h" />
     <ClInclude Include="Engine\LowerLayer\Resource\Texture\TextureContextDiplomat\TextureContextToolLender\TextureContextToolLender.h" />
+    <ClInclude Include="Engine\LowerLayer\Render\RenderPass\RuntimePassInfo\RuntimePassInfo.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

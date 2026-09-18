@@ -6,7 +6,7 @@ class SceneCompositor :public RenderContext::PassBehavior
 {
 public:
 
-	SceneCompositor(RenderContext::NexusFieldProof proof_, const RenderContext::PassDesc& desc_, RenderPassComponent::Pass pass_);
+	SceneCompositor(RenderContext::NexusFieldProof proof_, std::unique_ptr<RenderContext::PassDesc>&& desc_);
 	
 	virtual void Update
 	(

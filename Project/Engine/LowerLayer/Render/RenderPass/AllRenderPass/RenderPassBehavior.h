@@ -1,6 +1,5 @@
 #pragma once
 #include "../../RenderContext.h"
-#include "../PassDesc/PassDesc.h"
 
 #include "../../../Core/Command/CommandContext.h"
 
@@ -10,10 +9,10 @@ class RenderContext::PassBehavior
 {
 public:
 
-	PassBehavior(NexusFieldProof proof_, const PassDesc& desc_,RenderPassComponent::Pass pass_);
+	PassBehavior(NexusFieldProof proof_, std::unique_ptr<PassDesc>&& desc_);
 	virtual ~PassBehavior() = default;
 
-	PassDesc const& WatchDesc() const { return desc; }
+	PassDesc const& WatchDesc() const { return *desc; }
 
 	virtual void Update
 	(
@@ -23,9 +22,9 @@ public:
 
 protected:
 
-	//PSO特定のためにもっておく。PassDescの簡略キーみたいな。
-	RenderPassComponent::Pass pass;
 	//Passの設計図
-	PassDesc desc;
+	std::unique_ptr<PassDesc> desc;
+	//ランタイムで必要になるPassの情報をまとめたもの
+	std::unique_ptr<RuntimePassInfo> runtimePassInfo;
 };
 
