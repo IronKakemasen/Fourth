@@ -87,9 +87,5 @@ void ModelContext::ModelDataLoader::MaterialParser::ParseMaterial(MaterialCPU& d
 
 std::string ModelContext::ModelDataLoader::MaterialParser::Convert(const aiString& path_)
 {
-    wchar_t temp[256] = {};
-    size_t  size;
-    mbstowcs_s(&size, temp, path_.C_Str(), 256);
-
     return StringProcessing::RemoveFileExtension(std::string(path_.C_Str()));
 }

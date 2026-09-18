@@ -1,6 +1,9 @@
 #pragma once
 #include "../TextureContext.h"
 
+//外部
+#include "../../../Buffer/BufferDefinition/TextureComponent.h"
+
 class TextureContext::TextureLibrary
 {
 public:
@@ -16,8 +19,6 @@ public:
 private:
 
 	std::unordered_map<std::string, SRVHeapIndex> data;
-	//ノーデータテクスチャのファイル名
-	std::string const kNoDataTex = "noData_albedo";
 
 };
 

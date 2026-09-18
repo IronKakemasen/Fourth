@@ -10076,8 +10076,8 @@ namespace RenderPassComponent
     ///これにバッファの情報から深度テスト方法などの情報が詰まってるといっていい
 	enum class Pass
 	{
-		kSceneTextureCreatorOpaque,
-        kSceneTextureCompositor
+		kSceneOpaque,
+        kSceneCompositor
 		,kCount,
         kEnd
 	};
@@ -10107,21 +10107,21 @@ namespace RenderPassComponent
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Render\RenderPass\AllRenderPass\AllPassFwd.h ===
 ========================================
 #pragma once
-class SceneTextureCreatorOpaque;
-class SceneTextureCompositor;
-using AllPassPtr = std::tuple<SceneTextureCreatorOpaque*, SceneTextureCompositor*>;
-using AllPassTypes = std::tuple<SceneTextureCreatorOpaque, SceneTextureCompositor>;
+class SceneOpaque;
+class SceneCompositor;
+using AllPassPtr = std::tuple<SceneOpaque*, SceneCompositor*>;
+using AllPassTypes = std::tuple<SceneOpaque, SceneCompositor>;
 
 ========================================
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Render\RenderPass\AllRenderPass\AllPassInclude.h ===
 ========================================
 #pragma once
-#include "SceneTextureCreatorOpaque/SceneTextureCreatorOpaque.h"
-#include "SceneTextureCompositor/SceneTextureCompositor.h"
+#include "SceneOpaque/SceneOpaque.h"
+#include "SceneCompositor/SceneCompositor.h"
 using AllPassUnique = std::tuple
 <
-	std::unique_ptr<SceneTextureCreatorOpaque>,
-	std::unique_ptr<SceneTextureCompositor>
+	std::unique_ptr<SceneOpaque>,
+	std::unique_ptr<SceneCompositor>
 >;
 
 ========================================
@@ -10175,28 +10175,28 @@ namespace RenderPassTraits
 	template<typename PassType>
 	struct PassClassTraits;
 	template<>
-	struct PassClassTraits<SceneTextureCreatorOpaque>
+	struct PassClassTraits<SceneOpaque>
 	{
-		static inline const std::string name = "SceneTextureCreatorOpaque";
-		static constexpr RenderPassComponent::Pass passEnum = RenderPassComponent::Pass::kSceneTextureCreatorOpaque;
+		static inline const std::string name = "SceneOpaque";
+		static constexpr RenderPassComponent::Pass passEnum = RenderPassComponent::Pass::kSceneOpaque;
 	};
 	template<>
-	struct PassClassTraits<SceneTextureCompositor>
+	struct PassClassTraits<SceneCompositor>
 	{
-		static inline const std::string name = "SceneTextureCompositor";
-		static constexpr RenderPassComponent::Pass passEnum = RenderPassComponent::Pass::kSceneTextureCompositor;
+		static inline const std::string name = "SceneCompositor";
+		static constexpr RenderPassComponent::Pass passEnum = RenderPassComponent::Pass::kSceneCompositor;
 	};
 	//名前から列挙型を特定
 	constexpr RenderPassComponent::Pass PassNameToPassType(std::string const passName_)
 	{
 		RenderPassComponent::Pass pass = RenderPassComponent::Pass::kEnd;
-		if (passName_ == PassClassTraits<SceneTextureCreatorOpaque>::name)
+		if (passName_ == PassClassTraits<SceneOpaque>::name)
 		{
-			pass = PassClassTraits<SceneTextureCreatorOpaque>::passEnum;
+			pass = PassClassTraits<SceneOpaque>::passEnum;
 		}
-		else if (passName_ == PassClassTraits<SceneTextureCompositor>::name)
+		else if (passName_ == PassClassTraits<SceneCompositor>::name)
 		{
-			pass = PassClassTraits<SceneTextureCompositor>::passEnum;
+			pass = PassClassTraits<SceneCompositor>::passEnum;
 		}
 		else
 		{
@@ -10208,14 +10208,14 @@ namespace RenderPassTraits
     template<RenderPassComponent::Pass passType>
     struct PassTypeToPassClass;
 	template<>
-	struct PassTypeToPassClass<RenderPassComponent::Pass::kSceneTextureCreatorOpaque>
+	struct PassTypeToPassClass<RenderPassComponent::Pass::kSceneOpaque>
 	{
-		using PassClass = SceneTextureCreatorOpaque;
+		using PassClass = SceneOpaque;
 	};
 	template<>
-	struct PassTypeToPassClass<RenderPassComponent::Pass::kSceneTextureCompositor>
+	struct PassTypeToPassClass<RenderPassComponent::Pass::kSceneCompositor>
 	{
-		using PassClass = SceneTextureCompositor;
+		using PassClass = SceneCompositor;
 	};
 }
 
@@ -10232,19 +10232,19 @@ namespace RenderPassTraits
 多すぎて覚醒しそう
 
 ========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Render\RenderPass\AllRenderPass\SceneTextureCompositor\SceneTextureCompositor.cpp ===
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Render\RenderPass\AllRenderPass\SceneCompositor\SceneCompositor.cpp ===
 ========================================
 #include "PreCompileHeader.h"
-#include "SceneTextureCompositor.h"
+#include "SceneCompositor.h"
 #include "../../PassDesc/PassDesc.h"
 //外部
 #include "../../../../Resource/Model/ModelStructure/Model.h"
 #include "../../../../Core/Command/RuntimeWrapper/RuntimeWrapper.h"
-SceneTextureCompositor::SceneTextureCompositor(RenderContext::NexusFieldProof proof_, const RenderContext::PassDesc& desc_, RenderPassComponent::Pass pass_)
+SceneCompositor::SceneCompositor(RenderContext::NexusFieldProof proof_, const RenderContext::PassDesc& desc_, RenderPassComponent::Pass pass_)
 	:RenderContext::PassBehavior(proof_, desc_,pass_)
 {
 }
-void SceneTextureCompositor::Update
+void SceneCompositor::Update
 (
 	[[maybe_unused]] std::vector<Model> const& modelContainer_,
 	CommandContext::RuntimeWrapper& cmdWrapper_
@@ -10253,14 +10253,14 @@ void SceneTextureCompositor::Update
 }
 
 ========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Render\RenderPass\AllRenderPass\SceneTextureCompositor\SceneTextureCompositor.h ===
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Render\RenderPass\AllRenderPass\SceneCompositor\SceneCompositor.h ===
 ========================================
 #pragma once
 #include "../RenderPassBehavior.h"
-class SceneTextureCompositor :public RenderContext::PassBehavior
+class SceneCompositor :public RenderContext::PassBehavior
 {
 public:
-	SceneTextureCompositor(RenderContext::NexusFieldProof proof_, const RenderContext::PassDesc& desc_, RenderPassComponent::Pass pass_);
+	SceneCompositor(RenderContext::NexusFieldProof proof_, const RenderContext::PassDesc& desc_, RenderPassComponent::Pass pass_);
 	virtual void Update
 	(
 		[[maybe_unused]] std::vector<Model> const& modelContainer_,
@@ -10270,19 +10270,19 @@ private:
 };
 
 ========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Render\RenderPass\AllRenderPass\SceneTextureCreatorOpaque\SceneTextureCreatorOpaque.cpp ===
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Render\RenderPass\AllRenderPass\SceneOpaque\SceneOpaque.cpp ===
 ========================================
 #include "PreCompileHeader.h"
-#include "SceneTextureCreatorOpaque.h"
+#include "SceneOpaque.h"
 #include "../../PassDesc/PassDesc.h"
 //外部
 #include "../../../../Resource/Model/ModelStructure/Model.h"
 #include "../../../../Core/Command/RuntimeWrapper/RuntimeWrapper.h"
-SceneTextureCreatorOpaque::SceneTextureCreatorOpaque(RenderContext::NexusFieldProof proof_ , const RenderContext::PassDesc& desc_, RenderPassComponent::Pass pass_)
+SceneOpaque::SceneOpaque(RenderContext::NexusFieldProof proof_ , const RenderContext::PassDesc& desc_, RenderPassComponent::Pass pass_)
 	:RenderContext::PassBehavior(proof_,desc_,pass_)
 {
 }
-void SceneTextureCreatorOpaque::Update
+void SceneOpaque::Update
 (
 	[[maybe_unused]] std::vector<Model> const& modelContainer_,
 	CommandContext::RuntimeWrapper& cmdWrapper_
@@ -10291,14 +10291,14 @@ void SceneTextureCreatorOpaque::Update
 }
 
 ========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Render\RenderPass\AllRenderPass\SceneTextureCreatorOpaque\SceneTextureCreatorOpaque.h ===
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Render\RenderPass\AllRenderPass\SceneOpaque\SceneOpaque.h ===
 ========================================
 #pragma once
 #include "../RenderPassBehavior.h"
-class SceneTextureCreatorOpaque :public RenderContext::PassBehavior
+class SceneOpaque :public RenderContext::PassBehavior
 {
 public:
-	SceneTextureCreatorOpaque(RenderContext::NexusFieldProof proof_, const RenderContext::PassDesc& desc_, RenderPassComponent::Pass pass_);
+	SceneOpaque(RenderContext::NexusFieldProof proof_, const RenderContext::PassDesc& desc_, RenderPassComponent::Pass pass_);
 	virtual void Update
 	(
 		[[maybe_unused]] std::vector<Model> const& modelContainer_,
@@ -11415,7 +11415,7 @@ TestModelOKIBA::TestModelOKIBA(ModelContext::ModelCreator* modelCreator_)
 	cP.blendModes.emplace_back(BlendMode::kOpaque);
 	cP.blendModes.emplace_back(BlendMode::kAlphaBlend);
 	cP.blendModes.emplace_back(BlendMode::kAdditive);
-	cP.pass = Pass::kSceneTextureCreatorOpaque;
+	cP.pass = Pass::kSceneOpaque;
 	cP.cullMode = CullMode::kBack;
 	cP.meshType = MeshType::kStatic;
 	cP.materialType = MaterialType::kStandard;
@@ -11425,7 +11425,7 @@ TestModelOKIBA::TestModelOKIBA(ModelContext::ModelCreator* modelCreator_)
 	player = modelCreator_->Create("PlayerObj", playerC, materials,"Player");
 	ModelDescription::RenderState cC;
 	cC.blendModes.emplace_back(BlendMode::kOpaque);
-	cC.pass = RenderPassComponent::Pass::kSceneTextureCreatorOpaque;
+	cC.pass = RenderPassComponent::Pass::kSceneOpaque;
 	cC.cullMode = CullMode::kBack;
 	cC.meshType = MeshType::kStatic;
 	cC.materialType = MaterialType::kStandard;
@@ -13667,7 +13667,7 @@ struct ModelDescription
 	{
 		RenderState() = default;
 		//どの描画パス(ステージ)で描画するか
-		RenderPassComponent::Pass pass = RenderPassComponent::Pass::kSceneTextureCreatorOpaque;
+		RenderPassComponent::Pass pass = RenderPassComponent::Pass::kSceneOpaque;
 		//ブレンドモード複数可
 		std::vector<RenderStateComponent::BlendMode> blendModes;
 		//どの面をカリングするか
@@ -15562,7 +15562,7 @@ namespace ShaderTable
 		std::string meshShader;
 		switch (pass_)
 		{
-		case RenderPassComponent::Pass::kSceneTextureCreatorOpaque:
+		case RenderPassComponent::Pass::kSceneOpaque:
 			if (meshType_ == ShaderPathComponent::MeshType::kStatic)meshShader = "StaticMS";
 			break;
 		default:
@@ -15587,7 +15587,7 @@ namespace ShaderTable
 		return std::nullopt;
 		switch (pass_)
 		{
-		case RenderPassComponent::Pass::kSceneTextureCreatorOpaque:
+		case RenderPassComponent::Pass::kSceneOpaque:
 			if (materialType_ == ShaderPathComponent::MaterialType::kStandard)pixelShader = "StandardPS";
 			break;
 		default:
@@ -15790,6 +15790,8 @@ private:
 #include "../ShaderLibrary/ShaderLibrary.h"
 #include "StringConverter/StringConverter.h"
 #include "RegistryLoader/RegistryLoader.h"
+//外部
+#include "StringProcessing/StringProcessing.h"
 ShaderContext::ShaderLoader::ShaderLoader
 (
 	NexusFieldProof proof_,
@@ -15814,11 +15816,15 @@ void ShaderContext::ShaderLoader::CompileAllShaderFiles(NexusFieldProof proof_, 
     auto shaderFileNameToArgs = GetArgs();
     for (const auto& [key, value] : shaderRegistryMS)
     {
-        shaderLibrary_->Import(proof_, key, compiler.CompileShader(value, key, msProfile, shaderFileNameToArgs[key]));
+        //MSやPSなどの文字列は本来のファイルネームには存在しないのでカットしている
+        std::string const actualFileName = StringProcessing::Cut(key, 2);
+        shaderLibrary_->Import(proof_, key, compiler.CompileShader(value, actualFileName, msProfile, shaderFileNameToArgs[key]));
     }
     for (const auto& [key, value] : shaderRegistryPS)
     {
-        shaderLibrary_->Import(proof_, key, compiler.CompileShader(value, key, psProfile, shaderFileNameToArgs[key]));
+        //MSやPSなどの文字列は本来のファイルネームには存在しないのでカットしている
+        std::string const actualFileName = StringProcessing::Cut(key, 2);
+        shaderLibrary_->Import(proof_, key, compiler.CompileShader(value, actualFileName, psProfile, shaderFileNameToArgs[key]));
     }
     Logger::Log("Complete Load All Shaders", "ShaderLoader.cpp");
 }
@@ -18771,10 +18777,16 @@ namespace StringProcessing
         }
         return path_.substr(0, dotPos);
     }
+    ///けつからn番目の文字をカットする
+    inline std::string Cut(std::string const dstString_, size_t const removeStartPos_)
+    {
+        auto const stringEndPos = dstString_.size() - removeStartPos_;
+        return dstString_.substr(0, stringEndPos);
+    }
 }
 
 ========================================
 === SUMMARY ===
 ========================================
 Total Files      : 429
-Effective Lines  : 13627
+Effective Lines  : 13634
