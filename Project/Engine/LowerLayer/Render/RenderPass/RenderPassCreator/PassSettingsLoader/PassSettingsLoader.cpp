@@ -20,7 +20,8 @@ namespace
 		ParseShaderFile(passName_),
 		ParseRenderPassState(passName_),
 		ParseColorBufferInfo(passName_),
-		ParseDepthStencilBufferInfo(passName_)
+		ParseDepthStencilBufferInfo(passName_),
+		ParseReferenceBufferNames(passName_)
 	);
 
 	return desc;
@@ -192,3 +193,9 @@ std::optional<std::pair<std::string, std::string >> RenderContext::RenderPassCre
 	return ms_psOpt;
 }
 
+std::vector<std::string> RenderContext::RenderPassCreator::PassSettingsLoader::ParseReferenceBufferNames(std::string const passName_)
+{
+	auto* miyajison = Miyajison::Get();
+
+	return miyajison->LoadData<std::vector<std::string>>(DataKeyString::kSrcJsonFileName, { passName_,DataKeyString::kReferenceBufferNames });
+}

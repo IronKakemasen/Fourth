@@ -8,12 +8,19 @@ namespace
 
 RenderContext::PassDesc::PassDesc
 (
-	std::string name_,
-	std::optional<std::pair<std::string, std::string >> ms_psFileName_,
+	std::string const name_,
+	std::optional<std::pair<std::string, std::string >> const& ms_psFileName_,
 	RenderPassState renderPassState_,
-	std::vector<RenderContext::RequiredBufferInfo::ColorBuffer> colorBuffersInfo_,
-	std::optional<RenderContext::RequiredBufferInfo::DepthStencilBuffer> depthStencilBufferInfo_
-):renderPassState(renderPassState_) , colorBuffersInfo(colorBuffersInfo_), depthStencilBufferInfo(depthStencilBufferInfo_), ms_psFileName(ms_psFileName_),passName(name_)
+	std::vector<RenderContext::RequiredBufferInfo::ColorBuffer> const& colorBuffersInfo_,
+	std::optional<RenderContext::RequiredBufferInfo::DepthStencilBuffer> const& depthStencilBufferInfo_,
+	std::vector <std::string> const& referenceBufferNames_
+):
+	renderPassState(renderPassState_) ,
+	colorBuffersInfo(colorBuffersInfo_),
+	depthStencilBufferInfo(depthStencilBufferInfo_),
+	ms_psFileName(ms_psFileName_),
+	referenceBufferNames(referenceBufferNames_), 
+	passName(name_)
 {
 
 }

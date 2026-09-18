@@ -33,14 +33,13 @@ Model* ModelContext::ModelCreator::Create
 )
 {
 	//commonとuniqueのディスクリプション
-	auto [commons,uniques,materialsGPU] = modelDescAssembler->Assemble(modelFileName_, materials_);
+	auto [perDrawIndices,materialsGPU] = modelDescAssembler->Assemble(modelFileName_, materials_);
 
 	///一つのDescに詰める
 	ModelDescription modelDesc
 	(
 		modelName_ + std::to_string(numCreate++),
-		commons,
-		uniques,
+		perDrawIndices,
 		modelRenderStates_,
 		materialsGPU
 	);

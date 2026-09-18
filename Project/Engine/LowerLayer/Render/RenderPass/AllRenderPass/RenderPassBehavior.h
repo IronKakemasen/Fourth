@@ -25,7 +25,7 @@ protected:
 
 	//PSO特定のためにもっておく。PassDescの簡略キーみたいな。
 	RenderPassComponent::Pass pass;
-
+	//Passの設計図
 	PassDesc desc;
 };
 

@@ -5,15 +5,15 @@
 
 //外部
 #include "../../../../../../Assets/Shared/StructuredBufferModelData.h"
+#include "../../../../../../Assets/Shared/ConstantBuffers.h"
 #include "../../../Texture/TextureContext.h"
 
 
 class ModelContext::ModelDescAssembler
 {
-	using ModelDescSet = std::tuple
+	using ModelDescParts = std::tuple
 	<
-		std::vector<ModelDescription::Common>,
-		std::vector<ModelDescription::Unique>,
+		std::vector<ConstantBuffers::PerDrawIndicesCPUGPU>,
 		std::vector<StructuredBufferModelData::MaterialGPU>
 	>;
 
@@ -27,7 +27,7 @@ public:
 	);
 
 	//モデルクラスのRenderStates以外のディスクリプションを作ってあげる
-	ModelDescSet Assemble
+	ModelDescParts Assemble
 	(
 		std::string modelFileName_,
 		std::vector<StructuredBufferModelData::MaterialCPU> const& inputMaterials_
@@ -35,15 +35,12 @@ public:
 
 private:
 
-	//PerDrawIndicesのうち、モデル種共通のパラメーターを詰める
-	std::vector<ModelDescription::Common> PackCommonData
+	//PerDrawIndicesを詰める
+	std::vector<ConstantBuffers::PerDrawIndicesCPUGPU> PackPerDrawIndices
 	(
 		const std::vector<MeshDataID>& meshDataIDs_,
 		size_t const kNumMeshData_
 	);
-
-	//PerDrawIndicesのうち、モデルごとに所持するパラメーターを詰める
-	std::vector<ModelDescription::Unique> PackUniqueData(size_t const kNumMeshData_);
 
 	//引数のマテリアルデータをGPU仕様に変換する。
 	//もし、中身が空だった場合は、そのモデル名に紐づけられているマテリアルデータを入力

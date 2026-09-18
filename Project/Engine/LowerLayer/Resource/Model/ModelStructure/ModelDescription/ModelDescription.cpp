@@ -9,11 +9,10 @@ namespace
 ModelDescription::ModelDescription
 (
 	std::string modelName_,
-	std::vector<ModelDescription::Common> const& commons_,
-	std::vector<ModelDescription::Unique> const& uniques_,
+	std::vector<ConstantBuffers::PerDrawIndicesCPUGPU> const& perDrawIndices_,
 	std::vector<ModelDescription::RenderState> const& renderStates_,
 	std::vector<StructuredBufferModelData::MaterialGPU> materials_
-) :commons(commons_), uniques(uniques_), renderStates(renderStates_), materials(materials_)
+) :perDrawIndices(perDrawIndices_), renderStates(renderStates_), materials(materials_)
 {
 	std::string errorMsg{};
 
@@ -63,10 +62,8 @@ ModelDescription::ModelDescription
 
 	ErrorMessageOutput::Assert::DetectError(errorMsg.length() == 0, modelName_ + errorMsg, fileName);
 
-	if (renderStates.size() == 0)			errorMsg += "「renderStatesが空」";
-	if (uniques.size() == 0)				errorMsg += "「uniquesが空」";
-	if (commons.size() == 0)				errorMsg += "「commonsが空」";
-	if(uniques.size() != commons.size())	errorMsg += "「uniquesとcommonsのサイズが違う(恐らくエンジンのせい)」";
+	if (renderStates.size() == 0)		errorMsg += "「renderStatesが空」";
+	if (perDrawIndices.size() == 0)		errorMsg += "「perDrawIndicesが空」";
 
 	ErrorMessageOutput::Assert::DetectError(errorMsg.length() == 0, modelName_ +  errorMsg, fileName);
 

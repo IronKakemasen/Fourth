@@ -27,7 +27,7 @@ ModelContext::ModelDescAssembler::ModelDescAssembler
 
 }
 
-ModelContext::ModelDescAssembler::ModelDescSet ModelContext::ModelDescAssembler::Assemble
+ModelContext::ModelDescAssembler::ModelDescParts ModelContext::ModelDescAssembler::Assemble
 (
 	std::string modelFileName_,
 	std::vector<MaterialCPU> const& inputMaterials_
@@ -44,61 +44,45 @@ ModelContext::ModelDescAssembler::ModelDescSet ModelContext::ModelDescAssembler:
 	//サブメッシュ含む、メッシュの総数
 	size_t const kNumMeshData = meshDataIDs.size();
 
-	return ModelDescSet
+	return ModelDescParts
 	(
-		PackCommonData(meshDataIDs, kNumMeshData),
-		PackUniqueData(kNumMeshData),
+		PackPerDrawIndices(meshDataIDs, kNumMeshData),
 		ConvertMaterialData(kNumMeshData, materialsFromFile, inputMaterials_)
 	);
 
 }
 
-std::vector<ModelDescription::Common> ModelContext::ModelDescAssembler::PackCommonData
+std::vector<ConstantBuffers::PerDrawIndicesCPUGPU> ModelContext::ModelDescAssembler::PackPerDrawIndices
 (
 	const std::vector<MeshDataID>& meshDataIDs_,
 	size_t const kNumMeshData_
 )
 {
+	std::vector<ConstantBuffers::PerDrawIndicesCPUGPU> preDrawindices;
+	preDrawindices.resize(kNumMeshData_);
 
-	std::vector<ModelDescription::Common> commons;
-	commons.resize(kNumMeshData_);
-
-	for (size_t i = 0;i < kNumMeshData_;++i)
-	{
-		ModelDescription::Common common;
-		common.meshDataID = meshDataIDs_[i];
-
-		commons[i] = std::move(common);
-	}
-
-	return commons;
-}
-
-std::vector<ModelDescription::Unique> ModelContext::ModelDescAssembler::PackUniqueData(size_t const kNumMeshData_)
-{
-	std::vector<ModelDescription::Unique> uniques;
-	uniques.resize(kNumMeshData_);
+	auto const licence = ModelContext::ModelSlotAllocator::AllocateLicence{};
 
 	for (size_t i = 0;i < kNumMeshData_;++i)
 	{
-		
-		ModelDescription::Unique unique;
-		auto const licence = ModelContext::ModelSlotAllocator::AllocateLicence{};
+		//メッシュデータIDを割り当てる
+		ConstantBuffers::PerDrawIndicesCPUGPU perDrawIndex;
+		perDrawIndex.meshDataID = meshDataIDs_[i];
 
 		//トランスフォームIDを割り当てる
-		unique.dispatchedTransformedMatrixID =
+		perDrawIndex.transformMatrixID =
 			slotAllocator->AllocateSlot<ModelContext::ModelSlotAllocator::TransformMatrixSlot>(licence);
 
 		//マテリアルIDを割り当てる
-		unique.dispatchedMaterialID =
+		perDrawIndex.materialID =
 			slotAllocator->AllocateSlot<ModelContext::ModelSlotAllocator::MaterialSlot>(licence);
 
-		uniques[i] = std::move(unique);
-
+		preDrawindices.emplace_back(std::move(perDrawIndex));
 	}
 
-	return uniques;
+	return preDrawindices;
 }
+
 
 std::vector<MaterialGPU> ModelContext::ModelDescAssembler::ConvertMaterialData
 (

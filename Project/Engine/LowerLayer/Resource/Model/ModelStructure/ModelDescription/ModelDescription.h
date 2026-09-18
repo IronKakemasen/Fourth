@@ -6,6 +6,7 @@
 
 //外部
 #include "../../../../../../Assets/Shared/StructuredBufferModelData.h"
+#include "../../../../../../Assets/Shared/ConstantBuffers.h"
 
 
 ///2回のフェーズに分けてモデルクラスのデータを埋めていく
@@ -35,34 +36,12 @@ struct ModelDescription
 
 	};
 
-	//そのモデルクラス固有の
-	struct Unique
-	{
-		Unique() = default;
-		Unique(uint32_t dispatchedTransformedMatrixID_) :dispatchedTransformedMatrixID(dispatchedTransformedMatrixID_) {};
-
-		//トランスフォームID
-		uint32_t dispatchedTransformedMatrixID{};
-		//マテリアルID
-		uint32_t dispatchedMaterialID{};
-	};
-
-	//そのモデルクラス共通
-	struct Common
-	{
-		Common() = default;
-		Common(MeshDataID meshDataID_) :meshDataID(meshDataID_) {};
-
-		MeshDataID meshDataID{};
-	};
-
 	ModelDescription() {};
 	//中で入力チェック
 	ModelDescription
 	(
 		std::string modelName_,
-		std::vector<ModelDescription::Common> const& commons_,
-		std::vector<ModelDescription::Unique> const& uniques_,
+		std::vector<ConstantBuffers::PerDrawIndicesCPUGPU> const& perDrawIndices_,
 		std::vector<ModelDescription::RenderState> const& renderStates_,
 		std::vector<StructuredBufferModelData::MaterialGPU> materials_
 	);
@@ -73,10 +52,10 @@ private:
 
 	//ModelDescAssemblerに設定してもらう
 	//可変長になっているのは、マルチメッシュのため！！！！
-	std::vector<ModelDescription::Common> commons;
-	std::vector<ModelDescription::Unique> uniques;
+	std::vector<ConstantBuffers::PerDrawIndicesCPUGPU> perDrawIndices;
 
 	//これ以下は自分で決める
+
 	//可変長になっているのは、複数分のPassに参加できるようにするため
 	//つまり、サブメッシュもすべて同じ設定
 	std::vector<ModelDescription::RenderState> renderStates;
