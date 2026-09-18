@@ -37,9 +37,9 @@ namespace StructuredBufferModelData
 
     struct MaterialCPU
     {
-        std::string albedoTexture;
-        std::string normalTexture;
-        std::string emissiveTexture;
+        std::string albedoTexture = ProjectConfig::Texture::kNoDataAlbedoTex;
+        std::string normalTexture = ProjectConfig::Texture::kNoDataNormalTex;
+        std::string emissiveTexture = ProjectConfig::Texture::kNoDataEmissiveTex;
         Vector4<float> baseColor = {255,255,255,255};
         float roughness = 0.25f;
         float metallic = 0.9f;

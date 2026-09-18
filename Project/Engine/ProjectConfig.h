@@ -73,6 +73,16 @@ namespace ProjectConfig
 		constexpr uint32_t kNumDescriptorSRVHeap = 1024;
 		constexpr uint32_t kNumDescriptorsDSVHeap = 16;
 	}
+
+	namespace Texture
+	{
+		//ノーデータテクスチャのファイル名
+		inline std::string const kNoDataAlbedoTex	= "noData_albedo";
+		inline std::string const kNoDataNormalTex	= "noData_normal";
+		inline std::string const kNoDataEmissiveTex = "noData_emissive";
+		inline std::string const kNoDataSprite		= "noData_albedo";
+
+	}
 }
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////

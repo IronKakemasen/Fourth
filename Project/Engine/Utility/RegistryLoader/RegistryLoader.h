@@ -43,7 +43,7 @@ public:
         (
             file.is_open(),
             registryFilePath + "このパス無くない？",
-            "ModelRegistryLoader.h"
+            "RegistryLoader.h"
         );
 
         std::string line;
@@ -116,7 +116,7 @@ public:
         (
             file.is_open(),
             registryFilePath + "このパス無くない？",
-            "ModelRegistryLoader.h"
+            "RegistryLoader.h"
         );
 
         std::string line;
@@ -175,7 +175,7 @@ public:
         (
             filekKey.size() > 0,
             value_ + "これに対応するキーが無い",
-            "ModelRegistryLoader.h"
+            "RegistryLoader.h"
         );
 
         return filekKey;

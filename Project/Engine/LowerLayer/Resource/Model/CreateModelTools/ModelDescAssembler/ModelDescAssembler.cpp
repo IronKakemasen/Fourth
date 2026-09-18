@@ -9,6 +9,10 @@
 #include "../../../Texture/TextureContextDiplomat/TextureContextToolLender/TextureContextToolLenderLicences.h"
 #include "../../../Texture/TextureLibrary/TextureLibrary.h"
 
+
+using namespace StructuredBufferModelData;
+using namespace ProjectConfig::Texture;
+
 ModelContext::ModelDescAssembler::ModelDescAssembler
 (
 	NexusFieldProof proof_,
@@ -22,8 +26,6 @@ ModelContext::ModelDescAssembler::ModelDescAssembler
 	textureLib = &toolLender.Lend<TextureContext::TextureLibrary>(licence);
 
 }
-
-using namespace StructuredBufferModelData;
 
 ModelContext::ModelDescAssembler::ModelDescSet ModelContext::ModelDescAssembler::Assemble
 (
@@ -133,12 +135,12 @@ std::vector<MaterialGPU> ModelContext::ModelDescAssembler::ConvertMaterialData
 				materialGPUContainer[i].roughness = materialsFromFile_[i].roughness;
 				materialGPUContainer[i].metallic = materialsFromFile_[i].metallic;
 			}
-			//ファイルからフェッチしたマテリアルデータがないなら適当な値を入れておく
+			//ファイルからフェッチしたマテリアルデータがないならnoDataを入れておく
 			else
 			{
-				materialGPUContainer[i].albedoTexture = textureLib->Export("");
-				materialGPUContainer[i].normalTexture = textureLib->Export("");
-				materialGPUContainer[i].emissiveTexture = textureLib->Export("");
+				materialGPUContainer[i].albedoTexture = textureLib->Export(kNoDataAlbedoTex);
+				materialGPUContainer[i].normalTexture = textureLib->Export(kNoDataNormalTex);
+				materialGPUContainer[i].emissiveTexture = textureLib->Export(kNoDataEmissiveTex);
 				materialGPUContainer[i].roughness = 0.1f;
 				materialGPUContainer[i].metallic = 1.0f;
 			}
