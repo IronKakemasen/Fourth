@@ -23,10 +23,8 @@ void RenderContext::RenderPassCreator::PassBufferCreator::CreateBuffer
 	{
 		auto const& tmp = colorBuffersInfo[i];
 		ColorBufferDescription colorBufferDesc(tmp.clearColor, tmp.width, tmp.height, tmp.format, tmp.numBuffer);
-		
-		std::string const bufferName = passName_ + "<" + tmp.bufferName + ">" + "[" + std::to_string(i) + "]";
-		
-		desc_.SetColorBufferUniqueID(creator_->CreateWithBuffer(colorBufferDesc, bufferName).first, i);
+				
+		desc_.SetColorBufferUniqueID(creator_->CreateWithBuffer(colorBufferDesc, passName_).first, i);
 	}
 
 	if (desc_.WatchDepthStencilBufferInfo().has_value())
@@ -44,9 +42,7 @@ void RenderContext::RenderPassCreator::PassBufferCreator::CreateBuffer
 			tmp->numBuffer
 		);
 
-		auto const bufferName = passName_ + "<" + tmp->bufferName + ">";
-
-		desc_.SetDepthStencilBufferUniqueID(creator_->CreateWithBuffer(desc, bufferName).first);
+		desc_.SetDepthStencilBufferUniqueID(creator_->CreateWithBuffer(desc, passName_).first);
 	}
 
 }

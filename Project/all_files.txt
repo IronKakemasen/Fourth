@@ -102,6 +102,14 @@ namespace ProjectConfig
 		constexpr uint32_t kNumDescriptorSRVHeap = 1024;
 		constexpr uint32_t kNumDescriptorsDSVHeap = 16;
 	}
+	namespace Texture
+	{
+		//ノーデータテクスチャのファイル名
+		inline std::string const kNoDataAlbedoTex	= "noData_albedo";
+		inline std::string const kNoDataNormalTex	= "noData_normal";
+		inline std::string const kNoDataEmissiveTex = "noData_emissive";
+		inline std::string const kNoDataSprite		= "noData_albedo";
+	}
 }
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -12455,9 +12463,6 @@ void ModelContext::ModelDataLoader::MaterialParser::ParseMaterial(MaterialCPU& d
 }
 std::string ModelContext::ModelDataLoader::MaterialParser::Convert(const aiString& path_)
 {
-    wchar_t temp[256] = {};
-    size_t  size;
-    mbstowcs_s(&size, temp, path_.C_Str(), 256);
     return StringProcessing::RemoveFileExtension(std::string(path_.C_Str()));
 }
 
@@ -12733,6 +12738,8 @@ private:
 #include "../../../Texture/TextureContextDiplomat/TextureContextToolLender/TextureContextToolLender.h"
 #include "../../../Texture/TextureContextDiplomat/TextureContextToolLender/TextureContextToolLenderLicences.h"
 #include "../../../Texture/TextureLibrary/TextureLibrary.h"
+using namespace StructuredBufferModelData;
+using namespace ProjectConfig::Texture;
 ModelContext::ModelDescAssembler::ModelDescAssembler
 (
 	NexusFieldProof proof_,
@@ -12745,7 +12752,6 @@ ModelContext::ModelDescAssembler::ModelDescAssembler
 	TextureContext::ToolLender::LicenceType<TextureContext::TextureLibrary> licence;
 	textureLib = &toolLender.Lend<TextureContext::TextureLibrary>(licence);
 }
-using namespace StructuredBufferModelData;
 ModelContext::ModelDescAssembler::ModelDescSet ModelContext::ModelDescAssembler::Assemble
 (
 	std::string modelFileName_,
@@ -12834,12 +12840,12 @@ std::vector<MaterialGPU> ModelContext::ModelDescAssembler::ConvertMaterialData
 				materialGPUContainer[i].roughness = materialsFromFile_[i].roughness;
 				materialGPUContainer[i].metallic = materialsFromFile_[i].metallic;
 			}
-			//ファイルからフェッチしたマテリアルデータがないなら適当な値を入れておく
+			//ファイルからフェッチしたマテリアルデータがないならnoDataを入れておく
 			else
 			{
-				materialGPUContainer[i].albedoTexture = textureLib->Export("");
-				materialGPUContainer[i].normalTexture = textureLib->Export("");
-				materialGPUContainer[i].emissiveTexture = textureLib->Export("");
+				materialGPUContainer[i].albedoTexture = textureLib->Export(kNoDataAlbedoTex);
+				materialGPUContainer[i].normalTexture = textureLib->Export(kNoDataNormalTex);
+				materialGPUContainer[i].emissiveTexture = textureLib->Export(kNoDataEmissiveTex);
 				materialGPUContainer[i].roughness = 0.1f;
 				materialGPUContainer[i].metallic = 1.0f;
 			}
@@ -16669,12 +16675,6 @@ void TextureContext::TextureLibrary::Import(NexusFieldProof proof_, std::string 
 SRVHeapIndex TextureContext::TextureLibrary::Export(std::string const name_)const
 {
 	std::string actualName = name_;
-	//引数のテクスチャファイル名またはパス名が空だった場合は、noNameテクスチャを埋め込む
-	if (actualName.size() == 0)
-	{
-		actualName = kNoDataTex;
-		return data.at(actualName);
-	}
 	//まずリスト内に存在しているかチェック
 	if (data.find(name_) == data.end())
 	{
@@ -16706,6 +16706,8 @@ void TextureContext::TextureLibrary::Log()
 ========================================
 #pragma once
 #include "../TextureContext.h"
+//外部
+#include "../../../Buffer/BufferDefinition/TextureComponent.h"
 class TextureContext::TextureLibrary
 {
 public:
@@ -16716,8 +16718,6 @@ public:
 	void Log();
 private:
 	std::unordered_map<std::string, SRVHeapIndex> data;
-	//ノーデータテクスチャのファイル名
-	std::string const kNoDataTex = "noData_albedo";
 };
 
 ========================================
@@ -18510,7 +18510,7 @@ public:
         (
             file.is_open(),
             registryFilePath + "このパス無くない？",
-            "ModelRegistryLoader.h"
+            "RegistryLoader.h"
         );
         std::string line;
         while (std::getline(file, line))
@@ -18565,7 +18565,7 @@ public:
         (
             file.is_open(),
             registryFilePath + "このパス無くない？",
-            "ModelRegistryLoader.h"
+            "RegistryLoader.h"
         );
         std::string line;
         while (std::getline(file, line))
@@ -18611,7 +18611,7 @@ public:
         (
             filekKey.size() > 0,
             value_ + "これに対応するキーが無い",
-            "ModelRegistryLoader.h"
+            "RegistryLoader.h"
         );
         return filekKey;
     }
@@ -18789,4 +18789,4 @@ namespace StringProcessing
 === SUMMARY ===
 ========================================
 Total Files      : 429
-Effective Lines  : 13634
+Effective Lines  : 13633

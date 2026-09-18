@@ -20,7 +20,9 @@
                                 "colorHeight":  [-1],
                                 "numBuffer_Color":[1],
                                 
-                                "useDepthStencil": false
+                                "useDepthStencil": false,
+
+                                "referenceBufferNames": []
     },
     "SceneOpaque": 
      {
@@ -55,8 +57,8 @@
                                 "depthEnable": true,
                                 "depthBias":  0,
                                 "depthBiasClamp": 0.0,
-                                "slopeScaledDepthBias": 0.0
+                                "slopeScaledDepthBias": 0.0,
 
-                                
+                                "referenceBufferNames": []
                             }
 }
