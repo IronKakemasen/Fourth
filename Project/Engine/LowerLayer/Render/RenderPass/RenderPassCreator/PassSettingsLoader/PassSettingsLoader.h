@@ -1,13 +1,12 @@
 #pragma once
 #include "../RenderPassCreator.h"
-#include "../../PassDesc/PassDesc.h"
 
 
 class RenderContext::RenderPassCreator::PassSettingsLoader
 {
 	friend class RenderPassCreator;
 
-	static [[nodiscard]] PassDesc Load(std::string const passName_);
+	static [[nodiscard]] std::unique_ptr<PassDesc> Load(std::string const passName_);
 
 
 	//以下ヘルパー

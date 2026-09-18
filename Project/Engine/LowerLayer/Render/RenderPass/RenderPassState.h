@@ -1,6 +1,6 @@
 #pragma once
-#include "../RenderPassComponent.h"
-#include "../../RenderContext.h"
+#include "RenderPassComponent.h"
+#include "../RenderContext.h"
 
 struct RenderContext::RenderPassState
 {

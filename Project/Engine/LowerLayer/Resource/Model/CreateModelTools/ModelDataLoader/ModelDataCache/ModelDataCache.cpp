@@ -27,7 +27,7 @@ void ModelContext::ModelDataCache::FindDuplication(AccessKey key_, std::string f
 
 void ModelContext::ModelDataCache::StoreTemporarily(AccessKey key_, std::string fileName_, std::unique_ptr<ModelData>&& data_)
 {
-	Logger::Log("Regieter: " + fileName_, "ModelDataCache.cpp");
+	Logger::Log("Register: " + fileName_, "ModelDataCache.cpp");
 
 	modelDataCache[fileName_] = std::move(data_);
 }

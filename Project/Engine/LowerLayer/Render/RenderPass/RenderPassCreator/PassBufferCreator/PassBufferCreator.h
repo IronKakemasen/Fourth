@@ -1,6 +1,5 @@
 #pragma once
 #include "../RenderPassCreator.h"
-#include "../../../../Buffer/BufferContext.h"
 
 class RenderContext::RenderPassCreator::PassBufferCreator
 {
@@ -10,7 +9,8 @@ class RenderContext::RenderPassCreator::PassBufferCreator
 	(
 		std::string const passName_,
 		PassDesc& desc_,
-		BufferContext::BufferCreator* creator_
+		std::unordered_map<std::string, BufferUniqueID>& passBufferCache_,
+		BufferContextDiplomat& bufferContextDiplomat_
 	);
 };
 

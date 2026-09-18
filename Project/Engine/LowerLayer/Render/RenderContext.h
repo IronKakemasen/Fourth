@@ -20,7 +20,10 @@ public:
 	class RenderPassCreator;
 	//描画構成Passのビヘイビア
 	class PassBehavior;
+	//パスを作成するために必要
 	struct PassDesc;
+	//PassDescから必要な情報だけまとめたもの
+	struct RuntimePassInfo;
 	//そのパスで使用するバッファの情報をまとめたもの
 	struct RequiredBufferInfo;
 	class PathBehavior;

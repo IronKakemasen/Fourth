@@ -4,8 +4,6 @@
 #include "../RenderPassContainer/RenderPassContainer.h"
 #include "../AllRenderPass/RenderPassTraits.h"
 
-//外部
-#include "../../../Buffer/BufferContext.h"
 
 
 class RenderContext::RenderPassCreator
@@ -18,7 +16,7 @@ public:
 	RenderPassCreator
 	(
 		NexusFieldProof proof_,
-		RenderPassContainer* container_
+		RenderPassContainer& container_
 	);
 
 	template<typename PassType>
@@ -30,36 +28,36 @@ public:
 	)
 	{
 		//すでに作成済みであればコンテナから渡す
-		if (passContainer->Export<PassType>(proof_)) return passContainer->Export<PassType>(proof_);
+		auto* pass = passContainer.Export<PassType>(proof_);
+		if (pass) return pass;
 
-		BufferContext::BufferCreator* bufferCreator = BorrowBufferCreator(bufferContextDiplomat_);
+		//パスのディスクを作成
+		std::unique_ptr<PassDesc> passDesc = CreateDesc(passName_, bufferContextDiplomat_);
 
-		PassDesc passDesc = CreateDesc(passName_, bufferCreator);
-
-		return InstantiatePass<PassType>(proof_, passDesc);
+		return InstantiatePass<PassType>(proof_, std::move(passDesc));
 	}
 
 
 private:
 
 	//パスのディスクを生成
-	PassDesc CreateDesc(std::string const passName_, BufferContext::BufferCreator* bufferCreator_);
+	std::unique_ptr<PassDesc> CreateDesc(std::string const passName_, BufferContextDiplomat& bufferContextDiplomat_);
 	
 	//パスの具現化
 	template<typename PassType>
-	PassType* InstantiatePass(NexusFieldProof proof_, PassDesc desc_)
+	PassType* InstantiatePass(NexusFieldProof proof_, std::unique_ptr<PassDesc> desc_)
 	{
-		return passContainer->Import
+		return passContainer.Import
 		(
 			proof_, 
-			std::move(std::make_unique<PassType>(proof_, std::move(desc_), RenderPassTraits::PassClassTraits<PassType>::passEnum))
+			std::move(std::make_unique<PassType>(proof_, std::move(desc_)))
 		);
 	}
 
-	//bufferCreatorを借りる
-	BufferContext::BufferCreator* BorrowBufferCreator(BufferContextDiplomat& bufferContextDiplomat_);
-
 	//パスユニークの保管用
-	RenderPassContainer* passContainer;
+	RenderPassContainer& passContainer;
+	//一時的にパスのバッファを保存しておくもの。ま、このクラス自体が消滅するんだけどね
+	std::unordered_map<std::string, BufferUniqueID> passBufferCache;
+
 };
 

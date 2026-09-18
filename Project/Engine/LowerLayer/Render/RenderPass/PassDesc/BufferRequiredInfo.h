@@ -36,22 +36,4 @@ struct RenderContext::RequiredBufferInfo
 		BufferUniqueID bufferID;
 
 	};
-
-	///テクスチャとして読む	ときに必要
-	struct Texture
-	{
-		//SRVヒープ上のインデックス
-		SRVHeapIndex srvHeapIndex{};
-		//バリアを張るため
-		D3D12_RESOURCE_BARRIER barrier{};
-	};
-
-	///描画先として書き込むときに必要
-	struct RenderTarget
-	{
-		//RTVヒープ上のインデックス
-		D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle{};
-		//バリアを張るため
-		D3D12_RESOURCE_BARRIER barrier{};
-	};
 };

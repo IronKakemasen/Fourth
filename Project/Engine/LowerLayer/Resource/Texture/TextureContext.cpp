@@ -19,7 +19,7 @@ TextureContext::TextureContext
 	BufferContextDiplomat& bufferContextDiplomat_
 )
 {
-	Logger::Entry("ShaderContext: Constructor");
+	Logger::Entry("TextureContext: Constructor");
 
 
 	textureLibrary.reset(new TextureLibrary(proof_));
@@ -42,7 +42,7 @@ TextureContext::TextureContext
 
 
 
-	Logger::End("ShaderContext: Constructor");
+	Logger::End("TextureContext: Constructor");
 
 }
 

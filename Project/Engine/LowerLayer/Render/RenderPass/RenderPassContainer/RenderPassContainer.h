@@ -40,6 +40,7 @@ public:
 
 private:
 
+	//すべてのPassのユニーク。
 	AllPassUnique allPassUnique;
 	std::unordered_map<RenderPassComponent::Pass, PassBehavior*> allPassPtrMap;
 };

@@ -25,40 +25,6 @@ RenderContext::PassDesc::PassDesc
 
 }
 
-void RenderContext::PassDesc::SetColorBufferUniqueID(BufferUniqueID id_, size_t index_)
-{
-	colorBuffersInfo[index_].bufferID = id_;
-}
-
-void RenderContext::PassDesc::SetDepthStencilBufferUniqueID(BufferUniqueID id_)
-{
-	depthStencilBufferInfo->bufferID = id_;
-}
-
-std::vector<RenderContext::RequiredBufferInfo::ColorBuffer> const& RenderContext::PassDesc::WatchColorBuffersInfo()const
-{
-	return colorBuffersInfo;
-}
-
-std::optional<RenderContext::RequiredBufferInfo::DepthStencilBuffer> const& RenderContext::PassDesc::WatchDepthStencilBufferInfo()const
-{
-	return depthStencilBufferInfo;
-}
-
-std::optional<std::pair<std::string, std::string >> const& RenderContext::PassDesc::WatchMs_PsFileName()const
-{
-	return ms_psFileName;
-}
-
-RenderContext::RenderPassState const& RenderContext::PassDesc::WatchRenderPassState()const
-{
-	return renderPassState;
-}
-std::string const RenderContext::PassDesc::WatchName()const
-{
-	return passName;
-}
-
 void RenderContext::PassDesc::DebugLog()const
 {
 	std::string log;
@@ -68,7 +34,7 @@ void RenderContext::PassDesc::DebugLog()const
 	int cnt{};
 	for (auto const& info : colorBuffersInfo)
 	{
-		log += "Name: " + info.bufferName + "[" + std::to_string(cnt) + "]\n";
+		log += "Name: " + info.bufferName + " : [" + std::to_string(cnt) + "]\n";
 		log += "BufferUnique: " + std::to_string((UINT)info.bufferID) + "\n";
 		log += "Format: " + std::to_string((UINT)info.format) + "\n";
 		log += "Width x Height: " + std::to_string(info.width) + " x " + std::to_string(info.height) + "\n";
@@ -97,7 +63,7 @@ void RenderContext::PassDesc::DebugLog()const
 
 	}
 
-	log += "< RenderState >";
+	log += "< DepthSettings >";
 	if (depthStencilBufferInfo.has_value())
 	{
 		log += "\nDepthEnable: " + std::to_string((int)renderPassState.depthEnable);
@@ -109,7 +75,7 @@ void RenderContext::PassDesc::DebugLog()const
 	}
 	else
 	{
-		log += "\nDammy Value has been set\n";
+		log += "\nDummy Value has been set\n";
 	}
 
 	Logger::Log(log);

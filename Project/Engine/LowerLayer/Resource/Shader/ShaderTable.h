@@ -44,8 +44,6 @@ namespace ShaderTable
 	{
 		std::optional<std::string> pixelShader;
 
-		return std::nullopt;
-
 		switch (pass_)
 		{
 		case RenderPassComponent::Pass::kSceneOpaque:

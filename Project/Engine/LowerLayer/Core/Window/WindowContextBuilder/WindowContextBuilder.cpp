@@ -84,9 +84,9 @@ WindowContext::CoreParts WindowContext::Builder::Build(NexusFieldProof proof_)
 	ShowWindow(coreParts.hWnd, SW_SHOWNORMAL);
 	Logger::Log("Display Window", fileName);
 
-	//ウィンドウにフォーカスを設定
+	//ウィンドウにフォーカス
 	SetFocus(coreParts.hWnd);
-	Logger::Log("Forcus on Window", fileName);
+	Logger::Log("Focus on Window", fileName);
 
 	//誰も捕捉しなかった場合に(Unhandled)、補足する関数を登録
 	SetUnhandledExceptionFilter(ExportDump);
