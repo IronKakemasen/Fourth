@@ -6,8 +6,9 @@ RenderContext::RenderGraph::RenderGraph
 (
 	NexusFieldProof proof_,
 	RenderPathAssembler& pathAssembler_,
-	PSO_PoolDispatcher& psoDispatcher_,
+	RenderPassCreator& renderPassCreator_,
 	RenderPassContainer& passContainer_,
+	PSO_PoolDispatcher& psoDispatcher_,
 	RootSignatureContextDiplomat& rootSignatureContextDiplomat_,
 	BufferContextDiplomat& bufferContextDiplomat_,
 	ModelContextDiplomat& modelContextDiplomat_,
@@ -22,6 +23,7 @@ RenderContext::RenderGraph::RenderGraph
 		proof_,
 		pathAssembler_,
 		psoDispatcher_,
+		renderPassCreator_,
 		passContainer_,
 		rootSignatureContextDiplomat_,
 		bufferContextDiplomat_,

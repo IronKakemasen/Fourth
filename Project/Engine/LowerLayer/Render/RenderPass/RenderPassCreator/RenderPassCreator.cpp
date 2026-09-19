@@ -24,5 +24,10 @@ std::unique_ptr<RenderContext::PassDesc> RenderContext::RenderPassCreator::Creat
 	PassBufferCreator::CreateBuffer(passName_, *desc, passBufferCache,bufferContextDiplomat_);
 
 	return desc;
-
 }
+
+std::unordered_map<std::string, BufferUniqueID> RenderContext::RenderPassCreator::WatchPassBufferCache(NexusFieldProof proof_)const
+{
+	return passBufferCache;
+}
+

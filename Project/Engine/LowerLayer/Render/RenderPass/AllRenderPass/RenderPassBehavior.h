@@ -12,13 +12,19 @@ public:
 	PassBehavior(NexusFieldProof proof_, std::unique_ptr<PassDesc>&& desc_);
 	virtual ~PassBehavior() = default;
 
-	PassDesc const& WatchDesc() const { return *desc; }
-
 	virtual void Update
 	(
 		[[maybe_unused]] std::vector<Model> const& modelContainer_,
 		CommandContext::RuntimeWrapper& cmdWrapper_
 	) = 0;
+
+	PassDesc const* WatchDesc() const;
+	void CreatePassInfo
+	(
+		NexusFieldProof proof_,
+		std::unordered_map<std::string, BufferUniqueID> const& idMap_,
+		UINT const refOffset_
+	);
 
 protected:
 

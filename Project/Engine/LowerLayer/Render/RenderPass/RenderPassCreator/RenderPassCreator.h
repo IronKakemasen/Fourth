@@ -38,6 +38,9 @@ public:
 	}
 
 
+	std::unordered_map<std::string, BufferUniqueID> WatchPassBufferCache(NexusFieldProof proof_)const;
+
+
 private:
 
 	//パスのディスクを生成

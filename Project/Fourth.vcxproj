@@ -311,7 +311,6 @@
     <ClCompile Include="Engine\LowerLayer\Resource\RootSignature\RootSignatureContext.cpp" />
     <ClCompile Include="Engine\LowerLayer\Resource\RootSignature\RootSignatureCreator\RootSignatureAssembler\RootSignatureAssembler.cpp" />
     <ClCompile Include="Engine\LowerLayer\Resource\PSO\PSO_Creator\PSO_Assembler\ToolCreatePSO\PSO_InfoOutputter\PSO_InfoOutputter.cpp" />
-    <ClCompile Include="Engine\LowerLayer\Render\RenderPath\RenderPathComposer\ShaderCombiner\ShaderCombiner.cpp" />
     <ClCompile Include="Engine\LowerLayer\Resource\RootSignature\RootSignatureLibrary\RootSignatureLibrary.cpp" />
     <ClCompile Include="Engine\LowerLayer\Render\RenderContextRuntime\PSO_PoolDispatcher\PSO_PoolDispatcher.cpp" />
     <ClCompile Include="Engine\LowerLayer\Render\RenderPass\AllRenderPass\RenderPassBehavior.cpp" />
@@ -396,6 +395,7 @@
     <ClCompile Include="Engine\LowerLayer\Resource\Texture\TextureContextDiplomat\TextureContextDiplomat.cpp" />
     <ClCompile Include="Engine\LowerLayer\Resource\Texture\TextureContextDiplomat\TextureContextToolLender\TextureContextToolLender.cpp" />
     <ClCompile Include="Engine\LowerLayer\Render\RenderPass\RuntimePassInfo\RuntimePassInfo.cpp" />
+    <ClCompile Include="Engine\LowerLayer\Render\RenderContextRuntime\RenderGraph\RenderGraphBuilder\PassSetUpper\PassSetUpper.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Assets\BAKA\ConstantBuffers.h" />
@@ -573,7 +573,6 @@
     <ClInclude Include="Engine\LowerLayer\Resource\RootSignature\RootSignatureContext.h" />
     <ClInclude Include="Engine\LowerLayer\Resource\RootSignature\RootSignatureCreator\RootSignatureAssembler\RootSignatureAssembler.h" />
     <ClInclude Include="Engine\LowerLayer\Resource\PSO\PSO_Creator\PSO_Assembler\ToolCreatePSO\PSO_InfoOutputter\PSO_InfoOutputter.h" />
-    <ClInclude Include="Engine\LowerLayer\Render\RenderPath\RenderPathComposer\ShaderCombiner\ShaderCombiner.h" />
     <ClInclude Include="Engine\LowerLayer\Resource\RootSignature\RootSignatureLibrary\RootSignatureLibrary.h" />
     <ClInclude Include="Engine\LowerLayer\Render\RenderContextRuntime\PSO_PoolDispatcher\PSO_PoolDispatcher.h" />
     <ClInclude Include="Engine\Utility\KeyPackager\KeyPackager.h" />
@@ -661,6 +660,7 @@
     <ClInclude Include="Engine\LowerLayer\Resource\Texture\TextureContextDiplomat\TextureContextDiplomat.h" />
     <ClInclude Include="Engine\LowerLayer\Resource\Texture\TextureContextDiplomat\TextureContextToolLender\TextureContextToolLender.h" />
     <ClInclude Include="Engine\LowerLayer\Render\RenderPass\RuntimePassInfo\RuntimePassInfo.h" />
+    <ClInclude Include="Engine\LowerLayer\Render\RenderContextRuntime\RenderGraph\RenderGraphBuilder\PassSetUpper\PassSetUpper.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

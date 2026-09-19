@@ -270,9 +270,6 @@
     <ClCompile Include="Engine\LowerLayer\Resource\PSO\PSO_Creator\PSO_Assembler\ToolCreatePSO\PSO_InfoOutputter\PSO_InfoOutputter.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="Engine\LowerLayer\Render\RenderPath\RenderPathComposer\ShaderCombiner\ShaderCombiner.cpp">
-      <Filter>ソース ファイル</Filter>
-    </ClCompile>
     <ClCompile Include="Engine\LowerLayer\Resource\RootSignature\RootSignatureLibrary\RootSignatureLibrary.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
@@ -645,6 +642,9 @@
     <ClCompile Include="Engine\LowerLayer\Render\RenderPass\RuntimePassInfo\RuntimePassInfo.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
+    <ClCompile Include="Engine\LowerLayer\Render\RenderContextRuntime\RenderGraph\RenderGraphBuilder\PassSetUpper\PassSetUpper.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Engine\LowerLayer\Core\Window\WindowContext.h">
@@ -897,9 +897,6 @@
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
     <ClInclude Include="Engine\LowerLayer\Resource\PSO\PSO_Creator\PSO_Assembler\ToolCreatePSO\PSO_InfoOutputter\PSO_InfoOutputter.h">
-      <Filter>ヘッダー ファイル</Filter>
-    </ClInclude>
-    <ClInclude Include="Engine\LowerLayer\Render\RenderPath\RenderPathComposer\ShaderCombiner\ShaderCombiner.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
     <ClInclude Include="Engine\LowerLayer\Resource\RootSignature\RootSignatureLibrary\RootSignatureLibrary.h">
@@ -1434,6 +1431,9 @@
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
     <ClInclude Include="Engine\LowerLayer\Render\RenderPass\RuntimePassInfo\RuntimePassInfo.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\LowerLayer\Render\RenderContextRuntime\RenderGraph\RenderGraphBuilder\PassSetUpper\PassSetUpper.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
   </ItemGroup>

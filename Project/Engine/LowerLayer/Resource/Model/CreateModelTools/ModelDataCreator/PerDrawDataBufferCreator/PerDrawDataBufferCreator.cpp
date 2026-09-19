@@ -32,6 +32,7 @@ void ModelContext::ModelDataCreator::PerDrawDataBufferCreator::CreatePerDrawCons
 
 void ModelContext::ModelDataCreator::PerDrawDataBufferCreator::CreatePerDrawCBuffer(CreateCBufferCmd& createCBufferCmd_)
 {
+	//もちろん中身はモデルに依存するので、ドローコール時に書き込む
 	auto cBufferID_cBuffer = createCBufferCmd_
 	(
 		"PerDrawIndices",

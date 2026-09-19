@@ -31,7 +31,7 @@ public:
 		//実体
 		std::unique_ptr<PathType> path = InstantiatePath<PathType>(proof_);
 		//そのPathが使用するPassのコンテナ
-		std::vector<PassAndName> passAndNames =  LoadPathSettings(pathName);
+		std::vector<PassAndName> passAndNames = LoadPathSettings(pathName);
 		//それら情報をもとに、passCreatorでPassを作り追加する
 		AddPass(proof_, passAndNames, *path.get(), bufferContextDiplomat_);
 
