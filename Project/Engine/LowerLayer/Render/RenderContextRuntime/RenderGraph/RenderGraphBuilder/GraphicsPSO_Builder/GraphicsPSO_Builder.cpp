@@ -63,7 +63,6 @@ void RenderContext::RenderGraph::PSO_Builder::CreateAllPSO
 	PSO_ContextDiplomat& pso_ContextDiplomat_
 )
 {
-
 	//PSO生成ツールを借りる
 	auto* psoContextToolLender = pso_ContextDiplomat_.Access<PSO_Context::ToolLender>();
 	PSO_Context::ToolLender::LicenceType<PSO_Context::PSO_Creator> usesPsoCreatorLicence;
@@ -136,7 +135,7 @@ std::vector<RenderContext::RenderGraph::PSO_Builder::PsoDesc_Key> RenderContext:
 	for (UINT i = 0u; i < (UINT)Pass::kCount;++i)
 	{
 		//そのPassのDesc
-		auto const& passDesc = allPassPtrMap.at(Pass(i))->WatchDesc();
+		auto const& passDesc = *allPassPtrMap.at(Pass(i))->WatchDesc();
 		//パスの中身をログ出力。頼りはログのみ
 		passDesc.DebugLog();
 

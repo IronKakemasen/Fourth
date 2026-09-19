@@ -5,7 +5,7 @@
                                 "ms" : "FullScreenMS",
                                 "ps" : "SceneCompositorPS",
 
-                                "colorBufferName":["sceneComposite"],
+                                "colorBufferName":["sceneC"],
                                 "blendMode": ["kOpaque"], 
                                 "colorFormat":  [29],
                                 "clearColor":  [
@@ -22,13 +22,14 @@
                                 
                                 "useDepthStencil": false,
 
-                                "referenceBufferNames": []
+                                "referenceBufferNames": [ "opaC", "opaD" ]
     },
+
     "SceneOpaque": 
      {
                                 "isOffScreen" : false,
 
-                                "colorBufferName":["opaqueColor"],
+                                "colorBufferName":["opaC"],
                                 "blendMode": ["kDependsModel"], 
                                 "colorFormat":  [29],
                                 "clearColor":  [
@@ -44,7 +45,7 @@
                                 "numBuffer_Color":[1],
                                 
                                 "useDepthStencil": true,
-                                "depthBufferName": "opaqueDepth",
+                                "depthBufferName": "opaD",
                                 "dsvFormat":  45,
                                 "srvFormat":  46,
                                 "clearDepth":  0.0,

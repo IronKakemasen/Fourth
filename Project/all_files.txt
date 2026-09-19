@@ -459,11 +459,13 @@ BufferContextCmds::CreateCBufferCmd BufferContext::CmdProvider::Provide
 #include "BufferContextCmdProvider.h"
 class ModelContext;
 class TextureContext;
+class RenderContext;
 struct BufferContext::CmdProvider::UsesCBufferCreatorLicence
 {
 private:
 	friend class ModelContext;
 	friend class TextureContext;
+	friend class RenderContext;
 	explicit UsesCBufferCreatorLicence() = default;
 };
 
@@ -9008,12 +9010,12 @@ RenderContext::RenderContext
 	Logger::Log("Instantiate: renderPassContainer", fileName);
 	renderPathContainer.reset(new RenderPathContainer(proof_));
 	Logger::Log("Instantiate: renderPathContainer", fileName);
-	RenderPassCreator passCretor(proof_, *renderPassContainer);
+	RenderPassCreator passCreator(proof_, *renderPassContainer);
 	Logger::Log("Instantiate: RenderPassCreator", fileName);
 	RenderPathAssembler renderPathAssembler
 	(
 		proof_,
-		passCretor, 
+		passCreator,
 		*renderPathContainer
 	);
 	Logger::Log("Instantiate: renderPathAssembler", fileName);
@@ -9023,8 +9025,9 @@ RenderContext::RenderContext
 		(
 			proof_,
 			renderPathAssembler,
-			*pso_PoolDispatcher,
+			passCreator,
 			*renderPassContainer,
+			*pso_PoolDispatcher,
 			rootSignatureContextDiplomat_,
 			bufferContextDiplomat_,
 			modelContextDiplomat_,
@@ -9427,8 +9430,9 @@ RenderContext::RenderGraph::RenderGraph
 (
 	NexusFieldProof proof_,
 	RenderPathAssembler& pathAssembler_,
-	PSO_PoolDispatcher& psoDispatcher_,
+	RenderPassCreator& renderPassCreator_,
 	RenderPassContainer& passContainer_,
+	PSO_PoolDispatcher& psoDispatcher_,
 	RootSignatureContextDiplomat& rootSignatureContextDiplomat_,
 	BufferContextDiplomat& bufferContextDiplomat_,
 	ModelContextDiplomat& modelContextDiplomat_,
@@ -9442,6 +9446,7 @@ RenderContext::RenderGraph::RenderGraph
 		proof_,
 		pathAssembler_,
 		psoDispatcher_,
+		renderPassCreator_,
 		passContainer_,
 		rootSignatureContextDiplomat_,
 		bufferContextDiplomat_,
@@ -9460,17 +9465,18 @@ RenderContext::RenderGraph::RenderGraph
 #include "../../RenderPath/AllRenderPath/AllPathFwd.h"
 class RenderContext::RenderGraph
 {
-	class Builder;
 	class PSO_Builder;
 	class PathBuilder;
 	class RootSigBuilder;
+	class PassSetUpper;
 public:
 	RenderGraph
 	(
 		NexusFieldProof proof_,
 		RenderPathAssembler& pathAssembler_,
-		PSO_PoolDispatcher& psoDispatcher_,
+		RenderPassCreator& renderPassCreator_,
 		RenderPassContainer& passContainer_,
+		PSO_PoolDispatcher& psoDispatcher_,
 		RootSignatureContextDiplomat& rootSignatureContextDiplomat_,
 		BufferContextDiplomat& bufferContextDiplomat_,
 		ModelContextDiplomat& modelContextDiplomat_,
@@ -9483,6 +9489,7 @@ private:
 		NexusFieldProof proof_,
 		RenderPathAssembler& pathAssembler_,
 		PSO_PoolDispatcher& psoDispatcher_,
+		RenderPassCreator& renderPassCreator_,
 		RenderPassContainer& passContainer_,
 		RootSignatureContextDiplomat& rootSignatureContextDiplomat_,
 		BufferContextDiplomat& bufferContextDiplomat_,
@@ -9501,11 +9508,13 @@ private:
 #include "RenderGraphBuilder/GraphicsPSO_Builder/GraphicsPSO_Builder.h"
 #include "RenderGraphBuilder/GraphicsRootSigBuilder/GraphicsRootSigBuilder.h"
 #include "RenderGraphBuilder/RenderPathBuilder/RenderPathBuilder.h"
+#include "RenderGraphBuilder/PassSetUpper/PassSetUpper.h"
 void RenderContext::RenderGraph::Build
 (
 	NexusFieldProof proof_,
 	RenderPathAssembler& pathAssembler_,
 	PSO_PoolDispatcher& psoDispatcher_,
+	RenderPassCreator& renderPassCreator_,
 	RenderPassContainer& passContainer_,
 	RootSignatureContextDiplomat& rootSignatureContextDiplomat_,
 	BufferContextDiplomat& bufferContextDiplomat_,
@@ -9517,18 +9526,20 @@ void RenderContext::RenderGraph::Build
 	//全てのPathを生成し、つなげる
 	allPathPtr = PathBuilder::Build(proof_, pathAssembler_, bufferContextDiplomat_);
 	//グラフィックス用の巨大共通ルートシグネチャ
-	ID3D12RootSignature* graphicsRootSig = RootSigBuilder::Build(proof_ , rootSignatureContextDiplomat_);
+	ID3D12RootSignature* graphicsRootSig = RootSigBuilder::Build(proof_, rootSignatureContextDiplomat_);
 	//存在しなければならない全てのPSOを生成
 	PSO_Builder::Build
 	(
-		proof_ , 
-		psoDispatcher_, 
+		proof_,
+		psoDispatcher_,
 		passContainer_,
 		graphicsRootSig,
-		modelContextDiplomat_, 
-		pso_ContextDiplomat_, 
+		modelContextDiplomat_,
+		pso_ContextDiplomat_,
 		shaderContextDiplomat_
 	);
+	//全てのPassの不足している初期化部分(PassInfoの作成、ルートコンスタンツバッファの作成など)を行う。
+	PassSetUpper::Setup(proof_, renderPassCreator_, passContainer_, bufferContextDiplomat_);
 }
 
 ========================================
@@ -9650,7 +9661,7 @@ std::vector<RenderContext::RenderGraph::PSO_Builder::PsoDesc_Key> RenderContext:
 	for (UINT i = 0u; i < (UINT)Pass::kCount;++i)
 	{
 		//そのPassのDesc
-		auto const& passDesc = allPassPtrMap.at(Pass(i))->WatchDesc();
+		auto const& passDesc = *allPassPtrMap.at(Pass(i))->WatchDesc();
 		//パスの中身をログ出力。頼りはログのみ
 		passDesc.DebugLog();
 		//FillModeの個数分作る。ただしオフスクPassはWireFrameを用意する必要はないんで、
@@ -10037,6 +10048,141 @@ private:
 };
 
 ========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Render\RenderContextRuntime\RenderGraph\RenderGraphBuilder\PassSetUpper\PassSetUpper.cpp ===
+========================================
+#include "PreCompileHeader.h"
+#include "PassSetUpper.h"
+#include "../../../../RenderPass/RenderPassContainer/RenderPassContainer.h"
+#include "../../../../RenderPass/RenderPassCreator/RenderPassCreator.h"
+//外部
+#include "../../../../../Buffer/BufferContextToolsInclude.h"
+#include "../../../../../Buffer/BufferContextCmds.h"
+#include "../../../../../Buffer/BufferContextDiplomat/BufferContextDiplomat.h"
+#include "../../../../../Buffer/BufferContextDiplomat/BufferContextCmdProvider/BufferContextCmdProvider.h"
+#include "../../../../../Buffer/BufferContextDiplomat/BufferContextCmdProvider/BufferContextCmdProviderLicences.h"
+#include "../../../../../../../Assets/Shared/ConstantBuffers.h"
+using namespace ConstantBuffers;
+namespace
+{
+	auto const fileName = "PassSetUpper.cpp";
+}
+void RenderContext::RenderGraph::PassSetUpper::Setup
+(
+	NexusFieldProof proof_,
+	RenderPassCreator& renderPassCreator_,
+	RenderPassContainer& passContainer_,
+	BufferContextDiplomat& bufferContextDiplomat_
+)
+{
+	std::vector<BufferUniqueID> allRefBuffer = CreateAllPassInfo(proof_, renderPassCreator_, passContainer_);
+	CreatePassRootConstantsBuffer(proof_, bufferContextDiplomat_);
+}
+std::vector<BufferUniqueID> RenderContext::RenderGraph::PassSetUpper::CreateAllPassInfo
+(
+	NexusFieldProof proof_,
+	RenderPassCreator& renderPassCreator_,
+	RenderPassContainer& passContainer_
+)
+{
+	//全てのPassが入ってるコンテナ
+	auto const& allPassPtrMap = passContainer_.AccessAllPassPtrMap(proof_);
+	//名前 :　パスのバッファのユニークID
+	auto const& passBufferCache = renderPassCreator_.WatchPassBufferCache(proof_);
+	//別メソッドで使用する、参照するバッファのsrvHeapIndex配列を作成するための素材
+	std::vector<BufferUniqueID> allRefBufferUniques;
+	//デバッグ用
+	std::vector<std::string > allRefBufferNames;
+	//パス自身がどのバッファを使用するかの名前リストを所持しているので、それと組み合わせて埋めていく
+	for (auto const& [passEnum, pass]: allPassPtrMap)
+	{
+		PassDesc const& desc = *pass->WatchDesc();
+		std::string const dsrPassName = desc.passName;
+		//そのパスがバッファ配列の何番目を参照するか、であるPassBufferIndexRangeCPUGPUのoffset
+		//普通にallRefBufferUniquesのけつ番目でいいはず
+		UINT const refOffset = UINT(allRefBufferUniques.size());
+		//参照するバッファ一覧で回す
+		std::vector<std::string> const& refBufferNames = desc.referenceBufferNames;
+		std::unordered_map<std::string, BufferUniqueID> idMap;
+		for (auto const refBufferName : refBufferNames)
+		{
+			//参照するバッファID
+			BufferUniqueID refID = passBufferCache.at(refBufferName);
+			idMap[refBufferName] = refID;
+			allRefBufferUniques.emplace_back(refID);
+			allRefBufferNames.emplace_back(refBufferName);
+		}
+		///PassDesc -> RuntimePassInfoに詰め変える
+		pass->CreatePassInfo(proof_, idMap, refOffset);
+	}
+	//デバッグ表記
+#ifdef  _DEBUG
+	Logger::Log("- - - - - All Pass Reference Buffers - - - - - ", fileName);
+	std::string log = "\nallRefBufferNames: ";
+	int cnt= 1;
+	for (auto const& v : allRefBufferNames)
+	{
+		log += v + ",";
+		cnt % 5 == 0 ? log += "\n" : log += "";
+	}
+	log += "\n";
+	Logger::Log(log);
+	Logger::Log("- - - - - - - - - - - - - - - - - - - - ", fileName);
+#endif //  _DEBUG
+	return allRefBufferUniques;
+}
+void RenderContext::RenderGraph::PassSetUpper::CreatePassRootConstantsBuffer
+(
+	NexusFieldProof proof_,
+	BufferContextDiplomat& bufferContextDiplomat_
+)
+{
+	//グローバル定数バッファ生成コマンドをもらう
+	auto cmdProv = bufferContextDiplomat_.Access<BufferContext::CmdProvider>();
+	BufferContext::CmdProvider::LicenceType<BufferContextCmds::CreateCBufferCmd> licence;
+	auto createCBufferCmd = cmdProv->Provide<BufferContextCmds::CreateCBufferCmd>(licence);
+	//ルートコンスタンツである、PassBufferIndexRangeCPUGPUの定数バッファ作成
+	//もちろん中身はPassに依存するので、ドローコール時に書き込む
+	createCBufferCmd("PassBufferIndexRange", UINT(sizeof(PassBufferIndexRangeCPUGPU)), (UINT)ConstantBuffers::RootConstantsBindSlots::kPassBufferIndexRange);
+}
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Render\RenderContextRuntime\RenderGraph\RenderGraphBuilder\PassSetUpper\PassSetUpper.h ===
+========================================
+#pragma once
+#include "../../RenderGraph.h"
+class RenderContext::RenderGraph::PassSetUpper
+{
+	friend class RenderGraph;
+	static void Setup
+	(
+		NexusFieldProof proof_,
+		RenderPassCreator& renderPassCreator_,
+		RenderPassContainer& passContainer_,
+		BufferContextDiplomat& bufferContextDiplomat_
+	);
+	//以下ヘルパー
+private:
+	//全パスの所持するPassDesc -> PassInfoに移し替える
+	static std::vector<BufferUniqueID> CreateAllPassInfo
+	(
+		NexusFieldProof proof_,
+		RenderPassCreator& renderPassCreator_,
+		RenderPassContainer& passContainer_
+	);
+	//各パスが参照するバッファのsrvHeapIndexを配列したもののバッファを作成
+	//static void CreateReferenceBufferSrvArray
+	//(
+	//	NexusFieldProof proof_,
+	//)
+	//Passのルートコンスタンツのバッファを作る
+	static void CreatePassRootConstantsBuffer
+	(
+		NexusFieldProof proof_,
+		BufferContextDiplomat& bufferContextDiplomat_
+	);
+};
+
+========================================
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Render\RenderContextRuntime\RenderGraph\RenderGraphBuilder\RenderPathBuilder\RenderPathBuilder.cpp ===
 ========================================
 #include "PreCompileHeader.h"
@@ -10177,6 +10323,19 @@ RenderContext::PassBehavior::PassBehavior(NexusFieldProof proof_, std::unique_pt
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+RenderContext::PassDesc const* RenderContext::PassBehavior::WatchDesc() const
+{
+	return desc ? desc.get() : nullptr;
+}
+void RenderContext::PassBehavior::CreatePassInfo
+(
+	NexusFieldProof proof_,
+	std::unordered_map<std::string, BufferUniqueID> const& idMap_,
+	UINT const refOffset_
+) 
+{
+	runtimePassInfo.reset(new RuntimePassInfo(proof_, std::move(desc), idMap_, refOffset_));
+}
 
 ========================================
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Render\RenderPass\AllRenderPass\RenderPassBehavior.h ===
@@ -10190,12 +10349,18 @@ class RenderContext::PassBehavior
 public:
 	PassBehavior(NexusFieldProof proof_, std::unique_ptr<PassDesc>&& desc_);
 	virtual ~PassBehavior() = default;
-	PassDesc const& WatchDesc() const { return *desc; }
 	virtual void Update
 	(
 		[[maybe_unused]] std::vector<Model> const& modelContainer_,
 		CommandContext::RuntimeWrapper& cmdWrapper_
 	) = 0;
+	PassDesc const* WatchDesc() const;
+	void CreatePassInfo
+	(
+		NexusFieldProof proof_,
+		std::unordered_map<std::string, BufferUniqueID> const& idMap_,
+		UINT const refOffset_
+	);
 protected:
 	//Passの設計図
 	std::unique_ptr<PassDesc> desc;
@@ -10458,6 +10623,20 @@ void RenderContext::PassDesc::DebugLog()const
 	{
 		log += "\nDummy Value has been set\n";
 	}
+	log += "\n< ReferenceBuffers >\n\n";
+	if (referenceBufferNames.size() == 0)
+	{
+		log += "NONE....\n";
+	}
+	else
+	{
+		log += "{ ";
+		for (auto const bufferName : referenceBufferNames)
+		{
+			log += bufferName + " , ";
+		}
+		log += " }\n";
+	}
 	Logger::Log(log);
 }
 
@@ -10572,6 +10751,10 @@ std::unique_ptr<RenderContext::PassDesc> RenderContext::RenderPassCreator::Creat
 	PassBufferCreator::CreateBuffer(passName_, *desc, passBufferCache,bufferContextDiplomat_);
 	return desc;
 }
+std::unordered_map<std::string, BufferUniqueID> RenderContext::RenderPassCreator::WatchPassBufferCache(NexusFieldProof proof_)const
+{
+	return passBufferCache;
+}
 
 ========================================
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Render\RenderPass\RenderPassCreator\RenderPassCreator.h ===
@@ -10606,6 +10789,7 @@ public:
 		std::unique_ptr<PassDesc> passDesc = CreateDesc(passName_, bufferContextDiplomat_);
 		return InstantiatePass<PassType>(proof_, std::move(passDesc));
 	}
+	std::unordered_map<std::string, BufferUniqueID> WatchPassBufferCache(NexusFieldProof proof_)const;
 private:
 	//パスのディスクを生成
 	std::unique_ptr<PassDesc> CreateDesc(std::string const passName_, BufferContextDiplomat& bufferContextDiplomat_);
@@ -10918,11 +11102,29 @@ private:
 #include "PreCompileHeader.h"
 #include "RuntimePassInfo.h"
 #include "../PassDesc/PassDesc.h"
-RenderContext::RuntimePassInfo::RuntimePassInfo(NexusFieldProof proof_, std::unique_ptr<PassDesc> desc_)
+RenderContext::RuntimePassInfo::RuntimePassInfo
+(
+	NexusFieldProof proof_,
+	std::unique_ptr<PassDesc> desc_,
+	std::unordered_map<std::string, BufferUniqueID> const& idMap_,
+	UINT const refOffset_
+)
 {
 	///パスディスクからランタイムに必要な情報のみピック
 	//ここでPassDescのお役は終了
 	PickUpRuntimeRequirementsFromDesc(*desc_);
+	//その他情報を入力
+	InputOtherParams(idMap_, refOffset_);
+}
+void RenderContext::RuntimePassInfo::InputOtherParams
+(
+	std::unordered_map<std::string, BufferUniqueID> const& idMap_,
+	UINT const refOffset_
+)
+{
+	referenceBufferIDMap = idMap_;
+	rootConstants.offset = refOffset_;
+	rootConstants.numTextureUse = UINT(idMap_.size());
 }
 void RenderContext::RuntimePassInfo::PickUpRuntimeRequirementsFromDesc(PassDesc const& desc_)
 {
@@ -10947,9 +11149,10 @@ void RenderContext::RuntimePassInfo::PickUpRuntimeRequirementsFromDesc(PassDesc 
 		auto const& src = desc_.depthStencilBufferInfo;
 		if (src.has_value())
 		{
-			info->bufferID = src->bufferID;
-			info->clearDepth = src->clearDepth;
-			info->clearStencil = src->clearStencil;
+			depthStencilBufferInfo.emplace();
+			info->bufferID		= src->bufferID;
+			info->clearDepth	= src->clearDepth;
+			info->clearStencil	= src->clearStencil;
 		}
 	}
 }
@@ -10965,14 +11168,20 @@ void RenderContext::RuntimePassInfo::PickUpRuntimeRequirementsFromDesc(PassDesc 
 #include "../../../../../Assets/Shared/ConstantBuffers.h"
 struct RenderContext::RuntimePassInfo
 {
-	RuntimePassInfo(NexusFieldProof proof_,std::unique_ptr<PassDesc> desc_);
+	RuntimePassInfo
+	(
+		NexusFieldProof proof_,
+		std::unique_ptr<PassDesc> desc_,
+		std::unordered_map<std::string, BufferUniqueID> const& idMap_,
+		UINT const refOffset_
+	);
 	struct ColorBuffer
 	{
 		std::vector<float> clearColor{};
 		uint32_t width{};
 		uint32_t height{};
 		RenderStateComponent::BlendMode blendMode = RenderStateComponent::BlendMode::kDependsModel;
-		BufferUniqueID bufferID;
+		BufferUniqueID bufferID{};
 	};
 	struct DepthStencilBuffer
 	{
@@ -10980,19 +11189,25 @@ struct RenderContext::RuntimePassInfo
 		int clearStencil{};
 		BufferUniqueID bufferID;
 	};
-	std::vector<ColorBuffer> const& WatchColorBuffersInfo() const { return colorBuffersInfo; }
-	std::optional<DepthStencilBuffer> const& WatchDepthStencilBufferInfo() const { return depthStencilBufferInfo; }
-	std::vector<BufferUniqueID> const& WatchReferenceBufferIDs() const { return referenceBufferIDs; }
-	ConstantBuffers::PassBufferIndexRangeCPUGPU const& WatchRootConstants() const { return rootConstants; }
+	auto const& WatchColorBuffersInfo() const { return colorBuffersInfo; }
+	auto const& WatchDepthStencilBufferInfo() const { return depthStencilBufferInfo; }
+	auto const& WatchReferenceBufferIDs() const { return referenceBufferIDMap; }
+	auto const& WatchRootConstants() const { return rootConstants; }
 private:
 	//Descから情報をピックする
 	std::vector<ColorBuffer> colorBuffersInfo;
 	std::optional<DepthStencilBuffer> depthStencilBufferInfo;
 	//こいつらは別機関から情報を埋めてもらう
-	std::vector<BufferUniqueID> referenceBufferIDs;
+	std::unordered_map<std::string, BufferUniqueID> referenceBufferIDMap;
 	ConstantBuffers::PassBufferIndexRangeCPUGPU rootConstants;
 	//PassDescからランタイムに必要な情報をピックする
 	void PickUpRuntimeRequirementsFromDesc(PassDesc const& desc_);
+	//その他、PassDesc以外の情報を入力
+	void InputOtherParams
+	(
+		std::unordered_map<std::string, BufferUniqueID> const& idMap_,
+		UINT const refOffset_
+	);
 };
 
 ========================================
@@ -11157,7 +11372,7 @@ public:
 		//実体
 		std::unique_ptr<PathType> path = InstantiatePath<PathType>(proof_);
 		//そのPathが使用するPassのコンテナ
-		std::vector<PassAndName> passAndNames =  LoadPathSettings(pathName);
+		std::vector<PassAndName> passAndNames = LoadPathSettings(pathName);
 		//それら情報をもとに、passCreatorでPassを作り追加する
 		AddPass(proof_, passAndNames, *path.get(), bufferContextDiplomat_);
 		auto* pathPtr = path.get();
@@ -11236,40 +11451,6 @@ class RenderContext::RenderPathAssembler::PathSettingsLoader
 	//パスの名前から列挙型へ変換
 	static std::vector<RenderPassComponent::Pass> PassNamesToPassTypes(std::vector<std::string> const& passNames_);
 };
-
-========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Render\RenderPath\RenderPathComposer\ShaderCombiner\ShaderCombiner.cpp ===
-========================================
-#include "ShaderCombiner.h"
-//外部
-#include "../../../../Resource/Shader/ShaderLibrary/ShaderLibrary.h"
-//
-//RenderPath::MS_PS RenderPath::PathComposer::ShaderCombiner::Combine(ShaderContext::ShaderLibrary* lib_, std::string const msKey_, std::string const psKey_)
-//{
-//	return
-//	{
-//		lib_->Export(msKey_) ,
-//		(psKey_.size() > 0) ? lib_->Export(psKey_) : nullptr
-//	};
-//}
-//
-
-========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Render\RenderPath\RenderPathComposer\ShaderCombiner\ShaderCombiner.h ===
-========================================
-#pragma once
-//#include "../RenderPathComposer.h"
-//#include "../../ShaderPathComponent.h"
-//
-//
-//#include "../../../../Resource/Shader/ShaderContext.h"
-//
-//struct RenderPath::PathComposer::ShaderCombiner
-//{
-//	RenderPath::MS_PS Combine(ShaderContext::ShaderLibrary* lib_, std::string const msKey_, std::string const psKey_);
-//
-//};
-//
 
 ========================================
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Render\RenderPath\RenderPathContainer\RenderPathContainer.cpp ===
@@ -12214,6 +12395,7 @@ void ModelContext::ModelDataCreator::PerDrawDataBufferCreator::CreatePerDrawCons
 }
 void ModelContext::ModelDataCreator::PerDrawDataBufferCreator::CreatePerDrawCBuffer(CreateCBufferCmd& createCBufferCmd_)
 {
+	//もちろん中身はモデルに依存するので、ドローコール時に書き込む
 	auto cBufferID_cBuffer = createCBufferCmd_
 	(
 		"PerDrawIndices",
@@ -15654,8 +15836,8 @@ namespace ShaderTable
 1.まずシェーダーファイルをアセットに追加
 2.alt + Windowボタンでアセット更新コマンドを叩く
 3.ShaderComponent.hのenumに追記
-4.必要であれば、ShaderTable.hに追記
-5.必要であれば、ShaderSettings.jsonに追記
+4.必要であれば(オフスク用でなければ)、ShaderTable.hに追記
+5.必要であれば(追加Argmentsがあれば)、ShaderSettings.jsonに追記
 
 ========================================
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Shader\ShaderContextDiplomat\ShaderContextDiplomat.cpp ===
@@ -18822,4 +19004,4 @@ namespace StringProcessing
 === SUMMARY ===
 ========================================
 Total Files      : 431
-Effective Lines  : 13632
+Effective Lines  : 13798

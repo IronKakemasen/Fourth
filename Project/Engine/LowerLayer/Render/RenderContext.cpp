@@ -37,13 +37,13 @@ RenderContext::RenderContext
 	renderPathContainer.reset(new RenderPathContainer(proof_));
 	Logger::Log("Instantiate: renderPathContainer", fileName);
 
-	RenderPassCreator passCretor(proof_, *renderPassContainer);
+	RenderPassCreator passCreator(proof_, *renderPassContainer);
 	Logger::Log("Instantiate: RenderPassCreator", fileName);
 
 	RenderPathAssembler renderPathAssembler
 	(
 		proof_,
-		passCretor, 
+		passCreator,
 		*renderPathContainer
 	);
 	Logger::Log("Instantiate: renderPathAssembler", fileName);
@@ -54,8 +54,9 @@ RenderContext::RenderContext
 		(
 			proof_,
 			renderPathAssembler,
-			*pso_PoolDispatcher,
+			passCreator,
 			*renderPassContainer,
+			*pso_PoolDispatcher,
 			rootSignatureContextDiplomat_,
 			bufferContextDiplomat_,
 			modelContextDiplomat_,

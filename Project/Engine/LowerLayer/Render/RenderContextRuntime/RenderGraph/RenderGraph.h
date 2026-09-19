@@ -5,10 +5,10 @@
 
 class RenderContext::RenderGraph
 {
-	class Builder;
 	class PSO_Builder;
 	class PathBuilder;
 	class RootSigBuilder;
+	class PassSetUpper;
 
 public:
 
@@ -16,8 +16,9 @@ public:
 	(
 		NexusFieldProof proof_,
 		RenderPathAssembler& pathAssembler_,
-		PSO_PoolDispatcher& psoDispatcher_,
+		RenderPassCreator& renderPassCreator_,
 		RenderPassContainer& passContainer_,
+		PSO_PoolDispatcher& psoDispatcher_,
 		RootSignatureContextDiplomat& rootSignatureContextDiplomat_,
 		BufferContextDiplomat& bufferContextDiplomat_,
 		ModelContextDiplomat& modelContextDiplomat_,
@@ -32,6 +33,7 @@ private:
 		NexusFieldProof proof_,
 		RenderPathAssembler& pathAssembler_,
 		PSO_PoolDispatcher& psoDispatcher_,
+		RenderPassCreator& renderPassCreator_,
 		RenderPassContainer& passContainer_,
 		RootSignatureContextDiplomat& rootSignatureContextDiplomat_,
 		BufferContextDiplomat& bufferContextDiplomat_,

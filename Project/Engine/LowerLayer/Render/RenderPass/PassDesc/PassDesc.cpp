@@ -78,5 +78,23 @@ void RenderContext::PassDesc::DebugLog()const
 		log += "\nDummy Value has been set\n";
 	}
 
+	log += "\n< ReferenceBuffers >\n\n";
+	if (referenceBufferNames.size() == 0)
+	{
+		log += "NONE....\n";
+	}
+	else
+	{
+		log += "{ ";
+		for (auto const bufferName : referenceBufferNames)
+		{
+
+			log += bufferName + " , ";
+		}
+
+		log += " }\n";
+	}
+
+
 	Logger::Log(log);
 }

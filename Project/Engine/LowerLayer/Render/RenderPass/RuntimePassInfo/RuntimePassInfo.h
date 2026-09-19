@@ -9,7 +9,13 @@
 
 struct RenderContext::RuntimePassInfo
 {
-	RuntimePassInfo(NexusFieldProof proof_,std::unique_ptr<PassDesc> desc_);
+	RuntimePassInfo
+	(
+		NexusFieldProof proof_,
+		std::unique_ptr<PassDesc> desc_,
+		std::unordered_map<std::string, BufferUniqueID> const& idMap_,
+		UINT const refOffset_
+	);
 
 	struct ColorBuffer
 	{
@@ -17,7 +23,7 @@ struct RenderContext::RuntimePassInfo
 		uint32_t width{};
 		uint32_t height{};
 		RenderStateComponent::BlendMode blendMode = RenderStateComponent::BlendMode::kDependsModel;
-		BufferUniqueID bufferID;
+		BufferUniqueID bufferID{};
 	};
 
 	struct DepthStencilBuffer
@@ -27,10 +33,10 @@ struct RenderContext::RuntimePassInfo
 		BufferUniqueID bufferID;
 	};
 
-	std::vector<ColorBuffer> const& WatchColorBuffersInfo() const { return colorBuffersInfo; }
-	std::optional<DepthStencilBuffer> const& WatchDepthStencilBufferInfo() const { return depthStencilBufferInfo; }
-	std::vector<BufferUniqueID> const& WatchReferenceBufferIDs() const { return referenceBufferIDs; }
-	ConstantBuffers::PassBufferIndexRangeCPUGPU const& WatchRootConstants() const { return rootConstants; }
+	auto const& WatchColorBuffersInfo() const { return colorBuffersInfo; }
+	auto const& WatchDepthStencilBufferInfo() const { return depthStencilBufferInfo; }
+	auto const& WatchReferenceBufferIDs() const { return referenceBufferIDMap; }
+	auto const& WatchRootConstants() const { return rootConstants; }
 
 private:
 
@@ -39,10 +45,16 @@ private:
 	std::optional<DepthStencilBuffer> depthStencilBufferInfo;
 	
 	//こいつらは別機関から情報を埋めてもらう
-	std::vector<BufferUniqueID> referenceBufferIDs;
+	std::unordered_map<std::string, BufferUniqueID> referenceBufferIDMap;
 	ConstantBuffers::PassBufferIndexRangeCPUGPU rootConstants;
 
 	//PassDescからランタイムに必要な情報をピックする
 	void PickUpRuntimeRequirementsFromDesc(PassDesc const& desc_);
+	//その他、PassDesc以外の情報を入力
+	void InputOtherParams
+	(
+		std::unordered_map<std::string, BufferUniqueID> const& idMap_,
+		UINT const refOffset_
+	);
 };
 
