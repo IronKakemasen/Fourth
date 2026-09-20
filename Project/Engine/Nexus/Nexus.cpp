@@ -51,18 +51,14 @@ bool Nexus::InstanceLimiter::CanInstantiate()
 
 Nexus::Nexus()
 {
-	//COMの初期化
-	HRESULT hr = CoInitializeEx(0, COINITBASE_MULTITHREADED);
-	ErrorMessageOutput::Abort::DetectError(SUCCEEDED(hr), "CoInitializeEx()でエラー", fileName);
-
-
 	Logger::Entry("Nexus: Constructor");
 
 	//自身のインスタンス制限
 	ErrorMessageOutput::Assert::DetectError(InstanceLimiter::CanInstantiate(), "Nexusクラスが複数具現化されてます", fileName);
 
-	InitializeInSequence<InitSequence::kLoadAllJsonFiles>();
+	InitializeInSequence<InitSequence::kCoInitializeEx>();
 
+	InitializeInSequence<InitSequence::kLoadAllJsonFiles>();
 
 	InitializeInSequence<InitSequence::kDeviceContext>();
 	InitializeInSequence<InitSequence::kWindowContext>();

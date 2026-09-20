@@ -3,7 +3,7 @@
 namespace StringProcessing
 {
 	///文字列の中の特定の文字の後ろの文字列を返す
-    inline std::string SkipFetch(std::string const dstString_ , char const signalChar_)
+    inline std::string SkipFetch(std::string const& dstString_ , char const signalChar_)
     {
         auto pos = dstString_.find(signalChar_);
 
@@ -19,7 +19,7 @@ namespace StringProcessing
     }
 
 	///引数のファイル指定子かどうかをチェック
-    inline bool CheckFileExtension(std::string const path_, std::string const extension_)
+    inline bool CheckFileExtension(std::string const& path_, std::string const& extension_)
 	{
         ErrorMessageOutput::Assert::DetectError
         (
@@ -36,7 +36,7 @@ namespace StringProcessing
 	}
 
     ///ファイル指定子を消す
-    static std::string RemoveFileExtension(std::string const path_)
+    static std::string RemoveFileExtension(std::string const& path_)
     {
         std::size_t const dotPos = path_.find_last_of('.');
 

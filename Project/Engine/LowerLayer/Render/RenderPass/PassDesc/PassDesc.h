@@ -8,7 +8,7 @@ struct RenderContext::PassDesc
 
 	PassDesc
 	(
-		std::string const name_,
+		std::string const& name_,
 		std::optional<std::pair<std::string, std::string >> const& ms_psFileName_,
 		RenderPassState renderPassState_,
 		std::vector<RenderContext::RequiredBufferInfo::ColorBuffer> const& colorBuffersInfo_,

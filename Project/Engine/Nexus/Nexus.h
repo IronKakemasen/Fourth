@@ -20,6 +20,8 @@ class Nexus
 	//初期化・生成順序
 	enum class InitSequence
 	{
+		kCoInitializeEx,
+
 		kLoadAllJsonFiles,
 
 		kDeviceContext,

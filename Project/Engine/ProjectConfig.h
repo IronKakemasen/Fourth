@@ -56,14 +56,18 @@ namespace ProjectConfig
 
 	namespace Debug
 	{
+#ifdef _DEBUG
+
 		//DebugLayer
 		constexpr bool kEnableDebugLayer = true;
 		//ポインター破壊検知
-		constexpr bool kEnablePointerValidator = false;
+		constexpr bool kEnablePointerValidator = true;
 		//Comptrのリークチェック
 		constexpr bool kEnableLeakChecker = true;
 		//Jsonファイルを読み込むときに型チェックを行うかどうか
 		constexpr bool kEnableJsonDataTypeCheck = true;
+
+#endif // _DEBUG
 
 	}
 
