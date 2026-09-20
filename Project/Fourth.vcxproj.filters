@@ -87,9 +87,6 @@
     <ClCompile Include="Engine\LowerLayer\Core\Device\DeviceContext.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="Engine\LowerLayer\Debug\Logger\Logger.cpp">
-      <Filter>ソース ファイル</Filter>
-    </ClCompile>
     <ClCompile Include="Engine\Utility\StringConverter\StringConverter.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
@@ -450,16 +447,10 @@
     <ClCompile Include="Engine\LowerLayer\Resource\Model\ModelContextDiplomat\ModelContextToolLender\ModelContextToolLender.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="Engine\MiddleLayer\MiyaJison\JsonDataLoader\JsonDataLoader.cpp">
-      <Filter>ソース ファイル</Filter>
-    </ClCompile>
     <ClCompile Include="Engine\MiddleLayer\MiyaJison\MiyaJison.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
     <ClCompile Include="Engine\MiddleLayer\MiyaJison\JsonDataLibrary\JsonDataLibrary.cpp">
-      <Filter>ソース ファイル</Filter>
-    </ClCompile>
-    <ClCompile Include="Engine\MiddleLayer\MiyaJison\JsonDataChecker\JsonDataChecker.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
     <ClCompile Include="Engine\LowerLayer\Resource\Shader\ShaderLoader\ShaderCompiler\ShaderCompiler.cpp">
@@ -645,6 +636,9 @@
     <ClCompile Include="Engine\LowerLayer\Render\RenderContextRuntime\StaticRenderGraph\RenderGraphBuilder\PassSetUpper\PassSetUpper.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
+    <ClCompile Include="Engine\LowerLayer\Debug\Logger\Logger.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Engine\LowerLayer\Core\Window\WindowContext.h">
@@ -705,9 +699,6 @@
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
     <ClInclude Include="Engine\LowerLayer\Core\Device\DeviceContext.h">
-      <Filter>ヘッダー ファイル</Filter>
-    </ClInclude>
-    <ClInclude Include="Engine\LowerLayer\Debug\Logger\Logger.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
     <ClInclude Include="Engine\Utility\StringConverter\StringConverter.h">
@@ -917,9 +908,6 @@
     <ClInclude Include="Engine\ProjectConfig.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\MiddleLayer\kara.h">
-      <Filter>ヘッダー ファイル</Filter>
-    </ClInclude>
     <ClInclude Include="Engine\LowerLayer\Render\RenderContextRuntime\PSO_PoolDispatcher\GraphicsPSO_Key.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
@@ -1124,9 +1112,6 @@
     <ClInclude Include="Engine\LowerLayer\Resource\Model\ModelContextDiplomat\ModelContextToolLender\ModelContextToolLenderLicence.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\MiddleLayer\MiyaJison\JsonDataLoader\JsonDataLoader.h">
-      <Filter>ヘッダー ファイル</Filter>
-    </ClInclude>
     <ClInclude Include="Engine\MiddleLayer\MiyaJison\MiyaJison.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
@@ -1134,9 +1119,6 @@
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
     <ClInclude Include="Engine\Utility\RegistryLoader\RegistryLoader.h">
-      <Filter>ヘッダー ファイル</Filter>
-    </ClInclude>
-    <ClInclude Include="Engine\MiddleLayer\MiyaJison\JsonDataChecker\JsonDataChecker.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
     <ClInclude Include="Assets\BAKA\StructuredBuffer.h">
@@ -1440,6 +1422,9 @@
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
     <ClInclude Include="Engine\LowerLayer\Resource\Shader\ShaderContextDiplomatIncludes.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\LowerLayer\Debug\Logger\Logger.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
   </ItemGroup>

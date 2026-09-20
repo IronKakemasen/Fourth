@@ -88,7 +88,7 @@ private:
 
     //バッファ生成
     template<typename BufferType>
-    std::unique_ptr<BufferType> Materialize(ResourceContainer resourceContainer_, const BufferDescriptionBehavior& desc_, std::string nameCnv_);
+    std::unique_ptr<BufferType> Materialize(ResourceContainer resourceContainer_, const BufferDescriptionBehavior& desc_, std::string const& nameCnv_);
     
     //ビュー生成
     template<typename DescType>
@@ -172,19 +172,19 @@ std::string BufferContext::BufferAssembler::ConvertName<Texture2DBuffer>(const s
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 template<>
-std::unique_ptr<ColorBuffer> BufferContext::BufferAssembler::Materialize(ResourceContainer resourceContainer_, const BufferDescriptionBehavior& desc_, std::string nameCnv_);
+std::unique_ptr<ColorBuffer> BufferContext::BufferAssembler::Materialize(ResourceContainer resourceContainer_, const BufferDescriptionBehavior& desc_, std::string const& nameCnv_);
 template<>
-std::unique_ptr<DepthStencilBuffer> BufferContext::BufferAssembler::Materialize(ResourceContainer resourceContainer_, const BufferDescriptionBehavior& desc_, std::string nameCnv_);
+std::unique_ptr<DepthStencilBuffer> BufferContext::BufferAssembler::Materialize(ResourceContainer resourceContainer_, const BufferDescriptionBehavior& desc_, std::string const& nameCnv_);
 template<>
-std::unique_ptr<StaticStructuredBuffer> BufferContext::BufferAssembler::Materialize(ResourceContainer resourceContainer_, const BufferDescriptionBehavior& desc_, std::string nameCnv_);
+std::unique_ptr<StaticStructuredBuffer> BufferContext::BufferAssembler::Materialize(ResourceContainer resourceContainer_, const BufferDescriptionBehavior& desc_, std::string const& nameCnv_);
 template<>
-std::unique_ptr<ConstantBuffer> BufferContext::BufferAssembler::Materialize(ResourceContainer resourceContainer_, const BufferDescriptionBehavior& desc_, std::string nameCnv_);
+std::unique_ptr<ConstantBuffer> BufferContext::BufferAssembler::Materialize(ResourceContainer resourceContainer_, const BufferDescriptionBehavior& desc_, std::string const& nameCnv_);
 template<>
-std::unique_ptr<UploadStructuredBuffer> BufferContext::BufferAssembler::Materialize(ResourceContainer resourceContainer_, const BufferDescriptionBehavior& desc_, std::string nameCnv_);
+std::unique_ptr<UploadStructuredBuffer> BufferContext::BufferAssembler::Materialize(ResourceContainer resourceContainer_, const BufferDescriptionBehavior& desc_, std::string const& nameCnv_);
 template<>
-std::unique_ptr<ComputeBuffer> BufferContext::BufferAssembler::Materialize(ResourceContainer resourceContainer_, const BufferDescriptionBehavior& desc_, std::string nameCnv_);
+std::unique_ptr<ComputeBuffer> BufferContext::BufferAssembler::Materialize(ResourceContainer resourceContainer_, const BufferDescriptionBehavior& desc_, std::string const& nameCnv_);
 template<>
-std::unique_ptr<Texture2DBuffer> BufferContext::BufferAssembler::Materialize(ResourceContainer resourceContainer_, const BufferDescriptionBehavior& desc_, std::string nameCnv_);
+std::unique_ptr<Texture2DBuffer> BufferContext::BufferAssembler::Materialize(ResourceContainer resourceContainer_, const BufferDescriptionBehavior& desc_, std::string const& nameCnv_);
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////

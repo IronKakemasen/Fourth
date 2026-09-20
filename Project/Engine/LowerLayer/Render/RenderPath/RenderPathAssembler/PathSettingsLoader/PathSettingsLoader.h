@@ -8,9 +8,18 @@ class RenderContext::RenderPathAssembler::PathSettingsLoader
 	///本丸
 	[[nodiscard]] static std::vector<PassAndName> ParseWhichPassUses(std::string const pathName_);
 
+	//以下ヘルパー
+private:
+
 	//Pathの名前からそのPathが使用するPassの名前をjsonファイルから読み込む
 	static std::vector<std::string> LoadData(std::string const pathName_);
 	//パスの名前から列挙型へ変換
 	static std::vector<RenderPassComponent::Pass> PassNamesToPassTypes(std::vector<std::string> const& passNames_);
-};
 
+	struct DataKey
+	{
+		static inline std::string const kSrcJsonFileName	= "RenderPathSettings";
+		static inline std::string const kUsePass			= "UsePass";
+
+	};
+};

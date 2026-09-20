@@ -127,7 +127,7 @@ private:
 	std::tuple<GPUBufferBehavior*, ID3D12Resource*> PickBufferAndResource(BufferUniqueID id_)const;
 
 	//コマンドを流す
-	void Flush(std::string log_);
+	void Flush(std::string const& log_);
 
 	//終わりの一言
 	void EndLog()const;
