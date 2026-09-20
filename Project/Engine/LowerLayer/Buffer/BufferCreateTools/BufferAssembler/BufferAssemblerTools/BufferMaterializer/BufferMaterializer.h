@@ -10,7 +10,7 @@ class BufferContext::BufferAssembler::BufferMaterializer
 	(
 		ResourceContainer resourceContainer_,
 		const BufferDescriptionBehavior& desc_,
-		std::string nameCnv_
+		std::string const& nameCnv_
 	);
 
 };
@@ -20,7 +20,7 @@ static [[nodiscard]] std::unique_ptr<ColorBuffer> BufferContext::BufferAssembler
 (
 	ResourceContainer resourceContainer_,
 	const BufferDescriptionBehavior& desc_,
-	std::string nameCnv_
+	std::string const& nameCnv_
 );
 
 template<>
@@ -28,7 +28,7 @@ static [[nodiscard]] std::unique_ptr<DepthStencilBuffer> BufferContext::BufferAs
 (
 	ResourceContainer resourceContainer_,
 	const BufferDescriptionBehavior& desc_,
-	std::string nameCnv_
+	std::string const& nameCnv_
 );
 
 template<>
@@ -36,7 +36,7 @@ static [[nodiscard]] std::unique_ptr<StaticStructuredBuffer> BufferContext::Buff
 (
 	ResourceContainer resourceContainer_,
 	const BufferDescriptionBehavior& desc_,
-	std::string nameCnv_
+	std::string const& nameCnv_
 );
 
 template<>
@@ -44,7 +44,7 @@ static [[nodiscard]] std::unique_ptr<UploadStructuredBuffer> BufferContext::Buff
 (
 	ResourceContainer resourceContainer_,
 	const BufferDescriptionBehavior& desc_,
-	std::string nameCnv_
+	std::string const& nameCnv_
 );
 
 template<>
@@ -52,7 +52,7 @@ static [[nodiscard]] std::unique_ptr<ComputeBuffer> BufferContext::BufferAssembl
 (
 	ResourceContainer resourceContainer_,
 	const BufferDescriptionBehavior& desc_,
-	std::string nameCnv_
+	std::string const& nameCnv_
 );
 
 template<>
@@ -60,7 +60,7 @@ static [[nodiscard]] std::unique_ptr<ConstantBuffer> BufferContext::BufferAssemb
 (
 	ResourceContainer resourceContainer_,
 	const BufferDescriptionBehavior& desc_,
-	std::string nameCnv_
+	std::string const& nameCnv_
 );
 
 template<>
@@ -68,5 +68,5 @@ static [[nodiscard]] std::unique_ptr<Texture2DBuffer> BufferContext::BufferAssem
 (
 	ResourceContainer resourceContainer_,
 	const BufferDescriptionBehavior& desc_,
-	std::string nameCnv_
+	std::string const& nameCnv_
 );

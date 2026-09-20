@@ -8987,7 +8987,7 @@ public:
 #include "RenderPass/AllRenderPass/RenderPassBehavior.h"
 #include "RenderPath/RenderPathAssembler/RenderPathAssembler.h"
 #include "RenderPath/RenderPathContainer/RenderPathContainer.h"
-#include "RenderContextRuntime/RenderGraph/RenderGraph.h"
+#include "RenderContextRuntime/StaticRenderGraph/StaticRenderGraph.h"
 #include "RenderContextRuntime/PSO_PoolDispatcher/PSO_PoolDispatcher.h"
 namespace 
 {
@@ -9019,9 +9019,9 @@ RenderContext::RenderContext
 		*renderPathContainer
 	);
 	Logger::Log("Instantiate: renderPathAssembler", fileName);
-	renderGraph.reset
+	staticRenderGraph.reset
 	(
-		new RenderGraph
+		new StaticRenderGraph
 		(
 			proof_,
 			renderPathAssembler,
@@ -9075,7 +9075,7 @@ public:
 	class PathBehavior;
 	struct RenderPassState;
 	//レンダーパス(Path)を設計し、描画コマンドを叩く強者
-	class RenderGraph;
+	class StaticRenderGraph;
 	//ネクサスフィールドの証
 	struct NexusFieldProof;
 	RenderContext
@@ -9091,7 +9091,7 @@ public:
 private:
 	std::unique_ptr<RenderPassContainer> renderPassContainer;
 	std::unique_ptr<RenderPathContainer> renderPathContainer;
-	std::unique_ptr<RenderGraph> renderGraph;
+	std::unique_ptr<StaticRenderGraph> staticRenderGraph;
 	std::unique_ptr<PSO_PoolDispatcher> pso_PoolDispatcher;
 };
 struct RenderContext::NexusFieldProof
@@ -9213,7 +9213,7 @@ namespace RenderStateComponent
 #include "../../RenderPass/RenderPassComponent.h"
 #include "../../RenderStateComponent.h"
 //外部
-#include "../../../Resource/Shader/ShaderPathComponent.h"
+#include "../../../Resource/Shader/ShaderPathComponent/ShaderPathComponent.h"
 struct GraphicsPSO_Key
 {
     ///シーケンス
@@ -9422,11 +9422,52 @@ private:
 };
 
 ========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Render\RenderContextRuntime\RenderGraph\RenderGraph.cpp ===
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Render\RenderContextRuntime\StaticRenderGraph\RenderGraphInitialization.cpp ===
+========================================
+#include "StaticRenderGraph.h"
+#include "RenderGraphBuilder/GraphicsPSO_Builder/GraphicsPSO_Builder.h"
+#include "RenderGraphBuilder/GraphicsRootSigBuilder/GraphicsRootSigBuilder.h"
+#include "RenderGraphBuilder/RenderPathBuilder/RenderPathBuilder.h"
+#include "RenderGraphBuilder/PassSetUpper/PassSetUpper.h"
+void RenderContext::StaticRenderGraph::Build
+(
+	NexusFieldProof proof_,
+	RenderPathAssembler& pathAssembler_,
+	PSO_PoolDispatcher& psoDispatcher_,
+	RenderPassCreator& renderPassCreator_,
+	RenderPassContainer& passContainer_,
+	RootSignatureContextDiplomat& rootSignatureContextDiplomat_,
+	BufferContextDiplomat& bufferContextDiplomat_,
+	ModelContextDiplomat& modelContextDiplomat_,
+	PSO_ContextDiplomat& pso_ContextDiplomat_,
+	ShaderContextDiplomat& shaderContextDiplomat_
+)
+{
+	//全てのPathを生成し、つなげる
+	allPathPtr = PathBuilder::Build(proof_, pathAssembler_, bufferContextDiplomat_);
+	//グラフィックス用の巨大共通ルートシグネチャ
+	graphicsRootSig = RootSigBuilder::Build(proof_, rootSignatureContextDiplomat_);
+	//存在しなければならない全てのPSOを生成
+	PSO_Builder::Build
+	(
+		proof_,
+		psoDispatcher_,
+		passContainer_,
+		graphicsRootSig,
+		modelContextDiplomat_,
+		pso_ContextDiplomat_,
+		shaderContextDiplomat_
+	);
+	//全てのPassの不足している初期化部分(PassInfoの作成、ルートコンスタンツバッファの作成など)を行う。
+	refBufSrvIndicesBufferID = PassSetUpper::Setup(proof_, renderPassCreator_, passContainer_, bufferContextDiplomat_);
+}
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Render\RenderContextRuntime\StaticRenderGraph\StaticRenderGraph.cpp ===
 ========================================
 #include "PreCompileHeader.h"
-#include "RenderGraph.h"
-RenderContext::RenderGraph::RenderGraph
+#include "StaticRenderGraph.h"
+RenderContext::StaticRenderGraph::StaticRenderGraph
 (
 	NexusFieldProof proof_,
 	RenderPathAssembler& pathAssembler_,
@@ -9440,7 +9481,7 @@ RenderContext::RenderGraph::RenderGraph
 	ShaderContextDiplomat& shaderContextDiplomat_
 )
 {
-	Logger::Entry("RenderGraph: Constructor");
+	Logger::Entry("StaticRenderGraph: Constructor");
 	Build
 	(
 		proof_,
@@ -9454,23 +9495,24 @@ RenderContext::RenderGraph::RenderGraph
 		pso_ContextDiplomat_,
 		shaderContextDiplomat_
 	);
-	Logger::End("RenderGraph: Constructor");
+	Logger::End("StaticRenderGraph: Constructor");
 }
 
 ========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Render\RenderContextRuntime\RenderGraph\RenderGraph.h ===
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Render\RenderContextRuntime\StaticRenderGraph\StaticRenderGraph.h ===
 ========================================
 #pragma once
 #include "../../RenderContext.h"
 #include "../../RenderPath/AllRenderPath/AllPathFwd.h"
-class RenderContext::RenderGraph
+#include "../../RenderPass/RenderPassComponent.h"
+class RenderContext::StaticRenderGraph
 {
 	class PSO_Builder;
 	class PathBuilder;
 	class RootSigBuilder;
 	class PassSetUpper;
 public:
-	RenderGraph
+	StaticRenderGraph
 	(
 		NexusFieldProof proof_,
 		RenderPathAssembler& pathAssembler_,
@@ -9499,51 +9541,15 @@ private:
 	);
 	//全てのPathのアドレス。本体は別コンテナクラスが所有
 	AllPathPtr allPathPtr;
+	//パスが参照するバッファのsrvheapIndexがつまったバッファID
+	//ランタイムで更新する必要がある
+	BufferUniqueID refBufSrvIndicesBufferID;
+	//描画用巨大共通ルートシグネチャ
+	ID3D12RootSignature* graphicsRootSig;
 };
 
 ========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Render\RenderContextRuntime\RenderGraph\RenderGraphInitialization.cpp ===
-========================================
-#include "RenderGraph.h"
-#include "RenderGraphBuilder/GraphicsPSO_Builder/GraphicsPSO_Builder.h"
-#include "RenderGraphBuilder/GraphicsRootSigBuilder/GraphicsRootSigBuilder.h"
-#include "RenderGraphBuilder/RenderPathBuilder/RenderPathBuilder.h"
-#include "RenderGraphBuilder/PassSetUpper/PassSetUpper.h"
-void RenderContext::RenderGraph::Build
-(
-	NexusFieldProof proof_,
-	RenderPathAssembler& pathAssembler_,
-	PSO_PoolDispatcher& psoDispatcher_,
-	RenderPassCreator& renderPassCreator_,
-	RenderPassContainer& passContainer_,
-	RootSignatureContextDiplomat& rootSignatureContextDiplomat_,
-	BufferContextDiplomat& bufferContextDiplomat_,
-	ModelContextDiplomat& modelContextDiplomat_,
-	PSO_ContextDiplomat& pso_ContextDiplomat_,
-	ShaderContextDiplomat& shaderContextDiplomat_
-)
-{
-	//全てのPathを生成し、つなげる
-	allPathPtr = PathBuilder::Build(proof_, pathAssembler_, bufferContextDiplomat_);
-	//グラフィックス用の巨大共通ルートシグネチャ
-	ID3D12RootSignature* graphicsRootSig = RootSigBuilder::Build(proof_, rootSignatureContextDiplomat_);
-	//存在しなければならない全てのPSOを生成
-	PSO_Builder::Build
-	(
-		proof_,
-		psoDispatcher_,
-		passContainer_,
-		graphicsRootSig,
-		modelContextDiplomat_,
-		pso_ContextDiplomat_,
-		shaderContextDiplomat_
-	);
-	//全てのPassの不足している初期化部分(PassInfoの作成、ルートコンスタンツバッファの作成など)を行う。
-	PassSetUpper::Setup(proof_, renderPassCreator_, passContainer_, bufferContextDiplomat_);
-}
-
-========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Render\RenderContextRuntime\RenderGraph\RenderGraphBuilder\GraphicsPSO_Builder\GraphicsPSO_Builder.cpp ===
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Render\RenderContextRuntime\StaticRenderGraph\RenderGraphBuilder\GraphicsPSO_Builder\GraphicsPSO_Builder.cpp ===
 ========================================
 #include "PreCompileHeader.h"
 #include "GraphicsPSO_Builder.h"
@@ -9551,25 +9557,20 @@ void RenderContext::RenderGraph::Build
 #include "../../../../RenderPass/RenderPassContainer/RenderPassContainer.h"
 #include "../../../../RenderPass/AllRenderPass/AllPassInclude.h"
 #include "../../../../RenderPass/PassDesc/PassDesc.h"
-#include "../../../../../Resource/Model/ModelContextDiplomat/ModelContextDiplomat.h"
-#include "../../../../../Resource/Model/ModelContextDiplomat/ModelContextCmdProvider/ModelContextCmdProvider.h"
-#include "../../../../../Resource/Model/ModelContextDiplomat/ModelContextCmdProvider/ModelContextCmdProviderLicences.h"
-#include "../../../../../Resource/Model/ModelContextCmds.h"
+#include "../../../../../Resource/Model/ModelContextDiplomatIncludes.h"
 #include "../../../../../Resource/Model/ModelStructure/Model.h"
 #include "../../../../../Resource/PSO/PSO_ContextDiplomat/PSO_ContextDiplomat.h"
 #include "../../../../../Resource/PSO/PSO_ContextDiplomat/PSO_ContextToolLender/PSO_ContextToolLender.h"
 #include "../../../../../Resource/PSO/PSO_ContextDiplomat/PSO_ContextToolLender/PSO_ContextToolLenderLicences.h"
 #include "../../../../../Resource/PSO/PSO_Creator/PSO_Creator.h"
-#include "../../../../../Resource/Shader/ShaderContextDiplomat/ShaderContextDiplomat.h"
-#include "../../../../../Resource/Shader/ShaderContextDiplomat/ShaderContextToolLender/ShaderContextToolLender.h"
-#include "../../../../../Resource/Shader/ShaderContextDiplomat/ShaderContextToolLender/ShaderContextToolLenderLicences.h"
+#include "../../../../../Resource/Shader/ShaderContextDiplomatIncludes.h"
 #include "../../../../../Resource/Shader/ShaderLibrary/ShaderLibrary.h"
-#include "../../../../../Resource/Shader/ShaderTable.h"
+#include "../../../../../Resource/Shader/ShaderPathComponent/ShaderTable.h"
 namespace
 {
 	auto const fileName = "GraphicsPSO_Builder.cpp";
 }
-void RenderContext::RenderGraph::PSO_Builder::Build
+void RenderContext::StaticRenderGraph::PSO_Builder::Build
 (
 	NexusFieldProof proof_,
 	PSO_PoolDispatcher& psoDispatcher_,
@@ -9594,7 +9595,7 @@ void RenderContext::RenderGraph::PSO_Builder::Build
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-void RenderContext::RenderGraph::PSO_Builder::CreateAllPSO
+void RenderContext::StaticRenderGraph::PSO_Builder::CreateAllPSO
 (
 	NexusFieldProof proof_,
 	PSO_PoolDispatcher& psoDispatcher_,
@@ -9639,7 +9640,7 @@ void RenderContext::RenderGraph::PSO_Builder::CreateAllPSO
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-std::vector<RenderContext::RenderGraph::PSO_Builder::PsoDesc_Key> RenderContext::RenderGraph::PSO_Builder::CreateAllPSO_Desc
+std::vector<RenderContext::StaticRenderGraph::PSO_Builder::PsoDesc_Key> RenderContext::StaticRenderGraph::PSO_Builder::CreateAllPSO_Desc
 (
 	NexusFieldProof proof_,
 	RenderPassContainer& passContainer_,
@@ -9703,7 +9704,7 @@ std::vector<RenderContext::RenderGraph::PSO_Builder::PsoDesc_Key> RenderContext:
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-RenderContext::RenderGraph::PSO_Builder::PsoDesc_Key RenderContext::RenderGraph::PSO_Builder::InputCommonInfo
+RenderContext::StaticRenderGraph::PSO_Builder::PsoDesc_Key RenderContext::StaticRenderGraph::PSO_Builder::InputCommonInfo
 (
 	RenderPassComponent::Pass const pass_,
 	PassDesc const& passDesc_,
@@ -9757,7 +9758,7 @@ RenderContext::RenderGraph::PSO_Builder::PsoDesc_Key RenderContext::RenderGraph:
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //モデルクラスとレンダーパスの二つで残りのPSOの要素を定める
-void RenderContext::RenderGraph::PSO_Builder::InputDependingModelsInfo
+void RenderContext::StaticRenderGraph::PSO_Builder::InputDependingModelsInfo
 (
 	ShaderContextDiplomat& shaderContextDiplomat_,
 	PsoDesc_Key& psoCommonDesc_,
@@ -9831,7 +9832,7 @@ void RenderContext::RenderGraph::PSO_Builder::InputDependingModelsInfo
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //レンダーパスオンリーで残りのPSOの要素を定める
-void RenderContext::RenderGraph::PSO_Builder::InputPassOnlyInfo
+void RenderContext::StaticRenderGraph::PSO_Builder::InputPassOnlyInfo
 (
 	ShaderContextDiplomat& shaderContextDiplomat_,
 	PsoDesc_Key& psoCommonDesc_,
@@ -9894,7 +9895,7 @@ void RenderContext::RenderGraph::PSO_Builder::InputPassOnlyInfo
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-std::vector<ModelDescription::RenderState> RenderContext::RenderGraph::PSO_Builder::CollectAllRenderStates
+std::vector<ModelDescription::RenderState> RenderContext::StaticRenderGraph::PSO_Builder::CollectAllRenderStates
 (
 	ModelContextDiplomat& modelContextDiplomat_
 )
@@ -9921,16 +9922,16 @@ std::vector<ModelDescription::RenderState> RenderContext::RenderGraph::PSO_Build
 }
 
 ========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Render\RenderContextRuntime\RenderGraph\RenderGraphBuilder\GraphicsPSO_Builder\GraphicsPSO_Builder.h ===
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Render\RenderContextRuntime\StaticRenderGraph\RenderGraphBuilder\GraphicsPSO_Builder\GraphicsPSO_Builder.h ===
 ========================================
 #pragma once
-#include "../../RenderGraph.h"
+#include "../../StaticRenderGraph.h"
 #include "../../../../../Resource/Model/ModelStructure/ModelDescription/ModelDescription.h"
 #include "../../../../../Resource/PSO/PSO_Creator/PipelineStateDesc.h"
 struct GraphicsPSO_Key;
-class RenderContext::RenderGraph::PSO_Builder
+class RenderContext::StaticRenderGraph::PSO_Builder
 {
-	friend class RenderGraph;
+	friend class StaticRenderGraph;
 	using PsoDesc_Key = std::pair<PipelineStateDesc::Graphics, GraphicsPSO_Key>;
 	static void Build
 	(
@@ -9996,7 +9997,7 @@ private:
 };
 
 ========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Render\RenderContextRuntime\RenderGraph\RenderGraphBuilder\GraphicsRootSigBuilder\GraphicsRootSigBuilder.cpp ===
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Render\RenderContextRuntime\StaticRenderGraph\RenderGraphBuilder\GraphicsRootSigBuilder\GraphicsRootSigBuilder.cpp ===
 ========================================
 #include "PreCompileHeader.h"
 #include "GraphicsRootSigBuilder.h"
@@ -10006,7 +10007,7 @@ namespace
 {
 	auto const fileName = "GraphicsRootSigBuilder.cpp";
 }
-[[nodiscard]] ID3D12RootSignature* RenderContext::RenderGraph::RootSigBuilder::Build
+[[nodiscard]] ID3D12RootSignature* RenderContext::StaticRenderGraph::RootSigBuilder::Build
 (
 	NexusFieldProof proof_,
 	RootSignatureContextDiplomat& rootSignatureContextDiplomat_
@@ -10030,13 +10031,13 @@ namespace
 }
 
 ========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Render\RenderContextRuntime\RenderGraph\RenderGraphBuilder\GraphicsRootSigBuilder\GraphicsRootSigBuilder.h ===
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Render\RenderContextRuntime\StaticRenderGraph\RenderGraphBuilder\GraphicsRootSigBuilder\GraphicsRootSigBuilder.h ===
 ========================================
 #pragma once
-#include "../../RenderGraph.h"
-class RenderContext::RenderGraph::RootSigBuilder
+#include "../../StaticRenderGraph.h"
+class RenderContext::StaticRenderGraph::RootSigBuilder
 {
-	friend class RenderGraph;
+	friend class StaticRenderGraph;
 	//グラフィックス用のルートシグの生成
 	static [[nodiscard]] ID3D12RootSignature* Build
 	(
@@ -10048,7 +10049,7 @@ private:
 };
 
 ========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Render\RenderContextRuntime\RenderGraph\RenderGraphBuilder\PassSetUpper\PassSetUpper.cpp ===
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Render\RenderContextRuntime\StaticRenderGraph\RenderGraphBuilder\PassSetUpper\PassSetUpper.cpp ===
 ========================================
 #include "PreCompileHeader.h"
 #include "PassSetUpper.h"
@@ -10070,7 +10071,7 @@ namespace
 {
 	auto const fileName = "PassSetUpper.cpp";
 }
-BufferUniqueID RenderContext::RenderGraph::PassSetUpper::Setup
+[[nodiscard]] BufferUniqueID RenderContext::StaticRenderGraph::PassSetUpper::Setup
 (
 	NexusFieldProof proof_,
 	RenderPassCreator& renderPassCreator_,
@@ -10084,7 +10085,7 @@ BufferUniqueID RenderContext::RenderGraph::PassSetUpper::Setup
 	CreatePassRootConstantsBuffer(proof_, bufferContextDiplomat_);
 	return refBufSrvArrayBufferID;
 }
-std::vector<BufferUniqueID> RenderContext::RenderGraph::PassSetUpper::CreateAllPassInfo
+std::vector<BufferUniqueID> RenderContext::StaticRenderGraph::PassSetUpper::CreateAllPassInfo
 (
 	NexusFieldProof proof_,
 	RenderPassCreator& renderPassCreator_,
@@ -10137,7 +10138,7 @@ std::vector<BufferUniqueID> RenderContext::RenderGraph::PassSetUpper::CreateAllP
 #endif //  _DEBUG
 	return allRefBufferUniques;
 }
-SRVHeapIndex RenderContext::RenderGraph::PassSetUpper::CreateReferenceBufferSrvArray
+SRVHeapIndex RenderContext::StaticRenderGraph::PassSetUpper::CreateReferenceBufferSrvArray
 (
 	NexusFieldProof proof_,
 	std::vector<BufferUniqueID> const& data_,
@@ -10166,7 +10167,7 @@ SRVHeapIndex RenderContext::RenderGraph::PassSetUpper::CreateReferenceBufferSrvA
 	);
 	return id_buffer.first;
 }
-void RenderContext::RenderGraph::PassSetUpper::CreatePassRootConstantsBuffer
+void RenderContext::StaticRenderGraph::PassSetUpper::CreatePassRootConstantsBuffer
 (
 	NexusFieldProof proof_,
 	BufferContextDiplomat& bufferContextDiplomat_
@@ -10182,14 +10183,14 @@ void RenderContext::RenderGraph::PassSetUpper::CreatePassRootConstantsBuffer
 }
 
 ========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Render\RenderContextRuntime\RenderGraph\RenderGraphBuilder\PassSetUpper\PassSetUpper.h ===
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Render\RenderContextRuntime\StaticRenderGraph\RenderGraphBuilder\PassSetUpper\PassSetUpper.h ===
 ========================================
 #pragma once
-#include "../../RenderGraph.h"
-class RenderContext::RenderGraph::PassSetUpper
+#include "../../StaticRenderGraph.h"
+class RenderContext::StaticRenderGraph::PassSetUpper
 {
-	friend class RenderGraph;
-	static BufferUniqueID Setup
+	friend class StaticRenderGraph;
+	static [[nodiscard]] BufferUniqueID Setup
 	(
 		NexusFieldProof proof_,
 		RenderPassCreator& renderPassCreator_,
@@ -10222,7 +10223,7 @@ private:
 };
 
 ========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Render\RenderContextRuntime\RenderGraph\RenderGraphBuilder\RenderPathBuilder\RenderPathBuilder.cpp ===
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Render\RenderContextRuntime\StaticRenderGraph\RenderGraphBuilder\RenderPathBuilder\RenderPathBuilder.cpp ===
 ========================================
 #include "PreCompileHeader.h"
 #include "RenderPathBuilder.h"
@@ -10231,7 +10232,7 @@ namespace
 {
 	auto const fileName = "RenderPathBuilder.cpp";
 }
-[[nodiscard]] AllPathPtr RenderContext::RenderGraph::PathBuilder::Build
+[[nodiscard]] AllPathPtr RenderContext::StaticRenderGraph::PathBuilder::Build
 (
 	NexusFieldProof proof_,
 	RenderPathAssembler& pathAssembler_,
@@ -10245,13 +10246,13 @@ namespace
 }
 
 ========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Render\RenderContextRuntime\RenderGraph\RenderGraphBuilder\RenderPathBuilder\RenderPathBuilder.h ===
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Render\RenderContextRuntime\StaticRenderGraph\RenderGraphBuilder\RenderPathBuilder\RenderPathBuilder.h ===
 ========================================
 #pragma once
-#include "../../RenderGraph.h"
-class RenderContext::RenderGraph::PathBuilder
+#include "../../StaticRenderGraph.h"
+class RenderContext::StaticRenderGraph::PathBuilder
 {
-	friend class RenderGraph;
+	friend class StaticRenderGraph;
 	//以下ヘルパー
 private:
 	//全てのPathを生成
@@ -10760,7 +10761,7 @@ public:
 		return std::get<std::unique_ptr<PassType>>(allPassUnique) ? 
 			std::get<std::unique_ptr<PassType>>(allPassUnique).get() : nullptr;
 	}
-	//RenderGraphさんに全てのパスの情報を渡してPSOを作ってもらう
+	//StaticRenderGraphさんに全てのパスの情報を渡してPSOを作ってもらう
 	std::unordered_map<RenderPassComponent::Pass,PassBehavior*> const& AccessAllPassPtrMap(NexusFieldProof proof_)const;
 private:
 	//すべてのPassのユニーク。
@@ -11463,9 +11464,7 @@ ParseWhichPassUses(std::string const pathName_)
 std::vector<std::string> RenderContext::RenderPathAssembler::PathSettingsLoader::LoadData(std::string const pathName_)
 {
 	Miyajison* miyajison = Miyajison::Get();
-	static std::string const srcJsonFileName = "RenderPathSettings";
-	static std::string const dataName = "UsePass";
-	return 	miyajison->LoadData<std::vector<std::string>>(srcJsonFileName, { pathName_,dataName });
+	return 	miyajison->LoadData<std::vector<std::string>>(DataKey::kSrcJsonFileName, { pathName_,DataKey::kUsePass});
 }
 std::vector<RenderPassComponent::Pass> RenderContext::RenderPathAssembler::PathSettingsLoader::PassNamesToPassTypes(std::vector<std::string> const& passNames_)
 {
@@ -11487,10 +11486,17 @@ class RenderContext::RenderPathAssembler::PathSettingsLoader
 	friend class RenderPathAssembler;
 	///本丸
 	[[nodiscard]] static std::vector<PassAndName> ParseWhichPassUses(std::string const pathName_);
+	//以下ヘルパー
+private:
 	//Pathの名前からそのPathが使用するPassの名前をjsonファイルから読み込む
 	static std::vector<std::string> LoadData(std::string const pathName_);
 	//パスの名前から列挙型へ変換
 	static std::vector<RenderPassComponent::Pass> PassNamesToPassTypes(std::vector<std::string> const& passNames_);
+	struct DataKey
+	{
+		static inline std::string const kSrcJsonFileName	= "RenderPathSettings";
+		static inline std::string const kUsePass			= "UsePass";
+	};
 };
 
 ========================================
@@ -11695,6 +11701,16 @@ namespace ModelContextCmds
 {
 	using WatchModelContainer = std::function<const std::vector<std::unique_ptr<Model>>*()>;
 }
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Model\ModelContextDiplomatIncludes.h ===
+========================================
+#pragma once
+#include "ModelContextDiplomat/ModelContextDiplomat.h"
+#include "ModelContextDiplomat/ModelContextCmdProvider/ModelContextCmdProvider.h"
+#include "ModelContextDiplomat/ModelContextCmdProvider/ModelContextCmdProviderLicences.h"
+#include "ModelContextDiplomat/ModelContextToolLender/ModelContextToolLender.h"
+#include "ModelContextDiplomat/ModelContextToolLender/ModelContextToolLenderLicence.h"
 
 ========================================
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Model\TestModelOKIBA.cpp ===
@@ -13933,7 +13949,7 @@ ModelDescription::ModelDescription
 ========================================
 #pragma once
 #include "../../../../Render/RenderStateComponent.h"
-#include "../../../../Resource/Shader/ShaderPathComponent.h"
+#include "../../../../Resource/Shader/ShaderPathComponent/ShaderPathComponent.h"
 #include "../../../../Render/RenderPass/RenderPassComponent.h"
 //外部
 #include "../../../../../../Assets/Shared/StructuredBufferModelData.h"
@@ -15097,7 +15113,7 @@ private:
 struct RootSignatureContext::CmdProvider::UsesCreateGraphicsRootSigCmdLicence
 {
 private:
-	friend class RenderContext::RenderGraph;
+	friend class RenderContext::StaticRenderGraph;
 	explicit UsesCreateGraphicsRootSigCmdLicence() = default;
 };
 
@@ -15787,88 +15803,12 @@ private:
 };
 
 ========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Shader\ShaderPathComponent.h ===
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Shader\ShaderContextDiplomatIncludes.h ===
 ========================================
 #pragma once
-namespace ShaderPathComponent
-{
-	enum class MeshType
-	{
-		//RenderPass専用！！
-		kOffscreen,
-		kStatic
-		,kCount
-	};
-	enum class MaterialType
-	{
-		//RenderPass専用！！
-		kOffscreen,
-		//ピクセルシェーダーを通さないケースはあるので
-		kNone,
-		kStandard
-		,kCount
-	};
-};
-
-========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Shader\ShaderTable.h ===
-========================================
-#pragma once
-#include "ShaderPathComponent.h"
-#include "../../Render/RenderPass/RenderPassComponent.h"
-///MeshType X Pass = MeshShader
-///MaterialType X Pass = PixelShader
-namespace ShaderTable
-{
-	std::string const GetMeshShader(RenderPassComponent::Pass pass_, ShaderPathComponent::MeshType meshType_)
-	{
-		std::string meshShader;
-		switch (pass_)
-		{
-		case RenderPassComponent::Pass::kSceneOpaque:
-			if (meshType_ == ShaderPathComponent::MeshType::kStatic)meshShader = "StaticMS";
-			break;
-		default:
-			ErrorMessageOutput::Assert::OutputError
-			(
-				"指定したRenderPassもしかしてオフスク用じゃない？(メッシュシェーダ)",
-				"ShaderTable.h"
-			);
-			break;
-		}
-		ErrorMessageOutput::Assert::DetectError
-		(
-			meshShader.size() > 0,
-			"shaderTableにて設定外の組み合わせがきた(メッシュシェーダ)",
-			"ShaderTable.h"
-		);
-		return meshShader;
-	}
-	std::optional<std::string> const GetPixelShader(RenderPassComponent::Pass pass_, ShaderPathComponent::MaterialType materialType_)
-	{
-		std::optional<std::string> pixelShader;
-		switch (pass_)
-		{
-		case RenderPassComponent::Pass::kSceneOpaque:
-			if (materialType_ == ShaderPathComponent::MaterialType::kStandard)pixelShader = "StandardPS";
-			break;
-		default:
-			ErrorMessageOutput::Assert::OutputError
-			(
-				"指定したRenderPassもしかしてオフスク用じゃない？(ピクセルシェーダ)",
-				"ShaderTable.h"
-			);
-			break;
-		}
-		ErrorMessageOutput::Assert::DetectError
-		(
-			pixelShader.has_value(),
-			"shaderTableにて設定外の組み合わせがきた(ピクセルシェーダ)",
-			"ShaderTable.h"
-		);
-		return pixelShader;
-	}
-}
+#include "ShaderContextDiplomat/ShaderContextDiplomat.h"
+#include "ShaderContextDiplomat/ShaderContextToolLender/ShaderContextToolLender.h"
+#include "ShaderContextDiplomat/ShaderContextToolLender/ShaderContextToolLenderLicences.h"
 
 ========================================
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Shader\whenMakeNewShaderFile.txt ===
@@ -16374,6 +16314,90 @@ private:
 	//コンパイル結果が問題ないかチェックし、バイナリーデータを返す
 	Microsoft::WRL::ComPtr<IDxcBlob> CheckResult(IDxcResult* shaderResult_);
 };
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Shader\ShaderPathComponent\ShaderPathComponent.h ===
+========================================
+#pragma once
+namespace ShaderPathComponent
+{
+	enum class MeshType
+	{
+		//RenderPass専用！！
+		kOffscreen,
+		kStatic
+		,kCount
+	};
+	enum class MaterialType
+	{
+		//RenderPass専用！！
+		kOffscreen,
+		//ピクセルシェーダーを通さないケースはあるので
+		kNone,
+		kStandard
+		,kCount
+	};
+};
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Shader\ShaderPathComponent\ShaderTable.h ===
+========================================
+#pragma once
+#include "ShaderPathComponent.h"
+#include "../../../Render/RenderPass/RenderPassComponent.h"
+///MeshType X Pass = MeshShader
+///MaterialType X Pass = PixelShader
+namespace ShaderTable
+{
+	std::string const GetMeshShader(RenderPassComponent::Pass pass_, ShaderPathComponent::MeshType meshType_)
+	{
+		std::string meshShader;
+		switch (pass_)
+		{
+		case RenderPassComponent::Pass::kSceneOpaque:
+			if (meshType_ == ShaderPathComponent::MeshType::kStatic)meshShader = "StaticMS";
+			break;
+		default:
+			ErrorMessageOutput::Assert::OutputError
+			(
+				"指定したRenderPassもしかしてオフスク用じゃない？(メッシュシェーダ)",
+				"ShaderTable.h"
+			);
+			break;
+		}
+		ErrorMessageOutput::Assert::DetectError
+		(
+			meshShader.size() > 0,
+			"shaderTableにて設定外の組み合わせがきた(メッシュシェーダ)",
+			"ShaderTable.h"
+		);
+		return meshShader;
+	}
+	std::optional<std::string> const GetPixelShader(RenderPassComponent::Pass pass_, ShaderPathComponent::MaterialType materialType_)
+	{
+		std::optional<std::string> pixelShader;
+		switch (pass_)
+		{
+		case RenderPassComponent::Pass::kSceneOpaque:
+			if (materialType_ == ShaderPathComponent::MaterialType::kStandard)pixelShader = "StandardPS";
+			break;
+		default:
+			ErrorMessageOutput::Assert::OutputError
+			(
+				"指定したRenderPassもしかしてオフスク用じゃない？(ピクセルシェーダ)",
+				"ShaderTable.h"
+			);
+			break;
+		}
+		ErrorMessageOutput::Assert::DetectError
+		(
+			pixelShader.has_value(),
+			"shaderTableにて設定外の組み合わせがきた(ピクセルシェーダ)",
+			"ShaderTable.h"
+		);
+		return pixelShader;
+	}
+}
 
 ========================================
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Texture\TextureContext.cpp ===
@@ -17444,7 +17468,6 @@ struct Vector4
 #include "Miyajison.h"
 #include "JsonDataLibrary/JsonDataLibrary.h"
 #include "RegistryLoader/RegistryLoader.h"
-#include "JsonDataLoader/JsonDataLoader.h"
 Miyajison::Miyajison()
 {
     jsonDataLibrary.reset(new DataLibrary());
@@ -17492,69 +17515,6 @@ const nlohmann::json& Miyajison::PullJsonData(std::string fileName_)
 {
     return jsonDataLibrary->Export(DataLibrary::HandleLicence{}, fileName_);
 }
-///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-template<>
-int Miyajison::LoadData(std::string fileName_, Group_Value group_value_)
-{
-    const nlohmann::json& jsonData = PullJsonData(fileName_);
-    return DataLoader::Load<int>(jsonData, group_value_);
-}
-template<>
-double Miyajison::LoadData(std::string fileName_, Group_Value group_value_)
-{
-    const nlohmann::json& jsonData = PullJsonData(fileName_);
-    return DataLoader::Load<double>(jsonData, group_value_);
-}
-template<>
-bool Miyajison::LoadData(std::string fileName_, Group_Value group_value_)
-{
-    const nlohmann::json& jsonData = PullJsonData(fileName_);
-    return DataLoader::Load<bool>(jsonData, group_value_);
-}
-template<>
-std::string Miyajison::LoadData(std::string fileName_, Group_Value group_value_)
-{
-    const nlohmann::json& jsonData = PullJsonData(fileName_);
-    return DataLoader::Load<std::string>(jsonData, group_value_);
-}
-template<>
-float Miyajison::LoadData(std::string fileName_, Group_Value group_value_)
-{
-    const nlohmann::json& jsonData = PullJsonData(fileName_);
-    return DataLoader::Load<float>(jsonData, group_value_);
-}
-template<>
-std::vector<int> Miyajison::LoadData(std::string fileName_, Group_Value group_value_)
-{
-    const nlohmann::json& jsonData = PullJsonData(fileName_);
-    return DataLoader::Load<std::vector<int>>(jsonData, group_value_);
-}
-template<>
-std::vector<double> Miyajison::LoadData(std::string fileName_, Group_Value group_value_)
-{
-    const nlohmann::json& jsonData = PullJsonData(fileName_);
-    return DataLoader::Load<std::vector<double>>(jsonData, group_value_);
-}
-template<>
-std::vector<bool> Miyajison::LoadData(std::string fileName_, Group_Value group_value_)
-{
-    const nlohmann::json& jsonData = PullJsonData(fileName_);
-    return DataLoader::Load<std::vector<bool>>(jsonData, group_value_);
-}
-template<>
-std::vector<std::string> Miyajison::LoadData(std::string fileName_, Group_Value group_value_)
-{
-    const nlohmann::json& jsonData = PullJsonData(fileName_);
-    return DataLoader::Load<std::vector<std::string>>(jsonData, group_value_);
-}
-template<>
-std::vector<std::vector<float>> Miyajison::LoadData(std::string fileName_, Group_Value group_value_)
-{
-    const nlohmann::json& jsonData = PullJsonData(fileName_);
-    return DataLoader::Load<std::vector<std::vector<float>>>(jsonData, group_value_);
-}
 
 ========================================
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\MiddleLayer\MiyaJison\MiyaJison.h ===
@@ -17563,9 +17523,7 @@ std::vector<std::vector<float>> Miyajison::LoadData(std::string fileName_, Group
 #include "../../../External/nlohmann/json.hpp"
 class Miyajison
 {
-	class DataLoader;
 	class DataLibrary;
-	class DataChecker;
 public:
 	using Group_Value = std::array<std::string, 2>;
 	static Miyajison* Get();
@@ -17575,8 +17533,24 @@ public:
 	Miyajison& operator=(Miyajison&&) = delete;
 	///ジェーソンファイル名(「.json」省略！！！！)、グループ名とキーを入力し目的のデータを引っ張る
 	///ファイル名はすべてAssets/Registryにあるからそこを見るべし
+	//template<typename DataType>
+	//std::vector<DataType> LoadData(std::string const& fileName_, Group_Value group_value_)
+	//{
+	//	const nlohmann::json& jsonData = PullJsonData(fileName_);
+	//	CheckDataType<DataType>();
+	//	auto data = jsonData[group_value_[0]][group_value_[1]];
+	//	auto value = data.get<DataType>();
+	//	return value;
+	//}
 	template<typename DataType>
-	DataType LoadData(std::string fileName_, Group_Value group_value_);
+	DataType LoadData(std::string const& fileName_, Group_Value const& group_value_)
+	{
+		const nlohmann::json& jsonData = PullJsonData(fileName_);
+		CheckDataType<DataType>();
+		auto data = jsonData[group_value_[0]][group_value_[1]];
+		auto value = data.get<DataType>();
+		return value;
+	}
 private:
 	Miyajison();
 	std::unique_ptr<DataLibrary> jsonDataLibrary;
@@ -17587,62 +17561,26 @@ private:
 	//ジェーソンファイルレジストリーから全てのジェーソンファイルのパスを取得して読み込み、
 	///ライブラリーに詰めていく
 	void LoadAllJsonFiles();
-};
-template<>
-int Miyajison::LoadData(std::string fileName_, Group_Value group_value_);
-template<>
-double Miyajison::LoadData(std::string fileName_, Group_Value group_value_);
-template<>
-bool Miyajison::LoadData(std::string fileName_, Group_Value group_value_);
-template<>
-std::string Miyajison::LoadData(std::string fileName_, Group_Value group_value_);
-template<>
-float Miyajison::LoadData(std::string fileName_, Group_Value group_value_);
-template<>
-std::vector<int> Miyajison::LoadData(std::string fileName_, Group_Value group_value_);
-template<>
-std::vector<double> Miyajison::LoadData(std::string fileName_, Group_Value group_value_);
-template<>
-std::vector<bool> Miyajison::LoadData(std::string fileName_, Group_Value group_value_);
-template<>
-std::vector<std::string> Miyajison::LoadData(std::string fileName_, Group_Value group_value_);
-template<>
-std::vector<std::vector<float>> Miyajison::LoadData(std::string fileName_, Group_Value group_value_);
-
-========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\MiddleLayer\MiyaJison\JsonDataChecker\JsonDataChecker.cpp ===
-========================================
-#include "PreCompileHeader.h"
-#include "JsonDataChecker.h"
-
-========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\MiddleLayer\MiyaJison\JsonDataChecker\JsonDataChecker.h ===
-========================================
-#pragma once
-#include "../Miyajison.h"
-class Miyajison::DataChecker
-{
-	friend class Miyajison;
-	///ProjectConfigのテータチェックフラグがオンの時に作動する
+	//データ型チェック
 	template<typename DataType>
-	static void Check()
+	void CheckDataType()
 	{
 		if (!ProjectConfig::Debug::kEnableJsonDataTypeCheck) return;
 		if constexpr
-		(
-			!std::is_same_v<DataType, std::string>					&&
-			!std::is_same_v<DataType, int>							&&
-			!std::is_same_v<DataType, bool>							&&
-			!std::is_same_v<DataType, double>						&&
-			!std::is_same_v<DataType, float>						&&
-			!std::is_same_v<DataType, std::vector<std::string>>		&&
-			!std::is_same_v<DataType, std::vector<int>>				&&
-			!std::is_same_v<DataType, std::vector<bool>>			&&
-			!std::is_same_v<DataType, std::vector<double>>			&&
-			!std::is_same_v<DataType, std::vector<std::vector<float>>>
-		)
+			(
+				!std::is_same_v<DataType, std::string> &&
+				!std::is_same_v<DataType, int> &&
+				!std::is_same_v<DataType, bool> &&
+				!std::is_same_v<DataType, double> &&
+				!std::is_same_v<DataType, float> &&
+				!std::is_same_v<DataType, std::vector<std::string>> &&
+				!std::is_same_v<DataType, std::vector<int>> &&
+				!std::is_same_v<DataType, std::vector<bool>> &&
+				!std::is_same_v<DataType, std::vector<double>> &&
+				!std::is_same_v<DataType, std::vector<std::vector<float>>>
+			)
 		{
-			ErrorMessageOutput::Assert::OutputError("データ型に異常あり", "JsonDataLoader.h");
+			ErrorMessageOutput::Assert::OutputError("データ型に異常あり", "Miyajison.h");
 		}
 	}
 };
@@ -17687,32 +17625,6 @@ struct Miyajison::DataLibrary::HandleLicence
 private:
 	friend class Miyajison;
 	explicit HandleLicence() = default;
-};
-
-========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\MiddleLayer\MiyaJison\JsonDataLoader\JsonDataLoader.cpp ===
-========================================
-#include "PreCompileHeader.h"
-#include "JsonDataLoader.h"
-
-========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\MiddleLayer\MiyaJison\JsonDataLoader\JsonDataLoader.h ===
-========================================
-#pragma once
-#include "../Miyajison.h"
-#include "../JsonDataChecker/JsonDataChecker.h"
-class Miyajison::DataLoader
-{
-	friend class Miyajison;
-	template<typename DataType>
-	static DataType Load(const nlohmann::json& jsonData, Group_Value group_value_)
-	{
-		//データ型チェック
-		Miyajison::DataChecker::Check<DataType>();
-		auto data = jsonData[group_value_[0]][group_value_[1]];
-		auto value = data.get<DataType>();
-		return value;
-	}
 };
 
 ========================================
@@ -19044,5 +18956,5 @@ namespace StringProcessing
 ========================================
 === SUMMARY ===
 ========================================
-Total Files      : 431
-Effective Lines  : 13831
+Total Files      : 429
+Effective Lines  : 13746

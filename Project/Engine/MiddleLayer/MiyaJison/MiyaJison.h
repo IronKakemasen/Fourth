@@ -3,9 +3,7 @@
 
 class Miyajison
 {
-	class DataLoader;
 	class DataLibrary;
-	class DataChecker;
 
 public:
 
@@ -21,8 +19,20 @@ public:
 	///ジェーソンファイル名(「.json」省略！！！！)、グループ名とキーを入力し目的のデータを引っ張る
 	///ファイル名はすべてAssets/Registryにあるからそこを見るべし
 	template<typename DataType>
-	DataType LoadData(std::string fileName_, Group_Value group_value_);
+	DataType LoadData(std::string const& fileName_, std::vector<std::string> const& nest_)
+	{
+		CheckDataType<DataType>();
 
+		nlohmann::json const* current = &PullJsonData(fileName_);
+
+		//ポインタをずらしながら階層を辿る
+		for (const auto& key : nest_)
+		{
+			current = &(*current)[key];
+		}
+
+		return current->get<DataType>();
+	}
 
 private:
 
@@ -39,35 +49,30 @@ private:
 	//ジェーソンファイルレジストリーから全てのジェーソンファイルのパスを取得して読み込み、
 	///ライブラリーに詰めていく
 	void LoadAllJsonFiles();
+
+	//データ型チェック
+	template<typename DataType>
+	void CheckDataType()
+	{
+		if (!ProjectConfig::Debug::kEnableJsonDataTypeCheck) return;
+
+		if constexpr
+		(
+			!std::is_same_v<DataType, std::string> &&
+			!std::is_same_v<DataType, int> &&
+			!std::is_same_v<DataType, bool> &&
+			!std::is_same_v<DataType, double> &&
+			!std::is_same_v<DataType, float> &&
+			!std::is_same_v<DataType, std::vector<std::string>> &&
+			!std::is_same_v<DataType, std::vector<int>> &&
+			!std::is_same_v<DataType, std::vector<bool>> &&
+			!std::is_same_v<DataType, std::vector<double>> &&
+			!std::is_same_v<DataType, std::vector<std::vector<float>>>
+
+		)
+		{
+			ErrorMessageOutput::Assert::OutputError("データ型に異常あり", "Miyajison.h");
+		}
+
+	}
 };
-
-template<>
-int Miyajison::LoadData(std::string fileName_, Group_Value group_value_);
-
-template<>
-double Miyajison::LoadData(std::string fileName_, Group_Value group_value_);
-
-template<>
-bool Miyajison::LoadData(std::string fileName_, Group_Value group_value_);
-
-template<>
-std::string Miyajison::LoadData(std::string fileName_, Group_Value group_value_);
-
-template<>
-float Miyajison::LoadData(std::string fileName_, Group_Value group_value_);
-
-template<>
-std::vector<int> Miyajison::LoadData(std::string fileName_, Group_Value group_value_);
-
-template<>
-std::vector<double> Miyajison::LoadData(std::string fileName_, Group_Value group_value_);
-
-template<>
-std::vector<bool> Miyajison::LoadData(std::string fileName_, Group_Value group_value_);
-
-template<>
-std::vector<std::string> Miyajison::LoadData(std::string fileName_, Group_Value group_value_);
-
-
-template<>
-std::vector<std::vector<float>> Miyajison::LoadData(std::string fileName_, Group_Value group_value_);

@@ -28,10 +28,8 @@ ParseWhichPassUses(std::string const pathName_)
 std::vector<std::string> RenderContext::RenderPathAssembler::PathSettingsLoader::LoadData(std::string const pathName_)
 {
 	Miyajison* miyajison = Miyajison::Get();
-	static std::string const srcJsonFileName = "RenderPathSettings";
-	static std::string const dataName = "UsePass";
 
-	return 	miyajison->LoadData<std::vector<std::string>>(srcJsonFileName, { pathName_,dataName });
+	return 	miyajison->LoadData<std::vector<std::string>>(DataKey::kSrcJsonFileName, { pathName_,DataKey::kUsePass});
 
 }
 
