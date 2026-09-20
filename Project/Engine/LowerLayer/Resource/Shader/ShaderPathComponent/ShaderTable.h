@@ -1,6 +1,6 @@
 #pragma once
 #include "ShaderPathComponent.h"
-#include "../../Render/RenderPass/RenderPassComponent.h"
+#include "../../../Render/RenderPass/RenderPassComponent.h"
 
 ///MeshType X Pass = MeshShader
 ///MaterialType X Pass = PixelShader

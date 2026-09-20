@@ -38,7 +38,7 @@ struct IDualRole
 struct IReadable
 {
 	virtual ~IReadable() = default;
-	virtual SRVHeapIndex OutProperSRVHeapIndex(int frameIndex_ = 0)const = 0;
+	virtual SRVHeapIndex OutProperSRVHeapIndex(int index_ = 0)const = 0;
 };
 
 //リードオンリーバッファのインターフェース

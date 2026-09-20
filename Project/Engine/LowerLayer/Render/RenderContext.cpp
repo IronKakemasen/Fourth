@@ -7,7 +7,7 @@
 #include "RenderPath/RenderPathAssembler/RenderPathAssembler.h"
 #include "RenderPath/RenderPathContainer/RenderPathContainer.h"
 
-#include "RenderContextRuntime/RenderGraph/RenderGraph.h"
+#include "RenderContextRuntime/StaticRenderGraph/StaticRenderGraph.h"
 #include "RenderContextRuntime/PSO_PoolDispatcher/PSO_PoolDispatcher.h"
 
 namespace 
@@ -48,9 +48,9 @@ RenderContext::RenderContext
 	);
 	Logger::Log("Instantiate: renderPathAssembler", fileName);
 
-	renderGraph.reset
+	staticRenderGraph.reset
 	(
-		new RenderGraph
+		new StaticRenderGraph
 		(
 			proof_,
 			renderPathAssembler,

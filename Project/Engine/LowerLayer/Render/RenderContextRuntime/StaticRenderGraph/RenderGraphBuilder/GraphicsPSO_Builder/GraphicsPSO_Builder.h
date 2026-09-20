@@ -1,13 +1,13 @@
 #pragma once
-#include "../../RenderGraph.h"
+#include "../../StaticRenderGraph.h"
 #include "../../../../../Resource/Model/ModelStructure/ModelDescription/ModelDescription.h"
 #include "../../../../../Resource/PSO/PSO_Creator/PipelineStateDesc.h"
 
 struct GraphicsPSO_Key;
 
-class RenderContext::RenderGraph::PSO_Builder
+class RenderContext::StaticRenderGraph::PSO_Builder
 {
-	friend class RenderGraph;
+	friend class StaticRenderGraph;
 
 	using PsoDesc_Key = std::pair<PipelineStateDesc::Graphics, GraphicsPSO_Key>;
 

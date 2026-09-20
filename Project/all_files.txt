@@ -3847,7 +3847,7 @@ struct IDualRole
 struct IReadable
 {
 	virtual ~IReadable() = default;
-	virtual SRVHeapIndex OutProperSRVHeapIndex(int frameIndex_ = 0)const = 0;
+	virtual SRVHeapIndex OutProperSRVHeapIndex(int index_ = 0)const = 0;
 };
 //リードオンリーバッファのインターフェース
 struct IReadOnly
@@ -4499,9 +4499,9 @@ UploadStructuredBuffer::~UploadStructuredBuffer()
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-SRVHeapIndex UploadStructuredBuffer::OutProperSRVHeapIndex(int frameIndex_)const
+SRVHeapIndex UploadStructuredBuffer::OutProperSRVHeapIndex(int index_)const
 {
-	return WatchIndex<ViewType::kSRV, SRVHeapIndex >(frameIndex_);
+	return WatchIndex<ViewType::kSRV, SRVHeapIndex >(index_);
 }
 
 ========================================
@@ -4521,7 +4521,7 @@ public:
 		std::vector<Microsoft::WRL::ComPtr<ID3D12Resource>> resourceContainer_,
 		const BufferDescriptionBehavior& description_
 	);
-	virtual SRVHeapIndex OutProperSRVHeapIndex(int frameIndex_ = 0)const override;
+	virtual SRVHeapIndex OutProperSRVHeapIndex(int index_ = 0)const override;
 };
 
 ========================================
@@ -10060,13 +10060,17 @@ private:
 #include "../../../../../Buffer/BufferContextDiplomat/BufferContextDiplomat.h"
 #include "../../../../../Buffer/BufferContextDiplomat/BufferContextCmdProvider/BufferContextCmdProvider.h"
 #include "../../../../../Buffer/BufferContextDiplomat/BufferContextCmdProvider/BufferContextCmdProviderLicences.h"
+#include "../../../../../Buffer/BufferContextDiplomat/BufferToolLender/BufferToolLender.h"
+#include "../../../../../Buffer/BufferContextDiplomat/BufferToolLender/BufferToolLenderLicence.h"
+#include "../../../../../Buffer/BufferDefinition/AllBuffersInclude.h"
+#include "../../../../../Buffer/BufferDefinition/AllBufferDescsInclude.h"
 #include "../../../../../../../Assets/Shared/ConstantBuffers.h"
 using namespace ConstantBuffers;
 namespace
 {
 	auto const fileName = "PassSetUpper.cpp";
 }
-void RenderContext::RenderGraph::PassSetUpper::Setup
+BufferUniqueID RenderContext::RenderGraph::PassSetUpper::Setup
 (
 	NexusFieldProof proof_,
 	RenderPassCreator& renderPassCreator_,
@@ -10075,7 +10079,10 @@ void RenderContext::RenderGraph::PassSetUpper::Setup
 )
 {
 	std::vector<BufferUniqueID> allRefBuffer = CreateAllPassInfo(proof_, renderPassCreator_, passContainer_);
+	BufferUniqueID refBufSrvArrayBufferID =  
+		CreateReferenceBufferSrvArray(proof_,allRefBuffer,bufferContextDiplomat_);
 	CreatePassRootConstantsBuffer(proof_, bufferContextDiplomat_);
+	return refBufSrvArrayBufferID;
 }
 std::vector<BufferUniqueID> RenderContext::RenderGraph::PassSetUpper::CreateAllPassInfo
 (
@@ -10130,6 +10137,35 @@ std::vector<BufferUniqueID> RenderContext::RenderGraph::PassSetUpper::CreateAllP
 #endif //  _DEBUG
 	return allRefBufferUniques;
 }
+SRVHeapIndex RenderContext::RenderGraph::PassSetUpper::CreateReferenceBufferSrvArray
+(
+	NexusFieldProof proof_,
+	std::vector<BufferUniqueID> const& data_,
+	BufferContextDiplomat& bufferContextDiplomat_
+)
+{
+	//グローバル定数バッファ生成コマンドをもらう
+	auto cmdProv = bufferContextDiplomat_.Access<BufferContext::CmdProvider>();
+	BufferContext::CmdProvider::LicenceType<BufferContextCmds::CreateCBufferCmd> licenceCmd;
+	auto createCBufferCmd = cmdProv->Provide<BufferContextCmds::CreateCBufferCmd>(licenceCmd);
+	//bufferCreatorを借りる
+	auto toolLender = bufferContextDiplomat_.Access<BufferContext::ToolLender>();
+	BufferContext::ToolLender::LicenceType<BufferContext::BufferCreator> licenceTool;
+	auto* bufferCreator = toolLender->Lend<BufferContext::BufferCreator>(licenceTool);
+	///バッファ作成
+	std::string const bufferName = "RefBufSrvArr";
+	UploadStructuredBufferDescription desc(UINT(sizeof(BufferUniqueID)), UINT(data_.size()), 0);
+	auto id_buffer = bufferCreator->CreateWithBuffer(desc, bufferName);
+	//そのバッファのコンスタントバッファを生成し,
+	auto cBufferID_cBuffer =
+	createCBufferCmd(bufferName, UINT(sizeof(SRVHeapIndex)), (UINT)ConstantBuffers::ConstantBufferBindSlots::kPassRefBufferIndices);
+	//srvHeapIndexを抽出しその定数バッファに記録
+	cBufferID_cBuffer.second->WriteInBoth<SRVHeapIndex>
+	(
+		{ id_buffer.second->OutProperSRVHeapIndex(0),id_buffer.second->OutProperSRVHeapIndex(1) }
+	);
+	return id_buffer.first;
+}
 void RenderContext::RenderGraph::PassSetUpper::CreatePassRootConstantsBuffer
 (
 	NexusFieldProof proof_,
@@ -10153,7 +10189,7 @@ void RenderContext::RenderGraph::PassSetUpper::CreatePassRootConstantsBuffer
 class RenderContext::RenderGraph::PassSetUpper
 {
 	friend class RenderGraph;
-	static void Setup
+	static BufferUniqueID Setup
 	(
 		NexusFieldProof proof_,
 		RenderPassCreator& renderPassCreator_,
@@ -10169,11 +10205,14 @@ private:
 		RenderPassCreator& renderPassCreator_,
 		RenderPassContainer& passContainer_
 	);
-	//各パスが参照するバッファのsrvHeapIndexを配列したもののバッファを作成
-	//static void CreateReferenceBufferSrvArray
-	//(
-	//	NexusFieldProof proof_,
-	//)
+	///各パスが参照するバッファのsrvHeapIndexを配列したもののバッファ、そしてそのsrvHeapIndexの定数バッファを作成
+	//ReferenceBufferSrvArrayバッファのバッファインデックスを返す
+	static SRVHeapIndex CreateReferenceBufferSrvArray
+	(
+		NexusFieldProof proof_,
+		std::vector<BufferUniqueID> const& data_,
+		BufferContextDiplomat& bufferContextDiplomat_
+	);
 	//Passのルートコンスタンツのバッファを作る
 	static void CreatePassRootConstantsBuffer
 	(
@@ -10579,6 +10618,7 @@ RenderContext::PassDesc::PassDesc
 }
 void RenderContext::PassDesc::DebugLog()const
 {
+#ifdef  _DEBUG
 	std::string log;
 	log += "----- " + passName + " -----\n";
 	log += "< ColorBuffersInfo(size = " + std::to_string(colorBuffersInfo.size()) + ")" + " >\n";
@@ -10638,6 +10678,7 @@ void RenderContext::PassDesc::DebugLog()const
 		log += " }\n";
 	}
 	Logger::Log(log);
+#endif
 }
 
 ========================================
@@ -19004,4 +19045,4 @@ namespace StringProcessing
 === SUMMARY ===
 ========================================
 Total Files      : 431
-Effective Lines  : 13798
+Effective Lines  : 13831

@@ -1,8 +1,8 @@
 #include "PreCompileHeader.h"
-#include "RenderGraph.h"
+#include "StaticRenderGraph.h"
 
 
-RenderContext::RenderGraph::RenderGraph
+RenderContext::StaticRenderGraph::StaticRenderGraph
 (
 	NexusFieldProof proof_,
 	RenderPathAssembler& pathAssembler_,
@@ -16,7 +16,7 @@ RenderContext::RenderGraph::RenderGraph
 	ShaderContextDiplomat& shaderContextDiplomat_
 )
 {
-	Logger::Entry("RenderGraph: Constructor");
+	Logger::Entry("StaticRenderGraph: Constructor");
 
 	Build
 	(
@@ -32,6 +32,6 @@ RenderContext::RenderGraph::RenderGraph
 		shaderContextDiplomat_
 	);
 
-	Logger::End("RenderGraph: Constructor");
+	Logger::End("StaticRenderGraph: Constructor");
 }
 

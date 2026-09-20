@@ -1,11 +1,11 @@
 #pragma once
-#include "../../RenderGraph.h"
+#include "../../StaticRenderGraph.h"
 
-class RenderContext::RenderGraph::PassSetUpper
+class RenderContext::StaticRenderGraph::PassSetUpper
 {
-	friend class RenderGraph;
+	friend class StaticRenderGraph;
 
-	static void Setup
+	static [[nodiscard]] BufferUniqueID Setup
 	(
 		NexusFieldProof proof_,
 		RenderPassCreator& renderPassCreator_,
@@ -24,12 +24,14 @@ private:
 		RenderPassContainer& passContainer_
 	);
 
-	//各パスが参照するバッファのsrvHeapIndexを配列したもののバッファを作成
-	//static void CreateReferenceBufferSrvArray
-	//(
-	//	NexusFieldProof proof_,
-
-	//)
+	///各パスが参照するバッファのsrvHeapIndexを配列したもののバッファ、そしてそのsrvHeapIndexの定数バッファを作成
+	//ReferenceBufferSrvArrayバッファのバッファインデックスを返す
+	static SRVHeapIndex CreateReferenceBufferSrvArray
+	(
+		NexusFieldProof proof_,
+		std::vector<BufferUniqueID> const& data_,
+		BufferContextDiplomat& bufferContextDiplomat_
+	);
 
 	//Passのルートコンスタンツのバッファを作る
 	static void CreatePassRootConstantsBuffer

@@ -103,7 +103,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="Engine\LowerLayer\Core\DescriptorHeap\DescriptorHeapPoolContainer\DescriptorHeapPoolContainer.cpp" />
-    <ClCompile Include="Engine\LowerLayer\Render\RenderContextRuntime\RenderGraph\RenderGraphInitialization.cpp" />
+    <ClCompile Include="Engine\LowerLayer\Render\RenderContextRuntime\StaticRenderGraph\RenderGraphInitialization.cpp" />
     <ClCompile Include="Engine\LowerLayer\Render\RenderPath\AllRenderPath\CreateSceneTexture\CreateSceneTexture.cpp" />
     <ClCompile Include="Engine\LowerLayer\Buffer\BufferContextDiplomat\BufferContextCmdProvider\BufferContextCmdProvider.cpp" />
     <ClCompile Include="Engine\LowerLayer\Resource\Texture\TextureBufferCreator\TextureFileLoader\TextureFileLoader.cpp" />
@@ -372,12 +372,12 @@
     <ClCompile Include="Engine\LowerLayer\Render\RenderPath\AllRenderPath\PathBehavior.cpp" />
     <ClCompile Include="Engine\LowerLayer\Render\RenderPath\RenderPathAssembler\RenderPathAssembler.cpp" />
     <ClCompile Include="Engine\LowerLayer\Render\RenderPath\RenderPathAssembler\PathSettingsLoader\PathSettingsLoader.cpp" />
-    <ClCompile Include="Engine\LowerLayer\Render\RenderContextRuntime\RenderGraph\RenderGraph.cpp" />
+    <ClCompile Include="Engine\LowerLayer\Render\RenderContextRuntime\StaticRenderGraph\StaticRenderGraph.cpp" />
     <ClCompile Include="Engine\LowerLayer\Render\RenderPath\RenderPathContainer\RenderPathContainer.cpp" />
     <ClCompile Include="Engine\LowerLayer\Render\RenderPass\AllRenderPass\SceneCompositor\SceneCompositor.cpp" />
-    <ClCompile Include="Engine\LowerLayer\Render\RenderContextRuntime\RenderGraph\RenderGraphBuilder\GraphicsRootSigBuilder\GraphicsRootSigBuilder.cpp" />
-    <ClCompile Include="Engine\LowerLayer\Render\RenderContextRuntime\RenderGraph\RenderGraphBuilder\RenderPathBuilder\RenderPathBuilder.cpp" />
-    <ClCompile Include="Engine\LowerLayer\Render\RenderContextRuntime\RenderGraph\RenderGraphBuilder\GraphicsPSO_Builder\GraphicsPSO_Builder.cpp" />
+    <ClCompile Include="Engine\LowerLayer\Render\RenderContextRuntime\StaticRenderGraph\RenderGraphBuilder\GraphicsRootSigBuilder\GraphicsRootSigBuilder.cpp" />
+    <ClCompile Include="Engine\LowerLayer\Render\RenderContextRuntime\StaticRenderGraph\RenderGraphBuilder\RenderPathBuilder\RenderPathBuilder.cpp" />
+    <ClCompile Include="Engine\LowerLayer\Render\RenderContextRuntime\StaticRenderGraph\RenderGraphBuilder\GraphicsPSO_Builder\GraphicsPSO_Builder.cpp" />
     <ClCompile Include="Engine\LowerLayer\Buffer\BufferDefinition\BufferDescriptions\Texture2DBufferDescription\Texture2DBufferDescription.cpp" />
     <ClCompile Include="Engine\LowerLayer\Resource\Texture\TextureBufferCreator\TextureDataLoader\TextureDataLoader.cpp" />
     <ClCompile Include="Engine\LowerLayer\Buffer\BufferDefinition\GPUBuffer\Texture2DBuffer\Texture2DBuffer.cpp" />
@@ -395,7 +395,7 @@
     <ClCompile Include="Engine\LowerLayer\Resource\Texture\TextureContextDiplomat\TextureContextDiplomat.cpp" />
     <ClCompile Include="Engine\LowerLayer\Resource\Texture\TextureContextDiplomat\TextureContextToolLender\TextureContextToolLender.cpp" />
     <ClCompile Include="Engine\LowerLayer\Render\RenderPass\RuntimePassInfo\RuntimePassInfo.cpp" />
-    <ClCompile Include="Engine\LowerLayer\Render\RenderContextRuntime\RenderGraph\RenderGraphBuilder\PassSetUpper\PassSetUpper.cpp" />
+    <ClCompile Include="Engine\LowerLayer\Render\RenderContextRuntime\StaticRenderGraph\RenderGraphBuilder\PassSetUpper\PassSetUpper.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Assets\BAKA\ConstantBuffers.h" />
@@ -424,6 +424,8 @@
     <ClInclude Include="Engine\LowerLayer\Buffer\BufferContextCmds.h" />
     <ClInclude Include="Engine\LowerLayer\Buffer\BufferContextDiplomat\BufferDiplomatIncludes.h" />
     <ClInclude Include="Engine\LowerLayer\Buffer\BufferContextToolsInclude.h" />
+    <ClInclude Include="Engine\LowerLayer\Resource\Model\ModelContextDiplomatIncludes.h" />
+    <ClInclude Include="Engine\LowerLayer\Resource\Shader\ShaderContextDiplomatIncludes.h" />
     <ClInclude Include="Engine\LowerLayer\Resource\Texture\TextureBufferCreator\TextureFileLoader\TextureFileLoader.h" />
     <ClInclude Include="Engine\LowerLayer\Buffer\BufferDefinition\TextureComponent.h" />
     <ClInclude Include="Engine\LowerLayer\Buffer\BufferPoolSet\BufferPoolSet.h" />
@@ -461,7 +463,7 @@
     <ClInclude Include="Engine\LowerLayer\Resource\RootSignature\RootSignatureCmds.h" />
     <ClInclude Include="Engine\LowerLayer\Resource\RootSignature\RootSignatureContextDiplomat\RootSignatureToolLender\RootSigToolLenderLicences.h" />
     <ClInclude Include="Engine\LowerLayer\Resource\Shader\ShaderContextDiplomat\ShaderContextToolLender\ShaderContextToolLenderLicences.h" />
-    <ClInclude Include="Engine\LowerLayer\Resource\Shader\ShaderTable.h" />
+    <ClInclude Include="Engine\LowerLayer\Resource\Shader\ShaderPathComponent\ShaderTable.h" />
     <ClInclude Include="Engine\LowerLayer\Resource\Texture\TextureContextDiplomat\TextureContextToolLender\TextureContextToolLenderLicences.h" />
     <ClInclude Include="Engine\Utility\ClosedHashMap\ClosedHashMap.h" />
     <ClInclude Include="Engine\LowerLayer\Render\RenderContextRuntime\PSO_PoolDispatcher\GraphicsPSO_Key.h" />
@@ -512,7 +514,7 @@
     <ClInclude Include="Engine\LowerLayer\Debug\ErrorMessageOutput\ErrorMessageOutput.h" />
     <ClInclude Include="Engine\LowerLayer\Buffer\BufferDefinition\ResourceBarrier.h" />
     <ClInclude Include="Engine\LowerLayer\Render\RenderStateComponent.h" />
-    <ClInclude Include="Engine\LowerLayer\Resource\Shader\ShaderPathComponent.h" />
+    <ClInclude Include="Engine\LowerLayer\Resource\Shader\ShaderPathComponent\ShaderPathComponent.h" />
     <ClInclude Include="Engine\LowerLayer\Resource\RootSignature\RootSignatureCreator\RootSignatureAssembler\RootSignatureLayoutComponent.h" />
     <ClInclude Include="Engine\MiddleLayer\kara.h" />
     <ClInclude Include="Engine\ProjectConfig.h" />
@@ -637,12 +639,12 @@
     <ClInclude Include="Engine\LowerLayer\Render\RenderPath\AllRenderPath\PathBehavior.h" />
     <ClInclude Include="Engine\LowerLayer\Render\RenderPath\RenderPathAssembler\RenderPathAssembler.h" />
     <ClInclude Include="Engine\LowerLayer\Render\RenderPath\RenderPathAssembler\PathSettingsLoader\PathSettingsLoader.h" />
-    <ClInclude Include="Engine\LowerLayer\Render\RenderContextRuntime\RenderGraph\RenderGraph.h" />
+    <ClInclude Include="Engine\LowerLayer\Render\RenderContextRuntime\StaticRenderGraph\StaticRenderGraph.h" />
     <ClInclude Include="Engine\LowerLayer\Render\RenderPath\RenderPathContainer\RenderPathContainer.h" />
     <ClInclude Include="Engine\LowerLayer\Render\RenderPass\AllRenderPass\SceneCompositor\SceneCompositor.h" />
-    <ClInclude Include="Engine\LowerLayer\Render\RenderContextRuntime\RenderGraph\RenderGraphBuilder\GraphicsRootSigBuilder\GraphicsRootSigBuilder.h" />
-    <ClInclude Include="Engine\LowerLayer\Render\RenderContextRuntime\RenderGraph\RenderGraphBuilder\RenderPathBuilder\RenderPathBuilder.h" />
-    <ClInclude Include="Engine\LowerLayer\Render\RenderContextRuntime\RenderGraph\RenderGraphBuilder\GraphicsPSO_Builder\GraphicsPSO_Builder.h" />
+    <ClInclude Include="Engine\LowerLayer\Render\RenderContextRuntime\StaticRenderGraph\RenderGraphBuilder\GraphicsRootSigBuilder\GraphicsRootSigBuilder.h" />
+    <ClInclude Include="Engine\LowerLayer\Render\RenderContextRuntime\StaticRenderGraph\RenderGraphBuilder\RenderPathBuilder\RenderPathBuilder.h" />
+    <ClInclude Include="Engine\LowerLayer\Render\RenderContextRuntime\StaticRenderGraph\RenderGraphBuilder\GraphicsPSO_Builder\GraphicsPSO_Builder.h" />
     <ClInclude Include="Engine\LowerLayer\Buffer\BufferDefinition\BufferDescriptions\Texture2DBufferDescription\Texture2DBufferDescription.h" />
     <ClInclude Include="Engine\LowerLayer\Resource\Texture\TextureBufferCreator\TextureDataLoader\TextureDataLoader.h" />
     <ClInclude Include="Engine\LowerLayer\Buffer\BufferDefinition\GPUBuffer\Texture2DBuffer\Texture2DBuffer.h" />
@@ -660,7 +662,7 @@
     <ClInclude Include="Engine\LowerLayer\Resource\Texture\TextureContextDiplomat\TextureContextDiplomat.h" />
     <ClInclude Include="Engine\LowerLayer\Resource\Texture\TextureContextDiplomat\TextureContextToolLender\TextureContextToolLender.h" />
     <ClInclude Include="Engine\LowerLayer\Render\RenderPass\RuntimePassInfo\RuntimePassInfo.h" />
-    <ClInclude Include="Engine\LowerLayer\Render\RenderContextRuntime\RenderGraph\RenderGraphBuilder\PassSetUpper\PassSetUpper.h" />
+    <ClInclude Include="Engine\LowerLayer\Render\RenderContextRuntime\StaticRenderGraph\RenderGraphBuilder\PassSetUpper\PassSetUpper.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

@@ -29,7 +29,7 @@ public:
 	class PathBehavior;
 	struct RenderPassState;
 	//レンダーパス(Path)を設計し、描画コマンドを叩く強者
-	class RenderGraph;
+	class StaticRenderGraph;
 
 	//ネクサスフィールドの証
 	struct NexusFieldProof;
@@ -50,7 +50,7 @@ private:
 
 	std::unique_ptr<RenderPassContainer> renderPassContainer;
 	std::unique_ptr<RenderPathContainer> renderPathContainer;
-	std::unique_ptr<RenderGraph> renderGraph;
+	std::unique_ptr<StaticRenderGraph> staticRenderGraph;
 	std::unique_ptr<PSO_PoolDispatcher> pso_PoolDispatcher;
 
 

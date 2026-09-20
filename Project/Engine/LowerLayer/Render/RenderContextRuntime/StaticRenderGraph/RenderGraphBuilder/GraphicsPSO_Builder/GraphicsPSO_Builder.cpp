@@ -5,10 +5,7 @@
 #include "../../../../RenderPass/AllRenderPass/AllPassInclude.h"
 #include "../../../../RenderPass/PassDesc/PassDesc.h"
 
-#include "../../../../../Resource/Model/ModelContextDiplomat/ModelContextDiplomat.h"
-#include "../../../../../Resource/Model/ModelContextDiplomat/ModelContextCmdProvider/ModelContextCmdProvider.h"
-#include "../../../../../Resource/Model/ModelContextDiplomat/ModelContextCmdProvider/ModelContextCmdProviderLicences.h"
-#include "../../../../../Resource/Model/ModelContextCmds.h"
+#include "../../../../../Resource/Model/ModelContextDiplomatIncludes.h"
 #include "../../../../../Resource/Model/ModelStructure/Model.h"
 
 #include "../../../../../Resource/PSO/PSO_ContextDiplomat/PSO_ContextDiplomat.h"
@@ -16,11 +13,9 @@
 #include "../../../../../Resource/PSO/PSO_ContextDiplomat/PSO_ContextToolLender/PSO_ContextToolLenderLicences.h"
 #include "../../../../../Resource/PSO/PSO_Creator/PSO_Creator.h"
 		  
-#include "../../../../../Resource/Shader/ShaderContextDiplomat/ShaderContextDiplomat.h"
-#include "../../../../../Resource/Shader/ShaderContextDiplomat/ShaderContextToolLender/ShaderContextToolLender.h"
-#include "../../../../../Resource/Shader/ShaderContextDiplomat/ShaderContextToolLender/ShaderContextToolLenderLicences.h"
+#include "../../../../../Resource/Shader/ShaderContextDiplomatIncludes.h"
 #include "../../../../../Resource/Shader/ShaderLibrary/ShaderLibrary.h"
-#include "../../../../../Resource/Shader/ShaderTable.h"
+#include "../../../../../Resource/Shader/ShaderPathComponent/ShaderTable.h"
 
 
 namespace
@@ -28,7 +23,7 @@ namespace
 	auto const fileName = "GraphicsPSO_Builder.cpp";
 }
 
-void RenderContext::RenderGraph::PSO_Builder::Build
+void RenderContext::StaticRenderGraph::PSO_Builder::Build
 (
 	NexusFieldProof proof_,
 	PSO_PoolDispatcher& psoDispatcher_,
@@ -54,7 +49,7 @@ void RenderContext::RenderGraph::PSO_Builder::Build
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-void RenderContext::RenderGraph::PSO_Builder::CreateAllPSO
+void RenderContext::StaticRenderGraph::PSO_Builder::CreateAllPSO
 (
 	NexusFieldProof proof_,
 	PSO_PoolDispatcher& psoDispatcher_,
@@ -108,7 +103,7 @@ void RenderContext::RenderGraph::PSO_Builder::CreateAllPSO
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-std::vector<RenderContext::RenderGraph::PSO_Builder::PsoDesc_Key> RenderContext::RenderGraph::PSO_Builder::CreateAllPSO_Desc
+std::vector<RenderContext::StaticRenderGraph::PSO_Builder::PsoDesc_Key> RenderContext::StaticRenderGraph::PSO_Builder::CreateAllPSO_Desc
 (
 	NexusFieldProof proof_,
 	RenderPassContainer& passContainer_,
@@ -189,7 +184,7 @@ std::vector<RenderContext::RenderGraph::PSO_Builder::PsoDesc_Key> RenderContext:
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-RenderContext::RenderGraph::PSO_Builder::PsoDesc_Key RenderContext::RenderGraph::PSO_Builder::InputCommonInfo
+RenderContext::StaticRenderGraph::PSO_Builder::PsoDesc_Key RenderContext::StaticRenderGraph::PSO_Builder::InputCommonInfo
 (
 	RenderPassComponent::Pass const pass_,
 	PassDesc const& passDesc_,
@@ -253,7 +248,7 @@ RenderContext::RenderGraph::PSO_Builder::PsoDesc_Key RenderContext::RenderGraph:
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 //モデルクラスとレンダーパスの二つで残りのPSOの要素を定める
-void RenderContext::RenderGraph::PSO_Builder::InputDependingModelsInfo
+void RenderContext::StaticRenderGraph::PSO_Builder::InputDependingModelsInfo
 (
 	ShaderContextDiplomat& shaderContextDiplomat_,
 	PsoDesc_Key& psoCommonDesc_,
@@ -344,7 +339,7 @@ void RenderContext::RenderGraph::PSO_Builder::InputDependingModelsInfo
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 //レンダーパスオンリーで残りのPSOの要素を定める
-void RenderContext::RenderGraph::PSO_Builder::InputPassOnlyInfo
+void RenderContext::StaticRenderGraph::PSO_Builder::InputPassOnlyInfo
 (
 	ShaderContextDiplomat& shaderContextDiplomat_,
 	PsoDesc_Key& psoCommonDesc_,
@@ -420,7 +415,7 @@ void RenderContext::RenderGraph::PSO_Builder::InputPassOnlyInfo
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-std::vector<ModelDescription::RenderState> RenderContext::RenderGraph::PSO_Builder::CollectAllRenderStates
+std::vector<ModelDescription::RenderState> RenderContext::StaticRenderGraph::PSO_Builder::CollectAllRenderStates
 (
 	ModelContextDiplomat& modelContextDiplomat_
 )

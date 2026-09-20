@@ -10,6 +10,10 @@
 #include "../../../../../Buffer/BufferContextDiplomat/BufferContextDiplomat.h"
 #include "../../../../../Buffer/BufferContextDiplomat/BufferContextCmdProvider/BufferContextCmdProvider.h"
 #include "../../../../../Buffer/BufferContextDiplomat/BufferContextCmdProvider/BufferContextCmdProviderLicences.h"
+#include "../../../../../Buffer/BufferContextDiplomat/BufferToolLender/BufferToolLender.h"
+#include "../../../../../Buffer/BufferContextDiplomat/BufferToolLender/BufferToolLenderLicence.h"
+#include "../../../../../Buffer/BufferDefinition/AllBuffersInclude.h"
+#include "../../../../../Buffer/BufferDefinition/AllBufferDescsInclude.h"
 
 #include "../../../../../../../Assets/Shared/ConstantBuffers.h"
 
@@ -20,7 +24,7 @@ namespace
 	auto const fileName = "PassSetUpper.cpp";
 }
 
-void RenderContext::RenderGraph::PassSetUpper::Setup
+[[nodiscard]] BufferUniqueID RenderContext::StaticRenderGraph::PassSetUpper::Setup
 (
 	NexusFieldProof proof_,
 	RenderPassCreator& renderPassCreator_,
@@ -31,11 +35,15 @@ void RenderContext::RenderGraph::PassSetUpper::Setup
 
 	std::vector<BufferUniqueID> allRefBuffer = CreateAllPassInfo(proof_, renderPassCreator_, passContainer_);
 
+	BufferUniqueID refBufSrvArrayBufferID =  
+		CreateReferenceBufferSrvArray(proof_,allRefBuffer,bufferContextDiplomat_);
+
 	CreatePassRootConstantsBuffer(proof_, bufferContextDiplomat_);
 
+	return refBufSrvArrayBufferID;
 }
 
-std::vector<BufferUniqueID> RenderContext::RenderGraph::PassSetUpper::CreateAllPassInfo
+std::vector<BufferUniqueID> RenderContext::StaticRenderGraph::PassSetUpper::CreateAllPassInfo
 (
 	NexusFieldProof proof_,
 	RenderPassCreator& renderPassCreator_,
@@ -51,7 +59,6 @@ std::vector<BufferUniqueID> RenderContext::RenderGraph::PassSetUpper::CreateAllP
 	std::vector<BufferUniqueID> allRefBufferUniques;
 	//デバッグ用
 	std::vector<std::string > allRefBufferNames;
-
 
 	//パス自身がどのバッファを使用するかの名前リストを所持しているので、それと組み合わせて埋めていく
 	for (auto const& [passEnum, pass]: allPassPtrMap)
@@ -75,6 +82,7 @@ std::vector<BufferUniqueID> RenderContext::RenderGraph::PassSetUpper::CreateAllP
 			idMap[refBufferName] = refID;
 			allRefBufferUniques.emplace_back(refID);
 			allRefBufferNames.emplace_back(refBufferName);
+			
 		}
 
 		///PassDesc -> RuntimePassInfoに詰め変える
@@ -106,8 +114,43 @@ std::vector<BufferUniqueID> RenderContext::RenderGraph::PassSetUpper::CreateAllP
 
 }
 
+SRVHeapIndex RenderContext::StaticRenderGraph::PassSetUpper::CreateReferenceBufferSrvArray
+(
+	NexusFieldProof proof_,
+	std::vector<BufferUniqueID> const& data_,
+	BufferContextDiplomat& bufferContextDiplomat_
+)
+{
+	//グローバル定数バッファ生成コマンドをもらう
+	auto cmdProv = bufferContextDiplomat_.Access<BufferContext::CmdProvider>();
+	BufferContext::CmdProvider::LicenceType<BufferContextCmds::CreateCBufferCmd> licenceCmd;
+	auto createCBufferCmd = cmdProv->Provide<BufferContextCmds::CreateCBufferCmd>(licenceCmd);
+	
+	//bufferCreatorを借りる
+	auto toolLender = bufferContextDiplomat_.Access<BufferContext::ToolLender>();
+	BufferContext::ToolLender::LicenceType<BufferContext::BufferCreator> licenceTool;
+	auto* bufferCreator = toolLender->Lend<BufferContext::BufferCreator>(licenceTool);
 
-void RenderContext::RenderGraph::PassSetUpper::CreatePassRootConstantsBuffer
+	///バッファ作成
+	std::string const bufferName = "RefBufSrvArr";
+	UploadStructuredBufferDescription desc(UINT(sizeof(BufferUniqueID)), UINT(data_.size()), 0);
+	auto id_buffer = bufferCreator->CreateWithBuffer(desc, bufferName);
+
+	//そのバッファのコンスタントバッファを生成し,
+	auto cBufferID_cBuffer =
+	createCBufferCmd(bufferName, UINT(sizeof(SRVHeapIndex)), (UINT)ConstantBuffers::ConstantBufferBindSlots::kPassRefBufferIndices);
+
+	//srvHeapIndexを抽出しその定数バッファに記録
+	cBufferID_cBuffer.second->WriteInBoth<SRVHeapIndex>
+	(
+		{ id_buffer.second->OutProperSRVHeapIndex(0),id_buffer.second->OutProperSRVHeapIndex(1) }
+	);
+
+	return id_buffer.first;
+}
+
+
+void RenderContext::StaticRenderGraph::PassSetUpper::CreatePassRootConstantsBuffer
 (
 	NexusFieldProof proof_,
 	BufferContextDiplomat& bufferContextDiplomat_
