@@ -1,18 +1,19 @@
 #pragma once
 #include "../../RenderContext.h"
 #include "../../RenderPath/AllRenderPath/AllPathFwd.h"
+#include "../../RenderPass/RenderPassComponent.h"
 
-
-class RenderContext::RenderGraph
+class RenderContext::StaticRenderGraph
 {
 	class PSO_Builder;
 	class PathBuilder;
 	class RootSigBuilder;
 	class PassSetUpper;
 
+
 public:
 
-	RenderGraph
+	StaticRenderGraph
 	(
 		NexusFieldProof proof_,
 		RenderPathAssembler& pathAssembler_,
@@ -44,7 +45,11 @@ private:
 
 	//全てのPathのアドレス。本体は別コンテナクラスが所有
 	AllPathPtr allPathPtr;
-
+	//パスが参照するバッファのsrvheapIndexがつまったバッファID
+	//ランタイムで更新する必要がある
+	BufferUniqueID refBufSrvIndicesBufferID;
+	//描画用巨大共通ルートシグネチャ
+	ID3D12RootSignature* graphicsRootSig;
 
 };
 

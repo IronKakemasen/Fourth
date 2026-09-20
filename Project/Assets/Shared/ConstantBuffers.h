@@ -10,7 +10,8 @@ namespace ConstantBuffers
 		kMeshDataContainer,
 		kTransformMatrixContainer,
 		kMaterialContainer,
-		kTextureContainer
+		kTextureContainer,
+		kPassRefBufferIndices
 
 		, kCount
 	};

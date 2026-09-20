@@ -35,7 +35,7 @@ public:
 			std::get<std::unique_ptr<PassType>>(allPassUnique).get() : nullptr;
 	}
 
-	//RenderGraphさんに全てのパスの情報を渡してPSOを作ってもらう
+	//StaticRenderGraphさんに全てのパスの情報を渡してPSOを作ってもらう
 	std::unordered_map<RenderPassComponent::Pass,PassBehavior*> const& AccessAllPassPtrMap(NexusFieldProof proof_)const;
 
 private:

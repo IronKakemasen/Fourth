@@ -1,10 +1,10 @@
-#include "RenderGraph.h"
+#include "StaticRenderGraph.h"
 #include "RenderGraphBuilder/GraphicsPSO_Builder/GraphicsPSO_Builder.h"
 #include "RenderGraphBuilder/GraphicsRootSigBuilder/GraphicsRootSigBuilder.h"
 #include "RenderGraphBuilder/RenderPathBuilder/RenderPathBuilder.h"
 #include "RenderGraphBuilder/PassSetUpper/PassSetUpper.h"
 
-void RenderContext::RenderGraph::Build
+void RenderContext::StaticRenderGraph::Build
 (
 	NexusFieldProof proof_,
 	RenderPathAssembler& pathAssembler_,
@@ -22,7 +22,7 @@ void RenderContext::RenderGraph::Build
 	allPathPtr = PathBuilder::Build(proof_, pathAssembler_, bufferContextDiplomat_);
 	
 	//グラフィックス用の巨大共通ルートシグネチャ
-	ID3D12RootSignature* graphicsRootSig = RootSigBuilder::Build(proof_, rootSignatureContextDiplomat_);
+	graphicsRootSig = RootSigBuilder::Build(proof_, rootSignatureContextDiplomat_);
 
 	//存在しなければならない全てのPSOを生成
 	PSO_Builder::Build
@@ -37,8 +37,7 @@ void RenderContext::RenderGraph::Build
 	);
 
 	//全てのPassの不足している初期化部分(PassInfoの作成、ルートコンスタンツバッファの作成など)を行う。
-	PassSetUpper::Setup(proof_, renderPassCreator_, passContainer_, bufferContextDiplomat_);
-
+	refBufSrvIndicesBufferID = PassSetUpper::Setup(proof_, renderPassCreator_, passContainer_, bufferContextDiplomat_);
 
 
 }

@@ -1,9 +1,9 @@
 #pragma once
-#include "../../RenderGraph.h"
+#include "../../StaticRenderGraph.h"
 
-class RenderContext::RenderGraph::RootSigBuilder
+class RenderContext::StaticRenderGraph::RootSigBuilder
 {
-	friend class RenderGraph;
+	friend class StaticRenderGraph;
 
 	//グラフィックス用のルートシグの生成
 	static [[nodiscard]] ID3D12RootSignature* Build

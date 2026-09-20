@@ -18,7 +18,7 @@ public:
 		const BufferDescriptionBehavior& description_
 	);
 
-	virtual SRVHeapIndex OutProperSRVHeapIndex(int frameIndex_ = 0)const override;
+	virtual SRVHeapIndex OutProperSRVHeapIndex(int index_ = 0)const override;
 
 };
 

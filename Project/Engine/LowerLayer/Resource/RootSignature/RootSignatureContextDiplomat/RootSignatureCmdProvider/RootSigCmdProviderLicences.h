@@ -7,7 +7,7 @@ struct RootSignatureContext::CmdProvider::UsesCreateGraphicsRootSigCmdLicence
 {
 private:
 
-	friend class RenderContext::RenderGraph;
+	friend class RenderContext::StaticRenderGraph;
 	explicit UsesCreateGraphicsRootSigCmdLicence() = default;
 
 };

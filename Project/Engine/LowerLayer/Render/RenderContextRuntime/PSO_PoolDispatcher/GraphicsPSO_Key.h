@@ -3,7 +3,7 @@
 #include "../../RenderStateComponent.h"
 
 //外部
-#include "../../../Resource/Shader/ShaderPathComponent.h"
+#include "../../../Resource/Shader/ShaderPathComponent/ShaderPathComponent.h"
 
 
 struct GraphicsPSO_Key

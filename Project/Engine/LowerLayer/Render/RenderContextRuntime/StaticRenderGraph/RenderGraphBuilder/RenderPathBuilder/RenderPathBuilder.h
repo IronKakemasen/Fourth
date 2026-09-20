@@ -1,9 +1,9 @@
 #pragma once
-#include "../../RenderGraph.h"
+#include "../../StaticRenderGraph.h"
 
-class RenderContext::RenderGraph::PathBuilder
+class RenderContext::StaticRenderGraph::PathBuilder
 {
-	friend class RenderGraph;
+	friend class StaticRenderGraph;
 
 
 

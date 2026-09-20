@@ -27,6 +27,8 @@ RenderContext::PassDesc::PassDesc
 
 void RenderContext::PassDesc::DebugLog()const
 {
+#ifdef  _DEBUG
+
 	std::string log;
 
 	log += "----- " + passName + " -----\n";
@@ -97,4 +99,6 @@ void RenderContext::PassDesc::DebugLog()const
 
 
 	Logger::Log(log);
+
+#endif
 }
