@@ -328,7 +328,7 @@ class ConstantBuffer;
 namespace BufferContextCmds
 {
 	using CreateCBufferCmd = std::function<std::pair<BufferUniqueID, ConstantBuffer*>
-		(std::string name_, UINT const realDataSize_, UINT const bindSlot_)>;
+		(std::string const& name_, UINT const realDataSize_, UINT const bindSlot_)>;
 }
 
 ========================================
@@ -937,37 +937,37 @@ std::string BufferContext::BufferAssembler::ConvertName<Texture2DBuffer>(const s
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 template<>
-std::unique_ptr<ColorBuffer> BufferContext::BufferAssembler::Materialize(ResourceContainer resourceContainer_, const BufferDescriptionBehavior& desc_, std::string nameCnv_)
+std::unique_ptr<ColorBuffer> BufferContext::BufferAssembler::Materialize(ResourceContainer resourceContainer_, const BufferDescriptionBehavior& desc_, std::string const& nameCnv_)
 {
 	return std::move(BufferMaterializer::Materialize<ColorBuffer>(std::move(resourceContainer_), desc_, nameCnv_));
 }
 template<>
-std::unique_ptr<DepthStencilBuffer> BufferContext::BufferAssembler::Materialize(ResourceContainer resourceContainer_, const BufferDescriptionBehavior& desc_, std::string nameCnv_)
+std::unique_ptr<DepthStencilBuffer> BufferContext::BufferAssembler::Materialize(ResourceContainer resourceContainer_, const BufferDescriptionBehavior& desc_, std::string const& nameCnv_)
 {
 	return std::move(BufferMaterializer::Materialize<DepthStencilBuffer>(std::move(resourceContainer_), desc_, nameCnv_));
 }
 template<>
-std::unique_ptr<StaticStructuredBuffer> BufferContext::BufferAssembler::Materialize(ResourceContainer resourceContainer_, const BufferDescriptionBehavior& desc_, std::string nameCnv_)
+std::unique_ptr<StaticStructuredBuffer> BufferContext::BufferAssembler::Materialize(ResourceContainer resourceContainer_, const BufferDescriptionBehavior& desc_, std::string const& nameCnv_)
 {
 	return std::move(BufferMaterializer::Materialize<StaticStructuredBuffer>(std::move(resourceContainer_), desc_, nameCnv_));
 }
 template<>
-std::unique_ptr<ConstantBuffer> BufferContext::BufferAssembler::Materialize(ResourceContainer resourceContainer_, const BufferDescriptionBehavior& desc_, std::string nameCnv_)
+std::unique_ptr<ConstantBuffer> BufferContext::BufferAssembler::Materialize(ResourceContainer resourceContainer_, const BufferDescriptionBehavior& desc_, std::string const& nameCnv_)
 {
 	return std::move(BufferMaterializer::Materialize<ConstantBuffer>(std::move(resourceContainer_), desc_, nameCnv_));
 }
 template<>
-std::unique_ptr<UploadStructuredBuffer> BufferContext::BufferAssembler::Materialize(ResourceContainer resourceContainer_, const BufferDescriptionBehavior& desc_, std::string nameCnv_)
+std::unique_ptr<UploadStructuredBuffer> BufferContext::BufferAssembler::Materialize(ResourceContainer resourceContainer_, const BufferDescriptionBehavior& desc_, std::string const& nameCnv_)
 {
 	return std::move(BufferMaterializer::Materialize<UploadStructuredBuffer>(std::move(resourceContainer_), desc_, nameCnv_));
 }
 template<>
-std::unique_ptr<ComputeBuffer> BufferContext::BufferAssembler::Materialize(ResourceContainer resourceContainer_, const BufferDescriptionBehavior& desc_, std::string nameCnv_)
+std::unique_ptr<ComputeBuffer> BufferContext::BufferAssembler::Materialize(ResourceContainer resourceContainer_, const BufferDescriptionBehavior& desc_, std::string const& nameCnv_)
 {
 	return std::move(BufferMaterializer::Materialize<ComputeBuffer>(std::move(resourceContainer_), desc_, nameCnv_));
 }
 template<>
-std::unique_ptr<Texture2DBuffer> BufferContext::BufferAssembler::Materialize(ResourceContainer resourceContainer_, const BufferDescriptionBehavior& desc_, std::string nameCnv_)
+std::unique_ptr<Texture2DBuffer> BufferContext::BufferAssembler::Materialize(ResourceContainer resourceContainer_, const BufferDescriptionBehavior& desc_, std::string const& nameCnv_)
 {
 	return std::move(BufferMaterializer::Materialize<Texture2DBuffer>(std::move(resourceContainer_), desc_, nameCnv_));
 }
@@ -1153,7 +1153,7 @@ private:
     std::string ConvertName(const std::string& srcName_);
     //バッファ生成
     template<typename BufferType>
-    std::unique_ptr<BufferType> Materialize(ResourceContainer resourceContainer_, const BufferDescriptionBehavior& desc_, std::string nameCnv_);
+    std::unique_ptr<BufferType> Materialize(ResourceContainer resourceContainer_, const BufferDescriptionBehavior& desc_, std::string const& nameCnv_);
     //ビュー生成
     template<typename DescType>
     void AssembleView
@@ -1230,19 +1230,19 @@ std::string BufferContext::BufferAssembler::ConvertName<Texture2DBuffer>(const s
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 template<>
-std::unique_ptr<ColorBuffer> BufferContext::BufferAssembler::Materialize(ResourceContainer resourceContainer_, const BufferDescriptionBehavior& desc_, std::string nameCnv_);
+std::unique_ptr<ColorBuffer> BufferContext::BufferAssembler::Materialize(ResourceContainer resourceContainer_, const BufferDescriptionBehavior& desc_, std::string const& nameCnv_);
 template<>
-std::unique_ptr<DepthStencilBuffer> BufferContext::BufferAssembler::Materialize(ResourceContainer resourceContainer_, const BufferDescriptionBehavior& desc_, std::string nameCnv_);
+std::unique_ptr<DepthStencilBuffer> BufferContext::BufferAssembler::Materialize(ResourceContainer resourceContainer_, const BufferDescriptionBehavior& desc_, std::string const& nameCnv_);
 template<>
-std::unique_ptr<StaticStructuredBuffer> BufferContext::BufferAssembler::Materialize(ResourceContainer resourceContainer_, const BufferDescriptionBehavior& desc_, std::string nameCnv_);
+std::unique_ptr<StaticStructuredBuffer> BufferContext::BufferAssembler::Materialize(ResourceContainer resourceContainer_, const BufferDescriptionBehavior& desc_, std::string const& nameCnv_);
 template<>
-std::unique_ptr<ConstantBuffer> BufferContext::BufferAssembler::Materialize(ResourceContainer resourceContainer_, const BufferDescriptionBehavior& desc_, std::string nameCnv_);
+std::unique_ptr<ConstantBuffer> BufferContext::BufferAssembler::Materialize(ResourceContainer resourceContainer_, const BufferDescriptionBehavior& desc_, std::string const& nameCnv_);
 template<>
-std::unique_ptr<UploadStructuredBuffer> BufferContext::BufferAssembler::Materialize(ResourceContainer resourceContainer_, const BufferDescriptionBehavior& desc_, std::string nameCnv_);
+std::unique_ptr<UploadStructuredBuffer> BufferContext::BufferAssembler::Materialize(ResourceContainer resourceContainer_, const BufferDescriptionBehavior& desc_, std::string const& nameCnv_);
 template<>
-std::unique_ptr<ComputeBuffer> BufferContext::BufferAssembler::Materialize(ResourceContainer resourceContainer_, const BufferDescriptionBehavior& desc_, std::string nameCnv_);
+std::unique_ptr<ComputeBuffer> BufferContext::BufferAssembler::Materialize(ResourceContainer resourceContainer_, const BufferDescriptionBehavior& desc_, std::string const& nameCnv_);
 template<>
-std::unique_ptr<Texture2DBuffer> BufferContext::BufferAssembler::Materialize(ResourceContainer resourceContainer_, const BufferDescriptionBehavior& desc_, std::string nameCnv_);
+std::unique_ptr<Texture2DBuffer> BufferContext::BufferAssembler::Materialize(ResourceContainer resourceContainer_, const BufferDescriptionBehavior& desc_, std::string const& nameCnv_);
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -1310,7 +1310,7 @@ static [[nodiscard]] std::unique_ptr<ColorBuffer> BufferContext::BufferAssembler
 (
 	ResourceContainer resourceContainer_,
 	const BufferDescriptionBehavior& desc_,
-	std::string nameCnv_
+	std::string const& nameCnv_
 )
 {
 	Logger::Log("BufferType: ColorBuffer", fileName);
@@ -1328,7 +1328,7 @@ static [[nodiscard]] std::unique_ptr<DepthStencilBuffer> BufferContext::BufferAs
 (
 	ResourceContainer resourceContainer_,
 	const BufferDescriptionBehavior& desc_,
-	std::string nameCnv_
+	std::string const& nameCnv_
 )
 {
 	Logger::Log("BufferType: DepthStencilBuffer", fileName);
@@ -1346,7 +1346,7 @@ static [[nodiscard]] std::unique_ptr<StaticStructuredBuffer> BufferContext::Buff
 (
 	ResourceContainer resourceContainer_,
 	const BufferDescriptionBehavior& desc_,
-	std::string nameCnv_
+	std::string const& nameCnv_
 )
 {
 	Logger::Log("BufferType: StaticStructuredBuffer", fileName);
@@ -1364,7 +1364,7 @@ static [[nodiscard]] std::unique_ptr<UploadStructuredBuffer> BufferContext::Buff
 (
 	ResourceContainer resourceContainer_,
 	const BufferDescriptionBehavior& desc_,
-	std::string nameCnv_
+	std::string const& nameCnv_
 )
 {
 	Logger::Log("BufferType: UploadStructuredBuffer", fileName);
@@ -1382,7 +1382,7 @@ static [[nodiscard]] std::unique_ptr<ComputeBuffer> BufferContext::BufferAssembl
 (
 	ResourceContainer resourceContainer_,
 	const BufferDescriptionBehavior& desc_,
-	std::string nameCnv_
+	std::string const& nameCnv_
 )
 {
 	Logger::Log("BufferType: ComputeBuffer", fileName);
@@ -1400,7 +1400,7 @@ static [[nodiscard]] std::unique_ptr<ConstantBuffer> BufferContext::BufferAssemb
 (
 	ResourceContainer resourceContainer_,
 	const BufferDescriptionBehavior& desc_,
-	std::string nameCnv_
+	std::string const& nameCnv_
 )
 {
 	Logger::Log("BufferType: ConstantBuffer", fileName);
@@ -1418,7 +1418,7 @@ static [[nodiscard]] std::unique_ptr<Texture2DBuffer> BufferContext::BufferAssem
 (
 	ResourceContainer resourceContainer_,
 	const BufferDescriptionBehavior& desc_,
-	std::string nameCnv_
+	std::string const& nameCnv_
 )
 {
 	Logger::Log("BufferType: Texture2DBuffer", fileName);
@@ -1445,7 +1445,7 @@ class BufferContext::BufferAssembler::BufferMaterializer
 	(
 		ResourceContainer resourceContainer_,
 		const BufferDescriptionBehavior& desc_,
-		std::string nameCnv_
+		std::string const& nameCnv_
 	);
 };
 template<>
@@ -1453,49 +1453,49 @@ static [[nodiscard]] std::unique_ptr<ColorBuffer> BufferContext::BufferAssembler
 (
 	ResourceContainer resourceContainer_,
 	const BufferDescriptionBehavior& desc_,
-	std::string nameCnv_
+	std::string const& nameCnv_
 );
 template<>
 static [[nodiscard]] std::unique_ptr<DepthStencilBuffer> BufferContext::BufferAssembler::BufferMaterializer::Materialize
 (
 	ResourceContainer resourceContainer_,
 	const BufferDescriptionBehavior& desc_,
-	std::string nameCnv_
+	std::string const& nameCnv_
 );
 template<>
 static [[nodiscard]] std::unique_ptr<StaticStructuredBuffer> BufferContext::BufferAssembler::BufferMaterializer::Materialize
 (
 	ResourceContainer resourceContainer_,
 	const BufferDescriptionBehavior& desc_,
-	std::string nameCnv_
+	std::string const& nameCnv_
 );
 template<>
 static [[nodiscard]] std::unique_ptr<UploadStructuredBuffer> BufferContext::BufferAssembler::BufferMaterializer::Materialize
 (
 	ResourceContainer resourceContainer_,
 	const BufferDescriptionBehavior& desc_,
-	std::string nameCnv_
+	std::string const& nameCnv_
 );
 template<>
 static [[nodiscard]] std::unique_ptr<ComputeBuffer> BufferContext::BufferAssembler::BufferMaterializer::Materialize
 (
 	ResourceContainer resourceContainer_,
 	const BufferDescriptionBehavior& desc_,
-	std::string nameCnv_
+	std::string const& nameCnv_
 );
 template<>
 static [[nodiscard]] std::unique_ptr<ConstantBuffer> BufferContext::BufferAssembler::BufferMaterializer::Materialize
 (
 	ResourceContainer resourceContainer_,
 	const BufferDescriptionBehavior& desc_,
-	std::string nameCnv_
+	std::string const& nameCnv_
 );
 template<>
 static [[nodiscard]] std::unique_ptr<Texture2DBuffer> BufferContext::BufferAssembler::BufferMaterializer::Materialize
 (
 	ResourceContainer resourceContainer_,
 	const BufferDescriptionBehavior& desc_,
-	std::string nameCnv_
+	std::string const& nameCnv_
 );
 
 ========================================
@@ -2312,7 +2312,7 @@ std::tuple<GPUBufferBehavior*, ID3D12Resource*> BufferContext::BufferUploader::P
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-void BufferContext::BufferUploader::Flush(std::string log_)
+void BufferContext::BufferUploader::Flush(std::string const& log_)
 {
 	if (barriers.empty()) return;
 	pitchBarriersCommand(barriers.data(), UINT(barriers.size()));
@@ -2467,7 +2467,7 @@ private:
 	//バッファと生ポインタのフェッチ
 	std::tuple<GPUBufferBehavior*, ID3D12Resource*> PickBufferAndResource(BufferUniqueID id_)const;
 	//コマンドを流す
-	void Flush(std::string log_);
+	void Flush(std::string const& log_);
 	//終わりの一言
 	void EndLog()const;
 	//バッファのサブリソース生成
@@ -17001,11 +17001,6 @@ private:
 };
 
 ========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\MiddleLayer\kara.h ===
-========================================
-#pragma once
-
-========================================
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\MiddleLayer\Math\Matrix\Matrix4x4.h ===
 ========================================
 #pragma once
@@ -17533,23 +17528,17 @@ public:
 	Miyajison& operator=(Miyajison&&) = delete;
 	///ジェーソンファイル名(「.json」省略！！！！)、グループ名とキーを入力し目的のデータを引っ張る
 	///ファイル名はすべてAssets/Registryにあるからそこを見るべし
-	//template<typename DataType>
-	//std::vector<DataType> LoadData(std::string const& fileName_, Group_Value group_value_)
-	//{
-	//	const nlohmann::json& jsonData = PullJsonData(fileName_);
-	//	CheckDataType<DataType>();
-	//	auto data = jsonData[group_value_[0]][group_value_[1]];
-	//	auto value = data.get<DataType>();
-	//	return value;
-	//}
 	template<typename DataType>
-	DataType LoadData(std::string const& fileName_, Group_Value const& group_value_)
+	DataType LoadData(std::string const& fileName_, std::vector<std::string> const& nest_)
 	{
-		const nlohmann::json& jsonData = PullJsonData(fileName_);
 		CheckDataType<DataType>();
-		auto data = jsonData[group_value_[0]][group_value_[1]];
-		auto value = data.get<DataType>();
-		return value;
+		nlohmann::json const* current = &PullJsonData(fileName_);
+		//ポインタをずらしながら階層を辿る
+		for (const auto& key : nest_)
+		{
+			current = &(*current)[key];
+		}
+		return current->get<DataType>();
 	}
 private:
 	Miyajison();
@@ -17567,18 +17556,18 @@ private:
 	{
 		if (!ProjectConfig::Debug::kEnableJsonDataTypeCheck) return;
 		if constexpr
-			(
-				!std::is_same_v<DataType, std::string> &&
-				!std::is_same_v<DataType, int> &&
-				!std::is_same_v<DataType, bool> &&
-				!std::is_same_v<DataType, double> &&
-				!std::is_same_v<DataType, float> &&
-				!std::is_same_v<DataType, std::vector<std::string>> &&
-				!std::is_same_v<DataType, std::vector<int>> &&
-				!std::is_same_v<DataType, std::vector<bool>> &&
-				!std::is_same_v<DataType, std::vector<double>> &&
-				!std::is_same_v<DataType, std::vector<std::vector<float>>>
-			)
+		(
+			!std::is_same_v<DataType, std::string> &&
+			!std::is_same_v<DataType, int> &&
+			!std::is_same_v<DataType, bool> &&
+			!std::is_same_v<DataType, double> &&
+			!std::is_same_v<DataType, float> &&
+			!std::is_same_v<DataType, std::vector<std::string>> &&
+			!std::is_same_v<DataType, std::vector<int>> &&
+			!std::is_same_v<DataType, std::vector<bool>> &&
+			!std::is_same_v<DataType, std::vector<double>> &&
+			!std::is_same_v<DataType, std::vector<std::vector<float>>>
+		)
 		{
 			ErrorMessageOutput::Assert::OutputError("データ型に異常あり", "Miyajison.h");
 		}
@@ -18956,5 +18945,5 @@ namespace StringProcessing
 ========================================
 === SUMMARY ===
 ========================================
-Total Files      : 429
-Effective Lines  : 13746
+Total Files      : 428
+Effective Lines  : 13748
