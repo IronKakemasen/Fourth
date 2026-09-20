@@ -344,8 +344,8 @@
     <ClCompile Include="Engine\LowerLayer\Resource\Model\TestModelOKIBA.cpp" />
     <ClCompile Include="Engine\LowerLayer\Resource\Model\CreateModelTools\ModelDataCreator\PerDrawDataBufferCreator\PerDrawDataBufferCreator.cpp" />
     <ClCompile Include="Engine\LowerLayer\Resource\Model\ModelContextDiplomat\ModelContextToolLender\ModelContextToolLender.cpp" />
-    <ClCompile Include="Engine\MiddleLayer\MiyaJison\MiyaJison.cpp" />
-    <ClCompile Include="Engine\MiddleLayer\MiyaJison\JsonDataLibrary\JsonDataLibrary.cpp" />
+    <ClCompile Include="Engine\MiddleLayer\Miyajison\Miyajison.cpp" />
+    <ClCompile Include="Engine\MiddleLayer\Miyajison\JsonDataLibrary\JsonDataLibrary.cpp" />
     <ClCompile Include="Engine\LowerLayer\Resource\Shader\ShaderLoader\ShaderLoader.cpp" />
     <ClCompile Include="Engine\LowerLayer\Resource\Shader\ShaderContextDiplomat\ShaderContextDiplomat.cpp" />
     <ClCompile Include="Engine\LowerLayer\Resource\Shader\ShaderContextDiplomat\ShaderContextToolLender\ShaderContextToolLender.cpp" />
@@ -608,8 +608,8 @@
     <ClInclude Include="Engine\LowerLayer\Resource\Model\TestModelOKIBA.h" />
     <ClInclude Include="Engine\LowerLayer\Resource\Model\CreateModelTools\ModelDataCreator\PerDrawDataBufferCreator\PerDrawDataBufferCreator.h" />
     <ClInclude Include="Engine\LowerLayer\Resource\Model\ModelContextDiplomat\ModelContextToolLender\ModelContextToolLender.h" />
-    <ClInclude Include="Engine\MiddleLayer\MiyaJison\MiyaJison.h" />
-    <ClInclude Include="Engine\MiddleLayer\MiyaJison\JsonDataLibrary\JsonDataLibrary.h" />
+    <ClInclude Include="Engine\MiddleLayer\Miyajison\Miyajison.h" />
+    <ClInclude Include="Engine\MiddleLayer\Miyajison\JsonDataLibrary\JsonDataLibrary.h" />
     <ClInclude Include="Engine\LowerLayer\Resource\Shader\ShaderLoader\ShaderLoader.h" />
     <ClInclude Include="Engine\LowerLayer\Resource\Shader\ShaderContextDiplomat\ShaderContextDiplomat.h" />
     <ClInclude Include="Engine\LowerLayer\Resource\Shader\ShaderContextDiplomat\ShaderContextToolLender\ShaderContextToolLender.h" />
