@@ -1,3 +1,4 @@
 key: "ShaderSettings" , value: "Assets/JsonFiles/AssetsJsonFile/ShaderSettings.json"
+key: "RenderGraphSettings" , value: "Assets/JsonFiles/EngineCoreJsonFile/RenderGraphSettings.json"
 key: "RenderPassSettings" , value: "Assets/JsonFiles/EngineCoreJsonFile/RenderPassSettings.json"
 key: "RenderPathSettings" , value: "Assets/JsonFiles/EngineCoreJsonFile/RenderPathSettings.json"

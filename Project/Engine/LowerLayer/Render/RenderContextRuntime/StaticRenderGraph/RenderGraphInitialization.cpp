@@ -18,7 +18,7 @@ void RenderContext::StaticRenderGraph::Build
 	ShaderContextDiplomat& shaderContextDiplomat_
 )
 {
-	//全てのPathを生成し、つなげる
+	//全てのPathを生成し、制御シーケンス通りに並び替える
 	allPathPtr = PathBuilder::Build(proof_, pathAssembler_, bufferContextDiplomat_);
 	
 	//グラフィックス用の巨大共通ルートシグネチャ

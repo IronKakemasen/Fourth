@@ -43,8 +43,8 @@ private:
 		ShaderContextDiplomat& shaderContextDiplomat_
 	);
 
-	//全てのPathのアドレス。本体は別コンテナクラスが所有
-	AllPathPtr allPathPtr;
+	//全てのPathのアドレス。本体は別コンテナクラスが所有。制御シーケンス通りにソートされている
+	std::vector<PathBehavior*> allPathPtr;
 	//パスが参照するバッファのsrvheapIndexがつまったバッファID
 	//ランタイムで更新する必要がある
 	BufferUniqueID refBufSrvIndicesBufferID;

@@ -5,7 +5,7 @@ class CreateSceneTexture:public RenderContext::PathBehavior
 {
 public:
 
-	CreateSceneTexture(RenderContext::NexusFieldProof proof_);
+	CreateSceneTexture(RenderContext::NexusFieldProof proof_, std::string const& name_);
 
 
 private:
