@@ -21,7 +21,7 @@ RenderContext::RenderPathAssembler::RenderPathAssembler
 
 }
 
-std::vector<RenderContext::RenderPathAssembler::PassAndName> RenderContext::RenderPathAssembler::LoadPathSettings(std::string const pathName_)
+std::vector<RenderContext::RenderPathAssembler::PassAndName> RenderContext::RenderPathAssembler::LoadPathSettings(std::string const& pathName_)
 {
 	//使用するPassを読み込む
 	return PathSettingsLoader::ParseWhichPassUses(pathName_);

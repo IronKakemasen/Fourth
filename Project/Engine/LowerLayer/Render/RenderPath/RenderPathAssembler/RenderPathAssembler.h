@@ -1,7 +1,7 @@
 #pragma once
 #include "../../RenderContext.h"
 #include "../AllRenderPath/AllPathInclude.h"
-#include "../AllRenderPath/RenderPathName.h"
+#include "../AllRenderPath/RenderPathTraits.h"
 #include "../../RenderPass/RenderPassComponent.h"
 #include "../RenderPathContainer/RenderPathContainer.h"
 
@@ -27,9 +27,11 @@ public:
 	)
 	{
 		//Pathの名前
-		std::string const pathName = RenderPathName::PathTypeToName<PathType>::name;
+		std::string const pathName = RenderPathTraits::PathClassTraits<PathType>::kName;
+
 		//実体
-		std::unique_ptr<PathType> path = InstantiatePath<PathType>(proof_);
+		std::unique_ptr<PathType> path = InstantiatePath<PathType>(proof_, pathName);
+
 		//そのPathが使用するPassのコンテナ
 		std::vector<PassAndName> passAndNames = LoadPathSettings(pathName);
 		//それら情報をもとに、passCreatorでPassを作り追加する
@@ -47,7 +49,7 @@ private:
 	RenderPassCreator& passCreator;
 	RenderPathContainer& pathContainer;
 
-	std::vector<PassAndName> LoadPathSettings(std::string const pathName_);
+	std::vector<PassAndName> LoadPathSettings(std::string const& pathName_);
 
 	void AddPass
 	(
@@ -58,9 +60,9 @@ private:
 	);
 
 	template<typename PathType>
-	std::unique_ptr<PathType> InstantiatePath(NexusFieldProof proof_)
+	std::unique_ptr<PathType> InstantiatePath(NexusFieldProof proof_,std::string const& name_)
 	{
-		return std::make_unique<PathType>(proof_);
+		return std::make_unique<PathType>(proof_, name_);
 	}
 
 };

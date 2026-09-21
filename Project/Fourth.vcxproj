@@ -415,7 +415,6 @@
     <ClInclude Include="Engine\LowerLayer\Render\RenderPath\AllRenderPath\CreateSceneTexture\CreateSceneTexture.h" />
     <ClInclude Include="Engine\LowerLayer\Render\RenderPass\AllRenderPass\AllPassFwd.h" />
     <ClInclude Include="Engine\LowerLayer\Render\RenderPass\AllRenderPass\AllPassInclude.h" />
-    <ClInclude Include="Engine\LowerLayer\Render\RenderPath\AllRenderPath\RenderPathName.h" />
     <ClInclude Include="Engine\LowerLayer\Buffer\BufferContextDiplomat\BufferContextCmdProvider\BufferContextCmdProvider.h" />
     <ClInclude Include="Engine\LowerLayer\Core\Command\CommandContextDiplomat\CommandContextCmdProvider\CommandContextCmdProviderLicences.h" />
     <ClInclude Include="Engine\LowerLayer\Core\Command\CommandContextCmds.h" />
@@ -423,6 +422,7 @@
     <ClInclude Include="Engine\LowerLayer\Buffer\BufferContextCmds.h" />
     <ClInclude Include="Engine\LowerLayer\Buffer\BufferContextDiplomat\BufferDiplomatIncludes.h" />
     <ClInclude Include="Engine\LowerLayer\Buffer\BufferContextToolsInclude.h" />
+    <ClInclude Include="Engine\LowerLayer\Render\RenderPath\AllRenderPath\RenderPathTraits.h" />
     <ClInclude Include="Engine\LowerLayer\Resource\Model\ModelContextDiplomatIncludes.h" />
     <ClInclude Include="Engine\LowerLayer\Resource\Shader\ShaderContextDiplomatIncludes.h" />
     <ClInclude Include="Engine\LowerLayer\Resource\Texture\TextureBufferCreator\TextureFileLoader\TextureFileLoader.h" />

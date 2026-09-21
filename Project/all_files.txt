@@ -87,14 +87,16 @@ namespace ProjectConfig
 	}
 	namespace Debug
 	{
+#ifdef _DEBUG
 		//DebugLayer
 		constexpr bool kEnableDebugLayer = true;
 		//ポインター破壊検知
-		constexpr bool kEnablePointerValidator = false;
+		constexpr bool kEnablePointerValidator = true;
 		//Comptrのリークチェック
 		constexpr bool kEnableLeakChecker = true;
 		//Jsonファイルを読み込むときに型チェックを行うかどうか
 		constexpr bool kEnableJsonDataTypeCheck = true;
+#endif // _DEBUG
 	}
 	namespace Core
 	{
@@ -3967,7 +3969,7 @@ namespace
 GPUBufferBehavior::GPUBufferBehavior
 (
 	const InstanceKey& instanceKey_,
-	std::string name_,
+	std::string const& name_,
 	std::vector<Microsoft::WRL::ComPtr<ID3D12Resource>> resourceContainer_,
 	const BufferDescriptionBehavior& description_
 ) : name(name_)
@@ -4062,7 +4064,7 @@ public:
 	GPUBufferBehavior
 	(
 		const InstanceKey& instanceKey_, 
-		std::string name_,
+		std::string const& name_,
 		std::vector<Microsoft::WRL::ComPtr<ID3D12Resource>> resourceContainer_,
 		const BufferDescriptionBehavior& description_
 	);
@@ -4145,7 +4147,7 @@ namespace
 ColorBuffer::ColorBuffer
 (
 	const InstanceKey& instanceKey_,
-	std::string name_,
+	std::string const& name_,
 	std::vector<Microsoft::WRL::ComPtr<ID3D12Resource>> resourceContainer_,
 	const BufferDescriptionBehavior& description_
 ) : GPUBufferBehavior(instanceKey_, name_, std::move(resourceContainer_), description_)
@@ -4193,7 +4195,7 @@ public:
 	ColorBuffer
 	(
 		const InstanceKey& instanceKey_,
-		std::string name_,
+		std::string const& name_,
 		std::vector<Microsoft::WRL::ComPtr<ID3D12Resource>> resourceContainer_,
 		const BufferDescriptionBehavior& description_
 	);
@@ -4213,7 +4215,7 @@ private:
 ComputeBuffer::ComputeBuffer
 (
 	const InstanceKey& instanceKey_,
-	std::string name_,
+	std::string const& name_,
 	std::vector<Microsoft::WRL::ComPtr<ID3D12Resource>> resourceContainer_,
 	const BufferDescriptionBehavior& description_
 ) : GPUBufferBehavior(instanceKey_, name_, std::move(resourceContainer_), description_)
@@ -4256,7 +4258,7 @@ public:
 	ComputeBuffer
 	(
 		const InstanceKey& instanceKey_, 
-		std::string name_,
+		std::string const& name_,
 		std::vector<Microsoft::WRL::ComPtr<ID3D12Resource>> resourceContainer_,
 		const BufferDescriptionBehavior& description_
 	);
@@ -4277,7 +4279,7 @@ private:
 ConstantBuffer::ConstantBuffer
 (
 	const InstanceKey& instanceKey_,
-	std::string name_,
+	std::string const& name_,
 	std::vector<Microsoft::WRL::ComPtr<ID3D12Resource>> resourceContainer_,
 	const BufferDescriptionBehavior& description_
 ) : GPUBufferBehavior(instanceKey_, name_, std::move(resourceContainer_), description_)
@@ -4306,7 +4308,7 @@ public:
 	ConstantBuffer
 	(
 		const InstanceKey& instanceKey_,
-		std::string name_,
+		std::string const& name_,
 		std::vector<Microsoft::WRL::ComPtr<ID3D12Resource>> resourceContainer_,
 		const BufferDescriptionBehavior& description_
 	);
@@ -4323,7 +4325,7 @@ namespace
 DepthStencilBuffer::DepthStencilBuffer
 (
 	const InstanceKey& instanceKey_,
-	std::string name_,
+	std::string const& name_,
 	std::vector<Microsoft::WRL::ComPtr<ID3D12Resource>> resourceContainer_,
 	const BufferDescriptionBehavior& description_
 ) : GPUBufferBehavior(instanceKey_, name_, std::move(resourceContainer_), description_)
@@ -4371,7 +4373,7 @@ public:
 	DepthStencilBuffer
 	(
 		const InstanceKey& instanceKey_,
-		std::string name_,
+		std::string const& name_,
 		std::vector<Microsoft::WRL::ComPtr<ID3D12Resource>> resourceContainer_,
 		const BufferDescriptionBehavior& description_
 	);
@@ -4392,7 +4394,7 @@ private:
 StaticStructuredBuffer::StaticStructuredBuffer
 (
 	const InstanceKey& instanceKey_,
-	std::string name_,
+	std::string const& name_,
 	std::vector<Microsoft::WRL::ComPtr<ID3D12Resource>> resourceContainer_,
 	const BufferDescriptionBehavior& description_
 ) : GPUBufferBehavior(instanceKey_, name_, std::move(resourceContainer_), description_)
@@ -4423,7 +4425,7 @@ public:
 	StaticStructuredBuffer
 	(
 		const InstanceKey& instanceKey_,
-		std::string name_,
+		std::string const& name_,
 		std::vector<Microsoft::WRL::ComPtr<ID3D12Resource>> resourceContainer_,
 		const BufferDescriptionBehavior& description_
 	);
@@ -4440,7 +4442,7 @@ public:
 Texture2DBuffer::Texture2DBuffer
 (
 	const InstanceKey& instanceKey_,
-	std::string name_,
+	std::string const& name_,
 	std::vector<Microsoft::WRL::ComPtr<ID3D12Resource>> resourceContainer_,
 	const BufferDescriptionBehavior& description_
 ) : GPUBufferBehavior(instanceKey_, name_, std::move(resourceContainer_), description_)
@@ -4467,7 +4469,7 @@ public:
 	Texture2DBuffer
 	(
 		const InstanceKey& instanceKey_,
-		std::string name_,
+		std::string const& name_,
 		std::vector<Microsoft::WRL::ComPtr<ID3D12Resource>> resourceContainer_,
 		const BufferDescriptionBehavior& description_
 	);
@@ -4484,7 +4486,7 @@ private:
 UploadStructuredBuffer::UploadStructuredBuffer
 (
 	const InstanceKey& instanceKey_,
-	std::string name_,
+	std::string const& name_,
 	std::vector<Microsoft::WRL::ComPtr<ID3D12Resource>> resourceContainer_,
 	const BufferDescriptionBehavior& description_
 ) : GPUBufferBehavior(instanceKey_, name_, std::move(resourceContainer_), description_)
@@ -4517,7 +4519,7 @@ public:
 	UploadStructuredBuffer
 	(
 		const InstanceKey& instanceKey_,
-		std::string name_,
+		std::string const& name_,
 		std::vector<Microsoft::WRL::ComPtr<ID3D12Resource>> resourceContainer_,
 		const BufferDescriptionBehavior& description_
 	);
@@ -8717,12 +8719,12 @@ void Logger::Init()
 	static int onlyOnce{ };
 	if (onlyOnce++ > 0) return;
 	std::filesystem::create_directory("DebugLog");
-	// 現在時刻を取得
+	//現在時刻を取得
 	auto now = std::chrono::system_clock::now();
 	std::time_t time_t_now = std::chrono::system_clock::to_time_t(now);
 	std::tm localTime{};
 	localtime_s(&localTime, &time_t_now);
-	// バッファに "YYYYMMDD_HHMMSS" を書き込む
+	//バッファに "YYYYMMDD_HHMMSS" を書き込む
 	char buffer[32];
 	std::strftime(buffer, sizeof(buffer), "%Y%m%d_%H%M%S", &localTime);
 	std::string dateString(buffer);
@@ -9443,7 +9445,7 @@ void RenderContext::StaticRenderGraph::Build
 	ShaderContextDiplomat& shaderContextDiplomat_
 )
 {
-	//全てのPathを生成し、つなげる
+	//全てのPathを生成し、制御シーケンス通りに並び替える
 	allPathPtr = PathBuilder::Build(proof_, pathAssembler_, bufferContextDiplomat_);
 	//グラフィックス用の巨大共通ルートシグネチャ
 	graphicsRootSig = RootSigBuilder::Build(proof_, rootSignatureContextDiplomat_);
@@ -9539,8 +9541,8 @@ private:
 		PSO_ContextDiplomat& pso_ContextDiplomat_,
 		ShaderContextDiplomat& shaderContextDiplomat_
 	);
-	//全てのPathのアドレス。本体は別コンテナクラスが所有
-	AllPathPtr allPathPtr;
+	//全てのPathのアドレス。本体は別コンテナクラスが所有。制御シーケンス通りにソートされている
+	std::vector<PathBehavior*> allPathPtr;
 	//パスが参照するバッファのsrvheapIndexがつまったバッファID
 	//ランタイムで更新する必要がある
 	BufferUniqueID refBufSrvIndicesBufferID;
@@ -10232,17 +10234,44 @@ namespace
 {
 	auto const fileName = "RenderPathBuilder.cpp";
 }
-[[nodiscard]] AllPathPtr RenderContext::StaticRenderGraph::PathBuilder::Build
+[[nodiscard]] std::vector<RenderContext::PathBehavior*> RenderContext::StaticRenderGraph::PathBuilder::Build
 (
 	NexusFieldProof proof_,
 	RenderPathAssembler& pathAssembler_,
 	BufferContextDiplomat& bufferContextDiplomat_
 )
 {
-	AllPathPtr allPathPtr;
-	std::get<CreateSceneTexture*>(allPathPtr) = pathAssembler_.Assemble<CreateSceneTexture>(proof_, bufferContextDiplomat_);
-	Logger::Log("Create: CreateSceneTexture", fileName);
-	return allPathPtr;
+	std::vector<RenderContext::PathBehavior*> allPathPtr;
+	allPathPtr.emplace_back(pathAssembler_.Assemble<CreateSceneTexture>(proof_, bufferContextDiplomat_));
+	Logger::Log("Instantiate: CreateSceneTexture", fileName);
+	//制御シーケンス通りに並び替える
+	return SortInSequence(allPathPtr);
+}
+std::vector<RenderContext::PathBehavior*> RenderContext::StaticRenderGraph::PathBuilder::SortInSequence(std::vector<RenderContext::PathBehavior*>& allPathPtr_)
+{
+	std::vector<RenderContext::PathBehavior*> sortDst;
+	//pathのシーケンス情報を取得
+	auto* miyajison = Miyajison::Get();
+	auto const pathSequence = miyajison->LoadData<std::vector<std::string>>(DataKey::kSrcJsonFile, { DataKey::kPathSequence });
+	//path名と一致したpathのアドレス順に並べ替える
+	for (auto const& srcPathName : pathSequence)
+	{
+		for (auto* pathPtr : allPathPtr_)
+		{
+			if (pathPtr->WatchName() == srcPathName)
+			{
+				sortDst.emplace_back(pathPtr);
+			}
+		}
+	}
+	//生成したパスの数と、シーケンス制御に記述された数の整合チェック
+	ErrorMessageOutput::Assert::DetectError
+	(
+		sortDst.size() == pathSequence.size(),
+		"生成したPathの数" + std::to_string(sortDst.size()) + "と、シーケンス制御の数" + std::to_string(pathSequence.size()) + "が合わない",
+		fileName
+	);
+	return sortDst;
 }
 
 ========================================
@@ -10256,12 +10285,19 @@ class RenderContext::StaticRenderGraph::PathBuilder
 	//以下ヘルパー
 private:
 	//全てのPathを生成
-	static AllPathPtr Build
+	static std::vector<RenderContext::PathBehavior*> Build
 	(
 		NexusFieldProof proof_,
 		RenderPathAssembler& pathAssembler_,
 		BufferContextDiplomat& bufferContextDiplomat_
 	);
+	//Jsonファイルに記録されているシーケンス通りに、AllPathPtrを一列に並び替えて返す
+	static std::vector<RenderContext::PathBehavior*> SortInSequence(std::vector<RenderContext::PathBehavior*>& allPathPtr_);
+	struct DataKey
+	{
+		static inline const std::string kSrcJsonFile = "RenderGraphSettings";
+		static inline const std::string kPathSequence = "PathSequence";
+	};
 };
 
 ========================================
@@ -10602,7 +10638,7 @@ namespace
 }
 RenderContext::PassDesc::PassDesc
 (
-	std::string const name_,
+	std::string const& name_,
 	std::optional<std::pair<std::string, std::string >> const& ms_psFileName_,
 	RenderPassState renderPassState_,
 	std::vector<RenderContext::RequiredBufferInfo::ColorBuffer> const& colorBuffersInfo_,
@@ -10693,7 +10729,7 @@ struct RenderContext::PassDesc
 	friend class RenderContext;
 	PassDesc
 	(
-		std::string const name_,
+		std::string const& name_,
 		std::optional<std::pair<std::string, std::string >> const& ms_psFileName_,
 		RenderPassState renderPassState_,
 		std::vector<RenderContext::RequiredBufferInfo::ColorBuffer> const& colorBuffersInfo_,
@@ -11257,7 +11293,6 @@ private:
 ========================================
 #pragma once
 class CreateSceneTexture;
-using AllPathPtr = std::tuple<CreateSceneTexture*>;
 
 ========================================
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Render\RenderPath\AllRenderPath\AllPathInclude.h ===
@@ -11270,7 +11305,8 @@ using AllPathPtr = std::tuple<CreateSceneTexture*>;
 ========================================
 #include "PreCompileHeader.h"
 #include "PathBehavior.h"
-RenderContext::PathBehavior::PathBehavior(NexusFieldProof proof_)
+RenderContext::PathBehavior::PathBehavior(NexusFieldProof proof_, std::string const& name_)
+	:name(name_)
 {
 }
 
@@ -11283,7 +11319,7 @@ RenderContext::PathBehavior::PathBehavior(NexusFieldProof proof_)
 class RenderContext::PathBehavior
 {
 public:
-	PathBehavior(NexusFieldProof proof_);
+	PathBehavior(NexusFieldProof proof_,std::string const& name_);
 	virtual ~PathBehavior() = default;
 	//PathCreatorがジェーソンファイルから使用するPassを詰めてくれる
 	template<typename PassType>
@@ -11291,24 +11327,27 @@ public:
 	{
 		std::get<PassType*>(passses) = pass_;
 	}
+	auto const& WatchName()const { return  name; }
 protected:
+	//名前。初期化のために所持する
+	std::string name;
 	//パフォーマンス稼ぎたいのでanyではなくtupleで
 	AllPassPtr passses;
 };
 
 ========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Render\RenderPath\AllRenderPath\RenderPathName.h ===
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Render\RenderPath\AllRenderPath\RenderPathTraits.h ===
 ========================================
 #pragma once
 #include "AllPathFwd.h"
-namespace RenderPathName
+namespace RenderPathTraits
 {
 	template<typename PathType>
-	struct PathTypeToName;
+	struct PathClassTraits;
 	template<>
-	struct PathTypeToName<CreateSceneTexture>
+	struct PathClassTraits<CreateSceneTexture>
 	{
-		static inline const std::string name = "CreateSceneTexture";
+		static inline std::string const kName = "CreateSceneTexture";
 	};
 }
 
@@ -11317,8 +11356,8 @@ namespace RenderPathName
 ========================================
 #include "PreCompileHeader.h"
 #include "CreateSceneTexture.h"
-CreateSceneTexture::CreateSceneTexture(RenderContext::NexusFieldProof proof_)
-	:PathBehavior::PathBehavior(proof_)
+CreateSceneTexture::CreateSceneTexture(RenderContext::NexusFieldProof proof_, std::string const& name_)
+	:PathBehavior::PathBehavior(proof_, name_)
 {
 }
 
@@ -11330,7 +11369,7 @@ CreateSceneTexture::CreateSceneTexture(RenderContext::NexusFieldProof proof_)
 class CreateSceneTexture:public RenderContext::PathBehavior
 {
 public:
-	CreateSceneTexture(RenderContext::NexusFieldProof proof_);
+	CreateSceneTexture(RenderContext::NexusFieldProof proof_, std::string const& name_);
 private:
 };
 
@@ -11355,7 +11394,7 @@ RenderContext::RenderPathAssembler::RenderPathAssembler
 	:passCreator(passCreator_), pathContainer(pathContainer_)
 {
 }
-std::vector<RenderContext::RenderPathAssembler::PassAndName> RenderContext::RenderPathAssembler::LoadPathSettings(std::string const pathName_)
+std::vector<RenderContext::RenderPathAssembler::PassAndName> RenderContext::RenderPathAssembler::LoadPathSettings(std::string const& pathName_)
 {
 	//使用するPassを読み込む
 	return PathSettingsLoader::ParseWhichPassUses(pathName_);
@@ -11388,7 +11427,7 @@ void RenderContext::RenderPathAssembler::AddPass
 #pragma once
 #include "../../RenderContext.h"
 #include "../AllRenderPath/AllPathInclude.h"
-#include "../AllRenderPath/RenderPathName.h"
+#include "../AllRenderPath/RenderPathTraits.h"
 #include "../../RenderPass/RenderPassComponent.h"
 #include "../RenderPathContainer/RenderPathContainer.h"
 class RenderContext::RenderPathAssembler
@@ -11410,9 +11449,9 @@ public:
 	)
 	{
 		//Pathの名前
-		std::string const pathName = RenderPathName::PathTypeToName<PathType>::name;
+		std::string const pathName = RenderPathTraits::PathClassTraits<PathType>::kName;
 		//実体
-		std::unique_ptr<PathType> path = InstantiatePath<PathType>(proof_);
+		std::unique_ptr<PathType> path = InstantiatePath<PathType>(proof_, pathName);
 		//そのPathが使用するPassのコンテナ
 		std::vector<PassAndName> passAndNames = LoadPathSettings(pathName);
 		//それら情報をもとに、passCreatorでPassを作り追加する
@@ -11424,7 +11463,7 @@ public:
 private:
 	RenderPassCreator& passCreator;
 	RenderPathContainer& pathContainer;
-	std::vector<PassAndName> LoadPathSettings(std::string const pathName_);
+	std::vector<PassAndName> LoadPathSettings(std::string const& pathName_);
 	void AddPass
 	(
 		NexusFieldProof proof_,
@@ -11433,9 +11472,9 @@ private:
 		BufferContextDiplomat& bufferContextDiplomat_
 	);
 	template<typename PathType>
-	std::unique_ptr<PathType> InstantiatePath(NexusFieldProof proof_)
+	std::unique_ptr<PathType> InstantiatePath(NexusFieldProof proof_,std::string const& name_)
 	{
-		return std::make_unique<PathType>(proof_);
+		return std::make_unique<PathType>(proof_, name_);
 	}
 };
 
@@ -17457,7 +17496,7 @@ struct Vector4
 };
 
 ========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\MiddleLayer\MiyaJison\MiyaJison.cpp ===
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\MiddleLayer\Miyajison\Miyajison.cpp ===
 ========================================
 #include "PreCompileHeader.h"
 #include "Miyajison.h"
@@ -17512,7 +17551,7 @@ const nlohmann::json& Miyajison::PullJsonData(std::string fileName_)
 }
 
 ========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\MiddleLayer\MiyaJison\MiyaJison.h ===
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\MiddleLayer\Miyajison\Miyajison.h ===
 ========================================
 #pragma once
 #include "../../../External/nlohmann/json.hpp"
@@ -17575,7 +17614,7 @@ private:
 };
 
 ========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\MiddleLayer\MiyaJison\JsonDataLibrary\JsonDataLibrary.cpp ===
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\MiddleLayer\Miyajison\JsonDataLibrary\JsonDataLibrary.cpp ===
 ========================================
 #include "PreCompileHeader.h"
 #include "JsonDataLibrary.h"
@@ -17596,7 +17635,7 @@ const nlohmann::json& Miyajison::DataLibrary::Export(HandleLicence licence_, std
 }
 
 ========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\MiddleLayer\MiyaJison\JsonDataLibrary\JsonDataLibrary.h ===
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\MiddleLayer\Miyajison\JsonDataLibrary\JsonDataLibrary.h ===
 ========================================
 #pragma once
 #include "../Miyajison.h"
@@ -17838,12 +17877,10 @@ bool Nexus::InstanceLimiter::CanInstantiate()
 }
 Nexus::Nexus()
 {
-	//COMの初期化
-	HRESULT hr = CoInitializeEx(0, COINITBASE_MULTITHREADED);
-	ErrorMessageOutput::Abort::DetectError(SUCCEEDED(hr), "CoInitializeEx()でエラー", fileName);
 	Logger::Entry("Nexus: Constructor");
 	//自身のインスタンス制限
 	ErrorMessageOutput::Assert::DetectError(InstanceLimiter::CanInstantiate(), "Nexusクラスが複数具現化されてます", fileName);
+	InitializeInSequence<InitSequence::kCoInitializeEx>();
 	InitializeInSequence<InitSequence::kLoadAllJsonFiles>();
 	InitializeInSequence<InitSequence::kDeviceContext>();
 	InitializeInSequence<InitSequence::kWindowContext>();
@@ -17897,6 +17934,7 @@ class Nexus
 	//初期化・生成順序
 	enum class InitSequence
 	{
+		kCoInitializeEx,
 		kLoadAllJsonFiles,
 		kDeviceContext,
 		kWindowContext,
@@ -18063,12 +18101,15 @@ namespace
 {
 	std::string const fileName = "NexusInitialization.cpp";
 }
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 template<>
-void Nexus::Init<Nexus::InitSequence::kDeviceContext>()
+void Nexus::Init<Nexus::InitSequence::kCoInitializeEx>()
 {
-	//deviceContextクラスのインスタンス化
-	deviceContext.reset(new DeviceContext(DeviceContext::NexusFieldProof{}));
-	Logger::Log("Instantiate: deviceContext", fileName);
+	//COMの初期化
+	HRESULT hr = CoInitializeEx(0, COINITBASE_MULTITHREADED);
+	ErrorMessageOutput::Abort::DetectError(SUCCEEDED(hr), "CoInitializeEx()でエラー", fileName);
 }
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -18078,6 +18119,16 @@ void Nexus::Init<Nexus::InitSequence::kLoadAllJsonFiles>()
 {
 	//シングルトンだから一度読んでコンストラクタが通ればよし
 	Miyajison::Get();
+}
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+template<>
+void Nexus::Init<Nexus::InitSequence::kDeviceContext>()
+{
+	//deviceContextクラスのインスタンス化
+	deviceContext.reset(new DeviceContext(DeviceContext::NexusFieldProof{}));
+	Logger::Log("Instantiate: deviceContext", fileName);
 }
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -18291,6 +18342,8 @@ void Nexus::Init<Nexus::InitSequence::kDeleteModelDataCache>()
 	//ランタイム用のベクターコンテナに詰め変える(全てのコンスタントバッファの生成が終わった後)
 	agent->DeleteModelDataCache(ModelContext::NexusFieldProof{});
 }
+template
+void Nexus::Init<Nexus::InitSequence::kCoInitializeEx>();
 template
 void Nexus::Init<Nexus::InitSequence::kLoadAllJsonFiles>();
 template
@@ -18899,7 +18952,7 @@ namespace StringConverter
 namespace StringProcessing
 {
 	///文字列の中の特定の文字の後ろの文字列を返す
-    inline std::string SkipFetch(std::string const dstString_ , char const signalChar_)
+    inline std::string SkipFetch(std::string const& dstString_ , char const signalChar_)
     {
         auto pos = dstString_.find(signalChar_);
         ErrorMessageOutput::Assert::DetectError
@@ -18912,7 +18965,7 @@ namespace StringProcessing
         return dstString_.substr(pos + 1);
     }
 	///引数のファイル指定子かどうかをチェック
-    inline bool CheckFileExtension(std::string const path_, std::string const extension_)
+    inline bool CheckFileExtension(std::string const& path_, std::string const& extension_)
 	{
         ErrorMessageOutput::Assert::DetectError
         (
@@ -18925,7 +18978,7 @@ namespace StringProcessing
 		return extension == extension_;
 	}
     ///ファイル指定子を消す
-    static std::string RemoveFileExtension(std::string const path_)
+    static std::string RemoveFileExtension(std::string const& path_)
     {
         std::size_t const dotPos = path_.find_last_of('.');
         if (dotPos == std::string::npos)
@@ -18946,4 +18999,4 @@ namespace StringProcessing
 === SUMMARY ===
 ========================================
 Total Files      : 428
-Effective Lines  : 13748
+Effective Lines  : 13787
