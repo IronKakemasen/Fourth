@@ -4664,12 +4664,12 @@ void BufferContext::GlobalConstantBuffers::PackRuntimeContainer(NexusFieldProof 
 	}
 	auto const numActualCBuffers = forChecking.size();
 	auto const numRequiredCBuffers = (size_t)ConstantBuffers::RootConstantsBindSlots::kCount;
-	//ErrorMessageOutput::Assert::DetectError
-	//(
-	//	numActualCBuffers == numRequiredCBuffers,
-	//	"定数バッファの生成数が合わない実 " + std::to_string(numActualCBuffers) + " : 必 " + std::to_string(numRequiredCBuffers),
-	//	fileName
-	//);
+	ErrorMessageOutput::Assert::DetectError
+	(
+		numActualCBuffers == numRequiredCBuffers,
+		"定数バッファの生成数が合わない実 " + std::to_string(numActualCBuffers) + " : 必 " + std::to_string(numRequiredCBuffers),
+		fileName
+	);
 	Logger::Log("===== List of cBuffer slots =====",fileName);
 	for (auto [key, value] : bufferNameMap)
 	{
@@ -5596,6 +5596,10 @@ public:
 	)
 	{
 		cmdList->SetGraphicsRoot32BitConstant(rootParameterIndex_, srcData_, destOffsetIn32BitValues_);
+	}
+	void SetGraphicsRootConstantBufferView(UINT const bindSlot_, D3D12_GPU_VIRTUAL_ADDRESS const gpuAddress_)
+	{
+		cmdList->SetGraphicsRootConstantBufferView(bindSlot_, gpuAddress_);
 	}
 	__forceinline void IASetPrimitiveTopology(_In_ D3D12_PRIMITIVE_TOPOLOGY primitiveTopology_)
 	{
@@ -9469,6 +9473,12 @@ void RenderContext::StaticRenderGraph::Build
 ========================================
 #include "PreCompileHeader.h"
 #include "StaticRenderGraph.h"
+#include "RenderGraphExecutor/PathOperator/PathOperator.h"
+#include "RenderGraphExecutor/CommonCmdExecutor/CommonCmdExecutor.h"
+namespace
+{
+	auto const fileName = "StaticRenderGraph.cpp";
+}
 RenderContext::StaticRenderGraph::StaticRenderGraph
 (
 	NexusFieldProof proof_,
@@ -9497,7 +9507,17 @@ RenderContext::StaticRenderGraph::StaticRenderGraph
 		pso_ContextDiplomat_,
 		shaderContextDiplomat_
 	);
+	pathOperator.reset
+	(
+		new PathOperator(proof_, allPathPtr)
+	);
+	Logger::Log("Instantiate: PathOperator", fileName);
+	commonCmdExecutor.reset(new CommonCmdExecutor(proof_, graphicsRootSig));
+	Logger::Log("Instantiate: CommonCmdExecutor", fileName);
 	Logger::End("StaticRenderGraph: Constructor");
+}
+RenderContext::StaticRenderGraph::~StaticRenderGraph()
+{
 }
 
 ========================================
@@ -9513,6 +9533,10 @@ class RenderContext::StaticRenderGraph
 	class PathBuilder;
 	class RootSigBuilder;
 	class PassSetUpper;
+	//Pathのランタイムを制御する
+	class PathOperator;
+	//共通描画コマンドをたたく
+	class CommonCmdExecutor;
 public:
 	StaticRenderGraph
 	(
@@ -9527,6 +9551,7 @@ public:
 		PSO_ContextDiplomat& pso_ContextDiplomat_,
 		ShaderContextDiplomat& shaderContextDiplomat_
 	);
+	~StaticRenderGraph();
 private:
 	void Build
 	(
@@ -9548,6 +9573,8 @@ private:
 	BufferUniqueID refBufSrvIndicesBufferID;
 	//描画用巨大共通ルートシグネチャ
 	ID3D12RootSignature* graphicsRootSig;
+	std::unique_ptr<PathOperator> pathOperator;
+	std::unique_ptr<CommonCmdExecutor> commonCmdExecutor;
 };
 
 ========================================
@@ -10298,6 +10325,133 @@ private:
 		static inline const std::string kSrcJsonFile = "RenderGraphSettings";
 		static inline const std::string kPathSequence = "PathSequence";
 	};
+};
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Render\RenderContextRuntime\StaticRenderGraph\RenderGraphExecutor\CommonCmdExecutor\CommonCmdExecutor.cpp ===
+========================================
+#include "PreCompileHeader.h"
+#include "CommonCmdExecutor.h"
+//外部
+#include "../../../../../Core/Command/RuntimeWrapper/RuntimeWrapper.h"
+#include "../../../../../../../Assets/Shared/ConstantBuffers.h"
+using namespace ProjectConfig::Render;
+using namespace ConstantBuffers;
+RenderContext::StaticRenderGraph::CommonCmdExecutor::CommonCmdExecutor(NexusFieldProof proof_, ID3D12RootSignature* graphicsRootSig_)
+	:graphicsRootSig(graphicsRootSig_)
+{
+}
+void RenderContext::StaticRenderGraph::CommonCmdExecutor::Execute
+(
+	UINT const frameIndex_,
+	ID3D12DescriptorHeap* descriptorHeap_,
+	CommandContext::RuntimeWrapper& runtimeWrapper_,
+	std::array<std::vector<D3D12_GPU_VIRTUAL_ADDRESS>, (UINT)NumBuffer::kDoubleBuffer> const& constantsGPU_
+)
+{
+	SetGraphicsRootSignature(runtimeWrapper_);
+	SetDescriptorHeaps(descriptorHeap_, runtimeWrapper_);
+	SetGlobalConstantViews
+	(
+		frameIndex_,
+		runtimeWrapper_,
+		constantsGPU_
+	);
+}
+void RenderContext::StaticRenderGraph::CommonCmdExecutor::SetGraphicsRootSignature
+(
+	CommandContext::RuntimeWrapper& runtimeWrapper_
+)
+{
+	runtimeWrapper_.SetGraphicsRootSignature(graphicsRootSig);
+}
+void RenderContext::StaticRenderGraph::CommonCmdExecutor::SetGlobalConstantViews
+(
+	UINT const frameIndex_,
+	CommandContext::RuntimeWrapper& runtimeWrapper_,
+	std::array<std::vector<D3D12_GPU_VIRTUAL_ADDRESS>, (UINT)NumBuffer::kDoubleBuffer> const& constantsGPU_
+)
+{
+	for (UINT i = 0; i < (UINT)ConstantBufferBindSlots::kCount;++i)
+	{
+		runtimeWrapper_.SetGraphicsRootConstantBufferView(i,constantsGPU_[frameIndex_][i]);
+	}
+}
+void RenderContext::StaticRenderGraph::CommonCmdExecutor::SetDescriptorHeaps
+(
+	ID3D12DescriptorHeap* descriptorHeap_,
+	CommandContext::RuntimeWrapper& runtimeWrapper_
+)
+{
+	ID3D12DescriptorHeap* descriptorHeaps[] = { descriptorHeap_ };
+	runtimeWrapper_.SetDescriptorHeaps(1, descriptorHeaps);
+}
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Render\RenderContextRuntime\StaticRenderGraph\RenderGraphExecutor\CommonCmdExecutor\CommonCmdExecutor.h ===
+========================================
+#pragma once
+#include "../../StaticRenderGraph.h"
+#include "../../../../../Core/Command/CommandContext.h"
+class RenderContext::StaticRenderGraph::CommonCmdExecutor
+{
+public:
+	CommonCmdExecutor(NexusFieldProof proof_, ID3D12RootSignature* graphicsRootSig_);
+	void Execute
+	(
+		UINT const frameIndex_,
+		ID3D12DescriptorHeap* descriptorHeap_,
+		CommandContext::RuntimeWrapper& runtimeWrapper_,
+		std::array<std::vector<D3D12_GPU_VIRTUAL_ADDRESS>, (UINT)ProjectConfig::Render::NumBuffer::kDoubleBuffer> const& constantsGPU_
+	);
+	//以下ヘルパー
+private:
+	void SetGlobalConstantViews
+	(
+		UINT const frameIndex_, 
+		CommandContext::RuntimeWrapper& runtimeWrapper_,
+		std::array<std::vector<D3D12_GPU_VIRTUAL_ADDRESS>, (UINT)ProjectConfig::Render::NumBuffer::kDoubleBuffer> const& constantsGPU_
+	);
+	void SetGraphicsRootSignature
+	(
+		CommandContext::RuntimeWrapper& runtimeWrapper_
+	);
+	void SetDescriptorHeaps
+	(
+		ID3D12DescriptorHeap* descriptorHeap_,
+		CommandContext::RuntimeWrapper& runtimeWrapper_
+	);
+	ID3D12RootSignature* graphicsRootSig;
+};
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Render\RenderContextRuntime\StaticRenderGraph\RenderGraphExecutor\PathOperator\PathOperator.cpp ===
+========================================
+#include "PreCompileHeader.h"
+#include "PathOperator.h"
+RenderContext::StaticRenderGraph::PathOperator::PathOperator
+(
+	NexusFieldProof proof_,
+	std::vector<PathBehavior*>& allPathPtr_
+):allPathPtr(allPathPtr_)
+{
+}
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Render\RenderContextRuntime\StaticRenderGraph\RenderGraphExecutor\PathOperator\PathOperator.h ===
+========================================
+#pragma once
+#include "../../StaticRenderGraph.h"
+class RenderContext::StaticRenderGraph::PathOperator
+{
+public:
+	PathOperator
+	(
+		NexusFieldProof proof_,
+		std::vector<PathBehavior*>& allPathPtr_
+	);
+private:
+	std::vector<PathBehavior*>& allPathPtr;
 };
 
 ========================================
@@ -13124,8 +13278,7 @@ std::vector<ConstantBuffers::PerDrawIndicesCPUGPU> ModelContext::ModelDescAssemb
 	size_t const kNumMeshData_
 )
 {
-	std::vector<ConstantBuffers::PerDrawIndicesCPUGPU> preDrawindices;
-	preDrawindices.resize(kNumMeshData_);
+	std::vector<ConstantBuffers::PerDrawIndicesCPUGPU> perDrawIndices;
 	auto const licence = ModelContext::ModelSlotAllocator::AllocateLicence{};
 	for (size_t i = 0;i < kNumMeshData_;++i)
 	{
@@ -13138,9 +13291,9 @@ std::vector<ConstantBuffers::PerDrawIndicesCPUGPU> ModelContext::ModelDescAssemb
 		//マテリアルIDを割り当てる
 		perDrawIndex.materialID =
 			slotAllocator->AllocateSlot<ModelContext::ModelSlotAllocator::MaterialSlot>(licence);
-		preDrawindices.emplace_back(std::move(perDrawIndex));
+		perDrawIndices.emplace_back(std::move(perDrawIndex));
 	}
-	return preDrawindices;
+	return perDrawIndices;
 }
 std::vector<MaterialGPU> ModelContext::ModelDescAssembler::ConvertMaterialData
 (
@@ -13155,35 +13308,37 @@ std::vector<MaterialGPU> ModelContext::ModelDescAssembler::ConvertMaterialData
 	materialGPUContainer.resize(kNumMeshData_);
 	for (size_t i = 0;i < kNumMeshData_;++i)
 	{
-		//データの手動入力があれば
+		auto& dst = materialGPUContainer[i];
+		//データの手動入力があればそちらが優先
 		if (i < inputMaterials.size())
 		{
-			materialGPUContainer[i].albedoTexture = textureLib->Export(inputMaterials[i].albedoTexture);
-			materialGPUContainer[i].normalTexture = textureLib->Export(inputMaterials[i].normalTexture);
-			materialGPUContainer[i].emissiveTexture = textureLib->Export(inputMaterials[i].emissiveTexture);
-			materialGPUContainer[i].roughness = inputMaterials[i].roughness;
-			materialGPUContainer[i].metallic = inputMaterials[i].metallic;
+			auto const& src = inputMaterials[i];
+			if (src.albedoTexture.size() > 0)	dst.albedoTexture	= textureLib->Export(src.albedoTexture);
+			if (src.normalTexture.size() > 0)	dst.normalTexture	= textureLib->Export(src.normalTexture);
+			if (src.emissiveTexture.size() > 0) dst.emissiveTexture = textureLib->Export(src.emissiveTexture);
+			if (src.roughness != kInvalid)	dst.roughness	= src.roughness;
+			if (src.metallic != kInvalid)	dst.metallic	= src.metallic;
 		}
-		//入力されてないなら、モデル名に紐づけられているデータから入力する
-		else
+		//手動入力で満たされなかった部分を、モデル名に紐づけられているデータから入力する
+		if (i < materialsFromFile_.size())
 		{
-			if (i < materialsFromFile_.size())
-			{
-				materialGPUContainer[i].albedoTexture = textureLib->Export(materialsFromFile_[i].albedoTexture);
-				materialGPUContainer[i].normalTexture = textureLib->Export(materialsFromFile_[i].normalTexture);
-				materialGPUContainer[i].emissiveTexture = textureLib->Export(materialsFromFile_[i].emissiveTexture);
-				materialGPUContainer[i].roughness = materialsFromFile_[i].roughness;
-				materialGPUContainer[i].metallic = materialsFromFile_[i].metallic;
-			}
-			//ファイルからフェッチしたマテリアルデータがないならnoDataを入れておく
-			else
-			{
-				materialGPUContainer[i].albedoTexture = textureLib->Export(kNoDataAlbedoTex);
-				materialGPUContainer[i].normalTexture = textureLib->Export(kNoDataNormalTex);
-				materialGPUContainer[i].emissiveTexture = textureLib->Export(kNoDataEmissiveTex);
-				materialGPUContainer[i].roughness = 0.1f;
-				materialGPUContainer[i].metallic = 1.0f;
-			}
+			auto const& src = materialsFromFile_[i];
+			if (dst.albedoTexture == kInvalid && src.albedoTexture.size() > 0)
+				dst.albedoTexture = textureLib->Export(src.albedoTexture);
+			if (dst.normalTexture == kInvalid && src.normalTexture.size() > 0)
+				dst.normalTexture = textureLib->Export(src.normalTexture);
+			if (dst.emissiveTexture == kInvalid && src.emissiveTexture.size() > 0)	
+				dst.emissiveTexture = textureLib->Export(src.emissiveTexture);
+			if (dst.roughness == kInvalid && src.roughness != kInvalid)
+				dst.roughness	= src.roughness;
+			if (dst.metallic == kInvalid && src.metallic != kInvalid)	
+				dst.metallic	= src.metallic;
+		}
+		//手動入力もなくソースも無ければ、適当な値を入れておく
+		{
+			if (dst.albedoTexture == kInvalid)dst.albedoTexture = textureLib->Export("white4x4_albedo");
+			if (dst.roughness == kInvalid)dst.roughness = 0.25f;
+			if (dst.metallic == kInvalid )dst.metallic = 0.9f;
 		}
 	}
 	return materialGPUContainer;
@@ -18998,5 +19153,5 @@ namespace StringProcessing
 ========================================
 === SUMMARY ===
 ========================================
-Total Files      : 428
-Effective Lines  : 13787
+Total Files      : 432
+Effective Lines  : 13915

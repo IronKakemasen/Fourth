@@ -9,7 +9,11 @@ class RenderContext::StaticRenderGraph
 	class PathBuilder;
 	class RootSigBuilder;
 	class PassSetUpper;
-
+	
+	//Pathのランタイムを制御する
+	class PathOperator;
+	//共通描画コマンドをたたく
+	class CommonCmdExecutor;
 
 public:
 
@@ -27,6 +31,7 @@ public:
 		ShaderContextDiplomat& shaderContextDiplomat_
 	);
 
+	~StaticRenderGraph();
 private:
 
 	void Build
@@ -51,5 +56,9 @@ private:
 	//描画用巨大共通ルートシグネチャ
 	ID3D12RootSignature* graphicsRootSig;
 
+	std::unique_ptr<PathOperator> pathOperator;
+	std::unique_ptr<CommonCmdExecutor> commonCmdExecutor;
+
+	
 };
 

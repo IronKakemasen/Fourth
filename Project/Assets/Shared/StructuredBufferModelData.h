@@ -9,6 +9,8 @@
 
 namespace StructuredBufferModelData
 {
+    static constexpr UINT kInvalid = 0xffffffff;
+
     struct StandardVertexGPU
     {
         Vector4<float> localPos;
@@ -37,22 +39,22 @@ namespace StructuredBufferModelData
 
     struct MaterialCPU
     {
-        std::string albedoTexture = ProjectConfig::Texture::kNoDataAlbedoTex;
-        std::string normalTexture = ProjectConfig::Texture::kNoDataNormalTex;
-        std::string emissiveTexture = ProjectConfig::Texture::kNoDataEmissiveTex;
+        std::string albedoTexture = "";
+        std::string normalTexture = "";
+        std::string emissiveTexture = "";
         Vector4<float> baseColor = {255,255,255,255};
-        float roughness = 0.25f;
-        float metallic = 0.9f;
+        float roughness = float(kInvalid);
+        float metallic = float(kInvalid);
     };
 
     struct MaterialGPU
     {
-        SRVHeapIndex albedoTexture{};
-        SRVHeapIndex normalTexture{};
-        SRVHeapIndex emissiveTexture{};
+        SRVHeapIndex albedoTexture = kInvalid;
+        SRVHeapIndex normalTexture = kInvalid;
+        SRVHeapIndex emissiveTexture = kInvalid;
         Vector4<float> baseColor = { 255,255,255,255 };
-        float roughness = 0.25f;
-        float metallic = 0.9f;
+        float roughness = float(kInvalid);
+        float metallic = float(kInvalid);
     };
 
     struct MeshletCPUGPU

@@ -58,8 +58,7 @@ std::vector<ConstantBuffers::PerDrawIndicesCPUGPU> ModelContext::ModelDescAssemb
 	size_t const kNumMeshData_
 )
 {
-	std::vector<ConstantBuffers::PerDrawIndicesCPUGPU> preDrawindices;
-	preDrawindices.resize(kNumMeshData_);
+	std::vector<ConstantBuffers::PerDrawIndicesCPUGPU> perDrawIndices;
 
 	auto const licence = ModelContext::ModelSlotAllocator::AllocateLicence{};
 
@@ -77,10 +76,10 @@ std::vector<ConstantBuffers::PerDrawIndicesCPUGPU> ModelContext::ModelDescAssemb
 		perDrawIndex.materialID =
 			slotAllocator->AllocateSlot<ModelContext::ModelSlotAllocator::MaterialSlot>(licence);
 
-		preDrawindices.emplace_back(std::move(perDrawIndex));
+		perDrawIndices.emplace_back(std::move(perDrawIndex));
 	}
 
-	return preDrawindices;
+	return perDrawIndices;
 }
 
 
@@ -99,36 +98,48 @@ std::vector<MaterialGPU> ModelContext::ModelDescAssembler::ConvertMaterialData
 
 	for (size_t i = 0;i < kNumMeshData_;++i)
 	{
-		//データの手動入力があれば
+		auto& dst = materialGPUContainer[i];
+
+		//データの手動入力があればそちらが優先
 		if (i < inputMaterials.size())
 		{
-			materialGPUContainer[i].albedoTexture = textureLib->Export(inputMaterials[i].albedoTexture);
-			materialGPUContainer[i].normalTexture = textureLib->Export(inputMaterials[i].normalTexture);
-			materialGPUContainer[i].emissiveTexture = textureLib->Export(inputMaterials[i].emissiveTexture);
-			materialGPUContainer[i].roughness = inputMaterials[i].roughness;
-			materialGPUContainer[i].metallic = inputMaterials[i].metallic;
-		}
-		//入力されてないなら、モデル名に紐づけられているデータから入力する
-		else
-		{
-			if (i < materialsFromFile_.size())
-			{
-				materialGPUContainer[i].albedoTexture = textureLib->Export(materialsFromFile_[i].albedoTexture);
-				materialGPUContainer[i].normalTexture = textureLib->Export(materialsFromFile_[i].normalTexture);
-				materialGPUContainer[i].emissiveTexture = textureLib->Export(materialsFromFile_[i].emissiveTexture);
-				materialGPUContainer[i].roughness = materialsFromFile_[i].roughness;
-				materialGPUContainer[i].metallic = materialsFromFile_[i].metallic;
-			}
-			//ファイルからフェッチしたマテリアルデータがないならnoDataを入れておく
-			else
-			{
-				materialGPUContainer[i].albedoTexture = textureLib->Export(kNoDataAlbedoTex);
-				materialGPUContainer[i].normalTexture = textureLib->Export(kNoDataNormalTex);
-				materialGPUContainer[i].emissiveTexture = textureLib->Export(kNoDataEmissiveTex);
-				materialGPUContainer[i].roughness = 0.1f;
-				materialGPUContainer[i].metallic = 1.0f;
-			}
+			auto const& src = inputMaterials[i];
 
+			if (src.albedoTexture.size() > 0)	dst.albedoTexture	= textureLib->Export(src.albedoTexture);
+			if (src.normalTexture.size() > 0)	dst.normalTexture	= textureLib->Export(src.normalTexture);
+			if (src.emissiveTexture.size() > 0) dst.emissiveTexture = textureLib->Export(src.emissiveTexture);
+
+			if (src.roughness != kInvalid)	dst.roughness	= src.roughness;
+			if (src.metallic != kInvalid)	dst.metallic	= src.metallic;
+
+		}
+
+		//手動入力で満たされなかった部分を、モデル名に紐づけられているデータから入力する
+		if (i < materialsFromFile_.size())
+		{
+			auto const& src = materialsFromFile_[i];
+
+			if (dst.albedoTexture == kInvalid && src.albedoTexture.size() > 0)
+				dst.albedoTexture = textureLib->Export(src.albedoTexture);
+
+			if (dst.normalTexture == kInvalid && src.normalTexture.size() > 0)
+				dst.normalTexture = textureLib->Export(src.normalTexture);
+
+			if (dst.emissiveTexture == kInvalid && src.emissiveTexture.size() > 0)	
+				dst.emissiveTexture = textureLib->Export(src.emissiveTexture);
+
+			if (dst.roughness == kInvalid && src.roughness != kInvalid)
+				dst.roughness	= src.roughness;
+
+			if (dst.metallic == kInvalid && src.metallic != kInvalid)	
+				dst.metallic	= src.metallic;
+		}
+
+		//手動入力もなくソースも無ければ、適当な値を入れておく
+		{
+			if (dst.albedoTexture == kInvalid)dst.albedoTexture = textureLib->Export("white4x4_albedo");
+			if (dst.roughness == kInvalid)dst.roughness = 0.25f;
+			if (dst.metallic == kInvalid )dst.metallic = 0.9f;
 		}
 	}
 
