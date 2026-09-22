@@ -11,7 +11,6 @@ public:
 
 	RuntimeWrapper(ID3D12GraphicsCommandList6* cmdList_);
 
-
 	__forceinline void SetGraphicsRootSignature(ID3D12RootSignature* rootSinganature_)
 	{
 		cmdList->SetGraphicsRootSignature(rootSinganature_);
@@ -104,6 +103,12 @@ public:
 	)
 	{
 		cmdList->SetGraphicsRoot32BitConstant(rootParameterIndex_, srcData_, destOffsetIn32BitValues_);
+	}
+
+
+	void SetGraphicsRootConstantBufferView(UINT const bindSlot_, D3D12_GPU_VIRTUAL_ADDRESS const gpuAddress_)
+	{
+		cmdList->SetGraphicsRootConstantBufferView(bindSlot_, gpuAddress_);
 	}
 
 	__forceinline void IASetPrimitiveTopology(_In_ D3D12_PRIMITIVE_TOPOLOGY primitiveTopology_)

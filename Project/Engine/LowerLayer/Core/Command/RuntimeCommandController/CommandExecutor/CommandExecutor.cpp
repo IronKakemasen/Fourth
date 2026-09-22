@@ -28,6 +28,8 @@ void CommandContext::RuntimeCommandController::CommandExecutor::PrepareForRecord
 
 }
 
+
+
 void CommandContext::RuntimeCommandController::CommandExecutor::Execute()
 {
 	//コマンドリストの内容を確定させる

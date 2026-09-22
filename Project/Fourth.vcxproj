@@ -102,6 +102,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Engine\LowerLayer\Render\RenderContextRuntime\StaticRenderGraph\RenderGraphExecutor\CommonCmdExecutor\CommonCmdExecutor.cpp" />
     <ClCompile Include="Engine\LowerLayer\Core\DescriptorHeap\DescriptorHeapPoolContainer\DescriptorHeapPoolContainer.cpp" />
     <ClCompile Include="Engine\LowerLayer\Debug\Logger\Logger.cpp" />
     <ClCompile Include="Engine\LowerLayer\Render\RenderContextRuntime\StaticRenderGraph\RenderGraphInitialization.cpp" />
@@ -394,6 +395,7 @@
     <ClCompile Include="Engine\LowerLayer\Resource\Texture\TextureContextDiplomat\TextureContextToolLender\TextureContextToolLender.cpp" />
     <ClCompile Include="Engine\LowerLayer\Render\RenderPass\RuntimePassInfo\RuntimePassInfo.cpp" />
     <ClCompile Include="Engine\LowerLayer\Render\RenderContextRuntime\StaticRenderGraph\RenderGraphBuilder\PassSetUpper\PassSetUpper.cpp" />
+    <ClCompile Include="Engine\LowerLayer\Render\RenderContextRuntime\StaticRenderGraph\RenderGraphExecutor\PathOperator\PathOperator.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Assets\BAKA\ConstantBuffers.h" />
@@ -401,6 +403,7 @@
     <ClInclude Include="Assets\Shared\ConstantBuffers.h" />
     <ClInclude Include="Assets\Shared\StaticSampler.h" />
     <ClInclude Include="Assets\Shared\StructuredBufferModelData.h" />
+    <ClInclude Include="Engine\LowerLayer\Render\RenderContextRuntime\StaticRenderGraph\RenderGraphExecutor\CommonCmdExecutor\CommonCmdExecutor.h" />
     <ClInclude Include="Engine\LowerLayer\Core\Command\CommandContextDiplomat\CommandContextToolLender\CmdContextToolLenderLicences.h" />
     <ClInclude Include="Engine\LowerLayer\Core\DescriptorHeap\DescriptorHeapPoolContainer\DescriptorHeapPoolContainer.h" />
     <ClInclude Include="Engine\LowerLayer\Core\Device\Commands\AllDeviceContextCmds.h" />
@@ -658,6 +661,7 @@
     <ClInclude Include="Engine\LowerLayer\Resource\Texture\TextureContextDiplomat\TextureContextToolLender\TextureContextToolLender.h" />
     <ClInclude Include="Engine\LowerLayer\Render\RenderPass\RuntimePassInfo\RuntimePassInfo.h" />
     <ClInclude Include="Engine\LowerLayer\Render\RenderContextRuntime\StaticRenderGraph\RenderGraphBuilder\PassSetUpper\PassSetUpper.h" />
+    <ClInclude Include="Engine\LowerLayer\Render\RenderContextRuntime\StaticRenderGraph\RenderGraphExecutor\PathOperator\PathOperator.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
