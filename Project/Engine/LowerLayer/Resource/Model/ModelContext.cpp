@@ -79,7 +79,7 @@ ModelContext::ModelContext
 		new ModelContextDiplomat
 		(
 			proof_,
-			std::make_unique<ExecutionAgent>(proof_,*this),
+			std::make_unique<ExecutionAgent>(proof_,*this,*modelContainer),
 			std::make_unique<ToolLender>(proof_),
 			std::make_unique<CommandProvider>(proof_, modelContainer.get())
 		)

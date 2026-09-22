@@ -27,7 +27,7 @@ namespace RenderPassTraits
 	//名前から列挙型を特定
 	constexpr RenderPassComponent::Pass PassNameToPassType(std::string const passName_)
 	{
-		RenderPassComponent::Pass pass = RenderPassComponent::Pass::kEnd;
+		RenderPassComponent::Pass pass = RenderPassComponent::Pass::kCount;
 
 		if (passName_ == PassClassTraits<SceneOpaque>::name)
 		{

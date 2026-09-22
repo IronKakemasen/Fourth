@@ -28,8 +28,8 @@ void BufferContext::GlobalConstantBuffers::PackRuntimeContainer(NexusFieldProof 
 		ErrorMessageOutput::Assert::DetectError(!std::ranges::contains(forChecking, key), "定数バッファのスロット設定おかしくね？", fileName);
 		forChecking.emplace_back(key);
 
-		gpuVirtualAddressVector[0].emplace_back(value[0]);
-		gpuVirtualAddressVector[1].emplace_back(value[1]);
+		gpuVirtualAddressVector[0].emplace_back(value.second[0]);
+		gpuVirtualAddressVector[1].emplace_back(value.second[1]);
 	}
 
 	auto const numActualCBuffers = forChecking.size();
@@ -43,13 +43,12 @@ void BufferContext::GlobalConstantBuffers::PackRuntimeContainer(NexusFieldProof 
 	);
 
 	Logger::Log("===== List of cBuffer slots =====",fileName);
-	for (auto [key, value] : bufferNameMap)
+	for (auto [key, value] : gpuVirtualAddressMap)
 	{
-		Logger::Log("Slot[" + std::to_string(key) + "]: " + value);
+		Logger::Log("Slot[" + std::to_string(key) + "]: " + value.first);
 	}
 
 	gpuVirtualAddressMap.clear();
-	bufferNameMap.clear();
 }
 
 
@@ -68,6 +67,5 @@ void BufferContext::GlobalConstantBuffers::Import
 		fileName
 	);
 
-	bufferNameMap[bindSlot_] = bufferName_;
-	gpuVirtualAddressMap[bindSlot_] = doubleVirtualGPUAddress_;
+	gpuVirtualAddressMap[bindSlot_] = std::make_pair(bufferName_, doubleVirtualGPUAddress_);
 }

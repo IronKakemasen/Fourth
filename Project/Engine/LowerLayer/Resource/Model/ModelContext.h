@@ -23,7 +23,6 @@ class ModelContext
 	class ModelDataCache;
 
 
-
 public:
 	//全てのモデルファイルのモデルデータのバッファを生成する。
 	class ModelDataCreator;

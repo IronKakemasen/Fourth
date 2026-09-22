@@ -17,10 +17,7 @@ public:
 	);
 
 	//データの転送は一括で行いたいから、いつでもgpuVirtualAddressを見せれるように
-	const std::vector<D3D12_GPU_VIRTUAL_ADDRESS>& WatchGPUAddressContainer(UINT curFrameIndex_)const
-	{
-		return gpuVirtualAddressVector[curFrameIndex_];
-	}
+	const auto& WatchGPUAddressContainer()const { return gpuVirtualAddressVector; }
 
 	void Import
 	(
@@ -37,9 +34,7 @@ public:
 private:
 
 	//一時保管用
-	std::map<uint8_t, DoubleVirtualGPUAddress> gpuVirtualAddressMap;
-	//デバッグ用
-	std::map<uint8_t, std::string> bufferNameMap;
+	std::map<uint8_t, std::pair<std::string,DoubleVirtualGPUAddress>> gpuVirtualAddressMap;
 
 	//ランタイムで速度を稼ぎたいのでベクター版を用意
 	std::array<std::vector<D3D12_GPU_VIRTUAL_ADDRESS>, (UINT)ProjectConfig::Render::NumBuffer::kDoubleBuffer>

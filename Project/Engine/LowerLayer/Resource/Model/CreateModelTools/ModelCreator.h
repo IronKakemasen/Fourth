@@ -29,6 +29,7 @@ private:
 	UINT numCreate{};
 	//モデルディスク組み立て役
 	std::unique_ptr<ModelContext::ModelDescAssembler> modelDescAssembler;
+	
 	//生成したユニークはこいつが管理する
 	ModelContext::ModelContainer& modelContainer;
 	

@@ -42,8 +42,8 @@ class Nexus
 		kKickCommands,
 		kDeleteIntermediateResources,
 		kSortOutGlobalConstantBuffers,
-		kDeleteModelDataCache					///モデルデータキャッシュの削除は、アプリ層の初期化が終わったあと
-
+		kDeleteModelDataCache,					///モデルデータキャッシュの削除は、アプリ層の初期化が終わったあと
+		kSeparateModelContainer					///同様
 
 		,kEnd
 	}nextInit = InitSequence(0);
