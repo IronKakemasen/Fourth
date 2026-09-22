@@ -282,12 +282,20 @@ void Nexus::Init<Nexus::InitSequence::kSortOutGlobalConstantBuffers>()
 template<>
 void Nexus::Init<Nexus::InitSequence::kDeleteModelDataCache>()
 {
-	//bufferContextの代行者
+	//modelContextの代行者
 	auto* agent = modelContext->diplomat->Access<ModelContext::ExecutionAgent>();
-	//ランタイム用のベクターコンテナに詰め変える(全てのコンスタントバッファの生成が終わった後)
+	//初期化処理に使ったモデルデータのキャッシュを削除
 	agent->DeleteModelDataCache(ModelContext::NexusFieldProof{});
 }
 
+template<>
+void Nexus::Init<Nexus::InitSequence::kSeparateModelContainer>()
+{
+	//modelContextの代行者
+	auto* agent = modelContext->diplomat->Access<ModelContext::ExecutionAgent>();
+	//ランタイム用のベクターコンテナに詰め変える(全てのモデル生成が終わった後)
+	agent->SeparateModelContainer(ModelContext::NexusFieldProof{});
+}
 
 
 
@@ -348,5 +356,8 @@ void Nexus::Init<Nexus::InitSequence::kSortOutGlobalConstantBuffers>();
 
 template
 void Nexus::Init<Nexus::InitSequence::kDeleteModelDataCache>();
+
+template
+void Nexus::Init<Nexus::InitSequence::kSeparateModelContainer>();
 
 

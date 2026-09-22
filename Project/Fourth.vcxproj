@@ -396,6 +396,8 @@
     <ClCompile Include="Engine\LowerLayer\Render\RenderPass\RuntimePassInfo\RuntimePassInfo.cpp" />
     <ClCompile Include="Engine\LowerLayer\Render\RenderContextRuntime\StaticRenderGraph\RenderGraphBuilder\PassSetUpper\PassSetUpper.cpp" />
     <ClCompile Include="Engine\LowerLayer\Render\RenderContextRuntime\StaticRenderGraph\RenderGraphExecutor\PathOperator\PathOperator.cpp" />
+    <ClCompile Include="Engine\LowerLayer\Resource\Model\ModelContainer\RenderStateKey\RenderStateKey.cpp" />
+    <ClCompile Include="Engine\LowerLayer\Resource\Model\ModelContainer\ModelSeparator\ModelSeparator.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Assets\BAKA\ConstantBuffers.h" />
@@ -662,6 +664,8 @@
     <ClInclude Include="Engine\LowerLayer\Render\RenderPass\RuntimePassInfo\RuntimePassInfo.h" />
     <ClInclude Include="Engine\LowerLayer\Render\RenderContextRuntime\StaticRenderGraph\RenderGraphBuilder\PassSetUpper\PassSetUpper.h" />
     <ClInclude Include="Engine\LowerLayer\Render\RenderContextRuntime\StaticRenderGraph\RenderGraphExecutor\PathOperator\PathOperator.h" />
+    <ClInclude Include="Engine\LowerLayer\Resource\Model\ModelContainer\RenderStateKey\RenderStateKey.h" />
+    <ClInclude Include="Engine\LowerLayer\Resource\Model\ModelContainer\ModelSeparator\ModelSeparator.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

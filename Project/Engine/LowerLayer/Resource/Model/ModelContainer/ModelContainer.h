@@ -5,6 +5,10 @@
 
 class ModelContext::ModelContainer
 {
+	//モデルのレンダーステートごとにコンテナに詰めて、PSOの切り替えコストを低減させるため
+	struct RenderStateKey;
+	class ModelSeparator;
+
 public:
 
 	struct Local_AddLicence;
@@ -14,11 +18,19 @@ public:
 
 	void Add(Local_AddLicence addLicence_,std::unique_ptr<Model>&& model_);
 
-	//コンテナの中身を見るためのコマンド
+	//全モデルコンテナの中身を見るためのコマンド
 	ModelContextCmds::WatchModelContainer WatchDataCmd(ProviderKey key_)const;
+
+	//ランタイムでPSO切り替えコストを低減させるために、モデルクラスをおなじrenderStateごとに分別する
+	void SeparateModels(NexusFieldProof proof_, AgentKey key_);
 
 private:
 
+	//モデルがレンダーステートごとに分別されたコンテナ。
+	//第一添え字は、Passで指定
+	std::vector<std::unordered_map<uint32_t, std::vector<Model*>>> separatedContainer;
+
+	//モデルの本体が詰まってる
 	std::vector<std::unique_ptr<Model>> container;
 
 };

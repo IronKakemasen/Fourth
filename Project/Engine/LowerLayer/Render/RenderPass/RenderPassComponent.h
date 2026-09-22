@@ -11,8 +11,7 @@ namespace RenderPassComponent
         kSceneCompositor
 		
 		
-		,kCount,
-        kEnd
+		,kCount
 	};
 
     enum class DepthEnable

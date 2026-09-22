@@ -1,7 +1,7 @@
 #include "PreCompileHeader.h"
 #include "ModelContainer.h"
 #include "../ModelStructure/Model.h"
-
+#include "ModelSeparator/ModelSeparator.h"
 
 namespace
 {
@@ -30,5 +30,13 @@ ModelContextCmds::WatchModelContainer ModelContext::ModelContainer::WatchDataCmd
 	{
 		return &this->container;
 	};
-
 }
+
+void ModelContext::ModelContainer::SeparateModels(NexusFieldProof proof_, AgentKey key_)
+{
+	ModelSeparator modelSeparator(proof_, key_);
+
+	separatedContainer = modelSeparator.SeparateAllModels(&container);
+	Logger::Log("Model Separating comp", fileName);
+}
+
