@@ -104,7 +104,7 @@
   <ItemGroup>
     <ClCompile Include="Engine\LowerLayer\Render\RenderContextRuntime\StaticRenderGraph\RenderGraphExecutor\CommonCmdExecutor\CommonCmdExecutor.cpp" />
     <ClCompile Include="Engine\LowerLayer\Core\DescriptorHeap\DescriptorHeapPoolContainer\DescriptorHeapPoolContainer.cpp" />
-    <ClCompile Include="Engine\LowerLayer\Debug\Logger\Logger.cpp" />
+    <ClCompile Include="Engine\LowerLayer\DebugSystem\Logger\Logger.cpp" />
     <ClCompile Include="Engine\LowerLayer\Render\RenderContextRuntime\StaticRenderGraph\RenderGraphInitialization.cpp" />
     <ClCompile Include="Engine\LowerLayer\Render\RenderPath\AllRenderPath\CreateSceneTexture\CreateSceneTexture.cpp" />
     <ClCompile Include="Engine\LowerLayer\Buffer\BufferContextDiplomat\BufferContextCmdProvider\BufferContextCmdProvider.cpp" />
@@ -167,7 +167,7 @@
     <ClCompile Include="Engine\LowerLayer\Buffer\BufferDefinition\BufferDescriptions\ColorBufferDescription\ColorBufferDescription.cpp" />
     <ClCompile Include="Engine\LowerLayer\Buffer\BufferDefinition\BufferDescriptions\ConstantBufferDescription\ConstantBufferDescription.cpp" />
     <ClCompile Include="Engine\LowerLayer\Core\Device\Commands\CreateResource\CommandCreateResource.cpp" />
-    <ClCompile Include="Engine\LowerLayer\Debug\RuntimeDebugger\DebugSystems\DebugLayer\DebugLayer.cpp" />
+    <ClCompile Include="Engine\LowerLayer\DebugSystem\RuntimeDebugger\DebugSystems\DebugLayer\DebugLayer.cpp" />
     <ClCompile Include="Engine\LowerLayer\Buffer\BufferDefinition\GPUBuffer\ConstantBuffer\ConstantBuffer.cpp" />
     <ClCompile Include="Engine\LowerLayer\Core\Device\DeviceContext.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Use</PrecompiledHeader>
@@ -178,7 +178,7 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
     </ClCompile>
-    <ClCompile Include="Engine\LowerLayer\Debug\ErrorMessageOutput\ErrorMessageOutput.cpp" />
+    <ClCompile Include="Engine\LowerLayer\DebugSystem\ErrorMessageOutput\ErrorMessageOutput.cpp" />
     <ClCompile Include="External\Audio\xaudio_player_mf.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
@@ -277,7 +277,7 @@
     </ClCompile>
     <ClCompile Include="Engine\LowerLayer\Buffer\BufferCreateTools\ResourceCreator\ResourceCreator.cpp" />
     <ClCompile Include="Engine\LowerLayer\Buffer\BufferDefinition\GPUBuffer\GPUBufferBehavior.cpp" />
-    <ClCompile Include="Engine\LowerLayer\Debug\RuntimeDebugger\DebugSystems\LeakChecker\LeakChecker.cpp" />
+    <ClCompile Include="Engine\LowerLayer\DebugSystem\RuntimeDebugger\DebugSystems\LeakChecker\LeakChecker.cpp" />
     <ClCompile Include="Engine\main.cpp" />
     <ClCompile Include="Engine\LowerLayer\Core\Window\WindowContext.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Use</PrecompiledHeader>
@@ -287,9 +287,9 @@
     <ClCompile Include="Engine\Nexus\Nexus.cpp" />
     <ClCompile Include="Engine\MiddleLayer\Math\Vector\Vector2.cpp" />
     <ClCompile Include="Engine\LowerLayer\Core\SwapChain\SwapChainContext.cpp" />
-    <ClCompile Include="Engine\LowerLayer\Debug\RuntimeDebugger\DebugSystems\PointerValidator\PointerValidator.cpp" />
-    <ClCompile Include="Engine\LowerLayer\Debug\RuntimeDebugger\DebugSystems\RuntimeDebuggerBehavior.cpp" />
-    <ClCompile Include="Engine\LowerLayer\Debug\RuntimeDebugger\RuntimeDebugger.cpp" />
+    <ClCompile Include="Engine\LowerLayer\DebugSystem\RuntimeDebugger\DebugSystems\PointerValidator\PointerValidator.cpp" />
+    <ClCompile Include="Engine\LowerLayer\DebugSystem\RuntimeDebugger\DebugSystems\RuntimeDebuggerBehavior.cpp" />
+    <ClCompile Include="Engine\LowerLayer\DebugSystem\RuntimeDebugger\RuntimeDebugger.cpp" />
     <ClCompile Include="Engine\LowerLayer\Core\DescriptorHeap\ViewCreator\ViewCreator.cpp" />
     <ClCompile Include="Engine\LowerLayer\Buffer\BufferDefinition\GPUBuffer\ComputeBuffer\ComputeBuffer.cpp" />
     <ClCompile Include="Engine\LowerLayer\Buffer\BufferDefinition\BufferDescriptions\ComputeBufferDescription\ComputeBufferDescription.cpp" />
@@ -412,7 +412,7 @@
     <ClInclude Include="Engine\LowerLayer\Core\Device\DeviceContextCmds.h" />
     <ClInclude Include="Engine\LowerLayer\Core\Device\DeviceContextDiplomat\DeviceContextCommandProvider\DeviceContextCmdLicences.h" />
     <ClInclude Include="Engine\LowerLayer\Core\Window\WindowContextDiplomat\WindowContextToolLender\WindowContextToolLenderLicences.h" />
-    <ClInclude Include="Engine\LowerLayer\Debug\Logger\Logger.h" />
+    <ClInclude Include="Engine\LowerLayer\DebugSystem\Logger\Logger.h" />
     <ClInclude Include="Engine\LowerLayer\Render\RenderPass\AllRenderPass\RenderPassTraits.h" />
     <ClInclude Include="Engine\LowerLayer\Render\RenderPass\RenderPassState.h" />
     <ClInclude Include="Engine\LowerLayer\Render\RenderPath\AllRenderPath\AllPathFwd.h" />
@@ -510,13 +510,13 @@
     <ClInclude Include="Engine\LowerLayer\Buffer\BufferDefinition\BufferDescriptions\ConstantBufferDescription\ConstantBufferDescription.h" />
     <ClInclude Include="Engine\LowerLayer\Buffer\BufferDefinition\BufferDescriptions\BufferDescriptionBehavior.h" />
     <ClInclude Include="Engine\LowerLayer\Core\Window\WindowContextBuilder\DumpExporter.h" />
-    <ClInclude Include="Engine\LowerLayer\Debug\RuntimeDebugger\DebugSystems\DebugLayer\DebugLayer.h" />
+    <ClInclude Include="Engine\LowerLayer\DebugSystem\RuntimeDebugger\DebugSystems\DebugLayer\DebugLayer.h" />
     <ClInclude Include="Engine\LowerLayer\Buffer\BufferDefinition\GPUBuffer\ConstantBuffer\ConstantBuffer.h" />
     <ClInclude Include="Engine\LowerLayer\Core\Device\DeviceContext.h" />
     <ClInclude Include="Engine\LowerLayer\Core\Window\WindowContext.h" />
     <ClInclude Include="Engine\MiddleLayer\Math\Matrix\Matrix4x4.h" />
     <ClInclude Include="Engine\LowerLayer\Resource\PSO\PSO_Creator\PipelineStateDesc.h" />
-    <ClInclude Include="Engine\LowerLayer\Debug\ErrorMessageOutput\ErrorMessageOutput.h" />
+    <ClInclude Include="Engine\LowerLayer\DebugSystem\ErrorMessageOutput\ErrorMessageOutput.h" />
     <ClInclude Include="Engine\LowerLayer\Buffer\BufferDefinition\ResourceBarrier.h" />
     <ClInclude Include="Engine\LowerLayer\Render\RenderStateComponent.h" />
     <ClInclude Include="Engine\LowerLayer\Resource\Shader\ShaderPathComponent\ShaderPathComponent.h" />
@@ -552,10 +552,10 @@
     <ClInclude Include="Engine\LowerLayer\Core\SwapChain\SwapChainContext.h" />
     <ClInclude Include="Engine\LowerLayer\Buffer\BufferCreateTools\ResourceCreator\ResourceCreator.h" />
     <ClInclude Include="Engine\LowerLayer\Buffer\BufferDefinition\GPUBuffer\GPUBufferBehavior.h" />
-    <ClInclude Include="Engine\LowerLayer\Debug\RuntimeDebugger\DebugSystems\LeakChecker\LeakChecker.h" />
-    <ClInclude Include="Engine\LowerLayer\Debug\RuntimeDebugger\DebugSystems\PointerValidator\PointerValidator.h" />
-    <ClInclude Include="Engine\LowerLayer\Debug\RuntimeDebugger\DebugSystems\RuntimeDebuggerBehavior.h" />
-    <ClInclude Include="Engine\LowerLayer\Debug\RuntimeDebugger\RuntimeDebugger.h" />
+    <ClInclude Include="Engine\LowerLayer\DebugSystem\RuntimeDebugger\DebugSystems\LeakChecker\LeakChecker.h" />
+    <ClInclude Include="Engine\LowerLayer\DebugSystem\RuntimeDebugger\DebugSystems\PointerValidator\PointerValidator.h" />
+    <ClInclude Include="Engine\LowerLayer\DebugSystem\RuntimeDebugger\DebugSystems\RuntimeDebuggerBehavior.h" />
+    <ClInclude Include="Engine\LowerLayer\DebugSystem\RuntimeDebugger\RuntimeDebugger.h" />
     <ClInclude Include="Engine\LowerLayer\Core\DescriptorHeap\ViewCreator\ViewCreator.h" />
     <ClInclude Include="Engine\LowerLayer\Buffer\BufferDefinition\GPUBuffer\ComputeBuffer\ComputeBuffer.h" />
     <ClInclude Include="Engine\LowerLayer\Buffer\BufferDefinition\BufferDescriptions\ComputeBufferDescription\ComputeBufferDescription.h" />
