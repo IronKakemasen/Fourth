@@ -13707,11 +13707,7 @@ class ModelContext::ModelContainer
 	struct RenderStateKey;
 	class ModelSeparator;
 public:
-	struct SepartatedContainer
-	{
-		std::unordered_map<uint32_t, std::vector<Model*>> modelPtrMap;
-		RenderState renderState;
-	};
+	using SepartatedContainer = std::unordered_map<uint32_t, std::pair<RenderState , std::vector<Model*>>>;
 	struct Local_AddLicence;
 	ModelContainer(NexusFieldProof proof_);
 	~ModelContainer();
@@ -13774,8 +13770,8 @@ ModelContext::ModelContainer::ModelSeparator::SeparateAllModels(std::vector<std:
 		auto packedKeys = PackToKey(*(*itr));
 		for (auto const& key : packedKeys)
 		{
-			dstSeparateContainer[(UINT)key.first.pass].renderState = key.first;
-			dstSeparateContainer[(UINT)key.first.pass].modelPtrMap[key.second].emplace_back((*itr).get());
+			dstSeparateContainer[(UINT)key.first.pass][key.second].first = key.first;
+			dstSeparateContainer[(UINT)key.first.pass][key.second].second.emplace_back((*itr).get());
 		}
 	}
 	return dstSeparateContainer;
@@ -19357,4 +19353,4 @@ namespace StringProcessing
 === SUMMARY ===
 ========================================
 Total Files      : 437
-Effective Lines  : 14066
+Effective Lines  : 14062

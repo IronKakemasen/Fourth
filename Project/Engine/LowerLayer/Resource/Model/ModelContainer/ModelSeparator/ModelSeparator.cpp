@@ -45,8 +45,8 @@ ModelContext::ModelContainer::ModelSeparator::SeparateAllModels(std::vector<std:
 
 		for (auto const& key : packedKeys)
 		{
-			dstSeparateContainer[(UINT)key.first.pass].renderState = key.first;
-			dstSeparateContainer[(UINT)key.first.pass].modelPtrMap[key.second].emplace_back((*itr).get());
+			dstSeparateContainer[(UINT)key.first.pass][key.second].first = key.first;
+			dstSeparateContainer[(UINT)key.first.pass][key.second].second.emplace_back((*itr).get());
 		}
 	}
 
@@ -61,16 +61,19 @@ std::vector<std::pair<RenderState, uint32_t>> ModelContext::ModelContainer::Mode
 	{
 		for (auto const& blendMode : renderState.blendModes)
 		{
-			uint32_t packedKey = keyPackager->Pack
-			(
-				renderState.pass,
-				blendMode,
-				renderState.cullMode,
-				renderState.meshType,
-				renderState.materialType
-			);
+			for (auto const& materialType : renderState.materialTypes)
+			{
+				uint32_t packedKey = keyPackager->Pack
+				(
+					renderState.pass,
+					blendMode,
+					renderState.cullMode,
+					renderState.meshType,
+					materialType
+				);
 
-			keys.emplace_back(std::make_pair(renderState, packedKey));
+				keys.emplace_back(std::make_pair(renderState, packedKey));
+			}
 		}
 	}
 
