@@ -1,9 +1,9 @@
 #pragma once
 #include "../../StaticRenderGraph.h"
-#include "../../../../../Resource/Model/ModelStructure/ModelDescription/ModelDescription.h"
 #include "../../../../../Resource/PSO/PSO_Creator/PipelineStateDesc.h"
 
 struct GraphicsPSO_Key;
+struct RenderState;
 
 class RenderContext::StaticRenderGraph::PSO_Builder
 {
@@ -50,7 +50,7 @@ private:
 
 
 	//全モデルデータを受け取ってそのモデルデータのRenderStateのベクタを取り出す
-	static std::vector<ModelDescription::RenderState> CollectAllRenderStates(ModelContextDiplomat& modelContextDiplomat_);
+	static std::vector<RenderState> CollectAllRenderStates(ModelContextDiplomat& modelContextDiplomat_);
 
 	//モデルクラスの情報が必要か否か関係なく埋めれる情報を埋める
 	static PsoDesc_Key InputCommonInfo
@@ -69,7 +69,7 @@ private:
 		PsoDesc_Key& psoCommonDesc_,
 		PassDesc const& passDesc_,
 		RenderPassComponent::Pass const renderPass_,
-		std::vector<ModelDescription::RenderState> const& allRenderStates_,
+		std::vector<RenderState> const& allRenderStates_,
 		std::vector<PsoDesc_Key>& allPsoDesc_
 	);
 

@@ -1451,6 +1451,9 @@
     <ClInclude Include="Engine\LowerLayer\Resource\Model\ModelContainer\ModelSeparator\ModelSeparator.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
+    <ClInclude Include="Engine\LowerLayer\Resource\Model\ModelStructure\RenderState.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

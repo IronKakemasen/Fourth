@@ -31,27 +31,31 @@ ModelContext::ModelContainer::ModelSeparator::~ModelSeparator()
 
 }
 
-[[nodiscard]] std::vector<std::unordered_map<uint32_t, std::vector<Model*>>>
+[[nodiscard]] std::vector<ModelContext::ModelContainer::SepartatedContainer>
 ModelContext::ModelContainer::ModelSeparator::SeparateAllModels(std::vector<std::unique_ptr<Model>>* modelContainer_)
 {
-	std::vector<std::unordered_map<uint32_t, std::vector<Model*>>> data;
-	data.resize(UINT(RenderPassComponent::Pass::kCount));
+	std::vector<SepartatedContainer> dstSeparateContainer;
+
+	dstSeparateContainer.resize((UINT)Pass::kCount);
 
 	for (auto itr = modelContainer_->begin();itr != modelContainer_->end();++itr)
 	{
+		//renderStateとそのパックされたキーがセット
 		auto packedKeys = PackToKey(*(*itr));
+
 		for (auto const& key : packedKeys)
 		{
-			data[(UINT)key.first][key.second].emplace_back((*itr).get());
+			dstSeparateContainer[(UINT)key.first.pass].renderState = key.first;
+			dstSeparateContainer[(UINT)key.first.pass].modelPtrMap[key.second].emplace_back((*itr).get());
 		}
 	}
 
-	return data;
+	return dstSeparateContainer;
 }
 
-std::vector<std::pair<RenderPassComponent::Pass, uint32_t>> ModelContext::ModelContainer::ModelSeparator::PackToKey(Model const& model_)
+std::vector<std::pair<RenderState, uint32_t>> ModelContext::ModelContainer::ModelSeparator::PackToKey(Model const& model_)
 {
-	std::vector<std::pair<RenderPassComponent::Pass, uint32_t>> keys;
+	std::vector<std::pair<RenderState, uint32_t>> keys;
 
 	for (auto const& renderState : model_.WatchRenderStates())
 	{
@@ -66,7 +70,7 @@ std::vector<std::pair<RenderPassComponent::Pass, uint32_t>> ModelContext::ModelC
 				renderState.materialType
 			);
 
-			keys.emplace_back(std::make_pair(renderState.pass , packedKey));
+			keys.emplace_back(std::make_pair(renderState, packedKey));
 		}
 	}
 

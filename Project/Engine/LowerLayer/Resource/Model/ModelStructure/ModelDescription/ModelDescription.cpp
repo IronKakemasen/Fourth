@@ -10,7 +10,7 @@ ModelDescription::ModelDescription
 (
 	std::string modelName_,
 	std::vector<ConstantBuffers::PerDrawIndicesCPUGPU> const& perDrawIndices_,
-	std::vector<ModelDescription::RenderState> const& renderStates_,
+	std::vector<RenderState> const& renderStates_,
 	std::vector<StructuredBufferModelData::MaterialGPU> materials_
 ) :perDrawIndices(perDrawIndices_), renderStates(renderStates_), materials(materials_)
 {

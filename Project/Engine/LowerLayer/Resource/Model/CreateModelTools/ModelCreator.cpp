@@ -3,7 +3,7 @@
 #include "../ModelStructure/Model.h"
 #include "ModelDescAssembler/ModelDescAssembler.h"
 #include "../ModelContainer/ModelContainer.h"
-
+#include "../ModelStructure/ModelDescription/ModelDescription.h"
 
 
 namespace
@@ -27,7 +27,7 @@ ModelContext::ModelCreator::ModelCreator
 Model* ModelContext::ModelCreator::Create
 (
 	std::string const modelFileName_,
-	std::vector<ModelDescription::RenderState> const& modelRenderStates_,
+	std::vector<RenderState> const& modelRenderStates_,
 	std::vector<MaterialCPU> const& materials_,
 	std::string const modelName_
 )

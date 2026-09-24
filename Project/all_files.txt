@@ -4659,8 +4659,8 @@ void BufferContext::GlobalConstantBuffers::PackRuntimeContainer(NexusFieldProof 
 		//念のため重複チェック
 		ErrorMessageOutput::Assert::DetectError(!std::ranges::contains(forChecking, key), "定数バッファのスロット設定おかしくね？", fileName);
 		forChecking.emplace_back(key);
-		gpuVirtualAddressVector[0].emplace_back(value[0]);
-		gpuVirtualAddressVector[1].emplace_back(value[1]);
+		gpuVirtualAddressVector[0].emplace_back(value.second[0]);
+		gpuVirtualAddressVector[1].emplace_back(value.second[1]);
 	}
 	auto const numActualCBuffers = forChecking.size();
 	auto const numRequiredCBuffers = (size_t)ConstantBuffers::RootConstantsBindSlots::kCount;
@@ -4671,12 +4671,11 @@ void BufferContext::GlobalConstantBuffers::PackRuntimeContainer(NexusFieldProof 
 		fileName
 	);
 	Logger::Log("===== List of cBuffer slots =====",fileName);
-	for (auto [key, value] : bufferNameMap)
+	for (auto [key, value] : gpuVirtualAddressMap)
 	{
-		Logger::Log("Slot[" + std::to_string(key) + "]: " + value);
+		Logger::Log("Slot[" + std::to_string(key) + "]: " + value.first);
 	}
 	gpuVirtualAddressMap.clear();
-	bufferNameMap.clear();
 }
 void BufferContext::GlobalConstantBuffers::Import
 (
@@ -4692,8 +4691,7 @@ void BufferContext::GlobalConstantBuffers::Import
 		"この定数バッファのスロットは使われているよ",
 		fileName
 	);
-	bufferNameMap[bindSlot_] = bufferName_;
-	gpuVirtualAddressMap[bindSlot_] = doubleVirtualGPUAddress_;
+	gpuVirtualAddressMap[bindSlot_] = std::make_pair(bufferName_, doubleVirtualGPUAddress_);
 }
 
 ========================================
@@ -4712,10 +4710,7 @@ public:
 		NexusFieldProof proof_
 	);
 	//データの転送は一括で行いたいから、いつでもgpuVirtualAddressを見せれるように
-	const std::vector<D3D12_GPU_VIRTUAL_ADDRESS>& WatchGPUAddressContainer(UINT curFrameIndex_)const
-	{
-		return gpuVirtualAddressVector[curFrameIndex_];
-	}
+	const auto& WatchGPUAddressContainer()const { return gpuVirtualAddressVector; }
 	void Import
 	(
 		Local_ImportLicence licence_,
@@ -4727,9 +4722,7 @@ public:
 	void PackRuntimeContainer(NexusFieldProof proof_, AgentKey agentKey_);
 private:
 	//一時保管用
-	std::map<uint8_t, DoubleVirtualGPUAddress> gpuVirtualAddressMap;
-	//デバッグ用
-	std::map<uint8_t, std::string> bufferNameMap;
+	std::map<uint8_t, std::pair<std::string,DoubleVirtualGPUAddress>> gpuVirtualAddressMap;
 	//ランタイムで速度を稼ぎたいのでベクター版を用意
 	std::array<std::vector<D3D12_GPU_VIRTUAL_ADDRESS>, (UINT)ProjectConfig::Render::NumBuffer::kDoubleBuffer>
 		gpuVirtualAddressVector;
@@ -9586,6 +9579,7 @@ private:
 #include "../../../../RenderPass/RenderPassContainer/RenderPassContainer.h"
 #include "../../../../RenderPass/AllRenderPass/AllPassInclude.h"
 #include "../../../../RenderPass/PassDesc/PassDesc.h"
+#include "../../../../../Resource/Model/ModelStructure/ModelDescription/ModelDescription.h"
 #include "../../../../../Resource/Model/ModelContextDiplomatIncludes.h"
 #include "../../../../../Resource/Model/ModelStructure/Model.h"
 #include "../../../../../Resource/PSO/PSO_ContextDiplomat/PSO_ContextDiplomat.h"
@@ -9679,7 +9673,7 @@ std::vector<RenderContext::StaticRenderGraph::PSO_Builder::PsoDesc_Key> RenderCo
 {
 	using namespace RenderPassComponent;
 	//全てのモデルのRenderStatesを集計
-	std::vector<ModelDescription::RenderState> allModelRenderStates = CollectAllRenderStates(modelContextDiplomat_);
+	std::vector<RenderState> allModelRenderStates = CollectAllRenderStates(modelContextDiplomat_);
 	//全てのPassが入ってるコンテナを参照
 	auto const& allPassPtrMap = passContainer_.AccessAllPassPtrMap(proof_);
 	///これら二つのデータの塊からPSOを生成していく
@@ -9793,7 +9787,7 @@ void RenderContext::StaticRenderGraph::PSO_Builder::InputDependingModelsInfo
 	PsoDesc_Key& psoCommonDesc_,
 	PassDesc const& passDesc_,
 	RenderPassComponent::Pass const renderPass_,
-	std::vector<ModelDescription::RenderState> const& allRenderStates_,
+	std::vector<RenderState> const& allRenderStates_,
 	std::vector<PsoDesc_Key>& allPsoDesc_
 ) 
 {
@@ -9924,7 +9918,7 @@ void RenderContext::StaticRenderGraph::PSO_Builder::InputPassOnlyInfo
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-std::vector<ModelDescription::RenderState> RenderContext::StaticRenderGraph::PSO_Builder::CollectAllRenderStates
+std::vector<RenderState> RenderContext::StaticRenderGraph::PSO_Builder::CollectAllRenderStates
 (
 	ModelContextDiplomat& modelContextDiplomat_
 )
@@ -9937,7 +9931,7 @@ std::vector<ModelDescription::RenderState> RenderContext::StaticRenderGraph::PSO
 	//全てのモデルクラスのコンテナ
 	const std::vector<std::unique_ptr<Model>>* modelDataContainer = watchModelContainer();
 	//全てのモデルクラスのRenderStates
-	std::vector<ModelDescription::RenderState> allModelRenderStates;
+	std::vector<RenderState> allModelRenderStates;
 	//モデルクラスを全走査し、全ModelDescriptionをかき集める
 	for (auto itr = modelDataContainer->begin();itr != modelDataContainer->end();++itr)
 	{
@@ -9955,9 +9949,9 @@ std::vector<ModelDescription::RenderState> RenderContext::StaticRenderGraph::PSO
 ========================================
 #pragma once
 #include "../../StaticRenderGraph.h"
-#include "../../../../../Resource/Model/ModelStructure/ModelDescription/ModelDescription.h"
 #include "../../../../../Resource/PSO/PSO_Creator/PipelineStateDesc.h"
 struct GraphicsPSO_Key;
+struct RenderState;
 class RenderContext::StaticRenderGraph::PSO_Builder
 {
 	friend class StaticRenderGraph;
@@ -9994,7 +9988,7 @@ private:
 	//	Logger::Entry("PSO creation start");
 	//Logger::Entry("PSO creation end");
 	//全モデルデータを受け取ってそのモデルデータのRenderStateのベクタを取り出す
-	static std::vector<ModelDescription::RenderState> CollectAllRenderStates(ModelContextDiplomat& modelContextDiplomat_);
+	static std::vector<RenderState> CollectAllRenderStates(ModelContextDiplomat& modelContextDiplomat_);
 	//モデルクラスの情報が必要か否か関係なく埋めれる情報を埋める
 	static PsoDesc_Key InputCommonInfo
 	(
@@ -10011,7 +10005,7 @@ private:
 		PsoDesc_Key& psoCommonDesc_,
 		PassDesc const& passDesc_,
 		RenderPassComponent::Pass const renderPass_,
-		std::vector<ModelDescription::RenderState> const& allRenderStates_,
+		std::vector<RenderState> const& allRenderStates_,
 		std::vector<PsoDesc_Key>& allPsoDesc_
 	);
 	//上と同じ要領
@@ -10467,8 +10461,7 @@ namespace RenderPassComponent
 	{
 		kSceneOpaque,
         kSceneCompositor
-		,kCount,
-        kEnd
+		,kCount
 	};
     enum class DepthEnable
     {
@@ -10624,7 +10617,7 @@ namespace RenderPassTraits
 	//名前から列挙型を特定
 	constexpr RenderPassComponent::Pass PassNameToPassType(std::string const passName_)
 	{
-		RenderPassComponent::Pass pass = RenderPassComponent::Pass::kEnd;
+		RenderPassComponent::Pass pass = RenderPassComponent::Pass::kCount;
 		if (passName_ == PassClassTraits<SceneOpaque>::name)
 		{
 			pass = PassClassTraits<SceneOpaque>::passEnum;
@@ -11785,7 +11778,7 @@ ModelContext::ModelContext
 		new ModelContextDiplomat
 		(
 			proof_,
-			std::make_unique<ExecutionAgent>(proof_,*this),
+			std::make_unique<ExecutionAgent>(proof_,*this,*modelContainer),
 			std::make_unique<ToolLender>(proof_),
 			std::make_unique<CommandProvider>(proof_, modelContainer.get())
 		)
@@ -11919,7 +11912,7 @@ using namespace StructuredBufferModelData;
 TestModelOKIBA::TestModelOKIBA(ModelContext::ModelCreator* modelCreator_)
 {
 	Logger::Log("TESTOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOO");
-	ModelDescription::RenderState cP;
+	RenderState cP;
 	cP.blendModes.emplace_back(BlendMode::kOpaque);
 	cP.blendModes.emplace_back(BlendMode::kAlphaBlend);
 	cP.blendModes.emplace_back(BlendMode::kAdditive);
@@ -11927,17 +11920,17 @@ TestModelOKIBA::TestModelOKIBA(ModelContext::ModelCreator* modelCreator_)
 	cP.cullMode = CullMode::kBack;
 	cP.meshType = MeshType::kStatic;
 	cP.materialType = MaterialType::kStandard;
-	std::vector<ModelDescription::RenderState> playerC;
+	std::vector<RenderState> playerC;
 	playerC.emplace_back(std::move(cP));
 	std::vector<MaterialCPU> materials;
 	player = modelCreator_->Create("PlayerObj", playerC, materials,"Player");
-	ModelDescription::RenderState cC;
+	RenderState cC;
 	cC.blendModes.emplace_back(BlendMode::kOpaque);
 	cC.pass = RenderPassComponent::Pass::kSceneOpaque;
 	cC.cullMode = CullMode::kBack;
 	cC.meshType = MeshType::kStatic;
 	cC.materialType = MaterialType::kStandard;
-	std::vector<ModelDescription::RenderState> cubeC;
+	std::vector<RenderState> cubeC;
 	cubeC.emplace_back(std::move(cC));
 	cube = modelCreator_->Create("CubeGltf", cubeC, materials,"Cube");
 }
@@ -11963,6 +11956,7 @@ struct TestModelOKIBA
 #include "../ModelStructure/Model.h"
 #include "ModelDescAssembler/ModelDescAssembler.h"
 #include "../ModelContainer/ModelContainer.h"
+#include "../ModelStructure/ModelDescription/ModelDescription.h"
 namespace
 {
 	auto const fileName = "ModelCreator.cpp";
@@ -11979,7 +11973,7 @@ ModelContext::ModelCreator::ModelCreator
 Model* ModelContext::ModelCreator::Create
 (
 	std::string const modelFileName_,
-	std::vector<ModelDescription::RenderState> const& modelRenderStates_,
+	std::vector<RenderState> const& modelRenderStates_,
 	std::vector<MaterialCPU> const& materials_,
 	std::string const modelName_
 )
@@ -12009,6 +12003,7 @@ Model* ModelContext::ModelCreator::Create
 #include "../ModelContext.h"
 #include "../ModelStructure/ModelDescription/ModelDescription.h"
 class Model;
+struct RenderState;
 class ModelContext::ModelCreator
 {
 public:
@@ -12021,7 +12016,7 @@ public:
 	Model* Create
 	(
 		std::string const modelFileName_,
-		std::vector<ModelDescription::RenderState> const& modelRenderStates_,
+		std::vector<RenderState> const& modelRenderStates_,
 		std::vector<StructuredBufferModelData::MaterialCPU> const& materials_,
 		std::string const modelName_ = "nameLess"
 	);
@@ -13668,6 +13663,7 @@ private:
 #include "PreCompileHeader.h"
 #include "ModelContainer.h"
 #include "../ModelStructure/Model.h"
+#include "ModelSeparator/ModelSeparator.h"
 namespace
 {
 	auto const fileName = "ModelContainer.cpp";
@@ -13690,6 +13686,12 @@ ModelContextCmds::WatchModelContainer ModelContext::ModelContainer::WatchDataCmd
 		return &this->container;
 	};
 }
+void ModelContext::ModelContainer::SeparateModels(NexusFieldProof proof_, AgentKey key_)
+{
+	ModelSeparator modelSeparator(proof_, key_);
+	separatedContainer = std::move(modelSeparator.SeparateAllModels(&container));
+	Logger::Log("Model Separating comp", fileName);
+}
 
 ========================================
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Model\ModelContainer\ModelContainer.h ===
@@ -13697,16 +13699,32 @@ ModelContextCmds::WatchModelContainer ModelContext::ModelContainer::WatchDataCmd
 #pragma once
 #include "../ModelContext.h"
 #include "../ModelContextCmds.h"
+#include "../ModelStructure/RenderState.h"
+struct RenderState;
 class ModelContext::ModelContainer
 {
+	//モデルのレンダーステートごとにコンテナに詰めて、PSOの切り替えコストを低減させるため
+	struct RenderStateKey;
+	class ModelSeparator;
 public:
+	struct SepartatedContainer
+	{
+		std::unordered_map<uint32_t, std::vector<Model*>> modelPtrMap;
+		RenderState renderState;
+	};
 	struct Local_AddLicence;
 	ModelContainer(NexusFieldProof proof_);
 	~ModelContainer();
 	void Add(Local_AddLicence addLicence_,std::unique_ptr<Model>&& model_);
-	//コンテナの中身を見るためのコマンド
+	//全モデルコンテナの中身を見るためのコマンド
 	ModelContextCmds::WatchModelContainer WatchDataCmd(ProviderKey key_)const;
+	//ランタイムでPSO切り替えコストを低減させるために、モデルクラスをおなじrenderStateごとに分別する
+	void SeparateModels(NexusFieldProof proof_, AgentKey key_);
 private:
+	//モデルがレンダーステートごとに分別されたコンテナ。
+	//第一添え字は、Passで指定
+	std::vector<SepartatedContainer> separatedContainer;
+	//モデルの本体が詰まってる
 	std::vector<std::unique_ptr<Model>> container;
 };
 struct ModelContext::ModelContainer::Local_AddLicence
@@ -13714,6 +13732,164 @@ struct ModelContext::ModelContainer::Local_AddLicence
 private:
 	friend class ModelContext::ModelCreator;
 	explicit Local_AddLicence() = default;
+};
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Model\ModelContainer\ModelSeparator\ModelSeparator.cpp ===
+========================================
+#include "PreCompileHeader.h"
+#include "ModelSeparator.h"
+#include "../RenderStateKey/RenderStateKey.h"
+#include "../../ModelStructure/Model.h"
+//外部
+#include "KeyPackager/KeyPackager.h"
+using namespace RenderPassComponent;
+using namespace RenderStateComponent;
+using namespace ShaderPathComponent;
+ModelContext::ModelContainer::ModelSeparator::ModelSeparator(NexusFieldProof proof_, AgentKey key_)
+{
+	keyPackager.reset
+	(
+		new KeyPackager
+		(
+			RenderStateKey::Count<RenderStateKey::Sequence::kPass>(),
+			RenderStateKey::Count<RenderStateKey::Sequence::kBlendMode>(),
+			RenderStateKey::Count<RenderStateKey::Sequence::kCullMode>(),
+			RenderStateKey::Count<RenderStateKey::Sequence::kMeshType>(),
+			RenderStateKey::Count<RenderStateKey::Sequence::kMaterialType>()
+		)
+	);
+}
+ModelContext::ModelContainer::ModelSeparator::~ModelSeparator()
+{
+}
+[[nodiscard]] std::vector<ModelContext::ModelContainer::SepartatedContainer>
+ModelContext::ModelContainer::ModelSeparator::SeparateAllModels(std::vector<std::unique_ptr<Model>>* modelContainer_)
+{
+	std::vector<SepartatedContainer> dstSeparateContainer;
+	dstSeparateContainer.resize((UINT)Pass::kCount);
+	for (auto itr = modelContainer_->begin();itr != modelContainer_->end();++itr)
+	{
+		//renderStateとそのパックされたキーがセット
+		auto packedKeys = PackToKey(*(*itr));
+		for (auto const& key : packedKeys)
+		{
+			dstSeparateContainer[(UINT)key.first.pass].renderState = key.first;
+			dstSeparateContainer[(UINT)key.first.pass].modelPtrMap[key.second].emplace_back((*itr).get());
+		}
+	}
+	return dstSeparateContainer;
+}
+std::vector<std::pair<RenderState, uint32_t>> ModelContext::ModelContainer::ModelSeparator::PackToKey(Model const& model_)
+{
+	std::vector<std::pair<RenderState, uint32_t>> keys;
+	for (auto const& renderState : model_.WatchRenderStates())
+	{
+		for (auto const& blendMode : renderState.blendModes)
+		{
+			uint32_t packedKey = keyPackager->Pack
+			(
+				renderState.pass,
+				blendMode,
+				renderState.cullMode,
+				renderState.meshType,
+				renderState.materialType
+			);
+			keys.emplace_back(std::make_pair(renderState, packedKey));
+		}
+	}
+	return keys;
+}
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Model\ModelContainer\ModelSeparator\ModelSeparator.h ===
+========================================
+#pragma once
+#include "../ModelContainer.h"
+#include "../../ModelStructure/RenderState.h"
+class KeyPackager;
+class ModelContext::ModelContainer::ModelSeparator
+{
+public:
+	ModelSeparator(NexusFieldProof proof_ ,AgentKey key_);
+	~ModelSeparator();
+	[[nodiscard]] std::vector<SepartatedContainer> SeparateAllModels(std::vector<std::unique_ptr<Model>>* modelContainer_);
+private:
+	//レンダーステートをキーに詰める
+	std::vector<std::pair<RenderState, uint32_t>> PackToKey(Model const& model_);
+	//レンダーステートキーをuint32_tに詰める
+	std::unique_ptr<KeyPackager> keyPackager;
+};
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Model\ModelContainer\RenderStateKey\RenderStateKey.cpp ===
+========================================
+#include "PreCompileHeader.h"
+#include "RenderStateKey.h"
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Model\ModelContainer\RenderStateKey\RenderStateKey.h ===
+========================================
+#pragma once
+#include "../ModelContainer.h"
+#include "../../../../Render/RenderStateComponent.h"
+#include "../../../../Resource/Shader/ShaderPathComponent/ShaderPathComponent.h"
+#include "../../../../Render/RenderPass/RenderPassComponent.h"
+struct ModelContext::ModelContainer::RenderStateKey
+{
+    ///シーケンス
+    enum Sequence
+    {
+        kPass,
+        kBlendMode,
+        kCullMode,
+        kMeshType,
+        kMaterialType
+    };
+private:
+    int const kInvalid = -1;
+    template <Sequence sequence>
+    static constexpr auto sequenceToType()
+    {
+        if      constexpr (sequence == kPass)         return RenderPassComponent::Pass{};
+        else if constexpr (sequence == kMeshType)     return ShaderPathComponent::MeshType{};
+        else if constexpr (sequence == kMaterialType) return ShaderPathComponent::MaterialType{};
+        else if constexpr (sequence == kBlendMode)    return RenderStateComponent::BlendMode{};
+        else if constexpr (sequence == kCullMode)     return RenderStateComponent::CullMode{};
+    }
+public:
+    template <Sequence sequence>
+    using SequenceToType = decltype(sequenceToType<sequence>());
+    RenderStateKey() = default;
+    RenderStateKey
+    (
+        RenderPassComponent::Pass pass_,
+        RenderStateComponent::BlendMode blend_,
+        RenderStateComponent::CullMode cull_,
+        ShaderPathComponent::MeshType mesh_,
+        ShaderPathComponent::MaterialType material_
+    ) :pass(pass_), mesh(mesh_), material(material_), blend(blend_), cull(cull_)
+    {
+    }
+    RenderPassComponent::Pass pass              = RenderPassComponent::Pass(kInvalid);
+    RenderStateComponent::BlendMode blend       = RenderStateComponent::BlendMode(kInvalid);
+    RenderStateComponent::CullMode cull         = RenderStateComponent::CullMode(kInvalid);
+    ShaderPathComponent::MeshType mesh          = ShaderPathComponent::MeshType(kInvalid);
+    ShaderPathComponent::MaterialType material  = ShaderPathComponent::MaterialType(kInvalid);
+    template<Sequence sequence>
+    constexpr auto Get() const
+    {
+        if      constexpr (sequence == kPass)         return pass;
+        else if constexpr (sequence == kMeshType)     return mesh;
+        else if constexpr (sequence == kMaterialType) return material;
+        else if constexpr (sequence == kBlendMode)    return blend;
+        else if constexpr (sequence == kCullMode)     return cull;
+    }
+    template<Sequence sequence>
+    static constexpr UINT Count()
+    {
+        return (UINT)SequenceToType<sequence>::kCount;
+    }
 };
 
 ========================================
@@ -13833,16 +14009,22 @@ private:
 #include "PreCompileHeader.h"
 #include "ModelContextExecutionAgent.h"
 #include "../../CreateModelTools/ModelDataLoader/ModelDataLoader.h"
+#include "../../ModelContainer/ModelContainer.h"
 ModelContext::ExecutionAgent::ExecutionAgent
 (
 	ModelContext::NexusFieldProof proof_,
-	ModelContext& modelContext_
-):modelContext(modelContext_)
+	ModelContext& modelContext_,
+	ModelContainer& modelContainer_
+):modelContext(modelContext_), modelContainer(modelContainer_)
 {
 }
 void ModelContext::ExecutionAgent::DeleteModelDataCache(NexusFieldProof proof_)
 {
 	modelContext.DeleteModelDataCache(proof_, AgentKey{});
+}
+void ModelContext::ExecutionAgent::SeparateModelContainer(NexusFieldProof proof_)
+{
+	modelContainer.SeparateModels(proof_, AgentKey{});
 }
 
 ========================================
@@ -13856,11 +14038,14 @@ public:
 	ExecutionAgent
 	(
 		ModelContext::NexusFieldProof proof_,
-		ModelContext& modelContext_
+		ModelContext& modelContext_,
+		ModelContainer& modelContainer_
 	);
 	void DeleteModelDataCache(NexusFieldProof proof_);
+	void SeparateModelContainer(NexusFieldProof proof_);
 private:
 	ModelContext& modelContext;
+	ModelContainer& modelContainer;
 };
 
 ========================================
@@ -14057,6 +14242,31 @@ private:
 };
 
 ========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Model\ModelStructure\RenderState.h ===
+========================================
+#pragma once
+#include "../../../Render/RenderStateComponent.h"
+#include "../../../Resource/Shader/ShaderPathComponent/ShaderPathComponent.h"
+#include "../../../Render/RenderPass/RenderPassComponent.h"
+//モデルクラスのコンストラクタで設置可能
+struct RenderState
+{
+	RenderState() = default;
+	//どの描画パス(ステージ)で描画するか
+	RenderPassComponent::Pass pass = RenderPassComponent::Pass::kSceneOpaque;
+	//ブレンドモード複数可
+	std::vector<RenderStateComponent::BlendMode> blendModes;
+	//どの面をカリングするか
+	RenderStateComponent::CullMode cullMode = RenderStateComponent::CullMode::kBack;
+	//頂点処理方法
+	ShaderPathComponent::MeshType meshType = ShaderPathComponent::MeshType::kStatic;
+	//メッシュ描画方法
+	ShaderPathComponent::MaterialType materialType = ShaderPathComponent::MaterialType::kStandard;
+	//デバッグ用
+	std::string modelName;
+};
+
+========================================
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Model\ModelStructure\ModelData\ModelData.cpp ===
 ========================================
 #include "PreCompileHeader.h"
@@ -14085,7 +14295,7 @@ ModelDescription::ModelDescription
 (
 	std::string modelName_,
 	std::vector<ConstantBuffers::PerDrawIndicesCPUGPU> const& perDrawIndices_,
-	std::vector<ModelDescription::RenderState> const& renderStates_,
+	std::vector<RenderState> const& renderStates_,
 	std::vector<StructuredBufferModelData::MaterialGPU> materials_
 ) :perDrawIndices(perDrawIndices_), renderStates(renderStates_), materials(materials_)
 {
@@ -14142,9 +14352,7 @@ ModelDescription::ModelDescription
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Model\ModelStructure\ModelDescription\ModelDescription.h ===
 ========================================
 #pragma once
-#include "../../../../Render/RenderStateComponent.h"
-#include "../../../../Resource/Shader/ShaderPathComponent/ShaderPathComponent.h"
-#include "../../../../Render/RenderPass/RenderPassComponent.h"
+#include "../RenderState.h"
 //外部
 #include "../../../../../../Assets/Shared/StructuredBufferModelData.h"
 #include "../../../../../../Assets/Shared/ConstantBuffers.h"
@@ -14154,33 +14362,16 @@ ModelDescription::ModelDescription
 ///その後RenderStatesを参加するPassの種類分セットする
 struct ModelDescription
 {
-	//モデルクラスのコンストラクタで設置可能
-	struct RenderState
-	{
-		RenderState() = default;
-		//どの描画パス(ステージ)で描画するか
-		RenderPassComponent::Pass pass = RenderPassComponent::Pass::kSceneOpaque;
-		//ブレンドモード複数可
-		std::vector<RenderStateComponent::BlendMode> blendModes;
-		//どの面をカリングするか
-		RenderStateComponent::CullMode cullMode = RenderStateComponent::CullMode::kBack;
-		//頂点処理方法
-		ShaderPathComponent::MeshType meshType = ShaderPathComponent::MeshType::kStatic;
-		//メッシュ描画方法
-		ShaderPathComponent::MaterialType materialType = ShaderPathComponent::MaterialType::kStandard;
-		//デバッグ用
-		std::string modelName;
-	};
 	ModelDescription() {};
 	//中で入力チェック
 	ModelDescription
 	(
 		std::string modelName_,
 		std::vector<ConstantBuffers::PerDrawIndicesCPUGPU> const& perDrawIndices_,
-		std::vector<ModelDescription::RenderState> const& renderStates_,
+		std::vector<RenderState> const& renderStates_,
 		std::vector<StructuredBufferModelData::MaterialGPU> materials_
 	);
-	inline std::vector<ModelDescription::RenderState> const& WatchRenderStates()const { return renderStates; }
+	inline std::vector<RenderState> const& WatchRenderStates()const { return renderStates; }
 private:
 	//ModelDescAssemblerに設定してもらう
 	//可変長になっているのは、マルチメッシュのため！！！！
@@ -14188,7 +14379,7 @@ private:
 	//これ以下は自分で決める
 	//可変長になっているのは、複数分のPassに参加できるようにするため
 	//つまり、サブメッシュもすべて同じ設定
-	std::vector<ModelDescription::RenderState> renderStates;
+	std::vector<RenderState> renderStates;
 	//マテリアル。可変長になっているのは、サブメッシュ分用意しているから
 	std::vector<StructuredBufferModelData::MaterialGPU> materials;
 };
@@ -18054,6 +18245,7 @@ Nexus::Nexus()
 	InitializeInSequence<InitSequence::kDeleteIntermediateResources>();
 	InitializeInSequence<InitSequence::kSortOutGlobalConstantBuffers>();
 	InitializeInSequence<InitSequence::kDeleteModelDataCache>();
+	InitializeInSequence<InitSequence::kSeparateModelContainer>();
 	ErrorMessageOutput::Assert::DetectError(nextInit == InitSequence::kEnd, "初期化が正常に行われていない可能性がある", fileName);
 	Logger::End("Nexus: Constructor");
 }
@@ -18107,7 +18299,8 @@ class Nexus
 		kKickCommands,
 		kDeleteIntermediateResources,
 		kSortOutGlobalConstantBuffers,
-		kDeleteModelDataCache					///モデルデータキャッシュの削除は、アプリ層の初期化が終わったあと
+		kDeleteModelDataCache,					///モデルデータキャッシュの削除は、アプリ層の初期化が終わったあと
+		kSeparateModelContainer					///同様
 		,kEnd
 	}nextInit = InitSequence(0);
 	//終了処理順序
@@ -18492,10 +18685,18 @@ void Nexus::Init<Nexus::InitSequence::kSortOutGlobalConstantBuffers>()
 template<>
 void Nexus::Init<Nexus::InitSequence::kDeleteModelDataCache>()
 {
-	//bufferContextの代行者
+	//modelContextの代行者
 	auto* agent = modelContext->diplomat->Access<ModelContext::ExecutionAgent>();
-	//ランタイム用のベクターコンテナに詰め変える(全てのコンスタントバッファの生成が終わった後)
+	//初期化処理に使ったモデルデータのキャッシュを削除
 	agent->DeleteModelDataCache(ModelContext::NexusFieldProof{});
+}
+template<>
+void Nexus::Init<Nexus::InitSequence::kSeparateModelContainer>()
+{
+	//modelContextの代行者
+	auto* agent = modelContext->diplomat->Access<ModelContext::ExecutionAgent>();
+	//ランタイム用のベクターコンテナに詰め変える(全てのモデル生成が終わった後)
+	agent->SeparateModelContainer(ModelContext::NexusFieldProof{});
 }
 template
 void Nexus::Init<Nexus::InitSequence::kCoInitializeEx>();
@@ -18535,6 +18736,8 @@ template
 void Nexus::Init<Nexus::InitSequence::kSortOutGlobalConstantBuffers>();
 template
 void Nexus::Init<Nexus::InitSequence::kDeleteModelDataCache>();
+template
+void Nexus::Init<Nexus::InitSequence::kSeparateModelContainer>();
 
 ========================================
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Nexus\NexusRun.cpp ===
@@ -19153,5 +19356,5 @@ namespace StringProcessing
 ========================================
 === SUMMARY ===
 ========================================
-Total Files      : 432
-Effective Lines  : 13915
+Total Files      : 437
+Effective Lines  : 14066

@@ -1,15 +1,24 @@
 #pragma once
 #include "../ModelContext.h"
 #include "../ModelContextCmds.h"
+#include "../ModelStructure/RenderState.h"
 
+struct RenderState;
 
 class ModelContext::ModelContainer
 {
 	//モデルのレンダーステートごとにコンテナに詰めて、PSOの切り替えコストを低減させるため
 	struct RenderStateKey;
 	class ModelSeparator;
+	
 
 public:
+
+	struct SepartatedContainer
+	{
+		std::unordered_map<uint32_t, std::vector<Model*>> modelPtrMap;
+		RenderState renderState;
+	};
 
 	struct Local_AddLicence;
 
@@ -28,7 +37,7 @@ private:
 
 	//モデルがレンダーステートごとに分別されたコンテナ。
 	//第一添え字は、Passで指定
-	std::vector<std::unordered_map<uint32_t, std::vector<Model*>>> separatedContainer;
+	std::vector<SepartatedContainer> separatedContainer;
 
 	//モデルの本体が詰まってる
 	std::vector<std::unique_ptr<Model>> container;

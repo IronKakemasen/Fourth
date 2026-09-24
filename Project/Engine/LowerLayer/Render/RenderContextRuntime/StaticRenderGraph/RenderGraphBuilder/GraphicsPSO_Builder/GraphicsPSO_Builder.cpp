@@ -5,8 +5,10 @@
 #include "../../../../RenderPass/AllRenderPass/AllPassInclude.h"
 #include "../../../../RenderPass/PassDesc/PassDesc.h"
 
+#include "../../../../../Resource/Model/ModelStructure/ModelDescription/ModelDescription.h"
 #include "../../../../../Resource/Model/ModelContextDiplomatIncludes.h"
 #include "../../../../../Resource/Model/ModelStructure/Model.h"
+
 
 #include "../../../../../Resource/PSO/PSO_ContextDiplomat/PSO_ContextDiplomat.h"
 #include "../../../../../Resource/PSO/PSO_ContextDiplomat/PSO_ContextToolLender/PSO_ContextToolLender.h"
@@ -114,7 +116,7 @@ std::vector<RenderContext::StaticRenderGraph::PSO_Builder::PsoDesc_Key> RenderCo
 	using namespace RenderPassComponent;
 
 	//全てのモデルのRenderStatesを集計
-	std::vector<ModelDescription::RenderState> allModelRenderStates = CollectAllRenderStates(modelContextDiplomat_);
+	std::vector<RenderState> allModelRenderStates = CollectAllRenderStates(modelContextDiplomat_);
 
 	//全てのPassが入ってるコンテナを参照
 	auto const& allPassPtrMap = passContainer_.AccessAllPassPtrMap(proof_);
@@ -254,7 +256,7 @@ void RenderContext::StaticRenderGraph::PSO_Builder::InputDependingModelsInfo
 	PsoDesc_Key& psoCommonDesc_,
 	PassDesc const& passDesc_,
 	RenderPassComponent::Pass const renderPass_,
-	std::vector<ModelDescription::RenderState> const& allRenderStates_,
+	std::vector<RenderState> const& allRenderStates_,
 	std::vector<PsoDesc_Key>& allPsoDesc_
 
 ) 
@@ -415,7 +417,7 @@ void RenderContext::StaticRenderGraph::PSO_Builder::InputPassOnlyInfo
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-std::vector<ModelDescription::RenderState> RenderContext::StaticRenderGraph::PSO_Builder::CollectAllRenderStates
+std::vector<RenderState> RenderContext::StaticRenderGraph::PSO_Builder::CollectAllRenderStates
 (
 	ModelContextDiplomat& modelContextDiplomat_
 )
@@ -430,7 +432,7 @@ std::vector<ModelDescription::RenderState> RenderContext::StaticRenderGraph::PSO
 	//全てのモデルクラスのコンテナ
 	const std::vector<std::unique_ptr<Model>>* modelDataContainer = watchModelContainer();
 	//全てのモデルクラスのRenderStates
-	std::vector<ModelDescription::RenderState> allModelRenderStates;
+	std::vector<RenderState> allModelRenderStates;
 
 	//モデルクラスを全走査し、全ModelDescriptionをかき集める
 	for (auto itr = modelDataContainer->begin();itr != modelDataContainer->end();++itr)
