@@ -63,17 +63,6 @@ namespace ShaderTable
 			break;
 		}
 
-
-		ErrorMessageOutput::Assert::DetectError
-		(
-			pixelShader.has_value(),
-			"shaderTableにて設定外の組み合わせがきた(ピクセルシェーダ)",
-			"ShaderTable.h"
-		);
-
 		return pixelShader;
 	}
-
-
-
 }

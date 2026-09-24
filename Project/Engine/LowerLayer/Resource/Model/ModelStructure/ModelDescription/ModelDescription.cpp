@@ -48,16 +48,20 @@ ModelDescription::ModelDescription
 			errorMsg += "「そのMeshTypeは選択不可(最低限処置)」";
 		}
 
-		if
-		(
-			renderState.materialType == ShaderPathComponent::MaterialType::kOffscreen ||
-			(UINT)renderState.materialType >= (UINT)ShaderPathComponent::MaterialType::kCount
-		)
+		if(renderState.materialTypes.size() == 0) errorMsg += "MaterialTypeが設定されていない";
+
+
+		for (auto const& material : renderState.materialTypes)
 		{
-			errorMsg += "「そのMaterialTypeは選択不可(最低限処置)」";
+			if
+			(
+					material == ShaderPathComponent::MaterialType::kOffscreen ||
+					(UINT)material >= (UINT)ShaderPathComponent::MaterialType::kCount
+			)
+			{
+				errorMsg += "「そのMaterialTypeは選択不可(最低限処置)」";
+			}
 		}
-
-
 	}
 
 	ErrorMessageOutput::Assert::DetectError(errorMsg.length() == 0, modelName_ + errorMsg, fileName);
@@ -67,8 +71,9 @@ ModelDescription::ModelDescription
 
 	ErrorMessageOutput::Assert::DetectError(errorMsg.length() == 0, modelName_ +  errorMsg, fileName);
 
+	UINT cnt{};
 	for (auto& renderState : renderStates)
 	{
-		renderState.modelName = modelName_ + "[0]";
+		renderState.modelName = modelName_ + "[" + std::to_string(cnt++) + "]";
 	}
 }

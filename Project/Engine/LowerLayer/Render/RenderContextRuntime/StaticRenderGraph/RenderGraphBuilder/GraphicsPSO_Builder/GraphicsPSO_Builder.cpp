@@ -277,28 +277,20 @@ void RenderContext::StaticRenderGraph::PSO_Builder::InputDependingModelsInfo
 		///一致していない = そのモデルはそのパスで描画されない　のでPSOを作る必要がない
 		if (renderState.pass != renderPass_) continue;
 
-		//ブレンドモード以外は書き込んじゃう
+		//ブレンドモードとマテリアルタイプ以外は単一なので書き込んじゃう
 		PsoDesc_Key renderStateCommon(psoCommonDesc_);
 		{
 			//PSO_Keyを入力
 			renderStateCommon.second.mesh = renderState.meshType;
-			renderStateCommon.second.material = renderState.materialType;
 			renderStateCommon.second.cull = renderState.cullMode;
 
 			///使用するシェーダーはPass X MeshType , Pass X MaterialType で決まる
+			///materialTypeは複数可なので後ほどループで処理る
 			std::string const msFileName = ShaderTable::GetMeshShader(renderPass_, renderState.meshType);
-			std::optional<std::string> const psFileName = ShaderTable::GetPixelShader(renderPass_, renderState.materialType);
 
 			//ファイル名からBlobのポインタを引っ張る
 			renderStateCommon.first.shaderSet.meshShader = shaderLib->Export(msFileName);
 			renderStateCommon.first.shaderSet.meshShaderName = msFileName;
-
-			//ピクセルシェーダーを通さないケースもあるのでチェック
-			if (psFileName.has_value())
-			{
-				renderStateCommon.first.shaderSet.pixelShader = shaderLib->Export(*psFileName);
-				renderStateCommon.first.shaderSet.pixelShaderName = *psFileName;
-			}
 
 			//ラスタライザー関連
 			renderStateCommon.first.rasterizerDesc.cullMode = renderState.cullMode;
@@ -306,33 +298,47 @@ void RenderContext::StaticRenderGraph::PSO_Builder::InputDependingModelsInfo
 			renderStateCommon.first.psoName += " X " + renderState.modelName;
 		}
 
-		//blendModeはめんどいことに複数の可能性あり設計。その個数分ぶんまわす
+		//blendModeとmaterialTypesはめんどいことに複数の可能性あり設計。その個数分ぶんまわす
 		for (auto const& blendMode : renderState.blendModes)
 		{
-			//psoDescを一つずつ共通設定をコピーしてから、書き込んでいく
-			PsoDesc_Key psoDesc(renderStateCommon);
-
-			//PSO_KeyにblendModeを入力
-			psoDesc.second.blend = blendMode;
-
-			//深度ステンシル関連
-			psoDesc.first.depthStencilDesc.blendMode = blendMode;
-
-			//レンダーターゲット関連
-			for (auto& renderTargetDesc : psoDesc.first.renderTargetDescs)
+			for (auto const& materialType : renderState.materialTypes)
 			{
-				//ブレンドモードはパスがモデル依存として設定しているかどうかで分岐させる
-				if (renderTargetDesc.blendMode == RenderStateComponent::BlendMode::kDependsModel)
+
+				//psoDescを一つずつ共通設定をコピーしてから、書き込んでいく
+				PsoDesc_Key psoDesc(renderStateCommon);
+
+				//MaterialTypeを入力
+				psoDesc.second.material = materialType;
+				std::optional<std::string> const psFileName = ShaderTable::GetPixelShader(renderPass_, materialType);
+				//ピクセルシェーダーを通さないケースもあるのでチェック
+				if (psFileName.has_value())
 				{
-					renderTargetDesc.blendMode = blendMode;
+					renderStateCommon.first.shaderSet.pixelShader = shaderLib->Export(*psFileName);
+					renderStateCommon.first.shaderSet.pixelShaderName = *psFileName;
 				}
+
+				//PSO_KeyにblendModeを入力
+				psoDesc.second.blend = blendMode;
+
+				//深度ステンシル関連
+				psoDesc.first.depthStencilDesc.blendMode = blendMode;
+
+				//レンダーターゲット関連
+				for (auto& renderTargetDesc : psoDesc.first.renderTargetDescs)
+				{
+					//ブレンドモードはパスがモデル依存として設定しているかどうかで分岐させる
+					if (renderTargetDesc.blendMode == RenderStateComponent::BlendMode::kDependsModel)
+					{
+						renderTargetDesc.blendMode = blendMode;
+					}
+				}
+
+				psoDesc.first.psoName += " X " + RenderStateComponent::BlendModeToString(blendMode);
+
+				//出来上がったディスクを回収
+				allPsoDesc_.emplace_back(psoDesc);
+
 			}
-
-			psoDesc.first.psoName += " X " + RenderStateComponent::BlendModeToString(blendMode);
-
-			//出来上がったディスクを回収
-			allPsoDesc_.emplace_back(psoDesc);
-
 		}
 	}
 }

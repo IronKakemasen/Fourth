@@ -13,6 +13,7 @@ public:
 
 private:
 
+	bool isVisible = true;
 	ModelDescription modelDesc;
 
 };

@@ -14,11 +14,7 @@ class ModelContext::ModelContainer
 
 public:
 
-	struct SepartatedContainer
-	{
-		std::unordered_map<uint32_t, std::vector<Model*>> modelPtrMap;
-		RenderState renderState;
-	};
+	using SepartatedContainer = std::unordered_map<uint32_t, std::pair<RenderState , std::vector<Model*>>>;
 
 	struct Local_AddLicence;
 
