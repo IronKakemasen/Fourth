@@ -429,6 +429,7 @@
     <ClInclude Include="Engine\LowerLayer\Buffer\BufferContextToolsInclude.h" />
     <ClInclude Include="Engine\LowerLayer\Render\RenderPath\AllRenderPath\RenderPathTraits.h" />
     <ClInclude Include="Engine\LowerLayer\Resource\Model\ModelContextDiplomatIncludes.h" />
+    <ClInclude Include="Engine\LowerLayer\Resource\Model\ModelStructure\RenderState.h" />
     <ClInclude Include="Engine\LowerLayer\Resource\Shader\ShaderContextDiplomatIncludes.h" />
     <ClInclude Include="Engine\LowerLayer\Resource\Texture\TextureBufferCreator\TextureFileLoader\TextureFileLoader.h" />
     <ClInclude Include="Engine\LowerLayer\Buffer\BufferDefinition\TextureComponent.h" />

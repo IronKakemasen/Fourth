@@ -36,7 +36,7 @@ void ModelContext::ModelContainer::SeparateModels(NexusFieldProof proof_, AgentK
 {
 	ModelSeparator modelSeparator(proof_, key_);
 
-	separatedContainer = modelSeparator.SeparateAllModels(&container);
+	separatedContainer = std::move(modelSeparator.SeparateAllModels(&container));
 	Logger::Log("Model Separating comp", fileName);
 }
 
