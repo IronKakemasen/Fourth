@@ -97,6 +97,16 @@ namespace ProjectConfig
 		//Jsonファイルを読み込むときに型チェックを行うかどうか
 		constexpr bool kEnableJsonDataTypeCheck = true;
 #endif // _DEBUG
+#ifndef _DEBUG
+		//DebugLayer
+		constexpr bool kEnableDebugLayer = true;
+		//ポインター破壊検知
+		constexpr bool kEnablePointerValidator = true;
+		//Comptrのリークチェック
+		constexpr bool kEnableLeakChecker = true;
+		//Jsonファイルを読み込むときに型チェックを行うかどうか
+		constexpr bool kEnableJsonDataTypeCheck = true;
+#endif // !_DEBUG
 	}
 	namespace Core
 	{
@@ -9804,50 +9814,55 @@ void RenderContext::StaticRenderGraph::PSO_Builder::InputDependingModelsInfo
 		///まず、そのrenderStateのパスと引数のパスが一致しているかチェックする
 		///一致していない = そのモデルはそのパスで描画されない　のでPSOを作る必要がない
 		if (renderState.pass != renderPass_) continue;
-		//ブレンドモード以外は書き込んじゃう
+		//ブレンドモードとマテリアルタイプ以外は単一なので書き込んじゃう
 		PsoDesc_Key renderStateCommon(psoCommonDesc_);
 		{
 			//PSO_Keyを入力
 			renderStateCommon.second.mesh = renderState.meshType;
-			renderStateCommon.second.material = renderState.materialType;
 			renderStateCommon.second.cull = renderState.cullMode;
 			///使用するシェーダーはPass X MeshType , Pass X MaterialType で決まる
+			///materialTypeは複数可なので後ほどループで処理る
 			std::string const msFileName = ShaderTable::GetMeshShader(renderPass_, renderState.meshType);
-			std::optional<std::string> const psFileName = ShaderTable::GetPixelShader(renderPass_, renderState.materialType);
 			//ファイル名からBlobのポインタを引っ張る
 			renderStateCommon.first.shaderSet.meshShader = shaderLib->Export(msFileName);
 			renderStateCommon.first.shaderSet.meshShaderName = msFileName;
-			//ピクセルシェーダーを通さないケースもあるのでチェック
-			if (psFileName.has_value())
-			{
-				renderStateCommon.first.shaderSet.pixelShader = shaderLib->Export(*psFileName);
-				renderStateCommon.first.shaderSet.pixelShaderName = *psFileName;
-			}
 			//ラスタライザー関連
 			renderStateCommon.first.rasterizerDesc.cullMode = renderState.cullMode;
 			renderStateCommon.first.psoName += " X " + renderState.modelName;
 		}
-		//blendModeはめんどいことに複数の可能性あり設計。その個数分ぶんまわす
+		//blendModeとmaterialTypesはめんどいことに複数の可能性あり設計。その個数分ぶんまわす
 		for (auto const& blendMode : renderState.blendModes)
 		{
-			//psoDescを一つずつ共通設定をコピーしてから、書き込んでいく
-			PsoDesc_Key psoDesc(renderStateCommon);
-			//PSO_KeyにblendModeを入力
-			psoDesc.second.blend = blendMode;
-			//深度ステンシル関連
-			psoDesc.first.depthStencilDesc.blendMode = blendMode;
-			//レンダーターゲット関連
-			for (auto& renderTargetDesc : psoDesc.first.renderTargetDescs)
+			for (auto const& materialType : renderState.materialTypes)
 			{
-				//ブレンドモードはパスがモデル依存として設定しているかどうかで分岐させる
-				if (renderTargetDesc.blendMode == RenderStateComponent::BlendMode::kDependsModel)
+				//psoDescを一つずつ共通設定をコピーしてから、書き込んでいく
+				PsoDesc_Key psoDesc(renderStateCommon);
+				//MaterialTypeを入力
+				psoDesc.second.material = materialType;
+				std::optional<std::string> const psFileName = ShaderTable::GetPixelShader(renderPass_, materialType);
+				//ピクセルシェーダーを通さないケースもあるのでチェック
+				if (psFileName.has_value())
 				{
-					renderTargetDesc.blendMode = blendMode;
+					renderStateCommon.first.shaderSet.pixelShader = shaderLib->Export(*psFileName);
+					renderStateCommon.first.shaderSet.pixelShaderName = *psFileName;
 				}
+				//PSO_KeyにblendModeを入力
+				psoDesc.second.blend = blendMode;
+				//深度ステンシル関連
+				psoDesc.first.depthStencilDesc.blendMode = blendMode;
+				//レンダーターゲット関連
+				for (auto& renderTargetDesc : psoDesc.first.renderTargetDescs)
+				{
+					//ブレンドモードはパスがモデル依存として設定しているかどうかで分岐させる
+					if (renderTargetDesc.blendMode == RenderStateComponent::BlendMode::kDependsModel)
+					{
+						renderTargetDesc.blendMode = blendMode;
+					}
+				}
+				psoDesc.first.psoName += " X " + RenderStateComponent::BlendModeToString(blendMode);
+				//出来上がったディスクを回収
+				allPsoDesc_.emplace_back(psoDesc);
 			}
-			psoDesc.first.psoName += " X " + RenderStateComponent::BlendModeToString(blendMode);
-			//出来上がったディスクを回収
-			allPsoDesc_.emplace_back(psoDesc);
 		}
 	}
 }
@@ -11919,7 +11934,7 @@ TestModelOKIBA::TestModelOKIBA(ModelContext::ModelCreator* modelCreator_)
 	cP.pass = Pass::kSceneOpaque;
 	cP.cullMode = CullMode::kBack;
 	cP.meshType = MeshType::kStatic;
-	cP.materialType = MaterialType::kStandard;
+	cP.materialTypes.emplace_back(MaterialType::kStandard);
 	std::vector<RenderState> playerC;
 	playerC.emplace_back(std::move(cP));
 	std::vector<MaterialCPU> materials;
@@ -11929,7 +11944,7 @@ TestModelOKIBA::TestModelOKIBA(ModelContext::ModelCreator* modelCreator_)
 	cC.pass = RenderPassComponent::Pass::kSceneOpaque;
 	cC.cullMode = CullMode::kBack;
 	cC.meshType = MeshType::kStatic;
-	cC.materialType = MaterialType::kStandard;
+	cC.materialTypes.emplace_back(MaterialType::kStandard);
 	std::vector<RenderState> cubeC;
 	cubeC.emplace_back(std::move(cC));
 	cube = modelCreator_->Create("CubeGltf", cubeC, materials,"Cube");
@@ -13783,15 +13798,18 @@ std::vector<std::pair<RenderState, uint32_t>> ModelContext::ModelContainer::Mode
 	{
 		for (auto const& blendMode : renderState.blendModes)
 		{
-			uint32_t packedKey = keyPackager->Pack
-			(
-				renderState.pass,
-				blendMode,
-				renderState.cullMode,
-				renderState.meshType,
-				renderState.materialType
-			);
-			keys.emplace_back(std::make_pair(renderState, packedKey));
+			for (auto const& materialType : renderState.materialTypes)
+			{
+				uint32_t packedKey = keyPackager->Pack
+				(
+					renderState.pass,
+					blendMode,
+					renderState.cullMode,
+					renderState.meshType,
+					materialType
+				);
+				keys.emplace_back(std::make_pair(renderState, packedKey));
+			}
 		}
 	}
 	return keys;
@@ -14234,6 +14252,7 @@ public:
 	 std::string const WatchName()const;
 	 auto const& WatchRenderStates()const { return modelDesc.WatchRenderStates(); }
 private:
+	bool isVisible = true;
 	ModelDescription modelDesc;
 };
 
@@ -14256,8 +14275,8 @@ struct RenderState
 	RenderStateComponent::CullMode cullMode = RenderStateComponent::CullMode::kBack;
 	//頂点処理方法
 	ShaderPathComponent::MeshType meshType = ShaderPathComponent::MeshType::kStatic;
-	//メッシュ描画方法
-	ShaderPathComponent::MaterialType materialType = ShaderPathComponent::MaterialType::kStandard;
+	//メッシュ描画方法も複数可
+	std::vector<ShaderPathComponent::MaterialType> materialTypes;
 	//デバッグ用
 	std::string modelName;
 };
@@ -14325,22 +14344,27 @@ ModelDescription::ModelDescription
 		{
 			errorMsg += "「そのMeshTypeは選択不可(最低限処置)」";
 		}
-		if
-		(
-			renderState.materialType == ShaderPathComponent::MaterialType::kOffscreen ||
-			(UINT)renderState.materialType >= (UINT)ShaderPathComponent::MaterialType::kCount
-		)
+		if(renderState.materialTypes.size() == 0) errorMsg += "MaterialTypeが設定されていない";
+		for (auto const& material : renderState.materialTypes)
 		{
-			errorMsg += "「そのMaterialTypeは選択不可(最低限処置)」";
+			if
+			(
+					material == ShaderPathComponent::MaterialType::kOffscreen ||
+					(UINT)material >= (UINT)ShaderPathComponent::MaterialType::kCount
+			)
+			{
+				errorMsg += "「そのMaterialTypeは選択不可(最低限処置)」";
+			}
 		}
 	}
 	ErrorMessageOutput::Assert::DetectError(errorMsg.length() == 0, modelName_ + errorMsg, fileName);
 	if (renderStates.size() == 0)		errorMsg += "「renderStatesが空」";
 	if (perDrawIndices.size() == 0)		errorMsg += "「perDrawIndicesが空」";
 	ErrorMessageOutput::Assert::DetectError(errorMsg.length() == 0, modelName_ +  errorMsg, fileName);
+	UINT cnt{};
 	for (auto& renderState : renderStates)
 	{
-		renderState.modelName = modelName_ + "[0]";
+		renderState.modelName = modelName_ + "[" + std::to_string(cnt++) + "]";
 	}
 }
 
@@ -16770,12 +16794,6 @@ namespace ShaderTable
 			);
 			break;
 		}
-		ErrorMessageOutput::Assert::DetectError
-		(
-			pixelShader.has_value(),
-			"shaderTableにて設定外の組み合わせがきた(ピクセルシェーダ)",
-			"ShaderTable.h"
-		);
 		return pixelShader;
 	}
 }
@@ -19353,4 +19371,4 @@ namespace StringProcessing
 === SUMMARY ===
 ========================================
 Total Files      : 437
-Effective Lines  : 14062
+Effective Lines  : 14072

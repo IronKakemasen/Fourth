@@ -37,9 +37,9 @@
 #include <cstdint>
 
 //abort()やassert()でエラーを吐いて文字列を出力する
-#include "../LowerLayer/Debug/ErrorMessageOutput/ErrorMessageOutput.h"
+#include "../LowerLayer/DebugSystem/ErrorMessageOutput/ErrorMessageOutput.h"
 //出力ウィンドウとログファイルにログを出力
-#include "../LowerLayer/Debug/Logger/Logger.h"
+#include "../LowerLayer/DebugSystem/Logger/Logger.h"
 //プロジェクト設定
 #include "../ProjectConfig.h"
 //ジェーソン読み書き
