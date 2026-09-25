@@ -4940,6 +4940,7 @@ void CommandContext::Finalize(NexusFieldProof proof_)
 class Nexus;
 class CommandContextDiplomat;
 class DeviceContextDiplomat;
+class RuntimeWrapper;
 class CommandContext
 {
 	//ランタイムでのコマンド制御を行う
@@ -4955,8 +4956,6 @@ public:
 	struct ProviderKey;
 	//リソースのアップロードを行う
 	class ResourceUploader;
-	//コマンドリストの処理のラッパークラス
-	class RuntimeWrapper;
 	//コマンドを提供する
 	class CommandProvider;
 	//ツールを貸す
@@ -5502,7 +5501,7 @@ private:
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Core\Command\RuntimeWrapper\RuntimeWrapper.cpp ===
 ========================================
 #include "RuntimeWrapper.h"
-CommandContext::RuntimeWrapper::RuntimeWrapper(ID3D12GraphicsCommandList6* cmdList_)
+RuntimeWrapper::RuntimeWrapper(ID3D12GraphicsCommandList6* cmdList_)
 	:cmdList(cmdList_)
 {
 }
@@ -5512,9 +5511,9 @@ CommandContext::RuntimeWrapper::RuntimeWrapper(ID3D12GraphicsCommandList6* cmdLi
 ========================================
 #pragma once
 #include "../CommandContext.h"
-class CommandContext::RuntimeWrapper
+//コマンドリストを使った処理のラッパークラス
+class RuntimeWrapper
 {
-	ID3D12GraphicsCommandList6* cmdList;
 public:
 	RuntimeWrapper(ID3D12GraphicsCommandList6* cmdList_);
 	__forceinline void SetGraphicsRootSignature(ID3D12RootSignature* rootSinganature_)
@@ -5643,6 +5642,8 @@ public:
 	{
 		cmdList->SetGraphicsRootDescriptorTable(rootParameterIndex_, baseDescriptor_);
 	}
+	private:
+		ID3D12GraphicsCommandList6* cmdList;
 };
 
 ========================================
@@ -9528,8 +9529,7 @@ RenderContext::StaticRenderGraph::~StaticRenderGraph()
 ========================================
 #pragma once
 #include "../../RenderContext.h"
-#include "../../RenderPath/AllRenderPath/AllPathFwd.h"
-#include "../../RenderPass/RenderPassComponent.h"
+class RuntimeWrapper;
 class RenderContext::StaticRenderGraph
 {
 	class PSO_Builder;
@@ -10000,8 +10000,6 @@ private:
 		ID3D12RootSignature* rootSignature_,
 		PSO_ContextDiplomat& pso_ContextDiplomat_
 	);
-	//	Logger::Entry("PSO creation start");
-	//Logger::Entry("PSO creation end");
 	//全モデルデータを受け取ってそのモデルデータのRenderStateのベクタを取り出す
 	static std::vector<RenderState> CollectAllRenderStates(ModelContextDiplomat& modelContextDiplomat_);
 	//モデルクラスの情報が必要か否か関係なく埋めれる情報を埋める
@@ -10350,16 +10348,19 @@ RenderContext::StaticRenderGraph::CommonCmdExecutor::CommonCmdExecutor(NexusFiel
 	:graphicsRootSig(graphicsRootSig_)
 {
 }
-void RenderContext::StaticRenderGraph::CommonCmdExecutor::Execute
+void RenderContext::StaticRenderGraph::CommonCmdExecutor::ExecuteCommonCmds
 (
 	UINT const frameIndex_,
-	ID3D12DescriptorHeap* descriptorHeap_,
-	CommandContext::RuntimeWrapper& runtimeWrapper_,
+	ID3D12DescriptorHeap* srvDescriptorHeap_,
+	RuntimeWrapper& runtimeWrapper_,
 	std::array<std::vector<D3D12_GPU_VIRTUAL_ADDRESS>, (UINT)NumBuffer::kDoubleBuffer> const& constantsGPU_
 )
 {
+	//ルートシグネチャをセット
 	SetGraphicsRootSignature(runtimeWrapper_);
-	SetDescriptorHeaps(descriptorHeap_, runtimeWrapper_);
+	//srvuavディスクリプタヒープをセット
+	SetDescriptorHeaps(srvDescriptorHeap_, runtimeWrapper_);
+	//フローバル定数バッファビューを転送
 	SetGlobalConstantViews
 	(
 		frameIndex_,
@@ -10369,7 +10370,7 @@ void RenderContext::StaticRenderGraph::CommonCmdExecutor::Execute
 }
 void RenderContext::StaticRenderGraph::CommonCmdExecutor::SetGraphicsRootSignature
 (
-	CommandContext::RuntimeWrapper& runtimeWrapper_
+	RuntimeWrapper& runtimeWrapper_
 )
 {
 	runtimeWrapper_.SetGraphicsRootSignature(graphicsRootSig);
@@ -10377,7 +10378,7 @@ void RenderContext::StaticRenderGraph::CommonCmdExecutor::SetGraphicsRootSignatu
 void RenderContext::StaticRenderGraph::CommonCmdExecutor::SetGlobalConstantViews
 (
 	UINT const frameIndex_,
-	CommandContext::RuntimeWrapper& runtimeWrapper_,
+	RuntimeWrapper& runtimeWrapper_,
 	std::array<std::vector<D3D12_GPU_VIRTUAL_ADDRESS>, (UINT)NumBuffer::kDoubleBuffer> const& constantsGPU_
 )
 {
@@ -10389,7 +10390,7 @@ void RenderContext::StaticRenderGraph::CommonCmdExecutor::SetGlobalConstantViews
 void RenderContext::StaticRenderGraph::CommonCmdExecutor::SetDescriptorHeaps
 (
 	ID3D12DescriptorHeap* descriptorHeap_,
-	CommandContext::RuntimeWrapper& runtimeWrapper_
+	RuntimeWrapper& runtimeWrapper_
 )
 {
 	ID3D12DescriptorHeap* descriptorHeaps[] = { descriptorHeap_ };
@@ -10406,11 +10407,11 @@ class RenderContext::StaticRenderGraph::CommonCmdExecutor
 {
 public:
 	CommonCmdExecutor(NexusFieldProof proof_, ID3D12RootSignature* graphicsRootSig_);
-	void Execute
+	void ExecuteCommonCmds
 	(
 		UINT const frameIndex_,
-		ID3D12DescriptorHeap* descriptorHeap_,
-		CommandContext::RuntimeWrapper& runtimeWrapper_,
+		ID3D12DescriptorHeap* srvDescriptorHeap_,
+		RuntimeWrapper& runtimeWrapper_,
 		std::array<std::vector<D3D12_GPU_VIRTUAL_ADDRESS>, (UINT)ProjectConfig::Render::NumBuffer::kDoubleBuffer> const& constantsGPU_
 	);
 	//以下ヘルパー
@@ -10418,17 +10419,17 @@ private:
 	void SetGlobalConstantViews
 	(
 		UINT const frameIndex_, 
-		CommandContext::RuntimeWrapper& runtimeWrapper_,
+		RuntimeWrapper& runtimeWrapper_,
 		std::array<std::vector<D3D12_GPU_VIRTUAL_ADDRESS>, (UINT)ProjectConfig::Render::NumBuffer::kDoubleBuffer> const& constantsGPU_
 	);
 	void SetGraphicsRootSignature
 	(
-		CommandContext::RuntimeWrapper& runtimeWrapper_
+		RuntimeWrapper& runtimeWrapper_
 	);
 	void SetDescriptorHeaps
 	(
 		ID3D12DescriptorHeap* descriptorHeap_,
-		CommandContext::RuntimeWrapper& runtimeWrapper_
+		RuntimeWrapper& runtimeWrapper_
 	);
 	ID3D12RootSignature* graphicsRootSig;
 };
@@ -10438,12 +10439,27 @@ private:
 ========================================
 #include "PreCompileHeader.h"
 #include "PathOperator.h"
+#include "../../../../RenderPath/AllRenderPath/PathBehavior.h"
+//外部
+#include "../../../../../Core/Command/RuntimeWrapper/RuntimeWrapper.h"
 RenderContext::StaticRenderGraph::PathOperator::PathOperator
 (
 	NexusFieldProof proof_,
 	std::vector<PathBehavior*>& allPathPtr_
 ):allPathPtr(allPathPtr_)
 {
+}
+void RenderContext::StaticRenderGraph::PathOperator::Run
+(
+	UINT const frameIndex_,
+	ModelContextDiplomat& modelContextDiplomat_,
+	RuntimeWrapper& runtimeWrapper_
+)
+{
+	for (auto* path : allPathPtr)
+	{
+		//path->Update()
+	}
 }
 
 ========================================
@@ -10458,6 +10474,13 @@ public:
 	(
 		NexusFieldProof proof_,
 		std::vector<PathBehavior*>& allPathPtr_
+	);
+	//全pathの更新処理をぶん回す
+	void Run
+	(
+		UINT const frameIndex_,
+		ModelContextDiplomat& modelContextDiplomat_,
+		RuntimeWrapper& runtimeWrapper_
 	);
 private:
 	std::vector<PathBehavior*>& allPathPtr;
@@ -10580,8 +10603,9 @@ void RenderContext::PassBehavior::CreatePassInfo
 ========================================
 #pragma once
 #include "../../RenderContext.h"
-#include "../../../Core/Command/CommandContext.h"
+class RuntimeWrapper;
 class Model;
+struct RenderStateKey;
 class RenderContext::PassBehavior
 {
 public:
@@ -10589,8 +10613,8 @@ public:
 	virtual ~PassBehavior() = default;
 	virtual void Update
 	(
-		[[maybe_unused]] std::vector<Model> const& modelContainer_,
-		CommandContext::RuntimeWrapper& cmdWrapper_
+		[[maybe_unused]] std::pair<RenderStateKey, std::vector<Model*>> const& modelContainer_,
+		RuntimeWrapper& cmdWrapper_
 	) = 0;
 	PassDesc const* WatchDesc() const;
 	void CreatePassInfo
@@ -10690,8 +10714,8 @@ SceneCompositor::SceneCompositor(RenderContext::NexusFieldProof proof_, std::uni
 }
 void SceneCompositor::Update
 (
-	[[maybe_unused]] std::vector<Model> const& modelContainer_,
-	CommandContext::RuntimeWrapper& cmdWrapper_
+	[[maybe_unused]] std::pair<RenderStateKey, std::vector<Model*>> const& modelContainer_,
+	RuntimeWrapper& cmdWrapper_
 )
 {
 }
@@ -10707,8 +10731,8 @@ public:
 	SceneCompositor(RenderContext::NexusFieldProof proof_, std::unique_ptr<RenderContext::PassDesc>&& desc_);
 	virtual void Update
 	(
-		[[maybe_unused]] std::vector<Model> const& modelContainer_,
-		CommandContext::RuntimeWrapper& cmdWrapper_
+		[[maybe_unused]] std::pair<RenderStateKey, std::vector<Model*>> const& modelContainer_,
+		RuntimeWrapper& cmdWrapper_
 	)override;
 private:
 };
@@ -10729,8 +10753,8 @@ SceneOpaque::SceneOpaque(RenderContext::NexusFieldProof proof_ , std::unique_ptr
 }
 void SceneOpaque::Update
 (
-	[[maybe_unused]] std::vector<Model> const& modelContainer_,
-	CommandContext::RuntimeWrapper& cmdWrapper_
+	[[maybe_unused]] std::pair<RenderStateKey, std::vector<Model*>> const& modelContainer_,
+	RuntimeWrapper& cmdWrapper_
 )
 {
 }
@@ -10746,8 +10770,8 @@ public:
 	SceneOpaque(RenderContext::NexusFieldProof proof_, std::unique_ptr<RenderContext::PassDesc>&& desc_);
 	virtual void Update
 	(
-		[[maybe_unused]] std::vector<Model> const& modelContainer_,
-		CommandContext::RuntimeWrapper& cmdWrapper_
+		[[maybe_unused]] std::pair<RenderStateKey, std::vector<Model*>> const& modelContainer_,
+		RuntimeWrapper& cmdWrapper_
 	)override;
 private:
 };
@@ -11478,6 +11502,9 @@ RenderContext::PathBehavior::PathBehavior(NexusFieldProof proof_, std::string co
 #pragma once
 #include "../../RenderContext.h"
 #include "../../RenderPass/AllRenderPass/AllPassFwd.h"
+class Model;
+struct RenderStateKey;
+class RuntimeWrapper;
 class RenderContext::PathBehavior
 {
 public:
@@ -11490,6 +11517,11 @@ public:
 		std::get<PassType*>(passses) = pass_;
 	}
 	auto const& WatchName()const { return  name; }
+	virtual void Update
+	(
+		[[maybe_unused]] std::pair<RenderStateKey, std::vector<Model*>> const& modelContainer_,
+		RuntimeWrapper& cmdWrapper_
+	) = 0;
 protected:
 	//名前。初期化のために所持する
 	std::string name;
@@ -11519,7 +11551,14 @@ namespace RenderPathTraits
 #include "PreCompileHeader.h"
 #include "CreateSceneTexture.h"
 CreateSceneTexture::CreateSceneTexture(RenderContext::NexusFieldProof proof_, std::string const& name_)
-	:PathBehavior::PathBehavior(proof_, name_)
+:PathBehavior::PathBehavior(proof_, name_)
+{
+}
+void CreateSceneTexture::Update
+(
+	[[maybe_unused]] std::pair<RenderStateKey, std::vector<Model*>> const& modelContainer_,
+	RuntimeWrapper& cmdWrapper_
+)
 {
 }
 
@@ -11532,6 +11571,11 @@ class CreateSceneTexture:public RenderContext::PathBehavior
 {
 public:
 	CreateSceneTexture(RenderContext::NexusFieldProof proof_, std::string const& name_);
+	virtual void Update
+	(
+		[[maybe_unused]] std::pair<RenderStateKey, std::vector<Model*>> const& modelContainer_,
+		RuntimeWrapper& cmdWrapper_
+	)override;
 private:
 };
 
@@ -11828,8 +11872,6 @@ class ModelContext
 {
 	//モデルファイルからモデル情報を読み込む
 	class ModelDataLoader;
-	//モデルのコンテナ。おそらくただのコンテナになると思う
-	class ModelContainer;
 	//TransformMatrixSlotの空きインデックスを割り当てたり、モデル名をもとに
 	//モデルデータの割り当てを行う
 	class ModelSlotAllocator;
@@ -11844,6 +11886,8 @@ public:
 	class ModelCreator;
 	//モデルの書き込まなくてはならないデータ(TransformMatrixなど)のバッチングを行う
 	class ModelDataBatcher;
+	//モデルのコンテナ。おそらくただのコンテナになると思う
+	class ModelContainer;
 	//代行者
 	class ExecutionAgent;
 	//コマンド提供者
@@ -11855,7 +11899,6 @@ public:
 	struct AgentKey;
 	//コマンド提供者キー
 	struct ProviderKey;
-	struct RenderStateKey;
 	ModelContext
 	(
 		NexusFieldProof proof_, 
@@ -13791,7 +13834,7 @@ ModelContext::ModelContainer::ModelSeparator::SeparateAllModels(std::vector<std:
 	}
 	return dstSeparateContainer;
 }
-std::vector<std::pair<ModelContext::RenderStateKey, uint32_t>> ModelContext::ModelContainer::ModelSeparator::PackToKey(Model const& model_)
+std::vector<std::pair<RenderStateKey, uint32_t>> ModelContext::ModelContainer::ModelSeparator::PackToKey(Model const& model_)
 {
 	std::vector<std::pair<RenderStateKey, uint32_t>> keys;
 	for (auto const& renderState : model_.WatchRenderStates())
@@ -13853,11 +13896,10 @@ private:
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Model\ModelContainer\RenderStateKey\RenderStateKey.h ===
 ========================================
 #pragma once
-#include "../ModelContainer.h"
 #include "../../../../Render/RenderStateComponent.h"
 #include "../../../../Resource/Shader/ShaderPathComponent/ShaderPathComponent.h"
 #include "../../../../Render/RenderPass/RenderPassComponent.h"
-struct ModelContext::RenderStateKey
+struct RenderStateKey
 {
     ///シーケンス
     enum Sequence
@@ -14271,7 +14313,7 @@ public:
 	std::string const WatchName()const;
 	auto const& WatchRenderStates()const { return modelDesc.WatchRenderStates(); }
 	auto const& WatchChangeables()const { return changeableStatus; }
-	//そのパスで描画するかどうか
+	//そのパスで描画するかどうかで使用
 	bool DoesDraw
 	(
 		RenderStateComponent::BlendMode blendMode_,
@@ -19403,4 +19445,4 @@ namespace StringProcessing
 === SUMMARY ===
 ========================================
 Total Files      : 437
-Effective Lines  : 14100
+Effective Lines  : 14140

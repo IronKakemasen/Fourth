@@ -184,24 +184,46 @@ void BufferContext::BufferUploader::EndLog()const
 void BufferContext::BufferUploader::RegisterTextureBuffer(DirectX::ScratchImage& image_,const BufferUniqueID id_)
 {
 	TemporaryTextureBufferInfoStorage temporaryTextureBufferInfoStorage;
-	std::vector<D3D12_SUBRESOURCE_DATA> subResources;
 
 	//scratchImageからサブリソースを作成
-	prepareUploadCommand(image_, subResources);
+	prepareUploadCommand(image_, temporaryTextureBufferInfoStorage.subResources);
+
+	auto const* images = image_.GetImages();
+	auto const imageCount = image_.GetImageCount();
+
+	temporaryTextureBufferInfoStorage.ownedData.resize(imageCount);
+
+	//スクラッチイメージのデータをコピー
+	for (size_t i = 0; i < imageCount; ++i)
+	{
+		auto const& image = images[i];
+
+		temporaryTextureBufferInfoStorage.ownedData[i].resize(image.slicePitch);
+
+		std::memcpy
+		(
+			temporaryTextureBufferInfoStorage.ownedData[i].data(),
+			image.pixels,
+			image.slicePitch
+		);
+
+		//一時保存変数のアドレスに差し替える
+		temporaryTextureBufferInfoStorage.subResources[i].pData = temporaryTextureBufferInfoStorage.ownedData[i].data();
+	}
 
 	//バッファIDからバッファのポインタを取得
 	auto[dstBuffer, dstResource] =  PickBufferAndResource(id_);
 
+
 	//中間リソースのサイズを求める
-	UINT64 const intermediateSize = GetRequiredIntermediateSize(dstResource, 0, UINT(subResources.size()));
+	UINT64 const intermediateSize = GetRequiredIntermediateSize(dstResource, 0, UINT(temporaryTextureBufferInfoStorage.subResources.size()));
 
 	//サイズから中間リソースを作成する
 	temporaryTextureBufferInfoStorage.intermediateResource = CreateInterMediateResource(UINT(intermediateSize));
 	temporaryTextureBufferInfoStorage.id = id_;
-	temporaryTextureBufferInfoStorage.subResources = subResources;
 
 
-	temporaryTextureBufferInfoStorageContainer.emplace_back(temporaryTextureBufferInfoStorage);
+	temporaryTextureBufferInfoStorageContainer.emplace_back(std::move(temporaryTextureBufferInfoStorage));
 }
 
 

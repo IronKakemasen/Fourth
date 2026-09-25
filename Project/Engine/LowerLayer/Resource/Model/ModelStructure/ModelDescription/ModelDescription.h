@@ -22,7 +22,13 @@ struct ModelDescription
 		std::vector<StructuredBufferModelData::MaterialGPU> materials_
 	);
 
-	inline std::vector<RenderState> const& WatchRenderStates()const { return renderStates; }
+	//初期化フェーズで利用
+	inline auto const& WatchRenderStates()const { return renderStates; }
+	
+	//ランタイムでドローコマンドをたたくために使用
+	inline auto const& WatchPerDrawIndices()const { return perDrawIndices; }
+	inline auto const& WatchMaterialGPU()const { return materials; }
+
 
 private:
 

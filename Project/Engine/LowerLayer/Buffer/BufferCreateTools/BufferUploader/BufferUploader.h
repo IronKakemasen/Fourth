@@ -28,6 +28,7 @@ class BufferContext::BufferUploader
 		BufferUniqueID id{};
 		ID3D12Resource* intermediateResource{nullptr};
 		std::vector<D3D12_SUBRESOURCE_DATA> subResources{};
+		std::vector<std::vector<std::byte>> ownedData;
 	};
 
 
