@@ -1318,7 +1318,7 @@ namespace
 	auto const fileName = "BufferMaterializer.cpp";
 }
 template<>
-static [[nodiscard]] std::unique_ptr<ColorBuffer> BufferContext::BufferAssembler::BufferMaterializer::Materialize
+[[nodiscard]] std::unique_ptr<ColorBuffer> BufferContext::BufferAssembler::BufferMaterializer::Materialize
 (
 	ResourceContainer resourceContainer_,
 	const BufferDescriptionBehavior& desc_,
@@ -1336,7 +1336,7 @@ static [[nodiscard]] std::unique_ptr<ColorBuffer> BufferContext::BufferAssembler
 	);
 }
 template<>
-static [[nodiscard]] std::unique_ptr<DepthStencilBuffer> BufferContext::BufferAssembler::BufferMaterializer::Materialize
+[[nodiscard]] std::unique_ptr<DepthStencilBuffer> BufferContext::BufferAssembler::BufferMaterializer::Materialize
 (
 	ResourceContainer resourceContainer_,
 	const BufferDescriptionBehavior& desc_,
@@ -1354,7 +1354,7 @@ static [[nodiscard]] std::unique_ptr<DepthStencilBuffer> BufferContext::BufferAs
 	);
 }
 template<>
-static [[nodiscard]] std::unique_ptr<StaticStructuredBuffer> BufferContext::BufferAssembler::BufferMaterializer::Materialize
+[[nodiscard]] std::unique_ptr<StaticStructuredBuffer> BufferContext::BufferAssembler::BufferMaterializer::Materialize
 (
 	ResourceContainer resourceContainer_,
 	const BufferDescriptionBehavior& desc_,
@@ -1372,7 +1372,7 @@ static [[nodiscard]] std::unique_ptr<StaticStructuredBuffer> BufferContext::Buff
 	);
 }
 template<>
-static [[nodiscard]] std::unique_ptr<UploadStructuredBuffer> BufferContext::BufferAssembler::BufferMaterializer::Materialize
+[[nodiscard]] std::unique_ptr<UploadStructuredBuffer> BufferContext::BufferAssembler::BufferMaterializer::Materialize
 (
 	ResourceContainer resourceContainer_,
 	const BufferDescriptionBehavior& desc_,
@@ -1390,7 +1390,7 @@ static [[nodiscard]] std::unique_ptr<UploadStructuredBuffer> BufferContext::Buff
 	);
 }
 template<>
-static [[nodiscard]] std::unique_ptr<ComputeBuffer> BufferContext::BufferAssembler::BufferMaterializer::Materialize
+[[nodiscard]] std::unique_ptr<ComputeBuffer> BufferContext::BufferAssembler::BufferMaterializer::Materialize
 (
 	ResourceContainer resourceContainer_,
 	const BufferDescriptionBehavior& desc_,
@@ -1408,7 +1408,7 @@ static [[nodiscard]] std::unique_ptr<ComputeBuffer> BufferContext::BufferAssembl
 		);
 }
 template<>
-static [[nodiscard]] std::unique_ptr<ConstantBuffer> BufferContext::BufferAssembler::BufferMaterializer::Materialize
+[[nodiscard]] std::unique_ptr<ConstantBuffer> BufferContext::BufferAssembler::BufferMaterializer::Materialize
 (
 	ResourceContainer resourceContainer_,
 	const BufferDescriptionBehavior& desc_,
@@ -1426,7 +1426,7 @@ static [[nodiscard]] std::unique_ptr<ConstantBuffer> BufferContext::BufferAssemb
 	);
 }
 template<>
-static [[nodiscard]] std::unique_ptr<Texture2DBuffer> BufferContext::BufferAssembler::BufferMaterializer::Materialize
+[[nodiscard]] std::unique_ptr<Texture2DBuffer> BufferContext::BufferAssembler::BufferMaterializer::Materialize
 (
 	ResourceContainer resourceContainer_,
 	const BufferDescriptionBehavior& desc_,
@@ -1461,49 +1461,49 @@ class BufferContext::BufferAssembler::BufferMaterializer
 	);
 };
 template<>
-static [[nodiscard]] std::unique_ptr<ColorBuffer> BufferContext::BufferAssembler::BufferMaterializer::Materialize
+[[nodiscard]] std::unique_ptr<ColorBuffer> BufferContext::BufferAssembler::BufferMaterializer::Materialize
 (
 	ResourceContainer resourceContainer_,
 	const BufferDescriptionBehavior& desc_,
 	std::string const& nameCnv_
 );
 template<>
-static [[nodiscard]] std::unique_ptr<DepthStencilBuffer> BufferContext::BufferAssembler::BufferMaterializer::Materialize
+[[nodiscard]] std::unique_ptr<DepthStencilBuffer> BufferContext::BufferAssembler::BufferMaterializer::Materialize
 (
 	ResourceContainer resourceContainer_,
 	const BufferDescriptionBehavior& desc_,
 	std::string const& nameCnv_
 );
 template<>
-static [[nodiscard]] std::unique_ptr<StaticStructuredBuffer> BufferContext::BufferAssembler::BufferMaterializer::Materialize
+[[nodiscard]] std::unique_ptr<StaticStructuredBuffer> BufferContext::BufferAssembler::BufferMaterializer::Materialize
 (
 	ResourceContainer resourceContainer_,
 	const BufferDescriptionBehavior& desc_,
 	std::string const& nameCnv_
 );
 template<>
-static [[nodiscard]] std::unique_ptr<UploadStructuredBuffer> BufferContext::BufferAssembler::BufferMaterializer::Materialize
+[[nodiscard]] std::unique_ptr<UploadStructuredBuffer> BufferContext::BufferAssembler::BufferMaterializer::Materialize
 (
 	ResourceContainer resourceContainer_,
 	const BufferDescriptionBehavior& desc_,
 	std::string const& nameCnv_
 );
 template<>
-static [[nodiscard]] std::unique_ptr<ComputeBuffer> BufferContext::BufferAssembler::BufferMaterializer::Materialize
+[[nodiscard]] std::unique_ptr<ComputeBuffer> BufferContext::BufferAssembler::BufferMaterializer::Materialize
 (
 	ResourceContainer resourceContainer_,
 	const BufferDescriptionBehavior& desc_,
 	std::string const& nameCnv_
 );
 template<>
-static [[nodiscard]] std::unique_ptr<ConstantBuffer> BufferContext::BufferAssembler::BufferMaterializer::Materialize
+[[nodiscard]] std::unique_ptr<ConstantBuffer> BufferContext::BufferAssembler::BufferMaterializer::Materialize
 (
 	ResourceContainer resourceContainer_,
 	const BufferDescriptionBehavior& desc_,
 	std::string const& nameCnv_
 );
 template<>
-static [[nodiscard]] std::unique_ptr<Texture2DBuffer> BufferContext::BufferAssembler::BufferMaterializer::Materialize
+[[nodiscard]] std::unique_ptr<Texture2DBuffer> BufferContext::BufferAssembler::BufferMaterializer::Materialize
 (
 	ResourceContainer resourceContainer_,
 	const BufferDescriptionBehavior& desc_,
@@ -2354,18 +2354,33 @@ void BufferContext::BufferUploader::EndLog()const
 void BufferContext::BufferUploader::RegisterTextureBuffer(DirectX::ScratchImage& image_,const BufferUniqueID id_)
 {
 	TemporaryTextureBufferInfoStorage temporaryTextureBufferInfoStorage;
-	std::vector<D3D12_SUBRESOURCE_DATA> subResources;
 	//scratchImageからサブリソースを作成
-	prepareUploadCommand(image_, subResources);
+	prepareUploadCommand(image_, temporaryTextureBufferInfoStorage.subResources);
+	auto const* images = image_.GetImages();
+	auto const imageCount = image_.GetImageCount();
+	temporaryTextureBufferInfoStorage.ownedData.resize(imageCount);
+	//スクラッチイメージのデータをコピー
+	for (size_t i = 0; i < imageCount; ++i)
+	{
+		auto const& image = images[i];
+		temporaryTextureBufferInfoStorage.ownedData[i].resize(image.slicePitch);
+		std::memcpy
+		(
+			temporaryTextureBufferInfoStorage.ownedData[i].data(),
+			image.pixels,
+			image.slicePitch
+		);
+		//一時保存変数のアドレスに差し替える
+		temporaryTextureBufferInfoStorage.subResources[i].pData = temporaryTextureBufferInfoStorage.ownedData[i].data();
+	}
 	//バッファIDからバッファのポインタを取得
 	auto[dstBuffer, dstResource] =  PickBufferAndResource(id_);
 	//中間リソースのサイズを求める
-	UINT64 const intermediateSize = GetRequiredIntermediateSize(dstResource, 0, UINT(subResources.size()));
+	UINT64 const intermediateSize = GetRequiredIntermediateSize(dstResource, 0, UINT(temporaryTextureBufferInfoStorage.subResources.size()));
 	//サイズから中間リソースを作成する
 	temporaryTextureBufferInfoStorage.intermediateResource = CreateInterMediateResource(UINT(intermediateSize));
 	temporaryTextureBufferInfoStorage.id = id_;
-	temporaryTextureBufferInfoStorage.subResources = subResources;
-	temporaryTextureBufferInfoStorageContainer.emplace_back(temporaryTextureBufferInfoStorage);
+	temporaryTextureBufferInfoStorageContainer.emplace_back(std::move(temporaryTextureBufferInfoStorage));
 }
 template
 void BufferContext::BufferUploader::ExtractBarrier<D3D12_RESOURCE_STATE_COPY_DEST>(GPUBufferBehavior* dstBuffer_);
@@ -2403,6 +2418,7 @@ class BufferContext::BufferUploader
 		BufferUniqueID id{};
 		ID3D12Resource* intermediateResource{nullptr};
 		std::vector<D3D12_SUBRESOURCE_DATA> subResources{};
+		std::vector<std::vector<std::byte>> ownedData;
 	};
 public:
 	BufferUploader
@@ -14311,9 +14327,9 @@ public:
 	};
 	Model(const ModelDescription& modelDesc_);
 	std::string const WatchName()const;
+	//PSO生成、モデル分別用として利用
 	auto const& WatchRenderStates()const { return modelDesc.WatchRenderStates(); }
-	auto const& WatchChangeables()const { return changeableStatus; }
-	//そのパスで描画するかどうかで使用
+	//そのパスで描画するかどうかで利用
 	bool DoesDraw
 	(
 		RenderStateComponent::BlendMode blendMode_,
@@ -14325,6 +14341,9 @@ public:
 		changeableStatus.blendMode == blendMode_ &&
 		changeableStatus.materialType == materialType_;
 	}
+	//ランタイムでドローコマンドをたたくために使用
+	inline auto const& WatchPerDrawIndices()const { return modelDesc.WatchPerDrawIndices(); }
+	inline auto const& WatchMaterialGPU()const { return modelDesc.WatchMaterialGPU(); }
 private:
 	ChangeableStatus changeableStatus;
 	ModelDescription modelDesc;
@@ -14465,7 +14484,11 @@ struct ModelDescription
 		std::vector<RenderState> const& renderStates_,
 		std::vector<StructuredBufferModelData::MaterialGPU> materials_
 	);
-	inline std::vector<RenderState> const& WatchRenderStates()const { return renderStates; }
+	//初期化フェーズで利用
+	inline auto const& WatchRenderStates()const { return renderStates; }
+	//ランタイムでドローコマンドをたたくために使用
+	inline auto const& WatchPerDrawIndices()const { return perDrawIndices; }
+	inline auto const& WatchMaterialGPU()const { return materials; }
 private:
 	//ModelDescAssemblerに設定してもらう
 	//可変長になっているのは、マルチメッシュのため！！！！
@@ -19445,4 +19468,4 @@ namespace StringProcessing
 === SUMMARY ===
 ========================================
 Total Files      : 437
-Effective Lines  : 14140
+Effective Lines  : 14157

@@ -46,8 +46,8 @@ void RenderContext::RuntimePassInfo::PickUpRuntimeRequirementsFromDesc(PassDesc 
 			info.blendMode = src.blendMode;
 			info.bufferID = src.bufferID;
 			info.clearColor = src.clearColor;
-			info.height = src.height;
-			info.width = src.width;
+			info.viewport = AssembleMatrix<D3D12_VIEWPORT>(src.width, src.height);
+			info.scissorRect = AssembleMatrix<D3D12_RECT>(src.width, src.height);
 		}
 	}
 
@@ -60,10 +60,40 @@ void RenderContext::RuntimePassInfo::PickUpRuntimeRequirementsFromDesc(PassDesc 
 		{
 			depthStencilBufferInfo.emplace();
 
-			info->bufferID		= src->bufferID;
-			info->clearDepth	= src->clearDepth;
-			info->clearStencil	= src->clearStencil;
+			info->bufferID			= src->bufferID;
+			info->clearDepth		= src->clearDepth;
+			info->clearStencil		= src->clearStencil;
+			info->doesClearStencil  = src->doesClearStencil;
 		}
 	}
 
+}
+
+
+template<>
+D3D12_VIEWPORT RenderContext::RuntimePassInfo::AssembleMatrix(uint32_t width_, uint32_t height_)
+{
+	D3D12_VIEWPORT viewport;
+
+	viewport.Width = static_cast<FLOAT>(width_);
+	viewport.Height = static_cast<FLOAT>(height_);
+	viewport.TopLeftX = 0.0f;
+	viewport.TopLeftY = 0.0f;
+	viewport.MinDepth = 0.0f;
+	viewport.MaxDepth = 1.0f;
+
+	return viewport;
+}
+
+template<>
+D3D12_RECT RenderContext::RuntimePassInfo::AssembleMatrix(uint32_t width_, uint32_t height_)
+{
+	D3D12_RECT scissorRect;
+
+	scissorRect.right = static_cast<LONG>(width_);
+	scissorRect.bottom = static_cast<LONG>(height_);
+	scissorRect.left = static_cast<LONG>(0.0f);
+	scissorRect.top = static_cast<LONG>(0.0f);
+
+	return scissorRect;
 }

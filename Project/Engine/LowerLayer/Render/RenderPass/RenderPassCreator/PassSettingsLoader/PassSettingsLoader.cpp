@@ -115,14 +115,17 @@ std::optional<RenderContext::RequiredBufferInfo::DepthStencilBuffer> RenderConte
 
 	depthStencilBufferInfo.emplace();
 
-	depthStencilBufferInfo->dsvFormat = 
-		(DXGI_FORMAT)miyajison->LoadData<int>(DataKeyString::kSrcJsonFileName, { passName_,DataKeyString::kDsvFormatI});
+	depthStencilBufferInfo->dsvFormat = (DXGI_FORMAT)
+		miyajison->LoadData<int>(DataKeyString::kSrcJsonFileName, { passName_,DataKeyString::kDsvFormatI});
 
-	depthStencilBufferInfo->srvFormat = 
-		(DXGI_FORMAT)miyajison->LoadData<int>(DataKeyString::kSrcJsonFileName, { passName_,DataKeyString::kSrvFormatI });
+	depthStencilBufferInfo->srvFormat = (DXGI_FORMAT)
+		miyajison->LoadData<int>(DataKeyString::kSrcJsonFileName, { passName_,DataKeyString::kSrvFormatI });
 
 	depthStencilBufferInfo->clearDepth =
 		miyajison->LoadData<float>(DataKeyString::kSrcJsonFileName, { passName_,DataKeyString::kClearDepthF });
+
+	depthStencilBufferInfo->doesClearStencil = (D3D12_CLEAR_FLAGS)
+		miyajison->LoadData<bool>(DataKeyString::kSrcJsonFileName, { passName_,DataKeyString::kClearStencilFlagB });
 
 	depthStencilBufferInfo->clearStencil =
 		miyajison->LoadData<int>(DataKeyString::kSrcJsonFileName, { passName_,DataKeyString::kClearStencilI });

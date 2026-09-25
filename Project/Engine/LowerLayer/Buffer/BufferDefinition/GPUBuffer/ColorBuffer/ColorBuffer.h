@@ -2,7 +2,7 @@
 #include "../BufferInterface.h"
 
 //カラーバッファクラス
-class ColorBuffer final : public GPUBufferBehavior,IColorBuffer,IRenderTargetBuffer,IReadable
+class ColorBuffer final : public GPUBufferBehavior, public IColorBuffer,IRenderTargetBuffer,IReadable
 {
 
 public:
