@@ -16,18 +16,21 @@ RenderContext::StaticRenderGraph::CommonCmdExecutor::CommonCmdExecutor(NexusFiel
 }
 
 
-void RenderContext::StaticRenderGraph::CommonCmdExecutor::Execute
+void RenderContext::StaticRenderGraph::CommonCmdExecutor::ExecuteCommonCmds
 (
 	UINT const frameIndex_,
-	ID3D12DescriptorHeap* descriptorHeap_,
-	CommandContext::RuntimeWrapper& runtimeWrapper_,
+	ID3D12DescriptorHeap* srvDescriptorHeap_,
+	RuntimeWrapper& runtimeWrapper_,
 	std::array<std::vector<D3D12_GPU_VIRTUAL_ADDRESS>, (UINT)NumBuffer::kDoubleBuffer> const& constantsGPU_
 )
 {
+	//ルートシグネチャをセット
 	SetGraphicsRootSignature(runtimeWrapper_);
 
-	SetDescriptorHeaps(descriptorHeap_, runtimeWrapper_);
+	//srvuavディスクリプタヒープをセット
+	SetDescriptorHeaps(srvDescriptorHeap_, runtimeWrapper_);
 	
+	//フローバル定数バッファビューを転送
 	SetGlobalConstantViews
 	(
 		frameIndex_,
@@ -39,7 +42,7 @@ void RenderContext::StaticRenderGraph::CommonCmdExecutor::Execute
 
 void RenderContext::StaticRenderGraph::CommonCmdExecutor::SetGraphicsRootSignature
 (
-	CommandContext::RuntimeWrapper& runtimeWrapper_
+	RuntimeWrapper& runtimeWrapper_
 )
 {
 	runtimeWrapper_.SetGraphicsRootSignature(graphicsRootSig);
@@ -48,7 +51,7 @@ void RenderContext::StaticRenderGraph::CommonCmdExecutor::SetGraphicsRootSignatu
 void RenderContext::StaticRenderGraph::CommonCmdExecutor::SetGlobalConstantViews
 (
 	UINT const frameIndex_,
-	CommandContext::RuntimeWrapper& runtimeWrapper_,
+	RuntimeWrapper& runtimeWrapper_,
 	std::array<std::vector<D3D12_GPU_VIRTUAL_ADDRESS>, (UINT)NumBuffer::kDoubleBuffer> const& constantsGPU_
 )
 {
@@ -62,7 +65,7 @@ void RenderContext::StaticRenderGraph::CommonCmdExecutor::SetGlobalConstantViews
 void RenderContext::StaticRenderGraph::CommonCmdExecutor::SetDescriptorHeaps
 (
 	ID3D12DescriptorHeap* descriptorHeap_,
-	CommandContext::RuntimeWrapper& runtimeWrapper_
+	RuntimeWrapper& runtimeWrapper_
 )
 {
 	ID3D12DescriptorHeap* descriptorHeaps[] = { descriptorHeap_ };

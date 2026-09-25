@@ -1,7 +1,7 @@
 ========================================
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\main.cpp ===
 ========================================
-#include "Lowerlayer/Debug/RuntimeDebugger/RuntimeDebugger.h"
+#include "Lowerlayer/DebugSystem/RuntimeDebugger/RuntimeDebugger.h"
 #include "Nexus/Nexus.h"
 void Update(Nexus& nexus_);
 int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
@@ -8664,7 +8664,7 @@ class WindowContext::WindowProcedure
 };
 
 ========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Debug\ErrorMessageOutput\ErrorMessageOutput.cpp ===
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\DebugSystem\ErrorMessageOutput\ErrorMessageOutput.cpp ===
 ========================================
 #include "ErrorMessageOutput.h"
 #include "../../../Utility/StringConverter/StringConverter.h"
@@ -8699,7 +8699,7 @@ void ErrorMessageOutput::Assert::OutputError(const std::string& message_, const 
 }
 
 ========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Debug\ErrorMessageOutput\ErrorMessageOutput.h ===
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\DebugSystem\ErrorMessageOutput\ErrorMessageOutput.h ===
 ========================================
 #pragma once
 namespace ErrorMessageOutput
@@ -8717,7 +8717,7 @@ namespace ErrorMessageOutput
 }
 
 ========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Debug\Logger\Logger.cpp ===
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\DebugSystem\Logger\Logger.cpp ===
 ========================================
 #include "Logger.h"
 #include <filesystem>
@@ -8805,7 +8805,7 @@ void Logger::End(const std::string& message_)
 }
 
 ========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Debug\Logger\Logger.h ===
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\DebugSystem\Logger\Logger.h ===
 ========================================
 #pragma once
 class Logger
@@ -8819,7 +8819,7 @@ public:
 };
 
 ========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Debug\RuntimeDebugger\RuntimeDebugger.cpp ===
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\DebugSystem\RuntimeDebugger\RuntimeDebugger.cpp ===
 ========================================
 #include "RuntimeDebugger.h"
 #include "../ErrorMessageOutput/ErrorMessageOutput.h"
@@ -8844,7 +8844,7 @@ bool RuntimeDebugger::InstanceLimiter::CanInstantiate()
 }
 
 ========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Debug\RuntimeDebugger\RuntimeDebugger.h ===
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\DebugSystem\RuntimeDebugger\RuntimeDebugger.h ===
 ========================================
 #pragma once
 #include "DebugSystems/DebugLayer/DebugLayer.h"
@@ -8881,12 +8881,12 @@ private:
 };
 
 ========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Debug\RuntimeDebugger\DebugSystems\RuntimeDebuggerBehavior.cpp ===
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\DebugSystem\RuntimeDebugger\DebugSystems\RuntimeDebuggerBehavior.cpp ===
 ========================================
 #include "RuntimeDebuggerBehavior.h"
 
 ========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Debug\RuntimeDebugger\DebugSystems\RuntimeDebuggerBehavior.h ===
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\DebugSystem\RuntimeDebugger\DebugSystems\RuntimeDebuggerBehavior.h ===
 ========================================
 #pragma once
 class RuntimeDebugger;
@@ -8905,7 +8905,7 @@ protected:
 };
 
 ========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Debug\RuntimeDebugger\DebugSystems\DebugLayer\DebugLayer.cpp ===
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\DebugSystem\RuntimeDebugger\DebugSystems\DebugLayer\DebugLayer.cpp ===
 ========================================
 #include "DebugLayer.h"
 void DebugLayer::Init()
@@ -8918,7 +8918,7 @@ void DebugLayer::Init()
 }
 
 ========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Debug\RuntimeDebugger\DebugSystems\DebugLayer\DebugLayer.h ===
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\DebugSystem\RuntimeDebugger\DebugSystems\DebugLayer\DebugLayer.h ===
 ========================================
 #pragma once
 #include "../RuntimeDebuggerBehavior.h"
@@ -8931,7 +8931,7 @@ public:
 };
 
 ========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Debug\RuntimeDebugger\DebugSystems\LeakChecker\LeakChecker.cpp ===
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\DebugSystem\RuntimeDebugger\DebugSystems\LeakChecker\LeakChecker.cpp ===
 ========================================
 #include "LeakChecker.h"
 void LeakChecker::Init()
@@ -8950,7 +8950,7 @@ LeakChecker::~LeakChecker()
 }
 
 ========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Debug\RuntimeDebugger\DebugSystems\LeakChecker\LeakChecker.h ===
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\DebugSystem\RuntimeDebugger\DebugSystems\LeakChecker\LeakChecker.h ===
 ========================================
 #pragma once
 #include "../RuntimeDebuggerBehavior.h"
@@ -8965,7 +8965,7 @@ public:
 };
 
 ========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Debug\RuntimeDebugger\DebugSystems\PointerValidator\PointerValidator.cpp ===
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\DebugSystem\RuntimeDebugger\DebugSystems\PointerValidator\PointerValidator.cpp ===
 ========================================
 #include "PointerValidator.h"
 void PointerValidator::Init()
@@ -8976,7 +8976,7 @@ void PointerValidator::Init()
 }
 
 ========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Debug\RuntimeDebugger\DebugSystems\PointerValidator\PointerValidator.h ===
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\DebugSystem\RuntimeDebugger\DebugSystems\PointerValidator\PointerValidator.h ===
 ========================================
 #pragma once
 #include "../RuntimeDebuggerBehavior.h"
@@ -11855,6 +11855,7 @@ public:
 	struct AgentKey;
 	//コマンド提供者キー
 	struct ProviderKey;
+	struct RenderStateKey;
 	ModelContext
 	(
 		NexusFieldProof proof_, 
@@ -13714,15 +13715,13 @@ void ModelContext::ModelContainer::SeparateModels(NexusFieldProof proof_, AgentK
 #pragma once
 #include "../ModelContext.h"
 #include "../ModelContextCmds.h"
-#include "../ModelStructure/RenderState.h"
-struct RenderState;
+#include "RenderStateKey/RenderStateKey.h"
 class ModelContext::ModelContainer
 {
 	//モデルのレンダーステートごとにコンテナに詰めて、PSOの切り替えコストを低減させるため
-	struct RenderStateKey;
 	class ModelSeparator;
 public:
-	using SepartatedContainer = std::unordered_map<uint32_t, std::pair<RenderState , std::vector<Model*>>>;
+	using SepartatedContainer = std::unordered_map<uint32_t, std::pair<RenderStateKey , std::vector<Model*>>>;
 	struct Local_AddLicence;
 	ModelContainer(NexusFieldProof proof_);
 	~ModelContainer();
@@ -13785,15 +13784,16 @@ ModelContext::ModelContainer::ModelSeparator::SeparateAllModels(std::vector<std:
 		auto packedKeys = PackToKey(*(*itr));
 		for (auto const& key : packedKeys)
 		{
-			dstSeparateContainer[(UINT)key.first.pass][key.second].first = key.first;
-			dstSeparateContainer[(UINT)key.first.pass][key.second].second.emplace_back((*itr).get());
+			auto const pass = (UINT)key.first.Get<RenderStateKey::Sequence::kPass>();
+			dstSeparateContainer[pass][key.second].first = key.first;
+			dstSeparateContainer[pass][key.second].second.emplace_back((*itr).get());
 		}
 	}
 	return dstSeparateContainer;
 }
-std::vector<std::pair<RenderState, uint32_t>> ModelContext::ModelContainer::ModelSeparator::PackToKey(Model const& model_)
+std::vector<std::pair<ModelContext::RenderStateKey, uint32_t>> ModelContext::ModelContainer::ModelSeparator::PackToKey(Model const& model_)
 {
-	std::vector<std::pair<RenderState, uint32_t>> keys;
+	std::vector<std::pair<RenderStateKey, uint32_t>> keys;
 	for (auto const& renderState : model_.WatchRenderStates())
 	{
 		for (auto const& blendMode : renderState.blendModes)
@@ -13808,7 +13808,15 @@ std::vector<std::pair<RenderState, uint32_t>> ModelContext::ModelContainer::Mode
 					renderState.meshType,
 					materialType
 				);
-				keys.emplace_back(std::make_pair(renderState, packedKey));
+				RenderStateKey renderStateKey
+				(
+					renderState.pass,
+					blendMode,
+					renderState.cullMode,
+					renderState.meshType,
+					materialType
+				);
+				keys.emplace_back(std::make_pair(renderStateKey, packedKey));
 			}
 		}
 	}
@@ -13820,7 +13828,7 @@ std::vector<std::pair<RenderState, uint32_t>> ModelContext::ModelContainer::Mode
 ========================================
 #pragma once
 #include "../ModelContainer.h"
-#include "../../ModelStructure/RenderState.h"
+#include "../RenderStateKey/RenderStateKey.h"
 class KeyPackager;
 class ModelContext::ModelContainer::ModelSeparator
 {
@@ -13830,7 +13838,7 @@ public:
 	[[nodiscard]] std::vector<SepartatedContainer> SeparateAllModels(std::vector<std::unique_ptr<Model>>* modelContainer_);
 private:
 	//レンダーステートをキーに詰める
-	std::vector<std::pair<RenderState, uint32_t>> PackToKey(Model const& model_);
+	std::vector<std::pair<RenderStateKey, uint32_t>> PackToKey(Model const& model_);
 	//レンダーステートキーをuint32_tに詰める
 	std::unique_ptr<KeyPackager> keyPackager;
 };
@@ -13849,7 +13857,7 @@ private:
 #include "../../../../Render/RenderStateComponent.h"
 #include "../../../../Resource/Shader/ShaderPathComponent/ShaderPathComponent.h"
 #include "../../../../Render/RenderPass/RenderPassComponent.h"
-struct ModelContext::ModelContainer::RenderStateKey
+struct ModelContext::RenderStateKey
 {
     ///シーケンス
     enum Sequence
@@ -13861,7 +13869,7 @@ struct ModelContext::ModelContainer::RenderStateKey
         kMaterialType
     };
 private:
-    int const kInvalid = -1;
+    static constexpr int kInvalid = -1;
     template <Sequence sequence>
     static constexpr auto sequenceToType()
     {
@@ -13871,6 +13879,11 @@ private:
         else if constexpr (sequence == kBlendMode)    return RenderStateComponent::BlendMode{};
         else if constexpr (sequence == kCullMode)     return RenderStateComponent::CullMode{};
     }
+    RenderPassComponent::Pass pass = RenderPassComponent::Pass(kInvalid);
+    RenderStateComponent::BlendMode blend = RenderStateComponent::BlendMode(kInvalid);
+    RenderStateComponent::CullMode cull = RenderStateComponent::CullMode(kInvalid);
+    ShaderPathComponent::MeshType mesh = ShaderPathComponent::MeshType(kInvalid);
+    ShaderPathComponent::MaterialType material = ShaderPathComponent::MaterialType(kInvalid);
 public:
     template <Sequence sequence>
     using SequenceToType = decltype(sequenceToType<sequence>());
@@ -13885,11 +13898,6 @@ public:
     ) :pass(pass_), mesh(mesh_), material(material_), blend(blend_), cull(cull_)
     {
     }
-    RenderPassComponent::Pass pass              = RenderPassComponent::Pass(kInvalid);
-    RenderStateComponent::BlendMode blend       = RenderStateComponent::BlendMode(kInvalid);
-    RenderStateComponent::CullMode cull         = RenderStateComponent::CullMode(kInvalid);
-    ShaderPathComponent::MeshType mesh          = ShaderPathComponent::MeshType(kInvalid);
-    ShaderPathComponent::MaterialType material  = ShaderPathComponent::MaterialType(kInvalid);
     template<Sequence sequence>
     constexpr auto Get() const
     {
@@ -14234,6 +14242,8 @@ private:
 Model::Model(const ModelDescription& modelDesc_)
 	:modelDesc(modelDesc_)
 {
+	changeableStatus.blendMode = modelDesc_.WatchRenderStates()[0].blendModes[0];
+	changeableStatus.materialType = modelDesc_.WatchRenderStates()[0].materialTypes[0];
 }
 std::string const Model::WatchName()const
 {
@@ -14248,11 +14258,33 @@ std::string const Model::WatchName()const
 class Model
 {
 public:
+	//動的に変更可能なパラメーター
+	//複数設定していないコンポーネントはもちろん不可
+	//RenderPassクラスで、コンポーネントの一致を確認する
+	struct ChangeableStatus
+	{
+		bool isVisible = true;
+		RenderStateComponent::BlendMode blendMode{};
+		ShaderPathComponent::MaterialType materialType{};
+	};
 	Model(const ModelDescription& modelDesc_);
-	 std::string const WatchName()const;
-	 auto const& WatchRenderStates()const { return modelDesc.WatchRenderStates(); }
+	std::string const WatchName()const;
+	auto const& WatchRenderStates()const { return modelDesc.WatchRenderStates(); }
+	auto const& WatchChangeables()const { return changeableStatus; }
+	//そのパスで描画するかどうか
+	bool DoesDraw
+	(
+		RenderStateComponent::BlendMode blendMode_,
+		ShaderPathComponent::MaterialType materialType_
+	)const
+	{
+		return
+		changeableStatus.isVisible &&
+		changeableStatus.blendMode == blendMode_ &&
+		changeableStatus.materialType == materialType_;
+	}
 private:
-	bool isVisible = true;
+	ChangeableStatus changeableStatus;
 	ModelDescription modelDesc;
 };
 
@@ -18822,9 +18854,9 @@ void Nexus::Run()
 #include <bit>
 #include <cstdint>
 //abort()やassert()でエラーを吐いて文字列を出力する
-#include "../LowerLayer/Debug/ErrorMessageOutput/ErrorMessageOutput.h"
+#include "../LowerLayer/DebugSystem/ErrorMessageOutput/ErrorMessageOutput.h"
 //出力ウィンドウとログファイルにログを出力
-#include "../LowerLayer/Debug/Logger/Logger.h"
+#include "../LowerLayer/DebugSystem/Logger/Logger.h"
 //プロジェクト設定
 #include "../ProjectConfig.h"
 //ジェーソン読み書き
@@ -19371,4 +19403,4 @@ namespace StringProcessing
 === SUMMARY ===
 ========================================
 Total Files      : 437
-Effective Lines  : 14072
+Effective Lines  : 14100

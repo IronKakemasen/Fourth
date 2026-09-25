@@ -1,10 +1,9 @@
 #pragma once
-#include "../ModelContainer.h"
 #include "../../../../Render/RenderStateComponent.h"
 #include "../../../../Resource/Shader/ShaderPathComponent/ShaderPathComponent.h"
 #include "../../../../Render/RenderPass/RenderPassComponent.h"
 
-struct ModelContext::ModelContainer::RenderStateKey
+struct RenderStateKey
 {
     ///シーケンス
     enum Sequence
@@ -18,7 +17,7 @@ struct ModelContext::ModelContainer::RenderStateKey
 
 private:
 
-    int const kInvalid = -1;
+    static constexpr int kInvalid = -1;
 
     template <Sequence sequence>
     static constexpr auto sequenceToType()
@@ -29,6 +28,12 @@ private:
         else if constexpr (sequence == kBlendMode)    return RenderStateComponent::BlendMode{};
         else if constexpr (sequence == kCullMode)     return RenderStateComponent::CullMode{};
     }
+
+    RenderPassComponent::Pass pass = RenderPassComponent::Pass(kInvalid);
+    RenderStateComponent::BlendMode blend = RenderStateComponent::BlendMode(kInvalid);
+    RenderStateComponent::CullMode cull = RenderStateComponent::CullMode(kInvalid);
+    ShaderPathComponent::MeshType mesh = ShaderPathComponent::MeshType(kInvalid);
+    ShaderPathComponent::MaterialType material = ShaderPathComponent::MaterialType(kInvalid);
 
 public:
 
@@ -48,13 +53,6 @@ public:
     {
 
     }
-
-    RenderPassComponent::Pass pass              = RenderPassComponent::Pass(kInvalid);
-    RenderStateComponent::BlendMode blend       = RenderStateComponent::BlendMode(kInvalid);
-    RenderStateComponent::CullMode cull         = RenderStateComponent::CullMode(kInvalid);
-    ShaderPathComponent::MeshType mesh          = ShaderPathComponent::MeshType(kInvalid);
-    ShaderPathComponent::MaterialType material  = ShaderPathComponent::MaterialType(kInvalid);
-
 
     template<Sequence sequence>
     constexpr auto Get() const

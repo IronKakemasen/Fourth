@@ -45,10 +45,6 @@ private:
 		PSO_ContextDiplomat& pso_ContextDiplomat_
 	);
 
-	//	Logger::Entry("PSO creation start");
-	//Logger::Entry("PSO creation end");
-
-
 	//全モデルデータを受け取ってそのモデルデータのRenderStateのベクタを取り出す
 	static std::vector<RenderState> CollectAllRenderStates(ModelContextDiplomat& modelContextDiplomat_);
 
