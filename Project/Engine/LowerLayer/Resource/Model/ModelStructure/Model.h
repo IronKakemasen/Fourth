@@ -18,10 +18,11 @@ public:
 	Model(const ModelDescription& modelDesc_);
 
 	std::string const WatchName()const;
-	auto const& WatchRenderStates()const { return modelDesc.WatchRenderStates(); }
-	auto const& WatchChangeables()const { return changeableStatus; }
 	
-	//そのパスで描画するかどうかで使用
+	//PSO生成、モデル分別用として利用
+	auto const& WatchRenderStates()const { return modelDesc.WatchRenderStates(); }
+	
+	//そのパスで描画するかどうかで利用
 	bool DoesDraw
 	(
 		RenderStateComponent::BlendMode blendMode_,
@@ -33,6 +34,10 @@ public:
 		changeableStatus.blendMode == blendMode_ &&
 		changeableStatus.materialType == materialType_;
 	}
+
+	//ランタイムでドローコマンドをたたくために使用
+	inline auto const& WatchPerDrawIndices()const { return modelDesc.WatchPerDrawIndices(); }
+	inline auto const& WatchMaterialGPU()const { return modelDesc.WatchMaterialGPU(); }
 
 private:
 

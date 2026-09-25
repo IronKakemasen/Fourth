@@ -16,7 +16,7 @@ class BufferContext::BufferAssembler::BufferMaterializer
 };
 
 template<>
-static [[nodiscard]] std::unique_ptr<ColorBuffer> BufferContext::BufferAssembler::BufferMaterializer::Materialize
+[[nodiscard]] std::unique_ptr<ColorBuffer> BufferContext::BufferAssembler::BufferMaterializer::Materialize
 (
 	ResourceContainer resourceContainer_,
 	const BufferDescriptionBehavior& desc_,
@@ -24,7 +24,7 @@ static [[nodiscard]] std::unique_ptr<ColorBuffer> BufferContext::BufferAssembler
 );
 
 template<>
-static [[nodiscard]] std::unique_ptr<DepthStencilBuffer> BufferContext::BufferAssembler::BufferMaterializer::Materialize
+[[nodiscard]] std::unique_ptr<DepthStencilBuffer> BufferContext::BufferAssembler::BufferMaterializer::Materialize
 (
 	ResourceContainer resourceContainer_,
 	const BufferDescriptionBehavior& desc_,
@@ -32,7 +32,7 @@ static [[nodiscard]] std::unique_ptr<DepthStencilBuffer> BufferContext::BufferAs
 );
 
 template<>
-static [[nodiscard]] std::unique_ptr<StaticStructuredBuffer> BufferContext::BufferAssembler::BufferMaterializer::Materialize
+[[nodiscard]] std::unique_ptr<StaticStructuredBuffer> BufferContext::BufferAssembler::BufferMaterializer::Materialize
 (
 	ResourceContainer resourceContainer_,
 	const BufferDescriptionBehavior& desc_,
@@ -40,7 +40,7 @@ static [[nodiscard]] std::unique_ptr<StaticStructuredBuffer> BufferContext::Buff
 );
 
 template<>
-static [[nodiscard]] std::unique_ptr<UploadStructuredBuffer> BufferContext::BufferAssembler::BufferMaterializer::Materialize
+[[nodiscard]] std::unique_ptr<UploadStructuredBuffer> BufferContext::BufferAssembler::BufferMaterializer::Materialize
 (
 	ResourceContainer resourceContainer_,
 	const BufferDescriptionBehavior& desc_,
@@ -48,7 +48,7 @@ static [[nodiscard]] std::unique_ptr<UploadStructuredBuffer> BufferContext::Buff
 );
 
 template<>
-static [[nodiscard]] std::unique_ptr<ComputeBuffer> BufferContext::BufferAssembler::BufferMaterializer::Materialize
+[[nodiscard]] std::unique_ptr<ComputeBuffer> BufferContext::BufferAssembler::BufferMaterializer::Materialize
 (
 	ResourceContainer resourceContainer_,
 	const BufferDescriptionBehavior& desc_,
@@ -56,7 +56,7 @@ static [[nodiscard]] std::unique_ptr<ComputeBuffer> BufferContext::BufferAssembl
 );
 
 template<>
-static [[nodiscard]] std::unique_ptr<ConstantBuffer> BufferContext::BufferAssembler::BufferMaterializer::Materialize
+[[nodiscard]] std::unique_ptr<ConstantBuffer> BufferContext::BufferAssembler::BufferMaterializer::Materialize
 (
 	ResourceContainer resourceContainer_,
 	const BufferDescriptionBehavior& desc_,
@@ -64,7 +64,7 @@ static [[nodiscard]] std::unique_ptr<ConstantBuffer> BufferContext::BufferAssemb
 );
 
 template<>
-static [[nodiscard]] std::unique_ptr<Texture2DBuffer> BufferContext::BufferAssembler::BufferMaterializer::Materialize
+[[nodiscard]] std::unique_ptr<Texture2DBuffer> BufferContext::BufferAssembler::BufferMaterializer::Materialize
 (
 	ResourceContainer resourceContainer_,
 	const BufferDescriptionBehavior& desc_,
