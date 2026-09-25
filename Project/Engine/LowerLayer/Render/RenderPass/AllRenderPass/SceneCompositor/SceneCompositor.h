@@ -11,7 +11,8 @@ public:
 	virtual void Update
 	(
 		[[maybe_unused]] std::pair<RenderStateKey, std::vector<Model*>> const& modelContainer_,
-		RuntimeWrapper& cmdWrapper_
+		RuntimeWrapper& cmdWrapper_,
+		BufferContext::BufferDispatcher& bufDispatcher_
 	)override;
 
 

@@ -46,6 +46,7 @@ private:
 		static inline std::string const kDsvFormatI		 		= "dsvFormat";
 		static inline std::string const kSrvFormatI		 		= "srvFormat";
 		static inline std::string const kClearDepthF	 		= "clearDepth";
+		static inline std::string const kClearStencilFlagB		= "clearStencilFlag";
 		static inline std::string const kClearStencilI	 		= "clearStencil";
 		static inline std::string const kDepthWidthI	 		= "depthWidth";
 		static inline std::string const kDepthHeightI	 		= "depthHeight";

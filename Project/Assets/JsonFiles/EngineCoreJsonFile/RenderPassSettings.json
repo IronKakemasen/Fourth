@@ -49,6 +49,7 @@
                                 "dsvFormat":  45,
                                 "srvFormat":  46,
                                 "clearDepth":  0.0,
+                                "clearStencilFlag": false,
                                 "clearStencil":0,
                                 "depthWidth": -1,
                                 "depthHeight": -1,

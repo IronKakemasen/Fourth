@@ -33,10 +33,10 @@ clearColor : double[][]
 Clear時の色をRGBWで指定。
 
 colorWidth : int[]
-カラーバッファの幅。
+カラーバッファの幅。-1にしてくれれば、ウィンドウサイズと認識します
 
 colorHeight : int[]
-カラーバッファの高さ。
+カラーバッファの高さ。同上
 
 numBuffer_Color : int[]
 バッファ数。シングル / ダブルを指定。
@@ -61,14 +61,17 @@ SRVフォーマット。
 clearDepth : double
 Clear時のDepth値。
 
+clearStencilFlag : bool
+stencilをクリアするかどうか
+
 clearStencil : int
 Clear時のStencil値。
 
 depthWidth : int
-深度バッファの幅。
+深度バッファの幅。-1にしてくれれば、ウィンドウサイズと認識します
 
 depthHeight : int
-深度バッファの高さ。
+深度バッファの高さ。同上
 
 numBuffer_Depth : int
 バッファ数。シングル / ダブルを指定。

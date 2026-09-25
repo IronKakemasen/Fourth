@@ -20,8 +20,8 @@ struct RenderContext::RuntimePassInfo
 	struct ColorBuffer
 	{
 		std::vector<float> clearColor{};
-		uint32_t width{};
-		uint32_t height{};
+		D3D12_VIEWPORT viewport;
+		D3D12_RECT scissorRect;
 		RenderStateComponent::BlendMode blendMode = RenderStateComponent::BlendMode::kDependsModel;
 		BufferUniqueID bufferID{};
 	};
@@ -29,6 +29,7 @@ struct RenderContext::RuntimePassInfo
 	struct DepthStencilBuffer
 	{
 		float clearDepth{};
+		D3D12_CLEAR_FLAGS doesClearStencil;
 		int clearStencil{};
 		BufferUniqueID bufferID;
 	};
@@ -50,11 +51,25 @@ private:
 
 	//PassDescからランタイムに必要な情報をピックする
 	void PickUpRuntimeRequirementsFromDesc(PassDesc const& desc_);
+	
 	//その他、PassDesc以外の情報を入力
 	void InputOtherParams
 	(
 		std::unordered_map<std::string, BufferUniqueID> const& idMap_,
 		UINT const refOffset_
 	);
+
+	//シザー行列、ビューポート行列を組み立てる
+	template<typename MarixType>
+	MarixType AssembleMatrix(uint32_t width_, uint32_t height_);
+
 };
+
+
+template<>
+D3D12_VIEWPORT RenderContext::RuntimePassInfo::AssembleMatrix(uint32_t width_, uint32_t height_);
+
+template<>
+D3D12_RECT RenderContext::RuntimePassInfo::AssembleMatrix(uint32_t width_, uint32_t height_);
+
 
