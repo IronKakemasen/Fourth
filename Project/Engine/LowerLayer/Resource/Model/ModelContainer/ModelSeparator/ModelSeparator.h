@@ -1,6 +1,6 @@
 #pragma once
 #include "../ModelContainer.h"
-#include "../../ModelStructure/RenderState.h"
+#include "../RenderStateKey/RenderStateKey.h"
 
 
 class KeyPackager;
@@ -17,7 +17,7 @@ public:
 private:
 
 	//レンダーステートをキーに詰める
-	std::vector<std::pair<RenderState, uint32_t>> PackToKey(Model const& model_);
+	std::vector<std::pair<RenderStateKey, uint32_t>> PackToKey(Model const& model_);
 
 	//レンダーステートキーをuint32_tに詰める
 	std::unique_ptr<KeyPackager> keyPackager;

@@ -2,6 +2,11 @@
 #include "../../RenderContext.h"
 #include "../../RenderPass/AllRenderPass/AllPassFwd.h"
 
+
+class Model;
+struct RenderStateKey;
+class RuntimeWrapper;
+
 class RenderContext::PathBehavior
 {
 public:
@@ -17,6 +22,12 @@ public:
 	}
 
 	auto const& WatchName()const { return  name; }
+
+	virtual void Update
+	(
+		[[maybe_unused]] std::pair<RenderStateKey, std::vector<Model*>> const& modelContainer_,
+		RuntimeWrapper& cmdWrapper_
+	) = 0;
 
 protected:
 	//名前。初期化のために所持する

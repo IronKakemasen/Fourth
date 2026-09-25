@@ -15,8 +15,8 @@ SceneOpaque::SceneOpaque(RenderContext::NexusFieldProof proof_ , std::unique_ptr
 
 void SceneOpaque::Update
 (
-	[[maybe_unused]] std::vector<Model> const& modelContainer_,
-	CommandContext::RuntimeWrapper& cmdWrapper_
+	[[maybe_unused]] std::pair<RenderStateKey, std::vector<Model*>> const& modelContainer_,
+	RuntimeWrapper& cmdWrapper_
 )
 {
 

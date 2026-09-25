@@ -7,6 +7,11 @@ public:
 
 	CreateSceneTexture(RenderContext::NexusFieldProof proof_, std::string const& name_);
 
+	virtual void Update
+	(
+		[[maybe_unused]] std::pair<RenderStateKey, std::vector<Model*>> const& modelContainer_,
+		RuntimeWrapper& cmdWrapper_
+	)override;
 
 private:
 

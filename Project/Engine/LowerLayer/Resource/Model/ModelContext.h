@@ -12,8 +12,6 @@ class ModelContext
 {
 	//モデルファイルからモデル情報を読み込む
 	class ModelDataLoader;
-	//モデルのコンテナ。おそらくただのコンテナになると思う
-	class ModelContainer;
 	//TransformMatrixSlotの空きインデックスを割り当てたり、モデル名をもとに
 	//モデルデータの割り当てを行う
 	class ModelSlotAllocator;
@@ -30,6 +28,8 @@ public:
 	class ModelCreator;
 	//モデルの書き込まなくてはならないデータ(TransformMatrixなど)のバッチングを行う
 	class ModelDataBatcher;
+	//モデルのコンテナ。おそらくただのコンテナになると思う
+	class ModelContainer;
 
 	//代行者
 	class ExecutionAgent;

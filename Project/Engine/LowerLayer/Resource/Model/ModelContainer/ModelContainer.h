@@ -1,20 +1,18 @@
 #pragma once
 #include "../ModelContext.h"
 #include "../ModelContextCmds.h"
-#include "../ModelStructure/RenderState.h"
+#include "RenderStateKey/RenderStateKey.h"
 
-struct RenderState;
 
 class ModelContext::ModelContainer
 {
 	//モデルのレンダーステートごとにコンテナに詰めて、PSOの切り替えコストを低減させるため
-	struct RenderStateKey;
 	class ModelSeparator;
 	
 
 public:
 
-	using SepartatedContainer = std::unordered_map<uint32_t, std::pair<RenderState , std::vector<Model*>>>;
+	using SepartatedContainer = std::unordered_map<uint32_t, std::pair<RenderStateKey , std::vector<Model*>>>;
 
 	struct Local_AddLicence;
 

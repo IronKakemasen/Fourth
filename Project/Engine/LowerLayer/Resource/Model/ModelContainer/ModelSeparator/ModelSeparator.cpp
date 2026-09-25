@@ -45,17 +45,18 @@ ModelContext::ModelContainer::ModelSeparator::SeparateAllModels(std::vector<std:
 
 		for (auto const& key : packedKeys)
 		{
-			dstSeparateContainer[(UINT)key.first.pass][key.second].first = key.first;
-			dstSeparateContainer[(UINT)key.first.pass][key.second].second.emplace_back((*itr).get());
+			auto const pass = (UINT)key.first.Get<RenderStateKey::Sequence::kPass>();
+			dstSeparateContainer[pass][key.second].first = key.first;
+			dstSeparateContainer[pass][key.second].second.emplace_back((*itr).get());
 		}
 	}
 
 	return dstSeparateContainer;
 }
 
-std::vector<std::pair<RenderState, uint32_t>> ModelContext::ModelContainer::ModelSeparator::PackToKey(Model const& model_)
+std::vector<std::pair<RenderStateKey, uint32_t>> ModelContext::ModelContainer::ModelSeparator::PackToKey(Model const& model_)
 {
-	std::vector<std::pair<RenderState, uint32_t>> keys;
+	std::vector<std::pair<RenderStateKey, uint32_t>> keys;
 
 	for (auto const& renderState : model_.WatchRenderStates())
 	{
@@ -72,7 +73,17 @@ std::vector<std::pair<RenderState, uint32_t>> ModelContext::ModelContainer::Mode
 					materialType
 				);
 
-				keys.emplace_back(std::make_pair(renderState, packedKey));
+				RenderStateKey renderStateKey
+				(
+					renderState.pass,
+					blendMode,
+					renderState.cullMode,
+					renderState.meshType,
+					materialType
+				);
+
+
+				keys.emplace_back(std::make_pair(renderStateKey, packedKey));
 			}
 		}
 	}

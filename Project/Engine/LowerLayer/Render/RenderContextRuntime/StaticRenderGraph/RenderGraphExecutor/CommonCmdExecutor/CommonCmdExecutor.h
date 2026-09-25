@@ -8,11 +8,11 @@ public:
 
 	CommonCmdExecutor(NexusFieldProof proof_, ID3D12RootSignature* graphicsRootSig_);
 
-	void Execute
+	void ExecuteCommonCmds
 	(
 		UINT const frameIndex_,
-		ID3D12DescriptorHeap* descriptorHeap_,
-		CommandContext::RuntimeWrapper& runtimeWrapper_,
+		ID3D12DescriptorHeap* srvDescriptorHeap_,
+		RuntimeWrapper& runtimeWrapper_,
 		std::array<std::vector<D3D12_GPU_VIRTUAL_ADDRESS>, (UINT)ProjectConfig::Render::NumBuffer::kDoubleBuffer> const& constantsGPU_
 	);
 
@@ -23,19 +23,19 @@ private:
 	void SetGlobalConstantViews
 	(
 		UINT const frameIndex_, 
-		CommandContext::RuntimeWrapper& runtimeWrapper_,
+		RuntimeWrapper& runtimeWrapper_,
 		std::array<std::vector<D3D12_GPU_VIRTUAL_ADDRESS>, (UINT)ProjectConfig::Render::NumBuffer::kDoubleBuffer> const& constantsGPU_
 	);
 
 	void SetGraphicsRootSignature
 	(
-		CommandContext::RuntimeWrapper& runtimeWrapper_
+		RuntimeWrapper& runtimeWrapper_
 	);
 
 	void SetDescriptorHeaps
 	(
 		ID3D12DescriptorHeap* descriptorHeap_,
-		CommandContext::RuntimeWrapper& runtimeWrapper_
+		RuntimeWrapper& runtimeWrapper_
 	);
 
 

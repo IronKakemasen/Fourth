@@ -1,7 +1,8 @@
 #pragma once
 #include "../../RenderContext.h"
-#include "../../RenderPath/AllRenderPath/AllPathFwd.h"
-#include "../../RenderPass/RenderPassComponent.h"
+
+
+class RuntimeWrapper;
 
 class RenderContext::StaticRenderGraph
 {

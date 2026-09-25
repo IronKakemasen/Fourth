@@ -9,8 +9,8 @@ public:
 
 	virtual void Update
 	(
-		[[maybe_unused]] std::vector<Model> const& modelContainer_,
-		CommandContext::RuntimeWrapper& cmdWrapper_
+		[[maybe_unused]] std::pair<RenderStateKey, std::vector<Model*>> const& modelContainer_,
+		RuntimeWrapper& cmdWrapper_
 	)override;
 
 private:

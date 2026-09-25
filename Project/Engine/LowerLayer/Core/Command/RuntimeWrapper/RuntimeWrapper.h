@@ -1,12 +1,9 @@
 #pragma once
 #include "../CommandContext.h"
 
-
-class CommandContext::RuntimeWrapper
+//コマンドリストを使った処理のラッパークラス
+class RuntimeWrapper
 {
-
-	ID3D12GraphicsCommandList6* cmdList;
-
 public:
 
 	RuntimeWrapper(ID3D12GraphicsCommandList6* cmdList_);
@@ -156,6 +153,11 @@ public:
 	{
 		cmdList->SetGraphicsRootDescriptorTable(rootParameterIndex_, baseDescriptor_);
 	}
+
+	private:
+		ID3D12GraphicsCommandList6* cmdList;
+
+
 };
 
 
