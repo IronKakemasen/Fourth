@@ -72,13 +72,13 @@ namespace ProjectConfig
 #ifndef _DEBUG
 
 		//DebugLayer
-		constexpr bool kEnableDebugLayer = true;
+		constexpr bool kEnableDebugLayer = false;
 		//ポインター破壊検知
-		constexpr bool kEnablePointerValidator = true;
+		constexpr bool kEnablePointerValidator = false;
 		//Comptrのリークチェック
-		constexpr bool kEnableLeakChecker = true;
+		constexpr bool kEnableLeakChecker = false;
 		//Jsonファイルを読み込むときに型チェックを行うかどうか
-		constexpr bool kEnableJsonDataTypeCheck = true;
+		constexpr bool kEnableJsonDataTypeCheck = false;
 
 
 #endif // !_DEBUG

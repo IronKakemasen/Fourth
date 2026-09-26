@@ -12,7 +12,7 @@ namespace RenderPassTraits
 	struct PassClassTraits<SceneOpaque>
 	{
 		static inline const std::string name = "SceneOpaque";
-		static constexpr RenderPassComponent::Pass passEnum = RenderPassComponent::Pass::kSceneOpaque;
+		static constexpr RenderPassComponent::Pass kPassEnum = RenderPassComponent::Pass::kSceneOpaque;
 
 	};
 
@@ -20,22 +20,22 @@ namespace RenderPassTraits
 	struct PassClassTraits<SceneCompositor>
 	{
 		static inline const std::string name = "SceneCompositor";
-		static constexpr RenderPassComponent::Pass passEnum = RenderPassComponent::Pass::kSceneCompositor;
+		static constexpr RenderPassComponent::Pass kPassEnum = RenderPassComponent::Pass::kSceneCompositor;
 
 	};
 
 	//名前から列挙型を特定
-	constexpr RenderPassComponent::Pass PassNameToPassType(std::string const passName_)
+	constexpr RenderPassComponent::Pass PassNameToPassType(std::string const& passName_)
 	{
 		RenderPassComponent::Pass pass = RenderPassComponent::Pass::kCount;
 
 		if (passName_ == PassClassTraits<SceneOpaque>::name)
 		{
-			pass = PassClassTraits<SceneOpaque>::passEnum;
+			pass = PassClassTraits<SceneOpaque>::kPassEnum;
 		}
 		else if (passName_ == PassClassTraits<SceneCompositor>::name)
 		{
-			pass = PassClassTraits<SceneCompositor>::passEnum;
+			pass = PassClassTraits<SceneCompositor>::kPassEnum;
 		}
 		else
 		{

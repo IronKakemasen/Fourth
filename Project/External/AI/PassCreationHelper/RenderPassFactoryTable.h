@@ -40,7 +40,7 @@ namespace RenderPassTraitsAI
 	{
 		std::array<PassFactory, (size_t)RenderPassComponent::Pass::kCount> table{};
 
-		((table[(size_t)RenderPassTraits::PassClassTraits<PassTypes>::passEnum] = &CreateAndRegister<PassTypes>), ...);
+		((table[(size_t)RenderPassTraits::PassClassTraits<PassTypes>::kPassEnum] = &CreateAndRegister<PassTypes>), ...);
 
 		return table;
 	}

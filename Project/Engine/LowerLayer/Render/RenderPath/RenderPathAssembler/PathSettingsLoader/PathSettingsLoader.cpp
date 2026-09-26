@@ -5,7 +5,7 @@
 using namespace RenderPassTraits;
 
 [[nodiscard]] std::vector<RenderContext::RenderPathAssembler::PassAndName> RenderContext::RenderPathAssembler::PathSettingsLoader::
-ParseWhichPassUses(std::string const pathName_)
+ParseWhichPassUses(std::string const& pathName_)
 {
 
 	//使用するPassを文字列で伝える
@@ -25,7 +25,7 @@ ParseWhichPassUses(std::string const pathName_)
 }
 
 
-std::vector<std::string> RenderContext::RenderPathAssembler::PathSettingsLoader::LoadData(std::string const pathName_)
+std::vector<std::string> RenderContext::RenderPathAssembler::PathSettingsLoader::LoadData(std::string const& pathName_)
 {
 	Miyajison* miyajison = Miyajison::Get();
 
@@ -37,7 +37,7 @@ std::vector<RenderPassComponent::Pass> RenderContext::RenderPathAssembler::PathS
 {
 	std::vector<RenderPassComponent::Pass> passTypes;
 
-	for (auto const passName : passNames_)
+	for (auto const& passName : passNames_)
 	{
 		passTypes.emplace_back(PassNameToPassType(passName));
 	}

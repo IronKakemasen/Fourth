@@ -1,6 +1,7 @@
 #include "PreCompileHeader.h"
 #include "RuntimePassInfo.h"
 #include "../PassDesc/PassDesc.h"
+#include "../AllRenderPass/RenderPassTraits.h"
 
 RenderContext::RuntimePassInfo::RuntimePassInfo
 (
@@ -32,6 +33,7 @@ void RenderContext::RuntimePassInfo::InputOtherParams
 
 void RenderContext::RuntimePassInfo::PickUpRuntimeRequirementsFromDesc(PassDesc const& desc_)
 {
+	pass = RenderPassTraits::PassNameToPassType(desc_.passName);
 
 //カラーバッファ
 	{

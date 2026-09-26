@@ -14,7 +14,7 @@ ModelContext::ModelDataCache::~ModelDataCache()
 	Logger::Log("Delete modelData cache", "ModelDataCache.cpp");
 }
 
-void ModelContext::ModelDataCache::FindDuplication(AccessKey key_, std::string fileName_)
+void ModelContext::ModelDataCache::FindDuplication(AccessKey key_, std::string const& fileName_)
 {
 	ErrorMessageOutput::Assert::DetectError
 	(
@@ -25,7 +25,7 @@ void ModelContext::ModelDataCache::FindDuplication(AccessKey key_, std::string f
 
 }
 
-void ModelContext::ModelDataCache::StoreTemporarily(AccessKey key_, std::string fileName_, std::unique_ptr<ModelData>&& data_)
+void ModelContext::ModelDataCache::StoreTemporarily(AccessKey key_, std::string const& fileName_, std::unique_ptr<ModelData>&& data_)
 {
 	Logger::Log("Register: " + fileName_, "ModelDataCache.cpp");
 

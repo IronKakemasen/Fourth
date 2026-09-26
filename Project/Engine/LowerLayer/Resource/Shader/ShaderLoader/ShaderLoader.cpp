@@ -83,10 +83,8 @@ std::unordered_map<std::string, std::vector<std::wstring>> ShaderContext::Shader
 
     for (auto const& key : allShaderFileNames)
     {
-        auto const groupName = key;
-
         std::vector<std::string> args =
-            Miyajison->LoadData<std::vector<std::string>>(DataStrings::kSrcJsonFileKey, { groupName ,DataStrings::kArgs });
+            Miyajison->LoadData<std::vector<std::string>>(DataStrings::kSrcJsonFileKey, { key ,DataStrings::kArgs });
 
         if (args[0] == DataStrings::kNone) continue;
 
@@ -94,7 +92,7 @@ std::unordered_map<std::string, std::vector<std::wstring>> ShaderContext::Shader
     }
 
     //stringからwstringへ
-    for (auto [key, value] : argsMap)
+    for (auto const& [key, value] : argsMap)
     {
         for (auto& arg : value)
         {

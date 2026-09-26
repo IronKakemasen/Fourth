@@ -61,10 +61,10 @@ std::vector<BufferUniqueID> RenderContext::StaticRenderGraph::PassSetUpper::Crea
 	std::vector<std::string > allRefBufferNames;
 
 	//パス自身がどのバッファを使用するかの名前リストを所持しているので、それと組み合わせて埋めていく
-	for (auto const& [passEnum, pass]: allPassPtrMap)
+	for (auto const& [kPassEnum, pass]: allPassPtrMap)
 	{
 		PassDesc const& desc = *pass->WatchDesc();
-		std::string const dsrPassName = desc.passName;
+		std::string const& dsrPassName = desc.passName;
 
 		//そのパスがバッファ配列の何番目を参照するか、であるPassBufferIndexRangeCPUGPUのoffset
 		//普通にallRefBufferUniquesのけつ番目でいいはず
@@ -74,7 +74,7 @@ std::vector<BufferUniqueID> RenderContext::StaticRenderGraph::PassSetUpper::Crea
 		std::vector<std::string> const& refBufferNames = desc.referenceBufferNames;
 		std::unordered_map<std::string, BufferUniqueID> idMap;
 
-		for (auto const refBufferName : refBufferNames)
+		for (auto const& refBufferName : refBufferNames)
 		{
 			//参照するバッファID
 			BufferUniqueID refID = passBufferCache.at(refBufferName);
