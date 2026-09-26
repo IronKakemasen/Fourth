@@ -9,7 +9,7 @@ CreateSceneTexture::CreateSceneTexture(RenderContext::NexusFieldProof proof_, st
 
 void CreateSceneTexture::Update
 (
-	[[maybe_unused]] std::pair<RenderStateKey, std::vector<Model*>> const& modelContainer_,
+	[[maybe_unused]] std::vector<std::unordered_map<uint32_t, std::pair<RenderStateKey, std::vector<Model*>>>> const& modelContainer_,
 	RuntimeWrapper& cmdWrapper_
 )
 {

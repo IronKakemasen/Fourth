@@ -25,14 +25,15 @@ public:
 
 	virtual void Update
 	(
-		[[maybe_unused]] std::pair<RenderStateKey, std::vector<Model*>> const& modelContainer_,
+		[[maybe_unused]] std::vector<std::unordered_map<uint32_t, std::pair<RenderStateKey, std::vector<Model*>>>> const& modelContainer_,
 		RuntimeWrapper& cmdWrapper_
 	) = 0;
 
 protected:
+
+
 	//名前。初期化のために所持する
 	std::string name;
-
 
 	//パフォーマンス稼ぎたいのでanyではなくtupleで
 	AllPassPtr passses;
