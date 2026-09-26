@@ -21,7 +21,7 @@ public:
 		std::string const modelFileName_,
 		std::vector<RenderState> const& modelRenderStates_,
 		std::vector<StructuredBufferModelData::MaterialCPU> const& materials_,
-		std::string const modelName_ = "nameLess"
+		std::string const& modelName_ = "nameLess"
 	);
 
 private:

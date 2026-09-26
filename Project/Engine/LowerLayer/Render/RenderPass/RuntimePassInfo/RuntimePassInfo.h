@@ -34,6 +34,7 @@ struct RenderContext::RuntimePassInfo
 		BufferUniqueID bufferID;
 	};
 
+	auto const& WatchPass() const { return pass; }
 	auto const& WatchColorBuffersInfo() const { return colorBuffersInfo; }
 	auto const& WatchDepthStencilBufferInfo() const { return depthStencilBufferInfo; }
 	auto const& WatchReferenceBufferIDs() const { return referenceBufferIDMap; }
@@ -42,6 +43,7 @@ struct RenderContext::RuntimePassInfo
 private:
 
 	//Descから情報をピックする
+	RenderPassComponent::Pass pass;
 	std::vector<ColorBuffer> colorBuffersInfo;
 	std::optional<DepthStencilBuffer> depthStencilBufferInfo;
 	

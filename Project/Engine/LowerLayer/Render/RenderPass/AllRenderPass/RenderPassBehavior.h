@@ -1,6 +1,7 @@
 #pragma once
 #include "../../RenderContext.h"
-
+#include "../RenderPassComponent.h"
+#include "../../RenderStateComponent.h"
 
 //外部
 #include "../../../Buffer/BufferContext.h"
@@ -43,6 +44,9 @@ public:
 
 protected:
 
+	//パスから出力すべきコンポーネント群
+	using RequiredComponents = std::tuple<RenderPassComponent::Pass, RenderStateComponent::BlendMode>;
+
 	//Passの設計図
 	std::unique_ptr<PassDesc> desc;
 	//ランタイムで必要になるPassの情報をまとめたもの
@@ -50,6 +54,10 @@ protected:
 
 
 private:
+
+	//パスからPSOキーのコンポーネントの一部を抽出
+	RequiredComponents ExtractComponents(UINT const colorIndex_)const;
+	
 
 	//Passのルートコンスタンツを転送
 	void TransferRootConstants(RuntimeWrapper& cmdWrapper_);
@@ -84,7 +92,7 @@ private:
 	);
 
 	//描画先の決定
-	void SetrenderTargets
+	void SetRenderTargets
 	(
 		std::array<D3D12_CPU_DESCRIPTOR_HANDLE, D3D12_SIMULTANEOUS_RENDER_TARGET_COUNT> const& rtHandles_,
 		UINT const numRT_,
@@ -99,9 +107,6 @@ private:
 		const MatrixType* matrix_,
 		RuntimeWrapper& cmdWrapper_
 	);
-
-
-
 };
 
 

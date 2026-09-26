@@ -26,13 +26,13 @@ class TextureContext::TextureBufferCreator::TextureDataLoader
 
 	///レジストリーに登録されている全てのテクスチャファイルの、
 	///Texture2DBufferDescriptionを構成する要素があるジェーソンファイルからデータを読む
-	static Texture2DState LoadTextureState(std::string const key_);
+	static Texture2DState LoadTextureState(std::string const& key_);
 
 
 	//以下ヘルパー
 private:
 
-	static TextureComponent::TextureType ToTextureType(std::string const typeString_);
+	static TextureComponent::TextureType ToTextureType(std::string const& typeString_);
 	
 };
 

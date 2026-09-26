@@ -22,7 +22,7 @@ void BufferContext::GlobalConstantBuffers::PackRuntimeContainer(NexusFieldProof 
 	
 
 	//昇順は担保されてるはずだからそのまま詰めてく
-	for (auto [key, value] : gpuVirtualAddressMap)
+	for (auto const& [key, value] : gpuVirtualAddressMap)
 	{
 		//念のため重複チェック
 		ErrorMessageOutput::Assert::DetectError(!std::ranges::contains(forChecking, key), "定数バッファのスロット設定おかしくね？", fileName);
@@ -43,7 +43,7 @@ void BufferContext::GlobalConstantBuffers::PackRuntimeContainer(NexusFieldProof 
 	);
 
 	Logger::Log("===== List of cBuffer slots =====",fileName);
-	for (auto [key, value] : gpuVirtualAddressMap)
+	for (auto const& [key, value] : gpuVirtualAddressMap)
 	{
 		Logger::Log("Slot[" + std::to_string(key) + "]: " + value.first);
 	}

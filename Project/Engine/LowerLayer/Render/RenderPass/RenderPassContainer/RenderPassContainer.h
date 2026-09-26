@@ -20,7 +20,7 @@ public:
 	)
 	{
 		auto* passPtr = pass_.get();
-		allPassPtrMap[RenderPassTraits::PassClassTraits<PassType>::passEnum] = passPtr;
+		allPassPtrMap[RenderPassTraits::PassClassTraits<PassType>::kPassEnum] = passPtr;
 
 		std::get<std::unique_ptr<PassType>>(allPassUnique) = std::move(pass_);
 

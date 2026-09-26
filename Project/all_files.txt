@@ -10135,10 +10135,10 @@ std::vector<BufferUniqueID> RenderContext::StaticRenderGraph::PassSetUpper::Crea
 	//デバッグ用
 	std::vector<std::string > allRefBufferNames;
 	//パス自身がどのバッファを使用するかの名前リストを所持しているので、それと組み合わせて埋めていく
-	for (auto const& [passEnum, pass]: allPassPtrMap)
+	for (auto const& [kPassEnum, pass]: allPassPtrMap)
 	{
 		PassDesc const& desc = *pass->WatchDesc();
-		std::string const dsrPassName = desc.passName;
+		std::string const& dsrPassName = desc.passName;
 		//そのパスがバッファ配列の何番目を参照するか、であるPassBufferIndexRangeCPUGPUのoffset
 		//普通にallRefBufferUniquesのけつ番目でいいはず
 		UINT const refOffset = UINT(allRefBufferUniques.size());
@@ -10602,6 +10602,9 @@ void RenderContext::PassBehavior::CreatePassInfo
 {
 	runtimePassInfo.reset(new RuntimePassInfo(proof_, std::move(desc), idMap_, refOffset_));
 }
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 void RenderContext::PassBehavior::BeginPass(RuntimeWrapper& cmdWrapper_, BufferContext::BufferDispatcher& bufDispatcher_)
 {
 	auto const& colorBuffersInfo = runtimePassInfo->WatchColorBuffersInfo();
@@ -10629,13 +10632,13 @@ void RenderContext::PassBehavior::BeginPass(RuntimeWrapper& cmdWrapper_, BufferC
 		//ビュークリア
 		ClearDepthStencilBufferView(dsvHandle, cmdWrapper_);
 		//描画先の設定
-		SetrenderTargets(rtHandles, numColorBuffers, &dsvHandle, cmdWrapper_);
+		SetRenderTargets(rtHandles, numColorBuffers, &dsvHandle, cmdWrapper_);
 	}
 	//無ければ
 	else
 	{
 		//描画先の設定
-		SetrenderTargets(rtHandles, numColorBuffers, nullptr, cmdWrapper_);
+		SetRenderTargets(rtHandles, numColorBuffers, nullptr, cmdWrapper_);
 	}
 	//このパスのルートコンスタンツを転送
 	TransferRootConstants(cmdWrapper_);
@@ -10656,7 +10659,7 @@ void RenderContext::PassBehavior::TransferRootConstants(RuntimeWrapper& cmdWrapp
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-void RenderContext::PassBehavior::SetrenderTargets
+void RenderContext::PassBehavior::SetRenderTargets
 (
 	std::array<D3D12_CPU_DESCRIPTOR_HANDLE, D3D12_SIMULTANEOUS_RENDER_TARGET_COUNT> const& rtHandles_,
 	UINT const numRT_,
@@ -10744,12 +10747,22 @@ void RenderContext::PassBehavior::SetMatrix<D3D12_RECT>
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+RenderContext::PassBehavior::RequiredComponents RenderContext::PassBehavior::ExtractComponents(UINT const colorIndex_)const
+{
+	return std::make_tuple
+	(
+		runtimePassInfo->WatchPass(),
+		runtimePassInfo->WatchColorBuffersInfo()[colorIndex_].blendMode
+	);
+}
 
 ========================================
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Render\RenderPass\AllRenderPass\RenderPassBehavior.h ===
 ========================================
 #pragma once
 #include "../../RenderContext.h"
+#include "../RenderPassComponent.h"
+#include "../../RenderStateComponent.h"
 //外部
 #include "../../../Buffer/BufferContext.h"
 class RuntimeWrapper;
@@ -10779,11 +10792,15 @@ public:
 	//レンダーターゲットのあれこれの描画コマンドをたたく
 	void BeginPass(RuntimeWrapper& cmdWrapper_, BufferContext::BufferDispatcher& bufDispatcher_);
 protected:
+	//パスから出力すべきコンポーネント群
+	using RequiredComponents = std::tuple<RenderPassComponent::Pass, RenderStateComponent::BlendMode>;
 	//Passの設計図
 	std::unique_ptr<PassDesc> desc;
 	//ランタイムで必要になるPassの情報をまとめたもの
 	std::unique_ptr<RuntimePassInfo> runtimePassInfo;
 private:
+	//パスからPSOキーのコンポーネントの一部を抽出
+	RequiredComponents ExtractComponents(UINT const colorIndex_)const;
 	//Passのルートコンスタンツを転送
 	void TransferRootConstants(RuntimeWrapper& cmdWrapper_);
 	//カラーバッファのビューをクリアする
@@ -10812,7 +10829,7 @@ private:
 		BufferContext::BufferDispatcher& bufDispatcher_
 	);
 	//描画先の決定
-	void SetrenderTargets
+	void SetRenderTargets
 	(
 		std::array<D3D12_CPU_DESCRIPTOR_HANDLE, D3D12_SIMULTANEOUS_RENDER_TARGET_COUNT> const& rtHandles_,
 		UINT const numRT_,
@@ -10857,25 +10874,25 @@ namespace RenderPassTraits
 	struct PassClassTraits<SceneOpaque>
 	{
 		static inline const std::string name = "SceneOpaque";
-		static constexpr RenderPassComponent::Pass passEnum = RenderPassComponent::Pass::kSceneOpaque;
+		static constexpr RenderPassComponent::Pass kPassEnum = RenderPassComponent::Pass::kSceneOpaque;
 	};
 	template<>
 	struct PassClassTraits<SceneCompositor>
 	{
 		static inline const std::string name = "SceneCompositor";
-		static constexpr RenderPassComponent::Pass passEnum = RenderPassComponent::Pass::kSceneCompositor;
+		static constexpr RenderPassComponent::Pass kPassEnum = RenderPassComponent::Pass::kSceneCompositor;
 	};
 	//名前から列挙型を特定
-	constexpr RenderPassComponent::Pass PassNameToPassType(std::string const passName_)
+	constexpr RenderPassComponent::Pass PassNameToPassType(std::string const& passName_)
 	{
 		RenderPassComponent::Pass pass = RenderPassComponent::Pass::kCount;
 		if (passName_ == PassClassTraits<SceneOpaque>::name)
 		{
-			pass = PassClassTraits<SceneOpaque>::passEnum;
+			pass = PassClassTraits<SceneOpaque>::kPassEnum;
 		}
 		else if (passName_ == PassClassTraits<SceneCompositor>::name)
 		{
-			pass = PassClassTraits<SceneCompositor>::passEnum;
+			pass = PassClassTraits<SceneCompositor>::kPassEnum;
 		}
 		else
 		{
@@ -11189,7 +11206,7 @@ public:
 	)
 	{
 		auto* passPtr = pass_.get();
-		allPassPtrMap[RenderPassTraits::PassClassTraits<PassType>::passEnum] = passPtr;
+		allPassPtrMap[RenderPassTraits::PassClassTraits<PassType>::kPassEnum] = passPtr;
 		std::get<std::unique_ptr<PassType>>(allPassUnique) = std::move(pass_);
 		return passPtr;
 	}
@@ -11586,6 +11603,7 @@ private:
 #include "PreCompileHeader.h"
 #include "RuntimePassInfo.h"
 #include "../PassDesc/PassDesc.h"
+#include "../AllRenderPass/RenderPassTraits.h"
 RenderContext::RuntimePassInfo::RuntimePassInfo
 (
 	NexusFieldProof proof_,
@@ -11612,6 +11630,7 @@ void RenderContext::RuntimePassInfo::InputOtherParams
 }
 void RenderContext::RuntimePassInfo::PickUpRuntimeRequirementsFromDesc(PassDesc const& desc_)
 {
+	pass = RenderPassTraits::PassNameToPassType(desc_.passName);
 //カラーバッファ
 	{
 		auto const numColorBuffers = desc_.colorBuffersInfo.size();
@@ -11697,12 +11716,14 @@ struct RenderContext::RuntimePassInfo
 		int clearStencil{};
 		BufferUniqueID bufferID;
 	};
+	auto const& WatchPass() const { return pass; }
 	auto const& WatchColorBuffersInfo() const { return colorBuffersInfo; }
 	auto const& WatchDepthStencilBufferInfo() const { return depthStencilBufferInfo; }
 	auto const& WatchReferenceBufferIDs() const { return referenceBufferIDMap; }
 	auto const& WatchRootConstants() const { return rootConstants; }
 private:
 	//Descから情報をピックする
+	RenderPassComponent::Pass pass;
 	std::vector<ColorBuffer> colorBuffersInfo;
 	std::optional<DepthStencilBuffer> depthStencilBufferInfo;
 	//こいつらは別機関から情報を埋めてもらう
@@ -19703,4 +19724,4 @@ namespace StringProcessing
 === SUMMARY ===
 ========================================
 Total Files      : 437
-Effective Lines  : 14356
+Effective Lines  : 14369

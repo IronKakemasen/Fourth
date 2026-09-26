@@ -20,7 +20,7 @@ public:
 	template<typename DataType>
 	void Link
 	(
-		std::string modelFileName_,
+		std::string const& modelFileName_,
 		std::vector<DataType> const& data_
 	)
 	{

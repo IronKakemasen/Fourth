@@ -49,7 +49,7 @@ namespace StringProcessing
     }
 
     ///けつからn番目の文字をカットする
-    inline std::string Cut(std::string const dstString_, size_t const removeStartPos_)
+    inline std::string Cut(std::string const& dstString_, size_t const removeStartPos_)
     {
         auto const stringEndPos = dstString_.size() - removeStartPos_;
 

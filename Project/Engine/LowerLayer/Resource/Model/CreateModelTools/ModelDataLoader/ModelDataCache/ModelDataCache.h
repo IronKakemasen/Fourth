@@ -13,9 +13,9 @@ public:
 	~ModelDataCache();
 
 	//ダブりチェック
-	void FindDuplication(AccessKey key_, std::string fileName_);
+	void FindDuplication(AccessKey key_, std::string const& fileName_);
 	//一時データとして保存
-	void StoreTemporarily(AccessKey key_, std::string fileName_, std::unique_ptr<ModelData>&& data_);
+	void StoreTemporarily(AccessKey key_, std::string const& fileName_, std::unique_ptr<ModelData>&& data_);
 
 private:
 
