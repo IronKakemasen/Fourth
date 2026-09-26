@@ -4215,7 +4215,7 @@ SRVHeapIndex ColorBuffer::OutProperSRVHeapIndex(int frameIndex_)const
 #pragma once
 #include "../BufferInterface.h"
 //カラーバッファクラス
-class ColorBuffer final : public GPUBufferBehavior,IColorBuffer,IRenderTargetBuffer,IReadable
+class ColorBuffer final : public GPUBufferBehavior, public IColorBuffer,IRenderTargetBuffer,IReadable
 {
 public:
 	ColorBuffer
@@ -4393,7 +4393,7 @@ SRVHeapIndex DepthStencilBuffer::OutProperSRVHeapIndex(int frameIndex_)const
 #pragma once
 #include "../BufferInterface.h"
 //定数バッファクラス
-class DepthStencilBuffer final : public GPUBufferBehavior, IRenderTargetBuffer,IReadable,IDepthBuffer
+class DepthStencilBuffer final : public GPUBufferBehavior, public IDepthBuffer, IRenderTargetBuffer,IReadable
 {
 public:
 	DepthStencilBuffer
@@ -9126,24 +9126,6 @@ private:
 	friend class Nexus;
 	explicit NexusFieldProof() = default;
 };
-//void IColorBuffer::AssembleMatrix(UINT width_, UINT height_)
-//{
-//	//クライアント領域と一緒のサイズにして画面全体に表示
-//	viewport.Width = static_cast<FLOAT>(width_);
-//	viewport.Height = static_cast<FLOAT>(height_);
-//	viewport.TopLeftX = 0.0f;
-//	viewport.TopLeftY = 0.0f;
-//	viewport.MinDepth = 0.0f;
-//	viewport.MaxDepth = 1.0f;
-//
-//	//シザー矩形
-//	scissorRect.right = static_cast<LONG>(width_);
-//	scissorRect.bottom = static_cast<LONG>(height_);
-//	scissorRect.left = static_cast<LONG>(0.0f);
-//	scissorRect.top = static_cast<LONG>(0.0f);
-//
-//	Logger::Log("Structure:  Matrix", "BufferInterface.cpp");
-//}
 
 ========================================
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Render\RenderStateComponent.h ===
@@ -10590,9 +10572,13 @@ using AllPassUnique = std::tuple
 ========================================
 #include "PreCompileHeader.h"
 #include "RenderPassBehavior.h"
-#include "RenderPassTraits.h"
 #include "../PassDesc/PassDesc.h"
 #include "../RuntimePassInfo/RuntimePassInfo.h"
+//外部
+#include "../../../Buffer/BufferRuntime/BufferDispatcher/BufferDispatcher.h"
+#include "../../../Buffer/BufferDefinition/GPUBuffer/ColorBuffer/ColorBuffer.h"
+#include "../../../Buffer/BufferDefinition/GPUBuffer/DepthStencilBuffer/DepthStencilBuffer.h"
+#include "../../../Core/Command/RuntimeWrapper/RuntimeWrapper.h"
 RenderContext::PassBehavior::PassBehavior(NexusFieldProof proof_, std::unique_ptr<PassDesc>&& desc_)
 	:desc(std::move(desc_))
 {
@@ -10604,6 +10590,9 @@ RenderContext::PassDesc const* RenderContext::PassBehavior::WatchDesc() const
 {
 	return desc ? desc.get() : nullptr;
 }
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 void RenderContext::PassBehavior::CreatePassInfo
 (
 	NexusFieldProof proof_,
@@ -10613,15 +10602,161 @@ void RenderContext::PassBehavior::CreatePassInfo
 {
 	runtimePassInfo.reset(new RuntimePassInfo(proof_, std::move(desc), idMap_, refOffset_));
 }
+void RenderContext::PassBehavior::BeginPass(RuntimeWrapper& cmdWrapper_, BufferContext::BufferDispatcher& bufDispatcher_)
+{
+	auto const& colorBuffersInfo = runtimePassInfo->WatchColorBuffersInfo();
+	UINT const numColorBuffers = UINT(colorBuffersInfo.size());
+	auto const& DepthStencilBufferInfo = runtimePassInfo->WatchDepthStencilBufferInfo();
+	std::array<D3D12_CPU_DESCRIPTOR_HANDLE, D3D12_SIMULTANEOUS_RENDER_TARGET_COUNT> rtHandles;
+	std::array<D3D12_RECT, D3D12_SIMULTANEOUS_RENDER_TARGET_COUNT> scissorRects;
+	std::array<D3D12_VIEWPORT, D3D12_SIMULTANEOUS_RENDER_TARGET_COUNT> viewports;
+	//カラーバッファ
+	for (UINT i = 0;i < numColorBuffers;++i)
+	{
+		auto const& src = colorBuffersInfo[i];
+		//パラメーターかき集め
+		rtHandles[i] = PullColorBufferHandle(src.bufferID, bufDispatcher_);
+		scissorRects[i] = src.scissorRect;
+		viewports[i] = src.viewport;
+		//ビュークリア
+		ClearColorBufferView(rtHandles[i], src.clearColor.data(), cmdWrapper_);
+	}
+	//深度ステンシルバッファ
+	if (DepthStencilBufferInfo.has_value())
+	{
+		//ハンドル取得
+		D3D12_CPU_DESCRIPTOR_HANDLE dsvHandle = PullDepthStencilBufferHandle(DepthStencilBufferInfo->bufferID, bufDispatcher_);
+		//ビュークリア
+		ClearDepthStencilBufferView(dsvHandle, cmdWrapper_);
+		//描画先の設定
+		SetrenderTargets(rtHandles, numColorBuffers, &dsvHandle, cmdWrapper_);
+	}
+	//無ければ
+	else
+	{
+		//描画先の設定
+		SetrenderTargets(rtHandles, numColorBuffers, nullptr, cmdWrapper_);
+	}
+	//このパスのルートコンスタンツを転送
+	TransferRootConstants(cmdWrapper_);
+}
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+void RenderContext::PassBehavior::TransferRootConstants(RuntimeWrapper& cmdWrapper_)
+{
+	cmdWrapper_.SetGraphicsRoot32BitConstants
+	(
+		(UINT)ConstantBuffers::RootConstantsBindSlots::kPassBufferIndexRange,
+		2,                    
+		&runtimePassInfo->WatchRootConstants(),
+		0
+	);
+}
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+void RenderContext::PassBehavior::SetrenderTargets
+(
+	std::array<D3D12_CPU_DESCRIPTOR_HANDLE, D3D12_SIMULTANEOUS_RENDER_TARGET_COUNT> const& rtHandles_,
+	UINT const numRT_,
+	D3D12_CPU_DESCRIPTOR_HANDLE* depthHandle_,
+	RuntimeWrapper& cmdWrapper_
+)
+{
+	cmdWrapper_.OMSetRenderTargets(numRT_, rtHandles_.data(), false, depthHandle_);
+}
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+D3D12_CPU_DESCRIPTOR_HANDLE RenderContext::PassBehavior::PullDepthStencilBufferHandle
+(
+	BufferUniqueID const id_,
+	BufferContext::BufferDispatcher& bufDispatcher_
+)
+{
+	//IDから深度ステンシルバッファを検索
+	auto* depthSBuffer = static_cast<DepthStencilBuffer*>(bufDispatcher_.Dispatch(id_));
+	IDepthBuffer* iDepth = static_cast<IDepthBuffer*>(depthSBuffer);
+	return iDepth->OutProperDSVHeapHandle();
+}
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+D3D12_CPU_DESCRIPTOR_HANDLE RenderContext::PassBehavior::PullColorBufferHandle
+(
+	BufferUniqueID const id_,
+	BufferContext::BufferDispatcher& bufDispatcher_
+)
+{
+	//IDからカラーバッファを検索
+	auto* colorBuffer = static_cast<ColorBuffer*>(bufDispatcher_.Dispatch(id_));
+	auto* iColorBuffer = static_cast<IColorBuffer*>(colorBuffer);
+	return iColorBuffer->OutProperRTVHeapHandle();
+}
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+void RenderContext::PassBehavior::ClearColorBufferView
+(
+	D3D12_CPU_DESCRIPTOR_HANDLE const handleCPU_,
+	const FLOAT* clearColorPtr_,
+	RuntimeWrapper& cmdWrapper_
+)
+{
+	cmdWrapper_.ClearRenderTargetView(handleCPU_, clearColorPtr_, 0, nullptr);
+}
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+void RenderContext::PassBehavior::ClearDepthStencilBufferView
+(
+	D3D12_CPU_DESCRIPTOR_HANDLE const handleCPU_,
+	RuntimeWrapper& cmdWrapper_
+)
+{
+	auto const& depthSInfo = runtimePassInfo->WatchDepthStencilBufferInfo();
+	cmdWrapper_.ClearDepthStencilView(handleCPU_, depthSInfo->doesClearStencil, depthSInfo->clearDepth, depthSInfo->clearStencil, 0, nullptr);
+}
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+template<>
+void RenderContext::PassBehavior::SetMatrix<D3D12_VIEWPORT>
+(
+	UINT const num_,
+	const D3D12_VIEWPORT* matrix_,
+	RuntimeWrapper& cmdWrapper_
+)
+{
+	cmdWrapper_.RSSetViewports(num_, matrix_);
+}
+template<>
+void RenderContext::PassBehavior::SetMatrix<D3D12_RECT>
+(
+	UINT const num_,
+	const D3D12_RECT* matrix_,
+	RuntimeWrapper& cmdWrapper_
+)
+{
+	cmdWrapper_.RSSetScissorRects(num_, matrix_);
+}
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 ========================================
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Render\RenderPass\AllRenderPass\RenderPassBehavior.h ===
 ========================================
 #pragma once
 #include "../../RenderContext.h"
+//外部
+#include "../../../Buffer/BufferContext.h"
 class RuntimeWrapper;
 class Model;
 struct RenderStateKey;
+class ColorBuffer;
+class DepthStencilBuffer;
 class RenderContext::PassBehavior
 {
 public:
@@ -10629,22 +10764,83 @@ public:
 	virtual ~PassBehavior() = default;
 	virtual void Update
 	(
-		[[maybe_unused]] std::pair<RenderStateKey, std::vector<Model*>> const& modelContainer_,
-		RuntimeWrapper& cmdWrapper_
+		[[maybe_unused]] std::unordered_map<uint32_t, std::pair<RenderStateKey, std::vector<Model*>>> const& modelContainer_,
+		RuntimeWrapper& cmdWrapper_,
+		BufferContext::BufferDispatcher& bufDispatcher_
 	) = 0;
 	PassDesc const* WatchDesc() const;
+	//初期化用のPassDescからランタイム用へ
 	void CreatePassInfo
 	(
 		NexusFieldProof proof_,
 		std::unordered_map<std::string, BufferUniqueID> const& idMap_,
 		UINT const refOffset_
 	);
+	//レンダーターゲットのあれこれの描画コマンドをたたく
+	void BeginPass(RuntimeWrapper& cmdWrapper_, BufferContext::BufferDispatcher& bufDispatcher_);
 protected:
 	//Passの設計図
 	std::unique_ptr<PassDesc> desc;
 	//ランタイムで必要になるPassの情報をまとめたもの
 	std::unique_ptr<RuntimePassInfo> runtimePassInfo;
+private:
+	//Passのルートコンスタンツを転送
+	void TransferRootConstants(RuntimeWrapper& cmdWrapper_);
+	//カラーバッファのビューをクリアする
+	void ClearColorBufferView
+	(
+		D3D12_CPU_DESCRIPTOR_HANDLE const handleCPU_,
+		const FLOAT* clearColorPtr_,
+		RuntimeWrapper& cmdWrapper_
+	);
+	//深度ステンシルバッファのビューをクリアする
+	void ClearDepthStencilBufferView
+	(
+		D3D12_CPU_DESCRIPTOR_HANDLE const handleCPU_,
+		RuntimeWrapper& cmdWrapper_
+	);
+	//深度ステンシルバッファからCPUハンドルを引っ張る
+	D3D12_CPU_DESCRIPTOR_HANDLE PullDepthStencilBufferHandle
+	(
+		BufferUniqueID const id_,
+		BufferContext::BufferDispatcher& bufDispatcher_
+	);
+	//そのカラーバッファバージョン
+	D3D12_CPU_DESCRIPTOR_HANDLE PullColorBufferHandle
+	(
+		BufferUniqueID const id_,
+		BufferContext::BufferDispatcher& bufDispatcher_
+	);
+	//描画先の決定
+	void SetrenderTargets
+	(
+		std::array<D3D12_CPU_DESCRIPTOR_HANDLE, D3D12_SIMULTANEOUS_RENDER_TARGET_COUNT> const& rtHandles_,
+		UINT const numRT_,
+		D3D12_CPU_DESCRIPTOR_HANDLE* depthHandle_,
+		RuntimeWrapper& cmdWrapper_
+	);
+	template<typename MatrixType>
+	void SetMatrix
+	(
+		UINT const num_,
+		const MatrixType* matrix_,
+		RuntimeWrapper& cmdWrapper_
+	);
 };
+template<>
+void RenderContext::PassBehavior::SetMatrix<D3D12_VIEWPORT>
+(
+	UINT const num_,
+	const D3D12_VIEWPORT* matrix_,
+	RuntimeWrapper& cmdWrapper_
+);
+template<>
+void RenderContext::PassBehavior::SetMatrix<D3D12_RECT>
+(
+	UINT const num_,
+	const D3D12_RECT* matrix_,
+	RuntimeWrapper& cmdWrapper_
+);
 
 ========================================
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Render\RenderPass\AllRenderPass\RenderPassTraits.h ===
@@ -10730,8 +10926,9 @@ SceneCompositor::SceneCompositor(RenderContext::NexusFieldProof proof_, std::uni
 }
 void SceneCompositor::Update
 (
-	[[maybe_unused]] std::pair<RenderStateKey, std::vector<Model*>> const& modelContainer_,
-	RuntimeWrapper& cmdWrapper_
+	[[maybe_unused]] std::unordered_map<uint32_t, std::pair<RenderStateKey, std::vector<Model*>>> const& modelContainer_,
+	RuntimeWrapper& cmdWrapper_,
+	BufferContext::BufferDispatcher& bufDispatcher_
 )
 {
 }
@@ -10747,8 +10944,9 @@ public:
 	SceneCompositor(RenderContext::NexusFieldProof proof_, std::unique_ptr<RenderContext::PassDesc>&& desc_);
 	virtual void Update
 	(
-		[[maybe_unused]] std::pair<RenderStateKey, std::vector<Model*>> const& modelContainer_,
-		RuntimeWrapper& cmdWrapper_
+		[[maybe_unused]] std::unordered_map<uint32_t, std::pair<RenderStateKey, std::vector<Model*>>> const& modelContainer_,
+		RuntimeWrapper& cmdWrapper_,
+		BufferContext::BufferDispatcher& bufDispatcher_
 	)override;
 private:
 };
@@ -10769,8 +10967,9 @@ SceneOpaque::SceneOpaque(RenderContext::NexusFieldProof proof_ , std::unique_ptr
 }
 void SceneOpaque::Update
 (
-	[[maybe_unused]] std::pair<RenderStateKey, std::vector<Model*>> const& modelContainer_,
-	RuntimeWrapper& cmdWrapper_
+	[[maybe_unused]] std::unordered_map<uint32_t, std::pair<RenderStateKey, std::vector<Model*>>> const& modelContainer_,
+	RuntimeWrapper& cmdWrapper_,
+	BufferContext::BufferDispatcher& bufDispatcher_
 )
 {
 }
@@ -10786,8 +10985,9 @@ public:
 	SceneOpaque(RenderContext::NexusFieldProof proof_, std::unique_ptr<RenderContext::PassDesc>&& desc_);
 	virtual void Update
 	(
-		[[maybe_unused]] std::pair<RenderStateKey, std::vector<Model*>> const& modelContainer_,
-		RuntimeWrapper& cmdWrapper_
+		[[maybe_unused]] std::unordered_map<uint32_t, std::pair<RenderStateKey, std::vector<Model*>>> const& modelContainer_,
+		RuntimeWrapper& cmdWrapper_,
+		BufferContext::BufferDispatcher& bufDispatcher_
 	)override;
 private:
 };
@@ -10821,6 +11021,7 @@ struct RenderContext::RequiredBufferInfo
 		DXGI_FORMAT dsvFormat;
 		DXGI_FORMAT srvFormat;
 		float clearDepth{};
+		D3D12_CLEAR_FLAGS doesClearStencil;
 		int clearStencil{};
 		uint32_t width{};
 		uint32_t height{};
@@ -11261,12 +11462,14 @@ std::optional<RenderContext::RequiredBufferInfo::DepthStencilBuffer> RenderConte
 	if (!miyajison->LoadData<bool>(DataKeyString::kSrcJsonFileName, { passName_,DataKeyString::kUseDepthStenciB }))
 		return std::nullopt;
 	depthStencilBufferInfo.emplace();
-	depthStencilBufferInfo->dsvFormat = 
-		(DXGI_FORMAT)miyajison->LoadData<int>(DataKeyString::kSrcJsonFileName, { passName_,DataKeyString::kDsvFormatI});
-	depthStencilBufferInfo->srvFormat = 
-		(DXGI_FORMAT)miyajison->LoadData<int>(DataKeyString::kSrcJsonFileName, { passName_,DataKeyString::kSrvFormatI });
+	depthStencilBufferInfo->dsvFormat = (DXGI_FORMAT)
+		miyajison->LoadData<int>(DataKeyString::kSrcJsonFileName, { passName_,DataKeyString::kDsvFormatI});
+	depthStencilBufferInfo->srvFormat = (DXGI_FORMAT)
+		miyajison->LoadData<int>(DataKeyString::kSrcJsonFileName, { passName_,DataKeyString::kSrvFormatI });
 	depthStencilBufferInfo->clearDepth =
 		miyajison->LoadData<float>(DataKeyString::kSrcJsonFileName, { passName_,DataKeyString::kClearDepthF });
+	depthStencilBufferInfo->doesClearStencil = (D3D12_CLEAR_FLAGS)
+		miyajison->LoadData<bool>(DataKeyString::kSrcJsonFileName, { passName_,DataKeyString::kClearStencilFlagB });
 	depthStencilBufferInfo->clearStencil =
 		miyajison->LoadData<int>(DataKeyString::kSrcJsonFileName, { passName_,DataKeyString::kClearStencilI });
 	depthStencilBufferInfo->numBuffer = 
@@ -11361,6 +11564,7 @@ private:
 		static inline std::string const kDsvFormatI		 		= "dsvFormat";
 		static inline std::string const kSrvFormatI		 		= "srvFormat";
 		static inline std::string const kClearDepthF	 		= "clearDepth";
+		static inline std::string const kClearStencilFlagB		= "clearStencilFlag";
 		static inline std::string const kClearStencilI	 		= "clearStencil";
 		static inline std::string const kDepthWidthI	 		= "depthWidth";
 		static inline std::string const kDepthHeightI	 		= "depthHeight";
@@ -11419,8 +11623,8 @@ void RenderContext::RuntimePassInfo::PickUpRuntimeRequirementsFromDesc(PassDesc 
 			info.blendMode = src.blendMode;
 			info.bufferID = src.bufferID;
 			info.clearColor = src.clearColor;
-			info.height = src.height;
-			info.width = src.width;
+			info.viewport = AssembleMatrix<D3D12_VIEWPORT>(src.width, src.height);
+			info.scissorRect = AssembleMatrix<D3D12_RECT>(src.width, src.height);
 		}
 	}
 	//深度ステンシルバッファ
@@ -11430,11 +11634,34 @@ void RenderContext::RuntimePassInfo::PickUpRuntimeRequirementsFromDesc(PassDesc 
 		if (src.has_value())
 		{
 			depthStencilBufferInfo.emplace();
-			info->bufferID		= src->bufferID;
-			info->clearDepth	= src->clearDepth;
-			info->clearStencil	= src->clearStencil;
+			info->bufferID			= src->bufferID;
+			info->clearDepth		= src->clearDepth;
+			info->clearStencil		= src->clearStencil;
+			info->doesClearStencil  = src->doesClearStencil;
 		}
 	}
+}
+template<>
+D3D12_VIEWPORT RenderContext::RuntimePassInfo::AssembleMatrix(uint32_t width_, uint32_t height_)
+{
+	D3D12_VIEWPORT viewport;
+	viewport.Width = static_cast<FLOAT>(width_);
+	viewport.Height = static_cast<FLOAT>(height_);
+	viewport.TopLeftX = 0.0f;
+	viewport.TopLeftY = 0.0f;
+	viewport.MinDepth = 0.0f;
+	viewport.MaxDepth = 1.0f;
+	return viewport;
+}
+template<>
+D3D12_RECT RenderContext::RuntimePassInfo::AssembleMatrix(uint32_t width_, uint32_t height_)
+{
+	D3D12_RECT scissorRect;
+	scissorRect.right = static_cast<LONG>(width_);
+	scissorRect.bottom = static_cast<LONG>(height_);
+	scissorRect.left = static_cast<LONG>(0.0f);
+	scissorRect.top = static_cast<LONG>(0.0f);
+	return scissorRect;
 }
 
 ========================================
@@ -11458,14 +11685,15 @@ struct RenderContext::RuntimePassInfo
 	struct ColorBuffer
 	{
 		std::vector<float> clearColor{};
-		uint32_t width{};
-		uint32_t height{};
+		D3D12_VIEWPORT viewport;
+		D3D12_RECT scissorRect;
 		RenderStateComponent::BlendMode blendMode = RenderStateComponent::BlendMode::kDependsModel;
 		BufferUniqueID bufferID{};
 	};
 	struct DepthStencilBuffer
 	{
 		float clearDepth{};
+		D3D12_CLEAR_FLAGS doesClearStencil;
 		int clearStencil{};
 		BufferUniqueID bufferID;
 	};
@@ -11488,7 +11716,14 @@ private:
 		std::unordered_map<std::string, BufferUniqueID> const& idMap_,
 		UINT const refOffset_
 	);
+	//シザー行列、ビューポート行列を組み立てる
+	template<typename MarixType>
+	MarixType AssembleMatrix(uint32_t width_, uint32_t height_);
 };
+template<>
+D3D12_VIEWPORT RenderContext::RuntimePassInfo::AssembleMatrix(uint32_t width_, uint32_t height_);
+template<>
+D3D12_RECT RenderContext::RuntimePassInfo::AssembleMatrix(uint32_t width_, uint32_t height_);
 
 ========================================
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Render\RenderPath\AllRenderPath\AllPathFwd.h ===
@@ -11535,7 +11770,7 @@ public:
 	auto const& WatchName()const { return  name; }
 	virtual void Update
 	(
-		[[maybe_unused]] std::pair<RenderStateKey, std::vector<Model*>> const& modelContainer_,
+		[[maybe_unused]] std::vector<std::unordered_map<uint32_t, std::pair<RenderStateKey, std::vector<Model*>>>> const& modelContainer_,
 		RuntimeWrapper& cmdWrapper_
 	) = 0;
 protected:
@@ -11572,7 +11807,7 @@ CreateSceneTexture::CreateSceneTexture(RenderContext::NexusFieldProof proof_, st
 }
 void CreateSceneTexture::Update
 (
-	[[maybe_unused]] std::pair<RenderStateKey, std::vector<Model*>> const& modelContainer_,
+	[[maybe_unused]] std::vector<std::unordered_map<uint32_t, std::pair<RenderStateKey, std::vector<Model*>>>> const& modelContainer_,
 	RuntimeWrapper& cmdWrapper_
 )
 {
@@ -11589,7 +11824,7 @@ public:
 	CreateSceneTexture(RenderContext::NexusFieldProof proof_, std::string const& name_);
 	virtual void Update
 	(
-		[[maybe_unused]] std::pair<RenderStateKey, std::vector<Model*>> const& modelContainer_,
+		[[maybe_unused]] std::vector<std::unordered_map<uint32_t, std::pair<RenderStateKey, std::vector<Model*>>>> const& modelContainer_,
 		RuntimeWrapper& cmdWrapper_
 	)override;
 private:
@@ -19468,4 +19703,4 @@ namespace StringProcessing
 === SUMMARY ===
 ========================================
 Total Files      : 437
-Effective Lines  : 14157
+Effective Lines  : 14356

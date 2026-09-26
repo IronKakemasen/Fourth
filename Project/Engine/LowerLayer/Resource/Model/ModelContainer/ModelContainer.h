@@ -8,7 +8,6 @@ class ModelContext::ModelContainer
 {
 	//モデルのレンダーステートごとにコンテナに詰めて、PSOの切り替えコストを低減させるため
 	class ModelSeparator;
-	
 
 public:
 

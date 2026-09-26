@@ -25,6 +25,9 @@ RenderContext::PassDesc const* RenderContext::PassBehavior::WatchDesc() const
 {
 	return desc ? desc.get() : nullptr;
 }
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 void RenderContext::PassBehavior::CreatePassInfo
 (
@@ -36,59 +39,163 @@ void RenderContext::PassBehavior::CreatePassInfo
 	runtimePassInfo.reset(new RuntimePassInfo(proof_, std::move(desc), idMap_, refOffset_));
 }
 
+
 void RenderContext::PassBehavior::BeginPass(RuntimeWrapper& cmdWrapper_, BufferContext::BufferDispatcher& bufDispatcher_)
 {
 	auto const& colorBuffersInfo = runtimePassInfo->WatchColorBuffersInfo();
-	UINT const numColorBuffers = (UINT)colorBuffersInfo.size();
+	UINT const numColorBuffers = UINT(colorBuffersInfo.size());
+
+	auto const& DepthStencilBufferInfo = runtimePassInfo->WatchDepthStencilBufferInfo();
 
 	std::array<D3D12_CPU_DESCRIPTOR_HANDLE, D3D12_SIMULTANEOUS_RENDER_TARGET_COUNT> rtHandles;
 	std::array<D3D12_RECT, D3D12_SIMULTANEOUS_RENDER_TARGET_COUNT> scissorRects;
 	std::array<D3D12_VIEWPORT, D3D12_SIMULTANEOUS_RENDER_TARGET_COUNT> viewports;
 
-	for (size_t i = 0;i < numColorBuffers;++i)
+
+	//カラーバッファ
+	for (UINT i = 0;i < numColorBuffers;++i)
 	{
 		auto const& src = colorBuffersInfo[i];
 
+		//パラメーターかき集め
+		rtHandles[i] = PullColorBufferHandle(src.bufferID, bufDispatcher_);
 		scissorRects[i] = src.scissorRect;
 		viewports[i] = src.viewport;
 
-		//IDからカラーバッファを検索
-		auto* colorBuffer = static_cast<ColorBuffer*>(bufDispatcher_.Dispatch(src.bufferID));
-		auto* iColorBuffer = static_cast<IColorBuffer*>(colorBuffer);
-		
-		//ダブルかシングル問わず、内部ステートに基づいて適切なハンドルを取得
-		rtHandles[i] = iColorBuffer->OutProperRTVHeapHandle();
-
-		//クリアカラーでクリア
-		cmdWrapper_.ClearRenderTargetView(rtHandles[i], src.clearColor.data(), 0, nullptr);
+		//ビュークリア
+		ClearColorBufferView(rtHandles[i], src.clearColor.data(), cmdWrapper_);
 	}
 
-	//DXの行列の設定
-	cmdWrapper_.RSSetScissorRects(numColorBuffers, scissorRects.data());
-	cmdWrapper_.RSSetViewports(numColorBuffers, viewports.data());
-
-
-	//深度ステンシルバッファも同様に
-	auto const& depthSInfo = runtimePassInfo->WatchDepthStencilBufferInfo();
-
-	if (depthSInfo.has_value())
+	//深度ステンシルバッファ
+	if (DepthStencilBufferInfo.has_value())
 	{
-		//IDから深度ステンシルバッファを検索
-		auto* depthSBuffer = static_cast<DepthStencilBuffer*>(bufDispatcher_.Dispatch(depthSInfo->bufferID));
-		IDepthBuffer* iDepth = static_cast<IDepthBuffer*>(depthSBuffer);
-		
-		//ハンドルを入れる
-		D3D12_CPU_DESCRIPTOR_HANDLE depthHandle = iDepth->OutProperDSVHeapHandle();
-		//クリアする
-		cmdWrapper_.ClearDepthStencilView(depthHandle, depthSInfo->doesClearStencil, depthSInfo->clearDepth, depthSInfo->clearStencil, 0, nullptr);
-		//描画先としてセット
-		cmdWrapper_.OMSetRenderTargets(numColorBuffers, rtHandles.data(), false, &depthHandle);
+		//ハンドル取得
+		D3D12_CPU_DESCRIPTOR_HANDLE dsvHandle = PullDepthStencilBufferHandle(DepthStencilBufferInfo->bufferID, bufDispatcher_);
+		//ビュークリア
+		ClearDepthStencilBufferView(dsvHandle, cmdWrapper_);
+
+		//描画先の設定
+		SetrenderTargets(rtHandles, numColorBuffers, &dsvHandle, cmdWrapper_);
 	}
+	//無ければ
 	else
 	{
-		//深度ステンシルなし
-		cmdWrapper_.OMSetRenderTargets(numColorBuffers, rtHandles.data(), false, nullptr);
+		//描画先の設定
+		SetrenderTargets(rtHandles, numColorBuffers, nullptr, cmdWrapper_);
 	}
+
+	//このパスのルートコンスタンツを転送
+	TransferRootConstants(cmdWrapper_);
+
+}
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+void RenderContext::PassBehavior::TransferRootConstants(RuntimeWrapper& cmdWrapper_)
+{
+	cmdWrapper_.SetGraphicsRoot32BitConstants
+	(
+		(UINT)ConstantBuffers::RootConstantsBindSlots::kPassBufferIndexRange,
+		2,                    
+		&runtimePassInfo->WatchRootConstants(),
+		0
+	);
+}
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+void RenderContext::PassBehavior::SetrenderTargets
+(
+	std::array<D3D12_CPU_DESCRIPTOR_HANDLE, D3D12_SIMULTANEOUS_RENDER_TARGET_COUNT> const& rtHandles_,
+	UINT const numRT_,
+	D3D12_CPU_DESCRIPTOR_HANDLE* depthHandle_,
+	RuntimeWrapper& cmdWrapper_
+)
+{
+	cmdWrapper_.OMSetRenderTargets(numRT_, rtHandles_.data(), false, depthHandle_);
+}
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+D3D12_CPU_DESCRIPTOR_HANDLE RenderContext::PassBehavior::PullDepthStencilBufferHandle
+(
+	BufferUniqueID const id_,
+	BufferContext::BufferDispatcher& bufDispatcher_
+)
+{
+	//IDから深度ステンシルバッファを検索
+	auto* depthSBuffer = static_cast<DepthStencilBuffer*>(bufDispatcher_.Dispatch(id_));
+	IDepthBuffer* iDepth = static_cast<IDepthBuffer*>(depthSBuffer);
+
+	return iDepth->OutProperDSVHeapHandle();
+}
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+D3D12_CPU_DESCRIPTOR_HANDLE RenderContext::PassBehavior::PullColorBufferHandle
+(
+	BufferUniqueID const id_,
+	BufferContext::BufferDispatcher& bufDispatcher_
+)
+{
+	//IDからカラーバッファを検索
+	auto* colorBuffer = static_cast<ColorBuffer*>(bufDispatcher_.Dispatch(id_));
+	auto* iColorBuffer = static_cast<IColorBuffer*>(colorBuffer);
+
+	return iColorBuffer->OutProperRTVHeapHandle();
+}
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+void RenderContext::PassBehavior::ClearColorBufferView
+(
+	D3D12_CPU_DESCRIPTOR_HANDLE const handleCPU_,
+	const FLOAT* clearColorPtr_,
+	RuntimeWrapper& cmdWrapper_
+)
+{
+	cmdWrapper_.ClearRenderTargetView(handleCPU_, clearColorPtr_, 0, nullptr);
+
+}
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+void RenderContext::PassBehavior::ClearDepthStencilBufferView
+(
+	D3D12_CPU_DESCRIPTOR_HANDLE const handleCPU_,
+	RuntimeWrapper& cmdWrapper_
+)
+{
+	auto const& depthSInfo = runtimePassInfo->WatchDepthStencilBufferInfo();
+
+	cmdWrapper_.ClearDepthStencilView(handleCPU_, depthSInfo->doesClearStencil, depthSInfo->clearDepth, depthSInfo->clearStencil, 0, nullptr);
+}
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+template<>
+void RenderContext::PassBehavior::SetMatrix<D3D12_VIEWPORT>
+(
+	UINT const num_,
+	const D3D12_VIEWPORT* matrix_,
+	RuntimeWrapper& cmdWrapper_
+)
+{
+	cmdWrapper_.RSSetViewports(num_, matrix_);
 }
 
+template<>
+void RenderContext::PassBehavior::SetMatrix<D3D12_RECT>
+(
+	UINT const num_,
+	const D3D12_RECT* matrix_,
+	RuntimeWrapper& cmdWrapper_
+)
+{
+	cmdWrapper_.RSSetScissorRects(num_, matrix_);
+
+}
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
