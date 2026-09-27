@@ -11,16 +11,16 @@ public:
 	RootSignatureLibrary(NexusFieldProof proof_);
 	~RootSignatureLibrary();
 
-	template<Usage usage>
+	template<BufferUsage BufferUsage>
 	ID3D12RootSignature* Export(HandleLicence licence_);
 	
-	template<Usage usage>
+	template<BufferUsage BufferUsage>
 	void Import(HandleLicence licence_,Microsoft::WRL::ComPtr<ID3D12RootSignature>&& rootSig_);
 
 
 private:
 	///本元データ
-	std::array<Microsoft::WRL::ComPtr<ID3D12RootSignature>, (int)Usage::kCount> data;
+	std::array<Microsoft::WRL::ComPtr<ID3D12RootSignature>, (int)BufferUsage::kCount> data;
 
 
 };

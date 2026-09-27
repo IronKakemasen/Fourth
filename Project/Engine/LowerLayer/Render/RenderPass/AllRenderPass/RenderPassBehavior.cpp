@@ -2,12 +2,17 @@
 #include "RenderPassBehavior.h"
 #include "../PassDesc/PassDesc.h"
 #include "../RuntimePassInfo/RuntimePassInfo.h"
+#include "../../RenderContextRuntime/PSO_PoolDispatcher/PSO_PoolDispatcher.h"
+
 
 //外部
 #include "../../../Buffer/BufferRuntime/BufferDispatcher/BufferDispatcher.h"
 #include "../../../Buffer/BufferDefinition/GPUBuffer/ColorBuffer/ColorBuffer.h"
 #include "../../../Buffer/BufferDefinition/GPUBuffer/DepthStencilBuffer/DepthStencilBuffer.h"
 #include "../../../Core/Command/RuntimeWrapper/RuntimeWrapper.h"
+
+#include "../../../Resource/Model/ModelStructure/Model.h"
+#include "../../../Resource/Model/ModelContainer/RenderStateKey/RenderStateKey.h"
 
 
 
@@ -56,8 +61,11 @@ void RenderContext::PassBehavior::BeginPass(RuntimeWrapper& cmdWrapper_, BufferC
 	{
 		auto const& src = colorBuffersInfo[i];
 
+		//バッファ検索
+		ColorBuffer* colorBuffer = FindBufferWithID<ColorBuffer>(src.bufferID, bufDispatcher_);
+		
 		//パラメーターかき集め
-		rtHandles[i] = PullColorBufferHandle(src.bufferID, bufDispatcher_);
+		rtHandles[i] = PullHandleCPU<ColorBuffer>(colorBuffer, bufDispatcher_);
 		scissorRects[i] = src.scissorRect;
 		viewports[i] = src.viewport;
 
@@ -68,8 +76,12 @@ void RenderContext::PassBehavior::BeginPass(RuntimeWrapper& cmdWrapper_, BufferC
 	//深度ステンシルバッファ
 	if (DepthStencilBufferInfo.has_value())
 	{
+		//バッファ検索
+		auto* depthStencilBuffer = FindBufferWithID<DepthStencilBuffer>(DepthStencilBufferInfo->bufferID, bufDispatcher_);
+
 		//ハンドル取得
-		D3D12_CPU_DESCRIPTOR_HANDLE dsvHandle = PullDepthStencilBufferHandle(DepthStencilBufferInfo->bufferID, bufDispatcher_);
+		D3D12_CPU_DESCRIPTOR_HANDLE dsvHandle = PullHandleCPU<DepthStencilBuffer>(depthStencilBuffer, bufDispatcher_);
+		
 		//ビュークリア
 		ClearDepthStencilBufferView(dsvHandle, cmdWrapper_);
 
@@ -86,6 +98,35 @@ void RenderContext::PassBehavior::BeginPass(RuntimeWrapper& cmdWrapper_, BufferC
 	//このパスのルートコンスタンツを転送
 	TransferRootConstants(cmdWrapper_);
 
+}
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+void RenderContext::PassBehavior::DrawModels
+(
+	std::unordered_map<uint32_t, std::pair<RenderStateKey, std::vector<Model*>>> const& modelContainer_,
+	RenderStateComponent::FillMode const fillMode_,
+	PSO_PoolDispatcher& psoDispatcher_,
+	RuntimeWrapper& cmdWrapper_
+)
+{
+	//このパスのPSOキーの生成
+	
+
+	//このPassで描画対象の全モデルの走査
+	for (auto const& [key, state_models] : modelContainer_)
+	{
+		//PSOキーを生成
+
+		//state_models.first
+		//モデルのレンダーステートごとに走査
+		for (auto const& models : state_models.second)
+		{
+			
+		}
+	
+
+	}
 }
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -116,32 +157,51 @@ void RenderContext::PassBehavior::SetRenderTargets
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-D3D12_CPU_DESCRIPTOR_HANDLE RenderContext::PassBehavior::PullDepthStencilBufferHandle
+template<>
+D3D12_CPU_DESCRIPTOR_HANDLE RenderContext::PassBehavior::PullHandleCPU
 (
-	BufferUniqueID const id_,
+	ColorBuffer* buffer_,
 	BufferContext::BufferDispatcher& bufDispatcher_
 )
 {
-	//IDから深度ステンシルバッファを検索
-	auto* depthSBuffer = static_cast<DepthStencilBuffer*>(bufDispatcher_.Dispatch(id_));
-	IDepthBuffer* iDepth = static_cast<IDepthBuffer*>(depthSBuffer);
+	auto* iColorBuffer = static_cast<IColorBuffer*>(buffer_);
+
+	return iColorBuffer->OutProperRTVHeapHandle();
+}
+template<>
+D3D12_CPU_DESCRIPTOR_HANDLE RenderContext::PassBehavior::PullHandleCPU
+(
+	DepthStencilBuffer* buffer_,
+	BufferContext::BufferDispatcher& bufDispatcher_
+)
+{
+	IDepthBuffer* iDepth = static_cast<IDepthBuffer*>(buffer_);
 
 	return iDepth->OutProperDSVHeapHandle();
 }
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-D3D12_CPU_DESCRIPTOR_HANDLE RenderContext::PassBehavior::PullColorBufferHandle
+template<>
+ColorBuffer* RenderContext::PassBehavior::FindBufferWithID
 (
 	BufferUniqueID const id_,
 	BufferContext::BufferDispatcher& bufDispatcher_
 )
 {
 	//IDからカラーバッファを検索
-	auto* colorBuffer = static_cast<ColorBuffer*>(bufDispatcher_.Dispatch(id_));
-	auto* iColorBuffer = static_cast<IColorBuffer*>(colorBuffer);
+	return static_cast<ColorBuffer*>(bufDispatcher_.Dispatch(id_));
+}
 
-	return iColorBuffer->OutProperRTVHeapHandle();
+template<>
+DepthStencilBuffer* RenderContext::PassBehavior::FindBufferWithID
+(
+	BufferUniqueID const id_,
+	BufferContext::BufferDispatcher& bufDispatcher_
+)
+{
+	//IDから深度ステンシルバッファを検索
+	return static_cast<DepthStencilBuffer*>(bufDispatcher_.Dispatch(id_));
 }
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -154,7 +214,6 @@ void RenderContext::PassBehavior::ClearColorBufferView
 )
 {
 	cmdWrapper_.ClearRenderTargetView(handleCPU_, clearColorPtr_, 0, nullptr);
-
 }
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

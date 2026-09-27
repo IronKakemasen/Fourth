@@ -1,5 +1,6 @@
 #include "PreCompileHeader.h"
 #include "BarrierExtractor.h"
+#include "../../../../BufferDefinition/GPUBuffer/GPUBufferBehavior.h"
 #include "../../../../BufferDefinition/GPUBuffer/BufferInterface.h"
 
 template<>

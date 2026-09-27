@@ -99,13 +99,13 @@ namespace ProjectConfig
 #endif // _DEBUG
 #ifndef _DEBUG
 		//DebugLayer
-		constexpr bool kEnableDebugLayer = true;
+		constexpr bool kEnableDebugLayer = false;
 		//ポインター破壊検知
-		constexpr bool kEnablePointerValidator = true;
+		constexpr bool kEnablePointerValidator = false;
 		//Comptrのリークチェック
-		constexpr bool kEnableLeakChecker = true;
+		constexpr bool kEnableLeakChecker = false;
 		//Jsonファイルを読み込むときに型チェックを行うかどうか
-		constexpr bool kEnableJsonDataTypeCheck = true;
+		constexpr bool kEnableJsonDataTypeCheck = false;
 #endif // !_DEBUG
 	}
 	namespace Core
@@ -2515,6 +2515,7 @@ private:
 ========================================
 #include "PreCompileHeader.h"
 #include "BarrierExtractor.h"
+#include "../../../../BufferDefinition/GPUBuffer/GPUBufferBehavior.h"
 #include "../../../../BufferDefinition/GPUBuffer/BufferInterface.h"
 template<>
 [[nodiscard]] D3D12_RESOURCE_BARRIER BufferContext::BufferUploader::BarrierExtractor::
@@ -2559,6 +2560,7 @@ ExtractBarrier<D3D12_RESOURCE_STATE_GENERIC_READ>(GPUBufferBehavior* dstBuffer_)
 ========================================
 #pragma once
 #include "../../BufferUploader.h"
+class GPUBufferBehavior;
 class BufferContext::BufferUploader::BarrierExtractor
 {
 	friend class BufferContext::BufferUploader;
@@ -3728,7 +3730,7 @@ public:
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Buffer\BufferDefinition\GPUBuffer\BufferInterface.cpp ===
 ========================================
 #include "BufferInterface.h"
-D3D12_RESOURCE_STATES IColorBuffer::ResourceStateTable(Usage usage_)const
+D3D12_RESOURCE_STATES IColorBuffer::ResourceStateTable(BufferUsage usage_)const
 {
 	static D3D12_RESOURCE_STATES resourceStatetable[2]
 	{
@@ -3750,7 +3752,7 @@ void IWritableCPU::Map(std::array<ID3D12Resource*, (UINT)ProjectConfig::Render::
 ///+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-D3D12_RESOURCE_STATES IDepthBuffer::ResourceStateTable(Usage usage_)const
+D3D12_RESOURCE_STATES IDepthBuffer::ResourceStateTable(BufferUsage usage_)const
 {
 	static D3D12_RESOURCE_STATES resourceStateTable[2]
 	{
@@ -3772,13 +3774,13 @@ void IRenderTargetBuffer::Swap()
 	};
 	status = nextTable[status];
 }
-int IRenderTargetBuffer::ProperBufferIndex(Usage usage_)const
+int IRenderTargetBuffer::ProperBufferIndex(BufferUsage usage_)const
 {
 	//シングルバッファは問答無用
 	if (status == kSingle) return 0;
 	int dstBufferIndex{};
 	//使用目的が読み込みの場合
-	if (usage_ == Usage::kRead)
+	if (usage_ == BufferUsage::kRead)
 	{
 		//2番目がシェーダーリソース
 		if (status == kRenderTarget_ShaderResource) dstBufferIndex = 1;
@@ -3808,13 +3810,13 @@ void IComputeBuffer::Swap()
 	};
 	status = nextTable[status];
 }
-int IComputeBuffer::ProperBufferIndex(Usage usage_)const
+int IComputeBuffer::ProperBufferIndex(BufferUsage usage_)const
 {
 	//シングルバッファは問答無用
 	if (status == kSingle) return 0;
 	int dstBufferIndex{};
 	//使用目的が読み込みの場合
-	if (usage_ == Usage::kRead)
+	if (usage_ == BufferUsage::kRead)
 	{
 		//2番目がシェーダーリソース
 		if (status == kComputeResource_ShaderResource) dstBufferIndex = 1;
@@ -3831,7 +3833,7 @@ void IComputeBuffer::SynchronizeStatus(ProjectConfig::Render::NumBuffer numBuffe
 {
 	(numBuffer_ == ProjectConfig::Render::NumBuffer::kSingleBuffer) ? status = kSingle : status = kComputeResource_ShaderResource;
 }
-D3D12_RESOURCE_STATES IComputeBuffer::ResourceStateTable(Usage usage_)const
+D3D12_RESOURCE_STATES IComputeBuffer::ResourceStateTable(BufferUsage usage_)const
 {
 	static D3D12_RESOURCE_STATES resourceStateTable[2]
 	{
@@ -3845,9 +3847,9 @@ D3D12_RESOURCE_STATES IComputeBuffer::ResourceStateTable(Usage usage_)const
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Buffer\BufferDefinition\GPUBuffer\BufferInterface.h ===
 ========================================
 #pragma once
-#include "GPUBufferBehavior.h"
+//#include "GPUBufferBehavior.h"
 //使用目的
-enum class Usage
+enum class BufferUsage
 {
 	kRead,
 	kWrite
@@ -3861,15 +3863,15 @@ struct IPingPong
 	//ステートを同期させる
 	virtual void SynchronizeStatus(ProjectConfig::Render::NumBuffer numBuffer_) = 0;
 	//バリアを生成仮想関数
-	virtual D3D12_RESOURCE_BARRIER CreateBarrier(Usage usage_) = 0;
+	virtual D3D12_RESOURCE_BARRIER CreateBarrier(BufferUsage usage_) = 0;
 protected:
 	//使用法に応じて、適切にバッファのインデックスを出す
-	virtual int ProperBufferIndex(Usage usage_)const = 0;
+	virtual int ProperBufferIndex(BufferUsage usage_)const = 0;
 };
 struct IDualRole
 {
 	virtual ~IDualRole() = default;
-	virtual D3D12_RESOURCE_STATES ResourceStateTable(Usage usage_)const = 0;
+	virtual D3D12_RESOURCE_STATES ResourceStateTable(BufferUsage usage_)const = 0;
 };
 //シェーダーバッファのインターフェース
 struct IReadable
@@ -3921,7 +3923,7 @@ struct IDepthBuffer:IDualRole
 	virtual ~IDepthBuffer() = default;
 	virtual D3D12_CPU_DESCRIPTOR_HANDLE OutProperDSVHeapHandle()const = 0;
 protected:
-	virtual D3D12_RESOURCE_STATES ResourceStateTable(Usage usage_)const override;
+	virtual D3D12_RESOURCE_STATES ResourceStateTable(BufferUsage usage_)const override;
 };
 //カラーバッファインターフェース
 struct IColorBuffer:IDualRole
@@ -3929,7 +3931,7 @@ struct IColorBuffer:IDualRole
 	virtual ~IColorBuffer() = default;
 	virtual D3D12_CPU_DESCRIPTOR_HANDLE OutProperRTVHeapHandle()const = 0;
 protected:
-	virtual D3D12_RESOURCE_STATES ResourceStateTable(Usage usage_)const override;
+	virtual D3D12_RESOURCE_STATES ResourceStateTable(BufferUsage usage_)const override;
 };
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -3948,13 +3950,13 @@ private:
 public:
 	virtual ~IComputeBuffer() = default;
 	virtual void Swap()override;
-	virtual D3D12_RESOURCE_BARRIER CreateBarrier(Usage usage_) = 0;
+	virtual D3D12_RESOURCE_BARRIER CreateBarrier(BufferUsage usage_) = 0;
 protected:
 	///いつかそのひがきたら
 	//virtual uint32_t OutProperUAVHeapIndex()const = 0;
-	virtual int ProperBufferIndex(Usage usage_)const override;
+	virtual int ProperBufferIndex(BufferUsage usage_)const override;
 	virtual void SynchronizeStatus(ProjectConfig::Render::NumBuffer numBuffer_)override;
-	virtual D3D12_RESOURCE_STATES ResourceStateTable(Usage usage_)const override;
+	virtual D3D12_RESOURCE_STATES ResourceStateTable(BufferUsage usage_)const override;
 };
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -3973,10 +3975,10 @@ private:
 public:
 	virtual ~IRenderTargetBuffer() = default;
 	//適切なClearColor出す
-	virtual D3D12_RESOURCE_BARRIER CreateBarrier(Usage usage_) = 0;
+	virtual D3D12_RESOURCE_BARRIER CreateBarrier(BufferUsage usage_) = 0;
 	virtual void Swap()override;
 protected:
-	virtual int ProperBufferIndex(Usage usage_)const override;
+	virtual int ProperBufferIndex(BufferUsage usage_)const override;
 	virtual void SynchronizeStatus(ProjectConfig::Render::NumBuffer numBuffer_)override;
 };
 
@@ -4184,7 +4186,7 @@ ColorBuffer::ColorBuffer
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-D3D12_RESOURCE_BARRIER ColorBuffer::CreateBarrier(Usage usage_)
+D3D12_RESOURCE_BARRIER ColorBuffer::CreateBarrier(BufferUsage usage_)
 {
 	int dstBufferIndex = ProperBufferIndex(usage_);
 	return buffers.at(dstBufferIndex).CreateBarrier(ResourceStateTable(usage_));
@@ -4194,7 +4196,7 @@ D3D12_RESOURCE_BARRIER ColorBuffer::CreateBarrier(Usage usage_)
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 D3D12_CPU_DESCRIPTOR_HANDLE ColorBuffer::OutProperRTVHeapHandle()const
 {
-	int dstBufferIndex = ProperBufferIndex(Usage::kWrite);
+	int dstBufferIndex = ProperBufferIndex(BufferUsage::kWrite);
 	return WatchIndex<ViewType::kRTV, D3D12_CPU_DESCRIPTOR_HANDLE >(dstBufferIndex);
 }
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -4202,7 +4204,7 @@ D3D12_CPU_DESCRIPTOR_HANDLE ColorBuffer::OutProperRTVHeapHandle()const
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 SRVHeapIndex ColorBuffer::OutProperSRVHeapIndex(int frameIndex_)const
 {
-	int dstBufferIndex = ProperBufferIndex(Usage::kRead);
+	int dstBufferIndex = ProperBufferIndex(BufferUsage::kRead);
 	return WatchIndex<ViewType::kSRV, SRVHeapIndex >(dstBufferIndex);
 }
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -4213,9 +4215,10 @@ SRVHeapIndex ColorBuffer::OutProperSRVHeapIndex(int frameIndex_)const
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Buffer\BufferDefinition\GPUBuffer\ColorBuffer\ColorBuffer.h ===
 ========================================
 #pragma once
+#include "../GPUBufferBehavior.h"
 #include "../BufferInterface.h"
 //カラーバッファクラス
-class ColorBuffer final : public GPUBufferBehavior, public IColorBuffer,IRenderTargetBuffer,IReadable
+class ColorBuffer final : public GPUBufferBehavior, public IColorBuffer, public IRenderTargetBuffer,IReadable
 {
 public:
 	ColorBuffer
@@ -4227,7 +4230,7 @@ public:
 	);
 private:
 	//バリア生成
-	virtual D3D12_RESOURCE_BARRIER CreateBarrier(Usage usage_) override;
+	virtual D3D12_RESOURCE_BARRIER CreateBarrier(BufferUsage usage_) override;
 	//適切なRTVヒープインデックスを出す
 	virtual D3D12_CPU_DESCRIPTOR_HANDLE OutProperRTVHeapHandle()const override;
 	//適切なSRVヒープインデックスを出す
@@ -4276,6 +4279,7 @@ ComputeBuffer::ComputeBuffer
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Buffer\BufferDefinition\GPUBuffer\ComputeBuffer\ComputeBuffer.h ===
 ========================================
 #pragma once
+#include "../GPUBufferBehavior.h"
 #include "../BufferInterface.h"
 //読み書き
 class ComputeBuffer final : public GPUBufferBehavior
@@ -4325,6 +4329,7 @@ ConstantBuffer::~ConstantBuffer()
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Buffer\BufferDefinition\GPUBuffer\ConstantBuffer\ConstantBuffer.h ===
 ========================================
 #pragma once
+#include "../GPUBufferBehavior.h"
 #include "../BufferInterface.h"
 //定数バッファクラス
 class ConstantBuffer final : public GPUBufferBehavior, public IWritableCPU
@@ -4362,7 +4367,7 @@ DepthStencilBuffer::DepthStencilBuffer
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-D3D12_RESOURCE_BARRIER DepthStencilBuffer::CreateBarrier(Usage usage_)
+D3D12_RESOURCE_BARRIER DepthStencilBuffer::CreateBarrier(BufferUsage usage_)
 {
 	int dstBufferIndex = ProperBufferIndex(usage_);
 	return buffers.at(dstBufferIndex).CreateBarrier(ResourceStateTable(usage_));
@@ -4372,7 +4377,7 @@ D3D12_RESOURCE_BARRIER DepthStencilBuffer::CreateBarrier(Usage usage_)
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 D3D12_CPU_DESCRIPTOR_HANDLE DepthStencilBuffer::OutProperDSVHeapHandle()const
 {
-	int dstBufferIndex = ProperBufferIndex(Usage::kWrite);
+	int dstBufferIndex = ProperBufferIndex(BufferUsage::kWrite);
 	return WatchIndex<ViewType::kDSV, D3D12_CPU_DESCRIPTOR_HANDLE >(dstBufferIndex);
 }
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -4380,7 +4385,7 @@ D3D12_CPU_DESCRIPTOR_HANDLE DepthStencilBuffer::OutProperDSVHeapHandle()const
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 SRVHeapIndex DepthStencilBuffer::OutProperSRVHeapIndex(int frameIndex_)const
 {
-	int dstBufferIndex = ProperBufferIndex(Usage::kRead);
+	int dstBufferIndex = ProperBufferIndex(BufferUsage::kRead);
 	return WatchIndex<ViewType::kSRV, SRVHeapIndex >(dstBufferIndex);
 }
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -4391,6 +4396,7 @@ SRVHeapIndex DepthStencilBuffer::OutProperSRVHeapIndex(int frameIndex_)const
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Buffer\BufferDefinition\GPUBuffer\DepthStencilBuffer\DepthStencilBuffer.h ===
 ========================================
 #pragma once
+#include "../GPUBufferBehavior.h"
 #include "../BufferInterface.h"
 //定数バッファクラス
 class DepthStencilBuffer final : public GPUBufferBehavior, public IDepthBuffer, IRenderTargetBuffer,IReadable
@@ -4405,7 +4411,7 @@ public:
 	);
 private:
 	//バリアを張る
-	virtual D3D12_RESOURCE_BARRIER CreateBarrier(Usage usage_) override;
+	virtual D3D12_RESOURCE_BARRIER CreateBarrier(BufferUsage usage_) override;
 	//適切なCPUインデックスを出す
 	virtual D3D12_CPU_DESCRIPTOR_HANDLE OutProperDSVHeapHandle()const override;
 	//適切なsrvHeapインデックスを渡す
@@ -4443,6 +4449,7 @@ D3D12_RESOURCE_BARRIER StaticStructuredBuffer::CreateBarrierAsCopy()
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Buffer\BufferDefinition\GPUBuffer\StaticStructuredBuffer\StaticStructuredBuffer.h ===
 ========================================
 #pragma once
+#include "../GPUBufferBehavior.h"
 #include "../BufferInterface.h"
 //読み込み専用StructuredBuffer
 class StaticStructuredBuffer final : public GPUBufferBehavior, public IReadable,public IReadOnly,public IUpload
@@ -4487,6 +4494,7 @@ D3D12_RESOURCE_BARRIER Texture2DBuffer::CreateBarrierAsReading()
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Buffer\BufferDefinition\GPUBuffer\Texture2DBuffer\Texture2DBuffer.h ===
 ========================================
 #pragma once
+#include "../GPUBufferBehavior.h"
 #include "../BufferInterface.h"
 //2Dテクスチャバッファ
 class Texture2DBuffer final : public GPUBufferBehavior, public IReadable, public IReadOnly
@@ -4536,6 +4544,7 @@ SRVHeapIndex UploadStructuredBuffer::OutProperSRVHeapIndex(int index_)const
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Buffer\BufferDefinition\GPUBuffer\UploadStructuredBuffer\UploadStructuredBuffer.h ===
 ========================================
 #pragma once 
+#include "../GPUBufferBehavior.h"
 #include "../BufferInterface.h"
 //読み書きStructuredBuffer
 class UploadStructuredBuffer final : public GPUBufferBehavior, public IReadable,public IWritableCPU
@@ -4680,7 +4689,7 @@ void BufferContext::GlobalConstantBuffers::PackRuntimeContainer(NexusFieldProof 
 	//デバッグ用
 	std::vector<uint8_t> forChecking{};
 	//昇順は担保されてるはずだからそのまま詰めてく
-	for (auto [key, value] : gpuVirtualAddressMap)
+	for (auto const& [key, value] : gpuVirtualAddressMap)
 	{
 		//念のため重複チェック
 		ErrorMessageOutput::Assert::DetectError(!std::ranges::contains(forChecking, key), "定数バッファのスロット設定おかしくね？", fileName);
@@ -4697,7 +4706,7 @@ void BufferContext::GlobalConstantBuffers::PackRuntimeContainer(NexusFieldProof 
 		fileName
 	);
 	Logger::Log("===== List of cBuffer slots =====",fileName);
-	for (auto [key, value] : gpuVirtualAddressMap)
+	for (auto const& [key, value] : gpuVirtualAddressMap)
 	{
 		Logger::Log("Slot[" + std::to_string(key) + "]: " + value.first);
 	}
@@ -10145,7 +10154,7 @@ std::vector<BufferUniqueID> RenderContext::StaticRenderGraph::PassSetUpper::Crea
 		//参照するバッファ一覧で回す
 		std::vector<std::string> const& refBufferNames = desc.referenceBufferNames;
 		std::unordered_map<std::string, BufferUniqueID> idMap;
-		for (auto const refBufferName : refBufferNames)
+		for (auto const& refBufferName : refBufferNames)
 		{
 			//参照するバッファID
 			BufferUniqueID refID = passBufferCache.at(refBufferName);
@@ -10617,8 +10626,10 @@ void RenderContext::PassBehavior::BeginPass(RuntimeWrapper& cmdWrapper_, BufferC
 	for (UINT i = 0;i < numColorBuffers;++i)
 	{
 		auto const& src = colorBuffersInfo[i];
+		//バッファ検索
+		ColorBuffer* colorBuffer = FindBufferWithID<ColorBuffer>(src.bufferID, bufDispatcher_);
 		//パラメーターかき集め
-		rtHandles[i] = PullColorBufferHandle(src.bufferID, bufDispatcher_);
+		rtHandles[i] = PullHandleCPU<ColorBuffer>(colorBuffer, bufDispatcher_);
 		scissorRects[i] = src.scissorRect;
 		viewports[i] = src.viewport;
 		//ビュークリア
@@ -10627,8 +10638,10 @@ void RenderContext::PassBehavior::BeginPass(RuntimeWrapper& cmdWrapper_, BufferC
 	//深度ステンシルバッファ
 	if (DepthStencilBufferInfo.has_value())
 	{
+		//バッファ検索
+		auto* depthStencilBuffer = FindBufferWithID<DepthStencilBuffer>(DepthStencilBufferInfo->bufferID, bufDispatcher_);
 		//ハンドル取得
-		D3D12_CPU_DESCRIPTOR_HANDLE dsvHandle = PullDepthStencilBufferHandle(DepthStencilBufferInfo->bufferID, bufDispatcher_);
+		D3D12_CPU_DESCRIPTOR_HANDLE dsvHandle = PullHandleCPU<DepthStencilBuffer>(depthStencilBuffer, bufDispatcher_);
 		//ビュークリア
 		ClearDepthStencilBufferView(dsvHandle, cmdWrapper_);
 		//描画先の設定
@@ -10672,30 +10685,48 @@ void RenderContext::PassBehavior::SetRenderTargets
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-D3D12_CPU_DESCRIPTOR_HANDLE RenderContext::PassBehavior::PullDepthStencilBufferHandle
+template<>
+D3D12_CPU_DESCRIPTOR_HANDLE RenderContext::PassBehavior::PullHandleCPU
 (
-	BufferUniqueID const id_,
+	ColorBuffer* buffer_,
 	BufferContext::BufferDispatcher& bufDispatcher_
 )
 {
-	//IDから深度ステンシルバッファを検索
-	auto* depthSBuffer = static_cast<DepthStencilBuffer*>(bufDispatcher_.Dispatch(id_));
-	IDepthBuffer* iDepth = static_cast<IDepthBuffer*>(depthSBuffer);
+	auto* iColorBuffer = static_cast<IColorBuffer*>(buffer_);
+	return iColorBuffer->OutProperRTVHeapHandle();
+}
+template<>
+D3D12_CPU_DESCRIPTOR_HANDLE RenderContext::PassBehavior::PullHandleCPU
+(
+	DepthStencilBuffer* buffer_,
+	BufferContext::BufferDispatcher& bufDispatcher_
+)
+{
+	IDepthBuffer* iDepth = static_cast<IDepthBuffer*>(buffer_);
 	return iDepth->OutProperDSVHeapHandle();
 }
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-D3D12_CPU_DESCRIPTOR_HANDLE RenderContext::PassBehavior::PullColorBufferHandle
+template<>
+ColorBuffer* RenderContext::PassBehavior::FindBufferWithID
 (
 	BufferUniqueID const id_,
 	BufferContext::BufferDispatcher& bufDispatcher_
 )
 {
 	//IDからカラーバッファを検索
-	auto* colorBuffer = static_cast<ColorBuffer*>(bufDispatcher_.Dispatch(id_));
-	auto* iColorBuffer = static_cast<IColorBuffer*>(colorBuffer);
-	return iColorBuffer->OutProperRTVHeapHandle();
+	return static_cast<ColorBuffer*>(bufDispatcher_.Dispatch(id_));
+}
+template<>
+DepthStencilBuffer* RenderContext::PassBehavior::FindBufferWithID
+(
+	BufferUniqueID const id_,
+	BufferContext::BufferDispatcher& bufDispatcher_
+)
+{
+	//IDから深度ステンシルバッファを検索
+	return static_cast<DepthStencilBuffer*>(bufDispatcher_.Dispatch(id_));
 }
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -10765,11 +10796,13 @@ RenderContext::PassBehavior::RequiredComponents RenderContext::PassBehavior::Ext
 #include "../../RenderStateComponent.h"
 //外部
 #include "../../../Buffer/BufferContext.h"
+#include "../../../Buffer/BufferDefinition/GPUBuffer/BufferInterface.h"
 class RuntimeWrapper;
 class Model;
 struct RenderStateKey;
 class ColorBuffer;
 class DepthStencilBuffer;
+class GPUBufferBehavior;
 class RenderContext::PassBehavior
 {
 public:
@@ -10799,6 +10832,9 @@ protected:
 	//ランタイムで必要になるPassの情報をまとめたもの
 	std::unique_ptr<RuntimePassInfo> runtimePassInfo;
 private:
+	//バッファのステートを切り替えのためのバリアを張る++生成
+	template<BufferUsage usage>
+	D3D12_RESOURCE_BARRIER CreateBarrier(GPUBufferBehavior* buffer_);
 	//パスからPSOキーのコンポーネントの一部を抽出
 	RequiredComponents ExtractComponents(UINT const colorIndex_)const;
 	//Passのルートコンスタンツを転送
@@ -10816,18 +10852,6 @@ private:
 		D3D12_CPU_DESCRIPTOR_HANDLE const handleCPU_,
 		RuntimeWrapper& cmdWrapper_
 	);
-	//深度ステンシルバッファからCPUハンドルを引っ張る
-	D3D12_CPU_DESCRIPTOR_HANDLE PullDepthStencilBufferHandle
-	(
-		BufferUniqueID const id_,
-		BufferContext::BufferDispatcher& bufDispatcher_
-	);
-	//そのカラーバッファバージョン
-	D3D12_CPU_DESCRIPTOR_HANDLE PullColorBufferHandle
-	(
-		BufferUniqueID const id_,
-		BufferContext::BufferDispatcher& bufDispatcher_
-	);
 	//描画先の決定
 	void SetRenderTargets
 	(
@@ -10836,6 +10860,21 @@ private:
 		D3D12_CPU_DESCRIPTOR_HANDLE* depthHandle_,
 		RuntimeWrapper& cmdWrapper_
 	);
+	//バッファのユニークIDからバッファを検索
+	template<typename BufferType>
+	BufferType* FindBufferWithID
+	(
+		BufferUniqueID const id_,
+		BufferContext::BufferDispatcher& bufDispatcher_
+	);
+	//バッファからCPUハンドルを引っ張る
+	template<typename BufferType>
+	D3D12_CPU_DESCRIPTOR_HANDLE PullHandleCPU
+	(
+		BufferType* buffer_,
+		BufferContext::BufferDispatcher& bufDispatcher_
+	);
+	//viewportやscissorRectsのセット
 	template<typename MatrixType>
 	void SetMatrix
 	(
@@ -10857,6 +10896,30 @@ void RenderContext::PassBehavior::SetMatrix<D3D12_RECT>
 	UINT const num_,
 	const D3D12_RECT* matrix_,
 	RuntimeWrapper& cmdWrapper_
+);
+template<>
+ColorBuffer* RenderContext::PassBehavior::FindBufferWithID
+(
+	BufferUniqueID const id_,
+	BufferContext::BufferDispatcher& bufDispatcher_
+);
+template<>
+DepthStencilBuffer* RenderContext::PassBehavior::FindBufferWithID
+(
+	BufferUniqueID const id_,
+	BufferContext::BufferDispatcher& bufDispatcher_
+);
+template<>
+D3D12_CPU_DESCRIPTOR_HANDLE RenderContext::PassBehavior::PullHandleCPU
+(
+	ColorBuffer* buffer_,
+	BufferContext::BufferDispatcher& bufDispatcher_
+);
+template<>
+D3D12_CPU_DESCRIPTOR_HANDLE RenderContext::PassBehavior::PullHandleCPU
+(
+	DepthStencilBuffer* buffer_,
+	BufferContext::BufferDispatcher& bufDispatcher_
 );
 
 ========================================
@@ -11964,7 +12027,7 @@ private:
 #include "../../../RenderPass/AllRenderPass/RenderPassTraits.h"
 using namespace RenderPassTraits;
 [[nodiscard]] std::vector<RenderContext::RenderPathAssembler::PassAndName> RenderContext::RenderPathAssembler::PathSettingsLoader::
-ParseWhichPassUses(std::string const pathName_)
+ParseWhichPassUses(std::string const& pathName_)
 {
 	//使用するPassを文字列で伝える
 	std::vector<std::string> usesPassContainerString;
@@ -11978,7 +12041,7 @@ ParseWhichPassUses(std::string const pathName_)
 	}
 	return passType_string;
 }
-std::vector<std::string> RenderContext::RenderPathAssembler::PathSettingsLoader::LoadData(std::string const pathName_)
+std::vector<std::string> RenderContext::RenderPathAssembler::PathSettingsLoader::LoadData(std::string const& pathName_)
 {
 	Miyajison* miyajison = Miyajison::Get();
 	return 	miyajison->LoadData<std::vector<std::string>>(DataKey::kSrcJsonFileName, { pathName_,DataKey::kUsePass});
@@ -11986,7 +12049,7 @@ std::vector<std::string> RenderContext::RenderPathAssembler::PathSettingsLoader:
 std::vector<RenderPassComponent::Pass> RenderContext::RenderPathAssembler::PathSettingsLoader::PassNamesToPassTypes(std::vector<std::string> const& passNames_)
 {
 	std::vector<RenderPassComponent::Pass> passTypes;
-	for (auto const passName : passNames_)
+	for (auto const& passName : passNames_)
 	{
 		passTypes.emplace_back(PassNameToPassType(passName));
 	}
@@ -12002,11 +12065,11 @@ class RenderContext::RenderPathAssembler::PathSettingsLoader
 {
 	friend class RenderPathAssembler;
 	///本丸
-	[[nodiscard]] static std::vector<PassAndName> ParseWhichPassUses(std::string const pathName_);
+	[[nodiscard]] static std::vector<PassAndName> ParseWhichPassUses(std::string const& pathName_);
 	//以下ヘルパー
 private:
 	//Pathの名前からそのPathが使用するPassの名前をjsonファイルから読み込む
-	static std::vector<std::string> LoadData(std::string const pathName_);
+	static std::vector<std::string> LoadData(std::string const& pathName_);
 	//パスの名前から列挙型へ変換
 	static std::vector<RenderPassComponent::Pass> PassNamesToPassTypes(std::vector<std::string> const& passNames_);
 	struct DataKey
@@ -12306,7 +12369,7 @@ Model* ModelContext::ModelCreator::Create
 	std::string const modelFileName_,
 	std::vector<RenderState> const& modelRenderStates_,
 	std::vector<MaterialCPU> const& materials_,
-	std::string const modelName_
+	std::string const& modelName_
 )
 {
 	//commonとuniqueのディスクリプション
@@ -12349,7 +12412,7 @@ public:
 		std::string const modelFileName_,
 		std::vector<RenderState> const& modelRenderStates_,
 		std::vector<StructuredBufferModelData::MaterialCPU> const& materials_,
-		std::string const modelName_ = "nameLess"
+		std::string const& modelName_ = "nameLess"
 	);
 private:
 	//生成数。ネーミング用
@@ -12695,6 +12758,7 @@ class ModelContext::ModelDataCreator::MeshDataBufferCreator
 #include "MeshDataBufferSRVHeapIndexGroupPackager.h"
 //外部
 #include "../../../../../Buffer/BufferDefinition/GPUBuffer/BufferInterface.h"
+#include "../../../../../Buffer/BufferDefinition/GPUBuffer/GPUBufferBehavior.h"
 #include "../../../../../Buffer/BufferRuntime/BufferDispatcher/BufferDispatcher.h"
 namespace
 {
@@ -13512,7 +13576,7 @@ ModelContext::ModelDataCache::~ModelDataCache()
 	Logger::Log("ModelDataCache Destructor runs", "ModelDataCache.cpp");
 	Logger::Log("Delete modelData cache", "ModelDataCache.cpp");
 }
-void ModelContext::ModelDataCache::FindDuplication(AccessKey key_, std::string fileName_)
+void ModelContext::ModelDataCache::FindDuplication(AccessKey key_, std::string const& fileName_)
 {
 	ErrorMessageOutput::Assert::DetectError
 	(
@@ -13521,7 +13585,7 @@ void ModelContext::ModelDataCache::FindDuplication(AccessKey key_, std::string f
 		"ModelDataCache.cpp"
 	);
 }
-void ModelContext::ModelDataCache::StoreTemporarily(AccessKey key_, std::string fileName_, std::unique_ptr<ModelData>&& data_)
+void ModelContext::ModelDataCache::StoreTemporarily(AccessKey key_, std::string const& fileName_, std::unique_ptr<ModelData>&& data_)
 {
 	Logger::Log("Register: " + fileName_, "ModelDataCache.cpp");
 	modelDataCache[fileName_] = std::move(data_);
@@ -13540,9 +13604,9 @@ public:
 	ModelDataCache(NexusFieldProof proof_);
 	~ModelDataCache();
 	//ダブりチェック
-	void FindDuplication(AccessKey key_, std::string fileName_);
+	void FindDuplication(AccessKey key_, std::string const& fileName_);
 	//一時データとして保存
-	void StoreTemporarily(AccessKey key_, std::string fileName_, std::unique_ptr<ModelData>&& data_);
+	void StoreTemporarily(AccessKey key_, std::string const& fileName_, std::unique_ptr<ModelData>&& data_);
 private:
 	std::unordered_map<std::string, std::unique_ptr<ModelData>> modelDataCache;
 };
@@ -13903,7 +13967,7 @@ public:
 	template<typename DataType>
 	void Link
 	(
-		std::string modelFileName_,
+		std::string const& modelFileName_,
 		std::vector<DataType> const& data_
 	)
 	{
@@ -15783,7 +15847,7 @@ class RootSignatureContextDiplomat;
 class RootSignatureContext
 {
 public:
-	enum class Usage
+	enum class BufferUsage
 	{
 		kGraphics,
 		kCompute
@@ -15999,8 +16063,8 @@ RootSignatureCmds::CreateGraphicsRootSigCmd RootSignatureContext::RootSignatureC
 template<>
 ID3D12RootSignature* RootSignatureContext::RootSignatureCreator::Create(const RootSignatureDesc::Graphics& desc_)
 {
-	library->Import<Usage::kGraphics>(RootSignatureLibrary::HandleLicence{}, assembler->Assemble(desc_));
-	return library->Export<Usage::kGraphics>(RootSignatureLibrary::HandleLicence{});
+	library->Import<BufferUsage::kGraphics>(RootSignatureLibrary::HandleLicence{}, assembler->Assemble(desc_));
+	return library->Export<BufferUsage::kGraphics>(RootSignatureLibrary::HandleLicence{});
 }
 
 ========================================
@@ -16177,7 +16241,7 @@ namespace RootSignatureLayoutComponent
         kAS,
         kMS
     };
-    enum class Usage
+    enum class BufferUsage
     {
         kGraphics,
         kCompute
@@ -16422,46 +16486,46 @@ RootSignatureContext::RootSignatureLibrary::~RootSignatureLibrary()
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 template<>
-ID3D12RootSignature* RootSignatureContext::RootSignatureLibrary::Export<RootSignatureContext::Usage::kGraphics>(HandleLicence licence_)
+ID3D12RootSignature* RootSignatureContext::RootSignatureLibrary::Export<RootSignatureContext::BufferUsage::kGraphics>(HandleLicence licence_)
 {
-	ErrorMessageOutput::Assert::DetectError(data.at((UINT)RootSignatureContext::Usage::kGraphics), "中身が空です", fileName);
-	return data.at((UINT)RootSignatureContext::Usage::kGraphics).Get();
+	ErrorMessageOutput::Assert::DetectError(data.at((UINT)RootSignatureContext::BufferUsage::kGraphics), "中身が空です", fileName);
+	return data.at((UINT)RootSignatureContext::BufferUsage::kGraphics).Get();
 }
 template<>
-ID3D12RootSignature* RootSignatureContext::RootSignatureLibrary::Export<RootSignatureContext::Usage::kCompute>(HandleLicence licence_)
+ID3D12RootSignature* RootSignatureContext::RootSignatureLibrary::Export<RootSignatureContext::BufferUsage::kCompute>(HandleLicence licence_)
 {
-	ErrorMessageOutput::Assert::DetectError(data.at((int)RootSignatureContext::Usage::kCompute), "中身が空です", fileName);
-	return data.at((int)RootSignatureContext::Usage::kCompute).Get();
+	ErrorMessageOutput::Assert::DetectError(data.at((int)RootSignatureContext::BufferUsage::kCompute), "中身が空です", fileName);
+	return data.at((int)RootSignatureContext::BufferUsage::kCompute).Get();
 }
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 template<>
-void RootSignatureContext::RootSignatureLibrary::Import<RootSignatureContext::Usage::kGraphics>
+void RootSignatureContext::RootSignatureLibrary::Import<RootSignatureContext::BufferUsage::kGraphics>
 (HandleLicence licence_,Microsoft::WRL::ComPtr<ID3D12RootSignature>&& rootSig_)
 {
-	data.at(UINT(RootSignatureContext::Usage::kGraphics)) = std::move(rootSig_);
+	data.at(UINT(RootSignatureContext::BufferUsage::kGraphics)) = std::move(rootSig_);
 }
 template<>
-void RootSignatureContext::RootSignatureLibrary::Import<RootSignatureContext::Usage::kCompute>
+void RootSignatureContext::RootSignatureLibrary::Import<RootSignatureContext::BufferUsage::kCompute>
 (HandleLicence licence_,Microsoft::WRL::ComPtr<ID3D12RootSignature>&& rootSig_)
 {
-	data.at(UINT(RootSignatureContext::Usage::kCompute)) = std::move(rootSig_);
+	data.at(UINT(RootSignatureContext::BufferUsage::kCompute)) = std::move(rootSig_);
 }
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 template
-void RootSignatureContext::RootSignatureLibrary::Import<RootSignatureContext::Usage::kGraphics>
+void RootSignatureContext::RootSignatureLibrary::Import<RootSignatureContext::BufferUsage::kGraphics>
 (HandleLicence licence_,Microsoft::WRL::ComPtr<ID3D12RootSignature>&& rootSig_);
 template
-void RootSignatureContext::RootSignatureLibrary::Import<RootSignatureContext::Usage::kCompute>
+void RootSignatureContext::RootSignatureLibrary::Import<RootSignatureContext::BufferUsage::kCompute>
 (HandleLicence licence_,Microsoft::WRL::ComPtr<ID3D12RootSignature>&& rootSig_);
 template
-ID3D12RootSignature* RootSignatureContext::RootSignatureLibrary::Export<RootSignatureContext::Usage::kGraphics>
+ID3D12RootSignature* RootSignatureContext::RootSignatureLibrary::Export<RootSignatureContext::BufferUsage::kGraphics>
 (HandleLicence licence_);
 template
-ID3D12RootSignature* RootSignatureContext::RootSignatureLibrary::Export<RootSignatureContext::Usage::kCompute>
+ID3D12RootSignature* RootSignatureContext::RootSignatureLibrary::Export<RootSignatureContext::BufferUsage::kCompute>
 (HandleLicence licence_);
 
 ========================================
@@ -16475,13 +16539,13 @@ public:
 	struct HandleLicence;
 	RootSignatureLibrary(NexusFieldProof proof_);
 	~RootSignatureLibrary();
-	template<Usage usage>
+	template<BufferUsage BufferUsage>
 	ID3D12RootSignature* Export(HandleLicence licence_);
-	template<Usage usage>
+	template<BufferUsage BufferUsage>
 	void Import(HandleLicence licence_,Microsoft::WRL::ComPtr<ID3D12RootSignature>&& rootSig_);
 private:
 	///本元データ
-	std::array<Microsoft::WRL::ComPtr<ID3D12RootSignature>, (int)Usage::kCount> data;
+	std::array<Microsoft::WRL::ComPtr<ID3D12RootSignature>, (int)BufferUsage::kCount> data;
 };
 struct RootSignatureContext::RootSignatureLibrary::HandleLicence
 {
@@ -16810,14 +16874,13 @@ std::unordered_map<std::string, std::vector<std::wstring>> ShaderContext::Shader
     std::unordered_map<std::string, std::vector<std::string>> argsMap;
     for (auto const& key : allShaderFileNames)
     {
-        auto const groupName = key;
         std::vector<std::string> args =
-            Miyajison->LoadData<std::vector<std::string>>(DataStrings::kSrcJsonFileKey, { groupName ,DataStrings::kArgs });
+            Miyajison->LoadData<std::vector<std::string>>(DataStrings::kSrcJsonFileKey, { key ,DataStrings::kArgs });
         if (args[0] == DataStrings::kNone) continue;
         argsMap[key] = args;
     }
     //stringからwstringへ
-    for (auto [key, value] : argsMap)
+    for (auto const& [key, value] : argsMap)
     {
         for (auto& arg : value)
         {
@@ -17450,7 +17513,7 @@ namespace
 	auto const fileName = "TextureDataLoader.cpp";
 }
 using namespace TextureComponent;
-Texture2DState TextureContext::TextureBufferCreator::TextureDataLoader::LoadTextureState(std::string const key_)
+Texture2DState TextureContext::TextureBufferCreator::TextureDataLoader::LoadTextureState(std::string const& key_)
 {
 	Texture2DState texture2DState;
 	//keyからアンダーバーの先がテクスチャータイプ
@@ -17459,7 +17522,7 @@ Texture2DState TextureContext::TextureBufferCreator::TextureDataLoader::LoadText
 	texture2DState.type = ToTextureType(textureTypeString);
 	return texture2DState;
 }
-TextureType TextureContext::TextureBufferCreator::TextureDataLoader::ToTextureType(std::string const typeString_)
+TextureType TextureContext::TextureBufferCreator::TextureDataLoader::ToTextureType(std::string const& typeString_)
 {
 	TextureType type = TextureType::kCount;
 	if		(typeString_ == DataStrings::kAlbedo)		type = TextureType::kAlbedo;
@@ -17499,10 +17562,10 @@ class TextureContext::TextureBufferCreator::TextureDataLoader
 	};
 	///レジストリーに登録されている全てのテクスチャファイルの、
 	///Texture2DBufferDescriptionを構成する要素があるジェーソンファイルからデータを読む
-	static Texture2DState LoadTextureState(std::string const key_);
+	static Texture2DState LoadTextureState(std::string const& key_);
 	//以下ヘルパー
 private:
-	static TextureComponent::TextureType ToTextureType(std::string const typeString_);
+	static TextureComponent::TextureType ToTextureType(std::string const& typeString_);
 };
 
 ========================================
@@ -17700,11 +17763,11 @@ namespace
 {
 	auto const fileName = "TextureLibrary.cpp";
 }
-void TextureContext::TextureLibrary::Import(NexusFieldProof proof_, std::string const name_, SRVHeapIndex const index_)
+void TextureContext::TextureLibrary::Import(NexusFieldProof proof_, std::string const& name_, SRVHeapIndex const index_)
 {
 	data[name_] = index_;
 }
-SRVHeapIndex TextureContext::TextureLibrary::Export(std::string const name_)const
+SRVHeapIndex TextureContext::TextureLibrary::Export(std::string const& name_)const
 {
 	std::string actualName = name_;
 	//まずリスト内に存在しているかチェック
@@ -17723,6 +17786,7 @@ SRVHeapIndex TextureContext::TextureLibrary::Export(std::string const name_)cons
 }
 void TextureContext::TextureLibrary::Log()
 {
+#ifdef _DEBUG
 	std::string log = "\n- - - - - - - - - - TextureLibrary - - - - - - - - - -\n\n";
 	for (auto const& [key, value] : data)
 	{
@@ -17731,6 +17795,7 @@ void TextureContext::TextureLibrary::Log()
 	log += "\n- - - - - - - - - - - - - - - - - - - -";
 	Logger::Log(log);
 	Logger::Log("", fileName);
+#endif // DEBUG
 }
 
 ========================================
@@ -17744,8 +17809,8 @@ class TextureContext::TextureLibrary
 {
 public:
 	TextureLibrary(NexusFieldProof proof_);
-	void Import(NexusFieldProof proof_, std::string const name_, SRVHeapIndex const index_);
-	SRVHeapIndex Export(std::string const name_)const;
+	void Import(NexusFieldProof proof_, std::string const& name_, SRVHeapIndex const index_);
+	SRVHeapIndex Export(std::string const& name_)const;
 	//中身確認用
 	void Log();
 private:
@@ -19713,7 +19778,7 @@ namespace StringProcessing
         return path_.substr(0, dotPos);
     }
     ///けつからn番目の文字をカットする
-    inline std::string Cut(std::string const dstString_, size_t const removeStartPos_)
+    inline std::string Cut(std::string const& dstString_, size_t const removeStartPos_)
     {
         auto const stringEndPos = dstString_.size() - removeStartPos_;
         return dstString_.substr(0, stringEndPos);
@@ -19724,4 +19789,4 @@ namespace StringProcessing
 === SUMMARY ===
 ========================================
 Total Files      : 437
-Effective Lines  : 14369
+Effective Lines  : 14418

@@ -1,9 +1,9 @@
 #pragma once
-#include "GPUBufferBehavior.h"
+//#include "GPUBufferBehavior.h"
 
 
 //使用目的
-enum class Usage
+enum class BufferUsage
 {
 	kRead,
 	kWrite
@@ -20,18 +20,18 @@ struct IPingPong
 	//ステートを同期させる
 	virtual void SynchronizeStatus(ProjectConfig::Render::NumBuffer numBuffer_) = 0;
 	//バリアを生成仮想関数
-	virtual D3D12_RESOURCE_BARRIER CreateBarrier(Usage usage_) = 0;
+	virtual D3D12_RESOURCE_BARRIER CreateBarrier(BufferUsage usage_) = 0;
 
 protected:
 
 	//使用法に応じて、適切にバッファのインデックスを出す
-	virtual int ProperBufferIndex(Usage usage_)const = 0;
+	virtual int ProperBufferIndex(BufferUsage usage_)const = 0;
 };
 
 struct IDualRole
 {
 	virtual ~IDualRole() = default;
-	virtual D3D12_RESOURCE_STATES ResourceStateTable(Usage usage_)const = 0;
+	virtual D3D12_RESOURCE_STATES ResourceStateTable(BufferUsage usage_)const = 0;
 };
 
 //シェーダーバッファのインターフェース
@@ -93,7 +93,7 @@ struct IDepthBuffer:IDualRole
 
 	virtual D3D12_CPU_DESCRIPTOR_HANDLE OutProperDSVHeapHandle()const = 0;
 protected:
-	virtual D3D12_RESOURCE_STATES ResourceStateTable(Usage usage_)const override;
+	virtual D3D12_RESOURCE_STATES ResourceStateTable(BufferUsage usage_)const override;
 
 };
 
@@ -103,7 +103,7 @@ struct IColorBuffer:IDualRole
 	virtual ~IColorBuffer() = default;
 	virtual D3D12_CPU_DESCRIPTOR_HANDLE OutProperRTVHeapHandle()const = 0;
 protected:
-	virtual D3D12_RESOURCE_STATES ResourceStateTable(Usage usage_)const override;
+	virtual D3D12_RESOURCE_STATES ResourceStateTable(BufferUsage usage_)const override;
 };
 
 
@@ -127,15 +127,15 @@ public:
 
 	virtual ~IComputeBuffer() = default;
 	virtual void Swap()override;
-	virtual D3D12_RESOURCE_BARRIER CreateBarrier(Usage usage_) = 0;
+	virtual D3D12_RESOURCE_BARRIER CreateBarrier(BufferUsage usage_) = 0;
 
 protected:
 
 	///いつかそのひがきたら
 	//virtual uint32_t OutProperUAVHeapIndex()const = 0;
-	virtual int ProperBufferIndex(Usage usage_)const override;
+	virtual int ProperBufferIndex(BufferUsage usage_)const override;
 	virtual void SynchronizeStatus(ProjectConfig::Render::NumBuffer numBuffer_)override;
-	virtual D3D12_RESOURCE_STATES ResourceStateTable(Usage usage_)const override;
+	virtual D3D12_RESOURCE_STATES ResourceStateTable(BufferUsage usage_)const override;
 
 };
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -159,12 +159,12 @@ public:
 	virtual ~IRenderTargetBuffer() = default;
 
 	//適切なClearColor出す
-	virtual D3D12_RESOURCE_BARRIER CreateBarrier(Usage usage_) = 0;
+	virtual D3D12_RESOURCE_BARRIER CreateBarrier(BufferUsage usage_) = 0;
 	virtual void Swap()override;
 
 protected:
 
-	virtual int ProperBufferIndex(Usage usage_)const override;
+	virtual int ProperBufferIndex(BufferUsage usage_)const override;
 	virtual void SynchronizeStatus(ProjectConfig::Render::NumBuffer numBuffer_)override;
 };
 

@@ -20,57 +20,57 @@ RootSignatureContext::RootSignatureLibrary::~RootSignatureLibrary()
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 template<>
-ID3D12RootSignature* RootSignatureContext::RootSignatureLibrary::Export<RootSignatureContext::Usage::kGraphics>(HandleLicence licence_)
+ID3D12RootSignature* RootSignatureContext::RootSignatureLibrary::Export<RootSignatureContext::BufferUsage::kGraphics>(HandleLicence licence_)
 {
-	ErrorMessageOutput::Assert::DetectError(data.at((UINT)RootSignatureContext::Usage::kGraphics), "中身が空です", fileName);
+	ErrorMessageOutput::Assert::DetectError(data.at((UINT)RootSignatureContext::BufferUsage::kGraphics), "中身が空です", fileName);
 
-	return data.at((UINT)RootSignatureContext::Usage::kGraphics).Get();
+	return data.at((UINT)RootSignatureContext::BufferUsage::kGraphics).Get();
 
 }
 
 template<>
-ID3D12RootSignature* RootSignatureContext::RootSignatureLibrary::Export<RootSignatureContext::Usage::kCompute>(HandleLicence licence_)
+ID3D12RootSignature* RootSignatureContext::RootSignatureLibrary::Export<RootSignatureContext::BufferUsage::kCompute>(HandleLicence licence_)
 {
-	ErrorMessageOutput::Assert::DetectError(data.at((int)RootSignatureContext::Usage::kCompute), "中身が空です", fileName);
+	ErrorMessageOutput::Assert::DetectError(data.at((int)RootSignatureContext::BufferUsage::kCompute), "中身が空です", fileName);
 
-	return data.at((int)RootSignatureContext::Usage::kCompute).Get();
+	return data.at((int)RootSignatureContext::BufferUsage::kCompute).Get();
 }
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 template<>
-void RootSignatureContext::RootSignatureLibrary::Import<RootSignatureContext::Usage::kGraphics>
+void RootSignatureContext::RootSignatureLibrary::Import<RootSignatureContext::BufferUsage::kGraphics>
 (HandleLicence licence_,Microsoft::WRL::ComPtr<ID3D12RootSignature>&& rootSig_)
 {
-	data.at(UINT(RootSignatureContext::Usage::kGraphics)) = std::move(rootSig_);
+	data.at(UINT(RootSignatureContext::BufferUsage::kGraphics)) = std::move(rootSig_);
 }
 
 template<>
-void RootSignatureContext::RootSignatureLibrary::Import<RootSignatureContext::Usage::kCompute>
+void RootSignatureContext::RootSignatureLibrary::Import<RootSignatureContext::BufferUsage::kCompute>
 (HandleLicence licence_,Microsoft::WRL::ComPtr<ID3D12RootSignature>&& rootSig_)
 {
-	data.at(UINT(RootSignatureContext::Usage::kCompute)) = std::move(rootSig_);
+	data.at(UINT(RootSignatureContext::BufferUsage::kCompute)) = std::move(rootSig_);
 }
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 template
-void RootSignatureContext::RootSignatureLibrary::Import<RootSignatureContext::Usage::kGraphics>
+void RootSignatureContext::RootSignatureLibrary::Import<RootSignatureContext::BufferUsage::kGraphics>
 (HandleLicence licence_,Microsoft::WRL::ComPtr<ID3D12RootSignature>&& rootSig_);
 
 
 template
-void RootSignatureContext::RootSignatureLibrary::Import<RootSignatureContext::Usage::kCompute>
+void RootSignatureContext::RootSignatureLibrary::Import<RootSignatureContext::BufferUsage::kCompute>
 (HandleLicence licence_,Microsoft::WRL::ComPtr<ID3D12RootSignature>&& rootSig_);
 
 
 
 template
-ID3D12RootSignature* RootSignatureContext::RootSignatureLibrary::Export<RootSignatureContext::Usage::kGraphics>
+ID3D12RootSignature* RootSignatureContext::RootSignatureLibrary::Export<RootSignatureContext::BufferUsage::kGraphics>
 (HandleLicence licence_);
 
 
 template
-ID3D12RootSignature* RootSignatureContext::RootSignatureLibrary::Export<RootSignatureContext::Usage::kCompute>
+ID3D12RootSignature* RootSignatureContext::RootSignatureLibrary::Export<RootSignatureContext::BufferUsage::kCompute>
 (HandleLicence licence_);

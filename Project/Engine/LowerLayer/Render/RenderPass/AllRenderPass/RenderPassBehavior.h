@@ -5,13 +5,14 @@
 
 //外部
 #include "../../../Buffer/BufferContext.h"
+#include "../../../Buffer/BufferDefinition/GPUBuffer/BufferInterface.h"
 
 class RuntimeWrapper;
 class Model;
 struct RenderStateKey;
 class ColorBuffer;
 class DepthStencilBuffer;
-
+class GPUBufferBehavior;
 
 class RenderContext::PassBehavior
 {
@@ -40,7 +41,14 @@ public:
 
 	//レンダーターゲットのあれこれの描画コマンドをたたく
 	void BeginPass(RuntimeWrapper& cmdWrapper_, BufferContext::BufferDispatcher& bufDispatcher_);
-
+	//モデルを描画する
+	void DrawModels
+	(
+		std::unordered_map<uint32_t, std::pair<RenderStateKey, std::vector<Model*>>> const& modelContainer_,
+		RenderStateComponent::FillMode const fillMode_,
+		PSO_PoolDispatcher& psoDispatcher_,
+		RuntimeWrapper& cmdWrapper_
+	);
 
 protected:
 
@@ -55,9 +63,12 @@ protected:
 
 private:
 
+	//バッファのステートを切り替えのためのバリアを生成
+	template<BufferUsage usage>
+	D3D12_RESOURCE_BARRIER CreateBarrier(GPUBufferBehavior* buffer_);
+
 	//パスからPSOキーのコンポーネントの一部を抽出
 	RequiredComponents ExtractComponents(UINT const colorIndex_)const;
-	
 
 	//Passのルートコンスタンツを転送
 	void TransferRootConstants(RuntimeWrapper& cmdWrapper_);
@@ -77,19 +88,6 @@ private:
 		RuntimeWrapper& cmdWrapper_
 	);
 
-	//深度ステンシルバッファからCPUハンドルを引っ張る
-	D3D12_CPU_DESCRIPTOR_HANDLE PullDepthStencilBufferHandle
-	(
-		BufferUniqueID const id_,
-		BufferContext::BufferDispatcher& bufDispatcher_
-	);
-
-	//そのカラーバッファバージョン
-	D3D12_CPU_DESCRIPTOR_HANDLE PullColorBufferHandle
-	(
-		BufferUniqueID const id_,
-		BufferContext::BufferDispatcher& bufDispatcher_
-	);
 
 	//描画先の決定
 	void SetRenderTargets
@@ -100,6 +98,23 @@ private:
 		RuntimeWrapper& cmdWrapper_
 	);
 
+	//バッファのユニークIDからバッファを検索
+	template<typename BufferType>
+	BufferType* FindBufferWithID
+	(
+		BufferUniqueID const id_,
+		BufferContext::BufferDispatcher& bufDispatcher_
+	);
+
+	//バッファからCPUハンドルを引っ張る
+	template<typename BufferType>
+	D3D12_CPU_DESCRIPTOR_HANDLE PullHandleCPU
+	(
+		BufferType* buffer_,
+		BufferContext::BufferDispatcher& bufDispatcher_
+	);
+
+	//viewportやscissorRectsのセット
 	template<typename MatrixType>
 	void SetMatrix
 	(
@@ -117,7 +132,6 @@ void RenderContext::PassBehavior::SetMatrix<D3D12_VIEWPORT>
 	const D3D12_VIEWPORT* matrix_,
 	RuntimeWrapper& cmdWrapper_
 );
-
 template<>
 void RenderContext::PassBehavior::SetMatrix<D3D12_RECT>
 (
@@ -126,3 +140,31 @@ void RenderContext::PassBehavior::SetMatrix<D3D12_RECT>
 	RuntimeWrapper& cmdWrapper_
 );
 
+
+template<>
+ColorBuffer* RenderContext::PassBehavior::FindBufferWithID
+(
+	BufferUniqueID const id_,
+	BufferContext::BufferDispatcher& bufDispatcher_
+);
+template<>
+DepthStencilBuffer* RenderContext::PassBehavior::FindBufferWithID
+(
+	BufferUniqueID const id_,
+	BufferContext::BufferDispatcher& bufDispatcher_
+);
+
+
+
+template<>
+D3D12_CPU_DESCRIPTOR_HANDLE RenderContext::PassBehavior::PullHandleCPU
+(
+	ColorBuffer* buffer_,
+	BufferContext::BufferDispatcher& bufDispatcher_
+);
+template<>
+D3D12_CPU_DESCRIPTOR_HANDLE RenderContext::PassBehavior::PullHandleCPU
+(
+	DepthStencilBuffer* buffer_,
+	BufferContext::BufferDispatcher& bufDispatcher_
+);

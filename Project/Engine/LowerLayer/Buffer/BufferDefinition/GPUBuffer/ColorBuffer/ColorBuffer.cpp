@@ -19,7 +19,7 @@ ColorBuffer::ColorBuffer
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-D3D12_RESOURCE_BARRIER ColorBuffer::CreateBarrier(Usage usage_)
+D3D12_RESOURCE_BARRIER ColorBuffer::CreateBarrier(BufferUsage usage_)
 {
 	int dstBufferIndex = ProperBufferIndex(usage_);
 
@@ -30,7 +30,7 @@ D3D12_RESOURCE_BARRIER ColorBuffer::CreateBarrier(Usage usage_)
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 D3D12_CPU_DESCRIPTOR_HANDLE ColorBuffer::OutProperRTVHeapHandle()const
 {
-	int dstBufferIndex = ProperBufferIndex(Usage::kWrite);
+	int dstBufferIndex = ProperBufferIndex(BufferUsage::kWrite);
 
 	return WatchIndex<ViewType::kRTV, D3D12_CPU_DESCRIPTOR_HANDLE >(dstBufferIndex);
 }
@@ -39,7 +39,7 @@ D3D12_CPU_DESCRIPTOR_HANDLE ColorBuffer::OutProperRTVHeapHandle()const
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 SRVHeapIndex ColorBuffer::OutProperSRVHeapIndex(int frameIndex_)const
 {
-	int dstBufferIndex = ProperBufferIndex(Usage::kRead);
+	int dstBufferIndex = ProperBufferIndex(BufferUsage::kRead);
 
 	return WatchIndex<ViewType::kSRV, SRVHeapIndex >(dstBufferIndex);
 }

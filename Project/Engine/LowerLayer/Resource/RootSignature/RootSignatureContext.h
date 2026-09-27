@@ -9,7 +9,7 @@ class RootSignatureContext
 
 public:
 
-	enum class Usage
+	enum class BufferUsage
 	{
 		kGraphics,
 		kCompute

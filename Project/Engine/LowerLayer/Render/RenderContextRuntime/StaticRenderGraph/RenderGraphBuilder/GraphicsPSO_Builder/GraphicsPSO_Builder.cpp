@@ -401,7 +401,7 @@ void RenderContext::StaticRenderGraph::PSO_Builder::InputPassOnlyInfo
 	size_t const numRT = colorBuffersInfo.size();
 	for (size_t i = 0; i < numRT; ++i)
 	{
-		auto& tmp = offscreenPassPsoDesc.first.renderTargetDescs[i];
+		auto& renderTargetDesc = offscreenPassPsoDesc.first.renderTargetDescs[i];
 
 		//ここでcolorBuffersInfoのブレンドモードがkDependsModelだとおかしい
 		ErrorMessageOutput::Assert::DetectError
@@ -412,7 +412,7 @@ void RenderContext::StaticRenderGraph::PSO_Builder::InputPassOnlyInfo
 		);
 
 		//パス固定のブレンドモードを詰めていく
-		tmp.blendMode = colorBuffersInfo[i].blendMode;
+		renderTargetDesc.blendMode = colorBuffersInfo[i].blendMode;
 	}	
 
 	offscreenPassPsoDesc.first.psoName += " X None(offScreen)";

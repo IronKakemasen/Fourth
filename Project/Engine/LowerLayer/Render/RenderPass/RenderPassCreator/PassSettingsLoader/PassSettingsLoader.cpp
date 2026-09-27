@@ -124,12 +124,16 @@ std::optional<RenderContext::RequiredBufferInfo::DepthStencilBuffer> RenderConte
 	depthStencilBufferInfo->clearDepth =
 		miyajison->LoadData<float>(DataKeyString::kSrcJsonFileName, { passName_,DataKeyString::kClearDepthF });
 
-	depthStencilBufferInfo->doesClearStencil = (D3D12_CLEAR_FLAGS)
-		miyajison->LoadData<bool>(DataKeyString::kSrcJsonFileName, { passName_,DataKeyString::kClearStencilFlagB });
+	//深度は常にクリアする前提
+	depthStencilBufferInfo->doesClearStencil = D3D12_CLEAR_FLAG_DEPTH;
+	if (miyajison->LoadData<bool>(DataKeyString::kSrcJsonFileName, { passName_, DataKeyString::kClearStencilFlagB }))
+	{
+		depthStencilBufferInfo->doesClearStencil |= D3D12_CLEAR_FLAG_STENCIL;
+	}
 
 	depthStencilBufferInfo->clearStencil =
-		miyajison->LoadData<int>(DataKeyString::kSrcJsonFileName, { passName_,DataKeyString::kClearStencilI });
-
+		miyajison->LoadData<int>(DataKeyString::kSrcJsonFileName, { passName_, DataKeyString::kClearStencilI });  
+	
 	depthStencilBufferInfo->numBuffer = 
 		(NumBuffer)miyajison->LoadData<int>(DataKeyString::kSrcJsonFileName, { passName_,DataKeyString::kNumBuffer_depthI });
 

@@ -27,7 +27,7 @@ RootSignatureCmds::CreateGraphicsRootSigCmd RootSignatureContext::RootSignatureC
 template<>
 ID3D12RootSignature* RootSignatureContext::RootSignatureCreator::Create(const RootSignatureDesc::Graphics& desc_)
 {
-	library->Import<Usage::kGraphics>(RootSignatureLibrary::HandleLicence{}, assembler->Assemble(desc_));
+	library->Import<BufferUsage::kGraphics>(RootSignatureLibrary::HandleLicence{}, assembler->Assemble(desc_));
 
-	return library->Export<Usage::kGraphics>(RootSignatureLibrary::HandleLicence{});
+	return library->Export<BufferUsage::kGraphics>(RootSignatureLibrary::HandleLicence{});
 }

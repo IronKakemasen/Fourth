@@ -1,6 +1,8 @@
 #pragma once
 #include "../../BufferUploader.h"
 
+class GPUBufferBehavior;
+
 class BufferContext::BufferUploader::BarrierExtractor
 {
 	friend class BufferContext::BufferUploader;
