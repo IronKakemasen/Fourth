@@ -3,6 +3,7 @@
 //バッファ群
 #include "../../BufferDefinition/AllBuffersInclude.h"
 #include "ClosedHashMap/ClosedHashMap.h" 
+
 BufferContext::BufferCollector::BufferCollector
 (
 	BufferContext::NexusFieldProof proof_,

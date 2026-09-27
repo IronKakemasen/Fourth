@@ -21,7 +21,7 @@ DepthStencilBuffer::DepthStencilBuffer
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-D3D12_RESOURCE_BARRIER DepthStencilBuffer::CreateBarrier(Usage usage_)
+D3D12_RESOURCE_BARRIER DepthStencilBuffer::CreateBarrier(BufferUsage usage_)
 {
 	int dstBufferIndex = ProperBufferIndex(usage_);
 
@@ -33,7 +33,7 @@ D3D12_RESOURCE_BARRIER DepthStencilBuffer::CreateBarrier(Usage usage_)
 
 D3D12_CPU_DESCRIPTOR_HANDLE DepthStencilBuffer::OutProperDSVHeapHandle()const
 {
-	int dstBufferIndex = ProperBufferIndex(Usage::kWrite);
+	int dstBufferIndex = ProperBufferIndex(BufferUsage::kWrite);
 
 	return WatchIndex<ViewType::kDSV, D3D12_CPU_DESCRIPTOR_HANDLE >(dstBufferIndex);
 }
@@ -42,7 +42,7 @@ D3D12_CPU_DESCRIPTOR_HANDLE DepthStencilBuffer::OutProperDSVHeapHandle()const
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 SRVHeapIndex DepthStencilBuffer::OutProperSRVHeapIndex(int frameIndex_)const
 {
-	int dstBufferIndex = ProperBufferIndex(Usage::kRead);
+	int dstBufferIndex = ProperBufferIndex(BufferUsage::kRead);
 
 	return WatchIndex<ViewType::kSRV, SRVHeapIndex >(dstBufferIndex);
 }

@@ -1,4 +1,5 @@
 #pragma once
+#include "../GPUBufferBehavior.h"
 #include "../BufferInterface.h"
 
 
@@ -19,7 +20,7 @@ public:
 private:
 
 	//バリアを張る
-	virtual D3D12_RESOURCE_BARRIER CreateBarrier(Usage usage_) override;
+	virtual D3D12_RESOURCE_BARRIER CreateBarrier(BufferUsage usage_) override;
 	//適切なCPUインデックスを出す
 	virtual D3D12_CPU_DESCRIPTOR_HANDLE OutProperDSVHeapHandle()const override;
 	//適切なsrvHeapインデックスを渡す

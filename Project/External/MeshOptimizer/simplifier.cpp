@@ -1453,7 +1453,7 @@ static void sortEdgeCollapses(unsigned int* sort_order, const Collapse* collapse
 {
 	// we use counting sort to order collapses by error; since the exact sort order is not as critical,
 	// only top 12 bits of exponent+mantissa (8 bits of exponent and 4 bits of mantissa) are used.
-	// to avoid excessive stack usage, we clamp the exponent range as collapses with errors much higher than 1 are not useful.
+	// to avoid excessive stack BufferUsage, we clamp the exponent range as collapses with errors much higher than 1 are not useful.
 	const unsigned int sort_bits = 12;
 	const unsigned int sort_bins = 2048 + 512; // exponent range [-127, 32)
 

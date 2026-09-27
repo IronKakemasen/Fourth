@@ -1,7 +1,7 @@
 #include "BufferInterface.h"
 
 
-D3D12_RESOURCE_STATES IColorBuffer::ResourceStateTable(Usage usage_)const
+D3D12_RESOURCE_STATES IColorBuffer::ResourceStateTable(BufferUsage usage_)const
 {
 	static D3D12_RESOURCE_STATES resourceStatetable[2]
 	{
@@ -27,7 +27,7 @@ void IWritableCPU::Map(std::array<ID3D12Resource*, (UINT)ProjectConfig::Render::
 ///+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-D3D12_RESOURCE_STATES IDepthBuffer::ResourceStateTable(Usage usage_)const
+D3D12_RESOURCE_STATES IDepthBuffer::ResourceStateTable(BufferUsage usage_)const
 {
 	static D3D12_RESOURCE_STATES resourceStateTable[2]
 	{
@@ -52,7 +52,7 @@ void IRenderTargetBuffer::Swap()
 	status = nextTable[status];
 }
 
-int IRenderTargetBuffer::ProperBufferIndex(Usage usage_)const
+int IRenderTargetBuffer::ProperBufferIndex(BufferUsage usage_)const
 {
 	//シングルバッファは問答無用
 	if (status == kSingle) return 0;
@@ -60,7 +60,7 @@ int IRenderTargetBuffer::ProperBufferIndex(Usage usage_)const
 	int dstBufferIndex{};
 
 	//使用目的が読み込みの場合
-	if (usage_ == Usage::kRead)
+	if (usage_ == BufferUsage::kRead)
 	{
 		//2番目がシェーダーリソース
 		if (status == kRenderTarget_ShaderResource) dstBufferIndex = 1;
@@ -95,7 +95,7 @@ void IComputeBuffer::Swap()
 
 }
 
-int IComputeBuffer::ProperBufferIndex(Usage usage_)const
+int IComputeBuffer::ProperBufferIndex(BufferUsage usage_)const
 {
 	//シングルバッファは問答無用
 	if (status == kSingle) return 0;
@@ -103,7 +103,7 @@ int IComputeBuffer::ProperBufferIndex(Usage usage_)const
 	int dstBufferIndex{};
 
 	//使用目的が読み込みの場合
-	if (usage_ == Usage::kRead)
+	if (usage_ == BufferUsage::kRead)
 	{
 		//2番目がシェーダーリソース
 		if (status == kComputeResource_ShaderResource) dstBufferIndex = 1;
@@ -123,7 +123,7 @@ void IComputeBuffer::SynchronizeStatus(ProjectConfig::Render::NumBuffer numBuffe
 	(numBuffer_ == ProjectConfig::Render::NumBuffer::kSingleBuffer) ? status = kSingle : status = kComputeResource_ShaderResource;
 }
 
-D3D12_RESOURCE_STATES IComputeBuffer::ResourceStateTable(Usage usage_)const
+D3D12_RESOURCE_STATES IComputeBuffer::ResourceStateTable(BufferUsage usage_)const
 {
 	static D3D12_RESOURCE_STATES resourceStateTable[2]
 	{

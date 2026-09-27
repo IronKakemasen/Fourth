@@ -3,6 +3,7 @@
 
 //外部
 #include "../../../../../Buffer/BufferDefinition/GPUBuffer/BufferInterface.h"
+#include "../../../../../Buffer/BufferDefinition/GPUBuffer/GPUBufferBehavior.h"
 #include "../../../../../Buffer/BufferRuntime/BufferDispatcher/BufferDispatcher.h"
 
 

@@ -16,7 +16,7 @@ namespace RootSignatureLayoutComponent
     };
 
 
-    enum class Usage
+    enum class BufferUsage
     {
         kGraphics,
         kCompute
