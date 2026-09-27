@@ -3847,7 +3847,6 @@ D3D12_RESOURCE_STATES IComputeBuffer::ResourceStateTable(BufferUsage usage_)cons
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Buffer\BufferDefinition\GPUBuffer\BufferInterface.h ===
 ========================================
 #pragma once
-//#include "GPUBufferBehavior.h"
 //使用目的
 enum class BufferUsage
 {
@@ -9145,14 +9144,14 @@ namespace RenderStateComponent
     //追加したら下の変換関数もね
     enum class BlendMode
     {
-        ///RenderPass専用！！！
-        kOffScreen,
         kOpaque,
         kAlphaBlend,
-        kAdditive
-        ,kCount,
+        kAdditive,
         ///RenderPass専用！！！
-        kDependsModel,
+        kDependsRenderPass
+        ,kCount
+        ///RenderPass専用！！！
+        ,kDependsModel
     };
     enum class FillMode
     {
@@ -9273,8 +9272,16 @@ public:
     RenderPassComponent::Pass pass = RenderPassComponent::Pass(kInvalid);
     ShaderPathComponent::MeshType mesh = ShaderPathComponent::MeshType(kInvalid);
     ShaderPathComponent::MaterialType material = ShaderPathComponent::MaterialType(kInvalid);
+    ///超重要。このPSOキーにおけるblendModeはつまるところkDependsModelかそれ以外の２パターン存在する
+    ///kDependsModelを選択した場合、モデルのblendModeがそのパスにある
+    ///kDependsModelを選択しているカラーバッファに影響する
+    ///それ以外のタグを選択している場合は、カラーバッファ[0]のblendModeが代表として設定される
+    ///Pass X BlendMode　で使用するカラーバッファのblendModeは一意に決まるので恐らく心配する必要はない
     RenderStateComponent::BlendMode blend = RenderStateComponent::BlendMode(kInvalid);
     RenderStateComponent::CullMode cull = RenderStateComponent::CullMode(kInvalid);
+    ///これもblendModeと同じような感じ。モデル描画パスではWireFrameは有効だが、
+    ///そうでなければSolidのみ。キーがWireFrameだからと言って、そのパスの全てのバッファの
+    ///fillModeがwireFrameにはならない。あくまでモデル描画するカラーバッファの影響する
     RenderStateComponent::FillMode fill = RenderStateComponent::FillMode(kInvalid);
      template<Sequence sequence>
      constexpr auto Get() const
@@ -9394,12 +9401,10 @@ class RenderContext::PSO_PoolDispatcher
 		);
 	}
 public:
-	//psoのアドレスにアクセスする許可証
-	struct DataAccessLicense;
 	PSO_PoolDispatcher(NexusFieldProof proof_);
 	~PSO_PoolDispatcher();
 	///キーをもとにpsoを検索して渡す
-	[[nodiscard]] inline ID3D12PipelineState* AccessGraphicsPSO(const DataAccessLicense& license_, const GraphicsPSO_Key& key_)const
+	[[nodiscard]] inline ID3D12PipelineState* AccessGraphicsPSO(const GraphicsPSO_Key& key_)const
 	{
 		uint32_t const packedKey = PackKey(key_);
 		uint32_t const psoPoolIndex = closedHashMap->FindValueFast(packedKey);
@@ -9430,12 +9435,6 @@ private:
 	const uint32_t kHashMapCapacity = 2048;
 	//closedHashMapのビットレイアウトを定める
 	void DefinePackageLayout();
-};
-struct RenderContext::PSO_PoolDispatcher::DataAccessLicense
-{
-private:
-	///未登録
-	explicit DataAccessLicense() = default;
 };
 
 ========================================
@@ -9789,6 +9788,8 @@ RenderContext::StaticRenderGraph::PSO_Builder::PsoDesc_Key RenderContext::Static
 			auto& tmp = psoCommon.first.renderTargetDescs[i];
 			tmp.bufferName = colorBuffersInfo[i].bufferName;
 			tmp.rtvFormat = colorBuffersInfo[i].format;
+			//モデル依存かどうか問わず入力する
+			tmp.blendMode = colorBuffersInfo[i].blendMode;
 		}		
 		psoCommon.first.psoName += passDesc_.passName + " X " + RenderStateComponent::FillModeToString(fillMode_);
 	}
@@ -9863,6 +9864,7 @@ void RenderContext::StaticRenderGraph::PSO_Builder::InputDependingModelsInfo
 					//ブレンドモードはパスがモデル依存として設定しているかどうかで分岐させる
 					if (renderTargetDesc.blendMode == RenderStateComponent::BlendMode::kDependsModel)
 					{
+						//モデル依存ならそのまんま、モデルのブレンドモードを入れる
 						renderTargetDesc.blendMode = blendMode;
 					}
 				}
@@ -9903,7 +9905,8 @@ void RenderContext::StaticRenderGraph::PSO_Builder::InputPassOnlyInfo
 	offscreenPassPsoDesc.second.cull = RenderStateComponent::CullMode::kBack;
 	///ここは悪影響が出るか分からんが、実際の各レンダーターゲットのブレンドモードの値は、
 	///入力しているので恐らく問題ない。あくまでPSO_Keyのため
-	offscreenPassPsoDesc.second.blend = RenderStateComponent::BlendMode::kOffScreen;
+	///大事なのは、キー ≠ カラーバッファのブレンドモード
+	offscreenPassPsoDesc.second.blend = RenderStateComponent::BlendMode::kDependsRenderPass;
 	//使用するシェーダーファイルのバイナリデータのポインタ
 	offscreenPassPsoDesc.first.shaderSet.meshShader = shaderLib->Export(ms_psFile->first);
 	offscreenPassPsoDesc.first.shaderSet.meshShaderName = ms_psFile->first;
@@ -9922,7 +9925,7 @@ void RenderContext::StaticRenderGraph::PSO_Builder::InputPassOnlyInfo
 	size_t const numRT = colorBuffersInfo.size();
 	for (size_t i = 0; i < numRT; ++i)
 	{
-		auto& tmp = offscreenPassPsoDesc.first.renderTargetDescs[i];
+		auto& renderTargetDesc = offscreenPassPsoDesc.first.renderTargetDescs[i];
 		//ここでcolorBuffersInfoのブレンドモードがkDependsModelだとおかしい
 		ErrorMessageOutput::Assert::DetectError
 		(
@@ -9931,7 +9934,7 @@ void RenderContext::StaticRenderGraph::PSO_Builder::InputPassOnlyInfo
 			fileName
 		);
 		//パス固定のブレンドモードを詰めていく
-		tmp.blendMode = colorBuffersInfo[i].blendMode;
+		renderTargetDesc.blendMode = colorBuffersInfo[i].blendMode;
 	}	
 	offscreenPassPsoDesc.first.psoName += " X None(offScreen)";
 	//出来上がったものを追加
@@ -10583,15 +10586,18 @@ using AllPassUnique = std::tuple
 #include "RenderPassBehavior.h"
 #include "../PassDesc/PassDesc.h"
 #include "../RuntimePassInfo/RuntimePassInfo.h"
+#include "../../RenderContextRuntime/PSO_PoolDispatcher/PSO_PoolDispatcher.h"
 //外部
 #include "../../../Buffer/BufferRuntime/BufferDispatcher/BufferDispatcher.h"
 #include "../../../Buffer/BufferDefinition/GPUBuffer/ColorBuffer/ColorBuffer.h"
 #include "../../../Buffer/BufferDefinition/GPUBuffer/DepthStencilBuffer/DepthStencilBuffer.h"
 #include "../../../Core/Command/RuntimeWrapper/RuntimeWrapper.h"
+#include "../../../Resource/Model/ModelStructure/Model.h"
 RenderContext::PassBehavior::PassBehavior(NexusFieldProof proof_, std::unique_ptr<PassDesc>&& desc_)
 	:desc(std::move(desc_))
 {
 }
+using namespace RenderStateComponent;
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -10655,6 +10661,48 @@ void RenderContext::PassBehavior::BeginPass(RuntimeWrapper& cmdWrapper_, BufferC
 	}
 	//このパスのルートコンスタンツを転送
 	TransferRootConstants(cmdWrapper_);
+}
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+void RenderContext::PassBehavior::DrawModels
+(
+	std::unordered_map<uint32_t, std::pair<RenderStateKey, std::vector<Model*>>> const& modelContainer_,
+	RenderStateComponent::FillMode const fillMode_,
+	PSO_PoolDispatcher& psoDispatcher_,
+	RuntimeWrapper& cmdWrapper_
+)
+{
+	//PSOキー
+	GraphicsPSO_Key psoKey;
+	psoKey.pass = runtimePassInfo->WatchPass();
+	psoKey.fill = fillMode_;
+	//このPassで描画対象の全モデルの走査
+	for (auto const& [key, state_models] : modelContainer_)
+	{
+		//レンダーステートキーからPSOキーの一部を入力
+		WritePsoKeyFromRenderStateKey(state_models.first, psoKey);
+		//psoDispatcherがキーをもとにpsoを検索
+		auto* srcPso = psoDispatcher_.AccessGraphicsPSO(psoKey);
+		//psoをセット
+		cmdWrapper_.SetPipelineState(srcPso);
+		//おなじPSOごとに仕分けられているので、そこでも走査
+		for (auto const& model : state_models.second)
+		{
+			//そのモデルを描画するかどうか
+			if (!model->DoesDraw(psoKey.blend, psoKey.material)) continue;
+			//モデルのルートコンスタンツを転送
+			cmdWrapper_.SetGraphicsRoot32BitConstants
+			(
+				(UINT)ConstantBuffers::RootConstantsBindSlots::kPerDrawIndices,
+				3,
+				&model->WatchPerDrawIndices(),
+				0
+			);
+			//ドロー
+			//cmdWrapper_.DispatchMesh((UINT)resMesh->meshlets.size(), 1, 1);
+		}
+	}
 }
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -10778,14 +10826,20 @@ void RenderContext::PassBehavior::SetMatrix<D3D12_RECT>
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-RenderContext::PassBehavior::RequiredComponents RenderContext::PassBehavior::ExtractComponents(UINT const colorIndex_)const
+template<>
+D3D12_RESOURCE_BARRIER RenderContext::PassBehavior::CreateBarrier<BufferUsage::kRead>(IRenderTargetBuffer* buffer_)
 {
-	return std::make_tuple
-	(
-		runtimePassInfo->WatchPass(),
-		runtimePassInfo->WatchColorBuffersInfo()[colorIndex_].blendMode
-	);
+	return buffer_->CreateBarrier(BufferUsage::kRead);
 }
+template<>
+D3D12_RESOURCE_BARRIER RenderContext::PassBehavior::CreateBarrier<BufferUsage::kWrite>(IRenderTargetBuffer* buffer_)
+{
+	return buffer_->CreateBarrier(BufferUsage::kWrite);
+}
+template
+D3D12_RESOURCE_BARRIER RenderContext::PassBehavior::CreateBarrier<BufferUsage::kRead>(IRenderTargetBuffer* buffer_);
+template
+D3D12_RESOURCE_BARRIER RenderContext::PassBehavior::CreateBarrier<BufferUsage::kWrite>(IRenderTargetBuffer* buffer_);
 
 ========================================
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Render\RenderPass\AllRenderPass\RenderPassBehavior.h ===
@@ -10794,12 +10848,13 @@ RenderContext::PassBehavior::RequiredComponents RenderContext::PassBehavior::Ext
 #include "../../RenderContext.h"
 #include "../RenderPassComponent.h"
 #include "../../RenderStateComponent.h"
+#include "../../RenderContextRuntime/PSO_PoolDispatcher/GraphicsPSO_Key.h"
 //外部
 #include "../../../Buffer/BufferContext.h"
 #include "../../../Buffer/BufferDefinition/GPUBuffer/BufferInterface.h"
+#include "../../../Resource/Model/ModelContainer/RenderStateKey/RenderStateKey.h"
 class RuntimeWrapper;
 class Model;
-struct RenderStateKey;
 class ColorBuffer;
 class DepthStencilBuffer;
 class GPUBufferBehavior;
@@ -10824,19 +10879,34 @@ public:
 	);
 	//レンダーターゲットのあれこれの描画コマンドをたたく
 	void BeginPass(RuntimeWrapper& cmdWrapper_, BufferContext::BufferDispatcher& bufDispatcher_);
+	//モデルを描画する
+	void DrawModels
+	(
+		std::unordered_map<uint32_t, std::pair<RenderStateKey, std::vector<Model*>>> const& modelContainer_,
+		RenderStateComponent::FillMode const fillMode_,
+		PSO_PoolDispatcher& psoDispatcher_,
+		RuntimeWrapper& cmdWrapper_
+	);
 protected:
-	//パスから出力すべきコンポーネント群
-	using RequiredComponents = std::tuple<RenderPassComponent::Pass, RenderStateComponent::BlendMode>;
 	//Passの設計図
 	std::unique_ptr<PassDesc> desc;
 	//ランタイムで必要になるPassの情報をまとめたもの
 	std::unique_ptr<RuntimePassInfo> runtimePassInfo;
 private:
-	//バッファのステートを切り替えのためのバリアを張る++生成
+	//RenderStateKeyから、Passとフィルモード以外のPSOキーの入力をする
+	//呼び出し回数が多いのでヘッダで定義しちゃいます
+	void WritePsoKeyFromRenderStateKey(RenderStateKey const& renderStateKey_, GraphicsPSO_Key& dst_)
+	{
+		dst_.cull = renderStateKey_.Get<RenderStateKey::Sequence::kCullMode>();
+		dst_.mesh = renderStateKey_.Get<RenderStateKey::Sequence::kMeshType>();
+		dst_.material = renderStateKey_.Get<RenderStateKey::Sequence::kMaterialType>();
+		//ブレンドモードキーはモデル依存
+		dst_.blend = renderStateKey_.Get<RenderStateKey::Sequence::kBlendMode>();
+	}
+	//バッファのステートを切り替えのためのバリアを生成
+	//中で張ってない
 	template<BufferUsage usage>
-	D3D12_RESOURCE_BARRIER CreateBarrier(GPUBufferBehavior* buffer_);
-	//パスからPSOキーのコンポーネントの一部を抽出
-	RequiredComponents ExtractComponents(UINT const colorIndex_)const;
+	D3D12_RESOURCE_BARRIER CreateBarrier(IRenderTargetBuffer* buffer_);
 	//Passのルートコンスタンツを転送
 	void TransferRootConstants(RuntimeWrapper& cmdWrapper_);
 	//カラーバッファのビューをクリアする
@@ -11548,10 +11618,14 @@ std::optional<RenderContext::RequiredBufferInfo::DepthStencilBuffer> RenderConte
 		miyajison->LoadData<int>(DataKeyString::kSrcJsonFileName, { passName_,DataKeyString::kSrvFormatI });
 	depthStencilBufferInfo->clearDepth =
 		miyajison->LoadData<float>(DataKeyString::kSrcJsonFileName, { passName_,DataKeyString::kClearDepthF });
-	depthStencilBufferInfo->doesClearStencil = (D3D12_CLEAR_FLAGS)
-		miyajison->LoadData<bool>(DataKeyString::kSrcJsonFileName, { passName_,DataKeyString::kClearStencilFlagB });
+	//深度は常にクリアする前提
+	depthStencilBufferInfo->doesClearStencil = D3D12_CLEAR_FLAG_DEPTH;
+	if (miyajison->LoadData<bool>(DataKeyString::kSrcJsonFileName, { passName_, DataKeyString::kClearStencilFlagB }))
+	{
+		depthStencilBufferInfo->doesClearStencil |= D3D12_CLEAR_FLAG_STENCIL;
+	}
 	depthStencilBufferInfo->clearStencil =
-		miyajison->LoadData<int>(DataKeyString::kSrcJsonFileName, { passName_,DataKeyString::kClearStencilI });
+		miyajison->LoadData<int>(DataKeyString::kSrcJsonFileName, { passName_, DataKeyString::kClearStencilI });  
 	depthStencilBufferInfo->numBuffer = 
 		(NumBuffer)miyajison->LoadData<int>(DataKeyString::kSrcJsonFileName, { passName_,DataKeyString::kNumBuffer_depthI });
 	depthStencilBufferInfo->bufferName =
@@ -13662,6 +13736,13 @@ ModelContext::ModelDescAssembler::ModelDescParts ModelContext::ModelDescAssemble
 		ConvertMaterialData(kNumMeshData, materialsFromFile, inputMaterials_)
 	);
 }
+std::vector<size_t> ModelContext::ModelDescAssembler::OutMeshletSize
+(
+	const std::vector<MeshDataID>& meshDataIDs_,
+	size_t const kNumMeshData_
+)
+{
+}
 std::vector<ConstantBuffers::PerDrawIndicesCPUGPU> ModelContext::ModelDescAssembler::PackPerDrawIndices
 (
 	const std::vector<MeshDataID>& meshDataIDs_,
@@ -13749,7 +13830,8 @@ class ModelContext::ModelDescAssembler
 	using ModelDescParts = std::tuple
 	<
 		std::vector<ConstantBuffers::PerDrawIndicesCPUGPU>,
-		std::vector<StructuredBufferModelData::MaterialGPU>
+		std::vector<StructuredBufferModelData::MaterialGPU>,
+		std::vector<size_t>
 	>;
 public:
 	ModelDescAssembler
@@ -13765,6 +13847,12 @@ public:
 		std::vector<StructuredBufferModelData::MaterialCPU> const& inputMaterials_
 	);
 private:
+	//meshletのサイズを出力
+	std::vector<size_t> OutMeshletSize
+	(
+		const std::vector<MeshDataID>& meshDataIDs_,
+		size_t const kNumMeshData_
+	);
 	//PerDrawIndicesを詰める
 	std::vector<ConstantBuffers::PerDrawIndicesCPUGPU> PackPerDrawIndices
 	(
@@ -14002,6 +14090,7 @@ private:
 		std::unordered_map<std::string, std::vector<MeshDataID>>,
 		//モデルファイルから仕入れたマテリアル情報
 		std::unordered_map<std::string, std::vector<StructuredBufferModelData::MaterialCPU>>
+		//メッシュレットのサイズ
 	>libTuple;
 };
 template<>
@@ -14277,7 +14366,7 @@ public:
     {
     }
     template<Sequence sequence>
-    constexpr auto Get() const
+    constexpr auto const Get() const
     {
         if      constexpr (sequence == kPass)         return pass;
         else if constexpr (sequence == kMeshType)     return mesh;
@@ -14663,7 +14752,6 @@ public:
 	}
 	//ランタイムでドローコマンドをたたくために使用
 	inline auto const& WatchPerDrawIndices()const { return modelDesc.WatchPerDrawIndices(); }
-	inline auto const& WatchMaterialGPU()const { return modelDesc.WatchMaterialGPU(); }
 private:
 	ChangeableStatus changeableStatus;
 	ModelDescription modelDesc;
@@ -14741,7 +14829,7 @@ ModelDescription::ModelDescription
 				if 
 				(
 					((UINT)blendMode >= (UINT)RenderStateComponent::BlendMode::kCount) ||
-					(blendMode == RenderStateComponent::BlendMode::kOffScreen)
+					(blendMode == RenderStateComponent::BlendMode::kDependsRenderPass)
 				)errorMsg += "そのブレンドモードは選択不可";
 			}
 		}
@@ -14813,6 +14901,8 @@ private:
 	//ModelDescAssemblerに設定してもらう
 	//可変長になっているのは、マルチメッシュのため！！！！
 	std::vector<ConstantBuffers::PerDrawIndicesCPUGPU> perDrawIndices;
+	//メッシュレットのサイズ。描画コマンドたたくのに必要
+	std::vector<size_t> meshletSize;
 	//これ以下は自分で決める
 	//可変長になっているのは、複数分のPassに参加できるようにするため
 	//つまり、サブメッシュもすべて同じ設定
@@ -19789,4 +19879,4 @@ namespace StringProcessing
 === SUMMARY ===
 ========================================
 Total Files      : 437
-Effective Lines  : 14418
+Effective Lines  : 14476

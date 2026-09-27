@@ -4,7 +4,7 @@
 #include "MeshParser/MeshParser.h"
 #include "MaterialParser/MaterialParser.h"
 #include "ModelDataCache/ModelDataCache.h"
-#include "../../ModelStructure/ModelData/ModelData.h"
+#include "../../ModelStructure/ModelData/ModelDataFromFile.h"
 
 
 //外部
@@ -22,12 +22,7 @@ namespace
 ModelContext::ModelDataLoader::ModelDataLoader(NexusFieldProof proof_, ModelDataCache& modelDataCache_)
     :modelDataCache(modelDataCache_)
 {
-    Logger::Entry("ModelDataLoader: Constructor");
 
-
-    Logger::Log("Instantiate: ModelDataCache",fileName);
-
-    Logger::End("ModelDataLoader: Constructor");
 }
 
 ModelContext::ModelDataLoader::~ModelDataLoader()
@@ -37,9 +32,9 @@ ModelContext::ModelDataLoader::~ModelDataLoader()
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-ModelData* ModelContext::ModelDataLoader::Load(std::string fileName_ , std::string filePath_)
+ModelContext::ModelDataFromFile* ModelContext::ModelDataLoader::Load(std::string const& fileName_ , std::string const& filePath_)
 {
-    std::unique_ptr<ModelData> modelData = std::make_unique<ModelData>();
+    std::unique_ptr<ModelDataFromFile> modelData = std::make_unique<ModelDataFromFile>();
 
 	///同じモデルファイルを読み込んでいる場合は何かおかしいのでアサート
 	modelDataCache.FindDuplication(ModelDataCache::AccessKey{},fileName_);

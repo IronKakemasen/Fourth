@@ -8,11 +8,12 @@ namespace
 
 ModelDescription::ModelDescription
 (
-	std::string modelName_,
+	std::string const& modelName_,
 	std::vector<ConstantBuffers::PerDrawIndicesCPUGPU> const& perDrawIndices_,
 	std::vector<RenderState> const& renderStates_,
-	std::vector<StructuredBufferModelData::MaterialGPU> materials_
-) :perDrawIndices(perDrawIndices_), renderStates(renderStates_), materials(materials_)
+	std::vector<StructuredBufferModelData::MaterialGPU> const& materials_,
+	std::vector<size_t> const& meshletSize_
+) :perDrawIndices(perDrawIndices_), renderStates(renderStates_), materials(materials_), meshletSize(meshletSize_)
 {
 	std::string errorMsg{};
 
@@ -29,7 +30,7 @@ ModelDescription::ModelDescription
 				if 
 				(
 					((UINT)blendMode >= (UINT)RenderStateComponent::BlendMode::kCount) ||
-					(blendMode == RenderStateComponent::BlendMode::kOffScreen)
+					(blendMode == RenderStateComponent::BlendMode::kDependsRenderPass)
 				)errorMsg += "そのブレンドモードは選択不可";
 			}
 		}

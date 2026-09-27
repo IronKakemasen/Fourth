@@ -12,7 +12,6 @@
 #include "../../../Core/Command/RuntimeWrapper/RuntimeWrapper.h"
 
 #include "../../../Resource/Model/ModelStructure/Model.h"
-#include "../../../Resource/Model/ModelContainer/RenderStateKey/RenderStateKey.h"
 
 
 
@@ -21,6 +20,8 @@ RenderContext::PassBehavior::PassBehavior(NexusFieldProof proof_, std::unique_pt
 {
 	
 }
+
+using namespace RenderStateComponent;
 
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -110,21 +111,43 @@ void RenderContext::PassBehavior::DrawModels
 	RuntimeWrapper& cmdWrapper_
 )
 {
-	//このパスのPSOキーの生成
-	
+	//PSOキー
+	GraphicsPSO_Key psoKey;
+	psoKey.pass = runtimePassInfo->WatchPass();
+	psoKey.fill = fillMode_;
 
 	//このPassで描画対象の全モデルの走査
 	for (auto const& [key, state_models] : modelContainer_)
 	{
-		//PSOキーを生成
+		//レンダーステートキーからPSOキーの一部を入力
+		WritePsoKeyFromRenderStateKey(state_models.first, psoKey);
+		
+		//psoDispatcherがキーをもとにpsoを検索
+		auto* srcPso = psoDispatcher_.AccessGraphicsPSO(psoKey);
+		
+		//psoをセット
+		cmdWrapper_.SetPipelineState(srcPso);
 
-		//state_models.first
-		//モデルのレンダーステートごとに走査
-		for (auto const& models : state_models.second)
+		//おなじPSOごとに仕分けられているので、そこでも走査
+		for (auto const& model : state_models.second)
 		{
-			
+			//そのモデルを描画するかどうか
+			if (!model->DoesDraw(psoKey.blend, psoKey.material)) continue;
+
+			//モデルのルートコンスタンツを転送
+			cmdWrapper_.SetGraphicsRoot32BitConstants
+			(
+				(UINT)ConstantBuffers::RootConstantsBindSlots::kPerDrawIndices,
+				3,
+				&model->WatchPerDrawIndices(),
+				0
+			);
+
+			//ドロー
+			//cmdWrapper_.DispatchMesh((UINT)resMesh->meshlets.size(), 1, 1);
+
+
 		}
-	
 
 	}
 }
@@ -256,12 +279,19 @@ void RenderContext::PassBehavior::SetMatrix<D3D12_RECT>
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-RenderContext::PassBehavior::RequiredComponents RenderContext::PassBehavior::ExtractComponents(UINT const colorIndex_)const
+template<>
+D3D12_RESOURCE_BARRIER RenderContext::PassBehavior::CreateBarrier<BufferUsage::kRead>(IRenderTargetBuffer* buffer_)
 {
-	return std::make_tuple
-	(
-		runtimePassInfo->WatchPass(),
-		runtimePassInfo->WatchColorBuffersInfo()[colorIndex_].blendMode
-	);
+	return buffer_->CreateBarrier(BufferUsage::kRead);
 }
 
+template<>
+D3D12_RESOURCE_BARRIER RenderContext::PassBehavior::CreateBarrier<BufferUsage::kWrite>(IRenderTargetBuffer* buffer_)
+{
+	return buffer_->CreateBarrier(BufferUsage::kWrite);
+}
+
+template
+D3D12_RESOURCE_BARRIER RenderContext::PassBehavior::CreateBarrier<BufferUsage::kRead>(IRenderTargetBuffer* buffer_);
+template
+D3D12_RESOURCE_BARRIER RenderContext::PassBehavior::CreateBarrier<BufferUsage::kWrite>(IRenderTargetBuffer* buffer_);

@@ -37,11 +37,9 @@ public:
 
 	//ランタイムでドローコマンドをたたくために使用
 	inline auto const& WatchPerDrawIndices()const { return modelDesc.WatchPerDrawIndices(); }
-	inline auto const& WatchMaterialGPU()const { return modelDesc.WatchMaterialGPU(); }
 
 private:
 
-	
 	ChangeableStatus changeableStatus;
 	ModelDescription modelDesc;
 

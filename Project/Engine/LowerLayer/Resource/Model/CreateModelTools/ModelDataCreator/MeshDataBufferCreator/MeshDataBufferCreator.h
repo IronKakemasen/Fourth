@@ -14,7 +14,7 @@ class ModelContext::ModelDataCreator::MeshDataBufferCreator
 		const std::vector<StructuredBufferModelData::MeshCPU>& data_,
 		BufferContext::BufferCreator* bufferCreator_,
 		BufferContext::BufferCollector* bufferCollector_,
-		std::string modelFileName_,
+		std::string const& modelFileName_,
 		MeshDataID& meshDataID_
 	);
 

@@ -320,7 +320,7 @@
     <ClCompile Include="Engine\LowerLayer\Resource\Model\CreateModelTools\ModelDataLoader\ModelDataLoader.cpp" />
     <ClCompile Include="Engine\LowerLayer\Resource\Model\CreateModelTools\ModelDataCreator\ModelDataCreator.cpp" />
     <ClCompile Include="Engine\LowerLayer\Resource\Model\ModelStructure\Model.cpp" />
-    <ClCompile Include="Engine\LowerLayer\Resource\Model\ModelStructure\ModelData\ModelData.cpp" />
+    <ClCompile Include="Engine\LowerLayer\Resource\Model\ModelStructure\ModelData\ModelDataFromFile.cpp" />
     <ClCompile Include="Engine\MiddleLayer\Math\Vector\Vector4.cpp" />
     <ClCompile Include="Engine\LowerLayer\Buffer\BufferDefinition\BufferDescriptions\StaticStructuredBufferDescription\StaticStructuredBufferDescription.cpp" />
     <ClCompile Include="Engine\LowerLayer\Buffer\BufferDefinition\GPUBuffer\StaticStructuredBuffer\StaticStructuredBuffer.cpp" />
@@ -398,6 +398,7 @@
     <ClCompile Include="Engine\LowerLayer\Render\RenderContextRuntime\StaticRenderGraph\RenderGraphExecutor\PathOperator\PathOperator.cpp" />
     <ClCompile Include="Engine\LowerLayer\Resource\Model\ModelContainer\RenderStateKey\RenderStateKey.cpp" />
     <ClCompile Include="Engine\LowerLayer\Resource\Model\ModelContainer\ModelSeparator\ModelSeparator.cpp" />
+    <ClCompile Include="Engine\LowerLayer\Resource\Model\ModelStructure\ModelData\ModelData.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Assets\BAKA\ConstantBuffers.h" />
@@ -587,7 +588,7 @@
     <ClInclude Include="Engine\LowerLayer\Resource\Model\CreateModelTools\ModelDataLoader\ModelDataLoader.h" />
     <ClInclude Include="Engine\LowerLayer\Resource\Model\CreateModelTools\ModelDataCreator\ModelDataCreator.h" />
     <ClInclude Include="Engine\LowerLayer\Resource\Model\ModelStructure\Model.h" />
-    <ClInclude Include="Engine\LowerLayer\Resource\Model\ModelStructure\ModelData\ModelData.h" />
+    <ClInclude Include="Engine\LowerLayer\Resource\Model\ModelStructure\ModelData\ModelDataFromFile.h" />
     <ClInclude Include="Engine\MiddleLayer\Math\Vector\Vector4.h" />
     <ClInclude Include="Engine\MiddleLayer\Transform\Transform.h" />
     <ClInclude Include="Engine\LowerLayer\Buffer\BufferDefinition\BufferDescriptions\StaticStructuredBufferDescription\StaticStructuredBufferDescription.h" />
@@ -667,6 +668,7 @@
     <ClInclude Include="Engine\LowerLayer\Render\RenderContextRuntime\StaticRenderGraph\RenderGraphExecutor\PathOperator\PathOperator.h" />
     <ClInclude Include="Engine\LowerLayer\Resource\Model\ModelContainer\RenderStateKey\RenderStateKey.h" />
     <ClInclude Include="Engine\LowerLayer\Resource\Model\ModelContainer\ModelSeparator\ModelSeparator.h" />
+    <ClInclude Include="Engine\LowerLayer\Resource\Model\ModelStructure\ModelData\ModelData.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

@@ -1,6 +1,6 @@
 #include "PreCompileHeader.h"
 #include "ModelDataCache.h"
-#include "../../../ModelStructure/ModelData/ModelData.h"
+#include "../../../ModelStructure/ModelData/ModelDataFromFile.h"
 
 
 ModelContext::ModelDataCache::ModelDataCache(NexusFieldProof proof_)
@@ -25,7 +25,7 @@ void ModelContext::ModelDataCache::FindDuplication(AccessKey key_, std::string c
 
 }
 
-void ModelContext::ModelDataCache::StoreTemporarily(AccessKey key_, std::string const& fileName_, std::unique_ptr<ModelData>&& data_)
+void ModelContext::ModelDataCache::StoreTemporarily(AccessKey key_, std::string const& fileName_, std::unique_ptr<ModelDataFromFile>&& data_)
 {
 	Logger::Log("Register: " + fileName_, "ModelDataCache.cpp");
 

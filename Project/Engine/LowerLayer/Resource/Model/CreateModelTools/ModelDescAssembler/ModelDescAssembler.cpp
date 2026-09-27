@@ -36,18 +36,18 @@ ModelContext::ModelDescAssembler::ModelDescParts ModelContext::ModelDescAssemble
 	//modelDataLibraryにアクセス
 	auto& modelDataLibrary = slotAllocator->AccessModelDataLibrary(ModelContext::ModelSlotAllocator::HandleLicence{});
 	
-	//モデルファイル名からサブメッシュ分含む、メッシュデータのユニークIDを検索
-	std::vector<MeshDataID> const& meshDataIDs = modelDataLibrary.Find<MeshDataID>(modelFileName_);
-	//マテリアルも同様
-	std::vector<MaterialCPU> const& materialsFromFile = modelDataLibrary.Find<MaterialCPU>(modelFileName_);
+	//モデルファイル名からサブメッシュ分含む、
+	//メッシュデータのユニークID、マテリアル、メッシュレットのサイズを検索
+	auto const& modelData = modelDataLibrary.Find(modelFileName_);
 
 	//サブメッシュ含む、メッシュの総数
-	size_t const kNumMeshData = meshDataIDs.size();
+	size_t const kNumMeshData = modelData.meshDataID.size();
 
 	return ModelDescParts
 	(
-		PackPerDrawIndices(meshDataIDs, kNumMeshData),
-		ConvertMaterialData(kNumMeshData, materialsFromFile, inputMaterials_)
+		PackPerDrawIndices(modelData.meshDataID, kNumMeshData),
+		ConvertMaterialData(kNumMeshData, modelData.materialCPU, inputMaterials_),
+		modelData.meshletSize
 	);
 
 }
