@@ -3,7 +3,6 @@
 #include "../ModelStructure/Model.h"
 #include "ModelDescAssembler/ModelDescAssembler.h"
 #include "../ModelContainer/ModelContainer.h"
-#include "../ModelStructure/ModelDescription/ModelDescription.h"
 
 
 namespace
@@ -26,14 +25,14 @@ ModelContext::ModelCreator::ModelCreator
 
 Model* ModelContext::ModelCreator::Create
 (
-	std::string const modelFileName_,
+	std::string const& modelFileName_,
 	std::vector<RenderState> const& modelRenderStates_,
 	std::vector<MaterialCPU> const& materials_,
 	std::string const& modelName_
 )
 {
-	//commonとuniqueのディスクリプション
-	auto [perDrawIndices,materialsGPU] = modelDescAssembler->Assemble(modelFileName_, materials_);
+	//モデルのディスクリプションの要素を組み立てる
+	auto [perDrawIndices,materialsGPU,meshletSize] = modelDescAssembler->Assemble(modelFileName_, materials_);
 
 	///一つのDescに詰める
 	ModelDescription modelDesc
@@ -41,7 +40,8 @@ Model* ModelContext::ModelCreator::Create
 		modelName_ + std::to_string(numCreate++),
 		perDrawIndices,
 		modelRenderStates_,
-		materialsGPU
+		materialsGPU,
+		meshletSize
 	);
 
 	///モデルクラスのインスタンス化

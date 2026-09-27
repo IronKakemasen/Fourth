@@ -285,7 +285,7 @@
     <ClCompile Include="Engine\LowerLayer\Resource\Model\ModelStructure\Model.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="Engine\LowerLayer\Resource\Model\ModelStructure\ModelData\ModelData.cpp">
+    <ClCompile Include="Engine\LowerLayer\Resource\Model\ModelStructure\ModelData\ModelDataFromFile.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
     <ClCompile Include="Engine\LowerLayer\Resource\Model\CreateModelTools\ModelDataCreator\ModelDataCreator.cpp">
@@ -651,6 +651,9 @@
     <ClCompile Include="Engine\LowerLayer\Resource\Model\ModelContainer\ModelSeparator\ModelSeparator.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
+    <ClCompile Include="Engine\LowerLayer\Resource\Model\ModelStructure\ModelData\ModelData.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Engine\LowerLayer\Core\Window\WindowContext.h">
@@ -941,7 +944,7 @@
     <ClInclude Include="Engine\LowerLayer\Resource\Model\ModelStructure\Model.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\LowerLayer\Resource\Model\ModelStructure\ModelData\ModelData.h">
+    <ClInclude Include="Engine\LowerLayer\Resource\Model\ModelStructure\ModelData\ModelDataFromFile.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
     <ClInclude Include="Engine\LowerLayer\Resource\Model\CreateModelTools\ModelDataCreator\ModelDataCreator.h">
@@ -1452,6 +1455,9 @@
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
     <ClInclude Include="Engine\LowerLayer\Resource\Model\ModelStructure\RenderState.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\LowerLayer\Resource\Model\ModelStructure\ModelData\ModelData.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
   </ItemGroup>

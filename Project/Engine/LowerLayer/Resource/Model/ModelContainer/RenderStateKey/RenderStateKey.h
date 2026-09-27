@@ -55,7 +55,7 @@ public:
     }
 
     template<Sequence sequence>
-    constexpr auto Get() const
+    constexpr auto const Get() const
     {
         if      constexpr (sequence == kPass)         return pass;
         else if constexpr (sequence == kMeshType)     return mesh;

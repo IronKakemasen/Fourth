@@ -58,8 +58,17 @@ public:
     RenderPassComponent::Pass pass = RenderPassComponent::Pass(kInvalid);
     ShaderPathComponent::MeshType mesh = ShaderPathComponent::MeshType(kInvalid);
     ShaderPathComponent::MaterialType material = ShaderPathComponent::MaterialType(kInvalid);
+    ///超重要。このPSOキーにおけるblendModeはつまるところkDependsModelかそれ以外の２パターン存在する
+    ///kDependsModelを選択した場合、モデルのblendModeがそのパスにある
+    ///kDependsModelを選択しているカラーバッファに影響する
+    ///それ以外のタグを選択している場合は、カラーバッファ[0]のblendModeが代表として設定される
+    ///Pass X BlendMode　で使用するカラーバッファのblendModeは一意に決まるので恐らく心配する必要はない
     RenderStateComponent::BlendMode blend = RenderStateComponent::BlendMode(kInvalid);
     RenderStateComponent::CullMode cull = RenderStateComponent::CullMode(kInvalid);
+
+    ///これもblendModeと同じような感じ。モデル描画パスではWireFrameは有効だが、
+    ///そうでなければSolidのみ。キーがWireFrameだからと言って、そのパスの全てのバッファの
+    ///fillModeがwireFrameにはならない。あくまでモデル描画するカラーバッファの影響する
     RenderStateComponent::FillMode fill = RenderStateComponent::FillMode(kInvalid);
 
 

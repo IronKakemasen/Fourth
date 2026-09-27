@@ -14,7 +14,8 @@ class ModelContext::ModelDescAssembler
 	using ModelDescParts = std::tuple
 	<
 		std::vector<ConstantBuffers::PerDrawIndicesCPUGPU>,
-		std::vector<StructuredBufferModelData::MaterialGPU>
+		std::vector<StructuredBufferModelData::MaterialGPU>,
+		std::vector<size_t>
 	>;
 
 public:

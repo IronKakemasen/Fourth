@@ -1,6 +1,4 @@
 #pragma once
-//#include "GPUBufferBehavior.h"
-
 
 //使用目的
 enum class BufferUsage

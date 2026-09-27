@@ -1,7 +1,7 @@
 #include "PreCompileHeader.h"
 #include "ModelDataCreator.h"
 
-#include "../../ModelStructure/ModelData/ModelData.h"
+#include "../../ModelStructure/ModelData/ModelDataFromFile.h"
 #include "../ModelDataLoader/ModelDataLoader.h"
 #include "../ModelSlotAllocator/ModelDataLibrary/ModelDataLibrary.h"
 
@@ -80,7 +80,7 @@ void ModelContext::ModelDataCreator::CreateAllModelData
     std::vector<MeshDataSRVHeapIndexGroupGPUCPU> tmpMeshDataSRVHeapIndexGroupContainer;
 
     //モデルデータライブラリー
-    std::unordered_map<std::string, ModelData*> tmpModelDataLib = LoadAllModelFiles(modelDataLoader_);
+    std::unordered_map<std::string, ModelDataFromFile*> tmpModelDataLib = LoadAllModelFiles(modelDataLoader_);
 
     //バッファコンテキストのツールレンダーから各種ツールを借りる
     auto [bufferCreator, bufferCollector, bufferUploader,bufferDispatcher] = BorrowBufferContextTools(bufferContextDiplomat_);
@@ -158,9 +158,9 @@ void ModelContext::ModelDataCreator::CreateAllModelData
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-std::unordered_map<std::string , ModelData*> ModelContext::ModelDataCreator::LoadAllModelFiles(ModelDataLoader& modelDataLoader_)
+std::unordered_map<std::string , ModelContext::ModelDataFromFile*> ModelContext::ModelDataCreator::LoadAllModelFiles(ModelDataLoader& modelDataLoader_)
 {
-    std::unordered_map<std::string, ModelData*> modelDataLib;
+    std::unordered_map<std::string, ModelDataFromFile*> modelDataLib;
 
     auto modelFileName_pathLib = RegistryLoader::Load<RegistryLoader::RegistryFileType::kModelFiles>();
 

@@ -1,13 +1,12 @@
 #include "PreCompileHeader.h"
 #include "MeshDataBufferCreator.h"
-#include "../../../ModelStructure/ModelData/ModelData.h"
+#include "../../../ModelStructure/ModelData/ModelDataFromFile.h"
 #include "../../ModelSlotAllocator/ModelDataLibrary/ModelDataLibrary.h"
 
 //外部
 #include "../../../../../Buffer/BufferCreateTools/BufferCreator.h"
 //ほんとはstaticStructuredBufferDescriptionだけでいいんだけど、文字列制限なのかインクルードできないので
 #include "../../../../../Buffer/BufferDefinition/AllBufferDescsInclude.h"
-#include "../../../../../../../Assets/Shared/StructuredBufferModelData.h"
 
 using namespace StructuredBufferModelData;
 
@@ -18,7 +17,7 @@ ModelContext::ModelDataCreator::MeshDataBufferCreator::CreateMeshDataBuffer
     const std::vector<MeshCPU>& data_,
 	BufferContext::BufferCreator* bufferCreator_,
 	BufferContext::BufferCollector* bufferCollector_,
-	std::string modelFileName_,
+	std::string const& modelFileName_,
 	MeshDataID& meshDataID_
 )
 {
@@ -36,8 +35,12 @@ ModelContext::ModelDataCreator::MeshDataBufferCreator::CreateMeshDataBuffer
 
     //サブメッシュのカウント。バッファの命名に使用
     UINT subMeshCnt{};
+    
     //MeshDataBufferUniqueIDGroupコンテナ上の番地を記録するため。(サブメッシュも含む)
     std::vector<MeshDataID> meshDataIDContainer;
+    //同様に、メッシュレット数。
+    std::vector<size_t> meshletSize;
+
 
     ///メッシュデータのGPUバッファを作成
     for (const auto& meshData : data_)
@@ -64,6 +67,9 @@ ModelContext::ModelDataCreator::MeshDataBufferCreator::CreateMeshDataBuffer
 
         //メッシュデータ番地を格納
         meshDataIDContainer.emplace_back(meshDataID_);
+        //メッシュレット数を記録
+        meshletSize.emplace_back(meshData.meshlets.size());
+
         //総メッシュデータ数をインクリメント
         meshDataID_ += MeshDataID(1);
     }
@@ -71,6 +77,10 @@ ModelContext::ModelDataCreator::MeshDataBufferCreator::CreateMeshDataBuffer
     //モデルのファイル名とメッシュデータIDを紐づける
     auto& ModelDataLibrary = allocator_->AccessModelDataLibrary(ModelContext::ModelSlotAllocator::HandleLicence{});
     ModelDataLibrary.Link(modelFileName_, meshDataIDContainer);
+    //メッシュレット数も同様に
+    ModelDataLibrary.Link(modelFileName_, meshletSize);
+
+    
 
     //バッファコレクターに生成したバッファを仕分けしてもらう
     bufferCollector_->Distribute();

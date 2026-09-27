@@ -25,14 +25,11 @@ class RenderContext::PSO_PoolDispatcher
 
 public:
 
-	//psoのアドレスにアクセスする許可証
-	struct DataAccessLicense;
-
 	PSO_PoolDispatcher(NexusFieldProof proof_);
 	~PSO_PoolDispatcher();
 
 	///キーをもとにpsoを検索して渡す
-	[[nodiscard]] inline ID3D12PipelineState* AccessGraphicsPSO(const DataAccessLicense& license_, const GraphicsPSO_Key& key_)const
+	[[nodiscard]] inline ID3D12PipelineState* AccessGraphicsPSO(const GraphicsPSO_Key& key_)const
 	{
 		uint32_t const packedKey = PackKey(key_);
 		uint32_t const psoPoolIndex = closedHashMap->FindValueFast(packedKey);
@@ -71,14 +68,5 @@ private:
 
 	//closedHashMapのビットレイアウトを定める
 	void DefinePackageLayout();
-};
-
-struct RenderContext::PSO_PoolDispatcher::DataAccessLicense
-{
-private:
-	///未登録
-
-	explicit DataAccessLicense() = default;
-
 };
 

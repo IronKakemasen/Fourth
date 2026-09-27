@@ -222,6 +222,7 @@ RenderContext::StaticRenderGraph::PSO_Builder::PsoDesc_Key RenderContext::Static
 			psoCommon.first.depthStencilDesc.clearDepth = depthStencilBufferInfo->clearDepth;
 			psoCommon.first.depthStencilDesc.clearStencil = depthStencilBufferInfo->clearStencil;
 			psoCommon.first.depthStencilDesc.dsvFormat = depthStencilBufferInfo->dsvFormat;
+
 		}
 		else
 		{
@@ -232,12 +233,15 @@ RenderContext::StaticRenderGraph::PSO_Builder::PsoDesc_Key RenderContext::Static
 		auto const& colorBuffersInfo = passDesc_.colorBuffersInfo;
 		auto const numRenderTarget = colorBuffersInfo.size();
 		psoCommon.first.renderTargetDescs.resize(numRenderTarget);
+
 		for (size_t i = 0;i < numRenderTarget;++i)
 		{
 			auto& tmp = psoCommon.first.renderTargetDescs[i];
 
 			tmp.bufferName = colorBuffersInfo[i].bufferName;
 			tmp.rtvFormat = colorBuffersInfo[i].format;
+			//モデル依存かどうか問わず入力する
+			tmp.blendMode = colorBuffersInfo[i].blendMode;
 		}		
 
 		psoCommon.first.psoName += passDesc_.passName + " X " + RenderStateComponent::FillModeToString(fillMode_);
@@ -303,7 +307,6 @@ void RenderContext::StaticRenderGraph::PSO_Builder::InputDependingModelsInfo
 		{
 			for (auto const& materialType : renderState.materialTypes)
 			{
-
 				//psoDescを一つずつ共通設定をコピーしてから、書き込んでいく
 				PsoDesc_Key psoDesc(renderStateCommon);
 
@@ -329,6 +332,7 @@ void RenderContext::StaticRenderGraph::PSO_Builder::InputDependingModelsInfo
 					//ブレンドモードはパスがモデル依存として設定しているかどうかで分岐させる
 					if (renderTargetDesc.blendMode == RenderStateComponent::BlendMode::kDependsModel)
 					{
+						//モデル依存ならそのまんま、モデルのブレンドモードを入れる
 						renderTargetDesc.blendMode = blendMode;
 					}
 				}
@@ -378,7 +382,8 @@ void RenderContext::StaticRenderGraph::PSO_Builder::InputPassOnlyInfo
 	offscreenPassPsoDesc.second.cull = RenderStateComponent::CullMode::kBack;
 	///ここは悪影響が出るか分からんが、実際の各レンダーターゲットのブレンドモードの値は、
 	///入力しているので恐らく問題ない。あくまでPSO_Keyのため
-	offscreenPassPsoDesc.second.blend = RenderStateComponent::BlendMode::kOffScreen;
+	///大事なのは、キー ≠ カラーバッファのブレンドモード
+	offscreenPassPsoDesc.second.blend = RenderStateComponent::BlendMode::kDependsRenderPass;
 
 	//使用するシェーダーファイルのバイナリデータのポインタ
 	offscreenPassPsoDesc.first.shaderSet.meshShader = shaderLib->Export(ms_psFile->first);

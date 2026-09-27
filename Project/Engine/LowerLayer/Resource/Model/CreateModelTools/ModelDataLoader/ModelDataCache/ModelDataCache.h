@@ -1,7 +1,6 @@
 #pragma once
 #include "../ModelDataLoader.h"
 
-struct ModelData;
 
 class ModelContext::ModelDataCache
 {
@@ -15,11 +14,11 @@ public:
 	//ダブりチェック
 	void FindDuplication(AccessKey key_, std::string const& fileName_);
 	//一時データとして保存
-	void StoreTemporarily(AccessKey key_, std::string const& fileName_, std::unique_ptr<ModelData>&& data_);
+	void StoreTemporarily(AccessKey key_, std::string const& fileName_, std::unique_ptr<ModelDataFromFile>&& data_);
 
 private:
 
-	std::unordered_map<std::string, std::unique_ptr<ModelData>> modelDataCache;
+	std::unordered_map<std::string, std::unique_ptr<ModelDataFromFile>> modelDataCache;
 };
 
 struct ModelContext::ModelDataCache::AccessKey

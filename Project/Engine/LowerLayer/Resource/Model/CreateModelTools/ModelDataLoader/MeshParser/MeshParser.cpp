@@ -1,6 +1,6 @@
 #include "PreCompileHeader.h"
 #include "MeshParser.h"
-#include "../../../ModelStructure/ModelData/ModelData.h"
+#include "../../../ModelStructure/ModelData/ModelDataFromFile.h"
 
 //外部
 #include ".././../../../External/assimp/include/assimp/scene.h"

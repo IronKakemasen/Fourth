@@ -2,14 +2,16 @@
 #include "../../RenderContext.h"
 #include "../RenderPassComponent.h"
 #include "../../RenderStateComponent.h"
+#include "../../RenderContextRuntime/PSO_PoolDispatcher/GraphicsPSO_Key.h"
 
 //外部
 #include "../../../Buffer/BufferContext.h"
 #include "../../../Buffer/BufferDefinition/GPUBuffer/BufferInterface.h"
 
+#include "../../../Resource/Model/ModelContainer/RenderStateKey/RenderStateKey.h"
+
 class RuntimeWrapper;
 class Model;
-struct RenderStateKey;
 class ColorBuffer;
 class DepthStencilBuffer;
 class GPUBufferBehavior;
@@ -52,9 +54,6 @@ public:
 
 protected:
 
-	//パスから出力すべきコンポーネント群
-	using RequiredComponents = std::tuple<RenderPassComponent::Pass, RenderStateComponent::BlendMode>;
-
 	//Passの設計図
 	std::unique_ptr<PassDesc> desc;
 	//ランタイムで必要になるPassの情報をまとめたもの
@@ -63,12 +62,21 @@ protected:
 
 private:
 
-	//バッファのステートを切り替えのためのバリアを生成
-	template<BufferUsage usage>
-	D3D12_RESOURCE_BARRIER CreateBarrier(GPUBufferBehavior* buffer_);
+	//RenderStateKeyから、Passとフィルモード以外のPSOキーの入力をする
+	//呼び出し回数が多いのでヘッダで定義しちゃいます
+	void WritePsoKeyFromRenderStateKey(RenderStateKey const& renderStateKey_, GraphicsPSO_Key& dst_)
+	{
+		dst_.cull = renderStateKey_.Get<RenderStateKey::Sequence::kCullMode>();
+		dst_.mesh = renderStateKey_.Get<RenderStateKey::Sequence::kMeshType>();
+		dst_.material = renderStateKey_.Get<RenderStateKey::Sequence::kMaterialType>();
+		//ブレンドモードキーはモデル依存
+		dst_.blend = renderStateKey_.Get<RenderStateKey::Sequence::kBlendMode>();
+	}
 
-	//パスからPSOキーのコンポーネントの一部を抽出
-	RequiredComponents ExtractComponents(UINT const colorIndex_)const;
+	//バッファのステートを切り替えのためのバリアを生成
+	//中で張ってない
+	template<BufferUsage usage>
+	D3D12_RESOURCE_BARRIER CreateBarrier(IRenderTargetBuffer* buffer_);
 
 	//Passのルートコンスタンツを転送
 	void TransferRootConstants(RuntimeWrapper& cmdWrapper_);
@@ -87,7 +95,6 @@ private:
 		D3D12_CPU_DESCRIPTOR_HANDLE const handleCPU_,
 		RuntimeWrapper& cmdWrapper_
 	);
-
 
 	//描画先の決定
 	void SetRenderTargets
@@ -168,3 +175,5 @@ D3D12_CPU_DESCRIPTOR_HANDLE RenderContext::PassBehavior::PullHandleCPU
 	DepthStencilBuffer* buffer_,
 	BufferContext::BufferDispatcher& bufDispatcher_
 );
+
+

@@ -1,6 +1,9 @@
 #pragma once
 #include "../ModelContext.h"
-#include "../ModelStructure/ModelDescription/ModelDescription.h"
+
+
+//外部
+#include "../../../../../Assets/Shared/StructuredBufferModelData.h"
 
 class Model;
 struct RenderState;
@@ -18,7 +21,7 @@ public:
 
 	Model* Create
 	(
-		std::string const modelFileName_,
+		std::string const& modelFileName_,
 		std::vector<RenderState> const& modelRenderStates_,
 		std::vector<StructuredBufferModelData::MaterialCPU> const& materials_,
 		std::string const& modelName_ = "nameLess"

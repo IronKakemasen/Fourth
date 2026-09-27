@@ -19,7 +19,10 @@ class ModelContext
 	class ModelDescAssembler;
 	//モデルデータの一時キャッシュ
 	class ModelDataCache;
-
+	//モデルファイルから読み込んだデータ
+	struct ModelDataFromFile;
+	//モデルが実際に所持するデータ
+	struct ModelData;
 
 public:
 	//全てのモデルファイルのモデルデータのバッファを生成する。
