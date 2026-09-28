@@ -7,7 +7,8 @@
 //Colorバッファ
 //コンピュートバッファ
 //深度ステンシル
-
+//テクスチャバッファ
+//ストラクチャードバッファ 
 //＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝
 
 //バッファのディスクリプション共通
@@ -23,7 +24,6 @@ public:
 
 	BufferDescriptionBehavior() = default;
 
-	virtual void CheckRequirementsFilled() const = 0;
 	virtual D3D12_RESOURCE_DESC CreateResourceDesc()const = 0;
 	virtual D3D12_HEAP_PROPERTIES CreateHeapProperties()const = 0;
 

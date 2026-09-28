@@ -19,8 +19,6 @@ public:
 		UINT sizeInByte_
 	);
 
-	//パラーメーターチェック
-	virtual void CheckRequirementsFilled() const override;
 	//ヒーププロパティの生成
 	virtual D3D12_HEAP_PROPERTIES CreateHeapProperties()const override;
 	//リソースディスクの生成

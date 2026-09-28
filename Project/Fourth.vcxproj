@@ -406,6 +406,7 @@
     <ClInclude Include="Assets\Shared\ConstantBuffers.h" />
     <ClInclude Include="Assets\Shared\StaticSampler.h" />
     <ClInclude Include="Assets\Shared\StructuredBufferModelData.h" />
+    <ClInclude Include="Engine\LowerLayer\Buffer\BufferContextDiplomats.h" />
     <ClInclude Include="Engine\LowerLayer\Render\RenderContextRuntime\StaticRenderGraph\RenderGraphExecutor\CommonCmdExecutor\CommonCmdExecutor.h" />
     <ClInclude Include="Engine\LowerLayer\Core\Command\CommandContextDiplomat\CommandContextToolLender\CmdContextToolLenderLicences.h" />
     <ClInclude Include="Engine\LowerLayer\Core\DescriptorHeap\DescriptorHeapPoolContainer\DescriptorHeapPoolContainer.h" />

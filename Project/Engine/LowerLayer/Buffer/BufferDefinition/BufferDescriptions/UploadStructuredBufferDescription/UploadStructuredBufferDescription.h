@@ -23,8 +23,6 @@ public:
 		UINT firstElement_
 	);
 
-	//パラーメーターチェック
-	virtual void CheckRequirementsFilled() const override;
 	//リソースディスクの生成
 	virtual D3D12_RESOURCE_DESC CreateResourceDesc()const override;
 	//ヒーププロパティの生成

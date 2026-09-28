@@ -11,7 +11,7 @@ struct SwapChainContext::Description
 	DXGI_SWAP_CHAIN_DESC1 CreateSwapChainDesc()const;
 
 	std::array<float, 4> clearColor = { 9,9,9,9 };
-	DXGI_FORMAT format = DXGI_FORMAT_Error_Detection;
+	DXGI_FORMAT format;
 };
 
 

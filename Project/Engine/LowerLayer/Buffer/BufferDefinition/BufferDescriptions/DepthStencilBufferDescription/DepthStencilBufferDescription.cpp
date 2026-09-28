@@ -22,18 +22,6 @@ DepthStencilBufferDescription::DepthStencilBufferDescription
 
 }
 
-void DepthStencilBufferDescription::CheckRequirementsFilled() const
-{
-	std::string errorMess{};
-
-	if (param.width == 0)errorMess += "[width]";
-	if (param.height == 0)errorMess += "[height]";
-	if (param.srvFormat == DXGI_FORMAT_Error_Detection) errorMess += "[SRVformat]";
-	if (param.dsvFormat == DXGI_FORMAT_Error_Detection) errorMess += "[DSVformat]";
-	if ((param.clearDepth != 1.0f) && (param.clearDepth != 0.0f)) errorMess += "[clearColor]";
-
-	ErrorMessageOutput::Assert::DetectError((errorMess.length() == 0), errorMess + "の情報が未設定です", "DepthStencilBufferDescription.cpp");
-}
 
 D3D12_SHADER_RESOURCE_VIEW_DESC DepthStencilBufferDescription::CreateSRV_Desc()const
 {
