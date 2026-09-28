@@ -36,10 +36,6 @@ BufferContext::BufferAssembler::ResourceContainer BufferContext::BufferAssembler
 
 std::pair<D3D12_RESOURCE_DESC, D3D12_HEAP_PROPERTIES> BufferContext::BufferAssembler::ResourceAssembler::CreateRequirements(const BufferDescriptionBehavior& desc_)
 {
-    //要項チェック
-    desc_.CheckRequirementsFilled();
-    Logger::Log("Check: RequirementsFilled", fileName);
-
     D3D12_HEAP_PROPERTIES heapProp = desc_.CreateHeapProperties();
 
     D3D12_RESOURCE_DESC resourceDesc = desc_.CreateResourceDesc();

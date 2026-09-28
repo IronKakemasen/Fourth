@@ -16,8 +16,8 @@ private:
 		UINT height{};
 		FLOAT clearDepth = -1.0f;
 		UINT8  clearStencil = 0;
-		DXGI_FORMAT dsvFormat = DXGI_FORMAT::DXGI_FORMAT_Error_Detection;
-		DXGI_FORMAT srvFormat = DXGI_FORMAT::DXGI_FORMAT_Error_Detection;
+		DXGI_FORMAT dsvFormat;
+		DXGI_FORMAT srvFormat;
 
 	}param;
 
@@ -34,8 +34,6 @@ public:
 		ProjectConfig::Render::NumBuffer numBuffer_ = ProjectConfig::Render::NumBuffer::kSingleBuffer
 	);
 
-	//要項チェック
-	virtual void CheckRequirementsFilled() const override;
 	//リソースディスクの生成
 	virtual D3D12_RESOURCE_DESC CreateResourceDesc()const override;
 	//ヒーププロパティの生成

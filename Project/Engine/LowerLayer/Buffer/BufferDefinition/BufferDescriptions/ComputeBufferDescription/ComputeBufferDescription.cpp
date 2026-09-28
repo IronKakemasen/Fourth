@@ -17,17 +17,6 @@ ComputeBufferDescription::ComputeBufferDescription
 }
 
 
-void ComputeBufferDescription::CheckRequirementsFilled() const
-{
-	std::string errorMess{};
-
-	if (param.structureByte == 0)errorMess += "[structureByte]";
-	if (param.numElements == 0)errorMess += "[numElements]";
-	if (param.firstElement == -1) errorMess += "[firstElement]";
-	if (param.uavCounterOffsetInBytes == -1) errorMess += "[uavCounterOffsetInBytes]";
-
-	ErrorMessageOutput::Assert::DetectError((errorMess.length() == 0), errorMess + "の情報が未設定です", "ComputeBufferDescription.cpp");
-}
 
 D3D12_RESOURCE_DESC ComputeBufferDescription::CreateResourceDesc()const
 {

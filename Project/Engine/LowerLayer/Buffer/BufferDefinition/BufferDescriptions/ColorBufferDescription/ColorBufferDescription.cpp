@@ -16,20 +16,6 @@ ColorBufferDescription::ColorBufferDescription
 	param.format = format_;
 }
 
-
-void ColorBufferDescription::CheckRequirementsFilled() const
-{
-	std::string errorMess{};
-
-	if (param.width == 0)errorMess += "[width]";
-	if (param.height == 0)errorMess += "[height]";
-	if (param.format == DXGI_FORMAT_Error_Detection) errorMess += "[format]";
-	if (param.clearColor.size()!= 4)errorMess += "[color]";
-
-	ErrorMessageOutput::Assert::DetectError((errorMess.length() == 0), errorMess + "の情報が未設定です", "ColorBufferDescription.cpp");
-
-}
-
 D3D12_HEAP_PROPERTIES ColorBufferDescription::CreateHeapProperties()const
 {
 	D3D12_HEAP_PROPERTIES properties = {};

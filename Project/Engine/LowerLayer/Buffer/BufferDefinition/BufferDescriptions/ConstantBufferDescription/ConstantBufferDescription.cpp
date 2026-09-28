@@ -9,17 +9,6 @@ ConstantBufferDescription::ConstantBufferDescription
 	param.sizeInByte = (sizeInByte_ + 255) & ~255;
 }
 
-
-void ConstantBufferDescription::CheckRequirementsFilled() const
-{
-	std::string errorMess{};
-
-	if (param.sizeInByte == 0) errorMess += "[sizeInByte]";
-
-	ErrorMessageOutput::Assert::DetectError((errorMess.length() == 0), errorMess + "の情報が未設定です","ConstantBufferDescription.cpp");
-
-}
-
 D3D12_RESOURCE_DESC ConstantBufferDescription::CreateResourceDesc()const
 {
 	D3D12_RESOURCE_DESC resourceDesc = {};

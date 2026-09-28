@@ -21,12 +21,6 @@ Texture2DBufferDescription::Texture2DBufferDescription
     ExtractParams(metaData);
 }
 
-//パラーメーターチェック
-void Texture2DBufferDescription::CheckRequirementsFilled() const
-{
-
-}
-
 //リソースディスクの生成
 D3D12_RESOURCE_DESC Texture2DBufferDescription::CreateResourceDesc()const
 {

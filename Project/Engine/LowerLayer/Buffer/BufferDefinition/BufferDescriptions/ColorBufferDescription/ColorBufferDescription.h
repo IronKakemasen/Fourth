@@ -13,7 +13,7 @@ private:
 		std::vector<float> clearColor;
 		UINT width{};
 		UINT height{};
-		DXGI_FORMAT format = DXGI_FORMAT_Error_Detection;
+		DXGI_FORMAT format;
 
 	}param;
 
@@ -30,8 +30,6 @@ public:
 		ProjectConfig::Render::NumBuffer numBuffer_ = ProjectConfig::Render::NumBuffer::kSingleBuffer
 	);
 	
-	//要項チェック
-	virtual void CheckRequirementsFilled() const override;
 	//リソースディスクの生成
 	virtual D3D12_RESOURCE_DESC CreateResourceDesc()const override;
 	//ヒーププロパティの生成

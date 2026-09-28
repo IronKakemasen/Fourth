@@ -7,11 +7,7 @@
 //外部
 #include "../../../../../Buffer/BufferContextToolsInclude.h"
 #include "../../../../../Buffer/BufferContextCmds.h"
-#include "../../../../../Buffer/BufferContextDiplomat/BufferContextDiplomat.h"
-#include "../../../../../Buffer/BufferContextDiplomat/BufferContextCmdProvider/BufferContextCmdProvider.h"
-#include "../../../../../Buffer/BufferContextDiplomat/BufferContextCmdProvider/BufferContextCmdProviderLicences.h"
-#include "../../../../../Buffer/BufferContextDiplomat/BufferToolLender/BufferToolLender.h"
-#include "../../../../../Buffer/BufferContextDiplomat/BufferToolLender/BufferToolLenderLicence.h"
+#include "../../../../../Buffer/BufferContextDiplomats.h"
 #include "../../../../../Buffer/BufferDefinition/AllBuffersInclude.h"
 #include "../../../../../Buffer/BufferDefinition/AllBufferDescsInclude.h"
 
