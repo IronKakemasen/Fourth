@@ -49,7 +49,6 @@ void RenderContext::PassBehavior::BeginPass(RuntimeWrapper& cmdWrapper_, BufferC
 {
 	auto const& colorBuffersInfo = runtimePassInfo->WatchColorBuffersInfo();
 	UINT const numColorBuffers = UINT(colorBuffersInfo.size());
-
 	auto const& DepthStencilBufferInfo = runtimePassInfo->WatchDepthStencilBufferInfo();
 
 	std::array<D3D12_CPU_DESCRIPTOR_HANDLE, D3D12_SIMULTANEOUS_RENDER_TARGET_COUNT> rtHandles;
@@ -134,21 +133,25 @@ void RenderContext::PassBehavior::DrawModels
 			//そのモデルを描画するかどうか
 			if (!model->DoesDraw(psoKey.blend, psoKey.material)) continue;
 
-			//モデルのルートコンスタンツを転送
-			cmdWrapper_.SetGraphicsRoot32BitConstants
-			(
-				(UINT)ConstantBuffers::RootConstantsBindSlots::kPerDrawIndices,
-				3,
-				&model->WatchPerDrawIndices(),
-				0
-			);
+			//以下マルチメッシュ分も含めてドローコール
+			auto const& perDrawIndices = model->WatchPerDrawIndices();
+			auto const& meshletSize = model->WatchMeshletSize();
 
-			//ドロー
-			//cmdWrapper_.DispatchMesh((UINT)resMesh->meshlets.size(), 1, 1);
+			for (size_t i = 0;i < meshletSize.size();++i)
+			{
+				//モデルのルートコンスタンツを転送
+				cmdWrapper_.SetGraphicsRoot32BitConstants
+				(
+					(UINT)ConstantBuffers::RootConstantsBindSlots::kPerDrawIndices,
+					3,
+					&perDrawIndices[i],
+					0
+				);
 
-
+				//ドロー
+				cmdWrapper_.DispatchMesh((UINT)meshletSize[i], 1, 1);
+			}
 		}
-
 	}
 }
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

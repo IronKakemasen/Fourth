@@ -28,7 +28,7 @@ TestModelOKIBA::TestModelOKIBA(ModelContext::ModelCreator* modelCreator_)
 
 	std::vector<MaterialCPU> materials;
 
-	player = modelCreator_->Create("PlayerObj", playerC, materials,"Player");
+	player = modelCreator_->Create("PlayerObj", playerC, materials,1,"Player")[0];
 
 
 	RenderState cC;
@@ -41,6 +41,6 @@ TestModelOKIBA::TestModelOKIBA(ModelContext::ModelCreator* modelCreator_)
 	std::vector<RenderState> cubeC;
 	cubeC.emplace_back(std::move(cC));
 
-	cube = modelCreator_->Create("CubeGltf", cubeC, materials,"Cube");
+	cube = modelCreator_->Create("CubeGltf", cubeC, materials,1,"Cube")[0];
 
 }

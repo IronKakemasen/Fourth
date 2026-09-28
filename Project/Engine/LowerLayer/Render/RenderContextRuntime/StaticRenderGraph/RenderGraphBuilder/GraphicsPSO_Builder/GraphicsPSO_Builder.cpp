@@ -99,6 +99,9 @@ void RenderContext::StaticRenderGraph::PSO_Builder::CreateAllPSO
 		fileName
 	);
 
+	//PSOの生成占有率をチェック
+	psoDispatcher_.CheckOccupationRate();
+
 	Logger::Log("\nnumPso(" + std::to_string(psoDispatcher_.WatchPSO_Size()) + ") = numPsoDescs(" + std::to_string(allDesc_.size()) + ") - duplicatedCnt(" + std::to_string(duplicatedCnt) + ")");
 
 }

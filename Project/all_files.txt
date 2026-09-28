@@ -10691,16 +10691,22 @@ void RenderContext::PassBehavior::DrawModels
 		{
 			//そのモデルを描画するかどうか
 			if (!model->DoesDraw(psoKey.blend, psoKey.material)) continue;
-			//モデルのルートコンスタンツを転送
-			cmdWrapper_.SetGraphicsRoot32BitConstants
-			(
-				(UINT)ConstantBuffers::RootConstantsBindSlots::kPerDrawIndices,
-				3,
-				&model->WatchPerDrawIndices(),
-				0
-			);
-			//ドロー
-			//cmdWrapper_.DispatchMesh((UINT)resMesh->meshlets.size(), 1, 1);
+			//以下マルチメッシュ分も含めてドローコール
+			auto const& perDrawIndices = model->WatchPerDrawIndices();
+			auto const& meshletSize = model->WatchMeshletSize();
+			for (size_t i = 0;i < meshletSize.size();++i)
+			{
+				//モデルのルートコンスタンツを転送
+				cmdWrapper_.SetGraphicsRoot32BitConstants
+				(
+					(UINT)ConstantBuffers::RootConstantsBindSlots::kPerDrawIndices,
+					3,
+					&perDrawIndices[i],
+					0
+				);
+				//ドロー
+				cmdWrapper_.DispatchMesh((UINT)meshletSize[i], 1, 1);
+			}
 		}
 	}
 }
@@ -12288,6 +12294,10 @@ class ModelContext
 	class ModelDescAssembler;
 	//モデルデータの一時キャッシュ
 	class ModelDataCache;
+	//モデルファイルから読み込んだデータ
+	struct ModelDataFromFile;
+	//モデルが実際に所持するデータ
+	struct ModelData;
 public:
 	//全てのモデルファイルのモデルデータのバッファを生成する。
 	class ModelDataCreator;
@@ -12391,7 +12401,7 @@ TestModelOKIBA::TestModelOKIBA(ModelContext::ModelCreator* modelCreator_)
 	std::vector<RenderState> playerC;
 	playerC.emplace_back(std::move(cP));
 	std::vector<MaterialCPU> materials;
-	player = modelCreator_->Create("PlayerObj", playerC, materials,"Player");
+	player = modelCreator_->Create("PlayerObj", playerC, materials,1,"Player")[0];
 	RenderState cC;
 	cC.blendModes.emplace_back(BlendMode::kOpaque);
 	cC.pass = RenderPassComponent::Pass::kSceneOpaque;
@@ -12400,7 +12410,7 @@ TestModelOKIBA::TestModelOKIBA(ModelContext::ModelCreator* modelCreator_)
 	cC.materialTypes.emplace_back(MaterialType::kStandard);
 	std::vector<RenderState> cubeC;
 	cubeC.emplace_back(std::move(cC));
-	cube = modelCreator_->Create("CubeGltf", cubeC, materials,"Cube");
+	cube = modelCreator_->Create("CubeGltf", cubeC, materials,1,"Cube")[0];
 }
 
 ========================================
@@ -12424,7 +12434,6 @@ struct TestModelOKIBA
 #include "../ModelStructure/Model.h"
 #include "ModelDescAssembler/ModelDescAssembler.h"
 #include "../ModelContainer/ModelContainer.h"
-#include "../ModelStructure/ModelDescription/ModelDescription.h"
 namespace
 {
 	auto const fileName = "ModelCreator.cpp";
@@ -12438,30 +12447,36 @@ ModelContext::ModelCreator::ModelCreator
 ) :modelDescAssembler(std::move(modelAssembler_)), modelContainer(modelContainer_)
 {
 }
-Model* ModelContext::ModelCreator::Create
+std::vector<Model*> ModelContext::ModelCreator::Create
 (
-	std::string const modelFileName_,
+	std::string const& modelFileName_,
 	std::vector<RenderState> const& modelRenderStates_,
-	std::vector<MaterialCPU> const& materials_,
+	std::vector<StructuredBufferModelData::MaterialCPU> const& materials_,
+	UINT const numCreate_,
 	std::string const& modelName_
 )
 {
-	//commonとuniqueのディスクリプション
-	auto [perDrawIndices,materialsGPU] = modelDescAssembler->Assemble(modelFileName_, materials_);
+	std::vector<Model*> modelPtrContainer;
+	//モデルのディスクリプションの要素を組み立てる
+	auto [perDrawIndices,materialsGPU,meshletSize] = modelDescAssembler->Assemble(modelFileName_, materials_);
 	///一つのDescに詰める
 	ModelDescription modelDesc
 	(
 		modelName_ + std::to_string(numCreate++),
 		perDrawIndices,
 		modelRenderStates_,
-		materialsGPU
+		materialsGPU,
+		meshletSize
 	);
-	///モデルクラスのインスタンス化
-	std::unique_ptr<Model> model = std::make_unique<Model>(modelDesc);
-	Model* modelPtr = model.get();
-	//実体はモデルコンテナが握る
-	modelContainer.Add(ModelContainer::Local_AddLicence{}, std::move(model));
-	return modelPtr;
+	for (UINT i = 0;i < numCreate_;++i)
+	{
+		///モデルクラスのインスタンス化
+		std::unique_ptr<Model> model = std::make_unique<Model>(modelDesc);
+		modelPtrContainer.emplace_back(model.get());
+		//実体はモデルコンテナが握る
+		modelContainer.Add(ModelContainer::Local_AddLicence{}, std::move(model));
+	}
+	return modelPtrContainer;
 }
 
 ========================================
@@ -12469,7 +12484,8 @@ Model* ModelContext::ModelCreator::Create
 ========================================
 #pragma once
 #include "../ModelContext.h"
-#include "../ModelStructure/ModelDescription/ModelDescription.h"
+//外部
+#include "../../../../../Assets/Shared/StructuredBufferModelData.h"
 class Model;
 struct RenderState;
 class ModelContext::ModelCreator
@@ -12481,11 +12497,12 @@ public:
 		std::unique_ptr<ModelContext::ModelDescAssembler>&& modelAssembler_,
 		ModelContext::ModelContainer& modelContainer_
 	);
-	Model* Create
+	std::vector<Model*> Create
 	(
-		std::string const modelFileName_,
+		std::string const& modelFileName_,
 		std::vector<RenderState> const& modelRenderStates_,
 		std::vector<StructuredBufferModelData::MaterialCPU> const& materials_,
+		UINT const numCreate_,
 		std::string const& modelName_ = "nameLess"
 	);
 private:
@@ -12502,7 +12519,7 @@ private:
 ========================================
 #include "PreCompileHeader.h"
 #include "ModelDataCreator.h"
-#include "../../ModelStructure/ModelData/ModelData.h"
+#include "../../ModelStructure/ModelData/ModelDataFromFile.h"
 #include "../ModelDataLoader/ModelDataLoader.h"
 #include "../ModelSlotAllocator/ModelDataLibrary/ModelDataLibrary.h"
 #include "ModelDataTransducer/ModelDataTransducer.h"
@@ -12565,7 +12582,7 @@ void ModelContext::ModelDataCreator::CreateAllModelData
     ///そのバッファのsrvHeapIndexは配列に詰められ、コンスタントバッファとして転送される。
     std::vector<MeshDataSRVHeapIndexGroupGPUCPU> tmpMeshDataSRVHeapIndexGroupContainer;
     //モデルデータライブラリー
-    std::unordered_map<std::string, ModelData*> tmpModelDataLib = LoadAllModelFiles(modelDataLoader_);
+    std::unordered_map<std::string, ModelDataFromFile*> tmpModelDataLib = LoadAllModelFiles(modelDataLoader_);
     //バッファコンテキストのツールレンダーから各種ツールを借りる
     auto [bufferCreator, bufferCollector, bufferUploader,bufferDispatcher] = BorrowBufferContextTools(bufferContextDiplomat_);
     //定数バッファ生成コマンドを提供してもらう
@@ -12631,9 +12648,9 @@ void ModelContext::ModelDataCreator::CreateAllModelData
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-std::unordered_map<std::string , ModelData*> ModelContext::ModelDataCreator::LoadAllModelFiles(ModelDataLoader& modelDataLoader_)
+std::unordered_map<std::string , ModelContext::ModelDataFromFile*> ModelContext::ModelDataCreator::LoadAllModelFiles(ModelDataLoader& modelDataLoader_)
 {
-    std::unordered_map<std::string, ModelData*> modelDataLib;
+    std::unordered_map<std::string, ModelDataFromFile*> modelDataLib;
     auto modelFileName_pathLib = RegistryLoader::Load<RegistryLoader::RegistryFileType::kModelFiles>();
     for (const auto& [key, value] : modelFileName_pathLib)
     {
@@ -12670,7 +12687,6 @@ ModelContext::ModelDataCreator::BufferContextTools ModelContext::ModelDataCreato
 #include "../../ModelContext.h"
 //外部
 #include "../../../../Buffer/BufferContext.h"
-struct ModelData;
 class ModelContext::ModelDataCreator
 {
 	using BufferContextTools = std::tuple
@@ -12732,7 +12748,7 @@ private:
 	std::unique_ptr<ModelDataLoader> modelDataLoader;
 	//ローダーが全モデルファイルを読み込み、そのモデルデータのポインタを返す
 	///被り無しのはず設計なので、被りがあった場合はアサートでとまる
-	std::unordered_map<std::string, ModelData*> LoadAllModelFiles(ModelDataLoader& modelDataLoader_);
+	std::unordered_map<std::string, ModelDataFromFile*> LoadAllModelFiles(ModelDataLoader& modelDataLoader_);
 	//バッファコンテキストクラスからツールをお借りする
 	BufferContextTools BorrowBufferContextTools(BufferContextDiplomat& bufferContextDiplomat_);
 };
@@ -12742,13 +12758,12 @@ private:
 ========================================
 #include "PreCompileHeader.h"
 #include "MeshDataBufferCreator.h"
-#include "../../../ModelStructure/ModelData/ModelData.h"
+#include "../../../ModelStructure/ModelData/ModelDataFromFile.h"
 #include "../../ModelSlotAllocator/ModelDataLibrary/ModelDataLibrary.h"
 //外部
 #include "../../../../../Buffer/BufferCreateTools/BufferCreator.h"
 //ほんとはstaticStructuredBufferDescriptionだけでいいんだけど、文字列制限なのかインクルードできないので
 #include "../../../../../Buffer/BufferDefinition/AllBufferDescsInclude.h"
-#include "../../../../../../../Assets/Shared/StructuredBufferModelData.h"
 using namespace StructuredBufferModelData;
 [[nodiscard]] std::vector<ModelContext::ModelDataCreator::MeshDataBufferUniqueIDGroup> 
 ModelContext::ModelDataCreator::MeshDataBufferCreator::CreateMeshDataBuffer
@@ -12757,7 +12772,7 @@ ModelContext::ModelDataCreator::MeshDataBufferCreator::CreateMeshDataBuffer
     const std::vector<MeshCPU>& data_,
 	BufferContext::BufferCreator* bufferCreator_,
 	BufferContext::BufferCollector* bufferCollector_,
-	std::string modelFileName_,
+	std::string const& modelFileName_,
 	MeshDataID& meshDataID_
 )
 {
@@ -12774,6 +12789,8 @@ ModelContext::ModelDataCreator::MeshDataBufferCreator::CreateMeshDataBuffer
     UINT subMeshCnt{};
     //MeshDataBufferUniqueIDGroupコンテナ上の番地を記録するため。(サブメッシュも含む)
     std::vector<MeshDataID> meshDataIDContainer;
+    //同様に、メッシュレット数。
+    std::vector<size_t> meshletSize;
     ///メッシュデータのGPUバッファを作成
     for (const auto& meshData : data_)
     {
@@ -12792,12 +12809,16 @@ ModelContext::ModelDataCreator::MeshDataBufferCreator::CreateMeshDataBuffer
         meshDataBufferUniqueIDContainer.emplace_back(meshDataBufferUniqueID);
         //メッシュデータ番地を格納
         meshDataIDContainer.emplace_back(meshDataID_);
+        //メッシュレット数を記録
+        meshletSize.emplace_back(meshData.meshlets.size());
         //総メッシュデータ数をインクリメント
         meshDataID_ += MeshDataID(1);
     }
     //モデルのファイル名とメッシュデータIDを紐づける
     auto& ModelDataLibrary = allocator_->AccessModelDataLibrary(ModelContext::ModelSlotAllocator::HandleLicence{});
     ModelDataLibrary.Link(modelFileName_, meshDataIDContainer);
+    //メッシュレット数も同様に
+    ModelDataLibrary.Link(modelFileName_, meshletSize);
     //バッファコレクターに生成したバッファを仕分けしてもらう
     bufferCollector_->Distribute();
     //メッシュデータのバッファユニークID群を返す
@@ -12820,7 +12841,7 @@ class ModelContext::ModelDataCreator::MeshDataBufferCreator
 		const std::vector<StructuredBufferModelData::MeshCPU>& data_,
 		BufferContext::BufferCreator* bufferCreator_,
 		BufferContext::BufferCollector* bufferCollector_,
-		std::string modelFileName_,
+		std::string const& modelFileName_,
 		MeshDataID& meshDataID_
 	);
 };
@@ -13251,7 +13272,7 @@ private:
 #include "MeshParser/MeshParser.h"
 #include "MaterialParser/MaterialParser.h"
 #include "ModelDataCache/ModelDataCache.h"
-#include "../../ModelStructure/ModelData/ModelData.h"
+#include "../../ModelStructure/ModelData/ModelDataFromFile.h"
 //外部
 #include "StringConverter/StringConverter.h"
 #include ".././../../../External/assimp/include/assimp/Importer.hpp"
@@ -13264,9 +13285,6 @@ namespace
 ModelContext::ModelDataLoader::ModelDataLoader(NexusFieldProof proof_, ModelDataCache& modelDataCache_)
     :modelDataCache(modelDataCache_)
 {
-    Logger::Entry("ModelDataLoader: Constructor");
-    Logger::Log("Instantiate: ModelDataCache",fileName);
-    Logger::End("ModelDataLoader: Constructor");
 }
 ModelContext::ModelDataLoader::~ModelDataLoader()
 {
@@ -13274,9 +13292,9 @@ ModelContext::ModelDataLoader::~ModelDataLoader()
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-ModelData* ModelContext::ModelDataLoader::Load(std::string fileName_ , std::string filePath_)
+ModelContext::ModelDataFromFile* ModelContext::ModelDataLoader::Load(std::string const& fileName_ , std::string const& filePath_)
 {
-    std::unique_ptr<ModelData> modelData = std::make_unique<ModelData>();
+    std::unique_ptr<ModelDataFromFile> modelData = std::make_unique<ModelDataFromFile>();
 	///同じモデルファイルを読み込んでいる場合は何かおかしいのでアサート
 	modelDataCache.FindDuplication(ModelDataCache::AccessKey{},fileName_);
     //wchar_tからUTF-8に変換
@@ -13331,7 +13349,6 @@ ModelData* ModelContext::ModelDataLoader::Load(std::string fileName_ , std::stri
 ========================================
 #pragma once
 #include "../../ModelContext.h"
-struct ModelData;
 struct aiScene;
 class ModelContext::ModelDataLoader
 {
@@ -13340,7 +13357,7 @@ public:
 	~ModelDataLoader();
 	///ファイルの名前から実メッシュデータのアドレスを生成
 	///既に読み込み済みの場合はアサートで止める
-	ModelData* Load(std::string fileName_ , std::string filePath_);
+	ModelDataFromFile* Load(std::string const& fileName_ , std::string const& filePath_);
 private:
 	class MeshParser;
 	class MaterialParser;
@@ -13453,7 +13470,7 @@ private:
 ========================================
 #include "PreCompileHeader.h"
 #include "MeshParser.h"
-#include "../../../ModelStructure/ModelData/ModelData.h"
+#include "../../../ModelStructure/ModelData/ModelDataFromFile.h"
 //外部
 #include ".././../../../External/assimp/include/assimp/scene.h"
 #include "../../../../External/MeshOptimizer/meshoptimizer.h"
@@ -13641,7 +13658,7 @@ class ModelContext::ModelDataLoader::MeshParser
 ========================================
 #include "PreCompileHeader.h"
 #include "ModelDataCache.h"
-#include "../../../ModelStructure/ModelData/ModelData.h"
+#include "../../../ModelStructure/ModelData/ModelDataFromFile.h"
 ModelContext::ModelDataCache::ModelDataCache(NexusFieldProof proof_)
 {
 }
@@ -13659,7 +13676,7 @@ void ModelContext::ModelDataCache::FindDuplication(AccessKey key_, std::string c
 		"ModelDataCache.cpp"
 	);
 }
-void ModelContext::ModelDataCache::StoreTemporarily(AccessKey key_, std::string const& fileName_, std::unique_ptr<ModelData>&& data_)
+void ModelContext::ModelDataCache::StoreTemporarily(AccessKey key_, std::string const& fileName_, std::unique_ptr<ModelDataFromFile>&& data_)
 {
 	Logger::Log("Register: " + fileName_, "ModelDataCache.cpp");
 	modelDataCache[fileName_] = std::move(data_);
@@ -13670,7 +13687,6 @@ void ModelContext::ModelDataCache::StoreTemporarily(AccessKey key_, std::string 
 ========================================
 #pragma once
 #include "../ModelDataLoader.h"
-struct ModelData;
 class ModelContext::ModelDataCache
 {
 public:
@@ -13680,9 +13696,9 @@ public:
 	//ダブりチェック
 	void FindDuplication(AccessKey key_, std::string const& fileName_);
 	//一時データとして保存
-	void StoreTemporarily(AccessKey key_, std::string const& fileName_, std::unique_ptr<ModelData>&& data_);
+	void StoreTemporarily(AccessKey key_, std::string const& fileName_, std::unique_ptr<ModelDataFromFile>&& data_);
 private:
-	std::unordered_map<std::string, std::unique_ptr<ModelData>> modelDataCache;
+	std::unordered_map<std::string, std::unique_ptr<ModelDataFromFile>> modelDataCache;
 };
 struct ModelContext::ModelDataCache::AccessKey
 {
@@ -13724,24 +13740,17 @@ ModelContext::ModelDescAssembler::ModelDescParts ModelContext::ModelDescAssemble
 {
 	//modelDataLibraryにアクセス
 	auto& modelDataLibrary = slotAllocator->AccessModelDataLibrary(ModelContext::ModelSlotAllocator::HandleLicence{});
-	//モデルファイル名からサブメッシュ分含む、メッシュデータのユニークIDを検索
-	std::vector<MeshDataID> const& meshDataIDs = modelDataLibrary.Find<MeshDataID>(modelFileName_);
-	//マテリアルも同様
-	std::vector<MaterialCPU> const& materialsFromFile = modelDataLibrary.Find<MaterialCPU>(modelFileName_);
+	//モデルファイル名からサブメッシュ分含む、
+	//メッシュデータのユニークID、マテリアル、メッシュレットのサイズを検索
+	auto const& modelData = modelDataLibrary.Find(modelFileName_);
 	//サブメッシュ含む、メッシュの総数
-	size_t const kNumMeshData = meshDataIDs.size();
+	size_t const kNumMeshData = modelData.meshDataID.size();
 	return ModelDescParts
 	(
-		PackPerDrawIndices(meshDataIDs, kNumMeshData),
-		ConvertMaterialData(kNumMeshData, materialsFromFile, inputMaterials_)
+		PackPerDrawIndices(modelData.meshDataID, kNumMeshData),
+		ConvertMaterialData(kNumMeshData, modelData.materialCPU, inputMaterials_),
+		modelData.meshletSize
 	);
-}
-std::vector<size_t> ModelContext::ModelDescAssembler::OutMeshletSize
-(
-	const std::vector<MeshDataID>& meshDataIDs_,
-	size_t const kNumMeshData_
-)
-{
 }
 std::vector<ConstantBuffers::PerDrawIndicesCPUGPU> ModelContext::ModelDescAssembler::PackPerDrawIndices
 (
@@ -13847,12 +13856,6 @@ public:
 		std::vector<StructuredBufferModelData::MaterialCPU> const& inputMaterials_
 	);
 private:
-	//meshletのサイズを出力
-	std::vector<size_t> OutMeshletSize
-	(
-		const std::vector<MeshDataID>& meshDataIDs_,
-		size_t const kNumMeshData_
-	);
 	//PerDrawIndicesを詰める
 	std::vector<ConstantBuffers::PerDrawIndicesCPUGPU> PackPerDrawIndices
 	(
@@ -14021,21 +14024,21 @@ ModelContext::ModelSlotAllocator::ModelDataLibrary::ModelDataLibrary(NexusFieldP
 using namespace StructuredBufferModelData;
 void ModelContext::ModelSlotAllocator::ModelDataLibrary::Log()const
 {
+#ifdef _DEBUG
 	Logger::Log("Check ModelDataLibrary Contents", fileName);
-	auto const& meshIDlib= std::get<std::unordered_map<std::string, std::vector<MeshDataID>>>(libTuple);
-	auto const& materialLib = std::get<std::unordered_map<std::string, std::vector<MaterialCPU>>>(libTuple);
-	for (auto const& [key, value] : meshIDlib)
+	for (auto const& [key, value] : modelData)
 	{
-		std::string mess = key + "::MeshDataID: { ";
-		for (size_t i = 0;i < value.size();++i)
+		std::string mess = key + "::MeshDataID(sizeMeshlet): { ";
+		for (size_t i = 0;i < value.meshDataID.size();++i)
 		{
-			mess += std::to_string((UINT)value[i]);
-			mess += (i + 1) < value.size() ? +"," : "";
+			mess += std::to_string((UINT)value.meshDataID[i]) + "(" + std::to_string(value.meshletSize[i]) + ")";
+			mess += (i + 1) < value.meshDataID.size() ? +"," : "";
 		}
 		mess += " }";
-		mess += " Num Materials From File:" + std::to_string(materialLib.at(key).size());
+		mess += " Num Materials From File:" + std::to_string(value.materialCPU.size());
 		Logger::Log(mess);
 	}
+#endif // DEBUG
 }
 
 ========================================
@@ -14043,12 +14046,9 @@ void ModelContext::ModelSlotAllocator::ModelDataLibrary::Log()const
 ========================================
 #pragma once
 #include "../ModelSlotAllocator.h"
-//外部
-#include "../../../../../../../Assets/Shared/StructuredBufferModelData.h"
+#include "../../../ModelStructure/ModelData/ModelData.h"
 class ModelContext::ModelSlotAllocator::ModelDataLibrary
 {
-	template<typename DataType>
-	struct DataTypeTraits;
 public:
 	ModelDataLibrary(NexusFieldProof proof_);
 	//モデルファイル名に対してデータを紐づける
@@ -14056,52 +14056,40 @@ public:
 	void Link
 	(
 		std::string const& modelFileName_,
-		std::vector<DataType> const& data_
+		std::vector<DataType> const& src_
 	)
 	{
-		auto& lib = std::get<std::unordered_map<std::string, std::vector<DataType>>>(libTuple);
 		if constexpr (std::is_same_v<DataType, MeshDataID>)
 		{
-			ErrorMessageOutput::Assert::DetectError(data_.size() > 0, "中身すっからかんやん！", "ModelDataLibrary.h");
+			ErrorMessageOutput::Assert::DetectError(src_.size() > 0, "メッシュデータの中身すっからかんやん！", "ModelDataLibrary.h");
+			modelData[modelFileName_].meshDataID = src_;
 		}
-		lib[modelFileName_] = data_;
-		Logger::Log("Register: " + modelFileName_ + DataTypeTraits<DataType>::kName, "ModelDataLibrary.h");
+		else if constexpr (std::is_same_v<DataType, StructuredBufferModelData::MaterialCPU>)
+		{
+			modelData[modelFileName_].materialCPU = src_;
+		}
+		else if constexpr (std::is_same_v<DataType, size_t>)
+		{
+			ErrorMessageOutput::Assert::DetectError(src_.size() > 0, "メッシュデータの中身すっからかんやん！", "ModelDataLibrary.h");
+			modelData[modelFileName_].meshletSize = src_;
+		}
+		Logger::Log("Register: " + modelFileName_ + ModelData::DataTypeTraits<DataType>::kName, "ModelDataLibrary.h");
 	}
-	//検索
-	template<typename DataType>
-	[[nodiscard]] std::vector<DataType> const& Find(std::string fileName_)const
+	auto const& Find(std::string const& fileName_)const
 	{
-		auto const& lib = std::get<std::unordered_map<std::string, std::vector<DataType>>>(libTuple);
 		ErrorMessageOutput::Assert::DetectError
 		(
-			lib.find(fileName_) != lib.end(),
+			modelData.find(fileName_) != modelData.end(),
 			"そないなキーはありません",
 			"ModelDataLibrary.h"
 		);
-		return lib.at(fileName_);
+		return modelData.at(fileName_);
 	}
 	//ライブラリーの中身をログファイルに出力
 	void Log()const;
 private:
 	///モデルファイル名から、サブメッシュまで含んだ情報を索引する
-	std::tuple
-	<
-		///「メッシュデータバッファのsrvHeapIndexが詰まったもの」の配列の何番目に該当するのかを索引するため
-		std::unordered_map<std::string, std::vector<MeshDataID>>,
-		//モデルファイルから仕入れたマテリアル情報
-		std::unordered_map<std::string, std::vector<StructuredBufferModelData::MaterialCPU>>
-		//メッシュレットのサイズ
-	>libTuple;
-};
-template<>
-struct ModelContext::ModelSlotAllocator::ModelDataLibrary::DataTypeTraits<MeshDataID>
-{
-	static inline const std::string kName = "MeshDataID";
-};
-template<>
-struct ModelContext::ModelSlotAllocator::ModelDataLibrary::DataTypeTraits<StructuredBufferModelData::MaterialCPU>
-{
-	static inline const std::string kName = "MaterialCPU";
+	std::unordered_map<std::string, ModelData> modelData;
 };
 
 ========================================
@@ -14735,9 +14723,6 @@ public:
 		ShaderPathComponent::MaterialType materialType{};
 	};
 	Model(const ModelDescription& modelDesc_);
-	std::string const WatchName()const;
-	//PSO生成、モデル分別用として利用
-	auto const& WatchRenderStates()const { return modelDesc.WatchRenderStates(); }
 	//そのパスで描画するかどうかで利用
 	bool DoesDraw
 	(
@@ -14750,8 +14735,12 @@ public:
 		changeableStatus.blendMode == blendMode_ &&
 		changeableStatus.materialType == materialType_;
 	}
+	std::string const WatchName()const;
+	//PSO生成、モデル分別用として利用
+	auto const& WatchRenderStates()const { return modelDesc.WatchRenderStates(); }
 	//ランタイムでドローコマンドをたたくために使用
 	inline auto const& WatchPerDrawIndices()const { return modelDesc.WatchPerDrawIndices(); }
+	inline auto const& WatchMeshletSize()const { return modelDesc.WatchMeshletSize(); }
 private:
 	ChangeableStatus changeableStatus;
 	ModelDescription modelDesc;
@@ -14792,8 +14781,47 @@ struct RenderState
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Model\ModelStructure\ModelData\ModelData.h ===
 ========================================
 #pragma once
+#include "../../ModelContext.h"
+//外部
 #include "../../../../../../Assets/Shared/StructuredBufferModelData.h"
-struct ModelData
+struct ModelContext::ModelData
+{
+	template<typename DataType>
+	struct DataTypeTraits;
+	std::vector<MeshDataID> meshDataID;
+	std::vector<StructuredBufferModelData::MaterialCPU> materialCPU;
+	std::vector<size_t> meshletSize;
+};
+template<>
+struct ModelContext::ModelData::DataTypeTraits<MeshDataID>
+{
+	static inline const std::string kName = "MeshDataID";
+};
+template<>
+struct ModelContext::ModelData::DataTypeTraits<StructuredBufferModelData::MaterialCPU>
+{
+	static inline const std::string kName = "MaterialCPU";
+};
+template<>
+struct ModelContext::ModelData::DataTypeTraits<size_t>
+{
+	static inline const std::string kName = "MeshletSize";
+};
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Model\ModelStructure\ModelData\ModelDataFromFile.cpp ===
+========================================
+#include "PreCompileHeader.h"
+#include "ModelDataFromFile.h"
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Model\ModelStructure\ModelData\ModelDataFromFile.h ===
+========================================
+#pragma once
+#include "../../ModelContext.h"
+//外部
+#include "../../../../../../Assets/Shared/StructuredBufferModelData.h"
+struct ModelContext::ModelDataFromFile
 {
 	std::vector<StructuredBufferModelData::MeshCPU> resourceMesh;
 	std::vector<StructuredBufferModelData::MaterialCPU> resourceMaterial;
@@ -14809,11 +14837,12 @@ namespace
 }
 ModelDescription::ModelDescription
 (
-	std::string modelName_,
+	std::string const& modelName_,
 	std::vector<ConstantBuffers::PerDrawIndicesCPUGPU> const& perDrawIndices_,
 	std::vector<RenderState> const& renderStates_,
-	std::vector<StructuredBufferModelData::MaterialGPU> materials_
-) :perDrawIndices(perDrawIndices_), renderStates(renderStates_), materials(materials_)
+	std::vector<StructuredBufferModelData::MaterialGPU> const& materials_,
+	std::vector<size_t> const& meshletSize_
+) :perDrawIndices(perDrawIndices_), renderStates(renderStates_), materials(materials_), meshletSize(meshletSize_)
 {
 	std::string errorMsg{};
 	for (auto& renderState : renderStates)
@@ -14887,16 +14916,17 @@ struct ModelDescription
 	//中で入力チェック
 	ModelDescription
 	(
-		std::string modelName_,
+		std::string const& modelName_,
 		std::vector<ConstantBuffers::PerDrawIndicesCPUGPU> const& perDrawIndices_,
 		std::vector<RenderState> const& renderStates_,
-		std::vector<StructuredBufferModelData::MaterialGPU> materials_
+		std::vector<StructuredBufferModelData::MaterialGPU> const& materials_,
+		std::vector<size_t> const& meshletSize_
 	);
 	//初期化フェーズで利用
 	inline auto const& WatchRenderStates()const { return renderStates; }
 	//ランタイムでドローコマンドをたたくために使用
 	inline auto const& WatchPerDrawIndices()const { return perDrawIndices; }
-	inline auto const& WatchMaterialGPU()const { return materials; }
+	inline auto const& WatchMeshletSize()const { return meshletSize; }
 private:
 	//ModelDescAssemblerに設定してもらう
 	//可変長になっているのは、マルチメッシュのため！！！！
@@ -19878,5 +19908,5 @@ namespace StringProcessing
 ========================================
 === SUMMARY ===
 ========================================
-Total Files      : 437
-Effective Lines  : 14476
+Total Files      : 439
+Effective Lines  : 14490

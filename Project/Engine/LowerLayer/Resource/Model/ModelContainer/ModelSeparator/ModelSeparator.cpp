@@ -54,9 +54,9 @@ ModelContext::ModelContainer::ModelSeparator::SeparateAllModels(std::vector<std:
 	return dstSeparateContainer;
 }
 
-std::vector<std::pair<RenderStateKey, uint32_t>> ModelContext::ModelContainer::ModelSeparator::PackToKey(Model const& model_)
+std::vector<std::pair<RenderStateKey, uint64_t>> ModelContext::ModelContainer::ModelSeparator::PackToKey(Model const& model_)
 {
-	std::vector<std::pair<RenderStateKey, uint32_t>> keys;
+	std::vector<std::pair<RenderStateKey, uint64_t>> keys;
 
 	for (auto const& renderState : model_.WatchRenderStates())
 	{
@@ -64,7 +64,7 @@ std::vector<std::pair<RenderStateKey, uint32_t>> ModelContext::ModelContainer::M
 		{
 			for (auto const& materialType : renderState.materialTypes)
 			{
-				uint32_t packedKey = keyPackager->Pack
+				uint64_t packedKey = keyPackager->Pack
 				(
 					renderState.pass,
 					blendMode,

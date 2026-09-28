@@ -1,7 +1,5 @@
 #pragma once
 #include "../../RenderContext.h"
-#include "../RenderPassComponent.h"
-#include "../../RenderStateComponent.h"
 #include "../../RenderContextRuntime/PSO_PoolDispatcher/GraphicsPSO_Key.h"
 
 //外部
@@ -43,6 +41,7 @@ public:
 
 	//レンダーターゲットのあれこれの描画コマンドをたたく
 	void BeginPass(RuntimeWrapper& cmdWrapper_, BufferContext::BufferDispatcher& bufDispatcher_);
+	
 	//モデルを描画する
 	void DrawModels
 	(
