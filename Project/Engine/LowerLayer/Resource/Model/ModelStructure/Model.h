@@ -17,11 +17,6 @@ public:
 
 	Model(const ModelDescription& modelDesc_);
 
-	std::string const WatchName()const;
-	
-	//PSO生成、モデル分別用として利用
-	auto const& WatchRenderStates()const { return modelDesc.WatchRenderStates(); }
-	
 	//そのパスで描画するかどうかで利用
 	bool DoesDraw
 	(
@@ -35,8 +30,14 @@ public:
 		changeableStatus.materialType == materialType_;
 	}
 
+	std::string const WatchName()const;
+	//PSO生成、モデル分別用として利用
+	auto const& WatchRenderStates()const { return modelDesc.WatchRenderStates(); }
+
 	//ランタイムでドローコマンドをたたくために使用
 	inline auto const& WatchPerDrawIndices()const { return modelDesc.WatchPerDrawIndices(); }
+	inline auto const& WatchMeshletSize()const { return modelDesc.WatchMeshletSize(); }
+
 
 private:
 

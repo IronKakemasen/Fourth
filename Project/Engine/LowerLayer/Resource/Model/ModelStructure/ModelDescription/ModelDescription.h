@@ -28,7 +28,7 @@ struct ModelDescription
 	
 	//ランタイムでドローコマンドをたたくために使用
 	inline auto const& WatchPerDrawIndices()const { return perDrawIndices; }
-	inline auto const& WatchMaterialGPU()const { return materials; }
+	inline auto const& WatchMeshletSize()const { return meshletSize; }
 
 
 private:

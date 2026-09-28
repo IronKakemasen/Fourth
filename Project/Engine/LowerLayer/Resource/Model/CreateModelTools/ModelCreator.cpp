@@ -23,14 +23,17 @@ ModelContext::ModelCreator::ModelCreator
 }
 
 
-Model* ModelContext::ModelCreator::Create
+std::vector<Model*> ModelContext::ModelCreator::Create
 (
 	std::string const& modelFileName_,
 	std::vector<RenderState> const& modelRenderStates_,
-	std::vector<MaterialCPU> const& materials_,
+	std::vector<StructuredBufferModelData::MaterialCPU> const& materials_,
+	UINT const numCreate_,
 	std::string const& modelName_
 )
 {
+	std::vector<Model*> modelPtrContainer;
+
 	//モデルのディスクリプションの要素を組み立てる
 	auto [perDrawIndices,materialsGPU,meshletSize] = modelDescAssembler->Assemble(modelFileName_, materials_);
 
@@ -44,13 +47,16 @@ Model* ModelContext::ModelCreator::Create
 		meshletSize
 	);
 
-	///モデルクラスのインスタンス化
-	std::unique_ptr<Model> model = std::make_unique<Model>(modelDesc);
+	for (UINT i = 0;i < numCreate_;++i)
+	{
+		///モデルクラスのインスタンス化
+		std::unique_ptr<Model> model = std::make_unique<Model>(modelDesc);
 
-	Model* modelPtr = model.get();
+		modelPtrContainer.emplace_back(model.get());
 
-	//実体はモデルコンテナが握る
-	modelContainer.Add(ModelContainer::Local_AddLicence{}, std::move(model));
+		//実体はモデルコンテナが握る
+		modelContainer.Add(ModelContainer::Local_AddLicence{}, std::move(model));
+	}
 
-	return modelPtr;
+	return modelPtrContainer;
 }

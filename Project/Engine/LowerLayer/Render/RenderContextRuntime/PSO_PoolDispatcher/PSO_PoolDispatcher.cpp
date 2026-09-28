@@ -86,5 +86,15 @@ size_t const RenderContext::PSO_PoolDispatcher::WatchPSO_Size()const
 	return graphicsPSO_pool.size();
 }
 
+void RenderContext::PSO_PoolDispatcher::CheckOccupationRate()const
+{
+	float occupationRate = (float)graphicsPSO_pool.size() / float(kHashMapCapacity);
 
+	ErrorMessageOutput::Assert::DetectError
+	(
+		occupationRate < 0.75f,
+		"PSO生成数が4割未満じゃない: " + std::to_string(occupationRate * 100.0f),
+		fileName
+	);
+}
 

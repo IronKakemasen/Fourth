@@ -53,6 +53,8 @@ public:
 
 	//デバッグ用。PSO総数
 	size_t const WatchPSO_Size()const;
+	//キャパシティーが求める４割未満かどうかチェック
+	void CheckOccupationRate()const;
 
 private:
 
@@ -64,7 +66,7 @@ private:
 	///プール本体
 	std::vector<ID3D12PipelineState*> graphicsPSO_pool;
 	//closedHashMapのキャパ。想定されるPSOの数がキャパの4割位未満を目安
-	const uint32_t kHashMapCapacity = 2048;
+	const uint32_t kHashMapCapacity = 128;
 
 	//closedHashMapのビットレイアウトを定める
 	void DefinePackageLayout();

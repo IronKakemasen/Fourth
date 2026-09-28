@@ -16,7 +16,7 @@ private:
             //スタート地点を記録
             CalcShiftNum(shift_);
 
-            ErrorMessageOutput::Assert::DetectError((EndLocation() <= 32), "GraphicsPSO_Keyのサイズ超過", "KeyPackager.h");
+            ErrorMessageOutput::Assert::DetectError((EndLocation() < 64), "GraphicsPSO_Keyのサイズ超過", "KeyPackager.h");
         }
 
         uint32_t EndLocation() { return shift + bits; }

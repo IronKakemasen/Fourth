@@ -19,13 +19,15 @@ public:
 		ModelContext::ModelContainer& modelContainer_
 	);
 
-	Model* Create
+	std::vector<Model*> Create
 	(
 		std::string const& modelFileName_,
 		std::vector<RenderState> const& modelRenderStates_,
 		std::vector<StructuredBufferModelData::MaterialCPU> const& materials_,
+		UINT const numCreate_,
 		std::string const& modelName_ = "nameLess"
 	);
+
 
 private:
 
