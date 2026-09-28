@@ -22,6 +22,7 @@ public:
 		ProjectConfig::Render::NumBuffer numBuffer_ = ProjectConfig::Render::NumBuffer::kSingleBuffer
 	);
 
+
 	BufferDescriptionBehavior() = default;
 
 	virtual D3D12_RESOURCE_DESC CreateResourceDesc()const = 0;
