@@ -17,6 +17,7 @@
     <ProjectGuid>{614249c4-cbda-4ccd-82dc-9d4d033433a4}</ProjectGuid>
     <RootNamespace>Fourth</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+    <ProjectName>aFourth</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
