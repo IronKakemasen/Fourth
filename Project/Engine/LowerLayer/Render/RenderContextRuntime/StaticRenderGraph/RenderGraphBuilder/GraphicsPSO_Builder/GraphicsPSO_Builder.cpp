@@ -9,10 +9,7 @@
 #include "../../../../../Resource/Model/ModelContextDiplomatIncludes.h"
 #include "../../../../../Resource/Model/ModelStructure/Model.h"
 
-
-#include "../../../../../Resource/PSO/PSO_ContextDiplomat/PSO_ContextDiplomat.h"
-#include "../../../../../Resource/PSO/PSO_ContextDiplomat/PSO_ContextToolLender/PSO_ContextToolLender.h"
-#include "../../../../../Resource/PSO/PSO_ContextDiplomat/PSO_ContextToolLender/PSO_ContextToolLenderLicences.h"
+#include "../../../../../Resource/PSO/PSO_ContextDiplomats.h"
 #include "../../../../../Resource/PSO/PSO_Creator/PSO_Creator.h"
 		  
 #include "../../../../../Resource/Shader/ShaderContextDiplomatIncludes.h"
