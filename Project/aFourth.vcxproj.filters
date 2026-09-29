@@ -1463,6 +1463,9 @@
     <ClInclude Include="Engine\LowerLayer\Buffer\BufferContextDiplomats.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
+    <ClInclude Include="Engine\LowerLayer\Resource\PSO\PSO_ContextDiplomats.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
