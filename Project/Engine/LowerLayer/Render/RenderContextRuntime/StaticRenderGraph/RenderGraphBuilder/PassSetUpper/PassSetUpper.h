@@ -21,7 +21,8 @@ private:
 	(
 		NexusFieldProof proof_,
 		RenderPassCreator& renderPassCreator_,
-		RenderPassContainer& passContainer_
+		RenderPassContainer& passContainer_,
+		BufferContextDiplomat& bufferContextDiplomat_
 	);
 
 	///各パスが参照するバッファのsrvHeapIndexを配列したもののバッファ、そしてそのsrvHeapIndexの定数バッファを作成

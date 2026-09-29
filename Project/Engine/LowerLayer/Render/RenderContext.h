@@ -12,8 +12,6 @@ class RenderContext
 	class RenderPassContainer;
 	class RenderPathContainer;
 	class RenderPathAssembler;
-	//グラフィックス専用のpsoのプール、配布
-	class PSO_PoolDispatcher;
 
 public:
 	//renderPass生成機
@@ -30,6 +28,8 @@ public:
 	struct RenderPassState;
 	//レンダーパス(Path)を設計し、描画コマンドを叩く強者
 	class StaticRenderGraph;
+	//グラフィックス専用のpsoのプール、ランタイムでの配布
+	class PSO_PoolDispatcher;
 
 	//ネクサスフィールドの証
 	struct NexusFieldProof;

@@ -7,7 +7,8 @@ RenderContext::RuntimePassInfo::RuntimePassInfo
 (
 	NexusFieldProof proof_,
 	std::unique_ptr<PassDesc> desc_,
-	std::unordered_map<std::string, BufferUniqueID> const& idMap_,
+	std::vector<BufferUniqueID> const& refColorBuffersID_,
+	std::vector<BufferUniqueID> const& refDepthStencilBuffersID_,
 	UINT const refOffset_
 )
 {
@@ -16,19 +17,21 @@ RenderContext::RuntimePassInfo::RuntimePassInfo
 	PickUpRuntimeRequirementsFromDesc(*desc_);
 
 	//その他情報を入力
-	InputOtherParams(idMap_, refOffset_);
+	InputOtherParams(refColorBuffersID_, refDepthStencilBuffersID_,refOffset_);
 
 }
 
 void RenderContext::RuntimePassInfo::InputOtherParams
 (
-	std::unordered_map<std::string, BufferUniqueID> const& idMap_,
+	std::vector<BufferUniqueID> const& refColorBuffersID_,
+	std::vector<BufferUniqueID> const& refDepthStencilBuffersID_,
 	UINT const refOffset_
 )
 {
-	referenceBufferIDMap = idMap_;
+	refColorBuffersID = refColorBuffersID_;
+	refDepthStencilBuffersID = refDepthStencilBuffersID_;
 	rootConstants.offset = refOffset_;
-	rootConstants.numTextureUse = UINT(idMap_.size());
+	rootConstants.numTextureUse = UINT(refColorBuffersID.size()+ refDepthStencilBuffersID.size());
 }
 
 void RenderContext::RuntimePassInfo::PickUpRuntimeRequirementsFromDesc(PassDesc const& desc_)

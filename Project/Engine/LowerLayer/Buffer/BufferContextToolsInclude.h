@@ -4,3 +4,4 @@
 #include "GlobalConstantBuffers/GlobalConstantBufferCreator/GlobalConstantBufferCreator.h"
 #include "BufferCreateTools/BufferCreator.h"
 #include "BufferCreateTools/BufferUploader/BufferUploader.h"
+#include "BufferRuntime/BufferDispatcher/BufferDispatcher.h"
