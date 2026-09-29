@@ -10,6 +10,8 @@ public:
 	virtual void Update
 	(
 		[[maybe_unused]] std::unordered_map<uint32_t, std::pair<RenderStateKey, std::vector<Model*>>> const& modelContainer_,
+		[[maybe_unused]] RenderStateComponent::FillMode const modelFillMode_,
+		RenderContext::PSO_PoolDispatcher& psoDispatcher_,
 		RuntimeWrapper& cmdWrapper_,
 		BufferContext::BufferDispatcher& bufDispatcher_
 	)override;

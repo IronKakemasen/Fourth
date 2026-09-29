@@ -14,6 +14,13 @@ class ColorBuffer;
 class DepthStencilBuffer;
 class GPUBufferBehavior;
 
+///☆重要☆
+///バッファのステート遷移は、使う人(Pass)が責任を持つことにします。
+///自身の所持する描画用のバッファはもちろん、参照するバッファも
+///そうすれば、自身のバッファを誰がどう使うとかは気にしなくてよくなるので
+///銭湯でよく見る、座っていた人が次の人のためにお湯を掛けるのではなく、
+///これから座る人がお湯をかけましょう
+
 class RenderContext::PassBehavior
 {
 public:
@@ -24,6 +31,8 @@ public:
 	virtual void Update
 	(
 		[[maybe_unused]] std::unordered_map<uint32_t, std::pair<RenderStateKey, std::vector<Model*>>> const& modelContainer_,
+		[[maybe_unused]] RenderStateComponent::FillMode const modelFillMode_,
+		PSO_PoolDispatcher& psoDispatcher_,
 		RuntimeWrapper& cmdWrapper_,
 		BufferContext::BufferDispatcher& bufDispatcher_
 	) = 0;
@@ -34,16 +43,21 @@ public:
 	void CreatePassInfo
 	(
 		NexusFieldProof proof_,
-		std::unordered_map<std::string, BufferUniqueID> const& idMap_,
+		std::vector<BufferUniqueID> const& refColorBuffersID_,
+		std::vector<BufferUniqueID> const& refDepthStencilBuffersID_,
 		UINT const refOffset_
 	);
 
-
 	//レンダーターゲットのあれこれの描画コマンドをたたく
+	//自身の所持するバッファを全てレンダーターゲットへステート遷移
+	//Pass個人が呼ぶ必要はない
 	void BeginPass(RuntimeWrapper& cmdWrapper_, BufferContext::BufferDispatcher& bufDispatcher_);
+
 	
+protected:
+
 	//モデルを描画する
-	void DrawModels
+	void RenderModels
 	(
 		std::unordered_map<uint32_t, std::pair<RenderStateKey, std::vector<Model*>>> const& modelContainer_,
 		RenderStateComponent::FillMode const fillMode_,
@@ -51,15 +65,33 @@ public:
 		RuntimeWrapper& cmdWrapper_
 	);
 
-protected:
+	//オフスクにレンダリングをする
+	void RenderOffScreen
+	(
+		PSO_PoolDispatcher& psoDispatcher_,
+		RuntimeWrapper& cmdWrapper_,
+		BufferContext::BufferDispatcher& bufDispatcher_
+	);
+
+
+private:
 
 	//Passの設計図
 	std::unique_ptr<PassDesc> desc;
 	//ランタイムで必要になるPassの情報をまとめたもの
 	std::unique_ptr<RuntimePassInfo> runtimePassInfo;
+	//バリアのキャッシュ
+	std::vector<D3D12_RESOURCE_BARRIER> barrierCache;
+	//とりあえず10確保しておこう
+	static constexpr UINT kBarrierCacheCapacity = 10;
 
+	//バッファのステートを切り替えのためのバリアを生成
+	//中で張ってない
+	template<BufferUsage usage>
+	void CreateBarrier(IRenderTargetBuffer* buffer_);
 
-private:
+	//溜めたステート遷移のバリアを張る
+	void PitchBarrierCached(RuntimeWrapper& cmdWrapper_);
 
 	//RenderStateKeyから、Passとフィルモード以外のPSOキーの入力をする
 	//呼び出し回数が多いのでヘッダで定義しちゃいます
@@ -71,11 +103,6 @@ private:
 		//ブレンドモードキーはモデル依存
 		dst_.blend = renderStateKey_.Get<RenderStateKey::Sequence::kBlendMode>();
 	}
-
-	//バッファのステートを切り替えのためのバリアを生成
-	//中で張ってない
-	template<BufferUsage usage>
-	D3D12_RESOURCE_BARRIER CreateBarrier(IRenderTargetBuffer* buffer_);
 
 	//Passのルートコンスタンツを転送
 	void TransferRootConstants(RuntimeWrapper& cmdWrapper_);
@@ -174,5 +201,4 @@ D3D12_CPU_DESCRIPTOR_HANDLE RenderContext::PassBehavior::PullHandleCPU
 	DepthStencilBuffer* buffer_,
 	BufferContext::BufferDispatcher& bufDispatcher_
 );
-
 

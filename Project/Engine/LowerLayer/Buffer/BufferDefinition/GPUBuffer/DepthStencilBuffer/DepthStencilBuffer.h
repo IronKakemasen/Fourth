@@ -4,7 +4,7 @@
 
 
 //定数バッファクラス
-class DepthStencilBuffer final : public GPUBufferBehavior, public IDepthBuffer, IRenderTargetBuffer,IReadable
+class DepthStencilBuffer final : public GPUBufferBehavior, public IDepthBuffer, public IRenderTargetBuffer,IReadable
 {
 
 public:

@@ -9,6 +9,7 @@
 #include "../../../Buffer/BufferRuntime/BufferDispatcher/BufferDispatcher.h"
 #include "../../../Buffer/BufferDefinition/GPUBuffer/ColorBuffer/ColorBuffer.h"
 #include "../../../Buffer/BufferDefinition/GPUBuffer/DepthStencilBuffer/DepthStencilBuffer.h"
+
 #include "../../../Core/Command/RuntimeWrapper/RuntimeWrapper.h"
 
 #include "../../../Resource/Model/ModelStructure/Model.h"
@@ -18,7 +19,7 @@
 RenderContext::PassBehavior::PassBehavior(NexusFieldProof proof_, std::unique_ptr<PassDesc>&& desc_)
 	:desc(std::move(desc_))
 {
-	
+	barrierCache.reserve(kBarrierCacheCapacity);
 }
 
 using namespace RenderStateComponent;
@@ -36,11 +37,20 @@ RenderContext::PassDesc const* RenderContext::PassBehavior::WatchDesc() const
 void RenderContext::PassBehavior::CreatePassInfo
 (
 	NexusFieldProof proof_,
-	std::unordered_map<std::string, BufferUniqueID> const& idMap_,
+	std::vector<BufferUniqueID> const& refColorBuffersID_,
+	std::vector<BufferUniqueID> const& refDepthStencilBuffersID_,
 	UINT const refOffset_
 ) 
 {
-	runtimePassInfo.reset(new RuntimePassInfo(proof_, std::move(desc), idMap_, refOffset_));
+	runtimePassInfo.reset(new RuntimePassInfo(proof_, std::move(desc), refColorBuffersID_, refDepthStencilBuffersID_,refOffset_));
+}
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+void RenderContext::PassBehavior::PitchBarrierCached(RuntimeWrapper& cmdWrapper_)
+{
+	cmdWrapper_.ResourceBarrier((UINT)barrierCache.size(), barrierCache.data());
+	barrierCache.clear();
 }
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -63,14 +73,20 @@ void RenderContext::PassBehavior::BeginPass(RuntimeWrapper& cmdWrapper_, BufferC
 
 		//バッファ検索
 		ColorBuffer* colorBuffer = FindBufferWithID<ColorBuffer>(src.bufferID, bufDispatcher_);
-		
+
 		//パラメーターかき集め
 		rtHandles[i] = PullHandleCPU<ColorBuffer>(colorBuffer, bufDispatcher_);
 		scissorRects[i] = src.scissorRect;
 		viewports[i] = src.viewport;
 
+		//カラーバッファの状態をレンダーターゲットにするためにバリアを生成
+		//Read -> Writeへ
+		CreateBarrier<BufferUsage::kRead>(colorBuffer);
+
 		//ビュークリア
 		ClearColorBufferView(rtHandles[i], src.clearColor.data(), cmdWrapper_);
+
+
 	}
 
 	//深度ステンシルバッファ
@@ -82,8 +98,15 @@ void RenderContext::PassBehavior::BeginPass(RuntimeWrapper& cmdWrapper_, BufferC
 		//ハンドル取得
 		D3D12_CPU_DESCRIPTOR_HANDLE dsvHandle = PullHandleCPU<DepthStencilBuffer>(depthStencilBuffer, bufDispatcher_);
 		
+		//状態をレンダーターゲットにするためにバリアを生成
+		//Read -> Writeへ
+		CreateBarrier<BufferUsage::kRead>(depthStencilBuffer);
+
 		//ビュークリア
 		ClearDepthStencilBufferView(dsvHandle, cmdWrapper_);
+
+		//キャッシュされたバリアを張る
+		PitchBarrierCached(cmdWrapper_);
 
 		//描画先の設定
 		SetRenderTargets(rtHandles, numColorBuffers, &dsvHandle, cmdWrapper_);
@@ -91,6 +114,9 @@ void RenderContext::PassBehavior::BeginPass(RuntimeWrapper& cmdWrapper_, BufferC
 	//無ければ
 	else
 	{
+		//キャッシュされたバリアを張る
+		PitchBarrierCached(cmdWrapper_);
+
 		//描画先の設定
 		SetRenderTargets(rtHandles, numColorBuffers, nullptr, cmdWrapper_);
 	}
@@ -102,7 +128,31 @@ void RenderContext::PassBehavior::BeginPass(RuntimeWrapper& cmdWrapper_, BufferC
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-void RenderContext::PassBehavior::DrawModels
+void RenderContext::PassBehavior::RenderOffScreen
+(
+	PSO_PoolDispatcher& psoDispatcher_, 
+	RuntimeWrapper& cmdWrapper_,
+	BufferContext::BufferDispatcher& bufDispatcher_
+)
+{
+	////参照先のバッファID
+	//auto const& refBuffersID = runtimePassInfo->WatchReferenceBufferIDs();
+
+	////すでに描画先の設定は終わっているので、全ての参照バッファのステートを遷移させる
+	//for (auto const& name_id : refBuffersID)
+	//{
+
+	//	//バッファ検索
+	//	ColorBuffer* colorBuffer = FindBufferWithID<ColorBuffer>(name_id.second, bufDispatcher_);
+
+	//}
+
+
+}
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+void RenderContext::PassBehavior::RenderModels
 (
 	std::unordered_map<uint32_t, std::pair<RenderStateKey, std::vector<Model*>>> const& modelContainer_,
 	RenderStateComponent::FillMode const fillMode_,
@@ -282,19 +332,14 @@ void RenderContext::PassBehavior::SetMatrix<D3D12_RECT>
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-template<>
-D3D12_RESOURCE_BARRIER RenderContext::PassBehavior::CreateBarrier<BufferUsage::kRead>(IRenderTargetBuffer* buffer_)
+template<BufferUsage usage>
+void RenderContext::PassBehavior::CreateBarrier(IRenderTargetBuffer* buffer_)
 {
-	return buffer_->CreateBarrier(BufferUsage::kRead);
+	barrierCache.emplace_back(buffer_->CreateBarrier(usage));
 }
 
-template<>
-D3D12_RESOURCE_BARRIER RenderContext::PassBehavior::CreateBarrier<BufferUsage::kWrite>(IRenderTargetBuffer* buffer_)
-{
-	return buffer_->CreateBarrier(BufferUsage::kWrite);
-}
 
 template
-D3D12_RESOURCE_BARRIER RenderContext::PassBehavior::CreateBarrier<BufferUsage::kRead>(IRenderTargetBuffer* buffer_);
+void RenderContext::PassBehavior::CreateBarrier<BufferUsage::kRead>(IRenderTargetBuffer* buffer_);
 template
-D3D12_RESOURCE_BARRIER RenderContext::PassBehavior::CreateBarrier<BufferUsage::kWrite>(IRenderTargetBuffer* buffer_);
+void RenderContext::PassBehavior::CreateBarrier<BufferUsage::kWrite>(IRenderTargetBuffer* buffer_);

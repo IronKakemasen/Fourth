@@ -6,6 +6,8 @@
 //外部
 #include "../../../../../Assets/Shared/ConstantBuffers.h"
 
+class ColorBuffer;
+class DepthStencilBuffer;
 
 struct RenderContext::RuntimePassInfo
 {
@@ -13,7 +15,8 @@ struct RenderContext::RuntimePassInfo
 	(
 		NexusFieldProof proof_,
 		std::unique_ptr<PassDesc> desc_,
-		std::unordered_map<std::string, BufferUniqueID> const& idMap_,
+		std::vector<BufferUniqueID> const& refColorBuffersID_,
+		std::vector<BufferUniqueID> const& refDepthStencilBuffersID_,
 		UINT const refOffset_
 	);
 
@@ -37,8 +40,13 @@ struct RenderContext::RuntimePassInfo
 	auto const& WatchPass() const { return pass; }
 	auto const& WatchColorBuffersInfo() const { return colorBuffersInfo; }
 	auto const& WatchDepthStencilBufferInfo() const { return depthStencilBufferInfo; }
-	auto const& WatchReferenceBufferIDs() const { return referenceBufferIDMap; }
 	auto const& WatchRootConstants() const { return rootConstants; }
+	template<typename BufferType>
+	std::vector<BufferUniqueID> const& WatchReferenceBufferIDs() const 
+	{
+		if constexpr (std::is_same_v<BufferType, ColorBuffer>) return refColorBuffersID;
+		else if constexpr (std::is_same_v<BufferType, DepthStencilBuffer>) return depthStencilBufferInfo;
+	}
 
 private:
 
@@ -48,7 +56,11 @@ private:
 	std::optional<DepthStencilBuffer> depthStencilBufferInfo;
 	
 	//こいつらは別機関から情報を埋めてもらう
-	std::unordered_map<std::string, BufferUniqueID> referenceBufferIDMap;
+	//参照するカラーバッファのID群
+	std::vector<BufferUniqueID> refColorBuffersID;
+	//その深度ステンシルバッファバージョン
+	std::vector<BufferUniqueID> refDepthStencilBuffersID;
+
 	ConstantBuffers::PassBufferIndexRangeCPUGPU rootConstants;
 
 	//PassDescからランタイムに必要な情報をピックする
@@ -57,7 +69,8 @@ private:
 	//その他、PassDesc以外の情報を入力
 	void InputOtherParams
 	(
-		std::unordered_map<std::string, BufferUniqueID> const& idMap_,
+		std::vector<BufferUniqueID> const& refColorBuffersID_,
+		std::vector<BufferUniqueID> const& refDepthStencilBuffersID_,
 		UINT const refOffset_
 	);
 

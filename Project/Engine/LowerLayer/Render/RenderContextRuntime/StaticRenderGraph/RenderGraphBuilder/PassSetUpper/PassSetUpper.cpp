@@ -29,10 +29,9 @@ namespace
 )
 {
 
-	std::vector<BufferUniqueID> allRefBuffer = CreateAllPassInfo(proof_, renderPassCreator_, passContainer_);
+	std::vector<BufferUniqueID> allRefBuffer = CreateAllPassInfo(proof_, renderPassCreator_, passContainer_, bufferContextDiplomat_);
 
-	BufferUniqueID refBufSrvArrayBufferID =  
-		CreateReferenceBufferSrvArray(proof_,allRefBuffer,bufferContextDiplomat_);
+	BufferUniqueID refBufSrvArrayBufferID = CreateReferenceBufferSrvArray(proof_,allRefBuffer,bufferContextDiplomat_);
 
 	CreatePassRootConstantsBuffer(proof_, bufferContextDiplomat_);
 
@@ -43,7 +42,8 @@ std::vector<BufferUniqueID> RenderContext::StaticRenderGraph::PassSetUpper::Crea
 (
 	NexusFieldProof proof_,
 	RenderPassCreator& renderPassCreator_,
-	RenderPassContainer& passContainer_
+	RenderPassContainer& passContainer_,
+	BufferContextDiplomat& bufferContextDiplomat_
 )
 {
 	//全てのPassが入ってるコンテナ
@@ -56,7 +56,14 @@ std::vector<BufferUniqueID> RenderContext::StaticRenderGraph::PassSetUpper::Crea
 	//デバッグ用
 	std::vector<std::string > allRefBufferNames;
 
-	//パス自身がどのバッファを使用するかの名前リストを所持しているので、それと組み合わせて埋めていく
+	//bufferDispatcherを借りる
+	auto toolLender = bufferContextDiplomat_.Access<BufferContext::ToolLender>();
+	BufferContext::ToolLender::LicenceType<BufferContext::BufferDispatcher> licenceTool;
+	auto* bufferDispatcher = toolLender->Lend<BufferContext::BufferDispatcher>(licenceTool);
+
+
+
+	//パスDescがどのバッファを使用するかの名前リストを所持しているので、それと組み合わせて埋めていく
 	for (auto const& [kPassEnum, pass]: allPassPtrMap)
 	{
 		PassDesc const& desc = *pass->WatchDesc();
@@ -66,23 +73,37 @@ std::vector<BufferUniqueID> RenderContext::StaticRenderGraph::PassSetUpper::Crea
 		//普通にallRefBufferUniquesのけつ番目でいいはず
 		UINT const refOffset = UINT(allRefBufferUniques.size());
 
-		//参照するバッファ一覧で回す
+		//そのパスが参照するバッファ一覧で回す
 		std::vector<std::string> const& refBufferNames = desc.referenceBufferNames;
-		std::unordered_map<std::string, BufferUniqueID> idMap;
+		//Passの参照先ばっふぁID格納用
+		std::vector<BufferUniqueID> refColorBuffersID;
+		std::vector<BufferUniqueID> refDepthStencilBuffersID;
 
 		for (auto const& refBufferName : refBufferNames)
 		{
 			//参照するバッファID
+			//passCreatorが所持するidキャッシュから名前で引く
 			BufferUniqueID refID = passBufferCache.at(refBufferName);
 
-			idMap[refBufferName] = refID;
+			//ここで参照先IDの指すバッファがカラーバッファなのか、深度バッファなのかで仕訳ける
+			auto* buffer = bufferDispatcher->Dispatch(refID);
+
+			if (dynamic_cast<ColorBuffer*>(buffer))
+			{
+				refColorBuffersID.emplace_back(refID);
+			}
+			else
+			{
+				refDepthStencilBuffersID.emplace_back(refID);
+			}
+
 			allRefBufferUniques.emplace_back(refID);
 			allRefBufferNames.emplace_back(refBufferName);
 			
 		}
 
 		///PassDesc -> RuntimePassInfoに詰め変える
-		pass->CreatePassInfo(proof_, idMap, refOffset);
+		pass->CreatePassInfo(proof_, refColorBuffersID , refDepthStencilBuffersID, refOffset);
 		
 	}
 

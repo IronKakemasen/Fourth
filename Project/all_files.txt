@@ -344,6 +344,16 @@ namespace BufferContextCmds
 }
 
 ========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Buffer\BufferContextDiplomats.h ===
+========================================
+#pragma once
+#include "BufferContextDiplomat/BufferContextDiplomat.h"
+#include "BufferContextDiplomat/BufferContextCmdProvider/BufferContextCmdProvider.h"
+#include "BufferContextDiplomat/BufferContextCmdProvider/BufferContextCmdProviderLicences.h"
+#include "BufferContextDiplomat/BufferToolLender/BufferToolLender.h"
+#include "BufferContextDiplomat/BufferToolLender/BufferToolLenderLicence.h"
+
+========================================
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Buffer\BufferContextToolsInclude.h ===
 ========================================
 #pragma once
@@ -351,6 +361,7 @@ namespace BufferContextCmds
 #include "GlobalConstantBuffers/GlobalConstantBufferCreator/GlobalConstantBufferCreator.h"
 #include "BufferCreateTools/BufferCreator.h"
 #include "BufferCreateTools/BufferUploader/BufferUploader.h"
+#include "BufferRuntime/BufferDispatcher/BufferDispatcher.h"
 
 ========================================
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Buffer\BufferContextDiplomat\BufferContextDiplomat.cpp ===
@@ -1574,9 +1585,6 @@ BufferContext::BufferAssembler::ResourceContainer BufferContext::BufferAssembler
 }
 std::pair<D3D12_RESOURCE_DESC, D3D12_HEAP_PROPERTIES> BufferContext::BufferAssembler::ResourceAssembler::CreateRequirements(const BufferDescriptionBehavior& desc_)
 {
-    //要項チェック
-    desc_.CheckRequirementsFilled();
-    Logger::Log("Check: RequirementsFilled", fileName);
     D3D12_HEAP_PROPERTIES heapProp = desc_.CreateHeapProperties();
     D3D12_RESOURCE_DESC resourceDesc = desc_.CreateResourceDesc();
     return std::make_pair(resourceDesc, heapProp);
@@ -2851,11 +2859,6 @@ BufferDescriptionBehavior::BufferDescriptionBehavior
 	ProjectConfig::Render::NumBuffer numBuffer_ 
 ):initialState(initialState_), numBuffer(numBuffer_)
 {
-	ErrorMessageOutput::Assert::DetectError
-	(
-		(initialState != D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_Error_Detection),
-		"リソースステートが初期化されていない", "BufferDescriptionBehavior.cpp"
-	);
 };
 
 ========================================
@@ -2868,6 +2871,8 @@ BufferDescriptionBehavior::BufferDescriptionBehavior
 //Colorバッファ
 //コンピュートバッファ
 //深度ステンシル
+//テクスチャバッファ
+//ストラクチャードバッファ 
 //＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝
 //バッファのディスクリプション共通
 struct BufferDescriptionBehavior
@@ -2879,7 +2884,6 @@ public:
 		ProjectConfig::Render::NumBuffer numBuffer_ = ProjectConfig::Render::NumBuffer::kSingleBuffer
 	);
 	BufferDescriptionBehavior() = default;
-	virtual void CheckRequirementsFilled() const = 0;
 	virtual D3D12_RESOURCE_DESC CreateResourceDesc()const = 0;
 	virtual D3D12_HEAP_PROPERTIES CreateHeapProperties()const = 0;
 	D3D12_RESOURCE_STATES initialState;
@@ -2926,15 +2930,6 @@ ColorBufferDescription::ColorBufferDescription
 	param.width = width_;
 	param.height = height_;
 	param.format = format_;
-}
-void ColorBufferDescription::CheckRequirementsFilled() const
-{
-	std::string errorMess{};
-	if (param.width == 0)errorMess += "[width]";
-	if (param.height == 0)errorMess += "[height]";
-	if (param.format == DXGI_FORMAT_Error_Detection) errorMess += "[format]";
-	if (param.clearColor.size()!= 4)errorMess += "[color]";
-	ErrorMessageOutput::Assert::DetectError((errorMess.length() == 0), errorMess + "の情報が未設定です", "ColorBufferDescription.cpp");
 }
 D3D12_HEAP_PROPERTIES ColorBufferDescription::CreateHeapProperties()const
 {
@@ -3007,7 +3002,7 @@ private:
 		std::vector<float> clearColor;
 		UINT width{};
 		UINT height{};
-		DXGI_FORMAT format = DXGI_FORMAT_Error_Detection;
+		DXGI_FORMAT format;
 	}param;
 public:
 	ColorBufferDescription() = default;
@@ -3019,8 +3014,6 @@ public:
 		DXGI_FORMAT format_,
 		ProjectConfig::Render::NumBuffer numBuffer_ = ProjectConfig::Render::NumBuffer::kSingleBuffer
 	);
-	//要項チェック
-	virtual void CheckRequirementsFilled() const override;
 	//リソースディスクの生成
 	virtual D3D12_RESOURCE_DESC CreateResourceDesc()const override;
 	//ヒーププロパティの生成
@@ -3053,15 +3046,6 @@ ComputeBufferDescription::ComputeBufferDescription
 	param.numElements = numElements_;
 	param.firstElement = firstElement_;
 	param.uavCounterOffsetInBytes = uavCounterOffsetInBytes_;
-}
-void ComputeBufferDescription::CheckRequirementsFilled() const
-{
-	std::string errorMess{};
-	if (param.structureByte == 0)errorMess += "[structureByte]";
-	if (param.numElements == 0)errorMess += "[numElements]";
-	if (param.firstElement == -1) errorMess += "[firstElement]";
-	if (param.uavCounterOffsetInBytes == -1) errorMess += "[uavCounterOffsetInBytes]";
-	ErrorMessageOutput::Assert::DetectError((errorMess.length() == 0), errorMess + "の情報が未設定です", "ComputeBufferDescription.cpp");
 }
 D3D12_RESOURCE_DESC ComputeBufferDescription::CreateResourceDesc()const
 {
@@ -3131,8 +3115,6 @@ public:
 		UINT firstElement_,
 		uint64_t uavCounterOffsetInBytes_
 	);
-	//パラーメーターチェック
-	virtual void CheckRequirementsFilled() const override;
 	//リソースディスクの生成
 	virtual D3D12_RESOURCE_DESC CreateResourceDesc()const override;
 	//ヒーププロパティの生成
@@ -3153,12 +3135,6 @@ ConstantBufferDescription::ConstantBufferDescription
 ) :BufferDescriptionBehavior(D3D12_RESOURCE_STATE_GENERIC_READ, ProjectConfig::Render::NumBuffer::kDoubleBuffer)
 {
 	param.sizeInByte = (sizeInByte_ + 255) & ~255;
-}
-void ConstantBufferDescription::CheckRequirementsFilled() const
-{
-	std::string errorMess{};
-	if (param.sizeInByte == 0) errorMess += "[sizeInByte]";
-	ErrorMessageOutput::Assert::DetectError((errorMess.length() == 0), errorMess + "の情報が未設定です","ConstantBufferDescription.cpp");
 }
 D3D12_RESOURCE_DESC ConstantBufferDescription::CreateResourceDesc()const
 {
@@ -3197,8 +3173,6 @@ public:
 	(
 		UINT sizeInByte_
 	);
-	//パラーメーターチェック
-	virtual void CheckRequirementsFilled() const override;
 	//ヒーププロパティの生成
 	virtual D3D12_HEAP_PROPERTIES CreateHeapProperties()const override;
 	//リソースディスクの生成
@@ -3230,16 +3204,6 @@ DepthStencilBufferDescription::DepthStencilBufferDescription
 	param.clearStencil = clearStencil_;
 	param.dsvFormat = dsvFormat_;
 	param.srvFormat = srvFormat_;
-}
-void DepthStencilBufferDescription::CheckRequirementsFilled() const
-{
-	std::string errorMess{};
-	if (param.width == 0)errorMess += "[width]";
-	if (param.height == 0)errorMess += "[height]";
-	if (param.srvFormat == DXGI_FORMAT_Error_Detection) errorMess += "[SRVformat]";
-	if (param.dsvFormat == DXGI_FORMAT_Error_Detection) errorMess += "[DSVformat]";
-	if ((param.clearDepth != 1.0f) && (param.clearDepth != 0.0f)) errorMess += "[clearColor]";
-	ErrorMessageOutput::Assert::DetectError((errorMess.length() == 0), errorMess + "の情報が未設定です", "DepthStencilBufferDescription.cpp");
 }
 D3D12_SHADER_RESOURCE_VIEW_DESC DepthStencilBufferDescription::CreateSRV_Desc()const
 {
@@ -3327,8 +3291,8 @@ private:
 		UINT height{};
 		FLOAT clearDepth = -1.0f;
 		UINT8  clearStencil = 0;
-		DXGI_FORMAT dsvFormat = DXGI_FORMAT::DXGI_FORMAT_Error_Detection;
-		DXGI_FORMAT srvFormat = DXGI_FORMAT::DXGI_FORMAT_Error_Detection;
+		DXGI_FORMAT dsvFormat;
+		DXGI_FORMAT srvFormat;
 	}param;
 public:
 	DepthStencilBufferDescription
@@ -3341,8 +3305,6 @@ public:
 		DXGI_FORMAT srvFormat_,
 		ProjectConfig::Render::NumBuffer numBuffer_ = ProjectConfig::Render::NumBuffer::kSingleBuffer
 	);
-	//要項チェック
-	virtual void CheckRequirementsFilled() const override;
 	//リソースディスクの生成
 	virtual D3D12_RESOURCE_DESC CreateResourceDesc()const override;
 	//ヒーププロパティの生成
@@ -3380,15 +3342,6 @@ StaticStructuredBufferDescription::StaticStructuredBufferDescription
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//パラーメーターチェック
-void StaticStructuredBufferDescription::CheckRequirementsFilled() const
-{
-	std::string errorMess{};
-	if (param.structureByte == 0)errorMess += "[structureByte]";
-	if (param.numElements == 0)errorMess += "[numElements]";
-	if (param.firstElement == -1) errorMess += "[firstElement]";
-	ErrorMessageOutput::Assert::DetectError((errorMess.length() == 0), errorMess + "の情報が未設定です", "StaticStructuredBufferDescription.cpp");
-}
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -3457,8 +3410,6 @@ public:
 		UINT numElements_,
 		UINT firstElement_
 	);
-	//パラーメーターチェック
-	virtual void CheckRequirementsFilled() const override;
 	//リソースディスクの生成
 	virtual D3D12_RESOURCE_DESC CreateResourceDesc()const override;
 	//ヒーププロパティの生成
@@ -3487,10 +3438,6 @@ Texture2DBufferDescription::Texture2DBufferDescription
     //メタデータから必要情報を抽出
     auto const& metaData = scratchImage_.GetMetadata();
     ExtractParams(metaData);
-}
-//パラーメーターチェック
-void Texture2DBufferDescription::CheckRequirementsFilled() const
-{
 }
 //リソースディスクの生成
 D3D12_RESOURCE_DESC Texture2DBufferDescription::CreateResourceDesc()const
@@ -3600,8 +3547,6 @@ public:
 		DirectX::ScratchImage& scratchImage_,
 		Texture2DState texture2DState_
 	);
-	//パラーメーターチェック
-	virtual void CheckRequirementsFilled() const override;
 	//リソースディスクの生成
 	virtual D3D12_RESOURCE_DESC CreateResourceDesc()const override;
 	//ヒーププロパティの生成
@@ -3635,18 +3580,6 @@ UploadStructuredBufferDescription::UploadStructuredBufferDescription
 	param.structureByte = structureByte_;
 	param.numElements = numElements_;
 	param.firstElement = firstElement_;
-}
-///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//パラーメーターチェック
-void UploadStructuredBufferDescription::CheckRequirementsFilled() const
-{
-	std::string errorMess{};
-	if (param.structureByte == 0)errorMess += "[structureByte]";
-	if (param.numElements == 0)errorMess += "[numElements]";
-	if (param.firstElement == -1) errorMess += "[firstElement]";
-	ErrorMessageOutput::Assert::DetectError((errorMess.length() == 0), errorMess + "の情報が未設定です", "UploadStructuredBufferDescription.cpp");
 }
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -3716,8 +3649,6 @@ public:
 		UINT numElements_,
 		UINT firstElement_
 	);
-	//パラーメーターチェック
-	virtual void CheckRequirementsFilled() const override;
 	//リソースディスクの生成
 	virtual D3D12_RESOURCE_DESC CreateResourceDesc()const override;
 	//ヒーププロパティの生成
@@ -4398,7 +4329,7 @@ SRVHeapIndex DepthStencilBuffer::OutProperSRVHeapIndex(int frameIndex_)const
 #include "../GPUBufferBehavior.h"
 #include "../BufferInterface.h"
 //定数バッファクラス
-class DepthStencilBuffer final : public GPUBufferBehavior, public IDepthBuffer, IRenderTargetBuffer,IReadable
+class DepthStencilBuffer final : public GPUBufferBehavior, public IDepthBuffer, public IRenderTargetBuffer,IReadable
 {
 public:
 	DepthStencilBuffer
@@ -8264,7 +8195,7 @@ struct SwapChainContext::Description
 	D3D12_RENDER_TARGET_VIEW_DESC CreateRTV_Desc()const;
 	DXGI_SWAP_CHAIN_DESC1 CreateSwapChainDesc()const;
 	std::array<float, 4> clearColor = { 9,9,9,9 };
-	DXGI_FORMAT format = DXGI_FORMAT_Error_Detection;
+	DXGI_FORMAT format;
 };
 //オンリーなバッファなので、抽象クラスを使わない
 class SwapChainContext::ColorBuffer
@@ -9093,8 +9024,6 @@ class RenderContext
 	class RenderPassContainer;
 	class RenderPathContainer;
 	class RenderPathAssembler;
-	//グラフィックス専用のpsoのプール、配布
-	class PSO_PoolDispatcher;
 public:
 	//renderPass生成機
 	class RenderPassCreator;
@@ -9110,6 +9039,8 @@ public:
 	struct RenderPassState;
 	//レンダーパス(Path)を設計し、描画コマンドを叩く強者
 	class StaticRenderGraph;
+	//グラフィックス専用のpsoのプール、ランタイムでの配布
+	class PSO_PoolDispatcher;
 	//ネクサスフィールドの証
 	struct NexusFieldProof;
 	RenderContext
@@ -9375,6 +9306,16 @@ size_t const RenderContext::PSO_PoolDispatcher::WatchPSO_Size()const
 {
 	return graphicsPSO_pool.size();
 }
+void RenderContext::PSO_PoolDispatcher::CheckOccupationRate()const
+{
+	float occupationRate = (float)graphicsPSO_pool.size() / float(kHashMapCapacity);
+	ErrorMessageOutput::Assert::DetectError
+	(
+		occupationRate < 0.75f,
+		"PSO生成数が4割未満じゃない: " + std::to_string(occupationRate * 100.0f),
+		fileName
+	);
+}
 
 ========================================
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Render\RenderContextRuntime\PSO_PoolDispatcher\PSO_PoolDispatcher.h ===
@@ -9424,6 +9365,8 @@ public:
 	);
 	//デバッグ用。PSO総数
 	size_t const WatchPSO_Size()const;
+	//キャパシティーが求める４割未満かどうかチェック
+	void CheckOccupationRate()const;
 private:
 	//PSOキーをuint32_tに詰める
 	std::unique_ptr<KeyPackager> keyPackager;
@@ -9432,7 +9375,7 @@ private:
 	///プール本体
 	std::vector<ID3D12PipelineState*> graphicsPSO_pool;
 	//closedHashMapのキャパ。想定されるPSOの数がキャパの4割位未満を目安
-	const uint32_t kHashMapCapacity = 2048;
+	const uint32_t kHashMapCapacity = 128;
 	//closedHashMapのビットレイアウトを定める
 	void DefinePackageLayout();
 };
@@ -9598,9 +9541,7 @@ private:
 #include "../../../../../Resource/Model/ModelStructure/ModelDescription/ModelDescription.h"
 #include "../../../../../Resource/Model/ModelContextDiplomatIncludes.h"
 #include "../../../../../Resource/Model/ModelStructure/Model.h"
-#include "../../../../../Resource/PSO/PSO_ContextDiplomat/PSO_ContextDiplomat.h"
-#include "../../../../../Resource/PSO/PSO_ContextDiplomat/PSO_ContextToolLender/PSO_ContextToolLender.h"
-#include "../../../../../Resource/PSO/PSO_ContextDiplomat/PSO_ContextToolLender/PSO_ContextToolLenderLicences.h"
+#include "../../../../../Resource/PSO/PSO_ContextDiplomats.h"
 #include "../../../../../Resource/PSO/PSO_Creator/PSO_Creator.h"
 #include "../../../../../Resource/Shader/ShaderContextDiplomatIncludes.h"
 #include "../../../../../Resource/Shader/ShaderLibrary/ShaderLibrary.h"
@@ -9674,6 +9615,8 @@ void RenderContext::StaticRenderGraph::PSO_Builder::CreateAllPSO
 		"Desc作成数 = pso数 + duplicatedCnt じゃない",
 		fileName
 	);
+	//PSOの生成占有率をチェック
+	psoDispatcher_.CheckOccupationRate();
 	Logger::Log("\nnumPso(" + std::to_string(psoDispatcher_.WatchPSO_Size()) + ") = numPsoDescs(" + std::to_string(allDesc_.size()) + ") - duplicatedCnt(" + std::to_string(duplicatedCnt) + ")");
 }
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -10104,11 +10047,7 @@ private:
 //外部
 #include "../../../../../Buffer/BufferContextToolsInclude.h"
 #include "../../../../../Buffer/BufferContextCmds.h"
-#include "../../../../../Buffer/BufferContextDiplomat/BufferContextDiplomat.h"
-#include "../../../../../Buffer/BufferContextDiplomat/BufferContextCmdProvider/BufferContextCmdProvider.h"
-#include "../../../../../Buffer/BufferContextDiplomat/BufferContextCmdProvider/BufferContextCmdProviderLicences.h"
-#include "../../../../../Buffer/BufferContextDiplomat/BufferToolLender/BufferToolLender.h"
-#include "../../../../../Buffer/BufferContextDiplomat/BufferToolLender/BufferToolLenderLicence.h"
+#include "../../../../../Buffer/BufferContextDiplomats.h"
 #include "../../../../../Buffer/BufferDefinition/AllBuffersInclude.h"
 #include "../../../../../Buffer/BufferDefinition/AllBufferDescsInclude.h"
 #include "../../../../../../../Assets/Shared/ConstantBuffers.h"
@@ -10125,9 +10064,8 @@ namespace
 	BufferContextDiplomat& bufferContextDiplomat_
 )
 {
-	std::vector<BufferUniqueID> allRefBuffer = CreateAllPassInfo(proof_, renderPassCreator_, passContainer_);
-	BufferUniqueID refBufSrvArrayBufferID =  
-		CreateReferenceBufferSrvArray(proof_,allRefBuffer,bufferContextDiplomat_);
+	std::vector<BufferUniqueID> allRefBuffer = CreateAllPassInfo(proof_, renderPassCreator_, passContainer_, bufferContextDiplomat_);
+	BufferUniqueID refBufSrvArrayBufferID = CreateReferenceBufferSrvArray(proof_,allRefBuffer,bufferContextDiplomat_);
 	CreatePassRootConstantsBuffer(proof_, bufferContextDiplomat_);
 	return refBufSrvArrayBufferID;
 }
@@ -10135,7 +10073,8 @@ std::vector<BufferUniqueID> RenderContext::StaticRenderGraph::PassSetUpper::Crea
 (
 	NexusFieldProof proof_,
 	RenderPassCreator& renderPassCreator_,
-	RenderPassContainer& passContainer_
+	RenderPassContainer& passContainer_,
+	BufferContextDiplomat& bufferContextDiplomat_
 )
 {
 	//全てのPassが入ってるコンテナ
@@ -10146,7 +10085,11 @@ std::vector<BufferUniqueID> RenderContext::StaticRenderGraph::PassSetUpper::Crea
 	std::vector<BufferUniqueID> allRefBufferUniques;
 	//デバッグ用
 	std::vector<std::string > allRefBufferNames;
-	//パス自身がどのバッファを使用するかの名前リストを所持しているので、それと組み合わせて埋めていく
+	//bufferDispatcherを借りる
+	auto toolLender = bufferContextDiplomat_.Access<BufferContext::ToolLender>();
+	BufferContext::ToolLender::LicenceType<BufferContext::BufferDispatcher> licenceTool;
+	auto* bufferDispatcher = toolLender->Lend<BufferContext::BufferDispatcher>(licenceTool);
+	//パスDescがどのバッファを使用するかの名前リストを所持しているので、それと組み合わせて埋めていく
 	for (auto const& [kPassEnum, pass]: allPassPtrMap)
 	{
 		PassDesc const& desc = *pass->WatchDesc();
@@ -10154,19 +10097,31 @@ std::vector<BufferUniqueID> RenderContext::StaticRenderGraph::PassSetUpper::Crea
 		//そのパスがバッファ配列の何番目を参照するか、であるPassBufferIndexRangeCPUGPUのoffset
 		//普通にallRefBufferUniquesのけつ番目でいいはず
 		UINT const refOffset = UINT(allRefBufferUniques.size());
-		//参照するバッファ一覧で回す
+		//そのパスが参照するバッファ一覧で回す
 		std::vector<std::string> const& refBufferNames = desc.referenceBufferNames;
-		std::unordered_map<std::string, BufferUniqueID> idMap;
+		//Passの参照先ばっふぁID格納用
+		std::vector<BufferUniqueID> refColorBuffersID;
+		std::vector<BufferUniqueID> refDepthStencilBuffersID;
 		for (auto const& refBufferName : refBufferNames)
 		{
 			//参照するバッファID
+			//passCreatorが所持するidキャッシュから名前で引く
 			BufferUniqueID refID = passBufferCache.at(refBufferName);
-			idMap[refBufferName] = refID;
+			//ここで参照先IDの指すバッファがカラーバッファなのか、深度バッファなのかで仕訳ける
+			auto* buffer = bufferDispatcher->Dispatch(refID);
+			if (dynamic_cast<ColorBuffer*>(buffer))
+			{
+				refColorBuffersID.emplace_back(refID);
+			}
+			else
+			{
+				refDepthStencilBuffersID.emplace_back(refID);
+			}
 			allRefBufferUniques.emplace_back(refID);
 			allRefBufferNames.emplace_back(refBufferName);
 		}
 		///PassDesc -> RuntimePassInfoに詰め変える
-		pass->CreatePassInfo(proof_, idMap, refOffset);
+		pass->CreatePassInfo(proof_, refColorBuffersID , refDepthStencilBuffersID, refOffset);
 	}
 	//デバッグ表記
 #ifdef  _DEBUG
@@ -10250,7 +10205,8 @@ private:
 	(
 		NexusFieldProof proof_,
 		RenderPassCreator& renderPassCreator_,
-		RenderPassContainer& passContainer_
+		RenderPassContainer& passContainer_,
+		BufferContextDiplomat& bufferContextDiplomat_
 	);
 	///各パスが参照するバッファのsrvHeapIndexを配列したもののバッファ、そしてそのsrvHeapIndexの定数バッファを作成
 	//ReferenceBufferSrvArrayバッファのバッファインデックスを返す
@@ -10596,6 +10552,7 @@ using AllPassUnique = std::tuple
 RenderContext::PassBehavior::PassBehavior(NexusFieldProof proof_, std::unique_ptr<PassDesc>&& desc_)
 	:desc(std::move(desc_))
 {
+	barrierCache.reserve(kBarrierCacheCapacity);
 }
 using namespace RenderStateComponent;
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -10611,11 +10568,20 @@ RenderContext::PassDesc const* RenderContext::PassBehavior::WatchDesc() const
 void RenderContext::PassBehavior::CreatePassInfo
 (
 	NexusFieldProof proof_,
-	std::unordered_map<std::string, BufferUniqueID> const& idMap_,
+	std::vector<BufferUniqueID> const& refColorBuffersID_,
+	std::vector<BufferUniqueID> const& refDepthStencilBuffersID_,
 	UINT const refOffset_
 ) 
 {
-	runtimePassInfo.reset(new RuntimePassInfo(proof_, std::move(desc), idMap_, refOffset_));
+	runtimePassInfo.reset(new RuntimePassInfo(proof_, std::move(desc), refColorBuffersID_, refDepthStencilBuffersID_,refOffset_));
+}
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+void RenderContext::PassBehavior::PitchBarrierCached(RuntimeWrapper& cmdWrapper_)
+{
+	cmdWrapper_.ResourceBarrier((UINT)barrierCache.size(), barrierCache.data());
+	barrierCache.clear();
 }
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -10638,6 +10604,9 @@ void RenderContext::PassBehavior::BeginPass(RuntimeWrapper& cmdWrapper_, BufferC
 		rtHandles[i] = PullHandleCPU<ColorBuffer>(colorBuffer, bufDispatcher_);
 		scissorRects[i] = src.scissorRect;
 		viewports[i] = src.viewport;
+		//カラーバッファの状態をレンダーターゲットにするためにバリアを生成
+		//Read -> Writeへ
+		CreateBarrier<BufferUsage::kRead>(colorBuffer);
 		//ビュークリア
 		ClearColorBufferView(rtHandles[i], src.clearColor.data(), cmdWrapper_);
 	}
@@ -10648,14 +10617,21 @@ void RenderContext::PassBehavior::BeginPass(RuntimeWrapper& cmdWrapper_, BufferC
 		auto* depthStencilBuffer = FindBufferWithID<DepthStencilBuffer>(DepthStencilBufferInfo->bufferID, bufDispatcher_);
 		//ハンドル取得
 		D3D12_CPU_DESCRIPTOR_HANDLE dsvHandle = PullHandleCPU<DepthStencilBuffer>(depthStencilBuffer, bufDispatcher_);
+		//状態をレンダーターゲットにするためにバリアを生成
+		//Read -> Writeへ
+		CreateBarrier<BufferUsage::kRead>(depthStencilBuffer);
 		//ビュークリア
 		ClearDepthStencilBufferView(dsvHandle, cmdWrapper_);
+		//キャッシュされたバリアを張る
+		PitchBarrierCached(cmdWrapper_);
 		//描画先の設定
 		SetRenderTargets(rtHandles, numColorBuffers, &dsvHandle, cmdWrapper_);
 	}
 	//無ければ
 	else
 	{
+		//キャッシュされたバリアを張る
+		PitchBarrierCached(cmdWrapper_);
 		//描画先の設定
 		SetRenderTargets(rtHandles, numColorBuffers, nullptr, cmdWrapper_);
 	}
@@ -10665,7 +10641,26 @@ void RenderContext::PassBehavior::BeginPass(RuntimeWrapper& cmdWrapper_, BufferC
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-void RenderContext::PassBehavior::DrawModels
+void RenderContext::PassBehavior::RenderOffScreen
+(
+	PSO_PoolDispatcher& psoDispatcher_, 
+	RuntimeWrapper& cmdWrapper_,
+	BufferContext::BufferDispatcher& bufDispatcher_
+)
+{
+	////参照先のバッファID
+	//auto const& refBuffersID = runtimePassInfo->WatchReferenceBufferIDs();
+	////すでに描画先の設定は終わっているので、全ての参照バッファのステートを遷移させる
+	//for (auto const& name_id : refBuffersID)
+	//{
+	//	//バッファ検索
+	//	ColorBuffer* colorBuffer = FindBufferWithID<ColorBuffer>(name_id.second, bufDispatcher_);
+	//}
+}
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+void RenderContext::PassBehavior::RenderModels
 (
 	std::unordered_map<uint32_t, std::pair<RenderStateKey, std::vector<Model*>>> const& modelContainer_,
 	RenderStateComponent::FillMode const fillMode_,
@@ -10832,28 +10827,21 @@ void RenderContext::PassBehavior::SetMatrix<D3D12_RECT>
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-template<>
-D3D12_RESOURCE_BARRIER RenderContext::PassBehavior::CreateBarrier<BufferUsage::kRead>(IRenderTargetBuffer* buffer_)
+template<BufferUsage usage>
+void RenderContext::PassBehavior::CreateBarrier(IRenderTargetBuffer* buffer_)
 {
-	return buffer_->CreateBarrier(BufferUsage::kRead);
-}
-template<>
-D3D12_RESOURCE_BARRIER RenderContext::PassBehavior::CreateBarrier<BufferUsage::kWrite>(IRenderTargetBuffer* buffer_)
-{
-	return buffer_->CreateBarrier(BufferUsage::kWrite);
+	barrierCache.emplace_back(buffer_->CreateBarrier(usage));
 }
 template
-D3D12_RESOURCE_BARRIER RenderContext::PassBehavior::CreateBarrier<BufferUsage::kRead>(IRenderTargetBuffer* buffer_);
+void RenderContext::PassBehavior::CreateBarrier<BufferUsage::kRead>(IRenderTargetBuffer* buffer_);
 template
-D3D12_RESOURCE_BARRIER RenderContext::PassBehavior::CreateBarrier<BufferUsage::kWrite>(IRenderTargetBuffer* buffer_);
+void RenderContext::PassBehavior::CreateBarrier<BufferUsage::kWrite>(IRenderTargetBuffer* buffer_);
 
 ========================================
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Render\RenderPass\AllRenderPass\RenderPassBehavior.h ===
 ========================================
 #pragma once
 #include "../../RenderContext.h"
-#include "../RenderPassComponent.h"
-#include "../../RenderStateComponent.h"
 #include "../../RenderContextRuntime/PSO_PoolDispatcher/GraphicsPSO_Key.h"
 //外部
 #include "../../../Buffer/BufferContext.h"
@@ -10864,6 +10852,12 @@ class Model;
 class ColorBuffer;
 class DepthStencilBuffer;
 class GPUBufferBehavior;
+///☆重要☆
+///バッファのステート遷移は、使う人(Pass)が責任を持つことにします。
+///自身の所持する描画用のバッファはもちろん、参照するバッファも
+///そうすれば、自身のバッファを誰がどう使うとかは気にしなくてよくなるので
+///銭湯でよく見る、座っていた人が次の人のためにお湯を掛けるのではなく、
+///これから座る人がお湯をかけましょう
 class RenderContext::PassBehavior
 {
 public:
@@ -10872,6 +10866,8 @@ public:
 	virtual void Update
 	(
 		[[maybe_unused]] std::unordered_map<uint32_t, std::pair<RenderStateKey, std::vector<Model*>>> const& modelContainer_,
+		[[maybe_unused]] RenderStateComponent::FillMode const modelFillMode_,
+		PSO_PoolDispatcher& psoDispatcher_,
 		RuntimeWrapper& cmdWrapper_,
 		BufferContext::BufferDispatcher& bufDispatcher_
 	) = 0;
@@ -10880,25 +10876,45 @@ public:
 	void CreatePassInfo
 	(
 		NexusFieldProof proof_,
-		std::unordered_map<std::string, BufferUniqueID> const& idMap_,
+		std::vector<BufferUniqueID> const& refColorBuffersID_,
+		std::vector<BufferUniqueID> const& refDepthStencilBuffersID_,
 		UINT const refOffset_
 	);
 	//レンダーターゲットのあれこれの描画コマンドをたたく
+	//自身の所持するバッファを全てレンダーターゲットへステート遷移
+	//Pass個人が呼ぶ必要はない
 	void BeginPass(RuntimeWrapper& cmdWrapper_, BufferContext::BufferDispatcher& bufDispatcher_);
+protected:
 	//モデルを描画する
-	void DrawModels
+	void RenderModels
 	(
 		std::unordered_map<uint32_t, std::pair<RenderStateKey, std::vector<Model*>>> const& modelContainer_,
 		RenderStateComponent::FillMode const fillMode_,
 		PSO_PoolDispatcher& psoDispatcher_,
 		RuntimeWrapper& cmdWrapper_
 	);
-protected:
+	//オフスクにレンダリングをする
+	void RenderOffScreen
+	(
+		PSO_PoolDispatcher& psoDispatcher_,
+		RuntimeWrapper& cmdWrapper_,
+		BufferContext::BufferDispatcher& bufDispatcher_
+	);
+private:
 	//Passの設計図
 	std::unique_ptr<PassDesc> desc;
 	//ランタイムで必要になるPassの情報をまとめたもの
 	std::unique_ptr<RuntimePassInfo> runtimePassInfo;
-private:
+	//バリアのキャッシュ
+	std::vector<D3D12_RESOURCE_BARRIER> barrierCache;
+	//とりあえず10確保しておこう
+	static constexpr UINT kBarrierCacheCapacity = 10;
+	//バッファのステートを切り替えのためのバリアを生成
+	//中で張ってない
+	template<BufferUsage usage>
+	void CreateBarrier(IRenderTargetBuffer* buffer_);
+	//溜めたステート遷移のバリアを張る
+	void PitchBarrierCached(RuntimeWrapper& cmdWrapper_);
 	//RenderStateKeyから、Passとフィルモード以外のPSOキーの入力をする
 	//呼び出し回数が多いのでヘッダで定義しちゃいます
 	void WritePsoKeyFromRenderStateKey(RenderStateKey const& renderStateKey_, GraphicsPSO_Key& dst_)
@@ -10909,10 +10925,6 @@ private:
 		//ブレンドモードキーはモデル依存
 		dst_.blend = renderStateKey_.Get<RenderStateKey::Sequence::kBlendMode>();
 	}
-	//バッファのステートを切り替えのためのバリアを生成
-	//中で張ってない
-	template<BufferUsage usage>
-	D3D12_RESOURCE_BARRIER CreateBarrier(IRenderTargetBuffer* buffer_);
 	//Passのルートコンスタンツを転送
 	void TransferRootConstants(RuntimeWrapper& cmdWrapper_);
 	//カラーバッファのビューをクリアする
@@ -11083,6 +11095,8 @@ SceneCompositor::SceneCompositor(RenderContext::NexusFieldProof proof_, std::uni
 void SceneCompositor::Update
 (
 	[[maybe_unused]] std::unordered_map<uint32_t, std::pair<RenderStateKey, std::vector<Model*>>> const& modelContainer_,
+	[[maybe_unused]] RenderStateComponent::FillMode const modelFillMode_,
+	RenderContext::PSO_PoolDispatcher& psoDispatcher_,
 	RuntimeWrapper& cmdWrapper_,
 	BufferContext::BufferDispatcher& bufDispatcher_
 )
@@ -11101,6 +11115,8 @@ public:
 	virtual void Update
 	(
 		[[maybe_unused]] std::unordered_map<uint32_t, std::pair<RenderStateKey, std::vector<Model*>>> const& modelContainer_,
+		[[maybe_unused]] RenderStateComponent::FillMode const modelFillMode_,
+		RenderContext::PSO_PoolDispatcher& psoDispatcher_,
 		RuntimeWrapper& cmdWrapper_,
 		BufferContext::BufferDispatcher& bufDispatcher_
 	)override;
@@ -11124,6 +11140,8 @@ SceneOpaque::SceneOpaque(RenderContext::NexusFieldProof proof_ , std::unique_ptr
 void SceneOpaque::Update
 (
 	[[maybe_unused]] std::unordered_map<uint32_t, std::pair<RenderStateKey, std::vector<Model*>>> const& modelContainer_,
+	[[maybe_unused]] RenderStateComponent::FillMode const modelFillMode_,
+	RenderContext::PSO_PoolDispatcher& psoDispatcher_,
 	RuntimeWrapper& cmdWrapper_,
 	BufferContext::BufferDispatcher& bufDispatcher_
 )
@@ -11142,6 +11160,8 @@ public:
 	virtual void Update
 	(
 		[[maybe_unused]] std::unordered_map<uint32_t, std::pair<RenderStateKey, std::vector<Model*>>> const& modelContainer_,
+		[[maybe_unused]] RenderStateComponent::FillMode const modelFillMode_,
+		RenderContext::PSO_PoolDispatcher& psoDispatcher_,
 		RuntimeWrapper& cmdWrapper_,
 		BufferContext::BufferDispatcher& bufDispatcher_
 	)override;
@@ -11751,7 +11771,8 @@ RenderContext::RuntimePassInfo::RuntimePassInfo
 (
 	NexusFieldProof proof_,
 	std::unique_ptr<PassDesc> desc_,
-	std::unordered_map<std::string, BufferUniqueID> const& idMap_,
+	std::vector<BufferUniqueID> const& refColorBuffersID_,
+	std::vector<BufferUniqueID> const& refDepthStencilBuffersID_,
 	UINT const refOffset_
 )
 {
@@ -11759,17 +11780,19 @@ RenderContext::RuntimePassInfo::RuntimePassInfo
 	//ここでPassDescのお役は終了
 	PickUpRuntimeRequirementsFromDesc(*desc_);
 	//その他情報を入力
-	InputOtherParams(idMap_, refOffset_);
+	InputOtherParams(refColorBuffersID_, refDepthStencilBuffersID_,refOffset_);
 }
 void RenderContext::RuntimePassInfo::InputOtherParams
 (
-	std::unordered_map<std::string, BufferUniqueID> const& idMap_,
+	std::vector<BufferUniqueID> const& refColorBuffersID_,
+	std::vector<BufferUniqueID> const& refDepthStencilBuffersID_,
 	UINT const refOffset_
 )
 {
-	referenceBufferIDMap = idMap_;
+	refColorBuffersID = refColorBuffersID_;
+	refDepthStencilBuffersID = refDepthStencilBuffersID_;
 	rootConstants.offset = refOffset_;
-	rootConstants.numTextureUse = UINT(idMap_.size());
+	rootConstants.numTextureUse = UINT(refColorBuffersID.size()+ refDepthStencilBuffersID.size());
 }
 void RenderContext::RuntimePassInfo::PickUpRuntimeRequirementsFromDesc(PassDesc const& desc_)
 {
@@ -11835,13 +11858,16 @@ D3D12_RECT RenderContext::RuntimePassInfo::AssembleMatrix(uint32_t width_, uint3
 #include "../../RenderStateComponent.h"
 //外部
 #include "../../../../../Assets/Shared/ConstantBuffers.h"
+class ColorBuffer;
+class DepthStencilBuffer;
 struct RenderContext::RuntimePassInfo
 {
 	RuntimePassInfo
 	(
 		NexusFieldProof proof_,
 		std::unique_ptr<PassDesc> desc_,
-		std::unordered_map<std::string, BufferUniqueID> const& idMap_,
+		std::vector<BufferUniqueID> const& refColorBuffersID_,
+		std::vector<BufferUniqueID> const& refDepthStencilBuffersID_,
 		UINT const refOffset_
 	);
 	struct ColorBuffer
@@ -11862,22 +11888,31 @@ struct RenderContext::RuntimePassInfo
 	auto const& WatchPass() const { return pass; }
 	auto const& WatchColorBuffersInfo() const { return colorBuffersInfo; }
 	auto const& WatchDepthStencilBufferInfo() const { return depthStencilBufferInfo; }
-	auto const& WatchReferenceBufferIDs() const { return referenceBufferIDMap; }
 	auto const& WatchRootConstants() const { return rootConstants; }
+	template<typename BufferType>
+	std::vector<BufferUniqueID> const& WatchReferenceBufferIDs() const 
+	{
+		if constexpr (std::is_same_v<BufferType, ColorBuffer>) return refColorBuffersID;
+		else if constexpr (std::is_same_v<BufferType, DepthStencilBuffer>) return depthStencilBufferInfo;
+	}
 private:
 	//Descから情報をピックする
 	RenderPassComponent::Pass pass;
 	std::vector<ColorBuffer> colorBuffersInfo;
 	std::optional<DepthStencilBuffer> depthStencilBufferInfo;
 	//こいつらは別機関から情報を埋めてもらう
-	std::unordered_map<std::string, BufferUniqueID> referenceBufferIDMap;
+	//参照するカラーバッファのID群
+	std::vector<BufferUniqueID> refColorBuffersID;
+	//その深度ステンシルバッファバージョン
+	std::vector<BufferUniqueID> refDepthStencilBuffersID;
 	ConstantBuffers::PassBufferIndexRangeCPUGPU rootConstants;
 	//PassDescからランタイムに必要な情報をピックする
 	void PickUpRuntimeRequirementsFromDesc(PassDesc const& desc_);
 	//その他、PassDesc以外の情報を入力
 	void InputOtherParams
 	(
-		std::unordered_map<std::string, BufferUniqueID> const& idMap_,
+		std::vector<BufferUniqueID> const& refColorBuffersID_,
+		std::vector<BufferUniqueID> const& refDepthStencilBuffersID_,
 		UINT const refOffset_
 	);
 	//シザー行列、ビューポート行列を組み立てる
@@ -14177,7 +14212,7 @@ class ModelContext::ModelContainer
 	//モデルのレンダーステートごとにコンテナに詰めて、PSOの切り替えコストを低減させるため
 	class ModelSeparator;
 public:
-	using SepartatedContainer = std::unordered_map<uint32_t, std::pair<RenderStateKey , std::vector<Model*>>>;
+	using SepartatedContainer = std::unordered_map<uint64_t, std::pair<RenderStateKey , std::vector<Model*>>>;
 	struct Local_AddLicence;
 	ModelContainer(NexusFieldProof proof_);
 	~ModelContainer();
@@ -14247,16 +14282,16 @@ ModelContext::ModelContainer::ModelSeparator::SeparateAllModels(std::vector<std:
 	}
 	return dstSeparateContainer;
 }
-std::vector<std::pair<RenderStateKey, uint32_t>> ModelContext::ModelContainer::ModelSeparator::PackToKey(Model const& model_)
+std::vector<std::pair<RenderStateKey, uint64_t>> ModelContext::ModelContainer::ModelSeparator::PackToKey(Model const& model_)
 {
-	std::vector<std::pair<RenderStateKey, uint32_t>> keys;
+	std::vector<std::pair<RenderStateKey, uint64_t>> keys;
 	for (auto const& renderState : model_.WatchRenderStates())
 	{
 		for (auto const& blendMode : renderState.blendModes)
 		{
 			for (auto const& materialType : renderState.materialTypes)
 			{
-				uint32_t packedKey = keyPackager->Pack
+				uint64_t packedKey = keyPackager->Pack
 				(
 					renderState.pass,
 					blendMode,
@@ -14294,7 +14329,7 @@ public:
 	[[nodiscard]] std::vector<SepartatedContainer> SeparateAllModels(std::vector<std::unique_ptr<Model>>* modelContainer_);
 private:
 	//レンダーステートをキーに詰める
-	std::vector<std::pair<RenderStateKey, uint32_t>> PackToKey(Model const& model_);
+	std::vector<std::pair<RenderStateKey, uint64_t>> PackToKey(Model const& model_);
 	//レンダーステートキーをuint32_tに詰める
 	std::unique_ptr<KeyPackager> keyPackager;
 };
@@ -15026,6 +15061,14 @@ private:
 	friend class Nexus;
 	explicit NexusFieldProof() = default;
 };
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\PSO\PSO_ContextDiplomats.h ===
+========================================
+#pragma once
+#include "PSO_ContextDiplomat/PSO_ContextDiplomat.h"
+#include "PSO_ContextDiplomat/PSO_ContextToolLender/PSO_ContextToolLender.h"
+#include "PSO_ContextDiplomat/PSO_ContextToolLender/PSO_ContextToolLenderLicences.h"
 
 ========================================
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\PSO\PSO_Container\PSO_Container.cpp ===
@@ -19541,7 +19584,7 @@ private:
             CalcBitWidth(count_);
             //スタート地点を記録
             CalcShiftNum(shift_);
-            ErrorMessageOutput::Assert::DetectError((EndLocation() <= 32), "GraphicsPSO_Keyのサイズ超過", "KeyPackager.h");
+            ErrorMessageOutput::Assert::DetectError((EndLocation() < 64), "GraphicsPSO_Keyのサイズ超過", "KeyPackager.h");
         }
         uint32_t EndLocation() { return shift + bits; }
     private:
@@ -19908,5 +19951,5 @@ namespace StringProcessing
 ========================================
 === SUMMARY ===
 ========================================
-Total Files      : 439
-Effective Lines  : 14490
+Total Files      : 441
+Effective Lines  : 14494
