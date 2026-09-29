@@ -345,4 +345,4 @@ Release/
 
 !External/assimp/lib/Debug/*.lib
 !External/assimp/lib/Release/*.lib
-!Assets/Models/**/*.obj
+!**/Model/**/*.obj
