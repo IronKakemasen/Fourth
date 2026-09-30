@@ -3,6 +3,9 @@
 #include "../../ModelContextCmds.h"
 
 
+
+using namespace ModelContextCmds;
+
 class ModelContext::CommandProvider
 {
 	template<typename CmdType>
@@ -29,14 +32,23 @@ private:
 };
 
 template<>
-struct ModelContext::CommandProvider::CmdTypeTraits<ModelContextCmds::WatchModelContainer>
+struct ModelContext::CommandProvider::CmdTypeTraits<WatchModelContainer>
+{
+	using Type = WatchModelContainerLicence;
+};
+
+template<>
+struct ModelContext::CommandProvider::CmdTypeTraits<WatchSeparatedModelContainer>
 {
 	using Type = WatchModelContainerLicence;
 };
 
 
+template<>
+WatchModelContainer ModelContext::CommandProvider::Provide<WatchModelContainer>
+(typename CmdTypeTraits<WatchModelContainer>::Type licence_);
 
 template<>
-ModelContextCmds::WatchModelContainer ModelContext::CommandProvider::Provide<ModelContextCmds::WatchModelContainer>
-(typename CmdTypeTraits<ModelContextCmds::WatchModelContainer>::Type licence_);
+WatchSeparatedModelContainer ModelContext::CommandProvider::Provide<WatchSeparatedModelContainer>
+(typename CmdTypeTraits<WatchModelContainer>::Type licence_);
 

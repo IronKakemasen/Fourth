@@ -11,9 +11,9 @@ public:
 	void ExecuteCommonCmds
 	(
 		UINT const frameIndex_,
-		ID3D12DescriptorHeap* srvDescriptorHeap_,
+		DescriptorHeapContextDiplomat& descriptorHeapContextDiplomat_,
 		RuntimeWrapper& runtimeWrapper_,
-		std::array<std::vector<D3D12_GPU_VIRTUAL_ADDRESS>, (UINT)ProjectConfig::Render::NumBuffer::kDoubleBuffer> const& constantsGPU_
+		BufferContextDiplomat& bufferContextDiplomat_
 	);
 
 

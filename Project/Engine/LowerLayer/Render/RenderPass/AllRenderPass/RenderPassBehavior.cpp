@@ -156,6 +156,8 @@ void RenderContext::PassBehavior::RenderOffScreen
 		CreateBarrier<BufferUsage::kRead>(colorBuffer);
 	}
 
+	//キャッシュされたバリアを張る
+	PitchBarrierCached(cmdWrapper_);
 
 }
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -163,7 +165,7 @@ void RenderContext::PassBehavior::RenderOffScreen
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 void RenderContext::PassBehavior::RenderModels
 (
-	std::unordered_map<uint32_t, std::pair<RenderStateKey, std::vector<Model*>>> const& modelContainer_,
+	std::unordered_map<uint64_t, std::pair<RenderStateKey, std::vector<Model*>>> const& modelContainer_,
 	RenderStateComponent::FillMode const fillMode_,
 	PSO_PoolDispatcher& psoDispatcher_,
 	RuntimeWrapper& cmdWrapper_

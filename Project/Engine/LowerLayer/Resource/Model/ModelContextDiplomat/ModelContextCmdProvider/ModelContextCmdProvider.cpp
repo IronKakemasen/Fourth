@@ -17,3 +17,10 @@ ModelContextCmds::WatchModelContainer ModelContext::CommandProvider::Provide<Mod
 	return modelContainer->WatchDataCmd(ProviderKey{});
 }
 
+template<>
+ModelContextCmds::WatchSeparatedModelContainer ModelContext::CommandProvider::Provide<ModelContextCmds::WatchSeparatedModelContainer>
+(typename CmdTypeTraits<ModelContextCmds::WatchSeparatedModelContainer>::Type licence_)
+{
+	return modelContainer->WatchSeparatedCmd(ProviderKey{});
+}
+

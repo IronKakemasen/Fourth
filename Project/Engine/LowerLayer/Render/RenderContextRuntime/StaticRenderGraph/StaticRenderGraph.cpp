@@ -40,7 +40,7 @@ RenderContext::StaticRenderGraph::StaticRenderGraph
 
 	pathOperator.reset
 	(
-		new PathOperator(proof_, buildOutput .allPathPtr)
+		new PathOperator(proof_, buildOutput.allPathPtr, psoDispatcher_)
 	);
 	Logger::Log("Instantiate: PathOperator", fileName);
 	

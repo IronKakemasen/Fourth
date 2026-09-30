@@ -16,3 +16,14 @@ private:
 	explicit BasicBufferManagementLicence() = default;
 };
 
+struct BufferContext::ToolLender::UsesGlobalConstantBuffersLicence
+{
+private:
+
+	friend class RenderContext;
+
+	explicit UsesGlobalConstantBuffersLicence() = default;
+};
+
+
+

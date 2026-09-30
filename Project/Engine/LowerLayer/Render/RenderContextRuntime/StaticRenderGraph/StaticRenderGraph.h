@@ -42,7 +42,8 @@ public:
 		UINT const frameIndex_,
 		DescriptorHeapContextDiplomat& descriptorHeapContextDiplomat_,
 		CommandContextDiplomat& commandContextDiplomat_,
-		BufferContextDiplomat& bufferContextDiplomat_
+		BufferContextDiplomat& bufferContextDiplomat_,
+		ModelContextDiplomat& modelContextDiplomat_
 	);
 
 private:
