@@ -1,5 +1,5 @@
-#include "../../Shared/StructuredBufferModelData.h"
-#include "../../Shared/StaticSampler.h"
+#include "../../../Shared/StructuredBufferModelData.h"
+#include "../../../Shared/StaticSampler.h"
 
 
 struct MeshShaderOutput

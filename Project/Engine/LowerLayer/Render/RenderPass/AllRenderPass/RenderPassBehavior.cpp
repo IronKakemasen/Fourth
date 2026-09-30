@@ -19,6 +19,7 @@
 RenderContext::PassBehavior::PassBehavior(NexusFieldProof proof_, std::unique_ptr<PassDesc>&& desc_)
 	:desc(std::move(desc_))
 {
+	//ランタイムバリアキャッシュのキャパ確保
 	barrierCache.reserve(kBarrierCacheCapacity);
 }
 
@@ -81,12 +82,10 @@ void RenderContext::PassBehavior::BeginPass(RuntimeWrapper& cmdWrapper_, BufferC
 
 		//カラーバッファの状態をレンダーターゲットにするためにバリアを生成
 		//Read -> Writeへ
-		CreateBarrier<BufferUsage::kRead>(colorBuffer);
+		CreateBarrier<BufferUsage::kWrite>(colorBuffer);
 
 		//ビュークリア
 		ClearColorBufferView(rtHandles[i], src.clearColor.data(), cmdWrapper_);
-
-
 	}
 
 	//深度ステンシルバッファ
@@ -100,7 +99,7 @@ void RenderContext::PassBehavior::BeginPass(RuntimeWrapper& cmdWrapper_, BufferC
 		
 		//状態をレンダーターゲットにするためにバリアを生成
 		//Read -> Writeへ
-		CreateBarrier<BufferUsage::kRead>(depthStencilBuffer);
+		CreateBarrier<BufferUsage::kWrite>(depthStencilBuffer);
 
 		//ビュークリア
 		ClearDepthStencilBufferView(dsvHandle, cmdWrapper_);
@@ -135,17 +134,27 @@ void RenderContext::PassBehavior::RenderOffScreen
 	BufferContext::BufferDispatcher& bufDispatcher_
 )
 {
-	////参照先のバッファID
-	//auto const& refBuffersID = runtimePassInfo->WatchReferenceBufferIDs();
+	//参照先のバッファID
+	//カラーバッファのと深度ステンシルバッファの
+	auto const& refBuffersIDColors = runtimePassInfo->WatchReferenceBufferIDs<ColorBuffer>();
+	auto const& refBuffersIDDepths = runtimePassInfo->WatchReferenceBufferIDs<DepthStencilBuffer>();
 
-	////すでに描画先の設定は終わっているので、全ての参照バッファのステートを遷移させる
-	//for (auto const& name_id : refBuffersID)
-	//{
+	//すでに描画先の設定は終わっているので、全ての参照バッファのステートをReadへ遷移させる
+	for (auto const& id : refBuffersIDColors)
+	{
+		//バッファ検索
+		ColorBuffer* colorBuffer = FindBufferWithID<ColorBuffer>(id, bufDispatcher_);
+		//Write -> Read  へ
+		CreateBarrier<BufferUsage::kRead>(colorBuffer);
+	}
 
-	//	//バッファ検索
-	//	ColorBuffer* colorBuffer = FindBufferWithID<ColorBuffer>(name_id.second, bufDispatcher_);
-
-	//}
+	for (auto const& id : refBuffersIDDepths)
+	{
+		//バッファ検索
+		DepthStencilBuffer* colorBuffer = FindBufferWithID<DepthStencilBuffer>(id, bufDispatcher_);
+		//Write -> Read  へ
+		CreateBarrier<BufferUsage::kRead>(colorBuffer);
+	}
 
 
 }
@@ -335,7 +344,10 @@ void RenderContext::PassBehavior::SetMatrix<D3D12_RECT>
 template<BufferUsage usage>
 void RenderContext::PassBehavior::CreateBarrier(IRenderTargetBuffer* buffer_)
 {
-	barrierCache.emplace_back(buffer_->CreateBarrier(usage));
+	std::optional<D3D12_RESOURCE_BARRIER> barrierOpt = buffer_->CreateBarrier(usage);
+	
+	//リソースの遷移先が現在と同じだった場合、バリアを作る必要が無いため
+	if(barrierOpt.has_value()) barrierCache.emplace_back(*barrierOpt);
 }
 
 

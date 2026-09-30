@@ -19,7 +19,7 @@ public:
 
 private:
 	//バリア生成
-	virtual D3D12_RESOURCE_BARRIER CreateBarrier(BufferUsage usage_) override;
+	virtual std::optional<D3D12_RESOURCE_BARRIER> CreateBarrier(BufferUsage usage_) override;
 	//適切なRTVヒープインデックスを出す
 	virtual D3D12_CPU_DESCRIPTOR_HANDLE OutProperRTVHeapHandle()const override;
 	//適切なSRVヒープインデックスを出す

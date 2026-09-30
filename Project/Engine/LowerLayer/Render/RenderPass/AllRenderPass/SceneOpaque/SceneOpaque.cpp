@@ -22,5 +22,7 @@ void SceneOpaque::Update
 	BufferContext::BufferDispatcher& bufDispatcher_
 )
 {
+	//モデルの描画はもちろんします。
+
 
 }

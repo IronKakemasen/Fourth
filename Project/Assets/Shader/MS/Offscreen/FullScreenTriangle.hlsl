@@ -1,5 +1,5 @@
-#include "../../Shared/StructuredBufferModelData.h"
-#include "../../Shared/ConstantBuffers.h"
+#include "../../../Shared/StructuredBufferModelData.h"
+#include "../../../Shared/ConstantBuffers.h"
 
 
 struct MSOutput
@@ -19,9 +19,6 @@ void main
 {
     SetMeshOutputCounts(3, 1);
 
-    // groupThreadID_(0,1,2)だけから、画面全体を覆う三角形の3頂点を導出する。
-    // uv: (0,0) (2,0) (0,2) という、画面外まではみ出す座標をわざと作り、
-    // ラスタライズ時にちょうど画面全体がカバーされるようにする。
     if (groupThreadID_ < 3)
     {
         float2 uv = float2((groupThreadID_ << 1) & 2, groupThreadID_ & 2);

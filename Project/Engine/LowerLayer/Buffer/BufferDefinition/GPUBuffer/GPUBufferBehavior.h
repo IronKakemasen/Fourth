@@ -80,6 +80,12 @@ protected:
 	//バッファ本体
 	std::vector<Buffer> buffers;
 
+	//ステートの一致を返す
+	bool IsStateSame(uint8_t const index_ , D3D12_RESOURCE_STATES const& next_)const
+	{
+		return buffers.at(index_).curResourceState == next_;
+	}
+
 	//各種ビューのインデックスを取得
 	template<ViewType type, typename Index>
 	Index WatchIndex(uint8_t resourceNo_)const

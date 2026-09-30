@@ -18,7 +18,7 @@ struct IPingPong
 	//ステートを同期させる
 	virtual void SynchronizeStatus(ProjectConfig::Render::NumBuffer numBuffer_) = 0;
 	//バリアを生成仮想関数
-	virtual D3D12_RESOURCE_BARRIER CreateBarrier(BufferUsage usage_) = 0;
+	virtual std::optional<D3D12_RESOURCE_BARRIER> CreateBarrier(BufferUsage usage_) = 0;
 
 protected:
 
@@ -125,7 +125,7 @@ public:
 
 	virtual ~IComputeBuffer() = default;
 	virtual void Swap()override;
-	virtual D3D12_RESOURCE_BARRIER CreateBarrier(BufferUsage usage_) = 0;
+	virtual std::optional<D3D12_RESOURCE_BARRIER> CreateBarrier(BufferUsage usage_) = 0;
 
 protected:
 
@@ -156,8 +156,8 @@ public:
 
 	virtual ~IRenderTargetBuffer() = default;
 
-	//適切なClearColor出す
-	virtual D3D12_RESOURCE_BARRIER CreateBarrier(BufferUsage usage_) = 0;
+	//適切なバリアを出す
+	virtual std::optional<D3D12_RESOURCE_BARRIER> CreateBarrier(BufferUsage usage_) = 0;
 	virtual void Swap()override;
 
 protected:

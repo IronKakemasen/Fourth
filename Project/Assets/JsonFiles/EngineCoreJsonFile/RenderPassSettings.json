@@ -2,7 +2,7 @@
     "SceneCompositor": 
     {
                                 "isOffScreen" : true,
-                                "ms" : "FullScreenMS",
+                                "ms" : "FullScreenTriangleMS",
                                 "ps" : "SceneCompositorPS",
 
                                 "colorBufferName":["sceneC"],

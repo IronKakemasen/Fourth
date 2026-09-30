@@ -3793,7 +3793,7 @@ struct IPingPong
 	//ステートを同期させる
 	virtual void SynchronizeStatus(ProjectConfig::Render::NumBuffer numBuffer_) = 0;
 	//バリアを生成仮想関数
-	virtual D3D12_RESOURCE_BARRIER CreateBarrier(BufferUsage usage_) = 0;
+	virtual std::optional<D3D12_RESOURCE_BARRIER> CreateBarrier(BufferUsage usage_) = 0;
 protected:
 	//使用法に応じて、適切にバッファのインデックスを出す
 	virtual int ProperBufferIndex(BufferUsage usage_)const = 0;
@@ -3880,7 +3880,7 @@ private:
 public:
 	virtual ~IComputeBuffer() = default;
 	virtual void Swap()override;
-	virtual D3D12_RESOURCE_BARRIER CreateBarrier(BufferUsage usage_) = 0;
+	virtual std::optional<D3D12_RESOURCE_BARRIER> CreateBarrier(BufferUsage usage_) = 0;
 protected:
 	///いつかそのひがきたら
 	//virtual uint32_t OutProperUAVHeapIndex()const = 0;
@@ -3904,8 +3904,8 @@ private:
 	}status = kSingle;
 public:
 	virtual ~IRenderTargetBuffer() = default;
-	//適切なClearColor出す
-	virtual D3D12_RESOURCE_BARRIER CreateBarrier(BufferUsage usage_) = 0;
+	//適切なバリアを出す
+	virtual std::optional<D3D12_RESOURCE_BARRIER> CreateBarrier(BufferUsage usage_) = 0;
 	virtual void Swap()override;
 protected:
 	virtual int ProperBufferIndex(BufferUsage usage_)const override;
@@ -4054,6 +4054,11 @@ protected:
 	ProjectConfig::Render::NumBuffer numBuffer;
 	//バッファ本体
 	std::vector<Buffer> buffers;
+	//ステートの一致を返す
+	bool IsStateSame(uint8_t const index_ , D3D12_RESOURCE_STATES const& next_)const
+	{
+		return buffers.at(index_).curResourceState == next_;
+	}
 	//各種ビューのインデックスを取得
 	template<ViewType type, typename Index>
 	Index WatchIndex(uint8_t resourceNo_)const
@@ -4116,10 +4121,15 @@ ColorBuffer::ColorBuffer
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-D3D12_RESOURCE_BARRIER ColorBuffer::CreateBarrier(BufferUsage usage_)
+std::optional<D3D12_RESOURCE_BARRIER> ColorBuffer::CreateBarrier(BufferUsage usage_)
 {
 	int dstBufferIndex = ProperBufferIndex(usage_);
-	return buffers.at(dstBufferIndex).CreateBarrier(ResourceStateTable(usage_));
+	//次のステート
+	D3D12_RESOURCE_STATES nextState = ResourceStateTable(usage_);
+	auto& dstBuffer = buffers.at(dstBufferIndex);
+	//もし遷移予定のステートが現在ステートと一致していた場合はバリアを作らない
+	if (IsStateSame(dstBufferIndex, nextState)) return std::nullopt;
+	return dstBuffer.CreateBarrier(nextState);
 }
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -4160,7 +4170,7 @@ public:
 	);
 private:
 	//バリア生成
-	virtual D3D12_RESOURCE_BARRIER CreateBarrier(BufferUsage usage_) override;
+	virtual std::optional<D3D12_RESOURCE_BARRIER> CreateBarrier(BufferUsage usage_) override;
 	//適切なRTVヒープインデックスを出す
 	virtual D3D12_CPU_DESCRIPTOR_HANDLE OutProperRTVHeapHandle()const override;
 	//適切なSRVヒープインデックスを出す
@@ -4297,10 +4307,15 @@ DepthStencilBuffer::DepthStencilBuffer
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-D3D12_RESOURCE_BARRIER DepthStencilBuffer::CreateBarrier(BufferUsage usage_)
+std::optional<D3D12_RESOURCE_BARRIER> DepthStencilBuffer::CreateBarrier(BufferUsage usage_)
 {
 	int dstBufferIndex = ProperBufferIndex(usage_);
-	return buffers.at(dstBufferIndex).CreateBarrier(ResourceStateTable(usage_));
+	//次のステート
+	D3D12_RESOURCE_STATES nextState = ResourceStateTable(usage_);
+	auto& dstBuffer = buffers.at(dstBufferIndex);
+	//もし遷移予定のステートが現在ステートと一致していた場合はバリアを作らない
+	if (IsStateSame(dstBufferIndex, nextState)) return std::nullopt;
+	return dstBuffer.CreateBarrier(nextState);
 }
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -4341,7 +4356,7 @@ public:
 	);
 private:
 	//バリアを張る
-	virtual D3D12_RESOURCE_BARRIER CreateBarrier(BufferUsage usage_) override;
+	virtual std::optional<D3D12_RESOURCE_BARRIER> CreateBarrier(BufferUsage usage_) override;
 	//適切なCPUインデックスを出す
 	virtual D3D12_CPU_DESCRIPTOR_HANDLE OutProperDSVHeapHandle()const override;
 	//適切なsrvHeapインデックスを渡す
@@ -10552,6 +10567,7 @@ using AllPassUnique = std::tuple
 RenderContext::PassBehavior::PassBehavior(NexusFieldProof proof_, std::unique_ptr<PassDesc>&& desc_)
 	:desc(std::move(desc_))
 {
+	//ランタイムバリアキャッシュのキャパ確保
 	barrierCache.reserve(kBarrierCacheCapacity);
 }
 using namespace RenderStateComponent;
@@ -10606,7 +10622,7 @@ void RenderContext::PassBehavior::BeginPass(RuntimeWrapper& cmdWrapper_, BufferC
 		viewports[i] = src.viewport;
 		//カラーバッファの状態をレンダーターゲットにするためにバリアを生成
 		//Read -> Writeへ
-		CreateBarrier<BufferUsage::kRead>(colorBuffer);
+		CreateBarrier<BufferUsage::kWrite>(colorBuffer);
 		//ビュークリア
 		ClearColorBufferView(rtHandles[i], src.clearColor.data(), cmdWrapper_);
 	}
@@ -10619,7 +10635,7 @@ void RenderContext::PassBehavior::BeginPass(RuntimeWrapper& cmdWrapper_, BufferC
 		D3D12_CPU_DESCRIPTOR_HANDLE dsvHandle = PullHandleCPU<DepthStencilBuffer>(depthStencilBuffer, bufDispatcher_);
 		//状態をレンダーターゲットにするためにバリアを生成
 		//Read -> Writeへ
-		CreateBarrier<BufferUsage::kRead>(depthStencilBuffer);
+		CreateBarrier<BufferUsage::kWrite>(depthStencilBuffer);
 		//ビュークリア
 		ClearDepthStencilBufferView(dsvHandle, cmdWrapper_);
 		//キャッシュされたバリアを張る
@@ -10648,14 +10664,25 @@ void RenderContext::PassBehavior::RenderOffScreen
 	BufferContext::BufferDispatcher& bufDispatcher_
 )
 {
-	////参照先のバッファID
-	//auto const& refBuffersID = runtimePassInfo->WatchReferenceBufferIDs();
-	////すでに描画先の設定は終わっているので、全ての参照バッファのステートを遷移させる
-	//for (auto const& name_id : refBuffersID)
-	//{
-	//	//バッファ検索
-	//	ColorBuffer* colorBuffer = FindBufferWithID<ColorBuffer>(name_id.second, bufDispatcher_);
-	//}
+	//参照先のバッファID
+	//カラーバッファのと深度ステンシルバッファの
+	auto const& refBuffersIDColors = runtimePassInfo->WatchReferenceBufferIDs<ColorBuffer>();
+	auto const& refBuffersIDDepths = runtimePassInfo->WatchReferenceBufferIDs<DepthStencilBuffer>();
+	//すでに描画先の設定は終わっているので、全ての参照バッファのステートをReadへ遷移させる
+	for (auto const& id : refBuffersIDColors)
+	{
+		//バッファ検索
+		ColorBuffer* colorBuffer = FindBufferWithID<ColorBuffer>(id, bufDispatcher_);
+		//Write -> Read  へ
+		CreateBarrier<BufferUsage::kRead>(colorBuffer);
+	}
+	for (auto const& id : refBuffersIDDepths)
+	{
+		//バッファ検索
+		DepthStencilBuffer* colorBuffer = FindBufferWithID<DepthStencilBuffer>(id, bufDispatcher_);
+		//Write -> Read  へ
+		CreateBarrier<BufferUsage::kRead>(colorBuffer);
+	}
 }
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -10830,7 +10857,9 @@ void RenderContext::PassBehavior::SetMatrix<D3D12_RECT>
 template<BufferUsage usage>
 void RenderContext::PassBehavior::CreateBarrier(IRenderTargetBuffer* buffer_)
 {
-	barrierCache.emplace_back(buffer_->CreateBarrier(usage));
+	std::optional<D3D12_RESOURCE_BARRIER> barrierOpt = buffer_->CreateBarrier(usage);
+	//リソースの遷移先が現在と同じだった場合、バリアを作る必要が無いため
+	if(barrierOpt.has_value()) barrierCache.emplace_back(*barrierOpt);
 }
 template
 void RenderContext::PassBehavior::CreateBarrier<BufferUsage::kRead>(IRenderTargetBuffer* buffer_);
@@ -11892,8 +11921,9 @@ struct RenderContext::RuntimePassInfo
 	template<typename BufferType>
 	std::vector<BufferUniqueID> const& WatchReferenceBufferIDs() const 
 	{
-		if constexpr (std::is_same_v<BufferType, ColorBuffer>) return refColorBuffersID;
-		else if constexpr (std::is_same_v<BufferType, DepthStencilBuffer>) return depthStencilBufferInfo;
+		std::vector<BufferUniqueID> const& refIDContainer = refColorBuffersID;
+		if constexpr (std::is_same_v<BufferType, DepthStencilBuffer>) return depthStencilBufferInfo;
+		return refIDContainer;
 	}
 private:
 	//Descから情報をピックする
@@ -19952,4 +19982,4 @@ namespace StringProcessing
 === SUMMARY ===
 ========================================
 Total Files      : 441
-Effective Lines  : 14494
+Effective Lines  : 14518

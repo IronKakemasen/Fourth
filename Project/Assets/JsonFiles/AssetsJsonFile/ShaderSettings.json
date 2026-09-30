@@ -1,22 +1,22 @@
 {
-    "FullScreenMS":  {
-                         "Args":  [
-                                      "none"
-                                  ]
-                     },
     "StaticMS":  {
                      "Args":  [
                                   "none"
                               ]
                  },
+    "StandardPS":  {
+                       "Args":  [
+                                    "none"
+                                ]
+                   },
     "SceneCompositorPS":  {
                               "Args":  [
                                            "none"
                                        ]
                           },
-    "StandardPS":  {
-                       "Args":  [
-                                    "none"
-                                ]
-                   }
+    "FullScreenTriangleMS":  {
+                                 "Args":  [
+                                              "none"
+                                          ]
+                             }
 }
