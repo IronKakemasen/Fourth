@@ -2,6 +2,8 @@
 #include "../../RenderContext.h"
 
 
+class DescriptorHeapContextDiplomat;
+class CommandContextDiplomat;
 class RuntimeWrapper;
 
 class RenderContext::StaticRenderGraph
@@ -33,9 +35,30 @@ public:
 	);
 
 	~StaticRenderGraph();
+
+	void Run
+	(
+		PSO_PoolDispatcher& psoDispatcher_,
+		UINT const frameIndex_,
+		DescriptorHeapContextDiplomat& descriptorHeapContextDiplomat_,
+		CommandContextDiplomat& commandContextDiplomat_,
+		BufferContextDiplomat& bufferContextDiplomat_
+	);
+
 private:
 
-	void Build
+	struct BuildOutput
+	{
+		//全てのPathのアドレス。本体は別コンテナクラスが所有。制御シーケンス通りにソートされている
+		std::vector<PathBehavior*> allPathPtr;
+		//描画用巨大共通ルートシグネチャ
+		ID3D12RootSignature* graphicsRootSig;
+		//パスが参照するバッファのsrvheapIndexがつまったバッファID
+		//ランタイムで更新する必要がある
+		BufferUniqueID refBufSrvIndicesBufferID;
+	};
+
+	BuildOutput Build
 	(
 		NexusFieldProof proof_,
 		RenderPathAssembler& pathAssembler_,
@@ -49,15 +72,9 @@ private:
 		ShaderContextDiplomat& shaderContextDiplomat_
 	);
 
-	//全てのPathのアドレス。本体は別コンテナクラスが所有。制御シーケンス通りにソートされている
-	std::vector<PathBehavior*> allPathPtr;
-	//パスが参照するバッファのsrvheapIndexがつまったバッファID
-	//ランタイムで更新する必要がある
-	BufferUniqueID refBufSrvIndicesBufferID;
-	//描画用巨大共通ルートシグネチャ
-	ID3D12RootSignature* graphicsRootSig;
-
+	//Pathの更新処理を呼ぶ
 	std::unique_ptr<PathOperator> pathOperator;
+	//共通の描画コマンドをたたく
 	std::unique_ptr<CommonCmdExecutor> commonCmdExecutor;
 
 	

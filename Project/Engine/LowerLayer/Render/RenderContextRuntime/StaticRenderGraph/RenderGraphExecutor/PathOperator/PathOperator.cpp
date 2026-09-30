@@ -12,7 +12,7 @@
 RenderContext::StaticRenderGraph::PathOperator::PathOperator
 (
 	NexusFieldProof proof_,
-	std::vector<PathBehavior*>& allPathPtr_
+	std::vector<PathBehavior*> const& allPathPtr_
 ):allPathPtr(allPathPtr_)
 {
 

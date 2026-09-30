@@ -34,7 +34,7 @@ public:
 		[[maybe_unused]] RenderStateComponent::FillMode const modelFillMode_,
 		PSO_PoolDispatcher& psoDispatcher_,
 		RuntimeWrapper& cmdWrapper_,
-		BufferContext::BufferDispatcher& bufDispatcher_
+		[[maybe_unused]] BufferContext::BufferDispatcher& bufDispatcher_
 	) = 0;
 
 	PassDesc const* WatchDesc() const;

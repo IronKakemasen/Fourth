@@ -21,8 +21,10 @@ void SceneCompositor::Update
 	[[maybe_unused]] RenderStateComponent::FillMode const modelFillMode_,
 	RenderContext::PSO_PoolDispatcher& psoDispatcher_,
 	RuntimeWrapper& cmdWrapper_,
-	BufferContext::BufferDispatcher& bufDispatcher_
+	[[maybe_unused]] BufferContext::BufferDispatcher& bufDispatcher_
 )
 {
+	//オフスクリーンレンダリングのみです
+	RenderOffScreen(psoDispatcher_, cmdWrapper_ ,bufDispatcher_);
 
 }

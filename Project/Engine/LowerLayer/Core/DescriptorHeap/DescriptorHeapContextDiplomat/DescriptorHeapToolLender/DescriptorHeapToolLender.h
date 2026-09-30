@@ -1,8 +1,6 @@
 #pragma once
 #include "../../DescriptorHeapContext.h"
-#include "../../../../Buffer/BufferContext.h"
 
-class SwapChainContext;
 
 class DescriptorHeapContext::ToolLender
 {
@@ -10,9 +8,14 @@ class DescriptorHeapContext::ToolLender
 	struct CmdTypeTraits;
 
 	struct BasicViewManagementLicence;
+	struct UsesSrvDescriptorHeapLicence;
 
 	//貸出可能なツール
-	std::tuple<ViewCreator*> tools;
+	std::tuple
+	<
+		ViewCreator*,
+		ID3D12DescriptorHeap*	//srvUav
+	> tools;
 
 public:
 
@@ -32,17 +35,17 @@ public:
 
 };
 
-struct DescriptorHeapContext::ToolLender::BasicViewManagementLicence
-{
-private:
-
-	friend class SwapChainContext;
-	friend class BufferContext::BufferAssembler;
-	explicit BasicViewManagementLicence() = default;
-};
 
 template<>
 struct DescriptorHeapContext::ToolLender::CmdTypeTraits<DescriptorHeapContext::ViewCreator>
 {
 	using Type = BasicViewManagementLicence;
 };
+
+template<>
+struct DescriptorHeapContext::ToolLender::CmdTypeTraits<ID3D12DescriptorHeap>
+{
+	using Type = UsesSrvDescriptorHeapLicence;
+};
+
+

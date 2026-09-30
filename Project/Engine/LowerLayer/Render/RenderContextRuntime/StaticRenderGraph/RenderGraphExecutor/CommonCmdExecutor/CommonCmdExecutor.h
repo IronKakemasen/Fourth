@@ -40,7 +40,5 @@ private:
 
 
 	ID3D12RootSignature* graphicsRootSig;
-
-
 };
 

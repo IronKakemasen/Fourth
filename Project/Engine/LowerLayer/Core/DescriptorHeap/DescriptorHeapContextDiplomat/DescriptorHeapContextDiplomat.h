@@ -20,7 +20,10 @@ public:
 
 private:
 	//提供するツールのテーブル
-	std::tuple<std::unique_ptr<DescriptorHeapContext::ToolLender>> tools;
+	std::tuple
+	<
+		std::unique_ptr<DescriptorHeapContext::ToolLender>
+	> tools;
 
 };
 

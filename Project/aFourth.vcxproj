@@ -408,6 +408,9 @@
     <ClInclude Include="Assets\Shared\StaticSampler.h" />
     <ClInclude Include="Assets\Shared\StructuredBufferModelData.h" />
     <ClInclude Include="Engine\LowerLayer\Buffer\BufferContextDiplomats.h" />
+    <ClInclude Include="Engine\LowerLayer\Core\Command\CommandContextDiplomats.h" />
+    <ClInclude Include="Engine\LowerLayer\Core\DescriptorHeap\DescriptorHeapContextDiplomats.h" />
+    <ClInclude Include="Engine\LowerLayer\Core\DescriptorHeap\DescriptorHeapContextDiplomat\DescriptorHeapToolLender\DescriptorHeapToolLenderLicences.h" />
     <ClInclude Include="Engine\LowerLayer\Render\RenderContextRuntime\StaticRenderGraph\RenderGraphExecutor\CommonCmdExecutor\CommonCmdExecutor.h" />
     <ClInclude Include="Engine\LowerLayer\Core\Command\CommandContextDiplomat\CommandContextToolLender\CmdContextToolLenderLicences.h" />
     <ClInclude Include="Engine\LowerLayer\Core\DescriptorHeap\DescriptorHeapPoolContainer\DescriptorHeapPoolContainer.h" />
@@ -416,6 +419,7 @@
     <ClInclude Include="Engine\LowerLayer\Core\Device\DeviceContextDiplomat\DeviceContextCommandProvider\DeviceContextCmdLicences.h" />
     <ClInclude Include="Engine\LowerLayer\Core\Window\WindowContextDiplomat\WindowContextToolLender\WindowContextToolLenderLicences.h" />
     <ClInclude Include="Engine\LowerLayer\DebugSystem\Logger\Logger.h" />
+    <ClInclude Include="Engine\LowerLayer\Render\RenderContextRuntime\StaticRenderGraph\RenderGraphRun.cpp" />
     <ClInclude Include="Engine\LowerLayer\Render\RenderPass\AllRenderPass\RenderPassTraits.h" />
     <ClInclude Include="Engine\LowerLayer\Render\RenderPass\RenderPassState.h" />
     <ClInclude Include="Engine\LowerLayer\Render\RenderPath\AllRenderPath\AllPathFwd.h" />

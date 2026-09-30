@@ -18,6 +18,7 @@
 
 #include "../DescriptorHeap/DescriptorHeapContextDiplomat/DescriptorHeapContextDiplomat.h"
 #include "../DescriptorHeap/DescriptorHeapContextDiplomat/DescriptorHeapToolLender/DescriptorHeapToolLender.h"
+#include "../DescriptorHeap/DescriptorHeapContextDiplomat/DescriptorHeapToolLender/DescriptorHeapToolLenderLicences.h"
 #include "../DescriptorHeap/ViewCreator/ViewCreator.h"
 
 #include "../Window/WindowContextDiplomat/WindowContextDiplomat.h"

@@ -4,7 +4,7 @@
 #include "RenderGraphBuilder/RenderPathBuilder/RenderPathBuilder.h"
 #include "RenderGraphBuilder/PassSetUpper/PassSetUpper.h"
 
-void RenderContext::StaticRenderGraph::Build
+RenderContext::StaticRenderGraph::BuildOutput RenderContext::StaticRenderGraph::Build
 (
 	NexusFieldProof proof_,
 	RenderPathAssembler& pathAssembler_,
@@ -18,11 +18,14 @@ void RenderContext::StaticRenderGraph::Build
 	ShaderContextDiplomat& shaderContextDiplomat_
 )
 {
+	BuildOutput buildOutput;
+
+
 	//全てのPathを生成し、制御シーケンス通りに並び替える
-	allPathPtr = PathBuilder::Build(proof_, pathAssembler_, bufferContextDiplomat_);
+	buildOutput.allPathPtr = PathBuilder::Build(proof_, pathAssembler_, bufferContextDiplomat_);
 	
 	//グラフィックス用の巨大共通ルートシグネチャ
-	graphicsRootSig = RootSigBuilder::Build(proof_, rootSignatureContextDiplomat_);
+	buildOutput.graphicsRootSig = RootSigBuilder::Build(proof_, rootSignatureContextDiplomat_);
 
 	//存在しなければならない全てのPSOを生成
 	PSO_Builder::Build
@@ -30,14 +33,14 @@ void RenderContext::StaticRenderGraph::Build
 		proof_,
 		psoDispatcher_,
 		passContainer_,
-		graphicsRootSig,
+		buildOutput.graphicsRootSig,
 		modelContextDiplomat_,
 		pso_ContextDiplomat_,
 		shaderContextDiplomat_
 	);
 
 	//全てのPassの不足している初期化部分(PassInfoの作成、ルートコンスタンツバッファの作成など)を行う。
-	refBufSrvIndicesBufferID = PassSetUpper::Setup(proof_, renderPassCreator_, passContainer_, bufferContextDiplomat_);
+	buildOutput.refBufSrvIndicesBufferID = PassSetUpper::Setup(proof_, renderPassCreator_, passContainer_, bufferContextDiplomat_);
 
-
+	return buildOutput;
 }
