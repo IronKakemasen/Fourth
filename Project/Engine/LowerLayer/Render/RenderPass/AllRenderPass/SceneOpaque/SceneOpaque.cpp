@@ -15,7 +15,7 @@ SceneOpaque::SceneOpaque(RenderContext::NexusFieldProof proof_ , std::unique_ptr
 
 void SceneOpaque::Update
 (
-	[[maybe_unused]] std::unordered_map<uint32_t, std::pair<RenderStateKey, std::vector<Model*>>> const& modelContainer_,
+	[[maybe_unused]] std::unordered_map<uint64_t, std::pair<RenderStateKey, std::vector<Model*>>> const& modelContainer_,
 	[[maybe_unused]] RenderStateComponent::FillMode const modelFillMode_,
 	RenderContext::PSO_PoolDispatcher& psoDispatcher_,
 	RuntimeWrapper& cmdWrapper_,

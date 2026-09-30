@@ -582,6 +582,8 @@ class BufferContext::ToolLender
 	struct CmdTypeTraits;
 	//バッファクリエイターやアップローダー、ディスパッチャーを触ってもいい資格
 	struct BasicBufferManagementLicence;
+	//定数バッファクラスを触ってもいい資格
+	struct UsesGlobalConstantBuffersLicence;
 	///貸し出せるツール
 	std::tuple
 	<
@@ -634,7 +636,7 @@ struct BufferContext::ToolLender::CmdTypeTraits<BufferContext::BufferCollector>
 template<>
 struct BufferContext::ToolLender::CmdTypeTraits<BufferContext::GlobalConstantBuffers>
 {
-	using Type = BasicBufferManagementLicence;
+	using Type = UsesGlobalConstantBuffersLicence;
 };
 
 ========================================
@@ -652,6 +654,12 @@ private:
 	friend class RenderContext;
 	friend class TextureContext;
 	explicit BasicBufferManagementLicence() = default;
+};
+struct BufferContext::ToolLender::UsesGlobalConstantBuffersLicence
+{
+private:
+	friend class RenderContext;
+	explicit UsesGlobalConstantBuffersLicence() = default;
 };
 
 ========================================
@@ -795,8 +803,7 @@ struct BufferContext::BufferCreator::DescTypeTraits<Texture2DBufferDescription>
 #include "BufferAssemblerTools/BufferMaterializer/BufferMaterializer.h"
 #include "BufferAssemblerTools/ViewAssembler/ViewAssembler.h"
 //外部
-#include "../../../Core/DescriptorHeap/DescriptorHeapContextDiplomat/DescriptorHeapContextDiplomat.h"
-#include "../../../Core/DescriptorHeap/DescriptorHeapContextDiplomat/DescriptorHeapToolLender/DescriptorHeapToolLender.h"
+#include "../../../Core/DescriptorHeap/DescriptorHeapContextDiplomats.h"
 namespace
 {
 	auto const fileName = "BufferAssembler.cpp";
@@ -4842,7 +4849,7 @@ CommandContext::CommandContext
 		(
 			proof_,
 			std::make_unique<CommandProvider>(proof_, resourceUploader.get()),
-			std::make_unique<ToolLender>(proof_, commandQueue.Get()),
+			std::make_unique<ToolLender>(proof_, commandQueue.Get(), runtimeWrapper.get()),
 			std::make_unique<ExecutionAgent>(proof_, resourceUploader.get())
 		)
 	);
@@ -5000,6 +5007,17 @@ namespace CommandContextCmds
 	//バリアを張るコマンド
 	using PitchBarrierCommand = std::function<void(D3D12_RESOURCE_BARRIER*, UINT)>;
 }
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Core\Command\CommandContextDiplomats.h ===
+========================================
+#pragma once
+#include "CommandContextDiplomat/CommandContextDiplomat.h"
+#include "CommandContextDiplomat/CommandContextToolLender/CommandContextToolLender.h"
+#include "CommandContextDiplomat/CommandContextToolLender/CmdContextToolLenderLicences.h"
+#include "CommandContextDiplomat/CommandContextCmdProvider/CommandContextCmdProvider.h"
+#include "CommandContextDiplomat/CommandContextCmdProvider/CommandContextCmdProviderLicences.h"
+#include "CommandContextDiplomat/CommandContextExecutionAgent/CommandContextExecutionAgent.h"
 
 ========================================
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Core\Command\CommandContextDiplomat\CommandContextDiplomat.cpp ===
@@ -5170,11 +5188,18 @@ private:
 #pragma once
 #include "CommandContextToolLender.h"
 class SwapChainContext;
+class RenderContext;
 struct CommandContext::ToolLender::AccessCommandQueueLicence
 {
 private:
 	friend class SwapChainContext;
 	explicit AccessCommandQueueLicence() = default;
+};
+struct CommandContext::ToolLender::UsesRuntimeCmdWrapperLicence
+{
+private:
+	friend class RenderContext;
+	explicit UsesRuntimeCmdWrapperLicence() = default;
 };
 
 ========================================
@@ -5185,10 +5210,12 @@ private:
 CommandContext::ToolLender::ToolLender
 (
 	NexusFieldProof proof_,
-	ID3D12CommandQueue* cmdQueue_
+	ID3D12CommandQueue* cmdQueue_,
+	RuntimeWrapper* runtimeWrapper_
 )
 {
 	std::get<ID3D12CommandQueue*>(tools) = cmdQueue_;
+	std::get<RuntimeWrapper*>(tools) = runtimeWrapper_;
 }
 
 ========================================
@@ -5203,8 +5230,14 @@ class CommandContext::ToolLender
 	struct CmdTypeTraits;
 	//CommandQueueを扱う資格
 	struct AccessCommandQueueLicence;
+	//RuntimeCmdWrapperをしようする資格
+	struct UsesRuntimeCmdWrapperLicence;
 	///貸し出せるツール
-	std::tuple<ID3D12CommandQueue*> tools;
+	std::tuple
+	<
+		ID3D12CommandQueue*,
+		RuntimeWrapper*
+	> tools;
 public:
 	//ただのエイリアステンプレート
 	template<typename ToolType>
@@ -5212,7 +5245,8 @@ public:
 	ToolLender
 	(
 		NexusFieldProof proof_,
-		ID3D12CommandQueue* cmdQueue_
+		ID3D12CommandQueue* cmdQueue_,
+		RuntimeWrapper* runtimeWrapper_
 	);
 	///ツールの貸し出し
 	template<typename ToolType>
@@ -5225,6 +5259,11 @@ template<>
 struct CommandContext::ToolLender::CmdTypeTraits<ID3D12CommandQueue>
 {
 	using Type = AccessCommandQueueLicence;
+};
+template<>
+struct CommandContext::ToolLender::CmdTypeTraits<RuntimeWrapper>
+{
+	using Type = UsesRuntimeCmdWrapperLicence;
 };
 
 ========================================
@@ -5800,6 +5839,14 @@ private:
 };
 
 ========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Core\DescriptorHeap\DescriptorHeapContextDiplomats.h ===
+========================================
+#pragma once
+#include "DescriptorHeapContextDiplomat/DescriptorHeapContextDiplomat.h"
+#include "DescriptorHeapContextDiplomat/DescriptorHeapToolLender/DescriptorHeapToolLender.h"
+#include "DescriptorHeapContextDiplomat/DescriptorHeapToolLender/DescriptorHeapToolLenderLicences.h"
+
+========================================
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Core\DescriptorHeap\DescriptorHeapContextDiplomat\DescriptorHeapContextDiplomat.cpp ===
 ========================================
 #include "PreCompileHeader.h"
@@ -5835,7 +5882,10 @@ public:
 	}
 private:
 	//提供するツールのテーブル
-	std::tuple<std::unique_ptr<DescriptorHeapContext::ToolLender>> tools;
+	std::tuple
+	<
+		std::unique_ptr<DescriptorHeapContext::ToolLender>
+	> tools;
 };
 
 ========================================
@@ -5853,15 +5903,18 @@ DescriptorHeapContext::ToolLender::ToolLender(NexusFieldProof proof_, Descriptor
 ========================================
 #pragma once
 #include "../../DescriptorHeapContext.h"
-#include "../../../../Buffer/BufferContext.h"
-class SwapChainContext;
 class DescriptorHeapContext::ToolLender
 {
 	template<typename ToolType>
 	struct CmdTypeTraits;
 	struct BasicViewManagementLicence;
+	struct UsesSrvDescriptorHeapLicence;
 	//貸出可能なツール
-	std::tuple<ViewCreator*> tools;
+	std::tuple
+	<
+		ViewCreator*,
+		ID3D12DescriptorHeap*	//srvUav
+	> tools;
 public:
 	//ただのエイリアステンプレート
 	template<typename ToolType>
@@ -5874,17 +5927,37 @@ public:
 		return std::get<ToolType*>(tools);
 	}
 };
-struct DescriptorHeapContext::ToolLender::BasicViewManagementLicence
-{
-private:
-	friend class SwapChainContext;
-	friend class BufferContext::BufferAssembler;
-	explicit BasicViewManagementLicence() = default;
-};
 template<>
 struct DescriptorHeapContext::ToolLender::CmdTypeTraits<DescriptorHeapContext::ViewCreator>
 {
 	using Type = BasicViewManagementLicence;
+};
+template<>
+struct DescriptorHeapContext::ToolLender::CmdTypeTraits<ID3D12DescriptorHeap>
+{
+	using Type = UsesSrvDescriptorHeapLicence;
+};
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Core\DescriptorHeap\DescriptorHeapContextDiplomat\DescriptorHeapToolLender\DescriptorHeapToolLenderLicences.h ===
+========================================
+#pragma once
+#include "DescriptorHeapToolLender.h"
+class SwapChainContext;
+class BufferContext;
+class RenderContext;
+struct DescriptorHeapContext::ToolLender::BasicViewManagementLicence
+{
+private:
+	friend class SwapChainContext;
+	friend class BufferContext;
+	explicit BasicViewManagementLicence() = default;
+};
+struct DescriptorHeapContext::ToolLender::UsesSrvDescriptorHeapLicence
+{
+private:
+	friend class RenderContext;
+	explicit UsesSrvDescriptorHeapLicence() = default;
 };
 
 ========================================
@@ -7780,6 +7853,7 @@ private:
 #include "../Device/DeviceContextCmds.h"
 #include "../DescriptorHeap/DescriptorHeapContextDiplomat/DescriptorHeapContextDiplomat.h"
 #include "../DescriptorHeap/DescriptorHeapContextDiplomat/DescriptorHeapToolLender/DescriptorHeapToolLender.h"
+#include "../DescriptorHeap/DescriptorHeapContextDiplomat/DescriptorHeapToolLender/DescriptorHeapToolLenderLicences.h"
 #include "../DescriptorHeap/ViewCreator/ViewCreator.h"
 #include "../Window/WindowContextDiplomat/WindowContextDiplomat.h"
 #include "../Window/WindowContextDiplomat/WindowContextToolLender/WindowContextToolLender.h"
@@ -9403,7 +9477,7 @@ private:
 #include "RenderGraphBuilder/GraphicsRootSigBuilder/GraphicsRootSigBuilder.h"
 #include "RenderGraphBuilder/RenderPathBuilder/RenderPathBuilder.h"
 #include "RenderGraphBuilder/PassSetUpper/PassSetUpper.h"
-void RenderContext::StaticRenderGraph::Build
+RenderContext::StaticRenderGraph::BuildOutput RenderContext::StaticRenderGraph::Build
 (
 	NexusFieldProof proof_,
 	RenderPathAssembler& pathAssembler_,
@@ -9417,23 +9491,65 @@ void RenderContext::StaticRenderGraph::Build
 	ShaderContextDiplomat& shaderContextDiplomat_
 )
 {
+	BuildOutput buildOutput;
 	//全てのPathを生成し、制御シーケンス通りに並び替える
-	allPathPtr = PathBuilder::Build(proof_, pathAssembler_, bufferContextDiplomat_);
+	buildOutput.allPathPtr = PathBuilder::Build(proof_, pathAssembler_, bufferContextDiplomat_);
 	//グラフィックス用の巨大共通ルートシグネチャ
-	graphicsRootSig = RootSigBuilder::Build(proof_, rootSignatureContextDiplomat_);
+	buildOutput.graphicsRootSig = RootSigBuilder::Build(proof_, rootSignatureContextDiplomat_);
 	//存在しなければならない全てのPSOを生成
 	PSO_Builder::Build
 	(
 		proof_,
 		psoDispatcher_,
 		passContainer_,
-		graphicsRootSig,
+		buildOutput.graphicsRootSig,
 		modelContextDiplomat_,
 		pso_ContextDiplomat_,
 		shaderContextDiplomat_
 	);
 	//全てのPassの不足している初期化部分(PassInfoの作成、ルートコンスタンツバッファの作成など)を行う。
-	refBufSrvIndicesBufferID = PassSetUpper::Setup(proof_, renderPassCreator_, passContainer_, bufferContextDiplomat_);
+	buildOutput.refBufSrvIndicesBufferID = PassSetUpper::Setup(proof_, renderPassCreator_, passContainer_, bufferContextDiplomat_);
+	return buildOutput;
+}
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Render\RenderContextRuntime\StaticRenderGraph\RenderGraphRun.cpp ===
+========================================
+#include "StaticRenderGraph.h"
+#include "RenderGraphExecutor/CommonCmdExecutor/CommonCmdExecutor.h"
+#include "RenderGraphExecutor/PathOperator/PathOperator.h"
+//外部
+#include "../../../Core/Command/CommandContextDiplomats.h"
+void RenderContext::StaticRenderGraph::Run
+(
+	PSO_PoolDispatcher& psoDispatcher_,
+	UINT const frameIndex_,
+	DescriptorHeapContextDiplomat& descriptorHeapContextDiplomat_,
+	CommandContextDiplomat& commandContextDiplomat_,
+	BufferContextDiplomat& bufferContextDiplomat_,
+	ModelContextDiplomat& modelContextDiplomat_
+)
+{
+	//runtimeCmdWrapperにアクセス
+	auto cToolLender = commandContextDiplomat_.Access<CommandContext::ToolLender>();
+	CommandContext::ToolLender::LicenceType<RuntimeWrapper> cLicence;
+	auto& runtimeCmdWrapper = *cToolLender->Lend<RuntimeWrapper>(cLicence);
+	//共通の描画コマンドをたたく
+	commonCmdExecutor->ExecuteCommonCmds
+	(
+		frameIndex_,
+		descriptorHeapContextDiplomat_,
+		runtimeCmdWrapper,
+		bufferContextDiplomat_
+	);
+	//全Pathの更新処理
+	pathOperator->Run
+	(
+		frameIndex_, 
+		modelContextDiplomat_, 
+		bufferContextDiplomat_,
+		runtimeCmdWrapper
+	);
 }
 
 ========================================
@@ -9462,7 +9578,7 @@ RenderContext::StaticRenderGraph::StaticRenderGraph
 )
 {
 	Logger::Entry("StaticRenderGraph: Constructor");
-	Build
+	auto buildOutput = Build
 	(
 		proof_,
 		pathAssembler_,
@@ -9477,10 +9593,10 @@ RenderContext::StaticRenderGraph::StaticRenderGraph
 	);
 	pathOperator.reset
 	(
-		new PathOperator(proof_, allPathPtr)
+		new PathOperator(proof_, buildOutput.allPathPtr, psoDispatcher_)
 	);
 	Logger::Log("Instantiate: PathOperator", fileName);
-	commonCmdExecutor.reset(new CommonCmdExecutor(proof_, graphicsRootSig));
+	commonCmdExecutor.reset(new CommonCmdExecutor(proof_, buildOutput.graphicsRootSig));
 	Logger::Log("Instantiate: CommonCmdExecutor", fileName);
 	Logger::End("StaticRenderGraph: Constructor");
 }
@@ -9493,6 +9609,8 @@ RenderContext::StaticRenderGraph::~StaticRenderGraph()
 ========================================
 #pragma once
 #include "../../RenderContext.h"
+class DescriptorHeapContextDiplomat;
+class CommandContextDiplomat;
 class RuntimeWrapper;
 class RenderContext::StaticRenderGraph
 {
@@ -9519,8 +9637,27 @@ public:
 		ShaderContextDiplomat& shaderContextDiplomat_
 	);
 	~StaticRenderGraph();
+	void Run
+	(
+		PSO_PoolDispatcher& psoDispatcher_,
+		UINT const frameIndex_,
+		DescriptorHeapContextDiplomat& descriptorHeapContextDiplomat_,
+		CommandContextDiplomat& commandContextDiplomat_,
+		BufferContextDiplomat& bufferContextDiplomat_,
+		ModelContextDiplomat& modelContextDiplomat_
+	);
 private:
-	void Build
+	struct BuildOutput
+	{
+		//全てのPathのアドレス。本体は別コンテナクラスが所有。制御シーケンス通りにソートされている
+		std::vector<PathBehavior*> allPathPtr;
+		//描画用巨大共通ルートシグネチャ
+		ID3D12RootSignature* graphicsRootSig;
+		//パスが参照するバッファのsrvheapIndexがつまったバッファID
+		//ランタイムで更新する必要がある
+		BufferUniqueID refBufSrvIndicesBufferID;
+	};
+	BuildOutput Build
 	(
 		NexusFieldProof proof_,
 		RenderPathAssembler& pathAssembler_,
@@ -9533,14 +9670,9 @@ private:
 		PSO_ContextDiplomat& pso_ContextDiplomat_,
 		ShaderContextDiplomat& shaderContextDiplomat_
 	);
-	//全てのPathのアドレス。本体は別コンテナクラスが所有。制御シーケンス通りにソートされている
-	std::vector<PathBehavior*> allPathPtr;
-	//パスが参照するバッファのsrvheapIndexがつまったバッファID
-	//ランタイムで更新する必要がある
-	BufferUniqueID refBufSrvIndicesBufferID;
-	//描画用巨大共通ルートシグネチャ
-	ID3D12RootSignature* graphicsRootSig;
+	//Pathの更新処理を呼ぶ
 	std::unique_ptr<PathOperator> pathOperator;
+	//共通の描画コマンドをたたく
 	std::unique_ptr<CommonCmdExecutor> commonCmdExecutor;
 };
 
@@ -10321,6 +10453,9 @@ private:
 #include "PreCompileHeader.h"
 #include "CommonCmdExecutor.h"
 //外部
+#include "../../../../../Buffer/BufferContextDiplomats.h"
+#include "../../../../../Buffer/GlobalConstantBuffers/GlobalConstantBuffers.h"
+#include "../../../../../Core/DescriptorHeap/DescriptorHeapContextDiplomats.h"
 #include "../../../../../Core/Command/RuntimeWrapper/RuntimeWrapper.h"
 #include "../../../../../../../Assets/Shared/ConstantBuffers.h"
 using namespace ProjectConfig::Render;
@@ -10332,21 +10467,29 @@ RenderContext::StaticRenderGraph::CommonCmdExecutor::CommonCmdExecutor(NexusFiel
 void RenderContext::StaticRenderGraph::CommonCmdExecutor::ExecuteCommonCmds
 (
 	UINT const frameIndex_,
-	ID3D12DescriptorHeap* srvDescriptorHeap_,
+	DescriptorHeapContextDiplomat& descriptorHeapContextDiplomat_,
 	RuntimeWrapper& runtimeWrapper_,
-	std::array<std::vector<D3D12_GPU_VIRTUAL_ADDRESS>, (UINT)NumBuffer::kDoubleBuffer> const& constantsGPU_
+	BufferContextDiplomat& bufferContextDiplomat_
 )
 {
+	//srvDescriptorHeapにアクセス
+	auto dToolLender = descriptorHeapContextDiplomat_.Access<DescriptorHeapContext::ToolLender>();
+	DescriptorHeapContext::ToolLender::LicenceType<ID3D12DescriptorHeap> dLicence;
+	auto* srvUavDescriptorHeap = dToolLender->Lend<ID3D12DescriptorHeap>(dLicence);
+	//GlobalConstantBuffersにアクセス
+	auto bToolLender = bufferContextDiplomat_.Access<BufferContext::ToolLender>();
+	BufferContext::ToolLender::LicenceType<BufferContext::GlobalConstantBuffers> bLicence;
+	auto& globalConstantBuffers = *bToolLender->Lend<BufferContext::GlobalConstantBuffers>(bLicence);
 	//ルートシグネチャをセット
 	SetGraphicsRootSignature(runtimeWrapper_);
 	//srvuavディスクリプタヒープをセット
-	SetDescriptorHeaps(srvDescriptorHeap_, runtimeWrapper_);
+	SetDescriptorHeaps(srvUavDescriptorHeap, runtimeWrapper_);
 	//フローバル定数バッファビューを転送
 	SetGlobalConstantViews
 	(
 		frameIndex_,
 		runtimeWrapper_,
-		constantsGPU_
+		globalConstantBuffers.WatchGPUAddressContainer()
 	);
 }
 void RenderContext::StaticRenderGraph::CommonCmdExecutor::SetGraphicsRootSignature
@@ -10391,9 +10534,9 @@ public:
 	void ExecuteCommonCmds
 	(
 		UINT const frameIndex_,
-		ID3D12DescriptorHeap* srvDescriptorHeap_,
+		DescriptorHeapContextDiplomat& descriptorHeapContextDiplomat_,
 		RuntimeWrapper& runtimeWrapper_,
-		std::array<std::vector<D3D12_GPU_VIRTUAL_ADDRESS>, (UINT)ProjectConfig::Render::NumBuffer::kDoubleBuffer> const& constantsGPU_
+		BufferContextDiplomat& bufferContextDiplomat_
 	);
 	//以下ヘルパー
 private:
@@ -10423,23 +10566,36 @@ private:
 #include "../../../../RenderPath/AllRenderPath/PathBehavior.h"
 //外部
 #include "../../../../../Core/Command/RuntimeWrapper/RuntimeWrapper.h"
+#include "../../../../../Buffer/BufferContextDiplomats.h"
+#include "../../../../../Resource/Model/ModelContextDiplomatIncludes.h"
+#include "../../../../../Resource/Model/ModelContainer/ModelContainer.h"
 RenderContext::StaticRenderGraph::PathOperator::PathOperator
 (
 	NexusFieldProof proof_,
-	std::vector<PathBehavior*>& allPathPtr_
-):allPathPtr(allPathPtr_)
+	std::vector<PathBehavior*> const& allPathPtr_,
+	PSO_PoolDispatcher& pso_PoolDispatcher_
+):allPathPtr(allPathPtr_), pso_PoolDispatcher(pso_PoolDispatcher_)
 {
 }
 void RenderContext::StaticRenderGraph::PathOperator::Run
 (
 	UINT const frameIndex_,
 	ModelContextDiplomat& modelContextDiplomat_,
+	BufferContextDiplomat& bufferContextDiplomat_,
 	RuntimeWrapper& runtimeWrapper_
 )
 {
+	//BufferDispatcherにアクセス
+	auto bToolLender = bufferContextDiplomat_.Access<BufferContext::ToolLender>();
+	BufferContext::ToolLender::LicenceType<BufferContext::BufferDispatcher> bLicence;
+	auto& bufferDispatcher = *bToolLender->Lend<BufferContext::BufferDispatcher>(bLicence);
+	//modelContainer（仕分け済み）取得コマンドをもらう
+	auto mCmdProvider = modelContextDiplomat_.Access<ModelContext::CommandProvider>();
+	ModelContext::CommandProvider::LicenceType<ModelContextCmds::WatchSeparatedModelContainer> mLicence;
+	auto const& modelContainer = *mCmdProvider->Provide<ModelContextCmds::WatchSeparatedModelContainer>(mLicence)();
 	for (auto* path : allPathPtr)
 	{
-		//path->Update()
+		path->Run(modelContainer, modelFillMode, pso_PoolDispatcher, runtimeWrapper_, bufferDispatcher);
 	}
 }
 
@@ -10448,23 +10604,30 @@ void RenderContext::StaticRenderGraph::PathOperator::Run
 ========================================
 #pragma once
 #include "../../StaticRenderGraph.h"
+#include "../../../../RenderStateComponent.h"
 class RenderContext::StaticRenderGraph::PathOperator
 {
 public:
 	PathOperator
 	(
 		NexusFieldProof proof_,
-		std::vector<PathBehavior*>& allPathPtr_
+		std::vector<PathBehavior*> const& allPathPtr_,
+		PSO_PoolDispatcher& pso_PoolDispatcher_
 	);
 	//全pathの更新処理をぶん回す
 	void Run
 	(
 		UINT const frameIndex_,
 		ModelContextDiplomat& modelContextDiplomat_,
+		BufferContextDiplomat& bufferContextDiplomat_,
 		RuntimeWrapper& runtimeWrapper_
 	);
 private:
-	std::vector<PathBehavior*>& allPathPtr;
+	PSO_PoolDispatcher& pso_PoolDispatcher;
+	//モデル描画用のフィルモード
+	RenderStateComponent::FillMode modelFillMode = RenderStateComponent::FillMode::kSolid;
+	//シーケンス順にソートされた、全てのPathのポインタ
+	std::vector<PathBehavior*> allPathPtr;
 };
 
 ========================================
@@ -10683,13 +10846,15 @@ void RenderContext::PassBehavior::RenderOffScreen
 		//Write -> Read  へ
 		CreateBarrier<BufferUsage::kRead>(colorBuffer);
 	}
+	//キャッシュされたバリアを張る
+	PitchBarrierCached(cmdWrapper_);
 }
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 void RenderContext::PassBehavior::RenderModels
 (
-	std::unordered_map<uint32_t, std::pair<RenderStateKey, std::vector<Model*>>> const& modelContainer_,
+	std::unordered_map<uint64_t, std::pair<RenderStateKey, std::vector<Model*>>> const& modelContainer_,
 	RenderStateComponent::FillMode const fillMode_,
 	PSO_PoolDispatcher& psoDispatcher_,
 	RuntimeWrapper& cmdWrapper_
@@ -10894,7 +11059,7 @@ public:
 	virtual ~PassBehavior() = default;
 	virtual void Update
 	(
-		[[maybe_unused]] std::unordered_map<uint32_t, std::pair<RenderStateKey, std::vector<Model*>>> const& modelContainer_,
+		[[maybe_unused]] std::unordered_map<uint64_t, std::pair<RenderStateKey, std::vector<Model*>>> const& modelContainer_,
 		[[maybe_unused]] RenderStateComponent::FillMode const modelFillMode_,
 		PSO_PoolDispatcher& psoDispatcher_,
 		RuntimeWrapper& cmdWrapper_,
@@ -10917,7 +11082,7 @@ protected:
 	//モデルを描画する
 	void RenderModels
 	(
-		std::unordered_map<uint32_t, std::pair<RenderStateKey, std::vector<Model*>>> const& modelContainer_,
+		std::unordered_map<uint64_t, std::pair<RenderStateKey, std::vector<Model*>>> const& modelContainer_,
 		RenderStateComponent::FillMode const fillMode_,
 		PSO_PoolDispatcher& psoDispatcher_,
 		RuntimeWrapper& cmdWrapper_
@@ -11123,7 +11288,7 @@ SceneCompositor::SceneCompositor(RenderContext::NexusFieldProof proof_, std::uni
 }
 void SceneCompositor::Update
 (
-	[[maybe_unused]] std::unordered_map<uint32_t, std::pair<RenderStateKey, std::vector<Model*>>> const& modelContainer_,
+	[[maybe_unused]] std::unordered_map<uint64_t, std::pair<RenderStateKey, std::vector<Model*>>> const& modelContainer_,
 	[[maybe_unused]] RenderStateComponent::FillMode const modelFillMode_,
 	RenderContext::PSO_PoolDispatcher& psoDispatcher_,
 	RuntimeWrapper& cmdWrapper_,
@@ -11145,7 +11310,7 @@ public:
 	SceneCompositor(RenderContext::NexusFieldProof proof_, std::unique_ptr<RenderContext::PassDesc>&& desc_);
 	virtual void Update
 	(
-		[[maybe_unused]] std::unordered_map<uint32_t, std::pair<RenderStateKey, std::vector<Model*>>> const& modelContainer_,
+		[[maybe_unused]] std::unordered_map<uint64_t, std::pair<RenderStateKey, std::vector<Model*>>> const& modelContainer_,
 		[[maybe_unused]] RenderStateComponent::FillMode const modelFillMode_,
 		RenderContext::PSO_PoolDispatcher& psoDispatcher_,
 		RuntimeWrapper& cmdWrapper_,
@@ -11170,7 +11335,7 @@ SceneOpaque::SceneOpaque(RenderContext::NexusFieldProof proof_ , std::unique_ptr
 }
 void SceneOpaque::Update
 (
-	[[maybe_unused]] std::unordered_map<uint32_t, std::pair<RenderStateKey, std::vector<Model*>>> const& modelContainer_,
+	[[maybe_unused]] std::unordered_map<uint64_t, std::pair<RenderStateKey, std::vector<Model*>>> const& modelContainer_,
 	[[maybe_unused]] RenderStateComponent::FillMode const modelFillMode_,
 	RenderContext::PSO_PoolDispatcher& psoDispatcher_,
 	RuntimeWrapper& cmdWrapper_,
@@ -11192,7 +11357,7 @@ public:
 	SceneOpaque(RenderContext::NexusFieldProof proof_, std::unique_ptr<RenderContext::PassDesc>&& desc_);
 	virtual void Update
 	(
-		[[maybe_unused]] std::unordered_map<uint32_t, std::pair<RenderStateKey, std::vector<Model*>>> const& modelContainer_,
+		[[maybe_unused]] std::unordered_map<uint64_t, std::pair<RenderStateKey, std::vector<Model*>>> const& modelContainer_,
 		[[maybe_unused]] RenderStateComponent::FillMode const modelFillMode_,
 		RenderContext::PSO_PoolDispatcher& psoDispatcher_,
 		RuntimeWrapper& cmdWrapper_,
@@ -11926,7 +12091,7 @@ struct RenderContext::RuntimePassInfo
 	std::vector<BufferUniqueID> const& WatchReferenceBufferIDs() const 
 	{
 		std::vector<BufferUniqueID> const& refIDContainer = refColorBuffersID;
-		if constexpr (std::is_same_v<BufferType, DepthStencilBuffer>) return depthStencilBufferInfo;
+		if constexpr (std::is_same_v<BufferType, DepthStencilBuffer>) return refDepthStencilBuffersID;
 		return refIDContainer;
 	}
 private:
@@ -11987,6 +12152,7 @@ RenderContext::PathBehavior::PathBehavior(NexusFieldProof proof_, std::string co
 #include "../../RenderContext.h"
 #include "../../RenderPass/AllRenderPass/AllPassFwd.h"
 #include "../../RenderStateComponent.h"
+#include "../../RenderPass/AllRenderPass/RenderPassBehavior.h"
 //外部
 #include "../../../Buffer/BufferContext.h"
 class Model;
@@ -12004,16 +12170,36 @@ public:
 		std::get<PassType*>(passses) = pass_;
 	}
 	auto const& WatchName()const { return  name; }
-	virtual void Update
+	virtual void Run
 	(
-		std::unordered_map<uint32_t, std::pair<RenderStateKey, std::vector<Model*>>> const& modelContainer_,
+		std::unordered_map<uint64_t, std::pair<RenderStateKey, std::vector<Model*>>> const& modelContainer_,
 		RenderStateComponent::FillMode const modelFillMode_,
 		PSO_PoolDispatcher& psoDispatcher_,
 		RuntimeWrapper& cmdWrapper_,
 		BufferContext::BufferDispatcher& bufDispatcher_
 	) = 0;
 protected:
-	//名前。初期化のために所持する
+	//Passの更新処理を呼ぶ
+	template<typename PassType>
+	void CallPassUpdate
+	(
+		std::unordered_map<uint64_t, std::pair<RenderStateKey, std::vector<Model*>>> const& modelContainer_,
+		RenderStateComponent::FillMode const modelFillMode_,
+		PSO_PoolDispatcher& psoDispatcher_,
+		RuntimeWrapper& cmdWrapper_,
+		BufferContext::BufferDispatcher& bufDispatcher_
+	)
+	{
+		std::get<PassType*>(passses)->Update
+		(
+			modelContainer_,
+			modelFillMode_,
+			psoDispatcher_,
+			cmdWrapper_,
+			bufDispatcher_
+		);
+	}
+	//名前。pathシーケンス初期化のために所持する
 	std::string name;
 	//パフォーマンス稼ぎたいのでanyではなくtupleで
 	AllPassPtr passses;
@@ -12040,19 +12226,23 @@ namespace RenderPathTraits
 ========================================
 #include "PreCompileHeader.h"
 #include "CreateSceneTexture.h"
+#include "../../../RenderPass/AllRenderPass/AllPassInclude.h"
 CreateSceneTexture::CreateSceneTexture(RenderContext::NexusFieldProof proof_, std::string const& name_)
 :PathBehavior::PathBehavior(proof_, name_)
 {
 }
-void CreateSceneTexture::Update
+void CreateSceneTexture::Run
 (
-	std::unordered_map<uint32_t, std::pair<RenderStateKey, std::vector<Model*>>> const& modelContainer_,
+	std::unordered_map<uint64_t, std::pair<RenderStateKey, std::vector<Model*>>> const& modelContainer_,
 	RenderStateComponent::FillMode const modelFillMode_,
 	RenderContext::PSO_PoolDispatcher& psoDispatcher_,
 	RuntimeWrapper& cmdWrapper_,
 	BufferContext::BufferDispatcher& bufDispatcher_
 )
 {
+	//SceneOpaque -> SceneCompositor
+	CallPassUpdate<SceneOpaque>(modelContainer_,modelFillMode_,psoDispatcher_,cmdWrapper_,bufDispatcher_);
+	CallPassUpdate<SceneCompositor>(modelContainer_, modelFillMode_, psoDispatcher_, cmdWrapper_, bufDispatcher_);
 }
 
 ========================================
@@ -12064,9 +12254,9 @@ class CreateSceneTexture:public RenderContext::PathBehavior
 {
 public:
 	CreateSceneTexture(RenderContext::NexusFieldProof proof_, std::string const& name_);
-	virtual void Update
+	virtual void Run
 	(
-		std::unordered_map<uint32_t, std::pair<RenderStateKey, std::vector<Model*>>> const& modelContainer_,
+		std::unordered_map<uint64_t, std::pair<RenderStateKey, std::vector<Model*>>> const& modelContainer_,
 		RenderStateComponent::FillMode const modelFillMode_,
 		RenderContext::PSO_PoolDispatcher& psoDispatcher_,
 		RuntimeWrapper& cmdWrapper_,
@@ -12442,9 +12632,11 @@ private:
 ========================================
 #pragma once
 class Model;
+struct RenderStateKey;
 namespace ModelContextCmds
 {
 	using WatchModelContainer = std::function<const std::vector<std::unique_ptr<Model>>*()>;
+	using WatchSeparatedModelContainer = std::function<const std::unordered_map<uint64_t, std::pair<RenderStateKey, std::vector<Model*>>>*()>;
 }
 
 ========================================
@@ -14239,6 +14431,13 @@ ModelContextCmds::WatchModelContainer ModelContext::ModelContainer::WatchDataCmd
 		return &this->container;
 	};
 }
+ModelContextCmds::WatchSeparatedModelContainer ModelContext::ModelContainer::WatchSeparatedCmd(ProviderKey key_)
+{
+	return [this]()
+	{
+		return this->separatedContainer.data();
+	};
+}
 void ModelContext::ModelContainer::SeparateModels(NexusFieldProof proof_, AgentKey key_)
 {
 	ModelSeparator modelSeparator(proof_, key_);
@@ -14265,6 +14464,8 @@ public:
 	void Add(Local_AddLicence addLicence_,std::unique_ptr<Model>&& model_);
 	//全モデルコンテナの中身を見るためのコマンド
 	ModelContextCmds::WatchModelContainer WatchDataCmd(ProviderKey key_)const;
+	//仕分けコンテナを見るためのコマンド
+	ModelContextCmds::WatchSeparatedModelContainer WatchSeparatedCmd(ProviderKey key_);
 	//ランタイムでPSO切り替えコストを低減させるために、モデルクラスをおなじrenderStateごとに分別する
 	void SeparateModels(NexusFieldProof proof_, AgentKey key_);
 private:
@@ -14517,6 +14718,12 @@ ModelContextCmds::WatchModelContainer ModelContext::CommandProvider::Provide<Mod
 {
 	return modelContainer->WatchDataCmd(ProviderKey{});
 }
+template<>
+ModelContextCmds::WatchSeparatedModelContainer ModelContext::CommandProvider::Provide<ModelContextCmds::WatchSeparatedModelContainer>
+(typename CmdTypeTraits<ModelContextCmds::WatchSeparatedModelContainer>::Type licence_)
+{
+	return modelContainer->WatchSeparatedCmd(ProviderKey{});
+}
 
 ========================================
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Model\ModelContextDiplomat\ModelContextCmdProvider\ModelContextCmdProvider.h ===
@@ -14524,6 +14731,7 @@ ModelContextCmds::WatchModelContainer ModelContext::CommandProvider::Provide<Mod
 #pragma once
 #include "../../ModelContext.h"
 #include "../../ModelContextCmds.h"
+using namespace ModelContextCmds;
 class ModelContext::CommandProvider
 {
 	template<typename CmdType>
@@ -14540,13 +14748,21 @@ private:
 	ModelContainer* modelContainer;
 };
 template<>
-struct ModelContext::CommandProvider::CmdTypeTraits<ModelContextCmds::WatchModelContainer>
+struct ModelContext::CommandProvider::CmdTypeTraits<WatchModelContainer>
 {
 	using Type = WatchModelContainerLicence;
 };
 template<>
-ModelContextCmds::WatchModelContainer ModelContext::CommandProvider::Provide<ModelContextCmds::WatchModelContainer>
-(typename CmdTypeTraits<ModelContextCmds::WatchModelContainer>::Type licence_);
+struct ModelContext::CommandProvider::CmdTypeTraits<WatchSeparatedModelContainer>
+{
+	using Type = WatchModelContainerLicence;
+};
+template<>
+WatchModelContainer ModelContext::CommandProvider::Provide<WatchModelContainer>
+(typename CmdTypeTraits<WatchModelContainer>::Type licence_);
+template<>
+WatchSeparatedModelContainer ModelContext::CommandProvider::Provide<WatchSeparatedModelContainer>
+(typename CmdTypeTraits<WatchModelContainer>::Type licence_);
 
 ========================================
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Model\ModelContextDiplomat\ModelContextCmdProvider\ModelContextCmdProviderLicences.h ===
@@ -14651,13 +14867,6 @@ private:
 ========================================
 #pragma once
 #include "ModelContextToolLender.h"
-//struct ModelContext::ToolLender::ModelContainerAccessLicence
-//{
-//private:
-//
-//	//friend class SwapChainContext;
-//	explicit ModelContainerAccessLicence() = default;
-//};
 
 ========================================
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Model\ModelContextRuntime\ModelDataBatcher\ModelDataBatcher.cpp ===
@@ -19997,5 +20206,5 @@ namespace StringProcessing
 ========================================
 === SUMMARY ===
 ========================================
-Total Files      : 441
-Effective Lines  : 14529
+Total Files      : 445
+Effective Lines  : 14687

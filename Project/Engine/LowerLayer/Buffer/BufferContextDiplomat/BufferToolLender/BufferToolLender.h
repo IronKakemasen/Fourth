@@ -9,6 +9,9 @@ class BufferContext::ToolLender
 
 	//バッファクリエイターやアップローダー、ディスパッチャーを触ってもいい資格
 	struct BasicBufferManagementLicence;
+	//定数バッファクラスを触ってもいい資格
+	struct UsesGlobalConstantBuffersLicence;
+
 
 	///貸し出せるツール
 	std::tuple
@@ -76,5 +79,5 @@ struct BufferContext::ToolLender::CmdTypeTraits<BufferContext::BufferCollector>
 template<>
 struct BufferContext::ToolLender::CmdTypeTraits<BufferContext::GlobalConstantBuffers>
 {
-	using Type = BasicBufferManagementLicence;
+	using Type = UsesGlobalConstantBuffersLicence;
 };

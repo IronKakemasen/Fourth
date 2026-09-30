@@ -22,6 +22,8 @@ public:
 
 	//全モデルコンテナの中身を見るためのコマンド
 	ModelContextCmds::WatchModelContainer WatchDataCmd(ProviderKey key_)const;
+	//仕分けコンテナを見るためのコマンド
+	ModelContextCmds::WatchSeparatedModelContainer WatchSeparatedCmd(ProviderKey key_);
 
 	//ランタイムでPSO切り替えコストを低減させるために、モデルクラスをおなじrenderStateごとに分別する
 	void SeparateModels(NexusFieldProof proof_, AgentKey key_);

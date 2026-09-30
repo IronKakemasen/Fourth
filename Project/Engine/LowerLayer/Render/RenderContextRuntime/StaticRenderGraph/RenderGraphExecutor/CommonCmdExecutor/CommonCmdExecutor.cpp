@@ -3,7 +3,13 @@
 
 
 //外部
+#include "../../../../../Buffer/BufferContextDiplomats.h"
+#include "../../../../../Buffer/GlobalConstantBuffers/GlobalConstantBuffers.h"
+
+#include "../../../../../Core/DescriptorHeap/DescriptorHeapContextDiplomats.h"
+
 #include "../../../../../Core/Command/RuntimeWrapper/RuntimeWrapper.h"
+
 #include "../../../../../../../Assets/Shared/ConstantBuffers.h"
 
 using namespace ProjectConfig::Render;
@@ -19,23 +25,34 @@ RenderContext::StaticRenderGraph::CommonCmdExecutor::CommonCmdExecutor(NexusFiel
 void RenderContext::StaticRenderGraph::CommonCmdExecutor::ExecuteCommonCmds
 (
 	UINT const frameIndex_,
-	ID3D12DescriptorHeap* srvDescriptorHeap_,
+	DescriptorHeapContextDiplomat& descriptorHeapContextDiplomat_,
 	RuntimeWrapper& runtimeWrapper_,
-	std::array<std::vector<D3D12_GPU_VIRTUAL_ADDRESS>, (UINT)NumBuffer::kDoubleBuffer> const& constantsGPU_
+	BufferContextDiplomat& bufferContextDiplomat_
 )
 {
+	//srvDescriptorHeapにアクセス
+	auto dToolLender = descriptorHeapContextDiplomat_.Access<DescriptorHeapContext::ToolLender>();
+	DescriptorHeapContext::ToolLender::LicenceType<ID3D12DescriptorHeap> dLicence;
+	auto* srvUavDescriptorHeap = dToolLender->Lend<ID3D12DescriptorHeap>(dLicence);
+
+	//GlobalConstantBuffersにアクセス
+	auto bToolLender = bufferContextDiplomat_.Access<BufferContext::ToolLender>();
+	BufferContext::ToolLender::LicenceType<BufferContext::GlobalConstantBuffers> bLicence;
+	auto& globalConstantBuffers = *bToolLender->Lend<BufferContext::GlobalConstantBuffers>(bLicence);
+
+
 	//ルートシグネチャをセット
 	SetGraphicsRootSignature(runtimeWrapper_);
 
 	//srvuavディスクリプタヒープをセット
-	SetDescriptorHeaps(srvDescriptorHeap_, runtimeWrapper_);
+	SetDescriptorHeaps(srvUavDescriptorHeap, runtimeWrapper_);
 	
 	//フローバル定数バッファビューを転送
 	SetGlobalConstantViews
 	(
 		frameIndex_,
 		runtimeWrapper_,
-		constantsGPU_
+		globalConstantBuffers.WatchGPUAddressContainer()
 	);
 }
 
