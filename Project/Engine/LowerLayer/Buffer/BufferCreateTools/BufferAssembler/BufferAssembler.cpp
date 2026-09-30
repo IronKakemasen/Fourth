@@ -9,8 +9,7 @@
 
 
 //外部
-#include "../../../Core/DescriptorHeap/DescriptorHeapContextDiplomat/DescriptorHeapContextDiplomat.h"
-#include "../../../Core/DescriptorHeap/DescriptorHeapContextDiplomat/DescriptorHeapToolLender/DescriptorHeapToolLender.h"
+#include "../../../Core/DescriptorHeap/DescriptorHeapContextDiplomats.h"
 
 namespace
 {

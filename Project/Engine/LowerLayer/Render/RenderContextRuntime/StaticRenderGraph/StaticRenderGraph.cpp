@@ -24,7 +24,7 @@ RenderContext::StaticRenderGraph::StaticRenderGraph
 {
 	Logger::Entry("StaticRenderGraph: Constructor");
 
-	Build
+	auto buildOutput = Build
 	(
 		proof_,
 		pathAssembler_,
@@ -40,11 +40,11 @@ RenderContext::StaticRenderGraph::StaticRenderGraph
 
 	pathOperator.reset
 	(
-		new PathOperator(proof_, allPathPtr)
+		new PathOperator(proof_, buildOutput .allPathPtr)
 	);
 	Logger::Log("Instantiate: PathOperator", fileName);
 	
-	commonCmdExecutor.reset(new CommonCmdExecutor(proof_, graphicsRootSig));
+	commonCmdExecutor.reset(new CommonCmdExecutor(proof_, buildOutput.graphicsRootSig));
 	Logger::Log("Instantiate: CommonCmdExecutor", fileName);
 
 
@@ -56,3 +56,4 @@ RenderContext::StaticRenderGraph::~StaticRenderGraph()
 {
 
 }
+

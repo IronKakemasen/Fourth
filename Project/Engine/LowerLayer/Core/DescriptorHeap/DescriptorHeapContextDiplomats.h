@@ -1,0 +1,4 @@
+#pragma once
+#include "DescriptorHeapContextDiplomat/DescriptorHeapContextDiplomat.h"
+#include "DescriptorHeapContextDiplomat/DescriptorHeapToolLender/DescriptorHeapToolLender.h"
+#include "DescriptorHeapContextDiplomat/DescriptorHeapToolLender/DescriptorHeapToolLenderLicences.h"

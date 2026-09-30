@@ -1,0 +1,8 @@
+#pragma once
+
+#include "CommandContextDiplomat/CommandContextDiplomat.h"
+#include "CommandContextDiplomat/CommandContextToolLender/CommandContextToolLender.h"
+#include "CommandContextDiplomat/CommandContextToolLender/CmdContextToolLenderLicences.h"
+#include "CommandContextDiplomat/CommandContextCmdProvider/CommandContextCmdProvider.h"
+#include "CommandContextDiplomat/CommandContextCmdProvider/CommandContextCmdProviderLicences.h"
+#include "CommandContextDiplomat/CommandContextExecutionAgent/CommandContextExecutionAgent.h"

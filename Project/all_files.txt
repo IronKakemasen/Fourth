@@ -10898,7 +10898,7 @@ public:
 		[[maybe_unused]] RenderStateComponent::FillMode const modelFillMode_,
 		PSO_PoolDispatcher& psoDispatcher_,
 		RuntimeWrapper& cmdWrapper_,
-		BufferContext::BufferDispatcher& bufDispatcher_
+		[[maybe_unused]] BufferContext::BufferDispatcher& bufDispatcher_
 	) = 0;
 	PassDesc const* WatchDesc() const;
 	//初期化用のPassDescからランタイム用へ
@@ -11127,9 +11127,11 @@ void SceneCompositor::Update
 	[[maybe_unused]] RenderStateComponent::FillMode const modelFillMode_,
 	RenderContext::PSO_PoolDispatcher& psoDispatcher_,
 	RuntimeWrapper& cmdWrapper_,
-	BufferContext::BufferDispatcher& bufDispatcher_
+	[[maybe_unused]] BufferContext::BufferDispatcher& bufDispatcher_
 )
 {
+	//オフスクリーンレンダリングのみです
+	RenderOffScreen(psoDispatcher_, cmdWrapper_ ,bufDispatcher_);
 }
 
 ========================================
@@ -11147,7 +11149,7 @@ public:
 		[[maybe_unused]] RenderStateComponent::FillMode const modelFillMode_,
 		RenderContext::PSO_PoolDispatcher& psoDispatcher_,
 		RuntimeWrapper& cmdWrapper_,
-		BufferContext::BufferDispatcher& bufDispatcher_
+		[[maybe_unused]] BufferContext::BufferDispatcher& bufDispatcher_
 	)override;
 private:
 };
@@ -11172,9 +11174,11 @@ void SceneOpaque::Update
 	[[maybe_unused]] RenderStateComponent::FillMode const modelFillMode_,
 	RenderContext::PSO_PoolDispatcher& psoDispatcher_,
 	RuntimeWrapper& cmdWrapper_,
-	BufferContext::BufferDispatcher& bufDispatcher_
+	[[maybe_unused]] BufferContext::BufferDispatcher& bufDispatcher_
 )
 {
+	//モデルの描画はもちろんします。
+	RenderModels(modelContainer_, modelFillMode_, psoDispatcher_, cmdWrapper_);
 }
 
 ========================================
@@ -11192,7 +11196,7 @@ public:
 		[[maybe_unused]] RenderStateComponent::FillMode const modelFillMode_,
 		RenderContext::PSO_PoolDispatcher& psoDispatcher_,
 		RuntimeWrapper& cmdWrapper_,
-		BufferContext::BufferDispatcher& bufDispatcher_
+		[[maybe_unused]] BufferContext::BufferDispatcher& bufDispatcher_
 	)override;
 private:
 };
@@ -11982,6 +11986,9 @@ RenderContext::PathBehavior::PathBehavior(NexusFieldProof proof_, std::string co
 #pragma once
 #include "../../RenderContext.h"
 #include "../../RenderPass/AllRenderPass/AllPassFwd.h"
+#include "../../RenderStateComponent.h"
+//外部
+#include "../../../Buffer/BufferContext.h"
 class Model;
 struct RenderStateKey;
 class RuntimeWrapper;
@@ -11999,8 +12006,11 @@ public:
 	auto const& WatchName()const { return  name; }
 	virtual void Update
 	(
-		[[maybe_unused]] std::vector<std::unordered_map<uint32_t, std::pair<RenderStateKey, std::vector<Model*>>>> const& modelContainer_,
-		RuntimeWrapper& cmdWrapper_
+		std::unordered_map<uint32_t, std::pair<RenderStateKey, std::vector<Model*>>> const& modelContainer_,
+		RenderStateComponent::FillMode const modelFillMode_,
+		PSO_PoolDispatcher& psoDispatcher_,
+		RuntimeWrapper& cmdWrapper_,
+		BufferContext::BufferDispatcher& bufDispatcher_
 	) = 0;
 protected:
 	//名前。初期化のために所持する
@@ -12036,8 +12046,11 @@ CreateSceneTexture::CreateSceneTexture(RenderContext::NexusFieldProof proof_, st
 }
 void CreateSceneTexture::Update
 (
-	[[maybe_unused]] std::vector<std::unordered_map<uint32_t, std::pair<RenderStateKey, std::vector<Model*>>>> const& modelContainer_,
-	RuntimeWrapper& cmdWrapper_
+	std::unordered_map<uint32_t, std::pair<RenderStateKey, std::vector<Model*>>> const& modelContainer_,
+	RenderStateComponent::FillMode const modelFillMode_,
+	RenderContext::PSO_PoolDispatcher& psoDispatcher_,
+	RuntimeWrapper& cmdWrapper_,
+	BufferContext::BufferDispatcher& bufDispatcher_
 )
 {
 }
@@ -12053,8 +12066,11 @@ public:
 	CreateSceneTexture(RenderContext::NexusFieldProof proof_, std::string const& name_);
 	virtual void Update
 	(
-		[[maybe_unused]] std::vector<std::unordered_map<uint32_t, std::pair<RenderStateKey, std::vector<Model*>>>> const& modelContainer_,
-		RuntimeWrapper& cmdWrapper_
+		std::unordered_map<uint32_t, std::pair<RenderStateKey, std::vector<Model*>>> const& modelContainer_,
+		RenderStateComponent::FillMode const modelFillMode_,
+		RenderContext::PSO_PoolDispatcher& psoDispatcher_,
+		RuntimeWrapper& cmdWrapper_,
+		BufferContext::BufferDispatcher& bufDispatcher_
 	)override;
 private:
 };
@@ -19982,4 +19998,4 @@ namespace StringProcessing
 === SUMMARY ===
 ========================================
 Total Files      : 441
-Effective Lines  : 14518
+Effective Lines  : 14529

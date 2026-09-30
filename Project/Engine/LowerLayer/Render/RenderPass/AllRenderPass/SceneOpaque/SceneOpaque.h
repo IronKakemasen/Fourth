@@ -13,7 +13,7 @@ public:
 		[[maybe_unused]] RenderStateComponent::FillMode const modelFillMode_,
 		RenderContext::PSO_PoolDispatcher& psoDispatcher_,
 		RuntimeWrapper& cmdWrapper_,
-		BufferContext::BufferDispatcher& bufDispatcher_
+		[[maybe_unused]] BufferContext::BufferDispatcher& bufDispatcher_
 	)override;
 
 private:

@@ -10,9 +10,15 @@ class CommandContext::ToolLender
 
 	//CommandQueueを扱う資格
 	struct AccessCommandQueueLicence;
+	//RuntimeCmdWrapperをしようする資格
+	struct UsesRuntimeCmdWrapperLicence;
 
 	///貸し出せるツール
-	std::tuple<ID3D12CommandQueue*> tools;
+	std::tuple
+	<
+		ID3D12CommandQueue*,
+		RuntimeWrapper*
+	> tools;
 
 public:
 
@@ -23,7 +29,8 @@ public:
 	ToolLender
 	(
 		NexusFieldProof proof_,
-		ID3D12CommandQueue* cmdQueue_
+		ID3D12CommandQueue* cmdQueue_,
+		RuntimeWrapper* runtimeWrapper_
 	);
 
 
@@ -42,4 +49,11 @@ struct CommandContext::ToolLender::CmdTypeTraits<ID3D12CommandQueue>
 {
 	using Type = AccessCommandQueueLicence;
 };
+
+template<>
+struct CommandContext::ToolLender::CmdTypeTraits<RuntimeWrapper>
+{
+	using Type = UsesRuntimeCmdWrapperLicence;
+};
+
 

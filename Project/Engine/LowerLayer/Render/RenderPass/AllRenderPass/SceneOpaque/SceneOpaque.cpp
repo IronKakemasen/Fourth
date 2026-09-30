@@ -19,10 +19,10 @@ void SceneOpaque::Update
 	[[maybe_unused]] RenderStateComponent::FillMode const modelFillMode_,
 	RenderContext::PSO_PoolDispatcher& psoDispatcher_,
 	RuntimeWrapper& cmdWrapper_,
-	BufferContext::BufferDispatcher& bufDispatcher_
+	[[maybe_unused]] BufferContext::BufferDispatcher& bufDispatcher_
 )
 {
 	//モデルの描画はもちろんします。
-
+	RenderModels(modelContainer_, modelFillMode_, psoDispatcher_, cmdWrapper_);
 
 }
