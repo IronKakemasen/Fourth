@@ -44,8 +44,11 @@ struct RenderContext::RuntimePassInfo
 	template<typename BufferType>
 	std::vector<BufferUniqueID> const& WatchReferenceBufferIDs() const 
 	{
-		if constexpr (std::is_same_v<BufferType, ColorBuffer>) return refColorBuffersID;
-		else if constexpr (std::is_same_v<BufferType, DepthStencilBuffer>) return depthStencilBufferInfo;
+		std::vector<BufferUniqueID> const& refIDContainer = refColorBuffersID;
+
+		if constexpr (std::is_same_v<BufferType, DepthStencilBuffer>) return depthStencilBufferInfo;
+
+		return refIDContainer;
 	}
 
 private:

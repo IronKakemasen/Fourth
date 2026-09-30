@@ -1,2 +1,2 @@
-﻿key: "SceneCompositorPS" , value: "Assets/Shader/PS/"
-key: "StandardPS" , value: "Assets/Shader/PS/"
+﻿key: "StandardPS" , value: "Assets/Shader/PS/Model/"
+key: "SceneCompositorPS" , value: "Assets/Shader/PS/Offscreen/"

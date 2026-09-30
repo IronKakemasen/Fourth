@@ -1,6 +1,6 @@
-#include "../../Shared/ConstantBuffers.h"
-#include "../../Shared/StructuredBufferModelData.h"
-#include "../../Shared/StaticSampler.h"
+#include "../../../Shared/ConstantBuffers.h"
+#include "../../../Shared/StructuredBufferModelData.h"
+#include "../../../Shared/StaticSampler.h"
 
 
 struct PSInput
@@ -11,7 +11,6 @@ struct PSInput
 
 float4 main(PSInput input_) : SV_Target
 {
-    // 簡易版：offsetを直接シーンカラーのSRVHeapIndexとして解釈する
     Texture2D<float4> sceneColor = ResourceDescriptorHeap[gPassBufferIndexRange.offset];
 
     return sceneColor.Sample(sampler_linearWrap, input_.uv);
