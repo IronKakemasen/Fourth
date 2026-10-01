@@ -40,7 +40,5 @@ void RenderContext::StaticRenderGraph::Run
 		bufferContextDiplomat_,
 		runtimeCmdWrapper
 	);
-
-
 }
 

@@ -6,7 +6,7 @@ class RenderContext::StaticRenderGraph::RootSigBuilder
 	friend class StaticRenderGraph;
 
 	//グラフィックス用のルートシグの生成
-	static [[nodiscard]] ID3D12RootSignature* Build
+	static [[nodiscard]] BuildOutput::RootSigBuilder Build
 	(
 		NexusFieldProof proof_,
 		RootSignatureContextDiplomat& rootSignatureContextDiplomat_

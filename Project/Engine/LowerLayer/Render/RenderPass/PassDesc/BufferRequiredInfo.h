@@ -13,7 +13,7 @@ struct RenderContext::RequiredBufferInfo
 		std::vector<float> clearColor{};
 		uint32_t width{};
 		uint32_t height{};
-		//シングル化ダブルか
+		//シングルかダブルか
 		ProjectConfig::Render::NumBuffer numBuffer{};
 		RenderStateComponent::BlendMode blendMode = RenderStateComponent::BlendMode::kDependsModel;
 		BufferUniqueID bufferID;

@@ -11,7 +11,7 @@ class RenderContext::StaticRenderGraph::PathBuilder
 private:
 
 	//全てのPathを生成
-	static std::vector<RenderContext::PathBehavior*> Build
+	static [[nodiscard]] BuildOutput::PathBuilder Build
 	(
 		NexusFieldProof proof_,
 		RenderPathAssembler& pathAssembler_,

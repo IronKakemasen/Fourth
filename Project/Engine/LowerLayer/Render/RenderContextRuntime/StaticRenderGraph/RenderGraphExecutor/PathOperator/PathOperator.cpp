@@ -33,7 +33,6 @@ void RenderContext::StaticRenderGraph::PathOperator::Run
 	RuntimeWrapper& runtimeWrapper_
 )
 {
-
 	//BufferDispatcherにアクセス
 	auto bToolLender = bufferContextDiplomat_.Access<BufferContext::ToolLender>();
 	BufferContext::ToolLender::LicenceType<BufferContext::BufferDispatcher> bLicence;
@@ -42,7 +41,7 @@ void RenderContext::StaticRenderGraph::PathOperator::Run
 	//modelContainer（仕分け済み）取得コマンドをもらう
 	auto mCmdProvider = modelContextDiplomat_.Access<ModelContext::CommandProvider>();
 	ModelContext::CommandProvider::LicenceType<ModelContextCmds::WatchSeparatedModelContainer> mLicence;
-	auto const& modelContainer = *mCmdProvider->Provide<ModelContextCmds::WatchSeparatedModelContainer>(mLicence)();
+	auto& modelContainer = *mCmdProvider->Provide<ModelContextCmds::WatchSeparatedModelContainer>(mLicence)();
 
 	for (auto* path : allPathPtr)
 	{

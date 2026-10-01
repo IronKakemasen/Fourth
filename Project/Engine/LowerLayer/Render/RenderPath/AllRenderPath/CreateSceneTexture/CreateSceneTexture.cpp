@@ -11,7 +11,7 @@ CreateSceneTexture::CreateSceneTexture(RenderContext::NexusFieldProof proof_, st
 
 void CreateSceneTexture::Run
 (
-	std::unordered_map<uint64_t, std::pair<RenderStateKey, std::vector<Model*>>> const& modelContainer_,
+	std::vector<std::unordered_map<uint64_t, std::pair<RenderStateKey, std::vector<Model*>>>>& modelContainer_,
 	RenderStateComponent::FillMode const modelFillMode_,
 	RenderContext::PSO_PoolDispatcher& psoDispatcher_,
 	RuntimeWrapper& cmdWrapper_,

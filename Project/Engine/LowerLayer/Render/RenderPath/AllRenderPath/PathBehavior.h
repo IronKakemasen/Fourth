@@ -1,8 +1,10 @@
 #pragma once
 #include "../../RenderContext.h"
 #include "../../RenderPass/AllRenderPass/AllPassFwd.h"
+#include "../../RenderPass/AllRenderPass/RenderPassTraits.h"
 #include "../../RenderStateComponent.h"
 #include "../../RenderPass/AllRenderPass/RenderPassBehavior.h"
+
 
 
 //外部
@@ -30,7 +32,7 @@ public:
 
 	virtual void Run
 	(
-		std::unordered_map<uint64_t, std::pair<RenderStateKey, std::vector<Model*>>> const& modelContainer_,
+		std::vector<std::unordered_map<uint64_t, std::pair<RenderStateKey, std::vector<Model*>>>>& modelContainer_,
 		RenderStateComponent::FillMode const modelFillMode_,
 		PSO_PoolDispatcher& psoDispatcher_,
 		RuntimeWrapper& cmdWrapper_,
@@ -43,22 +45,30 @@ protected:
 	template<typename PassType>
 	void CallPassUpdate
 	(
-		std::unordered_map<uint64_t, std::pair<RenderStateKey, std::vector<Model*>>> const& modelContainer_,
+		std::vector<std::unordered_map<uint64_t, std::pair<RenderStateKey, std::vector<Model*>>>>& modelContainer_,
 		RenderStateComponent::FillMode const modelFillMode_,
 		PSO_PoolDispatcher& psoDispatcher_,
 		RuntimeWrapper& cmdWrapper_,
 		BufferContext::BufferDispatcher& bufDispatcher_
 	)
 	{
+
+		//対象パスが描画を担当するモデルコンテナを指定
+		auto const& srcModelContainer =
+			modelContainer_[(UINT)RenderPassTraits::PassClassTraits<PassType>::kPassEnum];
+
 		std::get<PassType*>(passses)->Update
 		(
-			modelContainer_,
+			srcModelContainer,
 			modelFillMode_,
 			psoDispatcher_,
 			cmdWrapper_,
 			bufDispatcher_
 		);
 	}
+
+
+
 
 	//名前。pathシーケンス初期化のために所持する
 	std::string name;

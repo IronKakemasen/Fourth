@@ -20,7 +20,7 @@ namespace
 	auto const fileName = "PassSetUpper.cpp";
 }
 
-[[nodiscard]] BufferUniqueID RenderContext::StaticRenderGraph::PassSetUpper::Setup
+[[nodiscard]] RenderContext::StaticRenderGraph::BuildOutput::PassSetUpper RenderContext::StaticRenderGraph::PassSetUpper::Setup
 (
 	NexusFieldProof proof_,
 	RenderPassCreator& renderPassCreator_,
@@ -28,14 +28,20 @@ namespace
 	BufferContextDiplomat& bufferContextDiplomat_
 )
 {
+	BuildOutput::PassSetUpper output;
 
-	std::vector<BufferUniqueID> allRefBuffer = CreateAllPassInfo(proof_, renderPassCreator_, passContainer_, bufferContextDiplomat_);
+	///全てのパスが参照するバッファのIDが横一列に詰まっている
+	///このIDを辿って、ランタイムの一歩目にsrvHeapIndexを詰めていく
+	output.refBuffers = CreateAllPassInfo(proof_, renderPassCreator_, passContainer_, bufferContextDiplomat_);
 
-	BufferUniqueID refBufSrvArrayBufferID = CreateReferenceBufferSrvArray(proof_,allRefBuffer,bufferContextDiplomat_);
+	///パスが参照するバッファのsrvHeapIndexを詰めるためのバッファのID
+	///UploadStructuredBufferでダブルです。中身の初期化もしていません
+	output.targetFillInRefBufferSrv = CreateReferenceBufferSrvArray(proof_, output.refBuffers,bufferContextDiplomat_);
 
+	//Passのルートコンスタンツのバッファを作成する
 	CreatePassRootConstantsBuffer(proof_, bufferContextDiplomat_);
 
-	return refBufSrvArrayBufferID;
+	return output;
 }
 
 std::vector<BufferUniqueID> RenderContext::StaticRenderGraph::PassSetUpper::CreateAllPassInfo
@@ -60,8 +66,6 @@ std::vector<BufferUniqueID> RenderContext::StaticRenderGraph::PassSetUpper::Crea
 	auto toolLender = bufferContextDiplomat_.Access<BufferContext::ToolLender>();
 	BufferContext::ToolLender::LicenceType<BufferContext::BufferDispatcher> licenceTool;
 	auto* bufferDispatcher = toolLender->Lend<BufferContext::BufferDispatcher>(licenceTool);
-
-
 
 	//パスDescがどのバッファを使用するかの名前リストを所持しているので、それと組み合わせて埋めていく
 	for (auto const& [kPassEnum, pass]: allPassPtrMap)
@@ -150,7 +154,7 @@ SRVHeapIndex RenderContext::StaticRenderGraph::PassSetUpper::CreateReferenceBuff
 
 	///バッファ作成
 	std::string const bufferName = "RefBufSrvArr";
-	UploadStructuredBufferDescription desc(UINT(sizeof(BufferUniqueID)), UINT(data_.size()), 0);
+	UploadStructuredBufferDescription desc(UINT(sizeof(SRVHeapIndex)), UINT(data_.size()), 0);
 	auto id_buffer = bufferCreator->CreateWithBuffer(desc, bufferName);
 
 	//そのバッファのコンスタントバッファを生成し,

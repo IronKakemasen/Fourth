@@ -151,13 +151,17 @@ void RenderContext::PassBehavior::RenderOffScreen
 	for (auto const& id : refBuffersIDDepths)
 	{
 		//バッファ検索
-		DepthStencilBuffer* colorBuffer = FindBufferWithID<DepthStencilBuffer>(id, bufDispatcher_);
+		DepthStencilBuffer* depthStencilBuffer = FindBufferWithID<DepthStencilBuffer>(id, bufDispatcher_);
 		//Write -> Read  へ
-		CreateBarrier<BufferUsage::kRead>(colorBuffer);
+		CreateBarrier<BufferUsage::kRead>(depthStencilBuffer);
 	}
 
 	//キャッシュされたバリアを張る
 	PitchBarrierCached(cmdWrapper_);
+
+	//どんなオフスクだろうが、フルスクリーントライアングルで頂点情報形成
+	cmdWrapper_.DispatchMesh(3, 1, 1);
+
 
 }
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

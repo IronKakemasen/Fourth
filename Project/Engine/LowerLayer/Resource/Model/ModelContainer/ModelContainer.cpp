@@ -36,9 +36,8 @@ ModelContextCmds::WatchSeparatedModelContainer ModelContext::ModelContainer::Wat
 {
 	return [this]()
 	{
-		return this->separatedContainer.data();
+		return &this->separatedContainer;
 	};
-
 }
 
 void ModelContext::ModelContainer::SeparateModels(NexusFieldProof proof_, AgentKey key_)

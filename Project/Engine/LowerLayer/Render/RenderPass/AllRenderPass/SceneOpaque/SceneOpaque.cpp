@@ -8,7 +8,7 @@
 #include "../../../../Core/Command/RuntimeWrapper/RuntimeWrapper.h"
 
 SceneOpaque::SceneOpaque(RenderContext::NexusFieldProof proof_ , std::unique_ptr<RenderContext::PassDesc>&& desc_)
-	:RenderContext::PassBehavior(proof_, std::move(desc_))
+:RenderContext::PassBehavior(proof_, std::move(desc_))
 {
 
 }

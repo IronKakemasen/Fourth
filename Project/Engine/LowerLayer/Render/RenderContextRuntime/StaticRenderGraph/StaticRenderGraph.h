@@ -50,13 +50,33 @@ private:
 
 	struct BuildOutput
 	{
-		//全てのPathのアドレス。本体は別コンテナクラスが所有。制御シーケンス通りにソートされている
-		std::vector<PathBehavior*> allPathPtr;
-		//描画用巨大共通ルートシグネチャ
-		ID3D12RootSignature* graphicsRootSig;
-		//パスが参照するバッファのsrvheapIndexがつまったバッファID
-		//ランタイムで更新する必要がある
-		BufferUniqueID refBufSrvIndicesBufferID;
+
+		struct RootSigBuilder
+		{
+			//描画用巨大共通ルートシグネチャ
+			ID3D12RootSignature* graphicsRootSig;
+		};
+
+		struct PathBuilder
+		{
+			//全てのPathのアドレス。本体は別コンテナクラスが所有。制御シーケンス通りにソートされている
+			std::vector<PathBehavior*> sortedAllPathPtr;
+		};
+
+		struct PassSetUpper
+		{
+			///全てのパスが参照するバッファのIDが横一列に詰まっている
+			///このIDを辿って、ランタイムの一歩目にsrvHeapIndexを詰めていく
+			std::vector<BufferUniqueID> refBuffers;
+			///パスが参照するバッファのsrvHeapIndexを詰めるためのバッファのID
+			///UploadStructuredBufferなのでダブルです。中身の初期化もしていません
+			BufferUniqueID targetFillInRefBufferSrv;
+		};
+
+		RootSigBuilder rootSigBuilder;
+		PathBuilder pathBuilder;
+		PassSetUpper passSetUpper;
+
 	};
 
 	BuildOutput Build

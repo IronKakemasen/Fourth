@@ -10,15 +10,18 @@ namespace
 	auto const fileName = "GraphicsRootSigBuilder.cpp";
 }
 
+using namespace RootSignatureLayoutComponent;
+using namespace StaticSampler;
 
-[[nodiscard]] ID3D12RootSignature* RenderContext::StaticRenderGraph::RootSigBuilder::Build
+
+[[nodiscard]] RenderContext::StaticRenderGraph::BuildOutput::RootSigBuilder RenderContext::StaticRenderGraph::RootSigBuilder::Build
 (
 	NexusFieldProof proof_,
 	RootSignatureContextDiplomat& rootSignatureContextDiplomat_
 )
 {
-	using namespace RootSignatureLayoutComponent;
-	using namespace StaticSampler;
+
+	BuildOutput::RootSigBuilder output;
 
 	//rootSig生成コマンドをもらう
 	auto* rootSigCmdProvider = rootSignatureContextDiplomat_.Access<RootSignatureContext::CmdProvider>();
@@ -36,5 +39,7 @@ namespace
 	Logger::Log("Create: GraphicsRootSig", fileName);
 
 	//ルートシグネチャを生成してそのポインタはもらっちゃう
-	return createRootSigCmd(desc);
+	output.graphicsRootSig = createRootSigCmd(desc);
+
+	return output;
 }

@@ -40,11 +40,11 @@ RenderContext::StaticRenderGraph::StaticRenderGraph
 
 	pathOperator.reset
 	(
-		new PathOperator(proof_, buildOutput.allPathPtr, psoDispatcher_)
+		new PathOperator(proof_, buildOutput.pathBuilder.sortedAllPathPtr, psoDispatcher_)
 	);
 	Logger::Log("Instantiate: PathOperator", fileName);
 	
-	commonCmdExecutor.reset(new CommonCmdExecutor(proof_, buildOutput.graphicsRootSig));
+	commonCmdExecutor.reset(new CommonCmdExecutor(proof_, buildOutput.rootSigBuilder.graphicsRootSig));
 	Logger::Log("Instantiate: CommonCmdExecutor", fileName);
 
 
