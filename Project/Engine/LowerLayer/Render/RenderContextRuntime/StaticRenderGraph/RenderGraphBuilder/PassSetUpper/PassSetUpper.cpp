@@ -36,7 +36,7 @@ namespace
 
 	///パスが参照するバッファのsrvHeapIndexを詰めるためのバッファのID
 	///UploadStructuredBufferでダブルです。中身の初期化もしていません
-	output.targetFillInRefBufferSrv = CreateReferenceBufferSrvArray(proof_, output.refBuffers,bufferContextDiplomat_);
+	output.targetFillInRefBufferID = CreateReferenceBufferSrvArray(proof_, output.refBuffers,bufferContextDiplomat_);
 
 	//Passのルートコンスタンツのバッファを作成する
 	CreatePassRootConstantsBuffer(proof_, bufferContextDiplomat_);

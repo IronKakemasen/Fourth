@@ -23,7 +23,7 @@ public:
 
 	ColorBufferDescription
 	(
-		std::vector<float> clearColor_,
+		std::vector<float> const& clearColor_,
 		UINT width_,
 		UINT height_,
 		DXGI_FORMAT format_,

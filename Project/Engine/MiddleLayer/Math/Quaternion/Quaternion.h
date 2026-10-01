@@ -39,7 +39,7 @@
 			return result;
 		}
 
-		inline static Quaternion CreateQuaternion(const Vector3 lookDir_)
+		inline static Quaternion CreateQuaternion(Vector3 const& lookDir_)
 		{
 			DirectX::XMVECTOR xAxis;
 			DirectX::XMVECTOR yAxis;

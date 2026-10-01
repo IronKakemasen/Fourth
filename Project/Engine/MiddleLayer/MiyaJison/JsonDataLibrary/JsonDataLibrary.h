@@ -8,8 +8,8 @@ public:
 
 	struct HandleLicence;
 
-	const nlohmann::json& Export(HandleLicence licence_, std::string fileName_)const;
-	void Import(HandleLicence licence_, std::string fileName_, nlohmann::json jsonData_);
+	const nlohmann::json& Export(HandleLicence licence_, std::string const& fileName_)const;
+	void Import(HandleLicence licence_, std::string const& fileName_, nlohmann::json const& jsonData_);
 
 
 private:

@@ -7,6 +7,9 @@
 #include "../../../../../Core/Command/RuntimeWrapper/RuntimeWrapper.h"
 
 #include "../../../../../Buffer/BufferContextDiplomats.h"
+#include "../../../../../Buffer/BufferRuntime/BufferDispatcher/BufferDispatcher.h"
+#include "../../../../../Buffer/BufferDefinition/GPUBuffer/UploadStructuredBuffer/UploadStructuredBuffer.h"
+
 
 #include "../../../../../Resource/Model/ModelContextDiplomatIncludes.h"
 #include "../../../../../Resource/Model/ModelContainer/ModelContainer.h"
@@ -17,13 +20,27 @@ RenderContext::StaticRenderGraph::PathOperator::PathOperator
 (
 	NexusFieldProof proof_,
 	std::vector<PathBehavior*> const& allPathPtr_,
-	PSO_PoolDispatcher& pso_PoolDispatcher_
+	PSO_PoolDispatcher& pso_PoolDispatcher_,
+	std::vector<BufferUniqueID> const& refBuffers_,
+	BufferUniqueID const targetFillInRefBufferID_
 
-):allPathPtr(allPathPtr_), pso_PoolDispatcher(pso_PoolDispatcher_)
+):allPathPtr(allPathPtr_), pso_PoolDispatcher(pso_PoolDispatcher_), refBuffers(refBuffers_), targetFillInRefBufferID(targetFillInRefBufferID_)
 {
 
 }
 
+void RenderContext::StaticRenderGraph::PathOperator::FillInRefBufferSrvIndices(BufferContextDiplomat& bufferContextDiplomat_)
+{
+	//BufferDispatcherにアクセス
+	auto bToolLender = bufferContextDiplomat_.Access<BufferContext::ToolLender>();
+	BufferContext::ToolLender::LicenceType<BufferContext::BufferDispatcher> bLicence;
+	auto& bufferDispatcher = *bToolLender->Lend<BufferContext::BufferDispatcher>(bLicence);
+
+	//参照バッファsrv格納先のバッファ
+	auto* dstBuffer = bufferDispatcher.Dispatch(targetFillInRefBufferID);
+
+
+}
 
 void RenderContext::StaticRenderGraph::PathOperator::Run
 (

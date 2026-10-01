@@ -25,9 +25,6 @@ public:
 	///+/////////////////////////////////////////////////////////////
 	///+/////////////////////////////////////////////////////////////
 
-	//virtual std::array<D3D12_RESOURCE_BARRIER, ProjectConfig::Render::kRequiredGPUBufferSum>
-	//	CreateNextStepBarriers(ExtractMaterialKey key_) override;
-
 private:
 
 

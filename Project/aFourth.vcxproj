@@ -94,6 +94,7 @@
       <PrecompiledHeaderFile>PreCompileHeader.h</PrecompiledHeaderFile>
       <AdditionalIncludeDirectories>$(ProjectDir)\Engine\Utility;$(ProjectDir)\Engine\PreCompileHeader;$(ProjectDir)\Engine\MiddleLayer\MiyaJison;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <ForcedIncludeFiles>PreCompileHeader.h;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <TreatWarningAsError>true</TreatWarningAsError>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>

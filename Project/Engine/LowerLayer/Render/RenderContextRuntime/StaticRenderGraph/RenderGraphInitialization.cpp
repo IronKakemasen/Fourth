@@ -20,7 +20,6 @@ RenderContext::StaticRenderGraph::BuildOutput RenderContext::StaticRenderGraph::
 {
 	BuildOutput buildOutput;
 
-
 	//全てのPathを生成し、制御シーケンス通りに並び替える
 	buildOutput.pathBuilder = PathBuilder::Build(proof_, pathAssembler_, bufferContextDiplomat_);
 	

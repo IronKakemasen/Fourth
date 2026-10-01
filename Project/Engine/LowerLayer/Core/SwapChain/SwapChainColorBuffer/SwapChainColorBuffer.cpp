@@ -49,7 +49,7 @@ void SwapChainContext::ColorBuffer::OverrideHeapIndex(SwapChainContext::NexusFie
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-SwapChainContext::Description::Description(std::array<float, 4> clearColor_, DXGI_FORMAT format_)
+SwapChainContext::Description::Description(std::array<float, 4> const& clearColor_, DXGI_FORMAT format_)
 {
 	clearColor = clearColor_;
 	format = format_;
