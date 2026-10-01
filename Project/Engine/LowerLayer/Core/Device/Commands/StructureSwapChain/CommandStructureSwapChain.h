@@ -13,7 +13,7 @@ struct CommandStructureSwapChain : public DeviceContextCommandBehavior
 	(
 		IDXGIFactory7& dxgiFactory_,
 		ID3D12CommandQueue* commandQueue_,
-		DXGI_SWAP_CHAIN_DESC1 desc_,
+		DXGI_SWAP_CHAIN_DESC1 const& desc_,
 		IDXGISwapChain4** swapChainDoublePtr_,
 		const HWND hWnd_
 	);

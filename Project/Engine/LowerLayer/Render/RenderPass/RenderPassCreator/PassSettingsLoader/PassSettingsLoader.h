@@ -6,20 +6,20 @@ class RenderContext::RenderPassCreator::PassSettingsLoader
 {
 	friend class RenderPassCreator;
 
-	static [[nodiscard]] std::unique_ptr<PassDesc> Load(std::string const passName_);
+	static [[nodiscard]] std::unique_ptr<PassDesc> Load(std::string const& passName_);
 
 
 	//以下ヘルパー
 private:
-	static std::vector<RenderContext::RequiredBufferInfo::ColorBuffer> ParseColorBufferInfo(std::string const passName_);
+	static std::vector<RenderContext::RequiredBufferInfo::ColorBuffer> ParseColorBufferInfo(std::string const& passName_);
 
-	static std::optional<RenderContext::RequiredBufferInfo::DepthStencilBuffer> ParseDepthStencilBufferInfo(std::string const passName_);
+	static std::optional<RenderContext::RequiredBufferInfo::DepthStencilBuffer> ParseDepthStencilBufferInfo(std::string const& passName_);
 
-	static RenderPassState ParseRenderPassState(std::string const passName_);
+	static RenderPassState ParseRenderPassState(std::string const& passName_);
 
-	static std::optional<std::pair<std::string, std::string >> ParseShaderFile(std::string const passName_);
+	static std::optional<std::pair<std::string, std::string >> ParseShaderFile(std::string const& passName_);
 
-	static std::vector<std::string> ParseReferenceBufferNames(std::string const passName_);
+	static std::vector<std::string> ParseReferenceBufferNames(std::string const& passName_);
 
 	struct DataKeyString
 	{

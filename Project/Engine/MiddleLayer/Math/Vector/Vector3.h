@@ -41,7 +41,7 @@ struct Vector3
 	///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	//内積
-	inline float GetCos(const Vector3 other_)const
+	inline float GetCos(Vector3 const& other_)const
 	{
 		DirectX::XMVECTOR v1 = DirectX::XMLoadFloat3(&data);
 		DirectX::XMVECTOR v2 = DirectX::XMLoadFloat3(&other_.data);
@@ -52,7 +52,7 @@ struct Vector3
 	///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	//外積
-	inline Vector3 GetCross(const Vector3 other_)const
+	inline Vector3 GetCross(Vector3 const& other_)const
 	{
 		DirectX::XMVECTOR v1 = DirectX::XMLoadFloat3(&data);
 		DirectX::XMVECTOR v2 = DirectX::XMLoadFloat3(&other_.data);
@@ -86,7 +86,7 @@ struct Vector3
 	///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	//長さ比較return [0] or [-] or [+] 
-	inline int LengthComparison(const Vector3 rVec_)const
+	inline int LengthComparison(Vector3 const& rVec_)const
 	{
 		float subtractResult = LengthSq() - rVec_.LengthSq();
 
@@ -110,9 +110,9 @@ struct Vector3
 
 	inline Vector3(float x_, float y_, float z_) : data(x_, y_, z_) {}
 
-	inline Vector3(std::array<float , 3> entries_) : data(entries_[0], entries_[1], entries_[2]) {}
+	inline Vector3(std::array<float , 3> const& entries_) : data(entries_[0], entries_[1], entries_[2]) {}
 
-	inline Vector3 operator+(const Vector3 other_)const
+	inline Vector3 operator+(Vector3 const& other_)const
 	{
 		//保管用のデータを、計算用データに入れ替える
 		DirectX::XMVECTOR v1 = DirectX::XMLoadFloat3(&data);
@@ -128,7 +128,7 @@ struct Vector3
 		return result;
 	}
 
-	inline Vector3 operator-(const Vector3 other_)const
+	inline Vector3 operator-(Vector3 const& other_)const
 	{
 		//保管用のデータを、計算用データに入れ替える
 		DirectX::XMVECTOR v1 = DirectX::XMLoadFloat3(&data);
@@ -156,7 +156,7 @@ struct Vector3
 		return result;
 	}
 
-	inline Vector3& operator+=(const Vector3 other_)
+	inline Vector3& operator+=(Vector3 const& other_)
 	{
 		//保管用のデータを、計算用データに入れ替える
 		DirectX::XMVECTOR v1 = DirectX::XMLoadFloat3(&data);
@@ -171,7 +171,7 @@ struct Vector3
 		return *this;
 	}
 
-	inline Vector3& operator-=(const Vector3 other_) 
+	inline Vector3& operator-=(Vector3 const& other_)
 	{
 		//保管用のデータを、計算用データに入れ替える
 		DirectX::XMVECTOR v1 = DirectX::XMLoadFloat3(&data);
@@ -194,7 +194,7 @@ struct Vector3
 
 };
 
-inline Vector3 operator*(const float num_,Vector3 vec_)
+inline Vector3 operator*(const float num_,Vector3 const& vec_)
 {
 	return vec_ * num_;
 }

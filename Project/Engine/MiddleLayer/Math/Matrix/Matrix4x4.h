@@ -36,7 +36,7 @@ struct Matrix4x4
 		return scaleMat;
 	}
 
-	inline static Matrix4x4 CreateScale(const Vector3 scale_ )
+	inline static Matrix4x4 CreateScale(Vector3 const& scale_ )
 	{
 		Matrix4x4 scaleMat;
 		DirectX::XMStoreFloat4x4(&scaleMat.data, DirectX::XMMatrixScaling(scale_.data.x, scale_.data.y, scale_.data.z));
@@ -52,7 +52,7 @@ struct Matrix4x4
 		return translationMat;
 	}
 
-	inline static Matrix4x4 CreateTranslation(const Vector3 translation_)
+	inline static Matrix4x4 CreateTranslation(Vector3 const& translation_)
 	{
 		Matrix4x4 translationMat;
 		DirectX::XMStoreFloat4x4(&translationMat.data, DirectX::XMMatrixTranslation(translation_.data.x, translation_.data.y, translation_.data.z));

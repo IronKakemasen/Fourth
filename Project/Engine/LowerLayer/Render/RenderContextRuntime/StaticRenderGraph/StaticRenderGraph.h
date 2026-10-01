@@ -70,7 +70,7 @@ private:
 			std::vector<BufferUniqueID> refBuffers;
 			///パスが参照するバッファのsrvHeapIndexを詰めるためのバッファのID
 			///UploadStructuredBufferなのでダブルです。中身の初期化もしていません
-			BufferUniqueID targetFillInRefBufferSrv;
+			BufferUniqueID targetFillInRefBufferID;
 		};
 
 		RootSigBuilder rootSigBuilder;
@@ -96,8 +96,6 @@ private:
 	//Pathの更新処理を呼ぶ
 	std::unique_ptr<PathOperator> pathOperator;
 	//共通の描画コマンドをたたく
-	std::unique_ptr<CommonCmdExecutor> commonCmdExecutor;
-
-	
+	std::unique_ptr<CommonCmdExecutor> commonCmdExecutor;	
 };
 

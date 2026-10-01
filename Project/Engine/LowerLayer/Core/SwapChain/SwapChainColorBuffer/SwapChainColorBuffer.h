@@ -5,7 +5,7 @@
 struct SwapChainContext::Description
 {
 
-	Description(std::array<float, 4> clearColor_, DXGI_FORMAT format_);
+	Description(std::array<float, 4> const& clearColor_, DXGI_FORMAT format_);
 
 	D3D12_RENDER_TARGET_VIEW_DESC CreateRTV_Desc()const;
 	DXGI_SWAP_CHAIN_DESC1 CreateSwapChainDesc()const;

@@ -12,7 +12,7 @@ namespace
 }
 
 
-[[nodiscard]] std::unique_ptr<RenderContext::PassDesc> RenderContext::RenderPassCreator::PassSettingsLoader::Load(std::string const passName_)
+[[nodiscard]] std::unique_ptr<RenderContext::PassDesc> RenderContext::RenderPassCreator::PassSettingsLoader::Load(std::string const& passName_)
 {
 	return std::make_unique<PassDesc>
 	(
@@ -27,7 +27,7 @@ namespace
 
 std::vector<RenderContext::RequiredBufferInfo::ColorBuffer> RenderContext::RenderPassCreator::PassSettingsLoader::ParseColorBufferInfo
 (
-	std::string const passName_
+	std::string const& passName_
 )
 {
 	std::vector<RenderContext::RequiredBufferInfo::ColorBuffer> colorBufferInfo;
@@ -101,7 +101,7 @@ std::vector<RenderContext::RequiredBufferInfo::ColorBuffer> RenderContext::Rende
 
 std::optional<RenderContext::RequiredBufferInfo::DepthStencilBuffer> RenderContext::RenderPassCreator::PassSettingsLoader::ParseDepthStencilBufferInfo
 (
-	std::string const passName_
+	std::string const& passName_
 )
 {
 
@@ -157,7 +157,7 @@ std::optional<RenderContext::RequiredBufferInfo::DepthStencilBuffer> RenderConte
 
 RenderContext::RenderPassState RenderContext::RenderPassCreator::PassSettingsLoader::ParseRenderPassState
 (
-	std::string const passName_
+	std::string const& passName_
 )
 {
 	auto* miyajison = Miyajison::Get();
@@ -179,7 +179,7 @@ RenderContext::RenderPassState RenderContext::RenderPassCreator::PassSettingsLoa
 
 std::optional<std::pair<std::string, std::string >> RenderContext::RenderPassCreator::PassSettingsLoader::ParseShaderFile
 (
-	std::string const passName_
+	std::string const& passName_
 )
 {
 	std::optional<std::pair<std::string, std::string >> ms_psOpt;
@@ -198,7 +198,7 @@ std::optional<std::pair<std::string, std::string >> RenderContext::RenderPassCre
 	return ms_psOpt;
 }
 
-std::vector<std::string> RenderContext::RenderPassCreator::PassSettingsLoader::ParseReferenceBufferNames(std::string const passName_)
+std::vector<std::string> RenderContext::RenderPassCreator::PassSettingsLoader::ParseReferenceBufferNames(std::string const& passName_)
 {
 	auto* miyajison = Miyajison::Get();
 

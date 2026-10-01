@@ -52,12 +52,16 @@ protected:
 		BufferContext::BufferDispatcher& bufDispatcher_
 	)
 	{
+		auto* dstPass = std::get<PassType*>(passses);
+
+		//描画先設定の詰め込みであるBeginPassを呼ぶ
+		dstPass->BeginPass(cmdWrapper_, bufDispatcher_);
 
 		//対象パスが描画を担当するモデルコンテナを指定
 		auto const& srcModelContainer =
 			modelContainer_[(UINT)RenderPassTraits::PassClassTraits<PassType>::kPassEnum];
 
-		std::get<PassType*>(passses)->Update
+		dstPass->Update
 		(
 			srcModelContainer,
 			modelFillMode_,
