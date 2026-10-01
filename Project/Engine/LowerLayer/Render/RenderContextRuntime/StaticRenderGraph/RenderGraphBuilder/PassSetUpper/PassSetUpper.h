@@ -5,7 +5,8 @@ class RenderContext::StaticRenderGraph::PassSetUpper
 {
 	friend class StaticRenderGraph;
 
-	static [[nodiscard]] BufferUniqueID Setup
+
+	static [[nodiscard]] BuildOutput::PassSetUpper Setup
 	(
 		NexusFieldProof proof_,
 		RenderPassCreator& renderPassCreator_,

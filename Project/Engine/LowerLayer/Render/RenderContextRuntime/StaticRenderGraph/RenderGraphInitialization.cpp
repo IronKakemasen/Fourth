@@ -22,10 +22,10 @@ RenderContext::StaticRenderGraph::BuildOutput RenderContext::StaticRenderGraph::
 
 
 	//全てのPathを生成し、制御シーケンス通りに並び替える
-	buildOutput.allPathPtr = PathBuilder::Build(proof_, pathAssembler_, bufferContextDiplomat_);
+	buildOutput.pathBuilder = PathBuilder::Build(proof_, pathAssembler_, bufferContextDiplomat_);
 	
 	//グラフィックス用の巨大共通ルートシグネチャ
-	buildOutput.graphicsRootSig = RootSigBuilder::Build(proof_, rootSignatureContextDiplomat_);
+	buildOutput.rootSigBuilder = RootSigBuilder::Build(proof_, rootSignatureContextDiplomat_);
 
 	//存在しなければならない全てのPSOを生成
 	PSO_Builder::Build
@@ -33,14 +33,14 @@ RenderContext::StaticRenderGraph::BuildOutput RenderContext::StaticRenderGraph::
 		proof_,
 		psoDispatcher_,
 		passContainer_,
-		buildOutput.graphicsRootSig,
+		buildOutput.rootSigBuilder.graphicsRootSig,
 		modelContextDiplomat_,
 		pso_ContextDiplomat_,
 		shaderContextDiplomat_
 	);
 
 	//全てのPassの不足している初期化部分(PassInfoの作成、ルートコンスタンツバッファの作成など)を行う。
-	buildOutput.refBufSrvIndicesBufferID = PassSetUpper::Setup(proof_, renderPassCreator_, passContainer_, bufferContextDiplomat_);
+	buildOutput.passSetUpper = PassSetUpper::Setup(proof_, renderPassCreator_, passContainer_, bufferContextDiplomat_);
 
 	return buildOutput;
 }

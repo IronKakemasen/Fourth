@@ -9,20 +9,23 @@ namespace
 }
 
 
-[[nodiscard]] std::vector<RenderContext::PathBehavior*> RenderContext::StaticRenderGraph::PathBuilder::Build
+[[nodiscard]] RenderContext::StaticRenderGraph::BuildOutput::PathBuilder RenderContext::StaticRenderGraph::PathBuilder::Build
 (
 	NexusFieldProof proof_,
 	RenderPathAssembler& pathAssembler_,
 	BufferContextDiplomat& bufferContextDiplomat_
 )
 {
+	BuildOutput::PathBuilder output;
 	std::vector<RenderContext::PathBehavior*> allPathPtr;
 
 	allPathPtr.emplace_back(pathAssembler_.Assemble<CreateSceneTexture>(proof_, bufferContextDiplomat_));
 	Logger::Log("Instantiate: CreateSceneTexture", fileName);
 
 	//制御シーケンス通りに並び替える
-	return SortInSequence(allPathPtr);
+	output.sortedAllPathPtr = SortInSequence(allPathPtr);
+
+	return output;
 }
 
 

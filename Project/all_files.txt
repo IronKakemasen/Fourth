@@ -9493,22 +9493,22 @@ RenderContext::StaticRenderGraph::BuildOutput RenderContext::StaticRenderGraph::
 {
 	BuildOutput buildOutput;
 	//全てのPathを生成し、制御シーケンス通りに並び替える
-	buildOutput.allPathPtr = PathBuilder::Build(proof_, pathAssembler_, bufferContextDiplomat_);
+	buildOutput.pathBuilder = PathBuilder::Build(proof_, pathAssembler_, bufferContextDiplomat_);
 	//グラフィックス用の巨大共通ルートシグネチャ
-	buildOutput.graphicsRootSig = RootSigBuilder::Build(proof_, rootSignatureContextDiplomat_);
+	buildOutput.rootSigBuilder = RootSigBuilder::Build(proof_, rootSignatureContextDiplomat_);
 	//存在しなければならない全てのPSOを生成
 	PSO_Builder::Build
 	(
 		proof_,
 		psoDispatcher_,
 		passContainer_,
-		buildOutput.graphicsRootSig,
+		buildOutput.rootSigBuilder.graphicsRootSig,
 		modelContextDiplomat_,
 		pso_ContextDiplomat_,
 		shaderContextDiplomat_
 	);
 	//全てのPassの不足している初期化部分(PassInfoの作成、ルートコンスタンツバッファの作成など)を行う。
-	buildOutput.refBufSrvIndicesBufferID = PassSetUpper::Setup(proof_, renderPassCreator_, passContainer_, bufferContextDiplomat_);
+	buildOutput.passSetUpper = PassSetUpper::Setup(proof_, renderPassCreator_, passContainer_, bufferContextDiplomat_);
 	return buildOutput;
 }
 
@@ -9593,10 +9593,10 @@ RenderContext::StaticRenderGraph::StaticRenderGraph
 	);
 	pathOperator.reset
 	(
-		new PathOperator(proof_, buildOutput.allPathPtr, psoDispatcher_)
+		new PathOperator(proof_, buildOutput.pathBuilder.sortedAllPathPtr, psoDispatcher_)
 	);
 	Logger::Log("Instantiate: PathOperator", fileName);
-	commonCmdExecutor.reset(new CommonCmdExecutor(proof_, buildOutput.graphicsRootSig));
+	commonCmdExecutor.reset(new CommonCmdExecutor(proof_, buildOutput.rootSigBuilder.graphicsRootSig));
 	Logger::Log("Instantiate: CommonCmdExecutor", fileName);
 	Logger::End("StaticRenderGraph: Constructor");
 }
@@ -9649,13 +9649,28 @@ public:
 private:
 	struct BuildOutput
 	{
-		//全てのPathのアドレス。本体は別コンテナクラスが所有。制御シーケンス通りにソートされている
-		std::vector<PathBehavior*> allPathPtr;
-		//描画用巨大共通ルートシグネチャ
-		ID3D12RootSignature* graphicsRootSig;
-		//パスが参照するバッファのsrvheapIndexがつまったバッファID
-		//ランタイムで更新する必要がある
-		BufferUniqueID refBufSrvIndicesBufferID;
+		struct RootSigBuilder
+		{
+			//描画用巨大共通ルートシグネチャ
+			ID3D12RootSignature* graphicsRootSig;
+		};
+		struct PathBuilder
+		{
+			//全てのPathのアドレス。本体は別コンテナクラスが所有。制御シーケンス通りにソートされている
+			std::vector<PathBehavior*> sortedAllPathPtr;
+		};
+		struct PassSetUpper
+		{
+			///全てのパスが参照するバッファのIDが横一列に詰まっている
+			///このIDを辿って、ランタイムの一歩目にsrvHeapIndexを詰めていく
+			std::vector<BufferUniqueID> refBuffers;
+			///パスが参照するバッファのsrvHeapIndexを詰めるためのバッファのID
+			///UploadStructuredBufferなのでダブルです。中身の初期化もしていません
+			BufferUniqueID targetFillInRefBufferSrv;
+		};
+		RootSigBuilder rootSigBuilder;
+		PathBuilder pathBuilder;
+		PassSetUpper passSetUpper;
 	};
 	BuildOutput Build
 	(
@@ -10143,14 +10158,15 @@ namespace
 {
 	auto const fileName = "GraphicsRootSigBuilder.cpp";
 }
-[[nodiscard]] ID3D12RootSignature* RenderContext::StaticRenderGraph::RootSigBuilder::Build
+using namespace RootSignatureLayoutComponent;
+using namespace StaticSampler;
+[[nodiscard]] RenderContext::StaticRenderGraph::BuildOutput::RootSigBuilder RenderContext::StaticRenderGraph::RootSigBuilder::Build
 (
 	NexusFieldProof proof_,
 	RootSignatureContextDiplomat& rootSignatureContextDiplomat_
 )
 {
-	using namespace RootSignatureLayoutComponent;
-	using namespace StaticSampler;
+	BuildOutput::RootSigBuilder output;
 	//rootSig生成コマンドをもらう
 	auto* rootSigCmdProvider = rootSignatureContextDiplomat_.Access<RootSignatureContext::CmdProvider>();
 	RootSignatureContext::CmdProvider::LicenceType<RootSignatureCmds::CreateGraphicsRootSigCmd> licenece;
@@ -10163,7 +10179,8 @@ namespace
 	}
 	Logger::Log("Create: GraphicsRootSig", fileName);
 	//ルートシグネチャを生成してそのポインタはもらっちゃう
-	return createRootSigCmd(desc);
+	output.graphicsRootSig = createRootSigCmd(desc);
+	return output;
 }
 
 ========================================
@@ -10175,7 +10192,7 @@ class RenderContext::StaticRenderGraph::RootSigBuilder
 {
 	friend class StaticRenderGraph;
 	//グラフィックス用のルートシグの生成
-	static [[nodiscard]] ID3D12RootSignature* Build
+	static [[nodiscard]] BuildOutput::RootSigBuilder Build
 	(
 		NexusFieldProof proof_,
 		RootSignatureContextDiplomat& rootSignatureContextDiplomat_
@@ -10203,7 +10220,7 @@ namespace
 {
 	auto const fileName = "PassSetUpper.cpp";
 }
-[[nodiscard]] BufferUniqueID RenderContext::StaticRenderGraph::PassSetUpper::Setup
+[[nodiscard]] RenderContext::StaticRenderGraph::BuildOutput::PassSetUpper RenderContext::StaticRenderGraph::PassSetUpper::Setup
 (
 	NexusFieldProof proof_,
 	RenderPassCreator& renderPassCreator_,
@@ -10211,10 +10228,16 @@ namespace
 	BufferContextDiplomat& bufferContextDiplomat_
 )
 {
-	std::vector<BufferUniqueID> allRefBuffer = CreateAllPassInfo(proof_, renderPassCreator_, passContainer_, bufferContextDiplomat_);
-	BufferUniqueID refBufSrvArrayBufferID = CreateReferenceBufferSrvArray(proof_,allRefBuffer,bufferContextDiplomat_);
+	BuildOutput::PassSetUpper output;
+	///全てのパスが参照するバッファのIDが横一列に詰まっている
+	///このIDを辿って、ランタイムの一歩目にsrvHeapIndexを詰めていく
+	output.refBuffers = CreateAllPassInfo(proof_, renderPassCreator_, passContainer_, bufferContextDiplomat_);
+	///パスが参照するバッファのsrvHeapIndexを詰めるためのバッファのID
+	///UploadStructuredBufferでダブルです。中身の初期化もしていません
+	output.targetFillInRefBufferSrv = CreateReferenceBufferSrvArray(proof_, output.refBuffers,bufferContextDiplomat_);
+	//Passのルートコンスタンツのバッファを作成する
 	CreatePassRootConstantsBuffer(proof_, bufferContextDiplomat_);
-	return refBufSrvArrayBufferID;
+	return output;
 }
 std::vector<BufferUniqueID> RenderContext::StaticRenderGraph::PassSetUpper::CreateAllPassInfo
 (
@@ -10303,7 +10326,7 @@ SRVHeapIndex RenderContext::StaticRenderGraph::PassSetUpper::CreateReferenceBuff
 	auto* bufferCreator = toolLender->Lend<BufferContext::BufferCreator>(licenceTool);
 	///バッファ作成
 	std::string const bufferName = "RefBufSrvArr";
-	UploadStructuredBufferDescription desc(UINT(sizeof(BufferUniqueID)), UINT(data_.size()), 0);
+	UploadStructuredBufferDescription desc(UINT(sizeof(SRVHeapIndex)), UINT(data_.size()), 0);
 	auto id_buffer = bufferCreator->CreateWithBuffer(desc, bufferName);
 	//そのバッファのコンスタントバッファを生成し,
 	auto cBufferID_cBuffer =
@@ -10338,7 +10361,7 @@ void RenderContext::StaticRenderGraph::PassSetUpper::CreatePassRootConstantsBuff
 class RenderContext::StaticRenderGraph::PassSetUpper
 {
 	friend class StaticRenderGraph;
-	static [[nodiscard]] BufferUniqueID Setup
+	static [[nodiscard]] BuildOutput::PassSetUpper Setup
 	(
 		NexusFieldProof proof_,
 		RenderPassCreator& renderPassCreator_,
@@ -10381,18 +10404,20 @@ namespace
 {
 	auto const fileName = "RenderPathBuilder.cpp";
 }
-[[nodiscard]] std::vector<RenderContext::PathBehavior*> RenderContext::StaticRenderGraph::PathBuilder::Build
+[[nodiscard]] RenderContext::StaticRenderGraph::BuildOutput::PathBuilder RenderContext::StaticRenderGraph::PathBuilder::Build
 (
 	NexusFieldProof proof_,
 	RenderPathAssembler& pathAssembler_,
 	BufferContextDiplomat& bufferContextDiplomat_
 )
 {
+	BuildOutput::PathBuilder output;
 	std::vector<RenderContext::PathBehavior*> allPathPtr;
 	allPathPtr.emplace_back(pathAssembler_.Assemble<CreateSceneTexture>(proof_, bufferContextDiplomat_));
 	Logger::Log("Instantiate: CreateSceneTexture", fileName);
 	//制御シーケンス通りに並び替える
-	return SortInSequence(allPathPtr);
+	output.sortedAllPathPtr = SortInSequence(allPathPtr);
+	return output;
 }
 std::vector<RenderContext::PathBehavior*> RenderContext::StaticRenderGraph::PathBuilder::SortInSequence(std::vector<RenderContext::PathBehavior*>& allPathPtr_)
 {
@@ -10432,7 +10457,7 @@ class RenderContext::StaticRenderGraph::PathBuilder
 	//以下ヘルパー
 private:
 	//全てのPathを生成
-	static std::vector<RenderContext::PathBehavior*> Build
+	static [[nodiscard]] BuildOutput::PathBuilder Build
 	(
 		NexusFieldProof proof_,
 		RenderPathAssembler& pathAssembler_,
@@ -10592,7 +10617,7 @@ void RenderContext::StaticRenderGraph::PathOperator::Run
 	//modelContainer（仕分け済み）取得コマンドをもらう
 	auto mCmdProvider = modelContextDiplomat_.Access<ModelContext::CommandProvider>();
 	ModelContext::CommandProvider::LicenceType<ModelContextCmds::WatchSeparatedModelContainer> mLicence;
-	auto const& modelContainer = *mCmdProvider->Provide<ModelContextCmds::WatchSeparatedModelContainer>(mLicence)();
+	auto& modelContainer = *mCmdProvider->Provide<ModelContextCmds::WatchSeparatedModelContainer>(mLicence)();
 	for (auto* path : allPathPtr)
 	{
 		path->Run(modelContainer, modelFillMode, pso_PoolDispatcher, runtimeWrapper_, bufferDispatcher);
@@ -10842,12 +10867,14 @@ void RenderContext::PassBehavior::RenderOffScreen
 	for (auto const& id : refBuffersIDDepths)
 	{
 		//バッファ検索
-		DepthStencilBuffer* colorBuffer = FindBufferWithID<DepthStencilBuffer>(id, bufDispatcher_);
+		DepthStencilBuffer* depthStencilBuffer = FindBufferWithID<DepthStencilBuffer>(id, bufDispatcher_);
 		//Write -> Read  へ
-		CreateBarrier<BufferUsage::kRead>(colorBuffer);
+		CreateBarrier<BufferUsage::kRead>(depthStencilBuffer);
 	}
 	//キャッシュされたバリアを張る
 	PitchBarrierCached(cmdWrapper_);
+	//どんなオフスクだろうが、フルスクリーントライアングルで頂点情報形成
+	cmdWrapper_.DispatchMesh(3, 1, 1);
 }
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -11330,7 +11357,7 @@ private:
 #include "../../../../Resource/Model/ModelStructure/Model.h"
 #include "../../../../Core/Command/RuntimeWrapper/RuntimeWrapper.h"
 SceneOpaque::SceneOpaque(RenderContext::NexusFieldProof proof_ , std::unique_ptr<RenderContext::PassDesc>&& desc_)
-	:RenderContext::PassBehavior(proof_, std::move(desc_))
+:RenderContext::PassBehavior(proof_, std::move(desc_))
 {
 }
 void SceneOpaque::Update
@@ -11382,7 +11409,7 @@ struct RenderContext::RequiredBufferInfo
 		std::vector<float> clearColor{};
 		uint32_t width{};
 		uint32_t height{};
-		//シングル化ダブルか
+		//シングルかダブルか
 		ProjectConfig::Render::NumBuffer numBuffer{};
 		RenderStateComponent::BlendMode blendMode = RenderStateComponent::BlendMode::kDependsModel;
 		BufferUniqueID bufferID;
@@ -12151,6 +12178,7 @@ RenderContext::PathBehavior::PathBehavior(NexusFieldProof proof_, std::string co
 #pragma once
 #include "../../RenderContext.h"
 #include "../../RenderPass/AllRenderPass/AllPassFwd.h"
+#include "../../RenderPass/AllRenderPass/RenderPassTraits.h"
 #include "../../RenderStateComponent.h"
 #include "../../RenderPass/AllRenderPass/RenderPassBehavior.h"
 //外部
@@ -12172,7 +12200,7 @@ public:
 	auto const& WatchName()const { return  name; }
 	virtual void Run
 	(
-		std::unordered_map<uint64_t, std::pair<RenderStateKey, std::vector<Model*>>> const& modelContainer_,
+		std::vector<std::unordered_map<uint64_t, std::pair<RenderStateKey, std::vector<Model*>>>>& modelContainer_,
 		RenderStateComponent::FillMode const modelFillMode_,
 		PSO_PoolDispatcher& psoDispatcher_,
 		RuntimeWrapper& cmdWrapper_,
@@ -12183,16 +12211,19 @@ protected:
 	template<typename PassType>
 	void CallPassUpdate
 	(
-		std::unordered_map<uint64_t, std::pair<RenderStateKey, std::vector<Model*>>> const& modelContainer_,
+		std::vector<std::unordered_map<uint64_t, std::pair<RenderStateKey, std::vector<Model*>>>>& modelContainer_,
 		RenderStateComponent::FillMode const modelFillMode_,
 		PSO_PoolDispatcher& psoDispatcher_,
 		RuntimeWrapper& cmdWrapper_,
 		BufferContext::BufferDispatcher& bufDispatcher_
 	)
 	{
+		//対象パスが描画を担当するモデルコンテナを指定
+		auto const& srcModelContainer =
+			modelContainer_[(UINT)RenderPassTraits::PassClassTraits<PassType>::kPassEnum];
 		std::get<PassType*>(passses)->Update
 		(
-			modelContainer_,
+			srcModelContainer,
 			modelFillMode_,
 			psoDispatcher_,
 			cmdWrapper_,
@@ -12233,7 +12264,7 @@ CreateSceneTexture::CreateSceneTexture(RenderContext::NexusFieldProof proof_, st
 }
 void CreateSceneTexture::Run
 (
-	std::unordered_map<uint64_t, std::pair<RenderStateKey, std::vector<Model*>>> const& modelContainer_,
+	std::vector<std::unordered_map<uint64_t, std::pair<RenderStateKey, std::vector<Model*>>>>& modelContainer_,
 	RenderStateComponent::FillMode const modelFillMode_,
 	RenderContext::PSO_PoolDispatcher& psoDispatcher_,
 	RuntimeWrapper& cmdWrapper_,
@@ -12256,7 +12287,7 @@ public:
 	CreateSceneTexture(RenderContext::NexusFieldProof proof_, std::string const& name_);
 	virtual void Run
 	(
-		std::unordered_map<uint64_t, std::pair<RenderStateKey, std::vector<Model*>>> const& modelContainer_,
+		std::vector<std::unordered_map<uint64_t, std::pair<RenderStateKey, std::vector<Model*>>>>& modelContainer_,
 		RenderStateComponent::FillMode const modelFillMode_,
 		RenderContext::PSO_PoolDispatcher& psoDispatcher_,
 		RuntimeWrapper& cmdWrapper_,
@@ -12636,7 +12667,7 @@ struct RenderStateKey;
 namespace ModelContextCmds
 {
 	using WatchModelContainer = std::function<const std::vector<std::unique_ptr<Model>>*()>;
-	using WatchSeparatedModelContainer = std::function<const std::unordered_map<uint64_t, std::pair<RenderStateKey, std::vector<Model*>>>*()>;
+	using WatchSeparatedModelContainer = std::function<std::vector<std::unordered_map<uint64_t, std::pair<RenderStateKey, std::vector<Model*>>>>* ()>;
 }
 
 ========================================
@@ -14435,7 +14466,7 @@ ModelContextCmds::WatchSeparatedModelContainer ModelContext::ModelContainer::Wat
 {
 	return [this]()
 	{
-		return this->separatedContainer.data();
+		return &this->separatedContainer;
 	};
 }
 void ModelContext::ModelContainer::SeparateModels(NexusFieldProof proof_, AgentKey key_)
@@ -20207,4 +20238,4 @@ namespace StringProcessing
 === SUMMARY ===
 ========================================
 Total Files      : 445
-Effective Lines  : 14687
+Effective Lines  : 14708
