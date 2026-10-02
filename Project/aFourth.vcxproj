@@ -104,6 +104,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Engine\LowerLayer\Render\RenderContextRuntime\StaticRenderGraph\RenderGraphExecutor\BackBufferRenderer\BackBufferRenderer.cpp" />
     <ClCompile Include="Engine\LowerLayer\Render\RenderContextRuntime\StaticRenderGraph\RenderGraphExecutor\CommonCmdExecutor\CommonCmdExecutor.cpp" />
     <ClCompile Include="Engine\LowerLayer\Core\DescriptorHeap\DescriptorHeapPoolContainer\DescriptorHeapPoolContainer.cpp" />
     <ClCompile Include="Engine\LowerLayer\DebugSystem\Logger\Logger.cpp" />
@@ -401,6 +402,7 @@
     <ClCompile Include="Engine\LowerLayer\Resource\Model\ModelContainer\RenderStateKey\RenderStateKey.cpp" />
     <ClCompile Include="Engine\LowerLayer\Resource\Model\ModelContainer\ModelSeparator\ModelSeparator.cpp" />
     <ClCompile Include="Engine\LowerLayer\Resource\Model\ModelStructure\ModelData\ModelData.cpp" />
+    <ClCompile Include="Engine\LowerLayer\Render\RenderContextRuntime\StaticRenderGraph\RenderGraphBuilder\FinalRenderingSetupper\FinalRenderingSetupper.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Assets\BAKA\ConstantBuffers.h" />
@@ -408,6 +410,7 @@
     <ClInclude Include="Assets\Shared\ConstantBuffers.h" />
     <ClInclude Include="Assets\Shared\StaticSampler.h" />
     <ClInclude Include="Assets\Shared\StructuredBufferModelData.h" />
+    <ClInclude Include="Engine\LowerLayer\Render\RenderContextRuntime\StaticRenderGraph\RenderGraphExecutor\BackBufferRenderer\BackBufferRenderer.h" />
     <ClInclude Include="Engine\LowerLayer\Buffer\BufferContextDiplomats.h" />
     <ClInclude Include="Engine\LowerLayer\Buffer\BufferDefinition\BufferTraits.h" />
     <ClInclude Include="Engine\LowerLayer\Core\Command\CommandContextDiplomats.h" />
@@ -678,6 +681,7 @@
     <ClInclude Include="Engine\LowerLayer\Resource\Model\ModelContainer\RenderStateKey\RenderStateKey.h" />
     <ClInclude Include="Engine\LowerLayer\Resource\Model\ModelContainer\ModelSeparator\ModelSeparator.h" />
     <ClInclude Include="Engine\LowerLayer\Resource\Model\ModelStructure\ModelData\ModelData.h" />
+    <ClInclude Include="Engine\LowerLayer\Render\RenderContextRuntime\StaticRenderGraph\RenderGraphBuilder\FinalRenderingSetupper\FinalRenderingSetupper.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

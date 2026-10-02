@@ -206,10 +206,10 @@ void RenderContext::StaticRenderGraph::PassSetUpper::CreateReferenceBufferSrvArr
 
 	//初期フレーム分を「0」に入力。初手フレームインデックスは0。つまり、書き込むべきは0
 	//読み込むべきは1
-	id_buffer.second->WriteRange<SRVHeapIndex>
+	//と言いたいところだがいちおう両方に入力しておく
+	id_buffer.second->WriteRangeInBoth<SRVHeapIndex>
 	(
-		0,
-		allRefIndices
+		{ allRefIndices,allRefIndices }
 	);
 
 	//参照バッファ格納先のバッファIDを記録

@@ -92,6 +92,8 @@ void RenderContext::StaticRenderGraph::PathOperator::Run
 	RuntimeWrapper& runtimeWrapper_
 )
 {
+	FillInRefBufferSrvIndices(frameIndex_, bufferContextDiplomat_);
+
 	//BufferDispatcherにアクセス
 	auto bToolLender = bufferContextDiplomat_.Access<BufferContext::ToolLender>();
 	BufferContext::ToolLender::LicenceType<BufferContext::BufferDispatcher> bLicence;
