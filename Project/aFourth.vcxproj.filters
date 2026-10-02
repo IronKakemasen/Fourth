@@ -1478,6 +1478,9 @@
     <ClInclude Include="Engine\LowerLayer\Core\Command\CommandContextDiplomats.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
+    <ClInclude Include="Engine\LowerLayer\Buffer\BufferDefinition\BufferTraits.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

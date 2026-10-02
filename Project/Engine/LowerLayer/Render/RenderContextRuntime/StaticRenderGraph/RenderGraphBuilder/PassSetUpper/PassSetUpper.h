@@ -18,9 +18,10 @@ class RenderContext::StaticRenderGraph::PassSetUpper
 private:
 
 	//全パスの所持するPassDesc -> PassInfoに移し替える
-	static std::vector<BufferUniqueID> CreateAllPassInfo
+	static void CreateAllPassInfo
 	(
 		NexusFieldProof proof_,
+		BuildOutput::PassSetUpper& output_,
 		RenderPassCreator& renderPassCreator_,
 		RenderPassContainer& passContainer_,
 		BufferContextDiplomat& bufferContextDiplomat_
@@ -28,10 +29,10 @@ private:
 
 	///各パスが参照するバッファのsrvHeapIndexを配列したもののバッファ、そしてそのsrvHeapIndexの定数バッファを作成
 	//ReferenceBufferSrvArrayバッファのバッファインデックスを返す
-	static SRVHeapIndex CreateReferenceBufferSrvArray
+	static void CreateReferenceBufferSrvArray
 	(
 		NexusFieldProof proof_,
-		std::vector<BufferUniqueID> const& data_,
+		BuildOutput::PassSetUpper& output_,
 		BufferContextDiplomat& bufferContextDiplomat_
 	);
 

@@ -4,7 +4,7 @@
 
 
 //定数バッファクラス
-class DepthStencilBuffer final : public GPUBufferBehavior, public IDepthBuffer, public IRenderTargetBuffer,IReadable
+class DepthStencilBuffer final : public GPUBufferBehavior, public IDepthBuffer, public IRenderTarget, public IReadable
 {
 
 public:
@@ -16,8 +16,6 @@ public:
 		std::vector<Microsoft::WRL::ComPtr<ID3D12Resource>> resourceContainer_,
 		const BufferDescriptionBehavior& description_
 	);
-
-private:
 
 	//バリアを張る
 	virtual std::optional<D3D12_RESOURCE_BARRIER> CreateBarrier(BufferUsage usage_) override;

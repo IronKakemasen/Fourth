@@ -40,9 +40,9 @@ D3D12_RESOURCE_STATES IDepthBuffer::ResourceStateTable(BufferUsage usage_)const
 ///+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-void IRenderTargetBuffer::Swap()
+void IRenderTarget::Swap()
 {
-	static IRenderTargetBuffer::Status nextTable[3]
+	static IRenderTarget::Status nextTable[3]
 	{
 		kShaderResource_RenderTarget,
 		kRenderTarget_ShaderResource,
@@ -52,7 +52,7 @@ void IRenderTargetBuffer::Swap()
 	status = nextTable[status];
 }
 
-int IRenderTargetBuffer::ProperBufferIndex(BufferUsage usage_)const
+int IRenderTarget::ProperBufferIndex(BufferUsage usage_)const
 {
 	//シングルバッファは問答無用
 	if (status == kSingle) return 0;
@@ -75,7 +75,7 @@ int IRenderTargetBuffer::ProperBufferIndex(BufferUsage usage_)const
 	return dstBufferIndex;
 }
 
-void IRenderTargetBuffer::SynchronizeStatus(ProjectConfig::Render::NumBuffer numBuffer_)
+void IRenderTarget::SynchronizeStatus(ProjectConfig::Render::NumBuffer numBuffer_)
 {
 	(numBuffer_ == ProjectConfig::Render::NumBuffer::kSingleBuffer) ? status = kSingle : status = kRenderTarget_ShaderResource;
 }

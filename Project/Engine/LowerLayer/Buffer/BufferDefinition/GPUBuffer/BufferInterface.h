@@ -62,15 +62,34 @@ struct IWritableCPU
 	{
 		*reinterpret_cast<DataType*>(mappedPtrs[index_]) = data_;
 	}
+
+	//配列データバージョン
+	template<typename DataType>
+	void WriteRange(const UINT frameIndex_, std::vector<DataType> const& data_)
+	{
+		std::memcpy(mappedPtrs[frameIndex_], data_.data(), sizeof(DataType) * data_.size());
+	}
+
 	//両方に書き込む。初期化用
 	template<typename DataType>
 	void WriteInBoth
 	(
-		const std::array<DataType, (UINT)ProjectConfig::Render::NumBuffer::kDoubleBuffer>& doubleData_ 
+		const std::array<DataType, (UINT)ProjectConfig::Render::NumBuffer::kDoubleBuffer>& doubleData_
 	)
 	{
 		Write(0, doubleData_[0]);
 		Write(1, doubleData_[1]);
+	}
+
+	//配列データバージョン.同じく初期化用
+	template<typename DataType>
+	void WriteRangeInBoth
+	(
+		const std::array<std::vector<DataType>, (UINT)ProjectConfig::Render::NumBuffer::kDoubleBuffer>& doubleData_
+	)
+	{
+		WriteRange(0, doubleData_[0]);
+		WriteRange(1, doubleData_[1]);
 	}
 
 	virtual ~IWritableCPU() {};
@@ -140,7 +159,7 @@ protected:
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///カラーバッファやディプスバッファなどのテクスチャに対して書き込みを行うもの
-struct IRenderTargetBuffer:IPingPong
+struct IRenderTarget:IPingPong
 {
 private:
 
@@ -154,7 +173,7 @@ private:
 
 public:
 
-	virtual ~IRenderTargetBuffer() = default;
+	virtual ~IRenderTarget() = default;
 
 	//適切なバリアを出す
 	virtual std::optional<D3D12_RESOURCE_BARRIER> CreateBarrier(BufferUsage usage_) = 0;

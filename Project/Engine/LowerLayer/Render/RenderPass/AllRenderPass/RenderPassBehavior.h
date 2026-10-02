@@ -88,7 +88,7 @@ private:
 	//バッファのステートを切り替えのためのバリアを生成
 	//中で張ってない
 	template<BufferUsage usage>
-	void CreateBarrier(IRenderTargetBuffer* buffer_);
+	void CreateBarrier(IRenderTarget* buffer_);
 
 	//溜めたステート遷移のバリアを張る
 	void PitchBarrierCached(RuntimeWrapper& cmdWrapper_);
