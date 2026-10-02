@@ -45,7 +45,8 @@ RenderContext::StaticRenderGraph::StaticRenderGraph
 			proof_, 
 			buildOutput.pathBuilder.sortedAllPathPtr, 
 			psoDispatcher_, 
-			buildOutput.passSetUpper.refBuffers,
+			buildOutput.passSetUpper.refBufferTagTrace,
+			buildOutput.passSetUpper.refBuffersArr,
 			buildOutput.passSetUpper.targetFillInRefBufferID
 		)
 	);

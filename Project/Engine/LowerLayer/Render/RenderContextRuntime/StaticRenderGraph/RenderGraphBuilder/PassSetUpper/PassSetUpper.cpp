@@ -14,6 +14,7 @@
 #include "../../../../../../../Assets/Shared/ConstantBuffers.h"
 
 using namespace ConstantBuffers;
+using namespace BufferTraits;
 
 namespace
 {
@@ -32,11 +33,11 @@ namespace
 
 	///全てのパスが参照するバッファのIDが横一列に詰まっている
 	///このIDを辿って、ランタイムの一歩目にsrvHeapIndexを詰めていく
-	output.refBuffers = CreateAllPassInfo(proof_, renderPassCreator_, passContainer_, bufferContextDiplomat_);
+	CreateAllPassInfo(proof_, output, renderPassCreator_, passContainer_, bufferContextDiplomat_);
 
 	///パスが参照するバッファのsrvHeapIndexを詰めるためのバッファのID
 	///UploadStructuredBufferでダブルです。中身の初期化もしていません
-	output.targetFillInRefBufferID = CreateReferenceBufferSrvArray(proof_, output.refBuffers,bufferContextDiplomat_);
+	CreateReferenceBufferSrvArray(proof_, output,bufferContextDiplomat_);
 
 	//Passのルートコンスタンツのバッファを作成する
 	CreatePassRootConstantsBuffer(proof_, bufferContextDiplomat_);
@@ -44,9 +45,10 @@ namespace
 	return output;
 }
 
-std::vector<BufferUniqueID> RenderContext::StaticRenderGraph::PassSetUpper::CreateAllPassInfo
+void RenderContext::StaticRenderGraph::PassSetUpper::CreateAllPassInfo
 (
 	NexusFieldProof proof_,
+	BuildOutput::PassSetUpper& output_,
 	RenderPassCreator& renderPassCreator_,
 	RenderPassContainer& passContainer_,
 	BufferContextDiplomat& bufferContextDiplomat_
@@ -57,8 +59,6 @@ std::vector<BufferUniqueID> RenderContext::StaticRenderGraph::PassSetUpper::Crea
 	//名前 :　パスのバッファのユニークID
 	auto const& passBufferCache = renderPassCreator_.WatchPassBufferCache(proof_);
 	
-	//別メソッドで使用する、参照するバッファのsrvHeapIndex配列を作成するための素材
-	std::vector<BufferUniqueID> allRefBufferUniques;
 	//デバッグ用
 	std::vector<std::string > allRefBufferNames;
 
@@ -75,11 +75,11 @@ std::vector<BufferUniqueID> RenderContext::StaticRenderGraph::PassSetUpper::Crea
 
 		//そのパスがバッファ配列の何番目を参照するか、であるPassBufferIndexRangeCPUGPUのoffset
 		//普通にallRefBufferUniquesのけつ番目でいいはず
-		UINT const refOffset = UINT(allRefBufferUniques.size());
+		UINT const refOffset = UINT(output_.refBufferTagTrace.size());
 
-		//そのパスが参照するバッファ一覧で回す
+		//そのPassが参照するバッファ一覧で回す
 		std::vector<std::string> const& refBufferNames = desc.referenceBufferNames;
-		//Passの参照先ばっふぁID格納用
+		//そのPassの参照先ばっふぁID格納用
 		std::vector<BufferUniqueID> refColorBuffersID;
 		std::vector<BufferUniqueID> refDepthStencilBuffersID;
 
@@ -94,14 +94,25 @@ std::vector<BufferUniqueID> RenderContext::StaticRenderGraph::PassSetUpper::Crea
 
 			if (dynamic_cast<ColorBuffer*>(buffer))
 			{
+				//参照先バッファをdynamicCastで確認して、何のバッファなのかTagを追加していく
+				output_.refBufferTagTrace.emplace_back(ClassTraits<ColorBuffer>::kTag);
+				//これはランタイムで使用する全パスの参照バッファ格納先(カラーバッファ)
+				output_.refBuffersArr[(UINT)ClassTraits<ColorBuffer>::kTag].emplace_back(refID);
+
+				//そのパスが参照するバッファIDの格納
 				refColorBuffersID.emplace_back(refID);
 			}
 			else
 			{
+				//参照先バッファをdynamicCastで確認して、何のバッファなのかTagを追加していく
+				output_.refBufferTagTrace.emplace_back(ClassTraits<DepthStencilBuffer>::kTag);
+				//これはランタイムで使用する全パスの参照バッファ格納先(深度ステンシルバッファ)
+				output_.refBuffersArr[(UINT)ClassTraits<DepthStencilBuffer>::kTag].emplace_back(refID);
+
+				//そのパスが参照するバッファIDの格納
 				refDepthStencilBuffersID.emplace_back(refID);
 			}
 
-			allRefBufferUniques.emplace_back(refID);
 			allRefBufferNames.emplace_back(refBufferName);
 			
 		}
@@ -130,15 +141,12 @@ std::vector<BufferUniqueID> RenderContext::StaticRenderGraph::PassSetUpper::Crea
 
 #endif //  _DEBUG
 
-
-	return allRefBufferUniques;
-
 }
 
-SRVHeapIndex RenderContext::StaticRenderGraph::PassSetUpper::CreateReferenceBufferSrvArray
+void RenderContext::StaticRenderGraph::PassSetUpper::CreateReferenceBufferSrvArray
 (
 	NexusFieldProof proof_,
-	std::vector<BufferUniqueID> const& data_,
+	BuildOutput::PassSetUpper& output_, 
 	BufferContextDiplomat& bufferContextDiplomat_
 )
 {
@@ -147,14 +155,16 @@ SRVHeapIndex RenderContext::StaticRenderGraph::PassSetUpper::CreateReferenceBuff
 	BufferContext::CmdProvider::LicenceType<BufferContextCmds::CreateCBufferCmd> licenceCmd;
 	auto createCBufferCmd = cmdProv->Provide<BufferContextCmds::CreateCBufferCmd>(licenceCmd);
 	
-	//bufferCreatorを借りる
+	//bufferCreatorとbufferDispatcherを借りる
 	auto toolLender = bufferContextDiplomat_.Access<BufferContext::ToolLender>();
 	BufferContext::ToolLender::LicenceType<BufferContext::BufferCreator> licenceTool;
 	auto* bufferCreator = toolLender->Lend<BufferContext::BufferCreator>(licenceTool);
+	auto* bufferDispatcher = toolLender->Lend<BufferContext::BufferDispatcher>(licenceTool);
 
-	///バッファ作成
+
+	///参照バッファ配列のバッファ作成
 	std::string const bufferName = "RefBufSrvArr";
-	UploadStructuredBufferDescription desc(UINT(sizeof(SRVHeapIndex)), UINT(data_.size()), 0);
+	UploadStructuredBufferDescription desc(UINT(sizeof(SRVHeapIndex)), UINT(output_.refBufferTagTrace.size()), 0);
 	auto id_buffer = bufferCreator->CreateWithBuffer(desc, bufferName);
 
 	//そのバッファのコンスタントバッファを生成し,
@@ -167,7 +177,44 @@ SRVHeapIndex RenderContext::StaticRenderGraph::PassSetUpper::CreateReferenceBuff
 		{ id_buffer.second->OutProperSRVHeapIndex(0),id_buffer.second->OutProperSRVHeapIndex(1) }
 	);
 
-	return id_buffer.first;
+	//参照バッファ配列のバッファにも初期値を書き込んでおく
+	std::vector<SRVHeapIndex> allRefIndices;
+	allRefIndices.reserve(output_.refBufferTagTrace.size());
+	std::array<UINT, BuildOutput::PassSetUpper::kNumRefBufferType > indexCnts{};
+
+	for (auto const bufferTag : output_.refBufferTagTrace)
+	{
+		//参照バッファがどっちかをインデックスに
+		UINT const bufferTypeIndex = UINT(bufferTag);
+
+		//参照バッファのID　→　バッファ　→　srvHeapIndex
+		BufferUniqueID refID = output_.refBuffersArr[bufferTypeIndex][indexCnts[bufferTypeIndex]++];
+		auto* refbuffer = bufferDispatcher->Dispatch(refID);
+		SRVHeapIndex refSrvIndex{};
+
+		if (bufferTag == BufferTag::kColor)
+		{
+			refSrvIndex = static_cast<ColorBuffer*>(refbuffer)->OutProperSRVHeapIndex();
+		}
+		else
+		{
+			refSrvIndex = static_cast<DepthStencilBuffer*>(refbuffer)->OutProperSRVHeapIndex();
+		}
+
+		allRefIndices.emplace_back(refSrvIndex);
+	}
+
+	//初期フレーム分を「0」に入力。初手フレームインデックスは0。つまり、書き込むべきは0
+	//読み込むべきは1
+	id_buffer.second->WriteRange<SRVHeapIndex>
+	(
+		0,
+		allRefIndices
+	);
+
+	//参照バッファ格納先のバッファIDを記録
+	output_.targetFillInRefBufferID = id_buffer.first;
+
 }
 
 

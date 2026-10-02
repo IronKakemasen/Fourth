@@ -11,7 +11,8 @@ public:
 		NexusFieldProof proof_,
 		std::vector<PathBehavior*> const& allPathPtr_,
 		PSO_PoolDispatcher& pso_PoolDispatcher_,
-		std::vector<BufferUniqueID> const& refBuffers_,
+		std::vector<BufferTraits::BufferTag> const& traceRefBuffersTag_,
+		std::array<std::vector<BufferUniqueID>, BuildOutput::PassSetUpper::kNumRefBufferType> const& refBuffersArr_,
 		BufferUniqueID const targetFillInRefBufferID_
 	);
 
@@ -27,7 +28,11 @@ public:
 private:
 
 	//全Pass分の参照テクスチャを更新する
-	void FillInRefBufferSrvIndices(BufferContextDiplomat& bufferContextDiplomat_);
+	void FillInRefBufferSrvIndices
+	(
+		UINT const frameIndex_,
+		BufferContextDiplomat& bufferContextDiplomat_
+	);
 
 
 	PSO_PoolDispatcher& pso_PoolDispatcher;
@@ -36,8 +41,14 @@ private:
 	//シーケンス順にソートされた、全てのPathのポインタ
 	std::vector<PathBehavior*> allPathPtr;
 
-	///全てのパスが参照するバッファのID群
-	std::vector<BufferUniqueID> refBuffers;
+
+	///全てのパスが参照するバッファのID群のうちどちらなのかを識別するためのもの
+	std::vector<BufferTraits::BufferTag> traceRefBuffersTag;
+	//参照バッファのID情報源
+	std::array<std::vector<BufferUniqueID>, BuildOutput::PassSetUpper::kNumRefBufferType> const& refBuffersArr;
+	//参照バッファのsrvheapIndex群を入れておくため
+	std::vector<SRVHeapIndex> refBufferSrvIndices;
+
 	///パスが参照するバッファのsrvHeapIndexを詰めるためのバッファのID
 	BufferUniqueID targetFillInRefBufferID;
 

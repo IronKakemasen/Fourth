@@ -348,7 +348,7 @@ void RenderContext::PassBehavior::SetMatrix<D3D12_RECT>
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 template<BufferUsage usage>
-void RenderContext::PassBehavior::CreateBarrier(IRenderTargetBuffer* buffer_)
+void RenderContext::PassBehavior::CreateBarrier(IRenderTarget* buffer_)
 {
 	std::optional<D3D12_RESOURCE_BARRIER> barrierOpt = buffer_->CreateBarrier(usage);
 	
@@ -358,6 +358,6 @@ void RenderContext::PassBehavior::CreateBarrier(IRenderTargetBuffer* buffer_)
 
 
 template
-void RenderContext::PassBehavior::CreateBarrier<BufferUsage::kRead>(IRenderTargetBuffer* buffer_);
+void RenderContext::PassBehavior::CreateBarrier<BufferUsage::kRead>(IRenderTarget* buffer_);
 template
-void RenderContext::PassBehavior::CreateBarrier<BufferUsage::kWrite>(IRenderTargetBuffer* buffer_);
+void RenderContext::PassBehavior::CreateBarrier<BufferUsage::kWrite>(IRenderTarget* buffer_);

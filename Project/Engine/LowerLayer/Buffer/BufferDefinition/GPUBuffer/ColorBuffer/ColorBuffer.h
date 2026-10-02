@@ -3,7 +3,7 @@
 #include "../BufferInterface.h"
 
 //カラーバッファクラス
-class ColorBuffer final : public GPUBufferBehavior, public IColorBuffer, public IRenderTargetBuffer,IReadable
+class ColorBuffer final : public GPUBufferBehavior, public IColorBuffer, public IRenderTarget,public IReadable
 {
 
 public:
@@ -16,8 +16,6 @@ public:
 		const BufferDescriptionBehavior& description_
 	);
 
-
-private:
 	//バリア生成
 	virtual std::optional<D3D12_RESOURCE_BARRIER> CreateBarrier(BufferUsage usage_) override;
 	//適切なRTVヒープインデックスを出す

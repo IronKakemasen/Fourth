@@ -1,10 +1,11 @@
 #pragma once
 #include "../../RenderContext.h"
-
+#include "../../../Buffer/BufferDefinition/BufferTraits.h"
 
 class DescriptorHeapContextDiplomat;
 class CommandContextDiplomat;
 class RuntimeWrapper;
+
 
 class RenderContext::StaticRenderGraph
 {
@@ -67,7 +68,10 @@ private:
 		{
 			///全てのパスが参照するバッファのIDが横一列に詰まっている
 			///このIDを辿って、ランタイムの一歩目にsrvHeapIndexを詰めていく
-			std::vector<BufferUniqueID> refBuffers;
+			///極力static_castで高速にキャストしたいので分別しておく
+			std::vector<BufferTraits::BufferTag> refBufferTagTrace;
+			static constexpr UINT kNumRefBufferType = 2;
+			std::array<std::vector<BufferUniqueID>, kNumRefBufferType > refBuffersArr;
 			///パスが参照するバッファのsrvHeapIndexを詰めるためのバッファのID
 			///UploadStructuredBufferなのでダブルです。中身の初期化もしていません
 			BufferUniqueID targetFillInRefBufferID;

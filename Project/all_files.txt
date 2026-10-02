@@ -2926,7 +2926,7 @@ struct IAssembleDepthStencilBuffer: public IAssembleRenderTarget
 #include "ColorBufferDescription.h"
 ColorBufferDescription::ColorBufferDescription
 (
-	std::vector<float> clearColor_,
+	std::vector<float> const& clearColor_,
 	UINT width_,
 	UINT height_,
 	DXGI_FORMAT format_,
@@ -3015,7 +3015,7 @@ public:
 	ColorBufferDescription() = default;
 	ColorBufferDescription
 	(
-		std::vector<float> clearColor_,
+		std::vector<float> const& clearColor_,
 		UINT width_,
 		UINT height_,
 		DXGI_FORMAT format_,
@@ -4196,31 +4196,10 @@ ComputeBuffer::ComputeBuffer
 	const BufferDescriptionBehavior& description_
 ) : GPUBufferBehavior(instanceKey_, name_, std::move(resourceContainer_), description_)
 {
-	//ステータスを同期
-	//SynchronizeStatus(description->numBuffer);
 }
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//std::array<D3D12_RESOURCE_BARRIER, ProjectConfig::Render::kRequiredGPUBufferSum>
-//ComputeBuffer::CreateNextStepBarriers(ExtractMaterialKey key_)
-//{
-//	std::array<D3D12_RESOURCE_BARRIER, ProjectConfig::Render::kRequiredGPUBufferSum> barriers;
-//
-//	if (status == kUAV_SRV)
-//	{
-//		// 0 - > SRV , 1 -> UAV
-//		barriers.at(0) = buffers[0].CreateBarrier(D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE | D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
-//		barriers.at(1) = buffers[1].CreateBarrier(D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
-//	}
-//	else
-//	{
-//		barriers.at(0) = buffers[0].CreateBarrier(D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
-//		barriers.at(1) = buffers[1].CreateBarrier(D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE | D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
-//	}
-//
-//	return barriers;
-//}
 
 ========================================
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Buffer\BufferDefinition\GPUBuffer\ComputeBuffer\ComputeBuffer.h ===
@@ -4244,8 +4223,6 @@ public:
 	///+抽象化予定
 	///+/////////////////////////////////////////////////////////////
 	///+/////////////////////////////////////////////////////////////
-	//virtual std::array<D3D12_RESOURCE_BARRIER, ProjectConfig::Render::kRequiredGPUBufferSum>
-	//	CreateNextStepBarriers(ExtractMaterialKey key_) override;
 private:
 };
 
@@ -7051,7 +7028,7 @@ void CommandStructureSwapChain::CreateSwapChain
 (
 	IDXGIFactory7& dxgiFactory_,
 	ID3D12CommandQueue* commandQueue_,
-	DXGI_SWAP_CHAIN_DESC1 desc_,
+	DXGI_SWAP_CHAIN_DESC1 const& desc_,
 	IDXGISwapChain4** swapChainDoublePtr_,
 	const HWND hWnd_
 )
@@ -7076,7 +7053,7 @@ struct CommandStructureSwapChain : public DeviceContextCommandBehavior
 	(
 		IDXGIFactory7& dxgiFactory_,
 		ID3D12CommandQueue* commandQueue_,
-		DXGI_SWAP_CHAIN_DESC1 desc_,
+		DXGI_SWAP_CHAIN_DESC1 const& desc_,
 		IDXGISwapChain4** swapChainDoublePtr_,
 		const HWND hWnd_
 	);
@@ -8220,7 +8197,7 @@ void SwapChainContext::ColorBuffer::OverrideHeapIndex(SwapChainContext::NexusFie
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-SwapChainContext::Description::Description(std::array<float, 4> clearColor_, DXGI_FORMAT format_)
+SwapChainContext::Description::Description(std::array<float, 4> const& clearColor_, DXGI_FORMAT format_)
 {
 	clearColor = clearColor_;
 	format = format_;
@@ -8280,7 +8257,7 @@ D3D12_RESOURCE_BARRIER SwapChainContext::ColorBuffer::Buffer::CreateBarrier(D3D1
 #include "../SwapChainContext.h"
 struct SwapChainContext::Description
 {
-	Description(std::array<float, 4> clearColor_, DXGI_FORMAT format_);
+	Description(std::array<float, 4> const& clearColor_, DXGI_FORMAT format_);
 	D3D12_RENDER_TARGET_VIEW_DESC CreateRTV_Desc()const;
 	DXGI_SWAP_CHAIN_DESC1 CreateSwapChainDesc()const;
 	std::array<float, 4> clearColor = { 9,9,9,9 };
@@ -9593,7 +9570,14 @@ RenderContext::StaticRenderGraph::StaticRenderGraph
 	);
 	pathOperator.reset
 	(
-		new PathOperator(proof_, buildOutput.pathBuilder.sortedAllPathPtr, psoDispatcher_)
+		new PathOperator
+		(
+			proof_, 
+			buildOutput.pathBuilder.sortedAllPathPtr, 
+			psoDispatcher_, 
+			buildOutput.passSetUpper.refBuffers,
+			buildOutput.passSetUpper.targetFillInRefBufferID
+		)
 	);
 	Logger::Log("Instantiate: PathOperator", fileName);
 	commonCmdExecutor.reset(new CommonCmdExecutor(proof_, buildOutput.rootSigBuilder.graphicsRootSig));
@@ -9666,7 +9650,7 @@ private:
 			std::vector<BufferUniqueID> refBuffers;
 			///パスが参照するバッファのsrvHeapIndexを詰めるためのバッファのID
 			///UploadStructuredBufferなのでダブルです。中身の初期化もしていません
-			BufferUniqueID targetFillInRefBufferSrv;
+			BufferUniqueID targetFillInRefBufferID;
 		};
 		RootSigBuilder rootSigBuilder;
 		PathBuilder pathBuilder;
@@ -9688,7 +9672,7 @@ private:
 	//Pathの更新処理を呼ぶ
 	std::unique_ptr<PathOperator> pathOperator;
 	//共通の描画コマンドをたたく
-	std::unique_ptr<CommonCmdExecutor> commonCmdExecutor;
+	std::unique_ptr<CommonCmdExecutor> commonCmdExecutor;	
 };
 
 ========================================
@@ -10234,7 +10218,7 @@ namespace
 	output.refBuffers = CreateAllPassInfo(proof_, renderPassCreator_, passContainer_, bufferContextDiplomat_);
 	///パスが参照するバッファのsrvHeapIndexを詰めるためのバッファのID
 	///UploadStructuredBufferでダブルです。中身の初期化もしていません
-	output.targetFillInRefBufferSrv = CreateReferenceBufferSrvArray(proof_, output.refBuffers,bufferContextDiplomat_);
+	output.targetFillInRefBufferID = CreateReferenceBufferSrvArray(proof_, output.refBuffers,bufferContextDiplomat_);
 	//Passのルートコンスタンツのバッファを作成する
 	CreatePassRootConstantsBuffer(proof_, bufferContextDiplomat_);
 	return output;
@@ -10592,15 +10576,32 @@ private:
 //外部
 #include "../../../../../Core/Command/RuntimeWrapper/RuntimeWrapper.h"
 #include "../../../../../Buffer/BufferContextDiplomats.h"
+#include "../../../../../Buffer/BufferRuntime/BufferDispatcher/BufferDispatcher.h"
+#include "../../../../../Buffer/BufferDefinition/GPUBuffer/UploadStructuredBuffer/UploadStructuredBuffer.h"
 #include "../../../../../Resource/Model/ModelContextDiplomatIncludes.h"
 #include "../../../../../Resource/Model/ModelContainer/ModelContainer.h"
 RenderContext::StaticRenderGraph::PathOperator::PathOperator
 (
 	NexusFieldProof proof_,
 	std::vector<PathBehavior*> const& allPathPtr_,
-	PSO_PoolDispatcher& pso_PoolDispatcher_
-):allPathPtr(allPathPtr_), pso_PoolDispatcher(pso_PoolDispatcher_)
+	PSO_PoolDispatcher& pso_PoolDispatcher_,
+	std::vector<BufferUniqueID> const& refBuffers_,
+	BufferUniqueID const targetFillInRefBufferID_
+):allPathPtr(allPathPtr_), pso_PoolDispatcher(pso_PoolDispatcher_), refBuffers(refBuffers_), targetFillInRefBufferID(targetFillInRefBufferID_)
 {
+}
+void RenderContext::StaticRenderGraph::PathOperator::FillInRefBufferSrvIndices
+(
+	UINT const frameIndex_,
+	BufferContextDiplomat& bufferContextDiplomat_
+)
+{
+	//BufferDispatcherにアクセス
+	auto bToolLender = bufferContextDiplomat_.Access<BufferContext::ToolLender>();
+	BufferContext::ToolLender::LicenceType<BufferContext::BufferDispatcher> bLicence;
+	auto& bufferDispatcher = *bToolLender->Lend<BufferContext::BufferDispatcher>(bLicence);
+	//参照バッファsrv格納先のバッファ
+	auto* dstBuffer = bufferDispatcher.Dispatch(targetFillInRefBufferID);
 }
 void RenderContext::StaticRenderGraph::PathOperator::Run
 (
@@ -10637,7 +10638,9 @@ public:
 	(
 		NexusFieldProof proof_,
 		std::vector<PathBehavior*> const& allPathPtr_,
-		PSO_PoolDispatcher& pso_PoolDispatcher_
+		PSO_PoolDispatcher& pso_PoolDispatcher_,
+		std::vector<BufferUniqueID> const& refBuffers_,
+		BufferUniqueID const targetFillInRefBufferID_
 	);
 	//全pathの更新処理をぶん回す
 	void Run
@@ -10648,11 +10651,21 @@ public:
 		RuntimeWrapper& runtimeWrapper_
 	);
 private:
+	//全Pass分の参照テクスチャを更新する
+	void FillInRefBufferSrvIndices
+	(
+		UINT const frameIndex_,
+		BufferContextDiplomat& bufferContextDiplomat_
+	);
 	PSO_PoolDispatcher& pso_PoolDispatcher;
 	//モデル描画用のフィルモード
 	RenderStateComponent::FillMode modelFillMode = RenderStateComponent::FillMode::kSolid;
 	//シーケンス順にソートされた、全てのPathのポインタ
 	std::vector<PathBehavior*> allPathPtr;
+	///全てのパスが参照するバッファのID群
+	std::vector<BufferUniqueID> refBuffers;
+	///パスが参照するバッファのsrvHeapIndexを詰めるためのバッファのID
+	BufferUniqueID targetFillInRefBufferID;
 };
 
 ========================================
@@ -11780,7 +11793,7 @@ namespace
 {
 	auto const fileName = "PassSettingsLoader.cpp";
 }
-[[nodiscard]] std::unique_ptr<RenderContext::PassDesc> RenderContext::RenderPassCreator::PassSettingsLoader::Load(std::string const passName_)
+[[nodiscard]] std::unique_ptr<RenderContext::PassDesc> RenderContext::RenderPassCreator::PassSettingsLoader::Load(std::string const& passName_)
 {
 	return std::make_unique<PassDesc>
 	(
@@ -11794,7 +11807,7 @@ namespace
 }
 std::vector<RenderContext::RequiredBufferInfo::ColorBuffer> RenderContext::RenderPassCreator::PassSettingsLoader::ParseColorBufferInfo
 (
-	std::string const passName_
+	std::string const& passName_
 )
 {
 	std::vector<RenderContext::RequiredBufferInfo::ColorBuffer> colorBufferInfo;
@@ -11854,7 +11867,7 @@ std::vector<RenderContext::RequiredBufferInfo::ColorBuffer> RenderContext::Rende
 }
 std::optional<RenderContext::RequiredBufferInfo::DepthStencilBuffer> RenderContext::RenderPassCreator::PassSettingsLoader::ParseDepthStencilBufferInfo
 (
-	std::string const passName_
+	std::string const& passName_
 )
 {
 	std::optional<RenderContext::RequiredBufferInfo::DepthStencilBuffer> depthStencilBufferInfo;
@@ -11892,7 +11905,7 @@ std::optional<RenderContext::RequiredBufferInfo::DepthStencilBuffer> RenderConte
 }
 RenderContext::RenderPassState RenderContext::RenderPassCreator::PassSettingsLoader::ParseRenderPassState
 (
-	std::string const passName_
+	std::string const& passName_
 )
 {
 	auto* miyajison = Miyajison::Get();
@@ -11910,7 +11923,7 @@ RenderContext::RenderPassState RenderContext::RenderPassCreator::PassSettingsLoa
 }
 std::optional<std::pair<std::string, std::string >> RenderContext::RenderPassCreator::PassSettingsLoader::ParseShaderFile
 (
-	std::string const passName_
+	std::string const& passName_
 )
 {
 	std::optional<std::pair<std::string, std::string >> ms_psOpt;
@@ -11925,7 +11938,7 @@ std::optional<std::pair<std::string, std::string >> RenderContext::RenderPassCre
 	}
 	return ms_psOpt;
 }
-std::vector<std::string> RenderContext::RenderPassCreator::PassSettingsLoader::ParseReferenceBufferNames(std::string const passName_)
+std::vector<std::string> RenderContext::RenderPassCreator::PassSettingsLoader::ParseReferenceBufferNames(std::string const& passName_)
 {
 	auto* miyajison = Miyajison::Get();
 	return miyajison->LoadData<std::vector<std::string>>(DataKeyString::kSrcJsonFileName, { passName_,DataKeyString::kReferenceBufferNames });
@@ -11939,14 +11952,14 @@ std::vector<std::string> RenderContext::RenderPassCreator::PassSettingsLoader::P
 class RenderContext::RenderPassCreator::PassSettingsLoader
 {
 	friend class RenderPassCreator;
-	static [[nodiscard]] std::unique_ptr<PassDesc> Load(std::string const passName_);
+	static [[nodiscard]] std::unique_ptr<PassDesc> Load(std::string const& passName_);
 	//以下ヘルパー
 private:
-	static std::vector<RenderContext::RequiredBufferInfo::ColorBuffer> ParseColorBufferInfo(std::string const passName_);
-	static std::optional<RenderContext::RequiredBufferInfo::DepthStencilBuffer> ParseDepthStencilBufferInfo(std::string const passName_);
-	static RenderPassState ParseRenderPassState(std::string const passName_);
-	static std::optional<std::pair<std::string, std::string >> ParseShaderFile(std::string const passName_);
-	static std::vector<std::string> ParseReferenceBufferNames(std::string const passName_);
+	static std::vector<RenderContext::RequiredBufferInfo::ColorBuffer> ParseColorBufferInfo(std::string const& passName_);
+	static std::optional<RenderContext::RequiredBufferInfo::DepthStencilBuffer> ParseDepthStencilBufferInfo(std::string const& passName_);
+	static RenderPassState ParseRenderPassState(std::string const& passName_);
+	static std::optional<std::pair<std::string, std::string >> ParseShaderFile(std::string const& passName_);
+	static std::vector<std::string> ParseReferenceBufferNames(std::string const& passName_);
 	struct DataKeyString
 	{
 		//パスの情報が詰まったjsonファイル名
@@ -12218,10 +12231,13 @@ protected:
 		BufferContext::BufferDispatcher& bufDispatcher_
 	)
 	{
+		auto* dstPass = std::get<PassType*>(passses);
+		//描画先設定の詰め込みであるBeginPassを呼ぶ
+		dstPass->BeginPass(cmdWrapper_, bufDispatcher_);
 		//対象パスが描画を担当するモデルコンテナを指定
 		auto const& srcModelContainer =
 			modelContainer_[(UINT)RenderPassTraits::PassClassTraits<PassType>::kPassEnum];
-		std::get<PassType*>(passses)->Update
+		dstPass->Update
 		(
 			srcModelContainer,
 			modelFillMode_,
@@ -18300,7 +18316,7 @@ struct Matrix4x4
 		DirectX::XMStoreFloat4x4(&scaleMat.data, DirectX::XMMatrixScaling(x_, y_, z_));
 		return scaleMat;
 	}
-	inline static Matrix4x4 CreateScale(const Vector3 scale_ )
+	inline static Matrix4x4 CreateScale(Vector3 const& scale_ )
 	{
 		Matrix4x4 scaleMat;
 		DirectX::XMStoreFloat4x4(&scaleMat.data, DirectX::XMMatrixScaling(scale_.data.x, scale_.data.y, scale_.data.z));
@@ -18312,7 +18328,7 @@ struct Matrix4x4
 		DirectX::XMStoreFloat4x4(&translationMat.data, DirectX::XMMatrixTranslation(x_, y_, z_));
 		return translationMat;
 	}
-	inline static Matrix4x4 CreateTranslation(const Vector3 translation_)
+	inline static Matrix4x4 CreateTranslation(Vector3 const& translation_)
 	{
 		Matrix4x4 translationMat;
 		DirectX::XMStoreFloat4x4(&translationMat.data, DirectX::XMMatrixTranslation(translation_.data.x, translation_.data.y, translation_.data.z));
@@ -18384,7 +18400,7 @@ struct Matrix4x4
 			DirectX::XMStoreFloat4(&result.data, DirectX::XMQuaternionRotationAxis(axisVec, radian_));
 			return result;
 		}
-		inline static Quaternion CreateQuaternion(const Vector3 lookDir_)
+		inline static Quaternion CreateQuaternion(Vector3 const& lookDir_)
 		{
 			DirectX::XMVECTOR xAxis;
 			DirectX::XMVECTOR yAxis;
@@ -18573,7 +18589,7 @@ struct Vector3
 	///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	//内積
-	inline float GetCos(const Vector3 other_)const
+	inline float GetCos(Vector3 const& other_)const
 	{
 		DirectX::XMVECTOR v1 = DirectX::XMLoadFloat3(&data);
 		DirectX::XMVECTOR v2 = DirectX::XMLoadFloat3(&other_.data);
@@ -18583,7 +18599,7 @@ struct Vector3
 	///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	//外積
-	inline Vector3 GetCross(const Vector3 other_)const
+	inline Vector3 GetCross(Vector3 const& other_)const
 	{
 		DirectX::XMVECTOR v1 = DirectX::XMLoadFloat3(&data);
 		DirectX::XMVECTOR v2 = DirectX::XMLoadFloat3(&other_.data);
@@ -18613,7 +18629,7 @@ struct Vector3
 	///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	//長さ比較return [0] or [-] or [+] 
-	inline int LengthComparison(const Vector3 rVec_)const
+	inline int LengthComparison(Vector3 const& rVec_)const
 	{
 		float subtractResult = LengthSq() - rVec_.LengthSq();
 		return (subtractResult > 0) - (subtractResult < 0);
@@ -18632,8 +18648,8 @@ struct Vector3
 	///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	inline Vector3() : data(0.0f, 0.0f, 0.0f) {}
 	inline Vector3(float x_, float y_, float z_) : data(x_, y_, z_) {}
-	inline Vector3(std::array<float , 3> entries_) : data(entries_[0], entries_[1], entries_[2]) {}
-	inline Vector3 operator+(const Vector3 other_)const
+	inline Vector3(std::array<float , 3> const& entries_) : data(entries_[0], entries_[1], entries_[2]) {}
+	inline Vector3 operator+(Vector3 const& other_)const
 	{
 		//保管用のデータを、計算用データに入れ替える
 		DirectX::XMVECTOR v1 = DirectX::XMLoadFloat3(&data);
@@ -18645,7 +18661,7 @@ struct Vector3
 		DirectX::XMStoreFloat3(&result.data, resultvec);
 		return result;
 	}
-	inline Vector3 operator-(const Vector3 other_)const
+	inline Vector3 operator-(Vector3 const& other_)const
 	{
 		//保管用のデータを、計算用データに入れ替える
 		DirectX::XMVECTOR v1 = DirectX::XMLoadFloat3(&data);
@@ -18666,7 +18682,7 @@ struct Vector3
 		DirectX::XMStoreFloat3(&result.data, DirectX::XMVectorScale(v,num_));
 		return result;
 	}
-	inline Vector3& operator+=(const Vector3 other_)
+	inline Vector3& operator+=(Vector3 const& other_)
 	{
 		//保管用のデータを、計算用データに入れ替える
 		DirectX::XMVECTOR v1 = DirectX::XMLoadFloat3(&data);
@@ -18677,7 +18693,7 @@ struct Vector3
 		DirectX::XMStoreFloat3(&data, resultvec);
 		return *this;
 	}
-	inline Vector3& operator-=(const Vector3 other_) 
+	inline Vector3& operator-=(Vector3 const& other_)
 	{
 		//保管用のデータを、計算用データに入れ替える
 		DirectX::XMVECTOR v1 = DirectX::XMLoadFloat3(&data);
@@ -18693,7 +18709,7 @@ struct Vector3
 	///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	Vector3 GetMultiply(Matrix4x4 const& other) const;
 };
-inline Vector3 operator*(const float num_,Vector3 vec_)
+inline Vector3 operator*(const float num_,Vector3 const& vec_)
 {
 	return vec_ * num_;
 }
@@ -18717,7 +18733,7 @@ struct Vector4
 	T y{};
 	T z{};
 	T w{};
-	Vector4(std::array<T,4> entries) : x(entries[0]), y(entries[1]), z(entries[2]), w(entries[3]) {}
+	Vector4(std::array<T,4>const& entries) : x(entries[0]), y(entries[1]), z(entries[2]), w(entries[3]) {}
 	Vector4(T x_, T y_, T z_, T w_) : x(x_), y(y_), z(z_), w(w_) {}
 	Vector4() {}
 };
@@ -18845,12 +18861,12 @@ private:
 ========================================
 #include "PreCompileHeader.h"
 #include "JsonDataLibrary.h"
-void Miyajison::DataLibrary::Import(HandleLicence licence_, std::string fileName_, nlohmann::json jsonData_)
+void Miyajison::DataLibrary::Import(HandleLicence licence_, std::string const& fileName_, nlohmann::json const& jsonData_)
 {
 	lib[fileName_] = jsonData_;
 	Logger::Log("Import: " + fileName_, "JsonDataLibrary.h");
 }
-const nlohmann::json& Miyajison::DataLibrary::Export(HandleLicence licence_, std::string fileName_)const
+const nlohmann::json& Miyajison::DataLibrary::Export(HandleLicence licence_, std::string const& fileName_)const
 {
 	ErrorMessageOutput::Assert::DetectError
 	(
@@ -18870,8 +18886,8 @@ class Miyajison::DataLibrary
 {
 public:
 	struct HandleLicence;
-	const nlohmann::json& Export(HandleLicence licence_, std::string fileName_)const;
-	void Import(HandleLicence licence_, std::string fileName_, nlohmann::json jsonData_);
+	const nlohmann::json& Export(HandleLicence licence_, std::string const& fileName_)const;
+	void Import(HandleLicence licence_, std::string const& fileName_, nlohmann::json const& jsonData_);
 private:
 	std::map<std::string, nlohmann::json> lib;
 };
@@ -20238,4 +20254,4 @@ namespace StringProcessing
 === SUMMARY ===
 ========================================
 Total Files      : 445
-Effective Lines  : 14708
+Effective Lines  : 14739
