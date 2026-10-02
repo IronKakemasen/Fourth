@@ -19,10 +19,25 @@ namespace ConstantBuffers
 	enum class RootConstantsBindSlots
 	{
 		kPerDrawIndices = ConstantBufferBindSlots::kCount,
-		kPassBufferIndexRange
+		kPassBufferIndexRange,
+		kFinalColorBufferSrv
 
 		,kCount
 	};
+
+	constexpr uint8_t Num32BitValuesTable(UINT const slot_)
+	{
+		UINT const numRootConstants = (UINT)RootConstantsBindSlots::kCount - (UINT)ConstantBufferBindSlots::kCount;
+		UINT dstIndex = slot_ - (UINT)ConstantBufferBindSlots::kCount;
+		
+		static constexpr uint8_t table[numRootConstants]
+		{
+			3,2,1
+		};
+
+		return table[dstIndex];
+	}
+
 
 	struct PerDrawIndicesCPUGPU
 	{
@@ -79,6 +94,12 @@ cbuffer TextureContainerIndexCB : register(b3)
 ConstantBuffer<PerDrawIndices> gPerDrawIndices: register(b4);
 
 ConstantBuffer<PassBufferIndexRange> gPassBufferIndexRange: register(b5);
+
+cbuffer FinalColorBufferSrvCB : register(b6)
+{
+	uint gFinalColorBufferSrv;
+}
+
 
 #endif
 

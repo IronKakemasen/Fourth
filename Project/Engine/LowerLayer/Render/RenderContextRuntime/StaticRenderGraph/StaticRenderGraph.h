@@ -9,15 +9,19 @@ class RuntimeWrapper;
 
 class RenderContext::StaticRenderGraph
 {
+	//レンダーグラフの初期化手助けクラス
 	class PSO_Builder;
 	class PathBuilder;
 	class RootSigBuilder;
 	class PassSetUpper;
-	
+	class FinalRenderingSetupper;
+
 	//Pathのランタイムを制御する
 	class PathOperator;
 	//共通描画コマンドをたたく
 	class CommonCmdExecutor;
+	//スワップチェーンのバックバッファに最終描画をする
+	class BackBufferRenderer;
 
 public:
 
@@ -51,7 +55,6 @@ private:
 
 	struct BuildOutput
 	{
-
 		struct RootSigBuilder
 		{
 			//描画用巨大共通ルートシグネチャ
@@ -75,6 +78,15 @@ private:
 			///パスが参照するバッファのsrvHeapIndexを詰めるためのバッファのID
 			///UploadStructuredBufferなのでダブルです。中身の初期化もしていません
 			BufferUniqueID targetFillInRefBufferID;
+		};
+
+		struct FinalRenderingSetupper
+		{
+			//スワップチェーンバッファの情報
+			std::array<D3D12_CPU_DESCRIPTOR_HANDLE, (UINT)ProjectConfig::Render::NumBuffer::kDoubleBuffer> rtvHandle;
+			D3D12_VIEWPORT viewport;
+			D3D12_RECT scissorRect;
+			
 		};
 
 		RootSigBuilder rootSigBuilder;

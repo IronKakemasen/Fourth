@@ -6,6 +6,7 @@ class RootSignatureContextDiplomat;
 class ModelContextDiplomat;
 class PSO_ContextDiplomat;
 class ShaderContextDiplomat;
+class SwapChainContextDiplomat;
 
 class RenderContext
 {

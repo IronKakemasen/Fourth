@@ -2807,6 +2807,101 @@ class Texture2DBuffer;
 #include "GPUBuffer/Texture2DBuffer/Texture2DBuffer.h"
 
 ========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Buffer\BufferDefinition\BufferTraits.h ===
+========================================
+#pragma once
+#include "AllBuffersFwd.h"
+namespace BufferTraits
+{
+	//バッファタグ。使うことはあんまりないと思うが
+	enum class BufferTag
+	{
+		kColor,
+		kDepthStencil,
+		kConstant,
+		kCompute,
+		kUploadStructured,
+		kStaticStructured,
+		kTexture2D,
+		kCount
+	};
+	template<BufferTag tag>
+	struct TagTraits;
+	template<typename BufferType>
+	struct ClassTraits;
+	template<>
+	struct TagTraits<BufferTag::kColor>
+	{
+		using classType = ColorBuffer;
+	};
+	template<>
+	struct TagTraits<BufferTag::kConstant>
+	{
+		using classType = ConstantBuffer;
+	};
+	template<>
+	struct TagTraits<BufferTag::kDepthStencil>
+	{
+		using classType = DepthStencilBuffer;
+	};
+	template<>
+	struct TagTraits<BufferTag::kCompute>
+	{
+		using classType = ComputeBuffer;
+	};
+	template<>
+	struct TagTraits<BufferTag::kUploadStructured>
+	{
+		using classType = UploadStructuredBuffer;
+	};
+	template<>
+	struct TagTraits<BufferTag::kStaticStructured>
+	{
+		using classType = StaticStructuredBuffer;
+	};
+	template<>
+	struct TagTraits<BufferTag::kTexture2D>
+	{
+		using classType = Texture2DBuffer;
+	};
+	template<>
+	struct ClassTraits<ColorBuffer>
+	{
+		static constexpr BufferTag kTag = BufferTag::kColor;
+	};
+	template<>
+	struct ClassTraits<ConstantBuffer>
+	{
+		static constexpr BufferTag kTag = BufferTag::kConstant;
+	};
+	template<>
+	struct ClassTraits<DepthStencilBuffer>
+	{
+		static constexpr BufferTag kTag = BufferTag::kDepthStencil;
+	};
+	template<>
+	struct ClassTraits<ComputeBuffer>
+	{
+		static constexpr BufferTag kTag = BufferTag::kCompute;
+	};
+	template<>
+	struct ClassTraits<UploadStructuredBuffer>
+	{
+		static constexpr BufferTag kTag = BufferTag::kUploadStructured;
+	};
+	template<>
+	struct ClassTraits<StaticStructuredBuffer>
+	{
+		static constexpr BufferTag kTag = BufferTag::kStaticStructured;
+	};
+	template<>
+	struct ClassTraits<Texture2DBuffer>
+	{
+		static constexpr BufferTag kTag = BufferTag::kTexture2D;
+	};
+}
+
+========================================
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Buffer\BufferDefinition\ResourceBarrier.h ===
 ========================================
 #pragma once
@@ -3702,9 +3797,9 @@ D3D12_RESOURCE_STATES IDepthBuffer::ResourceStateTable(BufferUsage usage_)const
 ///+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-void IRenderTargetBuffer::Swap()
+void IRenderTarget::Swap()
 {
-	static IRenderTargetBuffer::Status nextTable[3]
+	static IRenderTarget::Status nextTable[3]
 	{
 		kShaderResource_RenderTarget,
 		kRenderTarget_ShaderResource,
@@ -3712,7 +3807,7 @@ void IRenderTargetBuffer::Swap()
 	};
 	status = nextTable[status];
 }
-int IRenderTargetBuffer::ProperBufferIndex(BufferUsage usage_)const
+int IRenderTarget::ProperBufferIndex(BufferUsage usage_)const
 {
 	//シングルバッファは問答無用
 	if (status == kSingle) return 0;
@@ -3731,7 +3826,7 @@ int IRenderTargetBuffer::ProperBufferIndex(BufferUsage usage_)const
 	}
 	return dstBufferIndex;
 }
-void IRenderTargetBuffer::SynchronizeStatus(ProjectConfig::Render::NumBuffer numBuffer_)
+void IRenderTarget::SynchronizeStatus(ProjectConfig::Render::NumBuffer numBuffer_)
 {
 	(numBuffer_ == ProjectConfig::Render::NumBuffer::kSingleBuffer) ? status = kSingle : status = kRenderTarget_ShaderResource;
 }
@@ -3837,15 +3932,31 @@ struct IWritableCPU
 	{
 		*reinterpret_cast<DataType*>(mappedPtrs[index_]) = data_;
 	}
+	//配列データバージョン
+	template<typename DataType>
+	void WriteRange(const UINT frameIndex_, std::vector<DataType> const& data_)
+	{
+		std::memcpy(mappedPtrs[frameIndex_], data_.data(), sizeof(DataType) * data_.size());
+	}
 	//両方に書き込む。初期化用
 	template<typename DataType>
 	void WriteInBoth
 	(
-		const std::array<DataType, (UINT)ProjectConfig::Render::NumBuffer::kDoubleBuffer>& doubleData_ 
+		const std::array<DataType, (UINT)ProjectConfig::Render::NumBuffer::kDoubleBuffer>& doubleData_
 	)
 	{
 		Write(0, doubleData_[0]);
 		Write(1, doubleData_[1]);
+	}
+	//配列データバージョン.同じく初期化用
+	template<typename DataType>
+	void WriteRangeInBoth
+	(
+		const std::array<std::vector<DataType>, (UINT)ProjectConfig::Render::NumBuffer::kDoubleBuffer>& doubleData_
+	)
+	{
+		WriteRange(0, doubleData_[0]);
+		WriteRange(1, doubleData_[1]);
 	}
 	virtual ~IWritableCPU() {};
 protected:
@@ -3899,7 +4010,7 @@ protected:
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///カラーバッファやディプスバッファなどのテクスチャに対して書き込みを行うもの
-struct IRenderTargetBuffer:IPingPong
+struct IRenderTarget:IPingPong
 {
 private:
 	//内部ステータス
@@ -3910,7 +4021,7 @@ private:
 		kSingle
 	}status = kSingle;
 public:
-	virtual ~IRenderTargetBuffer() = default;
+	virtual ~IRenderTarget() = default;
 	//適切なバリアを出す
 	virtual std::optional<D3D12_RESOURCE_BARRIER> CreateBarrier(BufferUsage usage_) = 0;
 	virtual void Swap()override;
@@ -4165,7 +4276,7 @@ SRVHeapIndex ColorBuffer::OutProperSRVHeapIndex(int frameIndex_)const
 #include "../GPUBufferBehavior.h"
 #include "../BufferInterface.h"
 //カラーバッファクラス
-class ColorBuffer final : public GPUBufferBehavior, public IColorBuffer, public IRenderTargetBuffer,IReadable
+class ColorBuffer final : public GPUBufferBehavior, public IColorBuffer, public IRenderTarget,public IReadable
 {
 public:
 	ColorBuffer
@@ -4175,7 +4286,6 @@ public:
 		std::vector<Microsoft::WRL::ComPtr<ID3D12Resource>> resourceContainer_,
 		const BufferDescriptionBehavior& description_
 	);
-private:
 	//バリア生成
 	virtual std::optional<D3D12_RESOURCE_BARRIER> CreateBarrier(BufferUsage usage_) override;
 	//適切なRTVヒープインデックスを出す
@@ -4328,7 +4438,7 @@ SRVHeapIndex DepthStencilBuffer::OutProperSRVHeapIndex(int frameIndex_)const
 #include "../GPUBufferBehavior.h"
 #include "../BufferInterface.h"
 //定数バッファクラス
-class DepthStencilBuffer final : public GPUBufferBehavior, public IDepthBuffer, public IRenderTargetBuffer,IReadable
+class DepthStencilBuffer final : public GPUBufferBehavior, public IDepthBuffer, public IRenderTarget, public IReadable
 {
 public:
 	DepthStencilBuffer
@@ -4338,7 +4448,6 @@ public:
 		std::vector<Microsoft::WRL::ComPtr<ID3D12Resource>> resourceContainer_,
 		const BufferDescriptionBehavior& description_
 	);
-private:
 	//バリアを張る
 	virtual std::optional<D3D12_RESOURCE_BARRIER> CreateBarrier(BufferUsage usage_) override;
 	//適切なCPUインデックスを出す
@@ -9085,6 +9194,7 @@ class RootSignatureContextDiplomat;
 class ModelContextDiplomat;
 class PSO_ContextDiplomat;
 class ShaderContextDiplomat;
+class SwapChainContextDiplomat;
 class RenderContext
 {
 	class RenderPassContainer;
@@ -9575,7 +9685,8 @@ RenderContext::StaticRenderGraph::StaticRenderGraph
 			proof_, 
 			buildOutput.pathBuilder.sortedAllPathPtr, 
 			psoDispatcher_, 
-			buildOutput.passSetUpper.refBuffers,
+			buildOutput.passSetUpper.refBufferTagTrace,
+			buildOutput.passSetUpper.refBuffersArr,
 			buildOutput.passSetUpper.targetFillInRefBufferID
 		)
 	);
@@ -9593,19 +9704,24 @@ RenderContext::StaticRenderGraph::~StaticRenderGraph()
 ========================================
 #pragma once
 #include "../../RenderContext.h"
+#include "../../../Buffer/BufferDefinition/BufferTraits.h"
 class DescriptorHeapContextDiplomat;
 class CommandContextDiplomat;
 class RuntimeWrapper;
 class RenderContext::StaticRenderGraph
 {
+	//レンダーグラフの初期化手助けクラス
 	class PSO_Builder;
 	class PathBuilder;
 	class RootSigBuilder;
 	class PassSetUpper;
+	class FinalRenderingSetupper;
 	//Pathのランタイムを制御する
 	class PathOperator;
 	//共通描画コマンドをたたく
 	class CommonCmdExecutor;
+	//スワップチェーンのバックバッファに最終描画をする
+	class BackBufferRenderer;
 public:
 	StaticRenderGraph
 	(
@@ -9647,10 +9763,20 @@ private:
 		{
 			///全てのパスが参照するバッファのIDが横一列に詰まっている
 			///このIDを辿って、ランタイムの一歩目にsrvHeapIndexを詰めていく
-			std::vector<BufferUniqueID> refBuffers;
+			///極力static_castで高速にキャストしたいので分別しておく
+			std::vector<BufferTraits::BufferTag> refBufferTagTrace;
+			static constexpr UINT kNumRefBufferType = 2;
+			std::array<std::vector<BufferUniqueID>, kNumRefBufferType > refBuffersArr;
 			///パスが参照するバッファのsrvHeapIndexを詰めるためのバッファのID
 			///UploadStructuredBufferなのでダブルです。中身の初期化もしていません
 			BufferUniqueID targetFillInRefBufferID;
+		};
+		struct FinalRenderingSetupper
+		{
+			//スワップチェーンバッファの情報
+			std::array<D3D12_CPU_DESCRIPTOR_HANDLE, (UINT)ProjectConfig::Render::NumBuffer::kDoubleBuffer> rtvHandle;
+			D3D12_VIEWPORT viewport;
+			D3D12_RECT scissorRect;
 		};
 		RootSigBuilder rootSigBuilder;
 		PathBuilder pathBuilder;
@@ -9673,6 +9799,28 @@ private:
 	std::unique_ptr<PathOperator> pathOperator;
 	//共通の描画コマンドをたたく
 	std::unique_ptr<CommonCmdExecutor> commonCmdExecutor;	
+};
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Render\RenderContextRuntime\StaticRenderGraph\RenderGraphBuilder\FinalRenderingSetupper\FinalRenderingSetupper.cpp ===
+========================================
+#include "PreCompileHeader.h"
+#include "FinalRenderingSetupper.h"
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Render\RenderContextRuntime\StaticRenderGraph\RenderGraphBuilder\FinalRenderingSetupper\FinalRenderingSetupper.h ===
+========================================
+#pragma once
+#include "../../StaticRenderGraph.h"
+class RenderContext::StaticRenderGraph::FinalRenderingSetupper
+{
+	friend class StaticRenderGraph;
+	RenderContext::StaticRenderGraph::BuildOutput::FinalRenderingSetupper Setup
+	(
+		NexusFieldProof proof_,
+		BufferContextDiplomat& bufferContextDiplomat_,
+		SwapChainContextDiplomat& swapChainContextDiplomat_
+	);
 };
 
 ========================================
@@ -10200,6 +10348,7 @@ private:
 #include "../../../../../Buffer/BufferDefinition/AllBufferDescsInclude.h"
 #include "../../../../../../../Assets/Shared/ConstantBuffers.h"
 using namespace ConstantBuffers;
+using namespace BufferTraits;
 namespace
 {
 	auto const fileName = "PassSetUpper.cpp";
@@ -10215,17 +10364,18 @@ namespace
 	BuildOutput::PassSetUpper output;
 	///全てのパスが参照するバッファのIDが横一列に詰まっている
 	///このIDを辿って、ランタイムの一歩目にsrvHeapIndexを詰めていく
-	output.refBuffers = CreateAllPassInfo(proof_, renderPassCreator_, passContainer_, bufferContextDiplomat_);
+	CreateAllPassInfo(proof_, output, renderPassCreator_, passContainer_, bufferContextDiplomat_);
 	///パスが参照するバッファのsrvHeapIndexを詰めるためのバッファのID
 	///UploadStructuredBufferでダブルです。中身の初期化もしていません
-	output.targetFillInRefBufferID = CreateReferenceBufferSrvArray(proof_, output.refBuffers,bufferContextDiplomat_);
+	CreateReferenceBufferSrvArray(proof_, output,bufferContextDiplomat_);
 	//Passのルートコンスタンツのバッファを作成する
 	CreatePassRootConstantsBuffer(proof_, bufferContextDiplomat_);
 	return output;
 }
-std::vector<BufferUniqueID> RenderContext::StaticRenderGraph::PassSetUpper::CreateAllPassInfo
+void RenderContext::StaticRenderGraph::PassSetUpper::CreateAllPassInfo
 (
 	NexusFieldProof proof_,
+	BuildOutput::PassSetUpper& output_,
 	RenderPassCreator& renderPassCreator_,
 	RenderPassContainer& passContainer_,
 	BufferContextDiplomat& bufferContextDiplomat_
@@ -10235,8 +10385,6 @@ std::vector<BufferUniqueID> RenderContext::StaticRenderGraph::PassSetUpper::Crea
 	auto const& allPassPtrMap = passContainer_.AccessAllPassPtrMap(proof_);
 	//名前 :　パスのバッファのユニークID
 	auto const& passBufferCache = renderPassCreator_.WatchPassBufferCache(proof_);
-	//別メソッドで使用する、参照するバッファのsrvHeapIndex配列を作成するための素材
-	std::vector<BufferUniqueID> allRefBufferUniques;
 	//デバッグ用
 	std::vector<std::string > allRefBufferNames;
 	//bufferDispatcherを借りる
@@ -10250,10 +10398,10 @@ std::vector<BufferUniqueID> RenderContext::StaticRenderGraph::PassSetUpper::Crea
 		std::string const& dsrPassName = desc.passName;
 		//そのパスがバッファ配列の何番目を参照するか、であるPassBufferIndexRangeCPUGPUのoffset
 		//普通にallRefBufferUniquesのけつ番目でいいはず
-		UINT const refOffset = UINT(allRefBufferUniques.size());
-		//そのパスが参照するバッファ一覧で回す
+		UINT const refOffset = UINT(output_.refBufferTagTrace.size());
+		//そのPassが参照するバッファ一覧で回す
 		std::vector<std::string> const& refBufferNames = desc.referenceBufferNames;
-		//Passの参照先ばっふぁID格納用
+		//そのPassの参照先ばっふぁID格納用
 		std::vector<BufferUniqueID> refColorBuffersID;
 		std::vector<BufferUniqueID> refDepthStencilBuffersID;
 		for (auto const& refBufferName : refBufferNames)
@@ -10265,13 +10413,22 @@ std::vector<BufferUniqueID> RenderContext::StaticRenderGraph::PassSetUpper::Crea
 			auto* buffer = bufferDispatcher->Dispatch(refID);
 			if (dynamic_cast<ColorBuffer*>(buffer))
 			{
+				//参照先バッファをdynamicCastで確認して、何のバッファなのかTagを追加していく
+				output_.refBufferTagTrace.emplace_back(ClassTraits<ColorBuffer>::kTag);
+				//これはランタイムで使用する全パスの参照バッファ格納先(カラーバッファ)
+				output_.refBuffersArr[(UINT)ClassTraits<ColorBuffer>::kTag].emplace_back(refID);
+				//そのパスが参照するバッファIDの格納
 				refColorBuffersID.emplace_back(refID);
 			}
 			else
 			{
+				//参照先バッファをdynamicCastで確認して、何のバッファなのかTagを追加していく
+				output_.refBufferTagTrace.emplace_back(ClassTraits<DepthStencilBuffer>::kTag);
+				//これはランタイムで使用する全パスの参照バッファ格納先(深度ステンシルバッファ)
+				output_.refBuffersArr[(UINT)ClassTraits<DepthStencilBuffer>::kTag].emplace_back(refID);
+				//そのパスが参照するバッファIDの格納
 				refDepthStencilBuffersID.emplace_back(refID);
 			}
-			allRefBufferUniques.emplace_back(refID);
 			allRefBufferNames.emplace_back(refBufferName);
 		}
 		///PassDesc -> RuntimePassInfoに詰め変える
@@ -10291,12 +10448,11 @@ std::vector<BufferUniqueID> RenderContext::StaticRenderGraph::PassSetUpper::Crea
 	Logger::Log(log);
 	Logger::Log("- - - - - - - - - - - - - - - - - - - - ", fileName);
 #endif //  _DEBUG
-	return allRefBufferUniques;
 }
-SRVHeapIndex RenderContext::StaticRenderGraph::PassSetUpper::CreateReferenceBufferSrvArray
+void RenderContext::StaticRenderGraph::PassSetUpper::CreateReferenceBufferSrvArray
 (
 	NexusFieldProof proof_,
-	std::vector<BufferUniqueID> const& data_,
+	BuildOutput::PassSetUpper& output_, 
 	BufferContextDiplomat& bufferContextDiplomat_
 )
 {
@@ -10304,13 +10460,14 @@ SRVHeapIndex RenderContext::StaticRenderGraph::PassSetUpper::CreateReferenceBuff
 	auto cmdProv = bufferContextDiplomat_.Access<BufferContext::CmdProvider>();
 	BufferContext::CmdProvider::LicenceType<BufferContextCmds::CreateCBufferCmd> licenceCmd;
 	auto createCBufferCmd = cmdProv->Provide<BufferContextCmds::CreateCBufferCmd>(licenceCmd);
-	//bufferCreatorを借りる
+	//bufferCreatorとbufferDispatcherを借りる
 	auto toolLender = bufferContextDiplomat_.Access<BufferContext::ToolLender>();
 	BufferContext::ToolLender::LicenceType<BufferContext::BufferCreator> licenceTool;
 	auto* bufferCreator = toolLender->Lend<BufferContext::BufferCreator>(licenceTool);
-	///バッファ作成
+	auto* bufferDispatcher = toolLender->Lend<BufferContext::BufferDispatcher>(licenceTool);
+	///参照バッファ配列のバッファ作成
 	std::string const bufferName = "RefBufSrvArr";
-	UploadStructuredBufferDescription desc(UINT(sizeof(SRVHeapIndex)), UINT(data_.size()), 0);
+	UploadStructuredBufferDescription desc(UINT(sizeof(SRVHeapIndex)), UINT(output_.refBufferTagTrace.size()), 0);
 	auto id_buffer = bufferCreator->CreateWithBuffer(desc, bufferName);
 	//そのバッファのコンスタントバッファを生成し,
 	auto cBufferID_cBuffer =
@@ -10320,7 +10477,37 @@ SRVHeapIndex RenderContext::StaticRenderGraph::PassSetUpper::CreateReferenceBuff
 	(
 		{ id_buffer.second->OutProperSRVHeapIndex(0),id_buffer.second->OutProperSRVHeapIndex(1) }
 	);
-	return id_buffer.first;
+	//参照バッファ配列のバッファにも初期値を書き込んでおく
+	std::vector<SRVHeapIndex> allRefIndices;
+	allRefIndices.reserve(output_.refBufferTagTrace.size());
+	std::array<UINT, BuildOutput::PassSetUpper::kNumRefBufferType > indexCnts{};
+	for (auto const bufferTag : output_.refBufferTagTrace)
+	{
+		//参照バッファがどっちかをインデックスに
+		UINT const bufferTypeIndex = UINT(bufferTag);
+		//参照バッファのID　→　バッファ　→　srvHeapIndex
+		BufferUniqueID refID = output_.refBuffersArr[bufferTypeIndex][indexCnts[bufferTypeIndex]++];
+		auto* refbuffer = bufferDispatcher->Dispatch(refID);
+		SRVHeapIndex refSrvIndex{};
+		if (bufferTag == BufferTag::kColor)
+		{
+			refSrvIndex = static_cast<ColorBuffer*>(refbuffer)->OutProperSRVHeapIndex();
+		}
+		else
+		{
+			refSrvIndex = static_cast<DepthStencilBuffer*>(refbuffer)->OutProperSRVHeapIndex();
+		}
+		allRefIndices.emplace_back(refSrvIndex);
+	}
+	//初期フレーム分を「0」に入力。初手フレームインデックスは0。つまり、書き込むべきは0
+	//読み込むべきは1
+	//と言いたいところだがいちおう両方に入力しておく
+	id_buffer.second->WriteRangeInBoth<SRVHeapIndex>
+	(
+		{ allRefIndices,allRefIndices }
+	);
+	//参照バッファ格納先のバッファIDを記録
+	output_.targetFillInRefBufferID = id_buffer.first;
 }
 void RenderContext::StaticRenderGraph::PassSetUpper::CreatePassRootConstantsBuffer
 (
@@ -10355,19 +10542,20 @@ class RenderContext::StaticRenderGraph::PassSetUpper
 	//以下ヘルパー
 private:
 	//全パスの所持するPassDesc -> PassInfoに移し替える
-	static std::vector<BufferUniqueID> CreateAllPassInfo
+	static void CreateAllPassInfo
 	(
 		NexusFieldProof proof_,
+		BuildOutput::PassSetUpper& output_,
 		RenderPassCreator& renderPassCreator_,
 		RenderPassContainer& passContainer_,
 		BufferContextDiplomat& bufferContextDiplomat_
 	);
 	///各パスが参照するバッファのsrvHeapIndexを配列したもののバッファ、そしてそのsrvHeapIndexの定数バッファを作成
 	//ReferenceBufferSrvArrayバッファのバッファインデックスを返す
-	static SRVHeapIndex CreateReferenceBufferSrvArray
+	static void CreateReferenceBufferSrvArray
 	(
 		NexusFieldProof proof_,
-		std::vector<BufferUniqueID> const& data_,
+		BuildOutput::PassSetUpper& output_,
 		BufferContextDiplomat& bufferContextDiplomat_
 	);
 	//Passのルートコンスタンツのバッファを作る
@@ -10454,6 +10642,23 @@ private:
 		static inline const std::string kSrcJsonFile = "RenderGraphSettings";
 		static inline const std::string kPathSequence = "PathSequence";
 	};
+};
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Render\RenderContextRuntime\StaticRenderGraph\RenderGraphExecutor\BackBufferRenderer\BackBufferRenderer.cpp ===
+========================================
+#include "PreCompileHeader.h"
+#include "BackBufferRenderer.h"
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Render\RenderContextRuntime\StaticRenderGraph\RenderGraphExecutor\BackBufferRenderer\BackBufferRenderer.h ===
+========================================
+#pragma once
+#include "../../StaticRenderGraph.h"
+class RenderContext::StaticRenderGraph::BackBufferRenderer
+{
+public:
+private:
 };
 
 ========================================
@@ -10578,6 +10783,8 @@ private:
 #include "../../../../../Buffer/BufferContextDiplomats.h"
 #include "../../../../../Buffer/BufferRuntime/BufferDispatcher/BufferDispatcher.h"
 #include "../../../../../Buffer/BufferDefinition/GPUBuffer/UploadStructuredBuffer/UploadStructuredBuffer.h"
+#include "../../../../../Buffer/BufferDefinition/GPUBuffer/ColorBuffer/ColorBuffer.h"
+#include "../../../../../Buffer/BufferDefinition/GPUBuffer/DepthStencilBuffer/DepthStencilBuffer.h"
 #include "../../../../../Resource/Model/ModelContextDiplomatIncludes.h"
 #include "../../../../../Resource/Model/ModelContainer/ModelContainer.h"
 RenderContext::StaticRenderGraph::PathOperator::PathOperator
@@ -10585,10 +10792,18 @@ RenderContext::StaticRenderGraph::PathOperator::PathOperator
 	NexusFieldProof proof_,
 	std::vector<PathBehavior*> const& allPathPtr_,
 	PSO_PoolDispatcher& pso_PoolDispatcher_,
-	std::vector<BufferUniqueID> const& refBuffers_,
+	std::vector<BufferTraits::BufferTag> const& traceRefBuffersTag_,
+	std::array<std::vector<BufferUniqueID> , BuildOutput::PassSetUpper::kNumRefBufferType> const& refBuffersArr_,
 	BufferUniqueID const targetFillInRefBufferID_
-):allPathPtr(allPathPtr_), pso_PoolDispatcher(pso_PoolDispatcher_), refBuffers(refBuffers_), targetFillInRefBufferID(targetFillInRefBufferID_)
+):
+	allPathPtr(allPathPtr_),
+	pso_PoolDispatcher(pso_PoolDispatcher_), 
+	traceRefBuffersTag(traceRefBuffersTag_), 
+	targetFillInRefBufferID(targetFillInRefBufferID_),
+	refBuffersArr(refBuffersArr_)
 {
+	//参照バッファの総和と同じになるはずなので、確保しておく
+	refBufferSrvIndices.resize(traceRefBuffersTag.size());
 }
 void RenderContext::StaticRenderGraph::PathOperator::FillInRefBufferSrvIndices
 (
@@ -10600,8 +10815,33 @@ void RenderContext::StaticRenderGraph::PathOperator::FillInRefBufferSrvIndices
 	auto bToolLender = bufferContextDiplomat_.Access<BufferContext::ToolLender>();
 	BufferContext::ToolLender::LicenceType<BufferContext::BufferDispatcher> bLicence;
 	auto& bufferDispatcher = *bToolLender->Lend<BufferContext::BufferDispatcher>(bLicence);
-	//参照バッファsrv格納先のバッファ
-	auto* dstBuffer = bufferDispatcher.Dispatch(targetFillInRefBufferID);
+	//参照バッファ群srv書き込み先のバッファ
+	auto* dstBuffer = static_cast<UploadStructuredBuffer*>(bufferDispatcher.Dispatch(targetFillInRefBufferID));
+	//参照バッファの格納順は記録しているので、そこからバッファを検索→srvIndex格納
+	auto const numRefBuffers = traceRefBuffersTag.size();
+	std::array<UINT, BuildOutput::PassSetUpper::kNumRefBufferType> refBufferCnts{};
+	for (size_t i = 0;i< traceRefBuffersTag.size();++i)
+	{
+		//参照バッファの種類
+		UINT refTagIndex = (UINT)traceRefBuffersTag[i];
+		BufferUniqueID refID = refBuffersArr[refTagIndex][refBufferCnts[refTagIndex]++];
+		GPUBufferBehavior* refBuffer = bufferDispatcher.Dispatch(refID);
+		//なるべくdynamic_castつかいたくないんで
+		//参照先バッファのsrvHeapIndexを記録
+		if (traceRefBuffersTag[i] == BufferTraits::BufferTag::kColor)
+		{
+			refBufferSrvIndices[i] = static_cast<ColorBuffer*>(refBuffer)->OutProperSRVHeapIndex();
+		}
+		else
+		{
+			refBufferSrvIndices[i] = static_cast<DepthStencilBuffer*>(refBuffer)->OutProperSRVHeapIndex();
+		}		
+	}
+	//参照バッファ格納先のバッファを検索
+	auto* targetFillInRefBuffer = static_cast<UploadStructuredBuffer*>(bufferDispatcher.Dispatch(targetFillInRefBufferID));
+	//参照先バッファのsrvIndex群をframeIndex = 書き込み先インデックス指定
+	//で書き込む
+	targetFillInRefBuffer->WriteRange<SRVHeapIndex>(frameIndex_, refBufferSrvIndices);
 }
 void RenderContext::StaticRenderGraph::PathOperator::Run
 (
@@ -10611,6 +10851,7 @@ void RenderContext::StaticRenderGraph::PathOperator::Run
 	RuntimeWrapper& runtimeWrapper_
 )
 {
+	FillInRefBufferSrvIndices(frameIndex_, bufferContextDiplomat_);
 	//BufferDispatcherにアクセス
 	auto bToolLender = bufferContextDiplomat_.Access<BufferContext::ToolLender>();
 	BufferContext::ToolLender::LicenceType<BufferContext::BufferDispatcher> bLicence;
@@ -10639,7 +10880,8 @@ public:
 		NexusFieldProof proof_,
 		std::vector<PathBehavior*> const& allPathPtr_,
 		PSO_PoolDispatcher& pso_PoolDispatcher_,
-		std::vector<BufferUniqueID> const& refBuffers_,
+		std::vector<BufferTraits::BufferTag> const& traceRefBuffersTag_,
+		std::array<std::vector<BufferUniqueID>, BuildOutput::PassSetUpper::kNumRefBufferType> const& refBuffersArr_,
 		BufferUniqueID const targetFillInRefBufferID_
 	);
 	//全pathの更新処理をぶん回す
@@ -10662,8 +10904,12 @@ private:
 	RenderStateComponent::FillMode modelFillMode = RenderStateComponent::FillMode::kSolid;
 	//シーケンス順にソートされた、全てのPathのポインタ
 	std::vector<PathBehavior*> allPathPtr;
-	///全てのパスが参照するバッファのID群
-	std::vector<BufferUniqueID> refBuffers;
+	///全てのパスが参照するバッファのID群のうちどちらなのかを識別するためのもの
+	std::vector<BufferTraits::BufferTag> traceRefBuffersTag;
+	//参照バッファのID情報源
+	std::array<std::vector<BufferUniqueID>, BuildOutput::PassSetUpper::kNumRefBufferType> const& refBuffersArr;
+	//参照バッファのsrvheapIndex群を入れておくため
+	std::vector<SRVHeapIndex> refBufferSrvIndices;
 	///パスが参照するバッファのsrvHeapIndexを詰めるためのバッファのID
 	BufferUniqueID targetFillInRefBufferID;
 };
@@ -11060,16 +11306,16 @@ void RenderContext::PassBehavior::SetMatrix<D3D12_RECT>
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 template<BufferUsage usage>
-void RenderContext::PassBehavior::CreateBarrier(IRenderTargetBuffer* buffer_)
+void RenderContext::PassBehavior::CreateBarrier(IRenderTarget* buffer_)
 {
 	std::optional<D3D12_RESOURCE_BARRIER> barrierOpt = buffer_->CreateBarrier(usage);
 	//リソースの遷移先が現在と同じだった場合、バリアを作る必要が無いため
 	if(barrierOpt.has_value()) barrierCache.emplace_back(*barrierOpt);
 }
 template
-void RenderContext::PassBehavior::CreateBarrier<BufferUsage::kRead>(IRenderTargetBuffer* buffer_);
+void RenderContext::PassBehavior::CreateBarrier<BufferUsage::kRead>(IRenderTarget* buffer_);
 template
-void RenderContext::PassBehavior::CreateBarrier<BufferUsage::kWrite>(IRenderTargetBuffer* buffer_);
+void RenderContext::PassBehavior::CreateBarrier<BufferUsage::kWrite>(IRenderTarget* buffer_);
 
 ========================================
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Render\RenderPass\AllRenderPass\RenderPassBehavior.h ===
@@ -11146,7 +11392,7 @@ private:
 	//バッファのステートを切り替えのためのバリアを生成
 	//中で張ってない
 	template<BufferUsage usage>
-	void CreateBarrier(IRenderTargetBuffer* buffer_);
+	void CreateBarrier(IRenderTarget* buffer_);
 	//溜めたステート遷移のバリアを張る
 	void PitchBarrierCached(RuntimeWrapper& cmdWrapper_);
 	//RenderStateKeyから、Passとフィルモード以外のPSOキーの入力をする
@@ -16752,6 +16998,7 @@ namespace RootSignatureLayoutComponent
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\RootSignature\RootSignatureCreator\RootSignatureAssembler\RootSignatureAssemblerTool\RootParamCreator\RootParamCreator.cpp ===
 ========================================
 #include "RootParamCreator.h"
+//外部
 #include "../../../../../../../../Assets/Shared/ConstantBuffers.h"
 using namespace RootSignatureLayoutComponent;
 std::vector<D3D12_ROOT_PARAMETER> RootSignatureContext::Assembler::RootParamCreator::CreateRootparamGloballyCommonCBV(const RootSignatureDesc::Graphics& srcDesc_)
@@ -16769,30 +17016,11 @@ std::vector<D3D12_ROOT_PARAMETER> RootSignatureContext::Assembler::RootParamCrea
 	//こっちはルートコンスタンツ
 	for (;i < (int)ConstantBuffers::RootConstantsBindSlots::kCount;++i)
 	{
-		switch (i)
-		{
-		case (int)ConstantBuffers::RootConstantsBindSlots::kPerDrawIndices:
-			rootParams[i].ShaderVisibility = Convert(ShaderStage::kAll);
-			rootParams[i].ParameterType = D3D12_ROOT_PARAMETER_TYPE_32BIT_CONSTANTS;
-			rootParams[i].Constants.ShaderRegister = i;
-			rootParams[i].Constants.RegisterSpace = 0;
-			rootParams[i].Constants.Num32BitValues = 2;
-			break;
-		case (int)ConstantBuffers::RootConstantsBindSlots::kPassBufferIndexRange:
-			rootParams[i].ShaderVisibility = Convert(ShaderStage::kAll);
-			rootParams[i].ParameterType = D3D12_ROOT_PARAMETER_TYPE_32BIT_CONSTANTS;
-			rootParams[i].Constants.ShaderRegister = i;
-			rootParams[i].Constants.RegisterSpace = 0;
-			rootParams[i].Constants.Num32BitValues = 2;
-			break;
-		default:
-			ErrorMessageOutput::Assert::OutputError
-			(
-				"ここに到達するのはおかしい。ルート定数の設定が足りてないっしょ",
-				"RootParamCreator.cpp"
-			);
-			break;
-		}
+		rootParams[i].Constants.Num32BitValues = ConstantBuffers::Num32BitValuesTable(i);
+		rootParams[i].ShaderVisibility = Convert(ShaderStage::kAll);
+		rootParams[i].ParameterType = D3D12_ROOT_PARAMETER_TYPE_32BIT_CONSTANTS;
+		rootParams[i].Constants.ShaderRegister = i;
+		rootParams[i].Constants.RegisterSpace = 0;
 	}
 	return rootParams;
 }
@@ -20253,5 +20481,5 @@ namespace StringProcessing
 ========================================
 === SUMMARY ===
 ========================================
-Total Files      : 445
-Effective Lines  : 14739
+Total Files      : 450
+Effective Lines  : 14904
