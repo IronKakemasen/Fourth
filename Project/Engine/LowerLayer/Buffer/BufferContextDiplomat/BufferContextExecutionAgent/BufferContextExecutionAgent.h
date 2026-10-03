@@ -13,7 +13,7 @@ public:
 	);
 
 	//BufferUploaderの削除を代行
-	void DeleteBufferUploader(NexusFieldProof proof_);
+	void DeleteBufferUploaderChacheData(NexusFieldProof proof_);
 	//Resourceのバリアを全て張るのを代行
 	void UploadAllBuffer(NexusFieldProof proof_);
 	//ワールド定数バッファのコンテナクラスの移し替えを代行

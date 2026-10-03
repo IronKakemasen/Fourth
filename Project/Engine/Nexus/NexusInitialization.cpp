@@ -258,12 +258,12 @@ void Nexus::Init<Nexus::InitSequence::kKickCommands>()
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 template<>
-void Nexus::Init<Nexus::InitSequence::kDeleteIntermediateResources>()
+void Nexus::Init<Nexus::InitSequence::kDeleteBufferUploaderCache>()
 {
 	//bufferContextの代行者
 	auto* agent = bufferContext->AccessDiplomat().Access<BufferContext::ExecutionAgent>();
-	//BufferUploaderの削除を代行
-	agent->DeleteBufferUploader(BufferContext::NexusFieldProof{});
+	//BufferUploaderのキャッシュデータ削除を代行
+	agent->DeleteBufferUploaderChacheData(BufferContext::NexusFieldProof{});
 }
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -361,7 +361,7 @@ template
 void Nexus::Init<Nexus::InitSequence::kKickCommands>();
 
 template
-void Nexus::Init<Nexus::InitSequence::kDeleteIntermediateResources>();
+void Nexus::Init<Nexus::InitSequence::kDeleteBufferUploaderCache>();
 
 template
 void Nexus::Init<Nexus::InitSequence::kSortOutGlobalConstantBuffers>();

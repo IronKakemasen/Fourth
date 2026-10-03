@@ -14,9 +14,9 @@ BufferContext::ExecutionAgent::ExecutionAgent
 
 }
 
-void BufferContext::ExecutionAgent::DeleteBufferUploader(NexusFieldProof proof_)
+void BufferContext::ExecutionAgent::DeleteBufferUploaderChacheData(NexusFieldProof proof_)
 {
-	bufferContext->DeleteBufferUploader(proof_, BufferContext::AgentKey{});
+	bufferUploader->DeleteCache(proof_, BufferContext::AgentKey{});
 }
 
 void BufferContext::ExecutionAgent::UploadAllBuffer(BufferContext::NexusFieldProof proof_)

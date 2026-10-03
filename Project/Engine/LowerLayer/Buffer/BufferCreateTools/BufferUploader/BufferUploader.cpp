@@ -46,12 +46,24 @@ BufferContext::BufferUploader::BufferUploader
 	DeviceContext::CommandProvider::LicenceType<DeviceContextCmds::PrepareUploadCommand> licencePrepareUpload;
 	//テクスチャバッファのサブリソースを作成するため
 	prepareUploadCommand = deviceContextCmdProvider->Provide<DeviceContextCmds::PrepareUploadCommand>(licencePrepareUpload);
+
+
+	//そこまで重要じゃないのでとりあえず形式で
+	//ログファイルのキャッシュ削除数から、プラスアルファ程度のキャパを確保しておく
+	intermediateResources.reserve(20);
+	//中間リソースと同じ数になるはず
+	barriers.reserve(20);
+	//ログファイル見るのが確実
+	temporaryBufferInfoStorageContainer.reserve(15);
+	//テクスチャ枚数分あればいい
+	temporaryTextureBufferInfoStorageContainer.reserve(10);
+
+
 }
 
 BufferContext::BufferUploader::~BufferUploader()
 {
-	Logger::Log("BufferUploader Destructor Runs", fileName);
-	Logger::Log("Delete: all intermediateResources(" + std::to_string((UINT)intermediateResources.size()) + ")", fileName);
+
 }
 
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -137,6 +149,8 @@ void BufferContext::BufferUploader::UploadBuffer(BufferContext::NexusFieldProof 
 	///上記のコマンドを流す
 	Flush("Pitch All Barriers to ShaderResource");
 
+	Logger::Log("Delete CacheData", fileName);
+
 	//ログ出力
 	EndLog();
 }
@@ -164,6 +178,8 @@ void BufferContext::BufferUploader::Flush(std::string const& log_)
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 void BufferContext::BufferUploader::EndLog()const
 {
+#ifdef _DEBUG
+
 	Logger::Log("===== Size Of DataType x numDataContains =====");
 	for (auto& data : temporaryBufferInfoStorageContainer)
 	{
@@ -176,6 +192,8 @@ void BufferContext::BufferUploader::EndLog()const
 		auto [dstBuffer, dstResource] = PickBufferAndResource(data.id);
 		Logger::Log("Complete Uploading: " + dstBuffer->WatchName(), fileName);
 	}
+
+#endif // _DEBUG
 
 }
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -224,6 +242,21 @@ void BufferContext::BufferUploader::RegisterTextureBuffer(DirectX::ScratchImage&
 
 
 	temporaryTextureBufferInfoStorageContainer.emplace_back(std::move(temporaryTextureBufferInfoStorage));
+}
+
+void BufferContext::BufferUploader::DeleteCache(NexusFieldProof proof_, AgentKey key_)
+{
+	Logger::Log("Delete interMediateresources(" + std::to_string(intermediateResources.size()) + " )");
+	intermediateResources.clear();
+	intermediateResources.shrink_to_fit();
+
+	Logger::Log("Delete temporaryBufferInfoStorageContainer(" + std::to_string(temporaryBufferInfoStorageContainer.size()) + " )");
+	temporaryBufferInfoStorageContainer.clear();
+	temporaryBufferInfoStorageContainer.shrink_to_fit();
+
+	Logger::Log("Delete temporaryTextureBufferInfoStorageContainer(" + std::to_string(temporaryTextureBufferInfoStorageContainer.size()) + " )");
+	temporaryTextureBufferInfoStorageContainer.clear();
+	temporaryTextureBufferInfoStorageContainer.shrink_to_fit();
 }
 
 

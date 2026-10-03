@@ -86,6 +86,9 @@ public:
 	///Nexusフィールド限定、代行者限定
 	void UploadBuffer(BufferContext::NexusFieldProof proof_, BufferContext::AgentKey agentKey_);
 
+	//アップロードのためのデータをすべて消してもらう
+	void DeleteCache(NexusFieldProof proof_,AgentKey key_);
+
 
 private:
 
@@ -132,6 +135,7 @@ private:
 
 	//終わりの一言
 	void EndLog()const;
+
 
 	//バッファのサブリソース生成
 	template<typename RealDataType>
