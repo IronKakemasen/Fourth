@@ -38,7 +38,7 @@ public:
 	}
 
 
-	std::unordered_map<std::string, BufferUniqueID> WatchPassBufferCache(NexusFieldProof proof_)const;
+	std::unordered_map<std::string, BufferUniqueID> const& WatchPassBufferCache(NexusFieldProof proof_)const;
 
 
 private:

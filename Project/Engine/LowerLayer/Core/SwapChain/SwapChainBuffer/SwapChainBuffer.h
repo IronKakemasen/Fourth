@@ -12,6 +12,16 @@ public:
 		std::array<D3D12_CPU_DESCRIPTOR_HANDLE, (UINT)ProjectConfig::Render::NumBuffer::kDoubleBuffer> const& rtvHandles_
 	);
 
+	//お定まりのランタイムセット
+	template<D3D12_RESOURCE_STATES state>
+	D3D12_RESOURCE_BARRIER CreateBarrier(UINT const frameIndex_);
+
+	D3D12_CPU_DESCRIPTOR_HANDLE const& OutProperRtvHandle(UINT const frameIndex_)const;
+
+	std::pair<D3D12_VIEWPORT const*, D3D12_RECT const*> WatchMatrices()const;
+
+
+private:
 
 	struct Buffer
 	{
@@ -23,9 +33,13 @@ public:
 		D3D12_RESOURCE_BARRIER CreateBarrier(D3D12_RESOURCE_STATES after_);
 	};
 
-private:
+	//ウィンドウサイズに合わせて組み立てる
+	void AssembleMatrices();
+
 
 	std::array<Buffer, (UINT)ProjectConfig::Render::NumBuffer::kDoubleBuffer> buffers;
+	D3D12_VIEWPORT viewport;
+	D3D12_RECT scissorRect;
 
 };
 

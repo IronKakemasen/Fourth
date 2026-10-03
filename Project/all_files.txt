@@ -224,12 +224,6 @@ BufferContext::~BufferContext()
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-void BufferContext::DeleteBufferUploader(const NexusFieldProof& proof_, AgentKey agentKey_)
-{
-	///中にある中間リソースをすべて削除
-	bufferUploader.reset();
-	Logger::Log("delete: bufferUploader", fileName);
-}
 
 ========================================
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Buffer\BufferContext.h ===
@@ -282,8 +276,6 @@ public:
 		CommandContextDiplomat& commandContextDiplomat_
 	);
 	~BufferContext();
-	///ランタイムに入る前にNexusがアップロード用の中間リソースを破棄する
-	void DeleteBufferUploader(const NexusFieldProof& proof_, AgentKey agentKey_);
 	auto& AccessDiplomat() { return *diplomat; }
 private:
 	///複数のバッファのプールが定義されている
@@ -499,9 +491,9 @@ BufferContext::ExecutionAgent::ExecutionAgent
 ):bufferContext(bufferContext_), bufferUploader(bufferUploader_), globalConstantBuffers(worldConstantBuffers_)
 {
 }
-void BufferContext::ExecutionAgent::DeleteBufferUploader(NexusFieldProof proof_)
+void BufferContext::ExecutionAgent::DeleteBufferUploaderChacheData(NexusFieldProof proof_)
 {
-	bufferContext->DeleteBufferUploader(proof_, BufferContext::AgentKey{});
+	bufferUploader->DeleteCache(proof_, BufferContext::AgentKey{});
 }
 void BufferContext::ExecutionAgent::UploadAllBuffer(BufferContext::NexusFieldProof proof_)
 {
@@ -528,7 +520,7 @@ public:
 		GlobalConstantBuffers* worldConstantBuffers_
 	);
 	//BufferUploaderの削除を代行
-	void DeleteBufferUploader(NexusFieldProof proof_);
+	void DeleteBufferUploaderChacheData(NexusFieldProof proof_);
 	//Resourceのバリアを全て張るのを代行
 	void UploadAllBuffer(NexusFieldProof proof_);
 	//ワールド定数バッファのコンテナクラスの移し替えを代行
@@ -2238,11 +2230,18 @@ BufferContext::BufferUploader::BufferUploader
 	DeviceContext::CommandProvider::LicenceType<DeviceContextCmds::PrepareUploadCommand> licencePrepareUpload;
 	//テクスチャバッファのサブリソースを作成するため
 	prepareUploadCommand = deviceContextCmdProvider->Provide<DeviceContextCmds::PrepareUploadCommand>(licencePrepareUpload);
+	//そこまで重要じゃないのでとりあえず形式で
+	//ログファイルのキャッシュ削除数から、プラスアルファ程度のキャパを確保しておく
+	intermediateResources.reserve(20);
+	//中間リソースと同じ数になるはず
+	barriers.reserve(20);
+	//ログファイル見るのが確実
+	temporaryBufferInfoStorageContainer.reserve(15);
+	//テクスチャ枚数分あればいい
+	temporaryTextureBufferInfoStorageContainer.reserve(10);
 }
 BufferContext::BufferUploader::~BufferUploader()
 {
-	Logger::Log("BufferUploader Destructor Runs", fileName);
-	Logger::Log("Delete: all intermediateResources(" + std::to_string((UINT)intermediateResources.size()) + ")", fileName);
 }
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -2317,6 +2316,7 @@ void BufferContext::BufferUploader::UploadBuffer(BufferContext::NexusFieldProof 
 	}
 	///上記のコマンドを流す
 	Flush("Pitch All Barriers to ShaderResource");
+	Logger::Log("Delete CacheData", fileName);
 	//ログ出力
 	EndLog();
 }
@@ -2342,6 +2342,7 @@ void BufferContext::BufferUploader::Flush(std::string const& log_)
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 void BufferContext::BufferUploader::EndLog()const
 {
+#ifdef _DEBUG
 	Logger::Log("===== Size Of DataType x numDataContains =====");
 	for (auto& data : temporaryBufferInfoStorageContainer)
 	{
@@ -2353,6 +2354,7 @@ void BufferContext::BufferUploader::EndLog()const
 		auto [dstBuffer, dstResource] = PickBufferAndResource(data.id);
 		Logger::Log("Complete Uploading: " + dstBuffer->WatchName(), fileName);
 	}
+#endif // _DEBUG
 }
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -2387,6 +2389,18 @@ void BufferContext::BufferUploader::RegisterTextureBuffer(DirectX::ScratchImage&
 	temporaryTextureBufferInfoStorage.intermediateResource = CreateInterMediateResource(UINT(intermediateSize));
 	temporaryTextureBufferInfoStorage.id = id_;
 	temporaryTextureBufferInfoStorageContainer.emplace_back(std::move(temporaryTextureBufferInfoStorage));
+}
+void BufferContext::BufferUploader::DeleteCache(NexusFieldProof proof_, AgentKey key_)
+{
+	Logger::Log("Delete interMediateresources(" + std::to_string(intermediateResources.size()) + " )");
+	intermediateResources.clear();
+	intermediateResources.shrink_to_fit();
+	Logger::Log("Delete temporaryBufferInfoStorageContainer(" + std::to_string(temporaryBufferInfoStorageContainer.size()) + " )");
+	temporaryBufferInfoStorageContainer.clear();
+	temporaryBufferInfoStorageContainer.shrink_to_fit();
+	Logger::Log("Delete temporaryTextureBufferInfoStorageContainer(" + std::to_string(temporaryTextureBufferInfoStorageContainer.size()) + " )");
+	temporaryTextureBufferInfoStorageContainer.clear();
+	temporaryTextureBufferInfoStorageContainer.shrink_to_fit();
 }
 template
 void BufferContext::BufferUploader::ExtractBarrier<D3D12_RESOURCE_STATE_COPY_DEST>(GPUBufferBehavior* dstBuffer_);
@@ -2469,6 +2483,8 @@ public:
 	///バッファをアップロードする(テクスチャバッファはまた別。あとで共通窓口を作る)
 	///Nexusフィールド限定、代行者限定
 	void UploadBuffer(BufferContext::NexusFieldProof proof_, BufferContext::AgentKey agentKey_);
+	//アップロードのためのデータをすべて消してもらう
+	void DeleteCache(NexusFieldProof proof_,AgentKey key_);
 private:
 	//中間リソース生成
 	class IntermediateResourceCreator;
@@ -8040,6 +8056,14 @@ private:
 };
 
 ========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Core\SwapChain\SwapChainContextDiplomats.h ===
+========================================
+#pragma once
+#include "SwapChainContextDiplomat/SwapChainContextDiplomat.h"
+#include "SwapChainContextDiplomat/SwapChainContextToolLender/SwapChainContextToolLender.h"
+#include "SwapChainContextDiplomat/SwapChainContextToolLender/SwapChainContextToolLenderLicences.h"
+
+========================================
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Core\SwapChain\Presenter\Presenter.cpp ===
 ========================================
 #include "Presenter.h"
@@ -8082,6 +8106,17 @@ private:
 ========================================
 #include "PreCompileHeader.h"
 #include "SwapChainBuffer.h"
+D3D12_RESOURCE_BARRIER SwapChainContext::SwapChainBuffer::Buffer::CreateBarrier(D3D12_RESOURCE_STATES after_)
+{
+	D3D12_RESOURCE_BARRIER barrier{};
+	barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+	barrier.Transition.pResource = resource.Get();
+	barrier.Transition.StateBefore = resourceState;
+	barrier.Transition.StateAfter = after_;
+	barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
+	resourceState = after_;
+	return barrier;
+}
 SwapChainContext::SwapChainBuffer::SwapChainBuffer
 (
 	NexusFieldProof proof_,
@@ -8094,7 +8129,43 @@ SwapChainContext::SwapChainBuffer::SwapChainBuffer
 		buffers[i].resource = std::move(resources_.at(i));
 		buffers[i].rtvHandle = rtvHandles_[i];
 	}
+	AssembleMatrices();
 }
+void SwapChainContext::SwapChainBuffer::AssembleMatrices()
+{
+	viewport.Width = static_cast<FLOAT>(ProjectConfig::Window::kWidth);
+	viewport.Height = static_cast<FLOAT>(ProjectConfig::Window::kHeight);
+	viewport.TopLeftX = 0.0f;
+	viewport.TopLeftY = 0.0f;
+	viewport.MinDepth = 0.0f;
+	viewport.MaxDepth = 1.0f;
+	scissorRect.right = static_cast<LONG>(ProjectConfig::Window::kWidth);
+	scissorRect.bottom = static_cast<LONG>(ProjectConfig::Window::kHeight);
+	scissorRect.left = static_cast<LONG>(0.0f);
+	scissorRect.top = static_cast<LONG>(0.0f);
+}
+D3D12_CPU_DESCRIPTOR_HANDLE const& SwapChainContext::SwapChainBuffer::OutProperRtvHandle(UINT const frameIndex_)const
+{
+	return buffers[frameIndex_].rtvHandle;
+}
+std::pair<D3D12_VIEWPORT const*, D3D12_RECT const*> SwapChainContext::SwapChainBuffer::WatchMatrices()const
+{
+	return std::make_pair(&viewport, &scissorRect);
+}
+template<>
+D3D12_RESOURCE_BARRIER SwapChainContext::SwapChainBuffer::CreateBarrier<D3D12_RESOURCE_STATE_RENDER_TARGET>(UINT const frameIndex_)
+{
+	return buffers[frameIndex_].CreateBarrier(D3D12_RESOURCE_STATE_RENDER_TARGET);
+}
+template<>
+D3D12_RESOURCE_BARRIER SwapChainContext::SwapChainBuffer::CreateBarrier<D3D12_RESOURCE_STATE_PRESENT>(UINT const frameIndex_)
+{
+	return buffers[frameIndex_].CreateBarrier(D3D12_RESOURCE_STATE_PRESENT);
+}
+template
+D3D12_RESOURCE_BARRIER SwapChainContext::SwapChainBuffer::CreateBarrier<D3D12_RESOURCE_STATE_RENDER_TARGET>(UINT const frameIndex_);
+template
+D3D12_RESOURCE_BARRIER SwapChainContext::SwapChainBuffer::CreateBarrier<D3D12_RESOURCE_STATE_PRESENT>(UINT const frameIndex_);
 
 ========================================
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Core\SwapChain\SwapChainBuffer\SwapChainBuffer.h ===
@@ -8110,6 +8181,12 @@ public:
 		std::array<Microsoft::WRL::ComPtr<ID3D12Resource>, (UINT)ProjectConfig::Render::NumBuffer::kDoubleBuffer> resources_,
 		std::array<D3D12_CPU_DESCRIPTOR_HANDLE, (UINT)ProjectConfig::Render::NumBuffer::kDoubleBuffer> const& rtvHandles_
 	);
+	//お定まりのランタイムセット
+	template<D3D12_RESOURCE_STATES state>
+	D3D12_RESOURCE_BARRIER CreateBarrier(UINT const frameIndex_);
+	D3D12_CPU_DESCRIPTOR_HANDLE const& OutProperRtvHandle(UINT const frameIndex_)const;
+	std::pair<D3D12_VIEWPORT const*, D3D12_RECT const*> WatchMatrices()const;
+private:
 	struct Buffer
 	{
 		Microsoft::WRL::ComPtr <ID3D12Resource> resource;
@@ -8118,8 +8195,11 @@ public:
 		D3D12_RESOURCE_STATES resourceState = D3D12_RESOURCE_STATE_PRESENT;
 		D3D12_RESOURCE_BARRIER CreateBarrier(D3D12_RESOURCE_STATES after_);
 	};
-private:
+	//ウィンドウサイズに合わせて組み立てる
+	void AssembleMatrices();
 	std::array<Buffer, (UINT)ProjectConfig::Render::NumBuffer::kDoubleBuffer> buffers;
+	D3D12_VIEWPORT viewport;
+	D3D12_RECT scissorRect;
 };
 
 ========================================
@@ -9800,13 +9880,8 @@ private:
 			///パスが参照するバッファのsrvHeapIndexを詰めるためのバッファのID
 			///UploadStructuredBufferなのでダブルです。中身の初期化もしていません
 			BufferUniqueID targetFillInRefBufferID;
-		};
-		struct FinalRenderingSetupper
-		{
-			//スワップチェーンバッファの情報
-			std::array<D3D12_CPU_DESCRIPTOR_HANDLE, (UINT)ProjectConfig::Render::NumBuffer::kDoubleBuffer> rtvHandle;
-			D3D12_VIEWPORT viewport;
-			D3D12_RECT scissorRect;
+			//フロントバッファで参照する最終カラーバッファのID
+			BufferUniqueID finalColorBufferID = 0xffffffff;
 		};
 		RootSigBuilder rootSigBuilder;
 		PathBuilder pathBuilder;
@@ -9829,38 +9904,6 @@ private:
 	std::unique_ptr<PathOperator> pathOperator;
 	//共通の描画コマンドをたたく
 	std::unique_ptr<CommonCmdExecutor> commonCmdExecutor;	
-};
-
-========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Render\RenderContextRuntime\StaticRenderGraph\RenderGraphBuilder\FinalRenderingSetupper\FinalRenderingSetupper.cpp ===
-========================================
-#include "PreCompileHeader.h"
-#include "FinalRenderingSetupper.h"
-RenderContext::StaticRenderGraph::BuildOutput::FinalRenderingSetupper RenderContext::StaticRenderGraph::FinalRenderingSetupper::Setup
-(
-	NexusFieldProof proof_,
-	BufferContextDiplomat& bufferContextDiplomat_,
-	SwapChainContextDiplomat& swapChainContextDiplomat_
-)
-{
-	BuildOutput::FinalRenderingSetupper output;
-	return output;
-}
-
-========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Render\RenderContextRuntime\StaticRenderGraph\RenderGraphBuilder\FinalRenderingSetupper\FinalRenderingSetupper.h ===
-========================================
-#pragma once
-#include "../../StaticRenderGraph.h"
-class RenderContext::StaticRenderGraph::FinalRenderingSetupper
-{
-	friend class StaticRenderGraph;
-	static BuildOutput::FinalRenderingSetupper Setup
-	(
-		NexusFieldProof proof_,
-		BufferContextDiplomat& bufferContextDiplomat_,
-		SwapChainContextDiplomat& swapChainContextDiplomat_
-	);
 };
 
 ========================================
@@ -10431,6 +10474,9 @@ void RenderContext::StaticRenderGraph::PassSetUpper::CreateAllPassInfo
 	auto toolLender = bufferContextDiplomat_.Access<BufferContext::ToolLender>();
 	BufferContext::ToolLender::LicenceType<BufferContext::BufferDispatcher> licenceTool;
 	auto* bufferDispatcher = toolLender->Lend<BufferContext::BufferDispatcher>(licenceTool);
+	//フロントバッファ参照カラーバッファの名前をjsonfileから取得
+	Miyajison* miyajison = Miyajison::Get();
+	auto const finalColorBufferName = miyajison->LoadData<std::string>(DataKey::kRenderGraphSettings, { DataKey::kFinalColorBuffer });
 	//パスDescがどのバッファを使用するかの名前リストを所持しているので、それと組み合わせて埋めていく
 	for (auto const& [kPassEnum, pass]: allPassPtrMap)
 	{
@@ -10449,7 +10495,12 @@ void RenderContext::StaticRenderGraph::PassSetUpper::CreateAllPassInfo
 			//参照するバッファID
 			//passCreatorが所持するidキャッシュから名前で引く
 			BufferUniqueID refID = passBufferCache.at(refBufferName);
-			//ここで参照先IDの指すバッファがカラーバッファなのか、深度バッファなのかで仕訳ける
+			//最終カラーバッファと名前が一致していた場合は格納
+			if (output_.finalColorBufferID != 0xffffffff && finalColorBufferName == refBufferName)
+			{
+				output_.finalColorBufferID = refID;
+			}
+			//ここで参照先IDの指すバッファがカラーバッファなのか、深度バッファなのかで
 			auto* buffer = bufferDispatcher->Dispatch(refID);
 			if (dynamic_cast<ColorBuffer*>(buffer))
 			{
@@ -10563,6 +10614,28 @@ void RenderContext::StaticRenderGraph::PassSetUpper::CreatePassRootConstantsBuff
 	//もちろん中身はPassに依存するので、ドローコール時に書き込む
 	createCBufferCmd("PassBufferIndexRange", UINT(sizeof(PassBufferIndexRangeCPUGPU)), (UINT)ConstantBuffers::RootConstantsBindSlots::kPassBufferIndexRange);
 }
+void RenderContext::StaticRenderGraph::PassSetUpper::CreateFinalRefSrvConstantBuffer
+(
+	NexusFieldProof proof_,
+	BufferUniqueID const finalBufferID_,
+	BufferContextDiplomat& bufferContextDiplomat_
+)
+{
+	//グローバル定数バッファ生成コマンドをもらう
+	auto cmdProv = bufferContextDiplomat_.Access<BufferContext::CmdProvider>();
+	BufferContext::CmdProvider::LicenceType<BufferContextCmds::CreateCBufferCmd> licence;
+	auto createCBufferCmd = cmdProv->Provide<BufferContextCmds::CreateCBufferCmd>(licence);
+	//bufferDispatcherを借りる
+	auto toolLender = bufferContextDiplomat_.Access<BufferContext::ToolLender>();
+	BufferContext::ToolLender::LicenceType<BufferContext::BufferCreator> licenceTool;
+	auto* bufferDispatcher = toolLender->Lend<BufferContext::BufferDispatcher>(licenceTool);
+	//id -> ColorBufferへ
+	auto* finalColorBuffer = static_cast<ColorBuffer*>(bufferDispatcher->Dispatch(finalBufferID_));
+	//ルートコンスタンツ用の定数バッファを作成し、
+	auto id_buffer = createCBufferCmd("FinalColorBufferSrv", UINT(sizeof(SRVHeapIndex)), (UINT)ConstantBuffers::RootConstantsBindSlots::kFinalColorBufferSrv);
+	//最終カラーバッファのsrvHeapIndexを書き込む
+	id_buffer.second->WriteInBoth<SRVHeapIndex>({ finalColorBuffer->OutProperSRVHeapIndex(), finalColorBuffer->OutProperSRVHeapIndex() });
+}
 
 ========================================
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Render\RenderContextRuntime\StaticRenderGraph\RenderGraphBuilder\PassSetUpper\PassSetUpper.h ===
@@ -10604,6 +10677,20 @@ private:
 		NexusFieldProof proof_,
 		BufferContextDiplomat& bufferContextDiplomat_
 	);
+	//フロントバッファが参照するカラーバッファのIDからSrvHeapIndexを取得し
+	//それを入れるためのルートコンスタンツ用定数バッファを作成
+	//この参照するカラーバッファはシングルだと思うのでランタイムの更新はいらないはず
+	static void CreateFinalRefSrvConstantBuffer
+	(
+		NexusFieldProof proof_,
+		BufferUniqueID const finalBufferID_,
+		BufferContextDiplomat& bufferContextDiplomat_
+	);
+	struct DataKey
+	{
+		static inline auto const kRenderGraphSettings = "RenderGraphSettings";
+		static inline auto const kFinalColorBuffer	  = "FinalColorBuffer";
+	};
 };
 
 ========================================
@@ -10809,6 +10896,11 @@ private:
 class RenderContext::StaticRenderGraph::FinalRenderer
 {
 public:
+	void Update
+	(
+		UINT const frameIndex_,
+		RuntimeWrapper& runtimeWrapper_
+	);
 private:
 };
 
@@ -11932,7 +12024,7 @@ std::unique_ptr<RenderContext::PassDesc> RenderContext::RenderPassCreator::Creat
 	PassBufferCreator::CreateBuffer(passName_, *desc, passBufferCache,bufferContextDiplomat_);
 	return desc;
 }
-std::unordered_map<std::string, BufferUniqueID> RenderContext::RenderPassCreator::WatchPassBufferCache(NexusFieldProof proof_)const
+std::unordered_map<std::string, BufferUniqueID> const& RenderContext::RenderPassCreator::WatchPassBufferCache(NexusFieldProof proof_)const
 {
 	return passBufferCache;
 }
@@ -11970,7 +12062,7 @@ public:
 		std::unique_ptr<PassDesc> passDesc = CreateDesc(passName_, bufferContextDiplomat_);
 		return InstantiatePass<PassType>(proof_, std::move(passDesc));
 	}
-	std::unordered_map<std::string, BufferUniqueID> WatchPassBufferCache(NexusFieldProof proof_)const;
+	std::unordered_map<std::string, BufferUniqueID> const& WatchPassBufferCache(NexusFieldProof proof_)const;
 private:
 	//パスのディスクを生成
 	std::unique_ptr<PassDesc> CreateDesc(std::string const passName_, BufferContextDiplomat& bufferContextDiplomat_);
@@ -18665,7 +18757,7 @@ struct Matrix4x4
 			DirectX::XMStoreFloat4x4(&result.data, DirectX::XMMatrixRotationQuaternion(q));
 			return result;
 		}
-		inline static Quaternion CreateQuaternion(const Vector3 axis_, const float radian_)
+		inline static Quaternion CreateQuaternion(Vector3 const& axis_, const float radian_)
 		{
 			DirectX::XMVECTOR axisVec = DirectX::XMVectorSet(axis_.data.x, axis_.data.y, axis_.data.z, 0.0f);
 			axisVec = DirectX::XMVector3Normalize(axisVec);
@@ -18861,8 +18953,8 @@ struct Vector3
 	///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-	//内積
-	inline float GetCos(Vector3 const& other_)const
+	//内積()正規化無し
+	inline float GetDot(Vector3 const& other_)const
 	{
 		DirectX::XMVECTOR v1 = DirectX::XMLoadFloat3(&data);
 		DirectX::XMVECTOR v2 = DirectX::XMLoadFloat3(&other_.data);
@@ -19412,7 +19504,7 @@ Nexus::Nexus()
 	InitializeInSequence<InitSequence::kRenderContext>();
 	InitializeInSequence<InitSequence::kUploadAllResources>();
 	InitializeInSequence<InitSequence::kKickCommands>();
-	InitializeInSequence<InitSequence::kDeleteIntermediateResources>();
+	InitializeInSequence<InitSequence::kDeleteBufferUploaderCache>();
 	InitializeInSequence<InitSequence::kSortOutGlobalConstantBuffers>();
 	InitializeInSequence<InitSequence::kDeleteModelDataCache>();
 	InitializeInSequence<InitSequence::kSeparateModelContainer>();
@@ -19467,7 +19559,7 @@ class Nexus
 		kRenderContext,
 		kUploadAllResources,
 		kKickCommands,
-		kDeleteIntermediateResources,
+		kDeleteBufferUploaderCache,
 		kSortOutGlobalConstantBuffers,
 		kDeleteModelDataCache,					///モデルデータキャッシュの削除は、アプリ層の初期化が終わったあと
 		kSeparateModelContainer					///同様
@@ -19831,12 +19923,12 @@ void Nexus::Init<Nexus::InitSequence::kKickCommands>()
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 template<>
-void Nexus::Init<Nexus::InitSequence::kDeleteIntermediateResources>()
+void Nexus::Init<Nexus::InitSequence::kDeleteBufferUploaderCache>()
 {
 	//bufferContextの代行者
 	auto* agent = bufferContext->AccessDiplomat().Access<BufferContext::ExecutionAgent>();
-	//BufferUploaderの削除を代行
-	agent->DeleteBufferUploader(BufferContext::NexusFieldProof{});
+	//BufferUploaderのキャッシュデータ削除を代行
+	agent->DeleteBufferUploaderChacheData(BufferContext::NexusFieldProof{});
 }
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -19912,7 +20004,7 @@ void Nexus::Init<Nexus::InitSequence::kUploadAllResources>();
 template
 void Nexus::Init<Nexus::InitSequence::kKickCommands>();
 template
-void Nexus::Init<Nexus::InitSequence::kDeleteIntermediateResources>();
+void Nexus::Init<Nexus::InitSequence::kDeleteBufferUploaderCache>();
 template
 void Nexus::Init<Nexus::InitSequence::kSortOutGlobalConstantBuffers>();
 template
@@ -20173,7 +20265,7 @@ private:
             CalcBitWidth(count_);
             //スタート地点を記録
             CalcShiftNum(shift_);
-            ErrorMessageOutput::Assert::DetectError((EndLocation() < 64), "GraphicsPSO_Keyのサイズ超過", "KeyPackager.h");
+            ErrorMessageOutput::Assert::DetectError((EndLocation() < 32), "GraphicsPSO_Keyのサイズ超過", "KeyPackager.h");
         }
         uint32_t EndLocation() { return shift + bits; }
     private:
@@ -20188,6 +20280,7 @@ public:
     KeyPackager(Keys... sizeOfKeys_)
     {
         uint8_t length = sizeof...(sizeOfKeys_);
+        ErrorMessageOutput::Assert::DetectError(length > 0, "キーの設定なしかい！", "KeyPackager.h");
         uint32_t arr[] = { uint32_t(sizeOfKeys_)... };
         bitAndLocationContainer.resize(length);
         bitAndLocationContainer.at(0).Init(arr[0], 0);
@@ -20540,5 +20633,5 @@ namespace StringProcessing
 ========================================
 === SUMMARY ===
 ========================================
-Total Files      : 457
-Effective Lines  : 14945
+Total Files      : 456
+Effective Lines  : 15024
