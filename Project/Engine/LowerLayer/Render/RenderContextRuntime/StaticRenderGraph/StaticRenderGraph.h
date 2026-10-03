@@ -78,15 +78,9 @@ private:
 			///パスが参照するバッファのsrvHeapIndexを詰めるためのバッファのID
 			///UploadStructuredBufferなのでダブルです。中身の初期化もしていません
 			BufferUniqueID targetFillInRefBufferID;
-		};
+			//フロントバッファで参照する最終カラーバッファのID
+			BufferUniqueID finalColorBufferID = 0xffffffff;
 
-		struct FinalRenderingSetupper
-		{
-			//スワップチェーンバッファの情報
-			std::array<D3D12_CPU_DESCRIPTOR_HANDLE, (UINT)ProjectConfig::Render::NumBuffer::kDoubleBuffer> rtvHandle;
-			D3D12_VIEWPORT viewport;
-			D3D12_RECT scissorRect;
-			
 		};
 
 		RootSigBuilder rootSigBuilder;

@@ -67,6 +67,11 @@ void RenderContext::StaticRenderGraph::PassSetUpper::CreateAllPassInfo
 	BufferContext::ToolLender::LicenceType<BufferContext::BufferDispatcher> licenceTool;
 	auto* bufferDispatcher = toolLender->Lend<BufferContext::BufferDispatcher>(licenceTool);
 
+	//フロントバッファ参照カラーバッファの名前をjsonfileから取得
+	Miyajison* miyajison = Miyajison::Get();
+	auto const finalColorBufferName = miyajison->LoadData<std::string>(DataKey::kRenderGraphSettings, { DataKey::kFinalColorBuffer });
+
+
 	//パスDescがどのバッファを使用するかの名前リストを所持しているので、それと組み合わせて埋めていく
 	for (auto const& [kPassEnum, pass]: allPassPtrMap)
 	{
@@ -89,7 +94,13 @@ void RenderContext::StaticRenderGraph::PassSetUpper::CreateAllPassInfo
 			//passCreatorが所持するidキャッシュから名前で引く
 			BufferUniqueID refID = passBufferCache.at(refBufferName);
 
-			//ここで参照先IDの指すバッファがカラーバッファなのか、深度バッファなのかで仕訳ける
+			//最終カラーバッファと名前が一致していた場合は格納
+			if (output_.finalColorBufferID != 0xffffffff && finalColorBufferName == refBufferName)
+			{
+				output_.finalColorBufferID = refID;
+			}
+
+			//ここで参照先IDの指すバッファがカラーバッファなのか、深度バッファなのかで
 			auto* buffer = bufferDispatcher->Dispatch(refID);
 
 			if (dynamic_cast<ColorBuffer*>(buffer))
@@ -232,5 +243,32 @@ void RenderContext::StaticRenderGraph::PassSetUpper::CreatePassRootConstantsBuff
 	//ルートコンスタンツである、PassBufferIndexRangeCPUGPUの定数バッファ作成
 	//もちろん中身はPassに依存するので、ドローコール時に書き込む
 	createCBufferCmd("PassBufferIndexRange", UINT(sizeof(PassBufferIndexRangeCPUGPU)), (UINT)ConstantBuffers::RootConstantsBindSlots::kPassBufferIndexRange);
+
+}
+
+void RenderContext::StaticRenderGraph::PassSetUpper::CreateFinalRefSrvConstantBuffer
+(
+	NexusFieldProof proof_,
+	BufferUniqueID const finalBufferID_,
+	BufferContextDiplomat& bufferContextDiplomat_
+)
+{
+	//グローバル定数バッファ生成コマンドをもらう
+	auto cmdProv = bufferContextDiplomat_.Access<BufferContext::CmdProvider>();
+	BufferContext::CmdProvider::LicenceType<BufferContextCmds::CreateCBufferCmd> licence;
+	auto createCBufferCmd = cmdProv->Provide<BufferContextCmds::CreateCBufferCmd>(licence);
+	
+	//bufferDispatcherを借りる
+	auto toolLender = bufferContextDiplomat_.Access<BufferContext::ToolLender>();
+	BufferContext::ToolLender::LicenceType<BufferContext::BufferCreator> licenceTool;
+	auto* bufferDispatcher = toolLender->Lend<BufferContext::BufferDispatcher>(licenceTool);
+
+	//id -> ColorBufferへ
+	auto* finalColorBuffer = static_cast<ColorBuffer*>(bufferDispatcher->Dispatch(finalBufferID_));
+
+	//ルートコンスタンツ用の定数バッファを作成し、
+	auto id_buffer = createCBufferCmd("FinalColorBufferSrv", UINT(sizeof(SRVHeapIndex)), (UINT)ConstantBuffers::RootConstantsBindSlots::kFinalColorBufferSrv);
+	//最終カラーバッファのsrvHeapIndexを書き込む
+	id_buffer.second->WriteInBoth<SRVHeapIndex>({ finalColorBuffer->OutProperSRVHeapIndex(), finalColorBuffer->OutProperSRVHeapIndex() });
 
 }

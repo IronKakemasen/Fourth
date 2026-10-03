@@ -651,9 +651,6 @@
     <ClCompile Include="Engine\LowerLayer\Render\RenderContextRuntime\StaticRenderGraph\RenderGraphExecutor\FinalRenderer\FinalRenderer.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="Engine\LowerLayer\Render\RenderContextRuntime\StaticRenderGraph\RenderGraphBuilder\FinalRenderingSetupper\FinalRenderingSetupper.cpp">
-      <Filter>ソース ファイル</Filter>
-    </ClCompile>
     <ClCompile Include="Engine\LowerLayer\Core\SwapChain\SwapChainContextBuilder\SwapChainContextBuilder.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
@@ -1493,9 +1490,6 @@
     <ClInclude Include="Engine\LowerLayer\Render\RenderContextRuntime\StaticRenderGraph\RenderGraphExecutor\FinalRenderer\FinalRenderer.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\LowerLayer\Render\RenderContextRuntime\StaticRenderGraph\RenderGraphBuilder\FinalRenderingSetupper\FinalRenderingSetupper.h">
-      <Filter>ヘッダー ファイル</Filter>
-    </ClInclude>
     <ClInclude Include="Engine\LowerLayer\Core\SwapChain\SwapChainContextBuilder\SwapChainContextBuilder.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
@@ -1512,6 +1506,9 @@
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
     <ClInclude Include="Engine\LowerLayer\Core\SwapChain\SwapChainContextDiplomat\SwapChainExecutionAgent\SwapChainExecutionAgent.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\LowerLayer\Core\SwapChain\SwapChainContextDiplomats.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
   </ItemGroup>

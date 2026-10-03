@@ -1,8 +1,11 @@
 {
-  "PathSequence": [
+  "PathSequence": 
+  [
     "CreateSceneTexture"
 
-  ]
+  ],
+
+  "FinalColorBuffer":"sceneC"
 
 
 }

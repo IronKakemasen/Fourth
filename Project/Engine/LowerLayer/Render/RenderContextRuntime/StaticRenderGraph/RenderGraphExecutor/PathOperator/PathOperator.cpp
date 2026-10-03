@@ -104,6 +104,7 @@ void RenderContext::StaticRenderGraph::PathOperator::Run
 	ModelContext::CommandProvider::LicenceType<ModelContextCmds::WatchSeparatedModelContainer> mLicence;
 	auto& modelContainer = *mCmdProvider->Provide<ModelContextCmds::WatchSeparatedModelContainer>(mLicence)();
 
+	
 	for (auto* path : allPathPtr)
 	{
 		path->Run(modelContainer, modelFillMode, pso_PoolDispatcher, runtimeWrapper_, bufferDispatcher);

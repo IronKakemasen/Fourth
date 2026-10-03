@@ -1,0 +1,4 @@
+#pragma once
+#include "SwapChainContextDiplomat/SwapChainContextDiplomat.h"
+#include "SwapChainContextDiplomat/SwapChainContextToolLender/SwapChainContextToolLender.h"
+#include "SwapChainContextDiplomat/SwapChainContextToolLender/SwapChainContextToolLenderLicences.h"
