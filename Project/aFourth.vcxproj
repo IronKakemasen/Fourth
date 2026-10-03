@@ -403,6 +403,9 @@
     <ClCompile Include="Engine\LowerLayer\Render\RenderContextRuntime\StaticRenderGraph\RenderGraphBuilder\FinalRenderingSetupper\FinalRenderingSetupper.cpp" />
     <ClCompile Include="Engine\LowerLayer\Core\SwapChain\SwapChainContextBuilder\SwapChainContextBuilder.cpp" />
     <ClCompile Include="Engine\LowerLayer\Core\SwapChain\SwapChainBuffer\SwapChainBuffer.cpp" />
+    <ClCompile Include="Engine\LowerLayer\Core\SwapChain\SwapChainContextDiplomat\SwapChainContextDiplomat.cpp" />
+    <ClCompile Include="Engine\LowerLayer\Core\SwapChain\SwapChainContextDiplomat\SwapChainContextToolLender\SwapChainContextToolLender.cpp" />
+    <ClCompile Include="Engine\LowerLayer\Core\SwapChain\SwapChainContextDiplomat\SwapChainExecutionAgent\SwapChainExecutionAgent.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Assets\BAKA\ConstantBuffers.h" />
@@ -410,6 +413,7 @@
     <ClInclude Include="Assets\Shared\ConstantBuffers.h" />
     <ClInclude Include="Assets\Shared\StaticSampler.h" />
     <ClInclude Include="Assets\Shared\StructuredBufferModelData.h" />
+    <ClInclude Include="Engine\LowerLayer\Core\SwapChain\SwapChainContextDiplomat\SwapChainContextToolLender\SwapChainContextToolLenderLicences.h" />
     <ClInclude Include="Engine\LowerLayer\Render\RenderContextRuntime\StaticRenderGraph\RenderGraphExecutor\FinalRenderer\FinalRenderer.h" />
     <ClInclude Include="Engine\LowerLayer\Buffer\BufferContextDiplomats.h" />
     <ClInclude Include="Engine\LowerLayer\Buffer\BufferDefinition\BufferTraits.h" />
@@ -682,6 +686,9 @@
     <ClInclude Include="Engine\LowerLayer\Render\RenderContextRuntime\StaticRenderGraph\RenderGraphBuilder\FinalRenderingSetupper\FinalRenderingSetupper.h" />
     <ClInclude Include="Engine\LowerLayer\Core\SwapChain\SwapChainContextBuilder\SwapChainContextBuilder.h" />
     <ClInclude Include="Engine\LowerLayer\Core\SwapChain\SwapChainBuffer\SwapChainBuffer.h" />
+    <ClInclude Include="Engine\LowerLayer\Core\SwapChain\SwapChainContextDiplomat\SwapChainContextDiplomat.h" />
+    <ClInclude Include="Engine\LowerLayer\Core\SwapChain\SwapChainContextDiplomat\SwapChainContextToolLender\SwapChainContextToolLender.h" />
+    <ClInclude Include="Engine\LowerLayer\Core\SwapChain\SwapChainContextDiplomat\SwapChainExecutionAgent\SwapChainExecutionAgent.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

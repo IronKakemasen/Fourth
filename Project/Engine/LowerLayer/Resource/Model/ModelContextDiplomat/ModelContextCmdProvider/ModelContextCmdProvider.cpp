@@ -3,6 +3,8 @@
 #include "../../ModelContainer/ModelContainer.h"
 #include "ModelContextCmdProviderLicences.h"
 
+using namespace ModelContextCmds;
+
 ModelContext::CommandProvider::CommandProvider(NexusFieldProof proof_, ModelContainer* modelContainer_)
 	:modelContainer(modelContainer_)
 {
@@ -11,15 +13,15 @@ ModelContext::CommandProvider::CommandProvider(NexusFieldProof proof_, ModelCont
 
 
 template<>
-ModelContextCmds::WatchModelContainer ModelContext::CommandProvider::Provide<ModelContextCmds::WatchModelContainer>
-(typename CmdTypeTraits<ModelContextCmds::WatchModelContainer>::Type licence_)
+WatchModelContainer ModelContext::CommandProvider::Provide<WatchModelContainer>
+(typename CmdTypeTraits<WatchModelContainer>::Type licence_)
 {
 	return modelContainer->WatchDataCmd(ProviderKey{});
 }
 
 template<>
-ModelContextCmds::WatchSeparatedModelContainer ModelContext::CommandProvider::Provide<ModelContextCmds::WatchSeparatedModelContainer>
-(typename CmdTypeTraits<ModelContextCmds::WatchSeparatedModelContainer>::Type licence_)
+WatchSeparatedModelContainer ModelContext::CommandProvider::Provide<WatchSeparatedModelContainer>
+(typename CmdTypeTraits<WatchSeparatedModelContainer>::Type licence_)
 {
 	return modelContainer->WatchSeparatedCmd(ProviderKey{});
 }

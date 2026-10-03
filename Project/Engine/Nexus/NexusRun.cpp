@@ -1,5 +1,8 @@
 #include "Nexus.h"
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+#include "../LowerLayer/Core/SwapChain/SwapChainContextDiplomat/SwapChainContextDiplomat.h"
+#include "../LowerLayer/Core/SwapChain/SwapChainContextDiplomat/SwapChainExecutionAgent/SwapChainExecutionAgent.h"
+
 #include "../LowerLayer/Core/SwapChain/Presenter/Presenter.h"
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 #include "../LowerLayer/Core/Command/RuntimeCommandController/RuntimeCommandController.h"
@@ -7,9 +10,14 @@
 
 void Nexus::Run()
 {
-	auto const frameIndex = swapChainContext->presenter->GetFrameIndex();
+	//SwapChainContextの代行クラス
+	auto& s_ExecutionAgent = swapChainContext->AccessDiplomat().Access<SwapChainContext::ExecutionAgent>();
+	
+
+
+	auto const frameIndex = s_ExecutionAgent.GetFrameIndex(SwapChainContext::NexusFieldProof{});
+
 	auto* runtimeCmdController = commandContext->runtimeCommandController.get();
-	auto* presenter = swapChainContext->presenter.get();
 
 
 	//コマンドの記録開始
@@ -23,5 +31,5 @@ void Nexus::Run()
 
 
 	//表示
-	presenter->Present();
+	s_ExecutionAgent.Present(SwapChainContext::NexusFieldProof{});
 }
