@@ -28,7 +28,7 @@ CommandContext::~CommandContext() {}
 CommandContext::CommandContext
 (
 	NexusFieldProof proof_,
-	DeviceContextDiplomat* deviceContextDiplomat_
+	DeviceContextDiplomat& deviceContextDiplomat_
 ) 
 {
 	Logger::Entry("CommandContext: Constructor");
@@ -68,9 +68,9 @@ CommandContext::CommandContext
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-void CommandContext::CreateCoreParts(NexusFieldProof proof_, DeviceContextDiplomat* deviceContextDiplomat_)
+void CommandContext::CreateCoreParts(NexusFieldProof proof_, DeviceContextDiplomat& deviceContextDiplomat_)
 {
-	auto* cmdExecutor = deviceContextDiplomat_->Access<DeviceContext::CommandExecutor>();
+	auto* cmdExecutor = deviceContextDiplomat_.Access<DeviceContext::CommandExecutor>();
 
 	//メイン
 	auto [cmdQueue, cmdAllocators, cmdList] =

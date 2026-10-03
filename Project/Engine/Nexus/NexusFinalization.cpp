@@ -19,7 +19,7 @@ template<>
 void Nexus::Finalize<Nexus::FinalizeSequence::kWindowContext>()
 {
 	//ウィンドウコンテキストの終了処理を代行してもらう
-	auto& agent = windowContext->diplomat->Access<WindowContext::ExecutionAgent>();
+	auto& agent = windowContext->AccessDiplomat().Access<WindowContext::ExecutionAgent>();
 	agent.WindowContextFinalize(WindowContext::NexusFieldProof{});
 }
 

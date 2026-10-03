@@ -26,16 +26,16 @@ public:
 	//他クラスにコアパーツを流用させないようにコマンドを自ら実行する
 	class CommandExecutor;
 
-	std::unique_ptr<DeviceContextDiplomat> diplomat;
-
 	DeviceContext(NexusFieldProof proof_);
 	~DeviceContext();
+	auto& AccessDiplomat() { return *diplomat; }
 
 private:
 
 	Microsoft::WRL::ComPtr<ID3D12Device8> device = nullptr;
 	Microsoft::WRL::ComPtr<IDXGIFactory7> dxgiFactory = nullptr;
 	Microsoft::WRL::ComPtr<IDXGIAdapter4> useAdapter = nullptr;
+	std::unique_ptr<DeviceContextDiplomat> diplomat;
 
 	//Setupperからコアパーツを生成し、引き継ぐ
 	void TakeOverCoreParts(NexusFieldProof proof_);

@@ -31,7 +31,7 @@ public:
 
 	~DescriptorHeapContext();
 
-	std::unique_ptr<DescriptorHeapContextDiplomat> diplomat;
+	auto& AccessDiplomat() { return *diplomat; }
 
 private:
 
@@ -39,10 +39,10 @@ private:
 	std::unique_ptr<DescriptorHeapPoolContainer> descriptorHeapPoolContainer;
 	//ビュー生成機関
 	std::unique_ptr<ViewCreator> viewCreator;
+	//外交役
+	std::unique_ptr<DescriptorHeapContextDiplomat> diplomat;
 
 };
-
-
 
 //生成できるのはNexusのみ
 struct DescriptorHeapContext::NexusFieldProof

@@ -38,10 +38,7 @@ public:
 
 	~SwapChainContext();
 	
-	SwapChainContextDiplomat& AccessDiplomat()
-	{
-		return *diplomat;
-	}
+	auto& AccessDiplomat(){return *diplomat;}
 
 private:
 

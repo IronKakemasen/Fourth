@@ -9,7 +9,7 @@ class RootSignatureContext
 
 public:
 
-	enum class BufferUsage
+	enum class PsoType
 	{
 		kGraphics,
 		kCompute
@@ -23,11 +23,11 @@ public:
 	struct NexusFieldProof;
 	struct CmdProviderKey;
 
-	RootSignatureContext(NexusFieldProof proof_, DeviceContextDiplomat* deviceContextDiplomat_);
+	RootSignatureContext(NexusFieldProof proof_, DeviceContextDiplomat& deviceContextDiplomat_);
 	~RootSignatureContext();
+	auto& AccessDiplomat() { return *diplomat; }
 
 
-	std::unique_ptr<RootSignatureContextDiplomat> diplomat;
 
 private:
 
@@ -37,6 +37,7 @@ private:
 
 	std::unique_ptr<RootSignatureCreator> rootSignatureCreator;
 	std::unique_ptr<RootSignatureLibrary> rootSignatureLibrary;
+	std::unique_ptr<RootSignatureContextDiplomat> diplomat;
 
 };
 

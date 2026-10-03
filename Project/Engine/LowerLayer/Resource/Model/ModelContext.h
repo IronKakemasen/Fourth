@@ -58,10 +58,8 @@ public:
 
 	///代役に、モデルデータのキャッシュを消してもらう
 	void DeleteModelDataCache(NexusFieldProof proof_, AgentKey agentKey_);
+	auto& AccessDiplomat() { return *diplomat; }
 
-
-	//外交官
-	std::unique_ptr<ModelContextDiplomat> diplomat;
 
 private:
 
@@ -72,7 +70,8 @@ private:
 	std::unique_ptr<ModelDataBatcher> modelDataBatcher;
 	std::unique_ptr<ModelDataCache> modelDataCache;
 
-
+	//外交官
+	std::unique_ptr<ModelContextDiplomat> diplomat;
 	std::unique_ptr<TestModelOKIBA> testModelOKIBA;
 };
 

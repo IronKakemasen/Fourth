@@ -13,7 +13,7 @@ namespace
 	auto const fileName = "RootSignatureContext.cpp";
 }
 
-RootSignatureContext::RootSignatureContext(NexusFieldProof proof_, DeviceContextDiplomat* deviceContextDiplomat_)
+RootSignatureContext::RootSignatureContext(NexusFieldProof proof_, DeviceContextDiplomat& deviceContextDiplomat_)
 {
 	Logger::Entry("RootSignatureContext: Constructor");
 

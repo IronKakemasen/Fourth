@@ -15,7 +15,7 @@ namespace
 PSO_Context::PSO_Context
 (
 	NexusFieldProof proof_,
-	DeviceContextDiplomat* deviceContextDiplomat_
+	DeviceContextDiplomat& deviceContextDiplomat_
 )
 {
 	Logger::Entry("PSO_Context: Constructor");

@@ -16,20 +16,6 @@ class BufferContext
 
 	struct BufferPoolSet;
 
-
-protected:
-
-	//登録先識別用
-	enum class RegisterType
-	{
-		kRenderTarget,
-		kFrameBuffer,
-		kComputeBuffer,
-		kReadOnlyBuffer,
-		kCount
-	};
-
-
 public:
 
 	//自身のインスタンス化キー
@@ -71,12 +57,11 @@ public:
 
 	~BufferContext();
 
-	//外交役
-	std::unique_ptr<BufferContextDiplomat> diplomat;
 
 	///ランタイムに入る前にNexusがアップロード用の中間リソースを破棄する
 	void DeleteBufferUploader(const NexusFieldProof& proof_, AgentKey agentKey_);
-	
+	auto& AccessDiplomat() { return *diplomat; }
+
 private:
 
 	///複数のバッファのプールが定義されている
@@ -95,6 +80,9 @@ private:
 	std::unique_ptr<GlobalConstantBuffers> globalConstantBuffers;
 	std::unique_ptr<GlobalConstantBufferCreator> globalConstantBufferCreator;
 	
+	//外交役
+	std::unique_ptr<BufferContextDiplomat> diplomat;
+
 };
 
 struct BufferContext::NexusFieldProof

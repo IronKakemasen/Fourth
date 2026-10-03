@@ -22,17 +22,19 @@ public:
 	PSO_Context
 	(
 		NexusFieldProof proof_,
-		DeviceContextDiplomat* deviceContextDiplomat_
+		DeviceContextDiplomat& deviceContextDiplomat_
 	);
 
 	~PSO_Context();
+	auto& AccessDiplomat() { return *diplomat; }
 
-	std::unique_ptr<PSO_ContextDiplomat> diplomat;
+
 
 private:
 
 	std::unique_ptr<PSO_Creator> psoCreator;
 	std::unique_ptr<PSO_Container> psoContainer;
+	std::unique_ptr<PSO_ContextDiplomat> diplomat;
 
 };
 

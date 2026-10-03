@@ -22,7 +22,7 @@ class BufferContext::BufferUploader
 		std::vector<std::byte> ownedData;
 	};
 
-	//そのテクスチャバッファバージョン
+	//それのテクスチャバッファバージョン
 	struct TemporaryTextureBufferInfoStorage
 	{
 		BufferUniqueID id{};
