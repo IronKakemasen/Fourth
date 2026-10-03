@@ -57,9 +57,6 @@ public:
 
 	~BufferContext();
 
-
-	///ランタイムに入る前にNexusがアップロード用の中間リソースを破棄する
-	void DeleteBufferUploader(const NexusFieldProof& proof_, AgentKey agentKey_);
 	auto& AccessDiplomat() { return *diplomat; }
 
 private:

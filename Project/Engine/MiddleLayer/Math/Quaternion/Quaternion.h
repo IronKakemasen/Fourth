@@ -28,7 +28,7 @@
 			return result;
 		}
 
-		inline static Quaternion CreateQuaternion(const Vector3 axis_, const float radian_)
+		inline static Quaternion CreateQuaternion(Vector3 const& axis_, const float radian_)
 		{
 			DirectX::XMVECTOR axisVec = DirectX::XMVectorSet(axis_.data.x, axis_.data.y, axis_.data.z, 0.0f);
 			axisVec = DirectX::XMVector3Normalize(axisVec);
