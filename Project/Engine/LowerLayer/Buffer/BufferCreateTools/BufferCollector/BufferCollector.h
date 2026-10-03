@@ -1,7 +1,6 @@
 #pragma once
 #include "../../BufferContext.h"
-#include "../../BufferDefinition/AllBuffersFwd.h"
-
+#include "../../BufferDefinition/BufferTraits.h"
 
 class BufferContext::BufferCollector
 {
@@ -41,7 +40,7 @@ private:
 
 	struct TempSaveFormat
 	{
-		RegisterType type;
+		BufferTraits::RegisterType type;
 		std::unique_ptr<GPUBufferBehavior> buffer;
 		BufferUniqueID id;
 	};
@@ -70,37 +69,37 @@ private:
 template<>
 struct BufferContext::BufferCollector::BufferTypeTraits<UploadStructuredBuffer>
 {
-	constexpr static RegisterType type = RegisterType::kFrameBuffer;
+	constexpr static BufferTraits::RegisterType type = BufferTraits::RegisterType::kFrameBuffer;
 };
 
 template<>
 struct BufferContext::BufferCollector::BufferTypeTraits<ConstantBuffer>
 {
-	constexpr static RegisterType type = RegisterType::kFrameBuffer;
+	constexpr static BufferTraits::RegisterType type = BufferTraits::RegisterType::kFrameBuffer;
 };
 
 template<>
 struct BufferContext::BufferCollector::BufferTypeTraits<ColorBuffer>
 {
-	constexpr static RegisterType type = RegisterType::kRenderTarget;
+	constexpr static BufferTraits::RegisterType type = BufferTraits::RegisterType::kRenderTarget;
 };
 
 template<>
 struct BufferContext::BufferCollector::BufferTypeTraits<DepthStencilBuffer>
 {
-	constexpr static RegisterType type = RegisterType::kRenderTarget;
+	constexpr static BufferTraits::RegisterType type = BufferTraits::RegisterType::kRenderTarget;
 };
 
 template<>
 struct BufferContext::BufferCollector::BufferTypeTraits<StaticStructuredBuffer>
 {
-	constexpr static RegisterType type = RegisterType::kReadOnlyBuffer;
+	constexpr static BufferTraits::RegisterType type = BufferTraits::RegisterType::kReadOnlyBuffer;
 };
 
 template<>
 struct BufferContext::BufferCollector::BufferTypeTraits<Texture2DBuffer>
 {
-	constexpr static RegisterType type = RegisterType::kReadOnlyBuffer;
+	constexpr static BufferTraits::RegisterType type = BufferTraits::RegisterType::kReadOnlyBuffer;
 };
 
 

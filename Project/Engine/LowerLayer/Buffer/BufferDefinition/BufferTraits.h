@@ -4,6 +4,16 @@
 
 namespace BufferTraits
 {
+	//登録先識別用(CollectorとDispatcherが主に使う)
+	enum class RegisterType
+	{
+		kRenderTarget,
+		kFrameBuffer,
+		kComputeBuffer,
+		kReadOnlyBuffer,
+		kCount
+	};
+
 
 	//バッファタグ。使うことはあんまりないと思うが
 	enum class BufferTag

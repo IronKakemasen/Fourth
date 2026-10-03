@@ -3,9 +3,9 @@
 #include "ClosedHashMap/ClosedHashMap.h" 
 #include "../BufferDefinition/GPUBuffer/GPUBufferBehavior.h"
 
-std::vector<std::unique_ptr<GPUBufferBehavior>>* BufferContext::BufferPoolSet::ContainerTable(BufferContext::RegisterType type_)
+std::vector<std::unique_ptr<GPUBufferBehavior>>* BufferContext::BufferPoolSet::ContainerTable(BufferTraits::RegisterType type_)
 {
-	static std::vector<std::unique_ptr<GPUBufferBehavior>>* table[(int)BufferContext::RegisterType::kCount]
+	static std::vector<std::unique_ptr<GPUBufferBehavior>>* table[(int)BufferTraits::RegisterType::kCount]
 	{
 		&renderTargetBufferPool,
 		&frameBufferPool,
@@ -20,5 +20,5 @@ std::vector<std::unique_ptr<GPUBufferBehavior>>* BufferContext::BufferPoolSet::C
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 BufferContext::BufferPoolSet::BufferPoolSet()
 {
-	bufferLocationClosedHashedMap.reset(new ClosedHashMap<std::pair<RegisterType, uint32_t>>(kHashedMapSize));
+	bufferLocationClosedHashedMap.reset(new ClosedHashMap<std::pair<BufferTraits::RegisterType, uint32_t>>(kHashedMapSize));
 }

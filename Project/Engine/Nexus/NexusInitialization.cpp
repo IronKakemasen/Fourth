@@ -89,7 +89,7 @@ void Nexus::Init<Nexus::InitSequence::kDescriptorHeapContext>()
 		new DescriptorHeapContext
 		(
 			DescriptorHeapContext::NexusFieldProof{},
-			*deviceContext->diplomat.get()
+			deviceContext->AccessDiplomat()
 		)
 	);
 
@@ -101,7 +101,14 @@ void Nexus::Init<Nexus::InitSequence::kDescriptorHeapContext>()
 template<>
 void Nexus::Init<Nexus::InitSequence::kBufferContext>()
 {
-	bufferContext.reset(new BufferContext(BufferContext::NexusFieldProof{}, *deviceContext->diplomat, *descriptorHeapContext->diplomat, *commandContext->diplomat));
+	bufferContext = std::make_unique<BufferContext>
+	(
+		BufferContext::NexusFieldProof{},
+		deviceContext->AccessDiplomat(),
+		descriptorHeapContext->AccessDiplomat(),
+		commandContext->AccessDiplomat()
+	);
+
 	Logger::Log("Instantiate: bufferContext", fileName);
 }
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -115,7 +122,7 @@ void Nexus::Init<Nexus::InitSequence::kCommandContext>()
 		new CommandContext
 		(
 			CommandContext::NexusFieldProof{},
-			deviceContext->diplomat.get()
+			deviceContext->AccessDiplomat()
 		)
 	);
 
@@ -132,10 +139,10 @@ void Nexus::Init<Nexus::InitSequence::kSwapChainContext>()
 		new SwapChainContext
 		(
 			SwapChainContext::NexusFieldProof{},
-			*descriptorHeapContext->diplomat,
-			*commandContext->diplomat,
-			*deviceContext->diplomat,
-			*windowContext->diplomat
+			descriptorHeapContext->AccessDiplomat(),
+			commandContext->AccessDiplomat(),
+			deviceContext->AccessDiplomat(),
+			windowContext->AccessDiplomat()
 		)
 	);
 
@@ -162,7 +169,7 @@ void Nexus::Init<Nexus::InitSequence::kPSO_Context>()
 		new PSO_Context
 		(
 			PSO_Context::NexusFieldProof{},
-			deviceContext->diplomat.get()
+			deviceContext->AccessDiplomat()
 		)
 	);
 	Logger::Log("Instantiate: PSO_Context", fileName);
@@ -178,7 +185,7 @@ void Nexus::Init<Nexus::InitSequence::kRootSignatureContext>()
 		new RootSignatureContext
 		(
 			RootSignatureContext::NexusFieldProof{},
-			deviceContext->diplomat.get()
+			deviceContext->AccessDiplomat()
 		)
 	);
 
@@ -196,7 +203,7 @@ void Nexus::Init<Nexus::InitSequence::kTextureContext>()
 		new TextureContext
 		(
 			TextureContext::NexusFieldProof{},
-			*bufferContext->diplomat
+			bufferContext->AccessDiplomat()
 		)
 	);
 	Logger::Log("Instantiate: TextureContext", fileName);
@@ -213,11 +220,11 @@ void Nexus::Init<Nexus::InitSequence::kRenderContext>()
 		new RenderContext
 		(
 			RenderContext::NexusFieldProof{},
-			*bufferContext->diplomat,
-			*rootSignatureContext->diplomat,
-			*modelContext->diplomat,
-			*pso_context->diplomat,
-			*shaderContext->diplomat
+			bufferContext->AccessDiplomat(),
+			rootSignatureContext->AccessDiplomat(),
+			modelContext->AccessDiplomat(),
+			pso_context->AccessDiplomat(),
+			shaderContext->AccessDiplomat()
 		)
 	);
 	Logger::Log("Instantiate: RenderContext", fileName);
@@ -228,7 +235,12 @@ void Nexus::Init<Nexus::InitSequence::kRenderContext>()
 template<>
 void Nexus::Init<Nexus::InitSequence::kModelContext>()
 {
-	modelContext.reset(new ModelContext(ModelContext::NexusFieldProof{},*bufferContext->diplomat,*textureContext->diplomat));
+	modelContext = std::make_unique<ModelContext>
+	(
+		ModelContext::NexusFieldProof{},
+		bufferContext->AccessDiplomat(),
+		textureContext->AccessDiplomat()
+	);
 	Logger::Log("Instantiate: ModelContext", fileName);
 }
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -238,7 +250,7 @@ template<>
 void Nexus::Init<Nexus::InitSequence::kKickCommands>()
 {
 	//CommandContextの代行者
-	auto* agent = commandContext->diplomat->Access<CommandContext::ExecutionAgent>();
+	auto* agent = commandContext->AccessDiplomat().Access<CommandContext::ExecutionAgent>();
 	//リソースアップロードのために溜まったコマンドを全てキックして同期し、コマンドリストを閉じる
 	agent->KickAndSynchronizeUploadCommand(CommandContext::NexusFieldProof{});
 }
@@ -249,7 +261,7 @@ template<>
 void Nexus::Init<Nexus::InitSequence::kDeleteIntermediateResources>()
 {
 	//bufferContextの代行者
-	auto* agent = bufferContext->diplomat->Access<BufferContext::ExecutionAgent>();
+	auto* agent = bufferContext->AccessDiplomat().Access<BufferContext::ExecutionAgent>();
 	//BufferUploaderの削除を代行
 	agent->DeleteBufferUploader(BufferContext::NexusFieldProof{});
 }
@@ -260,7 +272,7 @@ template<>
 void Nexus::Init<Nexus::InitSequence::kUploadAllResources>()
 {
 	//bufferContextの代行者
-	auto* agent = bufferContext->diplomat->Access<BufferContext::ExecutionAgent>();
+	auto* agent = bufferContext->AccessDiplomat().Access<BufferContext::ExecutionAgent>();
 	//BufferUploaderの削除を代行
 	agent->UploadAllBuffer(BufferContext::NexusFieldProof{});
 }
@@ -271,7 +283,7 @@ template<>
 void Nexus::Init<Nexus::InitSequence::kSortOutGlobalConstantBuffers>()
 {
 	//bufferContextの代行者
-	auto* agent = bufferContext->diplomat->Access<BufferContext::ExecutionAgent>();
+	auto* agent = bufferContext->AccessDiplomat().Access<BufferContext::ExecutionAgent>();
 	//ランタイム用のベクターコンテナに詰め変える(全てのコンスタントバッファの生成が終わった後)
 	agent->PackRuntimeContainer(BufferContext::NexusFieldProof{});
 
@@ -283,7 +295,7 @@ template<>
 void Nexus::Init<Nexus::InitSequence::kDeleteModelDataCache>()
 {
 	//modelContextの代行者
-	auto* agent = modelContext->diplomat->Access<ModelContext::ExecutionAgent>();
+	auto* agent = modelContext->AccessDiplomat().Access<ModelContext::ExecutionAgent>();
 	//初期化処理に使ったモデルデータのキャッシュを削除
 	agent->DeleteModelDataCache(ModelContext::NexusFieldProof{});
 }
@@ -292,7 +304,7 @@ template<>
 void Nexus::Init<Nexus::InitSequence::kSeparateModelContainer>()
 {
 	//modelContextの代行者
-	auto* agent = modelContext->diplomat->Access<ModelContext::ExecutionAgent>();
+	auto* agent = modelContext->AccessDiplomat().Access<ModelContext::ExecutionAgent>();
 	//ランタイム用のベクターコンテナに詰め変える(全てのモデル生成が終わった後)
 	agent->SeparateModelContainer(ModelContext::NexusFieldProof{});
 }

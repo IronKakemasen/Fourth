@@ -28,12 +28,13 @@ public:
 	);
 
 	~TextureContext();
+	auto& AccessDiplomat() { return *diplomat; }
 
-	std::unique_ptr<TextureContextDiplomat> diplomat;
 
 private:
 
 	std::unique_ptr<TextureLibrary> textureLibrary;
+	std::unique_ptr<TextureContextDiplomat> diplomat;
 
 };
 

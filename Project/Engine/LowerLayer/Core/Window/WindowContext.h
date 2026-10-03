@@ -16,7 +16,7 @@ class WindowContext
 		UINT width;
 		UINT height;
 		LPCWSTR windowName;
-	}coreParts;
+	};
 
 public:
 	class ToolLender;
@@ -28,7 +28,12 @@ public:
 	~WindowContext();
 
 	void Finalize(NexusFieldProof proof_, AgentKey agentKey_);
+	auto& AccessDiplomat() { return *diplomat; }
 
+private:
+
+
+	CoreParts coreParts;
 	std::unique_ptr<WindowContextDiplomat> diplomat;
 
 };

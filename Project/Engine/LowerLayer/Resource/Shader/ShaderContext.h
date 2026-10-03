@@ -20,9 +20,9 @@ public:
 	
 	ShaderContext(NexusFieldProof proof_);
 	~ShaderContext();
+	auto& AccessDiplomat() { return *diplomat; }
 
 
-	std::unique_ptr<ShaderContextDiplomat> diplomat;
 
 private:
 
@@ -31,7 +31,7 @@ private:
 	//シェーダーファイルをロードする
 	class ShaderLoader;
 
-
+	std::unique_ptr<ShaderContextDiplomat> diplomat;
 	//シェーダーのデータがすべてここに
 	std::unique_ptr<ShaderLibrary> shaderLibrary;
 };

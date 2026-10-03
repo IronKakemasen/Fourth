@@ -18,10 +18,10 @@ namespace
 
 using namespace RootSignatureLayoutComponent;
 
-RootSignatureContext::Assembler::Assembler(NexusFieldProof proof_, DeviceContextDiplomat* deviceContextDiplomat_)
+RootSignatureContext::Assembler::Assembler(NexusFieldProof proof_, DeviceContextDiplomat& deviceContextDiplomat_)
 {
 	//ルートシグネチャ生成コマンドをもらう
-	auto cmdProvider = deviceContextDiplomat_->Access<DeviceContext::CommandProvider>();
+	auto cmdProvider = deviceContextDiplomat_.Access<DeviceContext::CommandProvider>();
 	DeviceContext::CommandProvider::LicenceType<DeviceContextCmds::CreateRootSig> licence;
 
 	cmdCreateRootSignature = cmdProvider->Provide<DeviceContextCmds::CreateRootSig>(licence);

@@ -247,16 +247,6 @@ class BufferContext
 	//生リソース生成
 	class ResourceCreator;
 	struct BufferPoolSet;
-protected:
-	//登録先識別用
-	enum class RegisterType
-	{
-		kRenderTarget,
-		kFrameBuffer,
-		kComputeBuffer,
-		kReadOnlyBuffer,
-		kCount
-	};
 public:
 	//自身のインスタンス化キー
 	struct NexusFieldProof;
@@ -292,10 +282,9 @@ public:
 		CommandContextDiplomat& commandContextDiplomat_
 	);
 	~BufferContext();
-	//外交役
-	std::unique_ptr<BufferContextDiplomat> diplomat;
 	///ランタイムに入る前にNexusがアップロード用の中間リソースを破棄する
 	void DeleteBufferUploader(const NexusFieldProof& proof_, AgentKey agentKey_);
+	auto& AccessDiplomat() { return *diplomat; }
 private:
 	///複数のバッファのプールが定義されている
 	std::unique_ptr<BufferPoolSet> bufferPoolSet;
@@ -311,6 +300,8 @@ private:
 	std::unique_ptr<BufferCollector> bufferCollector;
 	std::unique_ptr<GlobalConstantBuffers> globalConstantBuffers;
 	std::unique_ptr<GlobalConstantBufferCreator> globalConstantBufferCreator;
+	//外交役
+	std::unique_ptr<BufferContextDiplomat> diplomat;
 };
 struct BufferContext::NexusFieldProof
 {
@@ -2112,7 +2103,7 @@ std::unique_ptr<GPUBufferBehavior> BufferContext::BufferCollector::CastBuffer(st
 ========================================
 #pragma once
 #include "../../BufferContext.h"
-#include "../../BufferDefinition/AllBuffersFwd.h"
+#include "../../BufferDefinition/BufferTraits.h"
 class BufferContext::BufferCollector
 {
 	template<typename BufferType>
@@ -2141,7 +2132,7 @@ public:
 private:
 	struct TempSaveFormat
 	{
-		RegisterType type;
+		BufferTraits::RegisterType type;
 		std::unique_ptr<GPUBufferBehavior> buffer;
 		BufferUniqueID id;
 	};
@@ -2162,32 +2153,32 @@ private:
 template<>
 struct BufferContext::BufferCollector::BufferTypeTraits<UploadStructuredBuffer>
 {
-	constexpr static RegisterType type = RegisterType::kFrameBuffer;
+	constexpr static BufferTraits::RegisterType type = BufferTraits::RegisterType::kFrameBuffer;
 };
 template<>
 struct BufferContext::BufferCollector::BufferTypeTraits<ConstantBuffer>
 {
-	constexpr static RegisterType type = RegisterType::kFrameBuffer;
+	constexpr static BufferTraits::RegisterType type = BufferTraits::RegisterType::kFrameBuffer;
 };
 template<>
 struct BufferContext::BufferCollector::BufferTypeTraits<ColorBuffer>
 {
-	constexpr static RegisterType type = RegisterType::kRenderTarget;
+	constexpr static BufferTraits::RegisterType type = BufferTraits::RegisterType::kRenderTarget;
 };
 template<>
 struct BufferContext::BufferCollector::BufferTypeTraits<DepthStencilBuffer>
 {
-	constexpr static RegisterType type = RegisterType::kRenderTarget;
+	constexpr static BufferTraits::RegisterType type = BufferTraits::RegisterType::kRenderTarget;
 };
 template<>
 struct BufferContext::BufferCollector::BufferTypeTraits<StaticStructuredBuffer>
 {
-	constexpr static RegisterType type = RegisterType::kReadOnlyBuffer;
+	constexpr static BufferTraits::RegisterType type = BufferTraits::RegisterType::kReadOnlyBuffer;
 };
 template<>
 struct BufferContext::BufferCollector::BufferTypeTraits<Texture2DBuffer>
 {
-	constexpr static RegisterType type = RegisterType::kReadOnlyBuffer;
+	constexpr static BufferTraits::RegisterType type = BufferTraits::RegisterType::kReadOnlyBuffer;
 };
 template<>
 std::unique_ptr<GPUBufferBehavior> BufferContext::BufferCollector::CastBuffer(std::unique_ptr<ColorBuffer> buffer_);
@@ -2427,7 +2418,7 @@ class BufferContext::BufferUploader
 		UINT numData;
 		std::vector<std::byte> ownedData;
 	};
-	//そのテクスチャバッファバージョン
+	//それのテクスチャバッファバージョン
 	struct TemporaryTextureBufferInfoStorage
 	{
 		BufferUniqueID id{};
@@ -2813,6 +2804,15 @@ class Texture2DBuffer;
 #include "AllBuffersFwd.h"
 namespace BufferTraits
 {
+	//登録先識別用(CollectorとDispatcherが主に使う)
+	enum class RegisterType
+	{
+		kRenderTarget,
+		kFrameBuffer,
+		kComputeBuffer,
+		kReadOnlyBuffer,
+		kCount
+	};
 	//バッファタグ。使うことはあんまりないと思うが
 	enum class BufferTag
 	{
@@ -4606,9 +4606,9 @@ public:
 #include "BufferPoolSet.h"
 #include "ClosedHashMap/ClosedHashMap.h" 
 #include "../BufferDefinition/GPUBuffer/GPUBufferBehavior.h"
-std::vector<std::unique_ptr<GPUBufferBehavior>>* BufferContext::BufferPoolSet::ContainerTable(BufferContext::RegisterType type_)
+std::vector<std::unique_ptr<GPUBufferBehavior>>* BufferContext::BufferPoolSet::ContainerTable(BufferTraits::RegisterType type_)
 {
-	static std::vector<std::unique_ptr<GPUBufferBehavior>>* table[(int)BufferContext::RegisterType::kCount]
+	static std::vector<std::unique_ptr<GPUBufferBehavior>>* table[(int)BufferTraits::RegisterType::kCount]
 	{
 		&renderTargetBufferPool,
 		&frameBufferPool,
@@ -4622,7 +4622,7 @@ std::vector<std::unique_ptr<GPUBufferBehavior>>* BufferContext::BufferPoolSet::C
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 BufferContext::BufferPoolSet::BufferPoolSet()
 {
-	bufferLocationClosedHashedMap.reset(new ClosedHashMap<std::pair<RegisterType, uint32_t>>(kHashedMapSize));
+	bufferLocationClosedHashedMap.reset(new ClosedHashMap<std::pair<BufferTraits::RegisterType, uint32_t>>(kHashedMapSize));
 }
 
 ========================================
@@ -4630,6 +4630,7 @@ BufferContext::BufferPoolSet::BufferPoolSet()
 ========================================
 #pragma once
 #include "../BufferContext.h"
+#include "../BufferDefinition/BufferTraits.h"
 class GPUBufferBehavior;
 template<typename ValueType> class ClosedHashMap;
 struct BufferContext::BufferPoolSet
@@ -4645,9 +4646,9 @@ struct BufferContext::BufferPoolSet
 	std::vector<std::unique_ptr<GPUBufferBehavior>> readOnlyBufferPool;
 	//ユニークIDがどこのバッファコンテナの何番目のバッファを指しているのか示すマップコンテナ
 	//std::unordered_map<BufferUniqueID, std::pair<RegisterType, uint32_t>> bufferLocationMap;
-	std::unique_ptr<ClosedHashMap<std::pair<RegisterType, uint32_t>>> bufferLocationClosedHashedMap;
+	std::unique_ptr<ClosedHashMap<std::pair<BufferTraits::RegisterType, uint32_t>>> bufferLocationClosedHashedMap;
 	//RegisterTypeがキーのテーブル
-	std::vector<std::unique_ptr<GPUBufferBehavior>>* ContainerTable(RegisterType type_);
+	std::vector<std::unique_ptr<GPUBufferBehavior>>* ContainerTable(BufferTraits::RegisterType type_);
 private:
 	//bufferLocationClosedHashedMapのサイズ
 	static constexpr int kHashedMapSize = 16384;
@@ -4684,6 +4685,7 @@ BufferContext::BufferDispatcher::BufferDispatcher
 ========================================
 #pragma once
 #include "../../BufferPoolSet/BufferPoolSet.h"
+#include "../../BufferDefinition/BufferTraits.h"
 #include "ClosedHashMap/ClosedHashMap.h" 
 class GPUBufferBehavior;
 class BufferContext::BufferDispatcher
@@ -4698,7 +4700,7 @@ public:
 	[[nodiscard]] inline GPUBufferBehavior* Dispatch(BufferUniqueID bufferID_)
 	{
 		auto idToType_location = bufferPoolSet->bufferLocationClosedHashedMap->FindValueFast(bufferID_);
-		BufferContext::RegisterType dstRegisterType = idToType_location.first;
+		BufferTraits::RegisterType dstRegisterType = idToType_location.first;
 		uint32_t dstPoolIndex = idToType_location.second;
 		return (*bufferPoolSet->ContainerTable(dstRegisterType))[dstPoolIndex].get();
 	}
@@ -4913,7 +4915,7 @@ CommandContext::~CommandContext() {}
 CommandContext::CommandContext
 (
 	NexusFieldProof proof_,
-	DeviceContextDiplomat* deviceContextDiplomat_
+	DeviceContextDiplomat& deviceContextDiplomat_
 ) 
 {
 	Logger::Entry("CommandContext: Constructor");
@@ -4945,9 +4947,9 @@ CommandContext::CommandContext
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-void CommandContext::CreateCoreParts(NexusFieldProof proof_, DeviceContextDiplomat* deviceContextDiplomat_)
+void CommandContext::CreateCoreParts(NexusFieldProof proof_, DeviceContextDiplomat& deviceContextDiplomat_)
 {
-	auto* cmdExecutor = deviceContextDiplomat_->Access<DeviceContext::CommandExecutor>();
+	auto* cmdExecutor = deviceContextDiplomat_.Access<DeviceContext::CommandExecutor>();
 	//メイン
 	auto [cmdQueue, cmdAllocators, cmdList] =
 		cmdExecutor->CreateCommandContextCorePartsForRuntime(proof_);
@@ -5028,17 +5030,18 @@ public:
 	CommandContext
 	(
 		NexusFieldProof proof_,
-		DeviceContextDiplomat* deviceContextDiplomat_
+		DeviceContextDiplomat& deviceContextDiplomat_
 	);
 	~CommandContext();
 	//同期してCloseHandle()する
-	void Finalize(NexusFieldProof instanceKey_);
+	void Finalize(NexusFieldProof proof_);
+	auto& AccessDiplomat() { return *diplomat; }
 	std::unique_ptr<RuntimeCommandController> runtimeCommandController;
-	std::unique_ptr<CommandContextDiplomat> diplomat;
 private:
 	std::unique_ptr<Synchronizer> synchronizer;
 	std::unique_ptr<RuntimeWrapper> runtimeWrapper;
 	std::unique_ptr<ResourceUploader> resourceUploader;
+	std::unique_ptr<CommandContextDiplomat> diplomat;
 	//コマンドキュー
 	Microsoft::WRL::ComPtr<ID3D12CommandQueue> commandQueue;
 	//コマンドアローケータ
@@ -5055,7 +5058,7 @@ private:
 	HANDLE fenceEvent = nullptr;
 	void CreateFenceEvent();
 	void InstantiateRuntimeCommandControler();
-	void CreateCoreParts(NexusFieldProof instanceKey_,DeviceContextDiplomat* deviceContextDiplomat_);
+	void CreateCoreParts(NexusFieldProof instanceKey_,DeviceContextDiplomat& deviceContextDiplomat_);
 };
 struct CommandContext::NexusFieldProof
 {
@@ -5367,12 +5370,12 @@ namespace
 CommandContext::ResourceUploader::ResourceUploader
 (
 	NexusFieldProof proof_,
-	DeviceContextDiplomat* deviceContextDiplomat_,
+	DeviceContextDiplomat& deviceContextDiplomat_,
 	ID3D12CommandQueue* commandQueue_,
 	CommandContext::Synchronizer* synchronizer_
 ) :commandQueue(commandQueue_), synchronizer(synchronizer_)
 {
-	auto* cmdExecutor = deviceContextDiplomat_->Access<DeviceContext::CommandExecutor>();
+	auto* cmdExecutor = deviceContextDiplomat_.Access<DeviceContext::CommandExecutor>();
 	//リソースアップロード用
 	auto [allocator_forUpload, cmdList_forUpload] =
 		cmdExecutor->CreateCommandContextCorePartsForUpload(proof_);
@@ -5452,7 +5455,7 @@ public:
 	ResourceUploader
 	(
 		NexusFieldProof proof_,
-		DeviceContextDiplomat* deviceContextDiplomat_,
+		DeviceContextDiplomat& deviceContextDiplomat_,
 		ID3D12CommandQueue* commandQueue_,
 		CommandContext::Synchronizer* synchronizer_
 	);
@@ -5909,12 +5912,14 @@ public:
 		DeviceContextDiplomat& deviceContextDiplomat_
 	);
 	~DescriptorHeapContext();
-	std::unique_ptr<DescriptorHeapContextDiplomat> diplomat;
+	auto& AccessDiplomat() { return *diplomat; }
 private:
 	//DescriptorHeapPoolのコンテナ
 	std::unique_ptr<DescriptorHeapPoolContainer> descriptorHeapPoolContainer;
 	//ビュー生成機関
 	std::unique_ptr<ViewCreator> viewCreator;
+	//外交役
+	std::unique_ptr<DescriptorHeapContextDiplomat> diplomat;
 };
 //生成できるのはNexusのみ
 struct DescriptorHeapContext::NexusFieldProof
@@ -6571,13 +6576,14 @@ public:
 	class CommandProvider;
 	//他クラスにコアパーツを流用させないようにコマンドを自ら実行する
 	class CommandExecutor;
-	std::unique_ptr<DeviceContextDiplomat> diplomat;
 	DeviceContext(NexusFieldProof proof_);
 	~DeviceContext();
+	auto& AccessDiplomat() { return *diplomat; }
 private:
 	Microsoft::WRL::ComPtr<ID3D12Device8> device = nullptr;
 	Microsoft::WRL::ComPtr<IDXGIFactory7> dxgiFactory = nullptr;
 	Microsoft::WRL::ComPtr<IDXGIAdapter4> useAdapter = nullptr;
+	std::unique_ptr<DeviceContextDiplomat> diplomat;
 	//Setupperからコアパーツを生成し、引き継ぐ
 	void TakeOverCoreParts(NexusFieldProof proof_);
 	//CommandProviderの生成
@@ -8012,10 +8018,7 @@ public:
 		WindowContextDiplomat& windowContextDiplomat_
 	);
 	~SwapChainContext();
-	SwapChainContextDiplomat& AccessDiplomat()
-	{
-		return *diplomat;
-	}
+	auto& AccessDiplomat(){return *diplomat;}
 private:
 	Microsoft::WRL::ComPtr<IDXGISwapChain4> swapChain;
 	std::unique_ptr<SwapChainBuffer> swapChainBuffer;
@@ -8500,7 +8503,7 @@ class WindowContext
 		UINT width;
 		UINT height;
 		LPCWSTR windowName;
-	}coreParts;
+	};
 public:
 	class ToolLender;
 	class ExecutionAgent;
@@ -8508,6 +8511,9 @@ public:
 	WindowContext(NexusFieldProof proof_);
 	~WindowContext();
 	void Finalize(NexusFieldProof proof_, AgentKey agentKey_);
+	auto& AccessDiplomat() { return *diplomat; }
+private:
+	CoreParts coreParts;
 	std::unique_ptr<WindowContextDiplomat> diplomat;
 };
 struct WindowContext::NexusFieldProof
@@ -12925,14 +12931,15 @@ public:
 	~ModelContext();
 	///代役に、モデルデータのキャッシュを消してもらう
 	void DeleteModelDataCache(NexusFieldProof proof_, AgentKey agentKey_);
-	//外交官
-	std::unique_ptr<ModelContextDiplomat> diplomat;
+	auto& AccessDiplomat() { return *diplomat; }
 private:
 	std::unique_ptr<ModelSlotAllocator> modelSlotAllocator;
 	std::unique_ptr<ModelContainer> modelContainer;
 	std::unique_ptr<ModelCreator> modelCreator;
 	std::unique_ptr<ModelDataBatcher> modelDataBatcher;
 	std::unique_ptr<ModelDataCache> modelDataCache;
+	//外交官
+	std::unique_ptr<ModelContextDiplomat> diplomat;
 	std::unique_ptr<TestModelOKIBA> testModelOKIBA;
 };
 struct ModelContext::NexusFieldProof
@@ -15574,7 +15581,7 @@ namespace
 PSO_Context::PSO_Context
 (
 	NexusFieldProof proof_,
-	DeviceContextDiplomat* deviceContextDiplomat_
+	DeviceContextDiplomat& deviceContextDiplomat_
 )
 {
 	Logger::Entry("PSO_Context: Constructor");
@@ -15629,13 +15636,14 @@ public:
 	PSO_Context
 	(
 		NexusFieldProof proof_,
-		DeviceContextDiplomat* deviceContextDiplomat_
+		DeviceContextDiplomat& deviceContextDiplomat_
 	);
 	~PSO_Context();
-	std::unique_ptr<PSO_ContextDiplomat> diplomat;
+	auto& AccessDiplomat() { return *diplomat; }
 private:
 	std::unique_ptr<PSO_Creator> psoCreator;
 	std::unique_ptr<PSO_Container> psoContainer;
+	std::unique_ptr<PSO_ContextDiplomat> diplomat;
 };
 struct PSO_Context::NexusFieldProof
 {
@@ -15941,10 +15949,10 @@ namespace
 PSO_Context::Assembler::Assembler
 (
 	NexusFieldProof proof_,
-	DeviceContextDiplomat* deviceContextDiplomat_
+	DeviceContextDiplomat& deviceContextDiplomat_
 )
 {
-	auto cmdProvider = deviceContextDiplomat_->Access<DeviceContext::CommandProvider>();
+	auto cmdProvider = deviceContextDiplomat_.Access<DeviceContext::CommandProvider>();
 	DeviceContext::CommandProvider::LicenceType<DeviceContextCmds::CreatePSO<D3D12_PIPELINE_STATE_STREAM_DESC>> licenceCreateGraphicsPso;
 	DeviceContext::CommandProvider::LicenceType<DeviceContextCmds::CreatePSO<D3D12_COMPUTE_PIPELINE_STATE_DESC>> licenceCreateComputePso;
 	cmdCreateGraphicsPSO = cmdProvider->Provide<DeviceContextCmds::CreatePSO<D3D12_PIPELINE_STATE_STREAM_DESC>>(licenceCreateGraphicsPso);
@@ -16099,7 +16107,7 @@ public:
 	Assembler
 	(
 		NexusFieldProof proof_,
-		DeviceContextDiplomat* deviceContextDiplomat_
+		DeviceContextDiplomat& deviceContextDiplomat_
 	);
 	~Assembler();
 	template<typename DescType>
@@ -16545,7 +16553,7 @@ namespace
 {
 	auto const fileName = "RootSignatureContext.cpp";
 }
-RootSignatureContext::RootSignatureContext(NexusFieldProof proof_, DeviceContextDiplomat* deviceContextDiplomat_)
+RootSignatureContext::RootSignatureContext(NexusFieldProof proof_, DeviceContextDiplomat& deviceContextDiplomat_)
 {
 	Logger::Entry("RootSignatureContext: Constructor");
 	rootSignatureLibrary.reset(new RootSignatureLibrary(proof_));
@@ -16592,7 +16600,7 @@ class RootSignatureContextDiplomat;
 class RootSignatureContext
 {
 public:
-	enum class BufferUsage
+	enum class PsoType
 	{
 		kGraphics,
 		kCompute
@@ -16603,15 +16611,16 @@ public:
 	class CmdProvider;
 	struct NexusFieldProof;
 	struct CmdProviderKey;
-	RootSignatureContext(NexusFieldProof proof_, DeviceContextDiplomat* deviceContextDiplomat_);
+	RootSignatureContext(NexusFieldProof proof_, DeviceContextDiplomat& deviceContextDiplomat_);
 	~RootSignatureContext();
-	std::unique_ptr<RootSignatureContextDiplomat> diplomat;
+	auto& AccessDiplomat() { return *diplomat; }
 private:
 	class RootSignatureLibrary;
 	//rootSignatureを組み立てる
 	class Assembler;
 	std::unique_ptr<RootSignatureCreator> rootSignatureCreator;
 	std::unique_ptr<RootSignatureLibrary> rootSignatureLibrary;
+	std::unique_ptr<RootSignatureContextDiplomat> diplomat;
 };
 struct RootSignatureContext::NexusFieldProof
 {
@@ -16808,8 +16817,8 @@ RootSignatureCmds::CreateGraphicsRootSigCmd RootSignatureContext::RootSignatureC
 template<>
 ID3D12RootSignature* RootSignatureContext::RootSignatureCreator::Create(const RootSignatureDesc::Graphics& desc_)
 {
-	library->Import<BufferUsage::kGraphics>(RootSignatureLibrary::HandleLicence{}, assembler->Assemble(desc_));
-	return library->Export<BufferUsage::kGraphics>(RootSignatureLibrary::HandleLicence{});
+	library->Import<PsoType::kGraphics>(RootSignatureLibrary::HandleLicence{}, assembler->Assemble(desc_));
+	return library->Export<PsoType::kGraphics>(RootSignatureLibrary::HandleLicence{});
 }
 
 ========================================
@@ -16855,10 +16864,10 @@ namespace
 	auto const fileName = "RootSignatureAssembler.cpp";
 }
 using namespace RootSignatureLayoutComponent;
-RootSignatureContext::Assembler::Assembler(NexusFieldProof proof_, DeviceContextDiplomat* deviceContextDiplomat_)
+RootSignatureContext::Assembler::Assembler(NexusFieldProof proof_, DeviceContextDiplomat& deviceContextDiplomat_)
 {
 	//ルートシグネチャ生成コマンドをもらう
-	auto cmdProvider = deviceContextDiplomat_->Access<DeviceContext::CommandProvider>();
+	auto cmdProvider = deviceContextDiplomat_.Access<DeviceContext::CommandProvider>();
 	DeviceContext::CommandProvider::LicenceType<DeviceContextCmds::CreateRootSig> licence;
 	cmdCreateRootSignature = cmdProvider->Provide<DeviceContextCmds::CreateRootSig>(licence);
 }
@@ -16940,7 +16949,7 @@ Microsoft::WRL::ComPtr<ID3D12RootSignature> RootSignatureContext::Assembler::Cre
 class RootSignatureContext::Assembler
 {
 public:
-	Assembler(NexusFieldProof proof_, DeviceContextDiplomat* deviceContextDiplomat_);
+	Assembler(NexusFieldProof proof_, DeviceContextDiplomat& deviceContextDiplomat_);
 	~Assembler();
 	//生成関数
 	template<typename DescType>
@@ -17213,46 +17222,46 @@ RootSignatureContext::RootSignatureLibrary::~RootSignatureLibrary()
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 template<>
-ID3D12RootSignature* RootSignatureContext::RootSignatureLibrary::Export<RootSignatureContext::BufferUsage::kGraphics>(HandleLicence licence_)
+ID3D12RootSignature* RootSignatureContext::RootSignatureLibrary::Export<RootSignatureContext::PsoType::kGraphics>(HandleLicence licence_)
 {
-	ErrorMessageOutput::Assert::DetectError(data.at((UINT)RootSignatureContext::BufferUsage::kGraphics), "中身が空です", fileName);
-	return data.at((UINT)RootSignatureContext::BufferUsage::kGraphics).Get();
+	ErrorMessageOutput::Assert::DetectError(data.at((UINT)RootSignatureContext::PsoType::kGraphics), "中身が空です", fileName);
+	return data.at((UINT)RootSignatureContext::PsoType::kGraphics).Get();
 }
 template<>
-ID3D12RootSignature* RootSignatureContext::RootSignatureLibrary::Export<RootSignatureContext::BufferUsage::kCompute>(HandleLicence licence_)
+ID3D12RootSignature* RootSignatureContext::RootSignatureLibrary::Export<RootSignatureContext::PsoType::kCompute>(HandleLicence licence_)
 {
-	ErrorMessageOutput::Assert::DetectError(data.at((int)RootSignatureContext::BufferUsage::kCompute), "中身が空です", fileName);
-	return data.at((int)RootSignatureContext::BufferUsage::kCompute).Get();
+	ErrorMessageOutput::Assert::DetectError(data.at((int)RootSignatureContext::PsoType::kCompute), "中身が空です", fileName);
+	return data.at((int)RootSignatureContext::PsoType::kCompute).Get();
 }
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 template<>
-void RootSignatureContext::RootSignatureLibrary::Import<RootSignatureContext::BufferUsage::kGraphics>
+void RootSignatureContext::RootSignatureLibrary::Import<RootSignatureContext::PsoType::kGraphics>
 (HandleLicence licence_,Microsoft::WRL::ComPtr<ID3D12RootSignature>&& rootSig_)
 {
-	data.at(UINT(RootSignatureContext::BufferUsage::kGraphics)) = std::move(rootSig_);
+	data.at(UINT(RootSignatureContext::PsoType::kGraphics)) = std::move(rootSig_);
 }
 template<>
-void RootSignatureContext::RootSignatureLibrary::Import<RootSignatureContext::BufferUsage::kCompute>
+void RootSignatureContext::RootSignatureLibrary::Import<RootSignatureContext::PsoType::kCompute>
 (HandleLicence licence_,Microsoft::WRL::ComPtr<ID3D12RootSignature>&& rootSig_)
 {
-	data.at(UINT(RootSignatureContext::BufferUsage::kCompute)) = std::move(rootSig_);
+	data.at(UINT(RootSignatureContext::PsoType::kCompute)) = std::move(rootSig_);
 }
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 template
-void RootSignatureContext::RootSignatureLibrary::Import<RootSignatureContext::BufferUsage::kGraphics>
+void RootSignatureContext::RootSignatureLibrary::Import<RootSignatureContext::PsoType::kGraphics>
 (HandleLicence licence_,Microsoft::WRL::ComPtr<ID3D12RootSignature>&& rootSig_);
 template
-void RootSignatureContext::RootSignatureLibrary::Import<RootSignatureContext::BufferUsage::kCompute>
+void RootSignatureContext::RootSignatureLibrary::Import<RootSignatureContext::PsoType::kCompute>
 (HandleLicence licence_,Microsoft::WRL::ComPtr<ID3D12RootSignature>&& rootSig_);
 template
-ID3D12RootSignature* RootSignatureContext::RootSignatureLibrary::Export<RootSignatureContext::BufferUsage::kGraphics>
+ID3D12RootSignature* RootSignatureContext::RootSignatureLibrary::Export<RootSignatureContext::PsoType::kGraphics>
 (HandleLicence licence_);
 template
-ID3D12RootSignature* RootSignatureContext::RootSignatureLibrary::Export<RootSignatureContext::BufferUsage::kCompute>
+ID3D12RootSignature* RootSignatureContext::RootSignatureLibrary::Export<RootSignatureContext::PsoType::kCompute>
 (HandleLicence licence_);
 
 ========================================
@@ -17266,13 +17275,13 @@ public:
 	struct HandleLicence;
 	RootSignatureLibrary(NexusFieldProof proof_);
 	~RootSignatureLibrary();
-	template<BufferUsage BufferUsage>
+	template<PsoType BufferUsage>
 	ID3D12RootSignature* Export(HandleLicence licence_);
-	template<BufferUsage BufferUsage>
+	template<PsoType BufferUsage>
 	void Import(HandleLicence licence_,Microsoft::WRL::ComPtr<ID3D12RootSignature>&& rootSig_);
 private:
 	///本元データ
-	std::array<Microsoft::WRL::ComPtr<ID3D12RootSignature>, (int)BufferUsage::kCount> data;
+	std::array<Microsoft::WRL::ComPtr<ID3D12RootSignature>, (int)PsoType::kCount> data;
 };
 struct RootSignatureContext::RootSignatureLibrary::HandleLicence
 {
@@ -17335,12 +17344,13 @@ public:
 	class ToolLender;
 	ShaderContext(NexusFieldProof proof_);
 	~ShaderContext();
-	std::unique_ptr<ShaderContextDiplomat> diplomat;
+	auto& AccessDiplomat() { return *diplomat; }
 private:
 	//コンパイラー
 	class Compiler;
 	//シェーダーファイルをロードする
 	class ShaderLoader;
+	std::unique_ptr<ShaderContextDiplomat> diplomat;
 	//シェーダーのデータがすべてここに
 	std::unique_ptr<ShaderLibrary> shaderLibrary;
 };
@@ -18006,9 +18016,10 @@ public:
 		BufferContextDiplomat& bufferContextDiplomat_
 	);
 	~TextureContext();
-	std::unique_ptr<TextureContextDiplomat> diplomat;
+	auto& AccessDiplomat() { return *diplomat; }
 private:
 	std::unique_ptr<TextureLibrary> textureLibrary;
+	std::unique_ptr<TextureContextDiplomat> diplomat;
 };
 struct TextureContext::NexusFieldProof
 {
@@ -19559,7 +19570,7 @@ template<>
 void Nexus::Finalize<Nexus::FinalizeSequence::kWindowContext>()
 {
 	//ウィンドウコンテキストの終了処理を代行してもらう
-	auto& agent = windowContext->diplomat->Access<WindowContext::ExecutionAgent>();
+	auto& agent = windowContext->AccessDiplomat().Access<WindowContext::ExecutionAgent>();
 	agent.WindowContextFinalize(WindowContext::NexusFieldProof{});
 }
 template<>
@@ -19659,7 +19670,7 @@ void Nexus::Init<Nexus::InitSequence::kDescriptorHeapContext>()
 		new DescriptorHeapContext
 		(
 			DescriptorHeapContext::NexusFieldProof{},
-			*deviceContext->diplomat.get()
+			deviceContext->AccessDiplomat()
 		)
 	);
 	Logger::Log("Instantiate: descriptorHeapContext", fileName);
@@ -19670,7 +19681,13 @@ void Nexus::Init<Nexus::InitSequence::kDescriptorHeapContext>()
 template<>
 void Nexus::Init<Nexus::InitSequence::kBufferContext>()
 {
-	bufferContext.reset(new BufferContext(BufferContext::NexusFieldProof{}, *deviceContext->diplomat, *descriptorHeapContext->diplomat, *commandContext->diplomat));
+	bufferContext = std::make_unique<BufferContext>
+	(
+		BufferContext::NexusFieldProof{},
+		deviceContext->AccessDiplomat(),
+		descriptorHeapContext->AccessDiplomat(),
+		commandContext->AccessDiplomat()
+	);
 	Logger::Log("Instantiate: bufferContext", fileName);
 }
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -19684,7 +19701,7 @@ void Nexus::Init<Nexus::InitSequence::kCommandContext>()
 		new CommandContext
 		(
 			CommandContext::NexusFieldProof{},
-			deviceContext->diplomat.get()
+			deviceContext->AccessDiplomat()
 		)
 	);
 	Logger::Log("Instantiate: commandContext", fileName);
@@ -19700,10 +19717,10 @@ void Nexus::Init<Nexus::InitSequence::kSwapChainContext>()
 		new SwapChainContext
 		(
 			SwapChainContext::NexusFieldProof{},
-			*descriptorHeapContext->diplomat,
-			*commandContext->diplomat,
-			*deviceContext->diplomat,
-			*windowContext->diplomat
+			descriptorHeapContext->AccessDiplomat(),
+			commandContext->AccessDiplomat(),
+			deviceContext->AccessDiplomat(),
+			windowContext->AccessDiplomat()
 		)
 	);
 	Logger::Log("Instantiate: swapChainContext", fileName);
@@ -19728,7 +19745,7 @@ void Nexus::Init<Nexus::InitSequence::kPSO_Context>()
 		new PSO_Context
 		(
 			PSO_Context::NexusFieldProof{},
-			deviceContext->diplomat.get()
+			deviceContext->AccessDiplomat()
 		)
 	);
 	Logger::Log("Instantiate: PSO_Context", fileName);
@@ -19744,7 +19761,7 @@ void Nexus::Init<Nexus::InitSequence::kRootSignatureContext>()
 		new RootSignatureContext
 		(
 			RootSignatureContext::NexusFieldProof{},
-			deviceContext->diplomat.get()
+			deviceContext->AccessDiplomat()
 		)
 	);
 	Logger::Log("Instantiate: RootSignatureContext", fileName);
@@ -19760,7 +19777,7 @@ void Nexus::Init<Nexus::InitSequence::kTextureContext>()
 		new TextureContext
 		(
 			TextureContext::NexusFieldProof{},
-			*bufferContext->diplomat
+			bufferContext->AccessDiplomat()
 		)
 	);
 	Logger::Log("Instantiate: TextureContext", fileName);
@@ -19776,11 +19793,11 @@ void Nexus::Init<Nexus::InitSequence::kRenderContext>()
 		new RenderContext
 		(
 			RenderContext::NexusFieldProof{},
-			*bufferContext->diplomat,
-			*rootSignatureContext->diplomat,
-			*modelContext->diplomat,
-			*pso_context->diplomat,
-			*shaderContext->diplomat
+			bufferContext->AccessDiplomat(),
+			rootSignatureContext->AccessDiplomat(),
+			modelContext->AccessDiplomat(),
+			pso_context->AccessDiplomat(),
+			shaderContext->AccessDiplomat()
 		)
 	);
 	Logger::Log("Instantiate: RenderContext", fileName);
@@ -19791,7 +19808,12 @@ void Nexus::Init<Nexus::InitSequence::kRenderContext>()
 template<>
 void Nexus::Init<Nexus::InitSequence::kModelContext>()
 {
-	modelContext.reset(new ModelContext(ModelContext::NexusFieldProof{},*bufferContext->diplomat,*textureContext->diplomat));
+	modelContext = std::make_unique<ModelContext>
+	(
+		ModelContext::NexusFieldProof{},
+		bufferContext->AccessDiplomat(),
+		textureContext->AccessDiplomat()
+	);
 	Logger::Log("Instantiate: ModelContext", fileName);
 }
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -19801,7 +19823,7 @@ template<>
 void Nexus::Init<Nexus::InitSequence::kKickCommands>()
 {
 	//CommandContextの代行者
-	auto* agent = commandContext->diplomat->Access<CommandContext::ExecutionAgent>();
+	auto* agent = commandContext->AccessDiplomat().Access<CommandContext::ExecutionAgent>();
 	//リソースアップロードのために溜まったコマンドを全てキックして同期し、コマンドリストを閉じる
 	agent->KickAndSynchronizeUploadCommand(CommandContext::NexusFieldProof{});
 }
@@ -19812,7 +19834,7 @@ template<>
 void Nexus::Init<Nexus::InitSequence::kDeleteIntermediateResources>()
 {
 	//bufferContextの代行者
-	auto* agent = bufferContext->diplomat->Access<BufferContext::ExecutionAgent>();
+	auto* agent = bufferContext->AccessDiplomat().Access<BufferContext::ExecutionAgent>();
 	//BufferUploaderの削除を代行
 	agent->DeleteBufferUploader(BufferContext::NexusFieldProof{});
 }
@@ -19823,7 +19845,7 @@ template<>
 void Nexus::Init<Nexus::InitSequence::kUploadAllResources>()
 {
 	//bufferContextの代行者
-	auto* agent = bufferContext->diplomat->Access<BufferContext::ExecutionAgent>();
+	auto* agent = bufferContext->AccessDiplomat().Access<BufferContext::ExecutionAgent>();
 	//BufferUploaderの削除を代行
 	agent->UploadAllBuffer(BufferContext::NexusFieldProof{});
 }
@@ -19834,7 +19856,7 @@ template<>
 void Nexus::Init<Nexus::InitSequence::kSortOutGlobalConstantBuffers>()
 {
 	//bufferContextの代行者
-	auto* agent = bufferContext->diplomat->Access<BufferContext::ExecutionAgent>();
+	auto* agent = bufferContext->AccessDiplomat().Access<BufferContext::ExecutionAgent>();
 	//ランタイム用のベクターコンテナに詰め変える(全てのコンスタントバッファの生成が終わった後)
 	agent->PackRuntimeContainer(BufferContext::NexusFieldProof{});
 }
@@ -19845,7 +19867,7 @@ template<>
 void Nexus::Init<Nexus::InitSequence::kDeleteModelDataCache>()
 {
 	//modelContextの代行者
-	auto* agent = modelContext->diplomat->Access<ModelContext::ExecutionAgent>();
+	auto* agent = modelContext->AccessDiplomat().Access<ModelContext::ExecutionAgent>();
 	//初期化処理に使ったモデルデータのキャッシュを削除
 	agent->DeleteModelDataCache(ModelContext::NexusFieldProof{});
 }
@@ -19853,7 +19875,7 @@ template<>
 void Nexus::Init<Nexus::InitSequence::kSeparateModelContainer>()
 {
 	//modelContextの代行者
-	auto* agent = modelContext->diplomat->Access<ModelContext::ExecutionAgent>();
+	auto* agent = modelContext->AccessDiplomat().Access<ModelContext::ExecutionAgent>();
 	//ランタイム用のベクターコンテナに詰め変える(全てのモデル生成が終わった後)
 	agent->SeparateModelContainer(ModelContext::NexusFieldProof{});
 }
@@ -20519,4 +20541,4 @@ namespace StringProcessing
 === SUMMARY ===
 ========================================
 Total Files      : 457
-Effective Lines  : 14926
+Effective Lines  : 14945

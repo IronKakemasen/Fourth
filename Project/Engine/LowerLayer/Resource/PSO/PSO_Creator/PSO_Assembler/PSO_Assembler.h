@@ -16,7 +16,7 @@ public:
 	Assembler
 	(
 		NexusFieldProof proof_,
-		DeviceContextDiplomat* deviceContextDiplomat_
+		DeviceContextDiplomat& deviceContextDiplomat_
 	);
 
 	~Assembler();

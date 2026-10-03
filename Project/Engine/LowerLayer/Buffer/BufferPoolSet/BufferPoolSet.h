@@ -1,6 +1,6 @@
 #pragma once
 #include "../BufferContext.h"
-
+#include "../BufferDefinition/BufferTraits.h"
 
 class GPUBufferBehavior;
 template<typename ValueType> class ClosedHashMap;
@@ -20,9 +20,9 @@ struct BufferContext::BufferPoolSet
 
 	//ユニークIDがどこのバッファコンテナの何番目のバッファを指しているのか示すマップコンテナ
 	//std::unordered_map<BufferUniqueID, std::pair<RegisterType, uint32_t>> bufferLocationMap;
-	std::unique_ptr<ClosedHashMap<std::pair<RegisterType, uint32_t>>> bufferLocationClosedHashedMap;
+	std::unique_ptr<ClosedHashMap<std::pair<BufferTraits::RegisterType, uint32_t>>> bufferLocationClosedHashedMap;
 	//RegisterTypeがキーのテーブル
-	std::vector<std::unique_ptr<GPUBufferBehavior>>* ContainerTable(RegisterType type_);
+	std::vector<std::unique_ptr<GPUBufferBehavior>>* ContainerTable(BufferTraits::RegisterType type_);
 
 private:
 	//bufferLocationClosedHashedMapのサイズ

@@ -14,7 +14,6 @@ class CommandContext
 
 public:
 
-
 	//Nexusフィールドの証明
 	struct NexusFieldProof;
 	//代行者認証キー
@@ -36,16 +35,16 @@ public:
 	CommandContext
 	(
 		NexusFieldProof proof_,
-		DeviceContextDiplomat* deviceContextDiplomat_
+		DeviceContextDiplomat& deviceContextDiplomat_
 	);
 
 	~CommandContext();
 
 	//同期してCloseHandle()する
-	void Finalize(NexusFieldProof instanceKey_);
+	void Finalize(NexusFieldProof proof_);
+	auto& AccessDiplomat() { return *diplomat; }
 
 	std::unique_ptr<RuntimeCommandController> runtimeCommandController;
-	std::unique_ptr<CommandContextDiplomat> diplomat;
 
 
 private:
@@ -53,6 +52,7 @@ private:
 	std::unique_ptr<Synchronizer> synchronizer;
 	std::unique_ptr<RuntimeWrapper> runtimeWrapper;
 	std::unique_ptr<ResourceUploader> resourceUploader;
+	std::unique_ptr<CommandContextDiplomat> diplomat;
 
 	
 	//コマンドキュー
@@ -72,7 +72,7 @@ private:
 
 	void CreateFenceEvent();
 	void InstantiateRuntimeCommandControler();
-	void CreateCoreParts(NexusFieldProof instanceKey_,DeviceContextDiplomat* deviceContextDiplomat_);
+	void CreateCoreParts(NexusFieldProof instanceKey_,DeviceContextDiplomat& deviceContextDiplomat_);
 };
 
 

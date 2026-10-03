@@ -21,10 +21,10 @@ namespace
 PSO_Context::Assembler::Assembler
 (
 	NexusFieldProof proof_,
-	DeviceContextDiplomat* deviceContextDiplomat_
+	DeviceContextDiplomat& deviceContextDiplomat_
 )
 {
-	auto cmdProvider = deviceContextDiplomat_->Access<DeviceContext::CommandProvider>();
+	auto cmdProvider = deviceContextDiplomat_.Access<DeviceContext::CommandProvider>();
 	DeviceContext::CommandProvider::LicenceType<DeviceContextCmds::CreatePSO<D3D12_PIPELINE_STATE_STREAM_DESC>> licenceCreateGraphicsPso;
 	DeviceContext::CommandProvider::LicenceType<DeviceContextCmds::CreatePSO<D3D12_COMPUTE_PIPELINE_STATE_DESC>> licenceCreateComputePso;
 

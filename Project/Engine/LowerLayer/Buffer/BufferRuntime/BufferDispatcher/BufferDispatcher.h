@@ -1,5 +1,6 @@
 #pragma once
 #include "../../BufferPoolSet/BufferPoolSet.h"
+#include "../../BufferDefinition/BufferTraits.h"
 #include "ClosedHashMap/ClosedHashMap.h" 
 
 class GPUBufferBehavior;
@@ -19,7 +20,7 @@ public:
 	{
 		auto idToType_location = bufferPoolSet->bufferLocationClosedHashedMap->FindValueFast(bufferID_);
 
-		BufferContext::RegisterType dstRegisterType = idToType_location.first;
+		BufferTraits::RegisterType dstRegisterType = idToType_location.first;
 		uint32_t dstPoolIndex = idToType_location.second;
 
 		return (*bufferPoolSet->ContainerTable(dstRegisterType))[dstPoolIndex].get();

@@ -10,7 +10,7 @@ public:
 	ResourceUploader
 	(
 		NexusFieldProof proof_,
-		DeviceContextDiplomat* deviceContextDiplomat_,
+		DeviceContextDiplomat& deviceContextDiplomat_,
 		ID3D12CommandQueue* commandQueue_,
 		CommandContext::Synchronizer* synchronizer_
 	);

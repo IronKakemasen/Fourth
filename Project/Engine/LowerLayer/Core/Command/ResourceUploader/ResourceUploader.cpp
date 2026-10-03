@@ -14,14 +14,14 @@ namespace
 CommandContext::ResourceUploader::ResourceUploader
 (
 	NexusFieldProof proof_,
-	DeviceContextDiplomat* deviceContextDiplomat_,
+	DeviceContextDiplomat& deviceContextDiplomat_,
 	ID3D12CommandQueue* commandQueue_,
 	CommandContext::Synchronizer* synchronizer_
 
 ) :commandQueue(commandQueue_), synchronizer(synchronizer_)
 {
 
-	auto* cmdExecutor = deviceContextDiplomat_->Access<DeviceContext::CommandExecutor>();
+	auto* cmdExecutor = deviceContextDiplomat_.Access<DeviceContext::CommandExecutor>();
 	
 	//リソースアップロード用
 	auto [allocator_forUpload, cmdList_forUpload] =
