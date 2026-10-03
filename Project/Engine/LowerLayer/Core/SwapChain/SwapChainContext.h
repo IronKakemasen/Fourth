@@ -5,7 +5,7 @@ class CommandContextDiplomat;
 class DeviceContextDiplomat;
 class DescriptorHeapContextDiplomat;
 class WindowContextDiplomat;
-
+class SwapChainContextDiplomat;
 
 class SwapChainContext
 {
@@ -20,6 +20,12 @@ public:
 
 	//Nexusのみ生成可能
 	struct NexusFieldProof;
+	//代行者限定
+	struct AgentKey;
+	//ツール貸し出し
+	class ToolLender;
+	//Nexusフィールドでのアクションを代行する
+	class ExecutionAgent;
 
 	SwapChainContext
 	(
@@ -32,12 +38,19 @@ public:
 
 	~SwapChainContext();
 	
-	std::unique_ptr<Presenter> presenter;
+	SwapChainContextDiplomat& AccessDiplomat()
+	{
+		return *diplomat;
+	}
 
 private:
 
 	Microsoft::WRL::ComPtr<IDXGISwapChain4> swapChain;
 	std::unique_ptr<SwapChainBuffer> swapChainBuffer;
+	std::unique_ptr<Presenter> presenter;
+
+	std::unique_ptr<ToolLender> toolLender;
+	std::unique_ptr<SwapChainContextDiplomat> diplomat;
 };
 
 struct SwapChainContext::NexusFieldProof
@@ -47,4 +60,15 @@ private:
 	friend class Nexus;
 	explicit NexusFieldProof() = default;
 };
+
+struct SwapChainContext::AgentKey
+{
+private:
+
+	friend class ExecutionAgent;
+	explicit AgentKey() = default;
+};
+
+
+
 

@@ -660,6 +660,15 @@
     <ClCompile Include="Engine\LowerLayer\Core\SwapChain\SwapChainBuffer\SwapChainBuffer.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
+    <ClCompile Include="Engine\LowerLayer\Core\SwapChain\SwapChainContextDiplomat\SwapChainContextDiplomat.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\LowerLayer\Core\SwapChain\SwapChainContextDiplomat\SwapChainContextToolLender\SwapChainContextToolLender.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\LowerLayer\Core\SwapChain\SwapChainContextDiplomat\SwapChainExecutionAgent\SwapChainExecutionAgent.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Engine\LowerLayer\Core\Window\WindowContext.h">
@@ -1491,6 +1500,18 @@
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
     <ClInclude Include="Engine\LowerLayer\Core\SwapChain\SwapChainBuffer\SwapChainBuffer.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\LowerLayer\Core\SwapChain\SwapChainContextDiplomat\SwapChainContextDiplomat.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\LowerLayer\Core\SwapChain\SwapChainContextDiplomat\SwapChainContextToolLender\SwapChainContextToolLender.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\LowerLayer\Core\SwapChain\SwapChainContextDiplomat\SwapChainContextToolLender\SwapChainContextToolLenderLicences.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\LowerLayer\Core\SwapChain\SwapChainContextDiplomat\SwapChainExecutionAgent\SwapChainExecutionAgent.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
   </ItemGroup>

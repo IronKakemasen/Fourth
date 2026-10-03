@@ -2,6 +2,9 @@
 #include "SwapChainBuffer/SwapChainBuffer.h"
 #include "Presenter/Presenter.h"
 #include "SwapChainContextBuilder/SwapChainContextBuilder.h"
+#include "SwapChainContextDiplomat/SwapChainContextDiplomat.h"
+#include "SwapChainContextDiplomat/SwapChainContextToolLender/SwapChainContextToolLender.h"
+#include "SwapChainContextDiplomat/SwapChainExecutionAgent/SwapChainExecutionAgent.h"
 
 
 using namespace ProjectConfig::Render;
@@ -35,6 +38,17 @@ SwapChainContext::SwapChainContext
 
 	presenter.reset(new Presenter(swapChain.Get()));
 	Logger::Log("Instantiate: Presenter", fileName);
+
+	diplomat = std::make_unique<SwapChainContextDiplomat>
+	(
+		proof_,
+		std::make_unique<ToolLender>(proof_, swapChainBuffer.get()),
+		std::make_unique<ExecutionAgent>(proof_, *presenter)
+
+	);
+	Logger::Log("Instantiate: SwapChainContextDiplomat", fileName);
+	Logger::Log("Instantiate: ToolLender", fileName);
+	Logger::Log("Instantiate: ExecutionAgent", fileName);
 
 
 	Logger::End("SwapChainContext: Constructor");
