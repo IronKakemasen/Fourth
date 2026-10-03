@@ -21,7 +21,7 @@ class RenderContext::StaticRenderGraph
 	//共通描画コマンドをたたく
 	class CommonCmdExecutor;
 	//スワップチェーンのバックバッファに最終描画をする
-	class BackBufferRenderer;
+	class FinalRenderer;
 
 public:
 

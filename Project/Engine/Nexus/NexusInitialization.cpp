@@ -132,9 +132,9 @@ void Nexus::Init<Nexus::InitSequence::kSwapChainContext>()
 		new SwapChainContext
 		(
 			SwapChainContext::NexusFieldProof{},
-			descriptorHeapContext->diplomat.get(),
-			commandContext->diplomat.get(),
-			deviceContext->diplomat.get(),
+			*descriptorHeapContext->diplomat,
+			*commandContext->diplomat,
+			*deviceContext->diplomat,
 			*windowContext->diplomat
 		)
 	);

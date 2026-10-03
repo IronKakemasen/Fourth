@@ -6,78 +6,38 @@ class DeviceContextDiplomat;
 class DescriptorHeapContextDiplomat;
 class WindowContextDiplomat;
 
-//外部
-///リファクタ認定
-#include "../Device/DeviceContextCmds.h"
 
 class SwapChainContext
 {
 	//画面の表示、バックバッファの切り替えを担う
 	class Presenter;
+	//初期セットアップを行う
+	class Builder;
+	//スワップチェーン産の生リソースをもとに作られるバッファ
+	class SwapChainBuffer;
 
 public:
 
 	//Nexusのみ生成可能
 	struct NexusFieldProof;
-	//バッファの生リソースアドレスを取得キー
-	struct ResourceGetKey;
-	//専用のカラーバッファ
-	class ColorBuffer;
-	//描画パスに必要な情報を提供する
-	class RenderPassMaterialProvider;
-
-	std::unique_ptr<Presenter> presenter;
-	std::unique_ptr<RenderPassMaterialProvider> renderPassMaterialProvider;
 
 	SwapChainContext
 	(
 		NexusFieldProof proof_,
-		DescriptorHeapContextDiplomat* descriptorheapContextDiplomat_,
-		CommandContextDiplomat* commandContextDiplomat_,
-		DeviceContextDiplomat* deviceContextDiplomat_,
+		DescriptorHeapContextDiplomat& descriptorheapContextDiplomat_,
+		CommandContextDiplomat& commandContextDiplomat_,
+		DeviceContextDiplomat& deviceContextDiplomat_,
 		WindowContextDiplomat& windowContextDiplomat_
 	);
 
 	~SwapChainContext();
 	
+	std::unique_ptr<Presenter> presenter;
 
 private:
 
-	//そのディスクリプション
-	struct Description;
-
-	//SwapChainとそのカラーバッファを構築
-	void AssembleCoreParts
-	(
-		NexusFieldProof proof_,
-		DescriptorHeapContextDiplomat* descriptorheapContextDiplomat_,
-		CommandContextDiplomat* commandContextDiplomat_,
-		DeviceContextDiplomat* deviceContextDiplomat_,
-		const HWND hWnd_
-	);
-
-	//スワップチェーンの生成
-	void CreateSwapChain
-	(
-		DeviceContextCmds::CreateSwapChain cmdCreateSwapChain_,
-		const DXGI_SWAP_CHAIN_DESC1& desc_, 
-		const HWND hWnd_, 
-		ID3D12CommandQueue* commandQueue_
-	);
-
-	//スワップチェーンからリソースを引っ張ってくる
-	void PullResourcesFromSwapChain(std::unique_ptr<Description>&& desc_);
-	//RTVの生成
-	void CreateRTV
-	(
-		NexusFieldProof proof_ ,
-		const D3D12_RENDER_TARGET_VIEW_DESC& rtvDesc_, 
-		DescriptorHeapContextDiplomat* descriptorheapContextDiplomat_
-	);
-
-	//スワップチェーン
-	Microsoft::WRL::ComPtr<IDXGISwapChain4> swapChain = nullptr;
-	std::unique_ptr<ColorBuffer> colorBuffer;
+	Microsoft::WRL::ComPtr<IDXGISwapChain4> swapChain;
+	std::unique_ptr<SwapChainBuffer> swapChainBuffer;
 };
 
 struct SwapChainContext::NexusFieldProof
@@ -88,10 +48,3 @@ private:
 	explicit NexusFieldProof() = default;
 };
 
-struct SwapChainContext::ResourceGetKey
-{
-private:
-
-	friend class SwapChainContext;
-	explicit ResourceGetKey() = default;
-};
