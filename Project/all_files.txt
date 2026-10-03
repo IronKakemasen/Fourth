@@ -67,7 +67,6 @@ namespace ProjectConfig
 		constexpr UINT kHeight = 720;
 		constexpr float kDefaultFovY = 90.0f * 3.141592653589f / 180.0f;
 		constexpr std::array<float, 4> kColor = { 1.0f,0.0f,0.0f,1.0f };
-		constexpr DXGI_FORMAT kRtFormat = DXGI_FORMAT_R16G16B16A16_FLOAT;
 	}
 	namespace Render
 	{
@@ -84,6 +83,7 @@ namespace ProjectConfig
 			kSizeOfMaterialContainerBuffer = 100,
 		};
 		constexpr D3D_SHADER_MODEL kRequiredShaderModel = D3D_SHADER_MODEL_6_6;
+		constexpr DXGI_FORMAT kSwapChainBufferFormat = DXGI_FORMAT_R16G16B16A16_FLOAT;
 	}
 	namespace Debug
 	{
@@ -4737,12 +4737,12 @@ void BufferContext::GlobalConstantBuffers::PackRuntimeContainer(NexusFieldProof 
 	}
 	auto const numActualCBuffers = forChecking.size();
 	auto const numRequiredCBuffers = (size_t)ConstantBuffers::RootConstantsBindSlots::kCount;
-	ErrorMessageOutput::Assert::DetectError
-	(
-		numActualCBuffers == numRequiredCBuffers,
-		"定数バッファの生成数が合わない実 " + std::to_string(numActualCBuffers) + " : 必 " + std::to_string(numRequiredCBuffers),
-		fileName
-	);
+	//ErrorMessageOutput::Assert::DetectError
+	//(
+	//	numActualCBuffers == numRequiredCBuffers,
+	//	"定数バッファの生成数が合わない実 " + std::to_string(numActualCBuffers) + " : 必 " + std::to_string(numRequiredCBuffers),
+	//	fileName
+	//);
 	Logger::Log("===== List of cBuffer slots =====",fileName);
 	for (auto const& [key, value] : gpuVirtualAddressMap)
 	{
@@ -7926,24 +7926,9 @@ private:
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Core\SwapChain\SwapChainContext.cpp ===
 ========================================
 #include "SwapChainContext.h"
-#include "SwapChainColorBuffer/SwapChainColorBuffer.h"
+#include "SwapChainBuffer/SwapChainBuffer.h"
 #include "Presenter/Presenter.h"
-#include "RenderPassMaterialProvider/RenderPassMaterialProvider.h"
-//外部
-#include "../Command/CommandContextDiplomat/CommandContextDiplomat.h"
-#include "../Command/CommandContextDiplomat/CommandContextToolLender/CommandContextToolLender.h"
-#include "../Command/CommandContextDiplomat/CommandContextToolLender/CmdContextToolLenderLicences.h"
-#include "../Device/DeviceContextDiplomat/DeviceContextDiplomat.h"
-#include "../Device/DeviceContextDiplomat/DeviceContextCommandProvider/DeviceContextCommandProvider.h"
-#include "../Device/DeviceContextDiplomat/DeviceContextCommandProvider/DeviceContextCmdLicences.h"
-#include "../Device/DeviceContextCmds.h"
-#include "../DescriptorHeap/DescriptorHeapContextDiplomat/DescriptorHeapContextDiplomat.h"
-#include "../DescriptorHeap/DescriptorHeapContextDiplomat/DescriptorHeapToolLender/DescriptorHeapToolLender.h"
-#include "../DescriptorHeap/DescriptorHeapContextDiplomat/DescriptorHeapToolLender/DescriptorHeapToolLenderLicences.h"
-#include "../DescriptorHeap/ViewCreator/ViewCreator.h"
-#include "../Window/WindowContextDiplomat/WindowContextDiplomat.h"
-#include "../Window/WindowContextDiplomat/WindowContextToolLender/WindowContextToolLender.h"
-#include "../Window/WindowContextDiplomat/WindowContextToolLender/WindowContextToolLenderLicences.h"
+#include "SwapChainContextBuilder/SwapChainContextBuilder.h"
 using namespace ProjectConfig::Render;
 using namespace ProjectConfig::Window;
 namespace
@@ -7953,24 +7938,23 @@ namespace
 SwapChainContext::SwapChainContext
 (
 	NexusFieldProof proof_,
-	DescriptorHeapContextDiplomat* descriptorheapContextDiplomat_,
-	CommandContextDiplomat* commandContextDiplomat_,
-	DeviceContextDiplomat* deviceContextDiplomat_,
+	DescriptorHeapContextDiplomat& descriptorheapContextDiplomat_,
+	CommandContextDiplomat& commandContextDiplomat_,
+	DeviceContextDiplomat& deviceContextDiplomat_,
 	WindowContextDiplomat& windowContextDiplomat_
 )
 {
 	Logger::Entry("SwapChainContext: Constructor");
-	//
-	auto toolLender = windowContextDiplomat_.Access<WindowContext::ToolLender>();
-	WindowContext::ToolLender::LicenceType<HWND> licence;
-	auto& hwnd = toolLender.Lend<HWND>(licence);
-	//コアパーツを組み立てる
-	AssembleCoreParts(proof_, descriptorheapContextDiplomat_, commandContextDiplomat_, deviceContextDiplomat_, hwnd);
-	Logger::Log("Assemble: core parts", fileName);
+	std::tie(swapChainBuffer, swapChain) = Builder::Build
+	(
+		proof_,
+		descriptorheapContextDiplomat_,
+		commandContextDiplomat_,
+		deviceContextDiplomat_,
+		windowContextDiplomat_
+	);
 	presenter.reset(new Presenter(swapChain.Get()));
 	Logger::Log("Instantiate: Presenter", fileName);
-	renderPassMaterialProvider.reset(new RenderPassMaterialProvider(colorBuffer.get()));
-	Logger::Log("Instantiate: RenderPassMaterialProvider", fileName);
 	Logger::End("SwapChainContext: Constructor");
 }
 SwapChainContext::~SwapChainContext()
@@ -7979,92 +7963,6 @@ SwapChainContext::~SwapChainContext()
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-void SwapChainContext::CreateSwapChain
-(
-	DeviceContextCmds::CreateSwapChain cmdCreateSwapChain_,
-	const DXGI_SWAP_CHAIN_DESC1& desc_,
-	const HWND hWnd_,
-	ID3D12CommandQueue* commandQueue_
-)
-{
-	cmdCreateSwapChain_(commandQueue_, desc_, swapChain.GetAddressOf(), hWnd_);
-}
-///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-void SwapChainContext::AssembleCoreParts
-(
-	NexusFieldProof proof_,
-	DescriptorHeapContextDiplomat* descriptorheapContextDiplomat_,
-	CommandContextDiplomat* commandContextDiplomat_,
-	DeviceContextDiplomat* deviceContextDiplomat_,
-	const HWND hWnd_
-)
-{
-	//コマンドキューを一時的に借りる
-	auto* commandContextToolLender = commandContextDiplomat_->Access<CommandContext::ToolLender>();
-	CommandContext::ToolLender::LicenceType<ID3D12CommandQueue> cmdQueueAccesslicence{};
-	auto* commandQueue = commandContextToolLender->Lend<ID3D12CommandQueue>(cmdQueueAccesslicence);
-	//ディスクリプション
-	std::unique_ptr<Description> bufferDesc = std::make_unique<Description>(kColor, kRtFormat);
-	//rtvDesc
-	auto rtvDesc = bufferDesc->CreateRTV_Desc();
-	//swapChainDesc
-	auto swapChainDesc = bufferDesc->CreateSwapChainDesc();
-	//スワップチェーン生成
-	auto commandProvider = deviceContextDiplomat_->Access<DeviceContext::CommandProvider>();
-	DeviceContext::CommandProvider::LicenceType<DeviceContextCmds::CreateSwapChain> licence;
-	auto createSwapChainCmd = commandProvider->Provide<DeviceContextCmds::CreateSwapChain>(licence);
-	CreateSwapChain(createSwapChainCmd, swapChainDesc, hWnd_, commandQueue);
-	//スワップチェーンからリソースを引っ張る
-	PullResourcesFromSwapChain(std::move(bufferDesc));
-	//ビュー生成
-	CreateRTV(proof_, rtvDesc, descriptorheapContextDiplomat_);
-}
-///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-void SwapChainContext::PullResourcesFromSwapChain(std::unique_ptr<Description>&& desc_)
-{
-	//生リソース
-	std::array<Microsoft::WRL::ComPtr<ID3D12Resource>, (UINT)NumBuffer::kDoubleBuffer > resources;
-	//スワップチェーンからリソースを引っ張る
-	HRESULT hr{};
-	for (int i = 0;i < (int)NumBuffer::kDoubleBuffer;++i)
-	{
-		hr = swapChain->GetBuffer(i, IID_PPV_ARGS(resources.at(i).GetAddressOf()));
-		ErrorMessageOutput::Assert::DetectError(SUCCEEDED(hr), "SwapChainのリソースを引っ張れなかった", fileName);
-	}
-	//バッファ生成
-	colorBuffer.reset(new SwapChainContext::ColorBuffer(std::move(desc_), std::move(resources)));
-	Logger::Log("Complete: Pull SwapChainResources", fileName);
-}
-///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-void SwapChainContext::CreateRTV
-(
-	NexusFieldProof proof_,
-	const D3D12_RENDER_TARGET_VIEW_DESC& rtvDesc_,
-	DescriptorHeapContextDiplomat* descriptorheapContextDiplomat_
-)
-{
-	//ビュークリエイターを一時的に借りる
-	DescriptorHeapContext::ToolLender::LicenceType<DescriptorHeapContext::ViewCreator> licence;
-	auto* toolLender = descriptorheapContextDiplomat_->Access<DescriptorHeapContext::ToolLender>();
-	auto* viewCreator = toolLender->Lend<DescriptorHeapContext::ViewCreator>(licence);
-	ResourceGetKey resourceGetKey;
-	for (int i = 0;i < (int)NumBuffer::kDoubleBuffer;++i)
-	{
-		D3D12_CPU_DESCRIPTOR_HANDLE rtvCPU{};
-		//Rtvを作成
-		std::tie(std::ignore, rtvCPU, std::ignore) =
-			viewCreator->CreateView(colorBuffer->GetResource(resourceGetKey, i), &rtvDesc_);
-		//インデックスを書き込む
-		colorBuffer->OverrideHeapIndex(proof_,i, rtvCPU);
-	}
-	Logger::Log("Create: SwapChainResourceRTV", fileName);
-}
 
 ========================================
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Core\SwapChain\SwapChainContext.h ===
@@ -8075,77 +7973,36 @@ class CommandContextDiplomat;
 class DeviceContextDiplomat;
 class DescriptorHeapContextDiplomat;
 class WindowContextDiplomat;
-//外部
-///リファクタ認定
-#include "../Device/DeviceContextCmds.h"
 class SwapChainContext
 {
 	//画面の表示、バックバッファの切り替えを担う
 	class Presenter;
+	//初期セットアップを行う
+	class Builder;
+	//スワップチェーン産の生リソースをもとに作られるバッファ
+	class SwapChainBuffer;
 public:
 	//Nexusのみ生成可能
 	struct NexusFieldProof;
-	//バッファの生リソースアドレスを取得キー
-	struct ResourceGetKey;
-	//専用のカラーバッファ
-	class ColorBuffer;
-	//描画パスに必要な情報を提供する
-	class RenderPassMaterialProvider;
-	std::unique_ptr<Presenter> presenter;
-	std::unique_ptr<RenderPassMaterialProvider> renderPassMaterialProvider;
 	SwapChainContext
 	(
 		NexusFieldProof proof_,
-		DescriptorHeapContextDiplomat* descriptorheapContextDiplomat_,
-		CommandContextDiplomat* commandContextDiplomat_,
-		DeviceContextDiplomat* deviceContextDiplomat_,
+		DescriptorHeapContextDiplomat& descriptorheapContextDiplomat_,
+		CommandContextDiplomat& commandContextDiplomat_,
+		DeviceContextDiplomat& deviceContextDiplomat_,
 		WindowContextDiplomat& windowContextDiplomat_
 	);
 	~SwapChainContext();
+	std::unique_ptr<Presenter> presenter;
 private:
-	//そのディスクリプション
-	struct Description;
-	//SwapChainとそのカラーバッファを構築
-	void AssembleCoreParts
-	(
-		NexusFieldProof proof_,
-		DescriptorHeapContextDiplomat* descriptorheapContextDiplomat_,
-		CommandContextDiplomat* commandContextDiplomat_,
-		DeviceContextDiplomat* deviceContextDiplomat_,
-		const HWND hWnd_
-	);
-	//スワップチェーンの生成
-	void CreateSwapChain
-	(
-		DeviceContextCmds::CreateSwapChain cmdCreateSwapChain_,
-		const DXGI_SWAP_CHAIN_DESC1& desc_, 
-		const HWND hWnd_, 
-		ID3D12CommandQueue* commandQueue_
-	);
-	//スワップチェーンからリソースを引っ張ってくる
-	void PullResourcesFromSwapChain(std::unique_ptr<Description>&& desc_);
-	//RTVの生成
-	void CreateRTV
-	(
-		NexusFieldProof proof_ ,
-		const D3D12_RENDER_TARGET_VIEW_DESC& rtvDesc_, 
-		DescriptorHeapContextDiplomat* descriptorheapContextDiplomat_
-	);
-	//スワップチェーン
-	Microsoft::WRL::ComPtr<IDXGISwapChain4> swapChain = nullptr;
-	std::unique_ptr<ColorBuffer> colorBuffer;
+	Microsoft::WRL::ComPtr<IDXGISwapChain4> swapChain;
+	std::unique_ptr<SwapChainBuffer> swapChainBuffer;
 };
 struct SwapChainContext::NexusFieldProof
 {
 private:
 	friend class Nexus;
 	explicit NexusFieldProof() = default;
-};
-struct SwapChainContext::ResourceGetKey
-{
-private:
-	friend class SwapChainContext;
-	explicit ResourceGetKey() = default;
 };
 
 ========================================
@@ -8190,147 +8047,153 @@ private:
 };
 
 ========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Core\SwapChain\RenderPassMaterialProvider\RenderPassMaterialProvider.cpp ===
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Core\SwapChain\SwapChainBuffer\SwapChainBuffer.cpp ===
 ========================================
-#include "RenderPassMaterialProvider.h"
-SwapChainContext::RenderPassMaterialProvider::RenderPassMaterialProvider(SwapChainContext::ColorBuffer* colorBuffer_)
-	:colorBuffer(colorBuffer_)
+#include "PreCompileHeader.h"
+#include "SwapChainBuffer.h"
+SwapChainContext::SwapChainBuffer::SwapChainBuffer
+(
+	NexusFieldProof proof_,
+	std::array<Microsoft::WRL::ComPtr<ID3D12Resource>, (UINT)ProjectConfig::Render::NumBuffer::kDoubleBuffer> resources_,
+	std::array<D3D12_CPU_DESCRIPTOR_HANDLE, (UINT)ProjectConfig::Render::NumBuffer::kDoubleBuffer> const& rtvHandles_
+)
 {
-}
-///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-[[nodiscard]] SwapChainContext::RenderPassMaterialProvider::Materials SwapChainContext::RenderPassMaterialProvider::ProvideForBegine(UINT frameIndex_)
-{
-	SwapChainContext::RenderPassMaterialProvider::Materials::ColorBuffer materialC;
-	//カラーバッファの提供材料
+	for (int i = 0;i < (UINT)ProjectConfig::Render::NumBuffer::kDoubleBuffer;++i)
 	{
-		materialC.scissorRect = &colorBuffer->scissorRect;
-		materialC.viewport = &colorBuffer->viewport;
-		auto& dstBuffer = colorBuffer->buffers.at(frameIndex_);
-		//ハンドル
-		materialC.handle = dstBuffer.cpuHandle;
-		//クリアカラー
-		materialC.clearColor = colorBuffer->desc->clearColor;
-		//今後もリソースステートの遷移は固定だと思うので決め打ち
-		D3D12_RESOURCE_STATES after = D3D12_RESOURCE_STATE_RENDER_TARGET;
-		materialC.barrier = dstBuffer.CreateBarrier(after);
+		buffers[i].resource = std::move(resources_.at(i));
+		buffers[i].rtvHandle = rtvHandles_[i];
 	}
-	return SwapChainContext::RenderPassMaterialProvider::Materials
-	(
-		materialC
-	);
-}
-///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-[[nodiscard]] D3D12_RESOURCE_BARRIER SwapChainContext::RenderPassMaterialProvider::ProvideEnd(UINT frameIndex_)
-{
-	auto& dstBuffer = colorBuffer->buffers.at(frameIndex_);
-	//今後もリソースステートの遷移は固定だと思うので決め打ち
-	D3D12_RESOURCE_STATES after = D3D12_RESOURCE_STATE_PRESENT;
-	return dstBuffer.CreateBarrier(after);
 }
 
 ========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Core\SwapChain\RenderPassMaterialProvider\RenderPassMaterialProvider.h ===
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Core\SwapChain\SwapChainBuffer\SwapChainBuffer.h ===
 ========================================
 #pragma once
-#include "../SwapChainColorBuffer/SwapChainColorBuffer.h"
-//描画パスを構築するのに必要な材料を渡す
-class SwapChainContext::RenderPassMaterialProvider
+#include "../SwapChainContext.h"
+class SwapChainContext::SwapChainBuffer
 {
-	struct Materials
-	{
-		struct ColorBuffer
-		{
-			D3D12_CPU_DESCRIPTOR_HANDLE handle{};
-			D3D12_RESOURCE_BARRIER barrier;
-			D3D12_VIEWPORT* viewport;
-			D3D12_RECT* scissorRect;
-			std::array<FLOAT, 4> clearColor;
-		};
-		ColorBuffer colorBuffer;
-		Materials(ColorBuffer colorBuffer_):colorBuffer(colorBuffer_) {}
-	};
 public:
-	RenderPassMaterialProvider(SwapChainContext::ColorBuffer* colorBuffer_);
-	[[nodiscard]] Materials ProvideForBegine(UINT frameIndex_);
-	[[nodiscard]] D3D12_RESOURCE_BARRIER ProvideEnd(UINT frameIndex_);
+	SwapChainBuffer
+	(
+		NexusFieldProof proof_,
+		std::array<Microsoft::WRL::ComPtr<ID3D12Resource>, (UINT)ProjectConfig::Render::NumBuffer::kDoubleBuffer> resources_,
+		std::array<D3D12_CPU_DESCRIPTOR_HANDLE, (UINT)ProjectConfig::Render::NumBuffer::kDoubleBuffer> const& rtvHandles_
+	);
+	struct Buffer
+	{
+		Microsoft::WRL::ComPtr <ID3D12Resource> resource;
+		D3D12_CPU_DESCRIPTOR_HANDLE rtvHandle{};
+		//初期化ステートはこれ以外無いと思うので決め打ち
+		D3D12_RESOURCE_STATES resourceState = D3D12_RESOURCE_STATE_PRESENT;
+		D3D12_RESOURCE_BARRIER CreateBarrier(D3D12_RESOURCE_STATES after_);
+	};
 private:
-	SwapChainContext::ColorBuffer* colorBuffer;
+	std::array<Buffer, (UINT)ProjectConfig::Render::NumBuffer::kDoubleBuffer> buffers;
 };
 
 ========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Core\SwapChain\SwapChainColorBuffer\SwapChainColorBuffer.cpp ===
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Core\SwapChain\SwapChainContextBuilder\SwapChainContextBuilder.cpp ===
 ========================================
-#include "SwapChainColorBuffer.h"
-#include "../../../Buffer/BufferDefinition/ResourceBarrier.h"
-SwapChainContext::ColorBuffer::ColorBuffer
+#include "PreCompileHeader.h"
+#include "SwapChainContextBuilder.h"
+#include "../SwapChainBuffer/SwapChainBuffer.h"
+//外部
+#include "../../Command/CommandContextDiplomat/CommandContextDiplomat.h"
+#include "../../Command/CommandContextDiplomat/CommandContextToolLender/CommandContextToolLender.h"
+#include "../../Command/CommandContextDiplomat/CommandContextToolLender/CmdContextToolLenderLicences.h"
+#include "../../Device/DeviceContextDiplomat/DeviceContextDiplomat.h"
+#include "../../Device/DeviceContextDiplomat/DeviceContextCommandProvider/DeviceContextCommandProvider.h"
+#include "../../Device/DeviceContextDiplomat/DeviceContextCommandProvider/DeviceContextCmdLicences.h"
+#include "../../Device/DeviceContextCmds.h"
+#include "../../DescriptorHeap/DescriptorHeapContextDiplomat/DescriptorHeapContextDiplomat.h"
+#include "../../DescriptorHeap/DescriptorHeapContextDiplomat/DescriptorHeapToolLender/DescriptorHeapToolLender.h"
+#include "../../DescriptorHeap/DescriptorHeapContextDiplomat/DescriptorHeapToolLender/DescriptorHeapToolLenderLicences.h"
+#include "../../DescriptorHeap/ViewCreator/ViewCreator.h"
+#include "../../Window/WindowContextDiplomat/WindowContextDiplomat.h"
+#include "../../Window/WindowContextDiplomat/WindowContextToolLender/WindowContextToolLender.h"
+#include "../../Window/WindowContextDiplomat/WindowContextToolLender/WindowContextToolLenderLicences.h"
+namespace 
+{
+	std::string const fileName = "SwapChainContextBuilder.cpp";
+}
+using namespace ProjectConfig::Window;
+using namespace ProjectConfig::Render;
+std::tuple<std::unique_ptr<SwapChainContext::SwapChainBuffer>, Microsoft::WRL::ComPtr<IDXGISwapChain4>> SwapChainContext::Builder::Build
 (
-	std::unique_ptr<Description> desc_,
-	std::array<Microsoft::WRL::ComPtr<ID3D12Resource>, (UINT)ProjectConfig::Render::NumBuffer::kDoubleBuffer> resources_
-) : desc(std::move(desc_))
+	NexusFieldProof proof_,
+	DescriptorHeapContextDiplomat& descriptorheapContextDiplomat_,
+	CommandContextDiplomat& commandContextDiplomat_,
+	DeviceContextDiplomat& deviceContextDiplomat_,
+	WindowContextDiplomat& windowContextDiplomat_
+)
 {
-	//行列2種を構築
-	AssembleMatrix();
-	for (int i = 0;i < (UINT)ProjectConfig::Render::NumBuffer::kDoubleBuffer;++i)
+	//スワップチェーン生成
+	Microsoft::WRL::ComPtr<IDXGISwapChain4> swapChain = CreateSwapChain
+	(
+		commandContextDiplomat_,
+		deviceContextDiplomat_,
+		windowContextDiplomat_
+	);
+	std::unique_ptr<SwapChainContext::SwapChainBuffer> swapChainBuffer = CreateSwapChainBuffers
+	(
+		proof_,
+		*swapChain.Get(),
+		descriptorheapContextDiplomat_
+	);
+	return std::make_tuple(std::move(swapChainBuffer), std::move(swapChain));
+}
+std::unique_ptr<SwapChainContext::SwapChainBuffer> SwapChainContext::Builder::CreateSwapChainBuffers
+(
+	NexusFieldProof proof_,
+	IDXGISwapChain4& swapChain_,
+	DescriptorHeapContextDiplomat& descriptorheapContextDiplomat_
+)
+{
+	std::unique_ptr<SwapChainBuffer> swapChainBuffer;
+	//生リソース
+	std::array<Microsoft::WRL::ComPtr<ID3D12Resource>, (UINT)NumBuffer::kDoubleBuffer > resources;
+	//スワップチェーンからリソースを引っ張る
+	HRESULT hr{};
+	for (int i = 0;i < (int)NumBuffer::kDoubleBuffer;++i)
 	{
-		buffers.at(i).resource = std::move(resources_.at(i));
+		hr = swapChain_.GetBuffer(i, IID_PPV_ARGS(resources.at(i).GetAddressOf()));
+		ErrorMessageOutput::Assert::DetectError(SUCCEEDED(hr), "SwapChainのリソースを引っ張れなかった", fileName);
 	}
-	Logger::Log("Assemble: Matrix", "SwapChainColorBuffer.cpp");
+	//ビュークリエイターを一時的に借りる
+	DescriptorHeapContext::ToolLender::LicenceType<DescriptorHeapContext::ViewCreator> licence;
+	auto* toolLender = descriptorheapContextDiplomat_.Access<DescriptorHeapContext::ToolLender>();
+	auto* viewCreator = toolLender->Lend<DescriptorHeapContext::ViewCreator>(licence);
+	//rtvディスク生成
+	auto rtvDesc = CreateRTV_Desc();
+	std::array<D3D12_CPU_DESCRIPTOR_HANDLE, (UINT)NumBuffer::kDoubleBuffer> rtvHandles;
+	for (int i = 0;i < (int)NumBuffer::kDoubleBuffer;++i)
+	{
+		//rtvを作成
+		std::tie(std::ignore, rtvHandles[i], std::ignore) = viewCreator->CreateView<>(resources[i].Get(), &rtvDesc);
+	}
+	Logger::Log("Create SwapChainBuffers", fileName);
+	//バッファ生成
+	return std::make_unique<SwapChainBuffer>(proof_,std::move(resources), rtvHandles);
 }
-///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-void SwapChainContext::ColorBuffer::AssembleMatrix()
-{
-	using namespace ProjectConfig::Window;
-	//クライアント領域と一緒のサイズにして画面全体に表示
-	viewport.Width = static_cast<FLOAT>(kWidth);
-	viewport.Height = static_cast<FLOAT>(kHeight);
-	viewport.TopLeftX = 0.0f;
-	viewport.TopLeftY = 0.0f;
-	viewport.MinDepth = 0.0f;
-	viewport.MaxDepth = 1.0f;
-	//しざー矩形
-	scissorRect.right = static_cast<LONG>(kWidth);
-	scissorRect.bottom = static_cast<LONG>(kHeight);
-	scissorRect.left = static_cast<LONG>(0.0f);
-	scissorRect.top = static_cast<LONG>(0.0f);
-}
-void SwapChainContext::ColorBuffer::OverrideHeapIndex(SwapChainContext::NexusFieldProof proof_, int index_ ,D3D12_CPU_DESCRIPTOR_HANDLE handle_)
-{
-	buffers.at(index_).cpuHandle = handle_;
-}
-///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-SwapChainContext::Description::Description(std::array<float, 4> const& clearColor_, DXGI_FORMAT format_)
-{
-	clearColor = clearColor_;
-	format = format_;
-}
-D3D12_RENDER_TARGET_VIEW_DESC SwapChainContext::Description::CreateRTV_Desc()const
+D3D12_RENDER_TARGET_VIEW_DESC SwapChainContext::Builder::CreateRTV_Desc()
 {
 	D3D12_RENDER_TARGET_VIEW_DESC rtvDesc = {};
 	//出力結果をSRGBに変換する
-	rtvDesc.Format = format;
+	rtvDesc.Format = kSwapChainBufferFormat;
 	//2Dテクスチャとして書き込む
 	rtvDesc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2D;
 	rtvDesc.Texture2D.PlaneSlice = 0;
 	rtvDesc.Texture2D.MipSlice = 0;
 	return rtvDesc;
 }
-DXGI_SWAP_CHAIN_DESC1 SwapChainContext::Description::CreateSwapChainDesc()const
+DXGI_SWAP_CHAIN_DESC1 SwapChainContext::Builder::CreateSwapChainDesc()
 {
-	using namespace ProjectConfig::Window;
 	DXGI_SWAP_CHAIN_DESC1 swapChainDesc{};
 	//画面の縦横。クライアント領域と同じにしておく
 	swapChainDesc.Width = (UINT)kWidth;
 	swapChainDesc.Height = (UINT)kHeight;
 	//色の形成
-	swapChainDesc.Format = format;
+	swapChainDesc.Format = kSwapChainBufferFormat;
 	//マルチサンプルしない
 	swapChainDesc.SampleDesc.Count = 1;
 	//描画のターゲットとして利用する
@@ -8341,66 +8204,68 @@ DXGI_SWAP_CHAIN_DESC1 SwapChainContext::Description::CreateSwapChainDesc()const
 	swapChainDesc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD;
 	return swapChainDesc;
 }
-///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-D3D12_RESOURCE_BARRIER SwapChainContext::ColorBuffer::Buffer::CreateBarrier(D3D12_RESOURCE_STATES after_)
+Microsoft::WRL::ComPtr<IDXGISwapChain4> SwapChainContext::Builder::CreateSwapChain
+(
+	CommandContextDiplomat& commandContextDiplomat_,
+	DeviceContextDiplomat& deviceContextDiplomat_,
+	WindowContextDiplomat& windowContextDiplomat_
+)
 {
-	auto buff = resourceState;
-	resourceState = after_;
-	return ResourceBarrier::Create
-	(
-		resource.Get(),
-		D3D12_RESOURCE_BARRIER_TYPE_TRANSITION,
-		D3D12_RESOURCE_BARRIER_FLAG_NONE,
-		buff,
-		after_,
-		D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES
-	);
+	Microsoft::WRL::ComPtr<IDXGISwapChain4> swapChain;
+	//コマンドキューを一時的に借りる
+	auto* commandContextToolLender = commandContextDiplomat_.Access<CommandContext::ToolLender>();
+	CommandContext::ToolLender::LicenceType<ID3D12CommandQueue> cmdQueueAccesslicence{};
+	auto* commandQueue = commandContextToolLender->Lend<ID3D12CommandQueue>(cmdQueueAccesslicence);
+	//スワップチェーン生成コマンドを借りる
+	auto commandProvider = deviceContextDiplomat_.Access<DeviceContext::CommandProvider>();
+	DeviceContext::CommandProvider::LicenceType<DeviceContextCmds::CreateSwapChain> dLicence;
+	auto createSwapChainCmd = commandProvider->Provide<DeviceContextCmds::CreateSwapChain>(dLicence);
+	//windowContexのhwndを借りる
+	auto toolLender = windowContextDiplomat_.Access<WindowContext::ToolLender>();
+	WindowContext::ToolLender::LicenceType<HWND> hwndLicence;
+	auto const& hwnd = toolLender.Lend<HWND>(hwndLicence);
+	createSwapChainCmd(commandQueue, CreateSwapChainDesc(), swapChain.GetAddressOf(), hwnd);
+	Logger::Log("Create SwapChain", fileName);
+	return swapChain;
 }
 
 ========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Core\SwapChain\SwapChainColorBuffer\SwapChainColorBuffer.h ===
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Core\SwapChain\SwapChainContextBuilder\SwapChainContextBuilder.h ===
 ========================================
 #pragma once
 #include "../SwapChainContext.h"
-struct SwapChainContext::Description
+class SwapChainContext::Builder
 {
-	Description(std::array<float, 4> const& clearColor_, DXGI_FORMAT format_);
-	D3D12_RENDER_TARGET_VIEW_DESC CreateRTV_Desc()const;
-	DXGI_SWAP_CHAIN_DESC1 CreateSwapChainDesc()const;
-	std::array<float, 4> clearColor = { 9,9,9,9 };
-	DXGI_FORMAT format;
-};
-//オンリーなバッファなので、抽象クラスを使わない
-class SwapChainContext::ColorBuffer
-{
-public:
-	ColorBuffer
+	friend class SwapChainContext;
+	//スワップチェーンを生成し、そのバックバッファとフロントバッファを生成する
+	static std::tuple<std::unique_ptr<SwapChainBuffer>, Microsoft::WRL::ComPtr<IDXGISwapChain4>> Build
 	(
-		std::unique_ptr<SwapChainContext::Description> desc_,
-		std::array<Microsoft::WRL::ComPtr<ID3D12Resource>, (UINT)ProjectConfig::Render::NumBuffer::kDoubleBuffer> resources_
+		NexusFieldProof proof_,
+		DescriptorHeapContextDiplomat& descriptorheapContextDiplomat_,
+		CommandContextDiplomat& commandContextDiplomat_,
+		DeviceContextDiplomat& deviceContextDiplomat_,
+		WindowContextDiplomat& windowContextDiplomat_
 	);
-	//リソース取得
-	inline ID3D12Resource* GetResource(SwapChainContext::ResourceGetKey key_, int index_) { return buffers.at(index_).resource.Get(); }
-	//ヒープインデックスの上書き
-	void OverrideHeapIndex(SwapChainContext::NexusFieldProof proof_, int index_, D3D12_CPU_DESCRIPTOR_HANDLE handle_);
-	//MaterialProviderが情報を欲する
-	friend class SwapChainContext::RenderPassMaterialProvider;
+	//以下ヘルパー
 private:
-	void AssembleMatrix();
-	struct Buffer
-	{
-		Microsoft::WRL::ComPtr <ID3D12Resource> resource;
-		D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle{};
-		//初期化ステートはこれ以外無いと思うので決め打ち
-		D3D12_RESOURCE_STATES resourceState = D3D12_RESOURCE_STATE_PRESENT;
-		D3D12_RESOURCE_BARRIER CreateBarrier(D3D12_RESOURCE_STATES after_);
-	};
-	std::array<Buffer, (UINT)ProjectConfig::Render::NumBuffer::kDoubleBuffer> buffers;
-	std::unique_ptr<SwapChainContext::Description> desc;
-	D3D12_VIEWPORT viewport;
-	D3D12_RECT scissorRect;
+	//スワップチェーン生成
+	static Microsoft::WRL::ComPtr<IDXGISwapChain4> CreateSwapChain
+	(
+		CommandContextDiplomat& commandContextDiplomat_,
+		DeviceContextDiplomat& deviceContextDiplomat_,
+		WindowContextDiplomat& windowContextDiplomat_
+	);
+	//フロンとバッファとバックバッファを作成
+	static std::unique_ptr<SwapChainBuffer> CreateSwapChainBuffers
+	(
+		NexusFieldProof proof_,
+		IDXGISwapChain4& swapChain_,
+		DescriptorHeapContextDiplomat& descriptorheapContextDiplomat_
+	);
+	//スワップチェーンのバッファのビューディスク作成
+	static D3D12_RENDER_TARGET_VIEW_DESC CreateRTV_Desc();
+	//スワップチェーンのディスク生成
+	static DXGI_SWAP_CHAIN_DESC1 CreateSwapChainDesc();
 };
 
 ========================================
@@ -9721,7 +9586,7 @@ class RenderContext::StaticRenderGraph
 	//共通描画コマンドをたたく
 	class CommonCmdExecutor;
 	//スワップチェーンのバックバッファに最終描画をする
-	class BackBufferRenderer;
+	class FinalRenderer;
 public:
 	StaticRenderGraph
 	(
@@ -9806,6 +9671,16 @@ private:
 ========================================
 #include "PreCompileHeader.h"
 #include "FinalRenderingSetupper.h"
+RenderContext::StaticRenderGraph::BuildOutput::FinalRenderingSetupper RenderContext::StaticRenderGraph::FinalRenderingSetupper::Setup
+(
+	NexusFieldProof proof_,
+	BufferContextDiplomat& bufferContextDiplomat_,
+	SwapChainContextDiplomat& swapChainContextDiplomat_
+)
+{
+	BuildOutput::FinalRenderingSetupper output;
+	return output;
+}
 
 ========================================
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Render\RenderContextRuntime\StaticRenderGraph\RenderGraphBuilder\FinalRenderingSetupper\FinalRenderingSetupper.h ===
@@ -9815,7 +9690,7 @@ private:
 class RenderContext::StaticRenderGraph::FinalRenderingSetupper
 {
 	friend class StaticRenderGraph;
-	RenderContext::StaticRenderGraph::BuildOutput::FinalRenderingSetupper Setup
+	static BuildOutput::FinalRenderingSetupper Setup
 	(
 		NexusFieldProof proof_,
 		BufferContextDiplomat& bufferContextDiplomat_,
@@ -10645,23 +10520,6 @@ private:
 };
 
 ========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Render\RenderContextRuntime\StaticRenderGraph\RenderGraphExecutor\BackBufferRenderer\BackBufferRenderer.cpp ===
-========================================
-#include "PreCompileHeader.h"
-#include "BackBufferRenderer.h"
-
-========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Render\RenderContextRuntime\StaticRenderGraph\RenderGraphExecutor\BackBufferRenderer\BackBufferRenderer.h ===
-========================================
-#pragma once
-#include "../../StaticRenderGraph.h"
-class RenderContext::StaticRenderGraph::BackBufferRenderer
-{
-public:
-private:
-};
-
-========================================
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Render\RenderContextRuntime\StaticRenderGraph\RenderGraphExecutor\CommonCmdExecutor\CommonCmdExecutor.cpp ===
 ========================================
 #include "PreCompileHeader.h"
@@ -10770,6 +10628,23 @@ private:
 		RuntimeWrapper& runtimeWrapper_
 	);
 	ID3D12RootSignature* graphicsRootSig;
+};
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Render\RenderContextRuntime\StaticRenderGraph\RenderGraphExecutor\FinalRenderer\FinalRenderer.cpp ===
+========================================
+#include "PreCompileHeader.h"
+#include "FinalRenderer.h"
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Render\RenderContextRuntime\StaticRenderGraph\RenderGraphExecutor\FinalRenderer\FinalRenderer.h ===
+========================================
+#pragma once
+#include "../../StaticRenderGraph.h"
+class RenderContext::StaticRenderGraph::FinalRenderer
+{
+public:
+private:
 };
 
 ========================================
@@ -19666,9 +19541,9 @@ void Nexus::Init<Nexus::InitSequence::kSwapChainContext>()
 		new SwapChainContext
 		(
 			SwapChainContext::NexusFieldProof{},
-			descriptorHeapContext->diplomat.get(),
-			commandContext->diplomat.get(),
-			deviceContext->diplomat.get(),
+			*descriptorHeapContext->diplomat,
+			*commandContext->diplomat,
+			*deviceContext->diplomat,
 			*windowContext->diplomat
 		)
 	);
@@ -20482,4 +20357,4 @@ namespace StringProcessing
 === SUMMARY ===
 ========================================
 Total Files      : 450
-Effective Lines  : 14904
+Effective Lines  : 14817

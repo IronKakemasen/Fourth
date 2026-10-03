@@ -31,7 +31,6 @@ namespace ProjectConfig
 		constexpr UINT kHeight = 720;
 		constexpr float kDefaultFovY = 90.0f * 3.141592653589f / 180.0f;
 		constexpr std::array<float, 4> kColor = { 1.0f,0.0f,0.0f,1.0f };
-		constexpr DXGI_FORMAT kRtFormat = DXGI_FORMAT_R16G16B16A16_FLOAT;
 	}
 
 	namespace Render
@@ -52,6 +51,7 @@ namespace ProjectConfig
 		};
 
 		constexpr D3D_SHADER_MODEL kRequiredShaderModel = D3D_SHADER_MODEL_6_6;
+		constexpr DXGI_FORMAT kSwapChainBufferFormat = DXGI_FORMAT_R16G16B16A16_FLOAT;
 	}
 
 	namespace Debug

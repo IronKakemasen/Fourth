@@ -7,7 +7,7 @@ class RenderContext::StaticRenderGraph::FinalRenderingSetupper
 	friend class StaticRenderGraph;
 
 
-	RenderContext::StaticRenderGraph::BuildOutput::FinalRenderingSetupper Setup
+	static BuildOutput::FinalRenderingSetupper Setup
 	(
 		NexusFieldProof proof_,
 		BufferContextDiplomat& bufferContextDiplomat_,

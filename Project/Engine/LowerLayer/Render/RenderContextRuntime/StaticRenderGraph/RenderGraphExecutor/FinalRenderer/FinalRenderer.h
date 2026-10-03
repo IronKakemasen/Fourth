@@ -1,7 +1,7 @@
 #pragma once
 #include "../../StaticRenderGraph.h"
 
-class RenderContext::StaticRenderGraph::BackBufferRenderer
+class RenderContext::StaticRenderGraph::FinalRenderer
 {
 public:
 
