@@ -9,6 +9,8 @@
 
 class ModelContext::ModelDataBatcher
 {
+	//モデルの個体ごとに所持するTrnsformやMaterialなどのパラメーターの配列
+	//のバッファのIDを格納している
 	class PerDrawBufferLibrary;
 
 public:

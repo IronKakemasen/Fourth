@@ -43,14 +43,13 @@ std::vector<Model*> ModelContext::ModelCreator::Create
 		modelName_ + std::to_string(numCreate++),
 		perDrawIndices,
 		modelRenderStates_,
-		materialsGPU,
 		meshletSize
 	);
 
 	for (UINT i = 0;i < numCreate_;++i)
 	{
 		///モデルクラスのインスタンス化
-		std::unique_ptr<Model> model = std::make_unique<Model>(modelDesc);
+		std::unique_ptr<Model> model = std::make_unique<Model>(modelDesc, materialsGPU);
 
 		modelPtrContainer.emplace_back(model.get());
 

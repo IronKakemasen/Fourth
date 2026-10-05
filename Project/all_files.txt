@@ -9760,7 +9760,7 @@ void RenderContext::StaticRenderGraph::Run
 		runtimeCmdWrapper
 	);
 	//最終描画
-	finalRenderer->Update(frameIndex_, runtimeCmdWrapper, swapChainContextDiplomat_);
+	finalRenderer->Update(frameIndex_, runtimeCmdWrapper, swapChainContextDiplomat_,bufferContextDiplomat_);
 }
 
 ========================================
@@ -13287,13 +13287,12 @@ std::vector<Model*> ModelContext::ModelCreator::Create
 		modelName_ + std::to_string(numCreate++),
 		perDrawIndices,
 		modelRenderStates_,
-		materialsGPU,
 		meshletSize
 	);
 	for (UINT i = 0;i < numCreate_;++i)
 	{
 		///モデルクラスのインスタンス化
-		std::unique_ptr<Model> model = std::make_unique<Model>(modelDesc);
+		std::unique_ptr<Model> model = std::make_unique<Model>(modelDesc, materialsGPU);
 		modelPtrContainer.emplace_back(model.get());
 		//実体はモデルコンテナが握る
 		modelContainer.Add(ModelContainer::Local_AddLicence{}, std::move(model));
@@ -15445,6 +15444,8 @@ void ModelContext::ModelDataBatcher::ImportPerDrawBufferID<ConstantBuffers::Cons
 #include "../../../../../../Assets/Shared/ConstantBuffers.h"
 class ModelContext::ModelDataBatcher
 {
+	//モデルの個体ごとに所持するTrnsformやMaterialなどのパラメーターの配列
+	//のバッファのIDを格納している
 	class PerDrawBufferLibrary;
 public:
 	struct Local_InputBufferUniqueIDLicence;
@@ -15519,35 +15520,195 @@ private:
 ========================================
 #include "PreCompileHeader.h"
 #include "Model.h"
-Model::Model(const ModelDescription& modelDesc_)
-	:modelDesc(modelDesc_)
+namespace
 {
-	changeableStatus.blendMode = modelDesc_.WatchRenderStates()[0].blendModes[0];
-	changeableStatus.materialType = modelDesc_.WatchRenderStates()[0].materialTypes[0];
+	auto const fileName = "Model.cpp";
 }
-std::string const Model::WatchName()const
+Model::Model
+(
+	const ModelDescription& modelDesc_,
+	std::vector<StructuredBufferModelData::MaterialGPU> const& materials_
+) :modelDesc(modelDesc_)
 {
-	return modelDesc.WatchRenderStates()[0].modelName;
+	//変更可能描画コンポーネントの初期設定は添え字0番に
+	changeableParams.blendMode = modelDesc_.WatchRenderStates()[0].blendModes[0];
+	changeableParams.materialType = modelDesc_.WatchRenderStates()[0].materialTypes[0];
+	changeableParams.materials = materials_;
+	//サブメッシュ分のトランスフォームを確保
+	auto const numMeshes = modelDesc_.WatchPerDrawIndices().size();
+	changeableParams.transforms.resize(numMeshes);
+	//サブメッシュのペアレント化
+	auto& mainTrans = changeableParams.transforms[0];
+	for (size_t i = 1;i < numMeshes;++i)
+	{
+		mainTrans.BeParent(&changeableParams.transforms[i]);
+	}
 }
+void Model::ChangeBlendMode(RenderStateComponent::BlendMode dst_)
+{
+	bool hasConfigured{};
+	//そもそもこのコンポーネントパターンを構築しているか
+	for (auto const& renderState : WatchRenderStates())
+	{
+		for (auto const blendMode : renderState.blendModes)
+		{
+			if (dst_== blendMode)
+			{
+				hasConfigured = true;
+				break;
+			}
+		}
+	}
+	ErrorMessageOutput::Assert::DetectError
+	(
+		hasConfigured,
+		WatchName() + "に設定していないblendModeへの変更を検知",
+		fileName
+	);
+	changeableParams.blendMode = dst_;
+}
+void Model::ChangeMaterialType(ShaderPathComponent::MaterialType dst_)
+{
+	bool hasConfigured{};
+	//そもそもこのコンポーネントパターンを構築しているか
+	for (auto const& renderState : WatchRenderStates())
+	{
+		for (auto const materialType : renderState.materialTypes)
+		{
+			if (dst_ == materialType)
+			{
+				hasConfigured = true;
+				break;
+			}
+		}
+	}
+	ErrorMessageOutput::Assert::DetectError
+	(
+		hasConfigured,
+		WatchName() + "に設定していないMaterialTypeへの変更を検知",
+		fileName
+	);
+	changeableParams.materialType = dst_;
+}
+void Model::ChangeRoughness(int index_, float dst_)
+{
+	static auto const errorMsg = WatchName() + "のラフネスアクセス違反";
+	ErrorMessageOutput::Assert::DetectError
+	(
+		index_ <= changeableParams.materials.size(),
+		errorMsg,
+		fileName
+	);
+	changeableParams.materials[index_].roughness = dst_;
+}
+void Model::ChangeMetalic(int index_, float dst_)
+{
+	static auto const errorMsg = WatchName() + "のメタリックアクセス違反";
+	ErrorMessageOutput::Assert::DetectError
+	(
+		index_ <= changeableParams.materials.size(),
+		errorMsg,
+		fileName
+	);
+	changeableParams.materials[index_].metallic = dst_;
+}
+void Model::ChangeColor(int index_, Vector4<float> const& dst_)
+{
+	static auto const errorMsg = WatchName() + "のカラーインデックスアクセス違反";
+	ErrorMessageOutput::Assert::DetectError
+	(
+		index_ <= changeableParams.materials.size(),
+		errorMsg,
+		fileName
+	);
+	changeableParams.materials[index_].baseColor = dst_;
+}
+Transform& Model::RefTransform(int index_)
+{
+	ErrorMessageOutput::Assert::DetectError
+	(
+		index_ <= changeableParams.transforms.size(),
+		WatchName() + "には" + std::to_string(index_) + "番目のトランスフォームはない",
+		fileName
+	);
+	return changeableParams.transforms[index_];
+}
+std::vector<Transform>& Model::RefTransforms()
+{
+	return changeableParams.transforms;
+}
+template<>
+void Model::ChangeTexture<TextureComponent::TextureType::kAlbedo>(int index_, SRVHeapIndex dst_)
+{
+	ErrorMessageOutput::Assert::DetectError
+	(
+		index_ <= changeableParams.materials.size(),
+		WatchName() + "のアルベドテクスチャアクセス違反",
+		fileName
+	);
+	changeableParams.materials[index_].albedoTexture = dst_;
+}
+template<>
+void Model::ChangeTexture<TextureComponent::TextureType::kNormal>(int index_, SRVHeapIndex dst_)
+{
+	ErrorMessageOutput::Assert::DetectError
+	(
+		index_ <= changeableParams.materials.size(),
+		WatchName() + "の法線テクスチャアクセス違反",
+		fileName
+	);
+	changeableParams.materials[index_].normalTexture = dst_;
+}
+template<>
+void Model::ChangeTexture<TextureComponent::TextureType::kEmissive>(int index_, SRVHeapIndex dst_)
+{
+	ErrorMessageOutput::Assert::DetectError
+	(
+		index_ <= changeableParams.materials.size(),
+		WatchName() + "のエミッシブテクスチャアクセス違反",
+		fileName
+	);
+	changeableParams.materials[index_].emissiveTexture = dst_;
+}
+template
+void Model::ChangeTexture<TextureComponent::TextureType::kAlbedo>(int index_, SRVHeapIndex dst_);
+template
+void Model::ChangeTexture<TextureComponent::TextureType::kNormal>(int index_, SRVHeapIndex dst_);
+template
+void Model::ChangeTexture<TextureComponent::TextureType::kEmissive>(int index_, SRVHeapIndex dst_);
 
 ========================================
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Model\ModelStructure\Model.h ===
 ========================================
 #pragma once
 #include "ModelDescription/ModelDescription.h"
+#include "../../../../MiddleLayer/Transform/Transform.h"
+#include "../../../Buffer/BufferDefinition/TextureComponent.h"
 class Model
 {
-public:
-	//動的に変更可能なパラメーター
-	//複数設定していないコンポーネントはもちろん不可
-	//RenderPassクラスで、コンポーネントの一致を確認する
-	struct ChangeableStatus
+	//動的に変更可能なパラメーター群
+	//RenderPassクラスで、コンポーネントの一致確認でも利用する
+	struct ChangeableParams
 	{
 		bool isVisible = true;
+		//現在選択しているブレンドモード
 		RenderStateComponent::BlendMode blendMode{};
+		//現在選択しているマテリアルタイプ
 		ShaderPathComponent::MaterialType materialType{};
+		//マテリアル。可変長になっているのは、サブメッシュ分用意しているから
+		std::vector<StructuredBufferModelData::MaterialGPU> materials;
+		std::vector<Transform> transforms;
 	};
-	Model(const ModelDescription& modelDesc_);
+public:
+	Model
+	(
+		const ModelDescription& modelDesc_,
+		std::vector<StructuredBufferModelData::MaterialGPU> const& materials_
+	);
+	Model(const Model&) = delete;
+	Model& operator=(const Model&) = delete;
+	Model(Model&&) = delete;
+	Model& operator=(Model&&) = delete;
 	//そのパスで描画するかどうかで利用
 	bool DoesDraw
 	(
@@ -15556,18 +15717,30 @@ public:
 	)const
 	{
 		return
-		changeableStatus.isVisible &&
-		changeableStatus.blendMode == blendMode_ &&
-		changeableStatus.materialType == materialType_;
+		changeableParams.isVisible &&
+		changeableParams.blendMode == blendMode_ &&
+		changeableParams.materialType == materialType_;
 	}
-	std::string const WatchName()const;
-	//PSO生成、モデル分別用として利用
+	auto const& WatchName()const { return modelDesc.WatchRenderStates()[0].modelName; }
+	//たぶんimguiでモデルの情報を表示するときに使うと思う
+	auto const& WatchChangeables()const { return changeableParams; }
+	//PSO生成、モデル分別のときに利用
 	auto const& WatchRenderStates()const { return modelDesc.WatchRenderStates(); }
 	//ランタイムでドローコマンドをたたくために使用
 	inline auto const& WatchPerDrawIndices()const { return modelDesc.WatchPerDrawIndices(); }
 	inline auto const& WatchMeshletSize()const { return modelDesc.WatchMeshletSize(); }
+	//上位レイヤーでモデルのパラメーターを弄るときに
+	void ChangeBlendMode(RenderStateComponent::BlendMode dst_);
+	void ChangeMaterialType(ShaderPathComponent::MaterialType dst_);
+	void ChangeRoughness(int index_, float dst_);
+	void ChangeMetalic(int index_, float dst_);
+	void ChangeColor(int index_ , Vector4<float> const& dst_);
+	template<TextureComponent::TextureType textureType>
+	void ChangeTexture(int index_, SRVHeapIndex dst_);
+	Transform& RefTransform(int index_);
+	std::vector<Transform>& RefTransforms();
 private:
-	ChangeableStatus changeableStatus;
+	ChangeableParams changeableParams;
 	ModelDescription modelDesc;
 };
 
@@ -15665,9 +15838,8 @@ ModelDescription::ModelDescription
 	std::string const& modelName_,
 	std::vector<ConstantBuffers::PerDrawIndicesCPUGPU> const& perDrawIndices_,
 	std::vector<RenderState> const& renderStates_,
-	std::vector<StructuredBufferModelData::MaterialGPU> const& materials_,
 	std::vector<size_t> const& meshletSize_
-) :perDrawIndices(perDrawIndices_), renderStates(renderStates_), materials(materials_), meshletSize(meshletSize_)
+) :perDrawIndices(perDrawIndices_), renderStates(renderStates_), meshletSize(meshletSize_)
 {
 	std::string errorMsg{};
 	for (auto& renderState : renderStates)
@@ -15744,7 +15916,6 @@ struct ModelDescription
 		std::string const& modelName_,
 		std::vector<ConstantBuffers::PerDrawIndicesCPUGPU> const& perDrawIndices_,
 		std::vector<RenderState> const& renderStates_,
-		std::vector<StructuredBufferModelData::MaterialGPU> const& materials_,
 		std::vector<size_t> const& meshletSize_
 	);
 	//初期化フェーズで利用
@@ -15762,8 +15933,6 @@ private:
 	//可変長になっているのは、複数分のPassに参加できるようにするため
 	//つまり、サブメッシュもすべて同じ設定
 	std::vector<RenderState> renderStates;
-	//マテリアル。可変長になっているのは、サブメッシュ分用意しているから
-	std::vector<StructuredBufferModelData::MaterialGPU> materials;
 };
 
 ========================================
@@ -19498,8 +19667,8 @@ public:
 	{
 		if(parent) parent->DeleteChild(this);
 	}
-	template<typename... Children>
-	inline void BeParent(Children... children_)
+	template<typename... ChildrenPtr>
+	inline void BeParent(ChildrenPtr*... children_)
 	{
 		uint8_t length = sizeof...(children_);
 		Transform* ary[] = { children_... };
@@ -20743,4 +20912,4 @@ namespace StringProcessing
 === SUMMARY ===
 ========================================
 Total Files      : 456
-Effective Lines  : 15119
+Effective Lines  : 15276
