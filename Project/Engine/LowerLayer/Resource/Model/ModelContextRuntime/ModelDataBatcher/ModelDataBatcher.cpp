@@ -14,6 +14,12 @@ ModelContext::ModelDataBatcher::~ModelDataBatcher()
 
 }
 
+void ModelContext::ModelDataBatcher::BatchingAllModelData(NexusFieldProof proof_, AgentKey agentKey_)
+{
+
+}
+
+
 template<>
 void ModelContext::ModelDataBatcher::ImportPerDrawBufferID<ConstantBuffers::ConstantBufferBindSlots::kTransformMatrixContainer>
 (Local_InputBufferUniqueIDLicence licence_, BufferUniqueID id_)

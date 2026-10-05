@@ -24,7 +24,7 @@ void ModelContext::ModelContainer::Add(Local_AddLicence addLicence_, std::unique
 	Logger::Log("Add: " + model->WatchName(), fileName);
 }
 
-ModelContextCmds::WatchModelContainer ModelContext::ModelContainer::WatchDataCmd(ProviderKey key_)const
+ModelContextCmds::WatchModelContainer ModelContext::ModelContainer::WatchModelDataCmd(ProviderKey key_)const
 {
 	return [this]()
 	{
@@ -32,11 +32,19 @@ ModelContextCmds::WatchModelContainer ModelContext::ModelContainer::WatchDataCmd
 	};
 }
 
-ModelContextCmds::WatchSeparatedModelContainer ModelContext::ModelContainer::WatchSeparatedCmd(ProviderKey key_)
+ModelContextCmds::WatchSeparatedByRenderState ModelContext::ModelContainer::WatchSeparatedByRenderStateCmd(ProviderKey key_)
 {
 	return [this]()
 	{
-		return &this->separatedContainer;
+		return &this->separatedByRenderState;
+	};
+}
+
+ModelContextCmds::WatchSeparatedByModelType ModelContext::ModelContainer::WatchSeparatedByModelTypeCmd(ProviderKey key_)
+{
+	return [this]()
+	{
+		return &this->separatedByModelType;
 	};
 }
 
@@ -44,7 +52,10 @@ void ModelContext::ModelContainer::SeparateModels(NexusFieldProof proof_, AgentK
 {
 	ModelSeparator modelSeparator(proof_, key_);
 
-	separatedContainer = std::move(modelSeparator.SeparateAllModels(&container));
+	auto output = modelSeparator.SeparateAllModels(container);
+	separatedByRenderState = std::move(output.first);
+	separatedByModelType = std::move(output.second);
+
 	Logger::Log("Model Separating comp", fileName);
 }
 

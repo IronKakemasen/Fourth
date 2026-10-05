@@ -15,6 +15,9 @@ class ModelContext::ModelDataBatcher
 
 public:
 
+	template<ConstantBuffers::ConstantBufferBindSlots bufferType>
+	struct BufferTypeTraits;
+
 	struct Local_InputBufferUniqueIDLicence;
 
 	ModelDataBatcher(NexusFieldProof proof_);
@@ -23,8 +26,8 @@ public:
 	template<ConstantBuffers::ConstantBufferBindSlots bufferType>
 	void ImportPerDrawBufferID(Local_InputBufferUniqueIDLicence licence_,BufferUniqueID id_);
 
-	template<ConstantBuffers::ConstantBufferBindSlots bufferType>
-	struct BufferTypeTraits;
+	//代行者にランタイムでモデルデータのバッチング処理をやってもらう
+	void BatchingAllModelData(NexusFieldProof proof_, AgentKey agentKey_);
 
 private:
 

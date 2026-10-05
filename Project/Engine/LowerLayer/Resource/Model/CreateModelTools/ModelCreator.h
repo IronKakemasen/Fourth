@@ -4,8 +4,8 @@
 
 //外部
 #include "../../../../../Assets/Shared/StructuredBufferModelData.h"
+#include "../ModelStructure/Model.h"
 
-class Model;
 struct RenderState;
 
 class ModelContext::ModelCreator
@@ -22,6 +22,7 @@ public:
 	std::vector<Model*> Create
 	(
 		std::string const& modelFileName_,
+		Model::Type type_,
 		std::vector<RenderState> const& modelRenderStates_,
 		std::vector<StructuredBufferModelData::MaterialCPU> const& materials_,
 		UINT const numCreate_,

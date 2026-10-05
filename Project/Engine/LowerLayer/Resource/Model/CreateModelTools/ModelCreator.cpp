@@ -26,12 +26,20 @@ ModelContext::ModelCreator::ModelCreator
 std::vector<Model*> ModelContext::ModelCreator::Create
 (
 	std::string const& modelFileName_,
+	Model::Type type_,
 	std::vector<RenderState> const& modelRenderStates_,
 	std::vector<StructuredBufferModelData::MaterialCPU> const& materials_,
 	UINT const numCreate_,
 	std::string const& modelName_
 )
 {
+	ErrorMessageOutput::Assert::DetectError
+	(
+		type_ != Model::Type::kCount,
+		"KCount何か選択してんじゃない",
+		fileName
+	);
+
 	std::vector<Model*> modelPtrContainer;
 
 	//モデルのディスクリプションの要素を組み立てる
@@ -49,7 +57,7 @@ std::vector<Model*> ModelContext::ModelCreator::Create
 	for (UINT i = 0;i < numCreate_;++i)
 	{
 		///モデルクラスのインスタンス化
-		std::unique_ptr<Model> model = std::make_unique<Model>(modelDesc, materialsGPU);
+		std::unique_ptr<Model> model = std::make_unique<Model>(type_ , modelDesc, materialsGPU);
 
 		modelPtrContainer.emplace_back(model.get());
 
