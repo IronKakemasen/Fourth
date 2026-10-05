@@ -25,9 +25,10 @@ namespace ConstantBuffers
 		,kCount
 	};
 
+
 	constexpr uint8_t Num32BitValuesTable(UINT const slot_)
 	{
-		UINT const numRootConstants = (UINT)RootConstantsBindSlots::kCount - (UINT)ConstantBufferBindSlots::kCount;
+		static UINT const numRootConstants = (UINT)RootConstantsBindSlots::kCount - (UINT)ConstantBufferBindSlots::kCount;
 		UINT dstIndex = slot_ - (UINT)ConstantBufferBindSlots::kCount;
 		
 		static constexpr uint8_t table[numRootConstants]

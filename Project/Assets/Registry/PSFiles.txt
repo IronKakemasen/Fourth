@@ -1,2 +1,3 @@
 ﻿key: "StandardPS" , value: "Assets/Shader/PS/Model/"
+key: "FinalRenderingPS" , value: "Assets/Shader/PS/Offscreen/"
 key: "SceneCompositorPS" , value: "Assets/Shader/PS/Offscreen/"

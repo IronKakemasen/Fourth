@@ -27,7 +27,7 @@ public:
 		Local_AssembleLicence licence_,
 		DescType& srcDesc_,
 		ID3D12RootSignature* rootSignature_,
-		std::string debugName_
+		std::string const& debugName_
 	);
 
 
@@ -44,7 +44,7 @@ private:
 	(
 		const PipelineStateComponent::ShaderSet& shaderSet_,
 		const std::vector<PipelineStateComponent::RenderTargetDesc>& renderTargetDescs_,
-		const std::string debugName_
+		std::string const& debugName_
 	)const;
 
 	//レンダーターゲットのフォーマットと総数の情報をまとめる
@@ -71,7 +71,7 @@ Microsoft::WRL::ComPtr<ID3D12PipelineState> PSO_Context::Assembler::Assemble
 	Local_AssembleLicence licence_,
 	PipelineStateDesc::Graphics& srcDesc_,
 	ID3D12RootSignature* rootSignature_,
-	std::string debugName_
+	std::string const& debugName_
 );
 
 

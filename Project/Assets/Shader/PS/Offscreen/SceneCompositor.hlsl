@@ -1,5 +1,4 @@
 #include "../../../Shared/ConstantBuffers.h"
-#include "../../../Shared/StructuredBufferModelData.h"
 #include "../../../Shared/StaticSampler.h"
 
 

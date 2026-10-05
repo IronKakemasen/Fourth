@@ -27,6 +27,11 @@ SwapChainContext::SwapChainBuffer::SwapChainBuffer
 		buffers[i].rtvHandle = rtvHandles_[i];
 	}
 
+	for (UINT i = 0;i < 4;++i)
+	{
+		clearColor[i] = ProjectConfig::Window::kColor[i];
+	}
+
 	AssembleMatrices();
 }
 
@@ -56,6 +61,11 @@ D3D12_CPU_DESCRIPTOR_HANDLE const& SwapChainContext::SwapChainBuffer::OutProperR
 std::pair<D3D12_VIEWPORT const*, D3D12_RECT const*> SwapChainContext::SwapChainBuffer::WatchMatrices()const
 {
 	return std::make_pair(&viewport, &scissorRect);
+}
+
+FLOAT const* SwapChainContext::SwapChainBuffer::WatchClearColor()const 
+{
+	return clearColor; 
 }
 
 template<>

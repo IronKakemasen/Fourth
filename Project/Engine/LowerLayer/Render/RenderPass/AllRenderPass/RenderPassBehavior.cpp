@@ -224,10 +224,12 @@ void RenderContext::PassBehavior::RenderModels
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 void RenderContext::PassBehavior::TransferRootConstants(RuntimeWrapper& cmdWrapper_)
 {
+	auto const bindSlot = (UINT)ConstantBuffers::RootConstantsBindSlots::kPassBufferIndexRange;
+
 	cmdWrapper_.SetGraphicsRoot32BitConstants
 	(
-		(UINT)ConstantBuffers::RootConstantsBindSlots::kPassBufferIndexRange,
-		2,                    
+		bindSlot,
+		ConstantBuffers::Num32BitValuesTable(bindSlot),
 		&runtimePassInfo->WatchRootConstants(),
 		0
 	);

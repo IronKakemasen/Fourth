@@ -10496,7 +10496,7 @@ void RenderContext::StaticRenderGraph::PassSetUpper::CreateAllPassInfo
 			//passCreatorが所持するidキャッシュから名前で引く
 			BufferUniqueID refID = passBufferCache.at(refBufferName);
 			//最終カラーバッファと名前が一致していた場合は格納
-			if (output_.finalColorBufferID != 0xffffffff && finalColorBufferName == refBufferName)
+			if (output_.finalColorBufferID == 0xffffffff && finalColorBufferName == refBufferName)
 			{
 				output_.finalColorBufferID = refID;
 			}

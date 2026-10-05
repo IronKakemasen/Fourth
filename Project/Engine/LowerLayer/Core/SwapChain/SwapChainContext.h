@@ -13,8 +13,6 @@ class SwapChainContext
 	class Presenter;
 	//初期セットアップを行う
 	class Builder;
-	//スワップチェーン産の生リソースをもとに作られるバッファ
-	class SwapChainBuffer;
 
 public:
 
@@ -22,6 +20,10 @@ public:
 	struct NexusFieldProof;
 	//代行者限定
 	struct AgentKey;
+
+	//スワップチェーン産の生リソースをもとに作られるバッファ
+	class SwapChainBuffer;
+
 	//ツール貸し出し
 	class ToolLender;
 	//Nexusフィールドでのアクションを代行する

@@ -1,7 +1,7 @@
 #include "StaticRenderGraph.h"
 #include "RenderGraphExecutor/CommonCmdExecutor/CommonCmdExecutor.h"
 #include "RenderGraphExecutor/PathOperator/PathOperator.h"
-
+#include "RenderGraphExecutor/FinalRenderer/FinalRenderer.h"
 
 //外部
 #include "../../../Core/Command/CommandContextDiplomats.h"
@@ -15,7 +15,8 @@ void RenderContext::StaticRenderGraph::Run
 	DescriptorHeapContextDiplomat& descriptorHeapContextDiplomat_,
 	CommandContextDiplomat& commandContextDiplomat_,
 	BufferContextDiplomat& bufferContextDiplomat_,
-	ModelContextDiplomat& modelContextDiplomat_
+	ModelContextDiplomat& modelContextDiplomat_,
+	SwapChainContextDiplomat& swapChainContextDiplomat_
 )
 {
 	//runtimeCmdWrapperにアクセス
@@ -40,5 +41,9 @@ void RenderContext::StaticRenderGraph::Run
 		bufferContextDiplomat_,
 		runtimeCmdWrapper
 	);
+
+	//最終描画
+	finalRenderer->Update(frameIndex_, runtimeCmdWrapper, swapChainContextDiplomat_);
+
 }
 

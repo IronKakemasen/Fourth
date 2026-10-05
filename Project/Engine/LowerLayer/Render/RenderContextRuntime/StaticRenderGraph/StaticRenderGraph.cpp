@@ -2,6 +2,7 @@
 #include "StaticRenderGraph.h"
 #include "RenderGraphExecutor/PathOperator/PathOperator.h"
 #include "RenderGraphExecutor/CommonCmdExecutor/CommonCmdExecutor.h"
+#include "RenderGraphExecutor/FinalRenderer/FinalRenderer.h"
 
 namespace
 {
@@ -56,6 +57,12 @@ RenderContext::StaticRenderGraph::StaticRenderGraph
 	commonCmdExecutor.reset(new CommonCmdExecutor(proof_, buildOutput.rootSigBuilder.graphicsRootSig));
 	Logger::Log("Instantiate: CommonCmdExecutor", fileName);
 
+	finalRenderer = std::make_unique<FinalRenderer>
+	(
+		proof_,
+		buildOutput.pso_Builder.finalRenderingPso,
+		buildOutput.passSetUpper.finalColorBufferID
+	);
 
 
 	Logger::End("StaticRenderGraph: Constructor");
