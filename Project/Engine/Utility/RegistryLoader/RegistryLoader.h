@@ -154,7 +154,7 @@ public:
 
     //バリューからキーを検索
     template<RegistryFileType fileType>
-    static std::string ValueToKey(std::string const value_)
+    static std::string ValueToKey(std::string const& value_)
     {
         std::string filekKey;
 

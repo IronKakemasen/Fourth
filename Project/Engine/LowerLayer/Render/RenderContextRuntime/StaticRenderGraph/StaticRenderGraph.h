@@ -20,7 +20,7 @@ class RenderContext::StaticRenderGraph
 	class PathOperator;
 	//共通描画コマンドをたたく
 	class CommonCmdExecutor;
-	//スワップチェーンのバックバッファに最終描画をする
+	//最終描画をする
 	class FinalRenderer;
 
 public:
@@ -48,7 +48,8 @@ public:
 		DescriptorHeapContextDiplomat& descriptorHeapContextDiplomat_,
 		CommandContextDiplomat& commandContextDiplomat_,
 		BufferContextDiplomat& bufferContextDiplomat_,
-		ModelContextDiplomat& modelContextDiplomat_
+		ModelContextDiplomat& modelContextDiplomat_,
+		SwapChainContextDiplomat& swapChainContextDiplomat_
 	);
 
 private:
@@ -80,9 +81,14 @@ private:
 			BufferUniqueID targetFillInRefBufferID;
 			//フロントバッファで参照する最終カラーバッファのID
 			BufferUniqueID finalColorBufferID = 0xffffffff;
-
 		};
 
+		struct PSO_Builder
+		{
+			ID3D12PipelineState* finalRenderingPso;
+		};
+
+		PSO_Builder pso_Builder;
 		RootSigBuilder rootSigBuilder;
 		PathBuilder pathBuilder;
 		PassSetUpper passSetUpper;
@@ -107,5 +113,8 @@ private:
 	std::unique_ptr<PathOperator> pathOperator;
 	//共通の描画コマンドをたたく
 	std::unique_ptr<CommonCmdExecutor> commonCmdExecutor;	
+	//スワップチェーンバッファに最終描画結果を表示する
+	std::unique_ptr<FinalRenderer> finalRenderer;
+
 };
 

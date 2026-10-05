@@ -46,7 +46,7 @@ Microsoft::WRL::ComPtr<ID3D12PipelineState> PSO_Context::Assembler::Assemble
 	Local_AssembleLicence licence_,
 	PipelineStateDesc::Graphics& srcDesc_,
 	ID3D12RootSignature* rootSignature_,
-	std::string debugName_
+	std::string const& debugName_
 )
 {
 	Microsoft::WRL::ComPtr<ID3D12PipelineState> pipelineState;
@@ -134,7 +134,7 @@ void PSO_Context::Assembler::Check
 (
 	const PipelineStateComponent::ShaderSet& shaderSet_,
 	const std::vector<PipelineStateComponent::RenderTargetDesc>& renderTargetDescs_,
-	const std::string debugName_
+	std::string const& debugName_
 )const
 {
 	std::string errorMsg{};

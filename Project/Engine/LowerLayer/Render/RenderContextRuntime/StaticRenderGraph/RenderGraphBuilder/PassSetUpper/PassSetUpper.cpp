@@ -42,6 +42,10 @@ namespace
 	//Passのルートコンスタンツのバッファを作成する
 	CreatePassRootConstantsBuffer(proof_, bufferContextDiplomat_);
 
+	//フロントバッファが参照するカラーバッファのsrvHeapIndexの定数バッファ化
+	//実際に、最終カラーバッファのsrvHeapIndexをセット
+	CreateFinalRefSrvConstantBuffer(proof_, output.finalColorBufferID, bufferContextDiplomat_);
+
 	return output;
 }
 
@@ -95,7 +99,7 @@ void RenderContext::StaticRenderGraph::PassSetUpper::CreateAllPassInfo
 			BufferUniqueID refID = passBufferCache.at(refBufferName);
 
 			//最終カラーバッファと名前が一致していた場合は格納
-			if (output_.finalColorBufferID != 0xffffffff && finalColorBufferName == refBufferName)
+			if (output_.finalColorBufferID == 0xffffffff && finalColorBufferName == refBufferName)
 			{
 				output_.finalColorBufferID = refID;
 			}

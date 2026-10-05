@@ -20,7 +20,7 @@ ID3D12PipelineState* PSO_Context::PSO_Creator::Create
 (
 	PipelineStateDesc::Graphics& srcDesc_,
 	ID3D12RootSignature* rootSignature_,
-	std::string debugName_
+	std::string const& debugName_
 )
 {
 	return container->Import

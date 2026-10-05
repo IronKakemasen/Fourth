@@ -27,7 +27,7 @@ RenderContext::StaticRenderGraph::BuildOutput RenderContext::StaticRenderGraph::
 	buildOutput.rootSigBuilder = RootSigBuilder::Build(proof_, rootSignatureContextDiplomat_);
 
 	//存在しなければならない全てのPSOを生成
-	PSO_Builder::Build
+	buildOutput.pso_Builder = PSO_Builder::Build
 	(
 		proof_,
 		psoDispatcher_,

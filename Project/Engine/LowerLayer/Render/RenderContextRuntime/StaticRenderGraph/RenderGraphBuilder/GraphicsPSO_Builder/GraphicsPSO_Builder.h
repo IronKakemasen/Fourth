@@ -11,7 +11,7 @@ class RenderContext::StaticRenderGraph::PSO_Builder
 
 	using PsoDesc_Key = std::pair<PipelineStateDesc::Graphics, GraphicsPSO_Key>;
 
-	static void Build
+	static BuildOutput::PSO_Builder Build
 	(
 		NexusFieldProof proof_,
 		PSO_PoolDispatcher& psoDispatcher_,
@@ -78,6 +78,21 @@ private:
 		PassDesc const& passDesc_,
 		std::vector<PsoDesc_Key>& allPsoDesc_
 	);
+
+	//最終描画用のPSOを生成
+	static ID3D12PipelineState* CreateFinalRenderPso
+	(
+		PSO_ContextDiplomat& pso_ContextDiplomat_,
+		ShaderContextDiplomat& shaderContextDiplomat_,
+		ID3D12RootSignature* rootSignature_
+	);
+
+	struct DataKey
+	{
+		static auto const inline kFinalRenderingMeshShader = "FullScreenTriangleMS";
+		static auto const inline kFinalRenderingPixelShader = "FinalRenderingPS";
+
+	};
 
 };
 

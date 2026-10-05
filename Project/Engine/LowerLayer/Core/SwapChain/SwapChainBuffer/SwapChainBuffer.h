@@ -20,6 +20,7 @@ public:
 
 	std::pair<D3D12_VIEWPORT const*, D3D12_RECT const*> WatchMatrices()const;
 
+	FLOAT const* WatchClearColor()const;
 
 private:
 
@@ -36,10 +37,9 @@ private:
 	//ウィンドウサイズに合わせて組み立てる
 	void AssembleMatrices();
 
-
 	std::array<Buffer, (UINT)ProjectConfig::Render::NumBuffer::kDoubleBuffer> buffers;
 	D3D12_VIEWPORT viewport;
 	D3D12_RECT scissorRect;
-
+	FLOAT clearColor[4];
 };
 

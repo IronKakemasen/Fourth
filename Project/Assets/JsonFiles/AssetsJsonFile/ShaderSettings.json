@@ -18,5 +18,10 @@
                                  "Args":  [
                                               "none"
                                           ]
-                             }
+                             },
+    "FinalRenderingPS":  {
+                             "Args":  [
+                                          "none"
+                                      ]
+                         }
 }
