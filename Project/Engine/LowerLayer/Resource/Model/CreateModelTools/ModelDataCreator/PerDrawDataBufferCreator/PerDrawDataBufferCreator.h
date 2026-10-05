@@ -90,8 +90,6 @@ private:
 	static std::array<SRVHeapIndex, UINT(ProjectConfig::Render::NumBuffer::kDoubleBuffer)>
 		ExtractSrvHeapIndices(UploadStructuredBuffer* srcBuffer_);
 
-	//ルートコンスタンツであるPerDrawIndicesの定数バッファを作成する
-	static void CreatePerDrawCBuffer(BufferContextCmds::CreateCBufferCmd& createCBufferCmd_);
 
 };
 

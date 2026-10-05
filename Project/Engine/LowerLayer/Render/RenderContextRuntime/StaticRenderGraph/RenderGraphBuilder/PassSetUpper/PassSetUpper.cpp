@@ -39,12 +39,6 @@ namespace
 	///UploadStructuredBufferでダブルです。中身の初期化もしていません
 	CreateReferenceBufferSrvArray(proof_, output,bufferContextDiplomat_);
 
-	//Passのルートコンスタンツのバッファを作成する
-	CreatePassRootConstantsBuffer(proof_, bufferContextDiplomat_);
-
-	//フロントバッファが参照するカラーバッファのsrvHeapIndexの定数バッファ化
-	//実際に、最終カラーバッファのsrvHeapIndexをセット
-	CreateFinalRefSrvConstantBuffer(proof_, output.finalColorBufferID, bufferContextDiplomat_);
 
 	return output;
 }
@@ -177,7 +171,7 @@ void RenderContext::StaticRenderGraph::PassSetUpper::CreateReferenceBufferSrvArr
 	auto* bufferDispatcher = toolLender->Lend<BufferContext::BufferDispatcher>(licenceTool);
 
 
-	///参照バッファ配列のバッファ作成
+	///参照バッファ配列の定数バッファ作成
 	std::string const bufferName = "RefBufSrvArr";
 	UploadStructuredBufferDescription desc(UINT(sizeof(SRVHeapIndex)), UINT(output_.refBufferTagTrace.size()), 0);
 	auto id_buffer = bufferCreator->CreateWithBuffer(desc, bufferName);
@@ -233,46 +227,3 @@ void RenderContext::StaticRenderGraph::PassSetUpper::CreateReferenceBufferSrvArr
 }
 
 
-void RenderContext::StaticRenderGraph::PassSetUpper::CreatePassRootConstantsBuffer
-(
-	NexusFieldProof proof_,
-	BufferContextDiplomat& bufferContextDiplomat_
-)
-{
-	//グローバル定数バッファ生成コマンドをもらう
-	auto cmdProv = bufferContextDiplomat_.Access<BufferContext::CmdProvider>();
-	BufferContext::CmdProvider::LicenceType<BufferContextCmds::CreateCBufferCmd> licence;
-	auto createCBufferCmd = cmdProv->Provide<BufferContextCmds::CreateCBufferCmd>(licence);
-
-	//ルートコンスタンツである、PassBufferIndexRangeCPUGPUの定数バッファ作成
-	//もちろん中身はPassに依存するので、ドローコール時に書き込む
-	createCBufferCmd("PassBufferIndexRange", UINT(sizeof(PassBufferIndexRangeCPUGPU)), (UINT)ConstantBuffers::RootConstantsBindSlots::kPassBufferIndexRange);
-
-}
-
-void RenderContext::StaticRenderGraph::PassSetUpper::CreateFinalRefSrvConstantBuffer
-(
-	NexusFieldProof proof_,
-	BufferUniqueID const finalBufferID_,
-	BufferContextDiplomat& bufferContextDiplomat_
-)
-{
-	//グローバル定数バッファ生成コマンドをもらう
-	auto cmdProv = bufferContextDiplomat_.Access<BufferContext::CmdProvider>();
-	BufferContext::CmdProvider::LicenceType<BufferContextCmds::CreateCBufferCmd> licence;
-	auto createCBufferCmd = cmdProv->Provide<BufferContextCmds::CreateCBufferCmd>(licence);
-	
-	//bufferDispatcherを借りる
-	auto toolLender = bufferContextDiplomat_.Access<BufferContext::ToolLender>();
-	BufferContext::ToolLender::LicenceType<BufferContext::BufferCreator> licenceTool;
-	auto* bufferDispatcher = toolLender->Lend<BufferContext::BufferDispatcher>(licenceTool);
-
-	//id -> ColorBufferへ
-	auto* finalColorBuffer = static_cast<ColorBuffer*>(bufferDispatcher->Dispatch(finalBufferID_));
-
-	//ルートコンスタンツ用の定数バッファを作成し、
-	auto id_buffer = createCBufferCmd("FinalColorBufferSrv", UINT(sizeof(SRVHeapIndex)), (UINT)ConstantBuffers::RootConstantsBindSlots::kFinalColorBufferSrv);
-	//最終カラーバッファのsrvHeapIndexを書き込む
-	id_buffer.second->WriteInBoth<SRVHeapIndex>({ finalColorBuffer->OutProperSRVHeapIndex(), finalColorBuffer->OutProperSRVHeapIndex() });
-
-}
