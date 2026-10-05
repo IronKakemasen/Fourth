@@ -11,9 +11,8 @@ ModelDescription::ModelDescription
 	std::string const& modelName_,
 	std::vector<ConstantBuffers::PerDrawIndicesCPUGPU> const& perDrawIndices_,
 	std::vector<RenderState> const& renderStates_,
-	std::vector<StructuredBufferModelData::MaterialGPU> const& materials_,
 	std::vector<size_t> const& meshletSize_
-) :perDrawIndices(perDrawIndices_), renderStates(renderStates_), materials(materials_), meshletSize(meshletSize_)
+) :perDrawIndices(perDrawIndices_), renderStates(renderStates_), meshletSize(meshletSize_)
 {
 	std::string errorMsg{};
 

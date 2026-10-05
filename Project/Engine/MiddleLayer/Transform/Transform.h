@@ -6,76 +6,17 @@
 
 class Transform
 {
-	static inline const Vector3 kRight =  { 1.0f,0.0f,0.0f };
-	static inline const Vector3 kUp =	  { 0.0f,1.0f,0.0f };
-	static inline const Vector3 kBeyond = { 0.0f,0.0f,1.0f };
-
-	Vector3 worldPos;					//ワールド座標
-	Vector3 scale;						//スケール
-	Vector3 rotation;					//ヨーピッチロール
-	Vector3 lookDir;					//向いている方向
-	Quaternion quaternion;				//回転用クォータニオン
-	float rotationInterpolationCoe{};	//回転補完係数
-	Matrix4x4 worldMatrix;				//キャッシュ用ワールド行列
-	std::vector<Transform*> children;	//子孫
-	Transform* parent = nullptr;		//親
-	bool hasTransformChanged{};			//ワールド行列をアップデートするかどうかに関わる
-	bool needRotationUpdate{};			//回転補完がまだなのかどうか
-	bool updatedThisFrame{};			//1フレーム１きり更新ガード
-
-
-	//回転更新処理
-	inline void RotationUpdate()
-	{
-		//次の回転クォータニオン
-		Quaternion nextQuaternion = Quaternion::CreateQuaternion(lookDir);
-
-		//rotationに値が入って入れば
-		if (rotation.LengthSq() > 0.0f)
-		{
-			nextQuaternion = nextQuaternion.Multiply
-			(
-				Quaternion::CreateQuaternion(kRight, rotation.data.x).Multiply
-				(
-					Quaternion::CreateQuaternion(kUp, rotation.data.y).Multiply
-					(
-						Quaternion::CreateQuaternion(kBeyond, rotation.data.z)
-					)
-				)
-			);
-		}
-		
-		//回転補完
-		quaternion = quaternion.Slerp(nextQuaternion, rotationInterpolationCoe);
-		
-		//一致していなければ、ワールド行列を更新する必要がある
-		needRotationUpdate = !quaternion.NearlyEquals(nextQuaternion);
-		
-		if (needRotationUpdate)
-		{
-			NotifyChanged();
-		}
-	}
-
-	inline void BeChild(Transform* parent_)
-	{
-		parent = parent_;
-	}
-
-	inline void DeleteChild(Transform* dstChild_)
-	{
-		for (auto itr = children.begin();itr != children.end();++itr)
-		{
-			if ((*itr) && (*itr) == dstChild_)(*itr) = nullptr;
-		}
-	}
-
-	inline void ResetFrameFlag()
-	{
-		updatedThisFrame = false;
-	}
-
 public:
+
+	Transform()
+	{
+		Clear();
+	}
+
+	~Transform()
+	{
+		if (parent) parent->DeleteChild(this);
+	}
 
 	inline void TranslatePosition(const Vector3& dstWorldPos_)
 	{
@@ -121,6 +62,7 @@ public:
 		hasTransformChanged = true;
 		needRotationUpdate = true;
 		updatedThisFrame = false;
+		needOverrideBuffer = true;
 		worldMatrix = Matrix4x4{};
 	}
 
@@ -136,18 +78,8 @@ public:
 		}
 	}
 
-	Transform()
-	{
-		Clear();
-	}
-
-	~Transform()
-	{
-		if(parent) parent->DeleteChild(this);
-	}
-
-	template<typename... Children>
-	inline void BeParent(Children... children_)
+	template<typename... ChildrenPtr>
+	inline void BeParent(ChildrenPtr*... children_)
 	{
 		uint8_t length = sizeof...(children_);
 		Transform* ary[] = { children_... };
@@ -158,7 +90,6 @@ public:
 		}
 	}
 
-
 	void Update()
 	{
 		//既に更新処理をしていればリターン
@@ -166,7 +97,12 @@ public:
 		updatedThisFrame = true;
 
 		//親の更新処理を先に呼ぶ
-		if (parent) parent->Update();
+		if (parent)
+		{
+			parent->Update();
+			//親のトランスフォームが更新されたならこちらも変更しなくては
+			hasTransformChanged |= parent->needOverrideBuffer;
+		}
 
 		//回転クォータニオンの更新
 		if (needRotationUpdate) RotationUpdate();
@@ -187,6 +123,8 @@ public:
 		//ペアレント化しているなら
 		if (parent) worldMatrix = worldMatrix.GetMultiply(parent->WatchWorldMatrix());
 
+		//バッチング必要
+		needOverrideBuffer = true;
 		hasTransformChanged = false;
 	}
 
@@ -195,7 +133,7 @@ public:
 		return worldMatrix;
 	}
 
-	inline Vector3 WatchWorldPos()const
+	inline Vector3 const& WatchWorldPos()const
 	{
 		return
 		{
@@ -205,5 +143,78 @@ public:
 		};
 	}
 
+	bool ShouldOverrideBuffer(){ return needOverrideBuffer; }
+
+private:
+
+	static inline const Vector3 kRight = { 1.0f,0.0f,0.0f };
+	static inline const Vector3 kUp = { 0.0f,1.0f,0.0f };
+	static inline const Vector3 kBeyond = { 0.0f,0.0f,1.0f };
+
+	Vector3 worldPos;					//ワールド座標
+	Vector3 scale;						//スケール
+	Vector3 rotation;					//ヨーピッチロール
+	Vector3 lookDir;					//向いている方向
+	Quaternion quaternion;				//回転用クォータニオン
+	float rotationInterpolationCoe{};	//回転補完係数
+	Matrix4x4 worldMatrix;				//キャッシュ用ワールド行列
+	std::vector<Transform*> children;	//子孫
+	Transform* parent = nullptr;		//親
+	bool hasTransformChanged{};			//ワールド行列をアップデートするかどうかに関わる
+	bool needRotationUpdate{};			//回転補完がまだなのかどうか
+	bool updatedThisFrame{};			//1フレーム１きり更新ガード
+	bool needOverrideBuffer = true;		//バッファへのバッチング処理時に使用
+
+	//回転更新処理
+	inline void RotationUpdate()
+	{
+		//次の回転クォータニオン
+		Quaternion nextQuaternion = Quaternion::CreateQuaternion(lookDir);
+
+		//rotationに値が入って入れば
+		if (rotation.LengthSq() > 0.0f)
+		{
+			nextQuaternion = nextQuaternion.Multiply
+			(
+				Quaternion::CreateQuaternion(kRight, rotation.data.x).Multiply
+				(
+					Quaternion::CreateQuaternion(kUp, rotation.data.y).Multiply
+					(
+						Quaternion::CreateQuaternion(kBeyond, rotation.data.z)
+					)
+				)
+			);
+		}
+
+		//回転補完
+		quaternion = quaternion.Slerp(nextQuaternion, rotationInterpolationCoe);
+
+		//一致していなければ、ワールド行列を更新する必要がある
+		needRotationUpdate = !quaternion.NearlyEquals(nextQuaternion);
+
+		if (needRotationUpdate)
+		{
+			NotifyChanged();
+		}
+	}
+
+	inline void BeChild(Transform* parent_)
+	{
+		parent = parent_;
+	}
+
+	inline void DeleteChild(Transform* dstChild_)
+	{
+		for (auto itr = children.begin();itr != children.end();++itr)
+		{
+			if ((*itr) && (*itr) == dstChild_)(*itr) = nullptr;
+		}
+	}
+
+	inline void ResetFrameFlag()
+	{
+		updatedThisFrame = false;
+		needOverrideBuffer = false;
+	}
 };
 
