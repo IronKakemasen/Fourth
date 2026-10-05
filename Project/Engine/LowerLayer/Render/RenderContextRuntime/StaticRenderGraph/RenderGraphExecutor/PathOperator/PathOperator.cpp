@@ -101,8 +101,8 @@ void RenderContext::StaticRenderGraph::PathOperator::Run
 
 	//modelContainer（仕分け済み）取得コマンドをもらう
 	auto mCmdProvider = modelContextDiplomat_.Access<ModelContext::CommandProvider>();
-	ModelContext::CommandProvider::LicenceType<ModelContextCmds::WatchSeparatedModelContainer> mLicence;
-	auto& modelContainer = *mCmdProvider->Provide<ModelContextCmds::WatchSeparatedModelContainer>(mLicence)();
+	ModelContext::CommandProvider::LicenceType<ModelContextCmds::WatchSeparatedByRenderState> mLicence;
+	auto& modelContainer = *mCmdProvider->Provide<ModelContextCmds::WatchSeparatedByRenderState>(mLicence)();
 
 	
 	for (auto* path : allPathPtr)

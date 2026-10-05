@@ -16,13 +16,13 @@ template<>
 WatchModelContainer ModelContext::CommandProvider::Provide<WatchModelContainer>
 (typename CmdTypeTraits<WatchModelContainer>::Type licence_)
 {
-	return modelContainer->WatchDataCmd(ProviderKey{});
+	return modelContainer->WatchModelDataCmd(ProviderKey{});
 }
 
 template<>
-WatchSeparatedModelContainer ModelContext::CommandProvider::Provide<WatchSeparatedModelContainer>
-(typename CmdTypeTraits<WatchSeparatedModelContainer>::Type licence_)
+WatchSeparatedByRenderState ModelContext::CommandProvider::Provide<WatchSeparatedByRenderState>
+(typename CmdTypeTraits<WatchSeparatedByRenderState>::Type licence_)
 {
-	return modelContainer->WatchSeparatedCmd(ProviderKey{});
+	return modelContainer->WatchSeparatedByRenderStateCmd(ProviderKey{});
 }
 

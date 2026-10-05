@@ -7,12 +7,14 @@ class KeyPackager;
 
 class ModelContext::ModelContainer::ModelSeparator
 {
+	using Output = std::pair<std::vector<ModelContext::ModelContainer::SeparatedByRenderState>, std::array < std::vector<Model*>, (UINT)Model::Type::kCount > >;
+
 public:
 
 	ModelSeparator(NexusFieldProof proof_ ,AgentKey key_);
 	~ModelSeparator();
 
-	[[nodiscard]] std::vector<SepartatedContainer> SeparateAllModels(std::vector<std::unique_ptr<Model>>* modelContainer_);
+	[[nodiscard]] Output SeparateAllModels(std::vector<std::unique_ptr<Model>>& modelContainer_);
 
 private:
 

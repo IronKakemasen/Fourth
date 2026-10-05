@@ -8,15 +8,17 @@ namespace
 
 Model::Model
 (
+	Type type_,
 	const ModelDescription& modelDesc_,
 	std::vector<StructuredBufferModelData::MaterialGPU> const& materials_
-) :modelDesc(modelDesc_)
+) :modelDesc(modelDesc_), type(type_)
 {
 	//変更可能描画コンポーネントの初期設定は添え字0番に
 	changeableParams.blendMode = modelDesc_.WatchRenderStates()[0].blendModes[0];
 	changeableParams.materialType = modelDesc_.WatchRenderStates()[0].materialTypes[0];
 
 	changeableParams.materials = materials_;
+	changeableParams.areMaterialsDirty.resize(materials_.size(),true);
 
 	//サブメッシュ分のトランスフォームを確保
 	auto const numMeshes = modelDesc_.WatchPerDrawIndices().size();
@@ -92,6 +94,7 @@ void Model::ChangeRoughness(int index_, float dst_)
 		fileName
 	);
 
+	changeableParams.areMaterialsDirty[index_] = true;
 	changeableParams.materials[index_].roughness = dst_;
 }
 
@@ -105,6 +108,7 @@ void Model::ChangeMetalic(int index_, float dst_)
 		fileName
 	);
 
+	changeableParams.areMaterialsDirty[index_] = true;
 	changeableParams.materials[index_].metallic = dst_;
 
 }
@@ -119,6 +123,7 @@ void Model::ChangeColor(int index_, Vector4<float> const& dst_)
 		fileName
 	);
 
+	changeableParams.areMaterialsDirty[index_] = true;
 	changeableParams.materials[index_].baseColor = dst_;
 }
 
@@ -149,6 +154,7 @@ void Model::ChangeTexture<TextureComponent::TextureType::kAlbedo>(int index_, SR
 		fileName
 	);
 
+	changeableParams.areMaterialsDirty[index_] = true;
 	changeableParams.materials[index_].albedoTexture = dst_;
 }
 template<>
@@ -161,6 +167,7 @@ void Model::ChangeTexture<TextureComponent::TextureType::kNormal>(int index_, SR
 		fileName
 	);
 
+	changeableParams.areMaterialsDirty[index_] = true;
 	changeableParams.materials[index_].normalTexture = dst_;
 }
 template<>
@@ -173,6 +180,7 @@ void Model::ChangeTexture<TextureComponent::TextureType::kEmissive>(int index_, 
 		fileName
 	);
 
+	changeableParams.areMaterialsDirty[index_] = true;
 	changeableParams.materials[index_].emissiveTexture = dst_;
 }
 

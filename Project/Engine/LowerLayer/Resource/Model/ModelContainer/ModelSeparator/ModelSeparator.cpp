@@ -31,27 +31,32 @@ ModelContext::ModelContainer::ModelSeparator::~ModelSeparator()
 
 }
 
-[[nodiscard]] std::vector<ModelContext::ModelContainer::SepartatedContainer>
-ModelContext::ModelContainer::ModelSeparator::SeparateAllModels(std::vector<std::unique_ptr<Model>>* modelContainer_)
+[[nodiscard]] ModelContext::ModelContainer::ModelSeparator::Output
+ModelContext::ModelContainer::ModelSeparator::SeparateAllModels(std::vector<std::unique_ptr<Model>>& modelContainer_)
 {
-	std::vector<SepartatedContainer> dstSeparateContainer;
+	std::vector<SeparatedByRenderState> separatedByRenderState;
+	std::array < std::vector<Model*>, (UINT)Model::Type::kCount> separatedByModelType;
 
-	dstSeparateContainer.resize((UINT)Pass::kCount);
+	separatedByRenderState.resize((UINT)Pass::kCount);
 
-	for (auto itr = modelContainer_->begin();itr != modelContainer_->end();++itr)
+	for (auto itr = modelContainer_.begin();itr != modelContainer_.end();++itr)
 	{
 		//renderStateとそのパックされたキーがセット
 		auto packedKeys = PackToKey(*(*itr));
 
+		//RenderState別に仕分けていく
 		for (auto const& key : packedKeys)
 		{
 			auto const pass = (UINT)key.first.Get<RenderStateKey::Sequence::kPass>();
-			dstSeparateContainer[pass][key.second].first = key.first;
-			dstSeparateContainer[pass][key.second].second.emplace_back((*itr).get());
+			separatedByRenderState[pass][key.second].first = key.first;
+			separatedByRenderState[pass][key.second].second.emplace_back((*itr).get());
 		}
+
+		//ランタイムデータバッチング用にモデルタイプ別に仕分けていく
+		separatedByModelType[(UINT)(*itr)->WatchModelType()].emplace_back((*itr).get());
 	}
 
-	return dstSeparateContainer;
+	return std::make_pair(separatedByRenderState, separatedByModelType);
 }
 
 std::vector<std::pair<RenderStateKey, uint64_t>> ModelContext::ModelContainer::ModelSeparator::PackToKey(Model const& model_)

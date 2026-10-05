@@ -35,7 +35,7 @@ struct ModelContext::CommandProvider::CmdTypeTraits<ModelContextCmds::WatchModel
 };
 
 template<>
-struct ModelContext::CommandProvider::CmdTypeTraits<ModelContextCmds::WatchSeparatedModelContainer>
+struct ModelContext::CommandProvider::CmdTypeTraits<ModelContextCmds::WatchSeparatedByRenderState>
 {
 	using Type = WatchModelContainerLicence;
 };
@@ -46,6 +46,6 @@ ModelContextCmds::WatchModelContainer ModelContext::CommandProvider::Provide<Mod
 (typename CmdTypeTraits<ModelContextCmds::WatchModelContainer>::Type licence_);
 
 template<>
-ModelContextCmds::WatchSeparatedModelContainer ModelContext::CommandProvider::Provide<ModelContextCmds::WatchSeparatedModelContainer>
+ModelContextCmds::WatchSeparatedByRenderState ModelContext::CommandProvider::Provide<ModelContextCmds::WatchSeparatedByRenderState>
 (typename CmdTypeTraits<ModelContextCmds::WatchModelContainer>::Type licence_);
 

@@ -3,7 +3,7 @@
 
 #include "CreateModelTools/ModelCreator.h"
 #include "ModelStructure/ModelDescription/ModelDescription.h"
-
+#include "ModelStructure/Model.h"
 
 using namespace RenderStateComponent;
 using namespace ShaderPathComponent;
@@ -28,7 +28,7 @@ TestModelOKIBA::TestModelOKIBA(ModelContext::ModelCreator* modelCreator_)
 
 	std::vector<MaterialCPU> materials;
 
-	player = modelCreator_->Create("PlayerObj", playerC, materials,1,"Player")[0];
+	player = modelCreator_->Create("PlayerObj",Model::Type::kDynamic, playerC, materials,1,"Player")[0];
 
 
 	RenderState cC;
@@ -41,6 +41,6 @@ TestModelOKIBA::TestModelOKIBA(ModelContext::ModelCreator* modelCreator_)
 	std::vector<RenderState> cubeC;
 	cubeC.emplace_back(std::move(cC));
 
-	cube = modelCreator_->Create("CubeGltf", cubeC, materials,1,"Cube")[0];
+	cube = modelCreator_->Create("CubeGltf", Model::Type::kDynamic, cubeC, materials,1,"Cube")[0];
 
 }
