@@ -36,23 +36,6 @@ private:
 		BufferContextDiplomat& bufferContextDiplomat_
 	);
 
-	//Passのルートコンスタンツのバッファを作る
-	static void CreatePassRootConstantsBuffer
-	(
-		NexusFieldProof proof_,
-		BufferContextDiplomat& bufferContextDiplomat_
-	);
-
-	//フロントバッファが参照するカラーバッファのIDからSrvHeapIndexを取得し
-	//それを入れるためのルートコンスタンツ用定数バッファを作成
-	//この参照するカラーバッファはシングルだと思うのでランタイムの更新はいらないはず
-	static void CreateFinalRefSrvConstantBuffer
-	(
-		NexusFieldProof proof_,
-		BufferUniqueID const finalBufferID_,
-		BufferContextDiplomat& bufferContextDiplomat_
-	);
-
 	struct DataKey
 	{
 		static inline auto const kRenderGraphSettings = "RenderGraphSettings";

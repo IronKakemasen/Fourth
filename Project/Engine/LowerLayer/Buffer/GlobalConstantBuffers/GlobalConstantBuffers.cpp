@@ -33,7 +33,7 @@ void BufferContext::GlobalConstantBuffers::PackRuntimeContainer(NexusFieldProof 
 	}
 
 	auto const numActualCBuffers = forChecking.size();
-	auto const numRequiredCBuffers = (size_t)ConstantBuffers::RootConstantsBindSlots::kCount;
+	auto const numRequiredCBuffers = (size_t)ConstantBuffers::ConstantBufferBindSlots::kCount;
 
 	ErrorMessageOutput::Assert::DetectError
 	(

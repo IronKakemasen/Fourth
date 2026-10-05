@@ -43,7 +43,7 @@ void RenderContext::StaticRenderGraph::Run
 	);
 
 	//最終描画
-	finalRenderer->Update(frameIndex_, runtimeCmdWrapper, swapChainContextDiplomat_);
+	finalRenderer->Update(frameIndex_, runtimeCmdWrapper, swapChainContextDiplomat_,bufferContextDiplomat_);
 
 }
 

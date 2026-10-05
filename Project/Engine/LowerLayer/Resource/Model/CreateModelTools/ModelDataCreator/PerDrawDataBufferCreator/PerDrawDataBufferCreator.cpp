@@ -25,23 +25,7 @@ void ModelContext::ModelDataCreator::PerDrawDataBufferCreator::CreatePerDrawCons
 	Create<ConstantBufferBindSlots::kTransformMatrixContainer>(bufferCreator_, modelDataBatcher_, createCBufferCmd_);
 	Create<ConstantBufferBindSlots::kMaterialContainer>(bufferCreator_, modelDataBatcher_, createCBufferCmd_);
 
-	//最後に、perDrawDataのコンスタントバッファを作る
-	CreatePerDrawCBuffer(createCBufferCmd_);
-
 }
-
-void ModelContext::ModelDataCreator::PerDrawDataBufferCreator::CreatePerDrawCBuffer(CreateCBufferCmd& createCBufferCmd_)
-{
-	//もちろん中身はモデルに依存するので、ドローコール時に書き込む
-	auto cBufferID_cBuffer = createCBufferCmd_
-	(
-		"PerDrawIndices",
-		UINT(sizeof(PerDrawIndicesCPUGPU)),
-		UINT(RootConstantsBindSlots::kPerDrawIndices)
-	);
-
-}
-
 
 
 std::array<SRVHeapIndex, UINT(NumBuffer::kDoubleBuffer)>
