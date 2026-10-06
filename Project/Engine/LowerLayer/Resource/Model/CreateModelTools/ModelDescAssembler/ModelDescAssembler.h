@@ -30,7 +30,7 @@ public:
 	//モデルクラスのRenderStates以外のディスクリプションを作ってあげる
 	ModelDescParts Assemble
 	(
-		std::string modelFileName_,
+		std::string const& modelFileName_,
 		std::vector<StructuredBufferModelData::MaterialCPU> const& inputMaterials_
 	);
 

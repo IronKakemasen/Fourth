@@ -61,7 +61,7 @@ ModelContext::ModelContext
 	Logger::Log("Instantiate: ModelDescAssembler", fileName);
 	Logger::Log("Instantiate: ModelCreator", fileName);
 
-	modelDataBatcher.reset(new ModelDataBatcher(proof_));
+	modelDataBatcher = std::make_unique<ModelDataBatcher>(proof_,*modelContainer);
 	Logger::Log("Instantiate: modelDataBatcher", fileName);
 
 	ModelDataCreator modelDataCreator

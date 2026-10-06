@@ -43,8 +43,8 @@ namespace ConstantBuffers
 	struct PerDrawIndicesCPUGPU
 	{
 		MeshDataID meshDataID;
-		uint32_t transformMatrixID;
-		uint32_t materialID;
+		BufferUniqueID transformMatrixID;
+		BufferUniqueID materialID;
 	};
 
 	struct PassBufferIndexRangeCPUGPU

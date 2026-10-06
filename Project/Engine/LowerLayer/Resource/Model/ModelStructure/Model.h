@@ -69,9 +69,9 @@ public:
 	//ドローコマンドオンリー
 	auto const& WatchMeshletSize()const { return modelDesc.WatchMeshletSize(); }
 	//主にバッファにバッチングするため
-	auto const& WatchMaterials()const { return changeableParams.materials; }
-	auto const& WatchMaterialsDirty()const { return changeableParams.areMaterialsDirty; }
-	auto const& WatchTransforms()const { return changeableParams.transforms; }
+	auto const& WatchMaterial(size_t index_)const { return changeableParams.materials[index_]; }
+	auto const IsMaterialDirty(size_t index_)const { return changeableParams.areMaterialsDirty[index_]; }
+	auto const& WatchTransform(size_t index_)const { return changeableParams.transforms[index_]; }
 
 
 	//上位レイヤーでモデルのパラメーターを弄るときに

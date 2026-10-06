@@ -56,7 +56,7 @@ ModelContext::ModelContainer::ModelSeparator::SeparateAllModels(std::vector<std:
 		separatedByModelType[(UINT)(*itr)->WatchModelType()].emplace_back((*itr).get());
 	}
 
-	return std::make_pair(separatedByRenderState, separatedByModelType);
+	return std::make_pair(std::move(separatedByRenderState), std::move(separatedByModelType));
 }
 
 std::vector<std::pair<RenderStateKey, uint64_t>> ModelContext::ModelContainer::ModelSeparator::PackToKey(Model const& model_)
