@@ -70,6 +70,16 @@ struct IWritableCPU
 		std::memcpy(mappedPtrs[frameIndex_], data_.data(), sizeof(DataType) * data_.size());
 	}
 
+	//データ型が配列なものに対してのインデックスを指定して単一のデータを入れる
+	template<typename DataType>
+	void WriteElement(const UINT index_, const DataType& data_, UINT const arrIndex_)
+	{
+		auto* dst = reinterpret_cast<DataType*>(mappedPtrs[index_]);
+
+		dst[arrIndex_] = data_;
+	}
+
+
 	//両方に書き込む。初期化用
 	template<typename DataType>
 	void WriteInBoth

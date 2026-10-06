@@ -49,6 +49,18 @@ namespace StructuredBufferModelData
 
     struct MaterialGPU
     {
+        MaterialGPU() = default;
+
+        MaterialGPU(MaterialGPU const& materialGPU_)
+        {
+            albedoTexture = materialGPU_.albedoTexture;
+            normalTexture = materialGPU_.normalTexture;
+            emissiveTexture = materialGPU_.emissiveTexture;
+            baseColor = materialGPU_.baseColor;
+            roughness = materialGPU_.roughness;
+            metallic = materialGPU_.metallic;
+        }
+
         SRVHeapIndex albedoTexture = kInvalid;
         SRVHeapIndex normalTexture = kInvalid;
         SRVHeapIndex emissiveTexture = kInvalid;
@@ -93,7 +105,8 @@ namespace StructuredBufferModelData
 
     struct TransformMatrixCPUGPU
     {
-        Matrix4x4 wvp;
+        TransformMatrixCPUGPU() = default;
+        TransformMatrixCPUGPU(Matrix4x4 const& world_) :world(world_) {};
         Matrix4x4 world;
     };
 

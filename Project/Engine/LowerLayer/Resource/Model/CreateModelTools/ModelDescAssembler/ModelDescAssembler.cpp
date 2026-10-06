@@ -29,7 +29,7 @@ ModelContext::ModelDescAssembler::ModelDescAssembler
 
 ModelContext::ModelDescAssembler::ModelDescParts ModelContext::ModelDescAssembler::Assemble
 (
-	std::string modelFileName_,
+	std::string const& modelFileName_,
 	std::vector<MaterialCPU> const& inputMaterials_
 )
 {
@@ -120,10 +120,10 @@ std::vector<MaterialGPU> ModelContext::ModelDescAssembler::ConvertMaterialData
 			auto const& src = materialsFromFile_[i];
 
 			if (dst.albedoTexture == kInvalid && src.albedoTexture.size() > 0)
-				dst.albedoTexture = textureLib->Export(src.albedoTexture);
+				dst.albedoTexture	= textureLib->Export(src.albedoTexture);
 
 			if (dst.normalTexture == kInvalid && src.normalTexture.size() > 0)
-				dst.normalTexture = textureLib->Export(src.normalTexture);
+				dst.normalTexture	= textureLib->Export(src.normalTexture);
 
 			if (dst.emissiveTexture == kInvalid && src.emissiveTexture.size() > 0)	
 				dst.emissiveTexture = textureLib->Export(src.emissiveTexture);
@@ -136,8 +136,10 @@ std::vector<MaterialGPU> ModelContext::ModelDescAssembler::ConvertMaterialData
 		}
 
 		//手動入力もなくソースも無ければ、適当な値を入れておく
+		//あえて入れていないパラメータは、hlsl側でセンチネルとしての値が埋め込まれているので触らんように
 		{
 			if (dst.albedoTexture == kInvalid)dst.albedoTexture = textureLib->Export("white4x4_albedo");
+			//割とおきにな値
 			if (dst.roughness == kInvalid)dst.roughness = 0.25f;
 			if (dst.metallic == kInvalid )dst.metallic = 0.9f;
 		}

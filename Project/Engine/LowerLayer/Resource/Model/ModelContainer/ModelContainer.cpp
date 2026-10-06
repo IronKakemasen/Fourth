@@ -40,14 +40,6 @@ ModelContextCmds::WatchSeparatedByRenderState ModelContext::ModelContainer::Watc
 	};
 }
 
-ModelContextCmds::WatchSeparatedByModelType ModelContext::ModelContainer::WatchSeparatedByModelTypeCmd(ProviderKey key_)
-{
-	return [this]()
-	{
-		return &this->separatedByModelType;
-	};
-}
-
 void ModelContext::ModelContainer::SeparateModels(NexusFieldProof proof_, AgentKey key_)
 {
 	ModelSeparator modelSeparator(proof_, key_);

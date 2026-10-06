@@ -26,7 +26,7 @@ public:
 	//RenderStateで仕分けされたコンテナを見るためのコマンド
 	ModelContextCmds::WatchSeparatedByRenderState WatchSeparatedByRenderStateCmd(ProviderKey key_);
 	//モデルのタイプ別に仕分けされたコンテナを見るためのコマンド
-	ModelContextCmds::WatchSeparatedByModelType WatchSeparatedByModelTypeCmd(ProviderKey key_);
+	auto const& WatchSeparatedByModelType(NexusFieldProof proof_)const { return separatedByModelType; }
 
 	//ランタイムでPSO切り替えコストを低減させるために、モデルクラスをおなじrenderStateごとに分別する
 	void SeparateModels(NexusFieldProof proof_, AgentKey key_);

@@ -11112,8 +11112,8 @@ void RenderContext::StaticRenderGraph::PathOperator::Run
 	auto& bufferDispatcher = *bToolLender->Lend<BufferContext::BufferDispatcher>(bLicence);
 	//modelContainer（仕分け済み）取得コマンドをもらう
 	auto mCmdProvider = modelContextDiplomat_.Access<ModelContext::CommandProvider>();
-	ModelContext::CommandProvider::LicenceType<ModelContextCmds::WatchSeparatedModelContainer> mLicence;
-	auto& modelContainer = *mCmdProvider->Provide<ModelContextCmds::WatchSeparatedModelContainer>(mLicence)();
+	ModelContext::CommandProvider::LicenceType<ModelContextCmds::WatchSeparatedByRenderState> mLicence;
+	auto& modelContainer = *mCmdProvider->Provide<ModelContextCmds::WatchSeparatedByRenderState>(mLicence)();
 	for (auto* path : allPathPtr)
 	{
 		path->Run(modelContainer, modelFillMode, pso_PoolDispatcher, runtimeWrapper_, bufferDispatcher);
@@ -13185,7 +13185,9 @@ struct RenderStateKey;
 namespace ModelContextCmds
 {
 	using WatchModelContainer = std::function<const std::vector<std::unique_ptr<Model>>*()>;
-	using WatchSeparatedModelContainer = std::function<std::vector<std::unordered_map<uint64_t, std::pair<RenderStateKey, std::vector<Model*>>>>* ()>;
+	using WatchSeparatedByRenderState = std::function<std::vector<std::unordered_map<uint64_t, std::pair<RenderStateKey, std::vector<Model*>>>>* ()>;
+	//結合度を強めたくないので直書き。でもたぶん2種類しかないから大丈夫
+	using WatchSeparatedByModelType = std::function< std::array < std::vector<Model*>, 2 >*()>;
 }
 
 ========================================
@@ -13205,6 +13207,7 @@ namespace ModelContextCmds
 #include "TestModelOKIBA.h"
 #include "CreateModelTools/ModelCreator.h"
 #include "ModelStructure/ModelDescription/ModelDescription.h"
+#include "ModelStructure/Model.h"
 using namespace RenderStateComponent;
 using namespace ShaderPathComponent;
 using namespace RenderPassComponent;
@@ -13223,7 +13226,7 @@ TestModelOKIBA::TestModelOKIBA(ModelContext::ModelCreator* modelCreator_)
 	std::vector<RenderState> playerC;
 	playerC.emplace_back(std::move(cP));
 	std::vector<MaterialCPU> materials;
-	player = modelCreator_->Create("PlayerObj", playerC, materials,1,"Player")[0];
+	player = modelCreator_->Create("PlayerObj",Model::Type::kDynamic, playerC, materials,1,"Player")[0];
 	RenderState cC;
 	cC.blendModes.emplace_back(BlendMode::kOpaque);
 	cC.pass = RenderPassComponent::Pass::kSceneOpaque;
@@ -13232,7 +13235,7 @@ TestModelOKIBA::TestModelOKIBA(ModelContext::ModelCreator* modelCreator_)
 	cC.materialTypes.emplace_back(MaterialType::kStandard);
 	std::vector<RenderState> cubeC;
 	cubeC.emplace_back(std::move(cC));
-	cube = modelCreator_->Create("CubeGltf", cubeC, materials,1,"Cube")[0];
+	cube = modelCreator_->Create("CubeGltf", Model::Type::kDynamic, cubeC, materials,1,"Cube")[0];
 }
 
 ========================================
@@ -13272,12 +13275,19 @@ ModelContext::ModelCreator::ModelCreator
 std::vector<Model*> ModelContext::ModelCreator::Create
 (
 	std::string const& modelFileName_,
+	Model::Type type_,
 	std::vector<RenderState> const& modelRenderStates_,
 	std::vector<StructuredBufferModelData::MaterialCPU> const& materials_,
 	UINT const numCreate_,
 	std::string const& modelName_
 )
 {
+	ErrorMessageOutput::Assert::DetectError
+	(
+		type_ != Model::Type::kCount,
+		"KCount何か選択してんじゃない",
+		fileName
+	);
 	std::vector<Model*> modelPtrContainer;
 	//モデルのディスクリプションの要素を組み立てる
 	auto [perDrawIndices,materialsGPU,meshletSize] = modelDescAssembler->Assemble(modelFileName_, materials_);
@@ -13292,7 +13302,7 @@ std::vector<Model*> ModelContext::ModelCreator::Create
 	for (UINT i = 0;i < numCreate_;++i)
 	{
 		///モデルクラスのインスタンス化
-		std::unique_ptr<Model> model = std::make_unique<Model>(modelDesc, materialsGPU);
+		std::unique_ptr<Model> model = std::make_unique<Model>(type_ , modelDesc, materialsGPU);
 		modelPtrContainer.emplace_back(model.get());
 		//実体はモデルコンテナが握る
 		modelContainer.Add(ModelContainer::Local_AddLicence{}, std::move(model));
@@ -13307,7 +13317,7 @@ std::vector<Model*> ModelContext::ModelCreator::Create
 #include "../ModelContext.h"
 //外部
 #include "../../../../../Assets/Shared/StructuredBufferModelData.h"
-class Model;
+#include "../ModelStructure/Model.h"
 struct RenderState;
 class ModelContext::ModelCreator
 {
@@ -13321,6 +13331,7 @@ public:
 	std::vector<Model*> Create
 	(
 		std::string const& modelFileName_,
+		Model::Type type_,
 		std::vector<RenderState> const& modelRenderStates_,
 		std::vector<StructuredBufferModelData::MaterialCPU> const& materials_,
 		UINT const numCreate_,
@@ -14958,24 +14969,33 @@ void ModelContext::ModelContainer::Add(Local_AddLicence addLicence_, std::unique
 	const auto& model =  container.emplace_back(std::move(model_));
 	Logger::Log("Add: " + model->WatchName(), fileName);
 }
-ModelContextCmds::WatchModelContainer ModelContext::ModelContainer::WatchDataCmd(ProviderKey key_)const
+ModelContextCmds::WatchModelContainer ModelContext::ModelContainer::WatchModelDataCmd(ProviderKey key_)const
 {
 	return [this]()
 	{
 		return &this->container;
 	};
 }
-ModelContextCmds::WatchSeparatedModelContainer ModelContext::ModelContainer::WatchSeparatedCmd(ProviderKey key_)
+ModelContextCmds::WatchSeparatedByRenderState ModelContext::ModelContainer::WatchSeparatedByRenderStateCmd(ProviderKey key_)
 {
 	return [this]()
 	{
-		return &this->separatedContainer;
+		return &this->separatedByRenderState;
+	};
+}
+ModelContextCmds::WatchSeparatedByModelType ModelContext::ModelContainer::WatchSeparatedByModelTypeCmd(ProviderKey key_)
+{
+	return [this]()
+	{
+		return &this->separatedByModelType;
 	};
 }
 void ModelContext::ModelContainer::SeparateModels(NexusFieldProof proof_, AgentKey key_)
 {
 	ModelSeparator modelSeparator(proof_, key_);
-	separatedContainer = std::move(modelSeparator.SeparateAllModels(&container));
+	auto output = modelSeparator.SeparateAllModels(container);
+	separatedByRenderState = std::move(output.first);
+	separatedByModelType = std::move(output.second);
 	Logger::Log("Model Separating comp", fileName);
 }
 
@@ -14986,28 +15006,34 @@ void ModelContext::ModelContainer::SeparateModels(NexusFieldProof proof_, AgentK
 #include "../ModelContext.h"
 #include "../ModelContextCmds.h"
 #include "RenderStateKey/RenderStateKey.h"
+#include "../ModelStructure/Model.h"
 class ModelContext::ModelContainer
 {
-	//モデルのレンダーステートごとにコンテナに詰めて、PSOの切り替えコストを低減させるため
+	//1.モデルのレンダーステートごとにコンテナに詰めて、PSOの切り替えコストを低減させる
+	//2.モデルをstaticかdynamicかでコンテナを仕分ける。バッチング処理の効率化のため
 	class ModelSeparator;
 public:
-	using SepartatedContainer = std::unordered_map<uint64_t, std::pair<RenderStateKey , std::vector<Model*>>>;
+	using SeparatedByRenderState = std::unordered_map<uint64_t, std::pair<RenderStateKey , std::vector<Model*>>>;
 	struct Local_AddLicence;
 	ModelContainer(NexusFieldProof proof_);
 	~ModelContainer();
 	void Add(Local_AddLicence addLicence_,std::unique_ptr<Model>&& model_);
 	//全モデルコンテナの中身を見るためのコマンド
-	ModelContextCmds::WatchModelContainer WatchDataCmd(ProviderKey key_)const;
-	//仕分けコンテナを見るためのコマンド
-	ModelContextCmds::WatchSeparatedModelContainer WatchSeparatedCmd(ProviderKey key_);
+	ModelContextCmds::WatchModelContainer WatchModelDataCmd(ProviderKey key_)const;
+	//RenderStateで仕分けされたコンテナを見るためのコマンド
+	ModelContextCmds::WatchSeparatedByRenderState WatchSeparatedByRenderStateCmd(ProviderKey key_);
+	//モデルのタイプ別に仕分けされたコンテナを見るためのコマンド
+	ModelContextCmds::WatchSeparatedByModelType WatchSeparatedByModelTypeCmd(ProviderKey key_);
 	//ランタイムでPSO切り替えコストを低減させるために、モデルクラスをおなじrenderStateごとに分別する
 	void SeparateModels(NexusFieldProof proof_, AgentKey key_);
 private:
 	//モデルがレンダーステートごとに分別されたコンテナ。
 	//第一添え字は、Passで指定
-	std::vector<SepartatedContainer> separatedContainer;
+	std::vector<SeparatedByRenderState> separatedByRenderState;
 	//モデルの本体が詰まってる
 	std::vector<std::unique_ptr<Model>> container;
+	//staticかdynamicかで仕分けられている
+	std::array < std::vector<Model*>, (UINT)Model::Type::kCount > separatedByModelType;
 };
 struct ModelContext::ModelContainer::Local_AddLicence
 {
@@ -15045,23 +15071,27 @@ ModelContext::ModelContainer::ModelSeparator::ModelSeparator(NexusFieldProof pro
 ModelContext::ModelContainer::ModelSeparator::~ModelSeparator()
 {
 }
-[[nodiscard]] std::vector<ModelContext::ModelContainer::SepartatedContainer>
-ModelContext::ModelContainer::ModelSeparator::SeparateAllModels(std::vector<std::unique_ptr<Model>>* modelContainer_)
+[[nodiscard]] ModelContext::ModelContainer::ModelSeparator::Output
+ModelContext::ModelContainer::ModelSeparator::SeparateAllModels(std::vector<std::unique_ptr<Model>>& modelContainer_)
 {
-	std::vector<SepartatedContainer> dstSeparateContainer;
-	dstSeparateContainer.resize((UINT)Pass::kCount);
-	for (auto itr = modelContainer_->begin();itr != modelContainer_->end();++itr)
+	std::vector<SeparatedByRenderState> separatedByRenderState;
+	std::array < std::vector<Model*>, (UINT)Model::Type::kCount> separatedByModelType;
+	separatedByRenderState.resize((UINT)Pass::kCount);
+	for (auto itr = modelContainer_.begin();itr != modelContainer_.end();++itr)
 	{
 		//renderStateとそのパックされたキーがセット
 		auto packedKeys = PackToKey(*(*itr));
+		//RenderState別に仕分けていく
 		for (auto const& key : packedKeys)
 		{
 			auto const pass = (UINT)key.first.Get<RenderStateKey::Sequence::kPass>();
-			dstSeparateContainer[pass][key.second].first = key.first;
-			dstSeparateContainer[pass][key.second].second.emplace_back((*itr).get());
+			separatedByRenderState[pass][key.second].first = key.first;
+			separatedByRenderState[pass][key.second].second.emplace_back((*itr).get());
 		}
+		//ランタイムデータバッチング用にモデルタイプ別に仕分けていく
+		separatedByModelType[(UINT)(*itr)->WatchModelType()].emplace_back((*itr).get());
 	}
-	return dstSeparateContainer;
+	return std::make_pair(separatedByRenderState, separatedByModelType);
 }
 std::vector<std::pair<RenderStateKey, uint64_t>> ModelContext::ModelContainer::ModelSeparator::PackToKey(Model const& model_)
 {
@@ -15104,10 +15134,11 @@ std::vector<std::pair<RenderStateKey, uint64_t>> ModelContext::ModelContainer::M
 class KeyPackager;
 class ModelContext::ModelContainer::ModelSeparator
 {
+	using Output = std::pair<std::vector<ModelContext::ModelContainer::SeparatedByRenderState>, std::array < std::vector<Model*>, (UINT)Model::Type::kCount > >;
 public:
 	ModelSeparator(NexusFieldProof proof_ ,AgentKey key_);
 	~ModelSeparator();
-	[[nodiscard]] std::vector<SepartatedContainer> SeparateAllModels(std::vector<std::unique_ptr<Model>>* modelContainer_);
+	[[nodiscard]] Output SeparateAllModels(std::vector<std::unique_ptr<Model>>& modelContainer_);
 private:
 	//レンダーステートをキーに詰める
 	std::vector<std::pair<RenderStateKey, uint64_t>> PackToKey(Model const& model_);
@@ -15251,13 +15282,13 @@ template<>
 WatchModelContainer ModelContext::CommandProvider::Provide<WatchModelContainer>
 (typename CmdTypeTraits<WatchModelContainer>::Type licence_)
 {
-	return modelContainer->WatchDataCmd(ProviderKey{});
+	return modelContainer->WatchModelDataCmd(ProviderKey{});
 }
 template<>
-WatchSeparatedModelContainer ModelContext::CommandProvider::Provide<WatchSeparatedModelContainer>
-(typename CmdTypeTraits<WatchSeparatedModelContainer>::Type licence_)
+WatchSeparatedByRenderState ModelContext::CommandProvider::Provide<WatchSeparatedByRenderState>
+(typename CmdTypeTraits<WatchSeparatedByRenderState>::Type licence_)
 {
-	return modelContainer->WatchSeparatedCmd(ProviderKey{});
+	return modelContainer->WatchSeparatedByRenderStateCmd(ProviderKey{});
 }
 
 ========================================
@@ -15287,7 +15318,7 @@ struct ModelContext::CommandProvider::CmdTypeTraits<ModelContextCmds::WatchModel
 	using Type = WatchModelContainerLicence;
 };
 template<>
-struct ModelContext::CommandProvider::CmdTypeTraits<ModelContextCmds::WatchSeparatedModelContainer>
+struct ModelContext::CommandProvider::CmdTypeTraits<ModelContextCmds::WatchSeparatedByRenderState>
 {
 	using Type = WatchModelContainerLicence;
 };
@@ -15295,7 +15326,7 @@ template<>
 ModelContextCmds::WatchModelContainer ModelContext::CommandProvider::Provide<ModelContextCmds::WatchModelContainer>
 (typename CmdTypeTraits<ModelContextCmds::WatchModelContainer>::Type licence_);
 template<>
-ModelContextCmds::WatchSeparatedModelContainer ModelContext::CommandProvider::Provide<ModelContextCmds::WatchSeparatedModelContainer>
+ModelContextCmds::WatchSeparatedByRenderState ModelContext::CommandProvider::Provide<ModelContextCmds::WatchSeparatedByRenderState>
 (typename CmdTypeTraits<ModelContextCmds::WatchModelContainer>::Type licence_);
 
 ========================================
@@ -15415,6 +15446,9 @@ ModelContext::ModelDataBatcher::ModelDataBatcher(NexusFieldProof proof_)
 ModelContext::ModelDataBatcher::~ModelDataBatcher()
 {
 }
+void ModelContext::ModelDataBatcher::BatchingAllModelData(NexusFieldProof proof_, AgentKey agentKey_)
+{
+}
 template<>
 void ModelContext::ModelDataBatcher::ImportPerDrawBufferID<ConstantBuffers::ConstantBufferBindSlots::kTransformMatrixContainer>
 (Local_InputBufferUniqueIDLicence licence_, BufferUniqueID id_)
@@ -15448,13 +15482,15 @@ class ModelContext::ModelDataBatcher
 	//のバッファのIDを格納している
 	class PerDrawBufferLibrary;
 public:
+	template<ConstantBuffers::ConstantBufferBindSlots bufferType>
+	struct BufferTypeTraits;
 	struct Local_InputBufferUniqueIDLicence;
 	ModelDataBatcher(NexusFieldProof proof_);
 	~ModelDataBatcher();
 	template<ConstantBuffers::ConstantBufferBindSlots bufferType>
 	void ImportPerDrawBufferID(Local_InputBufferUniqueIDLicence licence_,BufferUniqueID id_);
-	template<ConstantBuffers::ConstantBufferBindSlots bufferType>
-	struct BufferTypeTraits;
+	//代行者にランタイムでモデルデータのバッチング処理をやってもらう
+	void BatchingAllModelData(NexusFieldProof proof_, AgentKey agentKey_);
 private:
 	std::unique_ptr<PerDrawBufferLibrary> perDrawBufferLibrary;
 };
@@ -15526,14 +15562,16 @@ namespace
 }
 Model::Model
 (
+	Type type_,
 	const ModelDescription& modelDesc_,
 	std::vector<StructuredBufferModelData::MaterialGPU> const& materials_
-) :modelDesc(modelDesc_)
+) :modelDesc(modelDesc_), type(type_)
 {
 	//変更可能描画コンポーネントの初期設定は添え字0番に
 	changeableParams.blendMode = modelDesc_.WatchRenderStates()[0].blendModes[0];
 	changeableParams.materialType = modelDesc_.WatchRenderStates()[0].materialTypes[0];
 	changeableParams.materials = materials_;
+	changeableParams.areMaterialsDirty.resize(materials_.size(),true);
 	//サブメッシュ分のトランスフォームを確保
 	auto const numMeshes = modelDesc_.WatchPerDrawIndices().size();
 	changeableParams.transforms.resize(numMeshes);
@@ -15599,6 +15637,7 @@ void Model::ChangeRoughness(int index_, float dst_)
 		errorMsg,
 		fileName
 	);
+	changeableParams.areMaterialsDirty[index_] = true;
 	changeableParams.materials[index_].roughness = dst_;
 }
 void Model::ChangeMetalic(int index_, float dst_)
@@ -15610,6 +15649,7 @@ void Model::ChangeMetalic(int index_, float dst_)
 		errorMsg,
 		fileName
 	);
+	changeableParams.areMaterialsDirty[index_] = true;
 	changeableParams.materials[index_].metallic = dst_;
 }
 void Model::ChangeColor(int index_, Vector4<float> const& dst_)
@@ -15621,6 +15661,7 @@ void Model::ChangeColor(int index_, Vector4<float> const& dst_)
 		errorMsg,
 		fileName
 	);
+	changeableParams.areMaterialsDirty[index_] = true;
 	changeableParams.materials[index_].baseColor = dst_;
 }
 Transform& Model::RefTransform(int index_)
@@ -15646,6 +15687,7 @@ void Model::ChangeTexture<TextureComponent::TextureType::kAlbedo>(int index_, SR
 		WatchName() + "のアルベドテクスチャアクセス違反",
 		fileName
 	);
+	changeableParams.areMaterialsDirty[index_] = true;
 	changeableParams.materials[index_].albedoTexture = dst_;
 }
 template<>
@@ -15657,6 +15699,7 @@ void Model::ChangeTexture<TextureComponent::TextureType::kNormal>(int index_, SR
 		WatchName() + "の法線テクスチャアクセス違反",
 		fileName
 	);
+	changeableParams.areMaterialsDirty[index_] = true;
 	changeableParams.materials[index_].normalTexture = dst_;
 }
 template<>
@@ -15668,6 +15711,7 @@ void Model::ChangeTexture<TextureComponent::TextureType::kEmissive>(int index_, 
 		WatchName() + "のエミッシブテクスチャアクセス違反",
 		fileName
 	);
+	changeableParams.areMaterialsDirty[index_] = true;
 	changeableParams.materials[index_].emissiveTexture = dst_;
 }
 template
@@ -15697,11 +15741,21 @@ class Model
 		ShaderPathComponent::MaterialType materialType{};
 		//マテリアル。可変長になっているのは、サブメッシュ分用意しているから
 		std::vector<StructuredBufferModelData::MaterialGPU> materials;
+		std::vector<bool> areMaterialsDirty;
 		std::vector<Transform> transforms;
 	};
 public:
+	enum class Type
+	{
+		//ランタイム時にバッチング、トランスフォームやマテリアルのアップデート対象から外れる
+		kStatic,
+		//ランタイム時にデータが変動する
+		kDynamic,
+		kCount
+	};
 	Model
 	(
+		Type type_,
 		const ModelDescription& modelDesc_,
 		std::vector<StructuredBufferModelData::MaterialGPU> const& materials_
 	);
@@ -15722,13 +15776,19 @@ public:
 		changeableParams.materialType == materialType_;
 	}
 	auto const& WatchName()const { return modelDesc.WatchRenderStates()[0].modelName; }
+	auto const WatchModelType()const { return type; }
 	//たぶんimguiでモデルの情報を表示するときに使うと思う
 	auto const& WatchChangeables()const { return changeableParams; }
 	//PSO生成、モデル分別のときに利用
 	auto const& WatchRenderStates()const { return modelDesc.WatchRenderStates(); }
-	//ランタイムでドローコマンドをたたくために使用
-	inline auto const& WatchPerDrawIndices()const { return modelDesc.WatchPerDrawIndices(); }
-	inline auto const& WatchMeshletSize()const { return modelDesc.WatchMeshletSize(); }
+	//ランタイムでドローコマンドをたたくため、バッチング先インデックスがどこかを知るために使用
+	auto const& WatchPerDrawIndices()const { return modelDesc.WatchPerDrawIndices(); }
+	//ドローコマンドオンリー
+	auto const& WatchMeshletSize()const { return modelDesc.WatchMeshletSize(); }
+	//主にバッファにバッチングするため
+	auto const& WatchMaterials()const { return changeableParams.materials; }
+	auto const& WatchMaterialsDirty()const { return changeableParams.areMaterialsDirty; }
+	auto const& WatchTransforms()const { return changeableParams.transforms; }
 	//上位レイヤーでモデルのパラメーターを弄るときに
 	void ChangeBlendMode(RenderStateComponent::BlendMode dst_);
 	void ChangeMaterialType(ShaderPathComponent::MaterialType dst_);
@@ -15740,6 +15800,7 @@ public:
 	Transform& RefTransform(int index_);
 	std::span<Transform> RefTransforms();
 private:
+	Type type;
 	ChangeableParams changeableParams;
 	ModelDescription modelDesc;
 };
@@ -19655,7 +19716,7 @@ public:
 	{
 		return worldMatrix;
 	}
-	inline Vector3 const& WatchWorldPos()const
+	inline Vector3 const WatchWorldPos()const
 	{
 		return
 		{
@@ -20924,4 +20985,4 @@ namespace StringProcessing
 === SUMMARY ===
 ========================================
 Total Files      : 456
-Effective Lines  : 15286
+Effective Lines  : 15333

@@ -133,7 +133,7 @@ public:
 		return worldMatrix;
 	}
 
-	inline Vector3 const& WatchWorldPos()const
+	inline Vector3 const WatchWorldPos()const
 	{
 		return
 		{
@@ -143,7 +143,7 @@ public:
 		};
 	}
 
-	bool ShouldOverrideBuffer(){ return needOverrideBuffer; }
+	bool ShouldOverrideBuffer()const { return needOverrideBuffer; }
 
 private:
 
