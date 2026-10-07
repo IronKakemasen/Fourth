@@ -6,6 +6,7 @@ using BufferUniqueID = uint32_t;
 using SRVHeapIndex = uint32_t;
 //メッシュデータのID
 using MeshDataID = uint32_t;
+static constexpr UINT kInvalid = 0xffffffff;
 
 
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////

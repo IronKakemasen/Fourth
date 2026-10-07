@@ -1511,6 +1511,9 @@
     <ClInclude Include="Engine\LowerLayer\Core\SwapChain\SwapChainContextDiplomats.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
+    <ClInclude Include="Assets\Shared\StructuredBufferCameraData.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

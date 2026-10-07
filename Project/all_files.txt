@@ -11314,10 +11314,18 @@ void RenderContext::PassBehavior::BeginPass(RuntimeWrapper& cmdWrapper_, BufferC
 {
 	auto const& colorBuffersInfo = runtimePassInfo->WatchColorBuffersInfo();
 	UINT const numColorBuffers = UINT(colorBuffersInfo.size());
-	auto const& DepthStencilBufferInfo = runtimePassInfo->WatchDepthStencilBufferInfo();
+	auto const& depthStencilBufferInfo = runtimePassInfo->WatchDepthStencilBufferInfo();
 	std::array<D3D12_CPU_DESCRIPTOR_HANDLE, D3D12_SIMULTANEOUS_RENDER_TARGET_COUNT> rtHandles;
 	std::array<D3D12_RECT, D3D12_SIMULTANEOUS_RENDER_TARGET_COUNT> scissorRects;
 	std::array<D3D12_VIEWPORT, D3D12_SIMULTANEOUS_RENDER_TARGET_COUNT> viewports;
+	//まずPassの所持する全てのバッファの書き込みバリアを張る
+	PitchOwnBuffersBarrierWriting
+	(
+		colorBuffersInfo,
+		depthStencilBufferInfo,
+		cmdWrapper_,
+		bufDispatcher_
+	);
 	//カラーバッファ
 	for (UINT i = 0;i < numColorBuffers;++i)
 	{
@@ -11328,39 +11336,57 @@ void RenderContext::PassBehavior::BeginPass(RuntimeWrapper& cmdWrapper_, BufferC
 		rtHandles[i] = PullHandleCPU<ColorBuffer>(colorBuffer, bufDispatcher_);
 		scissorRects[i] = src.scissorRect;
 		viewports[i] = src.viewport;
-		//カラーバッファの状態をレンダーターゲットにするためにバリアを生成
-		//Read -> Writeへ
-		CreateBarrier<BufferUsage::kWrite>(colorBuffer);
 		//ビュークリア
 		ClearColorBufferView(rtHandles[i], src.clearColor.data(), cmdWrapper_);
 	}
 	//深度ステンシルバッファ
-	if (DepthStencilBufferInfo.has_value())
+	if (depthStencilBufferInfo.has_value())
 	{
 		//バッファ検索
-		auto* depthStencilBuffer = FindBufferWithID<DepthStencilBuffer>(DepthStencilBufferInfo->bufferID, bufDispatcher_);
+		auto* depthStencilBuffer = FindBufferWithID<DepthStencilBuffer>(depthStencilBufferInfo->bufferID, bufDispatcher_);
 		//ハンドル取得
 		D3D12_CPU_DESCRIPTOR_HANDLE dsvHandle = PullHandleCPU<DepthStencilBuffer>(depthStencilBuffer, bufDispatcher_);
-		//状態をレンダーターゲットにするためにバリアを生成
-		//Read -> Writeへ
-		CreateBarrier<BufferUsage::kWrite>(depthStencilBuffer);
 		//ビュークリア
 		ClearDepthStencilBufferView(dsvHandle, cmdWrapper_);
-		//キャッシュされたバリアを張る
-		PitchBarrierCached(cmdWrapper_);
 		//描画先の設定
 		SetRenderTargets(rtHandles, numColorBuffers, &dsvHandle, cmdWrapper_);
 	}
 	//無ければ
 	else
 	{
-		//キャッシュされたバリアを張る
-		PitchBarrierCached(cmdWrapper_);
 		//描画先の設定
 		SetRenderTargets(rtHandles, numColorBuffers, nullptr, cmdWrapper_);
 	}
 	//このパスのルートコンスタンツを転送
 	TransferRootConstants(cmdWrapper_);
+}
+void RenderContext::PassBehavior::PitchOwnBuffersBarrierWriting
+(
+	std::vector<RuntimePassInfo::ColorBuffer> const& colorBuffersInfo_,
+	std::optional<RuntimePassInfo::DepthStencilBuffer> const& depthStencilBufferInfo_,
+	RuntimeWrapper& cmdWrapper_,
+	BufferContext::BufferDispatcher& bufDispatcher_
+)
+{
+	//描画先にステートを変化するためのバリアを張る
+	for (auto const& src: colorBuffersInfo_)
+	{
+		//バッファ検索
+		ColorBuffer* colorBuffer = FindBufferWithID<ColorBuffer>(src.bufferID, bufDispatcher_);
+		//カラーバッファの状態をレンダーターゲットにするためにバリアを生成
+		//Read -> Writeへ
+		CreateBarrier<BufferUsage::kWrite>(colorBuffer);
+	}
+	if (depthStencilBufferInfo_.has_value())
+	{
+		//バッファ検索
+		auto* depthStencilBuffer = FindBufferWithID<DepthStencilBuffer>(depthStencilBufferInfo_->bufferID, bufDispatcher_);
+		//状態をレンダーターゲットにするためにバリアを生成
+		//Read -> Writeへ
+		CreateBarrier<BufferUsage::kWrite>(depthStencilBuffer);
+	}
+	//キャッシュされたバリアを張る
+	PitchBarrierCached(cmdWrapper_);
 }
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -11583,7 +11609,7 @@ void RenderContext::PassBehavior::CreateBarrier<BufferUsage::kWrite>(IRenderTarg
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Render\RenderPass\AllRenderPass\RenderPassBehavior.h ===
 ========================================
 #pragma once
-#include "../../RenderContext.h"
+#include "../../RenderPass/RuntimePassInfo/RuntimePassInfo.h"
 #include "../../RenderContextRuntime/PSO_PoolDispatcher/GraphicsPSO_Key.h"
 //外部
 #include "../../../Buffer/BufferContext.h"
@@ -11651,6 +11677,14 @@ private:
 	std::vector<D3D12_RESOURCE_BARRIER> barrierCache;
 	//とりあえず10確保しておこう
 	static constexpr UINT kBarrierCacheCapacity = 10;
+	//Pass自身が所持するバッファをすべてに描画先バリアを張る
+	void PitchOwnBuffersBarrierWriting
+	(
+		std::vector<RuntimePassInfo::ColorBuffer> const& colorBuffersInfo_,
+		std::optional<RuntimePassInfo::DepthStencilBuffer> const& depthStencilBufferInfo_,
+		RuntimeWrapper& cmdWrapper_,
+		BufferContext::BufferDispatcher& bufDispatcher_
+	);
 	//バッファのステートを切り替えのためのバリアを生成
 	//中で張ってない
 	template<BufferUsage usage>
@@ -13062,7 +13096,7 @@ ModelContext::ModelContext
 	);
 	Logger::Log("Instantiate: ModelDescAssembler", fileName);
 	Logger::Log("Instantiate: ModelCreator", fileName);
-	modelDataBatcher = std::make_unique<ModelDataBatcher>(proof_,*modelContainer);
+	modelDataBatcher = std::make_unique<ModelDataBatcher>(proof_);
 	Logger::Log("Instantiate: modelDataBatcher", fileName);
 	ModelDataCreator modelDataCreator
 	(
@@ -13078,7 +13112,7 @@ ModelContext::ModelContext
 		new ModelContextDiplomat
 		(
 			proof_,
-			std::make_unique<ExecutionAgent>(proof_,*this,*modelContainer),
+			std::make_unique<ExecutionAgent>(proof_,*this,*modelContainer,*modelDataBatcher),
 			std::make_unique<ToolLender>(proof_),
 			std::make_unique<CommandProvider>(proof_, modelContainer.get())
 		)
@@ -15349,12 +15383,14 @@ private:
 #include "ModelContextExecutionAgent.h"
 #include "../../CreateModelTools/ModelDataLoader/ModelDataLoader.h"
 #include "../../ModelContainer/ModelContainer.h"
+#include "../../ModelContextRuntime/ModelDataBatcher/ModelDataBatcher.h"
 ModelContext::ExecutionAgent::ExecutionAgent
 (
 	ModelContext::NexusFieldProof proof_,
 	ModelContext& modelContext_,
-	ModelContainer& modelContainer_
-):modelContext(modelContext_), modelContainer(modelContainer_)
+	ModelContainer& modelContainer_,
+	ModelDataBatcher& modelDataBatcher_
+):modelContext(modelContext_), modelContainer(modelContainer_), modelDataBatcher(modelDataBatcher_)
 {
 }
 void ModelContext::ExecutionAgent::DeleteModelDataCache(NexusFieldProof proof_)
@@ -15364,6 +15400,38 @@ void ModelContext::ExecutionAgent::DeleteModelDataCache(NexusFieldProof proof_)
 void ModelContext::ExecutionAgent::SeparateModelContainer(NexusFieldProof proof_)
 {
 	modelContainer.SeparateModels(proof_, AgentKey{});
+}
+void ModelContext::ExecutionAgent::BatchStaticModelData
+(
+	NexusFieldProof proof_,
+	UINT const frameIndex_,
+	BufferContextDiplomat& bufferContextDiplomat_
+)
+{
+	modelDataBatcher.BatchModelData<Model::Type::kStatic>
+	(
+		proof_,
+		AgentKey{},
+		modelContainer,
+		frameIndex_,
+		bufferContextDiplomat_
+	);
+}
+void ModelContext::ExecutionAgent::BatchDynamicModelData
+(
+	NexusFieldProof proof_,
+	UINT const frameIndex_,
+	BufferContextDiplomat& bufferContextDiplomat_
+)
+{
+	modelDataBatcher.BatchModelData<Model::Type::kDynamic>
+	(
+		proof_,
+		AgentKey{},
+		modelContainer,
+		frameIndex_,
+		bufferContextDiplomat_
+	);
 }
 
 ========================================
@@ -15378,13 +15446,28 @@ public:
 	(
 		ModelContext::NexusFieldProof proof_,
 		ModelContext& modelContext_,
-		ModelContainer& modelContainer_
+		ModelContainer& modelContainer_,
+		ModelDataBatcher& modelDataBatcher_
 	);
 	void DeleteModelDataCache(NexusFieldProof proof_);
 	void SeparateModelContainer(NexusFieldProof proof_);
+	//モデルクラスとの結合度を密にしたくないのでテンプレートにしません宣言
+	void BatchStaticModelData
+	(
+		NexusFieldProof proof_,
+		UINT const frameIndex_,
+		BufferContextDiplomat& bufferContextDiplomat_
+	);
+	void BatchDynamicModelData
+	(
+		NexusFieldProof proof_,
+		UINT const frameIndex_,
+		BufferContextDiplomat& bufferContextDiplomat_
+	);
 private:
 	ModelContext& modelContext;
 	ModelContainer& modelContainer;
+	ModelDataBatcher& modelDataBatcher;
 };
 
 ========================================
@@ -15446,11 +15529,7 @@ private:
 #include "../../../../Buffer/BufferRuntime/BufferDispatcher/BufferDispatcher.h"
 using namespace ConstantBuffers;
 using namespace StructuredBufferModelData;
-ModelContext::ModelDataBatcher::ModelDataBatcher
-(
-	NexusFieldProof proof_,
-	ModelContainer const& modelContainer_
-):modelContainer(modelContainer_)
+ModelContext::ModelDataBatcher::ModelDataBatcher(NexusFieldProof proof_)
 {
 	perDrawBufferLibrary = std::make_unique<PerDrawBufferLibrary>(proof_);
 }
@@ -15463,14 +15542,22 @@ BufferContext::BufferDispatcher& ModelContext::ModelDataBatcher::BorrowBufferDis
 	return *bufferContextDiplomat_.Access<BufferContext::ToolLender>()->Lend<BufferContext::BufferDispatcher>(licence);
 }
 template<>
-std::vector<Model*> const& ModelContext::ModelDataBatcher::PullModelContainer<Model::Type::kStatic>(NexusFieldProof proof_)
+std::vector<Model*> const& ModelContext::ModelDataBatcher::PullModelContainer<Model::Type::kStatic>
+(
+	NexusFieldProof proof_,
+	ModelContainer const& modelContainer_
+) 
 {
-	return modelContainer.WatchSeparatedByModelType(proof_)[(UINT)Model::Type::kStatic];
+	return modelContainer_.WatchSeparatedByModelType(proof_)[(UINT)Model::Type::kStatic];
 }
 template<>
-std::vector<Model*> const& ModelContext::ModelDataBatcher::PullModelContainer<Model::Type::kDynamic>(NexusFieldProof proof_)
+std::vector<Model*> const& ModelContext::ModelDataBatcher::PullModelContainer<Model::Type::kDynamic>
+(
+	NexusFieldProof proof_,
+	ModelContainer const& modelContainer_
+) 
 {
-	return modelContainer.WatchSeparatedByModelType(proof_)[(UINT)Model::Type::kDynamic];
+	return modelContainer_.WatchSeparatedByModelType(proof_)[(UINT)Model::Type::kDynamic];
 }
 template<>
 void ModelContext::ModelDataBatcher::OverrideBuffer<ConstantBufferBindSlots::kTransformMatrixContainer>
@@ -15507,8 +15594,8 @@ void ModelContext::ModelDataBatcher::OverrideBuffer<ConstantBufferBindSlots::kMa
 )
 {
 	//書き込み先バッファ
-	BufferUniqueID transformContainerBufferID = perDrawBufferLibrary->Export<ConstantBufferBindSlots::kTransformMatrixContainer>();
-	auto dstBuffer = static_cast<IWritableCPU*>(static_cast<UploadStructuredBuffer*>(dispatcher_.Dispatch(transformContainerBufferID)));
+	BufferUniqueID materialContainerBufferID = perDrawBufferLibrary->Export<ConstantBufferBindSlots::kMaterialContainer>();
+	auto dstBuffer = static_cast<IWritableCPU*>(static_cast<UploadStructuredBuffer*>(dispatcher_.Dispatch(materialContainerBufferID)));
 	//やってることはトランスフォームと変わらない。
 	for (size_t i = 0;i < numMesh_;++i)
 	{
@@ -15538,9 +15625,17 @@ void ModelContext::ModelDataBatcher::OverrideBuffer<ConstantBufferBindSlots::kMa
 	BufferContext::BufferDispatcher& dispatcher_
 );
 template
-std::vector<Model*> const& ModelContext::ModelDataBatcher::PullModelContainer<Model::Type::kStatic>(NexusFieldProof proof_);
+std::vector<Model*> const& ModelContext::ModelDataBatcher::PullModelContainer<Model::Type::kStatic>
+(
+	NexusFieldProof proof_,
+	ModelContainer const& modelContainer_
+);
 template
-std::vector<Model*> const& ModelContext::ModelDataBatcher::PullModelContainer<Model::Type::kDynamic>(NexusFieldProof proof_);
+std::vector<Model*> const& ModelContext::ModelDataBatcher::PullModelContainer<Model::Type::kDynamic>
+(
+	NexusFieldProof proof_,
+	ModelContainer const& modelContainer_
+);
 template<>
 void ModelContext::ModelDataBatcher::ImportPerDrawBufferID<ConstantBufferBindSlots::kTransformMatrixContainer>
 (Local_InputBufferUniqueIDLicence licence_, BufferUniqueID id_)
@@ -15578,31 +15673,29 @@ public:
 	template<ConstantBuffers::ConstantBufferBindSlots bufferType>
 	struct BufferTypeTraits;
 	struct Local_InputBufferUniqueIDLicence;
-	ModelDataBatcher
-	(
-		NexusFieldProof proof_,
-		ModelContainer const& modelContainer_
-	);
+	ModelDataBatcher(NexusFieldProof proof_);
 	~ModelDataBatcher();
 	template<ConstantBuffers::ConstantBufferBindSlots bufferType>
 	void ImportPerDrawBufferID(Local_InputBufferUniqueIDLicence licence_,BufferUniqueID id_);
 	//代行者にランタイムでモデルデータのバッチング処理をやってもらう
+	//バッファに書き込まなくていいモデルも多数あるはずなので、全バッチングではなく、該当バッチングする
 	//staticかDynamicか選択
 	template<Model::Type modelType>
 	void BatchModelData
 	(
 		NexusFieldProof proof_,
 		AgentKey agentKey_,
-		BufferContextDiplomat& bufferContextDiplomat_,
-		UINT const frameIndex_
+		ModelContainer const& modelContainer_,
+		UINT const frameIndex_,
+		BufferContextDiplomat& bufferContextDiplomat_
 	)
 	{
 		//BufferDispatcherを借りる
 		auto& dispatcher = BorrowBufferDispatcher(bufferContextDiplomat_);
 		//モデルタイプ別に仕分けされたコンテナ
-		auto const& separatedContainer = PullModelContainer<modelType>(proof_);
+		auto const& separatedContainer = PullModelContainer<modelType>(proof_, modelContainer_);
 		//モデルの所持するデータをバッファに書き込んでいく
-		for (auto const& model : separatedContainer)
+		for (Model const* model: separatedContainer)
 		{
 			auto const& perDrawIndices = model->WatchPerDrawIndices();
 			auto const numMeshes = perDrawIndices.size();
@@ -15627,7 +15720,6 @@ public:
 private:
 	//モデルの個体ごとに所持するパラメーター(TransformやMaterialなど)の配列のBufferIDのライブラリ
 	std::unique_ptr<PerDrawBufferLibrary> perDrawBufferLibrary;
-	ModelContainer const& modelContainer;
 	//モデルのマテリアル情報、またはトランスフォームを書き込む
 	///結合度に箔がついちゃうけど、さすがにモデルひとつごとにBufferDispatcherを解凍するのは非効率的すぎるし、
 	///関数にまとめたいので
@@ -15644,7 +15736,7 @@ private:
 	BufferContext::BufferDispatcher& BorrowBufferDispatcher(BufferContextDiplomat& bufferContextDiplomat_);
 	//モデルコンテナクラスから、仕分け済みのモデルコンテナを引っ張る
 	template<Model::Type modelType>
-	std::vector<Model*> const& PullModelContainer(NexusFieldProof proof_);
+	std::vector<Model*> const& PullModelContainer(NexusFieldProof proof_, ModelContainer const& modelContainer_);
 };
 struct ModelContext::ModelDataBatcher::Local_InputBufferUniqueIDLicence
 {
@@ -15780,7 +15872,7 @@ void Model::ChangeMaterialType(ShaderPathComponent::MaterialType dst_)
 	);
 	changeableParams.materialType = dst_;
 }
-void Model::ChangeRoughness(int index_, float dst_)
+void Model::ChangeRoughness(size_t index_, float dst_)
 {
 	static auto const errorMsg = WatchName() + "のラフネスアクセス違反";
 	ErrorMessageOutput::Assert::DetectError
@@ -15792,7 +15884,7 @@ void Model::ChangeRoughness(int index_, float dst_)
 	changeableParams.areMaterialsDirty[index_] = true;
 	changeableParams.materials[index_].roughness = dst_;
 }
-void Model::ChangeMetalic(int index_, float dst_)
+void Model::ChangeMetalic(size_t index_, float dst_)
 {
 	static auto const errorMsg = WatchName() + "のメタリックアクセス違反";
 	ErrorMessageOutput::Assert::DetectError
@@ -15804,7 +15896,7 @@ void Model::ChangeMetalic(int index_, float dst_)
 	changeableParams.areMaterialsDirty[index_] = true;
 	changeableParams.materials[index_].metallic = dst_;
 }
-void Model::ChangeColor(int index_, Vector4<float> const& dst_)
+void Model::ChangeColor(size_t index_, Vector4<float> const& dst_)
 {
 	static auto const errorMsg = WatchName() + "のカラーインデックスアクセス違反";
 	ErrorMessageOutput::Assert::DetectError
@@ -15816,7 +15908,7 @@ void Model::ChangeColor(int index_, Vector4<float> const& dst_)
 	changeableParams.areMaterialsDirty[index_] = true;
 	changeableParams.materials[index_].baseColor = dst_;
 }
-Transform& Model::RefTransform(int index_)
+Transform& Model::RefTransform(size_t index_)
 {
 	ErrorMessageOutput::Assert::DetectError
 	(
@@ -15831,7 +15923,7 @@ std::span<Transform> Model::RefTransforms()
 	return changeableParams.transforms;
 }
 template<>
-void Model::ChangeTexture<TextureComponent::TextureType::kAlbedo>(int index_, SRVHeapIndex dst_)
+void Model::ChangeTexture<TextureComponent::TextureType::kAlbedo>(size_t index_, SRVHeapIndex dst_)
 {
 	ErrorMessageOutput::Assert::DetectError
 	(
@@ -15843,7 +15935,7 @@ void Model::ChangeTexture<TextureComponent::TextureType::kAlbedo>(int index_, SR
 	changeableParams.materials[index_].albedoTexture = dst_;
 }
 template<>
-void Model::ChangeTexture<TextureComponent::TextureType::kNormal>(int index_, SRVHeapIndex dst_)
+void Model::ChangeTexture<TextureComponent::TextureType::kNormal>(size_t index_, SRVHeapIndex dst_)
 {
 	ErrorMessageOutput::Assert::DetectError
 	(
@@ -15855,7 +15947,7 @@ void Model::ChangeTexture<TextureComponent::TextureType::kNormal>(int index_, SR
 	changeableParams.materials[index_].normalTexture = dst_;
 }
 template<>
-void Model::ChangeTexture<TextureComponent::TextureType::kEmissive>(int index_, SRVHeapIndex dst_)
+void Model::ChangeTexture<TextureComponent::TextureType::kEmissive>(size_t index_, SRVHeapIndex dst_)
 {
 	ErrorMessageOutput::Assert::DetectError
 	(
@@ -15867,11 +15959,11 @@ void Model::ChangeTexture<TextureComponent::TextureType::kEmissive>(int index_, 
 	changeableParams.materials[index_].emissiveTexture = dst_;
 }
 template
-void Model::ChangeTexture<TextureComponent::TextureType::kAlbedo>(int index_, SRVHeapIndex dst_);
+void Model::ChangeTexture<TextureComponent::TextureType::kAlbedo>(size_t index_, SRVHeapIndex dst_);
 template
-void Model::ChangeTexture<TextureComponent::TextureType::kNormal>(int index_, SRVHeapIndex dst_);
+void Model::ChangeTexture<TextureComponent::TextureType::kNormal>(size_t index_, SRVHeapIndex dst_);
 template
-void Model::ChangeTexture<TextureComponent::TextureType::kEmissive>(int index_, SRVHeapIndex dst_);
+void Model::ChangeTexture<TextureComponent::TextureType::kEmissive>(size_t index_, SRVHeapIndex dst_);
 
 ========================================
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Model\ModelStructure\Model.h ===
@@ -15944,12 +16036,12 @@ public:
 	//上位レイヤーでモデルのパラメーターを弄るときに
 	void ChangeBlendMode(RenderStateComponent::BlendMode dst_);
 	void ChangeMaterialType(ShaderPathComponent::MaterialType dst_);
-	void ChangeRoughness(int index_, float dst_);
-	void ChangeMetalic(int index_, float dst_);
-	void ChangeColor(int index_ , Vector4<float> const& dst_);
+	void ChangeRoughness(size_t index_, float dst_);
+	void ChangeMetalic(size_t index_, float dst_);
+	void ChangeColor(size_t index_ , Vector4<float> const& dst_);
 	template<TextureComponent::TextureType textureType>
-	void ChangeTexture(int index_, SRVHeapIndex dst_);
-	Transform& RefTransform(int index_);
+	void ChangeTexture(size_t index_, SRVHeapIndex dst_);
+	Transform& RefTransform(size_t index_);
 	std::span<Transform> RefTransforms();
 private:
 	Type type;
@@ -21137,4 +21229,4 @@ namespace StringProcessing
 === SUMMARY ===
 ========================================
 Total Files      : 456
-Effective Lines  : 15460
+Effective Lines  : 15545

@@ -17,8 +17,7 @@ RenderContext::RuntimePassInfo::RuntimePassInfo
 	PickUpRuntimeRequirementsFromDesc(*desc_);
 
 	//その他情報を入力
-	InputOtherParams(refColorBuffersID_, refDepthStencilBuffersID_,refOffset_);
-
+	InputOtherParams(refColorBuffersID_,refDepthStencilBuffersID_,refOffset_);
 }
 
 void RenderContext::RuntimePassInfo::InputOtherParams
@@ -30,8 +29,7 @@ void RenderContext::RuntimePassInfo::InputOtherParams
 {
 	refColorBuffersID = refColorBuffersID_;
 	refDepthStencilBuffersID = refDepthStencilBuffersID_;
-	rootConstants.offset = refOffset_;
-	rootConstants.numTextureUse = UINT(refColorBuffersID.size()+ refDepthStencilBuffersID.size());
+	rootConstants.refBuffferOffset = refOffset_;
 }
 
 void RenderContext::RuntimePassInfo::PickUpRuntimeRequirementsFromDesc(PassDesc const& desc_)
@@ -71,6 +69,8 @@ void RenderContext::RuntimePassInfo::PickUpRuntimeRequirementsFromDesc(PassDesc 
 			info->doesClearStencil  = src->doesClearStencil;
 		}
 	}
+
+
 
 }
 

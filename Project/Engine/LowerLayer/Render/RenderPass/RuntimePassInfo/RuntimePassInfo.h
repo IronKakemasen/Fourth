@@ -66,7 +66,7 @@ private:
 	//その深度ステンシルバッファバージョン
 	std::vector<BufferUniqueID> refDepthStencilBuffersID;
 
-	ConstantBuffers::PassBufferIndexRangeCPUGPU rootConstants;
+	ConstantBuffers::PassConstantsCPUGPU rootConstants;
 
 	//PassDescからランタイムに必要な情報をピックする
 	void PickUpRuntimeRequirementsFromDesc(PassDesc const& desc_);
