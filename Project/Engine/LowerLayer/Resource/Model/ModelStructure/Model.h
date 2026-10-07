@@ -77,12 +77,12 @@ public:
 	//上位レイヤーでモデルのパラメーターを弄るときに
 	void ChangeBlendMode(RenderStateComponent::BlendMode dst_);
 	void ChangeMaterialType(ShaderPathComponent::MaterialType dst_);
-	void ChangeRoughness(int index_, float dst_);
-	void ChangeMetalic(int index_, float dst_);
-	void ChangeColor(int index_ , Vector4<float> const& dst_);
+	void ChangeRoughness(size_t index_, float dst_);
+	void ChangeMetalic(size_t index_, float dst_);
+	void ChangeColor(size_t index_ , Vector4<float> const& dst_);
 	template<TextureComponent::TextureType textureType>
-	void ChangeTexture(int index_, SRVHeapIndex dst_);
-	Transform& RefTransform(int index_);
+	void ChangeTexture(size_t index_, SRVHeapIndex dst_);
+	Transform& RefTransform(size_t index_);
 	std::span<Transform> RefTransforms();
 
 private:

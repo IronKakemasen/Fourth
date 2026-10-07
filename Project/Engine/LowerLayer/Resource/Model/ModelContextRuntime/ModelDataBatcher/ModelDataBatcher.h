@@ -3,9 +3,6 @@
 #include "../../ModelStructure/Model.h"
 
 //外部
-#include "../../../../../../Assets/Shared/StructuredBufferModelData.h"
-#include "../../../../../../Assets/Shared/ConstantBuffers.h"
-
 //効率化のため
 #include "../../../../Buffer/BufferContext.h"
 
@@ -22,45 +19,43 @@ public:
 
 	struct Local_InputBufferUniqueIDLicence;
 
-	ModelDataBatcher
-	(
-		NexusFieldProof proof_,
-		ModelContainer const& modelContainer_
-	);
+	ModelDataBatcher(NexusFieldProof proof_);
 	~ModelDataBatcher();
 
 	template<ConstantBuffers::ConstantBufferBindSlots bufferType>
 	void ImportPerDrawBufferID(Local_InputBufferUniqueIDLicence licence_,BufferUniqueID id_);
 
 	//代行者にランタイムでモデルデータのバッチング処理をやってもらう
+	//バッファに書き込まなくていいモデルも多数あるはずなので、全バッチングではなく、該当バッチングする
 	//staticかDynamicか選択
 	template<Model::Type modelType>
 	void BatchModelData
 	(
 		NexusFieldProof proof_,
 		AgentKey agentKey_,
-		BufferContextDiplomat& bufferContextDiplomat_,
-		UINT const frameIndex_
+		ModelContainer const& modelContainer_,
+		UINT const frameIndex_,
+		BufferContextDiplomat& bufferContextDiplomat_
 	)
 	{
 		//BufferDispatcherを借りる
 		auto& dispatcher = BorrowBufferDispatcher(bufferContextDiplomat_);
 
 		//モデルタイプ別に仕分けされたコンテナ
-		auto const& separatedContainer = PullModelContainer<modelType>(proof_);
+		auto const& separatedContainer = PullModelContainer<modelType>(proof_, modelContainer_);
 
 		//モデルの所持するデータをバッファに書き込んでいく
-		for (auto const& model : separatedContainer)
+		for (Model const* model: separatedContainer)
 		{
 			auto const& perDrawIndices = model->WatchPerDrawIndices();
-			auto const numMaterials = perDrawIndices.size();
+			auto const numMeshes = perDrawIndices.size();
 
 			OverrideBuffer<ConstantBuffers::ConstantBufferBindSlots::kTransformMatrixContainer>
 			(
 				frameIndex_,
 				*model,
 				perDrawIndices,
-				numMaterials,
+				numMeshes,
 				dispatcher
 			);
 
@@ -69,7 +64,7 @@ public:
 				frameIndex_,
 				*model,
 				perDrawIndices,
-				numMaterials,
+				numMeshes,
 				dispatcher
 			);
 		}
@@ -79,7 +74,6 @@ private:
 
 	//モデルの個体ごとに所持するパラメーター(TransformやMaterialなど)の配列のBufferIDのライブラリ
 	std::unique_ptr<PerDrawBufferLibrary> perDrawBufferLibrary;
-	ModelContainer const& modelContainer;
 
 	//モデルのマテリアル情報、またはトランスフォームを書き込む
 	///結合度に箔がついちゃうけど、さすがにモデルひとつごとにBufferDispatcherを解凍するのは非効率的すぎるし、
@@ -99,7 +93,7 @@ private:
 
 	//モデルコンテナクラスから、仕分け済みのモデルコンテナを引っ張る
 	template<Model::Type modelType>
-	std::vector<Model*> const& PullModelContainer(NexusFieldProof proof_);
+	std::vector<Model*> const& PullModelContainer(NexusFieldProof proof_, ModelContainer const& modelContainer_);
 };
 
 

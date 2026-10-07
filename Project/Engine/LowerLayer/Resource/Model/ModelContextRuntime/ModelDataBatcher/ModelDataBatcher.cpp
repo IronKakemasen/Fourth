@@ -12,14 +12,9 @@
 using namespace ConstantBuffers;
 using namespace StructuredBufferModelData;
 
-ModelContext::ModelDataBatcher::ModelDataBatcher
-(
-	NexusFieldProof proof_,
-	ModelContainer const& modelContainer_
-):modelContainer(modelContainer_)
+ModelContext::ModelDataBatcher::ModelDataBatcher(NexusFieldProof proof_)
 {
 	perDrawBufferLibrary = std::make_unique<PerDrawBufferLibrary>(proof_);
-
 }
 
 ModelContext::ModelDataBatcher::~ModelDataBatcher()
@@ -35,15 +30,23 @@ BufferContext::BufferDispatcher& ModelContext::ModelDataBatcher::BorrowBufferDis
 }
 
 template<>
-std::vector<Model*> const& ModelContext::ModelDataBatcher::PullModelContainer<Model::Type::kStatic>(NexusFieldProof proof_)
+std::vector<Model*> const& ModelContext::ModelDataBatcher::PullModelContainer<Model::Type::kStatic>
+(
+	NexusFieldProof proof_,
+	ModelContainer const& modelContainer_
+) 
 {
-	return modelContainer.WatchSeparatedByModelType(proof_)[(UINT)Model::Type::kStatic];
+	return modelContainer_.WatchSeparatedByModelType(proof_)[(UINT)Model::Type::kStatic];
 }
 
 template<>
-std::vector<Model*> const& ModelContext::ModelDataBatcher::PullModelContainer<Model::Type::kDynamic>(NexusFieldProof proof_)
+std::vector<Model*> const& ModelContext::ModelDataBatcher::PullModelContainer<Model::Type::kDynamic>
+(
+	NexusFieldProof proof_,
+	ModelContainer const& modelContainer_
+) 
 {
-	return modelContainer.WatchSeparatedByModelType(proof_)[(UINT)Model::Type::kDynamic];
+	return modelContainer_.WatchSeparatedByModelType(proof_)[(UINT)Model::Type::kDynamic];
 }
 
 
@@ -86,8 +89,8 @@ void ModelContext::ModelDataBatcher::OverrideBuffer<ConstantBufferBindSlots::kMa
 )
 {
 	//書き込み先バッファ
-	BufferUniqueID transformContainerBufferID = perDrawBufferLibrary->Export<ConstantBufferBindSlots::kTransformMatrixContainer>();
-	auto dstBuffer = static_cast<IWritableCPU*>(static_cast<UploadStructuredBuffer*>(dispatcher_.Dispatch(transformContainerBufferID)));
+	BufferUniqueID materialContainerBufferID = perDrawBufferLibrary->Export<ConstantBufferBindSlots::kMaterialContainer>();
+	auto dstBuffer = static_cast<IWritableCPU*>(static_cast<UploadStructuredBuffer*>(dispatcher_.Dispatch(materialContainerBufferID)));
 
 	//やってることはトランスフォームと変わらない。
 	for (size_t i = 0;i < numMesh_;++i)
@@ -126,9 +129,18 @@ void ModelContext::ModelDataBatcher::OverrideBuffer<ConstantBufferBindSlots::kMa
 
 
 template
-std::vector<Model*> const& ModelContext::ModelDataBatcher::PullModelContainer<Model::Type::kStatic>(NexusFieldProof proof_);
+std::vector<Model*> const& ModelContext::ModelDataBatcher::PullModelContainer<Model::Type::kStatic>
+(
+	NexusFieldProof proof_,
+	ModelContainer const& modelContainer_
+);
 template
-std::vector<Model*> const& ModelContext::ModelDataBatcher::PullModelContainer<Model::Type::kDynamic>(NexusFieldProof proof_);
+std::vector<Model*> const& ModelContext::ModelDataBatcher::PullModelContainer<Model::Type::kDynamic>
+(
+	NexusFieldProof proof_,
+	ModelContainer const& modelContainer_
+);
+
 
 
 

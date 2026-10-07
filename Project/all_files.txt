@@ -3954,6 +3954,13 @@ struct IWritableCPU
 	{
 		std::memcpy(mappedPtrs[frameIndex_], data_.data(), sizeof(DataType) * data_.size());
 	}
+	//データ型が配列なものに対してのインデックスを指定して単一のデータを入れる
+	template<typename DataType>
+	void WriteElement(const UINT index_, const DataType& data_, UINT const arrIndex_)
+	{
+		auto* dst = reinterpret_cast<DataType*>(mappedPtrs[index_]);
+		dst[arrIndex_] = data_;
+	}
 	//両方に書き込む。初期化用
 	template<typename DataType>
 	void WriteInBoth
@@ -13055,7 +13062,7 @@ ModelContext::ModelContext
 	);
 	Logger::Log("Instantiate: ModelDescAssembler", fileName);
 	Logger::Log("Instantiate: ModelCreator", fileName);
-	modelDataBatcher.reset(new ModelDataBatcher(proof_));
+	modelDataBatcher = std::make_unique<ModelDataBatcher>(proof_,*modelContainer);
 	Logger::Log("Instantiate: modelDataBatcher", fileName);
 	ModelDataCreator modelDataCreator
 	(
@@ -13186,8 +13193,6 @@ namespace ModelContextCmds
 {
 	using WatchModelContainer = std::function<const std::vector<std::unique_ptr<Model>>*()>;
 	using WatchSeparatedByRenderState = std::function<std::vector<std::unordered_map<uint64_t, std::pair<RenderStateKey, std::vector<Model*>>>>* ()>;
-	//結合度を強めたくないので直書き。でもたぶん2種類しかないから大丈夫
-	using WatchSeparatedByModelType = std::function< std::array < std::vector<Model*>, 2 >*()>;
 }
 
 ========================================
@@ -14552,7 +14557,7 @@ ModelContext::ModelDescAssembler::ModelDescAssembler
 }
 ModelContext::ModelDescAssembler::ModelDescParts ModelContext::ModelDescAssembler::Assemble
 (
-	std::string modelFileName_,
+	std::string const& modelFileName_,
 	std::vector<MaterialCPU> const& inputMaterials_
 )
 {
@@ -14622,9 +14627,9 @@ std::vector<MaterialGPU> ModelContext::ModelDescAssembler::ConvertMaterialData
 		{
 			auto const& src = materialsFromFile_[i];
 			if (dst.albedoTexture == kInvalid && src.albedoTexture.size() > 0)
-				dst.albedoTexture = textureLib->Export(src.albedoTexture);
+				dst.albedoTexture	= textureLib->Export(src.albedoTexture);
 			if (dst.normalTexture == kInvalid && src.normalTexture.size() > 0)
-				dst.normalTexture = textureLib->Export(src.normalTexture);
+				dst.normalTexture	= textureLib->Export(src.normalTexture);
 			if (dst.emissiveTexture == kInvalid && src.emissiveTexture.size() > 0)	
 				dst.emissiveTexture = textureLib->Export(src.emissiveTexture);
 			if (dst.roughness == kInvalid && src.roughness != kInvalid)
@@ -14633,8 +14638,10 @@ std::vector<MaterialGPU> ModelContext::ModelDescAssembler::ConvertMaterialData
 				dst.metallic	= src.metallic;
 		}
 		//手動入力もなくソースも無ければ、適当な値を入れておく
+		//あえて入れていないパラメータは、hlsl側でセンチネルとしての値が埋め込まれているので触らんように
 		{
 			if (dst.albedoTexture == kInvalid)dst.albedoTexture = textureLib->Export("white4x4_albedo");
+			//割とおきにな値
 			if (dst.roughness == kInvalid)dst.roughness = 0.25f;
 			if (dst.metallic == kInvalid )dst.metallic = 0.9f;
 		}
@@ -14670,7 +14677,7 @@ public:
 	//モデルクラスのRenderStates以外のディスクリプションを作ってあげる
 	ModelDescParts Assemble
 	(
-		std::string modelFileName_,
+		std::string const& modelFileName_,
 		std::vector<StructuredBufferModelData::MaterialCPU> const& inputMaterials_
 	);
 private:
@@ -14983,13 +14990,6 @@ ModelContextCmds::WatchSeparatedByRenderState ModelContext::ModelContainer::Watc
 		return &this->separatedByRenderState;
 	};
 }
-ModelContextCmds::WatchSeparatedByModelType ModelContext::ModelContainer::WatchSeparatedByModelTypeCmd(ProviderKey key_)
-{
-	return [this]()
-	{
-		return &this->separatedByModelType;
-	};
-}
 void ModelContext::ModelContainer::SeparateModels(NexusFieldProof proof_, AgentKey key_)
 {
 	ModelSeparator modelSeparator(proof_, key_);
@@ -15023,7 +15023,7 @@ public:
 	//RenderStateで仕分けされたコンテナを見るためのコマンド
 	ModelContextCmds::WatchSeparatedByRenderState WatchSeparatedByRenderStateCmd(ProviderKey key_);
 	//モデルのタイプ別に仕分けされたコンテナを見るためのコマンド
-	ModelContextCmds::WatchSeparatedByModelType WatchSeparatedByModelTypeCmd(ProviderKey key_);
+	auto const& WatchSeparatedByModelType(NexusFieldProof proof_)const { return separatedByModelType; }
 	//ランタイムでPSO切り替えコストを低減させるために、モデルクラスをおなじrenderStateごとに分別する
 	void SeparateModels(NexusFieldProof proof_, AgentKey key_);
 private:
@@ -15091,7 +15091,7 @@ ModelContext::ModelContainer::ModelSeparator::SeparateAllModels(std::vector<std:
 		//ランタイムデータバッチング用にモデルタイプ別に仕分けていく
 		separatedByModelType[(UINT)(*itr)->WatchModelType()].emplace_back((*itr).get());
 	}
-	return std::make_pair(separatedByRenderState, separatedByModelType);
+	return std::make_pair(std::move(separatedByRenderState), std::move(separatedByModelType));
 }
 std::vector<std::pair<RenderStateKey, uint64_t>> ModelContext::ModelContainer::ModelSeparator::PackToKey(Model const& model_)
 {
@@ -15439,33 +15439,125 @@ private:
 #include "PreCompileHeader.h"
 #include "ModelDataBatcher.h"
 #include "PerDrawBufferLibrary/PerDrawBufferLibrary.h"
-ModelContext::ModelDataBatcher::ModelDataBatcher(NexusFieldProof proof_)
+#include "../../ModelContainer/ModelContainer.h"
+//外部
+#include "../../../../Buffer/BufferContextDiplomats.h"
+#include "../../../../Buffer/BufferDefinition/GPUBuffer/UploadStructuredBuffer/UploadStructuredBuffer.h"
+#include "../../../../Buffer/BufferRuntime/BufferDispatcher/BufferDispatcher.h"
+using namespace ConstantBuffers;
+using namespace StructuredBufferModelData;
+ModelContext::ModelDataBatcher::ModelDataBatcher
+(
+	NexusFieldProof proof_,
+	ModelContainer const& modelContainer_
+):modelContainer(modelContainer_)
 {
-	perDrawBufferLibrary.reset(new PerDrawBufferLibrary(proof_));
+	perDrawBufferLibrary = std::make_unique<PerDrawBufferLibrary>(proof_);
 }
 ModelContext::ModelDataBatcher::~ModelDataBatcher()
 {
 }
-void ModelContext::ModelDataBatcher::BatchingAllModelData(NexusFieldProof proof_, AgentKey agentKey_)
+BufferContext::BufferDispatcher& ModelContext::ModelDataBatcher::BorrowBufferDispatcher(BufferContextDiplomat& bufferContextDiplomat_)
 {
+	BufferContext::ToolLender::LicenceType<BufferContext::BufferDispatcher> licence;
+	return *bufferContextDiplomat_.Access<BufferContext::ToolLender>()->Lend<BufferContext::BufferDispatcher>(licence);
 }
 template<>
-void ModelContext::ModelDataBatcher::ImportPerDrawBufferID<ConstantBuffers::ConstantBufferBindSlots::kTransformMatrixContainer>
-(Local_InputBufferUniqueIDLicence licence_, BufferUniqueID id_)
+std::vector<Model*> const& ModelContext::ModelDataBatcher::PullModelContainer<Model::Type::kStatic>(NexusFieldProof proof_)
 {
-	perDrawBufferLibrary->Import<ConstantBuffers::ConstantBufferBindSlots::kTransformMatrixContainer>(id_);
+	return modelContainer.WatchSeparatedByModelType(proof_)[(UINT)Model::Type::kStatic];
 }
 template<>
-void ModelContext::ModelDataBatcher::ImportPerDrawBufferID<ConstantBuffers::ConstantBufferBindSlots::kMaterialContainer>
-(Local_InputBufferUniqueIDLicence licence_, BufferUniqueID id_)
+std::vector<Model*> const& ModelContext::ModelDataBatcher::PullModelContainer<Model::Type::kDynamic>(NexusFieldProof proof_)
 {
-	perDrawBufferLibrary->Import<ConstantBuffers::ConstantBufferBindSlots::kMaterialContainer>(id_);
+	return modelContainer.WatchSeparatedByModelType(proof_)[(UINT)Model::Type::kDynamic];
+}
+template<>
+void ModelContext::ModelDataBatcher::OverrideBuffer<ConstantBufferBindSlots::kTransformMatrixContainer>
+(
+	UINT const frameIndex_,
+	Model const& model_,
+	std::vector<ConstantBuffers::PerDrawIndicesCPUGPU> const& perDrawIndices_,
+	size_t const numMesh_,
+	BufferContext::BufferDispatcher& dispatcher_
+)
+{
+	//書き込み先バッファ
+	BufferUniqueID transformContainerBufferID = perDrawBufferLibrary->Export<ConstantBufferBindSlots::kTransformMatrixContainer>();
+	auto dstBuffer = static_cast<IWritableCPU*>(static_cast<UploadStructuredBuffer*>(dispatcher_.Dispatch(transformContainerBufferID)));
+	//ダーティ判定しながら、該当インデックス(perDrawIndices)を辿って、バッファに書き込む
+	//もちろんサブメッシュ分も
+	for (size_t i = 0;i < numMesh_;++i)
+	{
+		auto const& srcTransform = model_.WatchTransform(i);
+		//そのトランスフォームがダーティなら書き込まない
+		if (!srcTransform.ShouldOverrideBuffer()) continue;
+		TransformMatrixCPUGPU transformMatrix(srcTransform.WatchWorldMatrix());
+		dstBuffer->WriteElement(frameIndex_, transformMatrix, perDrawIndices_[i].transformMatrixID);
+	}
+}
+template<>
+void ModelContext::ModelDataBatcher::OverrideBuffer<ConstantBufferBindSlots::kMaterialContainer>
+(
+	UINT const frameIndex_,
+	Model const& model_,
+	std::vector<ConstantBuffers::PerDrawIndicesCPUGPU> const& perDrawIndices_,
+	size_t const numMesh_,
+	BufferContext::BufferDispatcher& dispatcher_
+)
+{
+	//書き込み先バッファ
+	BufferUniqueID transformContainerBufferID = perDrawBufferLibrary->Export<ConstantBufferBindSlots::kTransformMatrixContainer>();
+	auto dstBuffer = static_cast<IWritableCPU*>(static_cast<UploadStructuredBuffer*>(dispatcher_.Dispatch(transformContainerBufferID)));
+	//やってることはトランスフォームと変わらない。
+	for (size_t i = 0;i < numMesh_;++i)
+	{
+		//そのトランスフォームがダーティなら書き込まない
+		if (!model_.IsMaterialDirty(i)) continue;
+		const auto& srcMaterial = model_.WatchMaterial(i);
+		MaterialGPU material(srcMaterial);
+		dstBuffer->WriteElement(frameIndex_, material, perDrawIndices_[i].materialID);
+	}
 }
 template
-void ModelContext::ModelDataBatcher::ImportPerDrawBufferID<ConstantBuffers::ConstantBufferBindSlots::kTransformMatrixContainer>
+void ModelContext::ModelDataBatcher::OverrideBuffer<ConstantBufferBindSlots::kTransformMatrixContainer>
+(
+	UINT const frameIndex_,
+	Model const& model_,
+	std::vector<ConstantBuffers::PerDrawIndicesCPUGPU> const& perDrawIndices_,
+	size_t const numMesh_,
+	BufferContext::BufferDispatcher& dispatcher_
+);
+template
+void ModelContext::ModelDataBatcher::OverrideBuffer<ConstantBufferBindSlots::kMaterialContainer>
+(
+	UINT const frameIndex_,
+	Model const& model_,
+	std::vector<ConstantBuffers::PerDrawIndicesCPUGPU> const& perDrawIndices_,
+	size_t const numMesh_,
+	BufferContext::BufferDispatcher& dispatcher_
+);
+template
+std::vector<Model*> const& ModelContext::ModelDataBatcher::PullModelContainer<Model::Type::kStatic>(NexusFieldProof proof_);
+template
+std::vector<Model*> const& ModelContext::ModelDataBatcher::PullModelContainer<Model::Type::kDynamic>(NexusFieldProof proof_);
+template<>
+void ModelContext::ModelDataBatcher::ImportPerDrawBufferID<ConstantBufferBindSlots::kTransformMatrixContainer>
+(Local_InputBufferUniqueIDLicence licence_, BufferUniqueID id_)
+{
+	perDrawBufferLibrary->Import<ConstantBufferBindSlots::kTransformMatrixContainer>(id_);
+}
+template<>
+void ModelContext::ModelDataBatcher::ImportPerDrawBufferID<ConstantBufferBindSlots::kMaterialContainer>
+(Local_InputBufferUniqueIDLicence licence_, BufferUniqueID id_)
+{
+	perDrawBufferLibrary->Import<ConstantBufferBindSlots::kMaterialContainer>(id_);
+}
+template
+void ModelContext::ModelDataBatcher::ImportPerDrawBufferID<ConstantBufferBindSlots::kTransformMatrixContainer>
 (Local_InputBufferUniqueIDLicence licence_, BufferUniqueID id_);
 template
-void ModelContext::ModelDataBatcher::ImportPerDrawBufferID<ConstantBuffers::ConstantBufferBindSlots::kMaterialContainer>
+void ModelContext::ModelDataBatcher::ImportPerDrawBufferID<ConstantBufferBindSlots::kMaterialContainer>
 (Local_InputBufferUniqueIDLicence licence_, BufferUniqueID id_);
 
 ========================================
@@ -15473,9 +15565,10 @@ void ModelContext::ModelDataBatcher::ImportPerDrawBufferID<ConstantBuffers::Cons
 ========================================
 #pragma once
 #include "../../ModelContext.h"
+#include "../../ModelStructure/Model.h"
 //外部
-#include "../../../../../../Assets/Shared/StructuredBufferModelData.h"
-#include "../../../../../../Assets/Shared/ConstantBuffers.h"
+//効率化のため
+#include "../../../../Buffer/BufferContext.h"
 class ModelContext::ModelDataBatcher
 {
 	//モデルの個体ごとに所持するTrnsformやMaterialなどのパラメーターの配列
@@ -15485,14 +15578,73 @@ public:
 	template<ConstantBuffers::ConstantBufferBindSlots bufferType>
 	struct BufferTypeTraits;
 	struct Local_InputBufferUniqueIDLicence;
-	ModelDataBatcher(NexusFieldProof proof_);
+	ModelDataBatcher
+	(
+		NexusFieldProof proof_,
+		ModelContainer const& modelContainer_
+	);
 	~ModelDataBatcher();
 	template<ConstantBuffers::ConstantBufferBindSlots bufferType>
 	void ImportPerDrawBufferID(Local_InputBufferUniqueIDLicence licence_,BufferUniqueID id_);
 	//代行者にランタイムでモデルデータのバッチング処理をやってもらう
-	void BatchingAllModelData(NexusFieldProof proof_, AgentKey agentKey_);
+	//staticかDynamicか選択
+	template<Model::Type modelType>
+	void BatchModelData
+	(
+		NexusFieldProof proof_,
+		AgentKey agentKey_,
+		BufferContextDiplomat& bufferContextDiplomat_,
+		UINT const frameIndex_
+	)
+	{
+		//BufferDispatcherを借りる
+		auto& dispatcher = BorrowBufferDispatcher(bufferContextDiplomat_);
+		//モデルタイプ別に仕分けされたコンテナ
+		auto const& separatedContainer = PullModelContainer<modelType>(proof_);
+		//モデルの所持するデータをバッファに書き込んでいく
+		for (auto const& model : separatedContainer)
+		{
+			auto const& perDrawIndices = model->WatchPerDrawIndices();
+			auto const numMeshes = perDrawIndices.size();
+			OverrideBuffer<ConstantBuffers::ConstantBufferBindSlots::kTransformMatrixContainer>
+			(
+				frameIndex_,
+				*model,
+				perDrawIndices,
+				numMeshes,
+				dispatcher
+			);
+			OverrideBuffer<ConstantBuffers::ConstantBufferBindSlots::kMaterialContainer>
+			(
+				frameIndex_,
+				*model,
+				perDrawIndices,
+				numMeshes,
+				dispatcher
+			);
+		}
+	}
 private:
+	//モデルの個体ごとに所持するパラメーター(TransformやMaterialなど)の配列のBufferIDのライブラリ
 	std::unique_ptr<PerDrawBufferLibrary> perDrawBufferLibrary;
+	ModelContainer const& modelContainer;
+	//モデルのマテリアル情報、またはトランスフォームを書き込む
+	///結合度に箔がついちゃうけど、さすがにモデルひとつごとにBufferDispatcherを解凍するのは非効率的すぎるし、
+	///関数にまとめたいので
+	template<ConstantBuffers::ConstantBufferBindSlots bufferType>
+	void OverrideBuffer
+	(
+		UINT const frameIndex_,
+		Model const& model_,
+		std::vector<ConstantBuffers::PerDrawIndicesCPUGPU> const& perDrawIndices_,
+		size_t const numMesh_,
+		BufferContext::BufferDispatcher& dispatcher_
+	);
+	//BufferDispatcherを借りる
+	BufferContext::BufferDispatcher& BorrowBufferDispatcher(BufferContextDiplomat& bufferContextDiplomat_);
+	//モデルコンテナクラスから、仕分け済みのモデルコンテナを引っ張る
+	template<Model::Type modelType>
+	std::vector<Model*> const& PullModelContainer(NexusFieldProof proof_);
 };
 struct ModelContext::ModelDataBatcher::Local_InputBufferUniqueIDLicence
 {
@@ -15786,9 +15938,9 @@ public:
 	//ドローコマンドオンリー
 	auto const& WatchMeshletSize()const { return modelDesc.WatchMeshletSize(); }
 	//主にバッファにバッチングするため
-	auto const& WatchMaterials()const { return changeableParams.materials; }
-	auto const& WatchMaterialsDirty()const { return changeableParams.areMaterialsDirty; }
-	auto const& WatchTransforms()const { return changeableParams.transforms; }
+	auto const& WatchMaterial(size_t index_)const { return changeableParams.materials[index_]; }
+	auto const IsMaterialDirty(size_t index_)const { return changeableParams.areMaterialsDirty[index_]; }
+	auto const& WatchTransform(size_t index_)const { return changeableParams.transforms[index_]; }
 	//上位レイヤーでモデルのパラメーターを弄るときに
 	void ChangeBlendMode(RenderStateComponent::BlendMode dst_);
 	void ChangeMaterialType(ShaderPathComponent::MaterialType dst_);
@@ -19725,7 +19877,7 @@ public:
 			worldMatrix.data.m[3][2],
 		};
 	}
-	bool ShouldOverrideBuffer(){ return needOverrideBuffer; }
+	bool ShouldOverrideBuffer()const { return needOverrideBuffer; }
 private:
 	static inline const Vector3 kRight = { 1.0f,0.0f,0.0f };
 	static inline const Vector3 kUp = { 0.0f,1.0f,0.0f };
@@ -20985,4 +21137,4 @@ namespace StringProcessing
 === SUMMARY ===
 ========================================
 Total Files      : 456
-Effective Lines  : 15333
+Effective Lines  : 15460

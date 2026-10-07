@@ -60,12 +60,21 @@ void RenderContext::PassBehavior::BeginPass(RuntimeWrapper& cmdWrapper_, BufferC
 {
 	auto const& colorBuffersInfo = runtimePassInfo->WatchColorBuffersInfo();
 	UINT const numColorBuffers = UINT(colorBuffersInfo.size());
-	auto const& DepthStencilBufferInfo = runtimePassInfo->WatchDepthStencilBufferInfo();
+	auto const& depthStencilBufferInfo = runtimePassInfo->WatchDepthStencilBufferInfo();
 
 	std::array<D3D12_CPU_DESCRIPTOR_HANDLE, D3D12_SIMULTANEOUS_RENDER_TARGET_COUNT> rtHandles;
 	std::array<D3D12_RECT, D3D12_SIMULTANEOUS_RENDER_TARGET_COUNT> scissorRects;
 	std::array<D3D12_VIEWPORT, D3D12_SIMULTANEOUS_RENDER_TARGET_COUNT> viewports;
 
+
+	//まずPassの所持する全てのバッファの書き込みバリアを張る
+	PitchOwnBuffersBarrierWriting
+	(
+		colorBuffersInfo,
+		depthStencilBufferInfo,
+		cmdWrapper_,
+		bufDispatcher_
+	);
 
 	//カラーバッファ
 	for (UINT i = 0;i < numColorBuffers;++i)
@@ -80,32 +89,23 @@ void RenderContext::PassBehavior::BeginPass(RuntimeWrapper& cmdWrapper_, BufferC
 		scissorRects[i] = src.scissorRect;
 		viewports[i] = src.viewport;
 
-		//カラーバッファの状態をレンダーターゲットにするためにバリアを生成
-		//Read -> Writeへ
-		CreateBarrier<BufferUsage::kWrite>(colorBuffer);
 
 		//ビュークリア
 		ClearColorBufferView(rtHandles[i], src.clearColor.data(), cmdWrapper_);
 	}
 
 	//深度ステンシルバッファ
-	if (DepthStencilBufferInfo.has_value())
+	if (depthStencilBufferInfo.has_value())
 	{
 		//バッファ検索
-		auto* depthStencilBuffer = FindBufferWithID<DepthStencilBuffer>(DepthStencilBufferInfo->bufferID, bufDispatcher_);
+		auto* depthStencilBuffer = FindBufferWithID<DepthStencilBuffer>(depthStencilBufferInfo->bufferID, bufDispatcher_);
 
 		//ハンドル取得
 		D3D12_CPU_DESCRIPTOR_HANDLE dsvHandle = PullHandleCPU<DepthStencilBuffer>(depthStencilBuffer, bufDispatcher_);
 		
-		//状態をレンダーターゲットにするためにバリアを生成
-		//Read -> Writeへ
-		CreateBarrier<BufferUsage::kWrite>(depthStencilBuffer);
-
 		//ビュークリア
 		ClearDepthStencilBufferView(dsvHandle, cmdWrapper_);
 
-		//キャッシュされたバリアを張る
-		PitchBarrierCached(cmdWrapper_);
 
 		//描画先の設定
 		SetRenderTargets(rtHandles, numColorBuffers, &dsvHandle, cmdWrapper_);
@@ -113,9 +113,6 @@ void RenderContext::PassBehavior::BeginPass(RuntimeWrapper& cmdWrapper_, BufferC
 	//無ければ
 	else
 	{
-		//キャッシュされたバリアを張る
-		PitchBarrierCached(cmdWrapper_);
-
 		//描画先の設定
 		SetRenderTargets(rtHandles, numColorBuffers, nullptr, cmdWrapper_);
 	}
@@ -124,6 +121,41 @@ void RenderContext::PassBehavior::BeginPass(RuntimeWrapper& cmdWrapper_, BufferC
 	TransferRootConstants(cmdWrapper_);
 
 }
+
+
+void RenderContext::PassBehavior::PitchOwnBuffersBarrierWriting
+(
+	std::vector<RuntimePassInfo::ColorBuffer> const& colorBuffersInfo_,
+	std::optional<RuntimePassInfo::DepthStencilBuffer> const& depthStencilBufferInfo_,
+	RuntimeWrapper& cmdWrapper_,
+	BufferContext::BufferDispatcher& bufDispatcher_
+)
+{
+	//描画先にステートを変化するためのバリアを張る
+	for (auto const& src: colorBuffersInfo_)
+	{
+		//バッファ検索
+		ColorBuffer* colorBuffer = FindBufferWithID<ColorBuffer>(src.bufferID, bufDispatcher_);
+
+		//カラーバッファの状態をレンダーターゲットにするためにバリアを生成
+		//Read -> Writeへ
+		CreateBarrier<BufferUsage::kWrite>(colorBuffer);
+	}
+
+	if (depthStencilBufferInfo_.has_value())
+	{
+		//バッファ検索
+		auto* depthStencilBuffer = FindBufferWithID<DepthStencilBuffer>(depthStencilBufferInfo_->bufferID, bufDispatcher_);
+
+		//状態をレンダーターゲットにするためにバリアを生成
+		//Read -> Writeへ
+		CreateBarrier<BufferUsage::kWrite>(depthStencilBuffer);
+	}
+
+	//キャッシュされたバリアを張る
+	PitchBarrierCached(cmdWrapper_);
+}
+
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

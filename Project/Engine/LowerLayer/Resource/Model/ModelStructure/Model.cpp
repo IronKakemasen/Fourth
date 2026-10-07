@@ -84,7 +84,7 @@ void Model::ChangeMaterialType(ShaderPathComponent::MaterialType dst_)
 	changeableParams.materialType = dst_;
 }
 
-void Model::ChangeRoughness(int index_, float dst_)
+void Model::ChangeRoughness(size_t index_, float dst_)
 {
 	static auto const errorMsg = WatchName() + "のラフネスアクセス違反";
 	ErrorMessageOutput::Assert::DetectError
@@ -98,7 +98,7 @@ void Model::ChangeRoughness(int index_, float dst_)
 	changeableParams.materials[index_].roughness = dst_;
 }
 
-void Model::ChangeMetalic(int index_, float dst_)
+void Model::ChangeMetalic(size_t index_, float dst_)
 {
 	static auto const errorMsg = WatchName() + "のメタリックアクセス違反";
 	ErrorMessageOutput::Assert::DetectError
@@ -113,7 +113,7 @@ void Model::ChangeMetalic(int index_, float dst_)
 
 }
 
-void Model::ChangeColor(int index_, Vector4<float> const& dst_)
+void Model::ChangeColor(size_t index_, Vector4<float> const& dst_)
 {
 	static auto const errorMsg = WatchName() + "のカラーインデックスアクセス違反";
 	ErrorMessageOutput::Assert::DetectError
@@ -127,7 +127,7 @@ void Model::ChangeColor(int index_, Vector4<float> const& dst_)
 	changeableParams.materials[index_].baseColor = dst_;
 }
 
-Transform& Model::RefTransform(int index_)
+Transform& Model::RefTransform(size_t index_)
 {
 	ErrorMessageOutput::Assert::DetectError
 	(
@@ -145,7 +145,7 @@ std::span<Transform> Model::RefTransforms()
 }
 
 template<>
-void Model::ChangeTexture<TextureComponent::TextureType::kAlbedo>(int index_, SRVHeapIndex dst_)
+void Model::ChangeTexture<TextureComponent::TextureType::kAlbedo>(size_t index_, SRVHeapIndex dst_)
 {
 	ErrorMessageOutput::Assert::DetectError
 	(
@@ -158,7 +158,7 @@ void Model::ChangeTexture<TextureComponent::TextureType::kAlbedo>(int index_, SR
 	changeableParams.materials[index_].albedoTexture = dst_;
 }
 template<>
-void Model::ChangeTexture<TextureComponent::TextureType::kNormal>(int index_, SRVHeapIndex dst_)
+void Model::ChangeTexture<TextureComponent::TextureType::kNormal>(size_t index_, SRVHeapIndex dst_)
 {
 	ErrorMessageOutput::Assert::DetectError
 	(
@@ -171,7 +171,7 @@ void Model::ChangeTexture<TextureComponent::TextureType::kNormal>(int index_, SR
 	changeableParams.materials[index_].normalTexture = dst_;
 }
 template<>
-void Model::ChangeTexture<TextureComponent::TextureType::kEmissive>(int index_, SRVHeapIndex dst_)
+void Model::ChangeTexture<TextureComponent::TextureType::kEmissive>(size_t index_, SRVHeapIndex dst_)
 {
 	ErrorMessageOutput::Assert::DetectError
 	(
@@ -186,9 +186,9 @@ void Model::ChangeTexture<TextureComponent::TextureType::kEmissive>(int index_, 
 
 
 template
-void Model::ChangeTexture<TextureComponent::TextureType::kAlbedo>(int index_, SRVHeapIndex dst_);
+void Model::ChangeTexture<TextureComponent::TextureType::kAlbedo>(size_t index_, SRVHeapIndex dst_);
 template
-void Model::ChangeTexture<TextureComponent::TextureType::kNormal>(int index_, SRVHeapIndex dst_);
+void Model::ChangeTexture<TextureComponent::TextureType::kNormal>(size_t index_, SRVHeapIndex dst_);
 template
-void Model::ChangeTexture<TextureComponent::TextureType::kEmissive>(int index_, SRVHeapIndex dst_);
+void Model::ChangeTexture<TextureComponent::TextureType::kEmissive>(size_t index_, SRVHeapIndex dst_);
 
