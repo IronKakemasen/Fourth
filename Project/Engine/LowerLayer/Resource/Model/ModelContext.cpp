@@ -61,7 +61,7 @@ ModelContext::ModelContext
 	Logger::Log("Instantiate: ModelDescAssembler", fileName);
 	Logger::Log("Instantiate: ModelCreator", fileName);
 
-	modelDataBatcher = std::make_unique<ModelDataBatcher>(proof_,*modelContainer);
+	modelDataBatcher = std::make_unique<ModelDataBatcher>(proof_);
 	Logger::Log("Instantiate: modelDataBatcher", fileName);
 
 	ModelDataCreator modelDataCreator
@@ -79,7 +79,7 @@ ModelContext::ModelContext
 		new ModelContextDiplomat
 		(
 			proof_,
-			std::make_unique<ExecutionAgent>(proof_,*this,*modelContainer),
+			std::make_unique<ExecutionAgent>(proof_,*this,*modelContainer,*modelDataBatcher),
 			std::make_unique<ToolLender>(proof_),
 			std::make_unique<CommandProvider>(proof_, modelContainer.get())
 		)
