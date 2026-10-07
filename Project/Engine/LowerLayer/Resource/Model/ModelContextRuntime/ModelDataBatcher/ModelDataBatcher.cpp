@@ -86,8 +86,8 @@ void ModelContext::ModelDataBatcher::OverrideBuffer<ConstantBufferBindSlots::kMa
 )
 {
 	//書き込み先バッファ
-	BufferUniqueID transformContainerBufferID = perDrawBufferLibrary->Export<ConstantBufferBindSlots::kTransformMatrixContainer>();
-	auto dstBuffer = static_cast<IWritableCPU*>(static_cast<UploadStructuredBuffer*>(dispatcher_.Dispatch(transformContainerBufferID)));
+	BufferUniqueID materialContainerBufferID = perDrawBufferLibrary->Export<ConstantBufferBindSlots::kMaterialContainer>();
+	auto dstBuffer = static_cast<IWritableCPU*>(static_cast<UploadStructuredBuffer*>(dispatcher_.Dispatch(materialContainerBufferID)));
 
 	//やってることはトランスフォームと変わらない。
 	for (size_t i = 0;i < numMesh_;++i)

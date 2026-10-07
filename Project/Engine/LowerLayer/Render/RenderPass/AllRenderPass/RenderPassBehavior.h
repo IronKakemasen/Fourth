@@ -1,5 +1,5 @@
 #pragma once
-#include "../../RenderContext.h"
+#include "../../RenderPass/RuntimePassInfo/RuntimePassInfo.h"
 #include "../../RenderContextRuntime/PSO_PoolDispatcher/GraphicsPSO_Key.h"
 
 //外部
@@ -84,6 +84,15 @@ private:
 	std::vector<D3D12_RESOURCE_BARRIER> barrierCache;
 	//とりあえず10確保しておこう
 	static constexpr UINT kBarrierCacheCapacity = 10;
+
+	//Pass自身が所持するバッファをすべてに描画先バリアを張る
+	void PitchOwnBuffersBarrierWriting
+	(
+		std::vector<RuntimePassInfo::ColorBuffer> const& colorBuffersInfo_,
+		std::optional<RuntimePassInfo::DepthStencilBuffer> const& depthStencilBufferInfo_,
+		RuntimeWrapper& cmdWrapper_,
+		BufferContext::BufferDispatcher& bufDispatcher_
+	);
 
 	//バッファのステートを切り替えのためのバリアを生成
 	//中で張ってない

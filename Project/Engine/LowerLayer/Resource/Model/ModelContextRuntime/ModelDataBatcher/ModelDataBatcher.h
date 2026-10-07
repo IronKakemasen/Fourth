@@ -3,9 +3,6 @@
 #include "../../ModelStructure/Model.h"
 
 //外部
-#include "../../../../../../Assets/Shared/StructuredBufferModelData.h"
-#include "../../../../../../Assets/Shared/ConstantBuffers.h"
-
 //効率化のため
 #include "../../../../Buffer/BufferContext.h"
 
@@ -33,6 +30,7 @@ public:
 	void ImportPerDrawBufferID(Local_InputBufferUniqueIDLicence licence_,BufferUniqueID id_);
 
 	//代行者にランタイムでモデルデータのバッチング処理をやってもらう
+	//バッファに書き込まなくていいモデルも多数あるはずなので、全バッチングではなく、該当バッチングする
 	//staticかDynamicか選択
 	template<Model::Type modelType>
 	void BatchModelData
@@ -53,14 +51,14 @@ public:
 		for (auto const& model : separatedContainer)
 		{
 			auto const& perDrawIndices = model->WatchPerDrawIndices();
-			auto const numMaterials = perDrawIndices.size();
+			auto const numMeshes = perDrawIndices.size();
 
 			OverrideBuffer<ConstantBuffers::ConstantBufferBindSlots::kTransformMatrixContainer>
 			(
 				frameIndex_,
 				*model,
 				perDrawIndices,
-				numMaterials,
+				numMeshes,
 				dispatcher
 			);
 
@@ -69,7 +67,7 @@ public:
 				frameIndex_,
 				*model,
 				perDrawIndices,
-				numMaterials,
+				numMeshes,
 				dispatcher
 			);
 		}
