@@ -9,8 +9,6 @@
 
 namespace StructuredBufferModelData
 {
-    static constexpr UINT kInvalid = 0xffffffff;
-
     struct StandardVertexGPU
     {
         Vector4<float> localPos;
@@ -88,8 +86,7 @@ namespace StructuredBufferModelData
     struct UniqueVertexIndexCPUGPU
     {
         UniqueVertexIndexCPUGPU(uint32_t index_)
-            : index(index_) {
-        }
+            : index(index_) {}
 
         uint32_t index{};
     };
@@ -151,7 +148,6 @@ struct Meshlet
 
 struct TransformMatrix
 {
-    float4x4 wvp;
     float4x4 world;
 };
 

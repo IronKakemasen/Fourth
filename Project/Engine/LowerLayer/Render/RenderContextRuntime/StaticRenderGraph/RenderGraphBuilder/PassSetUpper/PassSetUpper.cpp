@@ -76,7 +76,7 @@ void RenderContext::StaticRenderGraph::PassSetUpper::CreateAllPassInfo
 		PassDesc const& desc = *pass->WatchDesc();
 		std::string const& dsrPassName = desc.passName;
 
-		//そのパスがバッファ配列の何番目を参照するか、であるPassBufferIndexRangeCPUGPUのoffset
+		//そのパスがバッファ配列の何番目を参照するか、であるPassConstantsCPUGPUのoffset
 		//普通にallRefBufferUniquesのけつ番目でいいはず
 		UINT const refOffset = UINT(output_.refBufferTagTrace.size());
 

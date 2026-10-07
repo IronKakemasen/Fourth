@@ -224,6 +224,9 @@ void RenderContext::PassBehavior::RenderModels
 		//psoをセット
 		cmdWrapper_.SetPipelineState(srcPso);
 
+		//perDrawIndicesのバインドスロット
+		auto const bindSlot = ConstantBuffers::RootConstantsBindSlots::kPerDrawIndices;
+
 		//おなじPSOごとに仕分けられているので、そこでも走査
 		for (auto const& model : state_models.second)
 		{
@@ -239,8 +242,8 @@ void RenderContext::PassBehavior::RenderModels
 				//モデルのルートコンスタンツを転送
 				cmdWrapper_.SetGraphicsRoot32BitConstants
 				(
-					(UINT)ConstantBuffers::RootConstantsBindSlots::kPerDrawIndices,
-					3,
+					(UINT)bindSlot,
+					ConstantBuffers::Num32BitValuesTable(bindSlot),
 					&perDrawIndices[i],
 					0
 				);
@@ -256,11 +259,11 @@ void RenderContext::PassBehavior::RenderModels
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 void RenderContext::PassBehavior::TransferRootConstants(RuntimeWrapper& cmdWrapper_)
 {
-	auto const bindSlot = (UINT)ConstantBuffers::RootConstantsBindSlots::kPassBufferIndexRange;
+	auto const bindSlot = ConstantBuffers::RootConstantsBindSlots::kPassConstants;
 
 	cmdWrapper_.SetGraphicsRoot32BitConstants
 	(
-		bindSlot,
+		(UINT)bindSlot,
 		ConstantBuffers::Num32BitValuesTable(bindSlot),
 		&runtimePassInfo->WatchRootConstants(),
 		0

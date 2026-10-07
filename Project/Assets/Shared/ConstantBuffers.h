@@ -11,7 +11,8 @@ namespace ConstantBuffers
 		kTransformMatrixContainer,
 		kMaterialContainer,
 		kTextureContainer,
-		kPassRefBufferIndices
+		kPassRefBufferIndices,
+		kCameraContainer
 
 		, kCount
 	};
@@ -19,17 +20,17 @@ namespace ConstantBuffers
 	enum class RootConstantsBindSlots
 	{
 		kPerDrawIndices = ConstantBufferBindSlots::kCount,
-		kPassBufferIndexRange,
+		kPassConstants,
 		kFinalColorBufferSrv
 
 		,kCount
 	};
 
 
-	constexpr uint8_t Num32BitValuesTable(UINT const slot_)
+	constexpr uint8_t Num32BitValuesTable(RootConstantsBindSlots const slot_)
 	{
 		static UINT const numRootConstants = (UINT)RootConstantsBindSlots::kCount - (UINT)ConstantBufferBindSlots::kCount;
-		UINT dstIndex = slot_ - (UINT)ConstantBufferBindSlots::kCount;
+		UINT dstIndex = (UINT)slot_ - (UINT)ConstantBufferBindSlots::kCount;
 		
 		static constexpr uint8_t table[numRootConstants]
 		{
@@ -47,12 +48,11 @@ namespace ConstantBuffers
 		BufferUniqueID materialID;
 	};
 
-	struct PassBufferIndexRangeCPUGPU
+	struct PassConstantsCPUGPU
 	{
-		uint32_t offset;
-		uint32_t numTextureUse;
+		uint32_t refBuffferOffset{};
+		uint32_t cameraOffset{};
 	};
-
 }
 
 
@@ -65,16 +65,18 @@ struct PerDrawIndices
 	uint materialID;
 };
 
-struct PassBufferIndexRange
+struct PassConstants
 {
-	uint offset;
-	uint numTextureUse;
+	uint refBuffferOffset;
+	uint numRefBuffers;
+	uint cameraOffset;
+	uint numCameras;
 };
 
 
-cbuffer ModelDataContainerIndexCB : register(b0)
+cbuffer MeshDataIndexContainerCB : register(b0)
 {
-	uint gMeshDataIDDataContainerIndex;
+	uint gMeshDataIndexContainer;
 }
 
 cbuffer TransformMatrixContainerIndexCB : register(b1)
@@ -92,11 +94,22 @@ cbuffer TextureContainerIndexCB : register(b3)
 	uint gTextureContainerIndex;
 }
 
-ConstantBuffer<PerDrawIndices> gPerDrawIndices: register(b4);
+cbuffer PassRefBufferContainerIndexCB : register(b4)
+{
+	uint gPassRefBufferContainerIndex;
+}
 
-ConstantBuffer<PassBufferIndexRange> gPassBufferIndexRange: register(b5);
+cbuffer CameraContainerIndexCB : register(b5)
+{
+	uint gCameraContainerIndex;
+}
 
-cbuffer FinalColorBufferSrvCB : register(b6)
+
+ConstantBuffer<PerDrawIndices> gPerDrawIndices: register(b6);
+
+ConstantBuffer<PassConstants> gPassConstants: register(b7);
+
+cbuffer FinalColorBufferSrvCB : register(b8)
 {
 	uint gFinalColorBufferSrv;
 }

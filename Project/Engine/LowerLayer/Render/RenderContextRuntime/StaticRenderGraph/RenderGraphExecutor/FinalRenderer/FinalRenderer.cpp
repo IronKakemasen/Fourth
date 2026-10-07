@@ -52,11 +52,11 @@ void RenderContext::StaticRenderGraph::FinalRenderer::Update
 	//参照するカラーバッファsrvIndexをルートコンスタンツで送る
 	auto* refColorBuffer = static_cast<ColorBuffer*>(bufferDispatcher.Dispatch(finalRefBufferID));
 	SRVHeapIndex refBufferSrvHeapIndex = refColorBuffer->OutProperSRVHeapIndex();
-	auto const bindSlot = (UINT)ConstantBuffers::RootConstantsBindSlots::kFinalColorBufferSrv;
+	auto const bindSlot = ConstantBuffers::RootConstantsBindSlots::kFinalColorBufferSrv;
 
 	runtimeWrapper_.SetGraphicsRoot32BitConstants
 	(
-		bindSlot,
+		(UINT)bindSlot,
 		ConstantBuffers::Num32BitValuesTable(bindSlot),
 		&refBufferSrvHeapIndex,
 		0
