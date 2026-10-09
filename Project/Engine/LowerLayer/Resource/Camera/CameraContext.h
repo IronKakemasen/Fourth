@@ -2,6 +2,7 @@
 
 class Nexus;
 class BufferContextDiplomat;
+class CameraContextDiplomat;
 
 class CameraContext
 {
@@ -9,13 +10,18 @@ class CameraContext
 public:
 
 	struct NexusFieldProof;
+	struct AgentKey;
+
+	//ランタイムでカメラのアップデート、カメラの接続制御を行う。
+	class CameraController;
 	//カメラのデータのバッチング処理を行う
 	class CameraDataBatcher;
-	//カメラのライブラリー
-	class CameraLibrary;
-	//カメラの登録を行う
-	class CameraRegister;
+	//カメラのランタイムシステムを束ねたもの。1シーンに1つ存在
+	class CameraFrontlineSystems;
+	//CameraFrontlineSystemsの分配を行う
+	class FrontlineSystemsDispatcher;
 
+	class ExecutionAgent;
 
 	CameraContext
 	(
@@ -25,13 +31,14 @@ public:
 
 	~CameraContext();
 
+	auto& AccessDiplomat() { return diplomat; }
 
 private:
 
-	std::unique_ptr<CameraLibrary> cameraLibrary;
-	std::unique_ptr<CameraRegister> cameraRegister;
+	std::unique_ptr<FrontlineSystemsDispatcher> frontlineSystemsDispatcher;
+	std::unique_ptr<CameraDataBatcher> cameraDataBatcher;
+	std::unique_ptr<CameraContextDiplomat> diplomat;
 	
-
 };
 
 
@@ -42,4 +49,13 @@ private:
 	friend class Nexus;
 	explicit NexusFieldProof() = default;
 };
+
+struct CameraContext::AgentKey
+{
+private:
+
+	friend class ExecutionAgent;
+	explicit AgentKey() = default;
+};
+
 

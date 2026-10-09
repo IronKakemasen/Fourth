@@ -2,18 +2,16 @@
 #include "CameraRegister.h"
 #include "../CameraLibrary/CameraLibrary.h"
 
-
-CameraContext::CameraRegister::CameraRegister
+CameraBehavior* CameraContext::CameraFrontlineSystems::CameraRegister::Register
 (
-	NexusFieldProof proof_,
+	std::unique_ptr<CameraBehavior>&& camera_,
+	std::string const& name_,
 	CameraLibrary& cameraLibrary_
-):cameraLibrary(cameraLibrary_)
+)
 {
+	auto* cameraPtr = camera_.get();
+	cameraLibrary_.Import(std::move(camera_), name_);
 
-}
-
-void CameraContext::CameraRegister::Register(std::unique_ptr<CameraBehavior>&& camera_,std::string const& name_)
-{
-	cameraLibrary.Import(CameraLibrary::Local_ImportLicence{}, std::move(camera_), name_);
+	return cameraPtr;
 }
 

@@ -1,23 +1,17 @@
 #pragma once
-#include "../CameraContext.h"
+#include "../CameraContextRuntime/CameraFrontlineSystems.h"
 
-class CameraBehavior;
 
-class CameraContext::CameraRegister
+class CameraContext::CameraFrontlineSystems::CameraRegister
 {
-public:
+	friend class CameraContext::CameraFrontlineSystems;
 
-	CameraRegister
+
+	static CameraBehavior* Register
 	(
-		NexusFieldProof proof_,
+		std::unique_ptr<CameraBehavior>&& camera_, 
+		std::string const& name_,
 		CameraLibrary& cameraLibrary_
 	);
-
-	void Register(std::unique_ptr<CameraBehavior>&& camera_, std::string const& name_);
-
-
-private:
-
-	CameraLibrary& cameraLibrary;
 };
 

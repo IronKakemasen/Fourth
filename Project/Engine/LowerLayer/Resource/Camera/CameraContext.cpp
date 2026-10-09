@@ -1,7 +1,9 @@
 #include "PreCompileHeader.h"
 #include "CameraContext.h"
-#include "CameraLibrary/CameraLibrary.h"
-#include "CameraRegister/CameraRegister.h"
+#include "CameraContextRuntime/CameraDataBatcher/CameraDataBatcher.h"
+#include "CameraFSDispatcher/CameraFSDispatcher.h"
+#include "CameraContextDiplomat/CameraContextDiplomat.h"
+#include "CameraContextDiplomat/CameraContextExecutionAgent/CameraContextExecutionAgent.h"
 
 namespace
 {
@@ -16,11 +18,17 @@ CameraContext::CameraContext
 {
 	Logger::Entry("CameraContext: Constructor");
 
-	cameraLibrary = std::make_unique<CameraLibrary>(proof_);
-	Logger::Log("Instantiate: CameraLibrary", fileName);
 
-	cameraRegister = std::make_unique<CameraRegister>(proof_,*cameraLibrary);
-	Logger::Log("Instantiate: CameraRegister", fileName);
+	frontlineSystemsDispatcher = std::make_unique<FrontlineSystemsDispatcher>(proof_);
+	Logger::Log("Instantiate: FrontlineSystemsDispatcher", fileName);
+
+	diplomat = std::make_unique<CameraContextDiplomat>
+	(
+		proof_,
+		std::make_unique<ExecutionAgent>(proof_, *frontlineSystemsDispatcher)
+	);
+	Logger::Log("Instantiate: CameraContextDiplomat", fileName);
+	Logger::Log("Instantiate: CmdProvider", fileName);
 
 
 	Logger::End("CameraContext: Constructor");
