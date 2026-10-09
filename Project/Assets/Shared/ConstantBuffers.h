@@ -1,7 +1,7 @@
 #pragma once
 
 #ifdef __cplusplus
-#include "../../Engine/MiddleLayer/Math/Vector/Vector4.h"
+#include "../../Engine/Math/Vector/Vector4.h"
 
 namespace ConstantBuffers
 {

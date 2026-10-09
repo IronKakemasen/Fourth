@@ -40,6 +40,15 @@ RenderContext::StaticRenderGraph::BuildOutput::PSO_Builder RenderContext::Static
 
 	BuildOutput::PSO_Builder output;
 
+	//最終描画用のpsoは別腹
+	output.finalRenderingPso = CreateFinalRenderPso
+	(
+		pso_ContextDiplomat_,
+		shaderContextDiplomat_,
+		rootSignature_
+	);
+	Logger::Log("Create FinalRendering Pso", fileName);
+
 	//PSOのディスクを作って
 	std::vector<PsoDesc_Key> allPSODesc =  CreateAllPSO_Desc
 	(
@@ -48,17 +57,12 @@ RenderContext::StaticRenderGraph::BuildOutput::PSO_Builder RenderContext::Static
 		modelContextDiplomat_,
 		shaderContextDiplomat_
 	);
+	Logger::Log("Create All Graphics PSO_Desc", fileName);
+
 
 	//そのディスクをもとにpsoを生成
 	CreateAllPSO(proof_, psoDispatcher_, allPSODesc, rootSignature_, pso_ContextDiplomat_);
-
-	//最終描画用のpsoは別腹
-	output.finalRenderingPso = CreateFinalRenderPso
-	(
-		pso_ContextDiplomat_,
-		shaderContextDiplomat_,
-		rootSignature_
-	);
+	Logger::Log("Create All Graphics PSO", fileName);
 
 	return output;
 }

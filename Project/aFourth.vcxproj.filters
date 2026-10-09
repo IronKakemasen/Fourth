@@ -309,19 +309,19 @@
     <ClCompile Include="Engine\Nexus\NexusRun.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="Engine\MiddleLayer\Math\Vector\Vector3.cpp">
+    <ClCompile Include="Engine\Math\Vector\Vector3.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="Engine\main.cpp">
+    <ClCompile Include="main.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
     <ClCompile Include="Engine\Nexus\Nexus.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="Engine\MiddleLayer\Math\Vector\Vector2.cpp">
+    <ClCompile Include="Engine\Math\Vector\Vector2.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="Engine\MiddleLayer\Math\Vector\Vector4.cpp">
+    <ClCompile Include="Engine\Math\Vector\Vector4.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
     <ClCompile Include="Engine\LowerLayer\Buffer\BufferContextDiplomat\BufferToolLender\BufferToolLender.cpp">
@@ -669,7 +669,7 @@
     <ClCompile Include="Engine\LowerLayer\Resource\Camera\CameraContext.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="Engine\LowerLayer\Resource\Camera\CameraStructrue\AllCamera\CameraBehavior.cpp">
+    <ClCompile Include="Engine\LowerLayer\Resource\Camera\CameraStructrue\CameraBehavior.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
     <ClCompile Include="Engine\LowerLayer\Resource\Camera\CameraStructrue\CameraTransform\CameraTransform.cpp">
@@ -678,7 +678,13 @@
     <ClCompile Include="Engine\LowerLayer\Resource\Camera\CameraStructrue\CameraDesc\CameraDesc.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="Engine\LowerLayer\Resource\Camera\CameraStructrue\AllCamera\DefaultDebugCamera\DefaultDebugCamera.cpp">
+    <ClCompile Include="Engine\LowerLayer\Resource\Camera\PresetCameras\DefaultDebugCamera\DefaultDebugCamera.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\LowerLayer\Resource\Camera\CameraLibrary\CameraLibrary.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\LowerLayer\Resource\Camera\CameraRegister\CameraRegister.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
   </ItemGroup>
@@ -995,22 +1001,22 @@
     <ClInclude Include="Engine\LowerLayer\Buffer\BufferCreateTools\BufferUploader\BufferUploader.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\MiddleLayer\Math\Matrix\Matrix4x4.h">
+    <ClInclude Include="Engine\Math\Matrix\Matrix4x4.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
     <ClInclude Include="Engine\Nexus\Nexus.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\MiddleLayer\Math\Vector\Vector3.h">
+    <ClInclude Include="Engine\Math\Vector\Vector3.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\MiddleLayer\Math\Quaternion\Quaternion.h">
+    <ClInclude Include="Engine\Math\Quaternion\Quaternion.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\MiddleLayer\Math\Vector\Vector2.h">
+    <ClInclude Include="Engine\Math\Vector\Vector2.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\MiddleLayer\Math\Vector\Vector4.h">
+    <ClInclude Include="Engine\Math\Vector\Vector4.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
     <ClInclude Include="Engine\LowerLayer\Buffer\BufferContextDiplomat\BufferToolLender\BufferToolLender.h">
@@ -1532,19 +1538,28 @@
     <ClInclude Include="Engine\LowerLayer\Resource\Camera\CameraContext.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\LowerLayer\Resource\Camera\CameraStructrue\AllCamera\CameraBehavior.h">
+    <ClInclude Include="Engine\LowerLayer\Resource\Camera\CameraStructrue\CameraBehavior.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
     <ClInclude Include="Engine\LowerLayer\Resource\Camera\CameraStructrue\CameraTransform\CameraTransform.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\MiddleLayer\Math\MathConstants.h">
+    <ClInclude Include="Engine\Math\MathConstants.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
     <ClInclude Include="Engine\LowerLayer\Resource\Camera\CameraStructrue\CameraDesc\CameraDesc.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\LowerLayer\Resource\Camera\CameraStructrue\AllCamera\DefaultDebugCamera\DefaultDebugCamera.h">
+    <ClInclude Include="Engine\LowerLayer\Resource\Camera\PresetCameras\DefaultDebugCamera\DefaultDebugCamera.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\LowerLayer\Resource\Camera\CameraLibrary\CameraLibrary.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\LowerLayer\Resource\Camera\PresetCameras\PresetCameraIncludes.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\LowerLayer\Resource\Camera\CameraRegister\CameraRegister.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
   </ItemGroup>

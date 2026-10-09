@@ -13079,6 +13079,8 @@ class CameraContext
 {
 public:
 	struct NexusFieldProof;
+	//カメラのデータのバッチング処理を行う
+	class CameraDataBatcher;
 	CameraContext
 	(
 		NexusFieldProof proof_,
@@ -13105,20 +13107,67 @@ CameraBehavior::CameraBehavior(std::optional<CameraDesc> const& desc_)
 {
 	trans = std::make_unique<CameraTransform>(desc_);
 }
+void CameraBehavior::UpdateMatrices(Local_UpdateMatricesLicence licence_)
+{
+	trans->UpdateMatrices(licence_);
+}
 
 ========================================
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Camera\CameraStructrue\AllCamera\CameraBehavior.h ===
 ========================================
 #pragma once
+class CameraContext;
 struct CameraDesc;
 class CameraBehavior
 {
-	CameraBehavior(std::optional<CameraDesc> const& desc_);
-	virtual ~CameraBehavior() = default;
+	friend class CameraContext;
 	//カメラ専用のトランスフォーム
 	struct CameraTransform;
-private:
+public:
+	//行列アップデート許可証
+	struct Local_UpdateMatricesLicence;
+	CameraBehavior(std::optional<CameraDesc> const& desc_);
+	virtual ~CameraBehavior() = default;
+	//お好きにどうぞな更新処理
+	virtual void Update() = 0;
+	CameraTransform& AccssTransform() { return *trans; }
+	//行列更新処理は、一括で誰かが呼びます
+	void UpdateMatrices(Local_UpdateMatricesLicence licence_);
+protected:
 	std::unique_ptr<CameraTransform> trans;
+};
+struct CameraBehavior::Local_UpdateMatricesLicence
+{
+private:
+	friend class CameraContext;
+	explicit Local_UpdateMatricesLicence() = default;
+};
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Camera\CameraStructrue\AllCamera\DefaultDebugCamera\DefaultDebugCamera.cpp ===
+========================================
+#include "PreCompileHeader.h"
+#include "DefaultDebugCamera.h"
+#include "../../CameraTransform/CameraTransform.h"
+#include "../../CameraDesc/CameraDesc.h"
+DefaultDebugCamera::DefaultDebugCamera(std::optional<CameraDesc> const& desc_)
+	: CameraBehavior(desc_)
+{
+}
+void DefaultDebugCamera::Update()
+{
+}
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Camera\CameraStructrue\AllCamera\DefaultDebugCamera\DefaultDebugCamera.h ===
+========================================
+#pragma once
+#include "../CameraBehavior.h"
+class DefaultDebugCamera :public CameraBehavior
+{
+public:
+	DefaultDebugCamera(std::optional<CameraDesc> const& desc_);
+	virtual void Update()override;
 };
 
 ========================================
@@ -13134,7 +13183,7 @@ private:
 #include "../../../../../MiddleLayer/Math/Vector/Vector3.h"
 struct CameraDesc
 {
-	Vector3 worldPos;
+	Vector3 pos;
 	Vector3 lookDir = { 0,0,1 };
 	float rotationZ{};
 	float rotationInterpolationCoe = 1.0f;
@@ -13151,6 +13200,10 @@ struct CameraDesc
 #include "CameraTransform.h"
 #include "../../../../../MiddleLayer/Transform/Transform.h"
 #include "../CameraDesc/CameraDesc.h"
+namespace
+{
+	auto const fileName = "CameraTransform.cpp";
+}
 CameraBehavior::CameraTransform::CameraTransform(std::optional<CameraDesc> const& desc_)
 {
 	if (desc_.has_value())
@@ -13163,7 +13216,7 @@ void CameraBehavior::CameraTransform::Clear()
 {
 	if (!cameraDesc)
 	{
-		base.worldPos = {};
+		base.pos = {};
 		base.rotationZ = {};
 		base.lookDir = { 0,0,1 };
 		base.rotationInterpolationCoe = 1.0f;
@@ -13174,7 +13227,7 @@ void CameraBehavior::CameraTransform::Clear()
 	}
 	else
 	{
-		base.worldPos = cameraDesc->worldPos;
+		base.pos = cameraDesc->pos;
 		base.rotationZ = cameraDesc->rotationZ;
 		base.lookDir = cameraDesc->lookDir;
 		base.rotationInterpolationCoe = cameraDesc->rotationInterpolationCoe;
@@ -13188,12 +13241,21 @@ void CameraBehavior::CameraTransform::Clear()
 	matrices.proj = Matrix4x4{};
 	matrices.viewProj = Matrix4x4{};
 }
-void CameraBehavior::CameraTransform::UpdateMatrices()
+void CameraBehavior::CameraTransform::UpdateMatrices(CameraBehavior::Local_UpdateMatricesLicence licence_)
 {
 	//回転クォータニオンの更新
 	RotationUpdate();
 	//位置行列
-	Matrix4x4 translationMat = Matrix4x4::CreateTranslation(base.worldPos);
+	Matrix4x4 translationMat;
+	if (base.followTarget)
+	{
+		Vector3 worldPos = base.followTarget->WatchWorldPos() + base.pos;
+		translationMat = Matrix4x4::CreateTranslation(worldPos);
+	}
+	else
+	{
+		translationMat = Matrix4x4::CreateTranslation(base.pos);
+	}
 	//回転行列
 	Matrix4x4 rotationMat = base.quaternion.GetRotateMatrix();
 	//ペアレント化しているなら
@@ -13223,7 +13285,7 @@ void CameraBehavior::CameraTransform::RotationUpdate()
 	//次の回転クォータニオン
 	Quaternion nextQuaternion = Quaternion::CreateQuaternion(base.lookDir);
 	//rotationに値が入って入れば
-	if (std::sqrtf(base.rotationZ) > 0.0f)
+	if (std::fabsf(base.rotationZ) > 0.0f)
 	{
 		nextQuaternion = nextQuaternion.Multiply
 		(
@@ -13235,7 +13297,43 @@ void CameraBehavior::CameraTransform::RotationUpdate()
 }
 void CameraBehavior::CameraTransform::BeChild(Transform* parent_)
 {
+	ErrorMessageOutput::Assert::DetectError
+	(
+		!base.followTarget,
+		"ペアレント化とポジションフォローは同時に設定できないぜ",
+		fileName
+	);
 	base.parent = parent_;
+}
+void CameraBehavior::CameraTransform::Follow(Transform* followTarget_)
+{
+	ErrorMessageOutput::Assert::DetectError
+	(
+		!base.parent,
+		"ペアレント化とポジションフォローは同時に設定できないぜ",
+		fileName
+	);
+	base.followTarget = followTarget_;
+}
+void CameraBehavior::CameraTransform::TranslatePosition(const Vector3& dstPos_)
+{
+	base.pos = dstPos_;
+}
+void CameraBehavior::CameraTransform::LookAt(const Vector3& dstDirection_)
+{
+	base.lookDir = dstDirection_;
+}
+void CameraBehavior::CameraTransform::RotateZ(float dstRotation_)
+{
+	base.rotationZ = dstRotation_;
+}
+void CameraBehavior::CameraTransform::ChangeRotationInterpolationCoe(float dst_)
+{
+	base.rotationInterpolationCoe = dst_;
+}
+void CameraBehavior::CameraTransform::ChangeFovY(float dst_)
+{
+	projection.fovY = dst_;
 }
 
 ========================================
@@ -13250,10 +13348,6 @@ void CameraBehavior::CameraTransform::BeChild(Transform* parent_)
 class Transform;
 struct CameraBehavior::CameraTransform
 {
-	CameraTransform(std::optional<CameraDesc> const& desc_);
-	//描画用の行列更新
-	void UpdateMatrices();
-	void Clear();
 private:
 	//投影方法関連
 	struct Projection
@@ -13266,11 +13360,13 @@ private:
 	//カメラ専用のトランスフォームパラメータ
 	struct Base
 	{
-		Vector3 worldPos;
+		Vector3 pos;
 		Vector3 lookDir{};
 		float rotationZ{};
 		Quaternion quaternion;
 		float rotationInterpolationCoe{};
+		//ポジションのみを追跡したい場合
+		Transform* followTarget = nullptr;
 		Transform* parent = nullptr;
 	};
 	//描画のための行列
@@ -13280,6 +13376,24 @@ private:
 		Matrix4x4 proj;
 		Matrix4x4 viewProj;
 	};
+public:
+	CameraTransform(std::optional<CameraDesc> const& desc_);
+	//描画用の行列更新
+	void UpdateMatrices(CameraBehavior::Local_UpdateMatricesLicence licence_);
+	void Clear();
+	//ペアレント化
+	void BeChild(Transform* parent_);
+	//フォロー
+	void Follow(Transform* followTarget_);
+	//パラメータ変動
+	void TranslatePosition(const Vector3& dstPos_);
+	void LookAt(const Vector3& dstDirection_);
+	void RotateZ(float dstRotation_);
+	void ChangeRotationInterpolationCoe(float dst_);
+	void ChangeFovY(float dst_);
+	//バッチング処理で使用
+	auto const& WatchMatrices()const { return matrices; }
+private:
 	Base base;
 	Projection projection;
 	Matrices matrices;
@@ -13287,8 +13401,6 @@ private:
 	std::unique_ptr<CameraDesc> cameraDesc;
 	//回転更新処理
 	void RotationUpdate();
-	//ペアレント化
-	void BeChild(Transform* parent_);
 	//透視投影作成(リバースZ対応)
 	void UpdateProjectionMatrixReverseZ();
 };
@@ -20127,9 +20239,9 @@ public:
 	{
 		if (parent) parent->DeleteChild(this);
 	}
-	inline void TranslatePosition(const Vector3& dstWorldPos_)
+	inline void TranslatePosition(const Vector3& dstPos_)
 	{
-		worldPos = dstWorldPos_;
+		pos = dstPos_;
 		NotifyChanged();
 	}
 	inline void LookAt(const Vector3& dstDirection_)
@@ -20157,7 +20269,7 @@ public:
 	}
 	inline void Clear()
 	{
-		worldPos = {};
+		pos = {};
 		rotation = {};
 		lookDir = kBeyond;
 		scale = { 1.0f,1.0f,1.0f };
@@ -20208,7 +20320,7 @@ public:
 		//スケール行列
 		Matrix4x4 scaleMat = Matrix4x4::CreateScale(scale);
 		//位置行列
-		Matrix4x4 translationMat = Matrix4x4::CreateTranslation(worldPos);
+		Matrix4x4 translationMat = Matrix4x4::CreateTranslation(pos);
 		//回転行列
 		Matrix4x4 rotationMat = quaternion.GetRotateMatrix();
 		//SRT
@@ -20237,7 +20349,7 @@ private:
 	static inline const Vector3 kRight = { 1.0f,0.0f,0.0f };
 	static inline const Vector3 kUp = { 0.0f,1.0f,0.0f };
 	static inline const Vector3 kBeyond = { 0.0f,0.0f,1.0f };
-	Vector3 worldPos;					//ワールド座標
+	Vector3 pos;						//ワールド座標またはローカル座標
 	Vector3 scale;						//スケール
 	Vector3 rotation;					//ヨーピッチロール
 	Vector3 lookDir;					//向いている方向
@@ -21514,5 +21626,5 @@ namespace StringProcessing
 ========================================
 === SUMMARY ===
 ========================================
-Total Files      : 465
-Effective Lines  : 15736
+Total Files      : 467
+Effective Lines  : 15826

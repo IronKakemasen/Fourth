@@ -11,6 +11,10 @@ public:
 	struct NexusFieldProof;
 	//カメラのデータのバッチング処理を行う
 	class CameraDataBatcher;
+	//カメラのライブラリー
+	class CameraLibrary;
+	//カメラの登録を行う
+	class CameraRegister;
 
 
 	CameraContext
@@ -24,6 +28,9 @@ public:
 
 private:
 
+	std::unique_ptr<CameraLibrary> cameraLibrary;
+	std::unique_ptr<CameraRegister> cameraRegister;
+	
 
 };
 

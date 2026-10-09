@@ -1,5 +1,5 @@
 #pragma once
-#include "../../../../../MiddleLayer/Math/Vector/Vector3.h"
+#include "../../../../../Math/Vector/Vector3.h"
 
 struct CameraDesc
 {
