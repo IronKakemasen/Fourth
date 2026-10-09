@@ -3,20 +3,24 @@
 #include "../CameraStructrue/CameraBehavior.h"
 
 
-CameraContext::CameraLibrary::CameraLibrary(NexusFieldProof proof_)
+namespace
+{
+	auto const fileName = "CameraLibrary.cpp";
+}
+
+CameraContext::CameraFrontlineSystems::CameraLibrary::CameraLibrary(NexusFieldProof proof_)
 {
 
 }
 
 
-CameraContext::CameraLibrary::~CameraLibrary()
+CameraContext::CameraFrontlineSystems::CameraLibrary::~CameraLibrary()
 {
 
 }
 
-void CameraContext::CameraLibrary::Import
+void CameraContext::CameraFrontlineSystems::CameraLibrary::Import
 (
-	Local_ImportLicence const& licence_,
 	std::unique_ptr<CameraBehavior>&& cameraUnique_,
 	std::string const& name_
 )
@@ -24,18 +28,26 @@ void CameraContext::CameraLibrary::Import
 	ErrorMessageOutput::Assert::DetectError
 	(
 		cameraLib.find(name_) == cameraLib.end(),
-		name_ + "このカメラ名は重複してるからだめ",
-		"CameraLibrary.h"
+		name_ + "このカメラ名は同じシーンの中で重複してるからだめ",
+		fileName
 	);
 
-	Logger::Log("Import: " + name_, "CameraLibrary.cpp");
+	Logger::Log("Import: " + name_, fileName);
 
-	allCameraPtr.emplace_back(cameraUnique_.get());
 	cameraLib[name_] = std::move(cameraUnique_);
 }
 
-std::vector<CameraBehavior*> const& CameraContext::CameraLibrary::WatchLibrary()const
+CameraBehavior* CameraContext::CameraFrontlineSystems::CameraLibrary::Export(std::string const& name_)
 {
-	return allCameraPtr;
+	ErrorMessageOutput::Assert::DetectError
+	(
+		cameraLib.find(name_) != cameraLib.end(),
+		name_ + "こんな名前のカメラは登録されていません",
+		fileName
+	);
+
+	return cameraLib[name_].get();
+
 }
+
 

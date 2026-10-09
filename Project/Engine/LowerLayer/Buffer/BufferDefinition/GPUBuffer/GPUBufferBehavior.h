@@ -1,5 +1,6 @@
 #pragma once
 #include "../../BufferContext.h"
+#include "../ViewType.h"
 
 struct BufferDescriptionBehavior;
 

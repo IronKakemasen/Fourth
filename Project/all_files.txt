@@ -1,41 +1,4 @@
 ========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\main.cpp ===
-========================================
-#include "Lowerlayer/DebugSystem/RuntimeDebugger/RuntimeDebugger.h"
-#include "Nexus/Nexus.h"
-void Update(Nexus& nexus_);
-int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
-{
-    //デバッガー。DebugLayer, PointerValidator, LeakChecker
-    RuntimeDebugger runtimeDebugger;
-    //エンジンの交易場
-    Nexus nexus;
-    Update(nexus);
-    return 0;
-}
-void Update(Nexus& nexus_)
-{
-    MSG msg = {};
-    while (true)
-    {
-        //Windowにメッセージが来てたら最優先で処理させる
-        if (PeekMessage(&msg, nullptr, 0, 0, PM_REMOVE))
-        {
-            if (msg.message == WM_QUIT)
-            {
-                break;
-            }
-            TranslateMessage(&msg);
-            DispatchMessage(&msg);
-        }
-        else
-        {
-            nexus_.Run();
-        }
-    }
-}
-
-========================================
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\ProjectConfig.h ===
 ========================================
 #pragma once
@@ -49,16 +12,6 @@ static constexpr UINT kInvalid = 0xffffffff;
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-namespace ConstantForCalculation
-{
-	constexpr float kPi = 3.141592653589f;
-	constexpr float kInvPi = 1.0f / 3.141592653589f;
-	constexpr float kInv255 = 1.0f / 255.0f;
-	constexpr float kHalf = 0.5f;
-}
-///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 namespace ProjectConfig
 {
 	namespace Window
@@ -66,7 +19,7 @@ namespace ProjectConfig
 		inline const LPCWSTR kTitle = L"Fourth";
 		constexpr UINT kWidth = 1280;
 		constexpr UINT kHeight = 720;
-		constexpr float kDefaultFovY = 90.0f * 3.141592653589f / 180.0f;
+		constexpr float kDefaultFovY = 3.141592653589f * 0.5f;
 		constexpr std::array<float, 4> kColor = { 1.0f,0.0f,0.0f,1.0f };
 	}
 	namespace Render
@@ -127,15 +80,6 @@ namespace ProjectConfig
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-enum class ViewType
-{
-	kSRV,
-	kUAV,
-	kSampler,
-	kRTV,
-	kDSV,
-	kCount
-};
 
 ========================================
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Buffer\BufferContext.cpp ===
@@ -2969,6 +2913,20 @@ struct Texture2DState
 };
 
 ========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Buffer\BufferDefinition\ViewType.h ===
+========================================
+#pragma once
+enum class ViewType
+{
+	kSRV,
+	kUAV,
+	kSampler,
+	kRTV,
+	kDSV,
+	kCount
+};
+
+========================================
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Buffer\BufferDefinition\BufferDescriptions\BufferDescriptionBehavior.cpp ===
 ========================================
 #include "BufferDescriptionBehavior.h"
@@ -4132,6 +4090,7 @@ std::string GPUBufferBehavior::WatchName()
 ========================================
 #pragma once
 #include "../../BufferContext.h"
+#include "../ViewType.h"
 struct BufferDescriptionBehavior;
 class GPUBufferBehavior
 {
@@ -9979,6 +9938,14 @@ RenderContext::StaticRenderGraph::BuildOutput::PSO_Builder RenderContext::Static
 )
 {
 	BuildOutput::PSO_Builder output;
+	//最終描画用のpsoは別腹
+	output.finalRenderingPso = CreateFinalRenderPso
+	(
+		pso_ContextDiplomat_,
+		shaderContextDiplomat_,
+		rootSignature_
+	);
+	Logger::Log("Create FinalRendering Pso", fileName);
 	//PSOのディスクを作って
 	std::vector<PsoDesc_Key> allPSODesc =  CreateAllPSO_Desc
 	(
@@ -9987,15 +9954,10 @@ RenderContext::StaticRenderGraph::BuildOutput::PSO_Builder RenderContext::Static
 		modelContextDiplomat_,
 		shaderContextDiplomat_
 	);
+	Logger::Log("Create All Graphics PSO_Desc", fileName);
 	//そのディスクをもとにpsoを生成
 	CreateAllPSO(proof_, psoDispatcher_, allPSODesc, rootSignature_, pso_ContextDiplomat_);
-	//最終描画用のpsoは別腹
-	output.finalRenderingPso = CreateFinalRenderPso
-	(
-		pso_ContextDiplomat_,
-		shaderContextDiplomat_,
-		rootSignature_
-	);
+	Logger::Log("Create All Graphics PSO", fileName);
 	return output;
 }
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -10555,9 +10517,11 @@ namespace
 	///全てのパスが参照するバッファのIDが横一列に詰まっている
 	///このIDを辿って、ランタイムの一歩目にsrvHeapIndexを詰めていく
 	CreateAllPassInfo(proof_, output, renderPassCreator_, passContainer_, bufferContextDiplomat_);
+	Logger::Log("Create All PassInfo", fileName);
 	///パスが参照するバッファのsrvHeapIndexを詰めるためのバッファのID
 	///UploadStructuredBufferでダブルです。中身の初期化もしていません
 	CreateReferenceBufferSrvArray(proof_, output,bufferContextDiplomat_);
+	Logger::Log("Create ReferenceBufferSrvArray", fileName);
 	return output;
 }
 void RenderContext::StaticRenderGraph::PassSetUpper::CreateAllPassInfo
@@ -13054,6 +13018,10 @@ private:
 ========================================
 #include "PreCompileHeader.h"
 #include "CameraContext.h"
+#include "CameraContextRuntime/CameraDataBatcher/CameraDataBatcher.h"
+#include "CameraFSDispatcher/CameraFSDispatcher.h"
+#include "CameraContextDiplomat/CameraContextDiplomat.h"
+#include "CameraContextDiplomat/CameraContextExecutionAgent/CameraContextExecutionAgent.h"
 namespace
 {
 	std::string const fileName = "CameraContext.cpp";
@@ -13064,6 +13032,17 @@ CameraContext::CameraContext
 	BufferContextDiplomat& bufferContextDiplomat_
 )
 {
+	Logger::Entry("CameraContext: Constructor");
+	frontlineSystemsDispatcher = std::make_unique<FrontlineSystemsDispatcher>(proof_);
+	Logger::Log("Instantiate: FrontlineSystemsDispatcher", fileName);
+	diplomat = std::make_unique<CameraContextDiplomat>
+	(
+		proof_,
+		std::make_unique<ExecutionAgent>(proof_, *frontlineSystemsDispatcher)
+	);
+	Logger::Log("Instantiate: CameraContextDiplomat", fileName);
+	Logger::Log("Instantiate: CmdProvider", fileName);
+	Logger::End("CameraContext: Constructor");
 }
 CameraContext::~CameraContext()
 {
@@ -13075,19 +13054,32 @@ CameraContext::~CameraContext()
 #pragma once
 class Nexus;
 class BufferContextDiplomat;
+class CameraContextDiplomat;
 class CameraContext
 {
 public:
 	struct NexusFieldProof;
+	struct AgentKey;
+	//ランタイムでカメラのアップデート、カメラの接続制御を行う。
+	class CameraController;
 	//カメラのデータのバッチング処理を行う
 	class CameraDataBatcher;
+	//カメラのランタイムシステムを束ねたもの。1シーンに1つ存在
+	class CameraFrontlineSystems;
+	//CameraFrontlineSystemsの分配を行う
+	class FrontlineSystemsDispatcher;
+	class ExecutionAgent;
 	CameraContext
 	(
 		NexusFieldProof proof_,
 		BufferContextDiplomat& bufferContextDiplomat_
 	);
 	~CameraContext();
+	auto& AccessDiplomat() { return diplomat; }
 private:
+	std::unique_ptr<FrontlineSystemsDispatcher> frontlineSystemsDispatcher;
+	std::unique_ptr<CameraDataBatcher> cameraDataBatcher;
+	std::unique_ptr<CameraContextDiplomat> diplomat;
 };
 struct CameraContext::NexusFieldProof
 {
@@ -13095,79 +13087,443 @@ private:
 	friend class Nexus;
 	explicit NexusFieldProof() = default;
 };
+struct CameraContext::AgentKey
+{
+private:
+	friend class ExecutionAgent;
+	explicit AgentKey() = default;
+};
 
 ========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Camera\CameraStructrue\AllCamera\CameraBehavior.cpp ===
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Camera\CameraContextDiplomat\CameraContextDiplomat.cpp ===
+========================================
+#include "PreCompileHeader.h"
+#include "CameraContextDiplomat.h"
+#include "CameraContextExecutionAgent/CameraContextExecutionAgent.h"
+CameraContextDiplomat::CameraContextDiplomat
+(
+	CameraContext::NexusFieldProof proof_,
+	std::unique_ptr<CameraContext::ExecutionAgent>&& executionAgent_
+)
+{
+	std::get<std::unique_ptr<CameraContext::ExecutionAgent>>(tools) = std::move(executionAgent_);
+}
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Camera\CameraContextDiplomat\CameraContextDiplomat.h ===
+========================================
+#pragma once
+#include "../CameraContext.h"
+class CameraContextDiplomat
+{
+public:
+	CameraContextDiplomat
+	(
+		CameraContext::NexusFieldProof proof_,
+		std::unique_ptr<CameraContext::ExecutionAgent>&& executionAgent_
+	);
+	template<typename ToolType>
+	auto& Access()
+	{
+		return *std::get<std::unique_ptr<ToolType>>(tools);
+	}
+private:
+	std::tuple<std::unique_ptr<CameraContext::ExecutionAgent>> tools;
+};
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Camera\CameraContextDiplomat\CameraContextExecutionAgent\CameraContextExecutionAgent.cpp ===
+========================================
+#include "PreCompileHeader.h"
+#include "CameraContextExecutionAgent.h"
+#include "../../CameraFSDispatcher/CameraFSDispatcher.h"
+CameraContext::ExecutionAgent::ExecutionAgent
+(
+	NexusFieldProof proof_,
+	FrontlineSystemsDispatcher& frontlineSystemsDispatcher_
+):frontlineSystemsDispatcher(frontlineSystemsDispatcher_)
+{
+}
+CameraContext::CameraFrontlineSystems* CameraContext::ExecutionAgent::DispatchFrontlineSystems(SceneContextProof proof_)
+{
+	return frontlineSystemsDispatcher.Dispatch(AgentKey{});
+}
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Camera\CameraContextDiplomat\CameraContextExecutionAgent\CameraContextExecutionAgent.h ===
+========================================
+#pragma once
+#include "../../CameraContext.h"
+class SceneContext;
+class CameraContext::ExecutionAgent
+{
+	struct SceneContextProof;
+public:
+	ExecutionAgent
+	(
+		NexusFieldProof proof_,
+		FrontlineSystemsDispatcher& frontlineSystemsDispatcher_
+	);
+	CameraFrontlineSystems* DispatchFrontlineSystems(SceneContextProof proof_);
+private:
+	FrontlineSystemsDispatcher& frontlineSystemsDispatcher;
+};
+struct CameraContext::ExecutionAgent::SceneContextProof
+{
+private:
+	friend class SceneContext;
+	explicit SceneContextProof() = default;
+};
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Camera\CameraContextRuntime\CameraFrontlineSystems.cpp ===
+========================================
+#include "PreCompileHeader.h"
+#include "CameraFrontlineSystems.h"
+#include "../CameraLibrary/CameraLibrary.h"
+#include "../CameraRegister/CameraRegister.h"
+#include "../CameraStructrue/CameraBehavior.h"
+CameraContext::CameraFrontlineSystems::CameraFrontlineSystems(NexusFieldProof proof_)
+{
+	cameraLibrary = std::make_unique<CameraLibrary>(proof_);
+}
+CameraContext::CameraFrontlineSystems::~CameraFrontlineSystems()
+{
+}
+void CameraContext::CameraFrontlineSystems::RegisterCamera
+(
+	std::unique_ptr<CameraBehavior>&& camera_,
+	CameraSocket dstCameraSocket_,
+	std::string const& name_
+)
+{
+	socketMap[dstCameraSocket_] = CameraRegister::Register(std::move(camera_), name_, *cameraLibrary);
+}
+void CameraContext::CameraFrontlineSystems::ChangeCamera(std::string const& to_, CameraSocket dstSocket_)
+{
+	socketMap[dstSocket_] = cameraLibrary->Export(to_);
+}
+void CameraContext::CameraFrontlineSystems::RunCameraUpdate()
+{
+	CameraBehavior::Local_UpdateLicence licenceUpdate;
+	//更新する必要があるカメラ(描画のために使用しているカメラ)の更新処理を呼ぶ
+	for (auto& [key, camera] : socketMap)
+	{
+		camera->Update(licenceUpdate);
+		camera->UpdateMatrices(licenceUpdate);
+	}
+}
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Camera\CameraContextRuntime\CameraFrontlineSystems.h ===
+========================================
+#pragma once
+#include "../CameraContext.h"
+#include "CameraSocket.h"
+class CameraBehavior;
+class CameraContext::CameraFrontlineSystems
+{
+	//カメラの登録を行う
+	class CameraRegister;
+	//そのシーンに存在するカメラのライブラリ
+	class CameraLibrary;
+public:
+	CameraFrontlineSystems(NexusFieldProof proof_);
+	~CameraFrontlineSystems();
+	//カメラの登録
+	void RegisterCamera
+	(
+		std::unique_ptr<CameraBehavior>&& camera_,
+		CameraSocket dstCameraSocket_,
+		std::string const& name_
+	);
+	//カメラ接続の変更
+	void ChangeCamera(std::string const& to_, CameraSocket dstSocket_);
+	//カメラのアップデート
+	//socketMapにあるカメラのアップデートを呼ぶ。バッチングは別機関で行う
+	void RunCameraUpdate();
+private:
+	std::unique_ptr<CameraLibrary> cameraLibrary;
+	std::unordered_map<CameraSocket, CameraBehavior*> socketMap;
+};
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Camera\CameraContextRuntime\CameraSocket.h ===
+========================================
+#pragma once
+//厳密にいうと、バッファに書き込むカメラの接続口
+//実際に更新・バッチングする必要のあるカメラはこのソケットに接続しているカメラのみということになる
+enum class CameraSocket
+{
+	//メインカメラとデバッグカメラ共用。切り替え可能ということ
+	kMainDebug,
+	//この数分のカメラのバッファを作成する必要がある
+	kCount
+};
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Camera\CameraContextRuntime\CameraController\CameraController.cpp ===
+========================================
+#include "PreCompileHeader.h"
+#include "CameraController.h"
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Camera\CameraContextRuntime\CameraController\CameraController.h ===
+========================================
+#pragma once
+#include "../../CameraContext.h"
+#include "../CameraSocket.h"
+class CameraBehavior;
+class CameraContext::CameraController
+{
+public:
+	CameraController(NexusFieldProof proof_);
+private:
+	//現在の接続しているカメラ
+	std::unordered_map<CameraSocket, CameraBehavior*> socketMap;
+};
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Camera\CameraContextRuntime\CameraDataBatcher\CameraDataBatcher.cpp ===
+========================================
+#include "PreCompileHeader.h"
+#include "CameraDataBatcher.h"
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Camera\CameraContextRuntime\CameraDataBatcher\CameraDataBatcher.h ===
+========================================
+#pragma once
+#include "../../CameraContext.h"
+class CameraContext::CameraDataBatcher
+{
+public:
+	CameraDataBatcher(NexusFieldProof proof_);
+private:
+};
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Camera\CameraFSDispatcher\CameraFSDispatcher.cpp ===
+========================================
+#include "PreCompileHeader.h"
+#include "CameraFSDispatcher.h"
+#include "../CameraContextRuntime/CameraFrontlineSystems.h"
+namespace
+{
+	std::string const fileName = "CameraFSDispatcher.cpp";
+}
+CameraContext::FrontlineSystemsDispatcher::FrontlineSystemsDispatcher(NexusFieldProof proof_)
+{
+	///!!!!!!!!将来的には、シーンのジェーソンファイルの数からシーン数を確定
+	//その数分インスタンス化する
+	simpleFreeList.Resize(1);
+	UINT i = 0;
+	for (;i < 1;++i)
+	{
+		cameraFrontlineSystemsContainer.emplace_back
+		(
+			std::make_unique<CameraFrontlineSystems>(proof_)
+		);
+	}
+	Logger::Log("Instantiate: CameraFrontlineSystems(" + std::to_string(i) + ")", fileName);
+}
+CameraContext::FrontlineSystemsDispatcher::~FrontlineSystemsDispatcher()
+{
+}
+CameraContext::CameraFrontlineSystems* CameraContext::FrontlineSystemsDispatcher::Dispatch(AgentKey key_)
+{
+	return cameraFrontlineSystemsContainer[simpleFreeList.Distribute()].get();
+}
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Camera\CameraFSDispatcher\CameraFSDispatcher.h ===
+========================================
+#pragma once
+#include "../CameraContext.h"
+#include "SimpleFreeList/SimpleFreeList.h"
+class CameraContext::FrontlineSystemsDispatcher
+{
+public:
+	FrontlineSystemsDispatcher(NexusFieldProof proof_);
+	~FrontlineSystemsDispatcher();
+	CameraFrontlineSystems* Dispatch(AgentKey key_);
+private:
+	std::vector<std::unique_ptr<CameraFrontlineSystems>> cameraFrontlineSystemsContainer;
+	SimpleFreeList simpleFreeList;
+};
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Camera\CameraLibrary\CameraLibrary.cpp ===
+========================================
+#include "PreCompileHeader.h"
+#include "CameraLibrary.h"
+#include "../CameraStructrue/CameraBehavior.h"
+namespace
+{
+	auto const fileName = "CameraLibrary.cpp";
+}
+CameraContext::CameraFrontlineSystems::CameraLibrary::CameraLibrary(NexusFieldProof proof_)
+{
+}
+CameraContext::CameraFrontlineSystems::CameraLibrary::~CameraLibrary()
+{
+}
+void CameraContext::CameraFrontlineSystems::CameraLibrary::Import
+(
+	std::unique_ptr<CameraBehavior>&& cameraUnique_,
+	std::string const& name_
+)
+{
+	ErrorMessageOutput::Assert::DetectError
+	(
+		cameraLib.find(name_) == cameraLib.end(),
+		name_ + "このカメラ名は同じシーンの中で重複してるからだめ",
+		fileName
+	);
+	Logger::Log("Import: " + name_, fileName);
+	cameraLib[name_] = std::move(cameraUnique_);
+}
+CameraBehavior* CameraContext::CameraFrontlineSystems::CameraLibrary::Export(std::string const& name_)
+{
+	ErrorMessageOutput::Assert::DetectError
+	(
+		cameraLib.find(name_) != cameraLib.end(),
+		name_ + "こんな名前のカメラは登録されていません",
+		fileName
+	);
+	return cameraLib[name_].get();
+}
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Camera\CameraLibrary\CameraLibrary.h ===
+========================================
+#pragma once
+#include "../CameraContextRuntime/CameraFrontlineSystems.h"
+class CameraContext::CameraFrontlineSystems::CameraLibrary
+{
+public:
+	CameraLibrary(NexusFieldProof proof_);
+	~CameraLibrary();
+	void Import
+	(
+		std::unique_ptr<CameraBehavior>&& cameraUnique_,
+		std::string const& name_
+	);
+	CameraBehavior* Export(std::string const& name_);
+private:
+	//同じ型で複数制作することになるので、しぶしぶ文字列をキーにします
+	std::unordered_map<std::string, std::unique_ptr<CameraBehavior>> cameraLib;
+};
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Camera\CameraRegister\CameraRegister.cpp ===
+========================================
+#include "PreCompileHeader.h"
+#include "CameraRegister.h"
+#include "../CameraLibrary/CameraLibrary.h"
+CameraBehavior* CameraContext::CameraFrontlineSystems::CameraRegister::Register
+(
+	std::unique_ptr<CameraBehavior>&& camera_,
+	std::string const& name_,
+	CameraLibrary& cameraLibrary_
+)
+{
+	auto* cameraPtr = camera_.get();
+	cameraLibrary_.Import(std::move(camera_), name_);
+	return cameraPtr;
+}
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Camera\CameraRegister\CameraRegister.h ===
+========================================
+#pragma once
+#include "../CameraContextRuntime/CameraFrontlineSystems.h"
+class CameraContext::CameraFrontlineSystems::CameraRegister
+{
+	friend class CameraContext::CameraFrontlineSystems;
+	static CameraBehavior* Register
+	(
+		std::unique_ptr<CameraBehavior>&& camera_, 
+		std::string const& name_,
+		CameraLibrary& cameraLibrary_
+	);
+};
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Camera\CameraStructrue\CameraBehavior.cpp ===
 ========================================
 #include "PreCompileHeader.h"
 #include "CameraBehavior.h"
-#include "../CameraTransform/CameraTransform.h"
-#include "../CameraDesc/CameraDesc.h"
+#include "CameraTransform/CameraTransform.h"
+#include "CameraDesc/CameraDesc.h"
 CameraBehavior::CameraBehavior(std::optional<CameraDesc> const& desc_)
 {
 	trans = std::make_unique<CameraTransform>(desc_);
 }
-void CameraBehavior::UpdateMatrices(Local_UpdateMatricesLicence licence_)
+void CameraBehavior::UpdateMatrices(Local_UpdateLicence licence_)
 {
 	trans->UpdateMatrices(licence_);
 }
+void CameraBehavior::Clear()
+{
+	trans->Clear();
+}
+void CameraBehavior::BeChild(Transform* parent_)
+{
+	trans->BeChild(parent_);
+}
+void CameraBehavior::Follow(Transform* followTarget_)
+{
+	trans->Follow(followTarget_);
+}
+CameraBehavior::Matrices const& CameraBehavior::WatchMatrices()const
+{
+	return trans->WatchMatrices();
+}
 
 ========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Camera\CameraStructrue\AllCamera\CameraBehavior.h ===
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Camera\CameraStructrue\CameraBehavior.h ===
 ========================================
 #pragma once
+#include "../../../../Math/Matrix/Matrix4x4.h"
 class CameraContext;
 struct CameraDesc;
+class Transform;
 class CameraBehavior
 {
-	friend class CameraContext;
+	//描画のための行列群
+	struct Matrices
+	{
+		Matrix4x4 view;
+		Matrix4x4 proj;
+		Matrix4x4 viewProj;
+	};
 	//カメラ専用のトランスフォーム
 	struct CameraTransform;
 public:
-	//行列アップデート許可証
-	struct Local_UpdateMatricesLicence;
+	//アップデート許可証
+	struct Local_UpdateLicence;
 	CameraBehavior(std::optional<CameraDesc> const& desc_);
 	virtual ~CameraBehavior() = default;
-	//お好きにどうぞな更新処理
-	virtual void Update() = 0;
-	CameraTransform& AccssTransform() { return *trans; }
-	//行列更新処理は、一括で誰かが呼びます
-	void UpdateMatrices(Local_UpdateMatricesLicence licence_);
+	//お好きにどうぞな更新処理。一括で誰かが呼びます
+	virtual void Update(Local_UpdateLicence licence_) = 0;
+	//一括で誰かが呼びます
+	void UpdateMatrices(Local_UpdateLicence licence_);
+	//クリア
+	void Clear();
+	//ペアレント化
+	void BeChild(Transform* parent_);
+	//フォロー
+	void Follow(Transform* followTarget_);
+	//おもにバッチング処理のため
+	Matrices const& WatchMatrices()const;
 protected:
 	std::unique_ptr<CameraTransform> trans;
 };
-struct CameraBehavior::Local_UpdateMatricesLicence
+struct CameraBehavior::Local_UpdateLicence
 {
 private:
 	friend class CameraContext;
-	explicit Local_UpdateMatricesLicence() = default;
-};
-
-========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Camera\CameraStructrue\AllCamera\DefaultDebugCamera\DefaultDebugCamera.cpp ===
-========================================
-#include "PreCompileHeader.h"
-#include "DefaultDebugCamera.h"
-#include "../../CameraTransform/CameraTransform.h"
-#include "../../CameraDesc/CameraDesc.h"
-DefaultDebugCamera::DefaultDebugCamera(std::optional<CameraDesc> const& desc_)
-	: CameraBehavior(desc_)
-{
-}
-void DefaultDebugCamera::Update()
-{
-}
-
-========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Camera\CameraStructrue\AllCamera\DefaultDebugCamera\DefaultDebugCamera.h ===
-========================================
-#pragma once
-#include "../CameraBehavior.h"
-class DefaultDebugCamera :public CameraBehavior
-{
-public:
-	DefaultDebugCamera(std::optional<CameraDesc> const& desc_);
-	virtual void Update()override;
+	explicit Local_UpdateLicence() = default;
 };
 
 ========================================
@@ -13180,7 +13536,7 @@ public:
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Camera\CameraStructrue\CameraDesc\CameraDesc.h ===
 ========================================
 #pragma once
-#include "../../../../../MiddleLayer/Math/Vector/Vector3.h"
+#include "../../../../../Math/Vector/Vector3.h"
 struct CameraDesc
 {
 	Vector3 pos;
@@ -13241,7 +13597,7 @@ void CameraBehavior::CameraTransform::Clear()
 	matrices.proj = Matrix4x4{};
 	matrices.viewProj = Matrix4x4{};
 }
-void CameraBehavior::CameraTransform::UpdateMatrices(CameraBehavior::Local_UpdateMatricesLicence licence_)
+void CameraBehavior::CameraTransform::UpdateMatrices(CameraBehavior::Local_UpdateLicence licence_)
 {
 	//回転クォータニオンの更新
 	RotationUpdate();
@@ -13340,11 +13696,11 @@ void CameraBehavior::CameraTransform::ChangeFovY(float dst_)
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Camera\CameraStructrue\CameraTransform\CameraTransform.h ===
 ========================================
 #pragma once
-#include "../AllCamera/CameraBehavior.h"
-#include "../../../../../MiddleLayer/Math/Vector/Vector2.h"
-#include "../../../../../MiddleLayer/Math/Vector/Vector3.h"
-#include "../../../../../MiddleLayer/Math/Quaternion/Quaternion.h"
-#include "../../../../../MiddleLayer/Math/Matrix/Matrix4x4.h"
+#include "../CameraBehavior.h"
+#include "../../../../../Math/Vector/Vector2.h"
+#include "../../../../../Math/Vector/Vector3.h"
+#include "../../../../../Math/Quaternion/Quaternion.h"
+#include "../../../../../Math/Matrix/Matrix4x4.h"
 class Transform;
 struct CameraBehavior::CameraTransform
 {
@@ -13369,17 +13725,10 @@ private:
 		Transform* followTarget = nullptr;
 		Transform* parent = nullptr;
 	};
-	//描画のための行列
-	struct Matrices
-	{
-		Matrix4x4 view;
-		Matrix4x4 proj;
-		Matrix4x4 viewProj;
-	};
 public:
 	CameraTransform(std::optional<CameraDesc> const& desc_);
 	//描画用の行列更新
-	void UpdateMatrices(CameraBehavior::Local_UpdateMatricesLicence licence_);
+	void UpdateMatrices(CameraBehavior::Local_UpdateLicence licence_);
 	void Clear();
 	//ペアレント化
 	void BeChild(Transform* parent_);
@@ -13403,6 +13752,39 @@ private:
 	void RotationUpdate();
 	//透視投影作成(リバースZ対応)
 	void UpdateProjectionMatrixReverseZ();
+};
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Camera\PresetCameras\PresetCameraIncludes.h ===
+========================================
+#pragma once
+#include "DefaultDebugCamera/DefaultDebugCamera.h"
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Camera\PresetCameras\DefaultDebugCamera\DefaultDebugCamera.cpp ===
+========================================
+#include "PreCompileHeader.h"
+#include "DefaultDebugCamera.h"
+#include "../../CameraStructrue/CameraTransform/CameraTransform.h"
+#include "../../CameraStructrue/CameraDesc/CameraDesc.h"
+DefaultDebugCamera::DefaultDebugCamera(std::optional<CameraDesc> const& desc_)
+	: CameraBehavior(desc_)
+{
+}
+void DefaultDebugCamera::Update(Local_UpdateLicence licence_)
+{
+}
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Camera\PresetCameras\DefaultDebugCamera\DefaultDebugCamera.h ===
+========================================
+#pragma once
+#include "../../CameraStructrue/CameraBehavior.h"
+class DefaultDebugCamera :public CameraBehavior
+{
+public:
+	DefaultDebugCamera(std::optional<CameraDesc> const& desc_);
+	virtual void Update(Local_UpdateLicence licence_)override;
 };
 
 ========================================
@@ -19590,7 +19972,7 @@ private:
 };
 
 ========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\MiddleLayer\Math\MathConstants.h ===
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Math\MathConstants.h ===
 ========================================
 #pragma once
 //計算によく使いそうな定数
@@ -19606,7 +19988,7 @@ namespace MathConstants
 }
 
 ========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\MiddleLayer\Math\Matrix\Matrix4x4.h ===
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Math\Matrix\Matrix4x4.h ===
 ========================================
 #pragma once
 #include "../Vector/Vector3.h"
@@ -19692,7 +20074,7 @@ struct Matrix4x4
 };
 
 ========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\MiddleLayer\Math\Quaternion\Quaternion.h ===
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Math\Quaternion\Quaternion.h ===
 ========================================
 	#pragma once
 	#include "../Matrix/Matrix4x4.h"
@@ -19780,7 +20162,7 @@ struct Matrix4x4
 	};
 
 ========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\MiddleLayer\Math\Vector\Vector2.cpp ===
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Math\Vector\Vector2.cpp ===
 ========================================
 #include "Vector2.h"
 float Vector2::GetMagnitutde()
@@ -19843,7 +20225,7 @@ Vector2 operator*(Vector2 const& dst_vec_, float const multipleNum)
 }
 
 ========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\MiddleLayer\Math\Vector\Vector2.h ===
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Math\Vector\Vector2.h ===
 ========================================
 #pragma once
 struct Vector2
@@ -19860,7 +20242,7 @@ struct Vector2
 };
 
 ========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\MiddleLayer\Math\Vector\Vector3.cpp ===
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Math\Vector\Vector3.cpp ===
 ========================================
 #include "Vector3.h"
 #include "../Matrix/Matrix4x4.h"
@@ -19875,7 +20257,7 @@ Vector3 Vector3::GetMultiply(Matrix4x4 const& other) const
 }
 
 ========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\MiddleLayer\Math\Vector\Vector3.h ===
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Math\Vector\Vector3.h ===
 ========================================
 #pragma once
 struct Matrix4x4;
@@ -20038,13 +20420,13 @@ inline Vector3 operator*(const float num_,Vector3 const& vec_)
 }
 
 ========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\MiddleLayer\Math\Vector\Vector4.cpp ===
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Math\Vector\Vector4.cpp ===
 ========================================
 #include "PreCompileHeader.h"
 #include "Vector4.h"
 
 ========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\MiddleLayer\Math\Vector\Vector4.h ===
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Math\Vector\Vector4.h ===
 ========================================
 #pragma once
 ///CPU⇔GPUデータ間のやり取りで使う
@@ -21084,7 +21466,7 @@ void Nexus::Run()
 //ジェーソン読み書き
 #include "../MiddleLayer/Miyajison/Miyajison.h"
 #include "../Utility/Comparison/Comparison.h"
-#include "../MiddleLayer/Math/MathConstants.h"
+#include "../Math/MathConstants.h"
 
 ========================================
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Utility\ClosedHashMap\ClosedHashMap.h ===
@@ -21626,5 +22008,5 @@ namespace StringProcessing
 ========================================
 === SUMMARY ===
 ========================================
-Total Files      : 467
-Effective Lines  : 15826
+Total Files      : 485
+Effective Lines  : 16069

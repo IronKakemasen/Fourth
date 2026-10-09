@@ -104,6 +104,12 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Engine\LowerLayer\Resource\Camera\CameraContextDiplomat\CameraContextExecutionAgent\CameraContextExecutionAgent.cpp" />
+    <ClCompile Include="Engine\LowerLayer\Resource\Camera\CameraContextDiplomat\CameraContextDiplomat.cpp" />
+    <ClCompile Include="Engine\LowerLayer\Resource\Camera\CameraFSDispatcher\CameraFSDispatcher.cpp" />
+    <ClCompile Include="Engine\LowerLayer\Resource\Camera\CameraContextRuntime\CameraFrontlineSystems.cpp" />
+    <ClCompile Include="Engine\LowerLayer\Resource\Camera\CameraContextRuntime\CameraController\CameraController.cpp" />
+    <ClCompile Include="Engine\LowerLayer\Resource\Camera\CameraContextRuntime\CameraDataBatcher\CameraDataBatcher.cpp" />
     <ClCompile Include="Engine\LowerLayer\Resource\Camera\CameraRegister\CameraRegister.cpp" />
     <ClCompile Include="Engine\LowerLayer\Resource\Camera\CameraLibrary\CameraLibrary.cpp" />
     <ClCompile Include="Engine\LowerLayer\Resource\Camera\PresetCameras\DefaultDebugCamera\DefaultDebugCamera.cpp" />
@@ -420,6 +426,14 @@
     <ClInclude Include="Assets\Shared\StaticSampler.h" />
     <ClInclude Include="Assets\Shared\StructuredBufferCameraData.h" />
     <ClInclude Include="Assets\Shared\StructuredBufferModelData.h" />
+    <ClInclude Include="Engine\LowerLayer\Resource\Camera\CameraContextDiplomat\CameraContextExecutionAgent\CameraContextExecutionAgent.h" />
+    <ClInclude Include="Engine\LowerLayer\Resource\Camera\CameraContextDiplomat\CameraContextDiplomat.h" />
+    <ClInclude Include="Engine\LowerLayer\Resource\Camera\CameraFSDispatcher\CameraFSDispatcher.h" />
+    <ClInclude Include="Engine\LowerLayer\Resource\Camera\CameraContextRuntime\CameraFrontlineSystems.h" />
+    <ClInclude Include="Engine\LowerLayer\Resource\Camera\CameraContextRuntime\CameraController\CameraController.h" />
+    <ClInclude Include="Engine\LowerLayer\Resource\Camera\CameraContextRuntime\CameraDataBatcher\CameraDataBatcher.h" />
+    <ClInclude Include="Engine\LowerLayer\Buffer\BufferDefinition\ViewType.h" />
+    <ClInclude Include="Engine\LowerLayer\Resource\Camera\CameraContextRuntime\CameraSocket.h" />
     <ClInclude Include="Engine\LowerLayer\Resource\Camera\CameraRegister\CameraRegister.h" />
     <ClInclude Include="Engine\LowerLayer\Resource\Camera\CameraLibrary\CameraLibrary.h" />
     <ClInclude Include="Engine\LowerLayer\Resource\Camera\PresetCameras\PresetCameraIncludes.h" />
