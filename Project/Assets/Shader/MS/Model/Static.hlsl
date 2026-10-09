@@ -43,7 +43,7 @@ void main
     Meshlet meshlet = meshlets[groupID_];
 
     //スレッドグループの頂点数とポリゴン数を設定
-    //全スレッドが同じ値で呼ぶことで、制御フロー上「必ず先に実行される」ことを保証する
+    //全スレッドが同じ値で呼ぶことで、制御フロー上で「必ず先に実行される」ことを保証する
     SetMeshOutputCounts(meshlet.vertexCnt, meshlet.primitiveCnt);
 
     if (groupThreadID_ == 0)

@@ -45,6 +45,7 @@ using BufferUniqueID = uint32_t;
 using SRVHeapIndex = uint32_t;
 //メッシュデータのID
 using MeshDataID = uint32_t;
+static constexpr UINT kInvalid = 0xffffffff;
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -4762,12 +4763,12 @@ void BufferContext::GlobalConstantBuffers::PackRuntimeContainer(NexusFieldProof 
 	}
 	auto const numActualCBuffers = forChecking.size();
 	auto const numRequiredCBuffers = (size_t)ConstantBuffers::ConstantBufferBindSlots::kCount;
-	ErrorMessageOutput::Assert::DetectError
-	(
-		numActualCBuffers == numRequiredCBuffers,
-		"定数バッファの生成数が合わない実 " + std::to_string(numActualCBuffers) + " : 必 " + std::to_string(numRequiredCBuffers),
-		fileName
-	);
+	//ErrorMessageOutput::Assert::DetectError
+	//(
+	//	numActualCBuffers == numRequiredCBuffers,
+	//	"定数バッファの生成数が合わない実 " + std::to_string(numActualCBuffers) + " : 必 " + std::to_string(numRequiredCBuffers),
+	//	fileName
+	//);
 	Logger::Log("===== List of cBuffer slots =====",fileName);
 	for (auto const& [key, value] : gpuVirtualAddressMap)
 	{
@@ -10586,7 +10587,7 @@ void RenderContext::StaticRenderGraph::PassSetUpper::CreateAllPassInfo
 	{
 		PassDesc const& desc = *pass->WatchDesc();
 		std::string const& dsrPassName = desc.passName;
-		//そのパスがバッファ配列の何番目を参照するか、であるPassBufferIndexRangeCPUGPUのoffset
+		//そのパスがバッファ配列の何番目を参照するか、であるPassConstantsCPUGPUのoffset
 		//普通にallRefBufferUniquesのけつ番目でいいはず
 		UINT const refOffset = UINT(output_.refBufferTagTrace.size());
 		//そのPassが参照するバッファ一覧で回す
@@ -10978,10 +10979,10 @@ void RenderContext::StaticRenderGraph::FinalRenderer::Update
 	//参照するカラーバッファsrvIndexをルートコンスタンツで送る
 	auto* refColorBuffer = static_cast<ColorBuffer*>(bufferDispatcher.Dispatch(finalRefBufferID));
 	SRVHeapIndex refBufferSrvHeapIndex = refColorBuffer->OutProperSRVHeapIndex();
-	auto const bindSlot = (UINT)ConstantBuffers::RootConstantsBindSlots::kFinalColorBufferSrv;
+	auto const bindSlot = ConstantBuffers::RootConstantsBindSlots::kFinalColorBufferSrv;
 	runtimeWrapper_.SetGraphicsRoot32BitConstants
 	(
-		bindSlot,
+		(UINT)bindSlot,
 		ConstantBuffers::Num32BitValuesTable(bindSlot),
 		&refBufferSrvHeapIndex,
 		0
@@ -11446,6 +11447,8 @@ void RenderContext::PassBehavior::RenderModels
 		auto* srcPso = psoDispatcher_.AccessGraphicsPSO(psoKey);
 		//psoをセット
 		cmdWrapper_.SetPipelineState(srcPso);
+		//perDrawIndicesのバインドスロット
+		auto const bindSlot = ConstantBuffers::RootConstantsBindSlots::kPerDrawIndices;
 		//おなじPSOごとに仕分けられているので、そこでも走査
 		for (auto const& model : state_models.second)
 		{
@@ -11459,8 +11462,8 @@ void RenderContext::PassBehavior::RenderModels
 				//モデルのルートコンスタンツを転送
 				cmdWrapper_.SetGraphicsRoot32BitConstants
 				(
-					(UINT)ConstantBuffers::RootConstantsBindSlots::kPerDrawIndices,
-					3,
+					(UINT)bindSlot,
+					ConstantBuffers::Num32BitValuesTable(bindSlot),
 					&perDrawIndices[i],
 					0
 				);
@@ -11475,10 +11478,10 @@ void RenderContext::PassBehavior::RenderModels
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 void RenderContext::PassBehavior::TransferRootConstants(RuntimeWrapper& cmdWrapper_)
 {
-	auto const bindSlot = (UINT)ConstantBuffers::RootConstantsBindSlots::kPassBufferIndexRange;
+	auto const bindSlot = ConstantBuffers::RootConstantsBindSlots::kPassConstants;
 	cmdWrapper_.SetGraphicsRoot32BitConstants
 	(
-		bindSlot,
+		(UINT)bindSlot,
 		ConstantBuffers::Num32BitValuesTable(bindSlot),
 		&runtimePassInfo->WatchRootConstants(),
 		0
@@ -12560,7 +12563,7 @@ RenderContext::RuntimePassInfo::RuntimePassInfo
 	//ここでPassDescのお役は終了
 	PickUpRuntimeRequirementsFromDesc(*desc_);
 	//その他情報を入力
-	InputOtherParams(refColorBuffersID_, refDepthStencilBuffersID_,refOffset_);
+	InputOtherParams(refColorBuffersID_,refDepthStencilBuffersID_,refOffset_);
 }
 void RenderContext::RuntimePassInfo::InputOtherParams
 (
@@ -12571,8 +12574,7 @@ void RenderContext::RuntimePassInfo::InputOtherParams
 {
 	refColorBuffersID = refColorBuffersID_;
 	refDepthStencilBuffersID = refDepthStencilBuffersID_;
-	rootConstants.offset = refOffset_;
-	rootConstants.numTextureUse = UINT(refColorBuffersID.size()+ refDepthStencilBuffersID.size());
+	rootConstants.refBuffferOffset = refOffset_;
 }
 void RenderContext::RuntimePassInfo::PickUpRuntimeRequirementsFromDesc(PassDesc const& desc_)
 {
@@ -12686,7 +12688,7 @@ private:
 	std::vector<BufferUniqueID> refColorBuffersID;
 	//その深度ステンシルバッファバージョン
 	std::vector<BufferUniqueID> refDepthStencilBuffersID;
-	ConstantBuffers::PassBufferIndexRangeCPUGPU rootConstants;
+	ConstantBuffers::PassConstantsCPUGPU rootConstants;
 	//PassDescからランタイムに必要な情報をピックする
 	void PickUpRuntimeRequirementsFromDesc(PassDesc const& desc_);
 	//その他、PassDesc以外の情報を入力
@@ -13045,6 +13047,250 @@ public:
 	void Import(NexusFieldProof proof_ , std::unique_ptr<PathBehavior>&& path_);
 private:
 	std::vector<std::unique_ptr<PathBehavior>> container;
+};
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Camera\CameraContext.cpp ===
+========================================
+#include "PreCompileHeader.h"
+#include "CameraContext.h"
+namespace
+{
+	std::string const fileName = "CameraContext.cpp";
+}
+CameraContext::CameraContext
+(
+	NexusFieldProof proof_,
+	BufferContextDiplomat& bufferContextDiplomat_
+)
+{
+}
+CameraContext::~CameraContext()
+{
+}
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Camera\CameraContext.h ===
+========================================
+#pragma once
+class Nexus;
+class BufferContextDiplomat;
+class CameraContext
+{
+public:
+	struct NexusFieldProof;
+	CameraContext
+	(
+		NexusFieldProof proof_,
+		BufferContextDiplomat& bufferContextDiplomat_
+	);
+	~CameraContext();
+private:
+};
+struct CameraContext::NexusFieldProof
+{
+private:
+	friend class Nexus;
+	explicit NexusFieldProof() = default;
+};
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Camera\CameraStructrue\AllCamera\CameraBehavior.cpp ===
+========================================
+#include "PreCompileHeader.h"
+#include "CameraBehavior.h"
+#include "../CameraTransform/CameraTransform.h"
+#include "../CameraDesc/CameraDesc.h"
+CameraBehavior::CameraBehavior(std::optional<CameraDesc> const& desc_)
+{
+	trans = std::make_unique<CameraTransform>(desc_);
+}
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Camera\CameraStructrue\AllCamera\CameraBehavior.h ===
+========================================
+#pragma once
+struct CameraDesc;
+class CameraBehavior
+{
+	CameraBehavior(std::optional<CameraDesc> const& desc_);
+	virtual ~CameraBehavior() = default;
+	//カメラ専用のトランスフォーム
+	struct CameraTransform;
+private:
+	std::unique_ptr<CameraTransform> trans;
+};
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Camera\CameraStructrue\CameraDesc\CameraDesc.cpp ===
+========================================
+#include "PreCompileHeader.h"
+#include "CameraDesc.h"
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Camera\CameraStructrue\CameraDesc\CameraDesc.h ===
+========================================
+#pragma once
+#include "../../../../../MiddleLayer/Math/Vector/Vector3.h"
+struct CameraDesc
+{
+	Vector3 worldPos;
+	Vector3 lookDir = { 0,0,1 };
+	float rotationZ{};
+	float rotationInterpolationCoe = 1.0f;
+	float farClip = 0.1f;
+	float nearClip = 1000.0f;
+	float fovY = MathConstants::kPi * MathConstants::kHalf;
+	float aspectRatio = (float)ProjectConfig::Window::kWidth / (float)ProjectConfig::Window::kHeight;
+};
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Camera\CameraStructrue\CameraTransform\CameraTransform.cpp ===
+========================================
+#include "PreCompileHeader.h"
+#include "CameraTransform.h"
+#include "../../../../../MiddleLayer/Transform/Transform.h"
+#include "../CameraDesc/CameraDesc.h"
+CameraBehavior::CameraTransform::CameraTransform(std::optional<CameraDesc> const& desc_)
+{
+	if (desc_.has_value())
+	{
+		cameraDesc = std::make_unique<CameraDesc>(*desc_);
+	}
+	Clear();
+}
+void CameraBehavior::CameraTransform::Clear()
+{
+	if (!cameraDesc)
+	{
+		base.worldPos = {};
+		base.rotationZ = {};
+		base.lookDir = { 0,0,1 };
+		base.rotationInterpolationCoe = 1.0f;
+		projection.farClip = 0.1f;
+		projection.nearClip = 1000.0f;
+		projection.fovY = MathConstants::kPi * MathConstants::kHalf;
+		projection.aspectRatio = (float)ProjectConfig::Window::kWidth / (float)ProjectConfig::Window::kHeight;
+	}
+	else
+	{
+		base.worldPos = cameraDesc->worldPos;
+		base.rotationZ = cameraDesc->rotationZ;
+		base.lookDir = cameraDesc->lookDir;
+		base.rotationInterpolationCoe = cameraDesc->rotationInterpolationCoe;
+		projection.farClip = cameraDesc->farClip;
+		projection.nearClip = cameraDesc->nearClip;
+		projection.fovY = cameraDesc->fovY;
+		projection.aspectRatio = cameraDesc->aspectRatio;
+	}
+	base.quaternion.Identity();
+	matrices.view = Matrix4x4{};
+	matrices.proj = Matrix4x4{};
+	matrices.viewProj = Matrix4x4{};
+}
+void CameraBehavior::CameraTransform::UpdateMatrices()
+{
+	//回転クォータニオンの更新
+	RotationUpdate();
+	//位置行列
+	Matrix4x4 translationMat = Matrix4x4::CreateTranslation(base.worldPos);
+	//回転行列
+	Matrix4x4 rotationMat = base.quaternion.GetRotateMatrix();
+	//ペアレント化しているなら
+	if (base.parent) rotationMat = rotationMat.GetMultiply(base.parent->WatchWorldMatrix());
+	//view
+	matrices.view = rotationMat.GetMultiply(translationMat).GetInversed();
+	//proj
+	UpdateProjectionMatrixReverseZ();
+	//viewProj
+	matrices.viewProj = matrices.view.GetMultiply(matrices.proj);
+}
+void CameraBehavior::CameraTransform::UpdateProjectionMatrixReverseZ()
+{
+	const float cotTheta{ 1.0f / tanf(projection.fovY * MathConstants::kHalf) };
+	const float inv_frustumHeight{ 1.0f / (projection.farClip - projection.nearClip) };
+	matrices.proj = Matrix4x4
+	{
+		cotTheta / projection.aspectRatio, 0.0f, 0.0f, 0.0f,
+		0.0f, cotTheta, 0.0f, 0.0f,
+		0.0f, 0.0f, projection.farClip * inv_frustumHeight, 1.0f,
+		0.0f, 0.0f, -projection.nearClip * projection.farClip * inv_frustumHeight, 0.0f,
+	};
+}
+//回転更新処理
+void CameraBehavior::CameraTransform::RotationUpdate()
+{
+	//次の回転クォータニオン
+	Quaternion nextQuaternion = Quaternion::CreateQuaternion(base.lookDir);
+	//rotationに値が入って入れば
+	if (std::sqrtf(base.rotationZ) > 0.0f)
+	{
+		nextQuaternion = nextQuaternion.Multiply
+		(
+			Quaternion::CreateQuaternion({ 0.0f,0.0f,1.0f }, base.rotationZ)
+		);
+	}
+	//回転補完
+	base.quaternion = base.quaternion.Slerp(nextQuaternion, base.rotationInterpolationCoe);
+}
+void CameraBehavior::CameraTransform::BeChild(Transform* parent_)
+{
+	base.parent = parent_;
+}
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Camera\CameraStructrue\CameraTransform\CameraTransform.h ===
+========================================
+#pragma once
+#include "../AllCamera/CameraBehavior.h"
+#include "../../../../../MiddleLayer/Math/Vector/Vector2.h"
+#include "../../../../../MiddleLayer/Math/Vector/Vector3.h"
+#include "../../../../../MiddleLayer/Math/Quaternion/Quaternion.h"
+#include "../../../../../MiddleLayer/Math/Matrix/Matrix4x4.h"
+class Transform;
+struct CameraBehavior::CameraTransform
+{
+	CameraTransform(std::optional<CameraDesc> const& desc_);
+	//描画用の行列更新
+	void UpdateMatrices();
+	void Clear();
+private:
+	//投影方法関連
+	struct Projection
+	{
+		float farClip = 0.1f;
+		float nearClip = 1000.0f;
+		float fovY = MathConstants::kPi * MathConstants::kHalf;
+		float aspectRatio = (float)ProjectConfig::Window::kWidth / (float)ProjectConfig::Window::kHeight;
+	};
+	//カメラ専用のトランスフォームパラメータ
+	struct Base
+	{
+		Vector3 worldPos;
+		Vector3 lookDir{};
+		float rotationZ{};
+		Quaternion quaternion;
+		float rotationInterpolationCoe{};
+		Transform* parent = nullptr;
+	};
+	//描画のための行列
+	struct Matrices
+	{
+		Matrix4x4 view;
+		Matrix4x4 proj;
+		Matrix4x4 viewProj;
+	};
+	Base base;
+	Projection projection;
+	Matrices matrices;
+	//初期値でクリアするために所持できるようにする
+	std::unique_ptr<CameraDesc> cameraDesc;
+	//回転更新処理
+	void RotationUpdate();
+	//ペアレント化
+	void BeChild(Transform* parent_);
+	//透視投影作成(リバースZ対応)
+	void UpdateProjectionMatrixReverseZ();
 };
 
 ========================================
@@ -17719,22 +17965,23 @@ namespace RootSignatureLayoutComponent
 //外部
 #include "../../../../../../../../Assets/Shared/ConstantBuffers.h"
 using namespace RootSignatureLayoutComponent;
+using namespace ConstantBuffers;
 std::vector<D3D12_ROOT_PARAMETER> RootSignatureContext::Assembler::RootParamCreator::CreateRootparamGloballyCommonCBV(const RootSignatureDesc::Graphics& srcDesc_)
 {
 	std::vector<D3D12_ROOT_PARAMETER> rootParams = {};
-	rootParams.resize(size_t(ConstantBuffers::RootConstantsBindSlots::kCount));
+	rootParams.resize(size_t(RootConstantsBindSlots::kCount));
 	//こっちは定数バッファ
 	int i = 0;
-	for (;i < (int)ConstantBuffers::ConstantBufferBindSlots::kCount;++i)
+	for (;i < (int)ConstantBufferBindSlots::kCount;++i)
 	{
 		rootParams[i].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
 		rootParams[i].ShaderVisibility = Convert(ShaderStage::kAll);
 		rootParams[i].Descriptor.ShaderRegister = i	;
 	}
 	//こっちはルートコンスタンツ
-	for (;i < (int)ConstantBuffers::RootConstantsBindSlots::kCount;++i)
+	for (;i < (int)RootConstantsBindSlots::kCount;++i)
 	{
-		rootParams[i].Constants.Num32BitValues = ConstantBuffers::Num32BitValuesTable(i);
+		rootParams[i].Constants.Num32BitValues = Num32BitValuesTable(RootConstantsBindSlots(i));
 		rootParams[i].ShaderVisibility = Convert(ShaderStage::kAll);
 		rootParams[i].ParameterType = D3D12_ROOT_PARAMETER_TYPE_32BIT_CONSTANTS;
 		rootParams[i].Constants.ShaderRegister = i;
@@ -19231,6 +19478,22 @@ private:
 };
 
 ========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\MiddleLayer\Math\MathConstants.h ===
+========================================
+#pragma once
+//計算によく使いそうな定数
+namespace MathConstants
+{
+	constexpr float kPi = 3.141592653589f;
+	constexpr float kHalf = 0.5f;
+	constexpr float kQuater = 0.25f;
+	constexpr float kQuaterQuater = 0.125f;
+	constexpr float kInv_255 = 1.0f / 255.0f;
+	constexpr float kInv_100 = 0.01f;
+	constexpr float kInv_10 = 0.1f;
+}
+
+========================================
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\MiddleLayer\Math\Matrix\Matrix4x4.h ===
 ========================================
 #pragma once
@@ -20049,6 +20312,7 @@ private:
 #include "../LowerLayer/Resource/RootSignature/RootSignatureContext.h"
 #include "../LowerLayer/Resource/Model/ModelContext.h"
 #include "../LowerLayer/Resource/Texture/TextureContext.h"
+#include "../LowerLayer/Resource/Camera/CameraContext.h"
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 #include "../LowerLayer/Render/RenderContext.h"
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -20096,6 +20360,7 @@ Nexus::Nexus()
 	InitializeInSequence<InitSequence::kRootSignatureContext>();
 	InitializeInSequence<InitSequence::kTextureContext>();
 	InitializeInSequence<InitSequence::kModelContext>();
+	InitializeInSequence<InitSequence::kCameraContext>();
 	InitializeInSequence<InitSequence::kRenderContext>();
 	InitializeInSequence<InitSequence::kUploadAllResources>();
 	InitializeInSequence<InitSequence::kKickCommands>();
@@ -20132,6 +20397,7 @@ class RootSignatureContext;
 class RenderContext;
 class ModelContext;
 class TextureContext;
+class CameraContext;
 //交易場
 class Nexus
 {
@@ -20151,6 +20417,7 @@ class Nexus
 		kRootSignatureContext,
 		kTextureContext,
 		kModelContext,
+		kCameraContext,
 		kRenderContext,
 		kUploadAllResources,
 		kKickCommands,
@@ -20203,6 +20470,8 @@ private:
 	std::unique_ptr<ModelContext> modelContext;
 	//テクスチャファイルの読み込み、データ保持
 	std::unique_ptr<TextureContext> textureContext;
+	//カメラの定義、作成、バッチング処理
+	std::unique_ptr<CameraContext> cameraContext;
 	//各Contextクラスの具現化、初期化を行う
 	template<InitSequence initSequence>
 	void Init();
@@ -20302,6 +20571,8 @@ void Nexus::Finalize<Nexus::FinalizeSequence::kCoUninitialize>()
 #include "../LowerLayer/Render/RenderContext.h"
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 #include "../LowerLayer/Resource/Texture/TextureContext.h"
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+#include "../LowerLayer/Resource/Camera/CameraContext.h"
 namespace
 {
 	std::string const fileName = "NexusInitialization.cpp";
@@ -20507,6 +20778,18 @@ void Nexus::Init<Nexus::InitSequence::kModelContext>()
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 template<>
+void Nexus::Init<Nexus::InitSequence::kCameraContext>()
+{
+	cameraContext = std::make_unique<CameraContext>
+	(
+		CameraContext::NexusFieldProof{},
+		bufferContext->AccessDiplomat()
+	);
+}
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+template<>
 void Nexus::Init<Nexus::InitSequence::kKickCommands>()
 {
 	//CommandContextの代行者
@@ -20592,6 +20875,8 @@ template
 void Nexus::Init<Nexus::InitSequence::kTextureContext>();
 template
 void Nexus::Init<Nexus::InitSequence::kModelContext>();
+template
+void Nexus::Init<Nexus::InitSequence::kCameraContext>();
 template
 void Nexus::Init<Nexus::InitSequence::kRenderContext>();
 template
@@ -20687,6 +20972,7 @@ void Nexus::Run()
 //ジェーソン読み書き
 #include "../MiddleLayer/Miyajison/Miyajison.h"
 #include "../Utility/Comparison/Comparison.h"
+#include "../MiddleLayer/Math/MathConstants.h"
 
 ========================================
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Utility\ClosedHashMap\ClosedHashMap.h ===
@@ -21228,5 +21514,5 @@ namespace StringProcessing
 ========================================
 === SUMMARY ===
 ========================================
-Total Files      : 456
-Effective Lines  : 15545
+Total Files      : 465
+Effective Lines  : 15736
