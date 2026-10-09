@@ -12,7 +12,7 @@ class RootSignatureContext;
 class RenderContext;
 class ModelContext;
 class TextureContext;
-
+class CameraContext;
 
 //交易場
 class Nexus
@@ -35,6 +35,7 @@ class Nexus
 		kRootSignatureContext,
 		kTextureContext,
 		kModelContext,
+		kCameraContext,
 		kRenderContext,
 
 
@@ -102,6 +103,9 @@ private:
 	std::unique_ptr<ModelContext> modelContext;
 	//テクスチャファイルの読み込み、データ保持
 	std::unique_ptr<TextureContext> textureContext;
+	//カメラの定義、作成、バッチング処理
+	std::unique_ptr<CameraContext> cameraContext;
+
 
 
 	

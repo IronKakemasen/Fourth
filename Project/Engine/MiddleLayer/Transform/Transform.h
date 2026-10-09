@@ -18,9 +18,9 @@ public:
 		if (parent) parent->DeleteChild(this);
 	}
 
-	inline void TranslatePosition(const Vector3& dstWorldPos_)
+	inline void TranslatePosition(const Vector3& dstPos_)
 	{
-		worldPos = dstWorldPos_;
+		pos = dstPos_;
 		NotifyChanged();
 	}
 
@@ -53,7 +53,7 @@ public:
 
 	inline void Clear()
 	{
-		worldPos = {};
+		pos = {};
 		rotation = {};
 		lookDir = kBeyond;
 		scale = { 1.0f,1.0f,1.0f };
@@ -113,7 +113,7 @@ public:
 		//スケール行列
 		Matrix4x4 scaleMat = Matrix4x4::CreateScale(scale);
 		//位置行列
-		Matrix4x4 translationMat = Matrix4x4::CreateTranslation(worldPos);
+		Matrix4x4 translationMat = Matrix4x4::CreateTranslation(pos);
 		//回転行列
 		Matrix4x4 rotationMat = quaternion.GetRotateMatrix();
 
@@ -151,7 +151,7 @@ private:
 	static inline const Vector3 kUp = { 0.0f,1.0f,0.0f };
 	static inline const Vector3 kBeyond = { 0.0f,0.0f,1.0f };
 
-	Vector3 worldPos;					//ワールド座標
+	Vector3 pos;						//ワールド座標またはローカル座標
 	Vector3 scale;						//スケール
 	Vector3 rotation;					//ヨーピッチロール
 	Vector3 lookDir;					//向いている方向

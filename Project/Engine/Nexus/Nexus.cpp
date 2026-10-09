@@ -11,6 +11,7 @@
 #include "../LowerLayer/Resource/RootSignature/RootSignatureContext.h"
 #include "../LowerLayer/Resource/Model/ModelContext.h"
 #include "../LowerLayer/Resource/Texture/TextureContext.h"
+#include "../LowerLayer/Resource/Camera/CameraContext.h"
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 #include "../LowerLayer/Render/RenderContext.h"
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -71,6 +72,7 @@ Nexus::Nexus()
 	InitializeInSequence<InitSequence::kRootSignatureContext>();
 	InitializeInSequence<InitSequence::kTextureContext>();
 	InitializeInSequence<InitSequence::kModelContext>();
+	InitializeInSequence<InitSequence::kCameraContext>();
 	InitializeInSequence<InitSequence::kRenderContext>();
 
 
