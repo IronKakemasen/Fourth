@@ -34,10 +34,12 @@ namespace
 	///全てのパスが参照するバッファのIDが横一列に詰まっている
 	///このIDを辿って、ランタイムの一歩目にsrvHeapIndexを詰めていく
 	CreateAllPassInfo(proof_, output, renderPassCreator_, passContainer_, bufferContextDiplomat_);
+	Logger::Log("Create All PassInfo", fileName);
 
 	///パスが参照するバッファのsrvHeapIndexを詰めるためのバッファのID
 	///UploadStructuredBufferでダブルです。中身の初期化もしていません
 	CreateReferenceBufferSrvArray(proof_, output,bufferContextDiplomat_);
+	Logger::Log("Create ReferenceBufferSrvArray", fileName);
 
 
 	return output;

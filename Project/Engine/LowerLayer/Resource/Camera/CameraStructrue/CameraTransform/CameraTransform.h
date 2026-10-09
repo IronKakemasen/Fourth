@@ -1,9 +1,9 @@
 #pragma once
-#include "../AllCamera/CameraBehavior.h"
-#include "../../../../../MiddleLayer/Math/Vector/Vector2.h"
-#include "../../../../../MiddleLayer/Math/Vector/Vector3.h"
-#include "../../../../../MiddleLayer/Math/Quaternion/Quaternion.h"
-#include "../../../../../MiddleLayer/Math/Matrix/Matrix4x4.h"
+#include "../CameraBehavior.h"
+#include "../../../../../Math/Vector/Vector2.h"
+#include "../../../../../Math/Vector/Vector3.h"
+#include "../../../../../Math/Quaternion/Quaternion.h"
+#include "../../../../../Math/Matrix/Matrix4x4.h"
 
 class Transform;
 
@@ -32,19 +32,12 @@ private:
 		Transform* parent = nullptr;
 	};
 
-	//描画のための行列
-	struct Matrices
-	{
-		Matrix4x4 view;
-		Matrix4x4 proj;
-		Matrix4x4 viewProj;
-	};
 
 public:
 	CameraTransform(std::optional<CameraDesc> const& desc_);
 
 	//描画用の行列更新
-	void UpdateMatrices(CameraBehavior::Local_UpdateMatricesLicence licence_);
+	void UpdateMatrices(CameraBehavior::Local_UpdateLicence licence_);
 	void Clear();
 	//ペアレント化
 	void BeChild(Transform* parent_);

@@ -54,7 +54,7 @@ void CameraBehavior::CameraTransform::Clear()
 }
 
 
-void CameraBehavior::CameraTransform::UpdateMatrices(CameraBehavior::Local_UpdateMatricesLicence licence_)
+void CameraBehavior::CameraTransform::UpdateMatrices(CameraBehavior::Local_UpdateLicence licence_)
 {
 	//回転クォータニオンの更新
 	RotationUpdate();
