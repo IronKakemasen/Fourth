@@ -1,11 +1,11 @@
 #pragma once
-#include "../RuntimeDebuggerBehavior.h"
+#include "../../RuntimeDebugger.h"
 
-class PointerValidator :public RuntimeDebuggerBehavior
+class DebugContext::RuntimeDebugger::PointerValidator
 {
 public:
-	virtual void Init()override;
-	PointerValidator(InstanceKey instanceKey_) :RuntimeDebuggerBehavior(instanceKey_) {}
+
+	PointerValidator(NexusFieldProof proof_);
 
 };
 

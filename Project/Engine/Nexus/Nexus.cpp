@@ -1,5 +1,7 @@
 #include "Nexus.h"
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+#include "../LowerLayer/DebugSystem/DebugContext.h"
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 #include "../LowerLayer/Core/Device/DeviceContext.h"
 #include "../LowerLayer/Core/DescriptorHeap/DescriptorHeapContext.h"
 #include "../LowerLayer/Core/Window/WindowContext.h"
@@ -60,6 +62,8 @@ Nexus::Nexus()
 	InitializeInSequence<InitSequence::kCoInitializeEx>();
 
 	InitializeInSequence<InitSequence::kLoadAllJsonFiles>();
+
+	InitializeInSequence<InitSequence::kDebugContext>();
 
 	InitializeInSequence<InitSequence::kDeviceContext>();
 	InitializeInSequence<InitSequence::kWindowContext>();

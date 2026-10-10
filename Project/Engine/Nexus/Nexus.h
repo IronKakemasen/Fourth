@@ -13,6 +13,8 @@ class RenderContext;
 class ModelContext;
 class TextureContext;
 class CameraContext;
+class DebugContext;
+
 
 //交易場
 class Nexus
@@ -23,6 +25,8 @@ class Nexus
 		kCoInitializeEx,
 
 		kLoadAllJsonFiles,
+
+		kDebugContext,
 
 		kDeviceContext,
 		kWindowContext,
@@ -78,7 +82,8 @@ private:
 	//Nexusのインスタンスを1つに制限するためのシングルトンクラス
 	class InstanceLimiter;
 
-
+	//デバッガー。DebugLayer, PointerValidator, LeakChecker
+	std::unique_ptr<DebugContext> debugContext;
 	//IDXGIFactory7、IDXGIAdapter4、ID3D12Device8を持ち、コアパーツによるコマンドを提供したりする
 	std::unique_ptr<DeviceContext> deviceContext;
 	//ウィンドウを制御するもの

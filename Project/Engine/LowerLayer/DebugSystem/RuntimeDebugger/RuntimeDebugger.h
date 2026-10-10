@@ -1,13 +1,16 @@
 #pragma once
-#include "DebugSystems/DebugLayer/DebugLayer.h"
-#include "DebugSystems/LeakChecker/LeakChecker.h"
-#include "DebugSystems/PointerValidator/PointerValidator.h"
+#include "../DebugContext.h"
 
-class RuntimeDebugger
+class DebugContext::RuntimeDebugger
 {
+	class DebugLayer;
+	class PointerValidator;
+	class LeakChecker;
+
 public:
 
-	RuntimeDebugger();
+	RuntimeDebugger(NexusFieldProof proof_);
+	~RuntimeDebugger();
 
 	RuntimeDebugger(const RuntimeDebugger&) = delete;
 	RuntimeDebugger& operator=(const RuntimeDebugger&) = delete;
@@ -16,17 +19,17 @@ public:
 
 private:
 
-	//インスタンス制限
+	//なんかの間違いで複数インスタンス化されると特に困るんでインスタンス制限
 	class InstanceLimiter;
 
-	DebugLayer debugLayer{ RuntimeDebuggerBehavior::InstanceKey{} };
-	PointerValidator pointerValidator{ RuntimeDebuggerBehavior::InstanceKey{} };
-	LeakChecker leakChecker{ RuntimeDebuggerBehavior::InstanceKey{} };
+	std::unique_ptr<DebugLayer> debugLayer;
+	std::unique_ptr<PointerValidator> pointerValidator;
+	std::unique_ptr<LeakChecker> leakChecker;
 };
 
 
 //RuntimeDebuggerクラスのインスタンスを制御するクラス
-class RuntimeDebugger::InstanceLimiter
+class DebugContext::RuntimeDebugger::InstanceLimiter
 {
 public:
 	static bool CanInstantiate();
