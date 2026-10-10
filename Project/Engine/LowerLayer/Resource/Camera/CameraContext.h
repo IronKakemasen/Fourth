@@ -12,8 +12,6 @@ public:
 	struct NexusFieldProof;
 	struct AgentKey;
 
-	//ランタイムでカメラのアップデート、カメラの接続制御を行う。
-	class CameraController;
 	//カメラのデータのバッチング処理を行う
 	class CameraDataBatcher;
 	//カメラのランタイムシステムを束ねたもの。1シーンに1つ存在

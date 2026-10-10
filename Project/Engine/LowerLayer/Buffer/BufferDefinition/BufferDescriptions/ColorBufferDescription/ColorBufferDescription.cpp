@@ -10,6 +10,13 @@ ColorBufferDescription::ColorBufferDescription
 	ProjectConfig::Render::NumBuffer numBuffer_
 ) : BufferDescriptionBehavior(D3D12_RESOURCE_STATE_RENDER_TARGET, numBuffer_)
 {
+	ErrorMessageOutput::Assert::DetectError
+	(
+		clearColor_.size() == 4,
+		"すみません、カラーバッファのクリアカラーはrgbaでお願い",
+		"ColorBufferDescription.cpp"
+	);
+
 	param.clearColor = clearColor_;
 	param.width = width_;
 	param.height = height_;

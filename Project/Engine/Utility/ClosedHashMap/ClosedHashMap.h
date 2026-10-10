@@ -8,8 +8,6 @@ class ClosedHashMap
 
 private:
 
-    static constexpr uint32_t InvalidKey = 0xffffffff;
-
     struct Slot
     {
         enum Status
@@ -18,11 +16,11 @@ private:
             kOccupied
         }status = kEmpty;
 
-        uint32_t key = InvalidKey;
+        uint32_t key = kInvalid;
         ValueType value;
     };
 
-    inline uint32_t Hash(uint32_t key_)const
+    inline uint32_t Hash(uint32_t key_)const  
     {
         key_ ^= key_ >> 16;
         key_ *= 0x7feb352d;

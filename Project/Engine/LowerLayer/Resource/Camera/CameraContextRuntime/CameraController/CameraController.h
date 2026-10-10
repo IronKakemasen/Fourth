@@ -1,15 +1,23 @@
 #pragma once
-#include "../../CameraContext.h"
-#include "../CameraSocket.h"
+#include "../CameraFrontlineSystems.h"
 
 class CameraBehavior;
 
-class CameraContext::CameraController
+class CameraContext::CameraFrontlineSystems::CameraController
 {
 public:
+
 	CameraController(NexusFieldProof proof_);
 
+	//ソケットに接続するカメラを変える
+	template<CameraSocket dstSocket_>
+	void Connect(CameraBehavior* dstCamera_)
+	{
+		socketMap[dstSocket_] = dstCamera_;
+	}
 
+	//ソケットに接続されているカメラ(描画のために使用しているカメラ)の更新処理を呼ぶ
+	void RunCamera();
 
 private:
 
