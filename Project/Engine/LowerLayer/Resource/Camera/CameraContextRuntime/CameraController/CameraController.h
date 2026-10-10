@@ -9,6 +9,8 @@ public:
 
 	CameraController(NexusFieldProof proof_);
 
+	void Update();
+
 	//ソケットに接続するカメラを変える
 	template<CameraSocket dstSocket_>
 	void Connect(CameraBehavior* dstCamera_)

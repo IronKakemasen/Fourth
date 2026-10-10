@@ -2,10 +2,8 @@
 
 #ifdef __cplusplus
 
-#include "../../Engine/MiddleLayer/Math/Vector/Vector2.h"
-#include "../../Engine/MiddleLayer/Math/Vector/Vector3.h"
-#include "../../Engine/MiddleLayer/Math/Vector/Vector4.h"
-#include "../../Engine/MiddleLayer/Math/Matrix/Matrix4x4.h"
+#include "../../Engine/Math/Vector/Vector4.h"
+#include "../../Engine/Math/Matrix/Matrix4x4.h"
 
 namespace StructuredBufferCameraData
 {
@@ -30,12 +28,6 @@ struct CameraData
 	float4 worldPos;
 	float4 lookDir;
 };
-
-struct CameraDataSrvArr
-{
-	uint cameraDataSrvIndex;
-};
-
 
 
 #endif
