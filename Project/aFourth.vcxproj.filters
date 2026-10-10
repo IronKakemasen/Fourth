@@ -681,10 +681,7 @@
     <ClCompile Include="Engine\LowerLayer\Resource\Camera\PresetCameras\DefaultDebugCamera\DefaultDebugCamera.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="Engine\LowerLayer\Resource\Camera\CameraLibrary\CameraLibrary.cpp">
-      <Filter>ソース ファイル</Filter>
-    </ClCompile>
-    <ClCompile Include="Engine\LowerLayer\Resource\Camera\CameraRegister\CameraRegister.cpp">
+    <ClCompile Include="Engine\LowerLayer\Resource\Camera\CameraContextRuntime\CameraLibrary\CameraLibrary.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
     <ClCompile Include="Engine\LowerLayer\Resource\Camera\CameraContextRuntime\CameraDataBatcher\CameraDataBatcher.cpp">
@@ -1571,13 +1568,10 @@
     <ClInclude Include="Engine\LowerLayer\Resource\Camera\PresetCameras\DefaultDebugCamera\DefaultDebugCamera.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\LowerLayer\Resource\Camera\CameraLibrary\CameraLibrary.h">
+    <ClInclude Include="Engine\LowerLayer\Resource\Camera\CameraContextRuntime\CameraLibrary\CameraLibrary.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
     <ClInclude Include="Engine\LowerLayer\Resource\Camera\PresetCameras\PresetCameraIncludes.h">
-      <Filter>ヘッダー ファイル</Filter>
-    </ClInclude>
-    <ClInclude Include="Engine\LowerLayer\Resource\Camera\CameraRegister\CameraRegister.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
     <ClInclude Include="Engine\LowerLayer\Buffer\BufferDefinition\ViewType.h">

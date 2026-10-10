@@ -19,7 +19,7 @@ namespace ProjectConfig
 		inline const LPCWSTR kTitle = L"Fourth";
 		constexpr UINT kWidth = 1280;
 		constexpr UINT kHeight = 720;
-		constexpr float kDefaultFovY = 3.141592653589f * 0.5f;
+		constexpr float kDefaultFovY = MathConstants::kPi * MathConstants::kHalf;
 		constexpr std::array<float, 4> kColor = { 1.0f,0.0f,0.0f,1.0f };
 	}
 

@@ -110,8 +110,7 @@
     <ClCompile Include="Engine\LowerLayer\Resource\Camera\CameraContextRuntime\CameraFrontlineSystems.cpp" />
     <ClCompile Include="Engine\LowerLayer\Resource\Camera\CameraContextRuntime\CameraController\CameraController.cpp" />
     <ClCompile Include="Engine\LowerLayer\Resource\Camera\CameraContextRuntime\CameraDataBatcher\CameraDataBatcher.cpp" />
-    <ClCompile Include="Engine\LowerLayer\Resource\Camera\CameraRegister\CameraRegister.cpp" />
-    <ClCompile Include="Engine\LowerLayer\Resource\Camera\CameraLibrary\CameraLibrary.cpp" />
+    <ClCompile Include="Engine\LowerLayer\Resource\Camera\CameraContextRuntime\CameraLibrary\CameraLibrary.cpp" />
     <ClCompile Include="Engine\LowerLayer\Resource\Camera\PresetCameras\DefaultDebugCamera\DefaultDebugCamera.cpp" />
     <ClCompile Include="Engine\LowerLayer\Resource\Camera\CameraStructrue\CameraDesc\CameraDesc.cpp" />
     <ClCompile Include="Engine\LowerLayer\Resource\Camera\CameraStructrue\CameraTransform\CameraTransform.cpp" />
@@ -434,8 +433,7 @@
     <ClInclude Include="Engine\LowerLayer\Resource\Camera\CameraContextRuntime\CameraDataBatcher\CameraDataBatcher.h" />
     <ClInclude Include="Engine\LowerLayer\Buffer\BufferDefinition\ViewType.h" />
     <ClInclude Include="Engine\LowerLayer\Resource\Camera\CameraContextRuntime\CameraSocket.h" />
-    <ClInclude Include="Engine\LowerLayer\Resource\Camera\CameraRegister\CameraRegister.h" />
-    <ClInclude Include="Engine\LowerLayer\Resource\Camera\CameraLibrary\CameraLibrary.h" />
+    <ClInclude Include="Engine\LowerLayer\Resource\Camera\CameraContextRuntime\CameraLibrary\CameraLibrary.h" />
     <ClInclude Include="Engine\LowerLayer\Resource\Camera\PresetCameras\PresetCameraIncludes.h" />
     <ClInclude Include="Engine\LowerLayer\Resource\Camera\PresetCameras\DefaultDebugCamera\DefaultDebugCamera.h" />
     <ClInclude Include="Engine\LowerLayer\Resource\Camera\CameraStructrue\CameraDesc\CameraDesc.h" />

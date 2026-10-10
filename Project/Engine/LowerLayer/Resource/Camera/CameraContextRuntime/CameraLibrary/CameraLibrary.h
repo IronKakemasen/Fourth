@@ -1,5 +1,5 @@
 #pragma once
-#include "../CameraContextRuntime/CameraFrontlineSystems.h"
+#include "../CameraFrontlineSystems.h"
 
 
 class CameraContext::CameraFrontlineSystems::CameraLibrary

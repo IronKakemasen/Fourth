@@ -10,7 +10,7 @@ struct CameraDesc
 
 	float farClip = 0.1f;
 	float nearClip = 1000.0f;
-	float fovY = MathConstants::kPi * MathConstants::kHalf;
+	float fovY = ProjectConfig::Window::kDefaultFovY;
 	float aspectRatio = (float)ProjectConfig::Window::kWidth / (float)ProjectConfig::Window::kHeight;
 };
 

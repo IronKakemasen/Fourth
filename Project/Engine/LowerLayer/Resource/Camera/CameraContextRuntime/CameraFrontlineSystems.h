@@ -6,10 +6,10 @@ class CameraBehavior;
 
 class CameraContext::CameraFrontlineSystems
 {
-	//カメラの登録を行う
-	class CameraRegister;
 	//そのシーンに存在するカメラのライブラリ
 	class CameraLibrary;
+	//カメラのアップデートを読んだり、デバッグ操作などを行う
+	class CameraController;
 
 public:
 
@@ -17,12 +17,16 @@ public:
 	~CameraFrontlineSystems();
 
 	//カメラの登録
+	template<CameraSocket dstSocket>
 	void RegisterCamera
 	(
 		std::unique_ptr<CameraBehavior>&& camera_,
-		CameraSocket dstCameraSocket_,
 		std::string const& name_
-	);
+	)
+	{
+		ImportCamera(std::move(camera_), name_);
+		Connect<dstSocket>(name_);
+	}
 
 	//カメラ接続の変更
 	void ChangeCamera(std::string const& to_, CameraSocket dstSocket_);
@@ -33,7 +37,16 @@ public:
 
 private:
 
+	void ImportCamera(std::unique_ptr<CameraBehavior>&& camera_, std::string const& name_);
+	
+	//明示的実体化必要
+	template<CameraSocket to>
+	void Connect(std::string const& name_);
+
+
 	std::unique_ptr<CameraLibrary> cameraLibrary;
-	std::unordered_map<CameraSocket, CameraBehavior*> socketMap;
+	std::unique_ptr<CameraController> cameraController;
+
+
 };
 

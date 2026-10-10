@@ -3003,6 +3003,12 @@ ColorBufferDescription::ColorBufferDescription
 	ProjectConfig::Render::NumBuffer numBuffer_
 ) : BufferDescriptionBehavior(D3D12_RESOURCE_STATE_RENDER_TARGET, numBuffer_)
 {
+	ErrorMessageOutput::Assert::DetectError
+	(
+		clearColor_.size() == 4,
+		"すみません、カラーバッファのクリアカラーはrgbaでお願い",
+		"ColorBufferDescription.cpp"
+	);
 	param.clearColor = clearColor_;
 	param.width = width_;
 	param.height = height_;
@@ -13060,8 +13066,6 @@ class CameraContext
 public:
 	struct NexusFieldProof;
 	struct AgentKey;
-	//ランタイムでカメラのアップデート、カメラの接続制御を行う。
-	class CameraController;
 	//カメラのデータのバッチング処理を行う
 	class CameraDataBatcher;
 	//カメラのランタイムシステムを束ねたもの。1シーンに1つ存在
@@ -13181,38 +13185,30 @@ private:
 #include "PreCompileHeader.h"
 #include "CameraFrontlineSystems.h"
 #include "../CameraLibrary/CameraLibrary.h"
-#include "../CameraRegister/CameraRegister.h"
-#include "../CameraStructrue/CameraBehavior.h"
+#include "CameraController/CameraController.h"
 CameraContext::CameraFrontlineSystems::CameraFrontlineSystems(NexusFieldProof proof_)
 {
 	cameraLibrary = std::make_unique<CameraLibrary>(proof_);
+	cameraController = std::make_unique<CameraController>(proof_);
 }
 CameraContext::CameraFrontlineSystems::~CameraFrontlineSystems()
 {
 }
-void CameraContext::CameraFrontlineSystems::RegisterCamera
-(
-	std::unique_ptr<CameraBehavior>&& camera_,
-	CameraSocket dstCameraSocket_,
-	std::string const& name_
-)
+void CameraContext::CameraFrontlineSystems::ImportCamera(std::unique_ptr<CameraBehavior>&& camera_, std::string const& name_)
 {
-	socketMap[dstCameraSocket_] = CameraRegister::Register(std::move(camera_), name_, *cameraLibrary);
-}
-void CameraContext::CameraFrontlineSystems::ChangeCamera(std::string const& to_, CameraSocket dstSocket_)
-{
-	socketMap[dstSocket_] = cameraLibrary->Export(to_);
+	cameraLibrary->Import(std::move(camera_), name_);
 }
 void CameraContext::CameraFrontlineSystems::RunCameraUpdate()
 {
-	CameraBehavior::Local_UpdateLicence licenceUpdate;
-	//更新する必要があるカメラ(描画のために使用しているカメラ)の更新処理を呼ぶ
-	for (auto& [key, camera] : socketMap)
-	{
-		camera->Update(licenceUpdate);
-		camera->UpdateMatrices(licenceUpdate);
-	}
+	cameraController->RunCamera();
 }
+template<>
+void CameraContext::CameraFrontlineSystems::Connect<CameraSocket::kMainDebug>(std::string const& name_)
+{
+	cameraController->Connect<CameraSocket::kMainDebug>(cameraLibrary->Export(name_));
+}
+template
+void CameraContext::CameraFrontlineSystems::Connect<CameraSocket::kMainDebug>(std::string const& name_);
 
 ========================================
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Camera\CameraContextRuntime\CameraFrontlineSystems.h ===
@@ -13223,28 +13219,36 @@ void CameraContext::CameraFrontlineSystems::RunCameraUpdate()
 class CameraBehavior;
 class CameraContext::CameraFrontlineSystems
 {
-	//カメラの登録を行う
-	class CameraRegister;
 	//そのシーンに存在するカメラのライブラリ
 	class CameraLibrary;
+	//カメラのアップデートを読んだり、デバッグ操作などを行う
+	class CameraController;
 public:
 	CameraFrontlineSystems(NexusFieldProof proof_);
 	~CameraFrontlineSystems();
 	//カメラの登録
+	template<CameraSocket dstSocket>
 	void RegisterCamera
 	(
 		std::unique_ptr<CameraBehavior>&& camera_,
-		CameraSocket dstCameraSocket_,
 		std::string const& name_
-	);
+	)
+	{
+		ImportCamera(std::move(camera_), name_);
+		Connect<dstSocket>(name_);
+	}
 	//カメラ接続の変更
 	void ChangeCamera(std::string const& to_, CameraSocket dstSocket_);
 	//カメラのアップデート
 	//socketMapにあるカメラのアップデートを呼ぶ。バッチングは別機関で行う
 	void RunCameraUpdate();
 private:
+	void ImportCamera(std::unique_ptr<CameraBehavior>&& camera_, std::string const& name_);
+	//明示的実体化必要
+	template<CameraSocket to>
+	void Connect(std::string const& name_);
 	std::unique_ptr<CameraLibrary> cameraLibrary;
-	std::unordered_map<CameraSocket, CameraBehavior*> socketMap;
+	std::unique_ptr<CameraController> cameraController;
 };
 
 ========================================
@@ -13253,6 +13257,7 @@ private:
 #pragma once
 //厳密にいうと、バッファに書き込むカメラの接続口
 //実際に更新・バッチングする必要のあるカメラはこのソケットに接続しているカメラのみということになる
+//追加したら、CameraContext::CameraFrontlineSystems::Connectの明示的実体化も
 enum class CameraSocket
 {
 	//メインカメラとデバッグカメラ共用。切り替え可能ということ
@@ -13266,18 +13271,39 @@ enum class CameraSocket
 ========================================
 #include "PreCompileHeader.h"
 #include "CameraController.h"
+#include "../../CameraStructrue/CameraBehavior.h"
+CameraContext::CameraFrontlineSystems::CameraController::CameraController(NexusFieldProof proof_)
+{
+}
+void CameraContext::CameraFrontlineSystems::CameraController::RunCamera()
+{
+	CameraBehavior::Local_UpdateLicence licenceUpdate;
+	//更新する必要があるカメラ(描画のために使用しているカメラ)の更新処理を呼ぶ
+	for (auto& [key, camera] : socketMap)
+	{
+		camera->Update(licenceUpdate);
+		camera->UpdateMatrices(licenceUpdate);
+	}
+}
 
 ========================================
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Camera\CameraContextRuntime\CameraController\CameraController.h ===
 ========================================
 #pragma once
-#include "../../CameraContext.h"
-#include "../CameraSocket.h"
+#include "../CameraFrontlineSystems.h"
 class CameraBehavior;
-class CameraContext::CameraController
+class CameraContext::CameraFrontlineSystems::CameraController
 {
 public:
 	CameraController(NexusFieldProof proof_);
+	//ソケットに接続するカメラを変える
+	template<CameraSocket dstSocket_>
+	void Connect(CameraBehavior* dstCamera_)
+	{
+		socketMap[dstSocket_] = dstCamera_;
+	}
+	//ソケットに接続されているカメラ(描画のために使用しているカメラ)の更新処理を呼ぶ
+	void RunCamera();
 private:
 	//現在の接続しているカメラ
 	std::unordered_map<CameraSocket, CameraBehavior*> socketMap;
@@ -13415,40 +13441,6 @@ private:
 };
 
 ========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Camera\CameraRegister\CameraRegister.cpp ===
-========================================
-#include "PreCompileHeader.h"
-#include "CameraRegister.h"
-#include "../CameraLibrary/CameraLibrary.h"
-CameraBehavior* CameraContext::CameraFrontlineSystems::CameraRegister::Register
-(
-	std::unique_ptr<CameraBehavior>&& camera_,
-	std::string const& name_,
-	CameraLibrary& cameraLibrary_
-)
-{
-	auto* cameraPtr = camera_.get();
-	cameraLibrary_.Import(std::move(camera_), name_);
-	return cameraPtr;
-}
-
-========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Camera\CameraRegister\CameraRegister.h ===
-========================================
-#pragma once
-#include "../CameraContextRuntime/CameraFrontlineSystems.h"
-class CameraContext::CameraFrontlineSystems::CameraRegister
-{
-	friend class CameraContext::CameraFrontlineSystems;
-	static CameraBehavior* Register
-	(
-		std::unique_ptr<CameraBehavior>&& camera_, 
-		std::string const& name_,
-		CameraLibrary& cameraLibrary_
-	);
-};
-
-========================================
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Camera\CameraStructrue\CameraBehavior.cpp ===
 ========================================
 #include "PreCompileHeader.h"
@@ -13545,7 +13537,7 @@ struct CameraDesc
 	float rotationInterpolationCoe = 1.0f;
 	float farClip = 0.1f;
 	float nearClip = 1000.0f;
-	float fovY = MathConstants::kPi * MathConstants::kHalf;
+	float fovY = ProjectConfig::Window::kDefaultFovY;
 	float aspectRatio = (float)ProjectConfig::Window::kWidth / (float)ProjectConfig::Window::kHeight;
 };
 
@@ -21477,7 +21469,6 @@ template<typename ValueType>
 class ClosedHashMap
 {
 private:
-    static constexpr uint32_t InvalidKey = 0xffffffff;
     struct Slot
     {
         enum Status
@@ -21485,10 +21476,10 @@ private:
             kEmpty,
             kOccupied
         }status = kEmpty;
-        uint32_t key = InvalidKey;
+        uint32_t key = kInvalid;
         ValueType value;
     };
-    inline uint32_t Hash(uint32_t key_)const
+    inline uint32_t Hash(uint32_t key_)const  
     {
         key_ ^= key_ >> 16;
         key_ *= 0x7feb352d;
@@ -22008,5 +21999,5 @@ namespace StringProcessing
 ========================================
 === SUMMARY ===
 ========================================
-Total Files      : 485
-Effective Lines  : 16069
+Total Files      : 483
+Effective Lines  : 16071

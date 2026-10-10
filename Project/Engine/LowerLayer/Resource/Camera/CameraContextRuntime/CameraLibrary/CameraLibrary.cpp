@@ -1,6 +1,6 @@
 #include "PreCompileHeader.h"
 #include "CameraLibrary.h"
-#include "../CameraStructrue/CameraBehavior.h"
+#include "../../CameraStructrue/CameraBehavior.h"
 
 
 namespace

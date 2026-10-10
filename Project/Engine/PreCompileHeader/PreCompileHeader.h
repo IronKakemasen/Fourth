@@ -36,6 +36,7 @@
 #include <bit>
 #include <cstdint>
 
+#include "../Math/MathConstants.h"
 //abort()やassert()でエラーを吐いて文字列を出力する
 #include "../LowerLayer/DebugSystem/ErrorMessageOutput/ErrorMessageOutput.h"
 //出力ウィンドウとログファイルにログを出力
@@ -45,7 +46,6 @@
 //ジェーソン読み書き
 #include "../MiddleLayer/Miyajison/Miyajison.h"
 #include "../Utility/Comparison/Comparison.h"
-#include "../Math/MathConstants.h"
 
 
 
