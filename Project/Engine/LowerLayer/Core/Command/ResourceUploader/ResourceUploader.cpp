@@ -16,7 +16,7 @@ CommandContext::ResourceUploader::ResourceUploader
 	NexusFieldProof proof_,
 	DeviceContextDiplomat& deviceContextDiplomat_,
 	ID3D12CommandQueue* commandQueue_,
-	CommandContext::Synchronizer* synchronizer_
+	CommandContext::Synchronizer& synchronizer_
 
 ) :commandQueue(commandQueue_), synchronizer(synchronizer_)
 {
@@ -50,7 +50,7 @@ void CommandContext::ResourceUploader::KickAndSynchronize(const NexusFieldProof&
 	ID3D12CommandList* commandLists[] = { commandList.Get()};
 	commandQueue->ExecuteCommandLists(1, commandLists);
 
-	synchronizer->WaitDirectly();
+	synchronizer.WaitDirectly();
 
 	Logger::Log("Kicked ResourceUploadCommands", fileName);
 }

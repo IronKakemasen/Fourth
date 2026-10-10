@@ -4,6 +4,7 @@
 
 CommandContext::RuntimeCommandController::RuntimeCommandController
 (
+	NexusFieldProof proof_,
 	ID3D12CommandQueue* commandQueue_,
 	std::array<ID3D12CommandAllocator*, (UINT)ProjectConfig::Render::NumBuffer::kDoubleBuffer> commandAllocators_,
 	ID3D12GraphicsCommandList6* commandList_,
@@ -12,7 +13,7 @@ CommandContext::RuntimeCommandController::RuntimeCommandController
 	:synchronizer(synchronizer_)
 {
 
-	commandExecutor.reset(new CommandExecutor(commandQueue_, commandAllocators_, commandList_));
+	commandExecutor = std::make_unique<CommandExecutor>(proof_,commandQueue_, commandAllocators_, commandList_);
 	Logger::Log("Create: commandExecutor", "RuntimeCommandController.cpp");
 
 

@@ -6,7 +6,7 @@ class RuntimeWrapper
 {
 public:
 
-	RuntimeWrapper(ID3D12GraphicsCommandList6* cmdList_);
+	RuntimeWrapper(CommandContext::NexusFieldProof proof_, ID3D12GraphicsCommandList6* cmdList_);
 
 	__forceinline void SetGraphicsRootSignature(ID3D12RootSignature* rootSinganature_)
 	{

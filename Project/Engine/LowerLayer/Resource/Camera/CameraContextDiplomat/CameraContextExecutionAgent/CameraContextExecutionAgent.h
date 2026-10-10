@@ -16,7 +16,7 @@ public:
 	);
 
 
-	CameraFrontlineSystems* DispatchFrontlineSystems(SceneContextProof proof_);
+	CameraFrontlineSystems& DispatchFrontlineSystems(SceneContextProof proof_);
 
 private:
 

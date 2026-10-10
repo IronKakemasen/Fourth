@@ -33,8 +33,8 @@ CameraContext::FrontlineSystemsDispatcher::~FrontlineSystemsDispatcher()
 
 }
 
-CameraContext::CameraFrontlineSystems* CameraContext::FrontlineSystemsDispatcher::Dispatch(AgentKey key_)
+CameraContext::CameraFrontlineSystems& CameraContext::FrontlineSystemsDispatcher::Dispatch(AgentKey key_)
 {
-	return cameraFrontlineSystemsContainer[simpleFreeList.Distribute()].get();
+	return *cameraFrontlineSystemsContainer[simpleFreeList.Distribute()];
 }
 
