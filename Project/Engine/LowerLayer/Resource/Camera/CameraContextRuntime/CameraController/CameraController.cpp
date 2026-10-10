@@ -9,6 +9,11 @@ CameraContext::CameraFrontlineSystems::CameraController::CameraController(NexusF
 
 }
 
+void CameraContext::CameraFrontlineSystems::CameraController::Update()
+{
+	RunCamera();
+}
+
 void CameraContext::CameraFrontlineSystems::CameraController::RunCamera()
 {
 	CameraBehavior::Local_UpdateLicence licenceUpdate;

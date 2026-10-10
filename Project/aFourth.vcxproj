@@ -104,6 +104,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Engine\LowerLayer\Resource\Camera\CameraBufferCreator\CameraBufferCreator.cpp" />
     <ClCompile Include="Engine\LowerLayer\Resource\Camera\CameraContextDiplomat\CameraContextExecutionAgent\CameraContextExecutionAgent.cpp" />
     <ClCompile Include="Engine\LowerLayer\Resource\Camera\CameraContextDiplomat\CameraContextDiplomat.cpp" />
     <ClCompile Include="Engine\LowerLayer\Resource\Camera\CameraFSDispatcher\CameraFSDispatcher.cpp" />
@@ -425,6 +426,7 @@
     <ClInclude Include="Assets\Shared\StaticSampler.h" />
     <ClInclude Include="Assets\Shared\StructuredBufferCameraData.h" />
     <ClInclude Include="Assets\Shared\StructuredBufferModelData.h" />
+    <ClInclude Include="Engine\LowerLayer\Resource\Camera\CameraBufferCreator\CameraBufferCreator.h" />
     <ClInclude Include="Engine\LowerLayer\Resource\Camera\CameraContextDiplomat\CameraContextExecutionAgent\CameraContextExecutionAgent.h" />
     <ClInclude Include="Engine\LowerLayer\Resource\Camera\CameraContextDiplomat\CameraContextDiplomat.h" />
     <ClInclude Include="Engine\LowerLayer\Resource\Camera\CameraFSDispatcher\CameraFSDispatcher.h" />

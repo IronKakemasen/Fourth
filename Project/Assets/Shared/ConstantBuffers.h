@@ -68,9 +68,7 @@ struct PerDrawIndices
 struct PassConstants
 {
 	uint refBuffferOffset;
-	uint numRefBuffers;
 	uint cameraOffset;
-	uint numCameras;
 };
 
 

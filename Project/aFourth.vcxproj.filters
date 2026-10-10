@@ -702,6 +702,9 @@
     <ClCompile Include="Engine\LowerLayer\Resource\Camera\CameraContextDiplomat\CameraContextExecutionAgent\CameraContextExecutionAgent.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
+    <ClCompile Include="Engine\LowerLayer\Resource\Camera\CameraBufferCreator\CameraBufferCreator.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Engine\LowerLayer\Core\Window\WindowContext.h">
@@ -1596,6 +1599,9 @@
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
     <ClInclude Include="Engine\LowerLayer\Resource\Camera\CameraContextDiplomat\CameraContextExecutionAgent\CameraContextExecutionAgent.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\LowerLayer\Resource\Camera\CameraBufferCreator\CameraBufferCreator.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
   </ItemGroup>

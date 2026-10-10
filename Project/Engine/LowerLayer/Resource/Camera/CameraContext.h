@@ -6,6 +6,8 @@ class CameraContextDiplomat;
 
 class CameraContext
 {
+	//カメラのバッファを作成する
+	class CameraBufferCreator;
 
 public:
 

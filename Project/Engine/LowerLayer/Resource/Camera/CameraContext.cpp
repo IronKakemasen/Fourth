@@ -4,6 +4,8 @@
 #include "CameraFSDispatcher/CameraFSDispatcher.h"
 #include "CameraContextDiplomat/CameraContextDiplomat.h"
 #include "CameraContextDiplomat/CameraContextExecutionAgent/CameraContextExecutionAgent.h"
+#include "CameraBufferCreator/CameraBufferCreator.h"
+
 
 namespace
 {
@@ -21,6 +23,11 @@ CameraContext::CameraContext
 
 	frontlineSystemsDispatcher = std::make_unique<FrontlineSystemsDispatcher>(proof_);
 	Logger::Log("Instantiate: FrontlineSystemsDispatcher", fileName);
+
+	cameraDataBatcher = std::make_unique<CameraDataBatcher>(proof_);
+	Logger::Log("Instantiate: FrontlineSystemsDispatcher", fileName);
+
+	CameraBufferCreator::Create(proof_, *cameraDataBatcher, bufferContextDiplomat_);
 
 	diplomat = std::make_unique<CameraContextDiplomat>
 	(

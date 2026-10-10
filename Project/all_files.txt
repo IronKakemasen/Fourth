@@ -19,7 +19,7 @@ namespace ProjectConfig
 		inline const LPCWSTR kTitle = L"Fourth";
 		constexpr UINT kWidth = 1280;
 		constexpr UINT kHeight = 720;
-		constexpr float kDefaultFovY = 3.141592653589f * 0.5f;
+		constexpr float kDefaultFovY = MathConstants::kPi * MathConstants::kHalf;
 		constexpr std::array<float, 4> kColor = { 1.0f,0.0f,0.0f,1.0f };
 	}
 	namespace Render
@@ -411,12 +411,14 @@ BufferContextCmds::CreateCBufferCmd BufferContext::CmdProvider::Provide
 class ModelContext;
 class TextureContext;
 class RenderContext;
+class CameraContext;
 struct BufferContext::CmdProvider::UsesCBufferCreatorLicence
 {
 private:
 	friend class ModelContext;
 	friend class TextureContext;
 	friend class RenderContext;
+	friend class CameraContext;
 	explicit UsesCBufferCreatorLicence() = default;
 };
 
@@ -575,12 +577,14 @@ struct BufferContext::ToolLender::CmdTypeTraits<BufferContext::GlobalConstantBuf
 class ModelContext;
 class RenderContext;
 class TextureContext;
+class CameraContext;
 struct BufferContext::ToolLender::BasicBufferManagementLicence
 {
 private:
 	friend class ModelContext;
 	friend class RenderContext;
 	friend class TextureContext;
+	friend class CameraContext;
 	explicit BasicBufferManagementLicence() = default;
 };
 struct BufferContext::ToolLender::UsesGlobalConstantBuffersLicence
@@ -4728,12 +4732,12 @@ void BufferContext::GlobalConstantBuffers::PackRuntimeContainer(NexusFieldProof 
 	}
 	auto const numActualCBuffers = forChecking.size();
 	auto const numRequiredCBuffers = (size_t)ConstantBuffers::ConstantBufferBindSlots::kCount;
-	//ErrorMessageOutput::Assert::DetectError
-	//(
-	//	numActualCBuffers == numRequiredCBuffers,
-	//	"定数バッファの生成数が合わない実 " + std::to_string(numActualCBuffers) + " : 必 " + std::to_string(numRequiredCBuffers),
-	//	fileName
-	//);
+	ErrorMessageOutput::Assert::DetectError
+	(
+		numActualCBuffers == numRequiredCBuffers,
+		"定数バッファの生成数が合わない実 " + std::to_string(numActualCBuffers) + " : 必 " + std::to_string(numRequiredCBuffers),
+		fileName
+	);
 	Logger::Log("===== List of cBuffer slots =====",fileName);
 	for (auto const& [key, value] : gpuVirtualAddressMap)
 	{
@@ -13028,6 +13032,7 @@ private:
 #include "CameraFSDispatcher/CameraFSDispatcher.h"
 #include "CameraContextDiplomat/CameraContextDiplomat.h"
 #include "CameraContextDiplomat/CameraContextExecutionAgent/CameraContextExecutionAgent.h"
+#include "CameraBufferCreator/CameraBufferCreator.h"
 namespace
 {
 	std::string const fileName = "CameraContext.cpp";
@@ -13041,6 +13046,9 @@ CameraContext::CameraContext
 	Logger::Entry("CameraContext: Constructor");
 	frontlineSystemsDispatcher = std::make_unique<FrontlineSystemsDispatcher>(proof_);
 	Logger::Log("Instantiate: FrontlineSystemsDispatcher", fileName);
+	cameraDataBatcher = std::make_unique<CameraDataBatcher>(proof_);
+	Logger::Log("Instantiate: FrontlineSystemsDispatcher", fileName);
+	CameraBufferCreator::Create(proof_, *cameraDataBatcher, bufferContextDiplomat_);
 	diplomat = std::make_unique<CameraContextDiplomat>
 	(
 		proof_,
@@ -13063,6 +13071,8 @@ class BufferContextDiplomat;
 class CameraContextDiplomat;
 class CameraContext
 {
+	//カメラのバッファを作成する
+	class CameraBufferCreator;
 public:
 	struct NexusFieldProof;
 	struct AgentKey;
@@ -13096,6 +13106,74 @@ struct CameraContext::AgentKey
 private:
 	friend class ExecutionAgent;
 	explicit AgentKey() = default;
+};
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Camera\CameraBufferCreator\CameraBufferCreator.cpp ===
+========================================
+#include "PreCompileHeader.h"
+#include "CameraBufferCreator.h"
+#include "../CameraContextRuntime/CameraDataBatcher/CameraDataBatcher.h"
+#include "../CameraContextRuntime/CameraSocket.h"
+//外部
+#include "../../../Buffer/BufferDefinition/BufferDescriptions/UploadStructuredBufferDescription/UploadStructuredBufferDescription.h"
+#include "../../../Buffer/BufferDefinition/GPUBuffer/UploadStructuredBuffer/UploadStructuredBuffer.h"
+#include "../../../Buffer/BufferContextDiplomats.h"
+#include "../../../Buffer/BufferContextToolsInclude.h"
+#include "../../../../../Assets/Shared/StructuredBufferCameraData.h"
+#include "../../../../../Assets/Shared/ConstantBuffers.h"
+using namespace StructuredBufferCameraData;
+using namespace ConstantBuffers;
+namespace
+{
+	auto const fileName = "CameraBufferCreator.cpp";
+}
+void CameraContext::CameraBufferCreator::Create
+(
+	NexusFieldProof proof_,
+	CameraDataBatcher& cameraDataBatcher_,
+	BufferContextDiplomat& bufferContextDiplomat_
+)
+{
+	//bufferCreatorを借りる
+	auto& toolLender = *bufferContextDiplomat_.Access<BufferContext::ToolLender>();
+	BufferContext::ToolLender::LicenceType<BufferContext::BufferCreator> licence{};
+	auto& bufferCreator = *toolLender.Lend<BufferContext::BufferCreator>(licence);
+	//定数バッファ作成コマンドをもらう
+	auto& cmdProvider = *bufferContextDiplomat_.Access<BufferContext::CmdProvider>();
+	BufferContext::CmdProvider::LicenceType<BufferContextCmds::CreateCBufferCmd> licence2{};
+	auto globalCBufferCreateCmd = cmdProvider.Provide<BufferContextCmds::CreateCBufferCmd>(licence2);
+	//bufferCreatorでカメラデータ配列のデータを作成する
+	UploadStructuredBufferDescription desc((UINT)sizeof(CameraDataCPUGPU), (UINT)CameraSocket::kCount, 0);
+	auto structuredID_buffer = bufferCreator.CreateWithBuffer(desc, "CameraDataArr");
+	//そのsrvHeapIndexを格納するための定数バッファを作成
+	auto constantID_buffer = globalCBufferCreateCmd("CameraDataArrSrv", (UINT)sizeof(SRVHeapIndex), (UINT)ConstantBufferBindSlots::kCameraContainer);
+	constantID_buffer.second->WriteInBoth<SRVHeapIndex>
+	(
+		{ 
+			structuredID_buffer.second->OutProperSRVHeapIndex(0),
+			structuredID_buffer.second->OutProperSRVHeapIndex(1)
+		}
+	);
+	Logger::Log("Create CameraDataArr Buffer and its srvIndexBuffer", fileName);
+}
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Camera\CameraBufferCreator\CameraBufferCreator.h ===
+========================================
+#pragma once
+#include "../CameraContext.h"
+class CameraContext::CameraBufferCreator
+{
+	friend class CameraContext;
+	//カメラデータ配列のバッファを作成し、そのsrvHeapIndexの定数バッファを作成。
+	//カメラデータ配列のバッファのIDはCameraDataBatcherがランタイムでバッチングするために所持する
+	static void Create
+	(
+		NexusFieldProof proof_,
+		CameraDataBatcher& cameraDataBatcher_,
+		BufferContextDiplomat& bufferContextDiplomat_
+	);
 };
 
 ========================================
@@ -13184,7 +13262,7 @@ private:
 ========================================
 #include "PreCompileHeader.h"
 #include "CameraFrontlineSystems.h"
-#include "../CameraLibrary/CameraLibrary.h"
+#include "CameraLibrary/CameraLibrary.h"
 #include "CameraController/CameraController.h"
 CameraContext::CameraFrontlineSystems::CameraFrontlineSystems(NexusFieldProof proof_)
 {
@@ -13275,6 +13353,10 @@ enum class CameraSocket
 CameraContext::CameraFrontlineSystems::CameraController::CameraController(NexusFieldProof proof_)
 {
 }
+void CameraContext::CameraFrontlineSystems::CameraController::Update()
+{
+	RunCamera();
+}
 void CameraContext::CameraFrontlineSystems::CameraController::RunCamera()
 {
 	CameraBehavior::Local_UpdateLicence licenceUpdate;
@@ -13296,6 +13378,7 @@ class CameraContext::CameraFrontlineSystems::CameraController
 {
 public:
 	CameraController(NexusFieldProof proof_);
+	void Update();
 	//ソケットに接続するカメラを変える
 	template<CameraSocket dstSocket_>
 	void Connect(CameraBehavior* dstCamera_)
@@ -13314,6 +13397,14 @@ private:
 ========================================
 #include "PreCompileHeader.h"
 #include "CameraDataBatcher.h"
+CameraContext::CameraDataBatcher::CameraDataBatcher(NexusFieldProof proof_)
+{
+}
+void CameraContext::CameraDataBatcher::ImportCameraDataArrBufferID(NexusFieldProof prooof_, BufferUniqueID id_)
+{
+	cameraDataArrBufferID = id_;
+	Logger::Log("Catched ID!" + std::to_string(id_), "CameraDataBatcher.cpp");
+}
 
 ========================================
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Camera\CameraContextRuntime\CameraDataBatcher\CameraDataBatcher.h ===
@@ -13324,7 +13415,73 @@ class CameraContext::CameraDataBatcher
 {
 public:
 	CameraDataBatcher(NexusFieldProof proof_);
+	void ImportCameraDataArrBufferID(NexusFieldProof prooof_, BufferUniqueID id_);
 private:
+	//カメラデータ配列のバッファID
+	BufferUniqueID cameraDataArrBufferID;
+};
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Camera\CameraContextRuntime\CameraLibrary\CameraLibrary.cpp ===
+========================================
+#include "PreCompileHeader.h"
+#include "CameraLibrary.h"
+#include "../../CameraStructrue/CameraBehavior.h"
+namespace
+{
+	auto const fileName = "CameraLibrary.cpp";
+}
+CameraContext::CameraFrontlineSystems::CameraLibrary::CameraLibrary(NexusFieldProof proof_)
+{
+}
+CameraContext::CameraFrontlineSystems::CameraLibrary::~CameraLibrary()
+{
+}
+void CameraContext::CameraFrontlineSystems::CameraLibrary::Import
+(
+	std::unique_ptr<CameraBehavior>&& cameraUnique_,
+	std::string const& name_
+)
+{
+	ErrorMessageOutput::Assert::DetectError
+	(
+		cameraLib.find(name_) == cameraLib.end(),
+		name_ + "このカメラ名は同じシーンの中で重複してるからだめ",
+		fileName
+	);
+	Logger::Log("Import: " + name_, fileName);
+	cameraLib[name_] = std::move(cameraUnique_);
+}
+CameraBehavior* CameraContext::CameraFrontlineSystems::CameraLibrary::Export(std::string const& name_)
+{
+	ErrorMessageOutput::Assert::DetectError
+	(
+		cameraLib.find(name_) != cameraLib.end(),
+		name_ + "こんな名前のカメラは登録されていません",
+		fileName
+	);
+	return cameraLib[name_].get();
+}
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Camera\CameraContextRuntime\CameraLibrary\CameraLibrary.h ===
+========================================
+#pragma once
+#include "../CameraFrontlineSystems.h"
+class CameraContext::CameraFrontlineSystems::CameraLibrary
+{
+public:
+	CameraLibrary(NexusFieldProof proof_);
+	~CameraLibrary();
+	void Import
+	(
+		std::unique_ptr<CameraBehavior>&& cameraUnique_,
+		std::string const& name_
+	);
+	CameraBehavior* Export(std::string const& name_);
+private:
+	//同じ型で複数制作することになるので、しぶしぶ文字列をキーにします
+	std::unordered_map<std::string, std::unique_ptr<CameraBehavior>> cameraLib;
 };
 
 ========================================
@@ -13375,69 +13532,6 @@ public:
 private:
 	std::vector<std::unique_ptr<CameraFrontlineSystems>> cameraFrontlineSystemsContainer;
 	SimpleFreeList simpleFreeList;
-};
-
-========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Camera\CameraLibrary\CameraLibrary.cpp ===
-========================================
-#include "PreCompileHeader.h"
-#include "CameraLibrary.h"
-#include "../CameraStructrue/CameraBehavior.h"
-namespace
-{
-	auto const fileName = "CameraLibrary.cpp";
-}
-CameraContext::CameraFrontlineSystems::CameraLibrary::CameraLibrary(NexusFieldProof proof_)
-{
-}
-CameraContext::CameraFrontlineSystems::CameraLibrary::~CameraLibrary()
-{
-}
-void CameraContext::CameraFrontlineSystems::CameraLibrary::Import
-(
-	std::unique_ptr<CameraBehavior>&& cameraUnique_,
-	std::string const& name_
-)
-{
-	ErrorMessageOutput::Assert::DetectError
-	(
-		cameraLib.find(name_) == cameraLib.end(),
-		name_ + "このカメラ名は同じシーンの中で重複してるからだめ",
-		fileName
-	);
-	Logger::Log("Import: " + name_, fileName);
-	cameraLib[name_] = std::move(cameraUnique_);
-}
-CameraBehavior* CameraContext::CameraFrontlineSystems::CameraLibrary::Export(std::string const& name_)
-{
-	ErrorMessageOutput::Assert::DetectError
-	(
-		cameraLib.find(name_) != cameraLib.end(),
-		name_ + "こんな名前のカメラは登録されていません",
-		fileName
-	);
-	return cameraLib[name_].get();
-}
-
-========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Camera\CameraLibrary\CameraLibrary.h ===
-========================================
-#pragma once
-#include "../CameraContextRuntime/CameraFrontlineSystems.h"
-class CameraContext::CameraFrontlineSystems::CameraLibrary
-{
-public:
-	CameraLibrary(NexusFieldProof proof_);
-	~CameraLibrary();
-	void Import
-	(
-		std::unique_ptr<CameraBehavior>&& cameraUnique_,
-		std::string const& name_
-	);
-	CameraBehavior* Export(std::string const& name_);
-private:
-	//同じ型で複数制作することになるので、しぶしぶ文字列をキーにします
-	std::unordered_map<std::string, std::unique_ptr<CameraBehavior>> cameraLib;
 };
 
 ========================================
@@ -21449,6 +21543,7 @@ void Nexus::Run()
 #include <type_traits> 
 #include <bit>
 #include <cstdint>
+#include "../Math/MathConstants.h"
 //abort()やassert()でエラーを吐いて文字列を出力する
 #include "../LowerLayer/DebugSystem/ErrorMessageOutput/ErrorMessageOutput.h"
 //出力ウィンドウとログファイルにログを出力
@@ -21458,7 +21553,6 @@ void Nexus::Run()
 //ジェーソン読み書き
 #include "../MiddleLayer/Miyajison/Miyajison.h"
 #include "../Utility/Comparison/Comparison.h"
-#include "../Math/MathConstants.h"
 
 ========================================
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Utility\ClosedHashMap\ClosedHashMap.h ===
@@ -21999,5 +22093,5 @@ namespace StringProcessing
 ========================================
 === SUMMARY ===
 ========================================
-Total Files      : 483
-Effective Lines  : 16071
+Total Files      : 485
+Effective Lines  : 16141
