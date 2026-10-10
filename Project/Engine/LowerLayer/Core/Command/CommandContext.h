@@ -11,7 +11,8 @@ class CommandContext
 	class RuntimeCommandController;
 	//FenceでCPUとGPUを同期させる
 	class Synchronizer;
-
+	//立ち上げを手伝ってもらう
+	class Builder;
 public:
 
 	//Nexusフィールドの証明
@@ -70,9 +71,7 @@ private:
 	//フェンスイベント
 	HANDLE fenceEvent = nullptr;
 
-	void CreateFenceEvent();
 	void InstantiateRuntimeCommandControler();
-	void CreateCoreParts(NexusFieldProof instanceKey_,DeviceContextDiplomat& deviceContextDiplomat_);
 };
 
 

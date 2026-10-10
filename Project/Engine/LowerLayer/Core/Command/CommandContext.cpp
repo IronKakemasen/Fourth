@@ -5,16 +5,12 @@
 #include "RuntimeWrapper/RuntimeWrapper.h"
 #include "ResourceUploader/ResourceUploader.h"
 #include "RuntimeCommandController/RuntimeCommandController.h"
-
+#include "CommandContextBuilder/CommandContextBuilder.h"
 
 #include "CommandContextDiplomat/CommandContextDiplomat.h"
 #include "CommandContextDiplomat/CommandContextCmdProvider/CommandContextCmdProvider.h"
 #include "CommandContextDiplomat/CommandContextToolLender/CommandContextToolLender.h"
 #include "CommandContextDiplomat/CommandContextExecutionAgent/CommandContextExecutionAgent.h"
-
-//外部
-#include "../Device/DeviceContextDiplomat/DeviceContextDiplomat.h"
-#include "../Device/DeviceContextDiplomat/DeviceContextCommandExecutor/DeviceContextCommandExecutor.h"
 
 using namespace ProjectConfig::Render;
 
@@ -34,9 +30,13 @@ CommandContext::CommandContext
 	Logger::Entry("CommandContext: Constructor");
 
 	//コアパーツの生成
-	CreateCoreParts(proof_, deviceContextDiplomat_);
-	//フェンスイベントの生成
-	CreateFenceEvent();
+	auto buildOutput = Builder::CreateCoreParts(proof_, deviceContextDiplomat_);
+	fence = std::move(buildOutput.fence);
+	fenceEvent = buildOutput.fenceEvent;
+	commandList = std::move(buildOutput.commandList);
+	commandAllocators = std::move(buildOutput.commandAllocators);
+	commandQueue = std::move(buildOutput.commandQueue);
+
 
 	synchronizer.reset(new Synchronizer(commandQueue.Get(), fence.Get(), &fenceCounters, &fenceEvent,&commonFenceValue));
 	Logger::Log("Instantiate: Synchronizer", fileName);
@@ -50,46 +50,17 @@ CommandContext::CommandContext
 	//ランタイムでコマンドを利用するクラスの生成
 	InstantiateRuntimeCommandControler();
 
-	diplomat.reset
+	diplomat = std::make_unique<CommandContextDiplomat>
 	(
-		new CommandContextDiplomat
-		(
-			proof_,
-			std::make_unique<CommandProvider>(proof_, resourceUploader.get()),
-			std::make_unique<ToolLender>(proof_, commandQueue.Get(), runtimeWrapper.get()),
-			std::make_unique<ExecutionAgent>(proof_, resourceUploader.get())
-		)
+		proof_,
+		std::make_unique<CommandProvider>(proof_, resourceUploader.get()),
+		std::make_unique<ToolLender>(proof_, commandQueue.Get(), runtimeWrapper.get()),
+		std::make_unique<ExecutionAgent>(proof_, resourceUploader.get())
 	);
 
 	Logger::Log("Instantiate: CommandContextDiplomat", fileName);
 
 	Logger::End("CommandContext: Constructor");
-}
-///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-void CommandContext::CreateCoreParts(NexusFieldProof proof_, DeviceContextDiplomat& deviceContextDiplomat_)
-{
-	auto* cmdExecutor = deviceContextDiplomat_.Access<DeviceContext::CommandExecutor>();
-
-	//メイン
-	auto [cmdQueue, cmdAllocators, cmdList] =
-		cmdExecutor->CreateCommandContextCorePartsForRuntime(proof_);
-
-	commandQueue = std::move(cmdQueue);
-	commandAllocators = std::move(cmdAllocators);
-	commandList = std::move(cmdList);
-
-	fence = std::move(cmdExecutor->CreateFence(proof_));
-}
-///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-void CommandContext::CreateFenceEvent()
-{
-	fenceEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
-	ErrorMessageOutput::Assert::DetectError((fenceEvent != nullptr), "フェンスイベント作成失敗", fileName);
-	Logger::Log("Create: FenceEvent", fileName);
 }
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -110,10 +81,10 @@ void CommandContext::InstantiateRuntimeCommandControler()
 			commandQueue.Get(),
 			cmdAllocators,
 			commandList.Get(),
-			synchronizer.get()
+			*synchronizer
 		)
 	);
-	Logger::Log("Instantiate: RuntimeCommandControler", fileName);
+	Logger::Log("Instantiate: RuntimeCommandController", fileName);
 }
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
