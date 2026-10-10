@@ -11,6 +11,7 @@ public:
 
 	RuntimeCommandController
 	(
+		NexusFieldProof proof_,
 		ID3D12CommandQueue* commandQueue_,
 		std::array<ID3D12CommandAllocator*, (UINT)ProjectConfig::Render::NumBuffer::kDoubleBuffer> commandAllocators_,
 		ID3D12GraphicsCommandList6* commandList_,

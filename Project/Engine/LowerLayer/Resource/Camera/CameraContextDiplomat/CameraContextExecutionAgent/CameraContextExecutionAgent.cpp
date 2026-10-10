@@ -13,7 +13,7 @@ CameraContext::ExecutionAgent::ExecutionAgent
 }
 
 
-CameraContext::CameraFrontlineSystems* CameraContext::ExecutionAgent::DispatchFrontlineSystems(SceneContextProof proof_)
+CameraContext::CameraFrontlineSystems& CameraContext::ExecutionAgent::DispatchFrontlineSystems(SceneContextProof proof_)
 {
 	return frontlineSystemsDispatcher.Dispatch(AgentKey{});
 }

@@ -12,7 +12,7 @@ public:
 		NexusFieldProof proof_,
 		DeviceContextDiplomat& deviceContextDiplomat_,
 		ID3D12CommandQueue* commandQueue_,
-		CommandContext::Synchronizer* synchronizer_
+		CommandContext::Synchronizer& synchronizer_
 	);
 
 
@@ -32,7 +32,7 @@ private:
 	Microsoft::WRL::ComPtr<ID3D12CommandAllocator> allocator;
 	Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList6> commandList;
 	ID3D12CommandQueue* commandQueue;
-	Synchronizer* synchronizer;
+	Synchronizer& synchronizer;
 
 	//リソースのアップロードのコマンドの記録開始
 	void RecordingStart();

@@ -4906,14 +4906,14 @@ CommandContext::CommandContext
 	commandList = std::move(buildOutput.commandList);
 	commandAllocators = std::move(buildOutput.commandAllocators);
 	commandQueue = std::move(buildOutput.commandQueue);
-	synchronizer.reset(new Synchronizer(commandQueue.Get(), fence.Get(), &fenceCounters, &fenceEvent,&commonFenceValue));
+	synchronizer = std::make_unique<Synchronizer>(proof_,commandQueue.Get(), fence.Get(), &fenceCounters, &fenceEvent,&commonFenceValue);
 	Logger::Log("Instantiate: Synchronizer", fileName);
-	runtimeWrapper.reset(new RuntimeWrapper(commandList.Get()));
+	runtimeWrapper = std::make_unique<RuntimeWrapper>(proof_, commandList.Get());
 	Logger::Log("Instantiate: RuntimeWrapper", fileName);
-	resourceUploader.reset(new ResourceUploader(proof_, deviceContextDiplomat_, commandQueue.Get(), synchronizer.get()));
+	resourceUploader = std::make_unique<ResourceUploader>(proof_, deviceContextDiplomat_, commandQueue.Get(), *synchronizer);
 	Logger::Log("Instantiate: ResourceUploader", fileName);
 	//ランタイムでコマンドを利用するクラスの生成
-	InstantiateRuntimeCommandControler();
+	InstantiateRuntimeCommandControler(proof_);
 	diplomat = std::make_unique<CommandContextDiplomat>
 	(
 		proof_,
@@ -4927,22 +4927,20 @@ CommandContext::CommandContext
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-void CommandContext::InstantiateRuntimeCommandControler()
+void CommandContext::InstantiateRuntimeCommandControler(NexusFieldProof proof_)
 {
 	std::array<ID3D12CommandAllocator*, (UINT)NumBuffer::kDoubleBuffer> cmdAllocators;
 	for (int i = 0;i < (UINT)NumBuffer::kDoubleBuffer;++i)
 	{
 		cmdAllocators.at(i) = commandAllocators.at(i).Get();
 	}
-	runtimeCommandController.reset
+	runtimeCommandController = std::make_unique<RuntimeCommandController>
 	(
-		new RuntimeCommandController
-		(
-			commandQueue.Get(),
-			cmdAllocators,
-			commandList.Get(),
-			*synchronizer
-		)
+		proof_,
+		commandQueue.Get(),
+		cmdAllocators,
+		commandList.Get(),
+		*synchronizer
 	);
 	Logger::Log("Instantiate: RuntimeCommandController", fileName);
 }
@@ -5015,7 +5013,7 @@ private:
 	std::array<uint64_t,(UINT)ProjectConfig::Render::NumBuffer::kDoubleBuffer> fenceCounters = { 0,0 };
 	//フェンスイベント
 	HANDLE fenceEvent = nullptr;
-	void InstantiateRuntimeCommandControler();
+	void InstantiateRuntimeCommandControler(NexusFieldProof proof_);
 };
 struct CommandContext::NexusFieldProof
 {
@@ -5409,7 +5407,7 @@ CommandContext::ResourceUploader::ResourceUploader
 	NexusFieldProof proof_,
 	DeviceContextDiplomat& deviceContextDiplomat_,
 	ID3D12CommandQueue* commandQueue_,
-	CommandContext::Synchronizer* synchronizer_
+	CommandContext::Synchronizer& synchronizer_
 ) :commandQueue(commandQueue_), synchronizer(synchronizer_)
 {
 	auto* cmdExecutor = deviceContextDiplomat_.Access<DeviceContext::CommandExecutor>();
@@ -5434,7 +5432,7 @@ void CommandContext::ResourceUploader::KickAndSynchronize(const NexusFieldProof&
 	ErrorMessageOutput::Assert::DetectError(SUCCEEDED(hr), "コマンド確定できない", fileName);
 	ID3D12CommandList* commandLists[] = { commandList.Get()};
 	commandQueue->ExecuteCommandLists(1, commandLists);
-	synchronizer->WaitDirectly();
+	synchronizer.WaitDirectly();
 	Logger::Log("Kicked ResourceUploadCommands", fileName);
 }
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -5494,7 +5492,7 @@ public:
 		NexusFieldProof proof_,
 		DeviceContextDiplomat& deviceContextDiplomat_,
 		ID3D12CommandQueue* commandQueue_,
-		CommandContext::Synchronizer* synchronizer_
+		CommandContext::Synchronizer& synchronizer_
 	);
 	//リソースをアップロードするときに溜まったコマンドリストをキックしてかつ同期し、閉じる
 	//コアな処理なのでNexusフィールドでしかさせん
@@ -5507,7 +5505,7 @@ private:
 	Microsoft::WRL::ComPtr<ID3D12CommandAllocator> allocator;
 	Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList6> commandList;
 	ID3D12CommandQueue* commandQueue;
-	Synchronizer* synchronizer;
+	Synchronizer& synchronizer;
 	//リソースのアップロードのコマンドの記録開始
 	void RecordingStart();
 };
@@ -5520,6 +5518,7 @@ private:
 #include "../Synchronizer/Synchronizer.h"
 CommandContext::RuntimeCommandController::RuntimeCommandController
 (
+	NexusFieldProof proof_,
 	ID3D12CommandQueue* commandQueue_,
 	std::array<ID3D12CommandAllocator*, (UINT)ProjectConfig::Render::NumBuffer::kDoubleBuffer> commandAllocators_,
 	ID3D12GraphicsCommandList6* commandList_,
@@ -5527,7 +5526,7 @@ CommandContext::RuntimeCommandController::RuntimeCommandController
 )
 	:synchronizer(synchronizer_)
 {
-	commandExecutor.reset(new CommandExecutor(commandQueue_, commandAllocators_, commandList_));
+	commandExecutor = std::make_unique<CommandExecutor>(proof_,commandQueue_, commandAllocators_, commandList_);
 	Logger::Log("Create: commandExecutor", "RuntimeCommandController.cpp");
 }
 CommandContext::RuntimeCommandController::~RuntimeCommandController()
@@ -5562,6 +5561,7 @@ class CommandContext::RuntimeCommandController
 public:
 	RuntimeCommandController
 	(
+		NexusFieldProof proof_,
 		ID3D12CommandQueue* commandQueue_,
 		std::array<ID3D12CommandAllocator*, (UINT)ProjectConfig::Render::NumBuffer::kDoubleBuffer> commandAllocators_,
 		ID3D12GraphicsCommandList6* commandList_,
@@ -5585,6 +5585,7 @@ namespace
 }
 CommandContext::RuntimeCommandController::CommandExecutor::CommandExecutor
 (
+	NexusFieldProof proof_,
 	ID3D12CommandQueue* commandQueue_,
 	std::array<ID3D12CommandAllocator*, (UINT)ProjectConfig::Render::NumBuffer::kDoubleBuffer> commandAllocators_,
 	ID3D12GraphicsCommandList6* commandList_
@@ -5619,6 +5620,7 @@ class CommandContext::RuntimeCommandController::CommandExecutor
 public:
 	CommandExecutor
 	(
+		NexusFieldProof proof_,
 		ID3D12CommandQueue* commandQueue_,
 		std::array<ID3D12CommandAllocator*, (UINT)ProjectConfig::Render::NumBuffer::kDoubleBuffer> commandAllocators_,
 		ID3D12GraphicsCommandList6* commandList_
@@ -5637,7 +5639,7 @@ private:
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Core\Command\RuntimeWrapper\RuntimeWrapper.cpp ===
 ========================================
 #include "RuntimeWrapper.h"
-RuntimeWrapper::RuntimeWrapper(ID3D12GraphicsCommandList6* cmdList_)
+RuntimeWrapper::RuntimeWrapper(CommandContext::NexusFieldProof proof_, ID3D12GraphicsCommandList6* cmdList_)
 	:cmdList(cmdList_)
 {
 }
@@ -5651,7 +5653,7 @@ RuntimeWrapper::RuntimeWrapper(ID3D12GraphicsCommandList6* cmdList_)
 class RuntimeWrapper
 {
 public:
-	RuntimeWrapper(ID3D12GraphicsCommandList6* cmdList_);
+	RuntimeWrapper(CommandContext::NexusFieldProof proof_, ID3D12GraphicsCommandList6* cmdList_);
 	__forceinline void SetGraphicsRootSignature(ID3D12RootSignature* rootSinganature_)
 	{
 		cmdList->SetGraphicsRootSignature(rootSinganature_);
@@ -5788,6 +5790,7 @@ public:
 #include "Synchronizer.h"
 CommandContext::Synchronizer::Synchronizer
 (
+	NexusFieldProof proof_,
 	ID3D12CommandQueue* commandQueue_,
 	ID3D12Fence* fence_,
 	std::array<uint64_t, (UINT)ProjectConfig::Render::NumBuffer::kDoubleBuffer>* fenceCounters_,
@@ -5848,6 +5851,7 @@ class CommandContext::Synchronizer
 public:
 	Synchronizer
 	(
+		NexusFieldProof proof_,
 		ID3D12CommandQueue* commandQueue_,
 		ID3D12Fence* fence_,
 		std::array<uint64_t, (UINT)ProjectConfig::Render::NumBuffer::kDoubleBuffer>* fenceCounters_,
@@ -13295,7 +13299,7 @@ CameraContext::ExecutionAgent::ExecutionAgent
 ):frontlineSystemsDispatcher(frontlineSystemsDispatcher_)
 {
 }
-CameraContext::CameraFrontlineSystems* CameraContext::ExecutionAgent::DispatchFrontlineSystems(SceneContextProof proof_)
+CameraContext::CameraFrontlineSystems& CameraContext::ExecutionAgent::DispatchFrontlineSystems(SceneContextProof proof_)
 {
 	return frontlineSystemsDispatcher.Dispatch(AgentKey{});
 }
@@ -13315,7 +13319,7 @@ public:
 		NexusFieldProof proof_,
 		FrontlineSystemsDispatcher& frontlineSystemsDispatcher_
 	);
-	CameraFrontlineSystems* DispatchFrontlineSystems(SceneContextProof proof_);
+	CameraFrontlineSystems& DispatchFrontlineSystems(SceneContextProof proof_);
 private:
 	FrontlineSystemsDispatcher& frontlineSystemsDispatcher;
 };
@@ -13581,9 +13585,9 @@ CameraContext::FrontlineSystemsDispatcher::FrontlineSystemsDispatcher(NexusField
 CameraContext::FrontlineSystemsDispatcher::~FrontlineSystemsDispatcher()
 {
 }
-CameraContext::CameraFrontlineSystems* CameraContext::FrontlineSystemsDispatcher::Dispatch(AgentKey key_)
+CameraContext::CameraFrontlineSystems& CameraContext::FrontlineSystemsDispatcher::Dispatch(AgentKey key_)
 {
-	return cameraFrontlineSystemsContainer[simpleFreeList.Distribute()].get();
+	return *cameraFrontlineSystemsContainer[simpleFreeList.Distribute()];
 }
 
 ========================================
@@ -13597,7 +13601,7 @@ class CameraContext::FrontlineSystemsDispatcher
 public:
 	FrontlineSystemsDispatcher(NexusFieldProof proof_);
 	~FrontlineSystemsDispatcher();
-	CameraFrontlineSystems* Dispatch(AgentKey key_);
+	CameraFrontlineSystems& Dispatch(AgentKey key_);
 private:
 	std::vector<std::unique_ptr<CameraFrontlineSystems>> cameraFrontlineSystemsContainer;
 	SimpleFreeList simpleFreeList;
@@ -20759,6 +20763,90 @@ private:
 };
 
 ========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\MiddleLayer\Scene\SceneContext.cpp ===
+========================================
+#include "PreCompileHeader.h"
+#include "SceneContext.h"
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\MiddleLayer\Scene\SceneContext.h ===
+========================================
+#pragma once
+class Nexus;
+class SceneContext
+{
+	class SceneController;
+public:
+	struct NexusFieldProof;
+	SceneContext(NexusFieldProof proof_);
+private:
+};
+struct SceneContext::NexusFieldProof
+{
+private:
+	friend class Nexus;
+	explicit NexusFieldProof() = default;
+};
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\MiddleLayer\Scene\SceneController\SceneController.cpp ===
+========================================
+#include "PreCompileHeader.h"
+#include "SceneController.h"
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\MiddleLayer\Scene\SceneController\SceneController.h ===
+========================================
+#pragma once
+class SceneController
+{
+};
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\MiddleLayer\Scene\SceneStructure\SceneBehavior.cpp ===
+========================================
+#include "PreCompileHeader.h"
+#include "SceneBehavior.h"
+//外部
+#include "../../../LowerLayer/Resource/Camera/CameraContextRuntime/CameraFrontlineSystems.h"
+SceneBehavior::SceneBehavior
+(
+	CameraContext::CameraFrontlineSystems& cameraSystems_
+):cameraSystems(cameraSystems_)
+{
+}
+SceneBehavior::Output SceneBehavior::Update()
+{
+	Output output;
+	return output;
+}
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\MiddleLayer\Scene\SceneStructure\SceneBehavior.h ===
+========================================
+#pragma once
+//外部
+#include "../../../LowerLayer/Resource/Camera/CameraContext.h"
+#include "../../../LowerLayer/Resource/Camera/CameraContextRuntime/CameraSocket.h"
+class CameraBehavior;
+class SceneBehavior
+{
+	struct Output
+	{
+		//使用しているカメラ
+		std::unordered_map<CameraSocket, CameraBehavior*> usiggCamera;
+	};
+public:
+	Output Update();
+	SceneBehavior
+	(
+		CameraContext::CameraFrontlineSystems& cameraSystems_
+	);
+private:
+	CameraContext::CameraFrontlineSystems& cameraSystems;
+};
+
+========================================
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\MiddleLayer\Transform\Transform.h ===
 ========================================
 #pragma once
@@ -22182,5 +22270,5 @@ namespace StringProcessing
 ========================================
 === SUMMARY ===
 ========================================
-Total Files      : 487
-Effective Lines  : 16192
+Total Files      : 493
+Effective Lines  : 16241

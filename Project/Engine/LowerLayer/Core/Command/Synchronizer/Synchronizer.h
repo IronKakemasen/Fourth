@@ -7,6 +7,7 @@ public:
 
 	Synchronizer
 	(
+		NexusFieldProof proof_,
 		ID3D12CommandQueue* commandQueue_,
 		ID3D12Fence* fence_,
 		std::array<uint64_t, (UINT)ProjectConfig::Render::NumBuffer::kDoubleBuffer>* fenceCounters_,

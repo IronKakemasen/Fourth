@@ -71,7 +71,7 @@ private:
 	//フェンスイベント
 	HANDLE fenceEvent = nullptr;
 
-	void InstantiateRuntimeCommandControler();
+	void InstantiateRuntimeCommandControler(NexusFieldProof proof_);
 };
 
 

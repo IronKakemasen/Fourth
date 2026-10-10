@@ -38,17 +38,17 @@ CommandContext::CommandContext
 	commandQueue = std::move(buildOutput.commandQueue);
 
 
-	synchronizer.reset(new Synchronizer(commandQueue.Get(), fence.Get(), &fenceCounters, &fenceEvent,&commonFenceValue));
+	synchronizer = std::make_unique<Synchronizer>(proof_,commandQueue.Get(), fence.Get(), &fenceCounters, &fenceEvent,&commonFenceValue);
 	Logger::Log("Instantiate: Synchronizer", fileName);
 
-	runtimeWrapper.reset(new RuntimeWrapper(commandList.Get()));
+	runtimeWrapper = std::make_unique<RuntimeWrapper>(proof_, commandList.Get());
 	Logger::Log("Instantiate: RuntimeWrapper", fileName);
 
-	resourceUploader.reset(new ResourceUploader(proof_, deviceContextDiplomat_, commandQueue.Get(), synchronizer.get()));
+	resourceUploader = std::make_unique<ResourceUploader>(proof_, deviceContextDiplomat_, commandQueue.Get(), *synchronizer);
 	Logger::Log("Instantiate: ResourceUploader", fileName);
 
 	//ランタイムでコマンドを利用するクラスの生成
-	InstantiateRuntimeCommandControler();
+	InstantiateRuntimeCommandControler(proof_);
 
 	diplomat = std::make_unique<CommandContextDiplomat>
 	(
@@ -65,7 +65,7 @@ CommandContext::CommandContext
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-void CommandContext::InstantiateRuntimeCommandControler()
+void CommandContext::InstantiateRuntimeCommandControler(NexusFieldProof proof_)
 {
 	std::array<ID3D12CommandAllocator*, (UINT)NumBuffer::kDoubleBuffer> cmdAllocators;
 	
@@ -74,15 +74,13 @@ void CommandContext::InstantiateRuntimeCommandControler()
 		cmdAllocators.at(i) = commandAllocators.at(i).Get();
 	}
 
-	runtimeCommandController.reset
+	runtimeCommandController = std::make_unique<RuntimeCommandController>
 	(
-		new RuntimeCommandController
-		(
-			commandQueue.Get(),
-			cmdAllocators,
-			commandList.Get(),
-			*synchronizer
-		)
+		proof_,
+		commandQueue.Get(),
+		cmdAllocators,
+		commandList.Get(),
+		*synchronizer
 	);
 	Logger::Log("Instantiate: RuntimeCommandController", fileName);
 }
