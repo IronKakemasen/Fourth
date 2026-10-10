@@ -104,6 +104,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Engine\LowerLayer\DebugSystem\DebugContext.cpp" />
     <ClCompile Include="Engine\LowerLayer\Resource\Camera\CameraBufferCreator\CameraBufferCreator.cpp" />
     <ClCompile Include="Engine\LowerLayer\Resource\Camera\CameraContextDiplomat\CameraContextExecutionAgent\CameraContextExecutionAgent.cpp" />
     <ClCompile Include="Engine\LowerLayer\Resource\Camera\CameraContextDiplomat\CameraContextDiplomat.cpp" />
@@ -304,7 +305,6 @@
     <ClCompile Include="Engine\Math\Vector\Vector2.cpp" />
     <ClCompile Include="Engine\LowerLayer\Core\SwapChain\SwapChainContext.cpp" />
     <ClCompile Include="Engine\LowerLayer\DebugSystem\RuntimeDebugger\DebugSystems\PointerValidator\PointerValidator.cpp" />
-    <ClCompile Include="Engine\LowerLayer\DebugSystem\RuntimeDebugger\DebugSystems\RuntimeDebuggerBehavior.cpp" />
     <ClCompile Include="Engine\LowerLayer\DebugSystem\RuntimeDebugger\RuntimeDebugger.cpp" />
     <ClCompile Include="Engine\LowerLayer\Core\DescriptorHeap\ViewCreator\ViewCreator.cpp" />
     <ClCompile Include="Engine\LowerLayer\Buffer\BufferDefinition\GPUBuffer\ComputeBuffer\ComputeBuffer.cpp" />
@@ -426,6 +426,7 @@
     <ClInclude Include="Assets\Shared\StaticSampler.h" />
     <ClInclude Include="Assets\Shared\StructuredBufferCameraData.h" />
     <ClInclude Include="Assets\Shared\StructuredBufferModelData.h" />
+    <ClInclude Include="Engine\LowerLayer\DebugSystem\DebugContext.h" />
     <ClInclude Include="Engine\LowerLayer\Resource\Camera\CameraBufferCreator\CameraBufferCreator.h" />
     <ClInclude Include="Engine\LowerLayer\Resource\Camera\CameraContextDiplomat\CameraContextExecutionAgent\CameraContextExecutionAgent.h" />
     <ClInclude Include="Engine\LowerLayer\Resource\Camera\CameraContextDiplomat\CameraContextDiplomat.h" />
@@ -602,7 +603,6 @@
     <ClInclude Include="Engine\LowerLayer\Buffer\BufferDefinition\GPUBuffer\GPUBufferBehavior.h" />
     <ClInclude Include="Engine\LowerLayer\DebugSystem\RuntimeDebugger\DebugSystems\LeakChecker\LeakChecker.h" />
     <ClInclude Include="Engine\LowerLayer\DebugSystem\RuntimeDebugger\DebugSystems\PointerValidator\PointerValidator.h" />
-    <ClInclude Include="Engine\LowerLayer\DebugSystem\RuntimeDebugger\DebugSystems\RuntimeDebuggerBehavior.h" />
     <ClInclude Include="Engine\LowerLayer\DebugSystem\RuntimeDebugger\RuntimeDebugger.h" />
     <ClInclude Include="Engine\LowerLayer\Core\DescriptorHeap\ViewCreator\ViewCreator.h" />
     <ClInclude Include="Engine\LowerLayer\Buffer\BufferDefinition\GPUBuffer\ComputeBuffer\ComputeBuffer.h" />

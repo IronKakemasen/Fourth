@@ -111,9 +111,6 @@
     <ClCompile Include="Engine\LowerLayer\DebugSystem\RuntimeDebugger\DebugSystems\PointerValidator\PointerValidator.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="Engine\LowerLayer\DebugSystem\RuntimeDebugger\DebugSystems\RuntimeDebuggerBehavior.cpp">
-      <Filter>ソース ファイル</Filter>
-    </ClCompile>
     <ClCompile Include="Engine\LowerLayer\DebugSystem\RuntimeDebugger\DebugSystems\DebugLayer\DebugLayer.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
@@ -705,6 +702,9 @@
     <ClCompile Include="Engine\LowerLayer\Resource\Camera\CameraBufferCreator\CameraBufferCreator.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
+    <ClCompile Include="Engine\LowerLayer\DebugSystem\DebugContext.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Engine\LowerLayer\Core\Window\WindowContext.h">
@@ -789,9 +789,6 @@
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
     <ClInclude Include="Engine\LowerLayer\DebugSystem\RuntimeDebugger\DebugSystems\PointerValidator\PointerValidator.h">
-      <Filter>ヘッダー ファイル</Filter>
-    </ClInclude>
-    <ClInclude Include="Engine\LowerLayer\DebugSystem\RuntimeDebugger\DebugSystems\RuntimeDebuggerBehavior.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
     <ClInclude Include="Engine\LowerLayer\DebugSystem\RuntimeDebugger\DebugSystems\DebugLayer\DebugLayer.h">
@@ -1602,6 +1599,9 @@
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
     <ClInclude Include="Engine\LowerLayer\Resource\Camera\CameraBufferCreator\CameraBufferCreator.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\LowerLayer\DebugSystem\DebugContext.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
   </ItemGroup>

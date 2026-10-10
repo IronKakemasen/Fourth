@@ -25,7 +25,7 @@ CameraContext::CameraContext
 	Logger::Log("Instantiate: FrontlineSystemsDispatcher", fileName);
 
 	cameraDataBatcher = std::make_unique<CameraDataBatcher>(proof_);
-	Logger::Log("Instantiate: FrontlineSystemsDispatcher", fileName);
+	Logger::Log("Instantiate: CameraDataBatcher", fileName);
 
 	CameraBufferCreator::Create(proof_, *cameraDataBatcher, bufferContextDiplomat_);
 

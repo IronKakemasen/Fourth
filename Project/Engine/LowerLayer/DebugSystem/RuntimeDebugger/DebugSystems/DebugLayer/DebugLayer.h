@@ -1,13 +1,14 @@
 #pragma once
-#include "../RuntimeDebuggerBehavior.h"
+#include "../../RuntimeDebugger.h"
 
-class DebugLayer:public RuntimeDebuggerBehavior
+
+class DebugContext::RuntimeDebugger::DebugLayer
 {
 	Microsoft::WRL::ComPtr <ID3D12Debug1> debugController = nullptr;
 
 public:
-	virtual void Init()override;
-	DebugLayer(InstanceKey instanceKey_) :RuntimeDebuggerBehavior(instanceKey_) {}
+
+	DebugLayer(NexusFieldProof proof_);
 	
 };
 

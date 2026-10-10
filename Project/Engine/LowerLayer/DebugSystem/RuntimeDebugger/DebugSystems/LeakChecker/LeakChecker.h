@@ -1,15 +1,12 @@
 #pragma once
-#include "../RuntimeDebuggerBehavior.h"
+#include "../../RuntimeDebugger.h"
 
-class LeakChecker :public RuntimeDebuggerBehavior
+class DebugContext::RuntimeDebugger::LeakChecker
 {
 public:
 
+	LeakChecker(NexusFieldProof proof_);
 	~LeakChecker();
-	LeakChecker(InstanceKey instanceKey_) :RuntimeDebuggerBehavior(instanceKey_) {}
-
-
-	virtual void Init()override;
 
 	LeakChecker(const LeakChecker&) = delete;
 	LeakChecker& operator=(const LeakChecker&) = delete;

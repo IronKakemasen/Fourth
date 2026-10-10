@@ -44,10 +44,9 @@ namespace ProjectConfig
 		constexpr DXGI_FORMAT kSwapChainBufferFormat = DXGI_FORMAT_R16G16B16A16_FLOAT;
 	}
 
+	//デバッグモードの時のみ有効です
 	namespace Debug
 	{
-#ifdef _DEBUG
-
 		//DebugLayer
 		constexpr bool kEnableDebugLayer = true;
 		//ポインター破壊検知
@@ -56,24 +55,6 @@ namespace ProjectConfig
 		constexpr bool kEnableLeakChecker = true;
 		//Jsonファイルを読み込むときに型チェックを行うかどうか
 		constexpr bool kEnableJsonDataTypeCheck = true;
-
-#endif // _DEBUG
-
-#ifndef _DEBUG
-
-		//DebugLayer
-		constexpr bool kEnableDebugLayer = false;
-		//ポインター破壊検知
-		constexpr bool kEnablePointerValidator = false;
-		//Comptrのリークチェック
-		constexpr bool kEnableLeakChecker = false;
-		//Jsonファイルを読み込むときに型チェックを行うかどうか
-		constexpr bool kEnableJsonDataTypeCheck = false;
-
-
-#endif // !_DEBUG
-
-
 	}
 
 	namespace Core

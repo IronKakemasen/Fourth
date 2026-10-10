@@ -42,6 +42,8 @@ void CameraContext::CameraBufferCreator::Create
 	//bufferCreatorでカメラデータ配列のデータを作成する
 	UploadStructuredBufferDescription desc((UINT)sizeof(CameraDataCPUGPU), (UINT)CameraSocket::kCount, 0);
 	auto structuredID_buffer = bufferCreator.CreateWithBuffer(desc, "CameraDataArr");
+	//ランタイムのため、IDは頂戴する
+	cameraDataBatcher_.ImportCameraDataArrBufferID(proof_, structuredID_buffer.first);
 
 	//そのsrvHeapIndexを格納するための定数バッファを作成
 	auto constantID_buffer = globalCBufferCreateCmd("CameraDataArrSrv", (UINT)sizeof(SRVHeapIndex), (UINT)ConstantBufferBindSlots::kCameraContainer);

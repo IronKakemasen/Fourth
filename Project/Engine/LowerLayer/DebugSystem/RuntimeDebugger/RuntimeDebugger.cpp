@@ -1,9 +1,9 @@
-
 #include "RuntimeDebugger.h"
-#include "../ErrorMessageOutput/ErrorMessageOutput.h"
+#include "DebugSystems/DebugLayer/DebugLayer.h"
+#include "DebugSystems/PointerValidator/PointerValidator.h"
+#include "DebugSystems/LeakChecker/LeakChecker.h"
 
-
-RuntimeDebugger::RuntimeDebugger()
+DebugContext::RuntimeDebugger::RuntimeDebugger(NexusFieldProof proof_)
 {
 	using namespace ProjectConfig::Debug;
 
@@ -11,16 +11,21 @@ RuntimeDebugger::RuntimeDebugger()
 	std::string errorMessage = "RuntimeDebuggerクラスが複数具現化されてます";
 	ErrorMessageOutput::Assert::DetectError(InstanceLimiter::CanInstantiate(), errorMessage,"RuntimeDebugger.cpp");
 
-	if (kEnableDebugLayer) debugLayer.Init();
-	if (kEnablePointerValidator) pointerValidator.Init();
-	if (kEnableLeakChecker) leakChecker.Init();
+	if (kEnableDebugLayer) debugLayer = std::make_unique<DebugLayer>(proof_);
+	if (kEnablePointerValidator) pointerValidator = std::make_unique<PointerValidator>(proof_);
+	if (kEnableLeakChecker) leakChecker = std::make_unique<LeakChecker>(proof_);
+
+}
+
+DebugContext::RuntimeDebugger::~RuntimeDebugger()
+{
 
 }
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //RuntimeDebuggerクラスのインスタンスを1つに制限する
-bool RuntimeDebugger::InstanceLimiter::CanInstantiate()
+bool DebugContext::RuntimeDebugger::InstanceLimiter::CanInstantiate()
 {
 	static InstanceLimiter instanceLimiter;
 

@@ -1,12 +1,9 @@
-#include "Engine/Lowerlayer/DebugSystem/RuntimeDebugger/RuntimeDebugger.h"
 #include "Engine/Nexus/Nexus.h"
 
 void Update(Nexus& nexus_);
 
 int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 {
-    //デバッガー。DebugLayer, PointerValidator, LeakChecker
-    RuntimeDebugger runtimeDebugger;
     //エンジンの交易場
     Nexus nexus;
 

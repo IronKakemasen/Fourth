@@ -1,12 +1,12 @@
 
 #include "LeakChecker.h"
 
-void LeakChecker::Init()
+DebugContext::RuntimeDebugger::LeakChecker::LeakChecker(NexusFieldProof proof_)
 {
 
 }
 
-LeakChecker::~LeakChecker()
+DebugContext::RuntimeDebugger::LeakChecker::~LeakChecker()
 {
 	//リソースリークチェック
 	Microsoft::WRL::ComPtr<IDXGIDebug1> debug = nullptr;
