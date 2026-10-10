@@ -1,5 +1,5 @@
 #pragma once
-#include "../Synchronizer/Synchronizer.h"
+#include "../CommandContext.h"
 
 
 class CommandContext::RuntimeCommandController
@@ -14,7 +14,7 @@ public:
 		ID3D12CommandQueue* commandQueue_,
 		std::array<ID3D12CommandAllocator*, (UINT)ProjectConfig::Render::NumBuffer::kDoubleBuffer> commandAllocators_,
 		ID3D12GraphicsCommandList6* commandList_,
-		Synchronizer* synchronizer_
+		Synchronizer& synchronizer_
 	);
 
 	~RuntimeCommandController();
@@ -24,6 +24,6 @@ public:
 
 private:
 	std::unique_ptr<CommandExecutor> commandExecutor;
-	Synchronizer* synchronizer;
+	Synchronizer& synchronizer;
 };
 

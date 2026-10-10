@@ -1,12 +1,13 @@
 #include "RuntimeCommandController.h"
 #include"CommandExecutor/CommandExecutor.h"
+#include "../Synchronizer/Synchronizer.h"
 
 CommandContext::RuntimeCommandController::RuntimeCommandController
 (
 	ID3D12CommandQueue* commandQueue_,
 	std::array<ID3D12CommandAllocator*, (UINT)ProjectConfig::Render::NumBuffer::kDoubleBuffer> commandAllocators_,
 	ID3D12GraphicsCommandList6* commandList_,
-	Synchronizer* synchronizer_
+	Synchronizer& synchronizer_
 )
 	:synchronizer(synchronizer_)
 {
@@ -26,7 +27,7 @@ CommandContext::RuntimeCommandController::~RuntimeCommandController()
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 void CommandContext::RuntimeCommandController::RecordingStart(UINT frameIndex_)
 {
-	synchronizer->Wait(frameIndex_);
+	synchronizer.Wait(frameIndex_);
 	commandExecutor->PrepareForRecording(frameIndex_);
 }
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -35,5 +36,5 @@ void CommandContext::RuntimeCommandController::RecordingStart(UINT frameIndex_)
 void CommandContext::RuntimeCommandController::ExecuteCommands(UINT frameIndex_)
 {
 	commandExecutor->Execute();
-	synchronizer->InsertSignal(frameIndex_);
+	synchronizer.InsertSignal(frameIndex_);
 }
