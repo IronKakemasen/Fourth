@@ -1,5 +1,4 @@
 #pragma once
-#include "../SceneContext.h"
 #include "../../../LowerLayer/Resource/Camera/PresetCameras/PresetCameraIncludes.h"
 
 
@@ -12,9 +11,11 @@
 #include "../../../../Application/AllCameraIncludes.h"
 
 
+class SceneContext;
+
 class SceneBehavior
 {
-	friend class SceneContext::SceneController;
+	friend class SceneContext;
 
 	struct Output
 	{

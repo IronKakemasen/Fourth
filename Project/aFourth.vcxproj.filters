@@ -732,6 +732,9 @@
     <ClCompile Include="Engine\MiddleLayer\Scene\SceneContextRuntime\SceneDataBatchingPlace\SceneDataBatchingPlace.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
+    <ClCompile Include="Engine\MiddleLayer\Scene\SceneContextRuntime\ScenePipeline.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Engine\LowerLayer\Core\Window\WindowContext.h">
@@ -1671,6 +1674,12 @@
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
     <ClInclude Include="Engine\MiddleLayer\Scene\SceneContextRuntime\SceneDataBatchingPlace\SceneDataBatchingPlace.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\MiddleLayer\Scene\SceneContextRuntime\ScenePipeline.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\LowerLayer\Resource\Camera\CameraContextDiplomats.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
   </ItemGroup>

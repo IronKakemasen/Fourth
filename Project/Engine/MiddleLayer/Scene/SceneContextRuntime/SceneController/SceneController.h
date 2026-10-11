@@ -1,8 +1,8 @@
 #pragma once
-#include "../../SceneContext.h"
+#include "../ScenePipeline.h"
 #include "../../SceneStructure/SceneBehavior.h"
 
-class SceneContext::SceneController
+class SceneContext::ScenePipeline::SceneController
 {
 public:
 
@@ -12,9 +12,11 @@ public:
 		SceneLibrary& sceneLib_
 	);
 
-	//シーンの更新処理は代行してもらう
-	void Run(NexusFieldProof proof_,AgentKey key_);
+	//シーンの制御、更新処理
+	void Run();
 
+
+	SceneBehavior::Output const& WatchSceneOutput()const;
 
 private:
 
