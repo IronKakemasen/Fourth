@@ -3,7 +3,7 @@
 
 struct CameraDesc
 {
-	Vector3 pos;
+	Vector3 pos{};
 	Vector3 lookDir = { 0,0,1 };
 	float rotationZ{};
 	float rotationInterpolationCoe = 1.0f;

@@ -422,17 +422,23 @@
     <ClCompile Include="Engine\MiddleLayer\Scene\SceneContext.cpp" />
     <ClCompile Include="Engine\MiddleLayer\Scene\SceneController\SceneController.cpp" />
     <ClCompile Include="Engine\MiddleLayer\Scene\SceneStructure\SceneBehavior.cpp" />
+    <ClCompile Include="Engine\MiddleLayer\Scene\SceneCreator\SceneCreator.cpp" />
+    <ClCompile Include="Engine\MiddleLayer\Scene\SceneLibrary\SceneLibrary.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Application\AllCameraIncludes.h" />
     <ClInclude Include="Assets\BAKA\ConstantBuffers.h" />
     <ClInclude Include="Assets\BAKA\StructuredBuffer.h" />
     <ClInclude Include="Assets\Shared\ConstantBuffers.h" />
     <ClInclude Include="Assets\Shared\StaticSampler.h" />
     <ClInclude Include="Assets\Shared\StructuredBufferCameraData.h" />
     <ClInclude Include="Assets\Shared\StructuredBufferModelData.h" />
+    <ClInclude Include="Application\AllGameObjectIncludes.h" />
+    <ClInclude Include="Application\AllSceneIncludes.h" />
     <ClInclude Include="Engine\LowerLayer\Core\Command\CommandContextBuilder\CommandContextBuilder.h" />
     <ClInclude Include="Engine\LowerLayer\DebugSystem\DebugContext.h" />
     <ClInclude Include="Engine\LowerLayer\Resource\Camera\CameraBufferCreator\CameraBufferCreator.h" />
+    <ClInclude Include="Engine\LowerLayer\Resource\Camera\CameraContextDiplomat\CameraContextExecutionAgent\CameraContextAgentLicences.h" />
     <ClInclude Include="Engine\LowerLayer\Resource\Camera\CameraContextDiplomat\CameraContextExecutionAgent\CameraContextExecutionAgent.h" />
     <ClInclude Include="Engine\LowerLayer\Resource\Camera\CameraContextDiplomat\CameraContextDiplomat.h" />
     <ClInclude Include="Engine\LowerLayer\Resource\Camera\CameraFSDispatcher\CameraFSDispatcher.h" />
@@ -727,6 +733,8 @@
     <ClInclude Include="Engine\MiddleLayer\Scene\SceneContext.h" />
     <ClInclude Include="Engine\MiddleLayer\Scene\SceneController\SceneController.h" />
     <ClInclude Include="Engine\MiddleLayer\Scene\SceneStructure\SceneBehavior.h" />
+    <ClInclude Include="Engine\MiddleLayer\Scene\SceneCreator\SceneCreator.h" />
+    <ClInclude Include="Engine\MiddleLayer\Scene\SceneLibrary\SceneLibrary.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

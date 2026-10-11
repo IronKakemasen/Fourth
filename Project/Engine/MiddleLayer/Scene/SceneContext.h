@@ -1,22 +1,25 @@
 #pragma once
 
 class Nexus;
+class CameraContextDiplomat;
 
 class SceneContext
 {
-	class SceneController;
-
 
 public:
+	class SceneCreator;
+	class SceneController;
+	class SceneLibrary;
 
 	struct NexusFieldProof;
 
 	SceneContext(NexusFieldProof proof_);
+	~SceneContext();
 
 
 private:
 
-
+	std::unique_ptr<SceneController> sceneController;
 
 };
 
