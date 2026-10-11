@@ -60,25 +60,24 @@ void CameraBehavior::CameraTransform::UpdateMatrices(CameraBehavior::Local_Updat
 	RotationUpdate();
 
 	//位置行列
-	Matrix4x4 translationMat;
 	if (base.followTarget)
 	{
 		Vector3 worldPos = base.followTarget->WatchWorldPos() + base.pos;
-		translationMat = Matrix4x4::CreateTranslation(worldPos);
+		matrices.world = Matrix4x4::CreateTranslation(worldPos);
 	}
 	else
 	{
-		translationMat = Matrix4x4::CreateTranslation(base.pos);
+		matrices.world = Matrix4x4::CreateTranslation(base.pos);
 	}
 
-	//回転行列
-	Matrix4x4 rotationMat = base.quaternion.GetRotateMatrix();
+	//回転・位置行列
+	matrices.world = base.quaternion.GetRotateMatrix().GetMultiply(matrices.world);
 
 	//ペアレント化しているなら
-	if (base.parent) rotationMat = rotationMat.GetMultiply(base.parent->WatchWorldMatrix());
+	if (base.parent) matrices.world = matrices.world.GetMultiply(base.parent->WatchWorldMatrix());
 
 	//view
-	matrices.view = rotationMat.GetMultiply(translationMat).GetInversed();
+	matrices.view = matrices.world.GetInversed();
 	
 	//proj
 	UpdateProjectionMatrixReverseZ();

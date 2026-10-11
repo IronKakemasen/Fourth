@@ -1,5 +1,7 @@
 #pragma once
-#include "../../../../Math/Matrix/Matrix4x4.h"
+
+//外部
+#include "../../../../../Assets/Shared/StructuredBufferCameraData.h"
 
 class CameraContext;
 struct CameraDesc;
@@ -7,14 +9,6 @@ class Transform;
 
 class CameraBehavior
 {
-	//描画のための行列群
-	struct Matrices
-	{
-		Matrix4x4 view;
-		Matrix4x4 proj;
-		Matrix4x4 viewProj;
-	};
-
 	//カメラ専用のトランスフォーム
 	struct CameraTransform;
 
@@ -39,8 +33,8 @@ public:
 	//フォロー
 	void Follow(Transform* followTarget_);
 
-	//おもにバッチング処理のため
-	Matrices const& WatchMatrices()const;
+	//バッチング処理のため
+	StructuredBufferCameraData::CameraDataCPUGPU OutCameraData()const;
 
 protected:
 

@@ -1,9 +1,7 @@
 #pragma once
 #include "../CameraBehavior.h"
-#include "../../../../../Math/Vector/Vector2.h"
 #include "../../../../../Math/Vector/Vector3.h"
 #include "../../../../../Math/Quaternion/Quaternion.h"
-#include "../../../../../Math/Matrix/Matrix4x4.h"
 
 class Transform;
 
@@ -32,6 +30,14 @@ private:
 		Transform* parent = nullptr;
 	};
 
+	//行列群
+	struct Matrices
+	{
+		Matrix4x4 world;
+		Matrix4x4 view;
+		Matrix4x4 proj;
+		Matrix4x4 viewProj;
+	};
 
 public:
 	CameraTransform(std::optional<CameraDesc> const& desc_);
@@ -51,9 +57,18 @@ public:
 	void ChangeRotationInterpolationCoe(float dst_);
 	void ChangeFovY(float dst_);
 
-
 	//バッチング処理で使用
 	auto const& WatchMatrices()const { return matrices; }
+	auto const& WatchBase()const { return base; }
+	auto const WatchWorldPosition()const
+	{
+		return Vector3
+		{
+			matrices.world.data.m[3][0],
+			matrices.world.data.m[3][1],
+			matrices.world.data.m[3][2]
+		};
+	}
 
 private:
 
