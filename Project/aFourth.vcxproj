@@ -427,6 +427,7 @@
     <ClCompile Include="Engine\MiddleLayer\Scene\SceneContextDiplomat\SceneContextDiplomat.cpp" />
     <ClCompile Include="Engine\MiddleLayer\Scene\SceneContextDiplomat\SceneExecutionAgent\SceneExecutionAgent.cpp" />
     <ClCompile Include="Engine\MiddleLayer\Scene\SceneContextRuntime\SceneDataBatchingPlace\SceneDataBatchingPlace.cpp" />
+    <ClCompile Include="Engine\MiddleLayer\Scene\SceneContextRuntime\ScenePipeline.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Application\AllCameraIncludes.h" />
@@ -441,6 +442,7 @@
     <ClInclude Include="Engine\LowerLayer\Core\Command\CommandContextBuilder\CommandContextBuilder.h" />
     <ClInclude Include="Engine\LowerLayer\DebugSystem\DebugContext.h" />
     <ClInclude Include="Engine\LowerLayer\Resource\Camera\CameraBufferCreator\CameraBufferCreator.h" />
+    <ClInclude Include="Engine\LowerLayer\Resource\Camera\CameraContextDiplomats.h" />
     <ClInclude Include="Engine\LowerLayer\Resource\Camera\CameraContextDiplomat\CameraContextExecutionAgent\CameraContextAgentLicences.h" />
     <ClInclude Include="Engine\LowerLayer\Resource\Camera\CameraContextDiplomat\CameraContextExecutionAgent\CameraContextExecutionAgent.h" />
     <ClInclude Include="Engine\LowerLayer\Resource\Camera\CameraContextDiplomat\CameraContextDiplomat.h" />
@@ -742,6 +744,7 @@
     <ClInclude Include="Engine\MiddleLayer\Scene\SceneContextDiplomat\SceneContextDiplomat.h" />
     <ClInclude Include="Engine\MiddleLayer\Scene\SceneContextDiplomat\SceneExecutionAgent\SceneExecutionAgent.h" />
     <ClInclude Include="Engine\MiddleLayer\Scene\SceneContextRuntime\SceneDataBatchingPlace\SceneDataBatchingPlace.h" />
+    <ClInclude Include="Engine\MiddleLayer\Scene\SceneContextRuntime\ScenePipeline.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

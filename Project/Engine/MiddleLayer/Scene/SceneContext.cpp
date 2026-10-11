@@ -2,7 +2,7 @@
 #include "SceneContext.h"
 #include "SceneLibrary/SceneLibrary.h"
 #include "SceneCreator/SceneCreator.h"
-#include "SceneContextRuntime/SceneController/SceneController.h"
+#include "SceneContextRuntime/ScenePipeline.h"
 #include "SceneContextRuntime/SceneDataBatchingPlace/SceneDataBatchingPlace.h"
 
 #include "SceneContextDiplomat/SceneContextDiplomat.h"
@@ -22,8 +22,8 @@ SceneContext::SceneContext(NexusFieldProof proof_)
 	sceneLibrary = std::make_unique<SceneLibrary>(proof_);
 	Logger::Log("Instantiate: SceneLibrary", fileName);
 
-	sceneController = std::make_unique<SceneController>(proof_, *sceneLibrary);
-	Logger::Log("Instantiate: SceneController", fileName);
+	scenePipeline = std::make_unique<ScenePipeline>(proof_, *sceneLibrary);
+	Logger::Log("Instantiate: ScenePipeline", fileName);
 
 	sceneCreator = std::make_unique<SceneCreator>(proof_, *sceneLibrary);
 	Logger::Log("Instantiate: SceneCreator", fileName);
@@ -32,7 +32,7 @@ SceneContext::SceneContext(NexusFieldProof proof_)
 	diplomat = std::make_unique<SceneContextDiplomat>
 	(
 		proof_,
-		std::make_unique<ExecutionAgent>(proof_, *sceneController)
+		std::make_unique<ExecutionAgent>(proof_, *scenePipeline)
 	);
 	Logger::Log("Instantiate: SceneContextDiplomat", fileName);
 	Logger::Log("Instantiate: ExecutionAgent", fileName);

@@ -1,0 +1,4 @@
+#pragma once
+#include "CameraContextDiplomat/CameraContextDiplomat.h"
+#include "CameraContextDiplomat/CameraContextExecutionAgent/CameraContextAgentLicences.h"
+#include "CameraContextDiplomat/CameraContextExecutionAgent/CameraContextExecutionAgent.h"

@@ -3,7 +3,7 @@
 #include "../../SceneLibrary/SceneLibrary.h"
 
 
-SceneContext::SceneController::SceneController
+SceneContext::ScenePipeline::SceneController::SceneController
 (
 	NexusFieldProof proof_,
 	SceneLibrary& sceneLib_
@@ -13,14 +13,19 @@ SceneContext::SceneController::SceneController
 }
 
 
-void SceneContext::SceneController::Run(NexusFieldProof proof_, AgentKey key_)
+void SceneContext::ScenePipeline::SceneController::Run()
 {
 	output = curScene->Update();
 
 }
 
 
-void SceneContext::SceneController::ChangeScene(std::string const& next_)
+void SceneContext::ScenePipeline::SceneController::ChangeScene(std::string const& next_)
 {
 	curScene = sceneLib.Export(next_);
+}
+
+SceneBehavior::Output const& SceneContext::ScenePipeline::SceneController::WatchSceneOutput()const
+{
+	return output;
 }

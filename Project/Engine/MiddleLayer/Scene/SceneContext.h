@@ -12,10 +12,8 @@ class SceneContext
 public:
 	//シーンを作成する
 	class SceneCreator;
-	//ランタイムでシーンの制御を行う
-	class SceneController;
-	//そのシーンで使用しているデータのバッチング場
-	class SceneDataBatchingPlace;
+	//シーンの制御、シーンデータのバッチングなどをランタイムで行う
+	class ScenePipeline;
 
 	class ExecutionAgent;
 
@@ -30,8 +28,8 @@ public:
 private:
 
 	std::unique_ptr<SceneLibrary> sceneLibrary;
-	std::unique_ptr<SceneController> sceneController;
 	std::unique_ptr<SceneCreator> sceneCreator;
+	std::unique_ptr<ScenePipeline> scenePipeline;
 
 	std::unique_ptr<SceneContextDiplomat> diplomat;
 };
