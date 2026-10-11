@@ -32,7 +32,7 @@ CameraContext::CameraContext
 	diplomat = std::make_unique<CameraContextDiplomat>
 	(
 		proof_,
-		std::make_unique<ExecutionAgent>(proof_, *frontlineSystemsDispatcher)
+		std::make_unique<ExecutionAgent>(proof_, *frontlineSystemsDispatcher,*cameraDataBatcher)
 	);
 	Logger::Log("Instantiate: CameraContextDiplomat", fileName);
 	Logger::Log("Instantiate: CmdProvider", fileName);

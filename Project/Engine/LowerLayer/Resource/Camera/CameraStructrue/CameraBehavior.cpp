@@ -30,8 +30,21 @@ void CameraBehavior::Follow(Transform* followTarget_)
 	trans->Follow(followTarget_);
 }
 
-CameraBehavior::Matrices const& CameraBehavior::WatchMatrices()const
+
+StructuredBufferCameraData::CameraDataCPUGPU CameraBehavior::OutCameraData()const
 {
-	return trans->WatchMatrices();
+	auto const& base = trans->WatchBase();
+	auto const& matrices = trans->WatchMatrices();
+	auto const worldPos = trans->WatchWorldPosition();
+
+	return StructuredBufferCameraData::CameraDataCPUGPU
+	{
+		matrices.view,
+		matrices.proj,
+		matrices.viewProj,
+		Vector4<float>{worldPos.data.x,worldPos.data.y,worldPos.data.z,1.0f},
+		Vector4<float>{base.lookDir.data.x,base.lookDir.data.y,base.lookDir.data.z,0.0f}
+	};
+
 }
 
