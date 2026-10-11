@@ -1,13 +1,12 @@
 #pragma once
 #include "../../CameraContext.h"
 
-class SceneContext;
-
 class CameraContext::ExecutionAgent
 {
-	struct SceneContextProof;
 
 public:
+
+	struct SceneContextProof;
 
 	ExecutionAgent
 	(
@@ -16,21 +15,11 @@ public:
 	);
 
 
-	CameraFrontlineSystems& DispatchFrontlineSystems(SceneContextProof proof_);
+	CameraFrontlineSystems* DispatchFrontlineSystems(SceneContextProof proof_);
 
 private:
 
 	FrontlineSystemsDispatcher& frontlineSystemsDispatcher;
 
 };
-
-struct CameraContext::ExecutionAgent::SceneContextProof
-{
-private:
-
-	friend class SceneContext;
-	explicit SceneContextProof() = default;
-
-};
-
 

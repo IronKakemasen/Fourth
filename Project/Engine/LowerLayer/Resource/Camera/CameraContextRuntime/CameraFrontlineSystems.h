@@ -13,6 +13,9 @@ class CameraContext::CameraFrontlineSystems
 
 public:
 
+	template<CameraSocket dstSocket_>
+	using CmdConnectCamera = std::function<void(std::string const&)>;
+
 	CameraFrontlineSystems(NexusFieldProof proof_);
 	~CameraFrontlineSystems();
 
@@ -28,12 +31,19 @@ public:
 		Connect<dstSocket>(name_);
 	}
 
-	//カメラ接続の変更
-	void ChangeCamera(std::string const& to_, CameraSocket dstSocket_);
+	//カメラ接続の変更するコマンドを返す
+	template<CameraSocket dstSocket_>
+	CmdConnectCamera<dstSocket_> GetCmdConnectCamera()
+	{
+		return [this](std::string const& dstCamera_)
+		{
+			Connect<dstSocket_>(dstCamera_);
+		};
+	}
 
 	//カメラのアップデート
 	//socketMapにあるカメラのアップデートを呼ぶ。バッチングは別機関で行う
-	void RunCameraUpdate();
+	std::unordered_map<CameraSocket, CameraBehavior*> const& CameraUpdate();
 
 private:
 

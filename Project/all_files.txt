@@ -13345,21 +13345,30 @@ CameraContext::CameraFrontlineSystems::CameraFrontlineSystems(NexusFieldProof pr
 CameraContext::CameraFrontlineSystems::~CameraFrontlineSystems()
 {
 }
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 void CameraContext::CameraFrontlineSystems::ImportCamera(std::unique_ptr<CameraBehavior>&& camera_, std::string const& name_)
 {
 	cameraLibrary->Import(std::move(camera_), name_);
 }
-void CameraContext::CameraFrontlineSystems::RunCameraUpdate()
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+std::unordered_map<CameraSocket, CameraBehavior*> const& CameraContext::CameraFrontlineSystems::CameraUpdate()
 {
-	cameraController->RunCamera();
+	return cameraController->Update();
 }
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 template<>
-void CameraContext::CameraFrontlineSystems::Connect<CameraSocket::kMainDebug>(std::string const& name_)
+void CameraContext::CameraFrontlineSystems::Connect<CameraSocket::kDebug>(std::string const& name_)
 {
-	cameraController->Connect<CameraSocket::kMainDebug>(cameraLibrary->Export(name_));
+	cameraController->Connect<CameraSocket::kDebug>(cameraLibrary->Export(name_));
 }
 template
-void CameraContext::CameraFrontlineSystems::Connect<CameraSocket::kMainDebug>(std::string const& name_);
+void CameraContext::CameraFrontlineSystems::Connect<CameraSocket::kDebug>(std::string const& name_);
 
 ========================================
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Camera\CameraContextRuntime\CameraFrontlineSystems.h ===
@@ -13375,6 +13384,8 @@ class CameraContext::CameraFrontlineSystems
 	//カメラのアップデートを読んだり、デバッグ操作などを行う
 	class CameraController;
 public:
+	template<CameraSocket dstSocket_>
+	using CmdConnectCamera = std::function<void(std::string const&)>;
 	CameraFrontlineSystems(NexusFieldProof proof_);
 	~CameraFrontlineSystems();
 	//カメラの登録
@@ -13388,11 +13399,18 @@ public:
 		ImportCamera(std::move(camera_), name_);
 		Connect<dstSocket>(name_);
 	}
-	//カメラ接続の変更
-	void ChangeCamera(std::string const& to_, CameraSocket dstSocket_);
+	//カメラ接続の変更するコマンドを返す
+	template<CameraSocket dstSocket_>
+	CmdConnectCamera<dstSocket_> GetCmdConnectCamera()
+	{
+		return [this](std::string const& dstCamera_)
+		{
+			Connect<dstSocket_>(dstCamera_);
+		};
+	}
 	//カメラのアップデート
 	//socketMapにあるカメラのアップデートを呼ぶ。バッチングは別機関で行う
-	void RunCameraUpdate();
+	std::unordered_map<CameraSocket, CameraBehavior*> const& CameraUpdate();
 private:
 	void ImportCamera(std::unique_ptr<CameraBehavior>&& camera_, std::string const& name_);
 	//明示的実体化必要
@@ -13411,8 +13429,8 @@ private:
 //追加したら、CameraContext::CameraFrontlineSystems::Connectの明示的実体化も
 enum class CameraSocket
 {
-	//メインカメラとデバッグカメラ共用。切り替え可能ということ
-	kMainDebug,
+	//デバッグカメラ
+	kDebug,
 	//この数分のカメラのバッファを作成する必要がある
 	kCount
 };
@@ -13426,11 +13444,11 @@ enum class CameraSocket
 CameraContext::CameraFrontlineSystems::CameraController::CameraController(NexusFieldProof proof_)
 {
 }
-void CameraContext::CameraFrontlineSystems::CameraController::Update()
+std::unordered_map<CameraSocket, CameraBehavior*> const& CameraContext::CameraFrontlineSystems::CameraController::Update()
 {
-	RunCamera();
+	return RunCamera();
 }
-void CameraContext::CameraFrontlineSystems::CameraController::RunCamera()
+std::unordered_map<CameraSocket, CameraBehavior*> const& CameraContext::CameraFrontlineSystems::CameraController::RunCamera()
 {
 	CameraBehavior::Local_UpdateLicence licenceUpdate;
 	//更新する必要があるカメラ(描画のために使用しているカメラ)の更新処理を呼ぶ
@@ -13439,6 +13457,7 @@ void CameraContext::CameraFrontlineSystems::CameraController::RunCamera()
 		camera->Update(licenceUpdate);
 		camera->UpdateMatrices(licenceUpdate);
 	}
+	return socketMap;
 }
 
 ========================================
@@ -13451,16 +13470,16 @@ class CameraContext::CameraFrontlineSystems::CameraController
 {
 public:
 	CameraController(NexusFieldProof proof_);
-	void Update();
-	//ソケットに接続するカメラを変える
+	std::unordered_map<CameraSocket, CameraBehavior*> const& Update();
+	//ソケットに接続するカメラを接続する
 	template<CameraSocket dstSocket_>
 	void Connect(CameraBehavior* dstCamera_)
 	{
 		socketMap[dstSocket_] = dstCamera_;
 	}
-	//ソケットに接続されているカメラ(描画のために使用しているカメラ)の更新処理を呼ぶ
-	void RunCamera();
 private:
+	//ソケットに接続されているカメラ(描画のために使用しているカメラ)の更新処理を呼ぶ
+	std::unordered_map<CameraSocket, CameraBehavior*> const& RunCamera();
 	//現在の接続しているカメラ
 	std::unordered_map<CameraSocket, CameraBehavior*> socketMap;
 };
@@ -13698,7 +13717,7 @@ private:
 #include "../../../../../Math/Vector/Vector3.h"
 struct CameraDesc
 {
-	Vector3 pos;
+	Vector3 pos{};
 	Vector3 lookDir = { 0,0,1 };
 	float rotationZ{};
 	float rotationInterpolationCoe = 1.0f;
@@ -20767,6 +20786,13 @@ private:
 ========================================
 #include "PreCompileHeader.h"
 #include "SceneContext.h"
+#include "SceneController/SceneController.h"
+SceneContext::SceneContext(NexusFieldProof proof_)
+{
+}
+SceneContext::~SceneContext()
+{
+}
 
 ========================================
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\MiddleLayer\Scene\SceneContext.h ===
@@ -20775,11 +20801,15 @@ private:
 class Nexus;
 class SceneContext
 {
-	class SceneController;
 public:
+	class SceneCreator;
+	class SceneController;
+	class SceneLibrary;
 	struct NexusFieldProof;
 	SceneContext(NexusFieldProof proof_);
+	~SceneContext();
 private:
+	std::unique_ptr<SceneController> sceneController;
 };
 struct SceneContext::NexusFieldProof
 {
@@ -20793,13 +20823,93 @@ private:
 ========================================
 #include "PreCompileHeader.h"
 #include "SceneController.h"
+SceneContext::SceneController::SceneController(NexusFieldProof proof_)
+{
+}
 
 ========================================
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\MiddleLayer\Scene\SceneController\SceneController.h ===
 ========================================
 #pragma once
-class SceneController
+#include "../SceneContext.h"
+class SceneContext::SceneController
 {
+public:
+	SceneController(NexusFieldProof proof_);
+private:
+};
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\MiddleLayer\Scene\SceneCreator\SceneCreator.cpp ===
+========================================
+#include "PreCompileHeader.h"
+#include "SceneCreator.h"
+SceneContext::SceneCreator::SceneCreator(NexusFieldProof proof_, SceneLibrary& sceneLib_)
+{
+}
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\MiddleLayer\Scene\SceneCreator\SceneCreator.h ===
+========================================
+#pragma once
+#include "../SceneContext.h"
+#include "../../../../Application/AllSceneIncludes.h"
+class SceneContext::SceneCreator
+{
+public:
+	SceneCreator(NexusFieldProof proof_,SceneLibrary& sceneLib_);
+	//template<typename SceneType>
+};
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\MiddleLayer\Scene\SceneLibrary\SceneLibrary.cpp ===
+========================================
+#include "PreCompileHeader.h"
+#include "SceneLibrary.h"
+#include "../SceneStructure/SceneBehavior.h"
+namespace
+{
+	auto const fileName = "SceneLibrary.cpp";
+}
+SceneContext::SceneLibrary::SceneLibrary(NexusFieldProof proof_)
+{
+}
+void SceneContext::SceneLibrary::Import(std::unique_ptr<SceneBehavior>&& scene_, std::string const& sceneName_)
+{
+	ErrorMessageOutput::Assert::DetectError
+	(
+		sceneMap.find(sceneName_) == sceneMap.end(),
+		sceneName_ + "←名前被りです",
+		fileName
+	);
+	Logger::Log("Import Scene: " + sceneName_, fileName);
+	sceneMap[sceneName_] = std::move(scene_);
+}
+SceneBehavior& SceneContext::SceneLibrary::Export(std::string const& sceneName_)
+{
+	ErrorMessageOutput::Assert::DetectError
+	(
+		sceneMap.find(sceneName_) != sceneMap.end(),
+		sceneName_ + "こんななまえのSceneは作成されていない",
+		fileName
+	);
+	return *sceneMap[sceneName_];
+}
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\MiddleLayer\Scene\SceneLibrary\SceneLibrary.h ===
+========================================
+#pragma once
+#include "../SceneContext.h"
+class SceneBehavior;
+class SceneContext::SceneLibrary
+{
+public:
+	SceneLibrary(NexusFieldProof proof_);
+	void Import(std::unique_ptr<SceneBehavior>&& scene_, std::string const& sceneName_);
+	SceneBehavior& Export(std::string const& sceneName_);
+private:
+	std::unordered_map<std::string, std::unique_ptr<SceneBehavior>> sceneMap;
 };
 
 ========================================
@@ -20807,17 +20917,19 @@ class SceneController
 ========================================
 #include "PreCompileHeader.h"
 #include "SceneBehavior.h"
-//外部
-#include "../../../LowerLayer/Resource/Camera/CameraContextRuntime/CameraFrontlineSystems.h"
 SceneBehavior::SceneBehavior
 (
 	CameraContext::CameraFrontlineSystems& cameraSystems_
 ):cameraSystems(cameraSystems_)
 {
+	//各シーンに1つは存在するデバッグカメラを作成
+	CreateCamera<CameraSocket::kDebug, DefaultDebugCamera>(std::nullopt, "DefaultDebugCamera");
 }
 SceneBehavior::Output SceneBehavior::Update()
 {
 	Output output;
+	//このシーンで使うカメラのアップデート
+	output.usingCamera = cameraSystems.CameraUpdate();
 	return output;
 }
 
@@ -20825,24 +20937,55 @@ SceneBehavior::Output SceneBehavior::Update()
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\MiddleLayer\Scene\SceneStructure\SceneBehavior.h ===
 ========================================
 #pragma once
+#include "../SceneContext.h"
+#include "../../../LowerLayer/Resource/Camera/PresetCameras/PresetCameraIncludes.h"
 //外部
-#include "../../../LowerLayer/Resource/Camera/CameraContext.h"
+#include "../../../LowerLayer/Resource/Camera/CameraContextRuntime/CameraFrontlineSystems.h"
 #include "../../../LowerLayer/Resource/Camera/CameraContextRuntime/CameraSocket.h"
-class CameraBehavior;
+#include "../../../LowerLayer/Resource/Camera/CameraStructrue/CameraDesc/CameraDesc.h"
+//アプリケーションで定義される全てのカメラのインクルード
+#include "../../../../Application/AllCameraIncludes.h"
 class SceneBehavior
 {
+	friend class SceneContext::SceneController;
 	struct Output
 	{
 		//使用しているカメラ
-		std::unordered_map<CameraSocket, CameraBehavior*> usiggCamera;
+		std::unordered_map<CameraSocket, CameraBehavior*> usingCamera;
 	};
 public:
-	Output Update();
 	SceneBehavior
 	(
 		CameraContext::CameraFrontlineSystems& cameraSystems_
 	);
+	virtual ~SceneBehavior() = default;
+protected:
+	//カメラの作成＆登録
+	template<CameraSocket dstSocket, typename CameraType>
+	void CreateCamera
+	(
+		std::optional<CameraDesc> const& cameraDesc_,
+		std::string const& name_
+	)
+	{
+		//作成したカメラを登録する
+		cameraSystems.RegisterCamera<dstSocket>
+		(
+			std::move(std::make_unique<CameraType>(cameraDesc_)),
+			name_
+		);
+	}
+	//ゲームオブジェクトが好きなタイミングでカメラを切り替えられるように
+	//カメラ切り替えコマンドを返す。
+	template<CameraSocket dstSocket>
+	CameraContext::CameraFrontlineSystems::CmdConnectCamera<dstSocket> GetCmdConnectCamera()
+	{
+		return cameraSystems.GetCmdConnectCamera<dstSocket>();
+	}
 private:
+	//SceneContext::SceneControllerのみ呼べる
+	Output Update();
+	void Reset();
 	CameraContext::CameraFrontlineSystems& cameraSystems;
 };
 
@@ -22270,5 +22413,5 @@ namespace StringProcessing
 ========================================
 === SUMMARY ===
 ========================================
-Total Files      : 493
-Effective Lines  : 16241
+Total Files      : 497
+Effective Lines  : 16336
