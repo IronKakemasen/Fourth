@@ -1,0 +1,404 @@
+#include "PreCompileHeader.h"
+#include "RenderPassBehavior.h"
+#include "../PassDesc/PassDesc.h"
+#include "../RuntimePassInfo/RuntimePassInfo.h"
+#include "../../RenderContextRuntime/PSO_PoolDispatcher/PSO_PoolDispatcher.h"
+
+
+//外部
+#include "../../../../LowerLayer/Buffer/BufferRuntime/BufferDispatcher/BufferDispatcher.h"
+#include "../../../../LowerLayer/Buffer/BufferDefinition/GPUBuffer/ColorBuffer/ColorBuffer.h"
+#include "../../../../LowerLayer/Buffer/BufferDefinition/GPUBuffer/DepthStencilBuffer/DepthStencilBuffer.h"
+
+#include "../../../../LowerLayer/Core/Command/RuntimeWrapper/RuntimeWrapper.h"
+
+#include "../../../../LowerLayer/Resource/Model/ModelStructure/Model.h"
+
+
+
+RenderContext::PassBehavior::PassBehavior(NexusFieldProof proof_, std::unique_ptr<PassDesc>&& desc_)
+	:desc(std::move(desc_))
+{
+	//ランタイムバリアキャッシュのキャパ確保
+	barrierCache.reserve(kBarrierCacheCapacity);
+}
+
+using namespace RenderStateComponent;
+
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+RenderContext::PassDesc const* RenderContext::PassBehavior::WatchDesc() const
+{
+	return desc ? desc.get() : nullptr;
+}
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+void RenderContext::PassBehavior::CreatePassInfo
+(
+	NexusFieldProof proof_,
+	std::vector<BufferUniqueID> const& refColorBuffersID_,
+	std::vector<BufferUniqueID> const& refDepthStencilBuffersID_,
+	UINT const refOffset_
+) 
+{
+	runtimePassInfo.reset(new RuntimePassInfo(proof_, std::move(desc), refColorBuffersID_, refDepthStencilBuffersID_,refOffset_));
+}
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+void RenderContext::PassBehavior::PitchBarrierCached(RuntimeWrapper& cmdWrapper_)
+{
+	cmdWrapper_.ResourceBarrier((UINT)barrierCache.size(), barrierCache.data());
+	barrierCache.clear();
+}
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+void RenderContext::PassBehavior::BeginPass(RuntimeWrapper& cmdWrapper_, BufferContext::BufferDispatcher& bufDispatcher_)
+{
+	auto const& colorBuffersInfo = runtimePassInfo->WatchColorBuffersInfo();
+	UINT const numColorBuffers = UINT(colorBuffersInfo.size());
+	auto const& depthStencilBufferInfo = runtimePassInfo->WatchDepthStencilBufferInfo();
+
+	std::array<D3D12_CPU_DESCRIPTOR_HANDLE, D3D12_SIMULTANEOUS_RENDER_TARGET_COUNT> rtHandles;
+	std::array<D3D12_RECT, D3D12_SIMULTANEOUS_RENDER_TARGET_COUNT> scissorRects;
+	std::array<D3D12_VIEWPORT, D3D12_SIMULTANEOUS_RENDER_TARGET_COUNT> viewports;
+
+
+	//まずPassの所持する全てのバッファの書き込みバリアを張る
+	PitchOwnBuffersBarrierWriting
+	(
+		colorBuffersInfo,
+		depthStencilBufferInfo,
+		cmdWrapper_,
+		bufDispatcher_
+	);
+
+	//カラーバッファ
+	for (UINT i = 0;i < numColorBuffers;++i)
+	{
+		auto const& src = colorBuffersInfo[i];
+
+		//バッファ検索
+		ColorBuffer* colorBuffer = FindBufferWithID<ColorBuffer>(src.bufferID, bufDispatcher_);
+
+		//パラメーターかき集め
+		rtHandles[i] = PullHandleCPU<ColorBuffer>(colorBuffer, bufDispatcher_);
+		scissorRects[i] = src.scissorRect;
+		viewports[i] = src.viewport;
+
+
+		//ビュークリア
+		ClearColorBufferView(rtHandles[i], src.clearColor.data(), cmdWrapper_);
+	}
+
+	//行列のセット(深度のみのパスだとまずいかも)
+	SetMatrix<D3D12_RECT>(numColorBuffers, scissorRects.data(), cmdWrapper_);
+	SetMatrix<D3D12_VIEWPORT>(numColorBuffers, viewports.data(), cmdWrapper_);
+
+
+	//深度ステンシルバッファ
+	if (depthStencilBufferInfo.has_value())
+	{
+		//バッファ検索
+		auto* depthStencilBuffer = FindBufferWithID<DepthStencilBuffer>(depthStencilBufferInfo->bufferID, bufDispatcher_);
+
+		//ハンドル取得
+		D3D12_CPU_DESCRIPTOR_HANDLE dsvHandle = PullHandleCPU<DepthStencilBuffer>(depthStencilBuffer, bufDispatcher_);
+		
+		//ビュークリア
+		ClearDepthStencilBufferView(dsvHandle, cmdWrapper_);
+
+
+		//描画先の設定
+		SetRenderTargets(rtHandles, numColorBuffers, &dsvHandle, cmdWrapper_);
+	}
+	//無ければ
+	else
+	{
+		//描画先の設定
+		SetRenderTargets(rtHandles, numColorBuffers, nullptr, cmdWrapper_);
+	}
+
+	//このパスのルートコンスタンツを転送
+	TransferRootConstants(cmdWrapper_);
+
+}
+
+
+void RenderContext::PassBehavior::PitchOwnBuffersBarrierWriting
+(
+	std::vector<RuntimePassInfo::ColorBuffer> const& colorBuffersInfo_,
+	std::optional<RuntimePassInfo::DepthStencilBuffer> const& depthStencilBufferInfo_,
+	RuntimeWrapper& cmdWrapper_,
+	BufferContext::BufferDispatcher& bufDispatcher_
+)
+{
+	//描画先にステートを変化するためのバリアを張る
+	for (auto const& src: colorBuffersInfo_)
+	{
+		//バッファ検索
+		ColorBuffer* colorBuffer = FindBufferWithID<ColorBuffer>(src.bufferID, bufDispatcher_);
+
+		//カラーバッファの状態をレンダーターゲットにするためにバリアを生成
+		//Read -> Writeへ
+		CreateBarrier<BufferUsage::kWrite>(colorBuffer);
+	}
+
+	if (depthStencilBufferInfo_.has_value())
+	{
+		//バッファ検索
+		auto* depthStencilBuffer = FindBufferWithID<DepthStencilBuffer>(depthStencilBufferInfo_->bufferID, bufDispatcher_);
+
+		//状態をレンダーターゲットにするためにバリアを生成
+		//Read -> Writeへ
+		CreateBarrier<BufferUsage::kWrite>(depthStencilBuffer);
+	}
+
+	//キャッシュされたバリアを張る
+	PitchBarrierCached(cmdWrapper_);
+}
+
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+void RenderContext::PassBehavior::RenderOffScreen
+(
+	PSO_PoolDispatcher& psoDispatcher_, 
+	RuntimeWrapper& cmdWrapper_,
+	BufferContext::BufferDispatcher& bufDispatcher_
+)
+{
+	//参照先のバッファID
+	//カラーバッファのと深度ステンシルバッファの
+	auto const& refBuffersIDColors = runtimePassInfo->WatchReferenceBufferIDs<ColorBuffer>();
+	auto const& refBuffersIDDepths = runtimePassInfo->WatchReferenceBufferIDs<DepthStencilBuffer>();
+
+	//すでに描画先の設定は終わっているので、全ての参照バッファのステートをReadへ遷移させる
+	for (auto const& id : refBuffersIDColors)
+	{
+		//バッファ検索
+		ColorBuffer* colorBuffer = FindBufferWithID<ColorBuffer>(id, bufDispatcher_);
+		//Write -> Read  へ
+		CreateBarrier<BufferUsage::kRead>(colorBuffer);
+	}
+
+	for (auto const& id : refBuffersIDDepths)
+	{
+		//バッファ検索
+		DepthStencilBuffer* depthStencilBuffer = FindBufferWithID<DepthStencilBuffer>(id, bufDispatcher_);
+		//Write -> Read  へ
+		CreateBarrier<BufferUsage::kRead>(depthStencilBuffer);
+	}
+
+	//キャッシュされたバリアを張る
+	PitchBarrierCached(cmdWrapper_);
+
+	//どんなオフスクだろうが、フルスクリーントライアングルで頂点情報形成
+	cmdWrapper_.DispatchMesh(3, 1, 1);
+
+
+}
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+void RenderContext::PassBehavior::RenderModels
+(
+	std::unordered_map<uint64_t, std::pair<RenderStateKey, std::vector<Model*>>> const& modelContainer_,
+	RenderStateComponent::FillMode const fillMode_,
+	PSO_PoolDispatcher& psoDispatcher_,
+	RuntimeWrapper& cmdWrapper_
+)
+{
+	//PSOキー
+	GraphicsPSO_Key psoKey;
+	psoKey.pass = runtimePassInfo->WatchPass();
+	psoKey.fill = fillMode_;
+
+	//このPassで描画対象の全モデルの走査
+	for (auto const& [key, state_models] : modelContainer_)
+	{
+		//レンダーステートキーからPSOキーの一部を入力
+		WritePsoKeyFromRenderStateKey(state_models.first, psoKey);
+		
+		//psoDispatcherがキーをもとにpsoを検索
+		auto* srcPso = psoDispatcher_.AccessGraphicsPSO(psoKey);
+		
+		//psoをセット
+		cmdWrapper_.SetPipelineState(srcPso);
+
+		//perDrawIndicesのバインドスロット
+		auto const bindSlot = ConstantBuffers::RootConstantsBindSlots::kPerDrawIndices;
+
+		//おなじPSOごとに仕分けられているので、そこでも走査
+		for (auto const& model : state_models.second)
+		{
+			//そのモデルを描画するかどうか
+			if (!model->DoesDraw(psoKey.blend, psoKey.material)) continue;
+
+			//以下マルチメッシュ分も含めてドローコール
+			auto const& perDrawIndices = model->WatchPerDrawIndices();
+			auto const& meshletSize = model->WatchMeshletSize();
+
+			for (size_t i = 0;i < meshletSize.size();++i)
+			{
+				//モデルのルートコンスタンツを転送
+				cmdWrapper_.SetGraphicsRoot32BitConstants
+				(
+					(UINT)bindSlot,
+					ConstantBuffers::Num32BitValuesTable(bindSlot),
+					&perDrawIndices[i],
+					0
+				);
+
+				//ドロー
+				cmdWrapper_.DispatchMesh((UINT)meshletSize[i], 1, 1);
+			}
+		}
+	}
+}
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+void RenderContext::PassBehavior::TransferRootConstants(RuntimeWrapper& cmdWrapper_)
+{
+	auto const bindSlot = ConstantBuffers::RootConstantsBindSlots::kPassConstants;
+
+	cmdWrapper_.SetGraphicsRoot32BitConstants
+	(
+		(UINT)bindSlot,
+		ConstantBuffers::Num32BitValuesTable(bindSlot),
+		&runtimePassInfo->WatchRootConstants(),
+		0
+	);
+}
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+void RenderContext::PassBehavior::SetRenderTargets
+(
+	std::array<D3D12_CPU_DESCRIPTOR_HANDLE, D3D12_SIMULTANEOUS_RENDER_TARGET_COUNT> const& rtHandles_,
+	UINT const numRT_,
+	D3D12_CPU_DESCRIPTOR_HANDLE* depthHandle_,
+	RuntimeWrapper& cmdWrapper_
+)
+{
+	cmdWrapper_.OMSetRenderTargets(numRT_, rtHandles_.data(), false, depthHandle_);
+}
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+template<>
+D3D12_CPU_DESCRIPTOR_HANDLE RenderContext::PassBehavior::PullHandleCPU
+(
+	ColorBuffer* buffer_,
+	BufferContext::BufferDispatcher& bufDispatcher_
+)
+{
+	auto* iColorBuffer = static_cast<IColorBuffer*>(buffer_);
+
+	return iColorBuffer->OutProperRTVHeapHandle();
+}
+template<>
+D3D12_CPU_DESCRIPTOR_HANDLE RenderContext::PassBehavior::PullHandleCPU
+(
+	DepthStencilBuffer* buffer_,
+	BufferContext::BufferDispatcher& bufDispatcher_
+)
+{
+	IDepthBuffer* iDepth = static_cast<IDepthBuffer*>(buffer_);
+
+	return iDepth->OutProperDSVHeapHandle();
+}
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+template<>
+ColorBuffer* RenderContext::PassBehavior::FindBufferWithID
+(
+	BufferUniqueID const id_,
+	BufferContext::BufferDispatcher& bufDispatcher_
+)
+{
+	//IDからカラーバッファを検索
+	return static_cast<ColorBuffer*>(bufDispatcher_.Dispatch(id_));
+}
+
+template<>
+DepthStencilBuffer* RenderContext::PassBehavior::FindBufferWithID
+(
+	BufferUniqueID const id_,
+	BufferContext::BufferDispatcher& bufDispatcher_
+)
+{
+	//IDから深度ステンシルバッファを検索
+	return static_cast<DepthStencilBuffer*>(bufDispatcher_.Dispatch(id_));
+}
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+void RenderContext::PassBehavior::ClearColorBufferView
+(
+	D3D12_CPU_DESCRIPTOR_HANDLE const handleCPU_,
+	const FLOAT* clearColorPtr_,
+	RuntimeWrapper& cmdWrapper_
+)
+{
+	cmdWrapper_.ClearRenderTargetView(handleCPU_, clearColorPtr_, 0, nullptr);
+}
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+void RenderContext::PassBehavior::ClearDepthStencilBufferView
+(
+	D3D12_CPU_DESCRIPTOR_HANDLE const handleCPU_,
+	RuntimeWrapper& cmdWrapper_
+)
+{
+	auto const& depthSInfo = runtimePassInfo->WatchDepthStencilBufferInfo();
+
+	cmdWrapper_.ClearDepthStencilView(handleCPU_, depthSInfo->doesClearStencil, depthSInfo->clearDepth, depthSInfo->clearStencil, 0, nullptr);
+}
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+template<>
+void RenderContext::PassBehavior::SetMatrix<D3D12_VIEWPORT>
+(
+	UINT const num_,
+	const D3D12_VIEWPORT* matrix_,
+	RuntimeWrapper& cmdWrapper_
+)
+{
+	cmdWrapper_.RSSetViewports(num_, matrix_);
+}
+
+template<>
+void RenderContext::PassBehavior::SetMatrix<D3D12_RECT>
+(
+	UINT const num_,
+	const D3D12_RECT* matrix_,
+	RuntimeWrapper& cmdWrapper_
+)
+{
+	cmdWrapper_.RSSetScissorRects(num_, matrix_);
+}
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+template<BufferUsage usage>
+void RenderContext::PassBehavior::CreateBarrier(IRenderTarget* buffer_)
+{
+	std::optional<D3D12_RESOURCE_BARRIER> barrierOpt = buffer_->CreateBarrier(usage);
+	
+	//リソースの遷移先が現在と同じだった場合、バリアを作る必要が無いため
+	if(barrierOpt.has_value()) barrierCache.emplace_back(*barrierOpt);
+}
+
+
+template
+void RenderContext::PassBehavior::CreateBarrier<BufferUsage::kRead>(IRenderTarget* buffer_);
+template
+void RenderContext::PassBehavior::CreateBarrier<BufferUsage::kWrite>(IRenderTarget* buffer_);

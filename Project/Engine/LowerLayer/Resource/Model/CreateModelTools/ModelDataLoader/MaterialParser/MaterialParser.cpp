@@ -28,6 +28,7 @@ void ModelContext::ModelDataLoader::MaterialParser::ParseMaterial(MaterialCPU& d
             dstMaterial_.baseColor.x = color.r;
             dstMaterial_.baseColor.y = color.g;
             dstMaterial_.baseColor.z = color.b;
+            dstMaterial_.baseColor.w = 1.0f;
         }
     }
 

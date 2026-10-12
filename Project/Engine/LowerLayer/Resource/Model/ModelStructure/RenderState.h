@@ -1,7 +1,7 @@
 #pragma once
-#include "../../../Render/RenderStateComponent.h"
+#include "../../../RenderPassComponent.h"
 #include "../../../Resource/Shader/ShaderPathComponent/ShaderPathComponent.h"
-#include "../../../Render/RenderPass/RenderPassComponent.h"
+#include "../../../RenderStateComponent.h"
 
 
 //モデルクラスのコンストラクタで設置可能

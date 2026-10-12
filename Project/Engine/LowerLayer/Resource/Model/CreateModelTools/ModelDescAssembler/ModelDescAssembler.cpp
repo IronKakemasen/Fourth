@@ -135,7 +135,7 @@ std::vector<MaterialGPU> ModelContext::ModelDescAssembler::ConvertMaterialData
 				dst.metallic	= src.metallic;
 
 			if (dst.baseColor.x == kInvalid && src.baseColor.x != kInvalid)
-				dst.baseColor = Vector4<float>{ src.baseColor.x * 255.0f,src.baseColor.y * 255.0f,src.baseColor.z * 255.0f,src.baseColor.w };
+				dst.baseColor = src.baseColor * 255.0f;
 
 		}
 

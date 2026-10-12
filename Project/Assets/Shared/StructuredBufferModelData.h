@@ -62,7 +62,7 @@ namespace StructuredBufferModelData
         SRVHeapIndex albedoTexture = kInvalid;
         SRVHeapIndex normalTexture = kInvalid;
         SRVHeapIndex emissiveTexture = kInvalid;
-        Vector4<float> baseColor = { 255,255,255,255 };
+        Vector4<float> baseColor = { float(kInvalid),float(kInvalid),float(kInvalid),float(kInvalid) };
         float roughness = float(kInvalid);
         float metallic = float(kInvalid);
     };

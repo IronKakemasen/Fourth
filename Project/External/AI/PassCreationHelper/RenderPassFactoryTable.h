@@ -1,10 +1,10 @@
 #pragma once
 // RenderPassFactoryTable.h
-#include "../../../Engine/LowerLayer/Render/RenderPass/AllRenderPass/RenderPassTraits.h"
-#include "../../../Engine/LowerLayer/Render/RenderPass/AllRenderPass/AllPassFwd.h"
-#include "../../../Engine/LowerLayer/Render/RenderPass/AllRenderPass/AllPassInclude.h"// 型の完全定義が要る
-#include "../../../Engine/LowerLayer/Render/RenderPass/RenderPassCreator/RenderPassCreator.h"
-#include "../../../Engine/LowerLayer/Render/RenderPath/AllRenderPath/PathBehavior.h"
+#include "../../../Engine/MiddleLayer/Render/RenderPass/AllRenderPass/RenderPassTraits.h"
+#include "../../../Engine/MiddleLayer/Render/RenderPass/AllRenderPass/AllPassFwd.h"
+#include "../../../Engine/MiddleLayer/Render/RenderPass/AllRenderPass/AllPassInclude.h"// 型の完全定義が要る
+#include "../../../Engine/MiddleLayer/Render/RenderPass/RenderPassCreator/RenderPassCreator.h"
+#include "../../../Engine/MiddleLayer/Render/RenderPath/AllRenderPath/PathBehavior.h"
 
 
 //心の余裕がなかったのでAIに書いてもらった、switch-case撲滅用テーブル。

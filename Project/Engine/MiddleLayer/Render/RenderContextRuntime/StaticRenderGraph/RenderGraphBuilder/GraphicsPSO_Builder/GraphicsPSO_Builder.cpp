@@ -1,0 +1,539 @@
+#include "PreCompileHeader.h"
+#include "GraphicsPSO_Builder.h"
+#include "../../../PSO_PoolDispatcher/PSO_PoolDispatcher.h"
+#include "../../../../RenderPass/RenderPassContainer/RenderPassContainer.h"
+#include "../../../../RenderPass/AllRenderPass/AllPassInclude.h"
+#include "../../../../RenderPass/PassDesc/PassDesc.h"
+
+#include "../../../../../../LowerLayer/Resource/Model/ModelStructure/ModelDescription/ModelDescription.h"
+#include "../../../../../../LowerLayer/Resource/Model/ModelContextDiplomatIncludes.h"
+#include "../../../../../../LowerLayer/Resource/Model/ModelStructure/Model.h"
+						 
+#include "../../../../../../LowerLayer/Resource/PSO/PSO_ContextDiplomats.h"
+#include "../../../../../../LowerLayer/Resource/PSO/PSO_Creator/PSO_Creator.h"
+		  				 
+#include "../../../../../../LowerLayer/Resource/Shader/ShaderContextDiplomatIncludes.h"
+#include "../../../../../../LowerLayer/Resource/Shader/ShaderLibrary/ShaderLibrary.h"
+#include "../../../../../../LowerLayer/Resource/Shader/ShaderPathComponent/ShaderTable.h"
+
+
+using namespace RenderStateComponent;
+using namespace RenderPassComponent;
+using namespace ShaderPathComponent;
+
+namespace
+{
+	auto const fileName = "GraphicsPSO_Builder.cpp";
+}
+
+RenderContext::StaticRenderGraph::BuildOutput::PSO_Builder RenderContext::StaticRenderGraph::PSO_Builder::Build
+(
+	NexusFieldProof proof_,
+	PSO_PoolDispatcher& psoDispatcher_,
+	RenderPassContainer& passContainer_,
+	ID3D12RootSignature* rootSignature_,
+	ModelContextDiplomat& modelContextDiplomat_,
+	PSO_ContextDiplomat& pso_ContextDiplomat_,
+	ShaderContextDiplomat& shaderContextDiplomat_
+)
+{
+
+	BuildOutput::PSO_Builder output;
+
+	//最終描画用のpsoは別腹
+	output.finalRenderingPso = CreateFinalRenderPso
+	(
+		pso_ContextDiplomat_,
+		shaderContextDiplomat_,
+		rootSignature_
+	);
+	Logger::Log("Create FinalRendering Pso", fileName);
+
+	//PSOのディスクを作って
+	std::vector<PsoDesc_Key> allPSODesc =  CreateAllPSO_Desc
+	(
+		proof_,
+		passContainer_,
+		modelContextDiplomat_,
+		shaderContextDiplomat_
+	);
+	Logger::Log("Create All Graphics PSO_Desc", fileName);
+
+
+	//そのディスクをもとにpsoを生成
+	CreateAllPSO(proof_, psoDispatcher_, allPSODesc, rootSignature_, pso_ContextDiplomat_);
+	Logger::Log("Create All Graphics PSO", fileName);
+
+	return output;
+}
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+void RenderContext::StaticRenderGraph::PSO_Builder::CreateAllPSO
+(
+	NexusFieldProof proof_,
+	PSO_PoolDispatcher& psoDispatcher_,
+	std::vector<PsoDesc_Key>& allDesc_,
+	ID3D12RootSignature* rootSignature_,
+	PSO_ContextDiplomat& pso_ContextDiplomat_
+)
+{
+	//PSO生成ツールを借りる
+	auto* psoContextToolLender = pso_ContextDiplomat_.Access<PSO_Context::ToolLender>();
+	PSO_Context::ToolLender::LicenceType<PSO_Context::PSO_Creator> usesPsoCreatorLicence;
+	auto* psoCreator = psoContextToolLender->Lend<PSO_Context::PSO_Creator>(usesPsoCreatorLicence);
+
+	//デバッグ用。PSO_Keyの被った個数(スキップしたPSO作成回数)
+	size_t duplicatedCnt{};
+
+	for (auto& desc : allDesc_)
+	{
+		//PSO_PoolDispatcherで被りチェック
+		//PSO_PoolDispatcherの検索Mapの開いている挿入スロット
+		std::optional<uint32_t> dstInputSlot = psoDispatcher_.CheckDuplication(desc.second);
+
+		//被ってたらスキップ
+		if (!dstInputSlot.has_value())
+		{
+			duplicatedCnt++;
+
+			Logger::Log("[ [ Duplicated ] ]" + desc.first.psoName, fileName);
+			continue;
+		}
+		//生成。本体はPSO_Context側が管理している。
+		auto* psoPtr = psoCreator->Create(desc.first, rootSignature_, desc.first.psoName);
+
+		//dispatcherにキーとともに登録
+		psoDispatcher_.Register(proof_, *dstInputSlot, desc.second, psoPtr);
+	}
+
+
+	//デバッグ出力。問題なければ、Desc作成数 = pso数 + duplicatedCntになるはず
+	auto const equationPsoAmount = psoDispatcher_.WatchPSO_Size() + duplicatedCnt;
+
+	ErrorMessageOutput::Assert::DetectError
+	(
+		equationPsoAmount == allDesc_.size(),
+		"Desc作成数 = pso数 + duplicatedCnt じゃない",
+		fileName
+	);
+
+	//PSOの生成占有率をチェック
+	psoDispatcher_.CheckOccupationRate();
+
+	Logger::Log("\nnumPso(" + std::to_string(psoDispatcher_.WatchPSO_Size()) + ") = numPsoDescs(" + std::to_string(allDesc_.size()) + ") - duplicatedCnt(" + std::to_string(duplicatedCnt) + ")");
+
+}
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+std::vector<RenderContext::StaticRenderGraph::PSO_Builder::PsoDesc_Key> RenderContext::StaticRenderGraph::PSO_Builder::CreateAllPSO_Desc
+(
+	NexusFieldProof proof_,
+	RenderPassContainer& passContainer_,
+	ModelContextDiplomat& modelContextDiplomat_,
+	ShaderContextDiplomat& shaderContextDiplomat_
+)
+{
+	using namespace RenderPassComponent;
+
+	//全てのモデルのRenderStatesを集計
+	std::vector<RenderState> allModelRenderStates = CollectAllRenderStates(modelContextDiplomat_);
+
+	//全てのPassが入ってるコンテナを参照
+	auto const& allPassPtrMap = passContainer_.AccessAllPassPtrMap(proof_);
+
+	///これら二つのデータの塊からPSOを生成していく
+	///基本は全Passを走査して、PassDescのms_ps(シェーダファイル)の有無で
+	///renderStateとからめるかどうかを分岐させる
+	///PSO = Pass X RenderState X FillMode
+
+	//全てのpsoディスク(とキー)。ここに詰めていく
+	std::vector<PsoDesc_Key> allPsoDesc;
+
+	for (UINT i = 0u; i < (UINT)Pass::kCount;++i)
+	{
+		//そのPassのDesc
+		auto const& passDesc = *allPassPtrMap.at(Pass(i))->WatchDesc();
+		//パスの中身をログ出力。頼りはログのみ
+		passDesc.DebugLog();
+
+		//FillModeの個数分作る。ただしオフスクPassはWireFrameを用意する必要はないんで、
+		//そこで分岐する
+		for (UINT k = 0u;k < (UINT)FillMode::kCount;++k)
+		{
+			//オフスクリーンパスでかつワイヤーフレームならスキップ
+			if
+			(
+				passDesc.ms_psFileName.has_value() &&
+				k == (UINT)FillMode::kWireFrame
+			) continue;
+
+
+			///まずはオフスクリーン用かどうか関わらず、共通の設定を入力
+			//共通設定が詰まったディスクとキーのセット
+			PsoDesc_Key psoDesc_keyCommon = InputCommonInfo(Pass(i), passDesc, FillMode(k));
+
+			///オフスクリーンパスであれば、renderPassの設定がPSOにダイレクトに反映
+			InputPassOnlyInfo(shaderContextDiplomat_, psoDesc_keyCommon, passDesc, allPsoDesc);
+
+			///モデル描画パスであればモデルクラスの情報とパスの情報の二つで設定が決まる
+			InputDependingModelsInfo
+			(
+				shaderContextDiplomat_,
+				psoDesc_keyCommon,
+				passDesc,
+				Pass(i),
+				allModelRenderStates,
+				allPsoDesc
+			);
+		}
+	}
+
+	std::string allPsoDescName = "= = = = All PSO_Desc List = = = = \n";
+
+	//生成されたPSODescのデバッグ出力
+	for (auto const& psoDesc : allPsoDesc)
+	{
+		allPsoDescName += psoDesc.first.psoName + "\n";
+	}
+
+	Logger::Log(allPsoDescName);
+
+	return allPsoDesc;
+
+
+}
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+RenderContext::StaticRenderGraph::PSO_Builder::PsoDesc_Key RenderContext::StaticRenderGraph::PSO_Builder::InputCommonInfo
+(
+	RenderPassComponent::Pass const pass_,
+	PassDesc const& passDesc_,
+	RenderStateComponent::FillMode const fillMode_
+)
+{
+	auto const& renderPassStates = passDesc_.renderPassState;
+	auto const& depthStencilBufferInfo = passDesc_.depthStencilBufferInfo;
+
+	PsoDesc_Key psoCommon;
+
+	//完全にPass依存
+	{
+		//PSO_Keyの入力
+		//フィルモード
+		psoCommon.second.fill = fillMode_;
+		psoCommon.second.pass = pass_;
+
+		//ラスタライザー関係
+		psoCommon.first.rasterizerDesc.depthBias = renderPassStates.depthBias;
+		psoCommon.first.rasterizerDesc.depthBiasClamp = renderPassStates.depthBiasClamp;
+		psoCommon.first.rasterizerDesc.slopeScaledDepthBias = renderPassStates.slopeScaledDepthBias;
+		psoCommon.first.rasterizerDesc.fillMode = fillMode_;
+
+		//深度設定
+		psoCommon.first.depthStencilDesc.depthEnable = renderPassStates.depthEnable;
+		psoCommon.first.depthStencilDesc.depthTest = renderPassStates.depthTest;
+
+		//深度バッファの情報
+		if (depthStencilBufferInfo.has_value())
+		{
+			psoCommon.first.depthStencilDesc.bufferName = depthStencilBufferInfo->bufferName;
+			psoCommon.first.depthStencilDesc.clearDepth = depthStencilBufferInfo->clearDepth;
+			psoCommon.first.depthStencilDesc.clearStencil = depthStencilBufferInfo->clearStencil;
+			psoCommon.first.depthStencilDesc.dsvFormat = depthStencilBufferInfo->dsvFormat;
+
+		}
+		else
+		{
+			psoCommon.first.depthStencilDesc.doesUseBuffer = false;
+		}
+
+		//カラーバッファの情報
+		auto const& colorBuffersInfo = passDesc_.colorBuffersInfo;
+		auto const numRenderTarget = colorBuffersInfo.size();
+		psoCommon.first.renderTargetDescs.resize(numRenderTarget);
+
+		for (size_t i = 0;i < numRenderTarget;++i)
+		{
+			auto& tmp = psoCommon.first.renderTargetDescs[i];
+
+			tmp.bufferName = colorBuffersInfo[i].bufferName;
+			tmp.rtvFormat = colorBuffersInfo[i].format;
+			//モデル依存かどうか問わず入力する
+			tmp.blendMode = colorBuffersInfo[i].blendMode;
+		}		
+
+		psoCommon.first.psoName += passDesc_.passName + " X " + RenderStateComponent::FillModeToString(fillMode_);
+	}
+
+	return psoCommon;
+}
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+//モデルクラスとレンダーパスの二つで残りのPSOの要素を定める
+void RenderContext::StaticRenderGraph::PSO_Builder::InputDependingModelsInfo
+(
+	ShaderContextDiplomat& shaderContextDiplomat_,
+	PsoDesc_Key const& psoCommonDesc_,
+	PassDesc const& passDesc_,
+	RenderPassComponent::Pass const renderPass_,
+	std::vector<RenderState> const& allRenderStates_,
+	std::vector<PsoDesc_Key>& allPsoDesc_
+
+) 
+{
+	///レンダーパスがオフスクリーンで専用のシェーダーファイルを持って ” いなければ ”
+	///それはモデル描画パス " である " 証拠
+	if (passDesc_.ms_psFileName.has_value()) return;
+
+	//シェーダーライブラリを借りる
+	auto* shaderContextToolLender = shaderContextDiplomat_.Access<ShaderContext::ToolLender>();
+	ShaderContext::ToolLender::LicenceType<ShaderContext::ShaderLibrary> usesShaderLibLicence;
+	auto* shaderLib = shaderContextToolLender->Lend<ShaderContext::ShaderLibrary>(usesShaderLibLicence);
+
+	///全renderState分ぶんまわす
+	for (auto const& renderState : allRenderStates_)
+	{
+		///まず、そのrenderStateのパスと引数のパスが一致しているかチェックする
+		///一致していない = そのモデルはそのパスで描画されない　のでPSOを作る必要がない
+		if (renderState.pass != renderPass_) continue;
+
+		//ブレンドモードとマテリアルタイプ以外は単一なので書き込んじゃう
+		PsoDesc_Key renderStateCommon(psoCommonDesc_);
+		{
+			//PSO_Keyを入力
+			renderStateCommon.second.mesh = renderState.meshType;
+			renderStateCommon.second.cull = renderState.cullMode;
+
+			///使用するシェーダーはPass X MeshType , Pass X MaterialType で決まる
+			///materialTypeは複数可なので後ほどループで処理る
+			std::string const msFileName = ShaderTable::GetMeshShader(renderPass_, renderState.meshType);
+
+			//ファイル名からBlobのポインタを引っ張る
+			renderStateCommon.first.shaderSet.meshShader = shaderLib->Export(msFileName);
+			renderStateCommon.first.shaderSet.meshShaderName = msFileName;
+
+			//ラスタライザー関連
+			renderStateCommon.first.rasterizerDesc.cullMode = renderState.cullMode;
+
+			renderStateCommon.first.psoName += " X " + renderState.modelName;
+		}
+
+		//blendModeとmaterialTypesはめんどいことに複数の可能性あり設計。その個数分ぶんまわす
+		for (auto const& blendMode : renderState.blendModes)
+		{
+			for (auto const& materialType : renderState.materialTypes)
+			{
+				//psoDescを一つずつ共通設定をコピーしてから、書き込んでいく
+				PsoDesc_Key psoDesc(renderStateCommon);
+
+				//MaterialTypeを入力
+				psoDesc.second.material = materialType;
+
+				std::optional<std::string> const psFileName = ShaderTable::GetPixelShader(renderPass_, materialType);
+				//ピクセルシェーダーを通さないケースもあるのでチェック
+				if (psFileName.has_value())
+				{
+					psoDesc.first.shaderSet.pixelShader = shaderLib->Export(*psFileName);
+					psoDesc.first.shaderSet.pixelShaderName = *psFileName;
+				}
+
+				//PSO_KeyにblendModeを入力
+				psoDesc.second.blend = blendMode;
+
+				//深度ステンシル関連
+				psoDesc.first.depthStencilDesc.blendMode = blendMode;
+
+				//レンダーターゲット関連
+				for (auto& renderTargetDesc : psoDesc.first.renderTargetDescs)
+				{
+					//ブレンドモードはパスがモデル依存として設定しているかどうかで分岐させる
+					if (renderTargetDesc.blendMode == BlendMode::kDependsModel)
+					{
+						//モデル依存ならそのまんま、モデルのブレンドモードを入れる
+						renderTargetDesc.blendMode = blendMode;
+					}
+				}
+
+				psoDesc.first.psoName += " X " + RenderStateComponent::BlendModeToString(blendMode);
+
+				//出来上がったディスクを回収
+				allPsoDesc_.emplace_back(psoDesc);
+
+			}
+		}
+	}
+}
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+//レンダーパスオンリーで残りのPSOの要素を定める
+void RenderContext::StaticRenderGraph::PSO_Builder::InputPassOnlyInfo
+(
+	ShaderContextDiplomat& shaderContextDiplomat_,
+	PsoDesc_Key& psoCommonDesc_,
+	PassDesc const& passDesc_,
+	std::vector<PsoDesc_Key>& allPsoDesc_
+)
+{
+	///レンダーパスがオフスクリーンで専用のシェーダーファイルを持って ” いれば ”
+	///それはモデル描画パス " でない " 証拠
+	//そのPass専用のシェーダーファイル(Optional)
+	auto const& ms_psFile = passDesc_.ms_psFileName;
+
+	if (!ms_psFile.has_value()) return;
+
+	//シェーダーライブラリを借りる
+	auto* shaderContextToolLender = shaderContextDiplomat_.Access<ShaderContext::ToolLender>();
+	ShaderContext::ToolLender::LicenceType<ShaderContext::ShaderLibrary> usesShaderLibLicence;
+	auto* shaderLib = shaderContextToolLender->Lend<ShaderContext::ShaderLibrary>(usesShaderLibLicence);
+
+
+	//共通設定をコピー
+	PsoDesc_Key offscreenPassPsoDesc(psoCommonDesc_);
+
+	//PSO_Keyのコンポーネントを入力
+	//shaderPathComponentはどちらもoffscreen専用
+	offscreenPassPsoDesc.second.mesh = MeshType::kOffscreen;
+	offscreenPassPsoDesc.second.material = MaterialType::kOffscreen;
+	offscreenPassPsoDesc.second.cull = CullMode::kBack;
+	///ここは悪影響が出るか分からんが、実際の各レンダーターゲットのブレンドモードの値は、
+	///入力しているので恐らく問題ない。あくまでPSO_Keyのため
+	///大事なのは、キー ≠ 全カラーバッファのブレンドモード
+	offscreenPassPsoDesc.second.blend = BlendMode::kDependsRenderPass;
+
+	//使用するシェーダーファイルのバイナリデータのポインタ
+	offscreenPassPsoDesc.first.shaderSet.meshShader = shaderLib->Export(ms_psFile->first);
+	offscreenPassPsoDesc.first.shaderSet.meshShaderName = ms_psFile->first;
+	//ピクセルシェーダーを通さないパターンもあるので"none"でチェックする
+	if (ms_psFile->second != "none")
+	{
+		offscreenPassPsoDesc.first.shaderSet.pixelShader = shaderLib->Export(ms_psFile->second);
+		offscreenPassPsoDesc.first.shaderSet.pixelShaderName = ms_psFile->second;
+	}
+
+	//深度ステンシルのdepthWriteMaskの分岐に関わるもの。kOpaque固定
+	offscreenPassPsoDesc.first.depthStencilDesc.blendMode = BlendMode::kOpaque;
+	
+	//背面カリング固定
+	offscreenPassPsoDesc.first.rasterizerDesc.cullMode = CullMode::kBack;
+	
+	//レンダーターゲットの設定
+	auto const& colorBuffersInfo = passDesc_.colorBuffersInfo;
+	size_t const numRT = colorBuffersInfo.size();
+	for (size_t i = 0; i < numRT; ++i)
+	{
+		auto& renderTargetDesc = offscreenPassPsoDesc.first.renderTargetDescs[i];
+
+		//ここでcolorBuffersInfoのブレンドモードがkDependsModelだとおかしい
+		ErrorMessageOutput::Assert::DetectError
+		(
+			colorBuffersInfo[i].blendMode != BlendMode::kDependsModel,
+			passDesc_.passName + "はオフスクリーンパスなのにブレンドモードがkDependsModel",
+			fileName
+		);
+
+		//パス固定のブレンドモードを詰めていく
+		renderTargetDesc.blendMode = colorBuffersInfo[i].blendMode;
+	}	
+
+	offscreenPassPsoDesc.first.psoName += " X None(offScreen)";
+
+	//出来上がったものを追加
+	allPsoDesc_.emplace_back(offscreenPassPsoDesc);
+}
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+std::vector<RenderState> RenderContext::StaticRenderGraph::PSO_Builder::CollectAllRenderStates
+(
+	ModelContextDiplomat& modelContextDiplomat_
+)
+{
+	using namespace ModelContextCmds;
+
+	//モデルコンテナの中身を覗くコマンドをもらう
+	auto* modelContextCmdProvider = modelContextDiplomat_.Access<ModelContext::CommandProvider>();
+	ModelContext::CommandProvider::LicenceType<WatchModelContainer> licence;
+	auto watchModelContainer = modelContextCmdProvider->Provide<WatchModelContainer>(licence);
+
+	//全てのモデルクラスのコンテナ
+	const std::vector<std::unique_ptr<Model>>* modelDataContainer = watchModelContainer();
+	//全てのモデルクラスのRenderStates
+	std::vector<RenderState> allModelRenderStates;
+
+	//モデルクラスを全走査し、全ModelDescriptionをかき集める
+	for (auto itr = modelDataContainer->begin();itr != modelDataContainer->end();++itr)
+	{
+		//そのモデルクラスのModelDescのrenderStatesを回収
+		for (auto const& renderState : (*itr)->WatchRenderStates())
+		{
+			allModelRenderStates.emplace_back(renderState);
+		}
+	}
+
+	return allModelRenderStates;
+}
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+ID3D12PipelineState* RenderContext::StaticRenderGraph::PSO_Builder::CreateFinalRenderPso
+(
+	PSO_ContextDiplomat& pso_ContextDiplomat_,
+	ShaderContextDiplomat& shaderContextDiplomat_,
+	ID3D12RootSignature* rootSignature_
+)
+{
+	PipelineStateDesc::Graphics psoDesc;
+
+	//深度ステンシル
+	{
+		auto& depthStencilDesc = psoDesc.depthStencilDesc;
+		depthStencilDesc.doesUseBuffer = false;
+	}
+
+	//ラスタライザ
+	{
+		auto& rasterizerDesc = psoDesc.rasterizerDesc;
+		rasterizerDesc.cullMode = CullMode::kBack;
+		rasterizerDesc.fillMode = FillMode::kSolid;
+		//他はデフォルト
+	}
+
+	//シェーダー
+	{
+
+		//シェーダーライブラリを借りる
+		auto* shaderContextToolLender = shaderContextDiplomat_.Access<ShaderContext::ToolLender>();
+		ShaderContext::ToolLender::LicenceType<ShaderContext::ShaderLibrary> usesShaderLibLicence;
+		auto* shaderLib = shaderContextToolLender->Lend<ShaderContext::ShaderLibrary>(usesShaderLibLicence);
+
+		auto& shaderSet = psoDesc.shaderSet;
+
+		shaderSet.meshShader = shaderLib->Export(DataKey::kFinalRenderingMeshShader);
+		shaderSet.pixelShader = shaderLib->Export(DataKey::kFinalRenderingPixelShader);
+	}
+
+	//描画先
+	{
+		PipelineStateComponent::RenderTargetDesc renderTargetDesc;
+		renderTargetDesc.blendMode = BlendMode::kOpaque;
+		renderTargetDesc.rtvFormat = ProjectConfig::Render::kSwapChainBufferFormat;
+
+		psoDesc.renderTargetDescs.emplace_back(std::move(renderTargetDesc));
+	}
+
+	//PSO生成ツールを借りる
+	auto* psoContextToolLender = pso_ContextDiplomat_.Access<PSO_Context::ToolLender>();
+	PSO_Context::ToolLender::LicenceType<PSO_Context::PSO_Creator> usesPsoCreatorLicence;
+	auto& psoCreator = *psoContextToolLender->Lend<PSO_Context::PSO_Creator>(usesPsoCreatorLicence);
+
+	return psoCreator.Create(psoDesc, rootSignature_, "FinalRendering");
+}
+
