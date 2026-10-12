@@ -9655,7 +9655,7 @@ void RenderContext::PSO_PoolDispatcher::CheckOccupationRate()const
 	float occupationRate = (float)graphicsPSO_pool.size() / float(kHashMapCapacity);
 	ErrorMessageOutput::Assert::DetectError
 	(
-		occupationRate < 0.75f,
+		occupationRate < 0.4f,
 		"PSO生成数が4割未満じゃない: " + std::to_string(occupationRate * 100.0f),
 		fileName
 	);
@@ -10214,7 +10214,7 @@ RenderContext::StaticRenderGraph::PSO_Builder::PsoDesc_Key RenderContext::Static
 void RenderContext::StaticRenderGraph::PSO_Builder::InputDependingModelsInfo
 (
 	ShaderContextDiplomat& shaderContextDiplomat_,
-	PsoDesc_Key& psoCommonDesc_,
+	PsoDesc_Key const& psoCommonDesc_,
 	PassDesc const& passDesc_,
 	RenderPassComponent::Pass const renderPass_,
 	std::vector<RenderState> const& allRenderStates_,
@@ -10263,8 +10263,8 @@ void RenderContext::StaticRenderGraph::PSO_Builder::InputDependingModelsInfo
 				//ピクセルシェーダーを通さないケースもあるのでチェック
 				if (psFileName.has_value())
 				{
-					renderStateCommon.first.shaderSet.pixelShader = shaderLib->Export(*psFileName);
-					renderStateCommon.first.shaderSet.pixelShaderName = *psFileName;
+					psoDesc.first.shaderSet.pixelShader = shaderLib->Export(*psFileName);
+					psoDesc.first.shaderSet.pixelShaderName = *psFileName;
 				}
 				//PSO_KeyにblendModeを入力
 				psoDesc.second.blend = blendMode;
@@ -10483,7 +10483,7 @@ private:
 	static void InputDependingModelsInfo
 	(
 		ShaderContextDiplomat& shaderContextDiplomat_,
-		PsoDesc_Key& psoCommonDesc_,
+		PsoDesc_Key const& psoCommonDesc_,
 		PassDesc const& passDesc_,
 		RenderPassComponent::Pass const renderPass_,
 		std::vector<RenderState> const& allRenderStates_,
@@ -10627,6 +10627,8 @@ void RenderContext::StaticRenderGraph::PassSetUpper::CreateAllPassInfo
 	//フロントバッファ参照カラーバッファの名前をjsonfileから取得
 	Miyajison* miyajison = Miyajison::Get();
 	auto const finalColorBufferName = miyajison->LoadData<std::string>(DataKey::kRenderGraphSettings, { DataKey::kFinalColorBuffer });
+	//最終カラーバッファと名前が一致しているカラーバッファのIDを格納
+	output_.finalColorBufferID = passBufferCache.at(finalColorBufferName);
 	//パスDescがどのバッファを使用するかの名前リストを所持しているので、それと組み合わせて埋めていく
 	for (auto const& [kPassEnum, pass]: allPassPtrMap)
 	{
@@ -10645,11 +10647,6 @@ void RenderContext::StaticRenderGraph::PassSetUpper::CreateAllPassInfo
 			//参照するバッファID
 			//passCreatorが所持するidキャッシュから名前で引く
 			BufferUniqueID refID = passBufferCache.at(refBufferName);
-			//最終カラーバッファと名前が一致していた場合は格納
-			if (output_.finalColorBufferID == 0xffffffff && finalColorBufferName == refBufferName)
-			{
-				output_.finalColorBufferID = refID;
-			}
 			//ここで参照先IDの指すバッファがカラーバッファなのか、深度バッファなのかで
 			auto* buffer = bufferDispatcher->Dispatch(refID);
 			if (dynamic_cast<ColorBuffer*>(buffer))
@@ -11021,7 +11018,7 @@ void RenderContext::StaticRenderGraph::FinalRenderer::Update
 	auto& bufferDispatcher = *bToolLender->Lend<BufferContext::BufferDispatcher>(bLicence);
 	auto const& rtvHandle = swapChianBuffer.OutProperRtvHandle(frameIndex_);
 	auto const& viewport_scissor = swapChianBuffer.WatchMatrices();
-	//参照するカラーバッファsrvIndexをルートコンスタンツで送る
+	//参照するカラーバッファのsrvIndexをルートコンスタンツで送る
 	auto* refColorBuffer = static_cast<ColorBuffer*>(bufferDispatcher.Dispatch(finalRefBufferID));
 	SRVHeapIndex refBufferSrvHeapIndex = refColorBuffer->OutProperSRVHeapIndex();
 	auto const bindSlot = ConstantBuffers::RootConstantsBindSlots::kFinalColorBufferSrv;
@@ -11032,9 +11029,14 @@ void RenderContext::StaticRenderGraph::FinalRenderer::Update
 		&refBufferSrvHeapIndex,
 		0
 	);
+	//バリアキャッシュBegin
+	std::vector<D3D12_RESOURCE_BARRIER> barrierCacheBegin;
+	//参照先バッファのバリアを生成ー＞Read
+	auto refColorBufferBarrierOpt = refColorBuffer->CreateBarrier(BufferUsage::kRead);
+	if (refColorBufferBarrierOpt)barrierCacheBegin.emplace_back(*refColorBufferBarrierOpt);
 	//バリアを張る→renderTarget
-	auto barrier = swapChianBuffer.CreateBarrier<D3D12_RESOURCE_STATE_RENDER_TARGET>(frameIndex_);
-	runtimeWrapper_.ResourceBarrier(1, &barrier);
+	barrierCacheBegin.emplace_back(swapChianBuffer.CreateBarrier<D3D12_RESOURCE_STATE_RENDER_TARGET>(frameIndex_));
+	runtimeWrapper_.ResourceBarrier((UINT)barrierCacheBegin.size(), barrierCacheBegin.data());
 	//クリア
 	runtimeWrapper_.ClearRenderTargetView(rtvHandle, swapChianBuffer.WatchClearColor(), 0, nullptr);
 	//描画先に設定
@@ -11047,7 +11049,7 @@ void RenderContext::StaticRenderGraph::FinalRenderer::Update
 	//描画
 	runtimeWrapper_.DispatchMesh(3, 1, 1);
 	//バリアを張る→Present
-	barrier = swapChianBuffer.CreateBarrier<D3D12_RESOURCE_STATE_PRESENT>(frameIndex_);
+	auto barrier = swapChianBuffer.CreateBarrier<D3D12_RESOURCE_STATE_PRESENT>(frameIndex_);
 	runtimeWrapper_.ResourceBarrier(1, &barrier);
 }
 
@@ -11385,6 +11387,9 @@ void RenderContext::PassBehavior::BeginPass(RuntimeWrapper& cmdWrapper_, BufferC
 		//ビュークリア
 		ClearColorBufferView(rtHandles[i], src.clearColor.data(), cmdWrapper_);
 	}
+	//行列のセット(深度のみのパスだとまずいかも)
+	SetMatrix<D3D12_RECT>(numColorBuffers, scissorRects.data(), cmdWrapper_);
+	SetMatrix<D3D12_VIEWPORT>(numColorBuffers, viewports.data(), cmdWrapper_);
 	//深度ステンシルバッファ
 	if (depthStencilBufferInfo.has_value())
 	{
@@ -13123,10 +13128,10 @@ CameraContext::CameraContext
 	diplomat = std::make_unique<CameraContextDiplomat>
 	(
 		proof_,
-		std::make_unique<ExecutionAgent>(proof_, *frontlineSystemsDispatcher)
+		std::make_unique<ExecutionAgent>(proof_, *frontlineSystemsDispatcher,*cameraDataBatcher)
 	);
 	Logger::Log("Instantiate: CameraContextDiplomat", fileName);
-	Logger::Log("Instantiate: CmdProvider", fileName);
+	Logger::Log("Instantiate: ExecutionAgent", fileName);
 	Logger::End("CameraContext: Constructor");
 }
 CameraContext::~CameraContext()
@@ -13178,6 +13183,14 @@ private:
 	friend class ExecutionAgent;
 	explicit AgentKey() = default;
 };
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Camera\CameraContextDiplomats.h ===
+========================================
+#pragma once
+#include "CameraContextDiplomat/CameraContextDiplomat.h"
+#include "CameraContextDiplomat/CameraContextExecutionAgent/CameraContextAgentLicences.h"
+#include "CameraContextDiplomat/CameraContextExecutionAgent/CameraContextExecutionAgent.h"
 
 ========================================
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Camera\CameraBufferCreator\CameraBufferCreator.cpp ===
@@ -13287,21 +13300,47 @@ private:
 };
 
 ========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Camera\CameraContextDiplomat\CameraContextExecutionAgent\CameraContextAgentLicences.h ===
+========================================
+#pragma once
+#include "CameraContextExecutionAgent.h"
+class SceneContext;
+struct CameraContext::ExecutionAgent::SceneContextProof
+{
+private:
+	friend class SceneContext;
+	explicit SceneContextProof() = default;
+};
+
+========================================
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Camera\CameraContextDiplomat\CameraContextExecutionAgent\CameraContextExecutionAgent.cpp ===
 ========================================
 #include "PreCompileHeader.h"
 #include "CameraContextExecutionAgent.h"
+#include "CameraContextAgentLicences.h"
 #include "../../CameraFSDispatcher/CameraFSDispatcher.h"
+#include "../../CameraContextRuntime/CameraDataBatcher/CameraDataBatcher.h"
 CameraContext::ExecutionAgent::ExecutionAgent
 (
 	NexusFieldProof proof_,
-	FrontlineSystemsDispatcher& frontlineSystemsDispatcher_
-):frontlineSystemsDispatcher(frontlineSystemsDispatcher_)
+	FrontlineSystemsDispatcher& frontlineSystemsDispatcher_,
+	CameraDataBatcher& cameraDataBatcher_
+):cameraDataBatcher(cameraDataBatcher_),frontlineSystemsDispatcher(frontlineSystemsDispatcher_)
 {
 }
-CameraContext::CameraFrontlineSystems& CameraContext::ExecutionAgent::DispatchFrontlineSystems(SceneContextProof proof_)
+CameraContext::CameraFrontlineSystems* CameraContext::ExecutionAgent::DispatchFrontlineSystems(SceneContextProof proof_)
 {
 	return frontlineSystemsDispatcher.Dispatch(AgentKey{});
+}
+void CameraContext::ExecutionAgent::BatchCameraData
+(
+	SceneContextProof proof_,
+	std::unordered_map<CameraSocket, CameraBehavior*> const& usingCamera_,
+	UINT const frameIndex_,
+	BufferContextDiplomat& bufferContextDiplomat_
+)
+{
+	cameraDataBatcher.Batch(AgentKey{}, usingCamera_, frameIndex_, bufferContextDiplomat_);
 }
 
 ========================================
@@ -13309,25 +13348,31 @@ CameraContext::CameraFrontlineSystems& CameraContext::ExecutionAgent::DispatchFr
 ========================================
 #pragma once
 #include "../../CameraContext.h"
-class SceneContext;
+#include "../../CameraContextRuntime/CameraSocket.h"
+class CameraBehavior;
 class CameraContext::ExecutionAgent
 {
-	struct SceneContextProof;
 public:
+	struct SceneContextProof;
 	ExecutionAgent
 	(
 		NexusFieldProof proof_,
-		FrontlineSystemsDispatcher& frontlineSystemsDispatcher_
+		FrontlineSystemsDispatcher& frontlineSystemsDispatcher_,
+		CameraDataBatcher& cameraDataBatcher_
 	);
-	CameraFrontlineSystems& DispatchFrontlineSystems(SceneContextProof proof_);
+	//シーンにカメラのシステムを渡す
+	CameraFrontlineSystems* DispatchFrontlineSystems(SceneContextProof proof_);
+	//カメラデータのバッチングを行う
+	void BatchCameraData
+	(
+		SceneContextProof proof_,
+		std::unordered_map<CameraSocket, CameraBehavior*> const& usingCamera_,
+		UINT const frameIndex_,
+		BufferContextDiplomat& bufferContextDiplomat_
+	);
 private:
 	FrontlineSystemsDispatcher& frontlineSystemsDispatcher;
-};
-struct CameraContext::ExecutionAgent::SceneContextProof
-{
-private:
-	friend class SceneContext;
-	explicit SceneContextProof() = default;
+	CameraDataBatcher& cameraDataBatcher;
 };
 
 ========================================
@@ -13489,6 +13534,11 @@ private:
 ========================================
 #include "PreCompileHeader.h"
 #include "CameraDataBatcher.h"
+//外部
+#include "../../../../Buffer/BufferDefinition/GPUBuffer/UploadStructuredBuffer/UploadStructuredBuffer.h"
+#include "../../../../Buffer/BufferContextDiplomats.h"
+#include "../../../../Buffer/BufferRuntime/BufferDispatcher/BufferDispatcher.h"
+#include "../../CameraStructrue/CameraBehavior.h"
 CameraContext::CameraDataBatcher::CameraDataBatcher(NexusFieldProof proof_)
 {
 }
@@ -13497,16 +13547,45 @@ void CameraContext::CameraDataBatcher::ImportCameraDataArrBufferID(NexusFieldPro
 	cameraDataArrBufferID = id_;
 	Logger::Log("Catched ID!" + std::to_string(id_), "CameraDataBatcher.cpp");
 }
+void CameraContext::CameraDataBatcher::Batch
+(
+	AgentKey key_,
+	std::unordered_map<CameraSocket, CameraBehavior*> const& usingCamera_,
+	UINT const frameIndex_,
+	BufferContextDiplomat& bufferContextDiplomat_
+)
+{
+	//bufferDispatcherを借りる
+	auto toolLender = bufferContextDiplomat_.Access<BufferContext::ToolLender>();
+	BufferContext::ToolLender::LicenceType<BufferContext::BufferDispatcher> licence{};
+	auto& bufferDispacher = *toolLender->Lend<BufferContext::BufferDispatcher>(licence);
+	auto* dstBuffer = static_cast<UploadStructuredBuffer*>(bufferDispacher.Dispatch(cameraDataArrBufferID));
+	for (auto const& [socket, camera] : usingCamera_)
+	{
+		dstBuffer->WriteElement(frameIndex_, camera->OutCameraData(), UINT(socket));
+	}
+}
 
 ========================================
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Camera\CameraContextRuntime\CameraDataBatcher\CameraDataBatcher.h ===
 ========================================
 #pragma once
 #include "../../CameraContext.h"
+#include "../CameraSocket.h"
+class CameraBehavior;
 class CameraContext::CameraDataBatcher
 {
 public:
 	CameraDataBatcher(NexusFieldProof proof_);
+	//cameraDataのバッチングを行う。どれを行うかは、SceneControllerの所持する情報から判別
+	//代行してもらう
+	void Batch
+	(
+		AgentKey key_,
+		std::unordered_map<CameraSocket, CameraBehavior*> const& usingCamera_,
+		UINT const frameIndex_,
+		BufferContextDiplomat& bufferContextDiplomat_
+	);
 	void ImportCameraDataArrBufferID(NexusFieldProof prooof_, BufferUniqueID id_);
 private:
 	//カメラデータ配列のバッファID
@@ -13604,9 +13683,9 @@ CameraContext::FrontlineSystemsDispatcher::FrontlineSystemsDispatcher(NexusField
 CameraContext::FrontlineSystemsDispatcher::~FrontlineSystemsDispatcher()
 {
 }
-CameraContext::CameraFrontlineSystems& CameraContext::FrontlineSystemsDispatcher::Dispatch(AgentKey key_)
+CameraContext::CameraFrontlineSystems* CameraContext::FrontlineSystemsDispatcher::Dispatch(AgentKey key_)
 {
-	return *cameraFrontlineSystemsContainer[simpleFreeList.Distribute()];
+	return cameraFrontlineSystemsContainer[simpleFreeList.Distribute()].get();
 }
 
 ========================================
@@ -13620,7 +13699,7 @@ class CameraContext::FrontlineSystemsDispatcher
 public:
 	FrontlineSystemsDispatcher(NexusFieldProof proof_);
 	~FrontlineSystemsDispatcher();
-	CameraFrontlineSystems& Dispatch(AgentKey key_);
+	CameraFrontlineSystems* Dispatch(AgentKey key_);
 private:
 	std::vector<std::unique_ptr<CameraFrontlineSystems>> cameraFrontlineSystemsContainer;
 	SimpleFreeList simpleFreeList;
@@ -13653,28 +13732,32 @@ void CameraBehavior::Follow(Transform* followTarget_)
 {
 	trans->Follow(followTarget_);
 }
-CameraBehavior::Matrices const& CameraBehavior::WatchMatrices()const
+StructuredBufferCameraData::CameraDataCPUGPU CameraBehavior::OutCameraData()const
 {
-	return trans->WatchMatrices();
+	auto const& base = trans->WatchBase();
+	auto const& matrices = trans->WatchMatrices();
+	auto const worldPos = trans->WatchWorldPosition();
+	return StructuredBufferCameraData::CameraDataCPUGPU
+	{
+		matrices.view,
+		matrices.proj,
+		matrices.viewProj,
+		Vector4<float>{worldPos.data.x,worldPos.data.y,worldPos.data.z,1.0f},
+		Vector4<float>{base.lookDir.data.x,base.lookDir.data.y,base.lookDir.data.z,0.0f}
+	};
 }
 
 ========================================
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Camera\CameraStructrue\CameraBehavior.h ===
 ========================================
 #pragma once
-#include "../../../../Math/Matrix/Matrix4x4.h"
+//外部
+#include "../../../../../Assets/Shared/StructuredBufferCameraData.h"
 class CameraContext;
 struct CameraDesc;
 class Transform;
 class CameraBehavior
 {
-	//描画のための行列群
-	struct Matrices
-	{
-		Matrix4x4 view;
-		Matrix4x4 proj;
-		Matrix4x4 viewProj;
-	};
 	//カメラ専用のトランスフォーム
 	struct CameraTransform;
 public:
@@ -13692,8 +13775,8 @@ public:
 	void BeChild(Transform* parent_);
 	//フォロー
 	void Follow(Transform* followTarget_);
-	//おもにバッチング処理のため
-	Matrices const& WatchMatrices()const;
+	//バッチング処理のため
+	StructuredBufferCameraData::CameraDataCPUGPU OutCameraData()const;
 protected:
 	std::unique_ptr<CameraTransform> trans;
 };
@@ -13780,22 +13863,21 @@ void CameraBehavior::CameraTransform::UpdateMatrices(CameraBehavior::Local_Updat
 	//回転クォータニオンの更新
 	RotationUpdate();
 	//位置行列
-	Matrix4x4 translationMat;
 	if (base.followTarget)
 	{
 		Vector3 worldPos = base.followTarget->WatchWorldPos() + base.pos;
-		translationMat = Matrix4x4::CreateTranslation(worldPos);
+		matrices.world = Matrix4x4::CreateTranslation(worldPos);
 	}
 	else
 	{
-		translationMat = Matrix4x4::CreateTranslation(base.pos);
+		matrices.world = Matrix4x4::CreateTranslation(base.pos);
 	}
-	//回転行列
-	Matrix4x4 rotationMat = base.quaternion.GetRotateMatrix();
+	//回転・位置行列
+	matrices.world = base.quaternion.GetRotateMatrix().GetMultiply(matrices.world);
 	//ペアレント化しているなら
-	if (base.parent) rotationMat = rotationMat.GetMultiply(base.parent->WatchWorldMatrix());
+	if (base.parent) matrices.world = matrices.world.GetMultiply(base.parent->WatchWorldMatrix());
 	//view
-	matrices.view = rotationMat.GetMultiply(translationMat).GetInversed();
+	matrices.view = matrices.world.GetInversed();
 	//proj
 	UpdateProjectionMatrixReverseZ();
 	//viewProj
@@ -13875,10 +13957,8 @@ void CameraBehavior::CameraTransform::ChangeFovY(float dst_)
 ========================================
 #pragma once
 #include "../CameraBehavior.h"
-#include "../../../../../Math/Vector/Vector2.h"
 #include "../../../../../Math/Vector/Vector3.h"
 #include "../../../../../Math/Quaternion/Quaternion.h"
-#include "../../../../../Math/Matrix/Matrix4x4.h"
 class Transform;
 struct CameraBehavior::CameraTransform
 {
@@ -13903,6 +13983,14 @@ private:
 		Transform* followTarget = nullptr;
 		Transform* parent = nullptr;
 	};
+	//行列群
+	struct Matrices
+	{
+		Matrix4x4 world;
+		Matrix4x4 view;
+		Matrix4x4 proj;
+		Matrix4x4 viewProj;
+	};
 public:
 	CameraTransform(std::optional<CameraDesc> const& desc_);
 	//描画用の行列更新
@@ -13920,6 +14008,16 @@ public:
 	void ChangeFovY(float dst_);
 	//バッチング処理で使用
 	auto const& WatchMatrices()const { return matrices; }
+	auto const& WatchBase()const { return base; }
+	auto const WatchWorldPosition()const
+	{
+		return Vector3
+		{
+			matrices.world.data.m[3][0],
+			matrices.world.data.m[3][1],
+			matrices.world.data.m[3][2]
+		};
+	}
 private:
 	Base base;
 	Projection projection;
@@ -14242,22 +14340,22 @@ std::vector<Model*> ModelContext::ModelCreator::Create
 	ErrorMessageOutput::Assert::DetectError
 	(
 		type_ != Model::Type::kCount,
-		"KCount何か選択してんじゃない",
+		"Model::Type::KCountを選択してんじゃない",
 		fileName
 	);
 	std::vector<Model*> modelPtrContainer;
-	//モデルのディスクリプションの要素を組み立てる
-	auto [perDrawIndices,materialsGPU,meshletSize] = modelDescAssembler->Assemble(modelFileName_, materials_);
-	///一つのDescに詰める
-	ModelDescription modelDesc
-	(
-		modelName_ + std::to_string(numCreate++),
-		perDrawIndices,
-		modelRenderStates_,
-		meshletSize
-	);
 	for (UINT i = 0;i < numCreate_;++i)
 	{
+		//モデルのディスクリプションの要素を組み立てる
+		auto [perDrawIndices, materialsGPU, meshletSize] = modelDescAssembler->Assemble(modelFileName_, materials_);
+		///一つのDescに詰める
+		ModelDescription modelDesc
+		(
+			modelName_ + std::to_string(numCreate++),
+			perDrawIndices,
+			modelRenderStates_,
+			meshletSize
+		);
 		///モデルクラスのインスタンス化
 		std::unique_ptr<Model> model = std::make_unique<Model>(type_ , modelDesc, materialsGPU);
 		modelPtrContainer.emplace_back(model.get());
@@ -15571,8 +15669,9 @@ std::vector<MaterialGPU> ModelContext::ModelDescAssembler::ConvertMaterialData
 			if (src.albedoTexture.size() > 0)	dst.albedoTexture	= textureLib->Export(src.albedoTexture);
 			if (src.normalTexture.size() > 0)	dst.normalTexture	= textureLib->Export(src.normalTexture);
 			if (src.emissiveTexture.size() > 0) dst.emissiveTexture = textureLib->Export(src.emissiveTexture);
-			if (src.roughness != kInvalid)	dst.roughness	= src.roughness;
-			if (src.metallic != kInvalid)	dst.metallic	= src.metallic;
+			if (src.roughness != kInvalid)		dst.roughness		= src.roughness;
+			if (src.metallic != kInvalid)		dst.metallic		= src.metallic;
+			if (src.baseColor.x != kInvalid)	dst.baseColor		= src.baseColor;
 		}
 		//手動入力で満たされなかった部分を、モデル名に紐づけられているデータから入力する
 		if (i < materialsFromFile_.size())
@@ -15588,14 +15687,17 @@ std::vector<MaterialGPU> ModelContext::ModelDescAssembler::ConvertMaterialData
 				dst.roughness	= src.roughness;
 			if (dst.metallic == kInvalid && src.metallic != kInvalid)	
 				dst.metallic	= src.metallic;
+			if (dst.baseColor.x == kInvalid && src.baseColor.x != kInvalid)
+				dst.baseColor = src.baseColor * 255.0f;
 		}
 		//手動入力もなくソースも無ければ、適当な値を入れておく
 		//あえて入れていないパラメータは、hlsl側でセンチネルとしての値が埋め込まれているので触らんように
 		{
 			if (dst.albedoTexture == kInvalid)dst.albedoTexture = textureLib->Export("white4x4_albedo");
 			//割とおきにな値
-			if (dst.roughness == kInvalid)dst.roughness = 0.25f;
-			if (dst.metallic == kInvalid )dst.metallic = 0.9f;
+			if (dst.roughness == kInvalid)		dst.roughness	= 0.25f;
+			if (dst.metallic == kInvalid )		dst.metallic	= 0.9f;
+			if (dst.baseColor.x != kInvalid)	dst.baseColor	= { 255,255,255,255 };
 		}
 	}
 	return materialGPUContainer;
@@ -15975,15 +16077,15 @@ public:
 	//RenderStateで仕分けされたコンテナを見るためのコマンド
 	ModelContextCmds::WatchSeparatedByRenderState WatchSeparatedByRenderStateCmd(ProviderKey key_);
 	//モデルのタイプ別に仕分けされたコンテナを見るためのコマンド
-	auto const& WatchSeparatedByModelType(NexusFieldProof proof_)const { return separatedByModelType; }
+	auto const& WatchSeparatedByModelType()const { return separatedByModelType; }
 	//ランタイムでPSO切り替えコストを低減させるために、モデルクラスをおなじrenderStateごとに分別する
 	void SeparateModels(NexusFieldProof proof_, AgentKey key_);
 private:
+	//モデルの本体が詰まってる
+	std::vector<std::unique_ptr<Model>> container;
 	//モデルがレンダーステートごとに分別されたコンテナ。
 	//第一添え字は、Passで指定
 	std::vector<SeparatedByRenderState> separatedByRenderState;
-	//モデルの本体が詰まってる
-	std::vector<std::unique_ptr<Model>> container;
 	//staticかdynamicかで仕分けられている
 	std::array < std::vector<Model*>, (UINT)Model::Type::kCount > separatedByModelType;
 };
@@ -16328,7 +16430,6 @@ void ModelContext::ExecutionAgent::BatchStaticModelData
 {
 	modelDataBatcher.BatchModelData<Model::Type::kStatic>
 	(
-		proof_,
 		AgentKey{},
 		modelContainer,
 		frameIndex_,
@@ -16344,7 +16445,6 @@ void ModelContext::ExecutionAgent::BatchDynamicModelData
 {
 	modelDataBatcher.BatchModelData<Model::Type::kDynamic>
 	(
-		proof_,
 		AgentKey{},
 		modelContainer,
 		frameIndex_,
@@ -16462,20 +16562,18 @@ BufferContext::BufferDispatcher& ModelContext::ModelDataBatcher::BorrowBufferDis
 template<>
 std::vector<Model*> const& ModelContext::ModelDataBatcher::PullModelContainer<Model::Type::kStatic>
 (
-	NexusFieldProof proof_,
 	ModelContainer const& modelContainer_
 ) 
 {
-	return modelContainer_.WatchSeparatedByModelType(proof_)[(UINT)Model::Type::kStatic];
+	return modelContainer_.WatchSeparatedByModelType()[(UINT)Model::Type::kStatic];
 }
 template<>
 std::vector<Model*> const& ModelContext::ModelDataBatcher::PullModelContainer<Model::Type::kDynamic>
 (
-	NexusFieldProof proof_,
 	ModelContainer const& modelContainer_
 ) 
 {
-	return modelContainer_.WatchSeparatedByModelType(proof_)[(UINT)Model::Type::kDynamic];
+	return modelContainer_.WatchSeparatedByModelType()[(UINT)Model::Type::kDynamic];
 }
 template<>
 void ModelContext::ModelDataBatcher::OverrideBuffer<ConstantBufferBindSlots::kTransformMatrixContainer>
@@ -16545,13 +16643,11 @@ void ModelContext::ModelDataBatcher::OverrideBuffer<ConstantBufferBindSlots::kMa
 template
 std::vector<Model*> const& ModelContext::ModelDataBatcher::PullModelContainer<Model::Type::kStatic>
 (
-	NexusFieldProof proof_,
 	ModelContainer const& modelContainer_
 );
 template
 std::vector<Model*> const& ModelContext::ModelDataBatcher::PullModelContainer<Model::Type::kDynamic>
 (
-	NexusFieldProof proof_,
 	ModelContainer const& modelContainer_
 );
 template<>
@@ -16601,7 +16697,6 @@ public:
 	template<Model::Type modelType>
 	void BatchModelData
 	(
-		NexusFieldProof proof_,
 		AgentKey agentKey_,
 		ModelContainer const& modelContainer_,
 		UINT const frameIndex_,
@@ -16611,7 +16706,7 @@ public:
 		//BufferDispatcherを借りる
 		auto& dispatcher = BorrowBufferDispatcher(bufferContextDiplomat_);
 		//モデルタイプ別に仕分けされたコンテナ
-		auto const& separatedContainer = PullModelContainer<modelType>(proof_, modelContainer_);
+		auto const& separatedContainer = PullModelContainer<modelType>(modelContainer_);
 		//モデルの所持するデータをバッファに書き込んでいく
 		for (Model const* model: separatedContainer)
 		{
@@ -16654,7 +16749,7 @@ private:
 	BufferContext::BufferDispatcher& BorrowBufferDispatcher(BufferContextDiplomat& bufferContextDiplomat_);
 	//モデルコンテナクラスから、仕分け済みのモデルコンテナを引っ張る
 	template<Model::Type modelType>
-	std::vector<Model*> const& PullModelContainer(NexusFieldProof proof_, ModelContainer const& modelContainer_);
+	std::vector<Model*> const& PullModelContainer(ModelContainer const& modelContainer_);
 };
 struct ModelContext::ModelDataBatcher::Local_InputBufferUniqueIDLicence
 {
@@ -19501,7 +19596,7 @@ namespace ShaderPathComponent
 ///MaterialType X Pass = PixelShader
 namespace ShaderTable
 {
-	std::string const GetMeshShader(RenderPassComponent::Pass pass_, ShaderPathComponent::MeshType meshType_)
+	inline std::string const GetMeshShader(RenderPassComponent::Pass pass_, ShaderPathComponent::MeshType meshType_)
 	{
 		std::string meshShader;
 		switch (pass_)
@@ -19525,7 +19620,7 @@ namespace ShaderTable
 		);
 		return meshShader;
 	}
-	std::optional<std::string> const GetPixelShader(RenderPassComponent::Pass pass_, ShaderPathComponent::MaterialType materialType_)
+	inline std::optional<std::string> const GetPixelShader(RenderPassComponent::Pass pass_, ShaderPathComponent::MaterialType materialType_)
 	{
 		std::optional<std::string> pixelShader;
 		switch (pass_)
@@ -20618,7 +20713,17 @@ struct Vector4
 	T w{};
 	Vector4(std::array<T,4>const& entries) : x(entries[0]), y(entries[1]), z(entries[2]), w(entries[3]) {}
 	Vector4(T x_, T y_, T z_, T w_) : x(x_), y(y_), z(z_), w(w_) {}
-	Vector4() {}
+	Vector4() = default;
+	auto operator*(float scalar_) const
+	{
+		return Vector4<T>
+		{
+			static_cast<T>(x* scalar_),
+			static_cast<T>(y* scalar_),
+			static_cast<T>(z* scalar_),
+			static_cast<T>(w* scalar_)
+		};
+	}
 };
 
 ========================================
@@ -20786,9 +20891,33 @@ private:
 ========================================
 #include "PreCompileHeader.h"
 #include "SceneContext.h"
-#include "SceneController/SceneController.h"
+#include "SceneLibrary/SceneLibrary.h"
+#include "SceneCreator/SceneCreator.h"
+#include "SceneContextRuntime/ScenePipeline.h"
+#include "SceneContextRuntime/SceneDataBatchingPlace/SceneDataBatchingPlace.h"
+#include "SceneContextDiplomat/SceneContextDiplomat.h"
+#include "SceneContextDiplomat/SceneExecutionAgent/SceneExecutionAgent.h"
+namespace
+{
+	std::string const fileName = "SceneContext.cpp";
+}
 SceneContext::SceneContext(NexusFieldProof proof_)
 {
+	Logger::Entry("SceneContext: Constructor");
+	sceneLibrary = std::make_unique<SceneLibrary>(proof_);
+	Logger::Log("Instantiate: SceneLibrary", fileName);
+	scenePipeline = std::make_unique<ScenePipeline>(proof_, *sceneLibrary);
+	Logger::Log("Instantiate: ScenePipeline", fileName);
+	sceneCreator = std::make_unique<SceneCreator>(proof_, *sceneLibrary);
+	Logger::Log("Instantiate: SceneCreator", fileName);
+	diplomat = std::make_unique<SceneContextDiplomat>
+	(
+		proof_,
+		std::make_unique<ExecutionAgent>(proof_, *scenePipeline)
+	);
+	Logger::Log("Instantiate: SceneContextDiplomat", fileName);
+	Logger::Log("Instantiate: ExecutionAgent", fileName);
+	Logger::End("SceneContext: Constructor");
 }
 SceneContext::~SceneContext()
 {
@@ -20799,17 +20928,27 @@ SceneContext::~SceneContext()
 ========================================
 #pragma once
 class Nexus;
+class SceneContextDiplomat;
 class SceneContext
 {
-public:
-	class SceneCreator;
-	class SceneController;
+	//シーンのユニークを保管
 	class SceneLibrary;
+public:
+	//シーンを作成する
+	class SceneCreator;
+	//シーンの制御、シーンデータのバッチングなどをランタイムで行う
+	class ScenePipeline;
+	class ExecutionAgent;
 	struct NexusFieldProof;
+	struct AgentKey;
 	SceneContext(NexusFieldProof proof_);
 	~SceneContext();
+	auto& AccessDiplomat() { return diplomat; }
 private:
-	std::unique_ptr<SceneController> sceneController;
+	std::unique_ptr<SceneLibrary> sceneLibrary;
+	std::unique_ptr<SceneCreator> sceneCreator;
+	std::unique_ptr<ScenePipeline> scenePipeline;
+	std::unique_ptr<SceneContextDiplomat> diplomat;
 };
 struct SceneContext::NexusFieldProof
 {
@@ -20817,25 +20956,288 @@ private:
 	friend class Nexus;
 	explicit NexusFieldProof() = default;
 };
+struct SceneContext::AgentKey
+{
+private:
+	friend class ExecutionAgent;
+	explicit AgentKey() = default;
+};
 
 ========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\MiddleLayer\Scene\SceneController\SceneController.cpp ===
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\MiddleLayer\Scene\SceneContextDiplomat\SceneContextDiplomat.cpp ===
 ========================================
 #include "PreCompileHeader.h"
-#include "SceneController.h"
-SceneContext::SceneController::SceneController(NexusFieldProof proof_)
+#include "SceneContextDiplomat.h"
+#include "SceneExecutionAgent/SceneExecutionAgent.h"
+SceneContextDiplomat::SceneContextDiplomat
+(
+	SceneContext::NexusFieldProof proof_,
+	std::unique_ptr<SceneContext::ExecutionAgent>&& executionAgent_
+)
 {
+	std::get<std::unique_ptr<SceneContext::ExecutionAgent>>(tools) = std::move(executionAgent_);
 }
 
 ========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\MiddleLayer\Scene\SceneController\SceneController.h ===
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\MiddleLayer\Scene\SceneContextDiplomat\SceneContextDiplomat.h ===
 ========================================
 #pragma once
 #include "../SceneContext.h"
-class SceneContext::SceneController
+class SceneContextDiplomat
 {
 public:
-	SceneController(NexusFieldProof proof_);
+	SceneContextDiplomat
+	(
+		SceneContext::NexusFieldProof proof_,
+		std::unique_ptr<SceneContext::ExecutionAgent>&& executionAgent_
+	);
+	template<typename ToolType>
+	auto& Access()
+	{
+		return *std::get<std::unique_ptr<ToolType>>(tools);
+	}
+private:
+	std::tuple<std::unique_ptr<SceneContext::ExecutionAgent>> tools;
+};
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\MiddleLayer\Scene\SceneContextDiplomat\SceneExecutionAgent\SceneExecutionAgent.cpp ===
+========================================
+#include "PreCompileHeader.h"
+#include "SceneExecutionAgent.h"
+#include "../../SceneContextRuntime/ScenePipeline.h"
+SceneContext::ExecutionAgent::ExecutionAgent(NexusFieldProof proof_, ScenePipeline& scenePipeline_)
+	:scenePipeline(scenePipeline_)
+{
+}
+void SceneContext::ExecutionAgent::RunScenePipeline
+(
+	NexusFieldProof proof_,
+	UINT const frameIndex_,
+	ModelContextDiplomat& modelContextDiplomat_,
+	CameraContextDiplomat& cameraContextDiplomat_,
+	BufferContextDiplomat& bufferContextDiplomat_
+)
+{
+	scenePipeline.Run
+	(
+		proof_, 
+		AgentKey{},
+		frameIndex_, 
+		modelContextDiplomat_, 
+		cameraContextDiplomat_, 
+		bufferContextDiplomat_
+	);
+}
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\MiddleLayer\Scene\SceneContextDiplomat\SceneExecutionAgent\SceneExecutionAgent.h ===
+========================================
+#pragma once
+#include "../../SceneContext.h"
+class ModelContextDiplomat;
+class CameraContextDiplomat;
+class BufferContextDiplomat;
+class SceneContext::ExecutionAgent
+{
+public:
+	ExecutionAgent(NexusFieldProof proof_, ScenePipeline& scenePipeline_);
+	void RunScenePipeline
+	(
+		NexusFieldProof proof_,
+		UINT const frameIndex_,
+		ModelContextDiplomat& modelContextDiplomat_,
+		CameraContextDiplomat& cameraContextDiplomat_,
+		BufferContextDiplomat& bufferContextDiplomat_
+	);
+private:
+	ScenePipeline& scenePipeline;
+};
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\MiddleLayer\Scene\SceneContextDiplomat\SceneExecutionAgent\SceneExecutionAgentLicences.h ===
+========================================
+#pragma once
+#include "SceneExecutionAgent.h"
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\MiddleLayer\Scene\SceneContextRuntime\ScenePipeline.cpp ===
+========================================
+#include "PreCompileHeader.h"
+#include "ScenePipeline.h"
+#include "SceneController/SceneController.h"
+#include "SceneDataBatchingPlace/SceneDataBatchingPlace.h"
+namespace
+{
+	auto const fileName = "ScenePipeline.cpp";
+}
+SceneContext::ScenePipeline::ScenePipeline(NexusFieldProof proof_, SceneLibrary& sceneLibrary_)
+{
+	sceneController = std::make_unique<SceneController>(proof_, sceneLibrary_);
+	Logger::Log("Instantiate: SceneController", fileName);
+}
+SceneContext::ScenePipeline::~ScenePipeline()
+{
+}
+void SceneContext::ScenePipeline::Run
+(
+	NexusFieldProof proof_,
+	AgentKey key_,
+	UINT const frameIndex_,
+	ModelContextDiplomat& modelContextDiplomat_,
+	CameraContextDiplomat& cameraContextDiplomat_,
+	BufferContextDiplomat& bufferContextDiplomat_
+)
+{
+	//シーンの制御、更新処理
+	sceneController->Run();
+	//シーンで使用したデータのバッチング
+	SceneDataBatchingPlace sceneDataBatchingPlace;
+	sceneDataBatchingPlace.BatchingPlace
+	(
+		frameIndex_ ,
+		*sceneController, 
+		modelContextDiplomat_, 
+		cameraContextDiplomat_,
+		bufferContextDiplomat_
+	);
+}
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\MiddleLayer\Scene\SceneContextRuntime\ScenePipeline.h ===
+========================================
+#pragma once
+#include "../SceneContext.h"
+class ModelContextDiplomat;
+class CameraContextDiplomat;
+class BufferContextDiplomat;
+class SceneContext::ScenePipeline
+{
+	//ランタイムでシーンの制御を行う
+	class SceneController;
+	//そのシーンで使用しているデータのバッチング場
+	class SceneDataBatchingPlace;
+public:
+	ScenePipeline(NexusFieldProof proof_,SceneLibrary& sceneLibrary_);
+	~ScenePipeline();
+	//シーンの更新処理の親玉
+	//更新処理の呼び出しは代行でやってもらう
+	void Run
+	(
+		NexusFieldProof proof_ ,
+		AgentKey key_,
+		UINT const frameIndex_,
+		ModelContextDiplomat& modelContextDiplomat_,
+		CameraContextDiplomat& cameraContextDiplomat_,
+		BufferContextDiplomat& bufferContextDiplomat_
+	);
+private:
+	std::unique_ptr<SceneController> sceneController;
+};
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\MiddleLayer\Scene\SceneContextRuntime\SceneController\SceneController.cpp ===
+========================================
+#include "PreCompileHeader.h"
+#include "SceneController.h"
+#include "../../SceneLibrary/SceneLibrary.h"
+SceneContext::ScenePipeline::SceneController::SceneController
+(
+	NexusFieldProof proof_,
+	SceneLibrary& sceneLib_
+):sceneLib(sceneLib_)
+{
+}
+void SceneContext::ScenePipeline::SceneController::Run()
+{
+	output = curScene->Update();
+}
+void SceneContext::ScenePipeline::SceneController::ChangeScene(std::string const& next_)
+{
+	curScene = sceneLib.Export(next_);
+}
+SceneBehavior::Output const& SceneContext::ScenePipeline::SceneController::WatchSceneOutput()const
+{
+	return output;
+}
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\MiddleLayer\Scene\SceneContextRuntime\SceneController\SceneController.h ===
+========================================
+#pragma once
+#include "../ScenePipeline.h"
+#include "../../SceneStructure/SceneBehavior.h"
+class SceneContext::ScenePipeline::SceneController
+{
+public:
+	SceneController
+	(
+		NexusFieldProof proof_,
+		SceneLibrary& sceneLib_
+	);
+	//シーンの制御、更新処理
+	void Run();
+	SceneBehavior::Output const& WatchSceneOutput()const;
+private:
+	void ChangeScene(std::string const& next_);
+	//現在稼働しているシーン
+	SceneBehavior* curScene = nullptr;
+	SceneLibrary& sceneLib;
+	//このシーンで使用しているカメラ、モデル、ライトなどの情報
+	SceneBehavior::Output output;
+};
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\MiddleLayer\Scene\SceneContextRuntime\SceneDataBatchingPlace\SceneDataBatchingPlace.cpp ===
+========================================
+#include "PreCompileHeader.h"
+#include "SceneDataBatchingPlace.h"
+#include "../SceneController/SceneController.h"
+//外部
+#include "../../../../LowerLayer/Resource/Camera/CameraContextDiplomats.h"
+SceneContext::ScenePipeline::SceneDataBatchingPlace::SceneDataBatchingPlace()
+{
+}
+void SceneContext::ScenePipeline::SceneDataBatchingPlace::BatchingPlace
+(
+	UINT const frameIndex_,
+	SceneController const& sceneController_,
+	ModelContextDiplomat& modelContextDiplomat_,
+	CameraContextDiplomat& cameraContextDiplomat_,
+	BufferContextDiplomat& bufferContextDiplomat_
+)
+{
+	auto const& sceneOutput = sceneController_.WatchSceneOutput();
+	//カメラコンテキストの代行者
+	auto& cameraAgent = cameraContextDiplomat_.Access<CameraContext::ExecutionAgent>();
+	//カメラデータのバッチング
+	cameraAgent.BatchCameraData
+	(
+		CameraContext::ExecutionAgent::SceneContextProof{},
+		sceneOutput.usingCamera,
+		frameIndex_,
+		bufferContextDiplomat_
+	);
+}
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\MiddleLayer\Scene\SceneContextRuntime\SceneDataBatchingPlace\SceneDataBatchingPlace.h ===
+========================================
+#pragma once
+#include "../ScenePipeline.h"
+class SceneContext::ScenePipeline::SceneDataBatchingPlace
+{
+public:
+	SceneDataBatchingPlace();
+	//カメラやモデル、ライトなどのそのシーンで使用しているデータのバッチング場
+	void BatchingPlace
+	(
+		UINT const frameIndex_,
+		SceneController const& sceneController_,
+		ModelContextDiplomat& modelContextDiplomat_,
+		CameraContextDiplomat& cameraContextDiplomat_,
+		BufferContextDiplomat& bufferContextDiplomat_
+	);
 private:
 };
 
@@ -20844,8 +21246,25 @@ private:
 ========================================
 #include "PreCompileHeader.h"
 #include "SceneCreator.h"
+#include "../SceneLibrary/SceneLibrary.h"
+//外部
+#include "../../../LowerLayer/Resource/Camera/CameraContextDiplomat/CameraContextDiplomat.h"
+#include "../../../LowerLayer/Resource/Camera/CameraContextDiplomat/CameraContextExecutionAgent/CameraContextExecutionAgent.h"
+#include "../../../LowerLayer/Resource/Camera/CameraContextDiplomat/CameraContextExecutionAgent/CameraContextAgentLicences.h"
+#include "../../../LowerLayer/Resource/Camera/CameraFSDispatcher/CameraFSDispatcher.h"
 SceneContext::SceneCreator::SceneCreator(NexusFieldProof proof_, SceneLibrary& sceneLib_)
+	:sceneLib(sceneLib_)
 {
+}
+void SceneContext::SceneCreator::Import(std::unique_ptr<SceneBehavior>&& scene_, std::string const& sceneName_)
+{
+	sceneLib.Import(std::move(scene_), sceneName_);
+}
+CameraContext::CameraFrontlineSystems* SceneContext::SceneCreator::ReceiveCameraSystems(CameraContextDiplomat& cameraContextDiplomat_)
+{
+	//CameraFrontlineSystemsを一つ渡してもらう
+	auto agent = cameraContextDiplomat_.Access<CameraContext::ExecutionAgent>();
+	return agent.DispatchFrontlineSystems(CameraContext::ExecutionAgent::SceneContextProof{});
 }
 
 ========================================
@@ -20853,12 +21272,31 @@ SceneContext::SceneCreator::SceneCreator(NexusFieldProof proof_, SceneLibrary& s
 ========================================
 #pragma once
 #include "../SceneContext.h"
+//外部
+#include "../SceneStructure/SceneBehavior.h"
 #include "../../../../Application/AllSceneIncludes.h"
+#include "../../../LowerLayer/Resource/Camera/CameraContext.h"
+class CameraContextDiplomat;
+//CameraFrontlineSystems
 class SceneContext::SceneCreator
 {
 public:
 	SceneCreator(NexusFieldProof proof_,SceneLibrary& sceneLib_);
-	//template<typename SceneType>
+	//シーンを作成する
+	template<typename SceneType>
+	void Create(std::string const& sceneName_, CameraContextDiplomat& cameraContextDiplomat_)
+	{
+		Logger::Log("Create Scene: " + sceneName_, "SceneCreator.h");
+		Import
+		(
+			std::make_unique<SceneType>(ReceiveCameraSystems(cameraContextDiplomat_)),
+			sceneName_
+		);
+	}
+private:
+	void Import(std::unique_ptr<SceneBehavior>&& scene_, std::string const& sceneName_);
+	CameraContext::CameraFrontlineSystems* ReceiveCameraSystems(CameraContextDiplomat& cameraContextDiplomat_);
+	SceneLibrary& sceneLib;
 };
 
 ========================================
@@ -20885,7 +21323,7 @@ void SceneContext::SceneLibrary::Import(std::unique_ptr<SceneBehavior>&& scene_,
 	Logger::Log("Import Scene: " + sceneName_, fileName);
 	sceneMap[sceneName_] = std::move(scene_);
 }
-SceneBehavior& SceneContext::SceneLibrary::Export(std::string const& sceneName_)
+SceneBehavior* SceneContext::SceneLibrary::Export(std::string const& sceneName_)
 {
 	ErrorMessageOutput::Assert::DetectError
 	(
@@ -20893,7 +21331,7 @@ SceneBehavior& SceneContext::SceneLibrary::Export(std::string const& sceneName_)
 		sceneName_ + "こんななまえのSceneは作成されていない",
 		fileName
 	);
-	return *sceneMap[sceneName_];
+	return sceneMap[sceneName_].get();
 }
 
 ========================================
@@ -20907,7 +21345,7 @@ class SceneContext::SceneLibrary
 public:
 	SceneLibrary(NexusFieldProof proof_);
 	void Import(std::unique_ptr<SceneBehavior>&& scene_, std::string const& sceneName_);
-	SceneBehavior& Export(std::string const& sceneName_);
+	SceneBehavior* Export(std::string const& sceneName_);
 private:
 	std::unordered_map<std::string, std::unique_ptr<SceneBehavior>> sceneMap;
 };
@@ -20919,7 +21357,7 @@ private:
 #include "SceneBehavior.h"
 SceneBehavior::SceneBehavior
 (
-	CameraContext::CameraFrontlineSystems& cameraSystems_
+	CameraContext::CameraFrontlineSystems* cameraSystems_
 ):cameraSystems(cameraSystems_)
 {
 	//各シーンに1つは存在するデバッグカメラを作成
@@ -20929,7 +21367,7 @@ SceneBehavior::Output SceneBehavior::Update()
 {
 	Output output;
 	//このシーンで使うカメラのアップデート
-	output.usingCamera = cameraSystems.CameraUpdate();
+	output.usingCamera = cameraSystems->CameraUpdate();
 	return output;
 }
 
@@ -20937,7 +21375,6 @@ SceneBehavior::Output SceneBehavior::Update()
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\MiddleLayer\Scene\SceneStructure\SceneBehavior.h ===
 ========================================
 #pragma once
-#include "../SceneContext.h"
 #include "../../../LowerLayer/Resource/Camera/PresetCameras/PresetCameraIncludes.h"
 //外部
 #include "../../../LowerLayer/Resource/Camera/CameraContextRuntime/CameraFrontlineSystems.h"
@@ -20945,9 +21382,10 @@ SceneBehavior::Output SceneBehavior::Update()
 #include "../../../LowerLayer/Resource/Camera/CameraStructrue/CameraDesc/CameraDesc.h"
 //アプリケーションで定義される全てのカメラのインクルード
 #include "../../../../Application/AllCameraIncludes.h"
+class SceneContext;
 class SceneBehavior
 {
-	friend class SceneContext::SceneController;
+	friend class SceneContext;
 	struct Output
 	{
 		//使用しているカメラ
@@ -20956,7 +21394,7 @@ class SceneBehavior
 public:
 	SceneBehavior
 	(
-		CameraContext::CameraFrontlineSystems& cameraSystems_
+		CameraContext::CameraFrontlineSystems* cameraSystems_
 	);
 	virtual ~SceneBehavior() = default;
 protected:
@@ -20969,7 +21407,7 @@ protected:
 	)
 	{
 		//作成したカメラを登録する
-		cameraSystems.RegisterCamera<dstSocket>
+		cameraSystems->RegisterCamera<dstSocket>
 		(
 			std::move(std::make_unique<CameraType>(cameraDesc_)),
 			name_
@@ -20986,7 +21424,7 @@ private:
 	//SceneContext::SceneControllerのみ呼べる
 	Output Update();
 	void Reset();
-	CameraContext::CameraFrontlineSystems& cameraSystems;
+	CameraContext::CameraFrontlineSystems* cameraSystems;
 };
 
 ========================================
@@ -22413,5 +22851,5 @@ namespace StringProcessing
 ========================================
 === SUMMARY ===
 ========================================
-Total Files      : 497
-Effective Lines  : 16336
+Total Files      : 508
+Effective Lines  : 16651

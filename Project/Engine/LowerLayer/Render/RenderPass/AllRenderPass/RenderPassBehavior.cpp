@@ -94,6 +94,11 @@ void RenderContext::PassBehavior::BeginPass(RuntimeWrapper& cmdWrapper_, BufferC
 		ClearColorBufferView(rtHandles[i], src.clearColor.data(), cmdWrapper_);
 	}
 
+	//行列のセット(深度のみのパスだとまずいかも)
+	SetMatrix<D3D12_RECT>(numColorBuffers, scissorRects.data(), cmdWrapper_);
+	SetMatrix<D3D12_VIEWPORT>(numColorBuffers, viewports.data(), cmdWrapper_);
+
+
 	//深度ステンシルバッファ
 	if (depthStencilBufferInfo.has_value())
 	{
@@ -379,7 +384,6 @@ void RenderContext::PassBehavior::SetMatrix<D3D12_RECT>
 )
 {
 	cmdWrapper_.RSSetScissorRects(num_, matrix_);
-
 }
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

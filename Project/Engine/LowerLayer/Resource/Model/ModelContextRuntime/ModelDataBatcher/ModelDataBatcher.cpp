@@ -32,21 +32,19 @@ BufferContext::BufferDispatcher& ModelContext::ModelDataBatcher::BorrowBufferDis
 template<>
 std::vector<Model*> const& ModelContext::ModelDataBatcher::PullModelContainer<Model::Type::kStatic>
 (
-	NexusFieldProof proof_,
 	ModelContainer const& modelContainer_
 ) 
 {
-	return modelContainer_.WatchSeparatedByModelType(proof_)[(UINT)Model::Type::kStatic];
+	return modelContainer_.WatchSeparatedByModelType()[(UINT)Model::Type::kStatic];
 }
 
 template<>
 std::vector<Model*> const& ModelContext::ModelDataBatcher::PullModelContainer<Model::Type::kDynamic>
 (
-	NexusFieldProof proof_,
 	ModelContainer const& modelContainer_
 ) 
 {
-	return modelContainer_.WatchSeparatedByModelType(proof_)[(UINT)Model::Type::kDynamic];
+	return modelContainer_.WatchSeparatedByModelType()[(UINT)Model::Type::kDynamic];
 }
 
 
@@ -131,13 +129,11 @@ void ModelContext::ModelDataBatcher::OverrideBuffer<ConstantBufferBindSlots::kMa
 template
 std::vector<Model*> const& ModelContext::ModelDataBatcher::PullModelContainer<Model::Type::kStatic>
 (
-	NexusFieldProof proof_,
 	ModelContainer const& modelContainer_
 );
 template
 std::vector<Model*> const& ModelContext::ModelDataBatcher::PullModelContainer<Model::Type::kDynamic>
 (
-	NexusFieldProof proof_,
 	ModelContainer const& modelContainer_
 );
 

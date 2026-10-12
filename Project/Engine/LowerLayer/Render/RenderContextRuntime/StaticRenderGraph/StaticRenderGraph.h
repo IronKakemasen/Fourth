@@ -80,7 +80,7 @@ private:
 			///UploadStructuredBufferなのでダブルです。中身の初期化もしていません
 			BufferUniqueID targetFillInRefBufferID;
 			//フロントバッファで参照する最終カラーバッファのID
-			BufferUniqueID finalColorBufferID = 0xffffffff;
+			BufferUniqueID finalColorBufferID = kInvalid;
 		};
 
 		struct PSO_Builder

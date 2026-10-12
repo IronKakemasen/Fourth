@@ -49,7 +49,7 @@ void RenderContext::StaticRenderGraph::FinalRenderer::Update
 	auto const& rtvHandle = swapChianBuffer.OutProperRtvHandle(frameIndex_);
 	auto const& viewport_scissor = swapChianBuffer.WatchMatrices();
 
-	//参照するカラーバッファsrvIndexをルートコンスタンツで送る
+	//参照するカラーバッファのsrvIndexをルートコンスタンツで送る
 	auto* refColorBuffer = static_cast<ColorBuffer*>(bufferDispatcher.Dispatch(finalRefBufferID));
 	SRVHeapIndex refBufferSrvHeapIndex = refColorBuffer->OutProperSRVHeapIndex();
 	auto const bindSlot = ConstantBuffers::RootConstantsBindSlots::kFinalColorBufferSrv;
@@ -62,10 +62,16 @@ void RenderContext::StaticRenderGraph::FinalRenderer::Update
 		0
 	);
 
+	//バリアキャッシュBegin
+	std::vector<D3D12_RESOURCE_BARRIER> barrierCacheBegin;
+
+	//参照先バッファのバリアを生成ー＞Read
+	auto refColorBufferBarrierOpt = refColorBuffer->CreateBarrier(BufferUsage::kRead);
+	if (refColorBufferBarrierOpt)barrierCacheBegin.emplace_back(*refColorBufferBarrierOpt);
 
 	//バリアを張る→renderTarget
-	auto barrier = swapChianBuffer.CreateBarrier<D3D12_RESOURCE_STATE_RENDER_TARGET>(frameIndex_);
-	runtimeWrapper_.ResourceBarrier(1, &barrier);
+	barrierCacheBegin.emplace_back(swapChianBuffer.CreateBarrier<D3D12_RESOURCE_STATE_RENDER_TARGET>(frameIndex_));
+	runtimeWrapper_.ResourceBarrier((UINT)barrierCacheBegin.size(), barrierCacheBegin.data());
 
 	//クリア
 	runtimeWrapper_.ClearRenderTargetView(rtvHandle, swapChianBuffer.WatchClearColor(), 0, nullptr);
@@ -84,6 +90,6 @@ void RenderContext::StaticRenderGraph::FinalRenderer::Update
 	runtimeWrapper_.DispatchMesh(3, 1, 1);
 
 	//バリアを張る→Present
-	barrier = swapChianBuffer.CreateBarrier<D3D12_RESOURCE_STATE_PRESENT>(frameIndex_);
+	auto barrier = swapChianBuffer.CreateBarrier<D3D12_RESOURCE_STATE_PRESENT>(frameIndex_);
 	runtimeWrapper_.ResourceBarrier(1, &barrier);
 }

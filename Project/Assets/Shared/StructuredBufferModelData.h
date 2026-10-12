@@ -40,7 +40,7 @@ namespace StructuredBufferModelData
         std::string albedoTexture = "";
         std::string normalTexture = "";
         std::string emissiveTexture = "";
-        Vector4<float> baseColor = {255,255,255,255};
+        Vector4<float> baseColor = { float(kInvalid),float(kInvalid),float(kInvalid),float(kInvalid) };
         float roughness = float(kInvalid);
         float metallic = float(kInvalid);
     };
