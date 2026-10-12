@@ -1,0 +1,45 @@
+#include "PreCompileHeader.h"
+#include "GraphicsRootSigBuilder.h"
+
+
+//外部
+#include "../../../../../../LowerLayer/Resource/RootSignature/RootSigDiplomatIncludes.h"
+
+namespace
+{
+	auto const fileName = "GraphicsRootSigBuilder.cpp";
+}
+
+using namespace RootSignatureLayoutComponent;
+using namespace StaticSampler;
+
+
+[[nodiscard]] RenderContext::StaticRenderGraph::BuildOutput::RootSigBuilder RenderContext::StaticRenderGraph::RootSigBuilder::Build
+(
+	NexusFieldProof proof_,
+	RootSignatureContextDiplomat& rootSignatureContextDiplomat_
+)
+{
+
+	BuildOutput::RootSigBuilder output;
+
+	//rootSig生成コマンドをもらう
+	auto* rootSigCmdProvider = rootSignatureContextDiplomat_.Access<RootSignatureContext::CmdProvider>();
+	RootSignatureContext::CmdProvider::LicenceType<RootSignatureCmds::CreateGraphicsRootSigCmd> licenece;
+	auto createRootSigCmd = rootSigCmdProvider->Provide<RootSignatureCmds::CreateGraphicsRootSigCmd>(licenece);
+
+	RootSignatureDesc::Graphics desc;
+
+	//とりあえずEnumで定義したある程度の静的サンプラーは全部作る
+	for (int i = 0;i < (int)SamplerState::kCount;++i)
+	{
+		desc.pairshaderStage_samplerStateContainer.emplace_back(ShaderStage::kAll, SamplerState(i));
+	}
+
+	Logger::Log("Create: GraphicsRootSig", fileName);
+
+	//ルートシグネチャを生成してそのポインタはもらっちゃう
+	output.graphicsRootSig = createRootSigCmd(desc);
+
+	return output;
+}

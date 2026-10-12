@@ -1,7 +1,8 @@
 #include "PreCompileHeader.h"
 #include "CameraTransform.h"
-#include "../../../../../MiddleLayer/Transform/Transform.h"
 #include "../CameraDesc/CameraDesc.h"
+
+#include "../../../../../Math/Transform/Transform.h"
 
 namespace
 {

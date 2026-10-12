@@ -1,6 +1,6 @@
 #pragma once
 #include "ModelDescription/ModelDescription.h"
-#include "../../../../MiddleLayer/Transform/Transform.h"
+#include "../../../../Math/Transform/Transform.h"
 #include "../../../Buffer/BufferDefinition/TextureComponent.h"
 
 class Model

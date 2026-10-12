@@ -1,0 +1,30 @@
+#include "PreCompileHeader.h"
+#include "SceneCompositor.h"
+#include "../../PassDesc/PassDesc.h"
+#include "../../RuntimePassInfo/RuntimePassInfo.h"
+
+
+//外部
+#include "../../../../../LowerLayer/Resource/Model/ModelStructure/Model.h"
+#include "../../../../../LowerLayer/Core/Command/RuntimeWrapper/RuntimeWrapper.h"
+
+SceneCompositor::SceneCompositor(RenderContext::NexusFieldProof proof_, std::unique_ptr<RenderContext::PassDesc>&& desc_)
+	:RenderContext::PassBehavior(proof_, std::move(desc_))
+{
+
+}
+
+
+void SceneCompositor::Update
+(
+	[[maybe_unused]] std::unordered_map<uint64_t, std::pair<RenderStateKey, std::vector<Model*>>> const& modelContainer_,
+	[[maybe_unused]] RenderStateComponent::FillMode const modelFillMode_,
+	RenderContext::PSO_PoolDispatcher& psoDispatcher_,
+	RuntimeWrapper& cmdWrapper_,
+	[[maybe_unused]] BufferContext::BufferDispatcher& bufDispatcher_
+)
+{
+	//オフスクリーンレンダリングのみです
+	RenderOffScreen(psoDispatcher_, cmdWrapper_ ,bufDispatcher_);
+
+}
