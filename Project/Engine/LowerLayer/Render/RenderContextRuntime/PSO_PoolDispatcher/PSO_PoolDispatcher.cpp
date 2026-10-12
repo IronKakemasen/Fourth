@@ -92,7 +92,7 @@ void RenderContext::PSO_PoolDispatcher::CheckOccupationRate()const
 
 	ErrorMessageOutput::Assert::DetectError
 	(
-		occupationRate < 0.75f,
+		occupationRate < 0.4f,
 		"PSO生成数が4割未満じゃない: " + std::to_string(occupationRate * 100.0f),
 		fileName
 	);

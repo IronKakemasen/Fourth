@@ -13,7 +13,17 @@ struct Vector4
 
 	Vector4(std::array<T,4>const& entries) : x(entries[0]), y(entries[1]), z(entries[2]), w(entries[3]) {}
 	Vector4(T x_, T y_, T z_, T w_) : x(x_), y(y_), z(z_), w(w_) {}
-	Vector4() {}
+	Vector4() = default;
 
+	auto operator*(float scalar_) const
+	{
+		return Vector4<T>
+		{
+			static_cast<T>(x* scalar_),
+			static_cast<T>(y* scalar_),
+			static_cast<T>(z* scalar_),
+			static_cast<T>(w* scalar_)
+		};
+	}
 };
 

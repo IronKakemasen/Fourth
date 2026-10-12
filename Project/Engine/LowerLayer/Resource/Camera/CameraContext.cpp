@@ -35,7 +35,7 @@ CameraContext::CameraContext
 		std::make_unique<ExecutionAgent>(proof_, *frontlineSystemsDispatcher,*cameraDataBatcher)
 	);
 	Logger::Log("Instantiate: CameraContextDiplomat", fileName);
-	Logger::Log("Instantiate: CmdProvider", fileName);
+	Logger::Log("Instantiate: ExecutionAgent", fileName);
 
 
 	Logger::End("CameraContext: Constructor");

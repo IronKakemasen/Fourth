@@ -279,7 +279,7 @@ RenderContext::StaticRenderGraph::PSO_Builder::PsoDesc_Key RenderContext::Static
 void RenderContext::StaticRenderGraph::PSO_Builder::InputDependingModelsInfo
 (
 	ShaderContextDiplomat& shaderContextDiplomat_,
-	PsoDesc_Key& psoCommonDesc_,
+	PsoDesc_Key const& psoCommonDesc_,
 	PassDesc const& passDesc_,
 	RenderPassComponent::Pass const renderPass_,
 	std::vector<RenderState> const& allRenderStates_,
@@ -334,12 +334,13 @@ void RenderContext::StaticRenderGraph::PSO_Builder::InputDependingModelsInfo
 
 				//MaterialTypeを入力
 				psoDesc.second.material = materialType;
+
 				std::optional<std::string> const psFileName = ShaderTable::GetPixelShader(renderPass_, materialType);
 				//ピクセルシェーダーを通さないケースもあるのでチェック
 				if (psFileName.has_value())
 				{
-					renderStateCommon.first.shaderSet.pixelShader = shaderLib->Export(*psFileName);
-					renderStateCommon.first.shaderSet.pixelShaderName = *psFileName;
+					psoDesc.first.shaderSet.pixelShader = shaderLib->Export(*psFileName);
+					psoDesc.first.shaderSet.pixelShaderName = *psFileName;
 				}
 
 				//PSO_KeyにblendModeを入力

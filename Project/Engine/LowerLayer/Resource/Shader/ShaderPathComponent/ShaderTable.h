@@ -7,7 +7,7 @@
 
 namespace ShaderTable
 {
-	std::string const GetMeshShader(RenderPassComponent::Pass pass_, ShaderPathComponent::MeshType meshType_)
+	inline std::string const GetMeshShader(RenderPassComponent::Pass pass_, ShaderPathComponent::MeshType meshType_)
 	{
 		std::string meshShader;
 
@@ -40,7 +40,7 @@ namespace ShaderTable
 		return meshShader;
 	}
 
-	std::optional<std::string> const GetPixelShader(RenderPassComponent::Pass pass_, ShaderPathComponent::MaterialType materialType_)
+	inline std::optional<std::string> const GetPixelShader(RenderPassComponent::Pass pass_, ShaderPathComponent::MaterialType materialType_)
 	{
 		std::optional<std::string> pixelShader;
 

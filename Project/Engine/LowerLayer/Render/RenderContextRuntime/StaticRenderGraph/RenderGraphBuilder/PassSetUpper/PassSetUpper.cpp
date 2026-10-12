@@ -70,6 +70,8 @@ void RenderContext::StaticRenderGraph::PassSetUpper::CreateAllPassInfo
 	//フロントバッファ参照カラーバッファの名前をjsonfileから取得
 	Miyajison* miyajison = Miyajison::Get();
 	auto const finalColorBufferName = miyajison->LoadData<std::string>(DataKey::kRenderGraphSettings, { DataKey::kFinalColorBuffer });
+	//最終カラーバッファと名前が一致しているカラーバッファのIDを格納
+	output_.finalColorBufferID = passBufferCache.at(finalColorBufferName);
 
 
 	//パスDescがどのバッファを使用するかの名前リストを所持しているので、それと組み合わせて埋めていく
@@ -94,11 +96,6 @@ void RenderContext::StaticRenderGraph::PassSetUpper::CreateAllPassInfo
 			//passCreatorが所持するidキャッシュから名前で引く
 			BufferUniqueID refID = passBufferCache.at(refBufferName);
 
-			//最終カラーバッファと名前が一致していた場合は格納
-			if (output_.finalColorBufferID == 0xffffffff && finalColorBufferName == refBufferName)
-			{
-				output_.finalColorBufferID = refID;
-			}
 
 			//ここで参照先IDの指すバッファがカラーバッファなのか、深度バッファなのかで
 			auto* buffer = bufferDispatcher->Dispatch(refID);

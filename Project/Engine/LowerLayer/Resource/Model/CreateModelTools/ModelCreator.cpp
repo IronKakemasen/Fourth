@@ -36,26 +36,27 @@ std::vector<Model*> ModelContext::ModelCreator::Create
 	ErrorMessageOutput::Assert::DetectError
 	(
 		type_ != Model::Type::kCount,
-		"KCount何か選択してんじゃない",
+		"Model::Type::KCountを選択してんじゃない",
 		fileName
 	);
 
 	std::vector<Model*> modelPtrContainer;
 
-	//モデルのディスクリプションの要素を組み立てる
-	auto [perDrawIndices,materialsGPU,meshletSize] = modelDescAssembler->Assemble(modelFileName_, materials_);
-
-	///一つのDescに詰める
-	ModelDescription modelDesc
-	(
-		modelName_ + std::to_string(numCreate++),
-		perDrawIndices,
-		modelRenderStates_,
-		meshletSize
-	);
 
 	for (UINT i = 0;i < numCreate_;++i)
 	{
+		//モデルのディスクリプションの要素を組み立てる
+		auto [perDrawIndices, materialsGPU, meshletSize] = modelDescAssembler->Assemble(modelFileName_, materials_);
+
+		///一つのDescに詰める
+		ModelDescription modelDesc
+		(
+			modelName_ + std::to_string(numCreate++),
+			perDrawIndices,
+			modelRenderStates_,
+			meshletSize
+		);
+
 		///モデルクラスのインスタンス化
 		std::unique_ptr<Model> model = std::make_unique<Model>(type_ , modelDesc, materialsGPU);
 

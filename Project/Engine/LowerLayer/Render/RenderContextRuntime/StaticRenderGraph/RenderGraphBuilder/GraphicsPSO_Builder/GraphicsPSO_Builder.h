@@ -62,7 +62,7 @@ private:
 	static void InputDependingModelsInfo
 	(
 		ShaderContextDiplomat& shaderContextDiplomat_,
-		PsoDesc_Key& psoCommonDesc_,
+		PsoDesc_Key const& psoCommonDesc_,
 		PassDesc const& passDesc_,
 		RenderPassComponent::Pass const renderPass_,
 		std::vector<RenderState> const& allRenderStates_,

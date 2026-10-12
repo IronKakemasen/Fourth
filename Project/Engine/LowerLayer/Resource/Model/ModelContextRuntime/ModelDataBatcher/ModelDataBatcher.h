@@ -31,7 +31,6 @@ public:
 	template<Model::Type modelType>
 	void BatchModelData
 	(
-		NexusFieldProof proof_,
 		AgentKey agentKey_,
 		ModelContainer const& modelContainer_,
 		UINT const frameIndex_,
@@ -42,7 +41,7 @@ public:
 		auto& dispatcher = BorrowBufferDispatcher(bufferContextDiplomat_);
 
 		//モデルタイプ別に仕分けされたコンテナ
-		auto const& separatedContainer = PullModelContainer<modelType>(proof_, modelContainer_);
+		auto const& separatedContainer = PullModelContainer<modelType>(modelContainer_);
 
 		//モデルの所持するデータをバッファに書き込んでいく
 		for (Model const* model: separatedContainer)
@@ -93,7 +92,7 @@ private:
 
 	//モデルコンテナクラスから、仕分け済みのモデルコンテナを引っ張る
 	template<Model::Type modelType>
-	std::vector<Model*> const& PullModelContainer(NexusFieldProof proof_, ModelContainer const& modelContainer_);
+	std::vector<Model*> const& PullModelContainer(ModelContainer const& modelContainer_);
 };
 
 

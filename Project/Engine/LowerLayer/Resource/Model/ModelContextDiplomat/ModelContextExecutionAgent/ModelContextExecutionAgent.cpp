@@ -36,7 +36,6 @@ void ModelContext::ExecutionAgent::BatchStaticModelData
 {
 	modelDataBatcher.BatchModelData<Model::Type::kStatic>
 	(
-		proof_,
 		AgentKey{},
 		modelContainer,
 		frameIndex_,
@@ -53,7 +52,6 @@ void ModelContext::ExecutionAgent::BatchDynamicModelData
 {
 	modelDataBatcher.BatchModelData<Model::Type::kDynamic>
 	(
-		proof_,
 		AgentKey{},
 		modelContainer,
 		frameIndex_,

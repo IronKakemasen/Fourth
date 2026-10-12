@@ -26,5 +26,7 @@ private:
 	ID3D12PipelineState* finalRenderingPso;
 	//最終参照テクスチャsrvHeapIndex
 	BufferUniqueID finalRefBufferID;
+	
+
 };
 

@@ -26,7 +26,7 @@ public:
 	//RenderStateで仕分けされたコンテナを見るためのコマンド
 	ModelContextCmds::WatchSeparatedByRenderState WatchSeparatedByRenderStateCmd(ProviderKey key_);
 	//モデルのタイプ別に仕分けされたコンテナを見るためのコマンド
-	auto const& WatchSeparatedByModelType(NexusFieldProof proof_)const { return separatedByModelType; }
+	auto const& WatchSeparatedByModelType()const { return separatedByModelType; }
 
 	//ランタイムでPSO切り替えコストを低減させるために、モデルクラスをおなじrenderStateごとに分別する
 	void SeparateModels(NexusFieldProof proof_, AgentKey key_);
@@ -34,12 +34,14 @@ public:
 
 private:
 
+
+	//モデルの本体が詰まってる
+	std::vector<std::unique_ptr<Model>> container;
+
 	//モデルがレンダーステートごとに分別されたコンテナ。
 	//第一添え字は、Passで指定
 	std::vector<SeparatedByRenderState> separatedByRenderState;
 
-	//モデルの本体が詰まってる
-	std::vector<std::unique_ptr<Model>> container;
 	//staticかdynamicかで仕分けられている
 	std::array < std::vector<Model*>, (UINT)Model::Type::kCount > separatedByModelType;
 };

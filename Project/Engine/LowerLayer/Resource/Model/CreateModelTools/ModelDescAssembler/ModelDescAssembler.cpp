@@ -109,9 +109,9 @@ std::vector<MaterialGPU> ModelContext::ModelDescAssembler::ConvertMaterialData
 			if (src.normalTexture.size() > 0)	dst.normalTexture	= textureLib->Export(src.normalTexture);
 			if (src.emissiveTexture.size() > 0) dst.emissiveTexture = textureLib->Export(src.emissiveTexture);
 
-			if (src.roughness != kInvalid)	dst.roughness	= src.roughness;
-			if (src.metallic != kInvalid)	dst.metallic	= src.metallic;
-
+			if (src.roughness != kInvalid)		dst.roughness		= src.roughness;
+			if (src.metallic != kInvalid)		dst.metallic		= src.metallic;
+			if (src.baseColor.x != kInvalid)	dst.baseColor		= src.baseColor;
 		}
 
 		//手動入力で満たされなかった部分を、モデル名に紐づけられているデータから入力する
@@ -133,15 +133,22 @@ std::vector<MaterialGPU> ModelContext::ModelDescAssembler::ConvertMaterialData
 
 			if (dst.metallic == kInvalid && src.metallic != kInvalid)	
 				dst.metallic	= src.metallic;
+
+			if (dst.baseColor.x == kInvalid && src.baseColor.x != kInvalid)
+				dst.baseColor = Vector4<float>{ src.baseColor.x * 255.0f,src.baseColor.y * 255.0f,src.baseColor.z * 255.0f,src.baseColor.w };
+
 		}
 
 		//手動入力もなくソースも無ければ、適当な値を入れておく
 		//あえて入れていないパラメータは、hlsl側でセンチネルとしての値が埋め込まれているので触らんように
 		{
 			if (dst.albedoTexture == kInvalid)dst.albedoTexture = textureLib->Export("white4x4_albedo");
+			
 			//割とおきにな値
-			if (dst.roughness == kInvalid)dst.roughness = 0.25f;
-			if (dst.metallic == kInvalid )dst.metallic = 0.9f;
+			if (dst.roughness == kInvalid)		dst.roughness	= 0.25f;
+			if (dst.metallic == kInvalid )		dst.metallic	= 0.9f;
+			if (dst.baseColor.x == kInvalid)	dst.baseColor	= { 255,255,255,255 };
+
 		}
 	}
 
