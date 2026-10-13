@@ -1,7 +1,7 @@
 #pragma once
 
 
-//オープンアドレッシング・ハッシュテーブル法で、高速にValueType検索するためのツール
+//オープンアドレッシング・ハッシュテーブル法で、高速にValueTypeを検索するためのツール
 template<typename ValueType>
 class ClosedHashMap
 {

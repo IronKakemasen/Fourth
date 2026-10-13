@@ -41,10 +41,10 @@ private:
 	std::unique_ptr<DataLibrary> jsonDataLibrary;
 
 	///ファイル名からジェーソンデータをライブラリーから引っ張り、返す
-	const nlohmann::json& PullJsonData(std::string fileName_);
+	const nlohmann::json& PullJsonData(std::string const& fileName_);
 
 	//パスからジェーソンファイルを読み込んでジェーソンデータを返す
-	nlohmann::json LoadJsonFile(std::string filePath_);
+	nlohmann::json LoadJsonFile(std::string const& filePath_);
 
 	//ジェーソンファイルレジストリーから全てのジェーソンファイルのパスを取得して読み込み、
 	///ライブラリーに詰めていく

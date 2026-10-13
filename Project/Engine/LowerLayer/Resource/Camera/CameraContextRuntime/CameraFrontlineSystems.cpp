@@ -2,8 +2,10 @@
 #include "CameraFrontlineSystems.h"
 #include "CameraLibrary/CameraLibrary.h"
 #include "CameraController/CameraController.h"
+#include "../CameraCreator/CameraCreator.h"
 
-CameraContext::CameraFrontlineSystems::CameraFrontlineSystems(NexusFieldProof proof_)
+CameraContext::CameraFrontlineSystems::CameraFrontlineSystems(NexusFieldProof proof_, CameraCreator& cameraCreator_)
+	:cameraCreator(cameraCreator_)
 {
 	cameraLibrary = std::make_unique<CameraLibrary>(proof_);
 	cameraController = std::make_unique<CameraController>(proof_);

@@ -8,7 +8,7 @@ namespace
 	std::string const fileName = "CameraFSDispatcher.cpp";
 }
 
-CameraContext::FrontlineSystemsDispatcher::FrontlineSystemsDispatcher(NexusFieldProof proof_)
+CameraContext::FrontlineSystemsDispatcher::FrontlineSystemsDispatcher(NexusFieldProof proof_, CameraCreator& cameraCreator_)
 {
 	///!!!!!!!!将来的には、シーンのジェーソンファイルの数からシーン数を確定
 	//その数分インスタンス化する
@@ -20,7 +20,7 @@ CameraContext::FrontlineSystemsDispatcher::FrontlineSystemsDispatcher(NexusField
 
 		cameraFrontlineSystemsContainer.emplace_back
 		(
-			std::make_unique<CameraFrontlineSystems>(proof_)
+			std::make_unique<CameraFrontlineSystems>(proof_, cameraCreator_)
 		);
 	}
 

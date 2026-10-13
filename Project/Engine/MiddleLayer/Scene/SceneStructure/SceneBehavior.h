@@ -1,14 +1,8 @@
 #pragma once
-#include "../../../LowerLayer/Resource/Camera/PresetCameras/PresetCameraIncludes.h"
 
 
 //外部
 #include "../../../LowerLayer/Resource/Camera/CameraContextRuntime/CameraFrontlineSystems.h"
-#include "../../../LowerLayer/Resource/Camera/CameraContextRuntime/CameraSocket.h"
-#include "../../../LowerLayer/Resource/Camera/CameraStructrue/CameraDesc/CameraDesc.h"
-
-//アプリケーションで定義される全てのカメラのインクルード
-#include "../../../../Application/AllCameraIncludes.h"
 
 
 class SceneContext;
@@ -42,12 +36,7 @@ protected:
 		std::string const& name_
 	)
 	{
-		//作成したカメラを登録する
-		cameraSystems->RegisterCamera<dstSocket>
-		(
-			std::move(std::make_unique<CameraType>(cameraDesc_)),
-			name_
-		);
+		cameraSystems->CreateCamera<dstSocket, CameraType>(cameraDesc_,name_);
 	}
 
 	//ゲームオブジェクトが好きなタイミングでカメラを切り替えられるように

@@ -104,6 +104,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Engine\LowerLayer\Resource\Camera\CameraCreator\CameraCreator.cpp" />
     <ClCompile Include="Engine\LowerLayer\Core\Command\CommandContextBuilder\CommandContextBuilder.cpp" />
     <ClCompile Include="Engine\LowerLayer\DebugSystem\DebugContext.cpp" />
     <ClCompile Include="Engine\LowerLayer\Resource\Camera\CameraBufferCreator\CameraBufferCreator.cpp" />
@@ -439,6 +440,7 @@
     <ClInclude Include="Assets\Shared\StructuredBufferModelData.h" />
     <ClInclude Include="Application\AllGameObjectIncludes.h" />
     <ClInclude Include="Application\AllSceneIncludes.h" />
+    <ClInclude Include="Engine\LowerLayer\Resource\Camera\CameraCreator\CameraCreator.h" />
     <ClInclude Include="Engine\LowerLayer\Core\Command\CommandContextBuilder\CommandContextBuilder.h" />
     <ClInclude Include="Engine\LowerLayer\DebugSystem\DebugContext.h" />
     <ClInclude Include="Engine\LowerLayer\Resource\Camera\CameraBufferCreator\CameraBufferCreator.h" />

@@ -20,6 +20,8 @@ public:
 	class CameraFrontlineSystems;
 	//CameraFrontlineSystemsの分配を行う
 	class FrontlineSystemsDispatcher;
+	//カメラ作成
+	class CameraCreator;
 
 	class ExecutionAgent;
 
@@ -38,7 +40,8 @@ private:
 	std::unique_ptr<FrontlineSystemsDispatcher> frontlineSystemsDispatcher;
 	std::unique_ptr<CameraDataBatcher> cameraDataBatcher;
 	std::unique_ptr<CameraContextDiplomat> diplomat;
-	
+	std::unique_ptr<CameraCreator> cameraCreator;
+
 };
 
 

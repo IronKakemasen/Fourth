@@ -6,7 +6,7 @@ class CameraContext::FrontlineSystemsDispatcher
 {
 public:
 
-	FrontlineSystemsDispatcher(NexusFieldProof proof_);
+	FrontlineSystemsDispatcher(NexusFieldProof proof_ ,CameraCreator& cameraCreator_);
 	~FrontlineSystemsDispatcher();
 
 	CameraFrontlineSystems* Dispatch(AgentKey key_);
