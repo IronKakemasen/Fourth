@@ -1,6 +1,5 @@
 #pragma once
-#include "../CameraContext.h"
-#include "CameraSocket.h"
+#include "../CameraCreator/CameraCreator.h"
 
 class CameraBehavior;
 
@@ -11,23 +10,24 @@ class CameraContext::CameraFrontlineSystems
 	//カメラのアップデートを読んだり、デバッグ操作などを行う
 	class CameraController;
 
+
 public:
 
 	template<CameraSocket dstSocket_>
 	using CmdConnectCamera = std::function<void(std::string const&)>;
 
-	CameraFrontlineSystems(NexusFieldProof proof_);
+	CameraFrontlineSystems(NexusFieldProof proof_, CameraCreator& cameraCreator_);
 	~CameraFrontlineSystems();
 
-	//カメラの登録
-	template<CameraSocket dstSocket>
-	void RegisterCamera
+	//カメラの作成
+	template<CameraSocket dstSocket,typename CameraType>
+	void CreateCamera
 	(
-		std::unique_ptr<CameraBehavior>&& camera_,
+		std::optional<CameraDesc> const& cameraDesc_,
 		std::string const& name_
 	)
 	{
-		ImportCamera(std::move(camera_), name_);
+		ImportCamera(std::move(cameraCreator.Create<dstSocket, CameraType>(cameraDesc_)), name_);
 		Connect<dstSocket>(name_);
 	}
 
@@ -56,7 +56,7 @@ private:
 
 	std::unique_ptr<CameraLibrary> cameraLibrary;
 	std::unique_ptr<CameraController> cameraController;
-
+	CameraCreator& cameraCreator;
 
 };
 
