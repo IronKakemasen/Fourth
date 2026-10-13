@@ -14,6 +14,8 @@ ModelDescription::ModelDescription
 	std::vector<size_t> const& meshletSize_
 ) :perDrawIndices(perDrawIndices_), renderStates(renderStates_), meshletSize(meshletSize_)
 {
+#ifdef _DEBUG
+
 	std::string errorMsg{};
 
 	for (auto& renderState : renderStates)
@@ -55,8 +57,8 @@ ModelDescription::ModelDescription
 		{
 			if
 			(
-					material == ShaderPathComponent::MaterialType::kOffscreen ||
-					(UINT)material >= (UINT)ShaderPathComponent::MaterialType::kCount
+				material == ShaderPathComponent::MaterialType::kOffscreen ||
+				(UINT)material >= (UINT)ShaderPathComponent::MaterialType::kCount
 			)
 			{
 				errorMsg += "「そのMaterialTypeは選択不可(最低限処置)」";
@@ -76,4 +78,7 @@ ModelDescription::ModelDescription
 	{
 		renderState.modelName = modelName_ + "[" + std::to_string(cnt++) + "]";
 	}
+
+#endif // _DEBUG
+
 }

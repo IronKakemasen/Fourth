@@ -15,7 +15,12 @@ public:
 	template<typename CmdType>
 	using LicenceType = typename CmdTypeTraits<CmdType>::Type;
 
-	CommandProvider(NexusFieldProof proof_, ModelContainer* modelContainer_);
+	CommandProvider
+	(
+		NexusFieldProof proof_,
+		ModelContainer& modelContainer_,
+		ModelCreator& modelCreator_
+	);
 
 	///コマンド提供
 	template<typename CmdType>
@@ -24,8 +29,8 @@ public:
 
 private:
 
-	ModelContainer* modelContainer;
-
+	ModelContainer& modelContainer;
+	ModelCreator& modelCreator;
 };
 
 template<>
@@ -40,6 +45,12 @@ struct ModelContext::CommandProvider::CmdTypeTraits<ModelContextCmds::WatchSepar
 	using Type = WatchModelContainerLicence;
 };
 
+template<>
+struct ModelContext::CommandProvider::CmdTypeTraits<ModelContextCmds::WatchAllModelsRenderStatePattern>
+{
+	using Type = WatchModelContainerLicence;
+};
+
 
 template<>
 ModelContextCmds::WatchModelContainer ModelContext::CommandProvider::Provide<ModelContextCmds::WatchModelContainer>
@@ -49,3 +60,6 @@ template<>
 ModelContextCmds::WatchSeparatedByRenderState ModelContext::CommandProvider::Provide<ModelContextCmds::WatchSeparatedByRenderState>
 (typename CmdTypeTraits<ModelContextCmds::WatchModelContainer>::Type licence_);
 
+template<>
+ModelContextCmds::WatchAllModelsRenderStatePattern ModelContext::CommandProvider::Provide<ModelContextCmds::WatchAllModelsRenderStatePattern>
+(typename CmdTypeTraits<ModelContextCmds::WatchModelContainer>::Type licence_);

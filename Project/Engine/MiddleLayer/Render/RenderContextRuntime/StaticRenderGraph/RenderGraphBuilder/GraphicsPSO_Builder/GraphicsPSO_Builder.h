@@ -46,7 +46,7 @@ private:
 	);
 
 	//全モデルデータを受け取ってそのモデルデータのRenderStateのベクタを取り出す
-	static std::vector<RenderState> CollectAllRenderStates(ModelContextDiplomat& modelContextDiplomat_);
+	static std::vector<RenderState> const& PullAllRenderStates(ModelContextDiplomat& modelContextDiplomat_);
 
 	//モデルクラスの情報が必要か否か関係なく埋めれる情報を埋める
 	static PsoDesc_Key InputCommonInfo

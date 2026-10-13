@@ -20,6 +20,7 @@
 using namespace RenderStateComponent;
 using namespace RenderPassComponent;
 using namespace ShaderPathComponent;
+using namespace ModelContextCmds;
 
 namespace
 {
@@ -138,7 +139,7 @@ std::vector<RenderContext::StaticRenderGraph::PSO_Builder::PsoDesc_Key> RenderCo
 	using namespace RenderPassComponent;
 
 	//全てのモデルのRenderStatesを集計
-	std::vector<RenderState> allModelRenderStates = CollectAllRenderStates(modelContextDiplomat_);
+	std::vector<RenderState> const& allModelRenderStates = PullAllRenderStates(modelContextDiplomat_);
 
 	//全てのPassが入ってるコンテナを参照
 	auto const& allPassPtrMap = passContainer_.AccessAllPassPtrMap(proof_);
@@ -451,34 +452,17 @@ void RenderContext::StaticRenderGraph::PSO_Builder::InputPassOnlyInfo
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-std::vector<RenderState> RenderContext::StaticRenderGraph::PSO_Builder::CollectAllRenderStates
+std::vector<RenderState> const& RenderContext::StaticRenderGraph::PSO_Builder::PullAllRenderStates
 (
 	ModelContextDiplomat& modelContextDiplomat_
 )
 {
-	using namespace ModelContextCmds;
-
-	//モデルコンテナの中身を覗くコマンドをもらう
+	//モデルクリエイターから、生成したモデルの全レンダーステートのパターンを所持しているので渡してもらう
 	auto* modelContextCmdProvider = modelContextDiplomat_.Access<ModelContext::CommandProvider>();
-	ModelContext::CommandProvider::LicenceType<WatchModelContainer> licence;
-	auto watchModelContainer = modelContextCmdProvider->Provide<WatchModelContainer>(licence);
+	ModelContext::CommandProvider::LicenceType<WatchAllModelsRenderStatePattern> licence;
+	auto cmd = modelContextCmdProvider->Provide<WatchAllModelsRenderStatePattern>(licence);
 
-	//全てのモデルクラスのコンテナ
-	const std::vector<std::unique_ptr<Model>>* modelDataContainer = watchModelContainer();
-	//全てのモデルクラスのRenderStates
-	std::vector<RenderState> allModelRenderStates;
-
-	//モデルクラスを全走査し、全ModelDescriptionをかき集める
-	for (auto itr = modelDataContainer->begin();itr != modelDataContainer->end();++itr)
-	{
-		//そのモデルクラスのModelDescのrenderStatesを回収
-		for (auto const& renderState : (*itr)->WatchRenderStates())
-		{
-			allModelRenderStates.emplace_back(renderState);
-		}
-	}
-
-	return allModelRenderStates;
+	return *cmd();
 }
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
