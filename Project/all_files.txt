@@ -9420,6 +9420,7 @@ public:
 #include "CameraContextDiplomat/CameraContextDiplomat.h"
 #include "CameraContextDiplomat/CameraContextExecutionAgent/CameraContextExecutionAgent.h"
 #include "CameraBufferCreator/CameraBufferCreator.h"
+#include "CameraCreator/CameraCreator.h"
 namespace
 {
 	std::string const fileName = "CameraContext.cpp";
@@ -9431,7 +9432,9 @@ CameraContext::CameraContext
 )
 {
 	Logger::Entry("CameraContext: Constructor");
-	frontlineSystemsDispatcher = std::make_unique<FrontlineSystemsDispatcher>(proof_);
+	cameraCreator = std::make_unique<CameraCreator>(proof_);
+	Logger::Log("Instantiate: CameraCreator", fileName);
+	frontlineSystemsDispatcher = std::make_unique<FrontlineSystemsDispatcher>(proof_, *cameraCreator);
 	Logger::Log("Instantiate: FrontlineSystemsDispatcher", fileName);
 	cameraDataBatcher = std::make_unique<CameraDataBatcher>(proof_);
 	Logger::Log("Instantiate: CameraDataBatcher", fileName);
@@ -9469,6 +9472,8 @@ public:
 	class CameraFrontlineSystems;
 	//CameraFrontlineSystemsの分配を行う
 	class FrontlineSystemsDispatcher;
+	//カメラ作成
+	class CameraCreator;
 	class ExecutionAgent;
 	CameraContext
 	(
@@ -9481,6 +9486,7 @@ private:
 	std::unique_ptr<FrontlineSystemsDispatcher> frontlineSystemsDispatcher;
 	std::unique_ptr<CameraDataBatcher> cameraDataBatcher;
 	std::unique_ptr<CameraContextDiplomat> diplomat;
+	std::unique_ptr<CameraCreator> cameraCreator;
 };
 struct CameraContext::NexusFieldProof
 {
@@ -9693,7 +9699,9 @@ private:
 #include "CameraFrontlineSystems.h"
 #include "CameraLibrary/CameraLibrary.h"
 #include "CameraController/CameraController.h"
-CameraContext::CameraFrontlineSystems::CameraFrontlineSystems(NexusFieldProof proof_)
+#include "../CameraCreator/CameraCreator.h"
+CameraContext::CameraFrontlineSystems::CameraFrontlineSystems(NexusFieldProof proof_, CameraCreator& cameraCreator_)
+	:cameraCreator(cameraCreator_)
 {
 	cameraLibrary = std::make_unique<CameraLibrary>(proof_);
 	cameraController = std::make_unique<CameraController>(proof_);
@@ -9730,8 +9738,7 @@ void CameraContext::CameraFrontlineSystems::Connect<CameraSocket::kDebug>(std::s
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Camera\CameraContextRuntime\CameraFrontlineSystems.h ===
 ========================================
 #pragma once
-#include "../CameraContext.h"
-#include "CameraSocket.h"
+#include "../CameraCreator/CameraCreator.h"
 class CameraBehavior;
 class CameraContext::CameraFrontlineSystems
 {
@@ -9742,17 +9749,17 @@ class CameraContext::CameraFrontlineSystems
 public:
 	template<CameraSocket dstSocket_>
 	using CmdConnectCamera = std::function<void(std::string const&)>;
-	CameraFrontlineSystems(NexusFieldProof proof_);
+	CameraFrontlineSystems(NexusFieldProof proof_, CameraCreator& cameraCreator_);
 	~CameraFrontlineSystems();
-	//カメラの登録
-	template<CameraSocket dstSocket>
-	void RegisterCamera
+	//カメラの作成
+	template<CameraSocket dstSocket,typename CameraType>
+	void CreateCamera
 	(
-		std::unique_ptr<CameraBehavior>&& camera_,
+		std::optional<CameraDesc> const& cameraDesc_,
 		std::string const& name_
 	)
 	{
-		ImportCamera(std::move(camera_), name_);
+		ImportCamera(std::move(cameraCreator.Create<dstSocket, CameraType>(cameraDesc_)), name_);
 		Connect<dstSocket>(name_);
 	}
 	//カメラ接続の変更するコマンドを返す
@@ -9774,6 +9781,7 @@ private:
 	void Connect(std::string const& name_);
 	std::unique_ptr<CameraLibrary> cameraLibrary;
 	std::unique_ptr<CameraController> cameraController;
+	CameraCreator& cameraCreator;
 };
 
 ========================================
@@ -9967,6 +9975,40 @@ private:
 };
 
 ========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Camera\CameraCreator\CameraCreator.cpp ===
+========================================
+#include "PreCompileHeader.h"
+#include "CameraCreator.h"
+CameraContext::CameraCreator::CameraCreator(NexusFieldProof proof_)
+{
+}
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Camera\CameraCreator\CameraCreator.h ===
+========================================
+#pragma once
+#include "../CameraContext.h"
+//エンジン備え付けのカメラ
+#include "../PresetCameras/PresetCameraIncludes.h"
+#include "../CameraContextRuntime/CameraSocket.h"
+//アプリケーションの全カメラ
+#include "../../../../../Application/AllCameraIncludes.h"
+struct CameraDesc;
+class CameraContext::CameraCreator
+{
+public:
+	CameraCreator(NexusFieldProof proof_);
+	template<CameraSocket dstSocket, typename CameraType>
+	std::unique_ptr<CameraBehavior> Create
+	(
+		std::optional<CameraDesc> const& cameraDesc_
+	)
+	{
+		return std::make_unique<CameraType>(cameraDesc_);
+	}
+};
+
+========================================
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Camera\CameraFSDispatcher\CameraFSDispatcher.cpp ===
 ========================================
 #include "PreCompileHeader.h"
@@ -9976,7 +10018,7 @@ namespace
 {
 	std::string const fileName = "CameraFSDispatcher.cpp";
 }
-CameraContext::FrontlineSystemsDispatcher::FrontlineSystemsDispatcher(NexusFieldProof proof_)
+CameraContext::FrontlineSystemsDispatcher::FrontlineSystemsDispatcher(NexusFieldProof proof_, CameraCreator& cameraCreator_)
 {
 	///!!!!!!!!将来的には、シーンのジェーソンファイルの数からシーン数を確定
 	//その数分インスタンス化する
@@ -9986,7 +10028,7 @@ CameraContext::FrontlineSystemsDispatcher::FrontlineSystemsDispatcher(NexusField
 	{
 		cameraFrontlineSystemsContainer.emplace_back
 		(
-			std::make_unique<CameraFrontlineSystems>(proof_)
+			std::make_unique<CameraFrontlineSystems>(proof_, cameraCreator_)
 		);
 	}
 	Logger::Log("Instantiate: CameraFrontlineSystems(" + std::to_string(i) + ")", fileName);
@@ -10008,7 +10050,7 @@ CameraContext::CameraFrontlineSystems* CameraContext::FrontlineSystemsDispatcher
 class CameraContext::FrontlineSystemsDispatcher
 {
 public:
-	FrontlineSystemsDispatcher(NexusFieldProof proof_);
+	FrontlineSystemsDispatcher(NexusFieldProof proof_ ,CameraCreator& cameraCreator_);
 	~FrontlineSystemsDispatcher();
 	CameraFrontlineSystems* Dispatch(AgentKey key_);
 private:
@@ -21382,6 +21424,7 @@ private:
 ========================================
 #include "PreCompileHeader.h"
 #include "SceneBehavior.h"
+#include "../../../LowerLayer/Resource/Camera/CameraStructrue/CameraDesc/CameraDesc.h"
 SceneBehavior::SceneBehavior
 (
 	CameraContext::CameraFrontlineSystems* cameraSystems_
@@ -21402,13 +21445,8 @@ SceneBehavior::Output SceneBehavior::Update()
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\MiddleLayer\Scene\SceneStructure\SceneBehavior.h ===
 ========================================
 #pragma once
-#include "../../../LowerLayer/Resource/Camera/PresetCameras/PresetCameraIncludes.h"
 //外部
 #include "../../../LowerLayer/Resource/Camera/CameraContextRuntime/CameraFrontlineSystems.h"
-#include "../../../LowerLayer/Resource/Camera/CameraContextRuntime/CameraSocket.h"
-#include "../../../LowerLayer/Resource/Camera/CameraStructrue/CameraDesc/CameraDesc.h"
-//アプリケーションで定義される全てのカメラのインクルード
-#include "../../../../Application/AllCameraIncludes.h"
 class SceneContext;
 class SceneBehavior
 {
@@ -21433,12 +21471,7 @@ protected:
 		std::string const& name_
 	)
 	{
-		//作成したカメラを登録する
-		cameraSystems->RegisterCamera<dstSocket>
-		(
-			std::move(std::make_unique<CameraType>(cameraDesc_)),
-			name_
-		);
+		cameraSystems->CreateCamera<dstSocket, CameraType>(cameraDesc_,name_);
 	}
 	//ゲームオブジェクトが好きなタイミングでカメラを切り替えられるように
 	//カメラ切り替えコマンドを返す。
@@ -22156,7 +22189,7 @@ void Nexus::Run()
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Utility\ClosedHashMap\ClosedHashMap.h ===
 ========================================
 #pragma once
-//オープンアドレッシング・ハッシュテーブル法で、高速にValueType検索するためのツール
+//オープンアドレッシング・ハッシュテーブル法で、高速にValueTypeを検索するためのツール
 template<typename ValueType>
 class ClosedHashMap
 {
@@ -22323,7 +22356,7 @@ private:
             CalcBitWidth(count_);
             //スタート地点を記録
             CalcShiftNum(shift_);
-            ErrorMessageOutput::Assert::DetectError((EndLocation() < 32), "GraphicsPSO_Keyのサイズ超過", "KeyPackager.h");
+            ErrorMessageOutput::Assert::DetectError((EndLocation() < 32), "GraphicsPSO_Keyのサイズ超過(32以上)", "KeyPackager.h");
         }
         uint32_t EndLocation() { return shift + bits; }
     private:
@@ -22857,5 +22890,5 @@ namespace StringProcessing
 ========================================
 === SUMMARY ===
 ========================================
-Total Files      : 508
-Effective Lines  : 16659
+Total Files      : 510
+Effective Lines  : 16678

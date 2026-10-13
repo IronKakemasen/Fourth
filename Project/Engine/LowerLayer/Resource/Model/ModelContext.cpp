@@ -9,7 +9,6 @@
 #include "CreateModelTools/ModelCreator.h"
 
 
-#include "ModelContainer/ModelContainer.h"
 
 #include "ModelContextRuntime/ModelDataBatcher/ModelDataBatcher.h"
 
@@ -81,7 +80,7 @@ ModelContext::ModelContext
 			proof_,
 			std::make_unique<ExecutionAgent>(proof_,*this,*modelContainer,*modelDataBatcher),
 			std::make_unique<ToolLender>(proof_),
-			std::make_unique<CommandProvider>(proof_, modelContainer.get())
+			std::make_unique<CommandProvider>(proof_, *modelContainer,*modelCreator)
 		)
 	);
 	Logger::Log("Instantiate: ToolLender", fileName);

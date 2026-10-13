@@ -1,8 +1,5 @@
 #include "PreCompileHeader.h"
 #include "ModelCreator.h"
-#include "../ModelStructure/Model.h"
-#include "ModelDescAssembler/ModelDescAssembler.h"
-#include "../ModelContainer/ModelContainer.h"
 
 
 namespace
@@ -22,49 +19,11 @@ ModelContext::ModelCreator::ModelCreator
 
 }
 
-
-std::vector<Model*> ModelContext::ModelCreator::Create
-(
-	std::string const& modelFileName_,
-	Model::Type type_,
-	std::vector<RenderState> const& modelRenderStates_,
-	std::vector<StructuredBufferModelData::MaterialCPU> const& materials_,
-	UINT const numCreate_,
-	std::string const& modelName_
-)
+ModelContextCmds::WatchAllModelsRenderStatePattern ModelContext::ModelCreator::WatchAllRenderStatesCmd(ProviderKey key_)const
 {
-	ErrorMessageOutput::Assert::DetectError
-	(
-		type_ != Model::Type::kCount,
-		"Model::Type::KCountを選択してんじゃない",
-		fileName
-	);
-
-	std::vector<Model*> modelPtrContainer;
-
-
-	for (UINT i = 0;i < numCreate_;++i)
+	return [this]()
 	{
-		//モデルのディスクリプションの要素を組み立てる
-		auto [perDrawIndices, materialsGPU, meshletSize] = modelDescAssembler->Assemble(modelFileName_, materials_);
-
-		///一つのDescに詰める
-		ModelDescription modelDesc
-		(
-			modelName_ + std::to_string(numCreate++),
-			perDrawIndices,
-			modelRenderStates_,
-			meshletSize
-		);
-
-		///モデルクラスのインスタンス化
-		std::unique_ptr<Model> model = std::make_unique<Model>(type_ , modelDesc, materialsGPU);
-
-		modelPtrContainer.emplace_back(model.get());
-
-		//実体はモデルコンテナが握る
-		modelContainer.Add(ModelContainer::Local_AddLicence{}, std::move(model));
-	}
-
-	return modelPtrContainer;
+		return &renderStatesCache;
+	};
 }
+

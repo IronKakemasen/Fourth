@@ -4,8 +4,6 @@
 
 
 //外部
-#include "../../../../../../Assets/Shared/StructuredBufferModelData.h"
-#include "../../../../../../Assets/Shared/ConstantBuffers.h"
 #include "../../../Texture/TextureContext.h"
 
 
