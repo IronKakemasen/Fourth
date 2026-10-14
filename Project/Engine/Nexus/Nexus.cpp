@@ -85,7 +85,6 @@ Nexus::Nexus()
 	InitializeInSequence<InitSequence::kDeleteBufferUploaderCache>();
 	InitializeInSequence<InitSequence::kSortOutGlobalConstantBuffers>();
 	InitializeInSequence<InitSequence::kDeleteModelDataCache>();
-	InitializeInSequence<InitSequence::kSeparateModelContainer>();
 
 	
 	ErrorMessageOutput::Assert::DetectError(nextInit == InitSequence::kEnd, "初期化が正常に行われていない可能性がある", fileName);

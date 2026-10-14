@@ -11,7 +11,7 @@
 #include "../../../../../../LowerLayer/Buffer/BufferDefinition/AllBuffersInclude.h"
 						
 #include "../../../../../../LowerLayer/Resource/Model/ModelContextDiplomatIncludes.h"
-#include "../../../../../../LowerLayer/Resource/Model/ModelContainer/ModelContainer.h"
+//#include "../../../../../../LowerLayer/Resource/Model/ModelContainer/ModelContainer.h"
 
 
 
@@ -96,14 +96,14 @@ void RenderContext::StaticRenderGraph::PathOperator::Run
 	BufferContext::ToolLender::LicenceType<BufferContext::BufferDispatcher> bLicence;
 	auto& bufferDispatcher = *bToolLender->Lend<BufferContext::BufferDispatcher>(bLicence);
 
-	//modelContainer（仕分け済み）取得コマンドをもらう
-	auto mCmdProvider = modelContextDiplomat_.Access<ModelContext::CommandProvider>();
-	ModelContext::CommandProvider::LicenceType<ModelContextCmds::WatchSeparatedByRenderState> mLicence;
-	auto& modelContainer = *mCmdProvider->Provide<ModelContextCmds::WatchSeparatedByRenderState>(mLicence)();
+	////modelContainer（仕分け済み）取得コマンドをもらう
+	//auto mCmdProvider = modelContextDiplomat_.Access<ModelContext::CommandProvider>();
+	//ModelContext::CommandProvider::LicenceType<ModelContextCmds::WatchSeparatedByRenderState> mLicence;
+	//auto& modelContainer = *mCmdProvider->Provide<ModelContextCmds::WatchSeparatedByRenderState>(mLicence)();
 
-	
-	for (auto* path : allPathPtr)
-	{
-		path->Run(modelContainer, modelFillMode, pso_PoolDispatcher, runtimeWrapper_, bufferDispatcher);
-	}
+	//
+	//for (auto* path : allPathPtr)
+	//{
+	//	path->Run(modelContainer, modelFillMode, pso_PoolDispatcher, runtimeWrapper_, bufferDispatcher);
+	//}
 }

@@ -15,7 +15,7 @@ SceneContext::ScenePipeline::SceneController::SceneController
 
 void SceneContext::ScenePipeline::SceneController::Run()
 {
-	output = curScene->Update();
+	curScene->Update();
 
 }
 
@@ -25,7 +25,7 @@ void SceneContext::ScenePipeline::SceneController::ChangeScene(std::string const
 	curScene = sceneLib.Export(next_);
 }
 
-SceneBehavior::Output const& SceneContext::ScenePipeline::SceneController::WatchSceneOutput()const
+SceneBehavior::Output const& SceneContext::ScenePipeline::SceneController::WatchCurrentSceneOutput()const
 {
-	return output;
+	return curScene->WatchSceneOutput();
 }

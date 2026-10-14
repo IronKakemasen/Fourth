@@ -10427,7 +10427,6 @@ public:
 #include "CreateModelTools/ModelDataLoader/ModelDataCache/ModelDataCache.h"
 #include "CreateModelTools/ModelDescAssembler/ModelDescAssembler.h"
 #include "CreateModelTools/ModelCreator.h"
-#include "ModelContainer/ModelContainer.h"
 #include "ModelContextRuntime/ModelDataBatcher/ModelDataBatcher.h"
 #include "ModelContextDiplomat/ModelContextDiplomat.h"
 #include "ModelContextDiplomat/ModelContextExecutionAgent/ModelContextExecutionAgent.h"
@@ -10452,16 +10451,10 @@ ModelContext::ModelContext
 	Logger::Log("Instantiate: ModelDataCache", fileName);
 	ModelDataLoader modelDataLoader(proof_, *modelDataCache);
 	Logger::Log("Instantiate: ModelDataLoader", fileName);
-	modelContainer.reset(new ModelContainer(proof_));
-	Logger::Log("Instantiate: modelContainer", fileName);
-	modelCreator.reset
+	modelCreator = std::make_unique<ModelCreator>
 	(
-		new ModelCreator
-		(
-			proof_,
-			std::make_unique<ModelDescAssembler>(proof_, modelSlotAllocator.get(), textureContextDiplomat_),
-			*modelContainer
-		)
+		proof_,
+		std::make_unique<ModelDescAssembler>(proof_, modelSlotAllocator.get(), textureContextDiplomat_)
 	);
 	Logger::Log("Instantiate: ModelDescAssembler", fileName);
 	Logger::Log("Instantiate: ModelCreator", fileName);
@@ -10481,9 +10474,9 @@ ModelContext::ModelContext
 		new ModelContextDiplomat
 		(
 			proof_,
-			std::make_unique<ExecutionAgent>(proof_,*this,*modelContainer,*modelDataBatcher),
+			std::make_unique<ExecutionAgent>(proof_,*this,*modelDataBatcher),
 			std::make_unique<ToolLender>(proof_),
-			std::make_unique<CommandProvider>(proof_, modelContainer.get())
+			std::make_unique<CommandProvider>(proof_,*modelCreator)
 		)
 	);
 	Logger::Log("Instantiate: ToolLender", fileName);
@@ -10534,8 +10527,8 @@ public:
 	class ModelCreator;
 	//モデルの書き込まなくてはならないデータ(TransformMatrixなど)のバッチングを行う
 	class ModelDataBatcher;
-	//モデルのコンテナ。おそらくただのコンテナになると思う
-	class ModelContainer;
+	//シーンが1つ所持するモデルのシステム群
+	class ModelFrontlineSystems;
 	//代行者
 	class ExecutionAgent;
 	//コマンド提供者
@@ -10559,7 +10552,7 @@ public:
 	auto& AccessDiplomat() { return *diplomat; }
 private:
 	std::unique_ptr<ModelSlotAllocator> modelSlotAllocator;
-	std::unique_ptr<ModelContainer> modelContainer;
+	//std::unique_ptr<ModelContainer> modelContainer;
 	std::unique_ptr<ModelCreator> modelCreator;
 	std::unique_ptr<ModelDataBatcher> modelDataBatcher;
 	std::unique_ptr<ModelDataCache> modelDataCache;
@@ -10592,10 +10585,10 @@ private:
 #pragma once
 class Model;
 struct RenderStateKey;
+struct RenderState;
 namespace ModelContextCmds
 {
-	using WatchModelContainer = std::function<const std::vector<std::unique_ptr<Model>>*()>;
-	using WatchSeparatedByRenderState = std::function<std::vector<std::unordered_map<uint64_t, std::pair<RenderStateKey, std::vector<Model*>>>>* ()>;
+	using WatchAllModelsRenderStatePattern = std::function<std::vector<RenderState> const* ()>;
 }
 
 ========================================
@@ -10614,36 +10607,34 @@ namespace ModelContextCmds
 #include "PreCompileHeader.h"
 #include "TestModelOKIBA.h"
 #include "CreateModelTools/ModelCreator.h"
-#include "ModelStructure/ModelDescription/ModelDescription.h"
-#include "ModelStructure/Model.h"
 using namespace RenderStateComponent;
 using namespace ShaderPathComponent;
 using namespace RenderPassComponent;
 using namespace StructuredBufferModelData;
 TestModelOKIBA::TestModelOKIBA(ModelContext::ModelCreator* modelCreator_)
 {
-	Logger::Log("TESTOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOO");
-	RenderState cP;
-	cP.blendModes.emplace_back(BlendMode::kOpaque);
-	cP.blendModes.emplace_back(BlendMode::kAlphaBlend);
-	cP.blendModes.emplace_back(BlendMode::kAdditive);
-	cP.pass = Pass::kSceneOpaque;
-	cP.cullMode = CullMode::kBack;
-	cP.meshType = MeshType::kStatic;
-	cP.materialTypes.emplace_back(MaterialType::kStandard);
-	std::vector<RenderState> playerC;
-	playerC.emplace_back(std::move(cP));
-	std::vector<MaterialCPU> materials;
-	player = modelCreator_->Create("PlayerObj",Model::Type::kDynamic, playerC, materials,1,"Player")[0];
-	RenderState cC;
-	cC.blendModes.emplace_back(BlendMode::kOpaque);
-	cC.pass = RenderPassComponent::Pass::kSceneOpaque;
-	cC.cullMode = CullMode::kBack;
-	cC.meshType = MeshType::kStatic;
-	cC.materialTypes.emplace_back(MaterialType::kStandard);
-	std::vector<RenderState> cubeC;
-	cubeC.emplace_back(std::move(cC));
-	cube = modelCreator_->Create("CubeGltf", Model::Type::kDynamic, cubeC, materials,1,"Cube")[0];
+	//Logger::Log("TESTOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOO");
+	//RenderState cP;
+	//cP.blendModes.emplace_back(BlendMode::kOpaque);
+	//cP.blendModes.emplace_back(BlendMode::kAlphaBlend);
+	//cP.blendModes.emplace_back(BlendMode::kAdditive);
+	//cP.pass = Pass::kSceneOpaque;
+	//cP.cullMode = CullMode::kBack;
+	//cP.meshType = MeshType::kStatic;
+	//cP.materialTypes.emplace_back(MaterialType::kStandard);
+	//std::vector<RenderState> playerC;
+	//playerC.emplace_back(std::move(cP));
+	//std::vector<MaterialCPU> materials;
+	//player = modelCreator_->Create<Model::Type::kDynamic>("PlayerObj", playerC, materials,1,"Player")[0];
+	//RenderState cC;
+	//cC.blendModes.emplace_back(BlendMode::kOpaque);
+	//cC.pass = RenderPassComponent::Pass::kSceneOpaque;
+	//cC.cullMode = CullMode::kBack;
+	//cC.meshType = MeshType::kStatic;
+	//cC.materialTypes.emplace_back(MaterialType::kStandard);
+	//std::vector<RenderState> cubeC;
+	//cubeC.emplace_back(std::move(cC));
+	//cube = modelCreator_->Create<Model::Type::kDynamic>("CubeGltf", cubeC, materials,1,"Cube")[0];
 }
 
 ========================================
@@ -10664,9 +10655,6 @@ struct TestModelOKIBA
 ========================================
 #include "PreCompileHeader.h"
 #include "ModelCreator.h"
-#include "../ModelStructure/Model.h"
-#include "ModelDescAssembler/ModelDescAssembler.h"
-#include "../ModelContainer/ModelContainer.h"
 namespace
 {
 	auto const fileName = "ModelCreator.cpp";
@@ -10675,83 +10663,83 @@ using namespace StructuredBufferModelData;
 ModelContext::ModelCreator::ModelCreator
 (
 	NexusFieldProof proof_,
-	std::unique_ptr<ModelContext::ModelDescAssembler>&& modelAssembler_,
-	ModelContext::ModelContainer& modelContainer_
-) :modelDescAssembler(std::move(modelAssembler_)), modelContainer(modelContainer_)
+	std::unique_ptr<ModelContext::ModelDescAssembler>&& modelAssembler_
+) :modelDescAssembler(std::move(modelAssembler_))
 {
 }
-std::vector<Model*> ModelContext::ModelCreator::Create
-(
-	std::string const& modelFileName_,
-	Model::Type type_,
-	std::vector<RenderState> const& modelRenderStates_,
-	std::vector<StructuredBufferModelData::MaterialCPU> const& materials_,
-	UINT const numCreate_,
-	std::string const& modelName_
-)
+ModelContextCmds::WatchAllModelsRenderStatePattern ModelContext::ModelCreator::WatchAllRenderStatesCmd(ProviderKey key_)const
 {
-	ErrorMessageOutput::Assert::DetectError
-	(
-		type_ != Model::Type::kCount,
-		"Model::Type::KCountを選択してんじゃない",
-		fileName
-	);
-	std::vector<Model*> modelPtrContainer;
-	for (UINT i = 0;i < numCreate_;++i)
+	return [this]()
 	{
-		//モデルのディスクリプションの要素を組み立てる
-		auto [perDrawIndices, materialsGPU, meshletSize] = modelDescAssembler->Assemble(modelFileName_, materials_);
-		///一つのDescに詰める
-		ModelDescription modelDesc
-		(
-			modelName_ + std::to_string(numCreate++),
-			perDrawIndices,
-			modelRenderStates_,
-			meshletSize
-		);
-		///モデルクラスのインスタンス化
-		std::unique_ptr<Model> model = std::make_unique<Model>(type_ , modelDesc, materialsGPU);
-		modelPtrContainer.emplace_back(model.get());
-		//実体はモデルコンテナが握る
-		modelContainer.Add(ModelContainer::Local_AddLicence{}, std::move(model));
-	}
-	return modelPtrContainer;
+		return &renderStatesCache;
+	};
 }
 
 ========================================
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Model\CreateModelTools\ModelCreator.h ===
 ========================================
 #pragma once
-#include "../ModelContext.h"
-//外部
-#include "../../../../../Assets/Shared/StructuredBufferModelData.h"
+#include "ModelDescAssembler/ModelDescAssembler.h"
 #include "../ModelStructure/Model.h"
-struct RenderState;
+#include "../ModelContextCmds.h"
 class ModelContext::ModelCreator
 {
 public:
 	ModelCreator
 	(
 		NexusFieldProof proof_, 
-		std::unique_ptr<ModelContext::ModelDescAssembler>&& modelAssembler_,
-		ModelContext::ModelContainer& modelContainer_
+		std::unique_ptr<ModelContext::ModelDescAssembler>&& modelAssembler_
 	);
-	std::vector<Model*> Create
+	template<Model::Type modelType>
+	std::vector<std::unique_ptr<Model>> Create
 	(
 		std::string const& modelFileName_,
-		Model::Type type_,
 		std::vector<RenderState> const& modelRenderStates_,
 		std::vector<StructuredBufferModelData::MaterialCPU> const& materials_,
 		UINT const numCreate_,
 		std::string const& modelName_ = "nameLess"
-	);
+	)
+	{
+		ErrorMessageOutput::Assert::DetectError
+		(
+			modelType != Model::Type::kCount,
+			"Model::Type::KCountを選択してんじゃない",
+			"ModelCreator.h"
+		);
+		std::vector<std::unique_ptr<Model>> modelUniques;
+		for (UINT i = 0;i < numCreate_;++i)
+		{
+			//モデルのディスクリプションの要素を組み立てる
+			auto [perDrawIndices, materialsGPU, meshletSize] = modelDescAssembler->Assemble(modelFileName_, materials_);
+			///一つのDescに詰める
+			ModelDescription modelDesc
+			(
+				modelName_ + std::to_string(numCreate++),
+				perDrawIndices,
+				modelRenderStates_,
+				meshletSize
+			);
+			///モデルクラスのインスタンス化
+			modelUniques.emplace_back(std::make_unique<Model>(modelType, modelDesc, materialsGPU));
+		}
+		//レンダーステートキャッシュに登録
+		renderStatesCache.insert
+		(
+			renderStatesCache.end(),
+			std::make_move_iterator(modelRenderStates_.begin()),
+			std::make_move_iterator(modelRenderStates_.end())
+		);
+		return modelUniques;
+	}
+	//PSO生成時に必要
+	ModelContextCmds::WatchAllModelsRenderStatePattern WatchAllRenderStatesCmd(ProviderKey key_)const;
 private:
 	//生成数。ネーミング用
 	UINT numCreate{};
 	//モデルディスク組み立て役
 	std::unique_ptr<ModelContext::ModelDescAssembler> modelDescAssembler;
-	//生成したユニークはこいつが管理する
-	ModelContext::ModelContainer& modelContainer;
+	//PSO生成時に生成された全モデルのレンダーステートパターンが必要
+	std::vector<RenderState> renderStatesCache;
 };
 
 ========================================
@@ -12064,8 +12052,6 @@ std::vector<MaterialGPU> ModelContext::ModelDescAssembler::ConvertMaterialData
 #include "../../ModelContext.h"
 #include "../../ModelStructure/ModelDescription/ModelDescription.h"
 //外部
-#include "../../../../../../Assets/Shared/StructuredBufferModelData.h"
-#include "../../../../../../Assets/Shared/ConstantBuffers.h"
 #include "../../../Texture/TextureContext.h"
 class ModelContext::ModelDescAssembler
 {
@@ -12363,205 +12349,558 @@ private:
 };
 
 ========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Model\ModelContainer\ModelContainer.cpp ===
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Model\ModelContextDiplomat\ModelContextDiplomat.cpp ===
 ========================================
 #include "PreCompileHeader.h"
-#include "ModelContainer.h"
-#include "../ModelStructure/Model.h"
-#include "ModelSeparator/ModelSeparator.h"
-namespace
+#include "ModelContextDiplomat.h"
+#include "ModelContextExecutionAgent/ModelContextExecutionAgent.h"
+#include "ModelContextToolLender/ModelContextToolLender.h"
+#include "ModelContextCmdProvider/ModelContextCmdProvider.h"
+ModelContextDiplomat::ModelContextDiplomat
+(
+	ModelContext::NexusFieldProof proof_,
+	std::unique_ptr<ModelContext::ExecutionAgent>&& agent_,
+	std::unique_ptr<ModelContext::ToolLender>&& toolLender_,
+	std::unique_ptr<ModelContext::CommandProvider>&& cmdProvider_
+)
 {
-	auto const fileName = "ModelContainer.cpp";
-}
-ModelContext::ModelContainer::ModelContainer(NexusFieldProof proof_)
-{
-}
-ModelContext::ModelContainer::~ModelContainer()
-{
-}
-void ModelContext::ModelContainer::Add(Local_AddLicence addLicence_, std::unique_ptr<Model>&& model_)
-{
-	const auto& model =  container.emplace_back(std::move(model_));
-	Logger::Log("Add: " + model->WatchName(), fileName);
-}
-ModelContextCmds::WatchModelContainer ModelContext::ModelContainer::WatchModelDataCmd(ProviderKey key_)const
-{
-	return [this]()
-	{
-		return &this->container;
-	};
-}
-ModelContextCmds::WatchSeparatedByRenderState ModelContext::ModelContainer::WatchSeparatedByRenderStateCmd(ProviderKey key_)
-{
-	return [this]()
-	{
-		return &this->separatedByRenderState;
-	};
-}
-void ModelContext::ModelContainer::SeparateModels(NexusFieldProof proof_, AgentKey key_)
-{
-	ModelSeparator modelSeparator(proof_, key_);
-	auto output = modelSeparator.SeparateAllModels(container);
-	separatedByRenderState = std::move(output.first);
-	separatedByModelType = std::move(output.second);
-	Logger::Log("Model Separating comp", fileName);
+	std::get<std::unique_ptr<ModelContext::ExecutionAgent>>(tools) = std::move(agent_);
+	std::get<std::unique_ptr<ModelContext::ToolLender>>(tools) = std::move(toolLender_);
+	std::get<std::unique_ptr<ModelContext::CommandProvider>>(tools) = std::move(cmdProvider_);
 }
 
 ========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Model\ModelContainer\ModelContainer.h ===
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Model\ModelContextDiplomat\ModelContextDiplomat.h ===
 ========================================
 #pragma once
 #include "../ModelContext.h"
-#include "../ModelContextCmds.h"
-#include "RenderStateKey/RenderStateKey.h"
-#include "../ModelStructure/Model.h"
-class ModelContext::ModelContainer
+class ModelContextDiplomat
 {
-	//1.モデルのレンダーステートごとにコンテナに詰めて、PSOの切り替えコストを低減させる
-	//2.モデルをstaticかdynamicかでコンテナを仕分ける。バッチング処理の効率化のため
-	class ModelSeparator;
 public:
-	using SeparatedByRenderState = std::unordered_map<uint64_t, std::pair<RenderStateKey , std::vector<Model*>>>;
-	struct Local_AddLicence;
-	ModelContainer(NexusFieldProof proof_);
-	~ModelContainer();
-	void Add(Local_AddLicence addLicence_,std::unique_ptr<Model>&& model_);
-	//全モデルコンテナの中身を見るためのコマンド
-	ModelContextCmds::WatchModelContainer WatchModelDataCmd(ProviderKey key_)const;
-	//RenderStateで仕分けされたコンテナを見るためのコマンド
-	ModelContextCmds::WatchSeparatedByRenderState WatchSeparatedByRenderStateCmd(ProviderKey key_);
-	//モデルのタイプ別に仕分けされたコンテナを見るためのコマンド
-	auto const& WatchSeparatedByModelType()const { return separatedByModelType; }
-	//ランタイムでPSO切り替えコストを低減させるために、モデルクラスをおなじrenderStateごとに分別する
-	void SeparateModels(NexusFieldProof proof_, AgentKey key_);
+	ModelContextDiplomat
+	(
+		ModelContext::NexusFieldProof proof_,
+		std::unique_ptr<ModelContext::ExecutionAgent>&& agent_,
+		std::unique_ptr<ModelContext::ToolLender>&& toolLender_,
+		std::unique_ptr<ModelContext::CommandProvider>&& cmdProvider_ 
+	);
+	template<typename ToolType>
+	auto* Access()
+	{
+		return std::get<std::unique_ptr<ToolType>>(tools).get();
+	}
 private:
-	//モデルの本体が詰まってる
-	std::vector<std::unique_ptr<Model>> container;
-	//モデルがレンダーステートごとに分別されたコンテナ。
-	//第一添え字は、Passで指定
-	std::vector<SeparatedByRenderState> separatedByRenderState;
-	//staticかdynamicかで仕分けられている
-	std::array < std::vector<Model*>, (UINT)Model::Type::kCount > separatedByModelType;
-};
-struct ModelContext::ModelContainer::Local_AddLicence
-{
-private:
-	friend class ModelContext::ModelCreator;
-	explicit Local_AddLicence() = default;
+	std::tuple
+	<
+		std::unique_ptr<ModelContext::ExecutionAgent>,
+		std::unique_ptr<ModelContext::ToolLender>,
+		std::unique_ptr<ModelContext::CommandProvider>
+	> tools;
 };
 
 ========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Model\ModelContainer\ModelSeparator\ModelSeparator.cpp ===
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Model\ModelContextDiplomat\ModelContextCmdProvider\ModelContextCmdProvider.cpp ===
 ========================================
 #include "PreCompileHeader.h"
-#include "ModelSeparator.h"
-#include "../RenderStateKey/RenderStateKey.h"
-#include "../../ModelStructure/Model.h"
-//外部
-#include "KeyPackager/KeyPackager.h"
-using namespace RenderPassComponent;
-using namespace RenderStateComponent;
-using namespace ShaderPathComponent;
-ModelContext::ModelContainer::ModelSeparator::ModelSeparator(NexusFieldProof proof_, AgentKey key_)
-{
-	keyPackager.reset
-	(
-		new KeyPackager
-		(
-			RenderStateKey::Count<RenderStateKey::Sequence::kPass>(),
-			RenderStateKey::Count<RenderStateKey::Sequence::kBlendMode>(),
-			RenderStateKey::Count<RenderStateKey::Sequence::kCullMode>(),
-			RenderStateKey::Count<RenderStateKey::Sequence::kMeshType>(),
-			RenderStateKey::Count<RenderStateKey::Sequence::kMaterialType>()
-		)
-	);
-}
-ModelContext::ModelContainer::ModelSeparator::~ModelSeparator()
+#include "ModelContextCmdProvider.h"
+#include "../../CreateModelTools/ModelCreator.h"
+#include "ModelContextCmdProviderLicences.h"
+using namespace ModelContextCmds;
+ModelContext::CommandProvider::CommandProvider
+(
+	NexusFieldProof proof_,
+	ModelCreator& modelCreator_
+) :modelCreator(modelCreator_)
 {
 }
-[[nodiscard]] ModelContext::ModelContainer::ModelSeparator::Output
-ModelContext::ModelContainer::ModelSeparator::SeparateAllModels(std::vector<std::unique_ptr<Model>>& modelContainer_)
+template<>
+ModelContextCmds::WatchAllModelsRenderStatePattern ModelContext::CommandProvider::Provide<ModelContextCmds::WatchAllModelsRenderStatePattern>
+(typename CmdTypeTraits<ModelContextCmds::WatchAllModelsRenderStatePattern>::Type licence_)
 {
-	std::vector<SeparatedByRenderState> separatedByRenderState;
-	std::array < std::vector<Model*>, (UINT)Model::Type::kCount> separatedByModelType;
-	separatedByRenderState.resize((UINT)Pass::kCount);
-	for (auto itr = modelContainer_.begin();itr != modelContainer_.end();++itr)
-	{
-		//renderStateとそのパックされたキーがセット
-		auto packedKeys = PackToKey(*(*itr));
-		//RenderState別に仕分けていく
-		for (auto const& key : packedKeys)
-		{
-			auto const pass = (UINT)key.first.Get<RenderStateKey::Sequence::kPass>();
-			separatedByRenderState[pass][key.second].first = key.first;
-			separatedByRenderState[pass][key.second].second.emplace_back((*itr).get());
-		}
-		//ランタイムデータバッチング用にモデルタイプ別に仕分けていく
-		separatedByModelType[(UINT)(*itr)->WatchModelType()].emplace_back((*itr).get());
-	}
-	return std::make_pair(std::move(separatedByRenderState), std::move(separatedByModelType));
-}
-std::vector<std::pair<RenderStateKey, uint64_t>> ModelContext::ModelContainer::ModelSeparator::PackToKey(Model const& model_)
-{
-	std::vector<std::pair<RenderStateKey, uint64_t>> keys;
-	for (auto const& renderState : model_.WatchRenderStates())
-	{
-		for (auto const& blendMode : renderState.blendModes)
-		{
-			for (auto const& materialType : renderState.materialTypes)
-			{
-				uint64_t packedKey = keyPackager->Pack
-				(
-					renderState.pass,
-					blendMode,
-					renderState.cullMode,
-					renderState.meshType,
-					materialType
-				);
-				RenderStateKey renderStateKey
-				(
-					renderState.pass,
-					blendMode,
-					renderState.cullMode,
-					renderState.meshType,
-					materialType
-				);
-				keys.emplace_back(std::make_pair(renderStateKey, packedKey));
-			}
-		}
-	}
-	return keys;
+	return modelCreator.WatchAllRenderStatesCmd(ProviderKey{});
 }
 
 ========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Model\ModelContainer\ModelSeparator\ModelSeparator.h ===
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Model\ModelContextDiplomat\ModelContextCmdProvider\ModelContextCmdProvider.h ===
 ========================================
 #pragma once
-#include "../ModelContainer.h"
-#include "../RenderStateKey/RenderStateKey.h"
-class KeyPackager;
-class ModelContext::ModelContainer::ModelSeparator
+#include "../../ModelContext.h"
+#include "../../ModelContextCmds.h"
+class ModelContext::CommandProvider
 {
-	using Output = std::pair<std::vector<ModelContext::ModelContainer::SeparatedByRenderState>, std::array < std::vector<Model*>, (UINT)Model::Type::kCount > >;
+	template<typename CmdType>
+	struct CmdTypeTraits;
+	struct WatchModelContainerLicence;
 public:
-	ModelSeparator(NexusFieldProof proof_ ,AgentKey key_);
-	~ModelSeparator();
-	[[nodiscard]] Output SeparateAllModels(std::vector<std::unique_ptr<Model>>& modelContainer_);
+	template<typename CmdType>
+	using LicenceType = typename CmdTypeTraits<CmdType>::Type;
+	CommandProvider
+	(
+		NexusFieldProof proof_,
+		ModelCreator& modelCreator_
+	);
+	///コマンド提供
+	template<typename CmdType>
+	CmdType Provide(typename CmdTypeTraits<CmdType>::Type licence_);
 private:
-	//レンダーステートをキーに詰める
-	std::vector<std::pair<RenderStateKey, uint64_t>> PackToKey(Model const& model_);
-	//レンダーステートキーをuint32_tに詰める
-	std::unique_ptr<KeyPackager> keyPackager;
+	ModelCreator& modelCreator;
+};
+template<>
+struct ModelContext::CommandProvider::CmdTypeTraits<ModelContextCmds::WatchAllModelsRenderStatePattern>
+{
+	using Type = WatchModelContainerLicence;
+};
+template<>
+ModelContextCmds::WatchAllModelsRenderStatePattern ModelContext::CommandProvider::Provide<ModelContextCmds::WatchAllModelsRenderStatePattern>
+(typename CmdTypeTraits<ModelContextCmds::WatchAllModelsRenderStatePattern>::Type licence_);
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Model\ModelContextDiplomat\ModelContextCmdProvider\ModelContextCmdProviderLicences.h ===
+========================================
+#pragma once
+#include "ModelContextCmdProvider.h"
+class RenderContext;
+struct ModelContext::CommandProvider::WatchModelContainerLicence
+{
+private:
+	friend class RenderContext;
+	explicit WatchModelContainerLicence() = default;
 };
 
 ========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Model\ModelContainer\RenderStateKey\RenderStateKey.cpp ===
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Model\ModelContextDiplomat\ModelContextExecutionAgent\ModelAgentLicences.h ===
 ========================================
-#include "PreCompileHeader.h"
-#include "RenderStateKey.h"
+#pragma once
+#include "ModelContextExecutionAgent.h"
+class SceneContext;
+struct ModelContext::ExecutionAgent::SceneContextProof
+{
+private:
+	friend class SceneContext;
+	explicit SceneContextProof() = default;
+};
 
 ========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Model\ModelContainer\RenderStateKey\RenderStateKey.h ===
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Model\ModelContextDiplomat\ModelContextExecutionAgent\ModelContextExecutionAgent.cpp ===
+========================================
+#include "PreCompileHeader.h"
+#include "ModelContextExecutionAgent.h"
+#include "ModelAgentLicences.h"
+#include "../../CreateModelTools/ModelDataLoader/ModelDataLoader.h"
+#include "../../ModelContextRuntime/ModelDataBatcher/ModelDataBatcher.h"
+ModelContext::ExecutionAgent::ExecutionAgent
+(
+	ModelContext::NexusFieldProof proof_,
+	ModelContext& modelContext_,
+	ModelDataBatcher& modelDataBatcher_
+):modelContext(modelContext_), modelDataBatcher(modelDataBatcher_)
+{
+}
+void ModelContext::ExecutionAgent::DeleteModelDataCache(NexusFieldProof proof_)
+{
+	modelContext.DeleteModelDataCache(proof_, AgentKey{});
+}
+void ModelContext::ExecutionAgent::BatchModelData
+(
+	SceneContextProof proof_,
+	UINT const frameIndex_,
+	std::vector<Model*> const& models_,
+	BufferContextDiplomat& bufferContextDiplomat_
+)
+{
+	modelDataBatcher.BatchModelData
+	(
+		AgentKey{},
+		frameIndex_,
+		models_,
+		bufferContextDiplomat_
+	);
+}
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Model\ModelContextDiplomat\ModelContextExecutionAgent\ModelContextExecutionAgent.h ===
+========================================
+#pragma once
+#include "../../ModelContext.h"
+class Model;
+class ModelContext::ExecutionAgent
+{
+public:
+	struct SceneContextProof;
+	ExecutionAgent
+	(
+		ModelContext::NexusFieldProof proof_,
+		ModelContext& modelContext_,
+		ModelDataBatcher& modelDataBatcher_
+	);
+	void DeleteModelDataCache(NexusFieldProof proof_);
+	//モデルクラスとの結合度を密にしたくないのでテンプレートにしません宣言
+	void BatchModelData
+	(
+		SceneContextProof proof_,
+		UINT const frameIndex_,
+		std::vector<Model*> const& modelsStatic_,
+		BufferContextDiplomat& bufferContextDiplomat_
+	);
+private:
+	ModelContext& modelContext;
+	ModelDataBatcher& modelDataBatcher;
+};
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Model\ModelContextDiplomat\ModelContextToolLender\ModelContextToolLender.cpp ===
+========================================
+#include "PreCompileHeader.h"
+#include "ModelContextToolLender.h"
+ModelContext::ToolLender::ToolLender
+(
+	NexusFieldProof proof_
+)
+{
+}
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Model\ModelContextDiplomat\ModelContextToolLender\ModelContextToolLender.h ===
+========================================
+#pragma once
+#include "../../ModelContext.h"
+class ModelContext::ToolLender
+{
+	template<typename ToolType>
+	struct CmdTypeTraits;
+public:
+	template<typename ToolType>
+	using LicenceType = typename CmdTypeTraits<ToolType>::Type;
+	ToolLender(NexusFieldProof proof_);
+	template<typename ToolType>
+	auto* Lend(typename CmdTypeTraits<ToolType>::Type licence_)
+	{
+		return std::get<ToolType*>(tools).get();
+	}
+private:
+	std::tuple<> tools;
+};
+//template<>
+//struct ModelContext::ToolLender::CmdTypeTraits<ModelContext::ModelContainer>
+//{
+//	using Type = ModelContainerAccessLicence;
+//};
+//
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Model\ModelContextDiplomat\ModelContextToolLender\ModelContextToolLenderLicence.h ===
+========================================
+#pragma once
+#include "ModelContextToolLender.h"
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Model\ModelContextRuntime\ModelDataBatcher\ModelDataBatcher.cpp ===
+========================================
+#include "PreCompileHeader.h"
+#include "ModelDataBatcher.h"
+#include "PerDrawBufferLibrary/PerDrawBufferLibrary.h"
+#include "../../ModelStructure/Model.h"
+//外部
+#include "../../../../Buffer/BufferContextDiplomats.h"
+#include "../../../../Buffer/BufferDefinition/GPUBuffer/UploadStructuredBuffer/UploadStructuredBuffer.h"
+#include "../../../../Buffer/BufferRuntime/BufferDispatcher/BufferDispatcher.h"
+using namespace ConstantBuffers;
+using namespace StructuredBufferModelData;
+ModelContext::ModelDataBatcher::ModelDataBatcher(NexusFieldProof proof_)
+{
+	perDrawBufferLibrary = std::make_unique<PerDrawBufferLibrary>(proof_);
+}
+ModelContext::ModelDataBatcher::~ModelDataBatcher()
+{
+}
+void ModelContext::ModelDataBatcher::BatchModelData
+(
+	AgentKey agentKey_,
+	UINT const frameIndex_,
+	std::vector<Model*> const& models_,
+	BufferContextDiplomat& bufferContextDiplomat_
+)
+{
+	//BufferDispatcherを借りる
+	BufferContext::ToolLender::LicenceType<BufferContext::BufferDispatcher> licence;
+	auto& dispatcher = *bufferContextDiplomat_.Access<BufferContext::ToolLender>()->Lend<BufferContext::BufferDispatcher>(licence);
+	//モデルの所持するデータをバッファに書き込んでいく
+	for (Model const* model : models_)
+	{
+		auto const& perDrawIndices = model->WatchPerDrawIndices();
+		auto const numMeshes = perDrawIndices.size();
+		OverrideBuffer<ConstantBuffers::ConstantBufferBindSlots::kTransformMatrixContainer>
+		(
+			frameIndex_,
+			*model,
+			perDrawIndices,
+			numMeshes,
+			dispatcher
+		);
+		OverrideBuffer<ConstantBuffers::ConstantBufferBindSlots::kMaterialContainer>
+		(
+			frameIndex_,
+			*model,
+			perDrawIndices,
+			numMeshes,
+			dispatcher
+		);
+	}
+}
+template<>
+void ModelContext::ModelDataBatcher::OverrideBuffer<ConstantBufferBindSlots::kTransformMatrixContainer>
+(
+	UINT const frameIndex_,
+	Model const& model_,
+	std::vector<ConstantBuffers::PerDrawIndicesCPUGPU> const& perDrawIndices_,
+	size_t const numMesh_,
+	BufferContext::BufferDispatcher& dispatcher_
+)
+{
+	//書き込み先バッファ
+	BufferUniqueID transformContainerBufferID = perDrawBufferLibrary->Export<ConstantBufferBindSlots::kTransformMatrixContainer>();
+	auto dstBuffer = static_cast<IWritableCPU*>(static_cast<UploadStructuredBuffer*>(dispatcher_.Dispatch(transformContainerBufferID)));
+	//ダーティ判定しながら、該当インデックス(perDrawIndices)を辿って、バッファに書き込む
+	//もちろんサブメッシュ分も
+	for (size_t i = 0;i < numMesh_;++i)
+	{
+		auto const& srcTransform = model_.WatchTransform(i);
+		//そのトランスフォームがダーティなら書き込まない
+		if (!srcTransform.ShouldOverrideBuffer()) continue;
+		TransformMatrixCPUGPU transformMatrix(srcTransform.WatchWorldMatrix());
+		dstBuffer->WriteElement(frameIndex_, transformMatrix, perDrawIndices_[i].transformMatrixID);
+	}
+}
+template<>
+void ModelContext::ModelDataBatcher::OverrideBuffer<ConstantBufferBindSlots::kMaterialContainer>
+(
+	UINT const frameIndex_,
+	Model const& model_,
+	std::vector<ConstantBuffers::PerDrawIndicesCPUGPU> const& perDrawIndices_,
+	size_t const numMesh_,
+	BufferContext::BufferDispatcher& dispatcher_
+)
+{
+	//書き込み先バッファ
+	BufferUniqueID materialContainerBufferID = perDrawBufferLibrary->Export<ConstantBufferBindSlots::kMaterialContainer>();
+	auto dstBuffer = static_cast<IWritableCPU*>(static_cast<UploadStructuredBuffer*>(dispatcher_.Dispatch(materialContainerBufferID)));
+	//やってることはトランスフォームと変わらない。
+	for (size_t i = 0;i < numMesh_;++i)
+	{
+		//そのトランスフォームがダーティなら書き込まない
+		if (!model_.IsMaterialDirty(i)) continue;
+		const auto& srcMaterial = model_.WatchMaterial(i);
+		MaterialGPU material(srcMaterial);
+		dstBuffer->WriteElement(frameIndex_, material, perDrawIndices_[i].materialID);
+	}
+}
+template<ConstantBufferBindSlots bindSlot>
+void ModelContext::ModelDataBatcher::ImportPerDrawBufferID
+(Local_InputBufferUniqueIDLicence licence_, BufferUniqueID id_)
+{
+	perDrawBufferLibrary->Import<bindSlot>(id_);
+}
+template
+void ModelContext::ModelDataBatcher::ImportPerDrawBufferID<ConstantBufferBindSlots::kTransformMatrixContainer>
+(Local_InputBufferUniqueIDLicence licence_, BufferUniqueID id_);
+template
+void ModelContext::ModelDataBatcher::ImportPerDrawBufferID<ConstantBufferBindSlots::kMaterialContainer>
+(Local_InputBufferUniqueIDLicence licence_, BufferUniqueID id_);
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Model\ModelContextRuntime\ModelDataBatcher\ModelDataBatcher.h ===
+========================================
+#pragma once
+#include "../../ModelContext.h"
+//外部
+#include "../../../../../../Assets/Shared/ConstantBuffers.h"
+#include "../../../../../../Assets/Shared/StructuredBufferModelData.h"
+//効率化のため
+#include "../../../../Buffer/BufferContext.h"
+class Model;
+class ModelContext::ModelDataBatcher
+{
+	//モデルの個体ごとに所持するTrnsformやMaterialなどのパラメーターの配列
+	//のバッファのIDを格納している
+	class PerDrawBufferLibrary;
+public:
+	template<ConstantBuffers::ConstantBufferBindSlots bufferType>
+	struct BufferTypeTraits;
+	struct Local_InputBufferUniqueIDLicence;
+	ModelDataBatcher(NexusFieldProof proof_);
+	~ModelDataBatcher();
+	template<ConstantBuffers::ConstantBufferBindSlots bufferType>
+	void ImportPerDrawBufferID(Local_InputBufferUniqueIDLicence licence_,BufferUniqueID id_);
+	//代行者にランタイムでモデルデータのバッチング処理をやってもらう
+	//バッファに書き込まなくていいモデルも多数あるはずなので、全バッチングではなく、該当バッチングする
+	void BatchModelData
+	(
+		AgentKey agentKey_,
+		UINT const frameIndex_,
+		std::vector<Model*> const& models_,
+		BufferContextDiplomat& bufferContextDiplomat_
+	);
+private:
+	//モデルの個体ごとに所持するパラメーター(TransformやMaterialなど)の配列のBufferIDのライブラリ
+	std::unique_ptr<PerDrawBufferLibrary> perDrawBufferLibrary;
+	//モデルのマテリアル情報、またはトランスフォームを書き込む
+	///結合度に箔がついちゃうけど、さすがにモデルひとつごとにBufferDispatcherを解凍するのは非効率的すぎるし、
+	///関数にまとめたいので
+	template<ConstantBuffers::ConstantBufferBindSlots bufferType>
+	void OverrideBuffer
+	(
+		UINT const frameIndex_,
+		Model const& model_,
+		std::vector<ConstantBuffers::PerDrawIndicesCPUGPU> const& perDrawIndices_,
+		size_t const numMesh_,
+		BufferContext::BufferDispatcher& dispatcher_
+	);
+};
+struct ModelContext::ModelDataBatcher::Local_InputBufferUniqueIDLicence
+{
+private:
+	friend class ModelDataCreator;
+	explicit Local_InputBufferUniqueIDLicence() = default;
+};
+template<>
+void ModelContext::ModelDataBatcher::OverrideBuffer<ConstantBuffers::ConstantBufferBindSlots::kTransformMatrixContainer>
+(
+	UINT const frameIndex_,
+	Model const& model_,
+	std::vector<ConstantBuffers::PerDrawIndicesCPUGPU> const& perDrawIndices_,
+	size_t const numMesh_,
+	BufferContext::BufferDispatcher& dispatcher_
+);
+template<>
+void ModelContext::ModelDataBatcher::OverrideBuffer<ConstantBuffers::ConstantBufferBindSlots::kMaterialContainer>
+(
+	UINT const frameIndex_,
+	Model const& model_,
+	std::vector<ConstantBuffers::PerDrawIndicesCPUGPU> const& perDrawIndices_,
+	size_t const numMesh_,
+	BufferContext::BufferDispatcher& dispatcher_
+);
+template<>
+struct ModelContext::ModelDataBatcher::BufferTypeTraits
+	<ConstantBuffers::ConstantBufferBindSlots::kTransformMatrixContainer>
+{
+	static inline std::string const kBufferName = "TransformMatrixContainer";
+	static constexpr UINT kArrSize = (UINT)ProjectConfig::Render::CBufferSize::kSizeOfTransformMatrixContainerBuffer;
+	static constexpr UINT kStructureSize = (UINT)sizeof(StructuredBufferModelData::TransformMatrixCPUGPU);
+};
+template<>
+struct ModelContext::ModelDataBatcher::BufferTypeTraits
+	<ConstantBuffers::ConstantBufferBindSlots::kMaterialContainer>
+{
+	static inline std::string const kBufferName = "MaterialContainer";
+	static constexpr UINT kArrSize = (UINT)ProjectConfig::Render::CBufferSize::kSizeOfMaterialContainerBuffer;
+	static constexpr UINT kStructureSize = (UINT)sizeof(StructuredBufferModelData::MaterialGPU);
+};
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Model\ModelContextRuntime\ModelDataBatcher\PerDrawBufferLibrary\PerDrawBufferLibrary.cpp ===
+========================================
+#include "PreCompileHeader.h"
+#include "PerDrawBufferLibrary.h"
+ModelContext::ModelDataBatcher::PerDrawBufferLibrary::PerDrawBufferLibrary(NexusFieldProof proof_)
+{
+}
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Model\ModelContextRuntime\ModelDataBatcher\PerDrawBufferLibrary\PerDrawBufferLibrary.h ===
+========================================
+#pragma once
+#include "../ModelDataBatcher.h"
+class ModelContext::ModelDataBatcher::PerDrawBufferLibrary
+{
+public:
+	PerDrawBufferLibrary(NexusFieldProof proof_);
+	template<ConstantBuffers::ConstantBufferBindSlots bufferType>
+	void Import(BufferUniqueID uniqueID_)
+	{
+		bufferIDMap[bufferType] = uniqueID_;
+		std::string bufferName = BufferTypeTraits<bufferType>::kBufferName;
+		Logger::Log("Import " + bufferName + " UniqueID: " + std::to_string(UINT(uniqueID_)), "PerDrawBufferLibrary.h");
+	}
+	template<ConstantBuffers::ConstantBufferBindSlots bufferType>
+	BufferUniqueID Export()
+	{
+		return bufferIDMap[bufferType];
+	}
+private:
+	std::unordered_map<ConstantBuffers::ConstantBufferBindSlots,BufferUniqueID> bufferIDMap;
+};
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Model\ModelContextRuntime\ModelFrontlineSystems\ModelFrontlineSystems.cpp ===
+========================================
+#include "PreCompileHeader.h"
+#include "ModelFrontlineSystems.h"
+#include "ModelContainer/ModelContainer.h"
+namespace
+{
+	auto const fileName = "ModelFrontlineSystems.h";
+}
+ModelContext::ModelFrontlineSystems::ModelFrontlineSystems(NexusFieldProof proof_, ModelCreator& modelCreator_)
+	:modelCreator(modelCreator_)
+{
+	modelContainer.reset(new ModelContainer(proof_));
+	Logger::Log("Instantiate: modelContainer", fileName);
+}
+void ModelContext::ModelFrontlineSystems::AddModel(std::unique_ptr<Model>&& model_)
+{
+	modelContainer->Add(ModelContainer::Local_InitLicence{}, std::move(model_));
+}
+void ModelContext::ModelFrontlineSystems::SeparateModels()
+{
+	modelContainer->SeparateModels(ModelContainer::Local_InitLicence{});
+}
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Model\ModelContextRuntime\ModelFrontlineSystems\ModelFrontlineSystems.h ===
+========================================
+#pragma once
+#include "../../CreateModelTools/ModelCreator.h"
+class ModelContext::ModelFrontlineSystems
+{
+	//モデルのコンテナ。シーン1つにつき1こ。モデルの本体、renderState別と、
+	//modelType別に分類されたコンテナも持つ
+	class ModelContainer;
+public:
+	ModelFrontlineSystems(NexusFieldProof proof_, ModelCreator& modelCreator_);
+	//モデル作成
+	template<Model::Type modelType>
+	std::vector<std::unique_ptr<Model>> CreateModel
+	(
+		std::string const& modelFileName_,
+		std::vector<RenderState> const& modelRenderStates_,
+		std::vector<StructuredBufferModelData::MaterialCPU> const& materials_,
+		UINT const numCreate_,
+		std::string const& modelName_ = "nameLess"
+	)
+	{
+		AddModel
+		(
+			modelCreator.Create<modelType>
+			(
+				modelFileName_,
+				modelRenderStates_,
+				materials_,
+				numCreate_,
+				modelName_
+			)
+		);
+	}
+	//モデルコンテナの分別を行う
+	void SeparateModels();
+private:
+	void AddModel(std::unique_ptr<Model>&& model_);
+	std::unique_ptr<ModelContainer> modelContainer;
+	ModelCreator& modelCreator;
+};
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Model\ModelContextRuntime\ModelFrontlineSystems\RenderStateKey.h ===
 ========================================
 #pragma once
 #include "../../../../RenderPassComponent.h"
@@ -12625,541 +12964,176 @@ public:
 };
 
 ========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Model\ModelContextDiplomat\ModelContextDiplomat.cpp ===
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Model\ModelContextRuntime\ModelFrontlineSystems\ModelContainer\ModelContainer.cpp ===
 ========================================
 #include "PreCompileHeader.h"
-#include "ModelContextDiplomat.h"
-#include "ModelContextExecutionAgent/ModelContextExecutionAgent.h"
-#include "ModelContextToolLender/ModelContextToolLender.h"
-#include "ModelContextCmdProvider/ModelContextCmdProvider.h"
-ModelContextDiplomat::ModelContextDiplomat
-(
-	ModelContext::NexusFieldProof proof_,
-	std::unique_ptr<ModelContext::ExecutionAgent>&& agent_,
-	std::unique_ptr<ModelContext::ToolLender>&& toolLender_,
-	std::unique_ptr<ModelContext::CommandProvider>&& cmdProvider_
-)
+#include "ModelContainer.h"
+#include "ModelSeparator/ModelSeparator.h"
+namespace
 {
-	std::get<std::unique_ptr<ModelContext::ExecutionAgent>>(tools) = std::move(agent_);
-	std::get<std::unique_ptr<ModelContext::ToolLender>>(tools) = std::move(toolLender_);
-	std::get<std::unique_ptr<ModelContext::CommandProvider>>(tools) = std::move(cmdProvider_);
+	auto const fileName = "ModelContainer.cpp";
+}
+ModelContext::ModelFrontlineSystems::ModelContainer::ModelContainer(NexusFieldProof proof_)
+{
+}
+ModelContext::ModelFrontlineSystems::ModelContainer::~ModelContainer()
+{
+}
+void ModelContext::ModelFrontlineSystems::ModelContainer::Add(Local_InitLicence licence_, std::unique_ptr<Model>&& model_)
+{
+	const auto& model =  container.emplace_back(std::move(model_));
+	Logger::Log("Add: " + model->WatchName(), fileName);
+}
+void ModelContext::ModelFrontlineSystems::ModelContainer::SeparateModels(Local_InitLicence licence_)
+{
+	ModelSeparator modelSeparator;
+	auto output = modelSeparator.SeparateAllModels(container);
+	separatedByRenderState = std::move(output.first);
+	separatedByModelType = std::move(output.second);
+	Logger::Log("Model Separating comp", fileName);
 }
 
 ========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Model\ModelContextDiplomat\ModelContextDiplomat.h ===
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Model\ModelContextRuntime\ModelFrontlineSystems\ModelContainer\ModelContainer.h ===
 ========================================
 #pragma once
-#include "../ModelContext.h"
-class ModelContextDiplomat
+#include "../ModelFrontlineSystems.h"
+#include "../RenderStateKey.h"
+#include "../../../ModelContextCmds.h"
+#include "../../../ModelStructure/Model.h"
+class ModelContext::ModelFrontlineSystems::ModelContainer
 {
+	//1.モデルのレンダーステートごとにコンテナに詰めて、PSOの切り替えコストを低減させる
+	//2.モデルをstaticかdynamicかでコンテナを仕分ける。バッチング処理の効率化のため
+	class ModelSeparator;
 public:
-	ModelContextDiplomat
-	(
-		ModelContext::NexusFieldProof proof_,
-		std::unique_ptr<ModelContext::ExecutionAgent>&& agent_,
-		std::unique_ptr<ModelContext::ToolLender>&& toolLender_,
-		std::unique_ptr<ModelContext::CommandProvider>&& cmdProvider_ 
-	);
-	template<typename ToolType>
-	auto* Access()
-	{
-		return std::get<std::unique_ptr<ToolType>>(tools).get();
-	}
+	using SeparatedByRenderState = std::unordered_map<uint64_t, std::pair<RenderStateKey , std::vector<Model*>>>;
+	struct Local_InitLicence;
+	ModelContainer(NexusFieldProof proof_);
+	~ModelContainer();
+	//モデルのタイプ別に仕分けされたコンテナを見るため
+	auto const& WatchSeparatedByModelType()const { return separatedByModelType; }
+	//レンダーステート別
+	auto const& WatchSeparatedByRenderState()const { return separatedByRenderState; }
+	//modelCreatorが作成したモデル本体を格納
+	void Add(Local_InitLicence licence_, std::unique_ptr<Model>&& model_);
+	//ランタイムでPSO切り替えコストを低減させるために、モデルクラスをおなじrenderStateごとに分別する
+	void SeparateModels(Local_InitLicence licence_);
 private:
-	std::tuple
-	<
-		std::unique_ptr<ModelContext::ExecutionAgent>,
-		std::unique_ptr<ModelContext::ToolLender>,
-		std::unique_ptr<ModelContext::CommandProvider>
-	> tools;
+	//モデルの本体が詰まってる
+	std::vector<std::unique_ptr<Model>> container;
+	//モデルがレンダーステートごとに分別されたコンテナ。
+	//第一添え字は、Passで指定
+	std::vector<SeparatedByRenderState> separatedByRenderState;
+	//staticかdynamicかで仕分けられている
+	std::array < std::vector<Model*>, (UINT)Model::Type::kCount > separatedByModelType;
+};
+struct ModelContext::ModelFrontlineSystems::ModelContainer::Local_InitLicence
+{
+private:
+	friend class ModelContext::ModelFrontlineSystems;
+	explicit Local_InitLicence() = default;
 };
 
 ========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Model\ModelContextDiplomat\ModelContextCmdProvider\ModelContextCmdProvider.cpp ===
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Model\ModelContextRuntime\ModelFrontlineSystems\ModelContainer\ModelSeparator\ModelSeparator.cpp ===
 ========================================
 #include "PreCompileHeader.h"
-#include "ModelContextCmdProvider.h"
-#include "../../ModelContainer/ModelContainer.h"
-#include "ModelContextCmdProviderLicences.h"
-using namespace ModelContextCmds;
-ModelContext::CommandProvider::CommandProvider(NexusFieldProof proof_, ModelContainer* modelContainer_)
-	:modelContainer(modelContainer_)
-{
-}
-template<>
-WatchModelContainer ModelContext::CommandProvider::Provide<WatchModelContainer>
-(typename CmdTypeTraits<WatchModelContainer>::Type licence_)
-{
-	return modelContainer->WatchModelDataCmd(ProviderKey{});
-}
-template<>
-WatchSeparatedByRenderState ModelContext::CommandProvider::Provide<WatchSeparatedByRenderState>
-(typename CmdTypeTraits<WatchSeparatedByRenderState>::Type licence_)
-{
-	return modelContainer->WatchSeparatedByRenderStateCmd(ProviderKey{});
-}
-
-========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Model\ModelContextDiplomat\ModelContextCmdProvider\ModelContextCmdProvider.h ===
-========================================
-#pragma once
-#include "../../ModelContext.h"
-#include "../../ModelContextCmds.h"
-class ModelContext::CommandProvider
-{
-	template<typename CmdType>
-	struct CmdTypeTraits;
-	struct WatchModelContainerLicence;
-public:
-	template<typename CmdType>
-	using LicenceType = typename CmdTypeTraits<CmdType>::Type;
-	CommandProvider(NexusFieldProof proof_, ModelContainer* modelContainer_);
-	///コマンド提供
-	template<typename CmdType>
-	CmdType Provide(typename CmdTypeTraits<CmdType>::Type licence_);
-private:
-	ModelContainer* modelContainer;
-};
-template<>
-struct ModelContext::CommandProvider::CmdTypeTraits<ModelContextCmds::WatchModelContainer>
-{
-	using Type = WatchModelContainerLicence;
-};
-template<>
-struct ModelContext::CommandProvider::CmdTypeTraits<ModelContextCmds::WatchSeparatedByRenderState>
-{
-	using Type = WatchModelContainerLicence;
-};
-template<>
-ModelContextCmds::WatchModelContainer ModelContext::CommandProvider::Provide<ModelContextCmds::WatchModelContainer>
-(typename CmdTypeTraits<ModelContextCmds::WatchModelContainer>::Type licence_);
-template<>
-ModelContextCmds::WatchSeparatedByRenderState ModelContext::CommandProvider::Provide<ModelContextCmds::WatchSeparatedByRenderState>
-(typename CmdTypeTraits<ModelContextCmds::WatchModelContainer>::Type licence_);
-
-========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Model\ModelContextDiplomat\ModelContextCmdProvider\ModelContextCmdProviderLicences.h ===
-========================================
-#pragma once
-#include "ModelContextCmdProvider.h"
-class RenderContext;
-struct ModelContext::CommandProvider::WatchModelContainerLicence
-{
-private:
-	friend class RenderContext;
-	explicit WatchModelContainerLicence() = default;
-};
-
-========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Model\ModelContextDiplomat\ModelContextExecutionAgent\ModelContextExecutionAgent.cpp ===
-========================================
-#include "PreCompileHeader.h"
-#include "ModelContextExecutionAgent.h"
-#include "../../CreateModelTools/ModelDataLoader/ModelDataLoader.h"
-#include "../../ModelContainer/ModelContainer.h"
-#include "../../ModelContextRuntime/ModelDataBatcher/ModelDataBatcher.h"
-ModelContext::ExecutionAgent::ExecutionAgent
-(
-	ModelContext::NexusFieldProof proof_,
-	ModelContext& modelContext_,
-	ModelContainer& modelContainer_,
-	ModelDataBatcher& modelDataBatcher_
-):modelContext(modelContext_), modelContainer(modelContainer_), modelDataBatcher(modelDataBatcher_)
-{
-}
-void ModelContext::ExecutionAgent::DeleteModelDataCache(NexusFieldProof proof_)
-{
-	modelContext.DeleteModelDataCache(proof_, AgentKey{});
-}
-void ModelContext::ExecutionAgent::SeparateModelContainer(NexusFieldProof proof_)
-{
-	modelContainer.SeparateModels(proof_, AgentKey{});
-}
-void ModelContext::ExecutionAgent::BatchStaticModelData
-(
-	NexusFieldProof proof_,
-	UINT const frameIndex_,
-	BufferContextDiplomat& bufferContextDiplomat_
-)
-{
-	modelDataBatcher.BatchModelData<Model::Type::kStatic>
-	(
-		AgentKey{},
-		modelContainer,
-		frameIndex_,
-		bufferContextDiplomat_
-	);
-}
-void ModelContext::ExecutionAgent::BatchDynamicModelData
-(
-	NexusFieldProof proof_,
-	UINT const frameIndex_,
-	BufferContextDiplomat& bufferContextDiplomat_
-)
-{
-	modelDataBatcher.BatchModelData<Model::Type::kDynamic>
-	(
-		AgentKey{},
-		modelContainer,
-		frameIndex_,
-		bufferContextDiplomat_
-	);
-}
-
-========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Model\ModelContextDiplomat\ModelContextExecutionAgent\ModelContextExecutionAgent.h ===
-========================================
-#pragma once
-#include "../../ModelContext.h"
-class ModelContext::ExecutionAgent
-{
-public:
-	ExecutionAgent
-	(
-		ModelContext::NexusFieldProof proof_,
-		ModelContext& modelContext_,
-		ModelContainer& modelContainer_,
-		ModelDataBatcher& modelDataBatcher_
-	);
-	void DeleteModelDataCache(NexusFieldProof proof_);
-	void SeparateModelContainer(NexusFieldProof proof_);
-	//モデルクラスとの結合度を密にしたくないのでテンプレートにしません宣言
-	void BatchStaticModelData
-	(
-		NexusFieldProof proof_,
-		UINT const frameIndex_,
-		BufferContextDiplomat& bufferContextDiplomat_
-	);
-	void BatchDynamicModelData
-	(
-		NexusFieldProof proof_,
-		UINT const frameIndex_,
-		BufferContextDiplomat& bufferContextDiplomat_
-	);
-private:
-	ModelContext& modelContext;
-	ModelContainer& modelContainer;
-	ModelDataBatcher& modelDataBatcher;
-};
-
-========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Model\ModelContextDiplomat\ModelContextToolLender\ModelContextToolLender.cpp ===
-========================================
-#include "PreCompileHeader.h"
-#include "ModelContextToolLender.h"
-ModelContext::ToolLender::ToolLender
-(
-	NexusFieldProof proof_
-)
-{
-}
-
-========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Model\ModelContextDiplomat\ModelContextToolLender\ModelContextToolLender.h ===
-========================================
-#pragma once
-#include "../../ModelContext.h"
-class ModelContext::ToolLender
-{
-	template<typename ToolType>
-	struct CmdTypeTraits;
-public:
-	template<typename ToolType>
-	using LicenceType = typename CmdTypeTraits<ToolType>::Type;
-	ToolLender(NexusFieldProof proof_);
-	template<typename ToolType>
-	auto* Lend(typename CmdTypeTraits<ToolType>::Type licence_)
-	{
-		return std::get<ToolType*>(tools).get();
-	}
-private:
-	std::tuple<> tools;
-};
-//template<>
-//struct ModelContext::ToolLender::CmdTypeTraits<ModelContext::ModelContainer>
-//{
-//	using Type = ModelContainerAccessLicence;
-//};
-//
-
-========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Model\ModelContextDiplomat\ModelContextToolLender\ModelContextToolLenderLicence.h ===
-========================================
-#pragma once
-#include "ModelContextToolLender.h"
-
-========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Model\ModelContextRuntime\ModelDataBatcher\ModelDataBatcher.cpp ===
-========================================
-#include "PreCompileHeader.h"
-#include "ModelDataBatcher.h"
-#include "PerDrawBufferLibrary/PerDrawBufferLibrary.h"
-#include "../../ModelContainer/ModelContainer.h"
+#include "ModelSeparator.h"
 //外部
-#include "../../../../Buffer/BufferContextDiplomats.h"
-#include "../../../../Buffer/BufferDefinition/GPUBuffer/UploadStructuredBuffer/UploadStructuredBuffer.h"
-#include "../../../../Buffer/BufferRuntime/BufferDispatcher/BufferDispatcher.h"
-using namespace ConstantBuffers;
-using namespace StructuredBufferModelData;
-ModelContext::ModelDataBatcher::ModelDataBatcher(NexusFieldProof proof_)
+#include "KeyPackager/KeyPackager.h"
+using namespace RenderPassComponent;
+using namespace RenderStateComponent;
+using namespace ShaderPathComponent;
+ModelContext::ModelFrontlineSystems::ModelContainer::ModelSeparator::ModelSeparator()
 {
-	perDrawBufferLibrary = std::make_unique<PerDrawBufferLibrary>(proof_);
-}
-ModelContext::ModelDataBatcher::~ModelDataBatcher()
-{
-}
-BufferContext::BufferDispatcher& ModelContext::ModelDataBatcher::BorrowBufferDispatcher(BufferContextDiplomat& bufferContextDiplomat_)
-{
-	BufferContext::ToolLender::LicenceType<BufferContext::BufferDispatcher> licence;
-	return *bufferContextDiplomat_.Access<BufferContext::ToolLender>()->Lend<BufferContext::BufferDispatcher>(licence);
-}
-template<>
-std::vector<Model*> const& ModelContext::ModelDataBatcher::PullModelContainer<Model::Type::kStatic>
-(
-	ModelContainer const& modelContainer_
-) 
-{
-	return modelContainer_.WatchSeparatedByModelType()[(UINT)Model::Type::kStatic];
-}
-template<>
-std::vector<Model*> const& ModelContext::ModelDataBatcher::PullModelContainer<Model::Type::kDynamic>
-(
-	ModelContainer const& modelContainer_
-) 
-{
-	return modelContainer_.WatchSeparatedByModelType()[(UINT)Model::Type::kDynamic];
-}
-template<>
-void ModelContext::ModelDataBatcher::OverrideBuffer<ConstantBufferBindSlots::kTransformMatrixContainer>
-(
-	UINT const frameIndex_,
-	Model const& model_,
-	std::vector<ConstantBuffers::PerDrawIndicesCPUGPU> const& perDrawIndices_,
-	size_t const numMesh_,
-	BufferContext::BufferDispatcher& dispatcher_
-)
-{
-	//書き込み先バッファ
-	BufferUniqueID transformContainerBufferID = perDrawBufferLibrary->Export<ConstantBufferBindSlots::kTransformMatrixContainer>();
-	auto dstBuffer = static_cast<IWritableCPU*>(static_cast<UploadStructuredBuffer*>(dispatcher_.Dispatch(transformContainerBufferID)));
-	//ダーティ判定しながら、該当インデックス(perDrawIndices)を辿って、バッファに書き込む
-	//もちろんサブメッシュ分も
-	for (size_t i = 0;i < numMesh_;++i)
-	{
-		auto const& srcTransform = model_.WatchTransform(i);
-		//そのトランスフォームがダーティなら書き込まない
-		if (!srcTransform.ShouldOverrideBuffer()) continue;
-		TransformMatrixCPUGPU transformMatrix(srcTransform.WatchWorldMatrix());
-		dstBuffer->WriteElement(frameIndex_, transformMatrix, perDrawIndices_[i].transformMatrixID);
-	}
-}
-template<>
-void ModelContext::ModelDataBatcher::OverrideBuffer<ConstantBufferBindSlots::kMaterialContainer>
-(
-	UINT const frameIndex_,
-	Model const& model_,
-	std::vector<ConstantBuffers::PerDrawIndicesCPUGPU> const& perDrawIndices_,
-	size_t const numMesh_,
-	BufferContext::BufferDispatcher& dispatcher_
-)
-{
-	//書き込み先バッファ
-	BufferUniqueID materialContainerBufferID = perDrawBufferLibrary->Export<ConstantBufferBindSlots::kMaterialContainer>();
-	auto dstBuffer = static_cast<IWritableCPU*>(static_cast<UploadStructuredBuffer*>(dispatcher_.Dispatch(materialContainerBufferID)));
-	//やってることはトランスフォームと変わらない。
-	for (size_t i = 0;i < numMesh_;++i)
-	{
-		//そのトランスフォームがダーティなら書き込まない
-		if (!model_.IsMaterialDirty(i)) continue;
-		const auto& srcMaterial = model_.WatchMaterial(i);
-		MaterialGPU material(srcMaterial);
-		dstBuffer->WriteElement(frameIndex_, material, perDrawIndices_[i].materialID);
-	}
-}
-template
-void ModelContext::ModelDataBatcher::OverrideBuffer<ConstantBufferBindSlots::kTransformMatrixContainer>
-(
-	UINT const frameIndex_,
-	Model const& model_,
-	std::vector<ConstantBuffers::PerDrawIndicesCPUGPU> const& perDrawIndices_,
-	size_t const numMesh_,
-	BufferContext::BufferDispatcher& dispatcher_
-);
-template
-void ModelContext::ModelDataBatcher::OverrideBuffer<ConstantBufferBindSlots::kMaterialContainer>
-(
-	UINT const frameIndex_,
-	Model const& model_,
-	std::vector<ConstantBuffers::PerDrawIndicesCPUGPU> const& perDrawIndices_,
-	size_t const numMesh_,
-	BufferContext::BufferDispatcher& dispatcher_
-);
-template
-std::vector<Model*> const& ModelContext::ModelDataBatcher::PullModelContainer<Model::Type::kStatic>
-(
-	ModelContainer const& modelContainer_
-);
-template
-std::vector<Model*> const& ModelContext::ModelDataBatcher::PullModelContainer<Model::Type::kDynamic>
-(
-	ModelContainer const& modelContainer_
-);
-template<>
-void ModelContext::ModelDataBatcher::ImportPerDrawBufferID<ConstantBufferBindSlots::kTransformMatrixContainer>
-(Local_InputBufferUniqueIDLicence licence_, BufferUniqueID id_)
-{
-	perDrawBufferLibrary->Import<ConstantBufferBindSlots::kTransformMatrixContainer>(id_);
-}
-template<>
-void ModelContext::ModelDataBatcher::ImportPerDrawBufferID<ConstantBufferBindSlots::kMaterialContainer>
-(Local_InputBufferUniqueIDLicence licence_, BufferUniqueID id_)
-{
-	perDrawBufferLibrary->Import<ConstantBufferBindSlots::kMaterialContainer>(id_);
-}
-template
-void ModelContext::ModelDataBatcher::ImportPerDrawBufferID<ConstantBufferBindSlots::kTransformMatrixContainer>
-(Local_InputBufferUniqueIDLicence licence_, BufferUniqueID id_);
-template
-void ModelContext::ModelDataBatcher::ImportPerDrawBufferID<ConstantBufferBindSlots::kMaterialContainer>
-(Local_InputBufferUniqueIDLicence licence_, BufferUniqueID id_);
-
-========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Model\ModelContextRuntime\ModelDataBatcher\ModelDataBatcher.h ===
-========================================
-#pragma once
-#include "../../ModelContext.h"
-#include "../../ModelStructure/Model.h"
-//外部
-//効率化のため
-#include "../../../../Buffer/BufferContext.h"
-class ModelContext::ModelDataBatcher
-{
-	//モデルの個体ごとに所持するTrnsformやMaterialなどのパラメーターの配列
-	//のバッファのIDを格納している
-	class PerDrawBufferLibrary;
-public:
-	template<ConstantBuffers::ConstantBufferBindSlots bufferType>
-	struct BufferTypeTraits;
-	struct Local_InputBufferUniqueIDLicence;
-	ModelDataBatcher(NexusFieldProof proof_);
-	~ModelDataBatcher();
-	template<ConstantBuffers::ConstantBufferBindSlots bufferType>
-	void ImportPerDrawBufferID(Local_InputBufferUniqueIDLicence licence_,BufferUniqueID id_);
-	//代行者にランタイムでモデルデータのバッチング処理をやってもらう
-	//バッファに書き込まなくていいモデルも多数あるはずなので、全バッチングではなく、該当バッチングする
-	//staticかDynamicか選択
-	template<Model::Type modelType>
-	void BatchModelData
+	keyPackager.reset
 	(
-		AgentKey agentKey_,
-		ModelContainer const& modelContainer_,
-		UINT const frameIndex_,
-		BufferContextDiplomat& bufferContextDiplomat_
-	)
+		new KeyPackager
+		(
+			RenderStateKey::Count<RenderStateKey::Sequence::kPass>(),
+			RenderStateKey::Count<RenderStateKey::Sequence::kBlendMode>(),
+			RenderStateKey::Count<RenderStateKey::Sequence::kCullMode>(),
+			RenderStateKey::Count<RenderStateKey::Sequence::kMeshType>(),
+			RenderStateKey::Count<RenderStateKey::Sequence::kMaterialType>()
+		)
+	);
+}
+ModelContext::ModelFrontlineSystems::ModelContainer::ModelSeparator::~ModelSeparator()
+{
+}
+[[nodiscard]] ModelContext::ModelFrontlineSystems::ModelContainer::ModelSeparator::Output
+ModelContext::ModelFrontlineSystems::ModelContainer::ModelSeparator::SeparateAllModels(std::vector<std::unique_ptr<Model>>& modelContainer_)
+{
+	std::vector<SeparatedByRenderState> separatedByRenderState;
+	std::array < std::vector<Model*>, (UINT)Model::Type::kCount> separatedByModelType;
+	separatedByRenderState.resize((UINT)Pass::kCount);
+	for (auto itr = modelContainer_.begin();itr != modelContainer_.end();++itr)
 	{
-		//BufferDispatcherを借りる
-		auto& dispatcher = BorrowBufferDispatcher(bufferContextDiplomat_);
-		//モデルタイプ別に仕分けされたコンテナ
-		auto const& separatedContainer = PullModelContainer<modelType>(modelContainer_);
-		//モデルの所持するデータをバッファに書き込んでいく
-		for (Model const* model: separatedContainer)
+		//renderStateとそのパックされたキーがセット
+		auto packedKeys = PackToKey(*(*itr));
+		//RenderState別に仕分けていく
+		for (auto const& key : packedKeys)
 		{
-			auto const& perDrawIndices = model->WatchPerDrawIndices();
-			auto const numMeshes = perDrawIndices.size();
-			OverrideBuffer<ConstantBuffers::ConstantBufferBindSlots::kTransformMatrixContainer>
-			(
-				frameIndex_,
-				*model,
-				perDrawIndices,
-				numMeshes,
-				dispatcher
-			);
-			OverrideBuffer<ConstantBuffers::ConstantBufferBindSlots::kMaterialContainer>
-			(
-				frameIndex_,
-				*model,
-				perDrawIndices,
-				numMeshes,
-				dispatcher
-			);
+			auto const pass = (UINT)key.first.Get<RenderStateKey::Sequence::kPass>();
+			separatedByRenderState[pass][key.second].first = key.first;
+			separatedByRenderState[pass][key.second].second.emplace_back((*itr).get());
+		}
+		//ランタイムデータバッチング用にモデルタイプ別に仕分けていく
+		separatedByModelType[(UINT)(*itr)->WatchModelType()].emplace_back((*itr).get());
+	}
+	return std::make_pair(std::move(separatedByRenderState), std::move(separatedByModelType));
+}
+std::vector<std::pair<RenderStateKey, uint64_t>> ModelContext::ModelFrontlineSystems::ModelContainer::ModelSeparator::PackToKey(Model const& model_)
+{
+	std::vector<std::pair<RenderStateKey, uint64_t>> keys;
+	for (auto const& renderState : model_.WatchRenderStates())
+	{
+		for (auto const& blendMode : renderState.blendModes)
+		{
+			for (auto const& materialType : renderState.materialTypes)
+			{
+				uint64_t packedKey = keyPackager->Pack
+				(
+					renderState.pass,
+					blendMode,
+					renderState.cullMode,
+					renderState.meshType,
+					materialType
+				);
+				RenderStateKey renderStateKey
+				(
+					renderState.pass,
+					blendMode,
+					renderState.cullMode,
+					renderState.meshType,
+					materialType
+				);
+				keys.emplace_back(std::make_pair(renderStateKey, packedKey));
+			}
 		}
 	}
-private:
-	//モデルの個体ごとに所持するパラメーター(TransformやMaterialなど)の配列のBufferIDのライブラリ
-	std::unique_ptr<PerDrawBufferLibrary> perDrawBufferLibrary;
-	//モデルのマテリアル情報、またはトランスフォームを書き込む
-	///結合度に箔がついちゃうけど、さすがにモデルひとつごとにBufferDispatcherを解凍するのは非効率的すぎるし、
-	///関数にまとめたいので
-	template<ConstantBuffers::ConstantBufferBindSlots bufferType>
-	void OverrideBuffer
-	(
-		UINT const frameIndex_,
-		Model const& model_,
-		std::vector<ConstantBuffers::PerDrawIndicesCPUGPU> const& perDrawIndices_,
-		size_t const numMesh_,
-		BufferContext::BufferDispatcher& dispatcher_
-	);
-	//BufferDispatcherを借りる
-	BufferContext::BufferDispatcher& BorrowBufferDispatcher(BufferContextDiplomat& bufferContextDiplomat_);
-	//モデルコンテナクラスから、仕分け済みのモデルコンテナを引っ張る
-	template<Model::Type modelType>
-	std::vector<Model*> const& PullModelContainer(ModelContainer const& modelContainer_);
-};
-struct ModelContext::ModelDataBatcher::Local_InputBufferUniqueIDLicence
-{
-private:
-	friend class ModelDataCreator;
-	explicit Local_InputBufferUniqueIDLicence() = default;
-};
-template<>
-struct ModelContext::ModelDataBatcher::BufferTypeTraits
-	<ConstantBuffers::ConstantBufferBindSlots::kTransformMatrixContainer>
-{
-	static inline std::string const kBufferName = "TransformMatrixContainer";
-	static constexpr UINT kArrSize = (UINT)ProjectConfig::Render::CBufferSize::kSizeOfTransformMatrixContainerBuffer;
-	static constexpr UINT kStructureSize = (UINT)sizeof(StructuredBufferModelData::TransformMatrixCPUGPU);
-};
-template<>
-struct ModelContext::ModelDataBatcher::BufferTypeTraits
-	<ConstantBuffers::ConstantBufferBindSlots::kMaterialContainer>
-{
-	static inline std::string const kBufferName = "MaterialContainer";
-	static constexpr UINT kArrSize = (UINT)ProjectConfig::Render::CBufferSize::kSizeOfMaterialContainerBuffer;
-	static constexpr UINT kStructureSize = (UINT)sizeof(StructuredBufferModelData::MaterialGPU);
-};
-
-========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Model\ModelContextRuntime\ModelDataBatcher\PerDrawBufferLibrary\PerDrawBufferLibrary.cpp ===
-========================================
-#include "PreCompileHeader.h"
-#include "PerDrawBufferLibrary.h"
-ModelContext::ModelDataBatcher::PerDrawBufferLibrary::PerDrawBufferLibrary(NexusFieldProof proof_)
-{
+	return keys;
 }
 
 ========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Model\ModelContextRuntime\ModelDataBatcher\PerDrawBufferLibrary\PerDrawBufferLibrary.h ===
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Model\ModelContextRuntime\ModelFrontlineSystems\ModelContainer\ModelSeparator\ModelSeparator.h ===
 ========================================
 #pragma once
-#include "../ModelDataBatcher.h"
-class ModelContext::ModelDataBatcher::PerDrawBufferLibrary
+#include "../ModelContainer.h"
+class KeyPackager;
+class ModelContext::ModelFrontlineSystems::ModelContainer::ModelSeparator
 {
+	using Output = std::pair<std::vector<SeparatedByRenderState>, std::array < std::vector<Model*>, (UINT)Model::Type::kCount > >;
 public:
-	PerDrawBufferLibrary(NexusFieldProof proof_);
-	template<ConstantBuffers::ConstantBufferBindSlots bufferType>
-	void Import(BufferUniqueID uniqueID_)
-	{
-		bufferIDMap[bufferType] = uniqueID_;
-		std::string bufferName = BufferTypeTraits<bufferType>::kBufferName;
-		Logger::Log("Import " + bufferName + " UniqueID: " + std::to_string(UINT(uniqueID_)), "PerDrawBufferLibrary.h");
-	}
-	template<ConstantBuffers::ConstantBufferBindSlots bufferType>
-	BufferUniqueID Export()
-	{
-		return bufferIDMap[bufferType];
-	}
+	ModelSeparator();
+	~ModelSeparator();
+	[[nodiscard]] Output SeparateAllModels(std::vector<std::unique_ptr<Model>>& modelContainer_);
 private:
-	std::unordered_map<ConstantBuffers::ConstantBufferBindSlots,BufferUniqueID> bufferIDMap;
+	//レンダーステートをキーに詰める
+	std::vector<std::pair<RenderStateKey, uint64_t>> PackToKey(Model const& model_);
+	//レンダーステートキーをuint32_tに詰める
+	std::unique_ptr<KeyPackager> keyPackager;
 };
 
 ========================================
@@ -13513,6 +13487,7 @@ ModelDescription::ModelDescription
 	std::vector<size_t> const& meshletSize_
 ) :perDrawIndices(perDrawIndices_), renderStates(renderStates_), meshletSize(meshletSize_)
 {
+#ifdef _DEBUG
 	std::string errorMsg{};
 	for (auto& renderState : renderStates)
 	{
@@ -13548,8 +13523,8 @@ ModelDescription::ModelDescription
 		{
 			if
 			(
-					material == ShaderPathComponent::MaterialType::kOffscreen ||
-					(UINT)material >= (UINT)ShaderPathComponent::MaterialType::kCount
+				material == ShaderPathComponent::MaterialType::kOffscreen ||
+				(UINT)material >= (UINT)ShaderPathComponent::MaterialType::kCount
 			)
 			{
 				errorMsg += "「そのMaterialTypeは選択不可(最低限処置)」";
@@ -13565,6 +13540,7 @@ ModelDescription::ModelDescription
 	{
 		renderState.modelName = modelName_ + "[" + std::to_string(cnt++) + "]";
 	}
+#endif // _DEBUG
 }
 
 ========================================
@@ -17782,6 +17758,7 @@ RenderContext::StaticRenderGraph::~StaticRenderGraph()
 class DescriptorHeapContextDiplomat;
 class CommandContextDiplomat;
 class RuntimeWrapper;
+class SceneContextDiplomat;
 class RenderContext::StaticRenderGraph
 {
 	//レンダーグラフの初期化手助けクラス
@@ -17898,6 +17875,7 @@ private:
 using namespace RenderStateComponent;
 using namespace RenderPassComponent;
 using namespace ShaderPathComponent;
+using namespace ModelContextCmds;
 namespace
 {
 	auto const fileName = "GraphicsPSO_Builder.cpp";
@@ -17996,7 +17974,7 @@ std::vector<RenderContext::StaticRenderGraph::PSO_Builder::PsoDesc_Key> RenderCo
 {
 	using namespace RenderPassComponent;
 	//全てのモデルのRenderStatesを集計
-	std::vector<RenderState> allModelRenderStates = CollectAllRenderStates(modelContextDiplomat_);
+	std::vector<RenderState> const& allModelRenderStates = PullAllRenderStates(modelContextDiplomat_);
 	//全てのPassが入ってるコンテナを参照
 	auto const& allPassPtrMap = passContainer_.AccessAllPassPtrMap(proof_);
 	///これら二つのデータの塊からPSOを生成していく
@@ -18250,30 +18228,16 @@ void RenderContext::StaticRenderGraph::PSO_Builder::InputPassOnlyInfo
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-std::vector<RenderState> RenderContext::StaticRenderGraph::PSO_Builder::CollectAllRenderStates
+std::vector<RenderState> const& RenderContext::StaticRenderGraph::PSO_Builder::PullAllRenderStates
 (
 	ModelContextDiplomat& modelContextDiplomat_
 )
 {
-	using namespace ModelContextCmds;
-	//モデルコンテナの中身を覗くコマンドをもらう
+	//モデルクリエイターから、生成したモデルの全レンダーステートのパターンを所持しているので渡してもらう
 	auto* modelContextCmdProvider = modelContextDiplomat_.Access<ModelContext::CommandProvider>();
-	ModelContext::CommandProvider::LicenceType<WatchModelContainer> licence;
-	auto watchModelContainer = modelContextCmdProvider->Provide<WatchModelContainer>(licence);
-	//全てのモデルクラスのコンテナ
-	const std::vector<std::unique_ptr<Model>>* modelDataContainer = watchModelContainer();
-	//全てのモデルクラスのRenderStates
-	std::vector<RenderState> allModelRenderStates;
-	//モデルクラスを全走査し、全ModelDescriptionをかき集める
-	for (auto itr = modelDataContainer->begin();itr != modelDataContainer->end();++itr)
-	{
-		//そのモデルクラスのModelDescのrenderStatesを回収
-		for (auto const& renderState : (*itr)->WatchRenderStates())
-		{
-			allModelRenderStates.emplace_back(renderState);
-		}
-	}
-	return allModelRenderStates;
+	ModelContext::CommandProvider::LicenceType<WatchAllModelsRenderStatePattern> licence;
+	auto cmd = modelContextCmdProvider->Provide<WatchAllModelsRenderStatePattern>(licence);
+	return *cmd();
 }
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -18364,7 +18328,7 @@ private:
 		PSO_ContextDiplomat& pso_ContextDiplomat_
 	);
 	//全モデルデータを受け取ってそのモデルデータのRenderStateのベクタを取り出す
-	static std::vector<RenderState> CollectAllRenderStates(ModelContextDiplomat& modelContextDiplomat_);
+	static std::vector<RenderState> const& PullAllRenderStates(ModelContextDiplomat& modelContextDiplomat_);
 	//モデルクラスの情報が必要か否か関係なく埋めれる情報を埋める
 	static PsoDesc_Key InputCommonInfo
 	(
@@ -18988,7 +18952,7 @@ private:
 #include "../../../../../../LowerLayer/Buffer/BufferRuntime/BufferDispatcher/BufferDispatcher.h"
 #include "../../../../../../LowerLayer/Buffer/BufferDefinition/AllBuffersInclude.h"
 #include "../../../../../../LowerLayer/Resource/Model/ModelContextDiplomatIncludes.h"
-#include "../../../../../../LowerLayer/Resource/Model/ModelContainer/ModelContainer.h"
+//#include "../../../../../../LowerLayer/Resource/Model/ModelContainer/ModelContainer.h"
 RenderContext::StaticRenderGraph::PathOperator::PathOperator
 (
 	NexusFieldProof proof_,
@@ -19058,14 +19022,15 @@ void RenderContext::StaticRenderGraph::PathOperator::Run
 	auto bToolLender = bufferContextDiplomat_.Access<BufferContext::ToolLender>();
 	BufferContext::ToolLender::LicenceType<BufferContext::BufferDispatcher> bLicence;
 	auto& bufferDispatcher = *bToolLender->Lend<BufferContext::BufferDispatcher>(bLicence);
-	//modelContainer（仕分け済み）取得コマンドをもらう
-	auto mCmdProvider = modelContextDiplomat_.Access<ModelContext::CommandProvider>();
-	ModelContext::CommandProvider::LicenceType<ModelContextCmds::WatchSeparatedByRenderState> mLicence;
-	auto& modelContainer = *mCmdProvider->Provide<ModelContextCmds::WatchSeparatedByRenderState>(mLicence)();
-	for (auto* path : allPathPtr)
-	{
-		path->Run(modelContainer, modelFillMode, pso_PoolDispatcher, runtimeWrapper_, bufferDispatcher);
-	}
+	////modelContainer（仕分け済み）取得コマンドをもらう
+	//auto mCmdProvider = modelContextDiplomat_.Access<ModelContext::CommandProvider>();
+	//ModelContext::CommandProvider::LicenceType<ModelContextCmds::WatchSeparatedByRenderState> mLicence;
+	//auto& modelContainer = *mCmdProvider->Provide<ModelContextCmds::WatchSeparatedByRenderState>(mLicence)();
+	//
+	//for (auto* path : allPathPtr)
+	//{
+	//	path->Run(modelContainer, modelFillMode, pso_PoolDispatcher, runtimeWrapper_, bufferDispatcher);
+	//}
 }
 
 ========================================
@@ -19523,7 +19488,7 @@ void RenderContext::PassBehavior::CreateBarrier<BufferUsage::kWrite>(IRenderTarg
 //外部
 #include "../../../../LowerLayer/Buffer/BufferContext.h"
 #include "../../../../LowerLayer/Buffer/BufferDefinition/GPUBuffer/BufferInterface.h"
-#include "../../../../LowerLayer/Resource/Model/ModelContainer/RenderStateKey/RenderStateKey.h"
+#include "../../../../LowerLayer/Resource/Model/ModelContextRuntime/ModelFrontlineSystems/RenderStateKey.h"
 class RuntimeWrapper;
 class Model;
 class ColorBuffer;
@@ -21177,9 +21142,13 @@ void SceneContext::ScenePipeline::Run
 ========================================
 #pragma once
 #include "../SceneContext.h"
+//外部
+#include "../../../LowerLayer/Resource/Model/ModelContextRuntime/ModelFrontlineSystems/RenderStateKey.h"
 class ModelContextDiplomat;
 class CameraContextDiplomat;
 class BufferContextDiplomat;
+class Model;
+struct RenderStateKey;
 class SceneContext::ScenePipeline
 {
 	//ランタイムでシーンの制御を行う
@@ -21200,6 +21169,9 @@ public:
 		CameraContextDiplomat& cameraContextDiplomat_,
 		BufferContextDiplomat& bufferContextDiplomat_
 	);
+	//稼働中シーンのレンダーステート別に仕分けられたモデルコンテナを見る
+	std::unordered_map<uint64_t, std::pair<RenderStateKey, std::vector<Model*>>> const&
+		WatchModelContainerSeparatedByRenderState()const;
 private:
 	std::unique_ptr<SceneController> sceneController;
 };
@@ -21219,15 +21191,15 @@ SceneContext::ScenePipeline::SceneController::SceneController
 }
 void SceneContext::ScenePipeline::SceneController::Run()
 {
-	output = curScene->Update();
+	curScene->Update();
 }
 void SceneContext::ScenePipeline::SceneController::ChangeScene(std::string const& next_)
 {
 	curScene = sceneLib.Export(next_);
 }
-SceneBehavior::Output const& SceneContext::ScenePipeline::SceneController::WatchSceneOutput()const
+SceneBehavior::Output const& SceneContext::ScenePipeline::SceneController::WatchCurrentSceneOutput()const
 {
-	return output;
+	return curScene->WatchSceneOutput();
 }
 
 ========================================
@@ -21246,14 +21218,12 @@ public:
 	);
 	//シーンの制御、更新処理
 	void Run();
-	SceneBehavior::Output const& WatchSceneOutput()const;
+	SceneBehavior::Output const& WatchCurrentSceneOutput()const;
 private:
 	void ChangeScene(std::string const& next_);
 	//現在稼働しているシーン
 	SceneBehavior* curScene = nullptr;
 	SceneLibrary& sceneLib;
-	//このシーンで使用しているカメラ、モデル、ライトなどの情報
-	SceneBehavior::Output output;
 };
 
 ========================================
@@ -21276,7 +21246,7 @@ void SceneContext::ScenePipeline::SceneDataBatchingPlace::BatchingPlace
 	BufferContextDiplomat& bufferContextDiplomat_
 )
 {
-	auto const& sceneOutput = sceneController_.WatchSceneOutput();
+	auto const& sceneOutput = sceneController_.WatchCurrentSceneOutput();
 	//カメラコンテキストの代行者
 	auto& cameraAgent = cameraContextDiplomat_.Access<CameraContext::ExecutionAgent>();
 	//カメラデータのバッチング
@@ -21427,18 +21397,20 @@ private:
 #include "../../../LowerLayer/Resource/Camera/CameraStructrue/CameraDesc/CameraDesc.h"
 SceneBehavior::SceneBehavior
 (
-	CameraContext::CameraFrontlineSystems* cameraSystems_
+	CameraContext::CameraFrontlineSystems& cameraSystems_
 ):cameraSystems(cameraSystems_)
 {
 	//各シーンに1つは存在するデバッグカメラを作成
 	CreateCamera<CameraSocket::kDebug, DefaultDebugCamera>(std::nullopt, "DefaultDebugCamera");
 }
-SceneBehavior::Output SceneBehavior::Update()
+void SceneBehavior::Update()
 {
-	Output output;
 	//このシーンで使うカメラのアップデート
-	output.usingCamera = cameraSystems->CameraUpdate();
-	return output;
+	output.usingCamera = cameraSystems.CameraUpdate();
+}
+SceneBehavior::Output const& SceneBehavior::WatchSceneOutput()const 
+{
+	return output; 
 }
 
 ========================================
@@ -21448,20 +21420,24 @@ SceneBehavior::Output SceneBehavior::Update()
 //外部
 #include "../../../LowerLayer/Resource/Camera/CameraContextRuntime/CameraFrontlineSystems.h"
 class SceneContext;
+class Model;
+struct CameraDesc;
 class SceneBehavior
 {
 	friend class SceneContext;
+	//このシーンで使用しているカメラ、モデル、ライトなどの情報
 	struct Output
 	{
-		//使用しているカメラ
+		//使用しているカメラ。更新必要
 		std::unordered_map<CameraSocket, CameraBehavior*> usingCamera;
 	};
 public:
 	SceneBehavior
 	(
-		CameraContext::CameraFrontlineSystems* cameraSystems_
+		CameraContext::CameraFrontlineSystems& cameraSystems_
 	);
 	virtual ~SceneBehavior() = default;
+	Output const& WatchSceneOutput()const;
 protected:
 	//カメラの作成＆登録
 	template<CameraSocket dstSocket, typename CameraType>
@@ -21471,7 +21447,7 @@ protected:
 		std::string const& name_
 	)
 	{
-		cameraSystems->CreateCamera<dstSocket, CameraType>(cameraDesc_,name_);
+		cameraSystems.CreateCamera<dstSocket, CameraType>(cameraDesc_,name_);
 	}
 	//ゲームオブジェクトが好きなタイミングでカメラを切り替えられるように
 	//カメラ切り替えコマンドを返す。
@@ -21482,9 +21458,10 @@ protected:
 	}
 private:
 	//SceneContext::SceneControllerのみ呼べる
-	Output Update();
+	void Update();
 	void Reset();
-	CameraContext::CameraFrontlineSystems* cameraSystems;
+	CameraContext::CameraFrontlineSystems& cameraSystems;
+	SceneBehavior::Output output;
 };
 
 ========================================
@@ -21561,7 +21538,6 @@ Nexus::Nexus()
 	InitializeInSequence<InitSequence::kDeleteBufferUploaderCache>();
 	InitializeInSequence<InitSequence::kSortOutGlobalConstantBuffers>();
 	InitializeInSequence<InitSequence::kDeleteModelDataCache>();
-	InitializeInSequence<InitSequence::kSeparateModelContainer>();
 	ErrorMessageOutput::Assert::DetectError(nextInit == InitSequence::kEnd, "初期化が正常に行われていない可能性がある", fileName);
 	Logger::End("Nexus: Constructor");
 }
@@ -21620,8 +21596,7 @@ class Nexus
 		kDeleteBufferUploaderCache,
 		kSortOutGlobalConstantBuffers,
 		kDeleteModelDataCache,					///モデルデータキャッシュの削除は、アプリ層の初期化が終わったあと
-		kSeparateModelContainer					///同様
-		,kEnd
+		kEnd
 	}nextInit = InitSequence(0);
 	//終了処理順序
 	enum class FinalizeSequence
@@ -22050,14 +22025,6 @@ void Nexus::Init<Nexus::InitSequence::kDeleteModelDataCache>()
 	//初期化処理に使ったモデルデータのキャッシュを削除
 	agent->DeleteModelDataCache(ModelContext::NexusFieldProof{});
 }
-template<>
-void Nexus::Init<Nexus::InitSequence::kSeparateModelContainer>()
-{
-	//modelContextの代行者
-	auto* agent = modelContext->AccessDiplomat().Access<ModelContext::ExecutionAgent>();
-	//ランタイム用のベクターコンテナに詰め変える(全てのモデル生成が終わった後)
-	agent->SeparateModelContainer(ModelContext::NexusFieldProof{});
-}
 template
 void Nexus::Init<Nexus::InitSequence::kCoInitializeEx>();
 template
@@ -22100,8 +22067,6 @@ template
 void Nexus::Init<Nexus::InitSequence::kSortOutGlobalConstantBuffers>();
 template
 void Nexus::Init<Nexus::InitSequence::kDeleteModelDataCache>();
-template
-void Nexus::Init<Nexus::InitSequence::kSeparateModelContainer>();
 
 ========================================
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Nexus\NexusRun.cpp ===
@@ -22890,5 +22855,5 @@ namespace StringProcessing
 ========================================
 === SUMMARY ===
 ========================================
-Total Files      : 510
-Effective Lines  : 16678
+Total Files      : 512
+Effective Lines  : 16611

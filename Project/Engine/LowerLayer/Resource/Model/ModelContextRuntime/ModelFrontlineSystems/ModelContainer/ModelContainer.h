@@ -1,10 +1,10 @@
 #pragma once
-#include "../ModelContext.h"
-#include "../ModelContextCmds.h"
-#include "RenderStateKey/RenderStateKey.h"
-#include "../ModelStructure/Model.h"
+#include "../ModelFrontlineSystems.h"
+#include "../RenderStateKey.h"
+#include "../../../ModelContextCmds.h"
+#include "../../../ModelStructure/Model.h"
 
-class ModelContext::ModelContainer
+class ModelContext::ModelFrontlineSystems::ModelContainer
 {
 	//1.モデルのレンダーステートごとにコンテナに詰めて、PSOの切り替えコストを低減させる
 	//2.モデルをstaticかdynamicかでコンテナを仕分ける。バッチング処理の効率化のため
@@ -14,26 +14,25 @@ public:
 
 	using SeparatedByRenderState = std::unordered_map<uint64_t, std::pair<RenderStateKey , std::vector<Model*>>>;
 
-	struct Local_AddLicence;
+	struct Local_InitLicence;
 
 	ModelContainer(NexusFieldProof proof_);
 	~ModelContainer();
 
-	void Add(Local_AddLicence addLicence_,std::unique_ptr<Model>&& model_);
 
-	//全モデルコンテナの中身を見るためのコマンド
-	ModelContextCmds::WatchModelContainer WatchModelDataCmd(ProviderKey key_)const;
-	//RenderStateで仕分けされたコンテナを見るためのコマンド
-	ModelContextCmds::WatchSeparatedByRenderState WatchSeparatedByRenderStateCmd(ProviderKey key_);
-	//モデルのタイプ別に仕分けされたコンテナを見るためのコマンド
+	//モデルのタイプ別に仕分けされたコンテナを見るため
 	auto const& WatchSeparatedByModelType()const { return separatedByModelType; }
+	//レンダーステート別
+	auto const& WatchSeparatedByRenderState()const { return separatedByRenderState; }
+
+	//modelCreatorが作成したモデル本体を格納
+	void Add(Local_InitLicence licence_, std::unique_ptr<Model>&& model_);
 
 	//ランタイムでPSO切り替えコストを低減させるために、モデルクラスをおなじrenderStateごとに分別する
-	void SeparateModels(NexusFieldProof proof_, AgentKey key_);
+	void SeparateModels(Local_InitLicence licence_);
 
 
 private:
-
 
 	//モデルの本体が詰まってる
 	std::vector<std::unique_ptr<Model>> container;
@@ -46,12 +45,12 @@ private:
 	std::array < std::vector<Model*>, (UINT)Model::Type::kCount > separatedByModelType;
 };
 
-struct ModelContext::ModelContainer::Local_AddLicence
+struct ModelContext::ModelFrontlineSystems::ModelContainer::Local_InitLicence
 {
 private:
 
-	friend class ModelContext::ModelCreator;
-	explicit Local_AddLicence() = default;
+	friend class ModelContext::ModelFrontlineSystems;
+	explicit Local_InitLicence() = default;
 };
 
 

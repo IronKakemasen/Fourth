@@ -48,9 +48,8 @@ class Nexus
 		kDeleteBufferUploaderCache,
 		kSortOutGlobalConstantBuffers,
 		kDeleteModelDataCache,					///モデルデータキャッシュの削除は、アプリ層の初期化が終わったあと
-		kSeparateModelContainer					///同様
 
-		,kEnd
+		kEnd
 	}nextInit = InitSequence(0);
 
 	//終了処理順序

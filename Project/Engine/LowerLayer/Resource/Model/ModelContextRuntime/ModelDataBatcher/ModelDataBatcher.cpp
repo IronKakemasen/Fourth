@@ -1,7 +1,7 @@
 #include "PreCompileHeader.h"
 #include "ModelDataBatcher.h"
 #include "PerDrawBufferLibrary/PerDrawBufferLibrary.h"
-#include "../../ModelContainer/ModelContainer.h"
+#include "../../ModelStructure/Model.h"
 
 
 //外部
@@ -22,29 +22,42 @@ ModelContext::ModelDataBatcher::~ModelDataBatcher()
 
 }
 
-BufferContext::BufferDispatcher& ModelContext::ModelDataBatcher::BorrowBufferDispatcher(BufferContextDiplomat& bufferContextDiplomat_)
+void ModelContext::ModelDataBatcher::BatchModelData
+(
+	AgentKey agentKey_,
+	UINT const frameIndex_,
+	std::vector<Model*> const& models_,
+	BufferContextDiplomat& bufferContextDiplomat_
+)
 {
+	//BufferDispatcherを借りる
 	BufferContext::ToolLender::LicenceType<BufferContext::BufferDispatcher> licence;
+	auto& dispatcher = *bufferContextDiplomat_.Access<BufferContext::ToolLender>()->Lend<BufferContext::BufferDispatcher>(licence);
 
-	return *bufferContextDiplomat_.Access<BufferContext::ToolLender>()->Lend<BufferContext::BufferDispatcher>(licence);
-}
+	//モデルの所持するデータをバッファに書き込んでいく
+	for (Model const* model : models_)
+	{
+		auto const& perDrawIndices = model->WatchPerDrawIndices();
+		auto const numMeshes = perDrawIndices.size();
 
-template<>
-std::vector<Model*> const& ModelContext::ModelDataBatcher::PullModelContainer<Model::Type::kStatic>
-(
-	ModelContainer const& modelContainer_
-) 
-{
-	return modelContainer_.WatchSeparatedByModelType()[(UINT)Model::Type::kStatic];
-}
+		OverrideBuffer<ConstantBuffers::ConstantBufferBindSlots::kTransformMatrixContainer>
+		(
+			frameIndex_,
+			*model,
+			perDrawIndices,
+			numMeshes,
+			dispatcher
+		);
 
-template<>
-std::vector<Model*> const& ModelContext::ModelDataBatcher::PullModelContainer<Model::Type::kDynamic>
-(
-	ModelContainer const& modelContainer_
-) 
-{
-	return modelContainer_.WatchSeparatedByModelType()[(UINT)Model::Type::kDynamic];
+		OverrideBuffer<ConstantBuffers::ConstantBufferBindSlots::kMaterialContainer>
+		(
+			frameIndex_,
+			*model,
+			perDrawIndices,
+			numMeshes,
+			dispatcher
+		);
+	}
 }
 
 
@@ -76,6 +89,7 @@ void ModelContext::ModelDataBatcher::OverrideBuffer<ConstantBufferBindSlots::kTr
 	}
 }
 
+
 template<>
 void ModelContext::ModelDataBatcher::OverrideBuffer<ConstantBufferBindSlots::kMaterialContainer>
 (
@@ -104,54 +118,11 @@ void ModelContext::ModelDataBatcher::OverrideBuffer<ConstantBufferBindSlots::kMa
 }
 
 
-
-
-template
-void ModelContext::ModelDataBatcher::OverrideBuffer<ConstantBufferBindSlots::kTransformMatrixContainer>
-(
-	UINT const frameIndex_,
-	Model const& model_,
-	std::vector<ConstantBuffers::PerDrawIndicesCPUGPU> const& perDrawIndices_,
-	size_t const numMesh_,
-	BufferContext::BufferDispatcher& dispatcher_
-);
-template
-void ModelContext::ModelDataBatcher::OverrideBuffer<ConstantBufferBindSlots::kMaterialContainer>
-(
-	UINT const frameIndex_,
-	Model const& model_,
-	std::vector<ConstantBuffers::PerDrawIndicesCPUGPU> const& perDrawIndices_,
-	size_t const numMesh_,
-	BufferContext::BufferDispatcher& dispatcher_
-);
-
-
-template
-std::vector<Model*> const& ModelContext::ModelDataBatcher::PullModelContainer<Model::Type::kStatic>
-(
-	ModelContainer const& modelContainer_
-);
-template
-std::vector<Model*> const& ModelContext::ModelDataBatcher::PullModelContainer<Model::Type::kDynamic>
-(
-	ModelContainer const& modelContainer_
-);
-
-
-
-
-template<>
-void ModelContext::ModelDataBatcher::ImportPerDrawBufferID<ConstantBufferBindSlots::kTransformMatrixContainer>
+template<ConstantBufferBindSlots bindSlot>
+void ModelContext::ModelDataBatcher::ImportPerDrawBufferID
 (Local_InputBufferUniqueIDLicence licence_, BufferUniqueID id_)
 {
-	perDrawBufferLibrary->Import<ConstantBufferBindSlots::kTransformMatrixContainer>(id_);
-}
-
-template<>
-void ModelContext::ModelDataBatcher::ImportPerDrawBufferID<ConstantBufferBindSlots::kMaterialContainer>
-(Local_InputBufferUniqueIDLicence licence_, BufferUniqueID id_)
-{
-	perDrawBufferLibrary->Import<ConstantBufferBindSlots::kMaterialContainer>(id_);
+	perDrawBufferLibrary->Import<bindSlot>(id_);
 }
 
 

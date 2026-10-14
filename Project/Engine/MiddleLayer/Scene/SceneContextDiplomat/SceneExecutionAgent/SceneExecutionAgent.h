@@ -22,6 +22,9 @@ public:
 		BufferContextDiplomat& bufferContextDiplomat_
 	);
 
+
+
+
 private:
 
 	ScenePipeline& scenePipeline;

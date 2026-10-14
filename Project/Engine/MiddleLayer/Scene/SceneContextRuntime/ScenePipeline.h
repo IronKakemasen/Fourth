@@ -2,9 +2,15 @@
 #include "../SceneContext.h"
 
 
+//外部
+#include "../../../LowerLayer/Resource/Model/ModelContextRuntime/ModelFrontlineSystems/RenderStateKey.h"
+
 class ModelContextDiplomat;
 class CameraContextDiplomat;
 class BufferContextDiplomat;
+
+class Model;
+struct RenderStateKey;
 
 class SceneContext::ScenePipeline
 {
@@ -29,6 +35,10 @@ public:
 		CameraContextDiplomat& cameraContextDiplomat_,
 		BufferContextDiplomat& bufferContextDiplomat_
 	);
+
+	//稼働中シーンのレンダーステート別に仕分けられたモデルコンテナを見る
+	std::unordered_map<uint64_t, std::pair<RenderStateKey, std::vector<Model*>>> const&
+		WatchModelContainerSeparatedByRenderState()const;
 
 private:
 	std::unique_ptr<SceneController> sceneController;

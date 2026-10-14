@@ -7,7 +7,7 @@
 class DescriptorHeapContextDiplomat;
 class CommandContextDiplomat;
 class RuntimeWrapper;
-
+class SceneContextDiplomat;
 
 class RenderContext::StaticRenderGraph
 {

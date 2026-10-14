@@ -20,7 +20,7 @@ void SceneContext::ScenePipeline::SceneDataBatchingPlace::BatchingPlace
 	BufferContextDiplomat& bufferContextDiplomat_
 )
 {
-	auto const& sceneOutput = sceneController_.WatchSceneOutput();
+	auto const& sceneOutput = sceneController_.WatchCurrentSceneOutput();
 
 	//カメラコンテキストの代行者
 	auto& cameraAgent = cameraContextDiplomat_.Access<CameraContext::ExecutionAgent>();

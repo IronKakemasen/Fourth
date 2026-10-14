@@ -7,7 +7,7 @@
 
 SceneBehavior::SceneBehavior
 (
-	CameraContext::CameraFrontlineSystems* cameraSystems_
+	CameraContext::CameraFrontlineSystems& cameraSystems_
 ):cameraSystems(cameraSystems_)
 {
 	//各シーンに1つは存在するデバッグカメラを作成
@@ -16,15 +16,15 @@ SceneBehavior::SceneBehavior
 
 }
 
-SceneBehavior::Output SceneBehavior::Update()
+void SceneBehavior::Update()
 {
-	Output output;
-
 	//このシーンで使うカメラのアップデート
-	output.usingCamera = cameraSystems->CameraUpdate();
+	output.usingCamera = cameraSystems.CameraUpdate();
 
-
-	return output;
 }
 
 
+SceneBehavior::Output const& SceneBehavior::WatchSceneOutput()const 
+{
+	return output; 
+}

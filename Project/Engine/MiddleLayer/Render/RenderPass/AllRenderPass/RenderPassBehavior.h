@@ -6,7 +6,7 @@
 #include "../../../../LowerLayer/Buffer/BufferContext.h"
 #include "../../../../LowerLayer/Buffer/BufferDefinition/GPUBuffer/BufferInterface.h"
 
-#include "../../../../LowerLayer/Resource/Model/ModelContainer/RenderStateKey/RenderStateKey.h"
+#include "../../../../LowerLayer/Resource/Model/ModelContextRuntime/ModelFrontlineSystems/RenderStateKey.h"
 
 class RuntimeWrapper;
 class Model;

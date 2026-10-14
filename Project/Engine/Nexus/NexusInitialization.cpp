@@ -326,17 +326,6 @@ void Nexus::Init<Nexus::InitSequence::kDeleteModelDataCache>()
 	agent->DeleteModelDataCache(ModelContext::NexusFieldProof{});
 }
 
-template<>
-void Nexus::Init<Nexus::InitSequence::kSeparateModelContainer>()
-{
-	//modelContextの代行者
-	auto* agent = modelContext->AccessDiplomat().Access<ModelContext::ExecutionAgent>();
-	//ランタイム用のベクターコンテナに詰め変える(全てのモデル生成が終わった後)
-	agent->SeparateModelContainer(ModelContext::NexusFieldProof{});
-}
-
-
-
 template
 void Nexus::Init<Nexus::InitSequence::kCoInitializeEx>();
 
@@ -399,8 +388,4 @@ void Nexus::Init<Nexus::InitSequence::kSortOutGlobalConstantBuffers>();
 
 template
 void Nexus::Init<Nexus::InitSequence::kDeleteModelDataCache>();
-
-template
-void Nexus::Init<Nexus::InitSequence::kSeparateModelContainer>();
-
 
