@@ -16,7 +16,7 @@ public:
 	void Run();
 
 
-	SceneBehavior::Output const& WatchSceneOutput()const;
+	SceneBehavior::Output const& WatchCurrentSceneOutput()const;
 
 private:
 
@@ -26,8 +26,5 @@ private:
 	//現在稼働しているシーン
 	SceneBehavior* curScene = nullptr;
 	SceneLibrary& sceneLib;
-
-	//このシーンで使用しているカメラ、モデル、ライトなどの情報
-	SceneBehavior::Output output;
 };
 

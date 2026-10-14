@@ -44,17 +44,11 @@ ModelContext::ModelContext
 	ModelDataLoader modelDataLoader(proof_, *modelDataCache);
 	Logger::Log("Instantiate: ModelDataLoader", fileName);
 
-	modelContainer.reset(new ModelContainer(proof_));
-	Logger::Log("Instantiate: modelContainer", fileName);
 
-	modelCreator.reset
+	modelCreator = std::make_unique<ModelCreator>
 	(
-		new ModelCreator
-		(
-			proof_,
-			std::make_unique<ModelDescAssembler>(proof_, modelSlotAllocator.get(), textureContextDiplomat_),
-			*modelContainer
-		)
+		proof_,
+		std::make_unique<ModelDescAssembler>(proof_, modelSlotAllocator.get(), textureContextDiplomat_)
 	);
 
 	Logger::Log("Instantiate: ModelDescAssembler", fileName);
@@ -78,9 +72,9 @@ ModelContext::ModelContext
 		new ModelContextDiplomat
 		(
 			proof_,
-			std::make_unique<ExecutionAgent>(proof_,*this,*modelContainer,*modelDataBatcher),
+			std::make_unique<ExecutionAgent>(proof_,*this,*modelDataBatcher),
 			std::make_unique<ToolLender>(proof_),
-			std::make_unique<CommandProvider>(proof_, *modelContainer,*modelCreator)
+			std::make_unique<CommandProvider>(proof_,*modelCreator)
 		)
 	);
 	Logger::Log("Instantiate: ToolLender", fileName);

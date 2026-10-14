@@ -18,7 +18,6 @@ public:
 	CommandProvider
 	(
 		NexusFieldProof proof_,
-		ModelContainer& modelContainer_,
 		ModelCreator& modelCreator_
 	);
 
@@ -29,21 +28,9 @@ public:
 
 private:
 
-	ModelContainer& modelContainer;
 	ModelCreator& modelCreator;
 };
 
-template<>
-struct ModelContext::CommandProvider::CmdTypeTraits<ModelContextCmds::WatchModelContainer>
-{
-	using Type = WatchModelContainerLicence;
-};
-
-template<>
-struct ModelContext::CommandProvider::CmdTypeTraits<ModelContextCmds::WatchSeparatedByRenderState>
-{
-	using Type = WatchModelContainerLicence;
-};
 
 template<>
 struct ModelContext::CommandProvider::CmdTypeTraits<ModelContextCmds::WatchAllModelsRenderStatePattern>
@@ -52,14 +39,7 @@ struct ModelContext::CommandProvider::CmdTypeTraits<ModelContextCmds::WatchAllMo
 };
 
 
-template<>
-ModelContextCmds::WatchModelContainer ModelContext::CommandProvider::Provide<ModelContextCmds::WatchModelContainer>
-(typename CmdTypeTraits<ModelContextCmds::WatchModelContainer>::Type licence_);
-
-template<>
-ModelContextCmds::WatchSeparatedByRenderState ModelContext::CommandProvider::Provide<ModelContextCmds::WatchSeparatedByRenderState>
-(typename CmdTypeTraits<ModelContextCmds::WatchModelContainer>::Type licence_);
 
 template<>
 ModelContextCmds::WatchAllModelsRenderStatePattern ModelContext::CommandProvider::Provide<ModelContextCmds::WatchAllModelsRenderStatePattern>
-(typename CmdTypeTraits<ModelContextCmds::WatchModelContainer>::Type licence_);
+(typename CmdTypeTraits<ModelContextCmds::WatchAllModelsRenderStatePattern>::Type licence_);

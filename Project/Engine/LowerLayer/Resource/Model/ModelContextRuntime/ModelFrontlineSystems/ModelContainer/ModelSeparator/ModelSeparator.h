@@ -1,17 +1,16 @@
 #pragma once
 #include "../ModelContainer.h"
-#include "../RenderStateKey/RenderStateKey.h"
 
 
 class KeyPackager;
 
-class ModelContext::ModelContainer::ModelSeparator
+class ModelContext::ModelFrontlineSystems::ModelContainer::ModelSeparator
 {
-	using Output = std::pair<std::vector<ModelContext::ModelContainer::SeparatedByRenderState>, std::array < std::vector<Model*>, (UINT)Model::Type::kCount > >;
+	using Output = std::pair<std::vector<SeparatedByRenderState>, std::array < std::vector<Model*>, (UINT)Model::Type::kCount > >;
 
 public:
 
-	ModelSeparator(NexusFieldProof proof_ ,AgentKey key_);
+	ModelSeparator();
 	~ModelSeparator();
 
 	[[nodiscard]] Output SeparateAllModels(std::vector<std::unique_ptr<Model>>& modelContainer_);

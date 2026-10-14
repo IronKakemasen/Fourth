@@ -356,7 +356,7 @@
     <ClCompile Include="Engine\LowerLayer\Resource\Model\CreateModelTools\ModelDescAssembler\ModelDescAssembler.cpp" />
     <ClCompile Include="Engine\LowerLayer\Resource\Model\CreateModelTools\ModelSlotAllocator\ModelDataLibrary\ModelDataLibrary.cpp" />
     <ClCompile Include="Engine\LowerLayer\Resource\Model\CreateModelTools\ModelCreator.cpp" />
-    <ClCompile Include="Engine\LowerLayer\Resource\Model\ModelContainer\ModelContainer.cpp" />
+    <ClCompile Include="Engine\LowerLayer\Resource\Model\ModelContextRuntime\ModelFrontlineSystems\ModelContainer\ModelContainer.cpp" />
     <ClCompile Include="Engine\LowerLayer\Resource\Model\CreateModelTools\ModelSlotAllocator\TransformMatrixSlot\TransformMatrixSlot.cpp" />
     <ClCompile Include="Engine\LowerLayer\Resource\Model\TestModelOKIBA.cpp" />
     <ClCompile Include="Engine\LowerLayer\Resource\Model\CreateModelTools\ModelDataCreator\PerDrawDataBufferCreator\PerDrawDataBufferCreator.cpp" />
@@ -412,8 +412,7 @@
     <ClCompile Include="Engine\MiddleLayer\Render\RenderPass\RuntimePassInfo\RuntimePassInfo.cpp" />
     <ClCompile Include="Engine\MiddleLayer\Render\RenderContextRuntime\StaticRenderGraph\RenderGraphBuilder\PassSetUpper\PassSetUpper.cpp" />
     <ClCompile Include="Engine\MiddleLayer\Render\RenderContextRuntime\StaticRenderGraph\RenderGraphExecutor\PathOperator\PathOperator.cpp" />
-    <ClCompile Include="Engine\LowerLayer\Resource\Model\ModelContainer\RenderStateKey\RenderStateKey.cpp" />
-    <ClCompile Include="Engine\LowerLayer\Resource\Model\ModelContainer\ModelSeparator\ModelSeparator.cpp" />
+    <ClCompile Include="Engine\LowerLayer\Resource\Model\ModelContextRuntime\ModelFrontlineSystems\ModelContainer\ModelSeparator\ModelSeparator.cpp" />
     <ClCompile Include="Engine\LowerLayer\Resource\Model\ModelStructure\ModelData\ModelData.cpp" />
     <ClCompile Include="Engine\LowerLayer\Core\SwapChain\SwapChainContextBuilder\SwapChainContextBuilder.cpp" />
     <ClCompile Include="Engine\LowerLayer\Core\SwapChain\SwapChainBuffer\SwapChainBuffer.cpp" />
@@ -429,6 +428,7 @@
     <ClCompile Include="Engine\MiddleLayer\Scene\SceneContextDiplomat\SceneExecutionAgent\SceneExecutionAgent.cpp" />
     <ClCompile Include="Engine\MiddleLayer\Scene\SceneContextRuntime\SceneDataBatchingPlace\SceneDataBatchingPlace.cpp" />
     <ClCompile Include="Engine\MiddleLayer\Scene\SceneContextRuntime\ScenePipeline.cpp" />
+    <ClCompile Include="Engine\LowerLayer\Resource\Model\ModelContextRuntime\ModelFrontlineSystems\ModelFrontlineSystems.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Application\AllCameraIncludes.h" />
@@ -463,6 +463,7 @@
     <ClInclude Include="Engine\LowerLayer\Resource\Camera\CameraContext.h" />
     <ClInclude Include="Engine\LowerLayer\Core\SwapChain\SwapChainContextDiplomats.h" />
     <ClInclude Include="Engine\LowerLayer\Core\SwapChain\SwapChainContextDiplomat\SwapChainContextToolLender\SwapChainContextToolLenderLicences.h" />
+    <ClInclude Include="Engine\LowerLayer\Resource\Model\ModelContextDiplomat\ModelContextExecutionAgent\ModelAgentLicences.h" />
     <ClInclude Include="Engine\MiddleLayer\Render\RenderContextRuntime\StaticRenderGraph\RenderGraphExecutor\FinalRenderer\FinalRenderer.h" />
     <ClInclude Include="Engine\LowerLayer\Buffer\BufferContextDiplomats.h" />
     <ClInclude Include="Engine\LowerLayer\Buffer\BufferDefinition\BufferTraits.h" />
@@ -674,7 +675,7 @@
     <ClInclude Include="Engine\LowerLayer\Resource\Model\CreateModelTools\ModelDescAssembler\ModelDescAssembler.h" />
     <ClInclude Include="Engine\LowerLayer\Resource\Model\CreateModelTools\ModelSlotAllocator\ModelDataLibrary\ModelDataLibrary.h" />
     <ClInclude Include="Engine\LowerLayer\Resource\Model\CreateModelTools\ModelCreator.h" />
-    <ClInclude Include="Engine\LowerLayer\Resource\Model\ModelContainer\ModelContainer.h" />
+    <ClInclude Include="Engine\LowerLayer\Resource\Model\ModelContextRuntime\ModelFrontlineSystems\ModelContainer\ModelContainer.h" />
     <ClInclude Include="Engine\LowerLayer\Resource\Model\CreateModelTools\ModelSlotAllocator\TransformMatrixSlot\TransformMatrixSlot.h" />
     <ClInclude Include="Engine\LowerLayer\Resource\Model\TestModelOKIBA.h" />
     <ClInclude Include="Engine\LowerLayer\Resource\Model\CreateModelTools\ModelDataCreator\PerDrawDataBufferCreator\PerDrawDataBufferCreator.h" />
@@ -730,8 +731,8 @@
     <ClInclude Include="Engine\MiddleLayer\Render\RenderPass\RuntimePassInfo\RuntimePassInfo.h" />
     <ClInclude Include="Engine\MiddleLayer\Render\RenderContextRuntime\StaticRenderGraph\RenderGraphBuilder\PassSetUpper\PassSetUpper.h" />
     <ClInclude Include="Engine\MiddleLayer\Render\RenderContextRuntime\StaticRenderGraph\RenderGraphExecutor\PathOperator\PathOperator.h" />
-    <ClInclude Include="Engine\LowerLayer\Resource\Model\ModelContainer\RenderStateKey\RenderStateKey.h" />
-    <ClInclude Include="Engine\LowerLayer\Resource\Model\ModelContainer\ModelSeparator\ModelSeparator.h" />
+    <ClInclude Include="Engine\LowerLayer\Resource\Model\ModelContextRuntime\ModelFrontlineSystems\RenderStateKey.h" />
+    <ClInclude Include="Engine\LowerLayer\Resource\Model\ModelContextRuntime\ModelFrontlineSystems\ModelContainer\ModelSeparator\ModelSeparator.h" />
     <ClInclude Include="Engine\LowerLayer\Resource\Model\ModelStructure\ModelData\ModelData.h" />
     <ClInclude Include="Engine\LowerLayer\Core\SwapChain\SwapChainContextBuilder\SwapChainContextBuilder.h" />
     <ClInclude Include="Engine\LowerLayer\Core\SwapChain\SwapChainBuffer\SwapChainBuffer.h" />
@@ -747,6 +748,7 @@
     <ClInclude Include="Engine\MiddleLayer\Scene\SceneContextDiplomat\SceneExecutionAgent\SceneExecutionAgent.h" />
     <ClInclude Include="Engine\MiddleLayer\Scene\SceneContextRuntime\SceneDataBatchingPlace\SceneDataBatchingPlace.h" />
     <ClInclude Include="Engine\MiddleLayer\Scene\SceneContextRuntime\ScenePipeline.h" />
+    <ClInclude Include="Engine\LowerLayer\Resource\Model\ModelContextRuntime\ModelFrontlineSystems\ModelFrontlineSystems.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

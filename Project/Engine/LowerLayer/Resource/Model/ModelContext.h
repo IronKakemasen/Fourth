@@ -31,8 +31,8 @@ public:
 	class ModelCreator;
 	//モデルの書き込まなくてはならないデータ(TransformMatrixなど)のバッチングを行う
 	class ModelDataBatcher;
-	//モデルのコンテナ。おそらくただのコンテナになると思う
-	class ModelContainer;
+	//シーンが1つ所持するモデルのシステム群
+	class ModelFrontlineSystems;
 
 	//代行者
 	class ExecutionAgent;
@@ -65,7 +65,7 @@ private:
 
 
 	std::unique_ptr<ModelSlotAllocator> modelSlotAllocator;
-	std::unique_ptr<ModelContainer> modelContainer;
+	//std::unique_ptr<ModelContainer> modelContainer;
 	std::unique_ptr<ModelCreator> modelCreator;
 	std::unique_ptr<ModelDataBatcher> modelDataBatcher;
 	std::unique_ptr<ModelDataCache> modelDataCache;

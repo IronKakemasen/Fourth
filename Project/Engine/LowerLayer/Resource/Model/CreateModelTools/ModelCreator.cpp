@@ -12,9 +12,8 @@ using namespace StructuredBufferModelData;
 ModelContext::ModelCreator::ModelCreator
 (
 	NexusFieldProof proof_,
-	std::unique_ptr<ModelContext::ModelDescAssembler>&& modelAssembler_,
-	ModelContext::ModelContainer& modelContainer_
-) :modelDescAssembler(std::move(modelAssembler_)), modelContainer(modelContainer_)
+	std::unique_ptr<ModelContext::ModelDescAssembler>&& modelAssembler_
+) :modelDescAssembler(std::move(modelAssembler_))
 {
 
 }

@@ -6,25 +6,31 @@
 
 
 class SceneContext;
+class Model;
+struct CameraDesc;
 
 class SceneBehavior
 {
 	friend class SceneContext;
 
+	//このシーンで使用しているカメラ、モデル、ライトなどの情報
 	struct Output
 	{
-		//使用しているカメラ
+		//使用しているカメラ。更新必要
 		std::unordered_map<CameraSocket, CameraBehavior*> usingCamera;
+
 	};
 
 public:
 
 	SceneBehavior
 	(
-		CameraContext::CameraFrontlineSystems* cameraSystems_
+		CameraContext::CameraFrontlineSystems& cameraSystems_
 	);
 
 	virtual ~SceneBehavior() = default;
+
+	Output const& WatchSceneOutput()const;
 
 protected:
 
@@ -36,7 +42,7 @@ protected:
 		std::string const& name_
 	)
 	{
-		cameraSystems->CreateCamera<dstSocket, CameraType>(cameraDesc_,name_);
+		cameraSystems.CreateCamera<dstSocket, CameraType>(cameraDesc_,name_);
 	}
 
 	//ゲームオブジェクトが好きなタイミングでカメラを切り替えられるように
@@ -50,9 +56,12 @@ protected:
 private:
 
 	//SceneContext::SceneControllerのみ呼べる
-	Output Update();
+	void Update();
 	void Reset();
 
-	CameraContext::CameraFrontlineSystems* cameraSystems;
+	CameraContext::CameraFrontlineSystems& cameraSystems;
+
+	SceneBehavior::Output output;
+
 };
 

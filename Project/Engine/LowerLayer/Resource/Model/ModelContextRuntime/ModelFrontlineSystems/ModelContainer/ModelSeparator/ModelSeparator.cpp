@@ -1,7 +1,5 @@
 #include "PreCompileHeader.h"
 #include "ModelSeparator.h"
-#include "../RenderStateKey/RenderStateKey.h"
-#include "../../ModelStructure/Model.h"
 
 //外部
 #include "KeyPackager/KeyPackager.h"
@@ -11,7 +9,7 @@ using namespace RenderStateComponent;
 using namespace ShaderPathComponent;
 
 
-ModelContext::ModelContainer::ModelSeparator::ModelSeparator(NexusFieldProof proof_, AgentKey key_)
+ModelContext::ModelFrontlineSystems::ModelContainer::ModelSeparator::ModelSeparator()
 {
 	keyPackager.reset
 	(
@@ -26,13 +24,13 @@ ModelContext::ModelContainer::ModelSeparator::ModelSeparator(NexusFieldProof pro
 	);
 }
 
-ModelContext::ModelContainer::ModelSeparator::~ModelSeparator()
+ModelContext::ModelFrontlineSystems::ModelContainer::ModelSeparator::~ModelSeparator()
 {
 
 }
 
-[[nodiscard]] ModelContext::ModelContainer::ModelSeparator::Output
-ModelContext::ModelContainer::ModelSeparator::SeparateAllModels(std::vector<std::unique_ptr<Model>>& modelContainer_)
+[[nodiscard]] ModelContext::ModelFrontlineSystems::ModelContainer::ModelSeparator::Output
+ModelContext::ModelFrontlineSystems::ModelContainer::ModelSeparator::SeparateAllModels(std::vector<std::unique_ptr<Model>>& modelContainer_)
 {
 	std::vector<SeparatedByRenderState> separatedByRenderState;
 	std::array < std::vector<Model*>, (UINT)Model::Type::kCount> separatedByModelType;
@@ -59,7 +57,7 @@ ModelContext::ModelContainer::ModelSeparator::SeparateAllModels(std::vector<std:
 	return std::make_pair(std::move(separatedByRenderState), std::move(separatedByModelType));
 }
 
-std::vector<std::pair<RenderStateKey, uint64_t>> ModelContext::ModelContainer::ModelSeparator::PackToKey(Model const& model_)
+std::vector<std::pair<RenderStateKey, uint64_t>> ModelContext::ModelFrontlineSystems::ModelContainer::ModelSeparator::PackToKey(Model const& model_)
 {
 	std::vector<std::pair<RenderStateKey, uint64_t>> keys;
 

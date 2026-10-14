@@ -423,7 +423,7 @@
     <ClCompile Include="Engine\LowerLayer\Resource\Model\CreateModelTools\ModelCreator.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="Engine\LowerLayer\Resource\Model\ModelContainer\ModelContainer.cpp">
+    <ClCompile Include="Engine\LowerLayer\Resource\Model\ModelContextRuntime\ModelFrontlineSystems\ModelContainer\ModelContainer.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
     <ClCompile Include="Engine\LowerLayer\Resource\Model\CreateModelTools\ModelSlotAllocator\TransformMatrixSlot\TransformMatrixSlot.cpp">
@@ -636,10 +636,7 @@
     <ClCompile Include="Engine\MiddleLayer\Render\RenderContextRuntime\StaticRenderGraph\RenderGraphExecutor\CommonCmdExecutor\CommonCmdExecutor.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="Engine\LowerLayer\Resource\Model\ModelContainer\RenderStateKey\RenderStateKey.cpp">
-      <Filter>ソース ファイル</Filter>
-    </ClCompile>
-    <ClCompile Include="Engine\LowerLayer\Resource\Model\ModelContainer\ModelSeparator\ModelSeparator.cpp">
+    <ClCompile Include="Engine\LowerLayer\Resource\Model\ModelContextRuntime\ModelFrontlineSystems\ModelContainer\ModelSeparator\ModelSeparator.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
     <ClCompile Include="Engine\LowerLayer\Resource\Model\ModelStructure\ModelData\ModelData.cpp">
@@ -736,6 +733,9 @@
       <Filter>ソース ファイル</Filter>
     </ClCompile>
     <ClCompile Include="Engine\LowerLayer\Resource\Camera\CameraCreator\CameraCreator.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\LowerLayer\Resource\Model\ModelContextRuntime\ModelFrontlineSystems\ModelFrontlineSystems.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
   </ItemGroup>
@@ -1181,7 +1181,7 @@
     <ClInclude Include="Engine\LowerLayer\Resource\Model\CreateModelTools\ModelCreator.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\LowerLayer\Resource\Model\ModelContainer\ModelContainer.h">
+    <ClInclude Include="Engine\LowerLayer\Resource\Model\ModelContextRuntime\ModelFrontlineSystems\ModelContainer\ModelContainer.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
     <ClInclude Include="Engine\LowerLayer\Buffer\BufferContextDiplomat\BufferToolLender\BufferToolLenderLicence.h">
@@ -1523,10 +1523,10 @@
     <ClInclude Include="Engine\MiddleLayer\Render\RenderContextRuntime\StaticRenderGraph\RenderGraphExecutor\CommonCmdExecutor\CommonCmdExecutor.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\LowerLayer\Resource\Model\ModelContainer\RenderStateKey\RenderStateKey.h">
+    <ClInclude Include="Engine\LowerLayer\Resource\Model\ModelContextRuntime\ModelFrontlineSystems\RenderStateKey.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\LowerLayer\Resource\Model\ModelContainer\ModelSeparator\ModelSeparator.h">
+    <ClInclude Include="Engine\LowerLayer\Resource\Model\ModelContextRuntime\ModelFrontlineSystems\ModelContainer\ModelSeparator\ModelSeparator.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
     <ClInclude Include="Engine\LowerLayer\Resource\Model\ModelStructure\RenderState.h">
@@ -1686,6 +1686,12 @@
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
     <ClInclude Include="Engine\LowerLayer\Resource\Camera\CameraCreator\CameraCreator.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\LowerLayer\Resource\Model\ModelContextRuntime\ModelFrontlineSystems\ModelFrontlineSystems.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\LowerLayer\Resource\Model\ModelContextDiplomat\ModelContextExecutionAgent\ModelAgentLicences.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
   </ItemGroup>

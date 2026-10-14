@@ -1,6 +1,5 @@
 #pragma once
 #include "ModelDescAssembler/ModelDescAssembler.h"
-#include "../ModelContainer/ModelContainer.h"
 #include "../ModelStructure/Model.h"
 #include "../ModelContextCmds.h"
 
@@ -11,12 +10,11 @@ public:
 	ModelCreator
 	(
 		NexusFieldProof proof_, 
-		std::unique_ptr<ModelContext::ModelDescAssembler>&& modelAssembler_,
-		ModelContext::ModelContainer& modelContainer_
+		std::unique_ptr<ModelContext::ModelDescAssembler>&& modelAssembler_
 	);
 
 	template<Model::Type modelType>
-	std::vector<Model*> Create
+	std::vector<std::unique_ptr<Model>> Create
 	(
 		std::string const& modelFileName_,
 		std::vector<RenderState> const& modelRenderStates_,
@@ -32,7 +30,7 @@ public:
 			"ModelCreator.h"
 		);
 
-		std::vector<Model*> modelPtrContainer;
+		std::vector<std::unique_ptr<Model>> modelUniques;
 
 		for (UINT i = 0;i < numCreate_;++i)
 		{
@@ -49,12 +47,8 @@ public:
 			);
 
 			///モデルクラスのインスタンス化
-			std::unique_ptr<Model> model = std::make_unique<Model>(modelType, modelDesc, materialsGPU);
+			modelUniques.emplace_back(std::make_unique<Model>(modelType, modelDesc, materialsGPU));
 
-			modelPtrContainer.emplace_back(model.get());
-
-			//実体はモデルコンテナが握る
-			modelContainer.Add(ModelContainer::Local_AddLicence{}, std::move(model));
 		}
 
 		//レンダーステートキャッシュに登録
@@ -65,7 +59,7 @@ public:
 			std::make_move_iterator(modelRenderStates_.end())
 		);
 
-		return modelPtrContainer;
+		return modelUniques;
 	}
 
 
@@ -81,10 +75,6 @@ private:
 	//PSO生成時に生成された全モデルのレンダーステートパターンが必要
 	std::vector<RenderState> renderStatesCache;
 
-
-
-	//生成したユニークはこいつが管理する
-	ModelContext::ModelContainer& modelContainer;
 	
 };
 
