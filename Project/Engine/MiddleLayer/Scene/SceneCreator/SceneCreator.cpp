@@ -23,7 +23,7 @@ void SceneContext::SceneCreator::Import(std::unique_ptr<SceneBehavior>&& scene_,
 }
 
 
-CameraContext::CameraFrontlineSystems* SceneContext::SceneCreator::ReceiveCameraSystems(CameraContextDiplomat& cameraContextDiplomat_)
+CameraContext::CameraFrontlineSystems& SceneContext::SceneCreator::ReceiveCameraSystems(CameraContextDiplomat& cameraContextDiplomat_)
 {
 	//CameraFrontlineSystemsを一つ渡してもらう
 	auto agent = cameraContextDiplomat_.Access<CameraContext::ExecutionAgent>();

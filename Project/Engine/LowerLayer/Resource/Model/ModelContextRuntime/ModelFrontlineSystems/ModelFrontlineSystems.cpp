@@ -15,9 +15,25 @@ ModelContext::ModelFrontlineSystems::ModelFrontlineSystems(NexusFieldProof proof
 
 }
 
-void ModelContext::ModelFrontlineSystems::AddModel(std::unique_ptr<Model>&& model_)
+ModelContext::ModelFrontlineSystems::~ModelFrontlineSystems()
 {
-	modelContainer->Add(ModelContainer::Local_InitLicence{}, std::move(model_));
+
+}
+
+
+
+std::vector<Model*> ModelContext::ModelFrontlineSystems::AddModel(std::vector<std::unique_ptr<Model>>&& modelUniques_)
+{
+	std::vector<Model*> modelsPtr;
+	modelsPtr.reserve(modelUniques_.size());
+
+	for (auto itr = modelUniques_.begin();itr != modelUniques_.end();++itr)
+	{
+		modelsPtr.emplace_back((*itr).get());
+		modelContainer->Add(ModelContainer::Local_InitLicence{}, std::move((*itr)));
+	}
+
+	return modelsPtr;
 }
 
 void ModelContext::ModelFrontlineSystems::SeparateModels()

@@ -71,6 +71,24 @@ namespace ProjectConfig
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 ========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\ReadMe.txt ===
+========================================
+Diplomatの概念
+Diplomat
+|
+|
+|-CmdProvider   
+|
+|
+|-ToolLender
+|
+|
+|-ExecutionAgent
+CmdProvider		...コマンドを"保持したい"パターンで経由。多少の結合度が強くなるのは仕方なし
+ToolLender		...コマンドにするにはオーバーヘッドが気になるケースで経由。結合度を疎にしやすい
+ExecutionAgent	..."保持する必要が無い"ケースで経由。限定的なケースでは特にこちらで対応したい。多少の結合度が強くなるのは仕方なし
+
+========================================
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\RenderPassComponent.h ===
 ========================================
 #pragma once
@@ -9645,7 +9663,7 @@ CameraContext::ExecutionAgent::ExecutionAgent
 ):cameraDataBatcher(cameraDataBatcher_),frontlineSystemsDispatcher(frontlineSystemsDispatcher_)
 {
 }
-CameraContext::CameraFrontlineSystems* CameraContext::ExecutionAgent::DispatchFrontlineSystems(SceneContextProof proof_)
+CameraContext::CameraFrontlineSystems& CameraContext::ExecutionAgent::DispatchFrontlineSystems(SceneContextProof proof_)
 {
 	return frontlineSystemsDispatcher.Dispatch(AgentKey{});
 }
@@ -9678,7 +9696,7 @@ public:
 		CameraDataBatcher& cameraDataBatcher_
 	);
 	//シーンにカメラのシステムを渡す
-	CameraFrontlineSystems* DispatchFrontlineSystems(SceneContextProof proof_);
+	CameraFrontlineSystems& DispatchFrontlineSystems(SceneContextProof proof_);
 	//カメラデータのバッチングを行う
 	void BatchCameraData
 	(
@@ -10036,9 +10054,9 @@ CameraContext::FrontlineSystemsDispatcher::FrontlineSystemsDispatcher(NexusField
 CameraContext::FrontlineSystemsDispatcher::~FrontlineSystemsDispatcher()
 {
 }
-CameraContext::CameraFrontlineSystems* CameraContext::FrontlineSystemsDispatcher::Dispatch(AgentKey key_)
+CameraContext::CameraFrontlineSystems& CameraContext::FrontlineSystemsDispatcher::Dispatch(AgentKey key_)
 {
-	return cameraFrontlineSystemsContainer[simpleFreeList.Distribute()].get();
+	return *cameraFrontlineSystemsContainer[simpleFreeList.Distribute()];
 }
 
 ========================================
@@ -10052,7 +10070,7 @@ class CameraContext::FrontlineSystemsDispatcher
 public:
 	FrontlineSystemsDispatcher(NexusFieldProof proof_ ,CameraCreator& cameraCreator_);
 	~FrontlineSystemsDispatcher();
-	CameraFrontlineSystems* Dispatch(AgentKey key_);
+	CameraFrontlineSystems& Dispatch(AgentKey key_);
 private:
 	std::vector<std::unique_ptr<CameraFrontlineSystems>> cameraFrontlineSystemsContainer;
 	SimpleFreeList simpleFreeList;
@@ -10474,9 +10492,9 @@ ModelContext::ModelContext
 		new ModelContextDiplomat
 		(
 			proof_,
-			std::make_unique<ExecutionAgent>(proof_,*this,*modelDataBatcher),
+			std::make_unique<ExecutionAgent>(proof_,*this,*modelDataBatcher, *modelCreator),
 			std::make_unique<ToolLender>(proof_),
-			std::make_unique<CommandProvider>(proof_,*modelCreator)
+			std::make_unique<CommandProvider>(proof_)
 		)
 	);
 	Logger::Log("Instantiate: ToolLender", fileName);
@@ -10588,7 +10606,6 @@ struct RenderStateKey;
 struct RenderState;
 namespace ModelContextCmds
 {
-	using WatchAllModelsRenderStatePattern = std::function<std::vector<RenderState> const* ()>;
 }
 
 ========================================
@@ -10600,6 +10617,8 @@ namespace ModelContextCmds
 #include "ModelContextDiplomat/ModelContextCmdProvider/ModelContextCmdProviderLicences.h"
 #include "ModelContextDiplomat/ModelContextToolLender/ModelContextToolLender.h"
 #include "ModelContextDiplomat/ModelContextToolLender/ModelContextToolLenderLicence.h"
+#include "ModelContextDiplomat/ModelContextExecutionAgent/ModelContextExecutionAgent.h"
+#include "ModelContextDiplomat/ModelContextExecutionAgent/ModelAgentLicences.h"
 
 ========================================
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Model\TestModelOKIBA.cpp ===
@@ -10655,6 +10674,7 @@ struct TestModelOKIBA
 ========================================
 #include "PreCompileHeader.h"
 #include "ModelCreator.h"
+#include "ModelDescAssembler/ModelDescAssembler.h"
 namespace
 {
 	auto const fileName = "ModelCreator.cpp";
@@ -10663,32 +10683,51 @@ using namespace StructuredBufferModelData;
 ModelContext::ModelCreator::ModelCreator
 (
 	NexusFieldProof proof_,
-	std::unique_ptr<ModelContext::ModelDescAssembler>&& modelAssembler_
-) :modelDescAssembler(std::move(modelAssembler_))
+	ModelSlotAllocator& slotAllocator_,
+	TextureContextDiplomat& textureContextDiplomat_
+) 
 {
+	modelDescAssembler = std::make_unique<ModelDescAssembler>(proof_, slotAllocator_, textureContextDiplomat_);
 }
-ModelContextCmds::WatchAllModelsRenderStatePattern ModelContext::ModelCreator::WatchAllRenderStatesCmd(ProviderKey key_)const
+std::vector<RenderState>const& ModelContext::ModelCreator::WatchRenderStateCache(AgentKey key_)const
 {
-	return [this]()
-	{
-		return &renderStatesCache;
-	};
+	return renderStatesCache;
+}
+void ModelContext::ModelCreator::DeleteRenderStateCache(NexusFieldProof proof_ , AgentKey key_)
+{
+	renderStatesCache.clear();
+	renderStatesCache.shrink_to_fit();
+}
+ModelContext::ModelCreator::ModelDescParts ModelContext::ModelCreator::AssembleModelDescParts
+(
+	std::string const& modelFileName_,
+	std::vector<MaterialCPU> const& inputMaterials_
+)
+{
+	return modelDescAssembler->Assemble(modelFileName_, inputMaterials_);
 }
 
 ========================================
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Model\CreateModelTools\ModelCreator.h ===
 ========================================
 #pragma once
-#include "ModelDescAssembler/ModelDescAssembler.h"
+#include "../ModelContext.h"
 #include "../ModelStructure/Model.h"
-#include "../ModelContextCmds.h"
 class ModelContext::ModelCreator
 {
+	class ModelDescAssembler;
+	using ModelDescParts = std::tuple
+	<
+		std::vector<ConstantBuffers::PerDrawIndicesCPUGPU>,
+		std::vector<StructuredBufferModelData::MaterialGPU>,
+		std::vector<size_t>
+	>;
 public:
 	ModelCreator
 	(
 		NexusFieldProof proof_, 
-		std::unique_ptr<ModelContext::ModelDescAssembler>&& modelAssembler_
+		ModelSlotAllocator& slotAllocator_,
+		TextureContextDiplomat& textureContextDiplomat_
 	);
 	template<Model::Type modelType>
 	std::vector<std::unique_ptr<Model>> Create
@@ -10723,21 +10762,23 @@ public:
 			modelUniques.emplace_back(std::make_unique<Model>(modelType, modelDesc, materialsGPU));
 		}
 		//レンダーステートキャッシュに登録
-		renderStatesCache.insert
-		(
-			renderStatesCache.end(),
-			std::make_move_iterator(modelRenderStates_.begin()),
-			std::make_move_iterator(modelRenderStates_.end())
-		);
+		renderStatesCache.append_range(renderStatesCache);
 		return modelUniques;
 	}
 	//PSO生成時に必要
-	ModelContextCmds::WatchAllModelsRenderStatePattern WatchAllRenderStatesCmd(ProviderKey key_)const;
+	std::vector<RenderState> const& WatchRenderStateCache(AgentKey key_)const;
+	//↑を呼出し後、キャッシュは削除してほしい
+	void DeleteRenderStateCache(NexusFieldProof proof_, AgentKey key_);
 private:
+	ModelDescParts AssembleModelDescParts
+	(
+		std::string const& modelFileName_,
+		std::vector<MaterialCPU> const& inputMaterials_
+	);
 	//生成数。ネーミング用
 	UINT numCreate{};
 	//モデルディスク組み立て役
-	std::unique_ptr<ModelContext::ModelDescAssembler> modelDescAssembler;
+	std::unique_ptr<ModelDescAssembler> modelDescAssembler;
 	//PSO生成時に生成された全モデルのレンダーステートパターンが必要
 	std::vector<RenderState> renderStatesCache;
 };
@@ -11935,10 +11976,10 @@ private:
 #include "../../../Texture/TextureLibrary/TextureLibrary.h"
 using namespace StructuredBufferModelData;
 using namespace ProjectConfig::Texture;
-ModelContext::ModelDescAssembler::ModelDescAssembler
+ModelContext::ModelCreator::ModelDescAssembler::ModelDescAssembler
 (
 	NexusFieldProof proof_,
-	ModelContext::ModelSlotAllocator* slotAllocator_,
+	ModelSlotAllocator& slotAllocator_,
 	TextureContextDiplomat& textureContextDiplomat_
 ):slotAllocator(slotAllocator_)
 {
@@ -11947,14 +11988,14 @@ ModelContext::ModelDescAssembler::ModelDescAssembler
 	TextureContext::ToolLender::LicenceType<TextureContext::TextureLibrary> licence;
 	textureLib = &toolLender.Lend<TextureContext::TextureLibrary>(licence);
 }
-ModelContext::ModelDescAssembler::ModelDescParts ModelContext::ModelDescAssembler::Assemble
+ModelContext::ModelCreator::ModelDescParts ModelContext::ModelCreator::ModelDescAssembler::Assemble
 (
 	std::string const& modelFileName_,
 	std::vector<MaterialCPU> const& inputMaterials_
 )
 {
 	//modelDataLibraryにアクセス
-	auto& modelDataLibrary = slotAllocator->AccessModelDataLibrary(ModelContext::ModelSlotAllocator::HandleLicence{});
+	auto& modelDataLibrary = slotAllocator.AccessModelDataLibrary(ModelContext::ModelSlotAllocator::HandleLicence{});
 	//モデルファイル名からサブメッシュ分含む、
 	//メッシュデータのユニークID、マテリアル、メッシュレットのサイズを検索
 	auto const& modelData = modelDataLibrary.Find(modelFileName_);
@@ -11967,7 +12008,7 @@ ModelContext::ModelDescAssembler::ModelDescParts ModelContext::ModelDescAssemble
 		modelData.meshletSize
 	);
 }
-std::vector<ConstantBuffers::PerDrawIndicesCPUGPU> ModelContext::ModelDescAssembler::PackPerDrawIndices
+std::vector<ConstantBuffers::PerDrawIndicesCPUGPU> ModelContext::ModelCreator::ModelDescAssembler::PackPerDrawIndices
 (
 	const std::vector<MeshDataID>& meshDataIDs_,
 	size_t const kNumMeshData_
@@ -11982,15 +12023,15 @@ std::vector<ConstantBuffers::PerDrawIndicesCPUGPU> ModelContext::ModelDescAssemb
 		perDrawIndex.meshDataID = meshDataIDs_[i];
 		//トランスフォームIDを割り当てる
 		perDrawIndex.transformMatrixID =
-			slotAllocator->AllocateSlot<ModelContext::ModelSlotAllocator::TransformMatrixSlot>(licence);
+			slotAllocator.AllocateSlot<ModelContext::ModelSlotAllocator::TransformMatrixSlot>(licence);
 		//マテリアルIDを割り当てる
 		perDrawIndex.materialID =
-			slotAllocator->AllocateSlot<ModelContext::ModelSlotAllocator::MaterialSlot>(licence);
+			slotAllocator.AllocateSlot<ModelContext::ModelSlotAllocator::MaterialSlot>(licence);
 		perDrawIndices.emplace_back(std::move(perDrawIndex));
 	}
 	return perDrawIndices;
 }
-std::vector<MaterialGPU> ModelContext::ModelDescAssembler::ConvertMaterialData
+std::vector<MaterialGPU> ModelContext::ModelCreator::ModelDescAssembler::ConvertMaterialData
 (
 	size_t const kNumMeshData_,
 	std::vector<MaterialCPU> const& materialsFromFile_,
@@ -12049,11 +12090,12 @@ std::vector<MaterialGPU> ModelContext::ModelDescAssembler::ConvertMaterialData
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Model\CreateModelTools\ModelDescAssembler\ModelDescAssembler.h ===
 ========================================
 #pragma once
-#include "../../ModelContext.h"
+#include "../ModelCreator.h"
 #include "../../ModelStructure/ModelDescription/ModelDescription.h"
 //外部
+//効率のため
 #include "../../../Texture/TextureContext.h"
-class ModelContext::ModelDescAssembler
+class ModelContext::ModelCreator::ModelDescAssembler
 {
 	using ModelDescParts = std::tuple
 	<
@@ -12065,7 +12107,7 @@ public:
 	ModelDescAssembler
 	(
 		NexusFieldProof proof_,
-		ModelContext::ModelSlotAllocator* slotAllocator_,
+		ModelSlotAllocator& slotAllocator_,
 		TextureContextDiplomat& textureContextDiplomat_
 	);
 	//モデルクラスのRenderStates以外のディスクリプションを作ってあげる
@@ -12090,7 +12132,7 @@ private:
 		std::vector<StructuredBufferModelData::MaterialCPU> const& inputMaterials
 	);
 	//TransformやMaterialのスロットを割り当てる
-	ModelContext::ModelSlotAllocator* slotAllocator;
+	ModelContext::ModelSlotAllocator& slotAllocator;
 	//MaterialCPU -> materialGPUへ変換するため
 	TextureContext::TextureLibrary* textureLib;
 };
@@ -12174,13 +12216,13 @@ struct ModelContext::ModelSlotAllocator::HandleLicence
 {
 private:
 	friend class ModelDataCreator;
-	friend class ModelDescAssembler;
+	friend class ModelCreator;
 	explicit HandleLicence() = default;
 };
 struct ModelContext::ModelSlotAllocator::AllocateLicence
 {
 private:
-	friend class ModelDescAssembler;
+	friend class ModelCreator;
 	explicit AllocateLicence() = default;
 };
 template<>
@@ -12408,16 +12450,9 @@ private:
 using namespace ModelContextCmds;
 ModelContext::CommandProvider::CommandProvider
 (
-	NexusFieldProof proof_,
-	ModelCreator& modelCreator_
-) :modelCreator(modelCreator_)
+	NexusFieldProof proof_
+) 
 {
-}
-template<>
-ModelContextCmds::WatchAllModelsRenderStatePattern ModelContext::CommandProvider::Provide<ModelContextCmds::WatchAllModelsRenderStatePattern>
-(typename CmdTypeTraits<ModelContextCmds::WatchAllModelsRenderStatePattern>::Type licence_)
-{
-	return modelCreator.WatchAllRenderStatesCmd(ProviderKey{});
 }
 
 ========================================
@@ -12430,42 +12465,24 @@ class ModelContext::CommandProvider
 {
 	template<typename CmdType>
 	struct CmdTypeTraits;
-	struct WatchModelContainerLicence;
 public:
 	template<typename CmdType>
 	using LicenceType = typename CmdTypeTraits<CmdType>::Type;
 	CommandProvider
 	(
-		NexusFieldProof proof_,
-		ModelCreator& modelCreator_
+		NexusFieldProof proof_
 	);
 	///コマンド提供
 	template<typename CmdType>
 	CmdType Provide(typename CmdTypeTraits<CmdType>::Type licence_);
 private:
-	ModelCreator& modelCreator;
 };
-template<>
-struct ModelContext::CommandProvider::CmdTypeTraits<ModelContextCmds::WatchAllModelsRenderStatePattern>
-{
-	using Type = WatchModelContainerLicence;
-};
-template<>
-ModelContextCmds::WatchAllModelsRenderStatePattern ModelContext::CommandProvider::Provide<ModelContextCmds::WatchAllModelsRenderStatePattern>
-(typename CmdTypeTraits<ModelContextCmds::WatchAllModelsRenderStatePattern>::Type licence_);
 
 ========================================
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Model\ModelContextDiplomat\ModelContextCmdProvider\ModelContextCmdProviderLicences.h ===
 ========================================
 #pragma once
 #include "ModelContextCmdProvider.h"
-class RenderContext;
-struct ModelContext::CommandProvider::WatchModelContainerLicence
-{
-private:
-	friend class RenderContext;
-	explicit WatchModelContainerLicence() = default;
-};
 
 ========================================
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Model\ModelContextDiplomat\ModelContextExecutionAgent\ModelAgentLicences.h ===
@@ -12473,11 +12490,18 @@ private:
 #pragma once
 #include "ModelContextExecutionAgent.h"
 class SceneContext;
+class RenderContext;
 struct ModelContext::ExecutionAgent::SceneContextProof
 {
 private:
 	friend class SceneContext;
 	explicit SceneContextProof() = default;
+};
+struct ModelContext::ExecutionAgent::RenderContextProof
+{
+private:
+	friend class RenderContext;
+	explicit RenderContextProof() = default;
 };
 
 ========================================
@@ -12488,17 +12512,20 @@ private:
 #include "ModelAgentLicences.h"
 #include "../../CreateModelTools/ModelDataLoader/ModelDataLoader.h"
 #include "../../ModelContextRuntime/ModelDataBatcher/ModelDataBatcher.h"
+#include "../../CreateModelTools/ModelCreator.h"
 ModelContext::ExecutionAgent::ExecutionAgent
 (
 	ModelContext::NexusFieldProof proof_,
 	ModelContext& modelContext_,
-	ModelDataBatcher& modelDataBatcher_
-):modelContext(modelContext_), modelDataBatcher(modelDataBatcher_)
+	ModelDataBatcher& modelDataBatcher_,
+	ModelCreator& modelCreator_
+):modelContext(modelContext_), modelDataBatcher(modelDataBatcher_), modelCreator(modelCreator_)
 {
 }
 void ModelContext::ExecutionAgent::DeleteModelDataCache(NexusFieldProof proof_)
 {
 	modelContext.DeleteModelDataCache(proof_, AgentKey{});
+	modelCreator.DeleteRenderStateCache(proof_, AgentKey{});
 }
 void ModelContext::ExecutionAgent::BatchModelData
 (
@@ -12516,6 +12543,10 @@ void ModelContext::ExecutionAgent::BatchModelData
 		bufferContextDiplomat_
 	);
 }
+std::vector<RenderState> const& ModelContext::ExecutionAgent::WatchRenderStateCache(RenderContextProof proof_)const
+{
+	return modelCreator.WatchRenderStateCache(AgentKey{});
+}
 
 ========================================
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Model\ModelContextDiplomat\ModelContextExecutionAgent\ModelContextExecutionAgent.h ===
@@ -12523,28 +12554,33 @@ void ModelContext::ExecutionAgent::BatchModelData
 #pragma once
 #include "../../ModelContext.h"
 class Model;
+struct RenderState;
 class ModelContext::ExecutionAgent
 {
 public:
 	struct SceneContextProof;
+	struct RenderContextProof;
 	ExecutionAgent
 	(
 		ModelContext::NexusFieldProof proof_,
 		ModelContext& modelContext_,
-		ModelDataBatcher& modelDataBatcher_
+		ModelDataBatcher& modelDataBatcher_,
+		ModelCreator& modelCreator_
 	);
 	void DeleteModelDataCache(NexusFieldProof proof_);
-	//モデルクラスとの結合度を密にしたくないのでテンプレートにしません宣言
+	//モデルデータをバッチングする
 	void BatchModelData
 	(
 		SceneContextProof proof_,
 		UINT const frameIndex_,
-		std::vector<Model*> const& modelsStatic_,
+		std::vector<Model*> const& models_,
 		BufferContextDiplomat& bufferContextDiplomat_
 	);
+	std::vector<RenderState> const& WatchRenderStateCache(RenderContextProof proof_)const;
 private:
 	ModelContext& modelContext;
 	ModelDataBatcher& modelDataBatcher;
+	ModelCreator& modelCreator;
 };
 
 ========================================
@@ -12847,9 +12883,19 @@ ModelContext::ModelFrontlineSystems::ModelFrontlineSystems(NexusFieldProof proof
 	modelContainer.reset(new ModelContainer(proof_));
 	Logger::Log("Instantiate: modelContainer", fileName);
 }
-void ModelContext::ModelFrontlineSystems::AddModel(std::unique_ptr<Model>&& model_)
+ModelContext::ModelFrontlineSystems::~ModelFrontlineSystems()
 {
-	modelContainer->Add(ModelContainer::Local_InitLicence{}, std::move(model_));
+}
+std::vector<Model*> ModelContext::ModelFrontlineSystems::AddModel(std::vector<std::unique_ptr<Model>>&& modelUniques_)
+{
+	std::vector<Model*> modelsPtr;
+	modelsPtr.reserve(modelUniques_.size());
+	for (auto itr = modelUniques_.begin();itr != modelUniques_.end();++itr)
+	{
+		modelsPtr.emplace_back((*itr).get());
+		modelContainer->Add(ModelContainer::Local_InitLicence{}, std::move((*itr)));
+	}
+	return modelsPtr;
 }
 void ModelContext::ModelFrontlineSystems::SeparateModels()
 {
@@ -12868,9 +12914,10 @@ class ModelContext::ModelFrontlineSystems
 	class ModelContainer;
 public:
 	ModelFrontlineSystems(NexusFieldProof proof_, ModelCreator& modelCreator_);
-	//モデル作成
+	~ModelFrontlineSystems();
+	//モデル作成し、そのポインタを返す
 	template<Model::Type modelType>
-	std::vector<std::unique_ptr<Model>> CreateModel
+	std::vector<Model*> CreateModel
 	(
 		std::string const& modelFileName_,
 		std::vector<RenderState> const& modelRenderStates_,
@@ -12879,7 +12926,7 @@ public:
 		std::string const& modelName_ = "nameLess"
 	)
 	{
-		AddModel
+		return AddModel
 		(
 			modelCreator.Create<modelType>
 			(
@@ -12894,7 +12941,7 @@ public:
 	//モデルコンテナの分別を行う
 	void SeparateModels();
 private:
-	void AddModel(std::unique_ptr<Model>&& model_);
+	std::vector<Model*> AddModel(std::vector<std::unique_ptr<Model>>&& modelUniques_);
 	std::unique_ptr<ModelContainer> modelContainer;
 	ModelCreator& modelCreator;
 };
@@ -12999,7 +13046,6 @@ void ModelContext::ModelFrontlineSystems::ModelContainer::SeparateModels(Local_I
 #pragma once
 #include "../ModelFrontlineSystems.h"
 #include "../RenderStateKey.h"
-#include "../../../ModelContextCmds.h"
 #include "../../../ModelStructure/Model.h"
 class ModelContext::ModelFrontlineSystems::ModelContainer
 {
@@ -18233,11 +18279,9 @@ std::vector<RenderState> const& RenderContext::StaticRenderGraph::PSO_Builder::P
 	ModelContextDiplomat& modelContextDiplomat_
 )
 {
-	//モデルクリエイターから、生成したモデルの全レンダーステートのパターンを所持しているので渡してもらう
-	auto* modelContextCmdProvider = modelContextDiplomat_.Access<ModelContext::CommandProvider>();
-	ModelContext::CommandProvider::LicenceType<WatchAllModelsRenderStatePattern> licence;
-	auto cmd = modelContextCmdProvider->Provide<WatchAllModelsRenderStatePattern>(licence);
-	return *cmd();
+	//モデルクリエイターが、生成したモデルの全レンダーステートのパターンを所持しているので渡してもらう
+	auto& modelAgent = *modelContextDiplomat_.Access<ModelContext::ExecutionAgent>();
+	return modelAgent.WatchRenderStateCache(ModelContext::ExecutionAgent::RenderContextProof{});
 }
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -21299,7 +21343,7 @@ void SceneContext::SceneCreator::Import(std::unique_ptr<SceneBehavior>&& scene_,
 {
 	sceneLib.Import(std::move(scene_), sceneName_);
 }
-CameraContext::CameraFrontlineSystems* SceneContext::SceneCreator::ReceiveCameraSystems(CameraContextDiplomat& cameraContextDiplomat_)
+CameraContext::CameraFrontlineSystems& SceneContext::SceneCreator::ReceiveCameraSystems(CameraContextDiplomat& cameraContextDiplomat_)
 {
 	//CameraFrontlineSystemsを一つ渡してもらう
 	auto agent = cameraContextDiplomat_.Access<CameraContext::ExecutionAgent>();
@@ -21328,13 +21372,13 @@ public:
 		Logger::Log("Create Scene: " + sceneName_, "SceneCreator.h");
 		Import
 		(
-			std::make_unique<SceneType>(ReceiveCameraSystems(cameraContextDiplomat_)),
+			std::move(std::make_unique<SceneType>(ReceiveCameraSystems(cameraContextDiplomat_))),
 			sceneName_
 		);
 	}
 private:
 	void Import(std::unique_ptr<SceneBehavior>&& scene_, std::string const& sceneName_);
-	CameraContext::CameraFrontlineSystems* ReceiveCameraSystems(CameraContextDiplomat& cameraContextDiplomat_);
+	CameraContext::CameraFrontlineSystems& ReceiveCameraSystems(CameraContextDiplomat& cameraContextDiplomat_);
 	SceneLibrary& sceneLib;
 };
 
@@ -22855,5 +22899,5 @@ namespace StringProcessing
 ========================================
 === SUMMARY ===
 ========================================
-Total Files      : 512
-Effective Lines  : 16611
+Total Files      : 513
+Effective Lines  : 16647

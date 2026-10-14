@@ -8,7 +8,6 @@ class ModelContext::CommandProvider
 	template<typename CmdType>
 	struct CmdTypeTraits;
 	
-	struct WatchModelContainerLicence;
 
 public:
 
@@ -17,8 +16,7 @@ public:
 
 	CommandProvider
 	(
-		NexusFieldProof proof_,
-		ModelCreator& modelCreator_
+		NexusFieldProof proof_
 	);
 
 	///コマンド提供
@@ -28,18 +26,7 @@ public:
 
 private:
 
-	ModelCreator& modelCreator;
+
 };
 
 
-template<>
-struct ModelContext::CommandProvider::CmdTypeTraits<ModelContextCmds::WatchAllModelsRenderStatePattern>
-{
-	using Type = WatchModelContainerLicence;
-};
-
-
-
-template<>
-ModelContextCmds::WatchAllModelsRenderStatePattern ModelContext::CommandProvider::Provide<ModelContextCmds::WatchAllModelsRenderStatePattern>
-(typename CmdTypeTraits<ModelContextCmds::WatchAllModelsRenderStatePattern>::Type licence_);

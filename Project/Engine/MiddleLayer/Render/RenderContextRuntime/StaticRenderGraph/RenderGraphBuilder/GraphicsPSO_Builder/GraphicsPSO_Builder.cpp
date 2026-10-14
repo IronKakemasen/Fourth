@@ -457,12 +457,10 @@ std::vector<RenderState> const& RenderContext::StaticRenderGraph::PSO_Builder::P
 	ModelContextDiplomat& modelContextDiplomat_
 )
 {
-	//モデルクリエイターから、生成したモデルの全レンダーステートのパターンを所持しているので渡してもらう
-	auto* modelContextCmdProvider = modelContextDiplomat_.Access<ModelContext::CommandProvider>();
-	ModelContext::CommandProvider::LicenceType<WatchAllModelsRenderStatePattern> licence;
-	auto cmd = modelContextCmdProvider->Provide<WatchAllModelsRenderStatePattern>(licence);
+	//モデルクリエイターが、生成したモデルの全レンダーステートのパターンを所持しているので渡してもらう
+	auto& modelAgent = *modelContextDiplomat_.Access<ModelContext::ExecutionAgent>();
 
-	return *cmd();
+	return modelAgent.WatchRenderStateCache(ModelContext::ExecutionAgent::RenderContextProof{});
 }
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

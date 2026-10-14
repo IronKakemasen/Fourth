@@ -5,7 +5,6 @@
 #include "CreateModelTools/ModelSlotAllocator/ModelSlotAllocator.h"
 #include "CreateModelTools/ModelDataLoader/ModelDataLoader.h"
 #include "CreateModelTools/ModelDataLoader/ModelDataCache/ModelDataCache.h"
-#include "CreateModelTools/ModelDescAssembler/ModelDescAssembler.h"
 #include "CreateModelTools/ModelCreator.h"
 
 
@@ -48,7 +47,8 @@ ModelContext::ModelContext
 	modelCreator = std::make_unique<ModelCreator>
 	(
 		proof_,
-		std::make_unique<ModelDescAssembler>(proof_, modelSlotAllocator.get(), textureContextDiplomat_)
+		*modelSlotAllocator, 
+		textureContextDiplomat_
 	);
 
 	Logger::Log("Instantiate: ModelDescAssembler", fileName);
@@ -72,9 +72,9 @@ ModelContext::ModelContext
 		new ModelContextDiplomat
 		(
 			proof_,
-			std::make_unique<ExecutionAgent>(proof_,*this,*modelDataBatcher),
+			std::make_unique<ExecutionAgent>(proof_,*this,*modelDataBatcher, *modelCreator),
 			std::make_unique<ToolLender>(proof_),
-			std::make_unique<CommandProvider>(proof_,*modelCreator)
+			std::make_unique<CommandProvider>(proof_)
 		)
 	);
 	Logger::Log("Instantiate: ToolLender", fileName);

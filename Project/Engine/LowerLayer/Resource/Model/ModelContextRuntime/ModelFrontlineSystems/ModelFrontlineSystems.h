@@ -9,10 +9,11 @@ class ModelContext::ModelFrontlineSystems
 
 public:
 	ModelFrontlineSystems(NexusFieldProof proof_, ModelCreator& modelCreator_);
+	~ModelFrontlineSystems();
 
-	//モデル作成
+	//モデル作成し、そのポインタを返す
 	template<Model::Type modelType>
-	std::vector<std::unique_ptr<Model>> CreateModel
+	std::vector<Model*> CreateModel
 	(
 		std::string const& modelFileName_,
 		std::vector<RenderState> const& modelRenderStates_,
@@ -21,7 +22,7 @@ public:
 		std::string const& modelName_ = "nameLess"
 	)
 	{
-		AddModel
+		return AddModel
 		(
 			modelCreator.Create<modelType>
 			(
@@ -40,7 +41,7 @@ public:
 
 private:
 
-	void AddModel(std::unique_ptr<Model>&& model_);
+	std::vector<Model*> AddModel(std::vector<std::unique_ptr<Model>>&& modelUniques_);
 
 	std::unique_ptr<ModelContainer> modelContainer;
 	ModelCreator& modelCreator;

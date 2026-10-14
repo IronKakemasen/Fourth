@@ -15,8 +15,6 @@ class ModelContext
 	//TransformMatrixSlotの空きインデックスを割り当てたり、モデル名をもとに
 	//モデルデータの割り当てを行う
 	class ModelSlotAllocator;
-	//インスタンス化されたモデルクラスのモデルファイル名をもとに中身を構築してあげる
-	class ModelDescAssembler;
 	//モデルデータの一時キャッシュ
 	class ModelDataCache;
 	//モデルファイルから読み込んだデータ
