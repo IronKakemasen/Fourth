@@ -9,7 +9,7 @@ public:
 	FrontlineSystemsDispatcher(NexusFieldProof proof_ ,CameraCreator& cameraCreator_);
 	~FrontlineSystemsDispatcher();
 
-	CameraFrontlineSystems* Dispatch(AgentKey key_);
+	CameraFrontlineSystems& Dispatch(AgentKey key_);
 
 private:
 

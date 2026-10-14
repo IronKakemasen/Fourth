@@ -23,7 +23,7 @@ public:
 
 		Import
 		(
-			std::make_unique<SceneType>(ReceiveCameraSystems(cameraContextDiplomat_)),
+			std::move(std::make_unique<SceneType>(ReceiveCameraSystems(cameraContextDiplomat_))),
 			sceneName_
 		);
 	}
@@ -31,7 +31,7 @@ public:
 private:
 
 	void Import(std::unique_ptr<SceneBehavior>&& scene_, std::string const& sceneName_);
-	CameraContext::CameraFrontlineSystems* ReceiveCameraSystems(CameraContextDiplomat& cameraContextDiplomat_);
+	CameraContext::CameraFrontlineSystems& ReceiveCameraSystems(CameraContextDiplomat& cameraContextDiplomat_);
 
 	SceneLibrary& sceneLib;
 

@@ -1,16 +1,25 @@
 #pragma once
-#include "ModelDescAssembler/ModelDescAssembler.h"
+#include "../ModelContext.h"
 #include "../ModelStructure/Model.h"
-#include "../ModelContextCmds.h"
 
 class ModelContext::ModelCreator
 {
+	class ModelDescAssembler;
+
+	using ModelDescParts = std::tuple
+	<
+		std::vector<ConstantBuffers::PerDrawIndicesCPUGPU>,
+		std::vector<StructuredBufferModelData::MaterialGPU>,
+		std::vector<size_t>
+	>;
+
 public:
 
 	ModelCreator
 	(
 		NexusFieldProof proof_, 
-		std::unique_ptr<ModelContext::ModelDescAssembler>&& modelAssembler_
+		ModelSlotAllocator& slotAllocator_,
+		TextureContextDiplomat& textureContextDiplomat_
 	);
 
 	template<Model::Type modelType>
@@ -35,7 +44,7 @@ public:
 		for (UINT i = 0;i < numCreate_;++i)
 		{
 			//モデルのディスクリプションの要素を組み立てる
-			auto [perDrawIndices, materialsGPU, meshletSize] = modelDescAssembler->Assemble(modelFileName_, materials_);
+			auto [perDrawIndices, materialsGPU, meshletSize] = AssembleModelDescParts(modelFileName_, materials_);
 
 			///一つのDescに詰める
 			ModelDescription modelDesc
@@ -52,26 +61,29 @@ public:
 		}
 
 		//レンダーステートキャッシュに登録
-		renderStatesCache.insert
-		(
-			renderStatesCache.end(),
-			std::make_move_iterator(modelRenderStates_.begin()),
-			std::make_move_iterator(modelRenderStates_.end())
-		);
+		renderStatesCache.append_range(renderStatesCache);
 
 		return modelUniques;
 	}
 
 
 	//PSO生成時に必要
-	ModelContextCmds::WatchAllModelsRenderStatePattern WatchAllRenderStatesCmd(ProviderKey key_)const;
+	std::vector<RenderState> const& WatchRenderStateCache(AgentKey key_)const;
+	//↑を呼出し後、キャッシュは削除してほしい
+	void DeleteRenderStateCache(NexusFieldProof proof_, AgentKey key_);
 
 private:
+
+	ModelDescParts AssembleModelDescParts
+	(
+		std::string const& modelFileName_,
+		std::vector<StructuredBufferModelData::MaterialCPU> const& inputMaterials_
+	);
 
 	//生成数。ネーミング用
 	UINT numCreate{};
 	//モデルディスク組み立て役
-	std::unique_ptr<ModelContext::ModelDescAssembler> modelDescAssembler;
+	std::unique_ptr<ModelDescAssembler> modelDescAssembler;
 	//PSO生成時に生成された全モデルのレンダーステートパターンが必要
 	std::vector<RenderState> renderStatesCache;
 

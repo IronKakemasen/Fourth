@@ -13,10 +13,10 @@
 using namespace StructuredBufferModelData;
 using namespace ProjectConfig::Texture;
 
-ModelContext::ModelDescAssembler::ModelDescAssembler
+ModelContext::ModelCreator::ModelDescAssembler::ModelDescAssembler
 (
 	NexusFieldProof proof_,
-	ModelContext::ModelSlotAllocator* slotAllocator_,
+	ModelSlotAllocator& slotAllocator_,
 	TextureContextDiplomat& textureContextDiplomat_
 ):slotAllocator(slotAllocator_)
 {
@@ -27,14 +27,14 @@ ModelContext::ModelDescAssembler::ModelDescAssembler
 
 }
 
-ModelContext::ModelDescAssembler::ModelDescParts ModelContext::ModelDescAssembler::Assemble
+ModelContext::ModelCreator::ModelDescParts ModelContext::ModelCreator::ModelDescAssembler::Assemble
 (
 	std::string const& modelFileName_,
 	std::vector<MaterialCPU> const& inputMaterials_
 )
 {
 	//modelDataLibraryにアクセス
-	auto& modelDataLibrary = slotAllocator->AccessModelDataLibrary(ModelContext::ModelSlotAllocator::HandleLicence{});
+	auto& modelDataLibrary = slotAllocator.AccessModelDataLibrary(ModelContext::ModelSlotAllocator::HandleLicence{});
 	
 	//モデルファイル名からサブメッシュ分含む、
 	//メッシュデータのユニークID、マテリアル、メッシュレットのサイズを検索
@@ -52,7 +52,7 @@ ModelContext::ModelDescAssembler::ModelDescParts ModelContext::ModelDescAssemble
 
 }
 
-std::vector<ConstantBuffers::PerDrawIndicesCPUGPU> ModelContext::ModelDescAssembler::PackPerDrawIndices
+std::vector<ConstantBuffers::PerDrawIndicesCPUGPU> ModelContext::ModelCreator::ModelDescAssembler::PackPerDrawIndices
 (
 	const std::vector<MeshDataID>& meshDataIDs_,
 	size_t const kNumMeshData_
@@ -70,11 +70,11 @@ std::vector<ConstantBuffers::PerDrawIndicesCPUGPU> ModelContext::ModelDescAssemb
 
 		//トランスフォームIDを割り当てる
 		perDrawIndex.transformMatrixID =
-			slotAllocator->AllocateSlot<ModelContext::ModelSlotAllocator::TransformMatrixSlot>(licence);
+			slotAllocator.AllocateSlot<ModelContext::ModelSlotAllocator::TransformMatrixSlot>(licence);
 
 		//マテリアルIDを割り当てる
 		perDrawIndex.materialID =
-			slotAllocator->AllocateSlot<ModelContext::ModelSlotAllocator::MaterialSlot>(licence);
+			slotAllocator.AllocateSlot<ModelContext::ModelSlotAllocator::MaterialSlot>(licence);
 
 		perDrawIndices.emplace_back(std::move(perDrawIndex));
 	}
@@ -83,7 +83,7 @@ std::vector<ConstantBuffers::PerDrawIndicesCPUGPU> ModelContext::ModelDescAssemb
 }
 
 
-std::vector<MaterialGPU> ModelContext::ModelDescAssembler::ConvertMaterialData
+std::vector<MaterialGPU> ModelContext::ModelCreator::ModelDescAssembler::ConvertMaterialData
 (
 	size_t const kNumMeshData_,
 	std::vector<MaterialCPU> const& materialsFromFile_,

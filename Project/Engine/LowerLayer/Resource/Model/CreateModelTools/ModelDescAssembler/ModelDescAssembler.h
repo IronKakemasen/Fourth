@@ -1,27 +1,22 @@
 #pragma once
-#include "../../ModelContext.h"
+#include "../ModelCreator.h"
 #include "../../ModelStructure/ModelDescription/ModelDescription.h"
 
 
 //外部
+//効率のため
 #include "../../../Texture/TextureContext.h"
 
 
-class ModelContext::ModelDescAssembler
+class ModelContext::ModelCreator::ModelDescAssembler
 {
-	using ModelDescParts = std::tuple
-	<
-		std::vector<ConstantBuffers::PerDrawIndicesCPUGPU>,
-		std::vector<StructuredBufferModelData::MaterialGPU>,
-		std::vector<size_t>
-	>;
 
 public:
 
 	ModelDescAssembler
 	(
 		NexusFieldProof proof_,
-		ModelContext::ModelSlotAllocator* slotAllocator_,
+		ModelSlotAllocator& slotAllocator_,
 		TextureContextDiplomat& textureContextDiplomat_
 	);
 
@@ -52,7 +47,7 @@ private:
 
 
 	//TransformやMaterialのスロットを割り当てる
-	ModelContext::ModelSlotAllocator* slotAllocator;
+	ModelContext::ModelSlotAllocator& slotAllocator;
 	
 	//MaterialCPU -> materialGPUへ変換するため
 	TextureContext::TextureLibrary* textureLib;

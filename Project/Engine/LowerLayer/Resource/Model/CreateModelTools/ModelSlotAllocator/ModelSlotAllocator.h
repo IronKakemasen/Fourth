@@ -42,7 +42,7 @@ struct ModelContext::ModelSlotAllocator::HandleLicence
 private:
 
 	friend class ModelDataCreator;
-	friend class ModelDescAssembler;
+	friend class ModelCreator;
 	explicit HandleLicence() = default;
 };
 
@@ -50,7 +50,7 @@ struct ModelContext::ModelSlotAllocator::AllocateLicence
 {
 private:
 
-	friend class ModelDescAssembler;
+	friend class ModelCreator;
 	explicit AllocateLicence() = default;
 };
 

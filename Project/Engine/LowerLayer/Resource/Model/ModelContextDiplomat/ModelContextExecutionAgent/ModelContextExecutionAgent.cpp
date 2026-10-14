@@ -3,14 +3,16 @@
 #include "ModelAgentLicences.h"
 #include "../../CreateModelTools/ModelDataLoader/ModelDataLoader.h"
 #include "../../ModelContextRuntime/ModelDataBatcher/ModelDataBatcher.h"
+#include "../../CreateModelTools/ModelCreator.h"
 
 
 ModelContext::ExecutionAgent::ExecutionAgent
 (
 	ModelContext::NexusFieldProof proof_,
 	ModelContext& modelContext_,
-	ModelDataBatcher& modelDataBatcher_
-):modelContext(modelContext_), modelDataBatcher(modelDataBatcher_)
+	ModelDataBatcher& modelDataBatcher_,
+	ModelCreator& modelCreator_
+):modelContext(modelContext_), modelDataBatcher(modelDataBatcher_), modelCreator(modelCreator_)
 {
 	
 }
@@ -19,6 +21,7 @@ ModelContext::ExecutionAgent::ExecutionAgent
 void ModelContext::ExecutionAgent::DeleteModelDataCache(NexusFieldProof proof_)
 {
 	modelContext.DeleteModelDataCache(proof_, AgentKey{});
+	modelCreator.DeleteRenderStateCache(proof_, AgentKey{});
 }
 
 
@@ -37,5 +40,10 @@ void ModelContext::ExecutionAgent::BatchModelData
 		models_,
 		bufferContextDiplomat_
 	);
+}
+
+std::vector<RenderState> const& ModelContext::ExecutionAgent::WatchRenderStateCache(RenderContextProof proof_)const
+{
+	return modelCreator.WatchRenderStateCache(AgentKey{});
 }
 

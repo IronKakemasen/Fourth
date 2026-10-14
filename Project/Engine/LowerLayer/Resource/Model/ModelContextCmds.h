@@ -6,5 +6,5 @@ struct RenderState;
 
 namespace ModelContextCmds
 {
-	using WatchAllModelsRenderStatePattern = std::function<std::vector<RenderState> const* ()>;
+
 }

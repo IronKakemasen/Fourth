@@ -2,6 +2,7 @@
 #include "ModelContextExecutionAgent.h"
 
 class SceneContext;
+class RenderContext;
 
 struct ModelContext::ExecutionAgent::SceneContextProof
 {
@@ -10,3 +11,13 @@ private:
 
 	explicit SceneContextProof() = default;
 };
+
+struct ModelContext::ExecutionAgent::RenderContextProof
+{
+private:
+	friend class RenderContext;
+
+	explicit RenderContextProof() = default;
+};
+
+

@@ -1,7 +1,6 @@
 #pragma once
 #include "../ModelFrontlineSystems.h"
 #include "../RenderStateKey.h"
-#include "../../../ModelContextCmds.h"
 #include "../../../ModelStructure/Model.h"
 
 class ModelContext::ModelFrontlineSystems::ModelContainer

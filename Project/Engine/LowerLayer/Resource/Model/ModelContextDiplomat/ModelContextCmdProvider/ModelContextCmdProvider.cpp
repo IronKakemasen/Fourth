@@ -7,19 +7,9 @@ using namespace ModelContextCmds;
 
 ModelContext::CommandProvider::CommandProvider
 (
-	NexusFieldProof proof_,
-	ModelCreator& modelCreator_
-) :modelCreator(modelCreator_)
+	NexusFieldProof proof_
+) 
 {
 
 }
-
-
-template<>
-ModelContextCmds::WatchAllModelsRenderStatePattern ModelContext::CommandProvider::Provide<ModelContextCmds::WatchAllModelsRenderStatePattern>
-(typename CmdTypeTraits<ModelContextCmds::WatchAllModelsRenderStatePattern>::Type licence_)
-{
-	return modelCreator.WatchAllRenderStatesCmd(ProviderKey{});
-}
-
 
