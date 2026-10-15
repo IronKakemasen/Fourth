@@ -5,8 +5,6 @@ class BufferContextDiplomat;
 class ModelContextDiplomat;
 class TextureContextDiplomat;
 
-///tesutooooooooooooooooooooooooooooooooooo
-struct TestModelOKIBA;
 
 class ModelContext
 {
@@ -21,16 +19,19 @@ class ModelContext
 	struct ModelDataFromFile;
 	//モデルが実際に所持するデータ
 	struct ModelData;
-
-public:
 	//全てのモデルファイルのモデルデータのバッファを生成する。
 	class ModelDataCreator;
 	///モデルクラスを生成する
 	class ModelCreator;
 	//モデルの書き込まなくてはならないデータ(TransformMatrixなど)のバッチングを行う
 	class ModelDataBatcher;
+
+public:
 	//シーンが1つ所持するモデルのシステム群
 	class ModelFrontlineSystems;
+	//ModelFrontlineSystemsをシーンにディスパッチする
+	class ModelFSDispatcher;
+
 
 	//代行者
 	class ExecutionAgent;
@@ -63,14 +64,13 @@ private:
 
 
 	std::unique_ptr<ModelSlotAllocator> modelSlotAllocator;
-	//std::unique_ptr<ModelContainer> modelContainer;
 	std::unique_ptr<ModelCreator> modelCreator;
 	std::unique_ptr<ModelDataBatcher> modelDataBatcher;
 	std::unique_ptr<ModelDataCache> modelDataCache;
+	std::unique_ptr<ModelFSDispatcher> modelFSDispatcher;
 
 	//外交官
 	std::unique_ptr<ModelContextDiplomat> diplomat;
-	std::unique_ptr<TestModelOKIBA> testModelOKIBA;
 };
 
 struct ModelContext::NexusFieldProof

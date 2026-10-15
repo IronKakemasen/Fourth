@@ -7,6 +7,7 @@ class RenderContext;
 struct ModelContext::ExecutionAgent::SceneContextProof
 {
 private:
+
 	friend class SceneContext;
 
 	explicit SceneContextProof() = default;

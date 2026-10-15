@@ -1,13 +1,15 @@
 #pragma once
 #include "../SceneContext.h"
+#include "../SceneStructure/SceneBehavior.h"
 
 //外部
-#include "../SceneStructure/SceneBehavior.h"
-#include "../../../../Application/AllSceneIncludes.h"
 #include "../../../LowerLayer/Resource/Camera/CameraContext.h"
 
+#include "../../../LowerLayer/Resource/Model/ModelContext.h"
 
-class CameraContextDiplomat;
+#include "../../../../Application/AllSceneIncludes.h"
+
+
 
 //CameraFrontlineSystems
 class SceneContext::SceneCreator
@@ -30,8 +32,13 @@ public:
 
 private:
 
+	//シーンの本体はいただく
 	void Import(std::unique_ptr<SceneBehavior>&& scene_, std::string const& sceneName_);
+
+	//CameraFrontlineSystemsを一つもらう
 	CameraContext::CameraFrontlineSystems& ReceiveCameraSystems(CameraContextDiplomat& cameraContextDiplomat_);
+	//ModelFrontlineSystemsを一つもらう
+	ModelContext::ModelFrontlineSystems& ReceiveModelSystems(ModelContextDiplomat& modelContextDiplomat_);
 
 	SceneLibrary& sceneLib;
 

@@ -20,6 +20,10 @@ ModelContext::ModelCreator::ModelCreator
 }
 
 
+ModelContext::ModelCreator::~ModelCreator()
+{
+
+}
 
 std::vector<RenderState>const& ModelContext::ModelCreator::WatchRenderStateCache(AgentKey key_)const
 {

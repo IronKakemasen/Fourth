@@ -4,12 +4,12 @@
 class Model;
 
 
-struct TestModelOKIBA
-{
-	TestModelOKIBA(ModelContext::ModelCreator* modelCreator_);
-
-	Model* cube;
-	Model* player;
-
-};
-
+//struct TestModelOKIBA
+//{
+//	TestModelOKIBA(ModelContext::ModelCreator* modelCreator_);
+//
+//	Model* cube;
+//	Model* player;
+//
+//};
+//
