@@ -1,18 +1,18 @@
 #include "PreCompileHeader.h"
 #include "ModelContextExecutionAgent.h"
 #include "ModelAgentLicences.h"
-#include "../../CreateModelTools/ModelDataLoader/ModelDataLoader.h"
 #include "../../ModelContextRuntime/ModelDataBatcher/ModelDataBatcher.h"
 #include "../../CreateModelTools/ModelCreator.h"
-
+#include "../../ModelFSDispatcher/ModelFSDispatcher.h"
 
 ModelContext::ExecutionAgent::ExecutionAgent
 (
 	ModelContext::NexusFieldProof proof_,
 	ModelContext& modelContext_,
 	ModelDataBatcher& modelDataBatcher_,
-	ModelCreator& modelCreator_
-):modelContext(modelContext_), modelDataBatcher(modelDataBatcher_), modelCreator(modelCreator_)
+	ModelCreator& modelCreator_,
+	ModelFSDispatcher& modelFSDispatcher_
+):modelContext(modelContext_), modelDataBatcher(modelDataBatcher_), modelCreator(modelCreator_), modelFSDispatcher(modelFSDispatcher_)
 {
 	
 }
@@ -45,5 +45,10 @@ void ModelContext::ExecutionAgent::BatchModelData
 std::vector<RenderState> const& ModelContext::ExecutionAgent::WatchRenderStateCache(RenderContextProof proof_)const
 {
 	return modelCreator.WatchRenderStateCache(AgentKey{});
+}
+
+ModelContext::ModelFrontlineSystems& ModelContext::ExecutionAgent::DispatchFrontSystems(SceneContextProof proof_)
+{
+	return modelFSDispatcher.Dispatch(AgentKey{});
 }
 

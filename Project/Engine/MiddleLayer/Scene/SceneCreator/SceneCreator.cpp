@@ -7,8 +7,10 @@
 #include "../../../LowerLayer/Resource/Camera/CameraContextDiplomat/CameraContextDiplomat.h"
 #include "../../../LowerLayer/Resource/Camera/CameraContextDiplomat/CameraContextExecutionAgent/CameraContextExecutionAgent.h"
 #include "../../../LowerLayer/Resource/Camera/CameraContextDiplomat/CameraContextExecutionAgent/CameraContextAgentLicences.h"
-#include "../../../LowerLayer/Resource/Camera/CameraFSDispatcher/CameraFSDispatcher.h"
 
+#include "../../../LowerLayer/Resource/Model/ModelContextDiplomat/ModelContextDiplomat.h"
+#include "../../../LowerLayer/Resource/Model/ModelContextDiplomat/ModelContextExecutionAgent/ModelContextExecutionAgent.h"
+#include "../../../LowerLayer/Resource/Model/ModelContextDiplomat/ModelContextExecutionAgent/ModelAgentLicences.h"
 
 
 SceneContext::SceneCreator::SceneCreator(NexusFieldProof proof_, SceneLibrary& sceneLib_)
@@ -29,4 +31,12 @@ CameraContext::CameraFrontlineSystems& SceneContext::SceneCreator::ReceiveCamera
 	auto agent = cameraContextDiplomat_.Access<CameraContext::ExecutionAgent>();
 	
 	return agent.DispatchFrontlineSystems(CameraContext::ExecutionAgent::SceneContextProof{});
+}
+
+ModelContext::ModelFrontlineSystems& SceneContext::SceneCreator::ReceiveModelSystems(ModelContextDiplomat& modelContextDiplomat_)
+{
+	//ModelFrontlineSystemsを一つ渡してもらう
+	auto agent = modelContextDiplomat_.Access<ModelContext::ExecutionAgent>();
+
+	return agent->DispatchFrontSystems(ModelContext::ExecutionAgent::SceneContextProof{});
 }

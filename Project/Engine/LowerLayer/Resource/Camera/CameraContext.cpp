@@ -7,7 +7,6 @@
 #include "CameraBufferCreator/CameraBufferCreator.h"
 #include "CameraCreator/CameraCreator.h"
 
-
 namespace
 {
 	std::string const fileName = "CameraContext.cpp";

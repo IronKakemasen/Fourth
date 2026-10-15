@@ -22,6 +22,8 @@ public:
 		TextureContextDiplomat& textureContextDiplomat_
 	);
 
+	~ModelCreator();
+
 	template<Model::Type modelType>
 	std::vector<std::unique_ptr<Model>> Create
 	(
@@ -29,7 +31,7 @@ public:
 		std::vector<RenderState> const& modelRenderStates_,
 		std::vector<StructuredBufferModelData::MaterialCPU> const& materials_,
 		UINT const numCreate_,
-		std::string const& modelName_ = "nameLess"
+		std::string const& modelName_ 
 	)
 	{
 		ErrorMessageOutput::Assert::DetectError
@@ -61,7 +63,7 @@ public:
 		}
 
 		//レンダーステートキャッシュに登録
-		renderStatesCache.append_range(renderStatesCache);
+		renderStatesCache.append_range(modelRenderStates_);
 
 		return modelUniques;
 	}

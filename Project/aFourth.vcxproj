@@ -429,6 +429,7 @@
     <ClCompile Include="Engine\MiddleLayer\Scene\SceneContextRuntime\SceneDataBatchingPlace\SceneDataBatchingPlace.cpp" />
     <ClCompile Include="Engine\MiddleLayer\Scene\SceneContextRuntime\ScenePipeline.cpp" />
     <ClCompile Include="Engine\LowerLayer\Resource\Model\ModelContextRuntime\ModelFrontlineSystems\ModelFrontlineSystems.cpp" />
+    <ClCompile Include="Engine\LowerLayer\Resource\Model\ModelFSDispatcher\ModelFSDispatcher.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Application\AllCameraIncludes.h" />
@@ -749,6 +750,7 @@
     <ClInclude Include="Engine\MiddleLayer\Scene\SceneContextRuntime\SceneDataBatchingPlace\SceneDataBatchingPlace.h" />
     <ClInclude Include="Engine\MiddleLayer\Scene\SceneContextRuntime\ScenePipeline.h" />
     <ClInclude Include="Engine\LowerLayer\Resource\Model\ModelContextRuntime\ModelFrontlineSystems\ModelFrontlineSystems.h" />
+    <ClInclude Include="Engine\LowerLayer\Resource\Model\ModelFSDispatcher\ModelFSDispatcher.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

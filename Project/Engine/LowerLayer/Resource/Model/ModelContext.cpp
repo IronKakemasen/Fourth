@@ -7,16 +7,13 @@
 #include "CreateModelTools/ModelDataLoader/ModelDataCache/ModelDataCache.h"
 #include "CreateModelTools/ModelCreator.h"
 
-
-
-#include "ModelContextRuntime/ModelDataBatcher/ModelDataBatcher.h"
-
 #include "ModelContextDiplomat/ModelContextDiplomat.h"
 #include "ModelContextDiplomat/ModelContextExecutionAgent/ModelContextExecutionAgent.h"
 #include "ModelContextDiplomat/ModelContextToolLender/ModelContextToolLender.h"
 #include "ModelContextDiplomat/ModelContextCmdProvider/ModelContextCmdProvider.h"
 
-#include "TestModelOKIBA.h"
+#include "ModelContextRuntime/ModelDataBatcher/ModelDataBatcher.h"
+#include "ModelFSDispatcher/ModelFSDispatcher.h"
 
 
 namespace
@@ -50,8 +47,6 @@ ModelContext::ModelContext
 		*modelSlotAllocator, 
 		textureContextDiplomat_
 	);
-
-	Logger::Log("Instantiate: ModelDescAssembler", fileName);
 	Logger::Log("Instantiate: ModelCreator", fileName);
 
 	modelDataBatcher = std::make_unique<ModelDataBatcher>(proof_);
@@ -65,14 +60,17 @@ ModelContext::ModelContext
 		modelDataBatcher.get(),
 		bufferContextDiplomat_
 	);
-	Logger::Log("Instantiate: ModelDataCreator", fileName);
+	Logger::Log("Input All ModelData", fileName);
+
+	modelFSDispatcher = std::make_unique<ModelFSDispatcher>(proof_, *modelCreator);
+	Logger::Log("Instantiate: ModelFSDispatcher", fileName);
 
 	diplomat.reset
 	(
 		new ModelContextDiplomat
 		(
 			proof_,
-			std::make_unique<ExecutionAgent>(proof_,*this,*modelDataBatcher, *modelCreator),
+			std::make_unique<ExecutionAgent>(proof_,*this,*modelDataBatcher, *modelCreator,*modelFSDispatcher),
 			std::make_unique<ToolLender>(proof_),
 			std::make_unique<CommandProvider>(proof_)
 		)
@@ -83,9 +81,6 @@ ModelContext::ModelContext
 	Logger::Log("Instantiate: ModelContextDiplomat", fileName);
 
 
-
-	///てすとおおおおお
-	testModelOKIBA.reset(new TestModelOKIBA(modelCreator.get()));
 
 	Logger::End("ModelContext: Constructor");
 
