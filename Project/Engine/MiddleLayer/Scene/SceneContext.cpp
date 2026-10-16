@@ -1,7 +1,5 @@
 #include "PreCompileHeader.h"
 #include "SceneContext.h"
-#include "SceneLibrary/SceneLibrary.h"
-#include "SceneCreator/SceneCreator.h"
 #include "SceneContextRuntime/ScenePipeline.h"
 #include "SceneContextRuntime/SceneDataBatchingPlace/SceneDataBatchingPlace.h"
 
@@ -19,15 +17,8 @@ SceneContext::SceneContext(NexusFieldProof proof_)
 	Logger::Entry("SceneContext: Constructor");
 
 
-	sceneLibrary = std::make_unique<SceneLibrary>(proof_);
-	Logger::Log("Instantiate: SceneLibrary", fileName);
-
-	scenePipeline = std::make_unique<ScenePipeline>(proof_, *sceneLibrary);
+	scenePipeline = std::make_unique<ScenePipeline>(proof_);
 	Logger::Log("Instantiate: ScenePipeline", fileName);
-
-	sceneCreator = std::make_unique<SceneCreator>(proof_, *sceneLibrary);
-	Logger::Log("Instantiate: SceneCreator", fileName);
-
 
 	diplomat = std::make_unique<SceneContextDiplomat>
 	(

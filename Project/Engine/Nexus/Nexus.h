@@ -1,5 +1,8 @@
 #pragma once
 
+template<typename... SceneTypes>
+class aFourth;
+
 class DeviceContext;
 class BufferContext;
 class WindowContext;
@@ -14,7 +17,7 @@ class ModelContext;
 class TextureContext;
 class CameraContext;
 class DebugContext;
-
+class SceneContext;
 
 //交易場
 class Nexus
@@ -22,8 +25,6 @@ class Nexus
 	//初期化・生成順序
 	enum class InitSequence
 	{
-		kCoInitializeEx,
-
 		kLoadAllJsonFiles,
 
 		kDebugContext,
@@ -40,6 +41,7 @@ class Nexus
 		kTextureContext,
 		kModelContext,
 		kCameraContext,
+		kSceneContext,
 		kRenderContext,
 
 
@@ -56,15 +58,15 @@ class Nexus
 	enum class FinalizeSequence
 	{
 		kCommandContext,
-		kWindowContext,
-		kCoUninitialize
-
+		kWindowContext
 
 
 		,kEnd
 	}nextFin = FinalizeSequence(0);
 
 public:
+
+	struct aFourthProof;
 
 	~Nexus();
 	Nexus();
@@ -77,9 +79,6 @@ public:
 	void Run();
 
 private:
-
-	//Nexusのインスタンスを1つに制限するためのシングルトンクラス
-	class InstanceLimiter;
 
 	//デバッガー。DebugLayer, PointerValidator, LeakChecker
 	std::unique_ptr<DebugContext> debugContext;
@@ -109,7 +108,8 @@ private:
 	std::unique_ptr<TextureContext> textureContext;
 	//カメラの定義、作成、バッチング処理
 	std::unique_ptr<CameraContext> cameraContext;
-
+	//シーンの作成、保持、コントロール、シーンデータのバッチングを行う
+	std::unique_ptr<SceneContext> sceneContext;
 
 
 	
@@ -155,6 +155,15 @@ private:
 
 };
 
+	struct Nexus::aFourthProof
+	{
+	private:
+
+		template<typename... SceneTypes>
+		friend class aFourth;
+
+		explicit aFourthProof() = default;
+	};
 
 
 

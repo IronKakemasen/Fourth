@@ -1,9 +1,9 @@
 #pragma once
-#include "../SceneContext.h"
+#include "../SceneContextRuntime/ScenePipeline.h"
 
 class SceneBehavior;
 
-class SceneContext::SceneLibrary
+class SceneContext::ScenePipeline::SceneLibrary
 {
 public:
 

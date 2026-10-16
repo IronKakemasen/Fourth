@@ -1,6 +1,5 @@
 #pragma once
-#include "../SceneContext.h"
-
+#include "../SceneCreator/SceneCreator.h"
 
 //外部
 #include "../../../LowerLayer/Resource/Model/ModelContextRuntime/ModelFrontlineSystems/RenderStateKey.h"
@@ -18,10 +17,12 @@ class SceneContext::ScenePipeline
 	class SceneController;
 	//そのシーンで使用しているデータのバッチング場
 	class SceneDataBatchingPlace;
+	//シーンのユニークを保管
+	class SceneLibrary;
 
 public:
 
-	ScenePipeline(NexusFieldProof proof_,SceneLibrary& sceneLibrary_);
+	ScenePipeline(NexusFieldProof proof_);
 	~ScenePipeline();
 
 	//シーンの更新処理の親玉
@@ -40,9 +41,36 @@ public:
 	std::unordered_map<uint64_t, std::pair<RenderStateKey, std::vector<Model*>>> const&
 		WatchModelContainerSeparatedByRenderState()const;
 
-private:
-	std::unique_ptr<SceneController> sceneController;
+	//シーンを作成する。
+	template<typename SceneType>
+	void CreateScene
+	(
+		std::string const& sceneName_,
+		CameraContextDiplomat& cameraContextDiplomat_,
+		ModelContextDiplomat& modelContextDiplomat_
+	)
+	{
+		SceneCreator sceneCreator;
 
+		ImportScene
+		(
+			sceneCreator.Create<SceneType>
+			(
+				cameraContextDiplomat_,
+				modelContextDiplomat_
+			),
+			sceneName_
+		);
+
+		Logger::Log("Instantiate: " + sceneName_, "ScenePipeline.h");
+	}
+
+private:
+
+	void ImportScene(std::unique_ptr<SceneBehavior>&& scene_, std::string const& sceneName_);
+
+	std::unique_ptr<SceneLibrary> sceneLibrary;
+	std::unique_ptr<SceneController> sceneController;
 
 };
 

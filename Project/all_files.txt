@@ -1,4 +1,80 @@
 ========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\EngineInterface.h ===
+========================================
+#pragma once
+#include "../Nexus/Nexus.h"
+template<typename... SceneTypes>
+class aFourth
+{
+	//インスタンスを1つに制限するための
+	class InstanceLimiter
+	{
+	public:
+		static void CanInstantiate()
+		{
+			static InstanceLimiter instanceLimiter;
+			ErrorMessageOutput::Assert::DetectError
+			(
+				instanceLimiter.instanceCnt++ == 0,
+				"クラスaFourthは一つしかインスタンス化できません",
+				"aFourth.h"
+			);
+		}
+		InstanceLimiter(const InstanceLimiter&) = delete;
+		InstanceLimiter& operator=(const InstanceLimiter&) = delete;
+		InstanceLimiter(InstanceLimiter&&) = delete;
+		InstanceLimiter& operator=(InstanceLimiter&&) = delete;
+	private:
+		int instanceCnt{};
+		~InstanceLimiter() = default;
+		InstanceLimiter() = default;
+	};
+public:
+	void Run()
+	{
+		MSG msg = {};
+		while (true)
+		{
+			//Windowにメッセージが来てたら最優先で処理させる
+			if (PeekMessage(&msg, nullptr, 0, 0, PM_REMOVE))
+			{
+				if (msg.message == WM_QUIT)
+				{
+					break;
+				}
+				TranslateMessage(&msg);
+				DispatchMessage(&msg);
+			}
+			else
+			{
+				nexus->Run();
+			}
+		}
+	}
+	aFourth()
+	{
+		//自身のインスタンス制限
+		InstanceLimiter::CanInstantiate();
+		//COMの初期化
+		HRESULT hr = CoInitializeEx(0, COINITBASE_MULTITHREADED);
+		ErrorMessageOutput::Abort::DetectError(SUCCEEDED(hr), "CoInitializeEx()でエラー", "aFourth.h");
+		Logger::Log("CoInitializeEx", "aFourth.h");
+		nexus = std::make_unique<Nexus>();
+	}
+	~aFourth() 
+	{
+		Logger::Entry("aFourth: Destructor");
+		nexus.reset();
+		Logger::Log("Delete Nexus", "aFourth.h");
+		CoUninitialize();
+		Logger::Log("CoUninitialize", "aFourth.h");
+		Logger::End("aFourth: Destructor");
+	};
+private:
+	std::unique_ptr<Nexus> nexus;
+};
+
+========================================
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\ProjectConfig.h ===
 ========================================
 #pragma once
@@ -9289,9 +9365,6 @@ public:
 DebugContext::RuntimeDebugger::RuntimeDebugger(NexusFieldProof proof_)
 {
 	using namespace ProjectConfig::Debug;
-	//インスタンス制限
-	std::string errorMessage = "RuntimeDebuggerクラスが複数具現化されてます";
-	ErrorMessageOutput::Assert::DetectError(InstanceLimiter::CanInstantiate(), errorMessage,"RuntimeDebugger.cpp");
 	if (kEnableDebugLayer) debugLayer = std::make_unique<DebugLayer>(proof_);
 	if (kEnablePointerValidator) pointerValidator = std::make_unique<PointerValidator>(proof_);
 	if (kEnableLeakChecker) leakChecker = std::make_unique<LeakChecker>(proof_);
@@ -9302,12 +9375,6 @@ DebugContext::RuntimeDebugger::~RuntimeDebugger()
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//RuntimeDebuggerクラスのインスタンスを1つに制限する
-bool DebugContext::RuntimeDebugger::InstanceLimiter::CanInstantiate()
-{
-	static InstanceLimiter instanceLimiter;
-	return (instanceLimiter.instanceCnt++ == 0);
-}
 
 ========================================
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\DebugSystem\RuntimeDebugger\RuntimeDebugger.h ===
@@ -9322,30 +9389,10 @@ class DebugContext::RuntimeDebugger
 public:
 	RuntimeDebugger(NexusFieldProof proof_);
 	~RuntimeDebugger();
-	RuntimeDebugger(const RuntimeDebugger&) = delete;
-	RuntimeDebugger& operator=(const RuntimeDebugger&) = delete;
-	RuntimeDebugger(RuntimeDebugger&&) = delete;
-	RuntimeDebugger& operator=(RuntimeDebugger&&) = delete;
 private:
-	//なんかの間違いで複数インスタンス化されると特に困るんでインスタンス制限
-	class InstanceLimiter;
 	std::unique_ptr<DebugLayer> debugLayer;
 	std::unique_ptr<PointerValidator> pointerValidator;
 	std::unique_ptr<LeakChecker> leakChecker;
-};
-//RuntimeDebuggerクラスのインスタンスを制御するクラス
-class DebugContext::RuntimeDebugger::InstanceLimiter
-{
-public:
-	static bool CanInstantiate();
-	InstanceLimiter(const InstanceLimiter&) = delete;
-	InstanceLimiter& operator=(const InstanceLimiter&) = delete;
-	InstanceLimiter(InstanceLimiter&&) = delete;
-	InstanceLimiter& operator=(InstanceLimiter&&) = delete;
-private:
-	int instanceCnt{};
-	~InstanceLimiter() = default;
-	InstanceLimiter() = default;
 };
 
 ========================================
@@ -10006,12 +10053,9 @@ CameraContext::CameraCreator::CameraCreator(NexusFieldProof proof_)
 ========================================
 #pragma once
 #include "../CameraContext.h"
-//エンジン備え付けのカメラ
-#include "../PresetCameras/PresetCameraIncludes.h"
 #include "../CameraContextRuntime/CameraSocket.h"
-//アプリケーションの全カメラ
-#include "../../../../../Application/AllCameraIncludes.h"
 struct CameraDesc;
+class CameraBehavior;
 class CameraContext::CameraCreator
 {
 public:
@@ -21027,8 +21071,6 @@ private:
 ========================================
 #include "PreCompileHeader.h"
 #include "SceneContext.h"
-#include "SceneLibrary/SceneLibrary.h"
-#include "SceneCreator/SceneCreator.h"
 #include "SceneContextRuntime/ScenePipeline.h"
 #include "SceneContextRuntime/SceneDataBatchingPlace/SceneDataBatchingPlace.h"
 #include "SceneContextDiplomat/SceneContextDiplomat.h"
@@ -21040,12 +21082,8 @@ namespace
 SceneContext::SceneContext(NexusFieldProof proof_)
 {
 	Logger::Entry("SceneContext: Constructor");
-	sceneLibrary = std::make_unique<SceneLibrary>(proof_);
-	Logger::Log("Instantiate: SceneLibrary", fileName);
-	scenePipeline = std::make_unique<ScenePipeline>(proof_, *sceneLibrary);
+	scenePipeline = std::make_unique<ScenePipeline>(proof_);
 	Logger::Log("Instantiate: ScenePipeline", fileName);
-	sceneCreator = std::make_unique<SceneCreator>(proof_, *sceneLibrary);
-	Logger::Log("Instantiate: SceneCreator", fileName);
 	diplomat = std::make_unique<SceneContextDiplomat>
 	(
 		proof_,
@@ -21067,11 +21105,9 @@ class Nexus;
 class SceneContextDiplomat;
 class SceneContext
 {
-	//シーンのユニークを保管
-	class SceneLibrary;
-public:
 	//シーンを作成する
 	class SceneCreator;
+public:
 	//シーンの制御、シーンデータのバッチングなどをランタイムで行う
 	class ScenePipeline;
 	class ExecutionAgent;
@@ -21081,8 +21117,6 @@ public:
 	~SceneContext();
 	auto& AccessDiplomat() { return diplomat; }
 private:
-	std::unique_ptr<SceneLibrary> sceneLibrary;
-	std::unique_ptr<SceneCreator> sceneCreator;
 	std::unique_ptr<ScenePipeline> scenePipeline;
 	std::unique_ptr<SceneContextDiplomat> diplomat;
 };
@@ -21203,17 +21237,24 @@ private:
 #include "ScenePipeline.h"
 #include "SceneController/SceneController.h"
 #include "SceneDataBatchingPlace/SceneDataBatchingPlace.h"
+#include "../SceneLibrary/SceneLibrary.h"
 namespace
 {
 	auto const fileName = "ScenePipeline.cpp";
 }
-SceneContext::ScenePipeline::ScenePipeline(NexusFieldProof proof_, SceneLibrary& sceneLibrary_)
+SceneContext::ScenePipeline::ScenePipeline(NexusFieldProof proof_)
 {
-	sceneController = std::make_unique<SceneController>(proof_, sceneLibrary_);
+	sceneLibrary = std::make_unique<SceneLibrary>(proof_);
+	Logger::Log("Instantiate: SceneLibrary", fileName);
+	sceneController = std::make_unique<SceneController>(proof_, *sceneLibrary);
 	Logger::Log("Instantiate: SceneController", fileName);
 }
 SceneContext::ScenePipeline::~ScenePipeline()
 {
+}
+void SceneContext::ScenePipeline::ImportScene(std::unique_ptr<SceneBehavior>&& scene_, std::string const& sceneName_)
+{
+	sceneLibrary->Import(std::move(scene_), sceneName_);
 }
 void SceneContext::ScenePipeline::Run
 (
@@ -21243,7 +21284,7 @@ void SceneContext::ScenePipeline::Run
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\MiddleLayer\Scene\SceneContextRuntime\ScenePipeline.h ===
 ========================================
 #pragma once
-#include "../SceneContext.h"
+#include "../SceneCreator/SceneCreator.h"
 //外部
 #include "../../../LowerLayer/Resource/Model/ModelContextRuntime/ModelFrontlineSystems/RenderStateKey.h"
 class ModelContextDiplomat;
@@ -21257,8 +21298,10 @@ class SceneContext::ScenePipeline
 	class SceneController;
 	//そのシーンで使用しているデータのバッチング場
 	class SceneDataBatchingPlace;
+	//シーンのユニークを保管
+	class SceneLibrary;
 public:
-	ScenePipeline(NexusFieldProof proof_,SceneLibrary& sceneLibrary_);
+	ScenePipeline(NexusFieldProof proof_);
 	~ScenePipeline();
 	//シーンの更新処理の親玉
 	//更新処理の呼び出しは代行でやってもらう
@@ -21274,7 +21317,30 @@ public:
 	//稼働中シーンのレンダーステート別に仕分けられたモデルコンテナを見る
 	std::unordered_map<uint64_t, std::pair<RenderStateKey, std::vector<Model*>>> const&
 		WatchModelContainerSeparatedByRenderState()const;
+	//シーンを作成する。
+	template<typename SceneType>
+	void CreateScene
+	(
+		std::string const& sceneName_,
+		CameraContextDiplomat& cameraContextDiplomat_,
+		ModelContextDiplomat& modelContextDiplomat_
+	)
+	{
+		SceneCreator sceneCreator;
+		ImportScene
+		(
+			sceneCreator.Create<SceneType>
+			(
+				cameraContextDiplomat_,
+				modelContextDiplomat_
+			),
+			sceneName_
+		);
+		Logger::Log("Instantiate: " + sceneName_, "ScenePipeline.h");
+	}
 private:
+	void ImportScene(std::unique_ptr<SceneBehavior>&& scene_, std::string const& sceneName_);
+	std::unique_ptr<SceneLibrary> sceneLibrary;
 	std::unique_ptr<SceneController> sceneController;
 };
 
@@ -21387,7 +21453,6 @@ private:
 ========================================
 #include "PreCompileHeader.h"
 #include "SceneCreator.h"
-#include "../SceneLibrary/SceneLibrary.h"
 //外部
 #include "../../../LowerLayer/Resource/Camera/CameraContextDiplomat/CameraContextDiplomat.h"
 #include "../../../LowerLayer/Resource/Camera/CameraContextDiplomat/CameraContextExecutionAgent/CameraContextExecutionAgent.h"
@@ -21395,14 +21460,6 @@ private:
 #include "../../../LowerLayer/Resource/Model/ModelContextDiplomat/ModelContextDiplomat.h"
 #include "../../../LowerLayer/Resource/Model/ModelContextDiplomat/ModelContextExecutionAgent/ModelContextExecutionAgent.h"
 #include "../../../LowerLayer/Resource/Model/ModelContextDiplomat/ModelContextExecutionAgent/ModelAgentLicences.h"
-SceneContext::SceneCreator::SceneCreator(NexusFieldProof proof_, SceneLibrary& sceneLib_)
-	:sceneLib(sceneLib_)
-{
-}
-void SceneContext::SceneCreator::Import(std::unique_ptr<SceneBehavior>&& scene_, std::string const& sceneName_)
-{
-	sceneLib.Import(std::move(scene_), sceneName_);
-}
 CameraContext::CameraFrontlineSystems& SceneContext::SceneCreator::ReceiveCameraSystems(CameraContextDiplomat& cameraContextDiplomat_)
 {
 	//CameraFrontlineSystemsを一つ渡してもらう
@@ -21421,35 +21478,34 @@ ModelContext::ModelFrontlineSystems& SceneContext::SceneCreator::ReceiveModelSys
 ========================================
 #pragma once
 #include "../SceneContext.h"
-#include "../SceneStructure/SceneBehavior.h"
 //外部
 #include "../../../LowerLayer/Resource/Camera/CameraContext.h"
 #include "../../../LowerLayer/Resource/Model/ModelContext.h"
-#include "../../../../Application/AllSceneIncludes.h"
+class SceneBehavior;
 //CameraFrontlineSystems
 class SceneContext::SceneCreator
 {
 public:
-	SceneCreator(NexusFieldProof proof_,SceneLibrary& sceneLib_);
+	SceneCreator() = default;
 	//シーンを作成する
 	template<typename SceneType>
-	void Create(std::string const& sceneName_, CameraContextDiplomat& cameraContextDiplomat_)
+	std::unique_ptr<SceneType> Create
+	(
+		CameraContextDiplomat& cameraContextDiplomat_,
+		ModelContextDiplomat& modelContextDiplomat_
+	)
 	{
-		Logger::Log("Create Scene: " + sceneName_, "SceneCreator.h");
-		Import
+		return std::make_unique<SceneType>
 		(
-			std::move(std::make_unique<SceneType>(ReceiveCameraSystems(cameraContextDiplomat_))),
-			sceneName_
+			ReceiveCameraSystems(cameraContextDiplomat_),
+			ReceiveModelSystems(modelContextDiplomat_)
 		);
 	}
 private:
-	//シーンの本体はいただく
-	void Import(std::unique_ptr<SceneBehavior>&& scene_, std::string const& sceneName_);
 	//CameraFrontlineSystemsを一つもらう
 	CameraContext::CameraFrontlineSystems& ReceiveCameraSystems(CameraContextDiplomat& cameraContextDiplomat_);
 	//ModelFrontlineSystemsを一つもらう
 	ModelContext::ModelFrontlineSystems& ReceiveModelSystems(ModelContextDiplomat& modelContextDiplomat_);
-	SceneLibrary& sceneLib;
 };
 
 ========================================
@@ -21462,10 +21518,10 @@ namespace
 {
 	auto const fileName = "SceneLibrary.cpp";
 }
-SceneContext::SceneLibrary::SceneLibrary(NexusFieldProof proof_)
+SceneContext::ScenePipeline::SceneLibrary::SceneLibrary(NexusFieldProof proof_)
 {
 }
-void SceneContext::SceneLibrary::Import(std::unique_ptr<SceneBehavior>&& scene_, std::string const& sceneName_)
+void SceneContext::ScenePipeline::SceneLibrary::Import(std::unique_ptr<SceneBehavior>&& scene_, std::string const& sceneName_)
 {
 	ErrorMessageOutput::Assert::DetectError
 	(
@@ -21476,7 +21532,7 @@ void SceneContext::SceneLibrary::Import(std::unique_ptr<SceneBehavior>&& scene_,
 	Logger::Log("Import Scene: " + sceneName_, fileName);
 	sceneMap[sceneName_] = std::move(scene_);
 }
-SceneBehavior* SceneContext::SceneLibrary::Export(std::string const& sceneName_)
+SceneBehavior* SceneContext::ScenePipeline::SceneLibrary::Export(std::string const& sceneName_)
 {
 	ErrorMessageOutput::Assert::DetectError
 	(
@@ -21491,9 +21547,9 @@ SceneBehavior* SceneContext::SceneLibrary::Export(std::string const& sceneName_)
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\MiddleLayer\Scene\SceneLibrary\SceneLibrary.h ===
 ========================================
 #pragma once
-#include "../SceneContext.h"
+#include "../SceneContextRuntime/ScenePipeline.h"
 class SceneBehavior;
-class SceneContext::SceneLibrary
+class SceneContext::ScenePipeline::SceneLibrary
 {
 public:
 	SceneLibrary(NexusFieldProof proof_);
@@ -21509,10 +21565,14 @@ private:
 #include "PreCompileHeader.h"
 #include "SceneBehavior.h"
 #include "../../../LowerLayer/Resource/Camera/CameraStructrue/CameraDesc/CameraDesc.h"
+//外部
+//エンジン備え付けのカメラ
+#include "../../../LowerLayer/Resource/Camera/PresetCameras/PresetCameraIncludes.h"
 SceneBehavior::SceneBehavior
 (
-	CameraContext::CameraFrontlineSystems& cameraSystems_
-):cameraSystems(cameraSystems_)
+	CameraContext::CameraFrontlineSystems& cameraSystems_,
+	ModelContext::ModelFrontlineSystems& modelSystems_
+):cameraSystems(cameraSystems_), modelSystems(modelSystems_)
 {
 	//各シーンに1つは存在するデバッグカメラを作成
 	CreateCamera<CameraSocket::kDebug, DefaultDebugCamera>(std::nullopt, "DefaultDebugCamera");
@@ -21533,6 +21593,7 @@ SceneBehavior::Output const& SceneBehavior::WatchSceneOutput()const
 #pragma once
 //外部
 #include "../../../LowerLayer/Resource/Camera/CameraContextRuntime/CameraFrontlineSystems.h"
+#include "../../../LowerLayer/Resource/Model/ModelContextRuntime/ModelFrontlineSystems/ModelFrontlineSystems.h"
 class SceneContext;
 class Model;
 struct CameraDesc;
@@ -21548,7 +21609,8 @@ class SceneBehavior
 public:
 	SceneBehavior
 	(
-		CameraContext::CameraFrontlineSystems& cameraSystems_
+		CameraContext::CameraFrontlineSystems& cameraSystems_,
+		ModelContext::ModelFrontlineSystems& modelSystems_
 	);
 	virtual ~SceneBehavior() = default;
 	Output const& WatchSceneOutput()const;
@@ -21575,6 +21637,7 @@ private:
 	void Update();
 	void Reset();
 	CameraContext::CameraFrontlineSystems& cameraSystems;
+	ModelContext::ModelFrontlineSystems& modelSystems;
 	SceneBehavior::Output output;
 };
 
@@ -21598,40 +21661,19 @@ private:
 #include "../LowerLayer/Resource/Texture/TextureContext.h"
 #include "../LowerLayer/Resource/Camera/CameraContext.h"
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+#include "../LowerLayer/Buffer/BufferContext.h"
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 #include "../MiddleLayer/Render/RenderContext.h"
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-#include "../LowerLayer/Buffer/BufferContext.h"
+#include "../MiddleLayer/Scene/SceneContext.h"
 namespace
 {
 	std::string const fileName = "Nexus.cpp";
 }
 using namespace ProjectConfig::Window;
-//Nexusクラスのインスタンスを制御するクラス
-class Nexus::InstanceLimiter
-{
-public:
-	static bool CanInstantiate();
-	InstanceLimiter(const InstanceLimiter&) = delete;
-	InstanceLimiter& operator=(const InstanceLimiter&) = delete;
-	InstanceLimiter(InstanceLimiter&&) = delete;
-	InstanceLimiter& operator=(InstanceLimiter&&) = delete;
-private:
-	int instanceCnt{};
-	~InstanceLimiter() = default;
-	InstanceLimiter() = default;
-};
-//Nexusクラスのインスタンスを1つに制限する
-bool Nexus::InstanceLimiter::CanInstantiate()
-{
-	static InstanceLimiter instanceLimiter;
-	return (instanceLimiter.instanceCnt++ == 0);
-}
 Nexus::Nexus()
 {
 	Logger::Entry("Nexus: Constructor");
-	//自身のインスタンス制限
-	ErrorMessageOutput::Assert::DetectError(InstanceLimiter::CanInstantiate(), "Nexusクラスが複数具現化されてます", fileName);
-	InitializeInSequence<InitSequence::kCoInitializeEx>();
 	InitializeInSequence<InitSequence::kLoadAllJsonFiles>();
 	InitializeInSequence<InitSequence::kDebugContext>();
 	InitializeInSequence<InitSequence::kDeviceContext>();
@@ -21646,6 +21688,7 @@ Nexus::Nexus()
 	InitializeInSequence<InitSequence::kTextureContext>();
 	InitializeInSequence<InitSequence::kModelContext>();
 	InitializeInSequence<InitSequence::kCameraContext>();
+	InitializeInSequence<InitSequence::kSceneContext>();
 	InitializeInSequence<InitSequence::kRenderContext>();
 	InitializeInSequence<InitSequence::kUploadAllResources>();
 	InitializeInSequence<InitSequence::kKickCommands>();
@@ -21660,7 +21703,6 @@ Nexus::~Nexus()
 	Logger::Entry("Nexus: Destructor");
 	FinalizeInSequence<FinalizeSequence::kCommandContext>();
 	FinalizeInSequence<FinalizeSequence::kWindowContext>();
-	FinalizeInSequence<FinalizeSequence::kCoUninitialize>();
 	ErrorMessageOutput::Assert::DetectError(nextFin == FinalizeSequence::kEnd, "終了処理が正常に行われていない可能性がある", fileName);
 	Logger::End("Nexus: Destructor");
 }
@@ -21669,6 +21711,8 @@ Nexus::~Nexus()
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Nexus\Nexus.h ===
 ========================================
 #pragma once
+template<typename... SceneTypes>
+class aFourth;
 class DeviceContext;
 class BufferContext;
 class WindowContext;
@@ -21683,13 +21727,13 @@ class ModelContext;
 class TextureContext;
 class CameraContext;
 class DebugContext;
+class SceneContext;
 //交易場
 class Nexus
 {
 	//初期化・生成順序
 	enum class InitSequence
 	{
-		kCoInitializeEx,
 		kLoadAllJsonFiles,
 		kDebugContext,
 		kDeviceContext,
@@ -21704,6 +21748,7 @@ class Nexus
 		kTextureContext,
 		kModelContext,
 		kCameraContext,
+		kSceneContext,
 		kRenderContext,
 		kUploadAllResources,
 		kKickCommands,
@@ -21716,11 +21761,11 @@ class Nexus
 	enum class FinalizeSequence
 	{
 		kCommandContext,
-		kWindowContext,
-		kCoUninitialize
+		kWindowContext
 		,kEnd
 	}nextFin = FinalizeSequence(0);
 public:
+	struct aFourthProof;
 	~Nexus();
 	Nexus();
 	Nexus(const Nexus&) = delete;
@@ -21729,8 +21774,6 @@ public:
 	Nexus& operator=(Nexus&&) = delete;
 	void Run();
 private:
-	//Nexusのインスタンスを1つに制限するためのシングルトンクラス
-	class InstanceLimiter;
 	//デバッガー。DebugLayer, PointerValidator, LeakChecker
 	std::unique_ptr<DebugContext> debugContext;
 	//IDXGIFactory7、IDXGIAdapter4、ID3D12Device8を持ち、コアパーツによるコマンドを提供したりする
@@ -21759,6 +21802,8 @@ private:
 	std::unique_ptr<TextureContext> textureContext;
 	//カメラの定義、作成、バッチング処理
 	std::unique_ptr<CameraContext> cameraContext;
+	//シーンの作成、保持、コントロール、シーンデータのバッチングを行う
+	std::unique_ptr<SceneContext> sceneContext;
 	//各Contextクラスの具現化、初期化を行う
 	template<InitSequence initSequence>
 	void Init();
@@ -21792,6 +21837,13 @@ private:
 		nextFin = FinalizeSequence((UINT)nextFin + 1);
 	}
 };
+	struct Nexus::aFourthProof
+	{
+	private:
+		template<typename... SceneTypes>
+		friend class aFourth;
+		explicit aFourthProof() = default;
+	};
 
 ========================================
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Nexus\NexusFinalization.cpp ===
@@ -21815,13 +21867,6 @@ void Nexus::Finalize<Nexus::FinalizeSequence::kWindowContext>()
 	//ウィンドウコンテキストの終了処理を代行してもらう
 	auto& agent = windowContext->AccessDiplomat().Access<WindowContext::ExecutionAgent>();
 	agent.WindowContextFinalize(WindowContext::NexusFieldProof{});
-}
-template<>
-void Nexus::Finalize<Nexus::FinalizeSequence::kCoUninitialize>()
-{
-	//COMの終了
-	CoUninitialize();
-	Logger::Log("CoUninitialize", fileName);
 }
 
 ========================================
@@ -21857,24 +21902,16 @@ void Nexus::Finalize<Nexus::FinalizeSequence::kCoUninitialize>()
 #include "../LowerLayer/Resource/Model/ModelContextDiplomat/ModelContextDiplomat.h"
 #include "../LowerLayer/Resource/Model/ModelContextDiplomat/ModelContextExecutionAgent/ModelContextExecutionAgent.h"
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-#include "../MiddleLayer/Render/RenderContext.h"
-///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 #include "../LowerLayer/Resource/Texture/TextureContext.h"
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 #include "../LowerLayer/Resource/Camera/CameraContext.h"
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+#include "../MiddleLayer/Render/RenderContext.h"
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+#include "../MiddleLayer/Scene/SceneContext.h"
 namespace
 {
 	std::string const fileName = "NexusInitialization.cpp";
-}
-///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-template<>
-void Nexus::Init<Nexus::InitSequence::kCoInitializeEx>()
-{
-	//COMの初期化
-	HRESULT hr = CoInitializeEx(0, COINITBASE_MULTITHREADED);
-	ErrorMessageOutput::Abort::DetectError(SUCCEEDED(hr), "CoInitializeEx()でエラー", fileName);
 }
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -22139,8 +22176,11 @@ void Nexus::Init<Nexus::InitSequence::kDeleteModelDataCache>()
 	//初期化処理に使ったモデルデータのキャッシュを削除
 	agent->DeleteModelDataCache(ModelContext::NexusFieldProof{});
 }
-template
-void Nexus::Init<Nexus::InitSequence::kCoInitializeEx>();
+template<>
+void Nexus::Init<Nexus::InitSequence::kSceneContext>()
+{
+	sceneContext = std::make_unique<SceneContext>(SceneContext::NexusFieldProof{});
+}
 template
 void Nexus::Init<Nexus::InitSequence::kLoadAllJsonFiles>();
 template
@@ -22169,6 +22209,8 @@ template
 void Nexus::Init<Nexus::InitSequence::kModelContext>();
 template
 void Nexus::Init<Nexus::InitSequence::kCameraContext>();
+template
+void Nexus::Init<Nexus::InitSequence::kSceneContext>();
 template
 void Nexus::Init<Nexus::InitSequence::kRenderContext>();
 template
@@ -22969,5 +23011,5 @@ namespace StringProcessing
 ========================================
 === SUMMARY ===
 ========================================
-Total Files      : 515
-Effective Lines  : 16675
+Total Files      : 516
+Effective Lines  : 16719

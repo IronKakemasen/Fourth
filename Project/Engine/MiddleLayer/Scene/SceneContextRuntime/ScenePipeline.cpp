@@ -2,6 +2,7 @@
 #include "ScenePipeline.h"
 #include "SceneController/SceneController.h"
 #include "SceneDataBatchingPlace/SceneDataBatchingPlace.h"
+#include "../SceneLibrary/SceneLibrary.h"
 
 namespace
 {
@@ -9,9 +10,12 @@ namespace
 }
 
 
-SceneContext::ScenePipeline::ScenePipeline(NexusFieldProof proof_, SceneLibrary& sceneLibrary_)
+SceneContext::ScenePipeline::ScenePipeline(NexusFieldProof proof_)
 {
-	sceneController = std::make_unique<SceneController>(proof_, sceneLibrary_);
+	sceneLibrary = std::make_unique<SceneLibrary>(proof_);
+	Logger::Log("Instantiate: SceneLibrary", fileName);
+
+	sceneController = std::make_unique<SceneController>(proof_, *sceneLibrary);
 	Logger::Log("Instantiate: SceneController", fileName);
 
 }
@@ -19,6 +23,12 @@ SceneContext::ScenePipeline::ScenePipeline(NexusFieldProof proof_, SceneLibrary&
 SceneContext::ScenePipeline::~ScenePipeline()
 {
 
+}
+
+
+void SceneContext::ScenePipeline::ImportScene(std::unique_ptr<SceneBehavior>&& scene_, std::string const& sceneName_)
+{
+	sceneLibrary->Import(std::move(scene_), sceneName_);
 }
 
 void SceneContext::ScenePipeline::Run
@@ -45,5 +55,4 @@ void SceneContext::ScenePipeline::Run
 		bufferContextDiplomat_
 	);
 }
-
 

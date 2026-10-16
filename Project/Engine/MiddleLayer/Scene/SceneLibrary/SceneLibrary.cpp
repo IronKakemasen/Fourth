@@ -7,13 +7,12 @@ namespace
 	auto const fileName = "SceneLibrary.cpp";
 }
 
-SceneContext::SceneLibrary::SceneLibrary(NexusFieldProof proof_)
+SceneContext::ScenePipeline::SceneLibrary::SceneLibrary(NexusFieldProof proof_)
 {
 
 }
 
-
-void SceneContext::SceneLibrary::Import(std::unique_ptr<SceneBehavior>&& scene_, std::string const& sceneName_)
+void SceneContext::ScenePipeline::SceneLibrary::Import(std::unique_ptr<SceneBehavior>&& scene_, std::string const& sceneName_)
 {
 	ErrorMessageOutput::Assert::DetectError
 	(
@@ -26,7 +25,7 @@ void SceneContext::SceneLibrary::Import(std::unique_ptr<SceneBehavior>&& scene_,
 	sceneMap[sceneName_] = std::move(scene_);
 }
 
-SceneBehavior* SceneContext::SceneLibrary::Export(std::string const& sceneName_)
+SceneBehavior* SceneContext::ScenePipeline::SceneLibrary::Export(std::string const& sceneName_)
 {
 	ErrorMessageOutput::Assert::DetectError
 	(

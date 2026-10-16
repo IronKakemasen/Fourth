@@ -1,37 +1,11 @@
-#include "Engine/Nexus/Nexus.h"
+#include "Engine/EngineInterface.h"
 
-void Update(Nexus& nexus_);
 
 int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 {
-    //エンジンの交易場
-    Nexus nexus;
+    aFourth engine;
 
-    Update(nexus);
+    engine.Run();
 
     return 0;
 }
-
-void Update(Nexus& nexus_)
-{
-    MSG msg = {};
-
-    while (true)
-    {
-        //Windowにメッセージが来てたら最優先で処理させる
-        if (PeekMessage(&msg, nullptr, 0, 0, PM_REMOVE))
-        {
-            if (msg.message == WM_QUIT)
-            {
-                break;
-            }
-            TranslateMessage(&msg);
-            DispatchMessage(&msg);
-        }
-        else
-        {
-            nexus_.Run();
-        }
-    }
-}
-
