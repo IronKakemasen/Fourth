@@ -1,13 +1,12 @@
 #pragma once
 #include "../CameraContext.h"
-//エンジン備え付けのカメラ
-#include "../PresetCameras/PresetCameraIncludes.h"
 #include "../CameraContextRuntime/CameraSocket.h"
 
-//アプリケーションの全カメラ
-#include "../../../../../Application/AllCameraIncludes.h"
+
 
 struct CameraDesc;
+class CameraBehavior;
+
 
 class CameraContext::CameraCreator
 {

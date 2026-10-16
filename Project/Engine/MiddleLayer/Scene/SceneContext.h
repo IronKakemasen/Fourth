@@ -6,15 +6,12 @@ class SceneContextDiplomat;
 
 class SceneContext
 {
-	//シーンのユニークを保管
-	class SceneLibrary;
-
-public:
 	//シーンを作成する
 	class SceneCreator;
+
+public:
 	//シーンの制御、シーンデータのバッチングなどをランタイムで行う
 	class ScenePipeline;
-
 	class ExecutionAgent;
 
 	struct NexusFieldProof;
@@ -27,10 +24,7 @@ public:
 
 private:
 
-	std::unique_ptr<SceneLibrary> sceneLibrary;
-	std::unique_ptr<SceneCreator> sceneCreator;
 	std::unique_ptr<ScenePipeline> scenePipeline;
-
 	std::unique_ptr<SceneContextDiplomat> diplomat;
 };
 

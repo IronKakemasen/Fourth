@@ -15,9 +15,11 @@
 #include "../LowerLayer/Resource/Texture/TextureContext.h"
 #include "../LowerLayer/Resource/Camera/CameraContext.h"
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+#include "../LowerLayer/Buffer/BufferContext.h"
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 #include "../MiddleLayer/Render/RenderContext.h"
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-#include "../LowerLayer/Buffer/BufferContext.h"
+#include "../MiddleLayer/Scene/SceneContext.h"
 
 namespace
 {
@@ -26,40 +28,10 @@ namespace
 
 using namespace ProjectConfig::Window;
 
-//Nexusクラスのインスタンスを制御するクラス
-class Nexus::InstanceLimiter
-{
-public:
-	static bool CanInstantiate();
-
-	InstanceLimiter(const InstanceLimiter&) = delete;
-	InstanceLimiter& operator=(const InstanceLimiter&) = delete;
-	InstanceLimiter(InstanceLimiter&&) = delete;
-	InstanceLimiter& operator=(InstanceLimiter&&) = delete;
-
-private:
-	int instanceCnt{};
-
-	~InstanceLimiter() = default;
-	InstanceLimiter() = default;
-};
-
-//Nexusクラスのインスタンスを1つに制限する
-bool Nexus::InstanceLimiter::CanInstantiate()
-{
-	static InstanceLimiter instanceLimiter;
-
-	return (instanceLimiter.instanceCnt++ == 0);
-}
 
 Nexus::Nexus()
 {
 	Logger::Entry("Nexus: Constructor");
-
-	//自身のインスタンス制限
-	ErrorMessageOutput::Assert::DetectError(InstanceLimiter::CanInstantiate(), "Nexusクラスが複数具現化されてます", fileName);
-
-	InitializeInSequence<InitSequence::kCoInitializeEx>();
 
 	InitializeInSequence<InitSequence::kLoadAllJsonFiles>();
 
@@ -77,6 +49,8 @@ Nexus::Nexus()
 	InitializeInSequence<InitSequence::kTextureContext>();
 	InitializeInSequence<InitSequence::kModelContext>();
 	InitializeInSequence<InitSequence::kCameraContext>();
+
+	InitializeInSequence<InitSequence::kSceneContext>();
 	InitializeInSequence<InitSequence::kRenderContext>();
 
 
@@ -101,7 +75,6 @@ Nexus::~Nexus()
 
 	FinalizeInSequence<FinalizeSequence::kCommandContext>();
 	FinalizeInSequence<FinalizeSequence::kWindowContext>();
-	FinalizeInSequence<FinalizeSequence::kCoUninitialize>();
 
 	ErrorMessageOutput::Assert::DetectError(nextFin == FinalizeSequence::kEnd, "終了処理が正常に行われていない可能性がある", fileName);
 

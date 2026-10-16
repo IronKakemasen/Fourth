@@ -1700,6 +1700,9 @@
     <ClInclude Include="Engine\LowerLayer\Resource\Model\ModelFSDispatcher\ModelFSDispatcher.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
+    <ClInclude Include="Engine\EngineInterface.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

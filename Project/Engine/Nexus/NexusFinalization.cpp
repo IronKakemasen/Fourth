@@ -23,11 +23,3 @@ void Nexus::Finalize<Nexus::FinalizeSequence::kWindowContext>()
 	agent.WindowContextFinalize(WindowContext::NexusFieldProof{});
 }
 
-template<>
-void Nexus::Finalize<Nexus::FinalizeSequence::kCoUninitialize>()
-{
-	//COMの終了
-	CoUninitialize();
-	Logger::Log("CoUninitialize", fileName);
-}
-

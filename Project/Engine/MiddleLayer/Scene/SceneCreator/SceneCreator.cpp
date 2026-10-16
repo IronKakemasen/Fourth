@@ -1,6 +1,5 @@
 #include "PreCompileHeader.h"
 #include "SceneCreator.h"
-#include "../SceneLibrary/SceneLibrary.h"
 
 
 //外部
@@ -13,16 +12,6 @@
 #include "../../../LowerLayer/Resource/Model/ModelContextDiplomat/ModelContextExecutionAgent/ModelAgentLicences.h"
 
 
-SceneContext::SceneCreator::SceneCreator(NexusFieldProof proof_, SceneLibrary& sceneLib_)
-	:sceneLib(sceneLib_)
-{
-
-}
-
-void SceneContext::SceneCreator::Import(std::unique_ptr<SceneBehavior>&& scene_, std::string const& sceneName_)
-{
-	sceneLib.Import(std::move(scene_), sceneName_);
-}
 
 
 CameraContext::CameraFrontlineSystems& SceneContext::SceneCreator::ReceiveCameraSystems(CameraContextDiplomat& cameraContextDiplomat_)

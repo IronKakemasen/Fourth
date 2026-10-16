@@ -4,6 +4,7 @@
 //外部
 #include "../../../LowerLayer/Resource/Camera/CameraContextRuntime/CameraFrontlineSystems.h"
 
+#include "../../../LowerLayer/Resource/Model/ModelContextRuntime/ModelFrontlineSystems/ModelFrontlineSystems.h"
 
 class SceneContext;
 class Model;
@@ -25,7 +26,8 @@ public:
 
 	SceneBehavior
 	(
-		CameraContext::CameraFrontlineSystems& cameraSystems_
+		CameraContext::CameraFrontlineSystems& cameraSystems_,
+		ModelContext::ModelFrontlineSystems& modelSystems_
 	);
 
 	virtual ~SceneBehavior() = default;
@@ -60,6 +62,7 @@ private:
 	void Reset();
 
 	CameraContext::CameraFrontlineSystems& cameraSystems;
+	ModelContext::ModelFrontlineSystems& modelSystems;
 
 	SceneBehavior::Output output;
 
