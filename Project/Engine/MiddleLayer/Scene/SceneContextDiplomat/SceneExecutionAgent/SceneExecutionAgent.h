@@ -27,6 +27,7 @@ public:
 	template<typename SceneType>
 	void CreateScene
 	(
+		EngineInterfaceProof proof_,
 		std::string const& sceneName_,
 		CameraContextDiplomat& cameraContextDiplomat_,
 		ModelContextDiplomat& modelContextDiplomat_

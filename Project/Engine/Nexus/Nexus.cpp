@@ -33,37 +33,8 @@ Nexus::Nexus(aFourthProof proof_)
 {
 	Logger::Entry("Nexus: Constructor");
 
-	InitializeInSequence<InitSequence::kLoadAllJsonFiles>();
-
-	InitializeInSequence<InitSequence::kDebugContext>();
-
-	InitializeInSequence<InitSequence::kDeviceContext>();
-	InitializeInSequence<InitSequence::kWindowContext>();
-	InitializeInSequence<InitSequence::kDescriptorHeapContext>();
-	InitializeInSequence<InitSequence::kCommandContext>();
-	InitializeInSequence<InitSequence::kBufferContext>();
-	InitializeInSequence<InitSequence::kSwapChainContext>();
-	InitializeInSequence<InitSequence::kShaderContext>();
-	InitializeInSequence<InitSequence::kPSO_Context>();
-	InitializeInSequence<InitSequence::kRootSignatureContext>();
-	InitializeInSequence<InitSequence::kTextureContext>();
-	InitializeInSequence<InitSequence::kModelContext>();
-	InitializeInSequence<InitSequence::kCameraContext>();
-
-	InitializeInSequence<InitSequence::kSceneContext>();
-	InitializeInSequence<InitSequence::kRenderContext>();
-
-
-	InitializeInSequence<InitSequence::kUploadAllResources>();
-	InitializeInSequence<InitSequence::kKickCommands>();
-	InitializeInSequence<InitSequence::kDeleteBufferUploaderCache>();
-	InitializeInSequence<InitSequence::kSortOutGlobalConstantBuffers>();
-	InitializeInSequence<InitSequence::kDeleteModelDataCache>();
-
+	PrimaryInit();
 	
-	ErrorMessageOutput::Assert::DetectError(nextInit == InitSequence::kEnd, "初期化が正常に行われていない可能性がある", fileName);
-
-
 	Logger::End("Nexus: Constructor");
 }
 
@@ -81,4 +52,40 @@ Nexus::~Nexus()
 	Logger::End("Nexus: Destructor");
 
 }
+
+void Nexus::PrimaryInit()
+{
+	InitializeInSequence<InitSequence::kLoadAllJsonFiles>();
+
+	InitializeInSequence<InitSequence::kDebugContext>();
+	InitializeInSequence<InitSequence::kDeviceContext>();
+	InitializeInSequence<InitSequence::kWindowContext>();
+	InitializeInSequence<InitSequence::kDescriptorHeapContext>();
+	InitializeInSequence<InitSequence::kCommandContext>();
+	InitializeInSequence<InitSequence::kBufferContext>();
+	InitializeInSequence<InitSequence::kSwapChainContext>();
+	InitializeInSequence<InitSequence::kShaderContext>();
+	InitializeInSequence<InitSequence::kPSO_Context>();
+	InitializeInSequence<InitSequence::kRootSignatureContext>();
+	InitializeInSequence<InitSequence::kTextureContext>();
+	InitializeInSequence<InitSequence::kModelContext>();
+	InitializeInSequence<InitSequence::kCameraContext>();
+	InitializeInSequence<InitSequence::kSceneContext>();
+
+}
+
+//2段階目初期化
+void Nexus::SecondaryInit(aFourthProof proof_)
+{
+	InitializeInSequence<InitSequence::kRenderContext>();
+	InitializeInSequence<InitSequence::kUploadAllResources>();
+	InitializeInSequence<InitSequence::kKickCommands>();
+	InitializeInSequence<InitSequence::kDeleteBufferUploaderCache>();
+	InitializeInSequence<InitSequence::kSortOutGlobalConstantBuffers>();
+	InitializeInSequence<InitSequence::kDeleteModelDataCache>();
+
+	ErrorMessageOutput::Assert::DetectError(nextInit == InitSequence::kEnd, "初期化が正常に行われていない可能性がある", fileName);
+
+}
+
 

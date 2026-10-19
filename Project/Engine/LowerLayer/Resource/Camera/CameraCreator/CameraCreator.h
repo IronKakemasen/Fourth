@@ -15,7 +15,7 @@ public:
 	CameraCreator(NexusFieldProof proof_);
 
 	template<CameraSocket dstSocket, typename CameraType>
-	std::unique_ptr<CameraBehavior> Create
+	std::unique_ptr<CameraType> Create
 	(
 		std::optional<CameraDesc> const& cameraDesc_
 	)

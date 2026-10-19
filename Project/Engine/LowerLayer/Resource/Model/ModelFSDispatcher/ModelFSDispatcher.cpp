@@ -23,8 +23,8 @@ ModelContext::ModelFSDispatcher::~ModelFSDispatcher()
 }
 
 
-ModelContext::ModelFrontlineSystems& ModelContext::ModelFSDispatcher::Dispatch(AgentKey key_)
+ModelContext::ModelFrontlineSystems* ModelContext::ModelFSDispatcher::Dispatch(AgentKey key_)
 {
-	return *frontlineSystems[simpleFreeList.Distribute()];
+	return frontlineSystems[simpleFreeList.Distribute()].get();
 
 }

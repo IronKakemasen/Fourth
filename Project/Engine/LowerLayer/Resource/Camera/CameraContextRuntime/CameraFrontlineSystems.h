@@ -21,14 +21,19 @@ public:
 
 	//カメラの作成
 	template<CameraSocket dstSocket,typename CameraType>
-	void CreateCamera
+	CameraType* CreateCamera
 	(
 		std::optional<CameraDesc> const& cameraDesc_,
 		std::string const& name_
 	)
 	{
-		ImportCamera(std::move(cameraCreator.Create<dstSocket, CameraType>(cameraDesc_)), name_);
+		std::unique_ptr<CameraType> cameraUnique = cameraCreator.Create<dstSocket, CameraType>(cameraDesc_);
+		CameraType* cameraPtr = cameraUnique.get();
+
+		ImportCamera(std::move(cameraUnique), name_);
 		Connect<dstSocket>(name_);
+
+		return cameraPtr;
 	}
 
 	//カメラ接続の変更するコマンドを返す

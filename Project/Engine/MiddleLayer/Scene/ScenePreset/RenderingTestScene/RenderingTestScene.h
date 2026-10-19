@@ -6,14 +6,11 @@ class RenderingTestScene : public SceneBehavior
 
 public:
 
-	RenderingTestScene
-	(
-		CameraContext::CameraFrontlineSystems& cameraSystems_,
-		ModelContext::ModelFrontlineSystems& modelSystems_
-	);
+	//パブリックで
+	RenderingTestScene(InstancingLicense license_):SceneBehavior(license_){}
 
-
-private:
+	//ここの中でモデルの生成などの処理を書く。一発しか呼びません。同じくパブリックで
+	virtual void Init()override;
 
 };
 

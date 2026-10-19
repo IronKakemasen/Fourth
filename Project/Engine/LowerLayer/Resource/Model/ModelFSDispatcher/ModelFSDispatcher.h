@@ -14,7 +14,7 @@ public:
 	~ModelFSDispatcher();
 
 
-	ModelFrontlineSystems& Dispatch(AgentKey key_);
+	ModelFrontlineSystems* Dispatch(AgentKey key_);
 
 
 private:
