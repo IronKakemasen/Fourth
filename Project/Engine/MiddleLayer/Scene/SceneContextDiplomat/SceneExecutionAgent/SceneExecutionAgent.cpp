@@ -1,6 +1,5 @@
 #include "PreCompileHeader.h"
 #include "SceneExecutionAgent.h"
-#include "../../SceneContextRuntime/ScenePipeline.h"
 
 
 SceneContext::ExecutionAgent::ExecutionAgent(NexusFieldProof proof_, ScenePipeline& scenePipeline_)

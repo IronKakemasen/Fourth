@@ -41,10 +41,12 @@ public:
 	std::unordered_map<uint64_t, std::pair<RenderStateKey, std::vector<Model*>>> const&
 		WatchModelContainerSeparatedByRenderState()const;
 
-	//シーンを作成する。
+	//シーンを作成する
+	//エンジンインターフェースの初期化で呼び出される
 	template<typename SceneType>
 	void CreateScene
 	(
+		AgentKey key_,
 		std::string const& sceneName_,
 		CameraContextDiplomat& cameraContextDiplomat_,
 		ModelContextDiplomat& modelContextDiplomat_
