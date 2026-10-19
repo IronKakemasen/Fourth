@@ -29,7 +29,7 @@ namespace
 using namespace ProjectConfig::Window;
 
 
-Nexus::Nexus()
+Nexus::Nexus(aFourthProof proof_)
 {
 	Logger::Entry("Nexus: Constructor");
 

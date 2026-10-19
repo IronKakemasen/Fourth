@@ -3,9 +3,10 @@
 
 int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 {
-    aFourth engine;
 
-    engine.Run();
+    aFourth<RenderingTestScene> engineInterface({ "nonde" });
+
+    engineInterface.Run();
 
     return 0;
 }

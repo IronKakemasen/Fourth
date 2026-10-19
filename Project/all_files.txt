@@ -1,35 +1,52 @@
 ========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\EngineInstanceLimiter.h ===
+========================================
+#pragma once
+template<typename... SceneTypes>
+class aFourth;
+//インスタンスを1つに制限するための
+class EngineInstanceLimiter
+{
+	template<typename... SceneTypes>
+	friend class aFourth;
+	static void CanInstantiate()
+	{
+		static EngineInstanceLimiter instanceLimiter;
+		ErrorMessageOutput::Assert::DetectError
+		(
+			instanceLimiter.instanceCnt++ == 0,
+			"クラスaFourthは一つしかインスタンス化できません",
+			"aFourth.h"
+		);
+	}
+	EngineInstanceLimiter(const EngineInstanceLimiter&) = delete;
+	EngineInstanceLimiter& operator=(const EngineInstanceLimiter&) = delete;
+	EngineInstanceLimiter(EngineInstanceLimiter&&) = delete;
+	EngineInstanceLimiter& operator=(EngineInstanceLimiter&&) = delete;
+	~EngineInstanceLimiter() = default;
+	EngineInstanceLimiter() = default;
+	int instanceCnt{};
+};
+
+========================================
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\EngineInterface.h ===
 ========================================
 #pragma once
+#include "EngineInstanceLimiter.h"
 #include "../Nexus/Nexus.h"
+//シーン作成のために必要
+#include "MiddleLayer/Scene/ScenePresetIncludes.h"
+#include "MiddleLayer/Scene/SceneContextDiplomat/SceneContextDiplomat.h"
+#include "MiddleLayer/Scene/SceneContextDiplomat/SceneExecutionAgent/SceneExecutionAgent.h"
+#include "MiddleLayer/Scene/SceneContextDiplomat/SceneExecutionAgent/SceneExecutionAgentLicences.h"
 template<typename... SceneTypes>
 class aFourth
 {
-	//インスタンスを1つに制限するための
-	class InstanceLimiter
-	{
-	public:
-		static void CanInstantiate()
-		{
-			static InstanceLimiter instanceLimiter;
-			ErrorMessageOutput::Assert::DetectError
-			(
-				instanceLimiter.instanceCnt++ == 0,
-				"クラスaFourthは一つしかインスタンス化できません",
-				"aFourth.h"
-			);
-		}
-		InstanceLimiter(const InstanceLimiter&) = delete;
-		InstanceLimiter& operator=(const InstanceLimiter&) = delete;
-		InstanceLimiter(InstanceLimiter&&) = delete;
-		InstanceLimiter& operator=(InstanceLimiter&&) = delete;
-	private:
-		int instanceCnt{};
-		~InstanceLimiter() = default;
-		InstanceLimiter() = default;
-	};
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 public:
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	void Run()
 	{
 		MSG msg = {};
@@ -51,16 +68,25 @@ public:
 			}
 		}
 	}
-	aFourth()
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+	aFourth(std::vector<std::string> const& correspondedSceneNames_)
 	{
 		//自身のインスタンス制限
-		InstanceLimiter::CanInstantiate();
+		EngineInstanceLimiter::CanInstantiate();
 		//COMの初期化
 		HRESULT hr = CoInitializeEx(0, COINITBASE_MULTITHREADED);
 		ErrorMessageOutput::Abort::DetectError(SUCCEEDED(hr), "CoInitializeEx()でエラー", "aFourth.h");
 		Logger::Log("CoInitializeEx", "aFourth.h");
-		nexus = std::make_unique<Nexus>();
+		//ネクサスのインスタンス化
+		nexus = std::make_unique<Nexus>(Nexus::aFourthProof{});
+		//main.cppで指定されたシーンをインスタンス化する
+		InstantiateScene(correspondedSceneNames_);
 	}
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	~aFourth() 
 	{
 		Logger::Entry("aFourth: Destructor");
@@ -70,7 +96,45 @@ public:
 		Logger::Log("CoUninitialize", "aFourth.h");
 		Logger::End("aFourth: Destructor");
 	};
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 private:
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+		void InstantiateScene(std::vector<std::string> const& correspondedSceneNames_)
+		{
+			auto aFourthProof = Nexus::aFourthProof{};
+			auto& sceneContext	= nexus->AccessContext<SceneContext>(aFourthProof);
+			auto& cameraContext = nexus->AccessContext<CameraContext>(aFourthProof);
+			auto& modelContext	= nexus->AccessContext<ModelContext>(aFourthProof);
+			//シーンコンテキストのエージェントがシーン作成関数を呼び出す
+			auto& agent = sceneContext.AccessDiplomat().Access<SceneContext::ExecutionAgent>();
+			//シーンの数とシーンネームの数が一致しているかチェック
+			auto const numScenes = sizeof...(SceneTypes);
+			ErrorMessageOutput::Assert::DetectError
+			(
+				numScenes == correspondedSceneNames_.size(),
+				"シーンの数と、シーン名の数が合わへん",
+				"EngineInterface.h"
+			);
+			//シーン作成
+			size_t cnt{};
+			(
+				agent.template CreateScene<SceneTypes>
+				(
+					correspondedSceneNames_[cnt++],
+					cameraContext.AccessDiplomat(),
+					modelContext.AccessDiplomat()
+				), 
+				...
+			);
+		}
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	std::unique_ptr<Nexus> nexus;
 };
 
@@ -9546,7 +9610,7 @@ public:
 		BufferContextDiplomat& bufferContextDiplomat_
 	);
 	~CameraContext();
-	auto& AccessDiplomat() { return diplomat; }
+	auto& AccessDiplomat() { return *diplomat; }
 private:
 	std::unique_ptr<FrontlineSystemsDispatcher> frontlineSystemsDispatcher;
 	std::unique_ptr<CameraDataBatcher> cameraDataBatcher;
@@ -21115,7 +21179,7 @@ public:
 	struct AgentKey;
 	SceneContext(NexusFieldProof proof_);
 	~SceneContext();
-	auto& AccessDiplomat() { return diplomat; }
+	auto& AccessDiplomat() { return *diplomat; }
 private:
 	std::unique_ptr<ScenePipeline> scenePipeline;
 	std::unique_ptr<SceneContextDiplomat> diplomat;
@@ -21132,6 +21196,12 @@ private:
 	friend class ExecutionAgent;
 	explicit AgentKey() = default;
 };
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\MiddleLayer\Scene\ScenePresetIncludes.h ===
+========================================
+#pragma once
+#include "ScenePreset/RenderingTestScene/RenderingTestScene.h"
 
 ========================================
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\MiddleLayer\Scene\SceneContextDiplomat\SceneContextDiplomat.cpp ===
@@ -21175,7 +21245,6 @@ private:
 ========================================
 #include "PreCompileHeader.h"
 #include "SceneExecutionAgent.h"
-#include "../../SceneContextRuntime/ScenePipeline.h"
 SceneContext::ExecutionAgent::ExecutionAgent(NexusFieldProof proof_, ScenePipeline& scenePipeline_)
 	:scenePipeline(scenePipeline_)
 {
@@ -21204,13 +21273,14 @@ void SceneContext::ExecutionAgent::RunScenePipeline
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\MiddleLayer\Scene\SceneContextDiplomat\SceneExecutionAgent\SceneExecutionAgent.h ===
 ========================================
 #pragma once
-#include "../../SceneContext.h"
+#include "../../SceneContextRuntime/ScenePipeline.h"
 class ModelContextDiplomat;
 class CameraContextDiplomat;
 class BufferContextDiplomat;
 class SceneContext::ExecutionAgent
 {
 public:
+	struct EngineInterfaceProof;
 	ExecutionAgent(NexusFieldProof proof_, ScenePipeline& scenePipeline_);
 	void RunScenePipeline
 	(
@@ -21220,6 +21290,22 @@ public:
 		CameraContextDiplomat& cameraContextDiplomat_,
 		BufferContextDiplomat& bufferContextDiplomat_
 	);
+	template<typename SceneType>
+	void CreateScene
+	(
+		std::string const& sceneName_,
+		CameraContextDiplomat& cameraContextDiplomat_,
+		ModelContextDiplomat& modelContextDiplomat_
+	)
+	{
+		scenePipeline.CreateScene<SceneType>
+		(
+			AgentKey{},
+			sceneName_,
+			cameraContextDiplomat_,
+			modelContextDiplomat_
+		);
+	}
 private:
 	ScenePipeline& scenePipeline;
 };
@@ -21229,6 +21315,15 @@ private:
 ========================================
 #pragma once
 #include "SceneExecutionAgent.h"
+template<typename... SceneTypes>
+class aFourth;
+struct SceneContext::ExecutionAgent::EngineInterfaceProof
+{
+private:
+	template<typename... SceneTypes>
+	friend class aFourth;
+	explicit EngineInterfaceProof() = default;
+};
 
 ========================================
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\MiddleLayer\Scene\SceneContextRuntime\ScenePipeline.cpp ===
@@ -21317,10 +21412,12 @@ public:
 	//稼働中シーンのレンダーステート別に仕分けられたモデルコンテナを見る
 	std::unordered_map<uint64_t, std::pair<RenderStateKey, std::vector<Model*>>> const&
 		WatchModelContainerSeparatedByRenderState()const;
-	//シーンを作成する。
+	//シーンを作成する
+	//エンジンインターフェースの初期化で呼び出される
 	template<typename SceneType>
 	void CreateScene
 	(
+		AgentKey key_,
 		std::string const& sceneName_,
 		CameraContextDiplomat& cameraContextDiplomat_,
 		ModelContextDiplomat& modelContextDiplomat_
@@ -21560,6 +21657,35 @@ private:
 };
 
 ========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\MiddleLayer\Scene\ScenePreset\RenderingTestScene\RenderingTestScene.cpp ===
+========================================
+#include "PreCompileHeader.h"
+#include "RenderingTestScene.h"
+RenderingTestScene::RenderingTestScene
+(
+	CameraContext::CameraFrontlineSystems& cameraSystems_,
+	ModelContext::ModelFrontlineSystems& modelSystems_
+): SceneBehavior(cameraSystems_, modelSystems_)
+{
+}
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\MiddleLayer\Scene\ScenePreset\RenderingTestScene\RenderingTestScene.h ===
+========================================
+#pragma once
+#include "../../SceneStructure/SceneBehavior.h"
+class RenderingTestScene : public SceneBehavior
+{
+public:
+	RenderingTestScene
+	(
+		CameraContext::CameraFrontlineSystems& cameraSystems_,
+		ModelContext::ModelFrontlineSystems& modelSystems_
+	);
+private:
+};
+
+========================================
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\MiddleLayer\Scene\SceneStructure\SceneBehavior.cpp ===
 ========================================
 #include "PreCompileHeader.h"
@@ -21671,7 +21797,7 @@ namespace
 	std::string const fileName = "Nexus.cpp";
 }
 using namespace ProjectConfig::Window;
-Nexus::Nexus()
+Nexus::Nexus(aFourthProof proof_)
 {
 	Logger::Entry("Nexus: Constructor");
 	InitializeInSequence<InitSequence::kLoadAllJsonFiles>();
@@ -21749,6 +21875,8 @@ class Nexus
 		kModelContext,
 		kCameraContext,
 		kSceneContext,
+		//ここまではコンストラクタ
+		//ここまでに、全シーンの全モデルが作成されていなければいけない
 		kRenderContext,
 		kUploadAllResources,
 		kKickCommands,
@@ -21765,14 +21893,26 @@ class Nexus
 		,kEnd
 	}nextFin = FinalizeSequence(0);
 public:
+	//エンジンクラスしかインスタンス化はさせません
 	struct aFourthProof;
 	~Nexus();
-	Nexus();
+	Nexus(aFourthProof proof_);
 	Nexus(const Nexus&) = delete;
 	Nexus& operator=(const Nexus&) = delete;
 	Nexus(Nexus&&) = delete;
 	Nexus& operator=(Nexus&&) = delete;
+	//更新処理
 	void Run();
+	//2段階初期化用
+	void SecondaryInit();
+	//エンジンインターフェースがシーンのインスタンス化メソッドを定義するために必要
+	template<typename ContextType>
+	auto& AccessContext(aFourthProof const& proof_)
+	{
+		if		constexpr (std::is_same_v<ContextType, ModelContext>)	return *modelContext;
+		else if constexpr (std::is_same_v<ContextType, CameraContext>)	return *cameraContext;
+		else if constexpr (std::is_same_v<ContextType, SceneContext>)	return *sceneContext;
+	}
 private:
 	//デバッガー。DebugLayer, PointerValidator, LeakChecker
 	std::unique_ptr<DebugContext> debugContext;
@@ -23011,5 +23151,5 @@ namespace StringProcessing
 ========================================
 === SUMMARY ===
 ========================================
-Total Files      : 516
-Effective Lines  : 16719
+Total Files      : 520
+Effective Lines  : 16799

@@ -430,6 +430,7 @@
     <ClCompile Include="Engine\MiddleLayer\Scene\SceneContextRuntime\ScenePipeline.cpp" />
     <ClCompile Include="Engine\LowerLayer\Resource\Model\ModelContextRuntime\ModelFrontlineSystems\ModelFrontlineSystems.cpp" />
     <ClCompile Include="Engine\LowerLayer\Resource\Model\ModelFSDispatcher\ModelFSDispatcher.cpp" />
+    <ClCompile Include="Engine\MiddleLayer\Scene\ScenePreset\RenderingTestScene\RenderingTestScene.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Application\AllCameraIncludes.h" />
@@ -441,6 +442,7 @@
     <ClInclude Include="Assets\Shared\StructuredBufferModelData.h" />
     <ClInclude Include="Application\AllGameObjectIncludes.h" />
     <ClInclude Include="Application\AllSceneIncludes.h" />
+    <ClInclude Include="Engine\EngineInstanceLimiter.h" />
     <ClInclude Include="Engine\EngineInterface.h" />
     <ClInclude Include="Engine\LowerLayer\Resource\Camera\CameraCreator\CameraCreator.h" />
     <ClInclude Include="Engine\LowerLayer\Core\Command\CommandContextBuilder\CommandContextBuilder.h" />
@@ -752,6 +754,8 @@
     <ClInclude Include="Engine\MiddleLayer\Scene\SceneContextRuntime\ScenePipeline.h" />
     <ClInclude Include="Engine\LowerLayer\Resource\Model\ModelContextRuntime\ModelFrontlineSystems\ModelFrontlineSystems.h" />
     <ClInclude Include="Engine\LowerLayer\Resource\Model\ModelFSDispatcher\ModelFSDispatcher.h" />
+    <ClInclude Include="Engine\MiddleLayer\Scene\ScenePreset\RenderingTestScene\RenderingTestScene.h" />
+    <ClInclude Include="Engine\MiddleLayer\Scene\ScenePresetIncludes.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

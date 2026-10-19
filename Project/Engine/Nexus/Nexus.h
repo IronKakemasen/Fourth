@@ -42,8 +42,11 @@ class Nexus
 		kModelContext,
 		kCameraContext,
 		kSceneContext,
-		kRenderContext,
+		//ここまではコンストラクタ
 
+
+		//ここまでに、全シーンの全モデルが作成されていなければいけない
+		kRenderContext,
 
 		kUploadAllResources,
 		kKickCommands,
@@ -66,17 +69,32 @@ class Nexus
 
 public:
 
+	//エンジンクラスしかインスタンス化はさせません
 	struct aFourthProof;
 
 	~Nexus();
-	Nexus();
+	Nexus(aFourthProof proof_);
 
 	Nexus(const Nexus&) = delete;
 	Nexus& operator=(const Nexus&) = delete;
 	Nexus(Nexus&&) = delete;
 	Nexus& operator=(Nexus&&) = delete;
 
+	//更新処理
 	void Run();
+
+	//2段階初期化用
+	void SecondaryInit();
+
+	//エンジンインターフェースがシーンのインスタンス化メソッドを定義するために必要
+	template<typename ContextType>
+	auto& AccessContext(aFourthProof const& proof_)
+	{
+		if		constexpr (std::is_same_v<ContextType, ModelContext>)	return *modelContext;
+		else if constexpr (std::is_same_v<ContextType, CameraContext>)	return *cameraContext;
+		else if constexpr (std::is_same_v<ContextType, SceneContext>)	return *sceneContext;
+
+	}
 
 private:
 

@@ -33,7 +33,7 @@ public:
 
 	~CameraContext();
 
-	auto& AccessDiplomat() { return diplomat; }
+	auto& AccessDiplomat() { return *diplomat; }
 
 private:
 

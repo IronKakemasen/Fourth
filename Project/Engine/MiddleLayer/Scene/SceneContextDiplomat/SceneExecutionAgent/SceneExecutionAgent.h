@@ -1,5 +1,5 @@
 #pragma once
-#include "../../SceneContext.h"
+#include "../../SceneContextRuntime/ScenePipeline.h"
 
 
 class ModelContextDiplomat;
@@ -11,6 +11,8 @@ class SceneContext::ExecutionAgent
 
 public:
 
+	struct EngineInterfaceProof;
+
 	ExecutionAgent(NexusFieldProof proof_, ScenePipeline& scenePipeline_);
 
 	void RunScenePipeline
@@ -21,6 +23,23 @@ public:
 		CameraContextDiplomat& cameraContextDiplomat_,
 		BufferContextDiplomat& bufferContextDiplomat_
 	);
+
+	template<typename SceneType>
+	void CreateScene
+	(
+		std::string const& sceneName_,
+		CameraContextDiplomat& cameraContextDiplomat_,
+		ModelContextDiplomat& modelContextDiplomat_
+	)
+	{
+		scenePipeline.CreateScene<SceneType>
+		(
+			AgentKey{},
+			sceneName_,
+			cameraContextDiplomat_,
+			modelContextDiplomat_
+		);
+	}
 
 
 

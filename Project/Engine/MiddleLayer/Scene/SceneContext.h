@@ -20,7 +20,7 @@ public:
 	SceneContext(NexusFieldProof proof_);
 	~SceneContext();
 
-	auto& AccessDiplomat() { return diplomat; }
+	auto& AccessDiplomat() { return *diplomat; }
 
 private:
 
