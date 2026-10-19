@@ -4,7 +4,7 @@
 int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 {
 
-    aFourth<RenderingTestScene> engineInterface({ "nonde" });
+    aFourth<RenderingTestScene> engineInterface({ "renderingTestScene" });
 
     engineInterface.Run();
 

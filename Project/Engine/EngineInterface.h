@@ -1,7 +1,9 @@
 #pragma once
 #include "EngineInstanceLimiter.h"
-#include "../Nexus/Nexus.h"
 
+
+//外部
+#include "../Nexus/Nexus.h"
 
 //シーン作成のために必要
 #include "MiddleLayer/Scene/ScenePresetIncludes.h"
@@ -23,6 +25,7 @@ public:
 	void Run()
 	{
 		MSG msg = {};
+		Nexus::aFourthProof proof;
 
 		while (true)
 		{
@@ -38,7 +41,7 @@ public:
 			}
 			else
 			{
-				nexus->Run();
+				nexus->Run(proof);
 			}
 		}
 	}
@@ -47,6 +50,8 @@ public:
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	aFourth(std::vector<std::string> const& correspondedSceneNames_)
 	{
+		Logger::Entry("aFourth: Constructor");
+
 		//自身のインスタンス制限
 		EngineInstanceLimiter::CanInstantiate();
 
@@ -61,7 +66,9 @@ public:
 		//main.cppで指定されたシーンをインスタンス化する
 		InstantiateScene(correspondedSceneNames_);
 
+		nexus->SecondaryInit(Nexus::aFourthProof{});
 		
+		Logger::End("aFourth: Constructor");
 	}
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -93,44 +100,43 @@ private:
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-		void InstantiateScene(std::vector<std::string> const& correspondedSceneNames_)
-		{
-			auto aFourthProof = Nexus::aFourthProof{};
+	void InstantiateScene(std::vector<std::string> const& correspondedSceneNames_)
+	{
+		auto aFourthProof = Nexus::aFourthProof{};
 
-			auto& sceneContext	= nexus->AccessContext<SceneContext>(aFourthProof);
-			auto& cameraContext = nexus->AccessContext<CameraContext>(aFourthProof);
-			auto& modelContext	= nexus->AccessContext<ModelContext>(aFourthProof);
+		auto& sceneContext	= nexus->AccessContext<SceneContext>(aFourthProof);
+		auto& cameraContext = nexus->AccessContext<CameraContext>(aFourthProof);
+		auto& modelContext	= nexus->AccessContext<ModelContext>(aFourthProof);
 
-			//シーンコンテキストのエージェントがシーン作成関数を呼び出す
-			auto& agent = sceneContext.AccessDiplomat().Access<SceneContext::ExecutionAgent>();
+		//シーンコンテキストのエージェントがシーン作成関数を呼び出す
+		auto& agent = sceneContext.AccessDiplomat().Access<SceneContext::ExecutionAgent>();
 
 
-			//シーンの数とシーンネームの数が一致しているかチェック
-			auto const numScenes = sizeof...(SceneTypes);
-			ErrorMessageOutput::Assert::DetectError
+		//シーンの数とシーンネームの数が一致しているかチェック
+		auto const numScenes = sizeof...(SceneTypes);
+		ErrorMessageOutput::Assert::DetectError
+		(
+			numScenes == correspondedSceneNames_.size(),
+			"シーンの数と、シーン名の数が合わへん",
+			"EngineInterface.h"
+		);
+
+
+		//シーン作成
+		size_t cnt{};
+
+		(
+			agent.template CreateScene<SceneTypes>
 			(
-				numScenes == correspondedSceneNames_.size(),
-				"シーンの数と、シーン名の数が合わへん",
-				"EngineInterface.h"
-			);
-
-
-			//シーン作成
-			size_t cnt{};
-
-			(
-				agent.template CreateScene<SceneTypes>
-				(
-					correspondedSceneNames_[cnt++],
-					cameraContext.AccessDiplomat(),
-					modelContext.AccessDiplomat()
-				), 
-				...
-			);
+				SceneContext::ExecutionAgent::EngineInterfaceProof{},
+				correspondedSceneNames_[cnt++],
+				cameraContext.AccessDiplomat(),
+				modelContext.AccessDiplomat()
+			), 
+			...
+		);
 		
-		}
-
-	
+	}
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////

@@ -19,7 +19,7 @@ public:
 		std::vector<RenderState> const& modelRenderStates_,
 		std::vector<StructuredBufferModelData::MaterialCPU> const& materials_,
 		UINT const numCreate_,
-		std::string const& modelName_ = "nameLess"
+		std::string const& modelName_
 	)
 	{
 		return AddModel

@@ -20,7 +20,7 @@ public:
 	);
 
 	//シーンにカメラのシステムを渡す
-	CameraFrontlineSystems& DispatchFrontlineSystems(SceneContextProof proof_);
+	CameraFrontlineSystems* DispatchFrontlineSystems(SceneContextProof proof_);
 
 	//カメラデータのバッチングを行う
 	void BatchCameraData

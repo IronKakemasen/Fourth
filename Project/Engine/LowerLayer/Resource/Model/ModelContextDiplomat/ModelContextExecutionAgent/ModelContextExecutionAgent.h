@@ -35,7 +35,7 @@ public:
 	std::vector<RenderState> const& WatchRenderStateCache(RenderContextProof proof_)const;
 
 	//シーンにModelFrontlineSystemsを割り当てる
-	ModelFrontlineSystems& DispatchFrontSystems(SceneContextProof proof_);
+	ModelFrontlineSystems* DispatchFrontSystems(SceneContextProof proof_);
 
 private:
 

@@ -8,7 +8,7 @@
 #include "../LowerLayer/Core/Command/RuntimeCommandController/RuntimeCommandController.h"
 
 
-void Nexus::Run()
+void Nexus::Run(aFourthProof proof_)
 {
 	//SwapChainContextの代行クラス
 	auto& s_ExecutionAgent = swapChainContext->AccessDiplomat().Access<SwapChainContext::ExecutionAgent>();

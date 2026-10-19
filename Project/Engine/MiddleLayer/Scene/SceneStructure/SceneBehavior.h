@@ -12,6 +12,7 @@ struct CameraDesc;
 
 class SceneBehavior
 {
+	//おおざっぱだが必要な情報のみ開示したいのでフレンド登録
 	friend class SceneContext;
 
 	//このシーンで使用しているカメラ、モデル、ライトなどの情報
@@ -22,49 +23,92 @@ class SceneBehavior
 
 	};
 
-public:
-
-	SceneBehavior
-	(
-		CameraContext::CameraFrontlineSystems& cameraSystems_,
-		ModelContext::ModelFrontlineSystems& modelSystems_
-	);
-
-	virtual ~SceneBehavior() = default;
-
-	Output const& WatchSceneOutput()const;
-
 protected:
+
+	//そこいらでインスタンス化させないため
+	struct InstancingLicense;
 
 	//カメラの作成＆登録
 	template<CameraSocket dstSocket, typename CameraType>
-	void CreateCamera
+	[[nodiscard]] CameraType* CreateCamera
 	(
 		std::optional<CameraDesc> const& cameraDesc_,
 		std::string const& name_
 	)
 	{
-		cameraSystems.CreateCamera<dstSocket, CameraType>(cameraDesc_,name_);
+		return cameraSystems->CreateCamera<dstSocket, CameraType>(cameraDesc_,name_);
 	}
 
 	//ゲームオブジェクトが好きなタイミングでカメラを切り替えられるように
 	//カメラ切り替えコマンドを返す。
 	template<CameraSocket dstSocket>
-	CameraContext::CameraFrontlineSystems::CmdConnectCamera<dstSocket> GetCmdConnectCamera()
+	[[nodiscard]] CameraContext::CameraFrontlineSystems::CmdConnectCamera<dstSocket> GetCmdConnectCamera()
 	{
-		return cameraSystems.GetCmdConnectCamera<dstSocket>();
+		return cameraSystems->GetCmdConnectCamera<dstSocket>();
 	}
+
+	//モデル作成し、そのポインタを返す
+	template<Model::Type modelType>
+	[[nodiscard]] std::vector<Model*> CreateModel
+	(
+		std::string const& modelFileName_,
+		std::vector<RenderState> const& modelRenderStates_,
+		std::vector<StructuredBufferModelData::MaterialCPU> const& materials_,
+		UINT const numCreate_,
+		std::string const& modelName_ = "nameLess"
+	)
+	{
+		return modelSystems->CreateModel<modelType>
+		(
+			modelFileName_,
+			modelRenderStates_,
+			materials_,
+			numCreate_,
+			modelName_
+		);			
+	}
+
+public:
+
+	SceneBehavior(InstancingLicense const& license_) {};
+	virtual ~SceneBehavior() = default;
 
 private:
 
+
+	//ここの中でモデルの生成などの処理を書く。一発しか呼びません。
+	virtual void Init() = 0;
+
 	//SceneContext::SceneControllerのみ呼べる
 	void Update();
-	void Reset();
 
-	CameraContext::CameraFrontlineSystems& cameraSystems;
-	ModelContext::ModelFrontlineSystems& modelSystems;
+	//シーンクリエイターがインスタンス化後に呼び出す
+	void SetSystems
+	(
+		CameraContext::CameraFrontlineSystems* cameraSystems_,
+		ModelContext::ModelFrontlineSystems* modelSystems_
+	);
 
+	//シーンクリエイターがプリセットカメラを備え付ける
+	void CreatePresetCamera();
+
+	//シーンのコンストラクタで終わった後に一括で一度だけ呼ばれる
+	void SeparateModels();
+
+	//SceneControllerにこのシーンで使われているリソース伝えるため
+	Output const& WatchSceneOutput()const;
+
+	CameraContext::CameraFrontlineSystems* cameraSystems = nullptr;
+	ModelContext::ModelFrontlineSystems* modelSystems = nullptr;
 	SceneBehavior::Output output;
 
 };
 
+
+struct SceneBehavior::InstancingLicense
+{
+
+private:
+	friend class SceneContext;
+	explicit InstancingLicense() = default;
+};

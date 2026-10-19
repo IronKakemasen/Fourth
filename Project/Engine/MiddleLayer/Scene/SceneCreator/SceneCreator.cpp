@@ -14,7 +14,7 @@
 
 
 
-CameraContext::CameraFrontlineSystems& SceneContext::SceneCreator::ReceiveCameraSystems(CameraContextDiplomat& cameraContextDiplomat_)
+CameraContext::CameraFrontlineSystems* SceneContext::SceneCreator::ReceiveCameraSystems(CameraContextDiplomat& cameraContextDiplomat_)
 {
 	//CameraFrontlineSystemsを一つ渡してもらう
 	auto agent = cameraContextDiplomat_.Access<CameraContext::ExecutionAgent>();
@@ -22,7 +22,7 @@ CameraContext::CameraFrontlineSystems& SceneContext::SceneCreator::ReceiveCamera
 	return agent.DispatchFrontlineSystems(CameraContext::ExecutionAgent::SceneContextProof{});
 }
 
-ModelContext::ModelFrontlineSystems& SceneContext::SceneCreator::ReceiveModelSystems(ModelContextDiplomat& modelContextDiplomat_)
+ModelContext::ModelFrontlineSystems* SceneContext::SceneCreator::ReceiveModelSystems(ModelContextDiplomat& modelContextDiplomat_)
 {
 	//ModelFrontlineSystemsを一つ渡してもらう
 	auto agent = modelContextDiplomat_.Access<ModelContext::ExecutionAgent>();

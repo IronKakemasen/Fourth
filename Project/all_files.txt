@@ -33,6 +33,7 @@ class EngineInstanceLimiter
 ========================================
 #pragma once
 #include "EngineInstanceLimiter.h"
+//外部
 #include "../Nexus/Nexus.h"
 //シーン作成のために必要
 #include "MiddleLayer/Scene/ScenePresetIncludes.h"
@@ -50,6 +51,7 @@ public:
 	void Run()
 	{
 		MSG msg = {};
+		Nexus::aFourthProof proof;
 		while (true)
 		{
 			//Windowにメッセージが来てたら最優先で処理させる
@@ -64,7 +66,7 @@ public:
 			}
 			else
 			{
-				nexus->Run();
+				nexus->Run(proof);
 			}
 		}
 	}
@@ -73,6 +75,7 @@ public:
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	aFourth(std::vector<std::string> const& correspondedSceneNames_)
 	{
+		Logger::Entry("aFourth: Constructor");
 		//自身のインスタンス制限
 		EngineInstanceLimiter::CanInstantiate();
 		//COMの初期化
@@ -83,6 +86,8 @@ public:
 		nexus = std::make_unique<Nexus>(Nexus::aFourthProof{});
 		//main.cppで指定されたシーンをインスタンス化する
 		InstantiateScene(correspondedSceneNames_);
+		nexus->SecondaryInit(Nexus::aFourthProof{});
+		Logger::End("aFourth: Constructor");
 	}
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -104,34 +109,35 @@ private:
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-		void InstantiateScene(std::vector<std::string> const& correspondedSceneNames_)
-		{
-			auto aFourthProof = Nexus::aFourthProof{};
-			auto& sceneContext	= nexus->AccessContext<SceneContext>(aFourthProof);
-			auto& cameraContext = nexus->AccessContext<CameraContext>(aFourthProof);
-			auto& modelContext	= nexus->AccessContext<ModelContext>(aFourthProof);
-			//シーンコンテキストのエージェントがシーン作成関数を呼び出す
-			auto& agent = sceneContext.AccessDiplomat().Access<SceneContext::ExecutionAgent>();
-			//シーンの数とシーンネームの数が一致しているかチェック
-			auto const numScenes = sizeof...(SceneTypes);
-			ErrorMessageOutput::Assert::DetectError
+	void InstantiateScene(std::vector<std::string> const& correspondedSceneNames_)
+	{
+		auto aFourthProof = Nexus::aFourthProof{};
+		auto& sceneContext	= nexus->AccessContext<SceneContext>(aFourthProof);
+		auto& cameraContext = nexus->AccessContext<CameraContext>(aFourthProof);
+		auto& modelContext	= nexus->AccessContext<ModelContext>(aFourthProof);
+		//シーンコンテキストのエージェントがシーン作成関数を呼び出す
+		auto& agent = sceneContext.AccessDiplomat().Access<SceneContext::ExecutionAgent>();
+		//シーンの数とシーンネームの数が一致しているかチェック
+		auto const numScenes = sizeof...(SceneTypes);
+		ErrorMessageOutput::Assert::DetectError
+		(
+			numScenes == correspondedSceneNames_.size(),
+			"シーンの数と、シーン名の数が合わへん",
+			"EngineInterface.h"
+		);
+		//シーン作成
+		size_t cnt{};
+		(
+			agent.template CreateScene<SceneTypes>
 			(
-				numScenes == correspondedSceneNames_.size(),
-				"シーンの数と、シーン名の数が合わへん",
-				"EngineInterface.h"
-			);
-			//シーン作成
-			size_t cnt{};
-			(
-				agent.template CreateScene<SceneTypes>
-				(
-					correspondedSceneNames_[cnt++],
-					cameraContext.AccessDiplomat(),
-					modelContext.AccessDiplomat()
-				), 
-				...
-			);
-		}
+				SceneContext::ExecutionAgent::EngineInterfaceProof{},
+				correspondedSceneNames_[cnt++],
+				cameraContext.AccessDiplomat(),
+				modelContext.AccessDiplomat()
+			), 
+			...
+		);
+	}
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -9774,7 +9780,7 @@ CameraContext::ExecutionAgent::ExecutionAgent
 ):cameraDataBatcher(cameraDataBatcher_),frontlineSystemsDispatcher(frontlineSystemsDispatcher_)
 {
 }
-CameraContext::CameraFrontlineSystems& CameraContext::ExecutionAgent::DispatchFrontlineSystems(SceneContextProof proof_)
+CameraContext::CameraFrontlineSystems* CameraContext::ExecutionAgent::DispatchFrontlineSystems(SceneContextProof proof_)
 {
 	return frontlineSystemsDispatcher.Dispatch(AgentKey{});
 }
@@ -9807,7 +9813,7 @@ public:
 		CameraDataBatcher& cameraDataBatcher_
 	);
 	//シーンにカメラのシステムを渡す
-	CameraFrontlineSystems& DispatchFrontlineSystems(SceneContextProof proof_);
+	CameraFrontlineSystems* DispatchFrontlineSystems(SceneContextProof proof_);
 	//カメラデータのバッチングを行う
 	void BatchCameraData
 	(
@@ -9882,14 +9888,17 @@ public:
 	~CameraFrontlineSystems();
 	//カメラの作成
 	template<CameraSocket dstSocket,typename CameraType>
-	void CreateCamera
+	CameraType* CreateCamera
 	(
 		std::optional<CameraDesc> const& cameraDesc_,
 		std::string const& name_
 	)
 	{
-		ImportCamera(std::move(cameraCreator.Create<dstSocket, CameraType>(cameraDesc_)), name_);
+		std::unique_ptr<CameraType> cameraUnique = cameraCreator.Create<dstSocket, CameraType>(cameraDesc_);
+		CameraType* cameraPtr = cameraUnique.get();
+		ImportCamera(std::move(cameraUnique), name_);
 		Connect<dstSocket>(name_);
+		return cameraPtr;
 	}
 	//カメラ接続の変更するコマンドを返す
 	template<CameraSocket dstSocket_>
@@ -10125,7 +10134,7 @@ class CameraContext::CameraCreator
 public:
 	CameraCreator(NexusFieldProof proof_);
 	template<CameraSocket dstSocket, typename CameraType>
-	std::unique_ptr<CameraBehavior> Create
+	std::unique_ptr<CameraType> Create
 	(
 		std::optional<CameraDesc> const& cameraDesc_
 	)
@@ -10162,9 +10171,9 @@ CameraContext::FrontlineSystemsDispatcher::FrontlineSystemsDispatcher(NexusField
 CameraContext::FrontlineSystemsDispatcher::~FrontlineSystemsDispatcher()
 {
 }
-CameraContext::CameraFrontlineSystems& CameraContext::FrontlineSystemsDispatcher::Dispatch(AgentKey key_)
+CameraContext::CameraFrontlineSystems* CameraContext::FrontlineSystemsDispatcher::Dispatch(AgentKey key_)
 {
-	return *cameraFrontlineSystemsContainer[simpleFreeList.Distribute()];
+	return cameraFrontlineSystemsContainer[simpleFreeList.Distribute()].get();
 }
 
 ========================================
@@ -10178,7 +10187,7 @@ class CameraContext::FrontlineSystemsDispatcher
 public:
 	FrontlineSystemsDispatcher(NexusFieldProof proof_ ,CameraCreator& cameraCreator_);
 	~FrontlineSystemsDispatcher();
-	CameraFrontlineSystems& Dispatch(AgentKey key_);
+	CameraFrontlineSystems* Dispatch(AgentKey key_);
 private:
 	std::vector<std::unique_ptr<CameraFrontlineSystems>> cameraFrontlineSystemsContainer;
 	SimpleFreeList simpleFreeList;
@@ -12662,7 +12671,7 @@ std::vector<RenderState> const& ModelContext::ExecutionAgent::WatchRenderStateCa
 {
 	return modelCreator.WatchRenderStateCache(AgentKey{});
 }
-ModelContext::ModelFrontlineSystems& ModelContext::ExecutionAgent::DispatchFrontSystems(SceneContextProof proof_)
+ModelContext::ModelFrontlineSystems* ModelContext::ExecutionAgent::DispatchFrontSystems(SceneContextProof proof_)
 {
 	return modelFSDispatcher.Dispatch(AgentKey{});
 }
@@ -12699,7 +12708,7 @@ public:
 	//モデルクリエイターの所持する全レンダーステートパターンのキャッシュを見せる
 	std::vector<RenderState> const& WatchRenderStateCache(RenderContextProof proof_)const;
 	//シーンにModelFrontlineSystemsを割り当てる
-	ModelFrontlineSystems& DispatchFrontSystems(SceneContextProof proof_);
+	ModelFrontlineSystems* DispatchFrontSystems(SceneContextProof proof_);
 private:
 	ModelContext& modelContext;
 	ModelDataBatcher& modelDataBatcher;
@@ -13047,7 +13056,7 @@ public:
 		std::vector<RenderState> const& modelRenderStates_,
 		std::vector<StructuredBufferModelData::MaterialCPU> const& materials_,
 		UINT const numCreate_,
-		std::string const& modelName_ = "nameLess"
+		std::string const& modelName_
 	)
 	{
 		return AddModel
@@ -13325,9 +13334,9 @@ ModelContext::ModelFSDispatcher::ModelFSDispatcher(NexusFieldProof proof_, Model
 ModelContext::ModelFSDispatcher::~ModelFSDispatcher()
 {
 }
-ModelContext::ModelFrontlineSystems& ModelContext::ModelFSDispatcher::Dispatch(AgentKey key_)
+ModelContext::ModelFrontlineSystems* ModelContext::ModelFSDispatcher::Dispatch(AgentKey key_)
 {
-	return *frontlineSystems[simpleFreeList.Distribute()];
+	return frontlineSystems[simpleFreeList.Distribute()].get();
 }
 
 ========================================
@@ -13342,7 +13351,7 @@ class ModelContext::ModelFSDispatcher
 public:
 	ModelFSDispatcher(NexusFieldProof proof_, ModelCreator& modelCreator_);
 	~ModelFSDispatcher();
-	ModelFrontlineSystems& Dispatch(AgentKey key_);
+	ModelFrontlineSystems* Dispatch(AgentKey key_);
 private:
 	std::vector<std::unique_ptr<ModelFrontlineSystems>> frontlineSystems;
 	SimpleFreeList simpleFreeList;
@@ -21293,6 +21302,7 @@ public:
 	template<typename SceneType>
 	void CreateScene
 	(
+		EngineInterfaceProof proof_,
 		std::string const& sceneName_,
 		CameraContextDiplomat& cameraContextDiplomat_,
 		ModelContextDiplomat& modelContextDiplomat_
@@ -21557,13 +21567,13 @@ private:
 #include "../../../LowerLayer/Resource/Model/ModelContextDiplomat/ModelContextDiplomat.h"
 #include "../../../LowerLayer/Resource/Model/ModelContextDiplomat/ModelContextExecutionAgent/ModelContextExecutionAgent.h"
 #include "../../../LowerLayer/Resource/Model/ModelContextDiplomat/ModelContextExecutionAgent/ModelAgentLicences.h"
-CameraContext::CameraFrontlineSystems& SceneContext::SceneCreator::ReceiveCameraSystems(CameraContextDiplomat& cameraContextDiplomat_)
+CameraContext::CameraFrontlineSystems* SceneContext::SceneCreator::ReceiveCameraSystems(CameraContextDiplomat& cameraContextDiplomat_)
 {
 	//CameraFrontlineSystemsを一つ渡してもらう
 	auto agent = cameraContextDiplomat_.Access<CameraContext::ExecutionAgent>();
 	return agent.DispatchFrontlineSystems(CameraContext::ExecutionAgent::SceneContextProof{});
 }
-ModelContext::ModelFrontlineSystems& SceneContext::SceneCreator::ReceiveModelSystems(ModelContextDiplomat& modelContextDiplomat_)
+ModelContext::ModelFrontlineSystems* SceneContext::SceneCreator::ReceiveModelSystems(ModelContextDiplomat& modelContextDiplomat_)
 {
 	//ModelFrontlineSystemsを一つ渡してもらう
 	auto agent = modelContextDiplomat_.Access<ModelContext::ExecutionAgent>();
@@ -21575,10 +21585,10 @@ ModelContext::ModelFrontlineSystems& SceneContext::SceneCreator::ReceiveModelSys
 ========================================
 #pragma once
 #include "../SceneContext.h"
+#include "../SceneStructure/SceneBehavior.h"
 //外部
 #include "../../../LowerLayer/Resource/Camera/CameraContext.h"
 #include "../../../LowerLayer/Resource/Model/ModelContext.h"
-class SceneBehavior;
 //CameraFrontlineSystems
 class SceneContext::SceneCreator
 {
@@ -21592,17 +21602,24 @@ public:
 		ModelContextDiplomat& modelContextDiplomat_
 	)
 	{
-		return std::make_unique<SceneType>
+		auto sceneUnique = std::make_unique<SceneType>(SceneBehavior::InstancingLicense{});
+		//他コンテキストのシステムをセット
+		sceneUnique->SetSystems
 		(
 			ReceiveCameraSystems(cameraContextDiplomat_),
 			ReceiveModelSystems(modelContextDiplomat_)
 		);
+		//プリセットカメラを備え付ける
+		sceneUnique->CreatePresetCamera();
+		//仮想初期化関数を呼ぶ
+		sceneUnique->Init();
+		return sceneUnique;
 	}
 private:
 	//CameraFrontlineSystemsを一つもらう
-	CameraContext::CameraFrontlineSystems& ReceiveCameraSystems(CameraContextDiplomat& cameraContextDiplomat_);
+	CameraContext::CameraFrontlineSystems* ReceiveCameraSystems(CameraContextDiplomat& cameraContextDiplomat_);
 	//ModelFrontlineSystemsを一つもらう
-	ModelContext::ModelFrontlineSystems& ReceiveModelSystems(ModelContextDiplomat& modelContextDiplomat_);
+	ModelContext::ModelFrontlineSystems* ReceiveModelSystems(ModelContextDiplomat& modelContextDiplomat_);
 };
 
 ========================================
@@ -21661,12 +21678,33 @@ private:
 ========================================
 #include "PreCompileHeader.h"
 #include "RenderingTestScene.h"
-RenderingTestScene::RenderingTestScene
-(
-	CameraContext::CameraFrontlineSystems& cameraSystems_,
-	ModelContext::ModelFrontlineSystems& modelSystems_
-): SceneBehavior(cameraSystems_, modelSystems_)
+using namespace RenderStateComponent;
+using namespace ShaderPathComponent;
+using namespace RenderPassComponent;
+using namespace StructuredBufferModelData;
+void RenderingTestScene::Init()
 {
+	RenderState cP;
+	cP.blendModes.emplace_back(BlendMode::kOpaque);
+	cP.blendModes.emplace_back(BlendMode::kAlphaBlend);
+	cP.blendModes.emplace_back(BlendMode::kAdditive);
+	cP.pass = Pass::kSceneOpaque;
+	cP.cullMode = CullMode::kBack;
+	cP.meshType = MeshType::kStatic;
+	cP.materialTypes.emplace_back(MaterialType::kStandard);
+	std::vector<RenderState> playerC;
+	playerC.emplace_back(std::move(cP));
+	std::vector<MaterialCPU> materials;
+	auto p = CreateModel<Model::Type::kDynamic>("PlayerObj", playerC, materials, 1, "Player");
+	RenderState cC;
+	cC.blendModes.emplace_back(BlendMode::kOpaque);
+	cC.pass = RenderPassComponent::Pass::kSceneOpaque;
+	cC.cullMode = CullMode::kBack;
+	cC.meshType = MeshType::kStatic;
+	cC.materialTypes.emplace_back(MaterialType::kStandard);
+	std::vector<RenderState> cubeC;
+	cubeC.emplace_back(std::move(cC));
+	auto c = CreateModel<Model::Type::kDynamic>("CubeGltf", cubeC, materials, 1, "Cube");
 }
 
 ========================================
@@ -21677,12 +21715,10 @@ RenderingTestScene::RenderingTestScene
 class RenderingTestScene : public SceneBehavior
 {
 public:
-	RenderingTestScene
-	(
-		CameraContext::CameraFrontlineSystems& cameraSystems_,
-		ModelContext::ModelFrontlineSystems& modelSystems_
-	);
-private:
+	//パブリックで
+	RenderingTestScene(InstancingLicense license_):SceneBehavior(license_){}
+	//ここの中でモデルの生成などの処理を書く。一発しか呼びません。同じくパブリックで
+	virtual void Init()override;
 };
 
 ========================================
@@ -21694,23 +21730,32 @@ private:
 //外部
 //エンジン備え付けのカメラ
 #include "../../../LowerLayer/Resource/Camera/PresetCameras/PresetCameraIncludes.h"
-SceneBehavior::SceneBehavior
-(
-	CameraContext::CameraFrontlineSystems& cameraSystems_,
-	ModelContext::ModelFrontlineSystems& modelSystems_
-):cameraSystems(cameraSystems_), modelSystems(modelSystems_)
-{
-	//各シーンに1つは存在するデバッグカメラを作成
-	CreateCamera<CameraSocket::kDebug, DefaultDebugCamera>(std::nullopt, "DefaultDebugCamera");
-}
 void SceneBehavior::Update()
 {
 	//このシーンで使うカメラのアップデート
-	output.usingCamera = cameraSystems.CameraUpdate();
+	output.usingCamera = cameraSystems->CameraUpdate();
 }
 SceneBehavior::Output const& SceneBehavior::WatchSceneOutput()const 
 {
 	return output; 
+}
+void SceneBehavior::SeparateModels()
+{
+	modelSystems->SeparateModels();
+}
+void SceneBehavior::SetSystems
+(
+	CameraContext::CameraFrontlineSystems* cameraSystems_,
+	ModelContext::ModelFrontlineSystems* modelSystems_
+)
+{
+	cameraSystems = cameraSystems_;
+	modelSystems = modelSystems_;
+}
+void SceneBehavior::CreatePresetCamera()
+{
+	//各シーンに1つは存在するデバッグカメラを作成
+	auto* debugCamera = CreateCamera<CameraSocket::kDebug, DefaultDebugCamera>(std::nullopt, "DefaultDebugCamera");
 }
 
 ========================================
@@ -21725,6 +21770,7 @@ class Model;
 struct CameraDesc;
 class SceneBehavior
 {
+	//おおざっぱだが必要な情報のみ開示したいのでフレンド登録
 	friend class SceneContext;
 	//このシーンで使用しているカメラ、モデル、ライトなどの情報
 	struct Output
@@ -21732,39 +21778,75 @@ class SceneBehavior
 		//使用しているカメラ。更新必要
 		std::unordered_map<CameraSocket, CameraBehavior*> usingCamera;
 	};
-public:
-	SceneBehavior
-	(
-		CameraContext::CameraFrontlineSystems& cameraSystems_,
-		ModelContext::ModelFrontlineSystems& modelSystems_
-	);
-	virtual ~SceneBehavior() = default;
-	Output const& WatchSceneOutput()const;
 protected:
+	//そこいらでインスタンス化させないため
+	struct InstancingLicense;
 	//カメラの作成＆登録
 	template<CameraSocket dstSocket, typename CameraType>
-	void CreateCamera
+	[[nodiscard]] CameraType* CreateCamera
 	(
 		std::optional<CameraDesc> const& cameraDesc_,
 		std::string const& name_
 	)
 	{
-		cameraSystems.CreateCamera<dstSocket, CameraType>(cameraDesc_,name_);
+		return cameraSystems->CreateCamera<dstSocket, CameraType>(cameraDesc_,name_);
 	}
 	//ゲームオブジェクトが好きなタイミングでカメラを切り替えられるように
 	//カメラ切り替えコマンドを返す。
 	template<CameraSocket dstSocket>
-	CameraContext::CameraFrontlineSystems::CmdConnectCamera<dstSocket> GetCmdConnectCamera()
+	[[nodiscard]] CameraContext::CameraFrontlineSystems::CmdConnectCamera<dstSocket> GetCmdConnectCamera()
 	{
-		return cameraSystems.GetCmdConnectCamera<dstSocket>();
+		return cameraSystems->GetCmdConnectCamera<dstSocket>();
 	}
+	//モデル作成し、そのポインタを返す
+	template<Model::Type modelType>
+	[[nodiscard]] std::vector<Model*> CreateModel
+	(
+		std::string const& modelFileName_,
+		std::vector<RenderState> const& modelRenderStates_,
+		std::vector<StructuredBufferModelData::MaterialCPU> const& materials_,
+		UINT const numCreate_,
+		std::string const& modelName_ = "nameLess"
+	)
+	{
+		return modelSystems->CreateModel<modelType>
+		(
+			modelFileName_,
+			modelRenderStates_,
+			materials_,
+			numCreate_,
+			modelName_
+		);			
+	}
+public:
+	SceneBehavior(InstancingLicense const& license_) {};
+	virtual ~SceneBehavior() = default;
 private:
+	//ここの中でモデルの生成などの処理を書く。一発しか呼びません。
+	virtual void Init() = 0;
 	//SceneContext::SceneControllerのみ呼べる
 	void Update();
-	void Reset();
-	CameraContext::CameraFrontlineSystems& cameraSystems;
-	ModelContext::ModelFrontlineSystems& modelSystems;
+	//シーンクリエイターがインスタンス化後に呼び出す
+	void SetSystems
+	(
+		CameraContext::CameraFrontlineSystems* cameraSystems_,
+		ModelContext::ModelFrontlineSystems* modelSystems_
+	);
+	//シーンクリエイターがプリセットカメラを備え付ける
+	void CreatePresetCamera();
+	//シーンのコンストラクタで終わった後に一括で一度だけ呼ばれる
+	void SeparateModels();
+	//SceneControllerにこのシーンで使われているリソース伝えるため
+	Output const& WatchSceneOutput()const;
+	CameraContext::CameraFrontlineSystems* cameraSystems = nullptr;
+	ModelContext::ModelFrontlineSystems* modelSystems = nullptr;
 	SceneBehavior::Output output;
+};
+struct SceneBehavior::InstancingLicense
+{
+private:
+	friend class SceneContext;
+	explicit InstancingLicense() = default;
 };
 
 ========================================
@@ -21800,6 +21882,19 @@ using namespace ProjectConfig::Window;
 Nexus::Nexus(aFourthProof proof_)
 {
 	Logger::Entry("Nexus: Constructor");
+	PrimaryInit();
+	Logger::End("Nexus: Constructor");
+}
+Nexus::~Nexus()
+{
+	Logger::Entry("Nexus: Destructor");
+	FinalizeInSequence<FinalizeSequence::kCommandContext>();
+	FinalizeInSequence<FinalizeSequence::kWindowContext>();
+	ErrorMessageOutput::Assert::DetectError(nextFin == FinalizeSequence::kEnd, "終了処理が正常に行われていない可能性がある", fileName);
+	Logger::End("Nexus: Destructor");
+}
+void Nexus::PrimaryInit()
+{
 	InitializeInSequence<InitSequence::kLoadAllJsonFiles>();
 	InitializeInSequence<InitSequence::kDebugContext>();
 	InitializeInSequence<InitSequence::kDeviceContext>();
@@ -21815,6 +21910,10 @@ Nexus::Nexus(aFourthProof proof_)
 	InitializeInSequence<InitSequence::kModelContext>();
 	InitializeInSequence<InitSequence::kCameraContext>();
 	InitializeInSequence<InitSequence::kSceneContext>();
+}
+//2段階目初期化
+void Nexus::SecondaryInit(aFourthProof proof_)
+{
 	InitializeInSequence<InitSequence::kRenderContext>();
 	InitializeInSequence<InitSequence::kUploadAllResources>();
 	InitializeInSequence<InitSequence::kKickCommands>();
@@ -21822,15 +21921,6 @@ Nexus::Nexus(aFourthProof proof_)
 	InitializeInSequence<InitSequence::kSortOutGlobalConstantBuffers>();
 	InitializeInSequence<InitSequence::kDeleteModelDataCache>();
 	ErrorMessageOutput::Assert::DetectError(nextInit == InitSequence::kEnd, "初期化が正常に行われていない可能性がある", fileName);
-	Logger::End("Nexus: Constructor");
-}
-Nexus::~Nexus()
-{
-	Logger::Entry("Nexus: Destructor");
-	FinalizeInSequence<FinalizeSequence::kCommandContext>();
-	FinalizeInSequence<FinalizeSequence::kWindowContext>();
-	ErrorMessageOutput::Assert::DetectError(nextFin == FinalizeSequence::kEnd, "終了処理が正常に行われていない可能性がある", fileName);
-	Logger::End("Nexus: Destructor");
 }
 
 ========================================
@@ -21876,7 +21966,7 @@ class Nexus
 		kCameraContext,
 		kSceneContext,
 		//ここまではコンストラクタ
-		//ここまでに、全シーンの全モデルが作成されていなければいけない
+		//コンストラクタからここまでに、シーン(モデル)の作成が完了してなければならない
 		kRenderContext,
 		kUploadAllResources,
 		kKickCommands,
@@ -21895,16 +21985,16 @@ class Nexus
 public:
 	//エンジンクラスしかインスタンス化はさせません
 	struct aFourthProof;
-	~Nexus();
 	Nexus(aFourthProof proof_);
+	~Nexus();
 	Nexus(const Nexus&) = delete;
 	Nexus& operator=(const Nexus&) = delete;
 	Nexus(Nexus&&) = delete;
 	Nexus& operator=(Nexus&&) = delete;
 	//更新処理
-	void Run();
-	//2段階初期化用
-	void SecondaryInit();
+	void Run(aFourthProof proof_);
+	//2段階目初期化
+	void SecondaryInit(aFourthProof proof_);
 	//エンジンインターフェースがシーンのインスタンス化メソッドを定義するために必要
 	template<typename ContextType>
 	auto& AccessContext(aFourthProof const& proof_)
@@ -21944,6 +22034,8 @@ private:
 	std::unique_ptr<CameraContext> cameraContext;
 	//シーンの作成、保持、コントロール、シーンデータのバッチングを行う
 	std::unique_ptr<SceneContext> sceneContext;
+	//一段階目初期化
+	void PrimaryInit();
 	//各Contextクラスの具現化、初期化を行う
 	template<InitSequence initSequence>
 	void Init();
@@ -22374,7 +22466,7 @@ void Nexus::Init<Nexus::InitSequence::kDeleteModelDataCache>();
 #include "../LowerLayer/Core/SwapChain/Presenter/Presenter.h"
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 #include "../LowerLayer/Core/Command/RuntimeCommandController/RuntimeCommandController.h"
-void Nexus::Run()
+void Nexus::Run(aFourthProof proof_)
 {
 	//SwapChainContextの代行クラス
 	auto& s_ExecutionAgent = swapChainContext->AccessDiplomat().Access<SwapChainContext::ExecutionAgent>();
@@ -23152,4 +23244,4 @@ namespace StringProcessing
 === SUMMARY ===
 ========================================
 Total Files      : 520
-Effective Lines  : 16799
+Effective Lines  : 16874
