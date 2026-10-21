@@ -91,12 +91,12 @@ public:
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	~aFourth() 
 	{
-		Logger::Entry("aFourth: Destructor");
+		Logger::Entry("EngineInterface: Destructor");
 		nexus.reset();
 		Logger::Log("Delete Nexus", "EngineInterface.h");
 		CoUninitialize();
 		Logger::Log("CoUninitialize", "EngineInterface.h");
-		Logger::End("aFourth: Destructor");
+		Logger::End("EngineInterface: Destructor");
 	};
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -2425,10 +2425,10 @@ BufferContext::BufferUploader::BufferUploader
 	//リソースのバリアを張るため
 	pitchBarriersCommand = commandProvider.Provide<CommandContextCmds::PitchBarrierCommand>(licence);
 	//DeviceContextのコマンドプロバイダーからコマンドをもらう
-	auto* deviceContextCmdProvider = deviceContextDiplomat_.Access<DeviceContext::CommandProvider>();
+	auto& deviceContextCmdProvider = deviceContextDiplomat_.Access<DeviceContext::CommandProvider>();
 	DeviceContext::CommandProvider::LicenceType<DeviceContextCmds::PrepareUploadCommand> licencePrepareUpload;
 	//テクスチャバッファのサブリソースを作成するため
-	prepareUploadCommand = deviceContextCmdProvider->Provide<DeviceContextCmds::PrepareUploadCommand>(licencePrepareUpload);
+	prepareUploadCommand = deviceContextCmdProvider.Provide<DeviceContextCmds::PrepareUploadCommand>(licencePrepareUpload);
 	//そこまで重要じゃないのでとりあえず形式で
 	//ログファイルのキャッシュ削除数から、プラスアルファ程度のキャパを確保しておく
 	intermediateResources.reserve(20);
@@ -2840,8 +2840,8 @@ class BufferContext::BufferUploader::BufferAndResourcePicker
 	//中間リソース作成
 	return resourceCreator_->Create
 	(
-		CreateIntermedeiateResourceDesc(resourceSize_),
-		CreateIntermedeiteHeapProp(),
+		CreateIntermediateResourceDesc(resourceSize_),
+		CreateIntermediateHeapProp(),
 		nullptr,
 		D3D12_RESOURCE_STATE_GENERIC_READ,
 		"intermed" + std::to_string(createNum++),
@@ -2851,7 +2851,7 @@ class BufferContext::BufferUploader::BufferAndResourcePicker
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-D3D12_RESOURCE_DESC BufferContext::BufferUploader::IntermediateResourceCreator::CreateIntermedeiateResourceDesc(UINT resourceSize_)
+D3D12_RESOURCE_DESC BufferContext::BufferUploader::IntermediateResourceCreator::CreateIntermediateResourceDesc(UINT resourceSize_)
 {
 	D3D12_RESOURCE_DESC resourceDesc{};
 	resourceDesc.Dimension = D3D12_RESOURCE_DIMENSION_BUFFER;
@@ -2867,7 +2867,7 @@ D3D12_RESOURCE_DESC BufferContext::BufferUploader::IntermediateResourceCreator::
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-D3D12_HEAP_PROPERTIES BufferContext::BufferUploader::IntermediateResourceCreator::CreateIntermedeiteHeapProp()
+D3D12_HEAP_PROPERTIES BufferContext::BufferUploader::IntermediateResourceCreator::CreateIntermediateHeapProp()
 {
 	D3D12_HEAP_PROPERTIES heapProperties{};
 	heapProperties.Type = D3D12_HEAP_TYPE_UPLOAD;
@@ -2889,8 +2889,8 @@ class BufferContext::BufferUploader::IntermediateResourceCreator
 		BufferContext::ResourceCreator* resourceCreator_,
 		UINT resourceSize_
 	);
-	static D3D12_RESOURCE_DESC CreateIntermedeiateResourceDesc(UINT resourceSize_);
-	static D3D12_HEAP_PROPERTIES CreateIntermedeiteHeapProp();
+	static D3D12_RESOURCE_DESC CreateIntermediateResourceDesc(UINT resourceSize_);
+	static D3D12_HEAP_PROPERTIES CreateIntermediateHeapProp();
 };
 
 ========================================
@@ -2906,9 +2906,9 @@ class BufferContext::BufferUploader::IntermediateResourceCreator
 BufferContext::ResourceCreator::ResourceCreator(NexusFieldProof proof_, DeviceContextDiplomat& deviceContextDiplomat_)
 {
 	//生リソース生成コマンドを受け取る
-	auto* cmdProvider = deviceContextDiplomat_.Access<DeviceContext::CommandProvider>();
+	auto& cmdProvider = deviceContextDiplomat_.Access<DeviceContext::CommandProvider>();
 	DeviceContext::CommandProvider::LicenceType<DeviceContextCmds::CreateResource> licence;
-	createResourceCommand = cmdProvider->Provide<DeviceContextCmds::CreateResource>(licence);
+	createResourceCommand = cmdProvider.Provide<DeviceContextCmds::CreateResource>(licence);
 }
 BufferContext::ResourceCreator::~ResourceCreator()
 {
@@ -5332,32 +5332,18 @@ CommandContext::Builder::Output CommandContext::Builder::CreateCoreParts
 {
 	Output output;
 	//deviceContextのCmdExecutorにアクセス
-	auto* cmdExecutor = deviceContextDiplomat_.Access<DeviceContext::CommandExecutor>();
+	auto& cmdExecutor = deviceContextDiplomat_.Access<DeviceContext::CommandExecutor>();
 	//フェンス作成
-	output.fence = std::move(cmdExecutor->CreateFence(proof_));
+	output.fence = std::move(cmdExecutor.CreateFence(proof_));
 	//フェンスイベント作成
 	output.fenceEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
 	ErrorMessageOutput::Assert::DetectError((output.fenceEvent != nullptr), "フェンスイベント作成失敗", fileName);
 	Logger::Log("Create: FenceEvent", fileName);
 	//コアパーツ作成
-	auto [cmdQueue, cmdAllocators, cmdList] = cmdExecutor->CreateCommandContextCorePartsForRuntime(proof_);
+	auto [cmdQueue, cmdAllocators, cmdList] = cmdExecutor.CreateCommandContextCorePartsForRuntime(proof_);
 	output.commandQueue = std::move(cmdQueue);
 	output.commandAllocators = std::move(cmdAllocators);
 	output.commandList = std::move(cmdList);
-	////runtimeCommandControllerの生成
-	//std::array<ID3D12CommandAllocator*, (UINT)NumBuffer::kDoubleBuffer> cmdAllocators;
-	//for (int i = 0;i < (UINT)NumBuffer::kDoubleBuffer;++i)
-	//{
-	//	cmdAllocators.at(i) = output.commandAllocators.at(i).Get();
-	//}
-	//output.runtimeCommandController = std::make_unique<RuntimeCommandController>
-	//(
-	//	output.commandQueue.Get(),
-	//	cmdAllocators,
-	//	output.commandList.Get(),
-	//	synchronizer
-	//);
-	//Logger::Log("Instantiate: RuntimeCommandController", fileName);
 	return std::move(output);
 }
 
@@ -5681,10 +5667,9 @@ CommandContext::ResourceUploader::ResourceUploader
 	CommandContext::Synchronizer& synchronizer_
 ) :commandQueue(commandQueue_), synchronizer(synchronizer_)
 {
-	auto* cmdExecutor = deviceContextDiplomat_.Access<DeviceContext::CommandExecutor>();
+	auto& cmdExecutor = deviceContextDiplomat_.Access<DeviceContext::CommandExecutor>();
 	//リソースアップロード用
-	auto [allocator_forUpload, cmdList_forUpload] =
-		cmdExecutor->CreateCommandContextCorePartsForUpload(proof_);
+	auto [allocator_forUpload, cmdList_forUpload] = cmdExecutor.CreateCommandContextCorePartsForUpload(proof_);
 	allocator = std::move(allocator_forUpload);
 	commandList = std::move(cmdList_forUpload);
 	//最初開いてるから閉じておく
@@ -6386,14 +6371,14 @@ DescriptorHeapContext::DescriptorHeapCreator::DescriptorHeapCreator
 	DeviceContextDiplomat& deviceContextDiplomat_
 ) {
 	//deviceContextからディスクリプタヒープ生成コマンドを渡してもらう
-	auto* deviceContextCmdProvider = deviceContextDiplomat_.Access<DeviceContext::CommandProvider>();
+	auto& deviceContextCmdProvider = deviceContextDiplomat_.Access<DeviceContext::CommandProvider>();
 	DeviceContext::CommandProvider::LicenceType<DeviceContextCmds::CreateDescriptorHeap> licenceCreateDescriptorHeap;
-	auto createDescriptorHeapCmd = deviceContextCmdProvider->Provide<DeviceContextCmds::CreateDescriptorHeap>(licenceCreateDescriptorHeap);
+	auto createDescriptorHeapCmd = deviceContextCmdProvider.Provide<DeviceContextCmds::CreateDescriptorHeap>(licenceCreateDescriptorHeap);
 	//deviceContextのコマンド実行クラスから、各種descriptorHeapのインクリメントサイズを教えてもらう
-	auto* cmdExecutor = deviceContextDiplomat_.Access<DeviceContext::CommandExecutor>();
-	UINT rtvDHIncrementSIze = cmdExecutor->CalcDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
-	UINT srvDHIncrementSIze = cmdExecutor->CalcDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
-	UINT dsvDHIncrementSIze = cmdExecutor->CalcDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_DSV);
+	auto& cmdExecutor = deviceContextDiplomat_.Access<DeviceContext::CommandExecutor>();
+	UINT rtvDHIncrementSIze = cmdExecutor.CalcDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
+	UINT srvDHIncrementSIze = cmdExecutor.CalcDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+	UINT dsvDHIncrementSIze = cmdExecutor.CalcDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_DSV);
 	container_.Import<D3D12_DESCRIPTOR_HEAP_TYPE_RTV>
 	(
 		proof_,
@@ -6658,15 +6643,15 @@ DescriptorHeapContext::ViewCreator::ViewCreator
 )
 {
 	//deviceContextからビュー生成のコマンドを渡してももらう
-	auto* deviceContextCmdProvider = deviceContextDiplomat_.Access<DeviceContext::CommandProvider>();
+	auto& deviceContextCmdProvider = deviceContextDiplomat_.Access<DeviceContext::CommandProvider>();
 	DeviceContext::CommandProvider::LicenceType<DeviceContextCmds::CreateView<D3D12_RENDER_TARGET_VIEW_DESC>> licenceRTV;
 	DeviceContext::CommandProvider::LicenceType<DeviceContextCmds::CreateView<D3D12_SHADER_RESOURCE_VIEW_DESC>> licenceSRV;
 	DeviceContext::CommandProvider::LicenceType<DeviceContextCmds::CreateView<D3D12_DEPTH_STENCIL_VIEW_DESC>> licenceDSV;
 	DeviceContext::CommandProvider::LicenceType<DeviceContextCmds::CreateUAV> licenceUAV;
-	rtvCmd = deviceContextCmdProvider->Provide<DeviceContextCmds::CreateView<D3D12_RENDER_TARGET_VIEW_DESC>>(licenceRTV);
-	srvCmd = deviceContextCmdProvider->Provide<DeviceContextCmds::CreateView<D3D12_SHADER_RESOURCE_VIEW_DESC>>(licenceSRV);
-	dsvCmd = deviceContextCmdProvider->Provide<DeviceContextCmds::CreateView<D3D12_DEPTH_STENCIL_VIEW_DESC>>(licenceDSV);
-	uavCmd = deviceContextCmdProvider->Provide<DeviceContextCmds::CreateUAV>(licenceUAV);
+	rtvCmd = deviceContextCmdProvider.Provide<DeviceContextCmds::CreateView<D3D12_RENDER_TARGET_VIEW_DESC>>(licenceRTV);
+	srvCmd = deviceContextCmdProvider.Provide<DeviceContextCmds::CreateView<D3D12_SHADER_RESOURCE_VIEW_DESC>>(licenceSRV);
+	dsvCmd = deviceContextCmdProvider.Provide<DeviceContextCmds::CreateView<D3D12_DEPTH_STENCIL_VIEW_DESC>>(licenceDSV);
+	uavCmd = deviceContextCmdProvider.Provide<DeviceContextCmds::CreateUAV>(licenceUAV);
 	//取り出し識別子が異なるので移し替える
 	descriptorHeapPoolArray.at(UINT(DescriptorHeapContext::ViewCreator::HeapType::kRTV)) =
 		descriptorHeapPoolContainer_.Export<D3D12_DESCRIPTOR_HEAP_TYPE_RTV>(proof_);
@@ -7524,9 +7509,9 @@ public:
 		std::unique_ptr<DeviceContext::CommandExecutor>&& cmdExecutor_
 	);
 	template<typename ToolType>
-	ToolType* Access()
+	ToolType& Access()
 	{
-		return std::get<std::unique_ptr<ToolType>>(tools).get();
+		return *std::get<std::unique_ptr<ToolType>>(tools);
 	}
 private:
 	//提供するツールのテーブル
@@ -8030,11 +8015,11 @@ DeviceContext::Setupper::Setupper(NexusFieldProof proof_)
 	//デバッグレイヤーのフィルターを設定
 	SetDebugLayerFilter();
 	//シェーダーモデルサポートチェック
-	EngineRequiementsChecker::ShaderModelCheck(device.Get(),ProjectConfig::Render::kRequiredShaderModel);
+	EngineRequirementsChecker::ShaderModelCheck(device.Get(),ProjectConfig::Render::kRequiredShaderModel);
 	//メッシュシェーダーをサポートしているかチェック
-	EngineRequiementsChecker::IsMeshShaderSupported(device.Get());
+	EngineRequirementsChecker::IsMeshShaderSupported(device.Get());
 	//ResourceBindingTierが必要値を満たしているか
-	EngineRequiementsChecker::ResourceBindingTierCheck(device.Get());
+	EngineRequirementsChecker::ResourceBindingTierCheck(device.Get());
 }
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -8166,7 +8151,7 @@ public:
 	[[nodiscard]] std::tuple<Microsoft::WRL::ComPtr<IDXGIAdapter4>, Microsoft::WRL::ComPtr<ID3D12Device8>, Microsoft::WRL::ComPtr<IDXGIFactory7>>
 		HandOver(NexusFieldProof proof_);
 private:
-	class EngineRequiementsChecker;
+	class EngineRequirementsChecker;
 	Microsoft::WRL::ComPtr<IDXGIFactory7> dxgiFactory = nullptr;
 	Microsoft::WRL::ComPtr<IDXGIAdapter4> useAdapter = nullptr;
 	Microsoft::WRL::ComPtr<ID3D12Device8> device = nullptr;
@@ -8183,9 +8168,9 @@ private:
 #include "EngineRequirementsChecker.h"
 namespace
 {
-	auto const fileName = "EngineRequiementsChecker.cpp";
+	auto const fileName = "EngineRequirementsChecker.cpp";
 }
-void DeviceContext::Setupper::EngineRequiementsChecker::ShaderModelCheck(ID3D12Device8* device_ , D3D_SHADER_MODEL shaderModel_)
+void DeviceContext::Setupper::EngineRequirementsChecker::ShaderModelCheck(ID3D12Device8* device_ , D3D_SHADER_MODEL shaderModel_)
 {
 	D3D12_FEATURE_DATA_SHADER_MODEL shaderModel = { shaderModel_ };
 	HRESULT hr = device_->CheckFeatureSupport(D3D12_FEATURE_SHADER_MODEL, &shaderModel, sizeof(shaderModel));
@@ -8198,7 +8183,7 @@ void DeviceContext::Setupper::EngineRequiementsChecker::ShaderModelCheck(ID3D12D
 	);
 	Logger::Log("ShaderModel Maximum Checked");
 }
-void DeviceContext::Setupper::EngineRequiementsChecker::IsMeshShaderSupported(ID3D12Device8* device_)
+void DeviceContext::Setupper::EngineRequirementsChecker::IsMeshShaderSupported(ID3D12Device8* device_)
 {
 	//メッシュシェーダがサポートされているかどうか
 	D3D12_FEATURE_DATA_D3D12_OPTIONS7 features = {};
@@ -8212,7 +8197,7 @@ void DeviceContext::Setupper::EngineRequiementsChecker::IsMeshShaderSupported(ID
 	);
 	Logger::Log("MeshShader is Supported");
 }
-void DeviceContext::Setupper::EngineRequiementsChecker::ResourceBindingTierCheck(ID3D12Device8* device_)
+void DeviceContext::Setupper::EngineRequirementsChecker::ResourceBindingTierCheck(ID3D12Device8* device_)
 {
 	//メッシュシェーダがサポートされているかどうか
 	D3D12_FEATURE_DATA_D3D12_OPTIONS features = {};
@@ -8232,7 +8217,7 @@ void DeviceContext::Setupper::EngineRequiementsChecker::ResourceBindingTierCheck
 ========================================
 #pragma once
 #include "../DeviceContextSetupper.h"
-class DeviceContext::Setupper::EngineRequiementsChecker
+class DeviceContext::Setupper::EngineRequirementsChecker
 {
 private:
 	friend class DeviceContext::Setupper;
@@ -8633,9 +8618,9 @@ Microsoft::WRL::ComPtr<IDXGISwapChain4> SwapChainContext::Builder::CreateSwapCha
 	CommandContext::ToolLender::LicenceType<ID3D12CommandQueue> cmdQueueAccesslicence{};
 	auto* commandQueue = commandContextToolLender.Lend<ID3D12CommandQueue>(cmdQueueAccesslicence);
 	//スワップチェーン生成コマンドを借りる
-	auto commandProvider = deviceContextDiplomat_.Access<DeviceContext::CommandProvider>();
+	auto& commandProvider = deviceContextDiplomat_.Access<DeviceContext::CommandProvider>();
 	DeviceContext::CommandProvider::LicenceType<DeviceContextCmds::CreateSwapChain> dLicence;
-	auto createSwapChainCmd = commandProvider->Provide<DeviceContextCmds::CreateSwapChain>(dLicence);
+	auto createSwapChainCmd = commandProvider.Provide<DeviceContextCmds::CreateSwapChain>(dLicence);
 	//windowContexのhwndを借りる
 	auto toolLender = windowContextDiplomat_.Access<WindowContext::ToolLender>();
 	WindowContext::ToolLender::LicenceType<HWND> hwndLicence;
@@ -14110,11 +14095,11 @@ PSO_Context::Assembler::Assembler
 	DeviceContextDiplomat& deviceContextDiplomat_
 )
 {
-	auto cmdProvider = deviceContextDiplomat_.Access<DeviceContext::CommandProvider>();
+	auto& cmdProvider = deviceContextDiplomat_.Access<DeviceContext::CommandProvider>();
 	DeviceContext::CommandProvider::LicenceType<DeviceContextCmds::CreatePSO<D3D12_PIPELINE_STATE_STREAM_DESC>> licenceCreateGraphicsPso;
 	DeviceContext::CommandProvider::LicenceType<DeviceContextCmds::CreatePSO<D3D12_COMPUTE_PIPELINE_STATE_DESC>> licenceCreateComputePso;
-	cmdCreateGraphicsPSO = cmdProvider->Provide<DeviceContextCmds::CreatePSO<D3D12_PIPELINE_STATE_STREAM_DESC>>(licenceCreateGraphicsPso);
-	cmdCreateComputePSO = cmdProvider->Provide<DeviceContextCmds::CreatePSO<D3D12_COMPUTE_PIPELINE_STATE_DESC>>(licenceCreateComputePso);
+	cmdCreateGraphicsPSO = cmdProvider.Provide<DeviceContextCmds::CreatePSO<D3D12_PIPELINE_STATE_STREAM_DESC>>(licenceCreateGraphicsPso);
+	cmdCreateComputePSO = cmdProvider.Provide<DeviceContextCmds::CreatePSO<D3D12_COMPUTE_PIPELINE_STATE_DESC>>(licenceCreateComputePso);
 }
 PSO_Context::Assembler::~Assembler(){}
 ///+//////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -15025,9 +15010,9 @@ using namespace RootSignatureLayoutComponent;
 RootSignatureContext::Assembler::Assembler(NexusFieldProof proof_, DeviceContextDiplomat& deviceContextDiplomat_)
 {
 	//ルートシグネチャ生成コマンドをもらう
-	auto cmdProvider = deviceContextDiplomat_.Access<DeviceContext::CommandProvider>();
+	auto& cmdProvider = deviceContextDiplomat_.Access<DeviceContext::CommandProvider>();
 	DeviceContext::CommandProvider::LicenceType<DeviceContextCmds::CreateRootSig> licence;
-	cmdCreateRootSignature = cmdProvider->Provide<DeviceContextCmds::CreateRootSig>(licence);
+	cmdCreateRootSignature = cmdProvider.Provide<DeviceContextCmds::CreateRootSig>(licence);
 }
 RootSignatureContext::Assembler::~Assembler() {};
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -16724,7 +16709,7 @@ namespace MathConstants
 	constexpr float kPi = 3.141592653589f;
 	constexpr float kHalf = 0.5f;
 	constexpr float kQuarter = 0.25f;
-	constexpr float kQuaterQuater = 0.125f;
+	constexpr float kQuarterQuarter = 0.125f;
 	constexpr float kInv_255 = 1.0f / 255.0f;
 	constexpr float kInv_100 = 0.01f;
 	constexpr float kInv_10 = 0.1f;
@@ -17798,9 +17783,9 @@ void RenderContext::StaticRenderGraph::Run
 )
 {
 	//runtimeCmdWrapperにアクセス
-	auto cToolLender = commandContextDiplomat_.Access<CommandContext::ToolLender>();
+	auto& cToolLender = commandContextDiplomat_.Access<CommandContext::ToolLender>();
 	CommandContext::ToolLender::LicenceType<RuntimeWrapper> cLicence;
-	auto& runtimeCmdWrapper = *cToolLender->Lend<RuntimeWrapper>(cLicence);
+	auto& runtimeCmdWrapper = *cToolLender.Lend<RuntimeWrapper>(cLicence);
 	//共通の描画コマンドをたたく
 	commonCmdExecutor->ExecuteCommonCmds
 	(
@@ -23278,4 +23263,4 @@ namespace StringProcessing
 === SUMMARY ===
 ========================================
 Total Files      : 517
-Effective Lines  : 16960
+Effective Lines  : 16959

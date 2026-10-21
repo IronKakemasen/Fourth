@@ -14,7 +14,7 @@ public:
 
 private:
 
-	class EngineRequiementsChecker;
+	class EngineRequirementsChecker;
 
 	Microsoft::WRL::ComPtr<IDXGIFactory7> dxgiFactory = nullptr;
 	Microsoft::WRL::ComPtr<IDXGIAdapter4> useAdapter = nullptr;

@@ -23,13 +23,13 @@ DeviceContext::Setupper::Setupper(NexusFieldProof proof_)
 	SetDebugLayerFilter();
 
 	//シェーダーモデルサポートチェック
-	EngineRequiementsChecker::ShaderModelCheck(device.Get(),ProjectConfig::Render::kRequiredShaderModel);
+	EngineRequirementsChecker::ShaderModelCheck(device.Get(),ProjectConfig::Render::kRequiredShaderModel);
 
 	//メッシュシェーダーをサポートしているかチェック
-	EngineRequiementsChecker::IsMeshShaderSupported(device.Get());
+	EngineRequirementsChecker::IsMeshShaderSupported(device.Get());
 
 	//ResourceBindingTierが必要値を満たしているか
-	EngineRequiementsChecker::ResourceBindingTierCheck(device.Get());
+	EngineRequirementsChecker::ResourceBindingTierCheck(device.Get());
 
 }
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////

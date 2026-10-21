@@ -21,15 +21,15 @@ DescriptorHeapContext::DescriptorHeapCreator::DescriptorHeapCreator
 	DeviceContextDiplomat& deviceContextDiplomat_
 ) {
 	//deviceContextからディスクリプタヒープ生成コマンドを渡してもらう
-	auto* deviceContextCmdProvider = deviceContextDiplomat_.Access<DeviceContext::CommandProvider>();
+	auto& deviceContextCmdProvider = deviceContextDiplomat_.Access<DeviceContext::CommandProvider>();
 	DeviceContext::CommandProvider::LicenceType<DeviceContextCmds::CreateDescriptorHeap> licenceCreateDescriptorHeap;
-	auto createDescriptorHeapCmd = deviceContextCmdProvider->Provide<DeviceContextCmds::CreateDescriptorHeap>(licenceCreateDescriptorHeap);
+	auto createDescriptorHeapCmd = deviceContextCmdProvider.Provide<DeviceContextCmds::CreateDescriptorHeap>(licenceCreateDescriptorHeap);
 
 	//deviceContextのコマンド実行クラスから、各種descriptorHeapのインクリメントサイズを教えてもらう
-	auto* cmdExecutor = deviceContextDiplomat_.Access<DeviceContext::CommandExecutor>();
-	UINT rtvDHIncrementSIze = cmdExecutor->CalcDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
-	UINT srvDHIncrementSIze = cmdExecutor->CalcDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
-	UINT dsvDHIncrementSIze = cmdExecutor->CalcDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_DSV);
+	auto& cmdExecutor = deviceContextDiplomat_.Access<DeviceContext::CommandExecutor>();
+	UINT rtvDHIncrementSIze = cmdExecutor.CalcDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
+	UINT srvDHIncrementSIze = cmdExecutor.CalcDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+	UINT dsvDHIncrementSIze = cmdExecutor.CalcDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_DSV);
 
 	container_.Import<D3D12_DESCRIPTOR_HEAP_TYPE_RTV>
 	(

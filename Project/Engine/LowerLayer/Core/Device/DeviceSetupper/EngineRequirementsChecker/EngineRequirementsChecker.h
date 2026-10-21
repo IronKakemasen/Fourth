@@ -2,7 +2,7 @@
 #include "../DeviceContextSetupper.h"
 
 
-class DeviceContext::Setupper::EngineRequiementsChecker
+class DeviceContext::Setupper::EngineRequirementsChecker
 {
 private:
 

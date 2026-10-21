@@ -42,10 +42,10 @@ BufferContext::BufferUploader::BufferUploader
 	pitchBarriersCommand = commandProvider.Provide<CommandContextCmds::PitchBarrierCommand>(licence);
 
 	//DeviceContextのコマンドプロバイダーからコマンドをもらう
-	auto* deviceContextCmdProvider = deviceContextDiplomat_.Access<DeviceContext::CommandProvider>();
+	auto& deviceContextCmdProvider = deviceContextDiplomat_.Access<DeviceContext::CommandProvider>();
 	DeviceContext::CommandProvider::LicenceType<DeviceContextCmds::PrepareUploadCommand> licencePrepareUpload;
 	//テクスチャバッファのサブリソースを作成するため
-	prepareUploadCommand = deviceContextCmdProvider->Provide<DeviceContextCmds::PrepareUploadCommand>(licencePrepareUpload);
+	prepareUploadCommand = deviceContextCmdProvider.Provide<DeviceContextCmds::PrepareUploadCommand>(licencePrepareUpload);
 
 
 	//そこまで重要じゃないのでとりあえず形式で
