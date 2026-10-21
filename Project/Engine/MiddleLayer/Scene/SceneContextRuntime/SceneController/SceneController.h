@@ -15,12 +15,12 @@ public:
 	//シーンの制御、更新処理
 	void Run();
 
-
 	SceneBehavior::Output const& WatchCurrentSceneOutput()const;
+
+	void ChangeScene(std::string const& next_);
 
 private:
 
-	void ChangeScene(std::string const& next_);
 
 
 	//現在稼働しているシーン

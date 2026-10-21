@@ -111,7 +111,6 @@ private:
 		//シーンコンテキストのエージェントがシーン作成関数を呼び出す
 		auto& agent = sceneContext.AccessDiplomat().Access<SceneContext::ExecutionAgent>();
 
-
 		//シーンの数とシーンネームの数が一致しているかチェック
 		auto const numScenes = sizeof...(SceneTypes);
 		ErrorMessageOutput::Assert::DetectError

@@ -9,7 +9,8 @@ public:
 	//パブリックで
 	RenderingTestScene(InstancingLicense license_):SceneBehavior(license_){}
 
-	//ここの中でモデルの生成などの処理を書く。一発しか呼びません。同じくパブリックで
+	//ここの中でモデルの生成などの処理を書く。一発しか呼びません。
+	//アクセス修飾子はどこでも
 	virtual void Init()override;
 
 };

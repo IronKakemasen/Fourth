@@ -31,7 +31,7 @@ namespace
 }
 
 
-using namespace ProjectConfig::Window;
+
 using namespace ProjectConfig::Render;
 
 
@@ -123,8 +123,8 @@ DXGI_SWAP_CHAIN_DESC1 SwapChainContext::Builder::CreateSwapChainDesc()
 	DXGI_SWAP_CHAIN_DESC1 swapChainDesc{};
 
 	//画面の縦横。クライアント領域と同じにしておく
-	swapChainDesc.Width = (UINT)kWidth;
-	swapChainDesc.Height = (UINT)kHeight;
+	swapChainDesc.Width = ProjectConfig::Window::Width();
+	swapChainDesc.Height = ProjectConfig::Window::Height();
 	//色の形成
 	swapChainDesc.Format = kSwapChainBufferFormat;
 	//マルチサンプルしない

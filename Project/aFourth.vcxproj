@@ -198,6 +198,7 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="Engine\LowerLayer\DebugSystem\ErrorMessageOutput\ErrorMessageOutput.cpp" />
+    <ClCompile Include="Engine\ProjectConfig\ProjectConfig.cpp" />
     <ClCompile Include="External\Audio\xaudio_player_mf.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
@@ -594,7 +595,7 @@
     <ClInclude Include="Engine\LowerLayer\RenderStateComponent.h" />
     <ClInclude Include="Engine\LowerLayer\Resource\Shader\ShaderPathComponent\ShaderPathComponent.h" />
     <ClInclude Include="Engine\LowerLayer\Resource\RootSignature\RootSignatureCreator\RootSignatureAssembler\RootSignatureLayoutComponent.h" />
-    <ClInclude Include="Engine\ProjectConfig.h" />
+    <ClInclude Include="Engine\ProjectConfig\ProjectConfig.h" />
     <ClInclude Include="Engine\Utility\Comparison\Comparison.h" />
     <ClInclude Include="Engine\Utility\RegistryLoader\RegistryLoader.h" />
     <ClInclude Include="Engine\Utility\StringProcessing\StringProcessing.h" />

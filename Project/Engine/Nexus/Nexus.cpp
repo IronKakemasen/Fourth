@@ -26,7 +26,7 @@ namespace
 	std::string const fileName = "Nexus.cpp";
 }
 
-using namespace ProjectConfig::Window;
+
 
 
 Nexus::Nexus(aFourthProof proof_)
@@ -55,7 +55,7 @@ Nexus::~Nexus()
 
 void Nexus::PrimaryInit()
 {
-	InitializeInSequence<InitSequence::kLoadAllJsonFiles>();
+	InitializeInSequence<InitSequence::kLoadProjectFiles>();
 
 	InitializeInSequence<InitSequence::kDebugContext>();
 	InitializeInSequence<InitSequence::kDeviceContext>();

@@ -29,6 +29,17 @@ SceneContext::ScenePipeline::~ScenePipeline()
 void SceneContext::ScenePipeline::ImportScene(std::unique_ptr<SceneBehavior>&& scene_, std::string const& sceneName_)
 {
 	sceneLibrary->Import(std::move(scene_), sceneName_);
+
+	//スタートアップシーンを設定
+#ifdef _DEBUG
+
+	if (sceneName_ == ProjectConfig::Window::FirstSceneDebug())
+	{
+		sceneController->ChangeScene(sceneName_);
+	}
+
+#endif // DEBUG
+
 }
 
 void SceneContext::ScenePipeline::Run

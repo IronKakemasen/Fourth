@@ -32,7 +32,7 @@ void CameraBehavior::CameraTransform::Clear()
 		projection.farClip = 0.1f;
 		projection.nearClip = 1000.0f;
 		projection.fovY = MathConstants::kPi * MathConstants::kHalf;
-		projection.aspectRatio = (float)ProjectConfig::Window::kWidth / (float)ProjectConfig::Window::kHeight;
+		projection.aspectRatio = (float)ProjectConfig::Window::Width() / (float)ProjectConfig::Window::Height();
 	}
 	else
 	{

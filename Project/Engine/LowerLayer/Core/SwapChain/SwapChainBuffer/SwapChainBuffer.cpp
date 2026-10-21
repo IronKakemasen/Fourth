@@ -38,15 +38,15 @@ SwapChainContext::SwapChainBuffer::SwapChainBuffer
 
 void SwapChainContext::SwapChainBuffer::AssembleMatrices()
 {
-	viewport.Width = static_cast<FLOAT>(ProjectConfig::Window::kWidth);
-	viewport.Height = static_cast<FLOAT>(ProjectConfig::Window::kHeight);
+	viewport.Width = static_cast<FLOAT>(ProjectConfig::Window::Width());
+	viewport.Height = static_cast<FLOAT>(ProjectConfig::Window::Height());
 	viewport.TopLeftX = 0.0f;
 	viewport.TopLeftY = 0.0f;
 	viewport.MinDepth = 0.0f;
 	viewport.MaxDepth = 1.0f;
 
-	scissorRect.right = static_cast<LONG>(ProjectConfig::Window::kWidth);
-	scissorRect.bottom = static_cast<LONG>(ProjectConfig::Window::kHeight);
+	scissorRect.right = static_cast<LONG>(ProjectConfig::Window::Width());
+	scissorRect.bottom = static_cast<LONG>(ProjectConfig::Window::Height());
 	scissorRect.left = static_cast<LONG>(0.0f);
 	scissorRect.top = static_cast<LONG>(0.0f);
 
