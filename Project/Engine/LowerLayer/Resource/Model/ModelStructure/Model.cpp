@@ -6,6 +6,8 @@ namespace
 	auto const fileName = "Model.cpp";
 }
 
+using namespace ProjectConfig::Render;
+
 Model::Model
 (
 	Type type_,
@@ -18,7 +20,8 @@ Model::Model
 	changeableParams.materialType = modelDesc_.WatchRenderStates()[0].materialTypes[0];
 
 	changeableParams.materials = materials_;
-	changeableParams.areMaterialsDirty.resize(materials_.size(),true);
+	//マテリアルのダーティ検知用(ダブルバッファ分)
+	changeableParams.areMaterialsDirtyCnt.resize(materials_.size(), (UINT)NumBuffer::kDoubleBuffer);
 
 	//サブメッシュ分のトランスフォームを確保
 	auto const numMeshes = modelDesc_.WatchPerDrawIndices().size();
@@ -94,7 +97,7 @@ void Model::ChangeRoughness(size_t index_, float dst_)
 		fileName
 	);
 
-	changeableParams.areMaterialsDirty[index_] = true;
+	changeableParams.areMaterialsDirtyCnt[index_] = (UINT)NumBuffer::kDoubleBuffer;
 	changeableParams.materials[index_].roughness = dst_;
 }
 
@@ -108,7 +111,7 @@ void Model::ChangeMetallic(size_t index_, float dst_)
 		fileName
 	);
 
-	changeableParams.areMaterialsDirty[index_] = true;
+	changeableParams.areMaterialsDirtyCnt[index_] = (UINT)NumBuffer::kDoubleBuffer;
 	changeableParams.materials[index_].metallic = dst_;
 
 }
@@ -123,7 +126,7 @@ void Model::ChangeColor(size_t index_, Vector4<float> const& dst_)
 		fileName
 	);
 
-	changeableParams.areMaterialsDirty[index_] = true;
+	changeableParams.areMaterialsDirtyCnt[index_] = (UINT)NumBuffer::kDoubleBuffer;
 	changeableParams.materials[index_].baseColor = dst_;
 }
 
@@ -154,7 +157,7 @@ void Model::ChangeTexture<TextureComponent::TextureType::kAlbedo>(size_t index_,
 		fileName
 	);
 
-	changeableParams.areMaterialsDirty[index_] = true;
+	changeableParams.areMaterialsDirtyCnt[index_] = (UINT)NumBuffer::kDoubleBuffer;
 	changeableParams.materials[index_].albedoTexture = dst_;
 }
 template<>
@@ -167,7 +170,7 @@ void Model::ChangeTexture<TextureComponent::TextureType::kNormal>(size_t index_,
 		fileName
 	);
 
-	changeableParams.areMaterialsDirty[index_] = true;
+	changeableParams.areMaterialsDirtyCnt[index_] = (UINT)NumBuffer::kDoubleBuffer;
 	changeableParams.materials[index_].normalTexture = dst_;
 }
 template<>
@@ -180,7 +183,7 @@ void Model::ChangeTexture<TextureComponent::TextureType::kEmissive>(size_t index
 		fileName
 	);
 
-	changeableParams.areMaterialsDirty[index_] = true;
+	changeableParams.areMaterialsDirtyCnt[index_] = (UINT)NumBuffer::kDoubleBuffer;
 	changeableParams.materials[index_].emissiveTexture = dst_;
 }
 

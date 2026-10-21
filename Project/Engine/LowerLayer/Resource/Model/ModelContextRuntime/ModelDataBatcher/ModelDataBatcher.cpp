@@ -22,11 +22,11 @@ ModelContext::ModelDataBatcher::~ModelDataBatcher()
 
 }
 
-void ModelContext::ModelDataBatcher::BatchModelData
+void ModelContext::ModelDataBatcher::BatchAndUpdateModelData
 (
 	AgentKey agentKey_,
 	UINT const frameIndex_,
-	std::vector<Model*> const& models_,
+	std::vector<Model*>& models_,
 	BufferContextDiplomat& bufferContextDiplomat_
 )
 {
@@ -35,12 +35,12 @@ void ModelContext::ModelDataBatcher::BatchModelData
 	auto& dispatcher = *bufferContextDiplomat_.Access<BufferContext::ToolLender>()->Lend<BufferContext::BufferDispatcher>(licence);
 
 	//モデルの所持するデータをバッファに書き込んでいく
-	for (Model const* model : models_)
+	for (Model* model : models_)
 	{
 		auto const& perDrawIndices = model->WatchPerDrawIndices();
 		auto const numMeshes = perDrawIndices.size();
 
-		OverrideBuffer<ConstantBuffers::ConstantBufferBindSlots::kTransformMatrixContainer>
+		UpdateAndOverrideBuffer<ConstantBuffers::ConstantBufferBindSlots::kTransformMatrixContainer>
 		(
 			frameIndex_,
 			*model,
@@ -49,7 +49,7 @@ void ModelContext::ModelDataBatcher::BatchModelData
 			dispatcher
 		);
 
-		OverrideBuffer<ConstantBuffers::ConstantBufferBindSlots::kMaterialContainer>
+		UpdateAndOverrideBuffer<ConstantBuffers::ConstantBufferBindSlots::kMaterialContainer>
 		(
 			frameIndex_,
 			*model,
@@ -58,14 +58,24 @@ void ModelContext::ModelDataBatcher::BatchModelData
 			dispatcher
 		);
 	}
+
+	//モデルのバッチング処理が終了したので、トランスフォームの
+	//更新処理用ダーティフラグをリセットする
+	for (auto* model : models_)
+	{
+		for (auto& modelTrans : model->RefTransforms())
+		{
+			modelTrans.ResetFrameFlag();
+		}
+	}
 }
 
 
 template<>
-void ModelContext::ModelDataBatcher::OverrideBuffer<ConstantBufferBindSlots::kTransformMatrixContainer>
+void ModelContext::ModelDataBatcher::UpdateAndOverrideBuffer<ConstantBufferBindSlots::kTransformMatrixContainer>
 (
 	UINT const frameIndex_,
-	Model const& model_,
+	Model& model_,
 	std::vector<ConstantBuffers::PerDrawIndicesCPUGPU> const& perDrawIndices_,
 	size_t const numMesh_,
 	BufferContext::BufferDispatcher& dispatcher_
@@ -79,22 +89,28 @@ void ModelContext::ModelDataBatcher::OverrideBuffer<ConstantBufferBindSlots::kTr
 	//もちろんサブメッシュ分も
 	for (size_t i = 0;i < numMesh_;++i)
 	{
-		auto const& srcTransform = model_.WatchTransform(i);
+		auto srcTransform = model_.RefTransform(i);
+		
+		//トランスフォームの更新処理
+		srcTransform.Update();
 
-		//そのトランスフォームがダーティなら書き込まない
+		//そのトランスフォームがダーティじゃないなら書き込まない
 		if (!srcTransform.ShouldOverrideBuffer()) continue;
 
 		TransformMatrixCPUGPU transformMatrix(srcTransform.WatchWorldMatrix());
 		dstBuffer->WriteElement(frameIndex_, transformMatrix, perDrawIndices_[i].transformMatrixID);
+
+		//トランスフォームのバッファ書き込みカウントを１つ減らす
+		srcTransform.DecrementNeedOverrideBufferCnt();
 	}
+
 }
 
-
 template<>
-void ModelContext::ModelDataBatcher::OverrideBuffer<ConstantBufferBindSlots::kMaterialContainer>
+void ModelContext::ModelDataBatcher::UpdateAndOverrideBuffer<ConstantBufferBindSlots::kMaterialContainer>
 (
 	UINT const frameIndex_,
-	Model const& model_,
+	Model& model_,
 	std::vector<ConstantBuffers::PerDrawIndicesCPUGPU> const& perDrawIndices_,
 	size_t const numMesh_,
 	BufferContext::BufferDispatcher& dispatcher_
@@ -107,13 +123,17 @@ void ModelContext::ModelDataBatcher::OverrideBuffer<ConstantBufferBindSlots::kMa
 	//やってることはトランスフォームと変わらない。
 	for (size_t i = 0;i < numMesh_;++i)
 	{
-		//そのトランスフォームがダーティなら書き込まない
+		//そのマテリアルがダーティじゃないなら書き込まない
 		if (!model_.IsMaterialDirty(i)) continue;
 
-		const auto& srcMaterial = model_.WatchMaterial(i);
+		auto& srcMaterial = model_.WatchMaterial(i);
+		//MaterialGPUに変換
 		MaterialGPU material(srcMaterial);
 
 		dstBuffer->WriteElement(frameIndex_, material, perDrawIndices_[i].materialID);
+
+		//マテリアルダーティのカウントを１つ消去
+		model_.DecrementMaterialDirtyCnt(i);
 	}
 }
 

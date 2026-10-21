@@ -1,13 +1,17 @@
 #pragma once
 #include "../../CreateModelTools/ModelCreator.h"
 
+struct RenderStateKey;
+
+
 class ModelContext::ModelFrontlineSystems
 {
+public:
+
 	//モデルのコンテナ。シーン1つにつき1こ。モデルの本体、renderState別と、
 	//modelType別に分類されたコンテナも持つ
 	class ModelContainer;
 
-public:
 	ModelFrontlineSystems(NexusFieldProof proof_, ModelCreator& modelCreator_);
 	~ModelFrontlineSystems();
 
@@ -37,6 +41,10 @@ public:
 
 	//モデルコンテナの分別を行う
 	void SeparateModels();
+
+	ModelContainer const* WatchModelContaienr()const;
+
+
 
 private:
 

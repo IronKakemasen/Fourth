@@ -23,6 +23,7 @@ void SceneContext::ScenePipeline::SceneController::Run()
 void SceneContext::ScenePipeline::SceneController::ChangeScene(std::string const& next_)
 {
 	curScene = sceneLib.Export(next_);
+	Logger::Log("Changed Scene To  " + next_, "SceneController.cpp");
 }
 
 SceneBehavior::Output const& SceneContext::ScenePipeline::SceneController::WatchCurrentSceneOutput()const

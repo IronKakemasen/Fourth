@@ -458,7 +458,7 @@ std::vector<RenderState> const& RenderContext::StaticRenderGraph::PSO_Builder::P
 )
 {
 	//モデルクリエイターが、生成したモデルの全レンダーステートのパターンを所持しているので渡してもらう
-	auto& modelAgent = *modelContextDiplomat_.Access<ModelContext::ExecutionAgent>();
+	auto& modelAgent = modelContextDiplomat_.Access<ModelContext::ExecutionAgent>();
 
 	return modelAgent.WatchRenderStateCache(ModelContext::ExecutionAgent::RenderContextProof{});
 }

@@ -22,12 +22,13 @@ public:
 
 	void DeleteModelDataCache(NexusFieldProof proof_);
 	
-	//モデルデータをバッチングする
-	void BatchModelData
+	//モデルデータをバッチングする。ループのコストが鼻につくので、
+	//モデルのトランスフォームのアップデートもやっちゃう
+	void BatchAndUpdateModelData
 	(
 		SceneContextProof proof_,
 		UINT const frameIndex_,
-		std::vector<Model*> const& models_,
+		std::vector<Model*>& models_,
 		BufferContextDiplomat& bufferContextDiplomat_
 	);
 

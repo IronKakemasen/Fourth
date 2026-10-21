@@ -41,6 +41,9 @@ void SceneBehavior::SetSystems
 
 	cameraSystems = cameraSystems_;
 	modelSystems = modelSystems_;
+
+	//シーン出力ようにモデルコンテナのアドレスを格納
+	output.modelContainer = modelSystems->WatchModelContaienr();
 }
 
 

@@ -34,5 +34,12 @@ SceneBehavior* SceneContext::ScenePipeline::SceneLibrary::Export(std::string con
 		fileName
 	);
 
+	ErrorMessageOutput::Assert::DetectError
+	(
+		sceneMap[sceneName_].get(),
+		sceneName_ + "nullptrやんけ",
+		fileName
+	);
+
 	return sceneMap[sceneName_].get();
 }

@@ -40,3 +40,9 @@ void ModelContext::ModelFrontlineSystems::SeparateModels()
 {
 	modelContainer->SeparateModels(ModelContainer::Local_InitLicence{});
 }
+
+ModelContext::ModelFrontlineSystems::ModelContainer const* ModelContext::ModelFrontlineSystems::WatchModelContaienr()const
+{
+	return modelContainer.get();
+}
+
