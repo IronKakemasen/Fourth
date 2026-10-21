@@ -35,7 +35,10 @@ public:
 		sceneUnique->CreatePresetCamera();
 
 		//仮想初期化関数を呼ぶ
-		sceneUnique->Init();
+		static_cast<SceneBehavior*>(sceneUnique.get())->Init();
+
+		//モデルをスタティックとダイナミックに分ける
+		sceneUnique->SeparateModels();
 
 		return sceneUnique;
 	}

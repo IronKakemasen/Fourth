@@ -8,7 +8,7 @@
 
 
 using namespace ProjectConfig::Render;
-using namespace ProjectConfig::Window;
+
 
 namespace
 {

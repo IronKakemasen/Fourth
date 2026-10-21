@@ -2,7 +2,7 @@
 #include "PassSettingsLoader.h"
 #include "../../PassDesc/PassDesc.h"
 
-using namespace ProjectConfig::Window;
+
 using namespace ProjectConfig::Render;
 using namespace RenderPassComponent;
 
@@ -90,8 +90,8 @@ std::vector<RenderContext::RequiredBufferInfo::ColorBuffer> RenderContext::Rende
 		colorBufferInfo[i].blendMode = blendModes[i];
 		colorBufferInfo[i].format = DXGI_FORMAT(colorBufferFormats[i]);
 		colorBufferInfo[i].clearColor = clearColors[i];
-		colorBufferInfo[i].width = widthContainer[i] == -1 ? kWidth : widthContainer[i];
-		colorBufferInfo[i].height = heightContainer[i] == -1 ? kHeight : heightContainer[i];
+		colorBufferInfo[i].width = widthContainer[i] == -1 ? ProjectConfig::Window::Width() : widthContainer[i];
+		colorBufferInfo[i].height = heightContainer[i] == -1 ? ProjectConfig::Window::Height() : heightContainer[i];
 		colorBufferInfo[i].numBuffer = NumBuffer(numBufferContainer[i]);
 	}
 
@@ -148,9 +148,8 @@ std::optional<RenderContext::RequiredBufferInfo::DepthStencilBuffer> RenderConte
 		miyajison->LoadData<int>(DataKeyString::kSrcJsonFileName, { passName_,DataKeyString::kDepthHeightI})
 	};
 
-	depthStencilBufferInfo->width = widthHeight[0] == -1 ? kWidth : widthHeight[0];
-	depthStencilBufferInfo->height = widthHeight[1] == -1 ? kHeight : widthHeight[1];
-
+	depthStencilBufferInfo->width = widthHeight[0] == -1 ? ProjectConfig::Window::Width() : widthHeight[0];
+	depthStencilBufferInfo->height = widthHeight[1] == -1 ? ProjectConfig::Window::Height() : widthHeight[1];
 
 	return depthStencilBufferInfo;
 }

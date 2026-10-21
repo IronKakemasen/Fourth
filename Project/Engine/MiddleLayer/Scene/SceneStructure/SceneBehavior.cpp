@@ -32,6 +32,13 @@ void SceneBehavior::SetSystems
 	ModelContext::ModelFrontlineSystems* modelSystems_
 )
 {
+	ErrorMessageOutput::Assert::DetectError
+	(
+		cameraSystems_ && modelSystems_,
+		"システムがぬるです",
+		"SceneBehavior.cpp"
+	);
+
 	cameraSystems = cameraSystems_;
 	modelSystems = modelSystems_;
 }

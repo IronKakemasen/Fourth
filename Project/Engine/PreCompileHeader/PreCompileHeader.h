@@ -42,7 +42,7 @@
 //出力ウィンドウとログファイルにログを出力
 #include "../LowerLayer/DebugSystem/Logger/Logger.h"
 //プロジェクト設定
-#include "../ProjectConfig.h"
+#include "../ProjectConfig/ProjectConfig.h"
 //ジェーソン読み書き
 #include "../Utility/Miyajison/Miyajison.h"
 #include "../Utility/Comparison/Comparison.h"

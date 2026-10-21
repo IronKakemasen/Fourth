@@ -79,8 +79,8 @@ private:
 	//ここの中でモデルの生成などの処理を書く。一発しか呼びません。
 	virtual void Init() = 0;
 
-	//SceneContext::SceneControllerのみ呼べる
-	void Update();
+	//シーンのInit()の後に一括で一度だけ呼ばれる
+	void SeparateModels();
 
 	//シーンクリエイターがインスタンス化後に呼び出す
 	void SetSystems
@@ -92,8 +92,8 @@ private:
 	//シーンクリエイターがプリセットカメラを備え付ける
 	void CreatePresetCamera();
 
-	//シーンのコンストラクタで終わった後に一括で一度だけ呼ばれる
-	void SeparateModels();
+	//SceneContext::SceneControllerのみ呼べる
+	void Update();
 
 	//SceneControllerにこのシーンで使われているリソース伝えるため
 	Output const& WatchSceneOutput()const;

@@ -14,7 +14,7 @@ private:
 		float farClip = 0.1f;
 		float nearClip = 1000.0f;
 		float fovY = MathConstants::kPi * MathConstants::kHalf;
-		float aspectRatio = (float)ProjectConfig::Window::kWidth / (float)ProjectConfig::Window::kHeight;
+		float aspectRatio = (float)ProjectConfig::Window::Width() / (float)ProjectConfig::Window::Height();
 	};
 
 	//カメラ専用のトランスフォームパラメータ

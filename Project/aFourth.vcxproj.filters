@@ -744,6 +744,9 @@
     <ClCompile Include="Engine\MiddleLayer\Scene\ScenePreset\RenderingTestScene\RenderingTestScene.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
+    <ClCompile Include="Engine\ProjectConfig\ProjectConfig.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Engine\LowerLayer\Core\Window\WindowContext.h">
@@ -1001,7 +1004,7 @@
     <ClInclude Include="Engine\LowerLayer\Resource\Shader\ShaderPathComponent\ShaderPathComponent.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\ProjectConfig.h">
+    <ClInclude Include="Engine\ProjectConfig\ProjectConfig.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
     <ClInclude Include="Engine\MiddleLayer\Render\RenderContextRuntime\PSO_PoolDispatcher\GraphicsPSO_Key.h">

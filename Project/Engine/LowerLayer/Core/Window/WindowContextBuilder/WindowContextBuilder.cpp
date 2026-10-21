@@ -15,7 +15,7 @@ WindowContext::CoreParts WindowContext::Builder::CreateCoreParts()
 {
 	CoreParts coreParts;
 
-	using namespace ProjectConfig::Window;
+	
 
 	auto hInst = GetModuleHandle(nullptr);
 	ErrorMessageOutput::Abort::DetectError(hInst, "hInstがぬるぽ", fileName);
@@ -23,9 +23,9 @@ WindowContext::CoreParts WindowContext::Builder::CreateCoreParts()
 	//ウィンドウクラスの登録
 	WNDCLASSEX wc = {};
 
-	coreParts.windowName = kTitle;
-	coreParts.width = kWidth;
-	coreParts.height = kHeight;
+	coreParts.windowName = ProjectConfig::Window::kTitle;
+	coreParts.width = ProjectConfig::Window::Width();
+	coreParts.height = ProjectConfig::Window::Height();
 
 	wc.cbSize = sizeof(WNDCLASSEX);
 	wc.style = CS_HREDRAW | CS_VREDRAW;
@@ -34,7 +34,7 @@ WindowContext::CoreParts WindowContext::Builder::CreateCoreParts()
 	wc.hCursor = LoadCursor(hInst, IDC_ARROW);
 	wc.hbrBackground = GetSysColorBrush(COLOR_BACKGROUND);
 	wc.lpszMenuName = nullptr;
-	wc.lpszClassName = kTitle;
+	wc.lpszClassName = ProjectConfig::Window::kTitle;
 	wc.hIconSm = LoadIcon(hInst, IDI_APPLICATION);
 
 	//ウィンドウの登録
@@ -54,8 +54,8 @@ WindowContext::CoreParts WindowContext::Builder::CreateCoreParts()
 	coreParts.hWnd = CreateWindowEx
 	(
 		0,
-		kTitle,
-		kTitle,
+		ProjectConfig::Window::kTitle,
+		ProjectConfig::Window::kTitle,
 		style,
 		CW_USEDEFAULT,
 		CW_USEDEFAULT,

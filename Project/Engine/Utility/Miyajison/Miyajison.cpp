@@ -3,10 +3,15 @@
 #include "JsonDataLibrary/JsonDataLibrary.h"
 #include "RegistryLoader/RegistryLoader.h"
 
+namespace
+{
+    auto const fileName = "Miyajison.cpp";
+}
+
 Miyajison::Miyajison()
 {
     jsonDataLibrary.reset(new DataLibrary());
-    Logger::Log("Instantiate: jsonDataLibrary", "Miyajison.cpp");
+    Logger::Log("Instantiate: jsonDataLibrary", fileName);
 
     LoadAllJsonFiles();
 }
@@ -43,7 +48,7 @@ nlohmann::json Miyajison::LoadJsonFile(std::string const& filePath_)
     (
         file.is_open(),
         filePath_ + "こんなファイルはねぇよ！他所をあたりな",
-        "Json.cpp"
+        fileName
     );
 
     nlohmann::json jsonData;

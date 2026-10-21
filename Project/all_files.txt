@@ -145,78 +145,6 @@ private:
 };
 
 ========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\ProjectConfig.h ===
-========================================
-#pragma once
-//バッファのユニークID
-using BufferUniqueID = uint32_t;
-//srv/uavディスクリプタヒープ上のインデックス
-using SRVHeapIndex = uint32_t;
-//メッシュデータのID
-using MeshDataID = uint32_t;
-static constexpr UINT kInvalid = 0xffffffff;
-///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-namespace ProjectConfig
-{
-	namespace Window
-	{
-		inline const LPCWSTR kTitle = L"Fourth";
-		constexpr UINT kWidth = 1280;
-		constexpr UINT kHeight = 720;
-		constexpr float kDefaultFovY = MathConstants::kPi * MathConstants::kHalf;
-		constexpr std::array<float, 4> kColor = { 1.0f,0.0f,0.0f,1.0f };
-	}
-	namespace Render
-	{
-		enum class NumBuffer
-		{
-			kSingleBuffer = 1,
-			kDoubleBuffer = 2
-		};
-		enum class CBufferSize
-		{
-			//TransformMatrixBufferの同時存在最大数
-			kSizeOfTransformMatrixContainerBuffer = 100,
-			//そのマテリアルバージョン
-			kSizeOfMaterialContainerBuffer = 100,
-		};
-		constexpr D3D_SHADER_MODEL kRequiredShaderModel = D3D_SHADER_MODEL_6_6;
-		constexpr DXGI_FORMAT kSwapChainBufferFormat = DXGI_FORMAT_R16G16B16A16_FLOAT;
-	}
-	//デバッグモードの時のみ有効です
-	namespace Debug
-	{
-		//DebugLayer
-		constexpr bool kEnableDebugLayer = true;
-		//ポインター破壊検知
-		constexpr bool kEnablePointerValidator = true;
-		//Comptrのリークチェック
-		constexpr bool kEnableLeakChecker = true;
-		//Jsonファイルを読み込むときに型チェックを行うかどうか
-		constexpr bool kEnableJsonDataTypeCheck = true;
-	}
-	namespace Core
-	{
-		constexpr uint32_t kNumDescriptorsRTVHeap = 16;
-		constexpr uint32_t kNumDescriptorSRVHeap = 1024;
-		constexpr uint32_t kNumDescriptorsDSVHeap = 16;
-	}
-	namespace Texture
-	{
-		//ノーデータテクスチャのファイル名
-		inline std::string const kNoDataAlbedoTex	= "noData_albedo";
-		inline std::string const kNoDataNormalTex	= "noData_normal";
-		inline std::string const kNoDataEmissiveTex = "noData_emissive";
-		inline std::string const kNoDataSprite		= "noData_albedo";
-	}
-}
-///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-========================================
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\ReadMe.txt ===
 ========================================
 Diplomatの概念
@@ -8269,7 +8197,6 @@ private:
 #include "SwapChainContextDiplomat/SwapChainContextToolLender/SwapChainContextToolLender.h"
 #include "SwapChainContextDiplomat/SwapChainExecutionAgent/SwapChainExecutionAgent.h"
 using namespace ProjectConfig::Render;
-using namespace ProjectConfig::Window;
 namespace
 {
 	std::string fileName = "SwapChainContext.cpp";
@@ -8451,14 +8378,14 @@ SwapChainContext::SwapChainBuffer::SwapChainBuffer
 }
 void SwapChainContext::SwapChainBuffer::AssembleMatrices()
 {
-	viewport.Width = static_cast<FLOAT>(ProjectConfig::Window::kWidth);
-	viewport.Height = static_cast<FLOAT>(ProjectConfig::Window::kHeight);
+	viewport.Width = static_cast<FLOAT>(ProjectConfig::Window::Width());
+	viewport.Height = static_cast<FLOAT>(ProjectConfig::Window::Height());
 	viewport.TopLeftX = 0.0f;
 	viewport.TopLeftY = 0.0f;
 	viewport.MinDepth = 0.0f;
 	viewport.MaxDepth = 1.0f;
-	scissorRect.right = static_cast<LONG>(ProjectConfig::Window::kWidth);
-	scissorRect.bottom = static_cast<LONG>(ProjectConfig::Window::kHeight);
+	scissorRect.right = static_cast<LONG>(ProjectConfig::Window::Width());
+	scissorRect.bottom = static_cast<LONG>(ProjectConfig::Window::Height());
 	scissorRect.left = static_cast<LONG>(0.0f);
 	scissorRect.top = static_cast<LONG>(0.0f);
 }
@@ -8551,7 +8478,6 @@ namespace
 {
 	std::string const fileName = "SwapChainContextBuilder.cpp";
 }
-using namespace ProjectConfig::Window;
 using namespace ProjectConfig::Render;
 std::tuple<std::unique_ptr<SwapChainContext::SwapChainBuffer>, Microsoft::WRL::ComPtr<IDXGISwapChain4>> SwapChainContext::Builder::Build
 (
@@ -8625,8 +8551,8 @@ DXGI_SWAP_CHAIN_DESC1 SwapChainContext::Builder::CreateSwapChainDesc()
 {
 	DXGI_SWAP_CHAIN_DESC1 swapChainDesc{};
 	//画面の縦横。クライアント領域と同じにしておく
-	swapChainDesc.Width = (UINT)kWidth;
-	swapChainDesc.Height = (UINT)kHeight;
+	swapChainDesc.Width = ProjectConfig::Window::Width();
+	swapChainDesc.Height = ProjectConfig::Window::Height();
 	//色の形成
 	swapChainDesc.Format = kSwapChainBufferFormat;
 	//マルチサンプルしない
@@ -8981,14 +8907,13 @@ namespace
 WindowContext::CoreParts WindowContext::Builder::CreateCoreParts()
 {
 	CoreParts coreParts;
-	using namespace ProjectConfig::Window;
 	auto hInst = GetModuleHandle(nullptr);
 	ErrorMessageOutput::Abort::DetectError(hInst, "hInstがぬるぽ", fileName);
 	//ウィンドウクラスの登録
 	WNDCLASSEX wc = {};
-	coreParts.windowName = kTitle;
-	coreParts.width = kWidth;
-	coreParts.height = kHeight;
+	coreParts.windowName = ProjectConfig::Window::kTitle;
+	coreParts.width = ProjectConfig::Window::Width();
+	coreParts.height = ProjectConfig::Window::Height();
 	wc.cbSize = sizeof(WNDCLASSEX);
 	wc.style = CS_HREDRAW | CS_VREDRAW;
 	wc.lpfnWndProc = WindowContext::WindowProcedure::WndProc;
@@ -8996,7 +8921,7 @@ WindowContext::CoreParts WindowContext::Builder::CreateCoreParts()
 	wc.hCursor = LoadCursor(hInst, IDC_ARROW);
 	wc.hbrBackground = GetSysColorBrush(COLOR_BACKGROUND);
 	wc.lpszMenuName = nullptr;
-	wc.lpszClassName = kTitle;
+	wc.lpszClassName = ProjectConfig::Window::kTitle;
 	wc.hIconSm = LoadIcon(hInst, IDI_APPLICATION);
 	//ウィンドウの登録
 	ErrorMessageOutput::Abort::DetectError(RegisterClassEx(&wc), "ウィンドウの登録失敗", fileName);
@@ -9012,8 +8937,8 @@ WindowContext::CoreParts WindowContext::Builder::CreateCoreParts()
 	coreParts.hWnd = CreateWindowEx
 	(
 		0,
-		kTitle,
-		kTitle,
+		ProjectConfig::Window::kTitle,
+		ProjectConfig::Window::kTitle,
 		style,
 		CW_USEDEFAULT,
 		CW_USEDEFAULT,
@@ -10295,7 +10220,7 @@ struct CameraDesc
 	float farClip = 0.1f;
 	float nearClip = 1000.0f;
 	float fovY = ProjectConfig::Window::kDefaultFovY;
-	float aspectRatio = (float)ProjectConfig::Window::kWidth / (float)ProjectConfig::Window::kHeight;
+	float aspectRatio = (float)ProjectConfig::Window::Width() / (float)ProjectConfig::Window::Height();
 };
 
 ========================================
@@ -10328,7 +10253,7 @@ void CameraBehavior::CameraTransform::Clear()
 		projection.farClip = 0.1f;
 		projection.nearClip = 1000.0f;
 		projection.fovY = MathConstants::kPi * MathConstants::kHalf;
-		projection.aspectRatio = (float)ProjectConfig::Window::kWidth / (float)ProjectConfig::Window::kHeight;
+		projection.aspectRatio = (float)ProjectConfig::Window::Width() / (float)ProjectConfig::Window::Height();
 	}
 	else
 	{
@@ -10457,7 +10382,7 @@ private:
 		float farClip = 0.1f;
 		float nearClip = 1000.0f;
 		float fovY = MathConstants::kPi * MathConstants::kHalf;
-		float aspectRatio = (float)ProjectConfig::Window::kWidth / (float)ProjectConfig::Window::kHeight;
+		float aspectRatio = (float)ProjectConfig::Window::Width() / (float)ProjectConfig::Window::Height();
 	};
 	//カメラ専用のトランスフォームパラメータ
 	struct Base
@@ -20421,7 +20346,6 @@ class RenderContext::RenderPassCreator::PassBufferCreator
 #include "PreCompileHeader.h"
 #include "PassSettingsLoader.h"
 #include "../../PassDesc/PassDesc.h"
-using namespace ProjectConfig::Window;
 using namespace ProjectConfig::Render;
 using namespace RenderPassComponent;
 namespace
@@ -20494,8 +20418,8 @@ std::vector<RenderContext::RequiredBufferInfo::ColorBuffer> RenderContext::Rende
 		colorBufferInfo[i].blendMode = blendModes[i];
 		colorBufferInfo[i].format = DXGI_FORMAT(colorBufferFormats[i]);
 		colorBufferInfo[i].clearColor = clearColors[i];
-		colorBufferInfo[i].width = widthContainer[i] == -1 ? kWidth : widthContainer[i];
-		colorBufferInfo[i].height = heightContainer[i] == -1 ? kHeight : heightContainer[i];
+		colorBufferInfo[i].width = widthContainer[i] == -1 ? ProjectConfig::Window::Width() : widthContainer[i];
+		colorBufferInfo[i].height = heightContainer[i] == -1 ? ProjectConfig::Window::Height() : heightContainer[i];
 		colorBufferInfo[i].numBuffer = NumBuffer(numBufferContainer[i]);
 	}
 	return colorBufferInfo;
@@ -20534,8 +20458,8 @@ std::optional<RenderContext::RequiredBufferInfo::DepthStencilBuffer> RenderConte
 		miyajison->LoadData<int>(DataKeyString::kSrcJsonFileName, { passName_,DataKeyString::kDepthWidthI }),
 		miyajison->LoadData<int>(DataKeyString::kSrcJsonFileName, { passName_,DataKeyString::kDepthHeightI})
 	};
-	depthStencilBufferInfo->width = widthHeight[0] == -1 ? kWidth : widthHeight[0];
-	depthStencilBufferInfo->height = widthHeight[1] == -1 ? kHeight : widthHeight[1];
+	depthStencilBufferInfo->width = widthHeight[0] == -1 ? ProjectConfig::Window::Width() : widthHeight[0];
+	depthStencilBufferInfo->height = widthHeight[1] == -1 ? ProjectConfig::Window::Height() : widthHeight[1];
 	return depthStencilBufferInfo;
 }
 RenderContext::RenderPassState RenderContext::RenderPassCreator::PassSettingsLoader::ParseRenderPassState
@@ -21360,6 +21284,13 @@ SceneContext::ScenePipeline::~ScenePipeline()
 void SceneContext::ScenePipeline::ImportScene(std::unique_ptr<SceneBehavior>&& scene_, std::string const& sceneName_)
 {
 	sceneLibrary->Import(std::move(scene_), sceneName_);
+	//スタートアップシーンを設定
+#ifdef _DEBUG
+	if (sceneName_ == ProjectConfig::Window::FirstSceneDebug())
+	{
+		sceneController->ChangeScene(sceneName_);
+	}
+#endif // DEBUG
 }
 void SceneContext::ScenePipeline::Run
 (
@@ -21494,8 +21425,8 @@ public:
 	//シーンの制御、更新処理
 	void Run();
 	SceneBehavior::Output const& WatchCurrentSceneOutput()const;
-private:
 	void ChangeScene(std::string const& next_);
+private:
 	//現在稼働しているシーン
 	SceneBehavior* curScene = nullptr;
 	SceneLibrary& sceneLib;
@@ -21612,7 +21543,9 @@ public:
 		//プリセットカメラを備え付ける
 		sceneUnique->CreatePresetCamera();
 		//仮想初期化関数を呼ぶ
-		sceneUnique->Init();
+		static_cast<SceneBehavior*>(sceneUnique.get())->Init();
+		//モデルをスタティックとダイナミックに分ける
+		sceneUnique->SeparateModels();
 		return sceneUnique;
 	}
 private:
@@ -21717,7 +21650,8 @@ class RenderingTestScene : public SceneBehavior
 public:
 	//パブリックで
 	RenderingTestScene(InstancingLicense license_):SceneBehavior(license_){}
-	//ここの中でモデルの生成などの処理を書く。一発しか呼びません。同じくパブリックで
+	//ここの中でモデルの生成などの処理を書く。一発しか呼びません。
+	//アクセス修飾子はどこでも
 	virtual void Init()override;
 };
 
@@ -21749,6 +21683,12 @@ void SceneBehavior::SetSystems
 	ModelContext::ModelFrontlineSystems* modelSystems_
 )
 {
+	ErrorMessageOutput::Assert::DetectError
+	(
+		cameraSystems_ && modelSystems_,
+		"システムがぬるです",
+		"SceneBehavior.cpp"
+	);
 	cameraSystems = cameraSystems_;
 	modelSystems = modelSystems_;
 }
@@ -21824,8 +21764,8 @@ public:
 private:
 	//ここの中でモデルの生成などの処理を書く。一発しか呼びません。
 	virtual void Init() = 0;
-	//SceneContext::SceneControllerのみ呼べる
-	void Update();
+	//シーンのInit()の後に一括で一度だけ呼ばれる
+	void SeparateModels();
 	//シーンクリエイターがインスタンス化後に呼び出す
 	void SetSystems
 	(
@@ -21834,8 +21774,8 @@ private:
 	);
 	//シーンクリエイターがプリセットカメラを備え付ける
 	void CreatePresetCamera();
-	//シーンのコンストラクタで終わった後に一括で一度だけ呼ばれる
-	void SeparateModels();
+	//SceneContext::SceneControllerのみ呼べる
+	void Update();
 	//SceneControllerにこのシーンで使われているリソース伝えるため
 	Output const& WatchSceneOutput()const;
 	CameraContext::CameraFrontlineSystems* cameraSystems = nullptr;
@@ -21878,7 +21818,6 @@ namespace
 {
 	std::string const fileName = "Nexus.cpp";
 }
-using namespace ProjectConfig::Window;
 Nexus::Nexus(aFourthProof proof_)
 {
 	Logger::Entry("Nexus: Constructor");
@@ -21895,7 +21834,7 @@ Nexus::~Nexus()
 }
 void Nexus::PrimaryInit()
 {
-	InitializeInSequence<InitSequence::kLoadAllJsonFiles>();
+	InitializeInSequence<InitSequence::kLoadProjectFiles>();
 	InitializeInSequence<InitSequence::kDebugContext>();
 	InitializeInSequence<InitSequence::kDeviceContext>();
 	InitializeInSequence<InitSequence::kWindowContext>();
@@ -21950,7 +21889,7 @@ class Nexus
 	//初期化・生成順序
 	enum class InitSequence
 	{
-		kLoadAllJsonFiles,
+		kLoadProjectFiles,
 		kDebugContext,
 		kDeviceContext,
 		kWindowContext,
@@ -22149,10 +22088,12 @@ namespace
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 template<>
-void Nexus::Init<Nexus::InitSequence::kLoadAllJsonFiles>()
+void Nexus::Init<Nexus::InitSequence::kLoadProjectFiles>()
 {
 	//シングルトンだから一度読んでコンストラクタが通ればよし
 	Miyajison::Get();
+	//ここでプロジェクト設定も初期化しちゃう
+	ProjectConfig::Window::Instantiate();
 }
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -22414,7 +22355,7 @@ void Nexus::Init<Nexus::InitSequence::kSceneContext>()
 	sceneContext = std::make_unique<SceneContext>(SceneContext::NexusFieldProof{});
 }
 template
-void Nexus::Init<Nexus::InitSequence::kLoadAllJsonFiles>();
+void Nexus::Init<Nexus::InitSequence::kLoadProjectFiles>();
 template
 void Nexus::Init<Nexus::InitSequence::kDebugContext>();
 template
@@ -22533,10 +22474,104 @@ void Nexus::Run(aFourthProof proof_)
 //出力ウィンドウとログファイルにログを出力
 #include "../LowerLayer/DebugSystem/Logger/Logger.h"
 //プロジェクト設定
-#include "../ProjectConfig.h"
+#include "../ProjectConfig/ProjectConfig.h"
 //ジェーソン読み書き
 #include "../Utility/Miyajison/Miyajison.h"
 #include "../Utility/Comparison/Comparison.h"
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\ProjectConfig\ProjectConfig.cpp ===
+========================================
+#include "ProjectConfig.h"
+ProjectConfig::Window::Window()
+{
+	Miyajison* miyajison = Miyajison::Get();
+	kFirstSceneDebug = miyajison->LoadData<std::string>("ProjectConfig", { "FirstSceneDebug" });
+	kWidth = (UINT)miyajison->LoadData<int>("ProjectConfig", { "Width" });
+	kHeight = (UINT)miyajison->LoadData<int>("ProjectConfig", { "Height" });
+}
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\ProjectConfig\ProjectConfig.h ===
+========================================
+#pragma once
+//バッファのユニークID
+using BufferUniqueID = uint32_t;
+//srv/uavディスクリプタヒープ上のインデックス
+using SRVHeapIndex = uint32_t;
+//メッシュデータのID
+using MeshDataID = uint32_t;
+static constexpr UINT kInvalid = 0xffffffff;
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+namespace ProjectConfig
+{
+	struct Window
+	{
+		Window();
+		static void Instantiate()
+		{
+			static Window window;
+		}
+		static inline constexpr LPCWSTR kTitle = L"Fourth";
+		static constexpr std::array<float, 4> kColor = { 1.0f,0.0f,0.0f,1.0f };
+		static constexpr float kDefaultFovY = MathConstants::kPi * MathConstants::kHalf;
+		static auto const& FirstSceneDebug() { return kFirstSceneDebug; }
+		static auto const Width() { return kWidth; }
+		static auto const Height() { return kHeight; }
+	private:
+		static inline std::string kFirstSceneDebug = "";
+		static inline UINT kWidth{};
+		static inline UINT kHeight{};
+	};
+	namespace Render
+	{
+		enum class NumBuffer
+		{
+			kSingleBuffer = 1,
+			kDoubleBuffer = 2
+		};
+		enum class CBufferSize
+		{
+			//TransformMatrixBufferの同時存在最大数
+			kSizeOfTransformMatrixContainerBuffer = 100,
+			//そのマテリアルバージョン
+			kSizeOfMaterialContainerBuffer = 100,
+		};
+		constexpr D3D_SHADER_MODEL kRequiredShaderModel = D3D_SHADER_MODEL_6_6;
+		constexpr DXGI_FORMAT kSwapChainBufferFormat = DXGI_FORMAT_R16G16B16A16_FLOAT;
+	}
+	//デバッグモードの時のみ有効です
+	namespace Debug
+	{
+		//DebugLayer
+		constexpr bool kEnableDebugLayer = true;
+		//ポインター破壊検知
+		constexpr bool kEnablePointerValidator = true;
+		//Comptrのリークチェック
+		constexpr bool kEnableLeakChecker = true;
+		//Jsonファイルを読み込むときに型チェックを行うかどうか
+		constexpr bool kEnableJsonDataTypeCheck = true;
+	}
+	namespace Core
+	{
+		constexpr uint32_t kNumDescriptorsRTVHeap = 16;
+		constexpr uint32_t kNumDescriptorSRVHeap = 1024;
+		constexpr uint32_t kNumDescriptorsDSVHeap = 16;
+	}
+	namespace Texture
+	{
+		//ノーデータテクスチャのファイル名
+		inline std::string const kNoDataAlbedoTex	= "noData_albedo";
+		inline std::string const kNoDataNormalTex	= "noData_normal";
+		inline std::string const kNoDataEmissiveTex = "noData_emissive";
+		inline std::string const kNoDataSprite		= "noData_albedo";
+	}
+}
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 ========================================
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Utility\ClosedHashMap\ClosedHashMap.h ===
@@ -22768,10 +22803,14 @@ public:
 #include "Miyajison.h"
 #include "JsonDataLibrary/JsonDataLibrary.h"
 #include "RegistryLoader/RegistryLoader.h"
+namespace
+{
+    auto const fileName = "Miyajison.cpp";
+}
 Miyajison::Miyajison()
 {
     jsonDataLibrary.reset(new DataLibrary());
-    Logger::Log("Instantiate: jsonDataLibrary", "Miyajison.cpp");
+    Logger::Log("Instantiate: jsonDataLibrary", fileName);
     LoadAllJsonFiles();
 }
 Miyajison* Miyajison::Get()
@@ -22802,7 +22841,7 @@ nlohmann::json Miyajison::LoadJsonFile(std::string const& filePath_)
     (
         file.is_open(),
         filePath_ + "こんなファイルはねぇよ！他所をあたりな",
-        "Json.cpp"
+        fileName
     );
     nlohmann::json jsonData;
     file >> jsonData;
@@ -23243,5 +23282,5 @@ namespace StringProcessing
 ========================================
 === SUMMARY ===
 ========================================
-Total Files      : 520
-Effective Lines  : 16874
+Total Files      : 521
+Effective Lines  : 16902

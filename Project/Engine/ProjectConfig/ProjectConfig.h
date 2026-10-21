@@ -14,14 +14,30 @@ static constexpr UINT kInvalid = 0xffffffff;
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 namespace ProjectConfig
 {
-	namespace Window
+	struct Window
 	{
-		inline const LPCWSTR kTitle = L"Fourth";
-		constexpr UINT kWidth = 1280;
-		constexpr UINT kHeight = 720;
-		constexpr float kDefaultFovY = MathConstants::kPi * MathConstants::kHalf;
-		constexpr std::array<float, 4> kColor = { 1.0f,0.0f,0.0f,1.0f };
-	}
+		Window();
+
+		static void Instantiate()
+		{
+			static Window window;
+		}
+
+		static inline constexpr LPCWSTR kTitle = L"Fourth";
+		static constexpr std::array<float, 4> kColor = { 1.0f,0.0f,0.0f,1.0f };
+		static constexpr float kDefaultFovY = MathConstants::kPi * MathConstants::kHalf;
+
+		static auto const& FirstSceneDebug() { return kFirstSceneDebug; }
+		static auto const Width() { return kWidth; }
+		static auto const Height() { return kHeight; }
+
+	private:
+
+		static inline std::string kFirstSceneDebug = "";
+		static inline UINT kWidth{};
+		static inline UINT kHeight{};
+
+	};
 
 	namespace Render
 	{
