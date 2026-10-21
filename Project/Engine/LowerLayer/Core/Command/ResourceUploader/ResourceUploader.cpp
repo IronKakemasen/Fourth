@@ -21,11 +21,10 @@ CommandContext::ResourceUploader::ResourceUploader
 ) :commandQueue(commandQueue_), synchronizer(synchronizer_)
 {
 
-	auto* cmdExecutor = deviceContextDiplomat_.Access<DeviceContext::CommandExecutor>();
+	auto& cmdExecutor = deviceContextDiplomat_.Access<DeviceContext::CommandExecutor>();
 	
 	//リソースアップロード用
-	auto [allocator_forUpload, cmdList_forUpload] =
-		cmdExecutor->CreateCommandContextCorePartsForUpload(proof_);
+	auto [allocator_forUpload, cmdList_forUpload] = cmdExecutor.CreateCommandContextCorePartsForUpload(proof_);
 
 	allocator = std::move(allocator_forUpload);
 	commandList = std::move(cmdList_forUpload);

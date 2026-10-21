@@ -20,9 +20,9 @@ void RenderContext::StaticRenderGraph::Run
 )
 {
 	//runtimeCmdWrapperにアクセス
-	auto cToolLender = commandContextDiplomat_.Access<CommandContext::ToolLender>();
+	auto& cToolLender = commandContextDiplomat_.Access<CommandContext::ToolLender>();
 	CommandContext::ToolLender::LicenceType<RuntimeWrapper> cLicence;
-	auto& runtimeCmdWrapper = *cToolLender->Lend<RuntimeWrapper>(cLicence);
+	auto& runtimeCmdWrapper = *cToolLender.Lend<RuntimeWrapper>(cLicence);
 
 	//共通の描画コマンドをたたく
 	commonCmdExecutor->ExecuteCommonCmds

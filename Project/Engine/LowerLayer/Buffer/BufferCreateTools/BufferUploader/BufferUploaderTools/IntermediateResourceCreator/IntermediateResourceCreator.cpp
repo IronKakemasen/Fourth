@@ -11,8 +11,8 @@
 	//中間リソース作成
 	return resourceCreator_->Create
 	(
-		CreateIntermedeiateResourceDesc(resourceSize_),
-		CreateIntermedeiteHeapProp(),
+		CreateIntermediateResourceDesc(resourceSize_),
+		CreateIntermediateHeapProp(),
 		nullptr,
 		D3D12_RESOURCE_STATE_GENERIC_READ,
 		"intermed" + std::to_string(createNum++),
@@ -22,7 +22,7 @@
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-D3D12_RESOURCE_DESC BufferContext::BufferUploader::IntermediateResourceCreator::CreateIntermedeiateResourceDesc(UINT resourceSize_)
+D3D12_RESOURCE_DESC BufferContext::BufferUploader::IntermediateResourceCreator::CreateIntermediateResourceDesc(UINT resourceSize_)
 {
 	D3D12_RESOURCE_DESC resourceDesc{};
 	resourceDesc.Dimension = D3D12_RESOURCE_DIMENSION_BUFFER;
@@ -39,7 +39,7 @@ D3D12_RESOURCE_DESC BufferContext::BufferUploader::IntermediateResourceCreator::
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-D3D12_HEAP_PROPERTIES BufferContext::BufferUploader::IntermediateResourceCreator::CreateIntermedeiteHeapProp()
+D3D12_HEAP_PROPERTIES BufferContext::BufferUploader::IntermediateResourceCreator::CreateIntermediateHeapProp()
 {
 	D3D12_HEAP_PROPERTIES heapProperties{};
 	heapProperties.Type = D3D12_HEAP_TYPE_UPLOAD;

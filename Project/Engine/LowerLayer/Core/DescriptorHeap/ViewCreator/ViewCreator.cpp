@@ -19,16 +19,16 @@ DescriptorHeapContext::ViewCreator::ViewCreator
 )
 {
 	//deviceContextからビュー生成のコマンドを渡してももらう
-	auto* deviceContextCmdProvider = deviceContextDiplomat_.Access<DeviceContext::CommandProvider>();
+	auto& deviceContextCmdProvider = deviceContextDiplomat_.Access<DeviceContext::CommandProvider>();
 	DeviceContext::CommandProvider::LicenceType<DeviceContextCmds::CreateView<D3D12_RENDER_TARGET_VIEW_DESC>> licenceRTV;
 	DeviceContext::CommandProvider::LicenceType<DeviceContextCmds::CreateView<D3D12_SHADER_RESOURCE_VIEW_DESC>> licenceSRV;
 	DeviceContext::CommandProvider::LicenceType<DeviceContextCmds::CreateView<D3D12_DEPTH_STENCIL_VIEW_DESC>> licenceDSV;
 	DeviceContext::CommandProvider::LicenceType<DeviceContextCmds::CreateUAV> licenceUAV;
 
-	rtvCmd = deviceContextCmdProvider->Provide<DeviceContextCmds::CreateView<D3D12_RENDER_TARGET_VIEW_DESC>>(licenceRTV);
-	srvCmd = deviceContextCmdProvider->Provide<DeviceContextCmds::CreateView<D3D12_SHADER_RESOURCE_VIEW_DESC>>(licenceSRV);
-	dsvCmd = deviceContextCmdProvider->Provide<DeviceContextCmds::CreateView<D3D12_DEPTH_STENCIL_VIEW_DESC>>(licenceDSV);
-	uavCmd = deviceContextCmdProvider->Provide<DeviceContextCmds::CreateUAV>(licenceUAV);
+	rtvCmd = deviceContextCmdProvider.Provide<DeviceContextCmds::CreateView<D3D12_RENDER_TARGET_VIEW_DESC>>(licenceRTV);
+	srvCmd = deviceContextCmdProvider.Provide<DeviceContextCmds::CreateView<D3D12_SHADER_RESOURCE_VIEW_DESC>>(licenceSRV);
+	dsvCmd = deviceContextCmdProvider.Provide<DeviceContextCmds::CreateView<D3D12_DEPTH_STENCIL_VIEW_DESC>>(licenceDSV);
+	uavCmd = deviceContextCmdProvider.Provide<DeviceContextCmds::CreateUAV>(licenceUAV);
 	
 
 	//取り出し識別子が異なるので移し替える

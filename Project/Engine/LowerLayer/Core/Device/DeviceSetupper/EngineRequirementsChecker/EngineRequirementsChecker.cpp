@@ -3,11 +3,11 @@
 
 namespace
 {
-	auto const fileName = "EngineRequiementsChecker.cpp";
+	auto const fileName = "EngineRequirementsChecker.cpp";
 }
 
 
-void DeviceContext::Setupper::EngineRequiementsChecker::ShaderModelCheck(ID3D12Device8* device_ , D3D_SHADER_MODEL shaderModel_)
+void DeviceContext::Setupper::EngineRequirementsChecker::ShaderModelCheck(ID3D12Device8* device_ , D3D_SHADER_MODEL shaderModel_)
 {
 	D3D12_FEATURE_DATA_SHADER_MODEL shaderModel = { shaderModel_ };
 
@@ -24,7 +24,7 @@ void DeviceContext::Setupper::EngineRequiementsChecker::ShaderModelCheck(ID3D12D
 	Logger::Log("ShaderModel Maximum Checked");
 }
 
-void DeviceContext::Setupper::EngineRequiementsChecker::IsMeshShaderSupported(ID3D12Device8* device_)
+void DeviceContext::Setupper::EngineRequirementsChecker::IsMeshShaderSupported(ID3D12Device8* device_)
 {
 	//メッシュシェーダがサポートされているかどうか
 	D3D12_FEATURE_DATA_D3D12_OPTIONS7 features = {};
@@ -42,7 +42,7 @@ void DeviceContext::Setupper::EngineRequiementsChecker::IsMeshShaderSupported(ID
 
 }
 
-void DeviceContext::Setupper::EngineRequiementsChecker::ResourceBindingTierCheck(ID3D12Device8* device_)
+void DeviceContext::Setupper::EngineRequirementsChecker::ResourceBindingTierCheck(ID3D12Device8* device_)
 {
 	//メッシュシェーダがサポートされているかどうか
 	D3D12_FEATURE_DATA_D3D12_OPTIONS features = {};
