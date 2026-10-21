@@ -37,7 +37,7 @@ D3D12_RESOURCE_DESC Texture2DBufferDescription::CreateResourceDesc()const
     //サンプリングカウント
 	resourceDesc.SampleDesc.Count = 1;
     //Textureの次元数
-    resourceDesc.DepthOrArraySize = textureParams.isTextureQube ? 6 : 1;	
+    resourceDesc.DepthOrArraySize = textureParams.isTextureCube ? 6 : 1;	
 	resourceDesc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
     
     return resourceDesc;
@@ -64,7 +64,7 @@ D3D12_SHADER_RESOURCE_VIEW_DESC Texture2DBufferDescription::CreateSRV_Desc()cons
     srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
 
     //キューブマップかどうかで分岐
-    if (textureParams.isTextureQube)
+    if (textureParams.isTextureCube)
     {
         srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURECUBE;
 
@@ -111,7 +111,7 @@ DXGI_FORMAT Texture2DBufferDescription::FormatTable(TextureType type_)const
 void Texture2DBufferDescription::ExtractParams(DirectX::TexMetadata const& metaData_)
 {
     //キューブマップかどうか
-    textureParams.isTextureQube = metaData_.IsCubemap();
+    textureParams.isTextureCube = metaData_.IsCubemap();
 
     //TextureTypeによるフォーマット
     textureParams.format = FormatTable(param.texture2DState.type);

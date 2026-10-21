@@ -9,8 +9,6 @@ class BufferContextDiplomat;
 
 class BufferContext
 {
-	//生成したバッファの削除を担当
-	class BufferDeferredReleaser;
 	//生リソース生成
 	class ResourceCreator;
 

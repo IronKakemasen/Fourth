@@ -1,5 +1,5 @@
 #pragma once
-#include "../../CameraStructrue/CameraBehavior.h"
+#include "../../CameraStructure/CameraBehavior.h"
 
 class DefaultDebugCamera :public CameraBehavior
 {

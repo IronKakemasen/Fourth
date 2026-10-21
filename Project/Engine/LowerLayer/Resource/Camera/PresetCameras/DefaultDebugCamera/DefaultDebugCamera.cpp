@@ -1,7 +1,7 @@
 #include "PreCompileHeader.h"
 #include "DefaultDebugCamera.h"
-#include "../../CameraStructrue/CameraTransform/CameraTransform.h"
-#include "../../CameraStructrue/CameraDesc/CameraDesc.h"
+#include "../../CameraStructure/CameraTransform/CameraTransform.h"
+#include "../../CameraStructure/CameraDesc/CameraDesc.h"
 
 
 DefaultDebugCamera::DefaultDebugCamera(std::optional<CameraDesc> const& desc_)

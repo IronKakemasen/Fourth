@@ -17,8 +17,6 @@ class aFourth
 {
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 public:
-
-
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -50,25 +48,21 @@ public:
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	aFourth(std::vector<std::string> const& correspondedSceneNames_)
 	{
-		Logger::Entry("aFourth: Constructor");
+		Logger::Entry("EngineInterface: Constructor");
+
+		correspondedSceneNames = correspondedSceneNames_;
 
 		//自身のインスタンス制限
 		EngineInstanceLimiter::CanInstantiate();
 
-		//COMの初期化
-		HRESULT hr = CoInitializeEx(0, COINITBASE_MULTITHREADED);
-		ErrorMessageOutput::Abort::DetectError(SUCCEEDED(hr), "CoInitializeEx()でエラー", "aFourth.h");
-		Logger::Log("CoInitializeEx", "aFourth.h");
+		InitializeInSequence<InitSequence::kCoInitializeEx>();
+		InitializeInSequence<InitSequence::kInstantiateNexus>();
+		InitializeInSequence<InitSequence::kInstantiateScene>();
+		InitializeInSequence<InitSequence::kNexusSecInit>();
 
-		//ネクサスのインスタンス化
-		nexus = std::make_unique<Nexus>(Nexus::aFourthProof{});
-
-		//main.cppで指定されたシーンをインスタンス化する
-		InstantiateScene(correspondedSceneNames_);
-
-		nexus->SecondaryInit(Nexus::aFourthProof{});
+		ErrorMessageOutput::Assert::DetectError(nextInit == InitSequence::kEnd, "初期化が正常に行われていない可能性がある", "EngineInterface.h");
 		
-		Logger::End("aFourth: Constructor");
+		Logger::End("EngineInterface: Constructor");
 	}
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -79,11 +73,11 @@ public:
 
 
 		nexus.reset();
-		Logger::Log("Delete Nexus", "aFourth.h");
+		Logger::Log("Delete Nexus", "EngineInterface.h");
 
 
 		CoUninitialize();
-		Logger::Log("CoUninitialize", "aFourth.h");
+		Logger::Log("CoUninitialize", "EngineInterface.h");
 
 
 		Logger::End("aFourth: Destructor");
@@ -97,10 +91,66 @@ public:
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 private:
 
+	enum class InitSequence
+	{
+		kCoInitializeEx,
+		kInstantiateNexus,
+		kInstantiateScene,
+		kNexusSecInit,
+
+		kEnd
+	}nextInit = InitSequence::kCoInitializeEx;
+
+	template<InitSequence initSequence>
+	void Init()
+	{
+		if constexpr (initSequence == InitSequence::kCoInitializeEx)
+		{
+			//COMの初期化
+			HRESULT hr = CoInitializeEx(0, COINITBASE_MULTITHREADED);
+			ErrorMessageOutput::Abort::DetectError(SUCCEEDED(hr), "CoInitializeEx()でエラー", "EngineInterface.h");
+			Logger::Log("CoInitializeEx", "EngineInterface.h");
+		}
+		else if constexpr (initSequence == InitSequence::kInstantiateNexus)
+		{
+			//ネクサスのインスタンス化
+			nexus = std::make_unique<Nexus>(Nexus::aFourthProof{});
+			Logger::Log("Comp Instantiate Nexus", "EngineInterface.h");
+		}
+		else if constexpr (initSequence == InitSequence::kInstantiateScene)
+		{
+			//main.cppで指定されたシーンをインスタンス化する
+			InstantiateScene();
+			Logger::Log("Comp InstantiateScene", "EngineInterface.h");
+		}
+		else if constexpr (initSequence == InitSequence::kNexusSecInit)
+		{
+			nexus->SecondaryInit(Nexus::aFourthProof{});
+			Logger::Log("Comp Nexus's SecondaryInit", "EngineInterface.h");
+		}
+
+	}
+
+	template<InitSequence next_>
+	void InitializeInSequence()
+	{
+		ErrorMessageOutput::Assert::DetectError
+		(
+			nextInit == next_,
+			"初期化が正常に行われていない可能性がある",
+			"EngineInterface.h"
+		);
+
+		Init<next_>();
+
+		nextInit = InitSequence((UINT)nextInit + 1);
+	}
+
+
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-	void InstantiateScene(std::vector<std::string> const& correspondedSceneNames_)
+	void InstantiateScene()
 	{
 		auto aFourthProof = Nexus::aFourthProof{};
 
@@ -115,7 +165,7 @@ private:
 		auto const numScenes = sizeof...(SceneTypes);
 		ErrorMessageOutput::Assert::DetectError
 		(
-			numScenes == correspondedSceneNames_.size(),
+			numScenes == correspondedSceneNames.size(),
 			"シーンの数と、シーン名の数が合わへん",
 			"EngineInterface.h"
 		);
@@ -128,18 +178,20 @@ private:
 			agent.template CreateScene<SceneTypes>
 			(
 				SceneContext::ExecutionAgent::EngineInterfaceProof{},
-				correspondedSceneNames_[cnt++],
+				correspondedSceneNames[cnt++],
 				cameraContext.AccessDiplomat(),
 				modelContext.AccessDiplomat()
 			), 
 			...
-		);
-		
+		);	
 	}
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 	std::unique_ptr<Nexus> nexus;
+	//生成するシーン名
+	std::vector<std::string> correspondedSceneNames;
+
 };
 

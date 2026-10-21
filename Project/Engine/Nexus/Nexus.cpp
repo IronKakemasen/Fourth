@@ -85,7 +85,6 @@ void Nexus::SecondaryInit(aFourthProof proof_)
 	InitializeInSequence<InitSequence::kDeleteModelDataCache>();
 
 	ErrorMessageOutput::Assert::DetectError(nextInit == InitSequence::kEnd, "初期化が正常に行われていない可能性がある", fileName);
-
 }
 
 

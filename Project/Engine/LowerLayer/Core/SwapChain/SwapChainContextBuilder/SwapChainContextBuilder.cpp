@@ -150,9 +150,9 @@ Microsoft::WRL::ComPtr<IDXGISwapChain4> SwapChainContext::Builder::CreateSwapCha
 	Microsoft::WRL::ComPtr<IDXGISwapChain4> swapChain;
 
 	//コマンドキューを一時的に借りる
-	auto* commandContextToolLender = commandContextDiplomat_.Access<CommandContext::ToolLender>();
+	auto& commandContextToolLender = commandContextDiplomat_.Access<CommandContext::ToolLender>();
 	CommandContext::ToolLender::LicenceType<ID3D12CommandQueue> cmdQueueAccesslicence{};
-	auto* commandQueue = commandContextToolLender->Lend<ID3D12CommandQueue>(cmdQueueAccesslicence);
+	auto* commandQueue = commandContextToolLender.Lend<ID3D12CommandQueue>(cmdQueueAccesslicence);
 
 	//スワップチェーン生成コマンドを借りる
 	auto commandProvider = deviceContextDiplomat_.Access<DeviceContext::CommandProvider>();

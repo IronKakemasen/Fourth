@@ -1,6 +1,6 @@
 #include "PreCompileHeader.h"
 #include "SceneBehavior.h"
-#include "../../../LowerLayer/Resource/Camera/CameraStructrue/CameraDesc/CameraDesc.h"
+#include "../../../LowerLayer/Resource/Camera/CameraStructure/CameraDesc/CameraDesc.h"
 
 
 //外部

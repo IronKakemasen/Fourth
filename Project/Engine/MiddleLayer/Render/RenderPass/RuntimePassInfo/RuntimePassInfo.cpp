@@ -29,7 +29,7 @@ void RenderContext::RuntimePassInfo::InputOtherParams
 {
 	refColorBuffersID = refColorBuffersID_;
 	refDepthStencilBuffersID = refDepthStencilBuffersID_;
-	rootConstants.refBuffferOffset = refOffset_;
+	rootConstants.refBufferOffset = refOffset_;
 }
 
 void RenderContext::RuntimePassInfo::PickUpRuntimeRequirementsFromDesc(PassDesc const& desc_)

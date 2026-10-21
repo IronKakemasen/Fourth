@@ -11,7 +11,7 @@
 	//中間リソース作成
 	return resourceCreator_->Create
 	(
-		CreateIntermedeiteResourceDesc(resourceSize_),
+		CreateIntermedeiateResourceDesc(resourceSize_),
 		CreateIntermedeiteHeapProp(),
 		nullptr,
 		D3D12_RESOURCE_STATE_GENERIC_READ,
@@ -22,7 +22,7 @@
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-D3D12_RESOURCE_DESC BufferContext::BufferUploader::IntermediateResourceCreator::CreateIntermedeiteResourceDesc(UINT resourceSize_)
+D3D12_RESOURCE_DESC BufferContext::BufferUploader::IntermediateResourceCreator::CreateIntermedeiateResourceDesc(UINT resourceSize_)
 {
 	D3D12_RESOURCE_DESC resourceDesc{};
 	resourceDesc.Dimension = D3D12_RESOURCE_DIMENSION_BUFFER;

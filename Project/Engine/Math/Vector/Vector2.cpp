@@ -1,7 +1,7 @@
 
 #include "Vector2.h"
 
-float Vector2::GetMagnitutde()
+float Vector2::GetMagnitude()
 {
 	float ret_mag = sqrtf(x * x + y * y);
 	return ret_mag;
@@ -16,7 +16,7 @@ Vector2 Vector2::GetNormalized()
 		return { 0,0 };
 	}
 
-	float inv_mag = 1.0f / GetMagnitutde();
+	float inv_mag = 1.0f / GetMagnitude();
 
 	return { x * inv_mag ,y * inv_mag };
 }

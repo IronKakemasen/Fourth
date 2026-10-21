@@ -98,7 +98,7 @@ void Model::ChangeRoughness(size_t index_, float dst_)
 	changeableParams.materials[index_].roughness = dst_;
 }
 
-void Model::ChangeMetalic(size_t index_, float dst_)
+void Model::ChangeMetallic(size_t index_, float dst_)
 {
 	static auto const errorMsg = WatchName() + "のメタリックアクセス違反";
 	ErrorMessageOutput::Assert::DetectError

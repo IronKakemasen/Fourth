@@ -51,7 +51,7 @@ void Nexus::Init<Nexus::InitSequence::kLoadProjectFiles>()
 	//シングルトンだから一度読んでコンストラクタが通ればよし
 	Miyajison::Get();
 	//ここでプロジェクト設定も初期化しちゃう
-	ProjectConfig::Window::Instantiate();
+	ProjectConfig::Window::LoadData();
 }
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -270,9 +270,9 @@ template<>
 void Nexus::Init<Nexus::InitSequence::kKickCommands>()
 {
 	//CommandContextの代行者
-	auto* agent = commandContext->AccessDiplomat().Access<CommandContext::ExecutionAgent>();
+	auto& agent = commandContext->AccessDiplomat().Access<CommandContext::ExecutionAgent>();
 	//リソースアップロードのために溜まったコマンドを全てキックして同期し、コマンドリストを閉じる
-	agent->KickAndSynchronizeUploadCommand(CommandContext::NexusFieldProof{});
+	agent.KickAndSynchronizeUploadCommand(CommandContext::NexusFieldProof{});
 }
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -283,7 +283,7 @@ void Nexus::Init<Nexus::InitSequence::kDeleteBufferUploaderCache>()
 	//bufferContextの代行者
 	auto* agent = bufferContext->AccessDiplomat().Access<BufferContext::ExecutionAgent>();
 	//BufferUploaderのキャッシュデータ削除を代行
-	agent->DeleteBufferUploaderChacheData(BufferContext::NexusFieldProof{});
+	agent->DeleteBufferUploaderCacheData(BufferContext::NexusFieldProof{});
 }
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////

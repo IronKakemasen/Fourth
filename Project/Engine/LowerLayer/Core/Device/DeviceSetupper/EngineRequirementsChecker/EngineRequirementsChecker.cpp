@@ -7,7 +7,7 @@ namespace
 }
 
 
-void DeviceContext::Setupper::EngineRequiementsChecker::ShaderModelChack(ID3D12Device8* device_ , D3D_SHADER_MODEL shaderModel_)
+void DeviceContext::Setupper::EngineRequiementsChecker::ShaderModelCheck(ID3D12Device8* device_ , D3D_SHADER_MODEL shaderModel_)
 {
 	D3D12_FEATURE_DATA_SHADER_MODEL shaderModel = { shaderModel_ };
 

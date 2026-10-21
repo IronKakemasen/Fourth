@@ -45,7 +45,6 @@ public:
 	void Finalize(NexusFieldProof proof_);
 	auto& AccessDiplomat() { return *diplomat; }
 
-	std::unique_ptr<RuntimeCommandController> runtimeCommandController;
 
 
 private:
@@ -54,6 +53,7 @@ private:
 	std::unique_ptr<RuntimeWrapper> runtimeWrapper;
 	std::unique_ptr<ResourceUploader> resourceUploader;
 	std::unique_ptr<CommandContextDiplomat> diplomat;
+	std::unique_ptr<RuntimeCommandController> runtimeCommandController;
 
 	
 	//コマンドキュー

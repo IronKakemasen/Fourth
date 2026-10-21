@@ -45,7 +45,7 @@ private:
 		uint32_t width{};
 		uint32_t height{};
         size_t mipLevels =  1;
-		bool isTextureQube{};
+		bool isTextureCube{};
 
     }textureParams;
 
