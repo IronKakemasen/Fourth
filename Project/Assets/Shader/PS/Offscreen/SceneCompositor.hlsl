@@ -10,7 +10,7 @@ struct PSInput
 
 float4 main(PSInput input_) : SV_Target
 {
-    Texture2D<float4> sceneColor = ResourceDescriptorHeap[gPassConstants.refBuffferOffset];
+    Texture2D<float4> sceneColor = ResourceDescriptorHeap[gPassConstants.refBufferOffset];
 
     return sceneColor.Sample(sampler_linearWrap, input_.uv);
 }

@@ -33,13 +33,13 @@ BufferContext::BufferUploader::BufferUploader
 ):resourceCreator(resourceCreator_), dispatcher(dispatcher_)
 {
 	//CommandContextのコマンドプロバイダーからコマンドをもらう
-	auto* commandProvider = commandContextDiplomat_.Access<CommandContext::CommandProvider>();
+	auto& commandProvider = commandContextDiplomat_.Access<CommandContext::CommandProvider>();
 	CommandContext::CommandProvider::LicenceType<CommandContextCmds::UploadBufferCommand> licence{};
 
 	//生リソースをアップロードするため
-	uploadCommand = commandProvider->Provide<CommandContextCmds::UploadBufferCommand>(licence);
+	uploadCommand = commandProvider.Provide<CommandContextCmds::UploadBufferCommand>(licence);
 	//リソースのバリアを張るため
-	pitchBarriersCommand = commandProvider->Provide<CommandContextCmds::PitchBarrierCommand>(licence);
+	pitchBarriersCommand = commandProvider.Provide<CommandContextCmds::PitchBarrierCommand>(licence);
 
 	//DeviceContextのコマンドプロバイダーからコマンドをもらう
 	auto* deviceContextCmdProvider = deviceContextDiplomat_.Access<DeviceContext::CommandProvider>();

@@ -399,9 +399,6 @@
     <ClCompile Include="Engine\LowerLayer\Buffer\BufferRuntime\BufferDispatcher\BufferDispatcher.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="Engine\LowerLayer\Buffer\BufferRuntime\BufferDeferredReleaser\BufferDeferredReleaser.cpp">
-      <Filter>ソース ファイル</Filter>
-    </ClCompile>
     <ClCompile Include="Engine\LowerLayer\Resource\Model\CreateModelTools\ModelDataCreator\MeshDataBufferSRVHeapIndexGroupPackager\MeshDataBufferSRVHeapIndexGroupPackager.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
@@ -427,9 +424,6 @@
       <Filter>ソース ファイル</Filter>
     </ClCompile>
     <ClCompile Include="Engine\LowerLayer\Resource\Model\CreateModelTools\ModelSlotAllocator\TransformMatrixSlot\TransformMatrixSlot.cpp">
-      <Filter>ソース ファイル</Filter>
-    </ClCompile>
-    <ClCompile Include="Engine\LowerLayer\Resource\Model\TestModelOKIBA.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
     <ClCompile Include="Engine\LowerLayer\Resource\Model\CreateModelTools\ModelDataCreator\PerDrawDataBufferCreator\PerDrawDataBufferCreator.cpp">
@@ -663,13 +657,13 @@
     <ClCompile Include="Engine\LowerLayer\Resource\Camera\CameraContext.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="Engine\LowerLayer\Resource\Camera\CameraStructrue\CameraBehavior.cpp">
+    <ClCompile Include="Engine\LowerLayer\Resource\Camera\CameraStructure\CameraBehavior.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="Engine\LowerLayer\Resource\Camera\CameraStructrue\CameraTransform\CameraTransform.cpp">
+    <ClCompile Include="Engine\LowerLayer\Resource\Camera\CameraStructure\CameraTransform\CameraTransform.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="Engine\LowerLayer\Resource\Camera\CameraStructrue\CameraDesc\CameraDesc.cpp">
+    <ClCompile Include="Engine\LowerLayer\Resource\Camera\CameraStructure\CameraDesc\CameraDesc.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
     <ClCompile Include="Engine\LowerLayer\Resource\Camera\PresetCameras\DefaultDebugCamera\DefaultDebugCamera.cpp">
@@ -1166,9 +1160,6 @@
     <ClInclude Include="Engine\LowerLayer\Buffer\BufferRuntime\BufferDispatcher\BufferDispatcher.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\LowerLayer\Buffer\BufferRuntime\BufferDeferredReleaser\BufferDeferredReleaser.h">
-      <Filter>ヘッダー ファイル</Filter>
-    </ClInclude>
     <ClInclude Include="Engine\LowerLayer\Resource\Model\CreateModelTools\ModelDataCreator\MeshDataBufferSRVHeapIndexGroupPackager\MeshDataBufferSRVHeapIndexGroupPackager.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
@@ -1197,9 +1188,6 @@
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
     <ClInclude Include="Engine\LowerLayer\Resource\Model\CreateModelTools\ModelSlotAllocator\TransformMatrixSlot\TransformMatrixSlot.h">
-      <Filter>ヘッダー ファイル</Filter>
-    </ClInclude>
-    <ClInclude Include="Engine\LowerLayer\Resource\Model\TestModelOKIBA.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
     <ClInclude Include="Engine\LowerLayer\Resource\Model\CreateModelTools\ModelDataCreator\PerDrawDataBufferCreator\PerDrawDataBufferCreator.h">
@@ -1595,16 +1583,16 @@
     <ClInclude Include="Engine\LowerLayer\Resource\Camera\CameraContext.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\LowerLayer\Resource\Camera\CameraStructrue\CameraBehavior.h">
+    <ClInclude Include="Engine\LowerLayer\Resource\Camera\CameraStructure\CameraBehavior.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\LowerLayer\Resource\Camera\CameraStructrue\CameraTransform\CameraTransform.h">
+    <ClInclude Include="Engine\LowerLayer\Resource\Camera\CameraStructure\CameraTransform\CameraTransform.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
     <ClInclude Include="Engine\Math\MathConstants.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\LowerLayer\Resource\Camera\CameraStructrue\CameraDesc\CameraDesc.h">
+    <ClInclude Include="Engine\LowerLayer\Resource\Camera\CameraStructure\CameraDesc\CameraDesc.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
     <ClInclude Include="Engine\LowerLayer\Resource\Camera\PresetCameras\DefaultDebugCamera\DefaultDebugCamera.h">

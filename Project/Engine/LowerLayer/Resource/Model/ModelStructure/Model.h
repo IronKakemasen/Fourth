@@ -78,7 +78,7 @@ public:
 	void ChangeBlendMode(RenderStateComponent::BlendMode dst_);
 	void ChangeMaterialType(ShaderPathComponent::MaterialType dst_);
 	void ChangeRoughness(size_t index_, float dst_);
-	void ChangeMetalic(size_t index_, float dst_);
+	void ChangeMetallic(size_t index_, float dst_);
 	void ChangeColor(size_t index_ , Vector4<float> const& dst_);
 	template<TextureComponent::TextureType textureType>
 	void ChangeTexture(size_t index_, SRVHeapIndex dst_);

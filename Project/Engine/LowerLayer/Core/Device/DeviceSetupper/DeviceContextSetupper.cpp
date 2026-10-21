@@ -23,7 +23,7 @@ DeviceContext::Setupper::Setupper(NexusFieldProof proof_)
 	SetDebugLayerFilter();
 
 	//シェーダーモデルサポートチェック
-	EngineRequiementsChecker::ShaderModelChack(device.Get(),ProjectConfig::Render::kRequiredShaderModel);
+	EngineRequiementsChecker::ShaderModelCheck(device.Get(),ProjectConfig::Render::kRequiredShaderModel);
 
 	//メッシュシェーダーをサポートしているかチェック
 	EngineRequiementsChecker::IsMeshShaderSupported(device.Get());

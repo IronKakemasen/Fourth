@@ -20,8 +20,8 @@ public:
 
 	~RuntimeCommandController();
 
-	void RecordingStart(UINT frameIndex_);
-	void ExecuteCommands(UINT frameIndex_);
+	void RecordingStart(NexusFieldProof proof_, AgentKey key_, UINT frameIndex_);
+	void ExecuteCommands(NexusFieldProof proof_, AgentKey key_, UINT frameIndex_);
 
 private:
 	std::unique_ptr<CommandExecutor> commandExecutor;

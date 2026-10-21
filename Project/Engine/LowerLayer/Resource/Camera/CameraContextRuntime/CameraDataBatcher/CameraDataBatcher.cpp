@@ -7,7 +7,7 @@
 #include "../../../../Buffer/BufferContextDiplomats.h"
 #include "../../../../Buffer/BufferRuntime/BufferDispatcher/BufferDispatcher.h"
 
-#include "../../CameraStructrue/CameraBehavior.h"
+#include "../../CameraStructure/CameraBehavior.h"
 
 CameraContext::CameraDataBatcher::CameraDataBatcher(NexusFieldProof proof_)
 {

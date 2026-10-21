@@ -15,7 +15,7 @@ class BufferContext::BufferUploader::IntermediateResourceCreator
 		UINT resourceSize_
 	);
 
-	static D3D12_RESOURCE_DESC CreateIntermedeiteResourceDesc(UINT resourceSize_);
+	static D3D12_RESOURCE_DESC CreateIntermedeiateResourceDesc(UINT resourceSize_);
 	static D3D12_HEAP_PROPERTIES CreateIntermedeiteHeapProp();
 
 };

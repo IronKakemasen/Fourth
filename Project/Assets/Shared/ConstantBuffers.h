@@ -50,7 +50,7 @@ namespace ConstantBuffers
 
 	struct PassConstantsCPUGPU
 	{
-		uint32_t refBuffferOffset{};
+		uint32_t refBufferOffset{};
 		uint32_t cameraOffset{};
 	};
 }
@@ -67,7 +67,7 @@ struct PerDrawIndices
 
 struct PassConstants
 {
-	uint refBuffferOffset;
+	uint refBufferOffset;
 	uint cameraOffset;
 };
 

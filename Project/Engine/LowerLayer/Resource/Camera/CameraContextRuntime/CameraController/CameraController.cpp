@@ -1,6 +1,6 @@
 #include "PreCompileHeader.h"
 #include "CameraController.h"
-#include "../../CameraStructrue/CameraBehavior.h"
+#include "../../CameraStructure/CameraBehavior.h"
 
 
 

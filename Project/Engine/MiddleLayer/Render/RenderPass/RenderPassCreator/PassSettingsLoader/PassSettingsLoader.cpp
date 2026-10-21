@@ -110,7 +110,7 @@ std::optional<RenderContext::RequiredBufferInfo::DepthStencilBuffer> RenderConte
 	auto* miyajison = Miyajison::Get();
 
 	//深度バッファ使わんならしらん
-	if (!miyajison->LoadData<bool>(DataKeyString::kSrcJsonFileName, { passName_,DataKeyString::kUseDepthStenciB }))
+	if (!miyajison->LoadData<bool>(DataKeyString::kSrcJsonFileName, { passName_,DataKeyString::kUseDepthStencilB }))
 		return std::nullopt;
 
 	depthStencilBufferInfo.emplace();
@@ -162,7 +162,7 @@ RenderContext::RenderPassState RenderContext::RenderPassCreator::PassSettingsLoa
 	auto* miyajison = Miyajison::Get();
 
 	bool doesUseDepthBuffer =
-		miyajison->LoadData<bool>(DataKeyString::kSrcJsonFileName, { passName_,DataKeyString::kUseDepthStenciB });
+		miyajison->LoadData<bool>(DataKeyString::kSrcJsonFileName, { passName_,DataKeyString::kUseDepthStencilB });
 
 	return doesUseDepthBuffer ? RenderPassState
 	(

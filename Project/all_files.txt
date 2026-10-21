@@ -75,19 +75,16 @@ public:
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	aFourth(std::vector<std::string> const& correspondedSceneNames_)
 	{
-		Logger::Entry("aFourth: Constructor");
+		Logger::Entry("EngineInterface: Constructor");
+		correspondedSceneNames = correspondedSceneNames_;
 		//自身のインスタンス制限
 		EngineInstanceLimiter::CanInstantiate();
-		//COMの初期化
-		HRESULT hr = CoInitializeEx(0, COINITBASE_MULTITHREADED);
-		ErrorMessageOutput::Abort::DetectError(SUCCEEDED(hr), "CoInitializeEx()でエラー", "aFourth.h");
-		Logger::Log("CoInitializeEx", "aFourth.h");
-		//ネクサスのインスタンス化
-		nexus = std::make_unique<Nexus>(Nexus::aFourthProof{});
-		//main.cppで指定されたシーンをインスタンス化する
-		InstantiateScene(correspondedSceneNames_);
-		nexus->SecondaryInit(Nexus::aFourthProof{});
-		Logger::End("aFourth: Constructor");
+		InitializeInSequence<InitSequence::kCoInitializeEx>();
+		InitializeInSequence<InitSequence::kInstantiateNexus>();
+		InitializeInSequence<InitSequence::kInstantiateScene>();
+		InitializeInSequence<InitSequence::kNexusSecInit>();
+		ErrorMessageOutput::Assert::DetectError(nextInit == InitSequence::kEnd, "初期化が正常に行われていない可能性がある", "EngineInterface.h");
+		Logger::End("EngineInterface: Constructor");
 	}
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -96,9 +93,9 @@ public:
 	{
 		Logger::Entry("aFourth: Destructor");
 		nexus.reset();
-		Logger::Log("Delete Nexus", "aFourth.h");
+		Logger::Log("Delete Nexus", "EngineInterface.h");
 		CoUninitialize();
-		Logger::Log("CoUninitialize", "aFourth.h");
+		Logger::Log("CoUninitialize", "EngineInterface.h");
 		Logger::End("aFourth: Destructor");
 	};
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -106,10 +103,58 @@ public:
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 private:
+	enum class InitSequence
+	{
+		kCoInitializeEx,
+		kInstantiateNexus,
+		kInstantiateScene,
+		kNexusSecInit,
+		kEnd
+	}nextInit = InitSequence::kCoInitializeEx;
+	template<InitSequence initSequence>
+	void Init()
+	{
+		if constexpr (initSequence == InitSequence::kCoInitializeEx)
+		{
+			//COMの初期化
+			HRESULT hr = CoInitializeEx(0, COINITBASE_MULTITHREADED);
+			ErrorMessageOutput::Abort::DetectError(SUCCEEDED(hr), "CoInitializeEx()でエラー", "EngineInterface.h");
+			Logger::Log("CoInitializeEx", "EngineInterface.h");
+		}
+		else if constexpr (initSequence == InitSequence::kInstantiateNexus)
+		{
+			//ネクサスのインスタンス化
+			nexus = std::make_unique<Nexus>(Nexus::aFourthProof{});
+			Logger::Log("Comp Instantiate Nexus", "EngineInterface.h");
+		}
+		else if constexpr (initSequence == InitSequence::kInstantiateScene)
+		{
+			//main.cppで指定されたシーンをインスタンス化する
+			InstantiateScene();
+			Logger::Log("Comp InstantiateScene", "EngineInterface.h");
+		}
+		else if constexpr (initSequence == InitSequence::kNexusSecInit)
+		{
+			nexus->SecondaryInit(Nexus::aFourthProof{});
+			Logger::Log("Comp Nexus's SecondaryInit", "EngineInterface.h");
+		}
+	}
+	template<InitSequence next_>
+	void InitializeInSequence()
+	{
+		ErrorMessageOutput::Assert::DetectError
+		(
+			nextInit == next_,
+			"初期化が正常に行われていない可能性がある",
+			"EngineInterface.h"
+		);
+		Init<next_>();
+		nextInit = InitSequence((UINT)nextInit + 1);
+	}
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-	void InstantiateScene(std::vector<std::string> const& correspondedSceneNames_)
+	void InstantiateScene()
 	{
 		auto aFourthProof = Nexus::aFourthProof{};
 		auto& sceneContext	= nexus->AccessContext<SceneContext>(aFourthProof);
@@ -121,7 +166,7 @@ private:
 		auto const numScenes = sizeof...(SceneTypes);
 		ErrorMessageOutput::Assert::DetectError
 		(
-			numScenes == correspondedSceneNames_.size(),
+			numScenes == correspondedSceneNames.size(),
 			"シーンの数と、シーン名の数が合わへん",
 			"EngineInterface.h"
 		);
@@ -131,17 +176,19 @@ private:
 			agent.template CreateScene<SceneTypes>
 			(
 				SceneContext::ExecutionAgent::EngineInterfaceProof{},
-				correspondedSceneNames_[cnt++],
+				correspondedSceneNames[cnt++],
 				cameraContext.AccessDiplomat(),
 				modelContext.AccessDiplomat()
 			), 
 			...
-		);
+		);	
 	}
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	std::unique_ptr<Nexus> nexus;
+	//生成するシーン名
+	std::vector<std::string> correspondedSceneNames;
 };
 
 ========================================
@@ -386,8 +433,6 @@ class DescriptorHeapContextDiplomat;
 class BufferContextDiplomat;
 class BufferContext
 {
-	//生成したバッファの削除を担当
-	class BufferDeferredReleaser;
 	//生リソース生成
 	class ResourceCreator;
 	struct BufferPoolSet;
@@ -643,7 +688,7 @@ BufferContext::ExecutionAgent::ExecutionAgent
 ):bufferContext(bufferContext_), bufferUploader(bufferUploader_), globalConstantBuffers(worldConstantBuffers_)
 {
 }
-void BufferContext::ExecutionAgent::DeleteBufferUploaderChacheData(NexusFieldProof proof_)
+void BufferContext::ExecutionAgent::DeleteBufferUploaderCacheData(NexusFieldProof proof_)
 {
 	bufferUploader->DeleteCache(proof_, BufferContext::AgentKey{});
 }
@@ -672,7 +717,7 @@ public:
 		GlobalConstantBuffers* worldConstantBuffers_
 	);
 	//BufferUploaderの削除を代行
-	void DeleteBufferUploaderChacheData(NexusFieldProof proof_);
+	void DeleteBufferUploaderCacheData(NexusFieldProof proof_);
 	//Resourceのバリアを全て張るのを代行
 	void UploadAllBuffer(NexusFieldProof proof_);
 	//ワールド定数バッファのコンテナクラスの移し替えを代行
@@ -2373,12 +2418,12 @@ BufferContext::BufferUploader::BufferUploader
 ):resourceCreator(resourceCreator_), dispatcher(dispatcher_)
 {
 	//CommandContextのコマンドプロバイダーからコマンドをもらう
-	auto* commandProvider = commandContextDiplomat_.Access<CommandContext::CommandProvider>();
+	auto& commandProvider = commandContextDiplomat_.Access<CommandContext::CommandProvider>();
 	CommandContext::CommandProvider::LicenceType<CommandContextCmds::UploadBufferCommand> licence{};
 	//生リソースをアップロードするため
-	uploadCommand = commandProvider->Provide<CommandContextCmds::UploadBufferCommand>(licence);
+	uploadCommand = commandProvider.Provide<CommandContextCmds::UploadBufferCommand>(licence);
 	//リソースのバリアを張るため
-	pitchBarriersCommand = commandProvider->Provide<CommandContextCmds::PitchBarrierCommand>(licence);
+	pitchBarriersCommand = commandProvider.Provide<CommandContextCmds::PitchBarrierCommand>(licence);
 	//DeviceContextのコマンドプロバイダーからコマンドをもらう
 	auto* deviceContextCmdProvider = deviceContextDiplomat_.Access<DeviceContext::CommandProvider>();
 	DeviceContext::CommandProvider::LicenceType<DeviceContextCmds::PrepareUploadCommand> licencePrepareUpload;
@@ -2795,7 +2840,7 @@ class BufferContext::BufferUploader::BufferAndResourcePicker
 	//中間リソース作成
 	return resourceCreator_->Create
 	(
-		CreateIntermedeiteResourceDesc(resourceSize_),
+		CreateIntermedeiateResourceDesc(resourceSize_),
 		CreateIntermedeiteHeapProp(),
 		nullptr,
 		D3D12_RESOURCE_STATE_GENERIC_READ,
@@ -2806,7 +2851,7 @@ class BufferContext::BufferUploader::BufferAndResourcePicker
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-D3D12_RESOURCE_DESC BufferContext::BufferUploader::IntermediateResourceCreator::CreateIntermedeiteResourceDesc(UINT resourceSize_)
+D3D12_RESOURCE_DESC BufferContext::BufferUploader::IntermediateResourceCreator::CreateIntermedeiateResourceDesc(UINT resourceSize_)
 {
 	D3D12_RESOURCE_DESC resourceDesc{};
 	resourceDesc.Dimension = D3D12_RESOURCE_DIMENSION_BUFFER;
@@ -2844,7 +2889,7 @@ class BufferContext::BufferUploader::IntermediateResourceCreator
 		BufferContext::ResourceCreator* resourceCreator_,
 		UINT resourceSize_
 	);
-	static D3D12_RESOURCE_DESC CreateIntermedeiteResourceDesc(UINT resourceSize_);
+	static D3D12_RESOURCE_DESC CreateIntermedeiateResourceDesc(UINT resourceSize_);
 	static D3D12_HEAP_PROPERTIES CreateIntermedeiteHeapProp();
 };
 
@@ -3745,7 +3790,7 @@ D3D12_RESOURCE_DESC Texture2DBufferDescription::CreateResourceDesc()const
     //サンプリングカウント
 	resourceDesc.SampleDesc.Count = 1;
     //Textureの次元数
-    resourceDesc.DepthOrArraySize = textureParams.isTextureQube ? 6 : 1;	
+    resourceDesc.DepthOrArraySize = textureParams.isTextureCube ? 6 : 1;	
 	resourceDesc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
     return resourceDesc;
 }
@@ -3765,7 +3810,7 @@ D3D12_SHADER_RESOURCE_VIEW_DESC Texture2DBufferDescription::CreateSRV_Desc()cons
     srvDesc.Format = textureParams.format;
     srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
     //キューブマップかどうかで分岐
-    if (textureParams.isTextureQube)
+    if (textureParams.isTextureCube)
     {
         srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURECUBE;
         //一番細かいMipから使用
@@ -3805,7 +3850,7 @@ DXGI_FORMAT Texture2DBufferDescription::FormatTable(TextureType type_)const
 void Texture2DBufferDescription::ExtractParams(DirectX::TexMetadata const& metaData_)
 {
     //キューブマップかどうか
-    textureParams.isTextureQube = metaData_.IsCubemap();
+    textureParams.isTextureCube = metaData_.IsCubemap();
     //TextureTypeによるフォーマット
     textureParams.format = FormatTable(param.texture2DState.type);
     //出力解像度
@@ -3852,7 +3897,7 @@ private:
 		uint32_t width{};
 		uint32_t height{};
         size_t mipLevels =  1;
-		bool isTextureQube{};
+		bool isTextureCube{};
     }textureParams;
 	void ExtractParams(DirectX::TexMetadata const& metaData_);
 	DXGI_FORMAT FormatTable(TextureComponent::TextureType type_)const;
@@ -4853,20 +4898,6 @@ private:
 };
 
 ========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Buffer\BufferRuntime\BufferDeferredReleaser\BufferDeferredReleaser.cpp ===
-========================================
-#include "BufferDeferredReleaser.h"
-
-========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Buffer\BufferRuntime\BufferDeferredReleaser\BufferDeferredReleaser.h ===
-========================================
-#pragma once
-#include "../../BufferContext.h"
-class BufferDeferredReleaser
-{
-};
-
-========================================
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Buffer\BufferRuntime\BufferDispatcher\BufferDispatcher.cpp ===
 ========================================
 #include "BufferDispatcher.h"
@@ -5135,7 +5166,7 @@ CommandContext::CommandContext
 		proof_,
 		std::make_unique<CommandProvider>(proof_, resourceUploader.get()),
 		std::make_unique<ToolLender>(proof_, commandQueue.Get(), runtimeWrapper.get()),
-		std::make_unique<ExecutionAgent>(proof_, resourceUploader.get())
+		std::make_unique<ExecutionAgent>(proof_, *resourceUploader,*runtimeCommandController)
 	);
 	Logger::Log("Instantiate: CommandContextDiplomat", fileName);
 	Logger::End("CommandContext: Constructor");
@@ -5209,12 +5240,12 @@ public:
 	//同期してCloseHandle()する
 	void Finalize(NexusFieldProof proof_);
 	auto& AccessDiplomat() { return *diplomat; }
-	std::unique_ptr<RuntimeCommandController> runtimeCommandController;
 private:
 	std::unique_ptr<Synchronizer> synchronizer;
 	std::unique_ptr<RuntimeWrapper> runtimeWrapper;
 	std::unique_ptr<ResourceUploader> resourceUploader;
 	std::unique_ptr<CommandContextDiplomat> diplomat;
+	std::unique_ptr<RuntimeCommandController> runtimeCommandController;
 	//コマンドキュー
 	Microsoft::WRL::ComPtr<ID3D12CommandQueue> commandQueue;
 	//コマンドアローケータ
@@ -5401,9 +5432,9 @@ public:
 		std::unique_ptr<CommandContext::ExecutionAgent>&& executionAgent_
 	);
 	template<typename ToolType>
-	ToolType* Access()
+	ToolType& Access()
 	{
-		return std::get<std::unique_ptr<ToolType>>(tools).get();
+		return *std::get<std::unique_ptr<ToolType>>(tools);
 	}
 private:
 	//提供するツールのテーブル
@@ -5498,13 +5529,27 @@ private:
 #include "PreCompileHeader.h"
 #include "CommandContextExecutionAgent.h"
 #include "../../ResourceUploader/ResourceUploader.h"
-CommandContext::ExecutionAgent::ExecutionAgent(NexusFieldProof proof_, CommandContext::ResourceUploader* resourceUploader_)
-:resourceUploader(resourceUploader_)
+#include "../../RuntimeCommandController/RuntimeCommandController.h"
+CommandContext::ExecutionAgent::ExecutionAgent
+(
+	NexusFieldProof proof_,
+	CommandContext::ResourceUploader& resourceUploader_,
+	RuntimeCommandController& runtimeCommandController_
+)
+:resourceUploader(resourceUploader_), runtimeCommandController(runtimeCommandController_)
 {
 }
 void CommandContext::ExecutionAgent::KickAndSynchronizeUploadCommand(NexusFieldProof proof_)
 {
-	resourceUploader->KickAndSynchronize(proof_, CommandContext::AgentKey{});
+	resourceUploader.KickAndSynchronize(proof_, CommandContext::AgentKey{});
+}
+void CommandContext::ExecutionAgent::StartRecordingCommands(NexusFieldProof proof_, UINT frameIndex_)
+{
+	runtimeCommandController.RecordingStart(proof_, AgentKey{}, frameIndex_);
+}
+void CommandContext::ExecutionAgent::ExecuteCommands(NexusFieldProof proof_, UINT frameIndex_)
+{
+	runtimeCommandController.ExecuteCommands(proof_, AgentKey{}, frameIndex_);
 }
 
 ========================================
@@ -5515,11 +5560,21 @@ void CommandContext::ExecutionAgent::KickAndSynchronizeUploadCommand(NexusFieldP
 class CommandContext::ExecutionAgent
 {
 public:
-	ExecutionAgent(NexusFieldProof proof_, CommandContext::ResourceUploader* resourceUploader_);
+	ExecutionAgent
+	(
+		NexusFieldProof proof_, 
+		CommandContext::ResourceUploader& resourceUploader_,
+		RuntimeCommandController& runtimeCommandController_
+	);
 	//リソースをアップロードするときに溜まったコマンドリストをキックしてかつ同期し、閉じる
 	void KickAndSynchronizeUploadCommand(NexusFieldProof proof_ );
+	//ランタイムでコマンドの記録を開始する
+	void StartRecordingCommands(NexusFieldProof proof_ , UINT frameIndex_);
+	//ランタイムでコマンドの転送を行う
+	void ExecuteCommands(NexusFieldProof proof_, UINT frameIndex_);
 private:
-	CommandContext::ResourceUploader* resourceUploader;
+	CommandContext::ResourceUploader& resourceUploader;
+	RuntimeCommandController& runtimeCommandController;
 };
 
 ========================================
@@ -5751,7 +5806,7 @@ CommandContext::RuntimeCommandController::~RuntimeCommandController()
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-void CommandContext::RuntimeCommandController::RecordingStart(UINT frameIndex_)
+void CommandContext::RuntimeCommandController::RecordingStart(NexusFieldProof proof_, AgentKey key_, UINT frameIndex_)
 {
 	synchronizer.Wait(frameIndex_);
 	commandExecutor->PrepareForRecording(frameIndex_);
@@ -5759,7 +5814,7 @@ void CommandContext::RuntimeCommandController::RecordingStart(UINT frameIndex_)
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-void CommandContext::RuntimeCommandController::ExecuteCommands(UINT frameIndex_)
+void CommandContext::RuntimeCommandController::ExecuteCommands(NexusFieldProof proof_, AgentKey key_, UINT frameIndex_)
 {
 	commandExecutor->Execute();
 	synchronizer.InsertSignal(frameIndex_);
@@ -5784,8 +5839,8 @@ public:
 		Synchronizer& synchronizer_
 	);
 	~RuntimeCommandController();
-	void RecordingStart(UINT frameIndex_);
-	void ExecuteCommands(UINT frameIndex_);
+	void RecordingStart(NexusFieldProof proof_, AgentKey key_, UINT frameIndex_);
+	void ExecuteCommands(NexusFieldProof proof_, AgentKey key_, UINT frameIndex_);
 private:
 	std::unique_ptr<CommandExecutor> commandExecutor;
 	Synchronizer& synchronizer;
@@ -7975,7 +8030,7 @@ DeviceContext::Setupper::Setupper(NexusFieldProof proof_)
 	//デバッグレイヤーのフィルターを設定
 	SetDebugLayerFilter();
 	//シェーダーモデルサポートチェック
-	EngineRequiementsChecker::ShaderModelChack(device.Get(),ProjectConfig::Render::kRequiredShaderModel);
+	EngineRequiementsChecker::ShaderModelCheck(device.Get(),ProjectConfig::Render::kRequiredShaderModel);
 	//メッシュシェーダーをサポートしているかチェック
 	EngineRequiementsChecker::IsMeshShaderSupported(device.Get());
 	//ResourceBindingTierが必要値を満たしているか
@@ -8130,7 +8185,7 @@ namespace
 {
 	auto const fileName = "EngineRequiementsChecker.cpp";
 }
-void DeviceContext::Setupper::EngineRequiementsChecker::ShaderModelChack(ID3D12Device8* device_ , D3D_SHADER_MODEL shaderModel_)
+void DeviceContext::Setupper::EngineRequiementsChecker::ShaderModelCheck(ID3D12Device8* device_ , D3D_SHADER_MODEL shaderModel_)
 {
 	D3D12_FEATURE_DATA_SHADER_MODEL shaderModel = { shaderModel_ };
 	HRESULT hr = device_->CheckFeatureSupport(D3D12_FEATURE_SHADER_MODEL, &shaderModel, sizeof(shaderModel));
@@ -8181,7 +8236,7 @@ class DeviceContext::Setupper::EngineRequiementsChecker
 {
 private:
 	friend class DeviceContext::Setupper;
-	static void ShaderModelChack(ID3D12Device8* device_ , D3D_SHADER_MODEL shaderModel_);
+	static void ShaderModelCheck(ID3D12Device8* device_ , D3D_SHADER_MODEL shaderModel_);
 	static void IsMeshShaderSupported(ID3D12Device8* device_);
 	static void ResourceBindingTierCheck(ID3D12Device8* device_);
 };
@@ -8574,9 +8629,9 @@ Microsoft::WRL::ComPtr<IDXGISwapChain4> SwapChainContext::Builder::CreateSwapCha
 {
 	Microsoft::WRL::ComPtr<IDXGISwapChain4> swapChain;
 	//コマンドキューを一時的に借りる
-	auto* commandContextToolLender = commandContextDiplomat_.Access<CommandContext::ToolLender>();
+	auto& commandContextToolLender = commandContextDiplomat_.Access<CommandContext::ToolLender>();
 	CommandContext::ToolLender::LicenceType<ID3D12CommandQueue> cmdQueueAccesslicence{};
-	auto* commandQueue = commandContextToolLender->Lend<ID3D12CommandQueue>(cmdQueueAccesslicence);
+	auto* commandQueue = commandContextToolLender.Lend<ID3D12CommandQueue>(cmdQueueAccesslicence);
 	//スワップチェーン生成コマンドを借りる
 	auto commandProvider = deviceContextDiplomat_.Access<DeviceContext::CommandProvider>();
 	DeviceContext::CommandProvider::LicenceType<DeviceContextCmds::CreateSwapChain> dLicence;
@@ -9867,7 +9922,7 @@ enum class CameraSocket
 ========================================
 #include "PreCompileHeader.h"
 #include "CameraController.h"
-#include "../../CameraStructrue/CameraBehavior.h"
+#include "../../CameraStructure/CameraBehavior.h"
 CameraContext::CameraFrontlineSystems::CameraController::CameraController(NexusFieldProof proof_)
 {
 }
@@ -9920,7 +9975,7 @@ private:
 #include "../../../../Buffer/BufferDefinition/GPUBuffer/UploadStructuredBuffer/UploadStructuredBuffer.h"
 #include "../../../../Buffer/BufferContextDiplomats.h"
 #include "../../../../Buffer/BufferRuntime/BufferDispatcher/BufferDispatcher.h"
-#include "../../CameraStructrue/CameraBehavior.h"
+#include "../../CameraStructure/CameraBehavior.h"
 CameraContext::CameraDataBatcher::CameraDataBatcher(NexusFieldProof proof_)
 {
 }
@@ -9979,7 +10034,7 @@ private:
 ========================================
 #include "PreCompileHeader.h"
 #include "CameraLibrary.h"
-#include "../../CameraStructrue/CameraBehavior.h"
+#include "../../CameraStructure/CameraBehavior.h"
 namespace
 {
 	auto const fileName = "CameraLibrary.cpp";
@@ -10119,7 +10174,7 @@ private:
 };
 
 ========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Camera\CameraStructrue\CameraBehavior.cpp ===
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Camera\CameraStructure\CameraBehavior.cpp ===
 ========================================
 #include "PreCompileHeader.h"
 #include "CameraBehavior.h"
@@ -10161,7 +10216,7 @@ StructuredBufferCameraData::CameraDataCPUGPU CameraBehavior::OutCameraData()cons
 }
 
 ========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Camera\CameraStructrue\CameraBehavior.h ===
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Camera\CameraStructure\CameraBehavior.h ===
 ========================================
 #pragma once
 //外部
@@ -10201,13 +10256,13 @@ private:
 };
 
 ========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Camera\CameraStructrue\CameraDesc\CameraDesc.cpp ===
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Camera\CameraStructure\CameraDesc\CameraDesc.cpp ===
 ========================================
 #include "PreCompileHeader.h"
 #include "CameraDesc.h"
 
 ========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Camera\CameraStructrue\CameraDesc\CameraDesc.h ===
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Camera\CameraStructure\CameraDesc\CameraDesc.h ===
 ========================================
 #pragma once
 #include "../../../../../Math/Vector/Vector3.h"
@@ -10224,7 +10279,7 @@ struct CameraDesc
 };
 
 ========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Camera\CameraStructrue\CameraTransform\CameraTransform.cpp ===
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Camera\CameraStructure\CameraTransform\CameraTransform.cpp ===
 ========================================
 #include "PreCompileHeader.h"
 #include "CameraTransform.h"
@@ -10366,7 +10421,7 @@ void CameraBehavior::CameraTransform::ChangeFovY(float dst_)
 }
 
 ========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Camera\CameraStructrue\CameraTransform\CameraTransform.h ===
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Camera\CameraStructure\CameraTransform\CameraTransform.h ===
 ========================================
 #pragma once
 #include "../CameraBehavior.h"
@@ -10454,8 +10509,8 @@ private:
 ========================================
 #include "PreCompileHeader.h"
 #include "DefaultDebugCamera.h"
-#include "../../CameraStructrue/CameraTransform/CameraTransform.h"
-#include "../../CameraStructrue/CameraDesc/CameraDesc.h"
+#include "../../CameraStructure/CameraTransform/CameraTransform.h"
+#include "../../CameraStructure/CameraDesc/CameraDesc.h"
 DefaultDebugCamera::DefaultDebugCamera(std::optional<CameraDesc> const& desc_)
 	: CameraBehavior(desc_)
 {
@@ -10468,7 +10523,7 @@ void DefaultDebugCamera::Update(Local_UpdateLicence licence_)
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Camera\PresetCameras\DefaultDebugCamera\DefaultDebugCamera.h ===
 ========================================
 #pragma once
-#include "../../CameraStructrue/CameraBehavior.h"
+#include "../../CameraStructure/CameraBehavior.h"
 class DefaultDebugCamera :public CameraBehavior
 {
 public:
@@ -10657,67 +10712,6 @@ namespace ModelContextCmds
 #include "ModelContextDiplomat/ModelContextToolLender/ModelContextToolLenderLicence.h"
 #include "ModelContextDiplomat/ModelContextExecutionAgent/ModelContextExecutionAgent.h"
 #include "ModelContextDiplomat/ModelContextExecutionAgent/ModelAgentLicences.h"
-
-========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Model\TestModelOKIBA.cpp ===
-========================================
-#include "PreCompileHeader.h"
-#include "TestModelOKIBA.h"
-#include "CreateModelTools/ModelCreator.h"
-using namespace RenderStateComponent;
-using namespace ShaderPathComponent;
-using namespace RenderPassComponent;
-using namespace StructuredBufferModelData;
-//TestModelOKIBA::TestModelOKIBA(ModelContext::ModelCreator* modelCreator_)
-//{
-//	//Logger::Log("TESTOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOO");
-//
-//	//RenderState cP;
-//	//cP.blendModes.emplace_back(BlendMode::kOpaque);
-//	//cP.blendModes.emplace_back(BlendMode::kAlphaBlend);
-//	//cP.blendModes.emplace_back(BlendMode::kAdditive);
-//
-//	//cP.pass = Pass::kSceneOpaque;
-//	//cP.cullMode = CullMode::kBack;
-//	//cP.meshType = MeshType::kStatic;
-//	//cP.materialTypes.emplace_back(MaterialType::kStandard);
-//	//std::vector<RenderState> playerC;
-//	//playerC.emplace_back(std::move(cP));
-//
-//	//std::vector<MaterialCPU> materials;
-//
-//	//player = modelCreator_->Create<Model::Type::kDynamic>("PlayerObj", playerC, materials,1,"Player")[0];
-//
-//
-//	//RenderState cC;
-//	//cC.blendModes.emplace_back(BlendMode::kOpaque);
-//	//cC.pass = RenderPassComponent::Pass::kSceneOpaque;
-//	//cC.cullMode = CullMode::kBack;
-//	//cC.meshType = MeshType::kStatic;
-//	//cC.materialTypes.emplace_back(MaterialType::kStandard);
-//
-//	//std::vector<RenderState> cubeC;
-//	//cubeC.emplace_back(std::move(cC));
-//
-//	//cube = modelCreator_->Create<Model::Type::kDynamic>("CubeGltf", cubeC, materials,1,"Cube")[0];
-//
-//}
-
-========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Model\TestModelOKIBA.h ===
-========================================
-#pragma once
-#include "ModelContext.h"
-class Model;
-//struct TestModelOKIBA
-//{
-//	TestModelOKIBA(ModelContext::ModelCreator* modelCreator_);
-//
-//	Model* cube;
-//	Model* player;
-//
-//};
-//
 
 ========================================
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Model\CreateModelTools\ModelCreator.cpp ===
@@ -13371,7 +13365,7 @@ void Model::ChangeRoughness(size_t index_, float dst_)
 	changeableParams.areMaterialsDirty[index_] = true;
 	changeableParams.materials[index_].roughness = dst_;
 }
-void Model::ChangeMetalic(size_t index_, float dst_)
+void Model::ChangeMetallic(size_t index_, float dst_)
 {
 	static auto const errorMsg = WatchName() + "のメタリックアクセス違反";
 	ErrorMessageOutput::Assert::DetectError
@@ -13524,7 +13518,7 @@ public:
 	void ChangeBlendMode(RenderStateComponent::BlendMode dst_);
 	void ChangeMaterialType(ShaderPathComponent::MaterialType dst_);
 	void ChangeRoughness(size_t index_, float dst_);
-	void ChangeMetalic(size_t index_, float dst_);
+	void ChangeMetallic(size_t index_, float dst_);
 	void ChangeColor(size_t index_ , Vector4<float> const& dst_);
 	template<TextureComponent::TextureType textureType>
 	void ChangeTexture(size_t index_, SRVHeapIndex dst_);
@@ -16729,7 +16723,7 @@ namespace MathConstants
 {
 	constexpr float kPi = 3.141592653589f;
 	constexpr float kHalf = 0.5f;
-	constexpr float kQuater = 0.25f;
+	constexpr float kQuarter = 0.25f;
 	constexpr float kQuaterQuater = 0.125f;
 	constexpr float kInv_255 = 1.0f / 255.0f;
 	constexpr float kInv_100 = 0.01f;
@@ -17101,7 +17095,7 @@ private:
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Math\Vector\Vector2.cpp ===
 ========================================
 #include "Vector2.h"
-float Vector2::GetMagnitutde()
+float Vector2::GetMagnitude()
 {
 	float ret_mag = sqrtf(x * x + y * y);
 	return ret_mag;
@@ -17115,7 +17109,7 @@ Vector2 Vector2::GetNormalized()
 	{
 		return { 0,0 };
 	}
-	float inv_mag = 1.0f / GetMagnitutde();
+	float inv_mag = 1.0f / GetMagnitude();
 	return { x * inv_mag ,y * inv_mag };
 }
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -17171,7 +17165,7 @@ struct Vector2
 	Vector2(std::array<float,2> entries_) : x(entries_[0]), y(entries_[1]) {}
 	Vector2(float x_, float y_) : x(x_), y(y_) {}
 	Vector2() {};
-	float GetMagnitutde();
+	float GetMagnitude();
 	Vector2 GetNormalized();
 	float GetCos(Vector2 other_);
 	float GetDot(Vector2 other_);
@@ -20432,7 +20426,7 @@ std::optional<RenderContext::RequiredBufferInfo::DepthStencilBuffer> RenderConte
 	std::optional<RenderContext::RequiredBufferInfo::DepthStencilBuffer> depthStencilBufferInfo;
 	auto* miyajison = Miyajison::Get();
 	//深度バッファ使わんならしらん
-	if (!miyajison->LoadData<bool>(DataKeyString::kSrcJsonFileName, { passName_,DataKeyString::kUseDepthStenciB }))
+	if (!miyajison->LoadData<bool>(DataKeyString::kSrcJsonFileName, { passName_,DataKeyString::kUseDepthStencilB }))
 		return std::nullopt;
 	depthStencilBufferInfo.emplace();
 	depthStencilBufferInfo->dsvFormat = (DXGI_FORMAT)
@@ -20469,7 +20463,7 @@ RenderContext::RenderPassState RenderContext::RenderPassCreator::PassSettingsLoa
 {
 	auto* miyajison = Miyajison::Get();
 	bool doesUseDepthBuffer =
-		miyajison->LoadData<bool>(DataKeyString::kSrcJsonFileName, { passName_,DataKeyString::kUseDepthStenciB });
+		miyajison->LoadData<bool>(DataKeyString::kSrcJsonFileName, { passName_,DataKeyString::kUseDepthStencilB });
 	return doesUseDepthBuffer ? RenderPassState
 	(
 		DepthTest(miyajison->LoadData<int>(DataKeyString::kSrcJsonFileName, { passName_,DataKeyString::kDepthTestI })),
@@ -20537,7 +20531,7 @@ private:
 		static inline std::string const kNumBuffer_colorI		= "numBuffer_Color";
 		//深度バッファの設定
 		static inline std::string const kDepthBufferName 		= "depthBufferName";
-		static inline std::string const kUseDepthStenciB 		= "useDepthStencil";
+		static inline std::string const kUseDepthStencilB 		= "useDepthStencil";
 		static inline std::string const kDsvFormatI		 		= "dsvFormat";
 		static inline std::string const kSrvFormatI		 		= "srvFormat";
 		static inline std::string const kClearDepthF	 		= "clearDepth";
@@ -20588,7 +20582,7 @@ void RenderContext::RuntimePassInfo::InputOtherParams
 {
 	refColorBuffersID = refColorBuffersID_;
 	refDepthStencilBuffersID = refDepthStencilBuffersID_;
-	rootConstants.refBuffferOffset = refOffset_;
+	rootConstants.refBufferOffset = refOffset_;
 }
 void RenderContext::RuntimePassInfo::PickUpRuntimeRequirementsFromDesc(PassDesc const& desc_)
 {
@@ -21660,7 +21654,7 @@ public:
 ========================================
 #include "PreCompileHeader.h"
 #include "SceneBehavior.h"
-#include "../../../LowerLayer/Resource/Camera/CameraStructrue/CameraDesc/CameraDesc.h"
+#include "../../../LowerLayer/Resource/Camera/CameraStructure/CameraDesc/CameraDesc.h"
 //外部
 //エンジン備え付けのカメラ
 #include "../../../LowerLayer/Resource/Camera/PresetCameras/PresetCameraIncludes.h"
@@ -21886,6 +21880,28 @@ class SceneContext;
 //交易場
 class Nexus
 {
+public:
+	//エンジンクラスしかインスタンス化はさせません
+	struct aFourthProof;
+	Nexus(aFourthProof proof_);
+	~Nexus();
+	Nexus(const Nexus&) = delete;
+	Nexus& operator=(const Nexus&) = delete;
+	Nexus(Nexus&&) = delete;
+	Nexus& operator=(Nexus&&) = delete;
+	//更新処理
+	void Run(aFourthProof proof_);
+	//2段階目初期化
+	void SecondaryInit(aFourthProof proof_);
+	//エンジンインターフェースがシーンのインスタンス化メソッドを定義するために必要
+	template<typename ContextType>
+	auto& AccessContext(aFourthProof const& proof_)
+	{
+		if		constexpr (std::is_same_v<ContextType, ModelContext>)	return *modelContext;
+		else if constexpr (std::is_same_v<ContextType, CameraContext>)	return *cameraContext;
+		else if constexpr (std::is_same_v<ContextType, SceneContext>)	return *sceneContext;
+	}
+private:
 	//初期化・生成順序
 	enum class InitSequence
 	{
@@ -21913,36 +21929,14 @@ class Nexus
 		kSortOutGlobalConstantBuffers,
 		kDeleteModelDataCache,					///モデルデータキャッシュの削除は、アプリ層の初期化が終わったあと
 		kEnd
-	}nextInit = InitSequence(0);
+	}nextInit = InitSequence::kLoadProjectFiles;
 	//終了処理順序
 	enum class FinalizeSequence
 	{
 		kCommandContext,
 		kWindowContext
-		,kEnd
-	}nextFin = FinalizeSequence(0);
-public:
-	//エンジンクラスしかインスタンス化はさせません
-	struct aFourthProof;
-	Nexus(aFourthProof proof_);
-	~Nexus();
-	Nexus(const Nexus&) = delete;
-	Nexus& operator=(const Nexus&) = delete;
-	Nexus(Nexus&&) = delete;
-	Nexus& operator=(Nexus&&) = delete;
-	//更新処理
-	void Run(aFourthProof proof_);
-	//2段階目初期化
-	void SecondaryInit(aFourthProof proof_);
-	//エンジンインターフェースがシーンのインスタンス化メソッドを定義するために必要
-	template<typename ContextType>
-	auto& AccessContext(aFourthProof const& proof_)
-	{
-		if		constexpr (std::is_same_v<ContextType, ModelContext>)	return *modelContext;
-		else if constexpr (std::is_same_v<ContextType, CameraContext>)	return *cameraContext;
-		else if constexpr (std::is_same_v<ContextType, SceneContext>)	return *sceneContext;
-	}
-private:
+		, kEnd
+	}nextFin = FinalizeSequence::kCommandContext;
 	//デバッガー。DebugLayer, PointerValidator, LeakChecker
 	std::unique_ptr<DebugContext> debugContext;
 	//IDXGIFactory7、IDXGIAdapter4、ID3D12Device8を持ち、コアパーツによるコマンドを提供したりする
@@ -22008,13 +22002,13 @@ private:
 		nextFin = FinalizeSequence((UINT)nextFin + 1);
 	}
 };
-	struct Nexus::aFourthProof
-	{
-	private:
-		template<typename... SceneTypes>
-		friend class aFourth;
-		explicit aFourthProof() = default;
-	};
+struct Nexus::aFourthProof
+{
+private:
+	template<typename... SceneTypes>
+	friend class aFourth;
+	explicit aFourthProof() = default;
+};
 
 ========================================
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Nexus\NexusFinalization.cpp ===
@@ -22093,7 +22087,7 @@ void Nexus::Init<Nexus::InitSequence::kLoadProjectFiles>()
 	//シングルトンだから一度読んでコンストラクタが通ればよし
 	Miyajison::Get();
 	//ここでプロジェクト設定も初期化しちゃう
-	ProjectConfig::Window::Instantiate();
+	ProjectConfig::Window::LoadData();
 }
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -22301,9 +22295,9 @@ template<>
 void Nexus::Init<Nexus::InitSequence::kKickCommands>()
 {
 	//CommandContextの代行者
-	auto* agent = commandContext->AccessDiplomat().Access<CommandContext::ExecutionAgent>();
+	auto& agent = commandContext->AccessDiplomat().Access<CommandContext::ExecutionAgent>();
 	//リソースアップロードのために溜まったコマンドを全てキックして同期し、コマンドリストを閉じる
-	agent->KickAndSynchronizeUploadCommand(CommandContext::NexusFieldProof{});
+	agent.KickAndSynchronizeUploadCommand(CommandContext::NexusFieldProof{});
 }
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -22314,7 +22308,7 @@ void Nexus::Init<Nexus::InitSequence::kDeleteBufferUploaderCache>()
 	//bufferContextの代行者
 	auto* agent = bufferContext->AccessDiplomat().Access<BufferContext::ExecutionAgent>();
 	//BufferUploaderのキャッシュデータ削除を代行
-	agent->DeleteBufferUploaderChacheData(BufferContext::NexusFieldProof{});
+	agent->DeleteBufferUploaderCacheData(BufferContext::NexusFieldProof{});
 }
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -22404,19 +22398,20 @@ void Nexus::Init<Nexus::InitSequence::kDeleteModelDataCache>();
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 #include "../LowerLayer/Core/SwapChain/SwapChainContextDiplomat/SwapChainContextDiplomat.h"
 #include "../LowerLayer/Core/SwapChain/SwapChainContextDiplomat/SwapChainExecutionAgent/SwapChainExecutionAgent.h"
-#include "../LowerLayer/Core/SwapChain/Presenter/Presenter.h"
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-#include "../LowerLayer/Core/Command/RuntimeCommandController/RuntimeCommandController.h"
+#include "../LowerLayer/Core/Command/CommandContextDiplomat/CommandContextDiplomat.h"
+#include "../LowerLayer/Core/Command/CommandContextDiplomat/CommandContextExecutionAgent/CommandContextExecutionAgent.h"
 void Nexus::Run(aFourthProof proof_)
 {
 	//SwapChainContextの代行クラス
 	auto& s_ExecutionAgent = swapChainContext->AccessDiplomat().Access<SwapChainContext::ExecutionAgent>();
+	//CommandContextの代行クラス
+	auto& c_ExecutionAgent = commandContext->AccessDiplomat().Access<CommandContext::ExecutionAgent>();
 	auto const frameIndex = s_ExecutionAgent.GetFrameIndex(SwapChainContext::NexusFieldProof{});
-	auto* runtimeCmdController = commandContext->runtimeCommandController.get();
 	//コマンドの記録開始
-	runtimeCmdController->RecordingStart(frameIndex);
+	c_ExecutionAgent.StartRecordingCommands(CommandContext::NexusFieldProof{}, frameIndex);
 	//コマンドを送る
-	runtimeCmdController->ExecuteCommands(frameIndex);
+	c_ExecutionAgent.ExecuteCommands(CommandContext::NexusFieldProof{},frameIndex);
 	//表示
 	s_ExecutionAgent.Present(SwapChainContext::NexusFieldProof{});
 }
@@ -22510,7 +22505,7 @@ namespace ProjectConfig
 	struct Window
 	{
 		Window();
-		static void Instantiate()
+		static void LoadData()
 		{
 			static Window window;
 		}
@@ -23282,5 +23277,5 @@ namespace StringProcessing
 ========================================
 === SUMMARY ===
 ========================================
-Total Files      : 521
-Effective Lines  : 16902
+Total Files      : 517
+Effective Lines  : 16960

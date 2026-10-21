@@ -22,6 +22,37 @@ class SceneContext;
 //交易場
 class Nexus
 {
+public:
+
+	//エンジンクラスしかインスタンス化はさせません
+	struct aFourthProof;
+
+	Nexus(aFourthProof proof_);
+	~Nexus();
+
+	Nexus(const Nexus&) = delete;
+	Nexus& operator=(const Nexus&) = delete;
+	Nexus(Nexus&&) = delete;
+	Nexus& operator=(Nexus&&) = delete;
+
+	//更新処理
+	void Run(aFourthProof proof_);
+
+	//2段階目初期化
+	void SecondaryInit(aFourthProof proof_);
+
+	//エンジンインターフェースがシーンのインスタンス化メソッドを定義するために必要
+	template<typename ContextType>
+	auto& AccessContext(aFourthProof const& proof_)
+	{
+		if		constexpr (std::is_same_v<ContextType, ModelContext>)	return *modelContext;
+		else if constexpr (std::is_same_v<ContextType, CameraContext>)	return *cameraContext;
+		else if constexpr (std::is_same_v<ContextType, SceneContext>)	return *sceneContext;
+
+	}
+
+private:
+
 	//初期化・生成順序
 	enum class InitSequence
 	{
@@ -55,7 +86,7 @@ class Nexus
 		kDeleteModelDataCache,					///モデルデータキャッシュの削除は、アプリ層の初期化が終わったあと
 
 		kEnd
-	}nextInit = InitSequence(0);
+	}nextInit = InitSequence::kLoadProjectFiles;
 
 	//終了処理順序
 	enum class FinalizeSequence
@@ -64,39 +95,8 @@ class Nexus
 		kWindowContext
 
 
-		,kEnd
-	}nextFin = FinalizeSequence(0);
-
-public:
-
-	//エンジンクラスしかインスタンス化はさせません
-	struct aFourthProof;
-
-	Nexus(aFourthProof proof_);
-	~Nexus();
-
-	Nexus(const Nexus&) = delete;
-	Nexus& operator=(const Nexus&) = delete;
-	Nexus(Nexus&&) = delete;
-	Nexus& operator=(Nexus&&) = delete;
-
-	//更新処理
-	void Run(aFourthProof proof_);
-
-	//2段階目初期化
-	void SecondaryInit(aFourthProof proof_);
-
-	//エンジンインターフェースがシーンのインスタンス化メソッドを定義するために必要
-	template<typename ContextType>
-	auto& AccessContext(aFourthProof const& proof_)
-	{
-		if		constexpr (std::is_same_v<ContextType, ModelContext>)	return *modelContext;
-		else if constexpr (std::is_same_v<ContextType, CameraContext>)	return *cameraContext;
-		else if constexpr (std::is_same_v<ContextType, SceneContext>)	return *sceneContext;
-
-	}
-
-private:
+		, kEnd
+	}nextFin = FinalizeSequence::kCommandContext;
 
 	//デバッガー。DebugLayer, PointerValidator, LeakChecker
 	std::unique_ptr<DebugContext> debugContext;
@@ -175,15 +175,15 @@ private:
 
 };
 
-	struct Nexus::aFourthProof
-	{
-	private:
+struct Nexus::aFourthProof
+{
+private:
 
-		template<typename... SceneTypes>
-		friend class aFourth;
+	template<typename... SceneTypes>
+	friend class aFourth;
 
-		explicit aFourthProof() = default;
-	};
+	explicit aFourthProof() = default;
+};
 
 
 

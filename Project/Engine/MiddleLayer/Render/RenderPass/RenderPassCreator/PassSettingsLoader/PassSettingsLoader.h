@@ -42,7 +42,7 @@ private:
 
 		//深度バッファの設定
 		static inline std::string const kDepthBufferName 		= "depthBufferName";
-		static inline std::string const kUseDepthStenciB 		= "useDepthStencil";
+		static inline std::string const kUseDepthStencilB 		= "useDepthStencil";
 		static inline std::string const kDsvFormatI		 		= "dsvFormat";
 		static inline std::string const kSrvFormatI		 		= "srvFormat";
 		static inline std::string const kClearDepthF	 		= "clearDepth";

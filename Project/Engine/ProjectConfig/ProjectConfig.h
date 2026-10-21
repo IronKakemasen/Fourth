@@ -18,7 +18,7 @@ namespace ProjectConfig
 	{
 		Window();
 
-		static void Instantiate()
+		static void LoadData()
 		{
 			static Window window;
 		}
