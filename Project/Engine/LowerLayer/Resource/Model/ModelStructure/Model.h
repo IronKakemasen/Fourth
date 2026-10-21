@@ -1,7 +1,13 @@
 #pragma once
 #include "ModelDescription/ModelDescription.h"
-#include "../../../../Math/Transform/Transform.h"
+
+
+//外部
 #include "../../../Buffer/BufferDefinition/TextureComponent.h"
+#include "../../../../Math/Transform/Transform.h"
+
+class ModelContext;
+class RenderContext;
 
 class Model
 {
@@ -16,7 +22,7 @@ class Model
 		ShaderPathComponent::MaterialType materialType{};
 		//マテリアル。可変長になっているのは、サブメッシュ分用意しているから
 		std::vector<StructuredBufferModelData::MaterialGPU> materials;
-		std::vector<bool> areMaterialsDirty;
+		std::vector<UINT> areMaterialsDirtyCnt;
 		std::vector<Transform> transforms;
 	};
 
@@ -44,7 +50,23 @@ public:
 	Model(Model&&) = delete;
 	Model& operator=(Model&&) = delete;
 
+	//上位レイヤーでモデルのパラメーターを弄るときに
+	void ChangeBlendMode(RenderStateComponent::BlendMode dst_);
+	void ChangeMaterialType(ShaderPathComponent::MaterialType dst_);
+	void ChangeRoughness(size_t index_, float dst_);
+	void ChangeMetallic(size_t index_, float dst_);
+	void ChangeColor(size_t index_ , Vector4<float> const& dst_);
+	template<TextureComponent::TextureType textureType>
+	void ChangeTexture(size_t index_, SRVHeapIndex dst_);
+	Transform& RefTransform(size_t index_);
+	std::span<Transform> RefTransforms();
 
+private:
+
+	//モデルクラスは上位層でも触るクラスであり、インターフェースを汚したくないので
+	friend class ModelContext;
+	friend class RenderContext;
+	
 	//そのパスで描画するかどうかで利用
 	bool DoesDraw
 	(
@@ -70,22 +92,32 @@ public:
 	auto const& WatchMeshletSize()const { return modelDesc.WatchMeshletSize(); }
 	//主にバッファにバッチングするため
 	auto const& WatchMaterial(size_t index_)const { return changeableParams.materials[index_]; }
-	auto const IsMaterialDirty(size_t index_)const { return changeableParams.areMaterialsDirty[index_]; }
+	//マテリアルのダーティー検出
+	bool const IsMaterialDirty(size_t index_)const { return changeableParams.areMaterialsDirtyCnt[index_]; }
 	auto const& WatchTransform(size_t index_)const { return changeableParams.transforms[index_]; }
+	//マテリアルのダーティーカウントを1つ減らす
+	//IsMaterialDirty()通過後、呼び出すこと
+	void DecrementMaterialDirtyCnt(size_t index_) 
+	{
+#ifdef _DEBUG
 
+		auto& dst = changeableParams.areMaterialsDirtyCnt[index_];
 
-	//上位レイヤーでモデルのパラメーターを弄るときに
-	void ChangeBlendMode(RenderStateComponent::BlendMode dst_);
-	void ChangeMaterialType(ShaderPathComponent::MaterialType dst_);
-	void ChangeRoughness(size_t index_, float dst_);
-	void ChangeMetallic(size_t index_, float dst_);
-	void ChangeColor(size_t index_ , Vector4<float> const& dst_);
-	template<TextureComponent::TextureType textureType>
-	void ChangeTexture(size_t index_, SRVHeapIndex dst_);
-	Transform& RefTransform(size_t index_);
-	std::span<Transform> RefTransforms();
+		ErrorMessageOutput::Assert::DetectError
+		(
+			dst > 0 && dst <= 2,
+			"マテリアルのダーティのインデックスがおかしい",
+			"Model.h"
+		);
 
-private:
+		dst--;
+
+#else
+		changeableParams.areMaterialsDirtyCnt[index_]--; 
+
+#endif // _DEBUG
+
+	}
 
 	Type type;
 	ChangeableParams changeableParams;

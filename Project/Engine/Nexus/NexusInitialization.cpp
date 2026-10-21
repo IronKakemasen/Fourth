@@ -315,9 +315,9 @@ template<>
 void Nexus::Init<Nexus::InitSequence::kDeleteModelDataCache>()
 {
 	//modelContextの代行者
-	auto* agent = modelContext->AccessDiplomat().Access<ModelContext::ExecutionAgent>();
+	auto& agent = modelContext->AccessDiplomat().Access<ModelContext::ExecutionAgent>();
 	//初期化処理に使ったモデルデータのキャッシュを削除
-	agent->DeleteModelDataCache(ModelContext::NexusFieldProof{});
+	agent.DeleteModelDataCache(ModelContext::NexusFieldProof{});
 }
 
 template<>

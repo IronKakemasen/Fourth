@@ -20,7 +20,8 @@ class SceneBehavior
 	{
 		//使用しているカメラ。更新必要
 		std::unordered_map<CameraSocket, CameraBehavior*> usingCamera;
-
+		//このシーンのモデルコンテナ
+		ModelContext::ModelFrontlineSystems::ModelContainer const* modelContainer = nullptr;
 	};
 
 protected:
@@ -76,7 +77,7 @@ public:
 private:
 
 
-	//ここの中でモデルの生成などの処理を書く。一発しか呼びません。
+	//ここの中でモデルの生成などの処理を書く。シーンが切り替わっても一発しか呼びません。
 	virtual void Init() = 0;
 
 	//シーンのInit()の後に一括で一度だけ呼ばれる
@@ -100,6 +101,7 @@ private:
 
 	CameraContext::CameraFrontlineSystems* cameraSystems = nullptr;
 	ModelContext::ModelFrontlineSystems* modelSystems = nullptr;
+	//シーンの出力物
 	SceneBehavior::Output output;
 
 };

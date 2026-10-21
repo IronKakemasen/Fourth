@@ -5677,7 +5677,7 @@ CommandContext::ResourceUploader::ResourceUploader
 	Logger::Log("Close: upload cmdList", fileName);
 	///後続するリソースのアップロードのためにコマンドの記録を開始する
 	RecordingStart();
-	Logger::Log("Commmand recording start", fileName);
+	Logger::Log("Command recording start", fileName);
 }
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -6369,32 +6369,33 @@ DescriptorHeapContext::DescriptorHeapCreator::DescriptorHeapCreator
 	NexusFieldProof proof_,
 	DescriptorHeapPoolContainer& container_,
 	DeviceContextDiplomat& deviceContextDiplomat_
-) {
+) 
+{
 	//deviceContextからディスクリプタヒープ生成コマンドを渡してもらう
 	auto& deviceContextCmdProvider = deviceContextDiplomat_.Access<DeviceContext::CommandProvider>();
 	DeviceContext::CommandProvider::LicenceType<DeviceContextCmds::CreateDescriptorHeap> licenceCreateDescriptorHeap;
 	auto createDescriptorHeapCmd = deviceContextCmdProvider.Provide<DeviceContextCmds::CreateDescriptorHeap>(licenceCreateDescriptorHeap);
 	//deviceContextのコマンド実行クラスから、各種descriptorHeapのインクリメントサイズを教えてもらう
 	auto& cmdExecutor = deviceContextDiplomat_.Access<DeviceContext::CommandExecutor>();
-	UINT rtvDHIncrementSIze = cmdExecutor.CalcDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
-	UINT srvDHIncrementSIze = cmdExecutor.CalcDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
-	UINT dsvDHIncrementSIze = cmdExecutor.CalcDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_DSV);
+	UINT rtvDHIncrementSize = cmdExecutor.CalcDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
+	UINT srvDHIncrementSize = cmdExecutor.CalcDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+	UINT dsvDHIncrementSize = cmdExecutor.CalcDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_DSV);
 	container_.Import<D3D12_DESCRIPTOR_HEAP_TYPE_RTV>
 	(
 		proof_,
-		std::move(Create<D3D12_DESCRIPTOR_HEAP_TYPE_RTV>(createDescriptorHeapCmd,kNumDescriptorsRTVHeap, false, rtvDHIncrementSIze))
+		std::move(Create<D3D12_DESCRIPTOR_HEAP_TYPE_RTV>(createDescriptorHeapCmd,kNumDescriptorsRTVHeap, false, rtvDHIncrementSize))
 	);
 	Logger::Log("Create: DescriptorHeapRTV", fileName);
 	container_.Import<D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV>
 	(
 		proof_,
-		std::move(Create<D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV>(createDescriptorHeapCmd,kNumDescriptorSRVHeap, true, srvDHIncrementSIze))
+		std::move(Create<D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV>(createDescriptorHeapCmd,kNumDescriptorSRVHeap, true, srvDHIncrementSize))
 	);
 	Logger::Log("Create: DescriptorHeapSRV", fileName);
 	container_.Import<D3D12_DESCRIPTOR_HEAP_TYPE_DSV>
 	(
 		proof_,
-		std::move(Create<D3D12_DESCRIPTOR_HEAP_TYPE_DSV>(createDescriptorHeapCmd,kNumDescriptorsDSVHeap, false, dsvDHIncrementSIze))
+		std::move(Create<D3D12_DESCRIPTOR_HEAP_TYPE_DSV>(createDescriptorHeapCmd,kNumDescriptorsDSVHeap, false, dsvDHIncrementSize))
 	);
 	Logger::Log("Create: DescriptorHeapDSV", fileName);
 }
@@ -12454,9 +12455,9 @@ public:
 		std::unique_ptr<ModelContext::CommandProvider>&& cmdProvider_ 
 	);
 	template<typename ToolType>
-	auto* Access()
+	auto& Access()
 	{
-		return std::get<std::unique_ptr<ToolType>>(tools).get();
+		return *std::get<std::unique_ptr<ToolType>>(tools);
 	}
 private:
 	std::tuple
@@ -12555,15 +12556,15 @@ void ModelContext::ExecutionAgent::DeleteModelDataCache(NexusFieldProof proof_)
 	modelContext.DeleteModelDataCache(proof_, AgentKey{});
 	modelCreator.DeleteRenderStateCache(proof_, AgentKey{});
 }
-void ModelContext::ExecutionAgent::BatchModelData
+void ModelContext::ExecutionAgent::BatchAndUpdateModelData
 (
 	SceneContextProof proof_,
 	UINT const frameIndex_,
-	std::vector<Model*> const& models_,
+	std::vector<Model*>& models_,
 	BufferContextDiplomat& bufferContextDiplomat_
 )
 {
-	modelDataBatcher.BatchModelData
+	modelDataBatcher.BatchAndUpdateModelData
 	(
 		AgentKey{},
 		frameIndex_,
@@ -12601,12 +12602,13 @@ public:
 		ModelFSDispatcher& modelFSDispatcher_
 	);
 	void DeleteModelDataCache(NexusFieldProof proof_);
-	//モデルデータをバッチングする
-	void BatchModelData
+	//モデルデータをバッチングする。ループのコストが鼻につくので、
+	//モデルのトランスフォームのアップデートもやっちゃう
+	void BatchAndUpdateModelData
 	(
 		SceneContextProof proof_,
 		UINT const frameIndex_,
-		std::vector<Model*> const& models_,
+		std::vector<Model*>& models_,
 		BufferContextDiplomat& bufferContextDiplomat_
 	);
 	//モデルクリエイターの所持する全レンダーステートパターンのキャッシュを見せる
@@ -12686,11 +12688,11 @@ ModelContext::ModelDataBatcher::ModelDataBatcher(NexusFieldProof proof_)
 ModelContext::ModelDataBatcher::~ModelDataBatcher()
 {
 }
-void ModelContext::ModelDataBatcher::BatchModelData
+void ModelContext::ModelDataBatcher::BatchAndUpdateModelData
 (
 	AgentKey agentKey_,
 	UINT const frameIndex_,
-	std::vector<Model*> const& models_,
+	std::vector<Model*>& models_,
 	BufferContextDiplomat& bufferContextDiplomat_
 )
 {
@@ -12698,11 +12700,11 @@ void ModelContext::ModelDataBatcher::BatchModelData
 	BufferContext::ToolLender::LicenceType<BufferContext::BufferDispatcher> licence;
 	auto& dispatcher = *bufferContextDiplomat_.Access<BufferContext::ToolLender>()->Lend<BufferContext::BufferDispatcher>(licence);
 	//モデルの所持するデータをバッファに書き込んでいく
-	for (Model const* model : models_)
+	for (Model* model : models_)
 	{
 		auto const& perDrawIndices = model->WatchPerDrawIndices();
 		auto const numMeshes = perDrawIndices.size();
-		OverrideBuffer<ConstantBuffers::ConstantBufferBindSlots::kTransformMatrixContainer>
+		UpdateAndOverrideBuffer<ConstantBuffers::ConstantBufferBindSlots::kTransformMatrixContainer>
 		(
 			frameIndex_,
 			*model,
@@ -12710,7 +12712,7 @@ void ModelContext::ModelDataBatcher::BatchModelData
 			numMeshes,
 			dispatcher
 		);
-		OverrideBuffer<ConstantBuffers::ConstantBufferBindSlots::kMaterialContainer>
+		UpdateAndOverrideBuffer<ConstantBuffers::ConstantBufferBindSlots::kMaterialContainer>
 		(
 			frameIndex_,
 			*model,
@@ -12719,12 +12721,21 @@ void ModelContext::ModelDataBatcher::BatchModelData
 			dispatcher
 		);
 	}
+	//モデルのバッチング処理が終了したので、トランスフォームの
+	//更新処理用ダーティフラグをリセットする
+	for (auto* model : models_)
+	{
+		for (auto& modelTrans : model->RefTransforms())
+		{
+			modelTrans.ResetFrameFlag();
+		}
+	}
 }
 template<>
-void ModelContext::ModelDataBatcher::OverrideBuffer<ConstantBufferBindSlots::kTransformMatrixContainer>
+void ModelContext::ModelDataBatcher::UpdateAndOverrideBuffer<ConstantBufferBindSlots::kTransformMatrixContainer>
 (
 	UINT const frameIndex_,
-	Model const& model_,
+	Model& model_,
 	std::vector<ConstantBuffers::PerDrawIndicesCPUGPU> const& perDrawIndices_,
 	size_t const numMesh_,
 	BufferContext::BufferDispatcher& dispatcher_
@@ -12737,18 +12748,22 @@ void ModelContext::ModelDataBatcher::OverrideBuffer<ConstantBufferBindSlots::kTr
 	//もちろんサブメッシュ分も
 	for (size_t i = 0;i < numMesh_;++i)
 	{
-		auto const& srcTransform = model_.WatchTransform(i);
-		//そのトランスフォームがダーティなら書き込まない
+		auto srcTransform = model_.RefTransform(i);
+		//トランスフォームの更新処理
+		srcTransform.Update();
+		//そのトランスフォームがダーティじゃないなら書き込まない
 		if (!srcTransform.ShouldOverrideBuffer()) continue;
 		TransformMatrixCPUGPU transformMatrix(srcTransform.WatchWorldMatrix());
 		dstBuffer->WriteElement(frameIndex_, transformMatrix, perDrawIndices_[i].transformMatrixID);
+		//トランスフォームのバッファ書き込みカウントを１つ減らす
+		srcTransform.DecrementNeedOverrideBufferCnt();
 	}
 }
 template<>
-void ModelContext::ModelDataBatcher::OverrideBuffer<ConstantBufferBindSlots::kMaterialContainer>
+void ModelContext::ModelDataBatcher::UpdateAndOverrideBuffer<ConstantBufferBindSlots::kMaterialContainer>
 (
 	UINT const frameIndex_,
-	Model const& model_,
+	Model& model_,
 	std::vector<ConstantBuffers::PerDrawIndicesCPUGPU> const& perDrawIndices_,
 	size_t const numMesh_,
 	BufferContext::BufferDispatcher& dispatcher_
@@ -12760,11 +12775,14 @@ void ModelContext::ModelDataBatcher::OverrideBuffer<ConstantBufferBindSlots::kMa
 	//やってることはトランスフォームと変わらない。
 	for (size_t i = 0;i < numMesh_;++i)
 	{
-		//そのトランスフォームがダーティなら書き込まない
+		//そのマテリアルがダーティじゃないなら書き込まない
 		if (!model_.IsMaterialDirty(i)) continue;
-		const auto& srcMaterial = model_.WatchMaterial(i);
+		auto& srcMaterial = model_.WatchMaterial(i);
+		//MaterialGPUに変換
 		MaterialGPU material(srcMaterial);
 		dstBuffer->WriteElement(frameIndex_, material, perDrawIndices_[i].materialID);
+		//マテリアルダーティのカウントを１つ消去
+		model_.DecrementMaterialDirtyCnt(i);
 	}
 }
 template<ConstantBufferBindSlots bindSlot>
@@ -12806,11 +12824,11 @@ public:
 	void ImportPerDrawBufferID(Local_InputBufferUniqueIDLicence licence_,BufferUniqueID id_);
 	//代行者にランタイムでモデルデータのバッチング処理をやってもらう
 	//バッファに書き込まなくていいモデルも多数あるはずなので、全バッチングではなく、該当バッチングする
-	void BatchModelData
+	void BatchAndUpdateModelData
 	(
 		AgentKey agentKey_,
 		UINT const frameIndex_,
-		std::vector<Model*> const& models_,
+		std::vector<Model*>& models_,
 		BufferContextDiplomat& bufferContextDiplomat_
 	);
 private:
@@ -12820,10 +12838,10 @@ private:
 	///結合度に箔がついちゃうけど、さすがにモデルひとつごとにBufferDispatcherを解凍するのは非効率的すぎるし、
 	///関数にまとめたいので
 	template<ConstantBuffers::ConstantBufferBindSlots bufferType>
-	void OverrideBuffer
+	void UpdateAndOverrideBuffer
 	(
 		UINT const frameIndex_,
-		Model const& model_,
+		Model& model_,
 		std::vector<ConstantBuffers::PerDrawIndicesCPUGPU> const& perDrawIndices_,
 		size_t const numMesh_,
 		BufferContext::BufferDispatcher& dispatcher_
@@ -12836,19 +12854,19 @@ private:
 	explicit Local_InputBufferUniqueIDLicence() = default;
 };
 template<>
-void ModelContext::ModelDataBatcher::OverrideBuffer<ConstantBuffers::ConstantBufferBindSlots::kTransformMatrixContainer>
+void ModelContext::ModelDataBatcher::UpdateAndOverrideBuffer<ConstantBuffers::ConstantBufferBindSlots::kTransformMatrixContainer>
 (
 	UINT const frameIndex_,
-	Model const& model_,
+	Model& model_,
 	std::vector<ConstantBuffers::PerDrawIndicesCPUGPU> const& perDrawIndices_,
 	size_t const numMesh_,
 	BufferContext::BufferDispatcher& dispatcher_
 );
 template<>
-void ModelContext::ModelDataBatcher::OverrideBuffer<ConstantBuffers::ConstantBufferBindSlots::kMaterialContainer>
+void ModelContext::ModelDataBatcher::UpdateAndOverrideBuffer<ConstantBuffers::ConstantBufferBindSlots::kMaterialContainer>
 (
 	UINT const frameIndex_,
-	Model const& model_,
+	Model& model_,
 	std::vector<ConstantBuffers::PerDrawIndicesCPUGPU> const& perDrawIndices_,
 	size_t const numMesh_,
 	BufferContext::BufferDispatcher& dispatcher_
@@ -12938,18 +12956,23 @@ void ModelContext::ModelFrontlineSystems::SeparateModels()
 {
 	modelContainer->SeparateModels(ModelContainer::Local_InitLicence{});
 }
+ModelContext::ModelFrontlineSystems::ModelContainer const* ModelContext::ModelFrontlineSystems::WatchModelContaienr()const
+{
+	return modelContainer.get();
+}
 
 ========================================
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Model\ModelContextRuntime\ModelFrontlineSystems\ModelFrontlineSystems.h ===
 ========================================
 #pragma once
 #include "../../CreateModelTools/ModelCreator.h"
+struct RenderStateKey;
 class ModelContext::ModelFrontlineSystems
 {
+public:
 	//モデルのコンテナ。シーン1つにつき1こ。モデルの本体、renderState別と、
 	//modelType別に分類されたコンテナも持つ
 	class ModelContainer;
-public:
 	ModelFrontlineSystems(NexusFieldProof proof_, ModelCreator& modelCreator_);
 	~ModelFrontlineSystems();
 	//モデル作成し、そのポインタを返す
@@ -12977,6 +13000,7 @@ public:
 	}
 	//モデルコンテナの分別を行う
 	void SeparateModels();
+	ModelContainer const* WatchModelContaienr()const;
 private:
 	std::vector<Model*> AddModel(std::vector<std::unique_ptr<Model>>&& modelUniques_);
 	std::unique_ptr<ModelContainer> modelContainer;
@@ -13270,6 +13294,7 @@ namespace
 {
 	auto const fileName = "Model.cpp";
 }
+using namespace ProjectConfig::Render;
 Model::Model
 (
 	Type type_,
@@ -13281,7 +13306,8 @@ Model::Model
 	changeableParams.blendMode = modelDesc_.WatchRenderStates()[0].blendModes[0];
 	changeableParams.materialType = modelDesc_.WatchRenderStates()[0].materialTypes[0];
 	changeableParams.materials = materials_;
-	changeableParams.areMaterialsDirty.resize(materials_.size(),true);
+	//マテリアルのダーティ検知用(ダブルバッファ分)
+	changeableParams.areMaterialsDirtyCnt.resize(materials_.size(), (UINT)NumBuffer::kDoubleBuffer);
 	//サブメッシュ分のトランスフォームを確保
 	auto const numMeshes = modelDesc_.WatchPerDrawIndices().size();
 	changeableParams.transforms.resize(numMeshes);
@@ -13347,7 +13373,7 @@ void Model::ChangeRoughness(size_t index_, float dst_)
 		errorMsg,
 		fileName
 	);
-	changeableParams.areMaterialsDirty[index_] = true;
+	changeableParams.areMaterialsDirtyCnt[index_] = (UINT)NumBuffer::kDoubleBuffer;
 	changeableParams.materials[index_].roughness = dst_;
 }
 void Model::ChangeMetallic(size_t index_, float dst_)
@@ -13359,7 +13385,7 @@ void Model::ChangeMetallic(size_t index_, float dst_)
 		errorMsg,
 		fileName
 	);
-	changeableParams.areMaterialsDirty[index_] = true;
+	changeableParams.areMaterialsDirtyCnt[index_] = (UINT)NumBuffer::kDoubleBuffer;
 	changeableParams.materials[index_].metallic = dst_;
 }
 void Model::ChangeColor(size_t index_, Vector4<float> const& dst_)
@@ -13371,7 +13397,7 @@ void Model::ChangeColor(size_t index_, Vector4<float> const& dst_)
 		errorMsg,
 		fileName
 	);
-	changeableParams.areMaterialsDirty[index_] = true;
+	changeableParams.areMaterialsDirtyCnt[index_] = (UINT)NumBuffer::kDoubleBuffer;
 	changeableParams.materials[index_].baseColor = dst_;
 }
 Transform& Model::RefTransform(size_t index_)
@@ -13397,7 +13423,7 @@ void Model::ChangeTexture<TextureComponent::TextureType::kAlbedo>(size_t index_,
 		WatchName() + "のアルベドテクスチャアクセス違反",
 		fileName
 	);
-	changeableParams.areMaterialsDirty[index_] = true;
+	changeableParams.areMaterialsDirtyCnt[index_] = (UINT)NumBuffer::kDoubleBuffer;
 	changeableParams.materials[index_].albedoTexture = dst_;
 }
 template<>
@@ -13409,7 +13435,7 @@ void Model::ChangeTexture<TextureComponent::TextureType::kNormal>(size_t index_,
 		WatchName() + "の法線テクスチャアクセス違反",
 		fileName
 	);
-	changeableParams.areMaterialsDirty[index_] = true;
+	changeableParams.areMaterialsDirtyCnt[index_] = (UINT)NumBuffer::kDoubleBuffer;
 	changeableParams.materials[index_].normalTexture = dst_;
 }
 template<>
@@ -13421,7 +13447,7 @@ void Model::ChangeTexture<TextureComponent::TextureType::kEmissive>(size_t index
 		WatchName() + "のエミッシブテクスチャアクセス違反",
 		fileName
 	);
-	changeableParams.areMaterialsDirty[index_] = true;
+	changeableParams.areMaterialsDirtyCnt[index_] = (UINT)NumBuffer::kDoubleBuffer;
 	changeableParams.materials[index_].emissiveTexture = dst_;
 }
 template
@@ -13436,8 +13462,11 @@ void Model::ChangeTexture<TextureComponent::TextureType::kEmissive>(size_t index
 ========================================
 #pragma once
 #include "ModelDescription/ModelDescription.h"
-#include "../../../../Math/Transform/Transform.h"
+//外部
 #include "../../../Buffer/BufferDefinition/TextureComponent.h"
+#include "../../../../Math/Transform/Transform.h"
+class ModelContext;
+class RenderContext;
 class Model
 {
 	//動的に変更可能なパラメーター群
@@ -13451,7 +13480,7 @@ class Model
 		ShaderPathComponent::MaterialType materialType{};
 		//マテリアル。可変長になっているのは、サブメッシュ分用意しているから
 		std::vector<StructuredBufferModelData::MaterialGPU> materials;
-		std::vector<bool> areMaterialsDirty;
+		std::vector<UINT> areMaterialsDirtyCnt;
 		std::vector<Transform> transforms;
 	};
 public:
@@ -13473,6 +13502,20 @@ public:
 	Model& operator=(const Model&) = delete;
 	Model(Model&&) = delete;
 	Model& operator=(Model&&) = delete;
+	//上位レイヤーでモデルのパラメーターを弄るときに
+	void ChangeBlendMode(RenderStateComponent::BlendMode dst_);
+	void ChangeMaterialType(ShaderPathComponent::MaterialType dst_);
+	void ChangeRoughness(size_t index_, float dst_);
+	void ChangeMetallic(size_t index_, float dst_);
+	void ChangeColor(size_t index_ , Vector4<float> const& dst_);
+	template<TextureComponent::TextureType textureType>
+	void ChangeTexture(size_t index_, SRVHeapIndex dst_);
+	Transform& RefTransform(size_t index_);
+	std::span<Transform> RefTransforms();
+private:
+	//モデルクラスは上位層でも触るクラスであり、インターフェースを汚したくないので
+	friend class ModelContext;
+	friend class RenderContext;
 	//そのパスで描画するかどうかで利用
 	bool DoesDraw
 	(
@@ -13497,19 +13540,26 @@ public:
 	auto const& WatchMeshletSize()const { return modelDesc.WatchMeshletSize(); }
 	//主にバッファにバッチングするため
 	auto const& WatchMaterial(size_t index_)const { return changeableParams.materials[index_]; }
-	auto const IsMaterialDirty(size_t index_)const { return changeableParams.areMaterialsDirty[index_]; }
+	//マテリアルのダーティー検出
+	bool const IsMaterialDirty(size_t index_)const { return changeableParams.areMaterialsDirtyCnt[index_]; }
 	auto const& WatchTransform(size_t index_)const { return changeableParams.transforms[index_]; }
-	//上位レイヤーでモデルのパラメーターを弄るときに
-	void ChangeBlendMode(RenderStateComponent::BlendMode dst_);
-	void ChangeMaterialType(ShaderPathComponent::MaterialType dst_);
-	void ChangeRoughness(size_t index_, float dst_);
-	void ChangeMetallic(size_t index_, float dst_);
-	void ChangeColor(size_t index_ , Vector4<float> const& dst_);
-	template<TextureComponent::TextureType textureType>
-	void ChangeTexture(size_t index_, SRVHeapIndex dst_);
-	Transform& RefTransform(size_t index_);
-	std::span<Transform> RefTransforms();
-private:
+	//マテリアルのダーティーカウントを1つ減らす
+	//IsMaterialDirty()通過後、呼び出すこと
+	void DecrementMaterialDirtyCnt(size_t index_) 
+	{
+#ifdef _DEBUG
+		auto& dst = changeableParams.areMaterialsDirtyCnt[index_];
+		ErrorMessageOutput::Assert::DetectError
+		(
+			dst > 0 && dst <= 2,
+			"マテリアルのダーティのインデックスがおかしい",
+			"Model.h"
+		);
+		dst--;
+#else
+		changeableParams.areMaterialsDirtyCnt[index_]--; 
+#endif // _DEBUG
+	}
 	Type type;
 	ChangeableParams changeableParams;
 	ModelDescription modelDesc;
@@ -16896,8 +16946,25 @@ struct Matrix4x4
 #include "../Vector/Vector3.h"
 #include "../Quaternion/Quaternion.h"
 #include "../Matrix/Matrix4x4.h"
+class ModelContext;
 class Transform
 {
+	static inline const Vector3 kRight = { 1.0f,0.0f,0.0f };
+	static inline const Vector3 kUp = { 0.0f,1.0f,0.0f };
+	static inline const Vector3 kBeyond = { 0.0f,0.0f,1.0f };
+	Vector3 pos;						//ワールド座標またはローカル座標
+	Vector3 scale;						//スケール
+	Vector3 rotation;					//ヨーピッチロール
+	Vector3 lookDir;					//向いている方向
+	Quaternion quaternion;				//回転用クォータニオン
+	float rotationInterpolationCoe{};	//回転補完係数
+	Matrix4x4 worldMatrix;				//キャッシュ用ワールド行列
+	std::vector<Transform*> children;	//子孫
+	Transform* parent = nullptr;		//親
+	bool hasTransformChanged{};			//ワールド行列をアップデートするかどうかに関わる
+	bool needRotationUpdate{};			//回転補完がまだなのかどうか
+	bool updatedThisFrame{};			//1フレーム１きり更新ガード
+	UINT needOverrideBufferCnt = (UINT)ProjectConfig::Render::NumBuffer::kDoubleBuffer;		//バッファへのバッチング処理時に使用
 public:
 	Transform()
 	{
@@ -16946,17 +17013,8 @@ public:
 		hasTransformChanged = true;
 		needRotationUpdate = true;
 		updatedThisFrame = false;
-		needOverrideBuffer = true;
+		needOverrideBufferCnt = (UINT)ProjectConfig::Render::NumBuffer::kDoubleBuffer;
 		worldMatrix = Matrix4x4{};
-	}
-	inline void NotifyChanged()
-	{
-		if (hasTransformChanged) return;
-		hasTransformChanged = true;
-		for (auto* child : children)
-		{
-			if(child) child->NotifyChanged();
-		}
 	}
 	template<typename... ChildrenPtr>
 	inline void BeParent(ChildrenPtr*... children_)
@@ -16969,40 +17027,6 @@ public:
 			child->BeChild(this);
 		}
 	}
-	void Update()
-	{
-		//既に更新処理をしていればリターン
-		if (updatedThisFrame) return;
-		updatedThisFrame = true;
-		//親の更新処理を先に呼ぶ
-		if (parent)
-		{
-			parent->Update();
-			//親のトランスフォームが更新されたならこちらも変更しなくては
-			hasTransformChanged |= parent->needOverrideBuffer;
-		}
-		//回転クォータニオンの更新
-		if (needRotationUpdate) RotationUpdate();
-		///変更なしなら更新しない
-		if (!hasTransformChanged) return;
-		//スケール行列
-		Matrix4x4 scaleMat = Matrix4x4::CreateScale(scale);
-		//位置行列
-		Matrix4x4 translationMat = Matrix4x4::CreateTranslation(pos);
-		//回転行列
-		Matrix4x4 rotationMat = quaternion.GetRotateMatrix();
-		//SRT
-		worldMatrix = scaleMat.GetMultiply(rotationMat.GetMultiply(translationMat));
-		//ペアレント化しているなら
-		if (parent) worldMatrix = worldMatrix.GetMultiply(parent->WatchWorldMatrix());
-		//バッチング必要
-		needOverrideBuffer = true;
-		hasTransformChanged = false;
-	}
-	inline const Matrix4x4& WatchWorldMatrix()const
-	{
-		return worldMatrix;
-	}
 	inline Vector3 const WatchWorldPos()const
 	{
 		return
@@ -17012,24 +17036,14 @@ public:
 			worldMatrix.data.m[3][2],
 		};
 	}
-	bool ShouldOverrideBuffer()const { return needOverrideBuffer; }
+	inline const Matrix4x4& WatchWorldMatrix()const
+	{
+		return worldMatrix;
+	}
 private:
-	static inline const Vector3 kRight = { 1.0f,0.0f,0.0f };
-	static inline const Vector3 kUp = { 0.0f,1.0f,0.0f };
-	static inline const Vector3 kBeyond = { 0.0f,0.0f,1.0f };
-	Vector3 pos;						//ワールド座標またはローカル座標
-	Vector3 scale;						//スケール
-	Vector3 rotation;					//ヨーピッチロール
-	Vector3 lookDir;					//向いている方向
-	Quaternion quaternion;				//回転用クォータニオン
-	float rotationInterpolationCoe{};	//回転補完係数
-	Matrix4x4 worldMatrix;				//キャッシュ用ワールド行列
-	std::vector<Transform*> children;	//子孫
-	Transform* parent = nullptr;		//親
-	bool hasTransformChanged{};			//ワールド行列をアップデートするかどうかに関わる
-	bool needRotationUpdate{};			//回転補完がまだなのかどうか
-	bool updatedThisFrame{};			//1フレーム１きり更新ガード
-	bool needOverrideBuffer = true;		//バッファへのバッチング処理時に使用
+	//アプリケーション側は触る必要ないので
+	//トランスフォームを統括するものをフレンド登録
+	friend class ModelContext;
 	//回転更新処理
 	inline void RotationUpdate()
 	{
@@ -17072,7 +17086,62 @@ private:
 	inline void ResetFrameFlag()
 	{
 		updatedThisFrame = false;
-		needOverrideBuffer = false;
+	}
+	inline void NotifyChanged()
+	{
+		if (hasTransformChanged) return;
+		hasTransformChanged = true;
+		for (auto* child : children)
+		{
+			if (child) child->NotifyChanged();
+		}
+	}
+	void Update()
+	{
+		//既に更新処理をしていればリターン
+		if (updatedThisFrame) return;
+		updatedThisFrame = true;
+		//親の更新処理を先に呼ぶ
+		if (parent)
+		{
+			parent->Update();
+			//親のトランスフォームが更新されたならこちらも変更しなくては
+			hasTransformChanged |= parent->hasTransformChanged;
+		}
+		//回転クォータニオンの更新
+		if (needRotationUpdate) RotationUpdate();
+		///変更なしなら更新しない
+		if (!hasTransformChanged) return;
+		//スケール行列
+		Matrix4x4 scaleMat = Matrix4x4::CreateScale(scale);
+		//位置行列
+		Matrix4x4 translationMat = Matrix4x4::CreateTranslation(pos);
+		//回転行列
+		Matrix4x4 rotationMat = quaternion.GetRotateMatrix();
+		//SRT
+		worldMatrix = scaleMat.GetMultiply(rotationMat.GetMultiply(translationMat));
+		//ペアレント化しているなら
+		if (parent) worldMatrix = worldMatrix.GetMultiply(parent->WatchWorldMatrix());
+		//バッチング必要
+		needOverrideBufferCnt = (UINT)ProjectConfig::Render::NumBuffer::kDoubleBuffer;
+		hasTransformChanged = false;
+	}
+	//バッファに書き込むべきかどうか
+	bool ShouldOverrideBuffer()const { return needOverrideBufferCnt; }
+	//バッファ書き込み用ダーティカウントを１つ減らす
+	void DecrementNeedOverrideBufferCnt()
+	{
+#ifdef _DEBUG
+		ErrorMessageOutput::Assert::DetectError
+		(
+			needOverrideBufferCnt > 0 && needOverrideBufferCnt <= 2,
+			"マテリアルのダーティのインデックスがおかしい",
+			"Model.h"
+		);
+		needOverrideBufferCnt--;
+#else
+		needOverrideBufferCnt--;
+#endif 
 	}
 };
 
@@ -18359,7 +18428,7 @@ std::vector<RenderState> const& RenderContext::StaticRenderGraph::PSO_Builder::P
 )
 {
 	//モデルクリエイターが、生成したモデルの全レンダーステートのパターンを所持しているので渡してもらう
-	auto& modelAgent = *modelContextDiplomat_.Access<ModelContext::ExecutionAgent>();
+	auto& modelAgent = modelContextDiplomat_.Access<ModelContext::ExecutionAgent>();
 	return modelAgent.WatchRenderStateCache(ModelContext::ExecutionAgent::RenderContextProof{});
 }
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -21381,6 +21450,7 @@ void SceneContext::ScenePipeline::SceneController::Run()
 void SceneContext::ScenePipeline::SceneController::ChangeScene(std::string const& next_)
 {
 	curScene = sceneLib.Export(next_);
+	Logger::Log("Changed Scene To  " + next_, "SceneController.cpp");
 }
 SceneBehavior::Output const& SceneContext::ScenePipeline::SceneController::WatchCurrentSceneOutput()const
 {
@@ -21480,14 +21550,14 @@ private:
 CameraContext::CameraFrontlineSystems* SceneContext::SceneCreator::ReceiveCameraSystems(CameraContextDiplomat& cameraContextDiplomat_)
 {
 	//CameraFrontlineSystemsを一つ渡してもらう
-	auto agent = cameraContextDiplomat_.Access<CameraContext::ExecutionAgent>();
+	auto& agent = cameraContextDiplomat_.Access<CameraContext::ExecutionAgent>();
 	return agent.DispatchFrontlineSystems(CameraContext::ExecutionAgent::SceneContextProof{});
 }
 ModelContext::ModelFrontlineSystems* SceneContext::SceneCreator::ReceiveModelSystems(ModelContextDiplomat& modelContextDiplomat_)
 {
 	//ModelFrontlineSystemsを一つ渡してもらう
-	auto agent = modelContextDiplomat_.Access<ModelContext::ExecutionAgent>();
-	return agent->DispatchFrontSystems(ModelContext::ExecutionAgent::SceneContextProof{});
+	auto& agent = modelContextDiplomat_.Access<ModelContext::ExecutionAgent>();
+	return agent.DispatchFrontSystems(ModelContext::ExecutionAgent::SceneContextProof{});
 }
 
 ========================================
@@ -21564,6 +21634,12 @@ SceneBehavior* SceneContext::ScenePipeline::SceneLibrary::Export(std::string con
 	(
 		sceneMap.find(sceneName_) != sceneMap.end(),
 		sceneName_ + "こんななまえのSceneは作成されていない",
+		fileName
+	);
+	ErrorMessageOutput::Assert::DetectError
+	(
+		sceneMap[sceneName_].get(),
+		sceneName_ + "nullptrやんけ",
 		fileName
 	);
 	return sceneMap[sceneName_].get();
@@ -21670,6 +21746,8 @@ void SceneBehavior::SetSystems
 	);
 	cameraSystems = cameraSystems_;
 	modelSystems = modelSystems_;
+	//シーン出力ようにモデルコンテナのアドレスを格納
+	output.modelContainer = modelSystems->WatchModelContaienr();
 }
 void SceneBehavior::CreatePresetCamera()
 {
@@ -21696,6 +21774,8 @@ class SceneBehavior
 	{
 		//使用しているカメラ。更新必要
 		std::unordered_map<CameraSocket, CameraBehavior*> usingCamera;
+		//このシーンのモデルコンテナ
+		ModelContext::ModelFrontlineSystems::ModelContainer const* modelContainer = nullptr;
 	};
 protected:
 	//そこいらでインスタンス化させないため
@@ -21741,7 +21821,7 @@ public:
 	SceneBehavior(InstancingLicense const& license_) {};
 	virtual ~SceneBehavior() = default;
 private:
-	//ここの中でモデルの生成などの処理を書く。一発しか呼びません。
+	//ここの中でモデルの生成などの処理を書く。シーンが切り替わっても一発しか呼びません。
 	virtual void Init() = 0;
 	//シーンのInit()の後に一括で一度だけ呼ばれる
 	void SeparateModels();
@@ -21759,6 +21839,7 @@ private:
 	Output const& WatchSceneOutput()const;
 	CameraContext::CameraFrontlineSystems* cameraSystems = nullptr;
 	ModelContext::ModelFrontlineSystems* modelSystems = nullptr;
+	//シーンの出力物
 	SceneBehavior::Output output;
 };
 struct SceneBehavior::InstancingLicense
@@ -22324,9 +22405,9 @@ template<>
 void Nexus::Init<Nexus::InitSequence::kDeleteModelDataCache>()
 {
 	//modelContextの代行者
-	auto* agent = modelContext->AccessDiplomat().Access<ModelContext::ExecutionAgent>();
+	auto& agent = modelContext->AccessDiplomat().Access<ModelContext::ExecutionAgent>();
 	//初期化処理に使ったモデルデータのキャッシュを削除
-	agent->DeleteModelDataCache(ModelContext::NexusFieldProof{});
+	agent.DeleteModelDataCache(ModelContext::NexusFieldProof{});
 }
 template<>
 void Nexus::Init<Nexus::InitSequence::kSceneContext>()
@@ -23263,4 +23344,4 @@ namespace StringProcessing
 === SUMMARY ===
 ========================================
 Total Files      : 517
-Effective Lines  : 16959
+Effective Lines  : 17014

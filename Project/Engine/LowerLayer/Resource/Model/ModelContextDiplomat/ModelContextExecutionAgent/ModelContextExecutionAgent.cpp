@@ -25,15 +25,15 @@ void ModelContext::ExecutionAgent::DeleteModelDataCache(NexusFieldProof proof_)
 }
 
 
-void ModelContext::ExecutionAgent::BatchModelData
+void ModelContext::ExecutionAgent::BatchAndUpdateModelData
 (
 	SceneContextProof proof_,
 	UINT const frameIndex_,
-	std::vector<Model*> const& models_,
+	std::vector<Model*>& models_,
 	BufferContextDiplomat& bufferContextDiplomat_
 )
 {
-	modelDataBatcher.BatchModelData
+	modelDataBatcher.BatchAndUpdateModelData
 	(
 		AgentKey{},
 		frameIndex_,

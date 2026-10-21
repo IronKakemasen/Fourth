@@ -35,7 +35,7 @@ CommandContext::ResourceUploader::ResourceUploader
 
 	///後続するリソースのアップロードのためにコマンドの記録を開始する
 	RecordingStart();
-	Logger::Log("Commmand recording start", fileName);
+	Logger::Log("Command recording start", fileName);
 
 }
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

@@ -16,9 +16,9 @@ public:
 	);
 	
 	template<typename ToolType>
-	auto* Access()
+	auto& Access()
 	{
-		return std::get<std::unique_ptr<ToolType>>(tools).get();
+		return *std::get<std::unique_ptr<ToolType>>(tools);
 	}
 
 private:

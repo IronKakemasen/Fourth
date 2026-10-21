@@ -3,9 +3,29 @@
 #include "../Quaternion/Quaternion.h"
 #include "../Matrix/Matrix4x4.h"
 
+class ModelContext;
 
 class Transform
 {
+
+	static inline const Vector3 kRight = { 1.0f,0.0f,0.0f };
+	static inline const Vector3 kUp = { 0.0f,1.0f,0.0f };
+	static inline const Vector3 kBeyond = { 0.0f,0.0f,1.0f };
+
+	Vector3 pos;						//ワールド座標またはローカル座標
+	Vector3 scale;						//スケール
+	Vector3 rotation;					//ヨーピッチロール
+	Vector3 lookDir;					//向いている方向
+	Quaternion quaternion;				//回転用クォータニオン
+	float rotationInterpolationCoe{};	//回転補完係数
+	Matrix4x4 worldMatrix;				//キャッシュ用ワールド行列
+	std::vector<Transform*> children;	//子孫
+	Transform* parent = nullptr;		//親
+	bool hasTransformChanged{};			//ワールド行列をアップデートするかどうかに関わる
+	bool needRotationUpdate{};			//回転補完がまだなのかどうか
+	bool updatedThisFrame{};			//1フレーム１きり更新ガード
+	UINT needOverrideBufferCnt = (UINT)ProjectConfig::Render::NumBuffer::kDoubleBuffer;		//バッファへのバッチング処理時に使用
+
 public:
 
 	Transform()
@@ -62,20 +82,8 @@ public:
 		hasTransformChanged = true;
 		needRotationUpdate = true;
 		updatedThisFrame = false;
-		needOverrideBuffer = true;
+		needOverrideBufferCnt = (UINT)ProjectConfig::Render::NumBuffer::kDoubleBuffer;
 		worldMatrix = Matrix4x4{};
-	}
-
-	inline void NotifyChanged()
-	{
-		if (hasTransformChanged) return;
-
-		hasTransformChanged = true;
-
-		for (auto* child : children)
-		{
-			if(child) child->NotifyChanged();
-		}
 	}
 
 	template<typename... ChildrenPtr>
@@ -90,49 +98,6 @@ public:
 		}
 	}
 
-	void Update()
-	{
-		//既に更新処理をしていればリターン
-		if (updatedThisFrame) return;
-		updatedThisFrame = true;
-
-		//親の更新処理を先に呼ぶ
-		if (parent)
-		{
-			parent->Update();
-			//親のトランスフォームが更新されたならこちらも変更しなくては
-			hasTransformChanged |= parent->needOverrideBuffer;
-		}
-
-		//回転クォータニオンの更新
-		if (needRotationUpdate) RotationUpdate();
-
-		///変更なしなら更新しない
-		if (!hasTransformChanged) return;
-
-		//スケール行列
-		Matrix4x4 scaleMat = Matrix4x4::CreateScale(scale);
-		//位置行列
-		Matrix4x4 translationMat = Matrix4x4::CreateTranslation(pos);
-		//回転行列
-		Matrix4x4 rotationMat = quaternion.GetRotateMatrix();
-
-		//SRT
-		worldMatrix = scaleMat.GetMultiply(rotationMat.GetMultiply(translationMat));
-
-		//ペアレント化しているなら
-		if (parent) worldMatrix = worldMatrix.GetMultiply(parent->WatchWorldMatrix());
-
-		//バッチング必要
-		needOverrideBuffer = true;
-		hasTransformChanged = false;
-	}
-
-	inline const Matrix4x4& WatchWorldMatrix()const
-	{
-		return worldMatrix;
-	}
-
 	inline Vector3 const WatchWorldPos()const
 	{
 		return
@@ -143,27 +108,16 @@ public:
 		};
 	}
 
-	bool ShouldOverrideBuffer()const { return needOverrideBuffer; }
+	inline const Matrix4x4& WatchWorldMatrix()const
+	{
+		return worldMatrix;
+	}
 
 private:
 
-	static inline const Vector3 kRight = { 1.0f,0.0f,0.0f };
-	static inline const Vector3 kUp = { 0.0f,1.0f,0.0f };
-	static inline const Vector3 kBeyond = { 0.0f,0.0f,1.0f };
-
-	Vector3 pos;						//ワールド座標またはローカル座標
-	Vector3 scale;						//スケール
-	Vector3 rotation;					//ヨーピッチロール
-	Vector3 lookDir;					//向いている方向
-	Quaternion quaternion;				//回転用クォータニオン
-	float rotationInterpolationCoe{};	//回転補完係数
-	Matrix4x4 worldMatrix;				//キャッシュ用ワールド行列
-	std::vector<Transform*> children;	//子孫
-	Transform* parent = nullptr;		//親
-	bool hasTransformChanged{};			//ワールド行列をアップデートするかどうかに関わる
-	bool needRotationUpdate{};			//回転補完がまだなのかどうか
-	bool updatedThisFrame{};			//1フレーム１きり更新ガード
-	bool needOverrideBuffer = true;		//バッファへのバッチング処理時に使用
+	//アプリケーション側は触る必要ないので
+	//トランスフォームを統括するものをフレンド登録
+	friend class ModelContext;
 
 	//回転更新処理
 	inline void RotationUpdate()
@@ -214,7 +168,81 @@ private:
 	inline void ResetFrameFlag()
 	{
 		updatedThisFrame = false;
-		needOverrideBuffer = false;
 	}
+
+	inline void NotifyChanged()
+	{
+		if (hasTransformChanged) return;
+
+		hasTransformChanged = true;
+
+		for (auto* child : children)
+		{
+			if (child) child->NotifyChanged();
+		}
+	}
+
+
+	void Update()
+	{
+		//既に更新処理をしていればリターン
+		if (updatedThisFrame) return;
+		updatedThisFrame = true;
+
+		//親の更新処理を先に呼ぶ
+		if (parent)
+		{
+			parent->Update();
+			//親のトランスフォームが更新されたならこちらも変更しなくては
+			hasTransformChanged |= parent->hasTransformChanged;
+		}
+
+		//回転クォータニオンの更新
+		if (needRotationUpdate) RotationUpdate();
+
+		///変更なしなら更新しない
+		if (!hasTransformChanged) return;
+
+		//スケール行列
+		Matrix4x4 scaleMat = Matrix4x4::CreateScale(scale);
+		//位置行列
+		Matrix4x4 translationMat = Matrix4x4::CreateTranslation(pos);
+		//回転行列
+		Matrix4x4 rotationMat = quaternion.GetRotateMatrix();
+
+		//SRT
+		worldMatrix = scaleMat.GetMultiply(rotationMat.GetMultiply(translationMat));
+
+		//ペアレント化しているなら
+		if (parent) worldMatrix = worldMatrix.GetMultiply(parent->WatchWorldMatrix());
+
+		//バッチング必要
+		needOverrideBufferCnt = (UINT)ProjectConfig::Render::NumBuffer::kDoubleBuffer;
+		hasTransformChanged = false;
+	}
+
+	//バッファに書き込むべきかどうか
+	bool ShouldOverrideBuffer()const { return needOverrideBufferCnt; }
+	
+	//バッファ書き込み用ダーティカウントを１つ減らす
+	void DecrementNeedOverrideBufferCnt()
+	{
+#ifdef _DEBUG
+
+		ErrorMessageOutput::Assert::DetectError
+		(
+			needOverrideBufferCnt > 0 && needOverrideBufferCnt <= 2,
+			"マテリアルのダーティのインデックスがおかしい",
+			"Model.h"
+		);
+
+		needOverrideBufferCnt--;
+#else
+		needOverrideBufferCnt--;
+
+#endif 
+
+	}
+
 };
 
