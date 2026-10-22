@@ -1,13 +1,10 @@
 #pragma once
-#include "../Vector/Vector3.h"
 #include "../Quaternion/Quaternion.h"
-#include "../Matrix/Matrix4x4.h"
 
 class ModelContext;
 
 class Transform
 {
-
 	static inline const Vector3 kRight = { 1.0f,0.0f,0.0f };
 	static inline const Vector3 kUp = { 0.0f,1.0f,0.0f };
 	static inline const Vector3 kBeyond = { 0.0f,0.0f,1.0f };
@@ -192,9 +189,10 @@ private:
 		//親の更新処理を先に呼ぶ
 		if (parent)
 		{
-			parent->Update();
 			//親のトランスフォームが更新されたならこちらも変更しなくては
 			hasTransformChanged |= parent->hasTransformChanged;
+			parent->Update();
+			hasTransformChanged |= parent->needOverrideBufferCnt == (UINT)ProjectConfig::Render::NumBuffer::kDoubleBuffer;
 		}
 
 		//回転クォータニオンの更新
@@ -231,9 +229,9 @@ private:
 
 		ErrorMessageOutput::Assert::DetectError
 		(
-			needOverrideBufferCnt > 0 && needOverrideBufferCnt <= 2,
-			"マテリアルのダーティのインデックスがおかしい",
-			"Model.h"
+			needOverrideBufferCnt > 0 && needOverrideBufferCnt <= (UINT)ProjectConfig::Render::NumBuffer::kDoubleBuffer,
+			"トランスフォームのダーティのインデックスがおかしい",
+			"Transform.h"
 		);
 
 		needOverrideBufferCnt--;

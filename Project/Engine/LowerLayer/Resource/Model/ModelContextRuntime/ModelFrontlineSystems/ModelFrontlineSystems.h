@@ -39,12 +39,14 @@ public:
 		);
 	}
 
+	//モデルのトランスフォームのアップデート
+	template<Model::Type modelType>
+	void UpdateModelTransform();
+
 	//モデルコンテナの分別を行う
 	void SeparateModels();
 
-	ModelContainer const* WatchModelContaienr()const;
-
-
+	ModelContainer const* WatchModelContainer()const;
 
 private:
 

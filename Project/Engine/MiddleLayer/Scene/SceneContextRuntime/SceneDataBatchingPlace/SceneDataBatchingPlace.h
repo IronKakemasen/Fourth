@@ -6,8 +6,6 @@ class SceneContext::ScenePipeline::SceneDataBatchingPlace
 {
 public:
 
-	SceneDataBatchingPlace();
-
 	//カメラやモデル、ライトなどのそのシーンで使用しているデータのバッチング場
 	void BatchingPlace
 	(
@@ -17,9 +15,6 @@ public:
 		CameraContextDiplomat& cameraContextDiplomat_,
 		BufferContextDiplomat& bufferContextDiplomat_
 	);
-
-private:
-
 
 };
 

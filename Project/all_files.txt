@@ -12556,15 +12556,15 @@ void ModelContext::ExecutionAgent::DeleteModelDataCache(NexusFieldProof proof_)
 	modelContext.DeleteModelDataCache(proof_, AgentKey{});
 	modelCreator.DeleteRenderStateCache(proof_, AgentKey{});
 }
-void ModelContext::ExecutionAgent::BatchAndUpdateModelData
+void ModelContext::ExecutionAgent::BatchModelData
 (
 	SceneContextProof proof_,
 	UINT const frameIndex_,
-	std::vector<Model*>& models_,
+	std::vector<Model*> const& models_,
 	BufferContextDiplomat& bufferContextDiplomat_
 )
 {
-	modelDataBatcher.BatchAndUpdateModelData
+	modelDataBatcher.BatchModelData
 	(
 		AgentKey{},
 		frameIndex_,
@@ -12604,11 +12604,11 @@ public:
 	void DeleteModelDataCache(NexusFieldProof proof_);
 	//モデルデータをバッチングする。ループのコストが鼻につくので、
 	//モデルのトランスフォームのアップデートもやっちゃう
-	void BatchAndUpdateModelData
+	void BatchModelData
 	(
 		SceneContextProof proof_,
 		UINT const frameIndex_,
-		std::vector<Model*>& models_,
+		std::vector<Model*> const& models_,
 		BufferContextDiplomat& bufferContextDiplomat_
 	);
 	//モデルクリエイターの所持する全レンダーステートパターンのキャッシュを見せる
@@ -12688,11 +12688,11 @@ ModelContext::ModelDataBatcher::ModelDataBatcher(NexusFieldProof proof_)
 ModelContext::ModelDataBatcher::~ModelDataBatcher()
 {
 }
-void ModelContext::ModelDataBatcher::BatchAndUpdateModelData
+void ModelContext::ModelDataBatcher::BatchModelData
 (
 	AgentKey agentKey_,
 	UINT const frameIndex_,
-	std::vector<Model*>& models_,
+	std::vector<Model*> const& models_,
 	BufferContextDiplomat& bufferContextDiplomat_
 )
 {
@@ -12704,7 +12704,7 @@ void ModelContext::ModelDataBatcher::BatchAndUpdateModelData
 	{
 		auto const& perDrawIndices = model->WatchPerDrawIndices();
 		auto const numMeshes = perDrawIndices.size();
-		UpdateAndOverrideBuffer<ConstantBuffers::ConstantBufferBindSlots::kTransformMatrixContainer>
+		OverrideBuffer<ConstantBuffers::ConstantBufferBindSlots::kTransformMatrixContainer>
 		(
 			frameIndex_,
 			*model,
@@ -12712,7 +12712,7 @@ void ModelContext::ModelDataBatcher::BatchAndUpdateModelData
 			numMeshes,
 			dispatcher
 		);
-		UpdateAndOverrideBuffer<ConstantBuffers::ConstantBufferBindSlots::kMaterialContainer>
+		OverrideBuffer<ConstantBuffers::ConstantBufferBindSlots::kMaterialContainer>
 		(
 			frameIndex_,
 			*model,
@@ -12732,7 +12732,7 @@ void ModelContext::ModelDataBatcher::BatchAndUpdateModelData
 	}
 }
 template<>
-void ModelContext::ModelDataBatcher::UpdateAndOverrideBuffer<ConstantBufferBindSlots::kTransformMatrixContainer>
+void ModelContext::ModelDataBatcher::OverrideBuffer<ConstantBufferBindSlots::kTransformMatrixContainer>
 (
 	UINT const frameIndex_,
 	Model& model_,
@@ -12748,9 +12748,7 @@ void ModelContext::ModelDataBatcher::UpdateAndOverrideBuffer<ConstantBufferBindS
 	//もちろんサブメッシュ分も
 	for (size_t i = 0;i < numMesh_;++i)
 	{
-		auto srcTransform = model_.RefTransform(i);
-		//トランスフォームの更新処理
-		srcTransform.Update();
+		auto& srcTransform = model_.RefTransform(i);
 		//そのトランスフォームがダーティじゃないなら書き込まない
 		if (!srcTransform.ShouldOverrideBuffer()) continue;
 		TransformMatrixCPUGPU transformMatrix(srcTransform.WatchWorldMatrix());
@@ -12760,7 +12758,7 @@ void ModelContext::ModelDataBatcher::UpdateAndOverrideBuffer<ConstantBufferBindS
 	}
 }
 template<>
-void ModelContext::ModelDataBatcher::UpdateAndOverrideBuffer<ConstantBufferBindSlots::kMaterialContainer>
+void ModelContext::ModelDataBatcher::OverrideBuffer<ConstantBufferBindSlots::kMaterialContainer>
 (
 	UINT const frameIndex_,
 	Model& model_,
@@ -12824,11 +12822,11 @@ public:
 	void ImportPerDrawBufferID(Local_InputBufferUniqueIDLicence licence_,BufferUniqueID id_);
 	//代行者にランタイムでモデルデータのバッチング処理をやってもらう
 	//バッファに書き込まなくていいモデルも多数あるはずなので、全バッチングではなく、該当バッチングする
-	void BatchAndUpdateModelData
+	void BatchModelData
 	(
 		AgentKey agentKey_,
 		UINT const frameIndex_,
-		std::vector<Model*>& models_,
+		std::vector<Model*> const& models_,
 		BufferContextDiplomat& bufferContextDiplomat_
 	);
 private:
@@ -12838,7 +12836,7 @@ private:
 	///結合度に箔がついちゃうけど、さすがにモデルひとつごとにBufferDispatcherを解凍するのは非効率的すぎるし、
 	///関数にまとめたいので
 	template<ConstantBuffers::ConstantBufferBindSlots bufferType>
-	void UpdateAndOverrideBuffer
+	void OverrideBuffer
 	(
 		UINT const frameIndex_,
 		Model& model_,
@@ -12854,7 +12852,7 @@ private:
 	explicit Local_InputBufferUniqueIDLicence() = default;
 };
 template<>
-void ModelContext::ModelDataBatcher::UpdateAndOverrideBuffer<ConstantBuffers::ConstantBufferBindSlots::kTransformMatrixContainer>
+void ModelContext::ModelDataBatcher::OverrideBuffer<ConstantBuffers::ConstantBufferBindSlots::kTransformMatrixContainer>
 (
 	UINT const frameIndex_,
 	Model& model_,
@@ -12863,7 +12861,7 @@ void ModelContext::ModelDataBatcher::UpdateAndOverrideBuffer<ConstantBuffers::Co
 	BufferContext::BufferDispatcher& dispatcher_
 );
 template<>
-void ModelContext::ModelDataBatcher::UpdateAndOverrideBuffer<ConstantBuffers::ConstantBufferBindSlots::kMaterialContainer>
+void ModelContext::ModelDataBatcher::OverrideBuffer<ConstantBuffers::ConstantBufferBindSlots::kMaterialContainer>
 (
 	UINT const frameIndex_,
 	Model& model_,
@@ -12941,6 +12939,19 @@ ModelContext::ModelFrontlineSystems::ModelFrontlineSystems(NexusFieldProof proof
 ModelContext::ModelFrontlineSystems::~ModelFrontlineSystems()
 {
 }
+template<Model::Type modelType>
+void ModelContext::ModelFrontlineSystems::UpdateModelTransform()
+{
+	auto const& models = modelContainer->WatchSeparatedByModelType()[(UINT)modelType];
+	for (auto* model : models)
+	{
+		auto refTransforms = model->RefTransforms();
+		for (auto& trans : refTransforms)
+		{
+			trans.Update();
+		}
+	}
+}
 std::vector<Model*> ModelContext::ModelFrontlineSystems::AddModel(std::vector<std::unique_ptr<Model>>&& modelUniques_)
 {
 	std::vector<Model*> modelsPtr;
@@ -12956,10 +12967,14 @@ void ModelContext::ModelFrontlineSystems::SeparateModels()
 {
 	modelContainer->SeparateModels(ModelContainer::Local_InitLicence{});
 }
-ModelContext::ModelFrontlineSystems::ModelContainer const* ModelContext::ModelFrontlineSystems::WatchModelContaienr()const
+ModelContext::ModelFrontlineSystems::ModelContainer const* ModelContext::ModelFrontlineSystems::WatchModelContainer()const
 {
 	return modelContainer.get();
 }
+template
+void ModelContext::ModelFrontlineSystems::UpdateModelTransform<Model::Type::kDynamic>();
+template
+void ModelContext::ModelFrontlineSystems::UpdateModelTransform<Model::Type::kStatic>();
 
 ========================================
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Model\ModelContextRuntime\ModelFrontlineSystems\ModelFrontlineSystems.h ===
@@ -12998,9 +13013,12 @@ public:
 			)
 		);
 	}
+	//モデルのトランスフォームのアップデート
+	template<Model::Type modelType>
+	void UpdateModelTransform();
 	//モデルコンテナの分別を行う
 	void SeparateModels();
-	ModelContainer const* WatchModelContaienr()const;
+	ModelContainer const* WatchModelContainer()const;
 private:
 	std::vector<Model*> AddModel(std::vector<std::unique_ptr<Model>>&& modelUniques_);
 	std::unique_ptr<ModelContainer> modelContainer;
@@ -13551,7 +13569,7 @@ private:
 		auto& dst = changeableParams.areMaterialsDirtyCnt[index_];
 		ErrorMessageOutput::Assert::DetectError
 		(
-			dst > 0 && dst <= 2,
+			dst > 0 && dst <= (UINT)ProjectConfig::Render::NumBuffer::kDoubleBuffer,
 			"マテリアルのダーティのインデックスがおかしい",
 			"Model.h"
 		);
@@ -16943,9 +16961,7 @@ struct Matrix4x4
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Math\Transform\Transform.h ===
 ========================================
 #pragma once
-#include "../Vector/Vector3.h"
 #include "../Quaternion/Quaternion.h"
-#include "../Matrix/Matrix4x4.h"
 class ModelContext;
 class Transform
 {
@@ -17104,9 +17120,10 @@ private:
 		//親の更新処理を先に呼ぶ
 		if (parent)
 		{
-			parent->Update();
 			//親のトランスフォームが更新されたならこちらも変更しなくては
 			hasTransformChanged |= parent->hasTransformChanged;
+			parent->Update();
+			hasTransformChanged |= parent->needOverrideBufferCnt == (UINT)ProjectConfig::Render::NumBuffer::kDoubleBuffer;
 		}
 		//回転クォータニオンの更新
 		if (needRotationUpdate) RotationUpdate();
@@ -17134,9 +17151,9 @@ private:
 #ifdef _DEBUG
 		ErrorMessageOutput::Assert::DetectError
 		(
-			needOverrideBufferCnt > 0 && needOverrideBufferCnt <= 2,
-			"マテリアルのダーティのインデックスがおかしい",
-			"Model.h"
+			needOverrideBufferCnt > 0 && needOverrideBufferCnt <= (UINT)ProjectConfig::Render::NumBuffer::kDoubleBuffer,
+			"トランスフォームのダーティのインデックスがおかしい",
+			"Transform.h"
 		);
 		needOverrideBufferCnt--;
 #else
@@ -21398,9 +21415,6 @@ public:
 		CameraContextDiplomat& cameraContextDiplomat_,
 		BufferContextDiplomat& bufferContextDiplomat_
 	);
-	//稼働中シーンのレンダーステート別に仕分けられたモデルコンテナを見る
-	std::unordered_map<uint64_t, std::pair<RenderStateKey, std::vector<Model*>>> const&
-		WatchModelContainerSeparatedByRenderState()const;
 	//シーンを作成する
 	//エンジンインターフェースの初期化で呼び出される
 	template<typename SceneType>
@@ -21489,9 +21503,9 @@ private:
 #include "../SceneController/SceneController.h"
 //外部
 #include "../../../../LowerLayer/Resource/Camera/CameraContextDiplomats.h"
-SceneContext::ScenePipeline::SceneDataBatchingPlace::SceneDataBatchingPlace()
-{
-}
+#include "../../../../LowerLayer/Resource/Model/ModelContextDiplomatIncludes.h"
+#include "../../../../LowerLayer/Resource/Model/ModelContextRuntime/ModelFrontlineSystems/ModelContainer/ModelContainer.h"
+using namespace ProjectConfig::Render;
 void SceneContext::ScenePipeline::SceneDataBatchingPlace::BatchingPlace
 (
 	UINT const frameIndex_,
@@ -21512,6 +21526,26 @@ void SceneContext::ScenePipeline::SceneDataBatchingPlace::BatchingPlace
 		frameIndex_,
 		bufferContextDiplomat_
 	);
+	//モデルコンテキストの代行者
+	auto& modelAgent = modelContextDiplomat_.Access<ModelContext::ExecutionAgent>();
+	//モデルデータのバッチング
+	modelAgent.BatchModelData
+	(
+		ModelContext::ExecutionAgent::SceneContextProof{},
+		frameIndex_,
+		sceneOutput.modelContainer->WatchSeparatedByModelType()[(UINT)Model::Type::kDynamic],
+		bufferContextDiplomat_
+	);
+	if (sceneOutput.leftStaticModelBatchingCnt <= (UINT)NumBuffer::kDoubleBuffer)
+	{
+		modelAgent.BatchModelData
+		(
+			ModelContext::ExecutionAgent::SceneContextProof{},
+			frameIndex_,
+			sceneOutput.modelContainer->WatchSeparatedByModelType()[(UINT)Model::Type::kStatic],
+			bufferContextDiplomat_
+		);
+	}
 }
 
 ========================================
@@ -21522,7 +21556,6 @@ void SceneContext::ScenePipeline::SceneDataBatchingPlace::BatchingPlace
 class SceneContext::ScenePipeline::SceneDataBatchingPlace
 {
 public:
-	SceneDataBatchingPlace();
 	//カメラやモデル、ライトなどのそのシーンで使用しているデータのバッチング場
 	void BatchingPlace
 	(
@@ -21532,7 +21565,6 @@ public:
 		CameraContextDiplomat& cameraContextDiplomat_,
 		BufferContextDiplomat& bufferContextDiplomat_
 	);
-private:
 };
 
 ========================================
@@ -21719,10 +21751,17 @@ public:
 //外部
 //エンジン備え付けのカメラ
 #include "../../../LowerLayer/Resource/Camera/PresetCameras/PresetCameraIncludes.h"
+using namespace ProjectConfig::Render;
 void SceneBehavior::Update()
 {
 	//このシーンで使うカメラのアップデート
 	output.usingCamera = cameraSystems->CameraUpdate();
+	//このシーンのモデルのトランスフォームのアップデートを呼ぶ
+	modelSystems->UpdateModelTransform<Model::Type::kDynamic>();
+	if (output.leftStaticModelBatchingCnt-- == (UINT)NumBuffer::kDoubleBuffer)
+	{
+		modelSystems->UpdateModelTransform<Model::Type::kStatic>();
+	}
 }
 SceneBehavior::Output const& SceneBehavior::WatchSceneOutput()const 
 {
@@ -21740,14 +21779,20 @@ void SceneBehavior::SetSystems
 {
 	ErrorMessageOutput::Assert::DetectError
 	(
-		cameraSystems_ && modelSystems_,
-		"システムがぬるです",
+		cameraSystems_ ,
+		"カメラシステムがぬるです(エンジンのせい)",
+		"SceneBehavior.cpp"
+	);
+	ErrorMessageOutput::Assert::DetectError
+	(
+		modelSystems_,
+		"モデルシステムがぬるです(エンジンのせい)",
 		"SceneBehavior.cpp"
 	);
 	cameraSystems = cameraSystems_;
 	modelSystems = modelSystems_;
 	//シーン出力ようにモデルコンテナのアドレスを格納
-	output.modelContainer = modelSystems->WatchModelContaienr();
+	output.modelContainer = modelSystems->WatchModelContainer();
 }
 void SceneBehavior::CreatePresetCamera()
 {
@@ -21776,6 +21821,8 @@ class SceneBehavior
 		std::unordered_map<CameraSocket, CameraBehavior*> usingCamera;
 		//このシーンのモデルコンテナ
 		ModelContext::ModelFrontlineSystems::ModelContainer const* modelContainer = nullptr;
+		//staticなモデルを毎回バッチング処理しないようにするため
+		UINT leftStaticModelBatchingCnt = (UINT)ProjectConfig::Render::NumBuffer::kDoubleBuffer;
 	};
 protected:
 	//そこいらでインスタンス化させないため
@@ -21837,6 +21884,7 @@ private:
 	void Update();
 	//SceneControllerにこのシーンで使われているリソース伝えるため
 	Output const& WatchSceneOutput()const;
+	//他コンテキストのシステム
 	CameraContext::CameraFrontlineSystems* cameraSystems = nullptr;
 	ModelContext::ModelFrontlineSystems* modelSystems = nullptr;
 	//シーンの出力物
@@ -23344,4 +23392,4 @@ namespace StringProcessing
 === SUMMARY ===
 ========================================
 Total Files      : 517
-Effective Lines  : 17014
+Effective Lines  : 17058

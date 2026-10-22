@@ -37,9 +37,6 @@ public:
 		BufferContextDiplomat& bufferContextDiplomat_
 	);
 
-	//稼働中シーンのレンダーステート別に仕分けられたモデルコンテナを見る
-	std::unordered_map<uint64_t, std::pair<RenderStateKey, std::vector<Model*>>> const&
-		WatchModelContainerSeparatedByRenderState()const;
 
 	//シーンを作成する
 	//エンジンインターフェースの初期化で呼び出される

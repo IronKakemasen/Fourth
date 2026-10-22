@@ -3,10 +3,8 @@
 #include "../CameraContextRuntime/CameraSocket.h"
 
 
-
 struct CameraDesc;
 class CameraBehavior;
-
 
 class CameraContext::CameraCreator
 {

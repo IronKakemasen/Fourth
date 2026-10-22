@@ -22,6 +22,8 @@ class SceneBehavior
 		std::unordered_map<CameraSocket, CameraBehavior*> usingCamera;
 		//このシーンのモデルコンテナ
 		ModelContext::ModelFrontlineSystems::ModelContainer const* modelContainer = nullptr;
+		//staticなモデルを毎回バッチング処理しないようにするため
+		UINT leftStaticModelBatchingCnt = (UINT)ProjectConfig::Render::NumBuffer::kDoubleBuffer;
 	};
 
 protected:
@@ -99,10 +101,14 @@ private:
 	//SceneControllerにこのシーンで使われているリソース伝えるため
 	Output const& WatchSceneOutput()const;
 
+	//他コンテキストのシステム
 	CameraContext::CameraFrontlineSystems* cameraSystems = nullptr;
 	ModelContext::ModelFrontlineSystems* modelSystems = nullptr;
+	
+
 	//シーンの出力物
 	SceneBehavior::Output output;
+
 
 };
 

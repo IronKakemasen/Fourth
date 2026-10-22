@@ -105,7 +105,7 @@ private:
 
 		ErrorMessageOutput::Assert::DetectError
 		(
-			dst > 0 && dst <= 2,
+			dst > 0 && dst <= (UINT)ProjectConfig::Render::NumBuffer::kDoubleBuffer,
 			"マテリアルのダーティのインデックスがおかしい",
 			"Model.h"
 		);
