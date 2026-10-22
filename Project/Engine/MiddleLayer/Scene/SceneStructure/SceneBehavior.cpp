@@ -8,11 +8,20 @@
 #include "../../../LowerLayer/Resource/Camera/PresetCameras/PresetCameraIncludes.h"
 
 
+using namespace ProjectConfig::Render;
+
 void SceneBehavior::Update()
 {
 	//このシーンで使うカメラのアップデート
 	output.usingCamera = cameraSystems->CameraUpdate();
 
+	//このシーンのモデルのトランスフォームのアップデートを呼ぶ
+	modelSystems->UpdateModelTransform<Model::Type::kDynamic>();
+	
+	if (output.leftStaticModelBatchingCnt-- == (UINT)NumBuffer::kDoubleBuffer)
+	{
+		modelSystems->UpdateModelTransform<Model::Type::kStatic>();
+	}
 }
 
 
@@ -34,8 +43,15 @@ void SceneBehavior::SetSystems
 {
 	ErrorMessageOutput::Assert::DetectError
 	(
-		cameraSystems_ && modelSystems_,
-		"システムがぬるです",
+		cameraSystems_ ,
+		"カメラシステムがぬるです(エンジンのせい)",
+		"SceneBehavior.cpp"
+	);
+
+	ErrorMessageOutput::Assert::DetectError
+	(
+		modelSystems_,
+		"モデルシステムがぬるです(エンジンのせい)",
 		"SceneBehavior.cpp"
 	);
 
@@ -43,7 +59,7 @@ void SceneBehavior::SetSystems
 	modelSystems = modelSystems_;
 
 	//シーン出力ようにモデルコンテナのアドレスを格納
-	output.modelContainer = modelSystems->WatchModelContaienr();
+	output.modelContainer = modelSystems->WatchModelContainer();
 }
 
 

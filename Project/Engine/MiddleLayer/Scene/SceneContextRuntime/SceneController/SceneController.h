@@ -21,8 +21,6 @@ public:
 
 private:
 
-
-
 	//現在稼働しているシーン
 	SceneBehavior* curScene = nullptr;
 	SceneLibrary& sceneLib;

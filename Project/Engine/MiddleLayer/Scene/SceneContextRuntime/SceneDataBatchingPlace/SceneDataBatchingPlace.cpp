@@ -5,11 +5,10 @@
 //外部
 #include "../../../../LowerLayer/Resource/Camera/CameraContextDiplomats.h"
 
+#include "../../../../LowerLayer/Resource/Model/ModelContextDiplomatIncludes.h"
+#include "../../../../LowerLayer/Resource/Model/ModelContextRuntime/ModelFrontlineSystems/ModelContainer/ModelContainer.h"
 
-SceneContext::ScenePipeline::SceneDataBatchingPlace::SceneDataBatchingPlace()
-{
-
-}
+using namespace ProjectConfig::Render;
 
 void SceneContext::ScenePipeline::SceneDataBatchingPlace::BatchingPlace
 (
@@ -33,5 +32,26 @@ void SceneContext::ScenePipeline::SceneDataBatchingPlace::BatchingPlace
 		bufferContextDiplomat_
 	);
 
+	//モデルコンテキストの代行者
+	auto& modelAgent = modelContextDiplomat_.Access<ModelContext::ExecutionAgent>();
+	
+	//モデルデータのバッチング
+	modelAgent.BatchModelData
+	(
+		ModelContext::ExecutionAgent::SceneContextProof{},
+		frameIndex_,
+		sceneOutput.modelContainer->WatchSeparatedByModelType()[(UINT)Model::Type::kDynamic],
+		bufferContextDiplomat_
+	);
 
+	if (sceneOutput.leftStaticModelBatchingCnt <= (UINT)NumBuffer::kDoubleBuffer)
+	{
+		modelAgent.BatchModelData
+		(
+			ModelContext::ExecutionAgent::SceneContextProof{},
+			frameIndex_,
+			sceneOutput.modelContainer->WatchSeparatedByModelType()[(UINT)Model::Type::kStatic],
+			bufferContextDiplomat_
+		);
+	}
 }

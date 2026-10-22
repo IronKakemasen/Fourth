@@ -24,11 +24,11 @@ public:
 	
 	//モデルデータをバッチングする。ループのコストが鼻につくので、
 	//モデルのトランスフォームのアップデートもやっちゃう
-	void BatchAndUpdateModelData
+	void BatchModelData
 	(
 		SceneContextProof proof_,
 		UINT const frameIndex_,
-		std::vector<Model*>& models_,
+		std::vector<Model*> const& models_,
 		BufferContextDiplomat& bufferContextDiplomat_
 	);
 

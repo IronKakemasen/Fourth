@@ -20,6 +20,20 @@ ModelContext::ModelFrontlineSystems::~ModelFrontlineSystems()
 
 }
 
+template<Model::Type modelType>
+void ModelContext::ModelFrontlineSystems::UpdateModelTransform()
+{
+
+	auto const& models = modelContainer->WatchSeparatedByModelType()[(UINT)modelType];
+	for (auto* model : models)
+	{
+		auto refTransforms = model->RefTransforms();
+		for (auto& trans : refTransforms)
+		{
+			trans.Update();
+		}
+	}
+}
 
 
 std::vector<Model*> ModelContext::ModelFrontlineSystems::AddModel(std::vector<std::unique_ptr<Model>>&& modelUniques_)
@@ -41,8 +55,14 @@ void ModelContext::ModelFrontlineSystems::SeparateModels()
 	modelContainer->SeparateModels(ModelContainer::Local_InitLicence{});
 }
 
-ModelContext::ModelFrontlineSystems::ModelContainer const* ModelContext::ModelFrontlineSystems::WatchModelContaienr()const
+ModelContext::ModelFrontlineSystems::ModelContainer const* ModelContext::ModelFrontlineSystems::WatchModelContainer()const
 {
 	return modelContainer.get();
 }
 
+
+template
+void ModelContext::ModelFrontlineSystems::UpdateModelTransform<Model::Type::kDynamic>();
+
+template
+void ModelContext::ModelFrontlineSystems::UpdateModelTransform<Model::Type::kStatic>();

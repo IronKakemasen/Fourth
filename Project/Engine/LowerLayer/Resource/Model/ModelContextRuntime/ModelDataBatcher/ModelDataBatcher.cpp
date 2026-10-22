@@ -22,11 +22,11 @@ ModelContext::ModelDataBatcher::~ModelDataBatcher()
 
 }
 
-void ModelContext::ModelDataBatcher::BatchAndUpdateModelData
+void ModelContext::ModelDataBatcher::BatchModelData
 (
 	AgentKey agentKey_,
 	UINT const frameIndex_,
-	std::vector<Model*>& models_,
+	std::vector<Model*> const& models_,
 	BufferContextDiplomat& bufferContextDiplomat_
 )
 {
@@ -40,7 +40,7 @@ void ModelContext::ModelDataBatcher::BatchAndUpdateModelData
 		auto const& perDrawIndices = model->WatchPerDrawIndices();
 		auto const numMeshes = perDrawIndices.size();
 
-		UpdateAndOverrideBuffer<ConstantBuffers::ConstantBufferBindSlots::kTransformMatrixContainer>
+		OverrideBuffer<ConstantBuffers::ConstantBufferBindSlots::kTransformMatrixContainer>
 		(
 			frameIndex_,
 			*model,
@@ -49,7 +49,7 @@ void ModelContext::ModelDataBatcher::BatchAndUpdateModelData
 			dispatcher
 		);
 
-		UpdateAndOverrideBuffer<ConstantBuffers::ConstantBufferBindSlots::kMaterialContainer>
+		OverrideBuffer<ConstantBuffers::ConstantBufferBindSlots::kMaterialContainer>
 		(
 			frameIndex_,
 			*model,
@@ -72,7 +72,7 @@ void ModelContext::ModelDataBatcher::BatchAndUpdateModelData
 
 
 template<>
-void ModelContext::ModelDataBatcher::UpdateAndOverrideBuffer<ConstantBufferBindSlots::kTransformMatrixContainer>
+void ModelContext::ModelDataBatcher::OverrideBuffer<ConstantBufferBindSlots::kTransformMatrixContainer>
 (
 	UINT const frameIndex_,
 	Model& model_,
@@ -89,11 +89,8 @@ void ModelContext::ModelDataBatcher::UpdateAndOverrideBuffer<ConstantBufferBindS
 	//もちろんサブメッシュ分も
 	for (size_t i = 0;i < numMesh_;++i)
 	{
-		auto srcTransform = model_.RefTransform(i);
+		auto& srcTransform = model_.RefTransform(i);
 		
-		//トランスフォームの更新処理
-		srcTransform.Update();
-
 		//そのトランスフォームがダーティじゃないなら書き込まない
 		if (!srcTransform.ShouldOverrideBuffer()) continue;
 
@@ -107,7 +104,7 @@ void ModelContext::ModelDataBatcher::UpdateAndOverrideBuffer<ConstantBufferBindS
 }
 
 template<>
-void ModelContext::ModelDataBatcher::UpdateAndOverrideBuffer<ConstantBufferBindSlots::kMaterialContainer>
+void ModelContext::ModelDataBatcher::OverrideBuffer<ConstantBufferBindSlots::kMaterialContainer>
 (
 	UINT const frameIndex_,
 	Model& model_,

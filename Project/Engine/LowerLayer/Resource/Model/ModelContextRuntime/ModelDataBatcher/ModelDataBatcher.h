@@ -30,11 +30,11 @@ public:
 
 	//代行者にランタイムでモデルデータのバッチング処理をやってもらう
 	//バッファに書き込まなくていいモデルも多数あるはずなので、全バッチングではなく、該当バッチングする
-	void BatchAndUpdateModelData
+	void BatchModelData
 	(
 		AgentKey agentKey_,
 		UINT const frameIndex_,
-		std::vector<Model*>& models_,
+		std::vector<Model*> const& models_,
 		BufferContextDiplomat& bufferContextDiplomat_
 	);
 
@@ -47,7 +47,7 @@ private:
 	///結合度に箔がついちゃうけど、さすがにモデルひとつごとにBufferDispatcherを解凍するのは非効率的すぎるし、
 	///関数にまとめたいので
 	template<ConstantBuffers::ConstantBufferBindSlots bufferType>
-	void UpdateAndOverrideBuffer
+	void OverrideBuffer
 	(
 		UINT const frameIndex_,
 		Model& model_,
@@ -68,7 +68,7 @@ private:
 };
 
 template<>
-void ModelContext::ModelDataBatcher::UpdateAndOverrideBuffer<ConstantBuffers::ConstantBufferBindSlots::kTransformMatrixContainer>
+void ModelContext::ModelDataBatcher::OverrideBuffer<ConstantBuffers::ConstantBufferBindSlots::kTransformMatrixContainer>
 (
 	UINT const frameIndex_,
 	Model& model_,
@@ -78,7 +78,7 @@ void ModelContext::ModelDataBatcher::UpdateAndOverrideBuffer<ConstantBuffers::Co
 );
 
 template<>
-void ModelContext::ModelDataBatcher::UpdateAndOverrideBuffer<ConstantBuffers::ConstantBufferBindSlots::kMaterialContainer>
+void ModelContext::ModelDataBatcher::OverrideBuffer<ConstantBuffers::ConstantBufferBindSlots::kMaterialContainer>
 (
 	UINT const frameIndex_,
 	Model& model_,
