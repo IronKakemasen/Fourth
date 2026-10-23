@@ -56,10 +56,7 @@ private:
 	//初期化・生成順序
 	enum class InitSequence
 	{
-		kLoadProjectFiles,
-
 		kDebugContext,
-
 		kDeviceContext,
 		kWindowContext,
 		kDescriptorHeapContext,
@@ -86,7 +83,7 @@ private:
 		kDeleteModelDataCache,					///モデルデータキャッシュの削除は、アプリ層の初期化が終わったあと
 
 		kEnd
-	}nextInit = InitSequence::kLoadProjectFiles;
+	}nextInit = InitSequence::kDebugContext;
 
 	//終了処理順序
 	enum class FinalizeSequence

@@ -22,8 +22,7 @@ public:
 
 	void DeleteModelDataCache(NexusFieldProof proof_);
 	
-	//モデルデータをバッチングする。ループのコストが鼻につくので、
-	//モデルのトランスフォームのアップデートもやっちゃう
+	//モデルデータをバッチングする
 	void BatchModelData
 	(
 		SceneContextProof proof_,

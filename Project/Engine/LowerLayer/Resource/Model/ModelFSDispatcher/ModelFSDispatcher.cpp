@@ -6,14 +6,20 @@
 
 ModelContext::ModelFSDispatcher::ModelFSDispatcher(NexusFieldProof proof_, ModelCreator& modelCreator_)
 {
-	//ここもシーンの数に依存。本来であれば、ジェーソンファイルからシーンの数が分かるはず
-	simpleFreeList.Resize(1);
-	frontlineSystems.reserve(1);
+	//シーンの総数をロード
+	auto* miyajison = Miyajison::Get();
+	UINT numScene = (UINT)miyajison->LoadData<int>("ProjectConfig", { "numScene" });
 
-	for (size_t i = 0;i < 1;++i)
+	simpleFreeList.Resize(numScene);
+	frontlineSystems.reserve(numScene);
+
+	UINT i{};
+	for (;i < numScene;++i)
 	{
 		frontlineSystems.emplace_back(std::make_unique<ModelFrontlineSystems>(proof_, modelCreator_));
 	}
+
+	Logger::Log("Instantiate: ModelFrontlineSystems(" + std::to_string(i) + ")", "ModelFSDispatcher.cpp");
 
 }
 

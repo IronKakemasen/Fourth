@@ -3,6 +3,9 @@
 #include "../CameraContextRuntime/CameraFrontlineSystems.h"
 
 
+//外部
+#include "../../../../EngineInterface.h"
+
 namespace
 {
 	std::string const fileName = "CameraFSDispatcher.cpp";
@@ -10,14 +13,16 @@ namespace
 
 CameraContext::FrontlineSystemsDispatcher::FrontlineSystemsDispatcher(NexusFieldProof proof_, CameraCreator& cameraCreator_)
 {
-	///!!!!!!!!将来的には、シーンのジェーソンファイルの数からシーン数を確定
-	//その数分インスタンス化する
-	simpleFreeList.Resize(1);
+	//シーンの総数をロード
+	auto* miyajison = Miyajison::Get();
+	UINT numScene = (UINT)miyajison->LoadData<int>("ProjectConfig", { "numScene" });
 
-	UINT i = 0;
-	for (;i < 1;++i)
+	simpleFreeList.Resize(numScene);
+	cameraFrontlineSystemsContainer.reserve(numScene);
+
+	UINT i{};
+	for (;i < numScene;++i)
 	{
-
 		cameraFrontlineSystemsContainer.emplace_back
 		(
 			std::make_unique<CameraFrontlineSystems>(proof_, cameraCreator_)

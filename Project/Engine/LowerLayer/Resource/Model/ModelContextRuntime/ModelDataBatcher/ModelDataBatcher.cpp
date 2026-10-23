@@ -34,6 +34,14 @@ void ModelContext::ModelDataBatcher::BatchModelData
 	BufferContext::ToolLender::LicenceType<BufferContext::BufferDispatcher> licence;
 	auto& dispatcher = *bufferContextDiplomat_.Access<BufferContext::ToolLender>()->Lend<BufferContext::BufferDispatcher>(licence);
 
+	//トランスフォームの書き込み先バッファ
+	BufferUniqueID transformContainerBufferID = perDrawBufferLibrary->Export<ConstantBufferBindSlots::kTransformMatrixContainer>();
+	auto dstWriteBufferTransform = static_cast<IWritableCPU*>(static_cast<UploadStructuredBuffer*>(dispatcher.Dispatch(transformContainerBufferID)));
+
+	//マテリアルの書き込み先バッファ
+	BufferUniqueID materialContainerBufferID = perDrawBufferLibrary->Export<ConstantBufferBindSlots::kMaterialContainer>();
+	auto dstWriteBufferMaterial = static_cast<IWritableCPU*>(static_cast<UploadStructuredBuffer*>(dispatcher.Dispatch(materialContainerBufferID)));
+
 	//モデルの所持するデータをバッファに書き込んでいく
 	for (Model* model : models_)
 	{
@@ -46,7 +54,7 @@ void ModelContext::ModelDataBatcher::BatchModelData
 			*model,
 			perDrawIndices,
 			numMeshes,
-			dispatcher
+			dstWriteBufferTransform
 		);
 
 		OverrideBuffer<ConstantBuffers::ConstantBufferBindSlots::kMaterialContainer>
@@ -55,18 +63,8 @@ void ModelContext::ModelDataBatcher::BatchModelData
 			*model,
 			perDrawIndices,
 			numMeshes,
-			dispatcher
+			dstWriteBufferMaterial
 		);
-	}
-
-	//モデルのバッチング処理が終了したので、トランスフォームの
-	//更新処理用ダーティフラグをリセットする
-	for (auto* model : models_)
-	{
-		for (auto& modelTrans : model->RefTransforms())
-		{
-			modelTrans.ResetFrameFlag();
-		}
 	}
 }
 
@@ -78,24 +76,23 @@ void ModelContext::ModelDataBatcher::OverrideBuffer<ConstantBufferBindSlots::kTr
 	Model& model_,
 	std::vector<ConstantBuffers::PerDrawIndicesCPUGPU> const& perDrawIndices_,
 	size_t const numMesh_,
-	BufferContext::BufferDispatcher& dispatcher_
+	IWritableCPU* writeDstBufferPtr_
 )
 {
-	//書き込み先バッファ
-	BufferUniqueID transformContainerBufferID = perDrawBufferLibrary->Export<ConstantBufferBindSlots::kTransformMatrixContainer>();
-	auto dstBuffer = static_cast<IWritableCPU*>(static_cast<UploadStructuredBuffer*>(dispatcher_.Dispatch(transformContainerBufferID)));
-
-	//ダーティ判定しながら、該当インデックス(perDrawIndices)を辿って、バッファに書き込む
+	//書き込み用のダーティ判定しながら、該当インデックス(perDrawIndices)を辿って、バッファに書き込む
 	//もちろんサブメッシュ分も
 	for (size_t i = 0;i < numMesh_;++i)
 	{
 		auto& srcTransform = model_.RefTransform(i);
 		
-		//そのトランスフォームがダーティじゃないなら書き込まない
+		//トランスフォームの更新用ダーティ判定をリセット
+		srcTransform.ResetFrameFlag();
+
+		//そのトランスフォームのデータを書き込む必要があるかどうか
 		if (!srcTransform.ShouldOverrideBuffer()) continue;
 
 		TransformMatrixCPUGPU transformMatrix(srcTransform.WatchWorldMatrix());
-		dstBuffer->WriteElement(frameIndex_, transformMatrix, perDrawIndices_[i].transformMatrixID);
+		writeDstBufferPtr_->WriteElement(frameIndex_, transformMatrix, perDrawIndices_[i].transformMatrixID);
 
 		//トランスフォームのバッファ書き込みカウントを１つ減らす
 		srcTransform.DecrementNeedOverrideBufferCnt();
@@ -110,14 +107,10 @@ void ModelContext::ModelDataBatcher::OverrideBuffer<ConstantBufferBindSlots::kMa
 	Model& model_,
 	std::vector<ConstantBuffers::PerDrawIndicesCPUGPU> const& perDrawIndices_,
 	size_t const numMesh_,
-	BufferContext::BufferDispatcher& dispatcher_
+	IWritableCPU* writeDstBufferPtr_
 )
 {
-	//書き込み先バッファ
-	BufferUniqueID materialContainerBufferID = perDrawBufferLibrary->Export<ConstantBufferBindSlots::kMaterialContainer>();
-	auto dstBuffer = static_cast<IWritableCPU*>(static_cast<UploadStructuredBuffer*>(dispatcher_.Dispatch(materialContainerBufferID)));
-
-	//やってることはトランスフォームと変わらない。
+	//やってることはトランスフォームとほぼ変わらない。
 	for (size_t i = 0;i < numMesh_;++i)
 	{
 		//そのマテリアルがダーティじゃないなら書き込まない
@@ -127,7 +120,7 @@ void ModelContext::ModelDataBatcher::OverrideBuffer<ConstantBufferBindSlots::kMa
 		//MaterialGPUに変換
 		MaterialGPU material(srcMaterial);
 
-		dstBuffer->WriteElement(frameIndex_, material, perDrawIndices_[i].materialID);
+		writeDstBufferPtr_->WriteElement(frameIndex_, material, perDrawIndices_[i].materialID);
 
 		//マテリアルダーティのカウントを１つ消去
 		model_.DecrementMaterialDirtyCnt(i);

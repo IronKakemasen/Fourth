@@ -189,9 +189,8 @@ private:
 		//親の更新処理を先に呼ぶ
 		if (parent)
 		{
-			//親のトランスフォームが更新されたならこちらも変更しなくては
-			hasTransformChanged |= parent->hasTransformChanged;
 			parent->Update();
+			//親のトランスフォームが更新されたならこちらも変更しなくては
 			hasTransformChanged |= parent->needOverrideBufferCnt == (UINT)ProjectConfig::Render::NumBuffer::kDoubleBuffer;
 		}
 

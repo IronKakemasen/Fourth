@@ -70,7 +70,7 @@ namespace ProjectConfig
 		//Comptrのリークチェック
 		constexpr bool kEnableLeakChecker = true;
 		//Jsonファイルを読み込むときに型チェックを行うかどうか
-		constexpr bool kEnableJsonDataTypeCheck = true;
+		constexpr bool kEnableJsonDataCheck = true;
 	}
 
 	namespace Core

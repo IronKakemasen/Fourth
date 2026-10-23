@@ -8,13 +8,21 @@ public:
 
 	struct HandleLicence;
 
-	const nlohmann::json& Export(HandleLicence licence_, std::string const& fileName_)const;
-	void Import(HandleLicence licence_, std::string const& fileName_, nlohmann::json const& jsonData_);
+	nlohmann::json& Export(HandleLicence licence_, std::string const& fileName_);
+	
+	void Import
+	(
+		HandleLicence licence_, 
+		std::string const& fileName_, 
+		nlohmann::json const& jsonData_, 
+		std::string const& filePath_
+	);
 
+	std::string const& ToPath(std::string const& fileName_);
 
 private:
 	std::map<std::string, nlohmann::json> lib;
-
+	std::unordered_map<std::string, std::string> fileName_Path;
 };
 
 

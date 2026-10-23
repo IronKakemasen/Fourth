@@ -80,6 +80,7 @@ public:
 		//自身のインスタンス制限
 		EngineInstanceLimiter::CanInstantiate();
 		InitializeInSequence<InitSequence::kCoInitializeEx>();
+		InitializeInSequence<InitSequence::kLoadProjectFiles>();
 		InitializeInSequence<InitSequence::kInstantiateNexus>();
 		InitializeInSequence<InitSequence::kInstantiateScene>();
 		InitializeInSequence<InitSequence::kNexusSecInit>();
@@ -106,6 +107,7 @@ private:
 	enum class InitSequence
 	{
 		kCoInitializeEx,
+		kLoadProjectFiles,
 		kInstantiateNexus,
 		kInstantiateScene,
 		kNexusSecInit,
@@ -137,6 +139,16 @@ private:
 		{
 			nexus->SecondaryInit(Nexus::aFourthProof{});
 			Logger::Log("Comp Nexus's SecondaryInit", "EngineInterface.h");
+		}
+		else if constexpr (initSequence == InitSequence::kLoadProjectFiles)
+		{
+			//Miyajisonの初期化
+			auto* miyajison = Miyajison::Get();
+			//ここでプロジェクト設定も初期化しちゃう
+			ProjectConfig::Window::LoadData();
+			//シーンの数を記録
+			miyajison->WriteData<int>("ProjectConfig", { "numScene" }, (int)correspondedSceneNames.size());
+			miyajison->Save();
 		}
 	}
 	template<InitSequence next_>
@@ -170,6 +182,7 @@ private:
 			"シーンの数と、シーン名の数が合わへん",
 			"EngineInterface.h"
 		);
+		//ProjectConfig.jsonにシーンの数を書き込む
 		//シーン作成
 		size_t cnt{};
 		(
@@ -10115,14 +10128,14 @@ public:
 #include "PreCompileHeader.h"
 #include "CameraFSDispatcher.h"
 #include "../CameraContextRuntime/CameraFrontlineSystems.h"
+//外部
+#include "../../../../EngineInterface.h"
 namespace
 {
 	std::string const fileName = "CameraFSDispatcher.cpp";
 }
 CameraContext::FrontlineSystemsDispatcher::FrontlineSystemsDispatcher(NexusFieldProof proof_, CameraCreator& cameraCreator_)
 {
-	///!!!!!!!!将来的には、シーンのジェーソンファイルの数からシーン数を確定
-	//その数分インスタンス化する
 	simpleFreeList.Resize(1);
 	UINT i = 0;
 	for (;i < 1;++i)
@@ -12602,8 +12615,7 @@ public:
 		ModelFSDispatcher& modelFSDispatcher_
 	);
 	void DeleteModelDataCache(NexusFieldProof proof_);
-	//モデルデータをバッチングする。ループのコストが鼻につくので、
-	//モデルのトランスフォームのアップデートもやっちゃう
+	//モデルデータをバッチングする
 	void BatchModelData
 	(
 		SceneContextProof proof_,
@@ -12699,6 +12711,12 @@ void ModelContext::ModelDataBatcher::BatchModelData
 	//BufferDispatcherを借りる
 	BufferContext::ToolLender::LicenceType<BufferContext::BufferDispatcher> licence;
 	auto& dispatcher = *bufferContextDiplomat_.Access<BufferContext::ToolLender>()->Lend<BufferContext::BufferDispatcher>(licence);
+	//トランスフォームの書き込み先バッファ
+	BufferUniqueID transformContainerBufferID = perDrawBufferLibrary->Export<ConstantBufferBindSlots::kTransformMatrixContainer>();
+	auto dstWriteBufferTransform = static_cast<IWritableCPU*>(static_cast<UploadStructuredBuffer*>(dispatcher.Dispatch(transformContainerBufferID)));
+	//マテリアルの書き込み先バッファ
+	BufferUniqueID materialContainerBufferID = perDrawBufferLibrary->Export<ConstantBufferBindSlots::kMaterialContainer>();
+	auto dstWriteBufferMaterial = static_cast<IWritableCPU*>(static_cast<UploadStructuredBuffer*>(dispatcher.Dispatch(materialContainerBufferID)));
 	//モデルの所持するデータをバッファに書き込んでいく
 	for (Model* model : models_)
 	{
@@ -12710,7 +12728,7 @@ void ModelContext::ModelDataBatcher::BatchModelData
 			*model,
 			perDrawIndices,
 			numMeshes,
-			dispatcher
+			dstWriteBufferTransform
 		);
 		OverrideBuffer<ConstantBuffers::ConstantBufferBindSlots::kMaterialContainer>
 		(
@@ -12718,17 +12736,8 @@ void ModelContext::ModelDataBatcher::BatchModelData
 			*model,
 			perDrawIndices,
 			numMeshes,
-			dispatcher
+			dstWriteBufferMaterial
 		);
-	}
-	//モデルのバッチング処理が終了したので、トランスフォームの
-	//更新処理用ダーティフラグをリセットする
-	for (auto* model : models_)
-	{
-		for (auto& modelTrans : model->RefTransforms())
-		{
-			modelTrans.ResetFrameFlag();
-		}
 	}
 }
 template<>
@@ -12738,21 +12747,20 @@ void ModelContext::ModelDataBatcher::OverrideBuffer<ConstantBufferBindSlots::kTr
 	Model& model_,
 	std::vector<ConstantBuffers::PerDrawIndicesCPUGPU> const& perDrawIndices_,
 	size_t const numMesh_,
-	BufferContext::BufferDispatcher& dispatcher_
+	IWritableCPU* writeDstBufferPtr_
 )
 {
-	//書き込み先バッファ
-	BufferUniqueID transformContainerBufferID = perDrawBufferLibrary->Export<ConstantBufferBindSlots::kTransformMatrixContainer>();
-	auto dstBuffer = static_cast<IWritableCPU*>(static_cast<UploadStructuredBuffer*>(dispatcher_.Dispatch(transformContainerBufferID)));
-	//ダーティ判定しながら、該当インデックス(perDrawIndices)を辿って、バッファに書き込む
+	//書き込み用のダーティ判定しながら、該当インデックス(perDrawIndices)を辿って、バッファに書き込む
 	//もちろんサブメッシュ分も
 	for (size_t i = 0;i < numMesh_;++i)
 	{
 		auto& srcTransform = model_.RefTransform(i);
-		//そのトランスフォームがダーティじゃないなら書き込まない
+		//トランスフォームの更新用ダーティ判定をリセット
+		srcTransform.ResetFrameFlag();
+		//そのトランスフォームのデータを書き込む必要があるかどうか
 		if (!srcTransform.ShouldOverrideBuffer()) continue;
 		TransformMatrixCPUGPU transformMatrix(srcTransform.WatchWorldMatrix());
-		dstBuffer->WriteElement(frameIndex_, transformMatrix, perDrawIndices_[i].transformMatrixID);
+		writeDstBufferPtr_->WriteElement(frameIndex_, transformMatrix, perDrawIndices_[i].transformMatrixID);
 		//トランスフォームのバッファ書き込みカウントを１つ減らす
 		srcTransform.DecrementNeedOverrideBufferCnt();
 	}
@@ -12764,13 +12772,10 @@ void ModelContext::ModelDataBatcher::OverrideBuffer<ConstantBufferBindSlots::kMa
 	Model& model_,
 	std::vector<ConstantBuffers::PerDrawIndicesCPUGPU> const& perDrawIndices_,
 	size_t const numMesh_,
-	BufferContext::BufferDispatcher& dispatcher_
+	IWritableCPU* writeDstBufferPtr_
 )
 {
-	//書き込み先バッファ
-	BufferUniqueID materialContainerBufferID = perDrawBufferLibrary->Export<ConstantBufferBindSlots::kMaterialContainer>();
-	auto dstBuffer = static_cast<IWritableCPU*>(static_cast<UploadStructuredBuffer*>(dispatcher_.Dispatch(materialContainerBufferID)));
-	//やってることはトランスフォームと変わらない。
+	//やってることはトランスフォームとほぼ変わらない。
 	for (size_t i = 0;i < numMesh_;++i)
 	{
 		//そのマテリアルがダーティじゃないなら書き込まない
@@ -12778,7 +12783,7 @@ void ModelContext::ModelDataBatcher::OverrideBuffer<ConstantBufferBindSlots::kMa
 		auto& srcMaterial = model_.WatchMaterial(i);
 		//MaterialGPUに変換
 		MaterialGPU material(srcMaterial);
-		dstBuffer->WriteElement(frameIndex_, material, perDrawIndices_[i].materialID);
+		writeDstBufferPtr_->WriteElement(frameIndex_, material, perDrawIndices_[i].materialID);
 		//マテリアルダーティのカウントを１つ消去
 		model_.DecrementMaterialDirtyCnt(i);
 	}
@@ -12804,9 +12809,8 @@ void ModelContext::ModelDataBatcher::ImportPerDrawBufferID<ConstantBufferBindSlo
 //外部
 #include "../../../../../../Assets/Shared/ConstantBuffers.h"
 #include "../../../../../../Assets/Shared/StructuredBufferModelData.h"
-//効率化のため
-#include "../../../../Buffer/BufferContext.h"
 class Model;
+struct IWritableCPU;
 class ModelContext::ModelDataBatcher
 {
 	//モデルの個体ごとに所持するTrnsformやMaterialなどのパラメーターの配列
@@ -12821,7 +12825,6 @@ public:
 	template<ConstantBuffers::ConstantBufferBindSlots bufferType>
 	void ImportPerDrawBufferID(Local_InputBufferUniqueIDLicence licence_,BufferUniqueID id_);
 	//代行者にランタイムでモデルデータのバッチング処理をやってもらう
-	//バッファに書き込まなくていいモデルも多数あるはずなので、全バッチングではなく、該当バッチングする
 	void BatchModelData
 	(
 		AgentKey agentKey_,
@@ -12833,8 +12836,6 @@ private:
 	//モデルの個体ごとに所持するパラメーター(TransformやMaterialなど)の配列のBufferIDのライブラリ
 	std::unique_ptr<PerDrawBufferLibrary> perDrawBufferLibrary;
 	//モデルのマテリアル情報、またはトランスフォームを書き込む
-	///結合度に箔がついちゃうけど、さすがにモデルひとつごとにBufferDispatcherを解凍するのは非効率的すぎるし、
-	///関数にまとめたいので
 	template<ConstantBuffers::ConstantBufferBindSlots bufferType>
 	void OverrideBuffer
 	(
@@ -12842,7 +12843,7 @@ private:
 		Model& model_,
 		std::vector<ConstantBuffers::PerDrawIndicesCPUGPU> const& perDrawIndices_,
 		size_t const numMesh_,
-		BufferContext::BufferDispatcher& dispatcher_
+		IWritableCPU* writeDstBufferPtr_
 	);
 };
 struct ModelContext::ModelDataBatcher::Local_InputBufferUniqueIDLicence
@@ -12858,7 +12859,7 @@ void ModelContext::ModelDataBatcher::OverrideBuffer<ConstantBuffers::ConstantBuf
 	Model& model_,
 	std::vector<ConstantBuffers::PerDrawIndicesCPUGPU> const& perDrawIndices_,
 	size_t const numMesh_,
-	BufferContext::BufferDispatcher& dispatcher_
+	IWritableCPU* writeDstBufferPtr_
 );
 template<>
 void ModelContext::ModelDataBatcher::OverrideBuffer<ConstantBuffers::ConstantBufferBindSlots::kMaterialContainer>
@@ -12867,7 +12868,7 @@ void ModelContext::ModelDataBatcher::OverrideBuffer<ConstantBuffers::ConstantBuf
 	Model& model_,
 	std::vector<ConstantBuffers::PerDrawIndicesCPUGPU> const& perDrawIndices_,
 	size_t const numMesh_,
-	BufferContext::BufferDispatcher& dispatcher_
+	IWritableCPU* writeDstBufferPtr_
 );
 template<>
 struct ModelContext::ModelDataBatcher::BufferTypeTraits
@@ -17120,9 +17121,8 @@ private:
 		//親の更新処理を先に呼ぶ
 		if (parent)
 		{
-			//親のトランスフォームが更新されたならこちらも変更しなくては
-			hasTransformChanged |= parent->hasTransformChanged;
 			parent->Update();
+			//親のトランスフォームが更新されたならこちらも変更しなくては
 			hasTransformChanged |= parent->needOverrideBufferCnt == (UINT)ProjectConfig::Render::NumBuffer::kDoubleBuffer;
 		}
 		//回転クォータニオンの更新
@@ -21942,7 +21942,6 @@ Nexus::~Nexus()
 }
 void Nexus::PrimaryInit()
 {
-	InitializeInSequence<InitSequence::kLoadProjectFiles>();
 	InitializeInSequence<InitSequence::kDebugContext>();
 	InitializeInSequence<InitSequence::kDeviceContext>();
 	InitializeInSequence<InitSequence::kWindowContext>();
@@ -22019,7 +22018,6 @@ private:
 	//初期化・生成順序
 	enum class InitSequence
 	{
-		kLoadProjectFiles,
 		kDebugContext,
 		kDeviceContext,
 		kWindowContext,
@@ -22043,7 +22041,7 @@ private:
 		kSortOutGlobalConstantBuffers,
 		kDeleteModelDataCache,					///モデルデータキャッシュの削除は、アプリ層の初期化が終わったあと
 		kEnd
-	}nextInit = InitSequence::kLoadProjectFiles;
+	}nextInit = InitSequence::kDebugContext;
 	//終了処理順序
 	enum class FinalizeSequence
 	{
@@ -22191,17 +22189,6 @@ void Nexus::Finalize<Nexus::FinalizeSequence::kWindowContext>()
 namespace
 {
 	std::string const fileName = "NexusInitialization.cpp";
-}
-///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-template<>
-void Nexus::Init<Nexus::InitSequence::kLoadProjectFiles>()
-{
-	//シングルトンだから一度読んでコンストラクタが通ればよし
-	Miyajison::Get();
-	//ここでプロジェクト設定も初期化しちゃう
-	ProjectConfig::Window::LoadData();
 }
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -22463,8 +22450,6 @@ void Nexus::Init<Nexus::InitSequence::kSceneContext>()
 	sceneContext = std::make_unique<SceneContext>(SceneContext::NexusFieldProof{});
 }
 template
-void Nexus::Init<Nexus::InitSequence::kLoadProjectFiles>();
-template
 void Nexus::Init<Nexus::InitSequence::kDebugContext>();
 template
 void Nexus::Init<Nexus::InitSequence::kDeviceContext>();
@@ -22661,7 +22646,7 @@ namespace ProjectConfig
 		//Comptrのリークチェック
 		constexpr bool kEnableLeakChecker = true;
 		//Jsonファイルを読み込むときに型チェックを行うかどうか
-		constexpr bool kEnableJsonDataTypeCheck = true;
+		constexpr bool kEnableJsonDataCheck = true;
 	}
 	namespace Core
 	{
@@ -22932,12 +22917,15 @@ Miyajison* Miyajison::Get()
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 void Miyajison::LoadAllJsonFiles()
 {
+    //レジストリーファイルに登録されているジェーソンファイルを読み込む
     std::unordered_map<std::string, std::string> fileName_Path =
         RegistryLoader::Load<RegistryLoader::RegistryFileType::kJsonFiles>();
+    //変更保存リストのサイズを確保しておく
+    saveList.reserve(fileName_Path.size());
     DataLibrary::HandleLicence licence;
     for (const auto& [key, value] : fileName_Path)
     {
-        jsonDataLibrary->Import(licence, key, LoadJsonFile(value));
+        jsonDataLibrary->Import(licence, key, LoadJsonFile(value), value);
     }
 }
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -22959,9 +22947,39 @@ nlohmann::json Miyajison::LoadJsonFile(std::string const& filePath_)
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-const nlohmann::json& Miyajison::PullJsonData(std::string const& fileName_)
+nlohmann::json& Miyajison::PullJsonData(std::string const& fileName_)
 {
     return jsonDataLibrary->Export(DataLibrary::HandleLicence{}, fileName_);
+}
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+std::string const& Miyajison::ToFilePath(std::string const& fileName_)
+{
+    return jsonDataLibrary->ToPath(fileName_);
+}
+void Miyajison::Save()
+{
+    for (auto const& fileName : saveList)
+    {
+        auto const& path = ToFilePath(fileName);
+        auto& jsonRoot = PullJsonData(fileName);
+        std::ofstream ofs(path);
+        ErrorMessageOutput::Abort::DetectError
+        (
+            ofs.is_open(),
+            path + "が開けない",
+            "Miyajison.h"
+        );
+        ofs << jsonRoot.dump(4);
+        ErrorMessageOutput::Abort::DetectError
+        (
+            ofs.good(),
+            path + "への書き込みに失敗",
+            "Miyajison.h"
+        );
+    }
+    saveList.clear();
 }
 
 ========================================
@@ -22973,7 +22991,6 @@ class Miyajison
 {
 	class DataLibrary;
 public:
-	using Group_Value = std::array<std::string, 2>;
 	static Miyajison* Get();
 	Miyajison(const Miyajison&) = delete;
 	Miyajison& operator=(const Miyajison&) = delete;
@@ -22984,8 +23001,8 @@ public:
 	template<typename DataType>
 	DataType LoadData(std::string const& fileName_, std::vector<std::string> const& nest_)
 	{
-		CheckDataType<DataType>();
-		nlohmann::json const* current = &PullJsonData(fileName_);
+		Check<DataType>(fileName_,nest_);
+		nlohmann::json* current = &PullJsonData(fileName_);
 		//ポインタをずらしながら階層を辿る
 		for (const auto& key : nest_)
 		{
@@ -22993,21 +23010,61 @@ public:
 		}
 		return current->get<DataType>();
 	}
+	template<typename DataType>
+	void WriteData
+	(
+		std::string const& fileName_,
+		std::vector<std::string> const& nest_,
+		DataType const& data_
+	)
+	{
+		Check<DataType>(fileName_,nest_);
+		nlohmann::json* current = &PullJsonData(fileName_);
+		for (size_t i = 0; i + 1 < nest_.size(); ++i)
+		{
+			std::string const& key = nest_[i];
+			if (!(*current)[key].is_object())
+			{
+				(*current)[key] = nlohmann::json::object();
+			}
+			current = &(*current)[key];
+		}
+		//最後の階層にデータを書き込む
+		(*current)[nest_.back()] = data_;
+		//保存リストに追加
+		if (!std::ranges::contains(saveList, fileName_))
+		{
+			saveList.emplace_back(fileName_);
+		}
+	}
+	//ジェーソンファイルに実際にwrittenFilePathCacheをもとに書き込んでいく
+	void Save();
 private:
 	Miyajison();
 	std::unique_ptr<DataLibrary> jsonDataLibrary;
+	//データが書き込まれたファイルパスのキャッシュ
+	//name_path
+	std::vector<std::string> saveList;
 	///ファイル名からジェーソンデータをライブラリーから引っ張り、返す
-	const nlohmann::json& PullJsonData(std::string const& fileName_);
+	nlohmann::json& PullJsonData(std::string const& fileName_);
+	//ファイル名→ファイルパス
+	std::string const& ToFilePath(std::string const& fileName_);
 	//パスからジェーソンファイルを読み込んでジェーソンデータを返す
 	nlohmann::json LoadJsonFile(std::string const& filePath_);
 	//ジェーソンファイルレジストリーから全てのジェーソンファイルのパスを取得して読み込み、
 	///ライブラリーに詰めていく
 	void LoadAllJsonFiles();
-	//データ型チェック
+	//簡易チェック
 	template<typename DataType>
-	void CheckDataType()
+	void Check(std::string const& fileName_ , std::vector<std::string> const& nest_)
 	{
-		if (!ProjectConfig::Debug::kEnableJsonDataTypeCheck) return;
+		if (!ProjectConfig::Debug::kEnableJsonDataCheck) return;
+		ErrorMessageOutput::Assert::DetectError
+		(
+			!nest_.empty(),
+			fileName_ + "へのデータ書き込み失敗(引数のネストが空)",
+			"Miyajison.h"
+		);
 		if constexpr
 		(
 			!std::is_same_v<DataType, std::string> &&
@@ -23032,26 +23089,50 @@ private:
 ========================================
 #include "PreCompileHeader.h"
 #include "JsonDataLibrary.h"
-void Miyajison::DataLibrary::Import(HandleLicence licence_, std::string const& fileName_, nlohmann::json const& jsonData_)
+void Miyajison::DataLibrary::Import
+(
+	HandleLicence licence_,
+	std::string const& fileName_,
+	nlohmann::json const& jsonData_,
+	std::string const& filePath_
+) 
 {
+#ifdef _DEBUG
 	ErrorMessageOutput::Assert::DetectError
 	(
 		lib.find(fileName_) == lib.end(),
 		fileName_ + "ファイル名被ってる",
 		"DataLibrary.cpp"
 	);
+#endif // DEBUG
 	lib[fileName_] = jsonData_;
-	Logger::Log("Import: " + fileName_, "JsonDataLibrary.h");
+	fileName_Path[fileName_] = filePath_;
+	Logger::Log("Import: " + fileName_, "JsonDataLibrary.cpp");
 }
-const nlohmann::json& Miyajison::DataLibrary::Export(HandleLicence licence_, std::string const& fileName_)const
+std::string const& Miyajison::DataLibrary::ToPath(std::string const& fileName_)
 {
+#ifdef _DEBUG
 	ErrorMessageOutput::Assert::DetectError
 	(
 		lib.find(fileName_) != lib.end(),
 		fileName_ + "\nんなファイル無いんだわ",
-		"DataLibrary.cpp"
+		"JsonDataLibrary.cpp"
 	);
-	return lib.at(fileName_);
+#endif // DEBUG
+	return fileName_Path[fileName_];
+}
+nlohmann::json& Miyajison::DataLibrary::Export(HandleLicence licence_, std::string const& fileName_)
+{
+	//さすがにジェーソンファイルが無いのはデバッグで確認するべきなので
+#ifdef _DEBUG
+	ErrorMessageOutput::Assert::DetectError
+	(
+		lib.find(fileName_) != lib.end(),
+		fileName_ + "\nんなファイル無いんだわ",
+		"JsonDataLibrary.cpp"
+	);
+#endif // DEBUG
+	return lib[fileName_];
 }
 
 ========================================
@@ -23063,10 +23144,18 @@ class Miyajison::DataLibrary
 {
 public:
 	struct HandleLicence;
-	const nlohmann::json& Export(HandleLicence licence_, std::string const& fileName_)const;
-	void Import(HandleLicence licence_, std::string const& fileName_, nlohmann::json const& jsonData_);
+	nlohmann::json& Export(HandleLicence licence_, std::string const& fileName_);
+	void Import
+	(
+		HandleLicence licence_, 
+		std::string const& fileName_, 
+		nlohmann::json const& jsonData_, 
+		std::string const& filePath_
+	);
+	std::string const& ToPath(std::string const& fileName_);
 private:
 	std::map<std::string, nlohmann::json> lib;
+	std::unordered_map<std::string, std::string> fileName_Path;
 };
 struct Miyajison::DataLibrary::HandleLicence
 {
@@ -23392,4 +23481,4 @@ namespace StringProcessing
 === SUMMARY ===
 ========================================
 Total Files      : 517
-Effective Lines  : 17058
+Effective Lines  : 17137
