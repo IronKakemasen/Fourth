@@ -18,7 +18,7 @@ public:
 		UINT handleIncrementSize_, 
 		uint32_t kMaxDescriptor_,
 		bool shaderVisible_ ,
-		std::string name_
+		std::string const& name_
 	);
 
 	~DescriptorHeapPool();

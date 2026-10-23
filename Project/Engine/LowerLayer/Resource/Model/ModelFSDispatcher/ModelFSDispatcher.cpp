@@ -10,7 +10,7 @@ ModelContext::ModelFSDispatcher::ModelFSDispatcher(NexusFieldProof proof_, Model
 	auto* miyajison = Miyajison::Get();
 	UINT numScene = (UINT)miyajison->LoadData<int>("ProjectConfig", { "numScene" });
 
-	simpleFreeList.Resize(numScene);
+	simpleFreeList.Resize(numScene, "ModelSys");
 	frontlineSystems.reserve(numScene);
 
 	UINT i{};

@@ -3,9 +3,6 @@
 #include "../CameraContextRuntime/CameraFrontlineSystems.h"
 
 
-//外部
-#include "../../../../EngineInterface.h"
-
 namespace
 {
 	std::string const fileName = "CameraFSDispatcher.cpp";
@@ -17,7 +14,7 @@ CameraContext::FrontlineSystemsDispatcher::FrontlineSystemsDispatcher(NexusField
 	auto* miyajison = Miyajison::Get();
 	UINT numScene = (UINT)miyajison->LoadData<int>("ProjectConfig", { "numScene" });
 
-	simpleFreeList.Resize(numScene);
+	simpleFreeList.Resize(numScene,"CameraSys");
 	cameraFrontlineSystemsContainer.reserve(numScene);
 
 	UINT i{};

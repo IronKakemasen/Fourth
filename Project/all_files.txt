@@ -33,9 +33,8 @@ class EngineInstanceLimiter
 ========================================
 #pragma once
 #include "EngineInstanceLimiter.h"
-//外部
 #include "../Nexus/Nexus.h"
-//シーン作成のために必要
+//外部
 #include "MiddleLayer/Scene/ScenePresetIncludes.h"
 #include "MiddleLayer/Scene/SceneContextDiplomat/SceneContextDiplomat.h"
 #include "MiddleLayer/Scene/SceneContextDiplomat/SceneExecutionAgent/SceneExecutionAgent.h"
@@ -147,7 +146,7 @@ private:
 			//ここでプロジェクト設定も初期化しちゃう
 			ProjectConfig::Window::LoadData();
 			//シーンの数を記録
-			miyajison->WriteData<int>("ProjectConfig", { "numScene" }, (int)correspondedSceneNames.size());
+			miyajison->WriteData<int>("ProjectConfig", { "numScene" }, (int)sizeof...(SceneTypes));
 			miyajison->Save();
 		}
 	}
@@ -182,7 +181,6 @@ private:
 			"シーンの数と、シーン名の数が合わへん",
 			"EngineInterface.h"
 		);
-		//ProjectConfig.jsonにシーンの数を書き込む
 		//シーン作成
 		size_t cnt{};
 		(
@@ -6475,13 +6473,13 @@ DescriptorHeapPool::DescriptorHeapPool
 	UINT handleIncrementSize_, 
 	uint32_t kMaxDescriptor_, 
 	bool shaderVisible_, 
-	std::string name_
+	std::string const& name_
 ) : descriptorHeap(descriptorHeap_), handleIncrementSize(handleIncrementSize_), kMaxDescriptor(kMaxDescriptor_),shaderVisible(shaderVisible_), name(name_)
 {
 	std::string log = "Instantiate: " + name_ + "[" + std::to_string(kMaxDescriptor_) + "]";
 	Logger::Log(log, fileName);
 	//フリーリストに空きインデックスを最大数まで登録
-	freeList.Resize(kMaxDescriptor_);
+	freeList.Resize(kMaxDescriptor_, name_);
 }
 DescriptorHeapPool::~DescriptorHeapPool(){}
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -6546,7 +6544,7 @@ public:
 		UINT handleIncrementSize_, 
 		uint32_t kMaxDescriptor_,
 		bool shaderVisible_ ,
-		std::string name_
+		std::string const& name_
 	);
 	~DescriptorHeapPool();
 	//フリーヒープインデックスを割り当てる
@@ -10128,17 +10126,19 @@ public:
 #include "PreCompileHeader.h"
 #include "CameraFSDispatcher.h"
 #include "../CameraContextRuntime/CameraFrontlineSystems.h"
-//外部
-#include "../../../../EngineInterface.h"
 namespace
 {
 	std::string const fileName = "CameraFSDispatcher.cpp";
 }
 CameraContext::FrontlineSystemsDispatcher::FrontlineSystemsDispatcher(NexusFieldProof proof_, CameraCreator& cameraCreator_)
 {
-	simpleFreeList.Resize(1);
-	UINT i = 0;
-	for (;i < 1;++i)
+	//シーンの総数をロード
+	auto* miyajison = Miyajison::Get();
+	UINT numScene = (UINT)miyajison->LoadData<int>("ProjectConfig", { "numScene" });
+	simpleFreeList.Resize(numScene,"CameraSys");
+	cameraFrontlineSystemsContainer.reserve(numScene);
+	UINT i{};
+	for (;i < numScene;++i)
 	{
 		cameraFrontlineSystemsContainer.emplace_back
 		(
@@ -12285,7 +12285,7 @@ namespace
 ModelContext::ModelSlotAllocator::MaterialSlot::MaterialSlot(NexusFieldProof proof_)
 {
 	//使いまわしMaterialSlotのスロットのサイズを確保する
-	slotList.Resize((UINT)ProjectConfig::Render::CBufferSize::kSizeOfMaterialContainerBuffer);
+	slotList.Resize((UINT)ProjectConfig::Render::CBufferSize::kSizeOfMaterialContainerBuffer,"ModelMaterialSlot");
 }
 uint32_t ModelContext::ModelSlotAllocator::MaterialSlot::AllocateFreeSlot()
 {
@@ -12406,7 +12406,7 @@ namespace
 ModelContext::ModelSlotAllocator::TransformMatrixSlot::TransformMatrixSlot(NexusFieldProof proof_)
 {
 	//使いまわしTransformMatrixのスロットのサイズを確保する
-	slotList.Resize((UINT)ProjectConfig::Render::CBufferSize::kSizeOfTransformMatrixContainerBuffer);
+	slotList.Resize((UINT)ProjectConfig::Render::CBufferSize::kSizeOfTransformMatrixContainerBuffer,"ModelTransformMatrixSlot");
 }
 uint32_t ModelContext::ModelSlotAllocator::TransformMatrixSlot::AllocateFreeSlot()
 {
@@ -13270,13 +13270,17 @@ private:
 #include "../ModelContextRuntime/ModelFrontlineSystems/ModelFrontlineSystems.h"
 ModelContext::ModelFSDispatcher::ModelFSDispatcher(NexusFieldProof proof_, ModelCreator& modelCreator_)
 {
-	//ここもシーンの数に依存。本来であれば、ジェーソンファイルからシーンの数が分かるはず
-	simpleFreeList.Resize(1);
-	frontlineSystems.reserve(1);
-	for (size_t i = 0;i < 1;++i)
+	//シーンの総数をロード
+	auto* miyajison = Miyajison::Get();
+	UINT numScene = (UINT)miyajison->LoadData<int>("ProjectConfig", { "numScene" });
+	simpleFreeList.Resize(numScene, "ModelSys");
+	frontlineSystems.reserve(numScene);
+	UINT i{};
+	for (;i < numScene;++i)
 	{
 		frontlineSystems.emplace_back(std::make_unique<ModelFrontlineSystems>(proof_, modelCreator_));
 	}
+	Logger::Log("Instantiate: ModelFrontlineSystems(" + std::to_string(i) + ")", "ModelFSDispatcher.cpp");
 }
 ModelContext::ModelFSDispatcher::~ModelFSDispatcher()
 {
@@ -21724,7 +21728,7 @@ void RenderingTestScene::Init()
 	cC.materialTypes.emplace_back(MaterialType::kStandard);
 	std::vector<RenderState> cubeC;
 	cubeC.emplace_back(std::move(cC));
-	auto c = CreateModel<Model::Type::kDynamic>("CubeGltf", cubeC, materials, 1, "Cube");
+	auto c = CreateModel<Model::Type::kStatic>("CubeGltf", cubeC, materials, 100, "Cube");
 }
 
 ========================================
@@ -22500,19 +22504,36 @@ void Nexus::Init<Nexus::InitSequence::kDeleteModelDataCache>();
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 #include "../LowerLayer/Core/Command/CommandContextDiplomat/CommandContextDiplomat.h"
 #include "../LowerLayer/Core/Command/CommandContextDiplomat/CommandContextExecutionAgent/CommandContextExecutionAgent.h"
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+#include "../MiddleLayer/Scene/SceneContextDiplomat/SceneContextDiplomat.h"
+#include "../MiddleLayer/Scene/SceneContextDiplomat/SceneExecutionAgent/SceneExecutionAgent.h"
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+#include "../LowerLayer/Buffer/BufferContext.h"
 void Nexus::Run(aFourthProof proof_)
 {
 	//SwapChainContextの代行クラス
-	auto& s_ExecutionAgent = swapChainContext->AccessDiplomat().Access<SwapChainContext::ExecutionAgent>();
+	auto& swap_ExecutionAgent = swapChainContext->AccessDiplomat().Access<SwapChainContext::ExecutionAgent>();
 	//CommandContextの代行クラス
-	auto& c_ExecutionAgent = commandContext->AccessDiplomat().Access<CommandContext::ExecutionAgent>();
-	auto const frameIndex = s_ExecutionAgent.GetFrameIndex(SwapChainContext::NexusFieldProof{});
+	auto& cmd_ExecutionAgent = commandContext->AccessDiplomat().Access<CommandContext::ExecutionAgent>();
+	//SceneContextの代行クラス
+	auto& scene_ExecutionAgent = sceneContext->AccessDiplomat().Access<SceneContext::ExecutionAgent>();
+	//フレームインデックスをスワップチェーンから取得
+	auto const frameIndex = swap_ExecutionAgent.GetFrameIndex(SwapChainContext::NexusFieldProof{});
+	//シーンの更新処理、シーンデータのバッチング
+	scene_ExecutionAgent.RunScenePipeline
+	(
+		SceneContext::NexusFieldProof{},
+		frameIndex,
+		modelContext->AccessDiplomat(),
+		cameraContext->AccessDiplomat(),
+		bufferContext->AccessDiplomat()
+	);
 	//コマンドの記録開始
-	c_ExecutionAgent.StartRecordingCommands(CommandContext::NexusFieldProof{}, frameIndex);
+	cmd_ExecutionAgent.StartRecordingCommands(CommandContext::NexusFieldProof{}, frameIndex);
 	//コマンドを送る
-	c_ExecutionAgent.ExecuteCommands(CommandContext::NexusFieldProof{},frameIndex);
+	cmd_ExecutionAgent.ExecuteCommands(CommandContext::NexusFieldProof{},frameIndex);
 	//表示
-	s_ExecutionAgent.Present(SwapChainContext::NexusFieldProof{});
+	swap_ExecutionAgent.Present(SwapChainContext::NexusFieldProof{});
 }
 
 ========================================
@@ -22629,9 +22650,9 @@ namespace ProjectConfig
 		enum class CBufferSize
 		{
 			//TransformMatrixBufferの同時存在最大数
-			kSizeOfTransformMatrixContainerBuffer = 100,
+			kSizeOfTransformMatrixContainerBuffer = 200,
 			//そのマテリアルバージョン
-			kSizeOfMaterialContainerBuffer = 100,
+			kSizeOfMaterialContainerBuffer = 200,
 		};
 		constexpr D3D_SHADER_MODEL kRequiredShaderModel = D3D_SHADER_MODEL_6_6;
 		constexpr DXGI_FORMAT kSwapChainBufferFormat = DXGI_FORMAT_R16G16B16A16_FLOAT;
@@ -23348,7 +23369,7 @@ class SimpleFreeList
 public:
 	inline uint32_t Distribute()
 	{
-		ErrorMessageOutput::Assert::DetectError(!freeList.empty(), " もうすかすかだぜ", "SimpleFreeList.h");
+		ErrorMessageOutput::Assert::DetectError(!freeList.empty(), listName + " はもうすかすかだぜ", "SimpleFreeList.h");
 		uint32_t lastIndex = freeList.back();
 		freeList.pop_back();
 		return lastIndex;
@@ -23357,8 +23378,10 @@ public:
 	{
 		freeList.emplace_back(dst_);
 	}
-	inline void Resize(UINT capacity_)
+	inline void Resize(UINT capacity_,std::string const& listName_)
 	{
+		listName = listName_;
+		Logger::Log("resize " + listName_ + "(" + std::to_string(capacity_) + ")");
 		freeList.resize(capacity_);
 		for (UINT i = 0;i < capacity_;++i)
 		{
@@ -23366,6 +23389,7 @@ public:
 		}
 	}
 private:
+	std::string listName;
 	std::vector<uint32_t> freeList;
 };
 
@@ -23481,4 +23505,4 @@ namespace StringProcessing
 === SUMMARY ===
 ========================================
 Total Files      : 517
-Effective Lines  : 17137
+Effective Lines  : 17156

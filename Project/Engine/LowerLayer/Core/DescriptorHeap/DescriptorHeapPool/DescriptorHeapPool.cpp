@@ -13,14 +13,14 @@ DescriptorHeapPool::DescriptorHeapPool
 	UINT handleIncrementSize_, 
 	uint32_t kMaxDescriptor_, 
 	bool shaderVisible_, 
-	std::string name_
+	std::string const& name_
 ) : descriptorHeap(descriptorHeap_), handleIncrementSize(handleIncrementSize_), kMaxDescriptor(kMaxDescriptor_),shaderVisible(shaderVisible_), name(name_)
 {
 	std::string log = "Instantiate: " + name_ + "[" + std::to_string(kMaxDescriptor_) + "]";
 	Logger::Log(log, fileName);
 
 	//フリーリストに空きインデックスを最大数まで登録
-	freeList.Resize(kMaxDescriptor_);
+	freeList.Resize(kMaxDescriptor_, name_);
 }
 
 DescriptorHeapPool::~DescriptorHeapPool(){}

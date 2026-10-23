@@ -50,9 +50,9 @@ namespace ProjectConfig
 		enum class CBufferSize
 		{
 			//TransformMatrixBufferの同時存在最大数
-			kSizeOfTransformMatrixContainerBuffer = 100,
+			kSizeOfTransformMatrixContainerBuffer = 200,
 			//そのマテリアルバージョン
-			kSizeOfMaterialContainerBuffer = 100,
+			kSizeOfMaterialContainerBuffer = 200,
 
 		};
 
