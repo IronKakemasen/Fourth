@@ -10,8 +10,11 @@
 #include "../../../../../../LowerLayer/Buffer/BufferRuntime/BufferDispatcher/BufferDispatcher.h"
 #include "../../../../../../LowerLayer/Buffer/BufferDefinition/AllBuffersInclude.h"
 						
-#include "../../../../../../LowerLayer/Resource/Model/ModelContextDiplomatIncludes.h"
-//#include "../../../../../../LowerLayer/Resource/Model/ModelContainer/ModelContainer.h"
+#include "../../../../../Scene/SceneContextDiplomat/SceneContextDiplomat.h"
+#include "../../../../../Scene/SceneContextDiplomat/SceneExecutionAgent/SceneExecutionAgent.h"
+#include "../../../../../Scene/SceneContextDiplomat/SceneExecutionAgent/SceneExecutionAgentLicences.h"
+
+#include "../../../../../../LowerLayer/Resource/Model/ModelContextIncludes.h"
 
 
 
@@ -84,7 +87,7 @@ void RenderContext::StaticRenderGraph::PathOperator::FillInRefBufferSrvIndices
 void RenderContext::StaticRenderGraph::PathOperator::Run
 (
 	UINT const frameIndex_,
-	ModelContextDiplomat& modelContextDiplomat_,
+	SceneContextDiplomat& sceneContextDiplomat_,
 	BufferContextDiplomat& bufferContextDiplomat_,
 	RuntimeWrapper& runtimeWrapper_
 )
@@ -96,14 +99,15 @@ void RenderContext::StaticRenderGraph::PathOperator::Run
 	BufferContext::ToolLender::LicenceType<BufferContext::BufferDispatcher> bLicence;
 	auto& bufferDispatcher = *bToolLender->Lend<BufferContext::BufferDispatcher>(bLicence);
 
-	////modelContainer（仕分け済み）取得コマンドをもらう
-	//auto mCmdProvider = modelContextDiplomat_.Access<ModelContext::CommandProvider>();
-	//ModelContext::CommandProvider::LicenceType<ModelContextCmds::WatchSeparatedByRenderState> mLicence;
-	//auto& modelContainer = *mCmdProvider->Provide<ModelContextCmds::WatchSeparatedByRenderState>(mLicence)();
+	//現在稼働中のシーンから、モデルコンテナを渡してもらう
+	auto sAgent = sceneContextDiplomat_.Access<SceneContext::ExecutionAgent>();
+	SceneContext::ExecutionAgent::RenderContextProof proof;
+	auto const& sceneOutput = sAgent.WatchCurSceneOutput(proof);
+	auto const* srcModelContainer = sceneOutput.WatchModelContainer();
 
-	//
-	//for (auto* path : allPathPtr)
-	//{
-	//	path->Run(modelContainer, modelFillMode, pso_PoolDispatcher, runtimeWrapper_, bufferDispatcher);
-	//}
+	
+	for (auto* path : allPathPtr)
+	{
+		path->Run(srcModelContainer->WatchSeparatedByRenderState(), modelFillMode, pso_PoolDispatcher, runtimeWrapper_, bufferDispatcher);
+	}
 }

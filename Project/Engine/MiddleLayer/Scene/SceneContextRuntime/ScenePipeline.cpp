@@ -25,6 +25,10 @@ SceneContext::ScenePipeline::~ScenePipeline()
 
 }
 
+SceneBehavior::Output const& SceneContext::ScenePipeline::WatchCurSceneOutput(AgentKey key_)
+{
+	return sceneController->WatchCurrentSceneOutput();
+}
 
 void SceneContext::ScenePipeline::ImportScene(std::unique_ptr<SceneBehavior>&& scene_, std::string const& sceneName_)
 {

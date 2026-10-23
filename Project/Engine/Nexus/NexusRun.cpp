@@ -1,4 +1,7 @@
 #include "Nexus.h"
+
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+#include "../LowerLayer/Core/DescriptorHeap/DescriptorHeapContext.h"
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 #include "../LowerLayer/Core/SwapChain/SwapChainContextDiplomat/SwapChainContextDiplomat.h"
 #include "../LowerLayer/Core/SwapChain/SwapChainContextDiplomat/SwapChainExecutionAgent/SwapChainExecutionAgent.h"
@@ -10,6 +13,11 @@
 #include "../MiddleLayer/Scene/SceneContextDiplomat/SceneExecutionAgent/SceneExecutionAgent.h"
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 #include "../LowerLayer/Buffer/BufferContext.h"
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+#include "../MiddleLayer/Render/RenderContextDiplomat/RenderContextDiplomat.h"
+#include "../MiddleLayer/Render/RenderContextDiplomat/RenderContextExecutionAgent/RenderContextExecutionAgent.h"
+
+
 
 void Nexus::Run(aFourthProof proof_)
 {
@@ -19,6 +27,10 @@ void Nexus::Run(aFourthProof proof_)
 	auto& cmd_ExecutionAgent = commandContext->AccessDiplomat().Access<CommandContext::ExecutionAgent>();
 	//SceneContextの代行クラス
 	auto& scene_ExecutionAgent = sceneContext->AccessDiplomat().Access<SceneContext::ExecutionAgent>();
+	//RenderContextの代行クラス
+	auto& render_ExecutionAgent = renderContext->AccessDiplomat().Access<RenderContext::ExecutionAgent>();
+
+
 
 	//フレームインデックスをスワップチェーンから取得
 	auto const frameIndex = swap_ExecutionAgent.GetFrameIndex(SwapChainContext::NexusFieldProof{});
@@ -38,7 +50,16 @@ void Nexus::Run(aFourthProof proof_)
 	cmd_ExecutionAgent.StartRecordingCommands(CommandContext::NexusFieldProof{}, frameIndex);
 
 
-
+	render_ExecutionAgent.RenderGraphRun
+	(
+		RenderContext::NexusFieldProof{},
+		frameIndex,
+		descriptorHeapContext->AccessDiplomat(),
+		commandContext->AccessDiplomat(),
+		bufferContext->AccessDiplomat(),
+		sceneContext->AccessDiplomat(),
+		swapChainContext->AccessDiplomat()
+	);
 
 	//コマンドを送る
 	cmd_ExecutionAgent.ExecuteCommands(CommandContext::NexusFieldProof{},frameIndex);

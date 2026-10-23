@@ -20,7 +20,7 @@ public:
 	void Run
 	(
 		UINT const frameIndex_,
-		ModelContextDiplomat& modelContextDiplomat_,
+		SceneContextDiplomat& sceneContextDiplomat_,
 		BufferContextDiplomat& bufferContextDiplomat_,
 		RuntimeWrapper& runtimeWrapper_
 	);

@@ -5,6 +5,16 @@
 template<typename... SceneTypes>
 class aFourth;
 
+class RenderContext;
+
+struct SceneContext::ExecutionAgent::RenderContextProof
+{
+private:
+	friend class RenderContext;
+
+	explicit RenderContextProof() = default;
+};
+
 struct SceneContext::ExecutionAgent::EngineInterfaceProof
 {
 private:

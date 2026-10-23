@@ -741,6 +741,15 @@
     <ClCompile Include="Engine\ProjectConfig\ProjectConfig.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
+    <ClCompile Include="Engine\MiddleLayer\Render\RenderContextDiplomat\RenderContextDiplomat.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\MiddleLayer\Render\RenderContextDiplomat\RenderContextExecutionAgent\RenderContextExecutionAgent.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\MiddleLayer\Render\RenderContextRuntime\StaticRenderGraph\RenderGraphRun.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Engine\LowerLayer\Core\Window\WindowContext.h">
@@ -1538,9 +1547,6 @@
     <ClInclude Include="Engine\LowerLayer\Resource\PSO\PSO_ContextDiplomats.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\MiddleLayer\Render\RenderContextRuntime\StaticRenderGraph\RenderGraphRun.cpp">
-      <Filter>ヘッダー ファイル</Filter>
-    </ClInclude>
     <ClInclude Include="Engine\LowerLayer\Core\DescriptorHeap\DescriptorHeapContextDiplomat\DescriptorHeapToolLender\DescriptorHeapToolLenderLicences.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
@@ -1704,6 +1710,18 @@
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
     <ClInclude Include="Engine\MiddleLayer\Scene\ScenePresetIncludes.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\LowerLayer\Resource\Model\ModelContextIncludes.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\MiddleLayer\Render\RenderContextDiplomat\RenderContextDiplomat.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\MiddleLayer\Render\RenderContextDiplomat\RenderContextExecutionAgent\RenderContextExecutionAgent.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\MiddleLayer\Render\RenderContextDiplomat\RenderContextExecutionAgent\RenderAgentLicences.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
   </ItemGroup>

@@ -18,6 +18,14 @@ class SceneBehavior
 	//このシーンで使用しているカメラ、モデル、ライトなどの情報
 	struct Output
 	{
+		friend class SceneBehavior;
+
+		auto const& WatchUsingCamera()const { return usingCamera; }
+		auto const* WatchModelContainer()const { return modelContainer; }
+		auto const& WatchLeftStaticModelBatchingCnt()const { return leftStaticModelBatchingCnt; }
+
+	private:
+
 		//使用しているカメラ。更新必要
 		std::unordered_map<CameraSocket, CameraBehavior*> usingCamera;
 		//このシーンのモデルコンテナ

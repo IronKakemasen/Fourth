@@ -4,9 +4,9 @@
 //外部
 #include "../../../../LowerLayer/Buffer/BufferDefinition/BufferTraits.h"
 
+class RuntimeWrapper;
 class DescriptorHeapContextDiplomat;
 class CommandContextDiplomat;
-class RuntimeWrapper;
 class SceneContextDiplomat;
 
 class RenderContext::StaticRenderGraph
@@ -45,12 +45,13 @@ public:
 
 	void Run
 	(
-		PSO_PoolDispatcher& psoDispatcher_,
+		NexusFieldProof proof_,
+		AgentKey key_,
 		UINT const frameIndex_,
 		DescriptorHeapContextDiplomat& descriptorHeapContextDiplomat_,
 		CommandContextDiplomat& commandContextDiplomat_,
 		BufferContextDiplomat& bufferContextDiplomat_,
-		ModelContextDiplomat& modelContextDiplomat_,
+		SceneContextDiplomat& sceneContextDiplomat_,
 		SwapChainContextDiplomat& swapChainContextDiplomat_
 	);
 

@@ -27,7 +27,7 @@ void SceneContext::ScenePipeline::SceneDataBatchingPlace::BatchingPlace
 	cameraAgent.BatchCameraData
 	(
 		CameraContext::ExecutionAgent::SceneContextProof{},
-		sceneOutput.usingCamera,
+		sceneOutput.WatchUsingCamera(),
 		frameIndex_,
 		bufferContextDiplomat_
 	);
@@ -40,18 +40,19 @@ void SceneContext::ScenePipeline::SceneDataBatchingPlace::BatchingPlace
 	(
 		ModelContext::ExecutionAgent::SceneContextProof{},
 		frameIndex_,
-		sceneOutput.modelContainer->WatchSeparatedByModelType()[(UINT)Model::Type::kDynamic],
+		sceneOutput.WatchModelContainer()->WatchSeparatedByModelType()[(UINT)Model::Type::kDynamic],
 		bufferContextDiplomat_
 	);
 
-	if (sceneOutput.leftStaticModelBatchingCnt <= (UINT)NumBuffer::kDoubleBuffer)
+	if (sceneOutput.WatchLeftStaticModelBatchingCnt() <= (UINT)NumBuffer::kDoubleBuffer)
 	{
 		modelAgent.BatchModelData
 		(
 			ModelContext::ExecutionAgent::SceneContextProof{},
 			frameIndex_,
-			sceneOutput.modelContainer->WatchSeparatedByModelType()[(UINT)Model::Type::kStatic],
+			sceneOutput.WatchModelContainer()->WatchSeparatedByModelType()[(UINT)Model::Type::kStatic],
 			bufferContextDiplomat_
 		);
 	}
 }
+

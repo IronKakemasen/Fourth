@@ -216,9 +216,10 @@ Diplomat
 |
 |
 |-ExecutionAgent
-CmdProvider		...コマンドを"保持したい"パターンで経由。多少の結合度が強くなるのは仕方なし
+CmdProvider		...コマンドを"保持したい"パターンなどで経由。多少の結合度が強くなるのは仕方なし
 ToolLender		...コマンドにするにはオーバーヘッドが気になるケースで経由。結合度を疎にしやすい
-ExecutionAgent	..."保持する必要が無い"ケースで経由。限定的なケースでは特にこちらで対応したい。多少の結合度が強くなるのは仕方なし
+ExecutionAgent	..."保持する必要が無い"ケースで経由。限定的なケースでは特にこちらで対応したい。
+多少の結合度が強くなるのは仕方なし
 
 ========================================
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\RenderPassComponent.h ===
@@ -10713,6 +10714,13 @@ namespace ModelContextCmds
 #include "ModelContextDiplomat/ModelContextExecutionAgent/ModelAgentLicences.h"
 
 ========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Model\ModelContextIncludes.h ===
+========================================
+#pragma once
+//他コンテキストで階層が深すぎてエラー出たとき用
+#include "ModelContextRuntime/ModelFrontlineSystems/ModelContainer/ModelContainer.h"
+
+========================================
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Model\CreateModelTools\ModelCreator.cpp ===
 ========================================
 #include "PreCompileHeader.h"
@@ -17469,6 +17477,8 @@ struct Vector4
 #include "RenderPath/RenderPathContainer/RenderPathContainer.h"
 #include "RenderContextRuntime/StaticRenderGraph/StaticRenderGraph.h"
 #include "RenderContextRuntime/PSO_PoolDispatcher/PSO_PoolDispatcher.h"
+#include "RenderContextDiplomat/RenderContextDiplomat.h"
+#include "RenderContextDiplomat/RenderContextExecutionAgent/RenderContextExecutionAgent.h"
 namespace 
 {
 	auto const fileName = "RenderContext.cpp";
@@ -17515,6 +17525,13 @@ RenderContext::RenderContext
 			shaderContextDiplomat_
 		)
 	);
+	diplomat = std::make_unique<RenderContextDiplomat>
+	(
+		proof_,
+		std::make_unique<ExecutionAgent>(proof_, *staticRenderGraph)
+	);
+	Logger::Log("Instantiate: RenderContextDiplomat", fileName);
+	Logger::Log("Instantiate: ExecutionAgent", fileName);
 	Logger::End("RenderContext: Constructor");
 }
 RenderContext::~RenderContext()
@@ -17535,11 +17552,19 @@ class ModelContextDiplomat;
 class PSO_ContextDiplomat;
 class ShaderContextDiplomat;
 class SwapChainContextDiplomat;
+class RenderContextDiplomat;
 class RenderContext
 {
 	class RenderPassContainer;
 	class RenderPathContainer;
 	class RenderPathAssembler;
+	//PassDescから必要な情報だけまとめたもの
+	struct RuntimePassInfo;
+	//そのパスで使用するバッファの情報をまとめたもの
+	struct RequiredBufferInfo;
+	struct RenderPassState;
+	//レンダーパス(Path)を設計し、描画コマンドを叩く強者
+	class StaticRenderGraph;
 public:
 	//renderPass生成機
 	class RenderPassCreator;
@@ -17547,18 +17572,15 @@ public:
 	class PassBehavior;
 	//パスを作成するために必要
 	struct PassDesc;
-	//PassDescから必要な情報だけまとめたもの
-	struct RuntimePassInfo;
-	//そのパスで使用するバッファの情報をまとめたもの
-	struct RequiredBufferInfo;
 	class PathBehavior;
-	struct RenderPassState;
-	//レンダーパス(Path)を設計し、描画コマンドを叩く強者
-	class StaticRenderGraph;
 	//グラフィックス専用のpsoのプール、ランタイムでの配布
 	class PSO_PoolDispatcher;
+	//代行者
+	class ExecutionAgent;
 	//ネクサスフィールドの証
 	struct NexusFieldProof;
+	//代行者キー
+	struct AgentKey;
 	RenderContext
 	(
 		NexusFieldProof proof_,
@@ -17574,12 +17596,127 @@ private:
 	std::unique_ptr<RenderPathContainer> renderPathContainer;
 	std::unique_ptr<StaticRenderGraph> staticRenderGraph;
 	std::unique_ptr<PSO_PoolDispatcher> pso_PoolDispatcher;
+	std::unique_ptr<RenderContextDiplomat> diplomat;
 };
 struct RenderContext::NexusFieldProof
 {
 private:
 	friend class Nexus;
 	explicit NexusFieldProof() = default;
+};
+struct RenderContext::AgentKey
+{
+private:
+	friend class ExecutionAgent;
+	explicit AgentKey() = default;
+};
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\MiddleLayer\Render\RenderContextDiplomat\RenderContextDiplomat.cpp ===
+========================================
+#include "PreCompileHeader.h"
+#include "RenderContextDiplomat.h"
+#include "RenderContextExecutionAgent/RenderContextExecutionAgent.h"
+RenderContextDiplomat::RenderContextDiplomat
+(
+	RenderContext::NexusFieldProof proof_,
+	std::unique_ptr<RenderContext::ExecutionAgent>&& agent_
+)
+{
+	std::get<std::unique_ptr<RenderContext::ExecutionAgent>>(tools) = std::move(agent_);
+}
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\MiddleLayer\Render\RenderContextDiplomat\RenderContextDiplomat.h ===
+========================================
+#pragma once
+#include "../RenderContext.h"
+class RenderContextDiplomat
+{
+public:
+	RenderContextDiplomat
+	(
+		RenderContext::NexusFieldProof proof_,
+		std::unique_ptr<RenderContext::ExecutionAgent>&& agent_
+	);
+	auto& Access()
+	{
+		return *std::get<std::unique_ptr<RenderContext::ExecutionAgent>>(tools);
+	}
+private:
+	std::tuple<std::unique_ptr<RenderContext::ExecutionAgent>> tools;
+};
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\MiddleLayer\Render\RenderContextDiplomat\RenderContextExecutionAgent\RenderAgentLicences.h ===
+========================================
+#pragma once
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\MiddleLayer\Render\RenderContextDiplomat\RenderContextExecutionAgent\RenderContextExecutionAgent.cpp ===
+========================================
+#include "PreCompileHeader.h"
+#include "RenderContextExecutionAgent.h"
+#include "../../RenderContextRuntime/StaticRenderGraph/StaticRenderGraph.h"
+RenderContext::ExecutionAgent::ExecutionAgent
+(
+	NexusFieldProof proof_,
+	StaticRenderGraph& staticRenderGraph_
+):staticRenderGraph(staticRenderGraph_)
+{
+}
+void RenderContext::ExecutionAgent::RenderGraphRun
+(
+	NexusFieldProof proof_,
+	UINT const frameIndex_,
+	DescriptorHeapContextDiplomat& descriptorHeapContextDiplomat_,
+	CommandContextDiplomat& commandContextDiplomat_,
+	BufferContextDiplomat& bufferContextDiplomat_,
+	SceneContextDiplomat& sceneContextDiplomat_,
+	SwapChainContextDiplomat& swapChainContextDiplomat_
+)
+{
+	staticRenderGraph.Run
+	(
+		proof_,
+		AgentKey{},
+		frameIndex_,
+		descriptorHeapContextDiplomat_,
+		commandContextDiplomat_,
+		bufferContextDiplomat_,
+		sceneContextDiplomat_,
+		swapChainContextDiplomat_
+	);
+}
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\MiddleLayer\Render\RenderContextDiplomat\RenderContextExecutionAgent\RenderContextExecutionAgent.h ===
+========================================
+#pragma once
+#include "../../RenderContext.h"
+class DescriptorHeapContextDiplomat;
+class CommandContextDiplomat;
+class SceneContextDiplomat;
+class RenderContext::ExecutionAgent
+{
+public:
+	ExecutionAgent
+	(
+		NexusFieldProof proof_,
+		StaticRenderGraph& staticRenderGraph_
+	);
+	void RenderGraphRun
+	(
+		NexusFieldProof proof_,
+		UINT const frameIndex_,
+		DescriptorHeapContextDiplomat& descriptorHeapContextDiplomat_,
+		CommandContextDiplomat& commandContextDiplomat_,
+		BufferContextDiplomat& bufferContextDiplomat_,
+		SceneContextDiplomat& sceneContextDiplomat_,
+		SwapChainContextDiplomat& swapChainContextDiplomat_
+	);
+private:
+	StaticRenderGraph& staticRenderGraph;
 };
 
 ========================================
@@ -17863,12 +18000,13 @@ RenderContext::StaticRenderGraph::BuildOutput RenderContext::StaticRenderGraph::
 #include "../../../../LowerLayer/Core/Command/CommandContextDiplomats.h"
 void RenderContext::StaticRenderGraph::Run
 (
-	PSO_PoolDispatcher& psoDispatcher_,
+	NexusFieldProof proof_,
+	AgentKey key_,
 	UINT const frameIndex_,
 	DescriptorHeapContextDiplomat& descriptorHeapContextDiplomat_,
 	CommandContextDiplomat& commandContextDiplomat_,
 	BufferContextDiplomat& bufferContextDiplomat_,
-	ModelContextDiplomat& modelContextDiplomat_,
+	SceneContextDiplomat& sceneContextDiplomat_,
 	SwapChainContextDiplomat& swapChainContextDiplomat_
 )
 {
@@ -17888,7 +18026,7 @@ void RenderContext::StaticRenderGraph::Run
 	pathOperator->Run
 	(
 		frameIndex_, 
-		modelContextDiplomat_, 
+		sceneContextDiplomat_,
 		bufferContextDiplomat_,
 		runtimeCmdWrapper
 	);
@@ -17970,9 +18108,9 @@ RenderContext::StaticRenderGraph::~StaticRenderGraph()
 #include "../../RenderContext.h"
 //外部
 #include "../../../../LowerLayer/Buffer/BufferDefinition/BufferTraits.h"
+class RuntimeWrapper;
 class DescriptorHeapContextDiplomat;
 class CommandContextDiplomat;
-class RuntimeWrapper;
 class SceneContextDiplomat;
 class RenderContext::StaticRenderGraph
 {
@@ -18005,12 +18143,13 @@ public:
 	~StaticRenderGraph();
 	void Run
 	(
-		PSO_PoolDispatcher& psoDispatcher_,
+		NexusFieldProof proof_,
+		AgentKey key_,
 		UINT const frameIndex_,
 		DescriptorHeapContextDiplomat& descriptorHeapContextDiplomat_,
 		CommandContextDiplomat& commandContextDiplomat_,
 		BufferContextDiplomat& bufferContextDiplomat_,
-		ModelContextDiplomat& modelContextDiplomat_,
+		SceneContextDiplomat& sceneContextDiplomat_,
 		SwapChainContextDiplomat& swapChainContextDiplomat_
 	);
 private:
@@ -19164,8 +19303,10 @@ private:
 #include "../../../../../../LowerLayer/Buffer/BufferContextDiplomats.h"
 #include "../../../../../../LowerLayer/Buffer/BufferRuntime/BufferDispatcher/BufferDispatcher.h"
 #include "../../../../../../LowerLayer/Buffer/BufferDefinition/AllBuffersInclude.h"
-#include "../../../../../../LowerLayer/Resource/Model/ModelContextDiplomatIncludes.h"
-//#include "../../../../../../LowerLayer/Resource/Model/ModelContainer/ModelContainer.h"
+#include "../../../../../Scene/SceneContextDiplomat/SceneContextDiplomat.h"
+#include "../../../../../Scene/SceneContextDiplomat/SceneExecutionAgent/SceneExecutionAgent.h"
+#include "../../../../../Scene/SceneContextDiplomat/SceneExecutionAgent/SceneExecutionAgentLicences.h"
+#include "../../../../../../LowerLayer/Resource/Model/ModelContextIncludes.h"
 RenderContext::StaticRenderGraph::PathOperator::PathOperator
 (
 	NexusFieldProof proof_,
@@ -19225,7 +19366,7 @@ void RenderContext::StaticRenderGraph::PathOperator::FillInRefBufferSrvIndices
 void RenderContext::StaticRenderGraph::PathOperator::Run
 (
 	UINT const frameIndex_,
-	ModelContextDiplomat& modelContextDiplomat_,
+	SceneContextDiplomat& sceneContextDiplomat_,
 	BufferContextDiplomat& bufferContextDiplomat_,
 	RuntimeWrapper& runtimeWrapper_
 )
@@ -19235,15 +19376,15 @@ void RenderContext::StaticRenderGraph::PathOperator::Run
 	auto bToolLender = bufferContextDiplomat_.Access<BufferContext::ToolLender>();
 	BufferContext::ToolLender::LicenceType<BufferContext::BufferDispatcher> bLicence;
 	auto& bufferDispatcher = *bToolLender->Lend<BufferContext::BufferDispatcher>(bLicence);
-	////modelContainer（仕分け済み）取得コマンドをもらう
-	//auto mCmdProvider = modelContextDiplomat_.Access<ModelContext::CommandProvider>();
-	//ModelContext::CommandProvider::LicenceType<ModelContextCmds::WatchSeparatedByRenderState> mLicence;
-	//auto& modelContainer = *mCmdProvider->Provide<ModelContextCmds::WatchSeparatedByRenderState>(mLicence)();
-	//
-	//for (auto* path : allPathPtr)
-	//{
-	//	path->Run(modelContainer, modelFillMode, pso_PoolDispatcher, runtimeWrapper_, bufferDispatcher);
-	//}
+	//現在稼働中のシーンから、モデルコンテナを渡してもらう
+	auto sAgent = sceneContextDiplomat_.Access<SceneContext::ExecutionAgent>();
+	SceneContext::ExecutionAgent::RenderContextProof proof;
+	auto const& sceneOutput = sAgent.WatchCurSceneOutput(proof);
+	auto const* srcModelContainer = sceneOutput.WatchModelContainer();
+	for (auto* path : allPathPtr)
+	{
+		path->Run(srcModelContainer->WatchSeparatedByRenderState(), modelFillMode, pso_PoolDispatcher, runtimeWrapper_, bufferDispatcher);
+	}
 }
 
 ========================================
@@ -19268,7 +19409,7 @@ public:
 	void Run
 	(
 		UINT const frameIndex_,
-		ModelContextDiplomat& modelContextDiplomat_,
+		SceneContextDiplomat& sceneContextDiplomat_,
 		BufferContextDiplomat& bufferContextDiplomat_,
 		RuntimeWrapper& runtimeWrapper_
 	);
@@ -20840,7 +20981,7 @@ public:
 	auto const& WatchName()const { return  name; }
 	virtual void Run
 	(
-		std::vector<std::unordered_map<uint64_t, std::pair<RenderStateKey, std::vector<Model*>>>>& modelContainer_,
+		std::vector<std::unordered_map<uint64_t, std::pair<RenderStateKey, std::vector<Model*>>>> const& modelContainer_,
 		RenderStateComponent::FillMode const modelFillMode_,
 		PSO_PoolDispatcher& psoDispatcher_,
 		RuntimeWrapper& cmdWrapper_,
@@ -20851,7 +20992,7 @@ protected:
 	template<typename PassType>
 	void CallPassUpdate
 	(
-		std::vector<std::unordered_map<uint64_t, std::pair<RenderStateKey, std::vector<Model*>>>>& modelContainer_,
+		std::vector<std::unordered_map<uint64_t, std::pair<RenderStateKey, std::vector<Model*>>>> const& modelContainer_,
 		RenderStateComponent::FillMode const modelFillMode_,
 		PSO_PoolDispatcher& psoDispatcher_,
 		RuntimeWrapper& cmdWrapper_,
@@ -20862,8 +21003,7 @@ protected:
 		//描画先設定の詰め込みであるBeginPassを呼ぶ
 		dstPass->BeginPass(cmdWrapper_, bufDispatcher_);
 		//対象パスが描画を担当するモデルコンテナを指定
-		auto const& srcModelContainer =
-			modelContainer_[(UINT)RenderPassTraits::PassClassTraits<PassType>::kPassEnum];
+		auto const& srcModelContainer = modelContainer_.at((UINT)RenderPassTraits::PassClassTraits<PassType>::kPassEnum);
 		dstPass->Update
 		(
 			srcModelContainer,
@@ -20907,7 +21047,7 @@ CreateSceneTexture::CreateSceneTexture(RenderContext::NexusFieldProof proof_, st
 }
 void CreateSceneTexture::Run
 (
-	std::vector<std::unordered_map<uint64_t, std::pair<RenderStateKey, std::vector<Model*>>>>& modelContainer_,
+	std::vector<std::unordered_map<uint64_t, std::pair<RenderStateKey, std::vector<Model*>>>> const& modelContainer_,
 	RenderStateComponent::FillMode const modelFillMode_,
 	RenderContext::PSO_PoolDispatcher& psoDispatcher_,
 	RuntimeWrapper& cmdWrapper_,
@@ -20930,7 +21070,7 @@ public:
 	CreateSceneTexture(RenderContext::NexusFieldProof proof_, std::string const& name_);
 	virtual void Run
 	(
-		std::vector<std::unordered_map<uint64_t, std::pair<RenderStateKey, std::vector<Model*>>>>& modelContainer_,
+		std::vector<std::unordered_map<uint64_t, std::pair<RenderStateKey, std::vector<Model*>>>> const& modelContainer_,
 		RenderStateComponent::FillMode const modelFillMode_,
 		RenderContext::PSO_PoolDispatcher& psoDispatcher_,
 		RuntimeWrapper& cmdWrapper_,
@@ -21247,9 +21387,14 @@ private:
 ========================================
 #include "PreCompileHeader.h"
 #include "SceneExecutionAgent.h"
+#include "SceneExecutionAgentLicences.h"
 SceneContext::ExecutionAgent::ExecutionAgent(NexusFieldProof proof_, ScenePipeline& scenePipeline_)
 	:scenePipeline(scenePipeline_)
 {
+}
+SceneBehavior::Output const& SceneContext::ExecutionAgent::WatchCurSceneOutput(RenderContextProof proof_)
+{
+	return scenePipeline.WatchCurSceneOutput(AgentKey{});
 }
 void SceneContext::ExecutionAgent::RunScenePipeline
 (
@@ -21283,7 +21428,9 @@ class SceneContext::ExecutionAgent
 {
 public:
 	struct EngineInterfaceProof;
+	struct RenderContextProof;
 	ExecutionAgent(NexusFieldProof proof_, ScenePipeline& scenePipeline_);
+	SceneBehavior::Output const& WatchCurSceneOutput(RenderContextProof proof_);
 	void RunScenePipeline
 	(
 		NexusFieldProof proof_,
@@ -21295,7 +21442,7 @@ public:
 	template<typename SceneType>
 	void CreateScene
 	(
-		EngineInterfaceProof proof_,
+		EngineInterfaceProof const& proof_,
 		std::string const& sceneName_,
 		CameraContextDiplomat& cameraContextDiplomat_,
 		ModelContextDiplomat& modelContextDiplomat_
@@ -21320,6 +21467,13 @@ private:
 #include "SceneExecutionAgent.h"
 template<typename... SceneTypes>
 class aFourth;
+class RenderContext;
+struct SceneContext::ExecutionAgent::RenderContextProof
+{
+private:
+	friend class RenderContext;
+	explicit RenderContextProof() = default;
+};
 struct SceneContext::ExecutionAgent::EngineInterfaceProof
 {
 private:
@@ -21349,6 +21503,10 @@ SceneContext::ScenePipeline::ScenePipeline(NexusFieldProof proof_)
 }
 SceneContext::ScenePipeline::~ScenePipeline()
 {
+}
+SceneBehavior::Output const& SceneContext::ScenePipeline::WatchCurSceneOutput(AgentKey key_)
+{
+	return sceneController->WatchCurrentSceneOutput();
 }
 void SceneContext::ScenePipeline::ImportScene(std::unique_ptr<SceneBehavior>&& scene_, std::string const& sceneName_)
 {
@@ -21408,6 +21566,7 @@ class SceneContext::ScenePipeline
 public:
 	ScenePipeline(NexusFieldProof proof_);
 	~ScenePipeline();
+	SceneBehavior::Output const& WatchCurSceneOutput(AgentKey key_);
 	//シーンの更新処理の親玉
 	//更新処理の呼び出しは代行でやってもらう
 	void Run
@@ -21526,7 +21685,7 @@ void SceneContext::ScenePipeline::SceneDataBatchingPlace::BatchingPlace
 	cameraAgent.BatchCameraData
 	(
 		CameraContext::ExecutionAgent::SceneContextProof{},
-		sceneOutput.usingCamera,
+		sceneOutput.WatchUsingCamera(),
 		frameIndex_,
 		bufferContextDiplomat_
 	);
@@ -21537,16 +21696,16 @@ void SceneContext::ScenePipeline::SceneDataBatchingPlace::BatchingPlace
 	(
 		ModelContext::ExecutionAgent::SceneContextProof{},
 		frameIndex_,
-		sceneOutput.modelContainer->WatchSeparatedByModelType()[(UINT)Model::Type::kDynamic],
+		sceneOutput.WatchModelContainer()->WatchSeparatedByModelType()[(UINT)Model::Type::kDynamic],
 		bufferContextDiplomat_
 	);
-	if (sceneOutput.leftStaticModelBatchingCnt <= (UINT)NumBuffer::kDoubleBuffer)
+	if (sceneOutput.WatchLeftStaticModelBatchingCnt() <= (UINT)NumBuffer::kDoubleBuffer)
 	{
 		modelAgent.BatchModelData
 		(
 			ModelContext::ExecutionAgent::SceneContextProof{},
 			frameIndex_,
-			sceneOutput.modelContainer->WatchSeparatedByModelType()[(UINT)Model::Type::kStatic],
+			sceneOutput.WatchModelContainer()->WatchSeparatedByModelType()[(UINT)Model::Type::kStatic],
 			bufferContextDiplomat_
 		);
 	}
@@ -21728,7 +21887,7 @@ void RenderingTestScene::Init()
 	cC.materialTypes.emplace_back(MaterialType::kStandard);
 	std::vector<RenderState> cubeC;
 	cubeC.emplace_back(std::move(cC));
-	auto c = CreateModel<Model::Type::kStatic>("CubeGltf", cubeC, materials, 100, "Cube");
+	auto c = CreateModel<Model::Type::kStatic>("CubeGltf", cubeC, materials, 5, "Cube");
 }
 
 ========================================
@@ -21821,6 +21980,11 @@ class SceneBehavior
 	//このシーンで使用しているカメラ、モデル、ライトなどの情報
 	struct Output
 	{
+		friend class SceneBehavior;
+		auto const& WatchUsingCamera()const { return usingCamera; }
+		auto const* WatchModelContainer()const { return modelContainer; }
+		auto const& WatchLeftStaticModelBatchingCnt()const { return leftStaticModelBatchingCnt; }
+	private:
 		//使用しているカメラ。更新必要
 		std::unordered_map<CameraSocket, CameraBehavior*> usingCamera;
 		//このシーンのモデルコンテナ
@@ -23504,5 +23668,5 @@ namespace StringProcessing
 ========================================
 === SUMMARY ===
 ========================================
-Total Files      : 517
-Effective Lines  : 17156
+Total Files      : 523
+Effective Lines  : 17283

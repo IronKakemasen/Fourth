@@ -12,8 +12,11 @@ class SceneContext::ExecutionAgent
 public:
 
 	struct EngineInterfaceProof;
+	struct RenderContextProof;
 
 	ExecutionAgent(NexusFieldProof proof_, ScenePipeline& scenePipeline_);
+
+	SceneBehavior::Output const& WatchCurSceneOutput(RenderContextProof proof_);
 
 	void RunScenePipeline
 	(
@@ -27,7 +30,7 @@ public:
 	template<typename SceneType>
 	void CreateScene
 	(
-		EngineInterfaceProof proof_,
+		EngineInterfaceProof const& proof_,
 		std::string const& sceneName_,
 		CameraContextDiplomat& cameraContextDiplomat_,
 		ModelContextDiplomat& modelContextDiplomat_
@@ -41,9 +44,6 @@ public:
 			modelContextDiplomat_
 		);
 	}
-
-
-
 
 private:
 
