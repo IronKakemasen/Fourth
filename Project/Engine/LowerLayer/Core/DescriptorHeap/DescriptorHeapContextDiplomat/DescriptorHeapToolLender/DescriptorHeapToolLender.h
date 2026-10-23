@@ -24,7 +24,12 @@ public:
 	template<typename ToolType>
 	using LicenceType = typename CmdTypeTraits<ToolType>::Type;
 
-	ToolLender(NexusFieldProof proof_, DescriptorHeapContext::ViewCreator* viewCretator_);
+	ToolLender
+	(
+		NexusFieldProof proof_, 
+		DescriptorHeapContext::ViewCreator* viewCretator_,
+		DescriptorHeapPoolContainer& descriptorHeapPoolContainer_
+	);
 	
 	///ツールの貸し出し
 	template<typename ToolType>

@@ -50,6 +50,7 @@ void Nexus::Run(aFourthProof proof_)
 	cmd_ExecutionAgent.StartRecordingCommands(CommandContext::NexusFieldProof{}, frameIndex);
 
 
+	//全ての描画コマンドはここに
 	render_ExecutionAgent.RenderGraphRun
 	(
 		RenderContext::NexusFieldProof{},

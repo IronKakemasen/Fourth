@@ -30,6 +30,9 @@ public:
 	//ヒープインデックスを回収
 	void CollectHeapIndex(uint32_t index_, CollectHeapIndexKey key_);
 
+	//ID3D12DescriptorHeapにアクセス
+	ID3D12DescriptorHeap* AccessHeap(DescriptorHeapContext::NexusFieldProof proof_);
+
 private:
 
 	Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> descriptorHeap;
@@ -54,7 +57,6 @@ struct DescriptorHeapPool::CreateViewKey
 {
 private:
 
-	//アクセスできるのはビュークリエイターのみ
 	friend class DescriptorHeapContext::ViewCreator;
 	explicit CreateViewKey() = default;
 };

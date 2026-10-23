@@ -40,12 +40,12 @@ void RenderContext::StaticRenderGraph::CommonCmdExecutor::ExecuteCommonCmds
 	BufferContext::ToolLender::LicenceType<BufferContext::GlobalConstantBuffers> bLicence;
 	auto& globalConstantBuffers = *bToolLender->Lend<BufferContext::GlobalConstantBuffers>(bLicence);
 
+	//srvuavディスクリプタヒープをセット
+	SetDescriptorHeaps(srvUavDescriptorHeap, runtimeWrapper_);
 
 	//ルートシグネチャをセット
 	SetGraphicsRootSignature(runtimeWrapper_);
 
-	//srvuavディスクリプタヒープをセット
-	SetDescriptorHeaps(srvUavDescriptorHeap, runtimeWrapper_);
 	
 	//フローバル定数バッファビューを転送
 	SetGlobalConstantViews
