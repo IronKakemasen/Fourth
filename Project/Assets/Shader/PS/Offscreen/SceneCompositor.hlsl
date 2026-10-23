@@ -10,7 +10,10 @@ struct PSInput
 
 float4 main(PSInput input_) : SV_Target
 {
-    Texture2D<float4> sceneColor = ResourceDescriptorHeap[gPassConstants.refBufferOffset];
+    //パスが参照するバッファのsrvHeapIndexの配列
+    StructuredBuffer<uint> refBufferSrvIndices = ResourceDescriptorHeap[gPassRefBufferContainerIndex];
 
-    return sceneColor.Sample(sampler_linearWrap, input_.uv);
+    Texture2D<float4> sceneOpaque = ResourceDescriptorHeap[refBufferSrvIndices[gPassConstants.refBufferOffset]];
+    
+    return sceneOpaque.Sample(sampler_linearWrap, input_.uv);
 }

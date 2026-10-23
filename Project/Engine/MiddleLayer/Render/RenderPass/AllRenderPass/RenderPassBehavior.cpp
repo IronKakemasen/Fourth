@@ -24,6 +24,8 @@ RenderContext::PassBehavior::PassBehavior(NexusFieldProof proof_, std::unique_pt
 }
 
 using namespace RenderStateComponent;
+using namespace ShaderPathComponent;
+
 
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -175,6 +177,19 @@ void RenderContext::PassBehavior::RenderOffScreen
 	//カラーバッファのと深度ステンシルバッファの
 	auto const& refBuffersIDColors = runtimePassInfo->WatchReferenceBufferIDs<ColorBuffer>();
 	auto const& refBuffersIDDepths = runtimePassInfo->WatchReferenceBufferIDs<DepthStencilBuffer>();
+
+
+	//psoDispatcherがキーをもとにpsoを検索
+	GraphicsPSO_Key psoKey;
+	psoKey.pass = runtimePassInfo->WatchPass();
+	psoKey.fill = FillMode::kSolid;
+	psoKey.cull = CullMode::kBack;
+	psoKey.mesh = MeshType::kOffscreen;
+	psoKey.material = MaterialType::kOffscreen;
+	psoKey.blend = BlendMode::kDependsRenderPass;
+
+	auto* srcPso = psoDispatcher_.AccessGraphicsPSO(psoKey);
+	cmdWrapper_.SetPipelineState(srcPso);
 
 	//すでに描画先の設定は終わっているので、全ての参照バッファのステートをReadへ遷移させる
 	for (auto const& id : refBuffersIDColors)
