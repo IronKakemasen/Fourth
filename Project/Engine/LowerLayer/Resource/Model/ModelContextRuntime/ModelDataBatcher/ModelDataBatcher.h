@@ -4,10 +4,9 @@
 //外部
 #include "../../../../../../Assets/Shared/ConstantBuffers.h"
 #include "../../../../../../Assets/Shared/StructuredBufferModelData.h"
-//効率化のため
-#include "../../../../Buffer/BufferContext.h"
 
 class Model;
+struct IWritableCPU;
 
 class ModelContext::ModelDataBatcher
 {
@@ -29,7 +28,6 @@ public:
 	void ImportPerDrawBufferID(Local_InputBufferUniqueIDLicence licence_,BufferUniqueID id_);
 
 	//代行者にランタイムでモデルデータのバッチング処理をやってもらう
-	//バッファに書き込まなくていいモデルも多数あるはずなので、全バッチングではなく、該当バッチングする
 	void BatchModelData
 	(
 		AgentKey agentKey_,
@@ -44,8 +42,6 @@ private:
 	std::unique_ptr<PerDrawBufferLibrary> perDrawBufferLibrary;
 
 	//モデルのマテリアル情報、またはトランスフォームを書き込む
-	///結合度に箔がついちゃうけど、さすがにモデルひとつごとにBufferDispatcherを解凍するのは非効率的すぎるし、
-	///関数にまとめたいので
 	template<ConstantBuffers::ConstantBufferBindSlots bufferType>
 	void OverrideBuffer
 	(
@@ -53,7 +49,7 @@ private:
 		Model& model_,
 		std::vector<ConstantBuffers::PerDrawIndicesCPUGPU> const& perDrawIndices_,
 		size_t const numMesh_,
-		BufferContext::BufferDispatcher& dispatcher_
+		IWritableCPU* writeDstBufferPtr_
 	);
 
 };
@@ -74,7 +70,7 @@ void ModelContext::ModelDataBatcher::OverrideBuffer<ConstantBuffers::ConstantBuf
 	Model& model_,
 	std::vector<ConstantBuffers::PerDrawIndicesCPUGPU> const& perDrawIndices_,
 	size_t const numMesh_,
-	BufferContext::BufferDispatcher& dispatcher_
+	IWritableCPU* writeDstBufferPtr_
 );
 
 template<>
@@ -84,7 +80,7 @@ void ModelContext::ModelDataBatcher::OverrideBuffer<ConstantBuffers::ConstantBuf
 	Model& model_,
 	std::vector<ConstantBuffers::PerDrawIndicesCPUGPU> const& perDrawIndices_,
 	size_t const numMesh_,
-	BufferContext::BufferDispatcher& dispatcher_
+	IWritableCPU* writeDstBufferPtr_
 );
 
 

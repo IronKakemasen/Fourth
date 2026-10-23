@@ -11,7 +11,6 @@
 #include "MiddleLayer/Scene/SceneContextDiplomat/SceneExecutionAgent/SceneExecutionAgent.h"
 #include "MiddleLayer/Scene/SceneContextDiplomat/SceneExecutionAgent/SceneExecutionAgentLicences.h"
 
-
 template<typename... SceneTypes>
 class aFourth
 {
@@ -56,6 +55,7 @@ public:
 		EngineInstanceLimiter::CanInstantiate();
 
 		InitializeInSequence<InitSequence::kCoInitializeEx>();
+		InitializeInSequence<InitSequence::kLoadProjectFiles>();
 		InitializeInSequence<InitSequence::kInstantiateNexus>();
 		InitializeInSequence<InitSequence::kInstantiateScene>();
 		InitializeInSequence<InitSequence::kNexusSecInit>();
@@ -87,13 +87,13 @@ public:
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 private:
 
 	enum class InitSequence
 	{
 		kCoInitializeEx,
+		kLoadProjectFiles,
 		kInstantiateNexus,
 		kInstantiateScene,
 		kNexusSecInit,
@@ -128,6 +128,20 @@ private:
 			nexus->SecondaryInit(Nexus::aFourthProof{});
 			Logger::Log("Comp Nexus's SecondaryInit", "EngineInterface.h");
 		}
+		else if constexpr (initSequence == InitSequence::kLoadProjectFiles)
+		{
+			//Miyajisonの初期化
+			auto* miyajison = Miyajison::Get();
+			
+			//ここでプロジェクト設定も初期化しちゃう
+			ProjectConfig::Window::LoadData();
+
+			//シーンの数を記録
+			miyajison->WriteData<int>("ProjectConfig", { "numScene" }, (int)correspondedSceneNames.size());
+			miyajison->Save();
+
+		}
+
 
 	}
 
@@ -170,6 +184,7 @@ private:
 			"EngineInterface.h"
 		);
 
+		//ProjectConfig.jsonにシーンの数を書き込む
 
 		//シーン作成
 		size_t cnt{};

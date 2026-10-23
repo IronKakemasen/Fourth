@@ -7,8 +7,6 @@ class Miyajison
 
 public:
 
-	using Group_Value = std::array<std::string, 2>;
-
 	static Miyajison* Get();
 
 	Miyajison(const Miyajison&) = delete;
@@ -21,9 +19,9 @@ public:
 	template<typename DataType>
 	DataType LoadData(std::string const& fileName_, std::vector<std::string> const& nest_)
 	{
-		CheckDataType<DataType>();
+		Check<DataType>(fileName_,nest_);
 
-		nlohmann::json const* current = &PullJsonData(fileName_);
+		nlohmann::json* current = &PullJsonData(fileName_);
 
 		//ポインタをずらしながら階層を辿る
 		for (const auto& key : nest_)
@@ -34,14 +32,57 @@ public:
 		return current->get<DataType>();
 	}
 
+	template<typename DataType>
+	void WriteData
+	(
+		std::string const& fileName_,
+		std::vector<std::string> const& nest_,
+		DataType const& data_
+	)
+	{
+		Check<DataType>(fileName_,nest_);
+
+		nlohmann::json* current = &PullJsonData(fileName_);
+
+		for (size_t i = 0; i + 1 < nest_.size(); ++i)
+		{
+			std::string const& key = nest_[i];
+
+			if (!(*current)[key].is_object())
+			{
+				(*current)[key] = nlohmann::json::object();
+			}
+			current = &(*current)[key];
+		}
+
+		//最後の階層にデータを書き込む
+		(*current)[nest_.back()] = data_;
+
+		//保存リストに追加
+		if (!std::ranges::contains(saveList, fileName_))
+		{
+			saveList.emplace_back(fileName_);
+		}
+	}
+
+	//ジェーソンファイルに実際にwrittenFilePathCacheをもとに書き込んでいく
+	void Save();
+
+
 private:
 
 	Miyajison();
 
 	std::unique_ptr<DataLibrary> jsonDataLibrary;
+	//データが書き込まれたファイルパスのキャッシュ
+	//name_path
+	std::vector<std::string> saveList;
 
 	///ファイル名からジェーソンデータをライブラリーから引っ張り、返す
-	const nlohmann::json& PullJsonData(std::string const& fileName_);
+	nlohmann::json& PullJsonData(std::string const& fileName_);
+
+	//ファイル名→ファイルパス
+	std::string const& ToFilePath(std::string const& fileName_);
 
 	//パスからジェーソンファイルを読み込んでジェーソンデータを返す
 	nlohmann::json LoadJsonFile(std::string const& filePath_);
@@ -50,11 +91,18 @@ private:
 	///ライブラリーに詰めていく
 	void LoadAllJsonFiles();
 
-	//データ型チェック
+	//簡易チェック
 	template<typename DataType>
-	void CheckDataType()
+	void Check(std::string const& fileName_ , std::vector<std::string> const& nest_)
 	{
-		if (!ProjectConfig::Debug::kEnableJsonDataTypeCheck) return;
+		if (!ProjectConfig::Debug::kEnableJsonDataCheck) return;
+
+		ErrorMessageOutput::Assert::DetectError
+		(
+			!nest_.empty(),
+			fileName_ + "へのデータ書き込み失敗(引数のネストが空)",
+			"Miyajison.h"
+		);
 
 		if constexpr
 		(
@@ -73,6 +121,5 @@ private:
 		{
 			ErrorMessageOutput::Assert::OutputError("データ型に異常あり", "Miyajison.h");
 		}
-
 	}
 };

@@ -55,8 +55,6 @@ Nexus::~Nexus()
 
 void Nexus::PrimaryInit()
 {
-	InitializeInSequence<InitSequence::kLoadProjectFiles>();
-
 	InitializeInSequence<InitSequence::kDebugContext>();
 	InitializeInSequence<InitSequence::kDeviceContext>();
 	InitializeInSequence<InitSequence::kWindowContext>();
