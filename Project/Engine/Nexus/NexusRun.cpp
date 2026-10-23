@@ -5,30 +5,45 @@
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 #include "../LowerLayer/Core/Command/CommandContextDiplomat/CommandContextDiplomat.h"
 #include "../LowerLayer/Core/Command/CommandContextDiplomat/CommandContextExecutionAgent/CommandContextExecutionAgent.h"
-
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+#include "../MiddleLayer/Scene/SceneContextDiplomat/SceneContextDiplomat.h"
+#include "../MiddleLayer/Scene/SceneContextDiplomat/SceneExecutionAgent/SceneExecutionAgent.h"
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+#include "../LowerLayer/Buffer/BufferContext.h"
 
 void Nexus::Run(aFourthProof proof_)
 {
 	//SwapChainContextの代行クラス
-	auto& s_ExecutionAgent = swapChainContext->AccessDiplomat().Access<SwapChainContext::ExecutionAgent>();
+	auto& swap_ExecutionAgent = swapChainContext->AccessDiplomat().Access<SwapChainContext::ExecutionAgent>();
 	//CommandContextの代行クラス
-	auto& c_ExecutionAgent = commandContext->AccessDiplomat().Access<CommandContext::ExecutionAgent>();
+	auto& cmd_ExecutionAgent = commandContext->AccessDiplomat().Access<CommandContext::ExecutionAgent>();
+	//SceneContextの代行クラス
+	auto& scene_ExecutionAgent = sceneContext->AccessDiplomat().Access<SceneContext::ExecutionAgent>();
 
+	//フレームインデックスをスワップチェーンから取得
+	auto const frameIndex = swap_ExecutionAgent.GetFrameIndex(SwapChainContext::NexusFieldProof{});
 
-	auto const frameIndex = s_ExecutionAgent.GetFrameIndex(SwapChainContext::NexusFieldProof{});
-
+	//シーンの更新処理、シーンデータのバッチング
+	scene_ExecutionAgent.RunScenePipeline
+	(
+		SceneContext::NexusFieldProof{},
+		frameIndex,
+		modelContext->AccessDiplomat(),
+		cameraContext->AccessDiplomat(),
+		bufferContext->AccessDiplomat()
+	);
 
 
 	//コマンドの記録開始
-	c_ExecutionAgent.StartRecordingCommands(CommandContext::NexusFieldProof{}, frameIndex);
+	cmd_ExecutionAgent.StartRecordingCommands(CommandContext::NexusFieldProof{}, frameIndex);
 
 
 
 
 	//コマンドを送る
-	c_ExecutionAgent.ExecuteCommands(CommandContext::NexusFieldProof{},frameIndex);
+	cmd_ExecutionAgent.ExecuteCommands(CommandContext::NexusFieldProof{},frameIndex);
 
 
 	//表示
-	s_ExecutionAgent.Present(SwapChainContext::NexusFieldProof{});
+	swap_ExecutionAgent.Present(SwapChainContext::NexusFieldProof{});
 }

@@ -1,15 +1,15 @@
 #pragma once
 #include "EngineInstanceLimiter.h"
+#include "../Nexus/Nexus.h"
 
 
 //外部
-#include "../Nexus/Nexus.h"
-
-//シーン作成のために必要
 #include "MiddleLayer/Scene/ScenePresetIncludes.h"
 #include "MiddleLayer/Scene/SceneContextDiplomat/SceneContextDiplomat.h"
 #include "MiddleLayer/Scene/SceneContextDiplomat/SceneExecutionAgent/SceneExecutionAgent.h"
 #include "MiddleLayer/Scene/SceneContextDiplomat/SceneExecutionAgent/SceneExecutionAgentLicences.h"
+
+
 
 template<typename... SceneTypes>
 class aFourth
@@ -137,7 +137,7 @@ private:
 			ProjectConfig::Window::LoadData();
 
 			//シーンの数を記録
-			miyajison->WriteData<int>("ProjectConfig", { "numScene" }, (int)correspondedSceneNames.size());
+			miyajison->WriteData<int>("ProjectConfig", { "numScene" }, (int)sizeof...(SceneTypes));
 			miyajison->Save();
 
 		}
@@ -183,8 +183,6 @@ private:
 			"シーンの数と、シーン名の数が合わへん",
 			"EngineInterface.h"
 		);
-
-		//ProjectConfig.jsonにシーンの数を書き込む
 
 		//シーン作成
 		size_t cnt{};

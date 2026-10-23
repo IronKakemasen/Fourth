@@ -36,7 +36,7 @@ void RenderingTestScene::Init()
 	std::vector<RenderState> cubeC;
 	cubeC.emplace_back(std::move(cC));
 
-	auto c = CreateModel<Model::Type::kDynamic>("CubeGltf", cubeC, materials, 1, "Cube");
+	auto c = CreateModel<Model::Type::kStatic>("CubeGltf", cubeC, materials, 100, "Cube");
 
 }
 

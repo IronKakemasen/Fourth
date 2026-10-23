@@ -1,66 +1,68 @@
 {
     "SceneCompositor": 
     {
-                                "isOffScreen" : true,
-                                "ms" : "FullScreenTriangleMS",
-                                "ps" : "SceneCompositorPS",
+      "isOffScreen" : true,
+      "ms" : "FullScreenTriangleMS",
+      "ps" : "SceneCompositorPS",
 
-                                "colorBufferName":["sceneC"],
-                                "blendMode": ["kOpaque"], 
-                                "colorFormat":  [29],
-                                "clearColor":  [
-                                                [
-                                                   0.0,
-                                                   0.0,
-                                                   0.0,
-                                                   1.0
-                                                ]
-                                            ],
-                                "colorWidth":  [-1],
-                                "colorHeight":  [-1],
-                                "numBuffer_Color":[1],
+      "colorBufferName":["sceneColor"],
+      "blendMode": ["kOpaque"], 
+      "colorFormat":  [29],
+      "clearColor": 
+      [
+        [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      ],
+      "colorWidth":  [-1],
+      "colorHeight":  [-1],
+      "numBuffer_Color":[1],
                                 
-                                "useDepthStencil": false,
+      "useDepthStencil": false,
 
-                                "referenceBufferNames": [ "opaC", "opaD" ]
+      "referenceBufferNames": [ "opaqueColor", "opaqueDepth" ]
     },
 
-    "SceneOpaque": 
-     {
-                                "isOffScreen" : false,
+  "SceneOpaque": 
+  {
+    "isOffScreen": false,
 
-                                "colorBufferName":["opaC"],
-                                "blendMode": ["kDependsModel"], 
-                                "colorFormat":  [29],
-                                "clearColor":  [
-                                                [
-                                                   0.0,
-                                                   0.0,
-                                                   0.0,
-                                                   1.0
-                                                ]
-                                            ],
-                                "colorWidth":  [-1],
-                                "colorHeight":  [-1],
-                                "numBuffer_Color":[1],
-                                
-                                "useDepthStencil": true,
-                                "depthBufferName": "opaD",
-                                "dsvFormat":  45,
-                                "srvFormat":  46,
-                                "clearDepth":  0.0,
-                                "clearStencilFlag": false,
-                                "clearStencil":0,
-                                "depthWidth": -1,
-                                "depthHeight": -1,
-                                "numBuffer_Depth":1,
+    "colorBufferName": [ "opaqueColor" ],
+    "blendMode": [ "kDependsModel" ],
+    "colorFormat": [ 29 ],
+    "clearColor": 
+    [
+      [
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ]
+    ],
+    "colorWidth": [ -1 ],
+    "colorHeight": [ -1 ],
+    "numBuffer_Color": [ 1 ],
 
-                                "depthTest": 1,
-                                "depthEnable": true,
-                                "depthBias":  0,
-                                "depthBiasClamp": 0.0,
-                                "slopeScaledDepthBias": 0.0,
+    "useDepthStencil": true,
+    "depthBufferName": "opaqueDepth",
+    "dsvFormat": 45,
+    "srvFormat": 46,
+    "clearDepth": 0.0,
+    "clearStencilFlag": false,
+    "clearStencil": 0,
+    "depthWidth": -1,
+    "depthHeight": -1,
+    "numBuffer_Depth": 1,
 
-                                "referenceBufferNames": []
-                            }
+    "depthTest": 1,
+    "depthEnable": true,
+    "depthBias": 0,
+    "depthBiasClamp": 0.0,
+    "slopeScaledDepthBias": 0.0,
+
+    "referenceBufferNames": []
+  }
 }

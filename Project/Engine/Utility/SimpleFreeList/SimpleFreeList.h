@@ -6,7 +6,7 @@ public:
 
 	inline uint32_t Distribute()
 	{
-		ErrorMessageOutput::Assert::DetectError(!freeList.empty(), " もうすかすかだぜ", "SimpleFreeList.h");
+		ErrorMessageOutput::Assert::DetectError(!freeList.empty(), listName + " はもうすかすかだぜ", "SimpleFreeList.h");
 
 		uint32_t lastIndex = freeList.back();
 		freeList.pop_back();
@@ -19,8 +19,12 @@ public:
 		freeList.emplace_back(dst_);
 	}
 
-	inline void Resize(UINT capacity_)
+	inline void Resize(UINT capacity_,std::string const& listName_)
 	{
+		listName = listName_;
+
+		Logger::Log("resize " + listName_ + "(" + std::to_string(capacity_) + ")");
+
 		freeList.resize(capacity_);
 
 		for (UINT i = 0;i < capacity_;++i)
@@ -30,6 +34,9 @@ public:
 	}
 
 private:
+
+	std::string listName;
+
 	std::vector<uint32_t> freeList;
 };
 

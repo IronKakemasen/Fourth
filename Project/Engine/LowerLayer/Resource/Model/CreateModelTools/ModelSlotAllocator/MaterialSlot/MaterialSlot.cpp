@@ -10,7 +10,7 @@ namespace
 ModelContext::ModelSlotAllocator::MaterialSlot::MaterialSlot(NexusFieldProof proof_)
 {
 	//使いまわしMaterialSlotのスロットのサイズを確保する
-	slotList.Resize((UINT)ProjectConfig::Render::CBufferSize::kSizeOfMaterialContainerBuffer);
+	slotList.Resize((UINT)ProjectConfig::Render::CBufferSize::kSizeOfMaterialContainerBuffer,"ModelMaterialSlot");
 
 }
 
