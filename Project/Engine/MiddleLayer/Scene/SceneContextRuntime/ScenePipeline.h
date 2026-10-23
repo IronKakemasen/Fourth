@@ -25,6 +25,8 @@ public:
 	ScenePipeline(NexusFieldProof proof_);
 	~ScenePipeline();
 
+	SceneBehavior::Output const& WatchCurSceneOutput(AgentKey key_);
+
 	//シーンの更新処理の親玉
 	//更新処理の呼び出しは代行でやってもらう
 	void Run

@@ -3,12 +3,13 @@
 #include "RenderPass/RenderPassContainer/RenderPassContainer.h"
 #include "RenderPass/RenderPassCreator/RenderPassCreator.h"
 #include "RenderPass/AllRenderPass/RenderPassBehavior.h"
-
 #include "RenderPath/RenderPathAssembler/RenderPathAssembler.h"
 #include "RenderPath/RenderPathContainer/RenderPathContainer.h"
-
 #include "RenderContextRuntime/StaticRenderGraph/StaticRenderGraph.h"
 #include "RenderContextRuntime/PSO_PoolDispatcher/PSO_PoolDispatcher.h"
+#include "RenderContextDiplomat/RenderContextDiplomat.h"
+#include "RenderContextDiplomat/RenderContextExecutionAgent/RenderContextExecutionAgent.h"
+
 
 namespace 
 {
@@ -65,6 +66,13 @@ RenderContext::RenderContext
 		)
 	);
 
+	diplomat = std::make_unique<RenderContextDiplomat>
+	(
+		proof_,
+		std::make_unique<ExecutionAgent>(proof_, *staticRenderGraph)
+	);
+	Logger::Log("Instantiate: RenderContextDiplomat", fileName);
+	Logger::Log("Instantiate: ExecutionAgent", fileName);
 
 	Logger::End("RenderContext: Constructor");
 

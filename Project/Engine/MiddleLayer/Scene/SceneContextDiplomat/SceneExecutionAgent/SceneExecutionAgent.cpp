@@ -1,6 +1,6 @@
 #include "PreCompileHeader.h"
 #include "SceneExecutionAgent.h"
-
+#include "SceneExecutionAgentLicences.h"
 
 SceneContext::ExecutionAgent::ExecutionAgent(NexusFieldProof proof_, ScenePipeline& scenePipeline_)
 	:scenePipeline(scenePipeline_)
@@ -8,6 +8,10 @@ SceneContext::ExecutionAgent::ExecutionAgent(NexusFieldProof proof_, ScenePipeli
 
 }
 
+SceneBehavior::Output const& SceneContext::ExecutionAgent::WatchCurSceneOutput(RenderContextProof proof_)
+{
+	return scenePipeline.WatchCurSceneOutput(AgentKey{});
+}
 
 void SceneContext::ExecutionAgent::RunScenePipeline
 (

@@ -10,12 +10,13 @@
 
 void RenderContext::StaticRenderGraph::Run
 (
-	PSO_PoolDispatcher& psoDispatcher_,
+	NexusFieldProof proof_,
+	AgentKey key_,
 	UINT const frameIndex_,
 	DescriptorHeapContextDiplomat& descriptorHeapContextDiplomat_,
 	CommandContextDiplomat& commandContextDiplomat_,
 	BufferContextDiplomat& bufferContextDiplomat_,
-	ModelContextDiplomat& modelContextDiplomat_,
+	SceneContextDiplomat& sceneContextDiplomat_,
 	SwapChainContextDiplomat& swapChainContextDiplomat_
 )
 {
@@ -37,7 +38,7 @@ void RenderContext::StaticRenderGraph::Run
 	pathOperator->Run
 	(
 		frameIndex_, 
-		modelContextDiplomat_, 
+		sceneContextDiplomat_,
 		bufferContextDiplomat_,
 		runtimeCmdWrapper
 	);

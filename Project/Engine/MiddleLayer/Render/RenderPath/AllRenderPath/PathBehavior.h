@@ -32,7 +32,7 @@ public:
 
 	virtual void Run
 	(
-		std::vector<std::unordered_map<uint64_t, std::pair<RenderStateKey, std::vector<Model*>>>>& modelContainer_,
+		std::vector<std::unordered_map<uint64_t, std::pair<RenderStateKey, std::vector<Model*>>>> const& modelContainer_,
 		RenderStateComponent::FillMode const modelFillMode_,
 		PSO_PoolDispatcher& psoDispatcher_,
 		RuntimeWrapper& cmdWrapper_,
@@ -45,7 +45,7 @@ protected:
 	template<typename PassType>
 	void CallPassUpdate
 	(
-		std::vector<std::unordered_map<uint64_t, std::pair<RenderStateKey, std::vector<Model*>>>>& modelContainer_,
+		std::vector<std::unordered_map<uint64_t, std::pair<RenderStateKey, std::vector<Model*>>>> const& modelContainer_,
 		RenderStateComponent::FillMode const modelFillMode_,
 		PSO_PoolDispatcher& psoDispatcher_,
 		RuntimeWrapper& cmdWrapper_,
@@ -58,8 +58,7 @@ protected:
 		dstPass->BeginPass(cmdWrapper_, bufDispatcher_);
 
 		//対象パスが描画を担当するモデルコンテナを指定
-		auto const& srcModelContainer =
-			modelContainer_[(UINT)RenderPassTraits::PassClassTraits<PassType>::kPassEnum];
+		auto const& srcModelContainer = modelContainer_.at((UINT)RenderPassTraits::PassClassTraits<PassType>::kPassEnum);
 
 		dstPass->Update
 		(
