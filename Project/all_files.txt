@@ -15138,9 +15138,8 @@ Microsoft::WRL::ComPtr<ID3D12RootSignature> RootSignatureContext::Assembler::Ass
 			D3D12_ROOT_SIGNATURE_FLAG_DENY_VERTEX_SHADER_ROOT_ACCESS	|
 			D3D12_ROOT_SIGNATURE_FLAG_DENY_HULL_SHADER_ROOT_ACCESS		|
 			D3D12_ROOT_SIGNATURE_FLAG_DENY_DOMAIN_SHADER_ROOT_ACCESS	|
-			D3D12_ROOT_SIGNATURE_FLAG_DENY_GEOMETRY_SHADER_ROOT_ACCESS  |
-			D3D12_ROOT_SIGNATURE_FLAG_CBV_SRV_UAV_HEAP_DIRECTLY_INDEXED |
-			D3D12_ROOT_SIGNATURE_FLAG_SAMPLER_HEAP_DIRECTLY_INDEXED;
+			D3D12_ROOT_SIGNATURE_FLAG_DENY_GEOMETRY_SHADER_ROOT_ACCESS	|
+			D3D12_ROOT_SIGNATURE_FLAG_CBV_SRV_UAV_HEAP_DIRECTLY_INDEXED;
 	}
 	Microsoft::WRL::ComPtr<ID3D12RootSignature> rootSignature = CreateRootSignature(&desc);
 	Logger::Log("Create: GraphicsRootSig", fileName);
@@ -19451,7 +19450,7 @@ private:
 	///全てのパスが参照するバッファのID群のうちどちらなのかを識別するためのもの
 	std::vector<BufferTraits::BufferTag> traceRefBuffersTag;
 	//参照バッファのID情報源
-	std::array<std::vector<BufferUniqueID>, BuildOutput::PassSetUpper::kNumRefBufferType> const& refBuffersArr;
+	std::array<std::vector<BufferUniqueID>, BuildOutput::PassSetUpper::kNumRefBufferType> refBuffersArr;
 	//参照バッファのsrvheapIndex群を入れておくため
 	std::vector<SRVHeapIndex> refBufferSrvIndices;
 	///パスが参照するバッファのsrvHeapIndexを詰めるためのバッファのID
@@ -23710,4 +23709,4 @@ namespace StringProcessing
 === SUMMARY ===
 ========================================
 Total Files      : 523
-Effective Lines  : 17313
+Effective Lines  : 17312
