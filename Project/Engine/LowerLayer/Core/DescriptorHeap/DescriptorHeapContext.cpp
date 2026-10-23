@@ -36,7 +36,7 @@ DescriptorHeapContext::DescriptorHeapContext
 		new ViewCreator
 		(
 			proof_,
-			*descriptorHeapPoolContainer.get(),
+			*descriptorHeapPoolContainer,
 			deviceContextDiplomat_
 		)
 	);
@@ -48,7 +48,7 @@ DescriptorHeapContext::DescriptorHeapContext
 		new DescriptorHeapContextDiplomat
 		(
 			proof_,
-			std::make_unique<ToolLender>(proof_, viewCreator.get())
+			std::make_unique<ToolLender>(proof_, viewCreator.get(), *descriptorHeapPoolContainer)
 		)
 	);
 	Logger::Log("Instantiate: ToolLender", fileName);

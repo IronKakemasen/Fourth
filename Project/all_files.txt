@@ -6171,7 +6171,7 @@ DescriptorHeapContext::DescriptorHeapContext
 		new ViewCreator
 		(
 			proof_,
-			*descriptorHeapPoolContainer.get(),
+			*descriptorHeapPoolContainer,
 			deviceContextDiplomat_
 		)
 	);
@@ -6181,7 +6181,7 @@ DescriptorHeapContext::DescriptorHeapContext
 		new DescriptorHeapContextDiplomat
 		(
 			proof_,
-			std::make_unique<ToolLender>(proof_, viewCreator.get())
+			std::make_unique<ToolLender>(proof_, viewCreator.get(), *descriptorHeapPoolContainer)
 		)
 	);
 	Logger::Log("Instantiate: ToolLender", fileName);
@@ -6294,9 +6294,17 @@ private:
 ========================================
 #include "PreCompileHeader.h"
 #include "DescriptorHeapToolLender.h"
-DescriptorHeapContext::ToolLender::ToolLender(NexusFieldProof proof_, DescriptorHeapContext::ViewCreator* viewCretator_)
+#include "../../DescriptorHeapPoolContainer/DescriptorHeapPoolContainer.h"
+DescriptorHeapContext::ToolLender::ToolLender
+(
+	NexusFieldProof proof_,
+	DescriptorHeapContext::ViewCreator* viewCretator_,
+	DescriptorHeapPoolContainer& descriptorHeapPoolContainer_
+) 
 {
 	std::get<DescriptorHeapContext::ViewCreator*>(tools) = viewCretator_;
+	std::get<ID3D12DescriptorHeap*>(tools) = 
+		descriptorHeapPoolContainer_.Export<D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV>(proof_)->AccessHeap(proof_);
 }
 
 ========================================
@@ -6320,7 +6328,12 @@ public:
 	//ただのエイリアステンプレート
 	template<typename ToolType>
 	using LicenceType = typename CmdTypeTraits<ToolType>::Type;
-	ToolLender(NexusFieldProof proof_, DescriptorHeapContext::ViewCreator* viewCretator_);
+	ToolLender
+	(
+		NexusFieldProof proof_, 
+		DescriptorHeapContext::ViewCreator* viewCretator_,
+		DescriptorHeapPoolContainer& descriptorHeapPoolContainer_
+	);
 	///ツールの貸し出し
 	template<typename ToolType>
 	auto* Lend(typename CmdTypeTraits<ToolType>::Type licence_)
@@ -6525,6 +6538,13 @@ void DescriptorHeapPool::CollectHeapIndex(uint32_t index_, CollectHeapIndexKey k
 {
 	freeList.Add(index_);
 }
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+ID3D12DescriptorHeap* DescriptorHeapPool::AccessHeap(DescriptorHeapContext::NexusFieldProof proof_)
+{
+	return descriptorHeap.Get();
+}
 
 ========================================
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Core\DescriptorHeap\DescriptorHeapPool\DescriptorHeapPool.h ===
@@ -6553,6 +6573,8 @@ public:
 	DistributeFreeHeapIndex(CreateViewKey accessKey_);
 	//ヒープインデックスを回収
 	void CollectHeapIndex(uint32_t index_, CollectHeapIndexKey key_);
+	//ID3D12DescriptorHeapにアクセス
+	ID3D12DescriptorHeap* AccessHeap(DescriptorHeapContext::NexusFieldProof proof_);
 private:
 	Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> descriptorHeap;
 	//ハンドルのインクリメントサイズ
@@ -6572,7 +6594,6 @@ private:
 struct DescriptorHeapPool::CreateViewKey
 {
 private:
-	//アクセスできるのはビュークリエイターのみ
 	friend class DescriptorHeapContext::ViewCreator;
 	explicit CreateViewKey() = default;
 };
@@ -17591,6 +17612,7 @@ public:
 		ShaderContextDiplomat& shaderContextDiplomat_
 	);
 	~RenderContext();
+	auto& AccessDiplomat() { return *diplomat; };
 private:
 	std::unique_ptr<RenderPassContainer> renderPassContainer;
 	std::unique_ptr<RenderPathContainer> renderPathContainer;
@@ -17639,9 +17661,10 @@ public:
 		RenderContext::NexusFieldProof proof_,
 		std::unique_ptr<RenderContext::ExecutionAgent>&& agent_
 	);
+	template<typename ToolType>
 	auto& Access()
 	{
-		return *std::get<std::unique_ptr<RenderContext::ExecutionAgent>>(tools);
+		return *std::get<std::unique_ptr<ToolType>>(tools);
 	}
 private:
 	std::tuple<std::unique_ptr<RenderContext::ExecutionAgent>> tools;
@@ -19111,10 +19134,10 @@ void RenderContext::StaticRenderGraph::CommonCmdExecutor::ExecuteCommonCmds
 	auto bToolLender = bufferContextDiplomat_.Access<BufferContext::ToolLender>();
 	BufferContext::ToolLender::LicenceType<BufferContext::GlobalConstantBuffers> bLicence;
 	auto& globalConstantBuffers = *bToolLender->Lend<BufferContext::GlobalConstantBuffers>(bLicence);
-	//ルートシグネチャをセット
-	SetGraphicsRootSignature(runtimeWrapper_);
 	//srvuavディスクリプタヒープをセット
 	SetDescriptorHeaps(srvUavDescriptorHeap, runtimeWrapper_);
+	//ルートシグネチャをセット
+	SetGraphicsRootSignature(runtimeWrapper_);
 	//フローバル定数バッファビューを転送
 	SetGlobalConstantViews
 	(
@@ -22663,6 +22686,8 @@ void Nexus::Init<Nexus::InitSequence::kDeleteModelDataCache>();
 ========================================
 #include "Nexus.h"
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+#include "../LowerLayer/Core/DescriptorHeap/DescriptorHeapContext.h"
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 #include "../LowerLayer/Core/SwapChain/SwapChainContextDiplomat/SwapChainContextDiplomat.h"
 #include "../LowerLayer/Core/SwapChain/SwapChainContextDiplomat/SwapChainExecutionAgent/SwapChainExecutionAgent.h"
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -22673,6 +22698,9 @@ void Nexus::Init<Nexus::InitSequence::kDeleteModelDataCache>();
 #include "../MiddleLayer/Scene/SceneContextDiplomat/SceneExecutionAgent/SceneExecutionAgent.h"
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 #include "../LowerLayer/Buffer/BufferContext.h"
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+#include "../MiddleLayer/Render/RenderContextDiplomat/RenderContextDiplomat.h"
+#include "../MiddleLayer/Render/RenderContextDiplomat/RenderContextExecutionAgent/RenderContextExecutionAgent.h"
 void Nexus::Run(aFourthProof proof_)
 {
 	//SwapChainContextの代行クラス
@@ -22681,6 +22709,8 @@ void Nexus::Run(aFourthProof proof_)
 	auto& cmd_ExecutionAgent = commandContext->AccessDiplomat().Access<CommandContext::ExecutionAgent>();
 	//SceneContextの代行クラス
 	auto& scene_ExecutionAgent = sceneContext->AccessDiplomat().Access<SceneContext::ExecutionAgent>();
+	//RenderContextの代行クラス
+	auto& render_ExecutionAgent = renderContext->AccessDiplomat().Access<RenderContext::ExecutionAgent>();
 	//フレームインデックスをスワップチェーンから取得
 	auto const frameIndex = swap_ExecutionAgent.GetFrameIndex(SwapChainContext::NexusFieldProof{});
 	//シーンの更新処理、シーンデータのバッチング
@@ -22694,6 +22724,17 @@ void Nexus::Run(aFourthProof proof_)
 	);
 	//コマンドの記録開始
 	cmd_ExecutionAgent.StartRecordingCommands(CommandContext::NexusFieldProof{}, frameIndex);
+	//全ての描画コマンドはここに
+	render_ExecutionAgent.RenderGraphRun
+	(
+		RenderContext::NexusFieldProof{},
+		frameIndex,
+		descriptorHeapContext->AccessDiplomat(),
+		commandContext->AccessDiplomat(),
+		bufferContext->AccessDiplomat(),
+		sceneContext->AccessDiplomat(),
+		swapChainContext->AccessDiplomat()
+	);
 	//コマンドを送る
 	cmd_ExecutionAgent.ExecuteCommands(CommandContext::NexusFieldProof{},frameIndex);
 	//表示
@@ -23669,4 +23710,4 @@ namespace StringProcessing
 === SUMMARY ===
 ========================================
 Total Files      : 523
-Effective Lines  : 17283
+Effective Lines  : 17313

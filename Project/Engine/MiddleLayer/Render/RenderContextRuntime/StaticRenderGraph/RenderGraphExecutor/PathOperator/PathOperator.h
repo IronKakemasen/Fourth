@@ -45,7 +45,7 @@ private:
 	///全てのパスが参照するバッファのID群のうちどちらなのかを識別するためのもの
 	std::vector<BufferTraits::BufferTag> traceRefBuffersTag;
 	//参照バッファのID情報源
-	std::array<std::vector<BufferUniqueID>, BuildOutput::PassSetUpper::kNumRefBufferType> const& refBuffersArr;
+	std::array<std::vector<BufferUniqueID>, BuildOutput::PassSetUpper::kNumRefBufferType> refBuffersArr;
 	//参照バッファのsrvheapIndex群を入れておくため
 	std::vector<SRVHeapIndex> refBufferSrvIndices;
 
