@@ -148,7 +148,7 @@ struct Meshlet
 
 struct TransformMatrix
 {
-    float4x4 world;
+    row_major float4x4 world;
 };
 
 struct MeshDataSRVHeapIndexGroup

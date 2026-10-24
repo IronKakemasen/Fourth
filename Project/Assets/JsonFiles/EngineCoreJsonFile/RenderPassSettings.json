@@ -1,43 +1,39 @@
 {
-    "SceneCompositor": 
-    {
-      "isOffScreen" : true,
-      "ms" : "FullScreenTriangleMS",
-      "ps" : "SceneCompositorPS",
+  "SceneCompositor": {
+    "isOffScreen": true,
+    "ms": "FullScreenTriangleMS",
+    "ps": "SceneCompositorPS",
 
-      "colorBufferName":["sceneColor"],
-      "blendMode": ["kOpaque"], 
-      "colorFormat":  [29],
-      "clearColor": 
+    "colorBufferName": [ "sceneColor" ],
+    "blendMode": [ "kOpaque" ],
+    "colorFormat": [ 29 ],
+    "clearColor": [
       [
-        [
-          0.0,
-          0.0,
-          0.0,
-          1.0
-        ]
-      ],
-      "colorWidth":  [-1],
-      "colorHeight":  [-1],
-      "numBuffer_Color":[1],
-                                
-      "useDepthStencil": false,
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ]
+    ],
+    "colorWidth": [ -1 ],
+    "colorHeight": [ -1 ],
+    "numBuffer_Color": [ 1 ],
 
-      "referenceBufferNames": [ "opaqueColor", "opaqueDepth" ]
-    },
+    "useDepthStencil": false,
 
-  "SceneOpaque": 
-  {
+    "referenceBufferNames": [ "opaqueColor", "opaqueDepth" ]
+  },
+
+  "SceneOpaque": {
     "isOffScreen": false,
 
     "colorBufferName": [ "opaqueColor" ],
     "blendMode": [ "kDependsModel" ],
     "colorFormat": [ 29 ],
-    "clearColor": 
-    [
+    "clearColor": [
       [
         0.0,
-        0.0,
+        1.0,
         0.0,
         1.0
       ]

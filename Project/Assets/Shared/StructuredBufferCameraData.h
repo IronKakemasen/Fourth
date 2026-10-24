@@ -22,9 +22,9 @@ namespace StructuredBufferCameraData
 
 struct CameraData
 {
-	float4x4 view;
-	float4x4 proj;
-	float4x4 viewProj;
+	row_major float4x4 view;
+	row_major float4x4 proj;
+	row_major float4x4 viewProj;
 	float4 worldPos;
 	float4 lookDir;
 };

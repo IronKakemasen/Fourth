@@ -62,7 +62,9 @@ void main
         verts_[groupThreadID_].position = mul(dst_vertex.localPos, groupSharedWvp);
         verts_[groupThreadID_].normal = normalize(mul(dst_vertex.normal, thisTransformMatrix.world).xyz);
         verts_[groupThreadID_].texcoord = dst_vertex.texcoord.xy;
-        verts_[groupThreadID_].worldPosition = float3(1, 1, 1);
+        verts_[groupThreadID_].worldPosition =
+        dst_vertex.localPos.xyz + float3(thisTransformMatrix.world[3][0], thisTransformMatrix.world[3][1], thisTransformMatrix.world[3][2]);
+
     }
 
 
