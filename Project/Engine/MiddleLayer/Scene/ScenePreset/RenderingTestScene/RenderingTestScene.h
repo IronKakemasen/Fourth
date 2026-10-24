@@ -13,5 +13,6 @@ public:
 	//アクセス修飾子はどこでも
 	virtual void Init()override;
 
+	static inline std::vector<Model*> p;
 };
 

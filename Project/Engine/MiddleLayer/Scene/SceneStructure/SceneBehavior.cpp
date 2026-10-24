@@ -7,6 +7,7 @@
 //エンジン備え付けのカメラ
 #include "../../../LowerLayer/Resource/Camera/PresetCameras/PresetCameraIncludes.h"
 
+#include "../ScenePreset/RenderingTestScene/RenderingTestScene.h"
 
 using namespace ProjectConfig::Render;
 
@@ -14,6 +15,19 @@ void SceneBehavior::Update()
 {
 	//このシーンで使うカメラのアップデート
 	output.usingCamera = cameraSystems->CameraUpdate();
+
+
+	static Vector3 a;
+	a.data.x += 0.008f;
+	a.data.y += 0.008f;
+	a.data.z += 0.008f;
+
+
+	for (int i = 0;i < 10;++i)
+	{
+		RenderingTestScene::p[i]->RefTransform(0).Rotate(a);
+	}
+
 
 	//このシーンのモデルのトランスフォームのアップデートを呼ぶ
 	modelSystems->UpdateModelTransform<Model::Type::kDynamic>();

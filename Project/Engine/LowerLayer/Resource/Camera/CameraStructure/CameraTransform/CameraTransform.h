@@ -8,6 +8,9 @@ class Transform;
 struct CameraBehavior::CameraTransform
 {
 private:
+
+	friend class CameraBehavior;
+
 	//投影方法関連
 	struct Projection
 	{
@@ -42,8 +45,6 @@ private:
 public:
 	CameraTransform(std::optional<CameraDesc> const& desc_);
 
-	//描画用の行列更新
-	void UpdateMatrices(CameraBehavior::Local_UpdateLicence licence_);
 	void Clear();
 	//ペアレント化
 	void BeChild(Transform* parent_);
@@ -56,19 +57,6 @@ public:
 	void RotateZ(float dstRotation_);
 	void ChangeRotationInterpolationCoe(float dst_);
 	void ChangeFovY(float dst_);
-
-	//バッチング処理で使用
-	auto const& WatchMatrices()const { return matrices; }
-	auto const& WatchBase()const { return base; }
-	auto const WatchWorldPosition()const
-	{
-		return Vector3
-		{
-			matrices.world.data.m[3][0],
-			matrices.world.data.m[3][1],
-			matrices.world.data.m[3][2]
-		};
-	}
 
 private:
 
@@ -83,5 +71,22 @@ private:
 	void RotationUpdate();
 	//透視投影作成(リバースZ対応)
 	void UpdateProjectionMatrixReverseZ();
+
+	//描画用の行列更新
+	void UpdateMatrices(CameraBehavior::Local_UpdateLicence licence_);
+
+	//バッチング処理で使用
+	auto const& WatchMatrices()const { return matrices; }
+	auto const& WatchBase()const { return base; }
+	auto const WatchWorldPosition()const
+	{
+		return Vector3
+		{
+			matrices.world.data.m[3][0],
+			matrices.world.data.m[3][1],
+			matrices.world.data.m[3][2]
+		};
+	}
+
 };
 

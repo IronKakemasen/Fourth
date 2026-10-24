@@ -100,7 +100,7 @@ void RenderContext::StaticRenderGraph::PathOperator::Run
 	auto& bufferDispatcher = *bToolLender->Lend<BufferContext::BufferDispatcher>(bLicence);
 
 	//現在稼働中のシーンから、モデルコンテナを渡してもらう
-	auto sAgent = sceneContextDiplomat_.Access<SceneContext::ExecutionAgent>();
+	auto& sAgent = sceneContextDiplomat_.Access<SceneContext::ExecutionAgent>();
 	SceneContext::ExecutionAgent::RenderContextProof proof;
 	auto const& sceneOutput = sAgent.WatchCurSceneOutput(proof);
 	auto const* srcModelContainer = sceneOutput.WatchModelContainer();
