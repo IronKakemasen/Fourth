@@ -10452,13 +10452,14 @@ class Transform;
 struct CameraBehavior::CameraTransform
 {
 private:
+	friend class CameraBehavior;
 	//投影方法関連
 	struct Projection
 	{
 		float farClip = 0.1f;
 		float nearClip = 1000.0f;
-		float fovY = MathConstants::kPi * MathConstants::kHalf;
-		float aspectRatio = (float)ProjectConfig::Window::Width() / (float)ProjectConfig::Window::Height();
+		float fovY = ProjectConfig::Window::kDefaultFovY;
+		float aspectRatio =  (float)ProjectConfig::Window::Width() / (float)ProjectConfig::Window::Height();
 	};
 	//カメラ専用のトランスフォームパラメータ
 	struct Base
@@ -10482,8 +10483,6 @@ private:
 	};
 public:
 	CameraTransform(std::optional<CameraDesc> const& desc_);
-	//描画用の行列更新
-	void UpdateMatrices(CameraBehavior::Local_UpdateLicence licence_);
 	void Clear();
 	//ペアレント化
 	void BeChild(Transform* parent_);
@@ -10495,6 +10494,18 @@ public:
 	void RotateZ(float dstRotation_);
 	void ChangeRotationInterpolationCoe(float dst_);
 	void ChangeFovY(float dst_);
+private:
+	Base base;
+	Projection projection;
+	Matrices matrices;
+	//初期値でクリアするために所持できるようにする
+	std::unique_ptr<CameraDesc> cameraDesc;
+	//回転更新処理
+	void RotationUpdate();
+	//透視投影作成(リバースZ対応)
+	void UpdateProjectionMatrixReverseZ();
+	//描画用の行列更新
+	void UpdateMatrices(CameraBehavior::Local_UpdateLicence licence_);
 	//バッチング処理で使用
 	auto const& WatchMatrices()const { return matrices; }
 	auto const& WatchBase()const { return base; }
@@ -10507,16 +10518,6 @@ public:
 			matrices.world.data.m[3][2]
 		};
 	}
-private:
-	Base base;
-	Projection projection;
-	Matrices matrices;
-	//初期値でクリアするために所持できるようにする
-	std::unique_ptr<CameraDesc> cameraDesc;
-	//回転更新処理
-	void RotationUpdate();
-	//透視投影作成(リバースZ対応)
-	void UpdateProjectionMatrixReverseZ();
 };
 
 ========================================
@@ -10535,6 +10536,8 @@ private:
 DefaultDebugCamera::DefaultDebugCamera(std::optional<CameraDesc> const& desc_)
 	: CameraBehavior(desc_)
 {
+	trans->TranslatePosition({ 0,0,-10 });
+	trans->LookAt({ 0.0f,-0.25f,1.0f });
 }
 void DefaultDebugCamera::Update(Local_UpdateLicence licence_)
 {
@@ -21429,7 +21432,11 @@ SceneBehavior::Output const& SceneContext::ExecutionAgent::WatchCurSceneOutput(R
 {
 	return scenePipeline.WatchCurSceneOutput(AgentKey{});
 }
-void SceneContext::ExecutionAgent::RunScenePipeline
+void SceneContext::ExecutionAgent::RunScenePipeline(NexusFieldProof proof_)
+{
+	scenePipeline.Run(proof_, AgentKey{});
+}
+void SceneContext::ExecutionAgent::BatchSceneData
 (
 	NexusFieldProof proof_,
 	UINT const frameIndex_,
@@ -21438,13 +21445,13 @@ void SceneContext::ExecutionAgent::RunScenePipeline
 	BufferContextDiplomat& bufferContextDiplomat_
 )
 {
-	scenePipeline.Run
+	scenePipeline.BatchSceneData
 	(
-		proof_, 
+		proof_,
 		AgentKey{},
-		frameIndex_, 
-		modelContextDiplomat_, 
-		cameraContextDiplomat_, 
+		frameIndex_,
+		modelContextDiplomat_,
+		cameraContextDiplomat_,
 		bufferContextDiplomat_
 	);
 }
@@ -21464,7 +21471,8 @@ public:
 	struct RenderContextProof;
 	ExecutionAgent(NexusFieldProof proof_, ScenePipeline& scenePipeline_);
 	SceneBehavior::Output const& WatchCurSceneOutput(RenderContextProof proof_);
-	void RunScenePipeline
+	void RunScenePipeline(NexusFieldProof proof_);
+	void BatchSceneData
 	(
 		NexusFieldProof proof_,
 		UINT const frameIndex_,
@@ -21555,6 +21563,15 @@ void SceneContext::ScenePipeline::ImportScene(std::unique_ptr<SceneBehavior>&& s
 void SceneContext::ScenePipeline::Run
 (
 	NexusFieldProof proof_,
+	AgentKey key_
+)
+{
+	//シーンの制御、更新処理
+	sceneController->Run();	
+}
+void SceneContext::ScenePipeline::BatchSceneData
+(
+	NexusFieldProof proof_,
 	AgentKey key_,
 	UINT const frameIndex_,
 	ModelContextDiplomat& modelContextDiplomat_,
@@ -21562,15 +21579,13 @@ void SceneContext::ScenePipeline::Run
 	BufferContextDiplomat& bufferContextDiplomat_
 )
 {
-	//シーンの制御、更新処理
-	sceneController->Run();
 	//シーンで使用したデータのバッチング
 	SceneDataBatchingPlace sceneDataBatchingPlace;
 	sceneDataBatchingPlace.BatchingPlace
 	(
-		frameIndex_ ,
-		*sceneController, 
-		modelContextDiplomat_, 
+		frameIndex_,
+		*sceneController,
+		modelContextDiplomat_,
 		cameraContextDiplomat_,
 		bufferContextDiplomat_
 	);
@@ -21600,11 +21615,17 @@ public:
 	ScenePipeline(NexusFieldProof proof_);
 	~ScenePipeline();
 	SceneBehavior::Output const& WatchCurSceneOutput(AgentKey key_);
-	//シーンの更新処理の親玉
+	//シーンの更新処理を呼ぶ
 	//更新処理の呼び出しは代行でやってもらう
 	void Run
 	(
 		NexusFieldProof proof_ ,
+		AgentKey key_
+	);
+	//シーンデータのバッチングを行う
+	void BatchSceneData
+	(
+		NexusFieldProof proof_,
 		AgentKey key_,
 		UINT const frameIndex_,
 		ModelContextDiplomat& modelContextDiplomat_,
@@ -21911,8 +21932,11 @@ void RenderingTestScene::Init()
 	std::vector<RenderState> playerC;
 	playerC.emplace_back(std::move(cP));
 	std::vector<MaterialCPU> materials;
-	auto p = CreateModel<Model::Type::kDynamic>("PlayerObj", playerC, materials, 1, "Player");
-	p[0]->RefTransform(0).TranslatePosition({ 0,0,2 });
+	p = CreateModel<Model::Type::kDynamic>("CubeGltf", playerC, materials, 10, "Player");
+	for (int i = 0;i < 10;++i)
+	{
+		p[i]->RefTransform(0).TranslatePosition({ float(i) * 1.5f,0,4 });
+	}
 	//RenderState cC;
 	//cC.blendModes.emplace_back(BlendMode::kOpaque);
 	//cC.pass = RenderPassComponent::Pass::kSceneOpaque;
@@ -21937,6 +21961,7 @@ public:
 	//ここの中でモデルの生成などの処理を書く。一発しか呼びません。
 	//アクセス修飾子はどこでも
 	virtual void Init()override;
+	static inline std::vector<Model*> p;
 };
 
 ========================================
@@ -21948,11 +21973,20 @@ public:
 //外部
 //エンジン備え付けのカメラ
 #include "../../../LowerLayer/Resource/Camera/PresetCameras/PresetCameraIncludes.h"
+#include "../ScenePreset/RenderingTestScene/RenderingTestScene.h"
 using namespace ProjectConfig::Render;
 void SceneBehavior::Update()
 {
 	//このシーンで使うカメラのアップデート
 	output.usingCamera = cameraSystems->CameraUpdate();
+	static Vector3 a;
+	a.data.x += 0.008f;
+	a.data.y += 0.008f;
+	a.data.z += 0.008f;
+	for (int i = 0;i < 10;++i)
+	{
+		RenderingTestScene::p[i]->RefTransform(0).Rotate(a);
+	}
 	//このシーンのモデルのトランスフォームのアップデートを呼ぶ
 	modelSystems->UpdateModelTransform<Model::Type::kDynamic>();
 	if (output.leftStaticModelBatchingCnt-- == (UINT)NumBuffer::kDoubleBuffer)
@@ -22722,10 +22756,14 @@ void Nexus::Run(aFourthProof proof_)
 	auto& scene_ExecutionAgent = sceneContext->AccessDiplomat().Access<SceneContext::ExecutionAgent>();
 	//RenderContextの代行クラス
 	auto& render_ExecutionAgent = renderContext->AccessDiplomat().Access<RenderContext::ExecutionAgent>();
+	//シーンの更新処理
+	scene_ExecutionAgent.RunScenePipeline(SceneContext::NexusFieldProof{});
 	//フレームインデックスをスワップチェーンから取得
 	auto const frameIndex = swap_ExecutionAgent.GetFrameIndex(SwapChainContext::NexusFieldProof{});
-	//シーンの更新処理、シーンデータのバッチング
-	scene_ExecutionAgent.RunScenePipeline
+	//コマンドの記録開始
+	cmd_ExecutionAgent.StartRecordingCommands(CommandContext::NexusFieldProof{}, frameIndex);
+	//シーンデータのバッチング
+	scene_ExecutionAgent.BatchSceneData
 	(
 		SceneContext::NexusFieldProof{},
 		frameIndex,
@@ -22733,8 +22771,6 @@ void Nexus::Run(aFourthProof proof_)
 		cameraContext->AccessDiplomat(),
 		bufferContext->AccessDiplomat()
 	);
-	//コマンドの記録開始
-	cmd_ExecutionAgent.StartRecordingCommands(CommandContext::NexusFieldProof{}, frameIndex);
 	//全ての描画コマンドはここに
 	render_ExecutionAgent.RenderGraphRun
 	(
@@ -23721,4 +23757,4 @@ namespace StringProcessing
 === SUMMARY ===
 ========================================
 Total Files      : 523
-Effective Lines  : 17314
+Effective Lines  : 17347

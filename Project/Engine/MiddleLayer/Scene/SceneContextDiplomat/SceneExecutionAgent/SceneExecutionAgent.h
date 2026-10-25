@@ -18,7 +18,9 @@ public:
 
 	SceneBehavior::Output const& WatchCurSceneOutput(RenderContextProof proof_);
 
-	void RunScenePipeline
+	void RunScenePipeline(NexusFieldProof proof_);
+
+	void BatchSceneData
 	(
 		NexusFieldProof proof_,
 		UINT const frameIndex_,
@@ -26,6 +28,7 @@ public:
 		CameraContextDiplomat& cameraContextDiplomat_,
 		BufferContextDiplomat& bufferContextDiplomat_
 	);
+
 
 	template<typename SceneType>
 	void CreateScene

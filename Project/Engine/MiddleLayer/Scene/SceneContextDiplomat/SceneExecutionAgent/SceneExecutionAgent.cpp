@@ -13,7 +13,12 @@ SceneBehavior::Output const& SceneContext::ExecutionAgent::WatchCurSceneOutput(R
 	return scenePipeline.WatchCurSceneOutput(AgentKey{});
 }
 
-void SceneContext::ExecutionAgent::RunScenePipeline
+void SceneContext::ExecutionAgent::RunScenePipeline(NexusFieldProof proof_)
+{
+	scenePipeline.Run(proof_, AgentKey{});
+}
+
+void SceneContext::ExecutionAgent::BatchSceneData
 (
 	NexusFieldProof proof_,
 	UINT const frameIndex_,
@@ -22,13 +27,13 @@ void SceneContext::ExecutionAgent::RunScenePipeline
 	BufferContextDiplomat& bufferContextDiplomat_
 )
 {
-	scenePipeline.Run
+	scenePipeline.BatchSceneData
 	(
-		proof_, 
+		proof_,
 		AgentKey{},
-		frameIndex_, 
-		modelContextDiplomat_, 
-		cameraContextDiplomat_, 
+		frameIndex_,
+		modelContextDiplomat_,
+		cameraContextDiplomat_,
 		bufferContextDiplomat_
 	);
 }

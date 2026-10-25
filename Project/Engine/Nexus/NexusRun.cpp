@@ -30,13 +30,17 @@ void Nexus::Run(aFourthProof proof_)
 	//RenderContextの代行クラス
 	auto& render_ExecutionAgent = renderContext->AccessDiplomat().Access<RenderContext::ExecutionAgent>();
 
-
+	//シーンの更新処理
+	scene_ExecutionAgent.RunScenePipeline(SceneContext::NexusFieldProof{});
 
 	//フレームインデックスをスワップチェーンから取得
 	auto const frameIndex = swap_ExecutionAgent.GetFrameIndex(SwapChainContext::NexusFieldProof{});
 
-	//シーンの更新処理、シーンデータのバッチング
-	scene_ExecutionAgent.RunScenePipeline
+	//コマンドの記録開始
+	cmd_ExecutionAgent.StartRecordingCommands(CommandContext::NexusFieldProof{}, frameIndex);
+
+	//シーンデータのバッチング
+	scene_ExecutionAgent.BatchSceneData
 	(
 		SceneContext::NexusFieldProof{},
 		frameIndex,
@@ -44,11 +48,6 @@ void Nexus::Run(aFourthProof proof_)
 		cameraContext->AccessDiplomat(),
 		bufferContext->AccessDiplomat()
 	);
-
-
-	//コマンドの記録開始
-	cmd_ExecutionAgent.StartRecordingCommands(CommandContext::NexusFieldProof{}, frameIndex);
-
 
 	//全ての描画コマンドはここに
 	render_ExecutionAgent.RenderGraphRun

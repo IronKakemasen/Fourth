@@ -49,6 +49,16 @@ void SceneContext::ScenePipeline::ImportScene(std::unique_ptr<SceneBehavior>&& s
 void SceneContext::ScenePipeline::Run
 (
 	NexusFieldProof proof_,
+	AgentKey key_
+)
+{
+	//シーンの制御、更新処理
+	sceneController->Run();	
+}
+
+void SceneContext::ScenePipeline::BatchSceneData
+(
+	NexusFieldProof proof_,
 	AgentKey key_,
 	UINT const frameIndex_,
 	ModelContextDiplomat& modelContextDiplomat_,
@@ -56,18 +66,17 @@ void SceneContext::ScenePipeline::Run
 	BufferContextDiplomat& bufferContextDiplomat_
 )
 {
-	//シーンの制御、更新処理
-	sceneController->Run();
-	
 	//シーンで使用したデータのバッチング
 	SceneDataBatchingPlace sceneDataBatchingPlace;
 	sceneDataBatchingPlace.BatchingPlace
 	(
-		frameIndex_ ,
-		*sceneController, 
-		modelContextDiplomat_, 
+		frameIndex_,
+		*sceneController,
+		modelContextDiplomat_,
 		cameraContextDiplomat_,
 		bufferContextDiplomat_
 	);
+
 }
+
 

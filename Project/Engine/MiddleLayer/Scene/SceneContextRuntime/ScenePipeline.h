@@ -27,11 +27,18 @@ public:
 
 	SceneBehavior::Output const& WatchCurSceneOutput(AgentKey key_);
 
-	//シーンの更新処理の親玉
+	//シーンの更新処理を呼ぶ
 	//更新処理の呼び出しは代行でやってもらう
 	void Run
 	(
 		NexusFieldProof proof_ ,
+		AgentKey key_
+	);
+
+	//シーンデータのバッチングを行う
+	void BatchSceneData
+	(
+		NexusFieldProof proof_,
 		AgentKey key_,
 		UINT const frameIndex_,
 		ModelContextDiplomat& modelContextDiplomat_,
