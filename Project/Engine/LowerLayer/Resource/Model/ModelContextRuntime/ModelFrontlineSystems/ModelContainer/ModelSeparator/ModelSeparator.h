@@ -4,7 +4,7 @@
 
 class KeyPackager;
 
-class ModelContext::ModelFrontlineSystems::ModelContainer::ModelSeparator
+class ModelContext::FrontlineSystems::ModelContainer::ModelSeparator
 {
 	using Output = std::pair<std::vector<SeparatedByRenderState>, std::array < std::vector<Model*>, (UINT)Model::Type::kCount > >;
 

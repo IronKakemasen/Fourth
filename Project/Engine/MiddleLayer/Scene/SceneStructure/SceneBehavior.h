@@ -29,7 +29,7 @@ class SceneBehavior
 		//使用しているカメラ。更新必要
 		std::unordered_map<CameraSocket, CameraBehavior*> usingCamera;
 		//このシーンのモデルコンテナ
-		ModelContext::ModelFrontlineSystems::ModelContainer const* modelContainer = nullptr;
+		ModelContext::FrontlineSystems::ModelContainer const* modelContainer = nullptr;
 		//staticなモデルを毎回バッチング処理しないようにするため
 		UINT leftStaticModelBatchingCnt = (UINT)ProjectConfig::Render::NumBuffer::kDoubleBuffer;
 	};
@@ -53,7 +53,7 @@ protected:
 	//ゲームオブジェクトが好きなタイミングでカメラを切り替えられるように
 	//カメラ切り替えコマンドを返す。
 	template<CameraSocket dstSocket>
-	[[nodiscard]] CameraContext::CameraFrontlineSystems::CmdConnectCamera<dstSocket> GetCmdConnectCamera()
+	[[nodiscard]] CameraContext::FrontlineSystems::CmdConnectCamera<dstSocket> GetCmdConnectCamera()
 	{
 		return cameraSystems->GetCmdConnectCamera<dstSocket>();
 	}
@@ -96,8 +96,8 @@ private:
 	//シーンクリエイターがインスタンス化後に呼び出す
 	void SetSystems
 	(
-		CameraContext::CameraFrontlineSystems* cameraSystems_,
-		ModelContext::ModelFrontlineSystems* modelSystems_
+		CameraContext::FrontlineSystems* cameraSystems_,
+		ModelContext::FrontlineSystems* modelSystems_
 	);
 
 	//シーンクリエイターがプリセットカメラを備え付ける
@@ -110,8 +110,8 @@ private:
 	Output const& WatchSceneOutput()const;
 
 	//他コンテキストのシステム
-	CameraContext::CameraFrontlineSystems* cameraSystems = nullptr;
-	ModelContext::ModelFrontlineSystems* modelSystems = nullptr;
+	CameraContext::FrontlineSystems* cameraSystems = nullptr;
+	ModelContext::FrontlineSystems* modelSystems = nullptr;
 	
 
 	//シーンの出力物

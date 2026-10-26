@@ -8,7 +8,7 @@
 #include "../../../LowerLayer/Resource/Model/ModelContext.h"
 
 
-//CameraFrontlineSystems
+//FrontlineSystems
 class SceneContext::SceneCreator
 {
 public:
@@ -45,10 +45,10 @@ public:
 
 private:
 
-	//CameraFrontlineSystemsを一つもらう
-	CameraContext::CameraFrontlineSystems* ReceiveCameraSystems(CameraContextDiplomat& cameraContextDiplomat_);
-	//ModelFrontlineSystemsを一つもらう
-	ModelContext::ModelFrontlineSystems* ReceiveModelSystems(ModelContextDiplomat& modelContextDiplomat_);
+	//FrontlineSystemsを一つもらう
+	CameraContext::FrontlineSystems* ReceiveCameraSystems(CameraContextDiplomat& cameraContextDiplomat_);
+	//FrontlineSystemsを一つもらう
+	ModelContext::FrontlineSystems* ReceiveModelSystems(ModelContextDiplomat& modelContextDiplomat_);
 
 
 };

@@ -17,8 +17,8 @@ public:
 	//カメラのデータのバッチング処理を行う
 	class CameraDataBatcher;
 	//カメラのランタイムシステムを束ねたもの。1シーンに1つ存在
-	class CameraFrontlineSystems;
-	//CameraFrontlineSystemsの分配を行う
+	class FrontlineSystems;
+	//FrontlineSystemsの分配を行う
 	class FrontlineSystemsDispatcher;
 	//カメラ作成
 	class CameraCreator;

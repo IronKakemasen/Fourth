@@ -9,11 +9,11 @@ public:
 	FrontlineSystemsDispatcher(NexusFieldProof proof_ ,CameraCreator& cameraCreator_);
 	~FrontlineSystemsDispatcher();
 
-	CameraFrontlineSystems* Dispatch(AgentKey key_);
+	FrontlineSystems* Dispatch(AgentKey key_);
 
 private:
 
-	std::vector<std::unique_ptr<CameraFrontlineSystems>> cameraFrontlineSystemsContainer;
+	std::vector<std::unique_ptr<FrontlineSystems>> cameraFrontlineSystemsContainer;
 	SimpleFreeList simpleFreeList;
 };
 

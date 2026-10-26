@@ -4,14 +4,14 @@
 #include "CameraController/CameraController.h"
 #include "../CameraCreator/CameraCreator.h"
 
-CameraContext::CameraFrontlineSystems::CameraFrontlineSystems(NexusFieldProof proof_, CameraCreator& cameraCreator_)
+CameraContext::FrontlineSystems::FrontlineSystems(NexusFieldProof proof_, CameraCreator& cameraCreator_)
 	:cameraCreator(cameraCreator_)
 {
 	cameraLibrary = std::make_unique<CameraLibrary>(proof_);
 	cameraController = std::make_unique<CameraController>(proof_);
 }
 
-CameraContext::CameraFrontlineSystems::~CameraFrontlineSystems()
+CameraContext::FrontlineSystems::~FrontlineSystems()
 {
 
 }
@@ -20,14 +20,14 @@ CameraContext::CameraFrontlineSystems::~CameraFrontlineSystems()
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-void CameraContext::CameraFrontlineSystems::ImportCamera(std::unique_ptr<CameraBehavior>&& camera_, std::string const& name_)
+void CameraContext::FrontlineSystems::ImportCamera(std::unique_ptr<CameraBehavior>&& camera_, std::string const& name_)
 {
 	cameraLibrary->Import(std::move(camera_), name_);
 }
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-std::unordered_map<CameraSocket, CameraBehavior*> const& CameraContext::CameraFrontlineSystems::CameraUpdate()
+std::unordered_map<CameraSocket, CameraBehavior*> const& CameraContext::FrontlineSystems::CameraUpdate()
 {
 	return cameraController->Update();
 }
@@ -36,10 +36,10 @@ std::unordered_map<CameraSocket, CameraBehavior*> const& CameraContext::CameraFr
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 template<>
-void CameraContext::CameraFrontlineSystems::Connect<CameraSocket::kDebug>(std::string const& name_)
+void CameraContext::FrontlineSystems::Connect<CameraSocket::kDebug>(std::string const& name_)
 {
 	cameraController->Connect<CameraSocket::kDebug>(cameraLibrary->Export(name_));
 }
 
 template
-void CameraContext::CameraFrontlineSystems::Connect<CameraSocket::kDebug>(std::string const& name_);
+void CameraContext::FrontlineSystems::Connect<CameraSocket::kDebug>(std::string const& name_);

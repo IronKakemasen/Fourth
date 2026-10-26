@@ -3,7 +3,7 @@
 
 class CameraBehavior;
 
-class CameraContext::CameraFrontlineSystems::CameraController
+class CameraContext::FrontlineSystems::CameraController
 {
 public:
 

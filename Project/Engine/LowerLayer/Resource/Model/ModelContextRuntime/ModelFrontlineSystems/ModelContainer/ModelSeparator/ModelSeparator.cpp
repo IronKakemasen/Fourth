@@ -9,7 +9,7 @@ using namespace RenderStateComponent;
 using namespace ShaderPathComponent;
 
 
-ModelContext::ModelFrontlineSystems::ModelContainer::ModelSeparator::ModelSeparator()
+ModelContext::FrontlineSystems::ModelContainer::ModelSeparator::ModelSeparator()
 {
 	keyPackager.reset
 	(
@@ -24,13 +24,13 @@ ModelContext::ModelFrontlineSystems::ModelContainer::ModelSeparator::ModelSepara
 	);
 }
 
-ModelContext::ModelFrontlineSystems::ModelContainer::ModelSeparator::~ModelSeparator()
+ModelContext::FrontlineSystems::ModelContainer::ModelSeparator::~ModelSeparator()
 {
 
 }
 
-[[nodiscard]] ModelContext::ModelFrontlineSystems::ModelContainer::ModelSeparator::Output
-ModelContext::ModelFrontlineSystems::ModelContainer::ModelSeparator::SeparateAllModels(std::vector<std::unique_ptr<Model>>& modelContainer_)
+[[nodiscard]] ModelContext::FrontlineSystems::ModelContainer::ModelSeparator::Output
+ModelContext::FrontlineSystems::ModelContainer::ModelSeparator::SeparateAllModels(std::vector<std::unique_ptr<Model>>& modelContainer_)
 {
 	std::vector<SeparatedByRenderState> separatedByRenderState;
 	std::array < std::vector<Model*>, (UINT)Model::Type::kCount> separatedByModelType;
@@ -57,7 +57,7 @@ ModelContext::ModelFrontlineSystems::ModelContainer::ModelSeparator::SeparateAll
 	return std::make_pair(std::move(separatedByRenderState), std::move(separatedByModelType));
 }
 
-std::vector<std::pair<RenderStateKey, uint64_t>> ModelContext::ModelFrontlineSystems::ModelContainer::ModelSeparator::PackToKey(Model const& model_)
+std::vector<std::pair<RenderStateKey, uint64_t>> ModelContext::FrontlineSystems::ModelContainer::ModelSeparator::PackToKey(Model const& model_)
 {
 	std::vector<std::pair<RenderStateKey, uint64_t>> keys;
 

@@ -22,11 +22,11 @@ CameraContext::FrontlineSystemsDispatcher::FrontlineSystemsDispatcher(NexusField
 	{
 		cameraFrontlineSystemsContainer.emplace_back
 		(
-			std::make_unique<CameraFrontlineSystems>(proof_, cameraCreator_)
+			std::make_unique<FrontlineSystems>(proof_, cameraCreator_)
 		);
 	}
 
-	Logger::Log("Instantiate: CameraFrontlineSystems(" + std::to_string(i) + ")", fileName);
+	Logger::Log("Instantiate: FrontlineSystems(" + std::to_string(i) + ")", fileName);
 
 }
 
@@ -35,7 +35,7 @@ CameraContext::FrontlineSystemsDispatcher::~FrontlineSystemsDispatcher()
 
 }
 
-CameraContext::CameraFrontlineSystems* CameraContext::FrontlineSystemsDispatcher::Dispatch(AgentKey key_)
+CameraContext::FrontlineSystems* CameraContext::FrontlineSystemsDispatcher::Dispatch(AgentKey key_)
 {
 	return cameraFrontlineSystemsContainer[simpleFreeList.Distribute()].get();
 }

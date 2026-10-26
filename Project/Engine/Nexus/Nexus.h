@@ -18,6 +18,8 @@ class TextureContext;
 class CameraContext;
 class DebugContext;
 class SceneContext;
+class GameObjectContext;
+
 
 //交易場
 class Nexus
@@ -68,6 +70,7 @@ private:
 		kRootSignatureContext,
 		kTextureContext,
 		kModelContext,
+		kGameObjectContext,
 		kCameraContext,
 		kSceneContext,
 		//ここまではコンストラクタ
@@ -125,6 +128,8 @@ private:
 	std::unique_ptr<CameraContext> cameraContext;
 	//シーンの作成、保持、コントロール、シーンデータのバッチングを行う
 	std::unique_ptr<SceneContext> sceneContext;
+	//ゲームオブジェクトの生成、管理
+	std::unique_ptr<GameObjectContext> gameObjectContext;
 
 
 	//一段階目初期化

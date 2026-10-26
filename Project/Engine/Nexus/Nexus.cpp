@@ -20,6 +20,9 @@
 #include "../MiddleLayer/Render/RenderContext.h"
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 #include "../MiddleLayer/Scene/SceneContext.h"
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+#include "../MiddleLayer/GameObject/GameObjectContext.h"
+
 
 namespace
 {
@@ -67,6 +70,7 @@ void Nexus::PrimaryInit()
 	InitializeInSequence<InitSequence::kRootSignatureContext>();
 	InitializeInSequence<InitSequence::kTextureContext>();
 	InitializeInSequence<InitSequence::kModelContext>();
+	InitializeInSequence<InitSequence::kGameObjectContext>();
 	InitializeInSequence<InitSequence::kCameraContext>();
 	InitializeInSequence<InitSequence::kSceneContext>();
 

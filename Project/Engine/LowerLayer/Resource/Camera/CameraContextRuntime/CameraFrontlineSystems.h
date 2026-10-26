@@ -3,7 +3,7 @@
 
 class CameraBehavior;
 
-class CameraContext::CameraFrontlineSystems
+class CameraContext::FrontlineSystems
 {
 	//そのシーンに存在するカメラのライブラリ
 	class CameraLibrary;
@@ -16,8 +16,8 @@ public:
 	template<CameraSocket dstSocket_>
 	using CmdConnectCamera = std::function<void(std::string const&)>;
 
-	CameraFrontlineSystems(NexusFieldProof proof_, CameraCreator& cameraCreator_);
-	~CameraFrontlineSystems();
+	FrontlineSystems(NexusFieldProof proof_, CameraCreator& cameraCreator_);
+	~FrontlineSystems();
 
 	//カメラの作成
 	template<CameraSocket dstSocket,typename CameraType>

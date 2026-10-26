@@ -51,8 +51,8 @@ void SceneBehavior::SeparateModels()
 
 void SceneBehavior::SetSystems
 (
-	CameraContext::CameraFrontlineSystems* cameraSystems_,
-	ModelContext::ModelFrontlineSystems* modelSystems_
+	CameraContext::FrontlineSystems* cameraSystems_,
+	ModelContext::FrontlineSystems* modelSystems_
 )
 {
 	ErrorMessageOutput::Assert::DetectError

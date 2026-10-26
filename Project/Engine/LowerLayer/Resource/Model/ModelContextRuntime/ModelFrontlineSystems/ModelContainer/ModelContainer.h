@@ -3,7 +3,7 @@
 #include "../RenderStateKey.h"
 #include "../../../ModelStructure/Model.h"
 
-class ModelContext::ModelFrontlineSystems::ModelContainer
+class ModelContext::FrontlineSystems::ModelContainer
 {
 	//1.モデルのレンダーステートごとにコンテナに詰めて、PSOの切り替えコストを低減させる
 	//2.モデルをstaticかdynamicかでコンテナを仕分ける。バッチング処理の効率化のため
@@ -44,11 +44,11 @@ private:
 	std::array < std::vector<Model*>, (UINT)Model::Type::kCount > separatedByModelType;
 };
 
-struct ModelContext::ModelFrontlineSystems::ModelContainer::Local_InitLicence
+struct ModelContext::FrontlineSystems::ModelContainer::Local_InitLicence
 {
 private:
 
-	friend class ModelContext::ModelFrontlineSystems;
+	friend class ModelContext::FrontlineSystems;
 	explicit Local_InitLicence() = default;
 };
 
