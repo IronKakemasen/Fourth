@@ -750,6 +750,21 @@
     <ClCompile Include="Engine\MiddleLayer\Render\RenderContextRuntime\StaticRenderGraph\RenderGraphRun.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
+    <ClCompile Include="Engine\MiddleLayer\GameObject\GameObjectContext.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\MiddleLayer\GameObject\GameObjectStructure\GameObjectBehavior.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\MiddleLayer\GameObject\GameObjectCreator\GameObjectCreator.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\MiddleLayer\GameObject\GameObjectRuntime\GameObjFrontSystems\GameObjFrontlineSystems.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\MiddleLayer\GameObject\GameObjectRuntime\GameObjFrontSystems\GameObjContainer\GameObjContainer.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Engine\LowerLayer\Core\Window\WindowContext.h">
@@ -1722,6 +1737,21 @@
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
     <ClInclude Include="Engine\MiddleLayer\Render\RenderContextDiplomat\RenderContextExecutionAgent\RenderAgentLicences.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\MiddleLayer\GameObject\GameObjectContext.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\MiddleLayer\GameObject\GameObjectStructure\GameObjectBehavior.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\MiddleLayer\GameObject\GameObjectCreator\GameObjectCreator.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\MiddleLayer\GameObject\GameObjectRuntime\GameObjFrontSystems\GameObjFrontlineSystems.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\MiddleLayer\GameObject\GameObjectRuntime\GameObjFrontSystems\GameObjContainer\GameObjContainer.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
   </ItemGroup>

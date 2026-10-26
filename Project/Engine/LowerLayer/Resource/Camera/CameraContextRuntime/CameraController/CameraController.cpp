@@ -4,17 +4,17 @@
 
 
 
-CameraContext::CameraFrontlineSystems::CameraController::CameraController(NexusFieldProof proof_)
+CameraContext::FrontlineSystems::CameraController::CameraController(NexusFieldProof proof_)
 {
 
 }
 
-std::unordered_map<CameraSocket, CameraBehavior*> const& CameraContext::CameraFrontlineSystems::CameraController::Update()
+std::unordered_map<CameraSocket, CameraBehavior*> const& CameraContext::FrontlineSystems::CameraController::Update()
 {
 	return RunCamera();
 }
 
-std::unordered_map<CameraSocket, CameraBehavior*> const& CameraContext::CameraFrontlineSystems::CameraController::RunCamera()
+std::unordered_map<CameraSocket, CameraBehavior*> const& CameraContext::FrontlineSystems::CameraController::RunCamera()
 {
 	CameraBehavior::Local_UpdateLicence licenceUpdate;
 

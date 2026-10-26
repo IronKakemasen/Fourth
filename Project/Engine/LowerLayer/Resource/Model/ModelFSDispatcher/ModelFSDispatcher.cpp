@@ -16,10 +16,10 @@ ModelContext::ModelFSDispatcher::ModelFSDispatcher(NexusFieldProof proof_, Model
 	UINT i{};
 	for (;i < numScene;++i)
 	{
-		frontlineSystems.emplace_back(std::make_unique<ModelFrontlineSystems>(proof_, modelCreator_));
+		frontlineSystems.emplace_back(std::make_unique<FrontlineSystems>(proof_, modelCreator_));
 	}
 
-	Logger::Log("Instantiate: ModelFrontlineSystems(" + std::to_string(i) + ")", "ModelFSDispatcher.cpp");
+	Logger::Log("Instantiate: FrontlineSystems(" + std::to_string(i) + ")", "ModelFSDispatcher.cpp");
 
 }
 
@@ -29,7 +29,7 @@ ModelContext::ModelFSDispatcher::~ModelFSDispatcher()
 }
 
 
-ModelContext::ModelFrontlineSystems* ModelContext::ModelFSDispatcher::Dispatch(AgentKey key_)
+ModelContext::FrontlineSystems* ModelContext::ModelFSDispatcher::Dispatch(AgentKey key_)
 {
 	return frontlineSystems[simpleFreeList.Distribute()].get();
 

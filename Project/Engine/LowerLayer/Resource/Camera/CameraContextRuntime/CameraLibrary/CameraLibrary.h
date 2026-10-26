@@ -2,7 +2,7 @@
 #include "../CameraFrontlineSystems.h"
 
 
-class CameraContext::CameraFrontlineSystems::CameraLibrary
+class CameraContext::FrontlineSystems::CameraLibrary
 {
 public:
 

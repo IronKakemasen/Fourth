@@ -4,10 +4,10 @@
 
 namespace
 {
-	auto const fileName = "ModelFrontlineSystems.h";
+	auto const fileName = "FrontlineSystems.h";
 }
 
-ModelContext::ModelFrontlineSystems::ModelFrontlineSystems(NexusFieldProof proof_, ModelCreator& modelCreator_)
+ModelContext::FrontlineSystems::FrontlineSystems(NexusFieldProof proof_, ModelCreator& modelCreator_)
 	:modelCreator(modelCreator_)
 {
 	modelContainer.reset(new ModelContainer(proof_));
@@ -15,13 +15,13 @@ ModelContext::ModelFrontlineSystems::ModelFrontlineSystems(NexusFieldProof proof
 
 }
 
-ModelContext::ModelFrontlineSystems::~ModelFrontlineSystems()
+ModelContext::FrontlineSystems::~FrontlineSystems()
 {
 
 }
 
 template<Model::Type modelType>
-void ModelContext::ModelFrontlineSystems::UpdateModelTransform()
+void ModelContext::FrontlineSystems::UpdateModelTransform()
 {
 
 	auto const& models = modelContainer->WatchSeparatedByModelType()[(UINT)modelType];
@@ -36,7 +36,7 @@ void ModelContext::ModelFrontlineSystems::UpdateModelTransform()
 }
 
 
-std::vector<Model*> ModelContext::ModelFrontlineSystems::AddModel(std::vector<std::unique_ptr<Model>>&& modelUniques_)
+std::vector<Model*> ModelContext::FrontlineSystems::AddModel(std::vector<std::unique_ptr<Model>>&& modelUniques_)
 {
 	std::vector<Model*> modelsPtr;
 	modelsPtr.reserve(modelUniques_.size());
@@ -50,19 +50,19 @@ std::vector<Model*> ModelContext::ModelFrontlineSystems::AddModel(std::vector<st
 	return modelsPtr;
 }
 
-void ModelContext::ModelFrontlineSystems::SeparateModels()
+void ModelContext::FrontlineSystems::SeparateModels()
 {
 	modelContainer->SeparateModels(ModelContainer::Local_InitLicence{});
 }
 
-ModelContext::ModelFrontlineSystems::ModelContainer const* ModelContext::ModelFrontlineSystems::WatchModelContainer()const
+ModelContext::FrontlineSystems::ModelContainer const* ModelContext::FrontlineSystems::WatchModelContainer()const
 {
 	return modelContainer.get();
 }
 
 
 template
-void ModelContext::ModelFrontlineSystems::UpdateModelTransform<Model::Type::kDynamic>();
+void ModelContext::FrontlineSystems::UpdateModelTransform<Model::Type::kDynamic>();
 
 template
-void ModelContext::ModelFrontlineSystems::UpdateModelTransform<Model::Type::kStatic>();
+void ModelContext::FrontlineSystems::UpdateModelTransform<Model::Type::kStatic>();

@@ -7,24 +7,24 @@ namespace
 	auto const fileName = "ModelContainer.cpp";
 }
 
-ModelContext::ModelFrontlineSystems::ModelContainer::ModelContainer(NexusFieldProof proof_)
+ModelContext::FrontlineSystems::ModelContainer::ModelContainer(NexusFieldProof proof_)
 {
 
 }
 
-ModelContext::ModelFrontlineSystems::ModelContainer::~ModelContainer()
+ModelContext::FrontlineSystems::ModelContainer::~ModelContainer()
 {
 
 }
 
-void ModelContext::ModelFrontlineSystems::ModelContainer::Add(Local_InitLicence licence_, std::unique_ptr<Model>&& model_)
+void ModelContext::FrontlineSystems::ModelContainer::Add(Local_InitLicence licence_, std::unique_ptr<Model>&& model_)
 {
 	const auto& model =  container.emplace_back(std::move(model_));
 	Logger::Log("Add: " + model->WatchName(), fileName);
 }
 
 
-void ModelContext::ModelFrontlineSystems::ModelContainer::SeparateModels(Local_InitLicence licence_)
+void ModelContext::FrontlineSystems::ModelContainer::SeparateModels(Local_InitLicence licence_)
 {
 	ModelSeparator modelSeparator;
 

@@ -14,12 +14,12 @@ public:
 	~ModelFSDispatcher();
 
 
-	ModelFrontlineSystems* Dispatch(AgentKey key_);
+	FrontlineSystems* Dispatch(AgentKey key_);
 
 
 private:
 
-	std::vector<std::unique_ptr<ModelFrontlineSystems>> frontlineSystems;
+	std::vector<std::unique_ptr<FrontlineSystems>> frontlineSystems;
 	SimpleFreeList simpleFreeList;
 };
 

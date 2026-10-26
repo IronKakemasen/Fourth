@@ -34,8 +34,8 @@ public:
 	//モデルクリエイターの所持する全レンダーステートパターンのキャッシュを見せる
 	std::vector<RenderState> const& WatchRenderStateCache(RenderContextProof proof_)const;
 
-	//シーンにModelFrontlineSystemsを割り当てる
-	ModelFrontlineSystems* DispatchFrontSystems(SceneContextProof proof_);
+	//シーンにFrontlineSystemsを割り当てる
+	FrontlineSystems* DispatchFrontSystems(SceneContextProof proof_);
 
 private:
 

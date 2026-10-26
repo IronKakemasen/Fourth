@@ -47,7 +47,7 @@ std::vector<RenderState> const& ModelContext::ExecutionAgent::WatchRenderStateCa
 	return modelCreator.WatchRenderStateCache(AgentKey{});
 }
 
-ModelContext::ModelFrontlineSystems* ModelContext::ExecutionAgent::DispatchFrontSystems(SceneContextProof proof_)
+ModelContext::FrontlineSystems* ModelContext::ExecutionAgent::DispatchFrontSystems(SceneContextProof proof_)
 {
 	return modelFSDispatcher.Dispatch(AgentKey{});
 }

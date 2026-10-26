@@ -14,17 +14,17 @@
 
 
 
-CameraContext::CameraFrontlineSystems* SceneContext::SceneCreator::ReceiveCameraSystems(CameraContextDiplomat& cameraContextDiplomat_)
+CameraContext::FrontlineSystems* SceneContext::SceneCreator::ReceiveCameraSystems(CameraContextDiplomat& cameraContextDiplomat_)
 {
-	//CameraFrontlineSystemsを一つ渡してもらう
+	//FrontlineSystemsを一つ渡してもらう
 	auto& agent = cameraContextDiplomat_.Access<CameraContext::ExecutionAgent>();
 	
 	return agent.DispatchFrontlineSystems(CameraContext::ExecutionAgent::SceneContextProof{});
 }
 
-ModelContext::ModelFrontlineSystems* SceneContext::SceneCreator::ReceiveModelSystems(ModelContextDiplomat& modelContextDiplomat_)
+ModelContext::FrontlineSystems* SceneContext::SceneCreator::ReceiveModelSystems(ModelContextDiplomat& modelContextDiplomat_)
 {
-	//ModelFrontlineSystemsを一つ渡してもらう
+	//FrontlineSystemsを一つ渡してもらう
 	auto& agent = modelContextDiplomat_.Access<ModelContext::ExecutionAgent>();
 
 	return agent.DispatchFrontSystems(ModelContext::ExecutionAgent::SceneContextProof{});

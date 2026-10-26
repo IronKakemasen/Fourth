@@ -28,8 +28,8 @@ class ModelContext
 
 public:
 	//シーンが1つ所持するモデルのシステム群
-	class ModelFrontlineSystems;
-	//ModelFrontlineSystemsをシーンにディスパッチする
+	class FrontlineSystems;
+	//FrontlineSystemsをシーンにディスパッチする
 	class ModelFSDispatcher;
 
 

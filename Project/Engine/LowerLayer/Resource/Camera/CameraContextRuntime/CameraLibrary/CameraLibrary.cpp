@@ -8,18 +8,18 @@ namespace
 	auto const fileName = "CameraLibrary.cpp";
 }
 
-CameraContext::CameraFrontlineSystems::CameraLibrary::CameraLibrary(NexusFieldProof proof_)
+CameraContext::FrontlineSystems::CameraLibrary::CameraLibrary(NexusFieldProof proof_)
 {
 
 }
 
 
-CameraContext::CameraFrontlineSystems::CameraLibrary::~CameraLibrary()
+CameraContext::FrontlineSystems::CameraLibrary::~CameraLibrary()
 {
 
 }
 
-void CameraContext::CameraFrontlineSystems::CameraLibrary::Import
+void CameraContext::FrontlineSystems::CameraLibrary::Import
 (
 	std::unique_ptr<CameraBehavior>&& cameraUnique_,
 	std::string const& name_
@@ -37,7 +37,7 @@ void CameraContext::CameraFrontlineSystems::CameraLibrary::Import
 	cameraLib[name_] = std::move(cameraUnique_);
 }
 
-CameraBehavior* CameraContext::CameraFrontlineSystems::CameraLibrary::Export(std::string const& name_)
+CameraBehavior* CameraContext::FrontlineSystems::CameraLibrary::Export(std::string const& name_)
 {
 	ErrorMessageOutput::Assert::DetectError
 	(

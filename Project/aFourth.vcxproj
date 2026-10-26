@@ -298,6 +298,11 @@
     <ClCompile Include="Engine\LowerLayer\Buffer\BufferCreateTools\ResourceCreator\ResourceCreator.cpp" />
     <ClCompile Include="Engine\LowerLayer\Buffer\BufferDefinition\GPUBuffer\GPUBufferBehavior.cpp" />
     <ClCompile Include="Engine\LowerLayer\DebugSystem\RuntimeDebugger\DebugSystems\LeakChecker\LeakChecker.cpp" />
+    <ClCompile Include="Engine\MiddleLayer\GameObject\GameObjectContext.cpp" />
+    <ClCompile Include="Engine\MiddleLayer\GameObject\GameObjectStructure\GameObjectBehavior.cpp" />
+    <ClCompile Include="Engine\MiddleLayer\GameObject\GameObjectCreator\GameObjectCreator.cpp" />
+    <ClCompile Include="Engine\MiddleLayer\GameObject\GameObjectRuntime\GameObjFrontSystems\GameObjFrontlineSystems.cpp" />
+    <ClCompile Include="Engine\MiddleLayer\GameObject\GameObjectRuntime\GameObjFrontSystems\GameObjContainer\GameObjContainer.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="Engine\LowerLayer\Core\Window\WindowContext.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Use</PrecompiledHeader>
@@ -759,6 +764,11 @@
     <ClInclude Include="Engine\MiddleLayer\Scene\ScenePresetIncludes.h" />
     <ClInclude Include="Engine\MiddleLayer\Render\RenderContextDiplomat\RenderContextDiplomat.h" />
     <ClInclude Include="Engine\MiddleLayer\Render\RenderContextDiplomat\RenderContextExecutionAgent\RenderContextExecutionAgent.h" />
+    <ClInclude Include="Engine\MiddleLayer\GameObject\GameObjectContext.h" />
+    <ClInclude Include="Engine\MiddleLayer\GameObject\GameObjectStructure\GameObjectBehavior.h" />
+    <ClInclude Include="Engine\MiddleLayer\GameObject\GameObjectCreator\GameObjectCreator.h" />
+    <ClInclude Include="Engine\MiddleLayer\GameObject\GameObjectRuntime\GameObjFrontSystems\GameObjFrontlineSystems.h" />
+    <ClInclude Include="Engine\MiddleLayer\GameObject\GameObjectRuntime\GameObjFrontSystems\GameObjContainer\GameObjContainer.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

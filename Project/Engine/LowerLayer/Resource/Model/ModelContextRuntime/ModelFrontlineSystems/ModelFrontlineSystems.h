@@ -4,7 +4,7 @@
 struct RenderStateKey;
 
 
-class ModelContext::ModelFrontlineSystems
+class ModelContext::FrontlineSystems
 {
 public:
 
@@ -12,8 +12,8 @@ public:
 	//modelType別に分類されたコンテナも持つ
 	class ModelContainer;
 
-	ModelFrontlineSystems(NexusFieldProof proof_, ModelCreator& modelCreator_);
-	~ModelFrontlineSystems();
+	FrontlineSystems(NexusFieldProof proof_, ModelCreator& modelCreator_);
+	~FrontlineSystems();
 
 	//モデル作成し、そのポインタを返す
 	template<Model::Type modelType>
