@@ -4,7 +4,7 @@
 
 namespace
 {
-	auto const fileName = "FrontlineSystems.h";
+	auto const fileName = "ModelFrontlineSystems.h";
 }
 
 ModelContext::FrontlineSystems::FrontlineSystems(NexusFieldProof proof_, ModelCreator& modelCreator_)

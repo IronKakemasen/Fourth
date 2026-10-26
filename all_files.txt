@@ -9603,8 +9603,8 @@ public:
 	//カメラのデータのバッチング処理を行う
 	class CameraDataBatcher;
 	//カメラのランタイムシステムを束ねたもの。1シーンに1つ存在
-	class CameraFrontlineSystems;
-	//CameraFrontlineSystemsの分配を行う
+	class FrontlineSystems;
+	//FrontlineSystemsの分配を行う
 	class FrontlineSystemsDispatcher;
 	//カメラ作成
 	class CameraCreator;
@@ -9779,7 +9779,7 @@ CameraContext::ExecutionAgent::ExecutionAgent
 ):cameraDataBatcher(cameraDataBatcher_),frontlineSystemsDispatcher(frontlineSystemsDispatcher_)
 {
 }
-CameraContext::CameraFrontlineSystems* CameraContext::ExecutionAgent::DispatchFrontlineSystems(SceneContextProof proof_)
+CameraContext::FrontlineSystems* CameraContext::ExecutionAgent::DispatchFrontlineSystems(SceneContextProof proof_)
 {
 	return frontlineSystemsDispatcher.Dispatch(AgentKey{});
 }
@@ -9812,7 +9812,7 @@ public:
 		CameraDataBatcher& cameraDataBatcher_
 	);
 	//シーンにカメラのシステムを渡す
-	CameraFrontlineSystems* DispatchFrontlineSystems(SceneContextProof proof_);
+	FrontlineSystems* DispatchFrontlineSystems(SceneContextProof proof_);
 	//カメラデータのバッチングを行う
 	void BatchCameraData
 	(
@@ -9834,26 +9834,26 @@ private:
 #include "CameraLibrary/CameraLibrary.h"
 #include "CameraController/CameraController.h"
 #include "../CameraCreator/CameraCreator.h"
-CameraContext::CameraFrontlineSystems::CameraFrontlineSystems(NexusFieldProof proof_, CameraCreator& cameraCreator_)
+CameraContext::FrontlineSystems::FrontlineSystems(NexusFieldProof proof_, CameraCreator& cameraCreator_)
 	:cameraCreator(cameraCreator_)
 {
 	cameraLibrary = std::make_unique<CameraLibrary>(proof_);
 	cameraController = std::make_unique<CameraController>(proof_);
 }
-CameraContext::CameraFrontlineSystems::~CameraFrontlineSystems()
+CameraContext::FrontlineSystems::~FrontlineSystems()
 {
 }
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-void CameraContext::CameraFrontlineSystems::ImportCamera(std::unique_ptr<CameraBehavior>&& camera_, std::string const& name_)
+void CameraContext::FrontlineSystems::ImportCamera(std::unique_ptr<CameraBehavior>&& camera_, std::string const& name_)
 {
 	cameraLibrary->Import(std::move(camera_), name_);
 }
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-std::unordered_map<CameraSocket, CameraBehavior*> const& CameraContext::CameraFrontlineSystems::CameraUpdate()
+std::unordered_map<CameraSocket, CameraBehavior*> const& CameraContext::FrontlineSystems::CameraUpdate()
 {
 	return cameraController->Update();
 }
@@ -9861,12 +9861,12 @@ std::unordered_map<CameraSocket, CameraBehavior*> const& CameraContext::CameraFr
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 template<>
-void CameraContext::CameraFrontlineSystems::Connect<CameraSocket::kDebug>(std::string const& name_)
+void CameraContext::FrontlineSystems::Connect<CameraSocket::kDebug>(std::string const& name_)
 {
 	cameraController->Connect<CameraSocket::kDebug>(cameraLibrary->Export(name_));
 }
 template
-void CameraContext::CameraFrontlineSystems::Connect<CameraSocket::kDebug>(std::string const& name_);
+void CameraContext::FrontlineSystems::Connect<CameraSocket::kDebug>(std::string const& name_);
 
 ========================================
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Camera\CameraContextRuntime\CameraFrontlineSystems.h ===
@@ -9874,7 +9874,7 @@ void CameraContext::CameraFrontlineSystems::Connect<CameraSocket::kDebug>(std::s
 #pragma once
 #include "../CameraCreator/CameraCreator.h"
 class CameraBehavior;
-class CameraContext::CameraFrontlineSystems
+class CameraContext::FrontlineSystems
 {
 	//そのシーンに存在するカメラのライブラリ
 	class CameraLibrary;
@@ -9883,8 +9883,8 @@ class CameraContext::CameraFrontlineSystems
 public:
 	template<CameraSocket dstSocket_>
 	using CmdConnectCamera = std::function<void(std::string const&)>;
-	CameraFrontlineSystems(NexusFieldProof proof_, CameraCreator& cameraCreator_);
-	~CameraFrontlineSystems();
+	FrontlineSystems(NexusFieldProof proof_, CameraCreator& cameraCreator_);
+	~FrontlineSystems();
 	//カメラの作成
 	template<CameraSocket dstSocket,typename CameraType>
 	CameraType* CreateCamera
@@ -9927,7 +9927,7 @@ private:
 #pragma once
 //厳密にいうと、バッファに書き込むカメラの接続口
 //実際に更新・バッチングする必要のあるカメラはこのソケットに接続しているカメラのみということになる
-//追加したら、CameraContext::CameraFrontlineSystems::Connectの明示的実体化も
+//追加したら、CameraContext::FrontlineSystems::Connectの明示的実体化も
 enum class CameraSocket
 {
 	//デバッグカメラ
@@ -9942,14 +9942,14 @@ enum class CameraSocket
 #include "PreCompileHeader.h"
 #include "CameraController.h"
 #include "../../CameraStructure/CameraBehavior.h"
-CameraContext::CameraFrontlineSystems::CameraController::CameraController(NexusFieldProof proof_)
+CameraContext::FrontlineSystems::CameraController::CameraController(NexusFieldProof proof_)
 {
 }
-std::unordered_map<CameraSocket, CameraBehavior*> const& CameraContext::CameraFrontlineSystems::CameraController::Update()
+std::unordered_map<CameraSocket, CameraBehavior*> const& CameraContext::FrontlineSystems::CameraController::Update()
 {
 	return RunCamera();
 }
-std::unordered_map<CameraSocket, CameraBehavior*> const& CameraContext::CameraFrontlineSystems::CameraController::RunCamera()
+std::unordered_map<CameraSocket, CameraBehavior*> const& CameraContext::FrontlineSystems::CameraController::RunCamera()
 {
 	CameraBehavior::Local_UpdateLicence licenceUpdate;
 	//更新する必要があるカメラ(描画のために使用しているカメラ)の更新処理を呼ぶ
@@ -9967,7 +9967,7 @@ std::unordered_map<CameraSocket, CameraBehavior*> const& CameraContext::CameraFr
 #pragma once
 #include "../CameraFrontlineSystems.h"
 class CameraBehavior;
-class CameraContext::CameraFrontlineSystems::CameraController
+class CameraContext::FrontlineSystems::CameraController
 {
 public:
 	CameraController(NexusFieldProof proof_);
@@ -10058,13 +10058,13 @@ namespace
 {
 	auto const fileName = "CameraLibrary.cpp";
 }
-CameraContext::CameraFrontlineSystems::CameraLibrary::CameraLibrary(NexusFieldProof proof_)
+CameraContext::FrontlineSystems::CameraLibrary::CameraLibrary(NexusFieldProof proof_)
 {
 }
-CameraContext::CameraFrontlineSystems::CameraLibrary::~CameraLibrary()
+CameraContext::FrontlineSystems::CameraLibrary::~CameraLibrary()
 {
 }
-void CameraContext::CameraFrontlineSystems::CameraLibrary::Import
+void CameraContext::FrontlineSystems::CameraLibrary::Import
 (
 	std::unique_ptr<CameraBehavior>&& cameraUnique_,
 	std::string const& name_
@@ -10079,7 +10079,7 @@ void CameraContext::CameraFrontlineSystems::CameraLibrary::Import
 	Logger::Log("Import: " + name_, fileName);
 	cameraLib[name_] = std::move(cameraUnique_);
 }
-CameraBehavior* CameraContext::CameraFrontlineSystems::CameraLibrary::Export(std::string const& name_)
+CameraBehavior* CameraContext::FrontlineSystems::CameraLibrary::Export(std::string const& name_)
 {
 	ErrorMessageOutput::Assert::DetectError
 	(
@@ -10095,7 +10095,7 @@ CameraBehavior* CameraContext::CameraFrontlineSystems::CameraLibrary::Export(std
 ========================================
 #pragma once
 #include "../CameraFrontlineSystems.h"
-class CameraContext::CameraFrontlineSystems::CameraLibrary
+class CameraContext::FrontlineSystems::CameraLibrary
 {
 public:
 	CameraLibrary(NexusFieldProof proof_);
@@ -10164,15 +10164,15 @@ CameraContext::FrontlineSystemsDispatcher::FrontlineSystemsDispatcher(NexusField
 	{
 		cameraFrontlineSystemsContainer.emplace_back
 		(
-			std::make_unique<CameraFrontlineSystems>(proof_, cameraCreator_)
+			std::make_unique<FrontlineSystems>(proof_, cameraCreator_)
 		);
 	}
-	Logger::Log("Instantiate: CameraFrontlineSystems(" + std::to_string(i) + ")", fileName);
+	Logger::Log("Instantiate: FrontlineSystems(" + std::to_string(i) + ")", fileName);
 }
 CameraContext::FrontlineSystemsDispatcher::~FrontlineSystemsDispatcher()
 {
 }
-CameraContext::CameraFrontlineSystems* CameraContext::FrontlineSystemsDispatcher::Dispatch(AgentKey key_)
+CameraContext::FrontlineSystems* CameraContext::FrontlineSystemsDispatcher::Dispatch(AgentKey key_)
 {
 	return cameraFrontlineSystemsContainer[simpleFreeList.Distribute()].get();
 }
@@ -10188,9 +10188,9 @@ class CameraContext::FrontlineSystemsDispatcher
 public:
 	FrontlineSystemsDispatcher(NexusFieldProof proof_ ,CameraCreator& cameraCreator_);
 	~FrontlineSystemsDispatcher();
-	CameraFrontlineSystems* Dispatch(AgentKey key_);
+	FrontlineSystems* Dispatch(AgentKey key_);
 private:
-	std::vector<std::unique_ptr<CameraFrontlineSystems>> cameraFrontlineSystemsContainer;
+	std::vector<std::unique_ptr<FrontlineSystems>> cameraFrontlineSystemsContainer;
 	SimpleFreeList simpleFreeList;
 };
 
@@ -10662,8 +10662,8 @@ class ModelContext
 	class ModelDataBatcher;
 public:
 	//シーンが1つ所持するモデルのシステム群
-	class ModelFrontlineSystems;
-	//ModelFrontlineSystemsをシーンにディスパッチする
+	class FrontlineSystems;
+	//FrontlineSystemsをシーンにディスパッチする
 	class ModelFSDispatcher;
 	//代行者
 	class ExecutionAgent;
@@ -12621,7 +12621,7 @@ std::vector<RenderState> const& ModelContext::ExecutionAgent::WatchRenderStateCa
 {
 	return modelCreator.WatchRenderStateCache(AgentKey{});
 }
-ModelContext::ModelFrontlineSystems* ModelContext::ExecutionAgent::DispatchFrontSystems(SceneContextProof proof_)
+ModelContext::FrontlineSystems* ModelContext::ExecutionAgent::DispatchFrontSystems(SceneContextProof proof_)
 {
 	return modelFSDispatcher.Dispatch(AgentKey{});
 }
@@ -12657,8 +12657,8 @@ public:
 	);
 	//モデルクリエイターの所持する全レンダーステートパターンのキャッシュを見せる
 	std::vector<RenderState> const& WatchRenderStateCache(RenderContextProof proof_)const;
-	//シーンにModelFrontlineSystemsを割り当てる
-	ModelFrontlineSystems* DispatchFrontSystems(SceneContextProof proof_);
+	//シーンにFrontlineSystemsを割り当てる
+	FrontlineSystems* DispatchFrontSystems(SceneContextProof proof_);
 private:
 	ModelContext& modelContext;
 	ModelDataBatcher& modelDataBatcher;
@@ -12963,17 +12963,17 @@ namespace
 {
 	auto const fileName = "ModelFrontlineSystems.h";
 }
-ModelContext::ModelFrontlineSystems::ModelFrontlineSystems(NexusFieldProof proof_, ModelCreator& modelCreator_)
+ModelContext::FrontlineSystems::FrontlineSystems(NexusFieldProof proof_, ModelCreator& modelCreator_)
 	:modelCreator(modelCreator_)
 {
 	modelContainer.reset(new ModelContainer(proof_));
 	Logger::Log("Instantiate: modelContainer", fileName);
 }
-ModelContext::ModelFrontlineSystems::~ModelFrontlineSystems()
+ModelContext::FrontlineSystems::~FrontlineSystems()
 {
 }
 template<Model::Type modelType>
-void ModelContext::ModelFrontlineSystems::UpdateModelTransform()
+void ModelContext::FrontlineSystems::UpdateModelTransform()
 {
 	auto const& models = modelContainer->WatchSeparatedByModelType()[(UINT)modelType];
 	for (auto* model : models)
@@ -12985,7 +12985,7 @@ void ModelContext::ModelFrontlineSystems::UpdateModelTransform()
 		}
 	}
 }
-std::vector<Model*> ModelContext::ModelFrontlineSystems::AddModel(std::vector<std::unique_ptr<Model>>&& modelUniques_)
+std::vector<Model*> ModelContext::FrontlineSystems::AddModel(std::vector<std::unique_ptr<Model>>&& modelUniques_)
 {
 	std::vector<Model*> modelsPtr;
 	modelsPtr.reserve(modelUniques_.size());
@@ -12996,18 +12996,18 @@ std::vector<Model*> ModelContext::ModelFrontlineSystems::AddModel(std::vector<st
 	}
 	return modelsPtr;
 }
-void ModelContext::ModelFrontlineSystems::SeparateModels()
+void ModelContext::FrontlineSystems::SeparateModels()
 {
 	modelContainer->SeparateModels(ModelContainer::Local_InitLicence{});
 }
-ModelContext::ModelFrontlineSystems::ModelContainer const* ModelContext::ModelFrontlineSystems::WatchModelContainer()const
+ModelContext::FrontlineSystems::ModelContainer const* ModelContext::FrontlineSystems::WatchModelContainer()const
 {
 	return modelContainer.get();
 }
 template
-void ModelContext::ModelFrontlineSystems::UpdateModelTransform<Model::Type::kDynamic>();
+void ModelContext::FrontlineSystems::UpdateModelTransform<Model::Type::kDynamic>();
 template
-void ModelContext::ModelFrontlineSystems::UpdateModelTransform<Model::Type::kStatic>();
+void ModelContext::FrontlineSystems::UpdateModelTransform<Model::Type::kStatic>();
 
 ========================================
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Model\ModelContextRuntime\ModelFrontlineSystems\ModelFrontlineSystems.h ===
@@ -13015,14 +13015,14 @@ void ModelContext::ModelFrontlineSystems::UpdateModelTransform<Model::Type::kSta
 #pragma once
 #include "../../CreateModelTools/ModelCreator.h"
 struct RenderStateKey;
-class ModelContext::ModelFrontlineSystems
+class ModelContext::FrontlineSystems
 {
 public:
 	//モデルのコンテナ。シーン1つにつき1こ。モデルの本体、renderState別と、
 	//modelType別に分類されたコンテナも持つ
 	class ModelContainer;
-	ModelFrontlineSystems(NexusFieldProof proof_, ModelCreator& modelCreator_);
-	~ModelFrontlineSystems();
+	FrontlineSystems(NexusFieldProof proof_, ModelCreator& modelCreator_);
+	~FrontlineSystems();
 	//モデル作成し、そのポインタを返す
 	template<Model::Type modelType>
 	std::vector<Model*> CreateModel
@@ -13132,18 +13132,18 @@ namespace
 {
 	auto const fileName = "ModelContainer.cpp";
 }
-ModelContext::ModelFrontlineSystems::ModelContainer::ModelContainer(NexusFieldProof proof_)
+ModelContext::FrontlineSystems::ModelContainer::ModelContainer(NexusFieldProof proof_)
 {
 }
-ModelContext::ModelFrontlineSystems::ModelContainer::~ModelContainer()
+ModelContext::FrontlineSystems::ModelContainer::~ModelContainer()
 {
 }
-void ModelContext::ModelFrontlineSystems::ModelContainer::Add(Local_InitLicence licence_, std::unique_ptr<Model>&& model_)
+void ModelContext::FrontlineSystems::ModelContainer::Add(Local_InitLicence licence_, std::unique_ptr<Model>&& model_)
 {
 	const auto& model =  container.emplace_back(std::move(model_));
 	Logger::Log("Add: " + model->WatchName(), fileName);
 }
-void ModelContext::ModelFrontlineSystems::ModelContainer::SeparateModels(Local_InitLicence licence_)
+void ModelContext::FrontlineSystems::ModelContainer::SeparateModels(Local_InitLicence licence_)
 {
 	ModelSeparator modelSeparator;
 	auto output = modelSeparator.SeparateAllModels(container);
@@ -13159,7 +13159,7 @@ void ModelContext::ModelFrontlineSystems::ModelContainer::SeparateModels(Local_I
 #include "../ModelFrontlineSystems.h"
 #include "../RenderStateKey.h"
 #include "../../../ModelStructure/Model.h"
-class ModelContext::ModelFrontlineSystems::ModelContainer
+class ModelContext::FrontlineSystems::ModelContainer
 {
 	//1.モデルのレンダーステートごとにコンテナに詰めて、PSOの切り替えコストを低減させる
 	//2.モデルをstaticかdynamicかでコンテナを仕分ける。バッチング処理の効率化のため
@@ -13186,10 +13186,10 @@ private:
 	//staticかdynamicかで仕分けられている
 	std::array < std::vector<Model*>, (UINT)Model::Type::kCount > separatedByModelType;
 };
-struct ModelContext::ModelFrontlineSystems::ModelContainer::Local_InitLicence
+struct ModelContext::FrontlineSystems::ModelContainer::Local_InitLicence
 {
 private:
-	friend class ModelContext::ModelFrontlineSystems;
+	friend class ModelContext::FrontlineSystems;
 	explicit Local_InitLicence() = default;
 };
 
@@ -13203,7 +13203,7 @@ private:
 using namespace RenderPassComponent;
 using namespace RenderStateComponent;
 using namespace ShaderPathComponent;
-ModelContext::ModelFrontlineSystems::ModelContainer::ModelSeparator::ModelSeparator()
+ModelContext::FrontlineSystems::ModelContainer::ModelSeparator::ModelSeparator()
 {
 	keyPackager.reset
 	(
@@ -13217,11 +13217,11 @@ ModelContext::ModelFrontlineSystems::ModelContainer::ModelSeparator::ModelSepara
 		)
 	);
 }
-ModelContext::ModelFrontlineSystems::ModelContainer::ModelSeparator::~ModelSeparator()
+ModelContext::FrontlineSystems::ModelContainer::ModelSeparator::~ModelSeparator()
 {
 }
-[[nodiscard]] ModelContext::ModelFrontlineSystems::ModelContainer::ModelSeparator::Output
-ModelContext::ModelFrontlineSystems::ModelContainer::ModelSeparator::SeparateAllModels(std::vector<std::unique_ptr<Model>>& modelContainer_)
+[[nodiscard]] ModelContext::FrontlineSystems::ModelContainer::ModelSeparator::Output
+ModelContext::FrontlineSystems::ModelContainer::ModelSeparator::SeparateAllModels(std::vector<std::unique_ptr<Model>>& modelContainer_)
 {
 	std::vector<SeparatedByRenderState> separatedByRenderState;
 	std::array < std::vector<Model*>, (UINT)Model::Type::kCount> separatedByModelType;
@@ -13242,7 +13242,7 @@ ModelContext::ModelFrontlineSystems::ModelContainer::ModelSeparator::SeparateAll
 	}
 	return std::make_pair(std::move(separatedByRenderState), std::move(separatedByModelType));
 }
-std::vector<std::pair<RenderStateKey, uint64_t>> ModelContext::ModelFrontlineSystems::ModelContainer::ModelSeparator::PackToKey(Model const& model_)
+std::vector<std::pair<RenderStateKey, uint64_t>> ModelContext::FrontlineSystems::ModelContainer::ModelSeparator::PackToKey(Model const& model_)
 {
 	std::vector<std::pair<RenderStateKey, uint64_t>> keys;
 	for (auto const& renderState : model_.WatchRenderStates())
@@ -13280,7 +13280,7 @@ std::vector<std::pair<RenderStateKey, uint64_t>> ModelContext::ModelFrontlineSys
 #pragma once
 #include "../ModelContainer.h"
 class KeyPackager;
-class ModelContext::ModelFrontlineSystems::ModelContainer::ModelSeparator
+class ModelContext::FrontlineSystems::ModelContainer::ModelSeparator
 {
 	using Output = std::pair<std::vector<SeparatedByRenderState>, std::array < std::vector<Model*>, (UINT)Model::Type::kCount > >;
 public:
@@ -13310,14 +13310,14 @@ ModelContext::ModelFSDispatcher::ModelFSDispatcher(NexusFieldProof proof_, Model
 	UINT i{};
 	for (;i < numScene;++i)
 	{
-		frontlineSystems.emplace_back(std::make_unique<ModelFrontlineSystems>(proof_, modelCreator_));
+		frontlineSystems.emplace_back(std::make_unique<FrontlineSystems>(proof_, modelCreator_));
 	}
-	Logger::Log("Instantiate: ModelFrontlineSystems(" + std::to_string(i) + ")", "ModelFSDispatcher.cpp");
+	Logger::Log("Instantiate: FrontlineSystems(" + std::to_string(i) + ")", "ModelFSDispatcher.cpp");
 }
 ModelContext::ModelFSDispatcher::~ModelFSDispatcher()
 {
 }
-ModelContext::ModelFrontlineSystems* ModelContext::ModelFSDispatcher::Dispatch(AgentKey key_)
+ModelContext::FrontlineSystems* ModelContext::ModelFSDispatcher::Dispatch(AgentKey key_)
 {
 	return frontlineSystems[simpleFreeList.Distribute()].get();
 }
@@ -13334,9 +13334,9 @@ class ModelContext::ModelFSDispatcher
 public:
 	ModelFSDispatcher(NexusFieldProof proof_, ModelCreator& modelCreator_);
 	~ModelFSDispatcher();
-	ModelFrontlineSystems* Dispatch(AgentKey key_);
+	FrontlineSystems* Dispatch(AgentKey key_);
 private:
-	std::vector<std::unique_ptr<ModelFrontlineSystems>> frontlineSystems;
+	std::vector<std::unique_ptr<FrontlineSystems>> frontlineSystems;
 	SimpleFreeList simpleFreeList;
 };
 
@@ -17487,6 +17487,291 @@ struct Vector4
 			static_cast<T>(w* scalar_)
 		};
 	}
+};
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\MiddleLayer\GameObject\GameObjectContext.cpp ===
+========================================
+#include "PreCompileHeader.h"
+#include "GameObjectContext.h"
+namespace
+{
+	std::string const fileName = "GameObjectContext.cpp";
+}
+GameObjectContext::GameObjectContext(NexusFieldProof proof_)
+{
+	Logger::Entry("GameObjectContext: Constructor");
+	Logger::End("GameObjectContext: Constructor");
+}
+GameObjectContext::~GameObjectContext()
+{
+}
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\MiddleLayer\GameObject\GameObjectContext.h ===
+========================================
+#pragma once
+class Nexus;
+class GameObjectContext
+{
+	//ゲームオブジェクトを作成する
+	class GameObjectCreator;
+	//シーンデータからゲームオブジェクトの情報をインプットする
+	class ObjDataLoader;
+public:
+	//1シーンが一つ持つ、前線システム群
+	class FrontlineSystems;
+	struct NexusFieldProof;
+	GameObjectContext(NexusFieldProof proof_);
+	~GameObjectContext();
+private:
+};
+struct GameObjectContext::NexusFieldProof
+{
+private:
+	friend class Nexus;
+	explicit NexusFieldProof() = default;
+};
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\MiddleLayer\GameObject\GameObjectCreator\GameObjectCreator.cpp ===
+========================================
+#include "PreCompileHeader.h"
+#include "GameObjectCreator.h"
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\MiddleLayer\GameObject\GameObjectCreator\GameObjectCreator.h ===
+========================================
+#pragma once
+#include "../GameObjectContext.h"
+#include "../GameObjectStructure/GameObjectBehavior.h"
+class GameObjectContext::GameObjectCreator
+{
+public:
+	GameObjectCreator(NexusFieldProof proof_);
+	template<typename ObjType>
+	std::unique_ptr<ObjType> Create
+	(
+		std::string const& name_,
+		UINT id_
+	)		
+	{
+		std::unique_ptr<ObjType> obj = std::make_unique<ObjType>(GameObjectBehavior::Local_CreateLicence{});
+		//名前とIDをセットする
+		static_cast<GameObjectBehavior*>(obj.get())->Init(name_, id_);
+		return obj;
+	}
+};
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\MiddleLayer\GameObject\GameObjectCreator\ObjDataLoader\ObjDataLoader.cpp ===
+========================================
+#include "PreCompileHeader.h"
+#include "ObjDataLoader.h"
+std::vector<std::string> GameObjectContext::ObjDataLoader::LoadUpdatePriority(std::string const& sceneName_)
+{
+	auto* miyajison = Miyajison::Get();
+	return miyajison->LoadData<std::vector<std::string>>(sceneName_, { DataKey::kGameObjectUpdatePriority });
+}
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\MiddleLayer\GameObject\GameObjectCreator\ObjDataLoader\ObjDataLoader.h ===
+========================================
+#pragma once
+#include "../../GameObjectContext.h"
+class GameObjectContext::ObjDataLoader
+{
+	std::vector<std::string> LoadUpdatePriority(std::string const& sceneName_);
+private:
+	struct DataKey
+	{
+		static inline std::string const kGameObjectUpdatePriority = "GameObjectUpdatePriority";
+	};
+};
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\MiddleLayer\GameObject\GameObjectRuntime\GameObjFrontSystems\GameObjFrontlineSystems.cpp ===
+========================================
+#include "PreCompileHeader.h"
+#include "GameObjFrontlineSystems.h"
+#include "GameObjContainer/GameObjContainer.h"
+namespace
+{
+	auto const fileName = "GameObjFrontlineSystems.cpp";
+}
+GameObjectContext::FrontlineSystems::FrontlineSystems(NexusFieldProof proof_, GameObjectCreator& objCreator_)
+	:objCreator(objCreator_)
+{
+	objContainer = std::make_unique<ObjContainer>(proof_);
+	Logger::Log("Instantiate: ObjContainer", fileName);
+}
+GameObjectContext::FrontlineSystems::~FrontlineSystems()
+{
+}
+size_t GameObjectContext::FrontlineSystems::WatchNumCreate()const
+{
+	return objContainer->WatchNumObjUnique();
+}
+void GameObjectContext::FrontlineSystems::ImportObj(std::string const& objNamePlusID_, std::unique_ptr<GameObjectBehavior>&& obj_)
+{
+	objContainer->Import(objNamePlusID_, std::move(obj_));
+}
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\MiddleLayer\GameObject\GameObjectRuntime\GameObjFrontSystems\GameObjFrontlineSystems.h ===
+========================================
+#pragma once
+#include "../../GameObjectCreator/GameObjectCreator.h"
+class GameObjectContext::FrontlineSystems
+{
+	class ObjContainer;
+public:
+	FrontlineSystems
+	(
+		NexusFieldProof proof_,
+		GameObjectCreator& objCreator_
+	);
+	~FrontlineSystems();
+	template<typename ObjType>
+	ObjType* CreateObj(std::string const& name_)
+	{
+		std::unique_ptr<ObjType> objUnique = objCreator.Create<ObjType>(name_, WatchNumCreate());
+		auto* objPtr = objUnique.get();
+		ImportObj(name_ + "[" + std::to_string(WatchNumCreate()) + "]", std::move(objUnique));
+		return objPtr;
+	}
+private:
+	GameObjectCreator& objCreator;
+	std::unique_ptr<ObjContainer> objContainer;
+	size_t WatchNumCreate()const;
+	void ImportObj(std::string const& objNamePlusID_, std::unique_ptr<GameObjectBehavior>&& obj_);
+};
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\MiddleLayer\GameObject\GameObjectRuntime\GameObjFrontSystems\GameObjContainer\GameObjContainer.cpp ===
+========================================
+#include "PreCompileHeader.h"
+#include "GameObjContainer.h"
+#include "../../../GameObjectStructure/GameObjectBehavior.h"
+namespace
+{
+	auto const fileName = "GameObjContainer.cpp";
+}
+GameObjectContext::FrontlineSystems::ObjContainer::ObjContainer(NexusFieldProof proof_)
+{
+}
+void GameObjectContext::FrontlineSystems::ObjContainer::Import(std::string const& objNamePlusID_, std::unique_ptr<GameObjectBehavior>&& obj_)
+{
+	objMap[objNamePlusID_] = std::move(obj_);
+	Logger::Log("Import: " + objNamePlusID_, fileName);
+}
+size_t GameObjectContext::FrontlineSystems::ObjContainer::WatchNumObjUnique()
+{
+	return objMap.size();
+}
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\MiddleLayer\GameObject\GameObjectRuntime\GameObjFrontSystems\GameObjContainer\GameObjContainer.h ===
+========================================
+#pragma once
+#include "../GameObjFrontlineSystems.h"
+class GameObjectBehavior;
+class GameObjectContext::FrontlineSystems::ObjContainer
+{
+public:
+	ObjContainer(NexusFieldProof proof_);
+	size_t WatchNumObjUnique();
+	void Import(std::string const& objNamePlusID_, std::unique_ptr<GameObjectBehavior>&& obj_);
+private:
+	//本体のマップ
+	std::unordered_map<std::string, std::unique_ptr<GameObjectBehavior>> objMap;
+};
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\MiddleLayer\GameObject\GameObjectStructure\GameObjectBehavior.cpp ===
+========================================
+#include "PreCompileHeader.h"
+#include "GameObjectBehavior.h"
+//外部
+#include "../../../LowerLayer/Resource/Model/ModelStructure/Model.h"
+GameObjectBehavior::GameObjectBehavior(Local_CreateLicence licence_)
+{
+}
+void GameObjectBehavior::SetNameAndID(std::string const& name_,UINT id_)
+{
+	name = name_;
+	id = id_;
+}
+void GameObjectBehavior::SetUpdatePriority(UINT updatePriority_)
+{
+	updatePriority = updatePriority_;
+}
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\MiddleLayer\GameObject\GameObjectStructure\GameObjectBehavior.h ===
+========================================
+#pragma once
+//外部
+#include "../../../Math/Transform/Transform.h"
+class Model;
+class GameObjectContext;
+class GameObjectBehavior
+{
+	friend class GameObjectContext;
+public:
+	enum class Status
+	{
+		kActive,	//更新します
+		kInActive,	//しません
+	};
+	struct Local_CreateLicence;
+	GameObjectBehavior(Local_CreateLicence licence_);
+	virtual ~GameObjectBehavior() = default;
+	//システムを取り付ける
+	template<typename SystemType>
+	void AttachSystem()
+	{
+		std::get<std::unique_ptr<SystemType>>(systems) = std::make_unique<SystemType>();
+	}
+	//システムのポインタを取得
+	template<typename SystemType>
+	auto* GetSystemPtr()
+	{
+		return 
+		std::get<std::unique_ptr<SystemType>>(systems) ?
+		std::get<std::unique_ptr<SystemType>>(systems).get() : nullptr;
+	}
+	Status WatchStatus()const {return status;}
+private:
+	//ゲームオブジェクトのステータス
+	Status status = Status::kActive;
+	//名前。検索などに使います
+	std::string name = "none";
+	//ID
+	UINT id = kInvalid;
+	//更新処理優先度
+	UINT updatePriority{};
+	//アタッチ可能なシステム
+	std::tuple<std::unique_ptr<Transform>> systems;
+	//以下ゲームオブジェクト管理クラスが呼ぶ
+	//ただの更新処理
+	virtual void Update() = 0;
+	//ゲームオブジェクトのリセットに使用。シーンが切り替わった時に呼ばれる
+	virtual void Reset() = 0;
+	//実質、コンストラクタの代わり
+	virtual void Awake() = 0;
+	//更新処理の直前に呼ばれる。他のゲームオブジェクトはこの時点で生成されているので
+	//検索などはできる
+	virtual void Start() = 0;
+	//コンストラクタをシンプルにするための、エンジン層で受け持つ初期化関数群
+	void SetNameAndID(std::string const& name_, UINT id_);
+	void SetUpdatePriority(UINT updatePriority_);
+};
+struct GameObjectBehavior::Local_CreateLicence
+{
+private:
+	friend class GameObjectContext;
+	explicit Local_CreateLicence() = default;
 };
 
 ========================================
@@ -21796,15 +22081,15 @@ public:
 #include "../../../LowerLayer/Resource/Model/ModelContextDiplomat/ModelContextDiplomat.h"
 #include "../../../LowerLayer/Resource/Model/ModelContextDiplomat/ModelContextExecutionAgent/ModelContextExecutionAgent.h"
 #include "../../../LowerLayer/Resource/Model/ModelContextDiplomat/ModelContextExecutionAgent/ModelAgentLicences.h"
-CameraContext::CameraFrontlineSystems* SceneContext::SceneCreator::ReceiveCameraSystems(CameraContextDiplomat& cameraContextDiplomat_)
+CameraContext::FrontlineSystems* SceneContext::SceneCreator::ReceiveCameraSystems(CameraContextDiplomat& cameraContextDiplomat_)
 {
-	//CameraFrontlineSystemsを一つ渡してもらう
+	//FrontlineSystemsを一つ渡してもらう
 	auto& agent = cameraContextDiplomat_.Access<CameraContext::ExecutionAgent>();
 	return agent.DispatchFrontlineSystems(CameraContext::ExecutionAgent::SceneContextProof{});
 }
-ModelContext::ModelFrontlineSystems* SceneContext::SceneCreator::ReceiveModelSystems(ModelContextDiplomat& modelContextDiplomat_)
+ModelContext::FrontlineSystems* SceneContext::SceneCreator::ReceiveModelSystems(ModelContextDiplomat& modelContextDiplomat_)
 {
-	//ModelFrontlineSystemsを一つ渡してもらう
+	//FrontlineSystemsを一つ渡してもらう
 	auto& agent = modelContextDiplomat_.Access<ModelContext::ExecutionAgent>();
 	return agent.DispatchFrontSystems(ModelContext::ExecutionAgent::SceneContextProof{});
 }
@@ -21818,7 +22103,7 @@ ModelContext::ModelFrontlineSystems* SceneContext::SceneCreator::ReceiveModelSys
 //外部
 #include "../../../LowerLayer/Resource/Camera/CameraContext.h"
 #include "../../../LowerLayer/Resource/Model/ModelContext.h"
-//CameraFrontlineSystems
+//FrontlineSystems
 class SceneContext::SceneCreator
 {
 public:
@@ -21847,10 +22132,10 @@ public:
 		return sceneUnique;
 	}
 private:
-	//CameraFrontlineSystemsを一つもらう
-	CameraContext::CameraFrontlineSystems* ReceiveCameraSystems(CameraContextDiplomat& cameraContextDiplomat_);
-	//ModelFrontlineSystemsを一つもらう
-	ModelContext::ModelFrontlineSystems* ReceiveModelSystems(ModelContextDiplomat& modelContextDiplomat_);
+	//FrontlineSystemsを一つもらう
+	CameraContext::FrontlineSystems* ReceiveCameraSystems(CameraContextDiplomat& cameraContextDiplomat_);
+	//FrontlineSystemsを一つもらう
+	ModelContext::FrontlineSystems* ReceiveModelSystems(ModelContextDiplomat& modelContextDiplomat_);
 };
 
 ========================================
@@ -22004,8 +22289,8 @@ void SceneBehavior::SeparateModels()
 }
 void SceneBehavior::SetSystems
 (
-	CameraContext::CameraFrontlineSystems* cameraSystems_,
-	ModelContext::ModelFrontlineSystems* modelSystems_
+	CameraContext::FrontlineSystems* cameraSystems_,
+	ModelContext::FrontlineSystems* modelSystems_
 )
 {
 	ErrorMessageOutput::Assert::DetectError
@@ -22056,7 +22341,7 @@ class SceneBehavior
 		//使用しているカメラ。更新必要
 		std::unordered_map<CameraSocket, CameraBehavior*> usingCamera;
 		//このシーンのモデルコンテナ
-		ModelContext::ModelFrontlineSystems::ModelContainer const* modelContainer = nullptr;
+		ModelContext::FrontlineSystems::ModelContainer const* modelContainer = nullptr;
 		//staticなモデルを毎回バッチング処理しないようにするため
 		UINT leftStaticModelBatchingCnt = (UINT)ProjectConfig::Render::NumBuffer::kDoubleBuffer;
 	};
@@ -22076,7 +22361,7 @@ protected:
 	//ゲームオブジェクトが好きなタイミングでカメラを切り替えられるように
 	//カメラ切り替えコマンドを返す。
 	template<CameraSocket dstSocket>
-	[[nodiscard]] CameraContext::CameraFrontlineSystems::CmdConnectCamera<dstSocket> GetCmdConnectCamera()
+	[[nodiscard]] CameraContext::FrontlineSystems::CmdConnectCamera<dstSocket> GetCmdConnectCamera()
 	{
 		return cameraSystems->GetCmdConnectCamera<dstSocket>();
 	}
@@ -22111,8 +22396,8 @@ private:
 	//シーンクリエイターがインスタンス化後に呼び出す
 	void SetSystems
 	(
-		CameraContext::CameraFrontlineSystems* cameraSystems_,
-		ModelContext::ModelFrontlineSystems* modelSystems_
+		CameraContext::FrontlineSystems* cameraSystems_,
+		ModelContext::FrontlineSystems* modelSystems_
 	);
 	//シーンクリエイターがプリセットカメラを備え付ける
 	void CreatePresetCamera();
@@ -22121,8 +22406,8 @@ private:
 	//SceneControllerにこのシーンで使われているリソース伝えるため
 	Output const& WatchSceneOutput()const;
 	//他コンテキストのシステム
-	CameraContext::CameraFrontlineSystems* cameraSystems = nullptr;
-	ModelContext::ModelFrontlineSystems* modelSystems = nullptr;
+	CameraContext::FrontlineSystems* cameraSystems = nullptr;
+	ModelContext::FrontlineSystems* modelSystems = nullptr;
 	//シーンの出力物
 	SceneBehavior::Output output;
 };
@@ -22158,6 +22443,8 @@ private:
 #include "../MiddleLayer/Render/RenderContext.h"
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 #include "../MiddleLayer/Scene/SceneContext.h"
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+#include "../MiddleLayer/GameObject/GameObjectContext.h"
 namespace
 {
 	std::string const fileName = "Nexus.cpp";
@@ -22190,6 +22477,7 @@ void Nexus::PrimaryInit()
 	InitializeInSequence<InitSequence::kRootSignatureContext>();
 	InitializeInSequence<InitSequence::kTextureContext>();
 	InitializeInSequence<InitSequence::kModelContext>();
+	InitializeInSequence<InitSequence::kGameObjectContext>();
 	InitializeInSequence<InitSequence::kCameraContext>();
 	InitializeInSequence<InitSequence::kSceneContext>();
 }
@@ -22226,6 +22514,7 @@ class TextureContext;
 class CameraContext;
 class DebugContext;
 class SceneContext;
+class GameObjectContext;
 //交易場
 class Nexus
 {
@@ -22266,6 +22555,7 @@ private:
 		kRootSignatureContext,
 		kTextureContext,
 		kModelContext,
+		kGameObjectContext,
 		kCameraContext,
 		kSceneContext,
 		//ここまではコンストラクタ
@@ -22313,6 +22603,8 @@ private:
 	std::unique_ptr<TextureContext> textureContext;
 	//カメラの定義、作成、バッチング処理
 	std::unique_ptr<CameraContext> cameraContext;
+	//ゲームオブジェクトの生成、管理
+	std::unique_ptr<GameObjectContext> gameObjectContext;
 	//シーンの作成、保持、コントロール、シーンデータのバッチングを行う
 	std::unique_ptr<SceneContext> sceneContext;
 	//一段階目初期化
@@ -22422,6 +22714,8 @@ void Nexus::Finalize<Nexus::FinalizeSequence::kWindowContext>()
 #include "../MiddleLayer/Render/RenderContext.h"
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 #include "../MiddleLayer/Scene/SceneContext.h"
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+#include "../MiddleLayer/GameObject/GameObjectContext.h"
 namespace
 {
 	std::string const fileName = "NexusInitialization.cpp";
@@ -22680,10 +22974,21 @@ void Nexus::Init<Nexus::InitSequence::kDeleteModelDataCache>()
 	//初期化処理に使ったモデルデータのキャッシュを削除
 	agent.DeleteModelDataCache(ModelContext::NexusFieldProof{});
 }
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 template<>
 void Nexus::Init<Nexus::InitSequence::kSceneContext>()
 {
 	sceneContext = std::make_unique<SceneContext>(SceneContext::NexusFieldProof{});
+}
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+template<>
+void Nexus::Init<Nexus::InitSequence::kGameObjectContext>()
+{
+	gameObjectContext = std::make_unique<GameObjectContext>(GameObjectContext::NexusFieldProof{});
 }
 template
 void Nexus::Init<Nexus::InitSequence::kDebugContext>();
@@ -22725,6 +23030,8 @@ template
 void Nexus::Init<Nexus::InitSequence::kSortOutGlobalConstantBuffers>();
 template
 void Nexus::Init<Nexus::InitSequence::kDeleteModelDataCache>();
+template
+void Nexus::Init<Nexus::InitSequence::kGameObjectContext>();
 
 ========================================
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Nexus\NexusRun.cpp ===
@@ -23756,5 +24063,5 @@ namespace StringProcessing
 ========================================
 === SUMMARY ===
 ========================================
-Total Files      : 523
-Effective Lines  : 17347
+Total Files      : 535
+Effective Lines  : 17547

@@ -438,6 +438,7 @@
     <ClCompile Include="Engine\MiddleLayer\Scene\ScenePreset\RenderingTestScene\RenderingTestScene.cpp" />
     <ClCompile Include="Engine\MiddleLayer\Render\RenderContextDiplomat\RenderContextDiplomat.cpp" />
     <ClCompile Include="Engine\MiddleLayer\Render\RenderContextDiplomat\RenderContextExecutionAgent\RenderContextExecutionAgent.cpp" />
+    <ClCompile Include="Engine\MiddleLayer\GameObject\GameObjectCreator\ObjDataLoader\ObjDataLoader.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Application\AllCameraIncludes.h" />
@@ -769,6 +770,7 @@
     <ClInclude Include="Engine\MiddleLayer\GameObject\GameObjectCreator\GameObjectCreator.h" />
     <ClInclude Include="Engine\MiddleLayer\GameObject\GameObjectRuntime\GameObjFrontSystems\GameObjFrontlineSystems.h" />
     <ClInclude Include="Engine\MiddleLayer\GameObject\GameObjectRuntime\GameObjFrontSystems\GameObjContainer\GameObjContainer.h" />
+    <ClInclude Include="Engine\MiddleLayer\GameObject\GameObjectCreator\ObjDataLoader\ObjDataLoader.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

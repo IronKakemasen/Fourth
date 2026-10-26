@@ -120,6 +120,8 @@ private:
 	std::unique_ptr<RootSignatureContext> rootSignatureContext;
 	//PSOの管理、描画パスの構築
 	std::unique_ptr<RenderContext> renderContext;
+	//ゲームオブジェクトの生成、管理
+	std::unique_ptr<GameObjectContext> gameObjectContext;
 	//モデルクラスの生成、管理
 	std::unique_ptr<ModelContext> modelContext;
 	//テクスチャファイルの読み込み、データ保持
@@ -128,8 +130,6 @@ private:
 	std::unique_ptr<CameraContext> cameraContext;
 	//シーンの作成、保持、コントロール、シーンデータのバッチングを行う
 	std::unique_ptr<SceneContext> sceneContext;
-	//ゲームオブジェクトの生成、管理
-	std::unique_ptr<GameObjectContext> gameObjectContext;
 
 
 	//一段階目初期化

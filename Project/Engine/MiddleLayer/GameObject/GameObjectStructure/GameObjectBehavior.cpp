@@ -12,21 +12,14 @@ GameObjectBehavior::GameObjectBehavior(Local_CreateLicence licence_)
 
 
 
-void GameObjectBehavior::Init
-(
-	std::string const& name_,
-	UINT id_,
-	Model* model_
-)
+void GameObjectBehavior::SetNameAndID(std::string const& name_,UINT id_)
 {
 	name = name_;
 	id = id_;
+}
 
-	//モデルがあるならそのメッシュの0番目とペアリングする
-	if (model_)
-	{
-		model = model_;
-		transform.BeParent(&model_->RefTransform(0));
-	}
+void GameObjectBehavior::SetUpdatePriority(UINT updatePriority_)
+{
+	updatePriority = updatePriority_;
 }
 
