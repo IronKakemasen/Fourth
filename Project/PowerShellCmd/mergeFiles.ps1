@@ -1,5 +1,7 @@
 ﻿$targetPath = "C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine"
-$outputPath = Join-Path $args[0] "all_files.txt"
+# スクリプトの配置ディレクトリから2階層上を出力先にする
+$outputDir = Split-Path (Split-Path $PSScriptRoot -Parent) -Parent
+$outputPath = Join-Path $outputDir "all_files.txt"
 
 $utf8NoBOM = New-Object System.Text.UTF8Encoding($false)
 $writer = New-Object System.IO.StreamWriter($outputPath, $false, $utf8NoBOM)

@@ -68,7 +68,6 @@ public:
 	//ジェーソンファイルに実際にwrittenFilePathCacheをもとに書き込んでいく
 	void Save();
 
-
 private:
 
 	Miyajison();

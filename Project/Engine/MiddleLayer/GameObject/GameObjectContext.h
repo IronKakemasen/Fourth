@@ -6,6 +6,8 @@ class GameObjectContext
 {
 	//ゲームオブジェクトを作成する
 	class GameObjectCreator;
+	//シーンデータからゲームオブジェクトの情報をインプットする
+	class ObjDataLoader;
 
 public:
 
@@ -19,6 +21,7 @@ public:
 
 
 private:
+
 
 };
 
