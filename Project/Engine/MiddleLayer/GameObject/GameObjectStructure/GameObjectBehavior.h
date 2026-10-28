@@ -45,12 +45,6 @@ private:
 
 	//ゲームオブジェクトのステータス
 	Status status = Status::kActive;
-	//名前。検索などに使います
-	std::string name = "none";
-	//ID
-	UINT id = kInvalid;
-	//更新処理優先度
-	UINT updatePriority{};
 
 	//アタッチ可能なシステム
 	std::tuple<std::unique_ptr<Transform>> systems;
@@ -69,8 +63,6 @@ private:
 	virtual void Start() = 0;
 
 	//コンストラクタをシンプルにするための、エンジン層で受け持つ初期化関数群
-	void SetNameAndID(std::string const& name_, UINT id_);
-	void SetUpdatePriority(UINT updatePriority_);
 
 };
 

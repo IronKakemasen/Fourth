@@ -32,7 +32,7 @@ public:
 
 	~Transform()
 	{
-		if (parent) parent->DeleteChild(this);
+		if (parent) parent->BreakRelationship(this);
 	}
 
 	inline void TranslatePosition(const Vector3& dstPos_)
@@ -154,11 +154,15 @@ private:
 		parent = parent_;
 	}
 
-	inline void DeleteChild(Transform* dstChild_)
+	inline void BreakRelationship(Transform* dstChild_)
 	{
 		for (auto itr = children.begin();itr != children.end();++itr)
 		{
-			if ((*itr) && (*itr) == dstChild_)(*itr) = nullptr;
+			if ((*itr) && (*itr) == dstChild_)
+			{
+				(*itr)->parent = nullptr;
+				(*itr) = nullptr;
+			}
 		}
 	}
 

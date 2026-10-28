@@ -17024,7 +17024,7 @@ public:
 	}
 	~Transform()
 	{
-		if (parent) parent->DeleteChild(this);
+		if (parent) parent->BreakRelationship(this);
 	}
 	inline void TranslatePosition(const Vector3& dstPos_)
 	{
@@ -17128,11 +17128,15 @@ private:
 	{
 		parent = parent_;
 	}
-	inline void DeleteChild(Transform* dstChild_)
+	inline void BreakRelationship(Transform* dstChild_)
 	{
 		for (auto itr = children.begin();itr != children.end();++itr)
 		{
-			if ((*itr) && (*itr) == dstChild_)(*itr) = nullptr;
+			if ((*itr) && (*itr) == dstChild_)
+			{
+				(*itr)->parent = nullptr;
+				(*itr) = nullptr;
+			}
 		}
 	}
 	inline void ResetFrameFlag()
@@ -17550,16 +17554,9 @@ class GameObjectContext::GameObjectCreator
 public:
 	GameObjectCreator(NexusFieldProof proof_);
 	template<typename ObjType>
-	std::unique_ptr<ObjType> Create
-	(
-		std::string const& name_,
-		UINT id_
-	)		
+	std::unique_ptr<ObjType> Create()		
 	{
-		std::unique_ptr<ObjType> obj = std::make_unique<ObjType>(GameObjectBehavior::Local_CreateLicence{});
-		//名前とIDをセットする
-		static_cast<GameObjectBehavior*>(obj.get())->Init(name_, id_);
-		return obj;
+		return std::make_unique<ObjType>(GameObjectBehavior::Local_CreateLicence{});
 	}
 };
 
@@ -17581,6 +17578,7 @@ std::vector<std::string> GameObjectContext::ObjDataLoader::LoadUpdatePriority(st
 #include "../../GameObjectContext.h"
 class GameObjectContext::ObjDataLoader
 {
+public:
 	std::vector<std::string> LoadUpdatePriority(std::string const& sceneName_);
 private:
 	struct DataKey
@@ -17594,7 +17592,7 @@ private:
 ========================================
 #include "PreCompileHeader.h"
 #include "GameObjFrontlineSystems.h"
-#include "GameObjContainer/GameObjContainer.h"
+#include "GameObjLibrary/GameObjLibrary.h"
 namespace
 {
 	auto const fileName = "GameObjFrontlineSystems.cpp";
@@ -17602,19 +17600,23 @@ namespace
 GameObjectContext::FrontlineSystems::FrontlineSystems(NexusFieldProof proof_, GameObjectCreator& objCreator_)
 	:objCreator(objCreator_)
 {
-	objContainer = std::make_unique<ObjContainer>(proof_);
-	Logger::Log("Instantiate: ObjContainer", fileName);
+	objLibrary = std::make_unique<ObjLibrary>(proof_);
+	Logger::Log("Instantiate: ObjLibrary", fileName);
 }
 GameObjectContext::FrontlineSystems::~FrontlineSystems()
 {
 }
-size_t GameObjectContext::FrontlineSystems::WatchNumCreate()const
+void GameObjectContext::FrontlineSystems::ImportObj
+(
+	std::string const& objName_,
+	std::unique_ptr<GameObjectBehavior>&& obj_
+) 
 {
-	return objContainer->WatchNumObjUnique();
+	objLibrary->Import(objName_,std::move(obj_));
 }
-void GameObjectContext::FrontlineSystems::ImportObj(std::string const& objNamePlusID_, std::unique_ptr<GameObjectBehavior>&& obj_)
+void GameObjectContext::FrontlineSystems::Sort(std::vector<std::string> const& objPriorityList_)
 {
-	objContainer->Import(objNamePlusID_, std::move(obj_));
+	objLibrary->SortByPriority(objPriorityList_);
 }
 
 ========================================
@@ -17624,7 +17626,7 @@ void GameObjectContext::FrontlineSystems::ImportObj(std::string const& objNamePl
 #include "../../GameObjectCreator/GameObjectCreator.h"
 class GameObjectContext::FrontlineSystems
 {
-	class ObjContainer;
+	class ObjLibrary;
 public:
 	FrontlineSystems
 	(
@@ -17632,59 +17634,115 @@ public:
 		GameObjectCreator& objCreator_
 	);
 	~FrontlineSystems();
+	//ゲームオブジェクトを生成し、コンテナにぶち込む。
 	template<typename ObjType>
 	ObjType* CreateObj(std::string const& name_)
 	{
-		std::unique_ptr<ObjType> objUnique = objCreator.Create<ObjType>(name_, WatchNumCreate());
+		std::unique_ptr<ObjType> objUnique = objCreator.Create<ObjType>();
 		auto* objPtr = objUnique.get();
-		ImportObj(name_ + "[" + std::to_string(WatchNumCreate()) + "]", std::move(objUnique));
+		ImportObj(name_ , std::move(objUnique));
 		return objPtr;
 	}
+	//コンテナの中のゲームオブジェクトをソートする
+	///シーンのInit()が呼ばれた後じゃないとダメ
+	void Sort(std::vector<std::string> const& objPriorityList_);
 private:
 	GameObjectCreator& objCreator;
-	std::unique_ptr<ObjContainer> objContainer;
-	size_t WatchNumCreate()const;
-	void ImportObj(std::string const& objNamePlusID_, std::unique_ptr<GameObjectBehavior>&& obj_);
+	std::unique_ptr<ObjLibrary> objLibrary;
+	void ImportObj
+	(
+		std::string const& objName_,
+		std::unique_ptr<GameObjectBehavior>&& obj_
+	);
 };
 
 ========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\MiddleLayer\GameObject\GameObjectRuntime\GameObjFrontSystems\GameObjContainer\GameObjContainer.cpp ===
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\MiddleLayer\GameObject\GameObjectRuntime\GameObjFrontSystems\GameObjLibrary\GameObjLibrary.cpp ===
 ========================================
 #include "PreCompileHeader.h"
-#include "GameObjContainer.h"
+#include "GameObjLibrary.h"
 #include "../../../GameObjectStructure/GameObjectBehavior.h"
 namespace
 {
-	auto const fileName = "GameObjContainer.cpp";
+	auto const fileName = "GameObjLibrary.cpp";
 }
-GameObjectContext::FrontlineSystems::ObjContainer::ObjContainer(NexusFieldProof proof_)
+GameObjectContext::FrontlineSystems::ObjLibrary::ObjLibrary(NexusFieldProof proof_)
 {
+	objMapCache = std::make_unique<std::unordered_map<std::string, std::vector<GameObjectBehavior*>>>();
 }
-void GameObjectContext::FrontlineSystems::ObjContainer::Import(std::string const& objNamePlusID_, std::unique_ptr<GameObjectBehavior>&& obj_)
+void GameObjectContext::FrontlineSystems::ObjLibrary::SortByPriority(std::vector<std::string> const& priorityList_)
 {
-	objMap[objNamePlusID_] = std::move(obj_);
-	Logger::Log("Import: " + objNamePlusID_, fileName);
+	//文字列データから優先順位ソート
+	for (auto const& srcName_ : priorityList_)
+	{
+		for (auto const& [name, objPtrVec] : *objMapCache)
+		{
+			if (srcName_ == name)
+			{
+				for (auto* objPtr : objPtrVec)
+				{
+					sortedByProority.emplace_back(objPtr);
+				}
+			}
+		}
+	}
+	//キャッシュデータ削除
+	objMapCache.reset();
+	ErrorMessageOutput::Assert::DetectError
+	(
+		objUniqueMap.size() == sortedByProority.size(),
+		"あるオブジェの優先リストとゲームオブジェクトリストの名前が一致してない可能性大",
+		fileName
+	);
+	Logger::Log("Sorted by Priority", fileName);
 }
-size_t GameObjectContext::FrontlineSystems::ObjContainer::WatchNumObjUnique()
+void GameObjectContext::FrontlineSystems::ObjLibrary::Import
+(
+	std::string const& objName_,
+	std::unique_ptr<GameObjectBehavior>&& obj_
+) 
 {
-	return objMap.size();
+	auto const nameID = objName_ + "[" + std::to_string(objUniqueMap.size()) + "]";
+	auto* objPtr = obj_.get();
+	//オブジェおおもと
+	objUniqueMap[nameID] = std::move(obj_);
+	//単一オブジェ検索用
+	forSerchContainer[objName_] = objPtr;
+	//優先度ソート用
+	(*objMapCache)[objName_].emplace_back(objPtr);
+	Logger::Log("Import: " + nameID, fileName);
 }
 
 ========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\MiddleLayer\GameObject\GameObjectRuntime\GameObjFrontSystems\GameObjContainer\GameObjContainer.h ===
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\MiddleLayer\GameObject\GameObjectRuntime\GameObjFrontSystems\GameObjLibrary\GameObjLibrary.h ===
 ========================================
 #pragma once
 #include "../GameObjFrontlineSystems.h"
 class GameObjectBehavior;
-class GameObjectContext::FrontlineSystems::ObjContainer
+class GameObjectContext::FrontlineSystems::ObjLibrary
 {
 public:
-	ObjContainer(NexusFieldProof proof_);
-	size_t WatchNumObjUnique();
-	void Import(std::string const& objNamePlusID_, std::unique_ptr<GameObjectBehavior>&& obj_);
+	ObjLibrary(NexusFieldProof proof_);
+	void Import
+	(
+		std::string const& objName_,
+		std::unique_ptr<GameObjectBehavior>&& obj_
+	);
+	//単一のオブジェ限定のサーチ
+	void FindIdentifiableObj(std::string const& objName_);
+	//優先順位で並び替える
+	void SortByPriority(std::vector<std::string> const& priorityList_);
+	//更新用オブジェコンテナの参照を返す
+	std::vector<GameObjectBehavior*>& RefObjContainer();
 private:
 	//本体のマップ
-	std::unordered_map<std::string, std::unique_ptr<GameObjectBehavior>> objMap;
+	std::unordered_map<std::string, std::unique_ptr<GameObjectBehavior>> objUniqueMap;
+	//更新優先度ソート用のキャッシュ
+	std::unique_ptr<std::unordered_map<std::string, std::vector<GameObjectBehavior*>>> objMapCache;
+	//更新優先度順に並び替えられたコンテナ
+	std::vector<GameObjectBehavior*> sortedByProority;
+	//検索用マップ。ただし、単一のものしか無理
+	std::unordered_map<std::string, GameObjectBehavior*> forSerchContainer;
 };
 
 ========================================
@@ -17696,15 +17754,6 @@ private:
 #include "../../../LowerLayer/Resource/Model/ModelStructure/Model.h"
 GameObjectBehavior::GameObjectBehavior(Local_CreateLicence licence_)
 {
-}
-void GameObjectBehavior::SetNameAndID(std::string const& name_,UINT id_)
-{
-	name = name_;
-	id = id_;
-}
-void GameObjectBehavior::SetUpdatePriority(UINT updatePriority_)
-{
-	updatePriority = updatePriority_;
 }
 
 ========================================
@@ -17745,12 +17794,6 @@ public:
 private:
 	//ゲームオブジェクトのステータス
 	Status status = Status::kActive;
-	//名前。検索などに使います
-	std::string name = "none";
-	//ID
-	UINT id = kInvalid;
-	//更新処理優先度
-	UINT updatePriority{};
 	//アタッチ可能なシステム
 	std::tuple<std::unique_ptr<Transform>> systems;
 	//以下ゲームオブジェクト管理クラスが呼ぶ
@@ -17764,8 +17807,6 @@ private:
 	//検索などはできる
 	virtual void Start() = 0;
 	//コンストラクタをシンプルにするための、エンジン層で受け持つ初期化関数群
-	void SetNameAndID(std::string const& name_, UINT id_);
-	void SetUpdatePriority(UINT updatePriority_);
 };
 struct GameObjectBehavior::Local_CreateLicence
 {
@@ -22597,14 +22638,14 @@ private:
 	std::unique_ptr<RootSignatureContext> rootSignatureContext;
 	//PSOの管理、描画パスの構築
 	std::unique_ptr<RenderContext> renderContext;
+	//ゲームオブジェクトの生成、管理
+	std::unique_ptr<GameObjectContext> gameObjectContext;
 	//モデルクラスの生成、管理
 	std::unique_ptr<ModelContext> modelContext;
 	//テクスチャファイルの読み込み、データ保持
 	std::unique_ptr<TextureContext> textureContext;
 	//カメラの定義、作成、バッチング処理
 	std::unique_ptr<CameraContext> cameraContext;
-	//ゲームオブジェクトの生成、管理
-	std::unique_ptr<GameObjectContext> gameObjectContext;
 	//シーンの作成、保持、コントロール、シーンデータのバッチングを行う
 	std::unique_ptr<SceneContext> sceneContext;
 	//一段階目初期化
@@ -24064,4 +24105,4 @@ namespace StringProcessing
 === SUMMARY ===
 ========================================
 Total Files      : 535
-Effective Lines  : 17547
+Effective Lines  : 17578

@@ -1,6 +1,6 @@
 #include "PreCompileHeader.h"
 #include "GameObjFrontlineSystems.h"
-#include "GameObjContainer/GameObjContainer.h"
+#include "GameObjLibrary/GameObjLibrary.h"
 
 
 namespace
@@ -12,8 +12,8 @@ namespace
 GameObjectContext::FrontlineSystems::FrontlineSystems(NexusFieldProof proof_, GameObjectCreator& objCreator_)
 	:objCreator(objCreator_)
 {
-	objContainer = std::make_unique<ObjContainer>(proof_);
-	Logger::Log("Instantiate: ObjContainer", fileName);
+	objLibrary = std::make_unique<ObjLibrary>(proof_);
+	Logger::Log("Instantiate: ObjLibrary", fileName);
 
 }
 
@@ -22,12 +22,16 @@ GameObjectContext::FrontlineSystems::~FrontlineSystems()
 
 }
 
-size_t GameObjectContext::FrontlineSystems::WatchNumCreate()const
+void GameObjectContext::FrontlineSystems::ImportObj
+(
+	std::string const& objName_,
+	std::unique_ptr<GameObjectBehavior>&& obj_
+) 
 {
-	return objContainer->WatchNumObjUnique();
+	objLibrary->Import(objName_,std::move(obj_));
 }
 
-void GameObjectContext::FrontlineSystems::ImportObj(std::string const& objNamePlusID_, std::unique_ptr<GameObjectBehavior>&& obj_)
+void GameObjectContext::FrontlineSystems::Sort(std::vector<std::string> const& objPriorityList_)
 {
-	objContainer->Import(objNamePlusID_, std::move(obj_));
+	objLibrary->SortByPriority(objPriorityList_);
 }
