@@ -13,6 +13,7 @@
 #include "../../../../../Scene/SceneContextDiplomat/SceneContextDiplomat.h"
 #include "../../../../../Scene/SceneContextDiplomat/SceneExecutionAgent/SceneExecutionAgent.h"
 #include "../../../../../Scene/SceneContextDiplomat/SceneExecutionAgent/SceneExecutionAgentLicences.h"
+#include "../../../../../Scene/SceneStructure/SceneOutput/SceneOutput.h"
 
 #include "../../../../../../LowerLayer/Resource/Model/ModelContextIncludes.h"
 

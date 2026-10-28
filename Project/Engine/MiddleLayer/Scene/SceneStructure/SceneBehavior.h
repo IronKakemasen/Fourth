@@ -9,80 +9,27 @@
 class SceneContext;
 class Model;
 struct CameraDesc;
+class SceneInitInterface;
+class SceneRuntimeInterface;
 
 class SceneBehavior
 {
 	//おおざっぱだが必要な情報のみ開示したいのでフレンド登録
 	friend class SceneContext;
 
-	//このシーンで使用しているカメラ、モデル、ライトなどの情報
-	struct Output
-	{
-		friend class SceneBehavior;
-
-		auto const& WatchUsingCamera()const { return usingCamera; }
-		auto const* WatchModelContainer()const { return modelContainer; }
-		auto const& WatchLeftStaticModelBatchingCnt()const { return leftStaticModelBatchingCnt; }
-
-	private:
-
-		//使用しているカメラ。更新必要
-		std::unordered_map<CameraSocket, CameraBehavior*> usingCamera;
-		//このシーンのモデルコンテナ
-		ModelContext::FrontlineSystems::ModelContainer const* modelContainer = nullptr;
-		//staticなモデルを毎回バッチング処理しないようにするため
-		UINT leftStaticModelBatchingCnt = (UINT)ProjectConfig::Render::NumBuffer::kDoubleBuffer;
-	};
-
-protected:
+public:
 
 	//そこいらでインスタンス化させないため
 	struct InstancingLicense;
 
-	//カメラの作成＆登録
-	template<CameraSocket dstSocket, typename CameraType>
-	[[nodiscard]] CameraType* CreateCamera
-	(
-		std::optional<CameraDesc> const& cameraDesc_,
-		std::string const& name_
-	)
-	{
-		return cameraSystems->CreateCamera<dstSocket, CameraType>(cameraDesc_,name_);
-	}
+	SceneBehavior(InstancingLicense license_);
+	virtual ~SceneBehavior();
 
-	//ゲームオブジェクトが好きなタイミングでカメラを切り替えられるように
-	//カメラ切り替えコマンドを返す。
-	template<CameraSocket dstSocket>
-	[[nodiscard]] CameraContext::FrontlineSystems::CmdConnectCamera<dstSocket> GetCmdConnectCamera()
-	{
-		return cameraSystems->GetCmdConnectCamera<dstSocket>();
-	}
+	//このシーンで使用しているカメラ、モデル、ライトなどの情報
+	struct Output;
 
-	//モデル作成し、そのポインタを返す
-	template<Model::Type modelType>
-	[[nodiscard]] std::vector<Model*> CreateModel
-	(
-		std::string const& modelFileName_,
-		std::vector<RenderState> const& modelRenderStates_,
-		std::vector<StructuredBufferModelData::MaterialCPU> const& materials_,
-		UINT const numCreate_,
-		std::string const& modelName_ = "nameLess"
-	)
-	{
-		return modelSystems->CreateModel<modelType>
-		(
-			modelFileName_,
-			modelRenderStates_,
-			materials_,
-			numCreate_,
-			modelName_
-		);			
-	}
+protected:
 
-public:
-
-	SceneBehavior(InstancingLicense const& license_) {};
-	virtual ~SceneBehavior() = default;
 
 private:
 
@@ -115,8 +62,14 @@ private:
 	
 
 	//シーンの出力物
-	SceneBehavior::Output output;
+	std::unique_ptr<Output> output;
 
+	//シーンのインターフェース群
+	std::tuple
+	<
+		std::unique_ptr<SceneInitInterface>,		//シーン初期化用のインターフェース。初期化フェーズが終わったら破棄
+		std::unique_ptr<SceneRuntimeInterface>		//シーンのランタイム用インターフェース。破棄されない
+	> interfaces;
 
 };
 

@@ -28,11 +28,13 @@ namespace ProjectConfig
 		static constexpr float kDefaultFovY = MathConstants::kPi * MathConstants::kHalf;
 
 		static auto const& FirstSceneDebug() { return kFirstSceneDebug; }
+		static auto const& FirstSceneRelease() { return kFirstSceneRelease; }
 		static auto const Width() { return kWidth; }
 		static auto const Height() { return kHeight; }
 
 	private:
 
+		static inline std::string kFirstSceneRelease = "";
 		static inline std::string kFirstSceneDebug = "";
 		static inline UINT kWidth{};
 		static inline UINT kHeight{};

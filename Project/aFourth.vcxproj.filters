@@ -1760,6 +1760,15 @@
     <ClInclude Include="Engine\MiddleLayer\GameObject\GameObjectCreator\ObjDataLoader\ObjDataLoader.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
+    <ClInclude Include="Engine\MiddleLayer\Scene\SceneStructure\SceneOutput\SceneOutput.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\MiddleLayer\Scene\SceneStructure\SceneInterface\SceneInitInterface.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\MiddleLayer\Scene\SceneStructure\SceneInterface\SceneRuntimeInterface.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

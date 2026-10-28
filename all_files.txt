@@ -19657,6 +19657,7 @@ private:
 #include "../../../../../Scene/SceneContextDiplomat/SceneContextDiplomat.h"
 #include "../../../../../Scene/SceneContextDiplomat/SceneExecutionAgent/SceneExecutionAgent.h"
 #include "../../../../../Scene/SceneContextDiplomat/SceneExecutionAgent/SceneExecutionAgentLicences.h"
+#include "../../../../../Scene/SceneStructure/SceneOutput/SceneOutput.h"
 #include "../../../../../../LowerLayer/Resource/Model/ModelContextIncludes.h"
 RenderContext::StaticRenderGraph::PathOperator::PathOperator
 (
@@ -21884,6 +21885,11 @@ void SceneContext::ScenePipeline::ImportScene(std::unique_ptr<SceneBehavior>&& s
 	{
 		sceneController->ChangeScene(sceneName_);
 	}
+#else
+	if (sceneName_ == ProjectConfig::Window::FirstSceneRelease())
+	{
+		sceneController->ChangeScene(sceneName_);
+	}
 #endif // DEBUG
 }
 void SceneContext::ScenePipeline::Run
@@ -22044,6 +22050,7 @@ private:
 #include "PreCompileHeader.h"
 #include "SceneDataBatchingPlace.h"
 #include "../SceneController/SceneController.h"
+#include "../../SceneStructure/SceneOutput/SceneOutput.h"
 //外部
 #include "../../../../LowerLayer/Resource/Camera/CameraContextDiplomats.h"
 #include "../../../../LowerLayer/Resource/Model/ModelContextDiplomatIncludes.h"
@@ -22247,22 +22254,22 @@ using namespace RenderPassComponent;
 using namespace StructuredBufferModelData;
 void RenderingTestScene::Init()
 {
-	RenderState cP;
-	cP.blendModes.emplace_back(BlendMode::kOpaque);
-	cP.blendModes.emplace_back(BlendMode::kAlphaBlend);
-	cP.blendModes.emplace_back(BlendMode::kAdditive);
-	cP.pass = Pass::kSceneOpaque;	
-	cP.cullMode = CullMode::kBack;
-	cP.meshType = MeshType::kStatic;
-	cP.materialTypes.emplace_back(MaterialType::kStandard);
-	std::vector<RenderState> playerC;
-	playerC.emplace_back(std::move(cP));
-	std::vector<MaterialCPU> materials;
-	p = CreateModel<Model::Type::kDynamic>("CubeGltf", playerC, materials, 10, "Player");
-	for (int i = 0;i < 10;++i)
-	{
-		p[i]->RefTransform(0).TranslatePosition({ float(i) * 1.5f,0,4 });
-	}
+	//RenderState cP;
+	//cP.blendModes.emplace_back(BlendMode::kOpaque);
+	//cP.blendModes.emplace_back(BlendMode::kAlphaBlend);
+	//cP.blendModes.emplace_back(BlendMode::kAdditive);
+	//cP.pass = Pass::kSceneOpaque;	
+	//cP.cullMode = CullMode::kBack;
+	//cP.meshType = MeshType::kStatic;
+	//cP.materialTypes.emplace_back(MaterialType::kStandard);
+	//std::vector<RenderState> playerC;
+	//playerC.emplace_back(std::move(cP));
+	//std::vector<MaterialCPU> materials;
+	//p = CreateModel<Model::Type::kDynamic>("CubeGltf", playerC, materials, 10, "Player");
+	//for (int i = 0;i < 10;++i)
+	//{
+	//	p[i]->RefTransform(0).TranslatePosition({ float(i) * 1.5f,0,4 });
+	//}
 	//RenderState cC;
 	//cC.blendModes.emplace_back(BlendMode::kOpaque);
 	//cC.pass = RenderPassComponent::Pass::kSceneOpaque;
@@ -22295,34 +22302,46 @@ public:
 ========================================
 #include "PreCompileHeader.h"
 #include "SceneBehavior.h"
-#include "../../../LowerLayer/Resource/Camera/CameraStructure/CameraDesc/CameraDesc.h"
+#include "SceneOutput/SceneOutput.h"
+#include "SceneInterface/SceneInitInterface.h"
+#include "SceneInterface/SceneRuntimeInterface.h"
 //外部
+#include "../../../LowerLayer/Resource/Camera/CameraStructure/CameraDesc/CameraDesc.h"
 //エンジン備え付けのカメラ
 #include "../../../LowerLayer/Resource/Camera/PresetCameras/PresetCameraIncludes.h"
 #include "../ScenePreset/RenderingTestScene/RenderingTestScene.h"
 using namespace ProjectConfig::Render;
+namespace
+{
+	auto const fileName = "SceneBehavior.cpp";
+}
+SceneBehavior::SceneBehavior(InstancingLicense license_)
+{
+	output = std::make_unique<Output>();
+}
+SceneBehavior::~SceneBehavior() = default;
 void SceneBehavior::Update()
 {
 	//このシーンで使うカメラのアップデート
-	output.usingCamera = cameraSystems->CameraUpdate();
-	static Vector3 a;
-	a.data.x += 0.008f;
-	a.data.y += 0.008f;
-	a.data.z += 0.008f;
-	for (int i = 0;i < 10;++i)
-	{
-		RenderingTestScene::p[i]->RefTransform(0).Rotate(a);
-	}
+	output->usingCamera = cameraSystems->CameraUpdate();
+	//static Vector3 a;
+	//a.data.x += 0.008f;
+	//a.data.y += 0.008f;
+	//a.data.z += 0.008f;
+	//for (int i = 0;i < 10;++i)
+	//{
+	//	RenderingTestScene::p[i]->RefTransform(0).Rotate(a);
+	//}
 	//このシーンのモデルのトランスフォームのアップデートを呼ぶ
 	modelSystems->UpdateModelTransform<Model::Type::kDynamic>();
-	if (output.leftStaticModelBatchingCnt-- == (UINT)NumBuffer::kDoubleBuffer)
+	if (output->leftStaticModelBatchingCnt-- == (UINT)NumBuffer::kDoubleBuffer)
 	{
 		modelSystems->UpdateModelTransform<Model::Type::kStatic>();
 	}
 }
 SceneBehavior::Output const& SceneBehavior::WatchSceneOutput()const 
 {
-	return output; 
+	return *output; 
 }
 void SceneBehavior::SeparateModels()
 {
@@ -22338,23 +22357,33 @@ void SceneBehavior::SetSystems
 	(
 		cameraSystems_ ,
 		"カメラシステムがぬるです(エンジンのせい)",
-		"SceneBehavior.cpp"
+		fileName
 	);
 	ErrorMessageOutput::Assert::DetectError
 	(
 		modelSystems_,
 		"モデルシステムがぬるです(エンジンのせい)",
-		"SceneBehavior.cpp"
+		fileName
 	);
 	cameraSystems = cameraSystems_;
 	modelSystems = modelSystems_;
+	//ヌルチェック重複は偽りの注意のせい
 	//シーン出力ようにモデルコンテナのアドレスを格納
-	output.modelContainer = modelSystems->WatchModelContainer();
+	if(modelSystems) output->modelContainer = modelSystems->WatchModelContainer();
+	//初期化用のインターフェースの作成
+	if (cameraSystems && modelSystems)
+	{
+		std::get<std::unique_ptr<SceneInitInterface>>(interfaces) = 
+			std::make_unique<SceneInitInterface>(cameraSystems, modelSystems);
+		std::get<std::unique_ptr<SceneRuntimeInterface>>(interfaces) =
+			std::make_unique<SceneRuntimeInterface>(cameraSystems);
+	}
 }
 void SceneBehavior::CreatePresetCamera()
 {
 	//各シーンに1つは存在するデバッグカメラを作成
-	auto* debugCamera = CreateCamera<CameraSocket::kDebug, DefaultDebugCamera>(std::nullopt, "DefaultDebugCamera");
+	auto* debugCamera = std::get<std::unique_ptr<SceneInitInterface>>(interfaces)->
+		CreateCamera<CameraSocket::kDebug, DefaultDebugCamera>(std::nullopt, "DefaultDebugCamera");
 }
 
 ========================================
@@ -22367,68 +22396,20 @@ void SceneBehavior::CreatePresetCamera()
 class SceneContext;
 class Model;
 struct CameraDesc;
+class SceneInitInterface;
+class SceneRuntimeInterface;
 class SceneBehavior
 {
 	//おおざっぱだが必要な情報のみ開示したいのでフレンド登録
 	friend class SceneContext;
-	//このシーンで使用しているカメラ、モデル、ライトなどの情報
-	struct Output
-	{
-		friend class SceneBehavior;
-		auto const& WatchUsingCamera()const { return usingCamera; }
-		auto const* WatchModelContainer()const { return modelContainer; }
-		auto const& WatchLeftStaticModelBatchingCnt()const { return leftStaticModelBatchingCnt; }
-	private:
-		//使用しているカメラ。更新必要
-		std::unordered_map<CameraSocket, CameraBehavior*> usingCamera;
-		//このシーンのモデルコンテナ
-		ModelContext::FrontlineSystems::ModelContainer const* modelContainer = nullptr;
-		//staticなモデルを毎回バッチング処理しないようにするため
-		UINT leftStaticModelBatchingCnt = (UINT)ProjectConfig::Render::NumBuffer::kDoubleBuffer;
-	};
-protected:
+public:
 	//そこいらでインスタンス化させないため
 	struct InstancingLicense;
-	//カメラの作成＆登録
-	template<CameraSocket dstSocket, typename CameraType>
-	[[nodiscard]] CameraType* CreateCamera
-	(
-		std::optional<CameraDesc> const& cameraDesc_,
-		std::string const& name_
-	)
-	{
-		return cameraSystems->CreateCamera<dstSocket, CameraType>(cameraDesc_,name_);
-	}
-	//ゲームオブジェクトが好きなタイミングでカメラを切り替えられるように
-	//カメラ切り替えコマンドを返す。
-	template<CameraSocket dstSocket>
-	[[nodiscard]] CameraContext::FrontlineSystems::CmdConnectCamera<dstSocket> GetCmdConnectCamera()
-	{
-		return cameraSystems->GetCmdConnectCamera<dstSocket>();
-	}
-	//モデル作成し、そのポインタを返す
-	template<Model::Type modelType>
-	[[nodiscard]] std::vector<Model*> CreateModel
-	(
-		std::string const& modelFileName_,
-		std::vector<RenderState> const& modelRenderStates_,
-		std::vector<StructuredBufferModelData::MaterialCPU> const& materials_,
-		UINT const numCreate_,
-		std::string const& modelName_ = "nameLess"
-	)
-	{
-		return modelSystems->CreateModel<modelType>
-		(
-			modelFileName_,
-			modelRenderStates_,
-			materials_,
-			numCreate_,
-			modelName_
-		);			
-	}
-public:
-	SceneBehavior(InstancingLicense const& license_) {};
-	virtual ~SceneBehavior() = default;
+	SceneBehavior(InstancingLicense license_);
+	virtual ~SceneBehavior();
+	//このシーンで使用しているカメラ、モデル、ライトなどの情報
+	struct Output;
+protected:
 private:
 	//ここの中でモデルの生成などの処理を書く。シーンが切り替わっても一発しか呼びません。
 	virtual void Init() = 0;
@@ -22450,13 +22431,113 @@ private:
 	CameraContext::FrontlineSystems* cameraSystems = nullptr;
 	ModelContext::FrontlineSystems* modelSystems = nullptr;
 	//シーンの出力物
-	SceneBehavior::Output output;
+	std::unique_ptr<Output> output;
+	std::tuple
+	<
+		std::unique_ptr<SceneInitInterface>,		//シーン初期化用のインターフェース。初期化フェーズが終わったら破棄
+		std::unique_ptr<SceneRuntimeInterface>		//シーンのランタイム用インターフェース。破棄されない
+	> interfaces;
 };
 struct SceneBehavior::InstancingLicense
 {
 private:
 	friend class SceneContext;
 	explicit InstancingLicense() = default;
+};
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\MiddleLayer\Scene\SceneStructure\SceneInterface\SceneInitInterface.h ===
+========================================
+#pragma once
+#include "../SceneBehavior.h"
+class SceneInitInterface
+{
+public:
+	SceneInitInterface
+	(
+		CameraContext::FrontlineSystems* cameraSystems_,
+		ModelContext::FrontlineSystems* modelSystems_
+	):cameraSystems(cameraSystems_), modelSystems(modelSystems_)
+	{
+	}
+	//カメラの作成＆登録
+	template<CameraSocket dstSocket, typename CameraType>
+	[[nodiscard]] CameraType* CreateCamera
+	(
+		std::optional<CameraDesc> const& cameraDesc_,
+		std::string const& name_
+	)
+	{
+		return cameraSystems->CreateCamera<dstSocket, CameraType>(cameraDesc_, name_);
+	}
+	//モデル作成し、そのポインタを返す
+	template<Model::Type modelType>
+	[[nodiscard]] std::vector<Model*> CreateModel
+	(
+		std::string const& modelFileName_,
+		std::vector<RenderState> const& modelRenderStates_,
+		std::vector<StructuredBufferModelData::MaterialCPU> const& materials_,
+		UINT const numCreate_,
+		std::string const& modelName_ = "nameLess"
+	)
+	{
+		return modelSystems->CreateModel<modelType>
+		(
+			modelFileName_,
+			modelRenderStates_,
+			materials_,
+			numCreate_,
+			modelName_
+		);
+	}
+private:
+	CameraContext::FrontlineSystems* cameraSystems;
+	ModelContext::FrontlineSystems* modelSystems;
+};
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\MiddleLayer\Scene\SceneStructure\SceneInterface\SceneRuntimeInterface.h ===
+========================================
+#pragma once
+#include "../SceneBehavior.h"
+class SceneRuntimeInterface
+{
+public:
+	SceneRuntimeInterface
+	(
+		CameraContext::FrontlineSystems* cameraSystems_
+	): cameraSystems(cameraSystems_)
+	{
+	}
+	//カメラ切り替えコマンドを返す
+	//ゲームオブジェクトが好きなタイミングでカメラを切り替えられるように
+	template<CameraSocket dstSocket>
+	[[nodiscard]] CameraContext::FrontlineSystems::CmdConnectCamera<dstSocket> GetCmdConnectCamera()
+	{
+		return cameraSystems->GetCmdConnectCamera<dstSocket>();
+	}
+private:
+	CameraContext::FrontlineSystems* cameraSystems;
+};
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\MiddleLayer\Scene\SceneStructure\SceneOutput\SceneOutput.h ===
+========================================
+#pragma once
+#include "../SceneBehavior.h"
+struct SceneBehavior::Output
+{
+	friend class SceneBehavior;
+	auto const& WatchUsingCamera()const { return usingCamera; }
+	auto const* WatchModelContainer()const { return modelContainer; }
+	auto const& WatchLeftStaticModelBatchingCnt()const { return leftStaticModelBatchingCnt; }
+private:
+	//使用しているカメラ。更新必要
+	std::unordered_map<CameraSocket, CameraBehavior*> usingCamera;
+	//このシーンのモデルコンテナ
+	ModelContext::FrontlineSystems::ModelContainer const* modelContainer = nullptr;
+	//staticなモデルを毎回バッチング処理しないようにするため
+	UINT leftStaticModelBatchingCnt = (UINT)ProjectConfig::Render::NumBuffer::kDoubleBuffer;
 };
 
 ========================================
@@ -23202,6 +23283,7 @@ ProjectConfig::Window::Window()
 {
 	Miyajison* miyajison = Miyajison::Get();
 	kFirstSceneDebug = miyajison->LoadData<std::string>("ProjectConfig", { "FirstSceneDebug" });
+	kFirstSceneRelease = miyajison->LoadData<std::string>("ProjectConfig", { "FirstSceneRelease" });
 	kWidth = (UINT)miyajison->LoadData<int>("ProjectConfig", { "Width" });
 	kHeight = (UINT)miyajison->LoadData<int>("ProjectConfig", { "Height" });
 }
@@ -23233,9 +23315,11 @@ namespace ProjectConfig
 		static constexpr std::array<float, 4> kColor = { 1.0f,0.0f,0.0f,1.0f };
 		static constexpr float kDefaultFovY = MathConstants::kPi * MathConstants::kHalf;
 		static auto const& FirstSceneDebug() { return kFirstSceneDebug; }
+		static auto const& FirstSceneRelease() { return kFirstSceneRelease; }
 		static auto const Width() { return kWidth; }
 		static auto const Height() { return kHeight; }
 	private:
+		static inline std::string kFirstSceneRelease = "";
 		static inline std::string kFirstSceneDebug = "";
 		static inline UINT kWidth{};
 		static inline UINT kHeight{};
@@ -24104,5 +24188,5 @@ namespace StringProcessing
 ========================================
 === SUMMARY ===
 ========================================
-Total Files      : 535
-Effective Lines  : 17578
+Total Files      : 538
+Effective Lines  : 17612

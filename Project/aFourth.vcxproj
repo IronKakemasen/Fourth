@@ -552,6 +552,7 @@
     <ClInclude Include="Engine\LowerLayer\Resource\Texture\TextureContextDiplomat\TextureContextToolLender\TextureContextToolLenderLicences.h" />
     <ClInclude Include="Engine\Math\MathConstants.h" />
     <ClInclude Include="Engine\MiddleLayer\Scene\SceneContextDiplomat\SceneExecutionAgent\SceneExecutionAgentLicences.h" />
+    <ClInclude Include="Engine\MiddleLayer\Scene\SceneStructure\SceneOutput\SceneOutput.h" />
     <ClInclude Include="Engine\Utility\ClosedHashMap\ClosedHashMap.h" />
     <ClInclude Include="Engine\MiddleLayer\Render\RenderContextRuntime\PSO_PoolDispatcher\GraphicsPSO_Key.h" />
     <ClInclude Include="Engine\LowerLayer\RenderPassComponent.h" />
@@ -771,6 +772,8 @@
     <ClInclude Include="Engine\MiddleLayer\GameObject\GameObjectRuntime\GameObjFrontSystems\GameObjFrontlineSystems.h" />
     <ClInclude Include="Engine\MiddleLayer\GameObject\GameObjectRuntime\GameObjFrontSystems\GameObjLibrary\GameObjLibrary.h" />
     <ClInclude Include="Engine\MiddleLayer\GameObject\GameObjectCreator\ObjDataLoader\ObjDataLoader.h" />
+    <ClInclude Include="Engine\MiddleLayer\Scene\SceneStructure\SceneInterface\SceneInitInterface.h" />
+    <ClInclude Include="Engine\MiddleLayer\Scene\SceneStructure\SceneInterface\SceneRuntimeInterface.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

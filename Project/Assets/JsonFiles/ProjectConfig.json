@@ -1,5 +1,6 @@
 {
     "FirstSceneDebug": "RenderingTestScene",
+    "FirstSceneRelease": "RenderingTestScene",
     "Height": 720,
     "Title": "aFourth",
     "Width": 1280,

@@ -1,6 +1,7 @@
 #include "PreCompileHeader.h"
 #include "SceneDataBatchingPlace.h"
 #include "../SceneController/SceneController.h"
+#include "../../SceneStructure/SceneOutput/SceneOutput.h"
 
 //外部
 #include "../../../../LowerLayer/Resource/Camera/CameraContextDiplomats.h"
