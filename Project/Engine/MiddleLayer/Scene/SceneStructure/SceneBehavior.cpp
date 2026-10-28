@@ -1,9 +1,11 @@
 #include "PreCompileHeader.h"
 #include "SceneBehavior.h"
-#include "../../../LowerLayer/Resource/Camera/CameraStructure/CameraDesc/CameraDesc.h"
-
+#include "SceneOutput/SceneOutput.h"
+#include "SceneInterface/SceneInitInterface.h"
+#include "SceneInterface/SceneRuntimeInterface.h"
 
 //外部
+#include "../../../LowerLayer/Resource/Camera/CameraStructure/CameraDesc/CameraDesc.h"
 //エンジン備え付けのカメラ
 #include "../../../LowerLayer/Resource/Camera/PresetCameras/PresetCameraIncludes.h"
 
@@ -11,28 +13,27 @@
 
 using namespace ProjectConfig::Render;
 
+namespace
+{
+	auto const fileName = "SceneBehavior.cpp";
+}
+
+SceneBehavior::SceneBehavior(InstancingLicense license_)
+{
+	output = std::make_unique<Output>();
+}
+
+SceneBehavior::~SceneBehavior() = default;
+
 void SceneBehavior::Update()
 {
 	//このシーンで使うカメラのアップデート
-	output.usingCamera = cameraSystems->CameraUpdate();
-
-
-	static Vector3 a;
-	a.data.x += 0.008f;
-	a.data.y += 0.008f;
-	a.data.z += 0.008f;
-
-
-	for (int i = 0;i < 10;++i)
-	{
-		RenderingTestScene::p[i]->RefTransform(0).Rotate(a);
-	}
-
+	output->usingCamera = cameraSystems->CameraUpdate();
 
 	//このシーンのモデルのトランスフォームのアップデートを呼ぶ
 	modelSystems->UpdateModelTransform<Model::Type::kDynamic>();
 	
-	if (output.leftStaticModelBatchingCnt-- == (UINT)NumBuffer::kDoubleBuffer)
+	if (output->leftStaticModelBatchingCnt-- == (UINT)NumBuffer::kDoubleBuffer)
 	{
 		modelSystems->UpdateModelTransform<Model::Type::kStatic>();
 	}
@@ -41,7 +42,7 @@ void SceneBehavior::Update()
 
 SceneBehavior::Output const& SceneBehavior::WatchSceneOutput()const 
 {
-	return output; 
+	return *output; 
 }
 
 void SceneBehavior::SeparateModels()
@@ -59,28 +60,42 @@ void SceneBehavior::SetSystems
 	(
 		cameraSystems_ ,
 		"カメラシステムがぬるです(エンジンのせい)",
-		"SceneBehavior.cpp"
+		fileName
 	);
 
 	ErrorMessageOutput::Assert::DetectError
 	(
 		modelSystems_,
 		"モデルシステムがぬるです(エンジンのせい)",
-		"SceneBehavior.cpp"
+		fileName
 	);
 
 	cameraSystems = cameraSystems_;
 	modelSystems = modelSystems_;
 
+	//ヌルチェック重複は偽りの注意のせい
+
 	//シーン出力ようにモデルコンテナのアドレスを格納
-	output.modelContainer = modelSystems->WatchModelContainer();
+	if(modelSystems) output->modelContainer = modelSystems->WatchModelContainer();
+
+	//初期化用のインターフェースの作成
+	if (cameraSystems && modelSystems)
+	{
+		std::get<std::unique_ptr<SceneInitInterface>>(interfaces) = 
+			std::make_unique<SceneInitInterface>(cameraSystems, modelSystems);
+
+		std::get<std::unique_ptr<SceneRuntimeInterface>>(interfaces) =
+			std::make_unique<SceneRuntimeInterface>(cameraSystems);
+
+	}
 }
 
 
 void SceneBehavior::CreatePresetCamera()
 {
 	//各シーンに1つは存在するデバッグカメラを作成
-	auto* debugCamera = CreateCamera<CameraSocket::kDebug, DefaultDebugCamera>(std::nullopt, "DefaultDebugCamera");
+	auto* debugCamera = std::get<std::unique_ptr<SceneInitInterface>>(interfaces)->
+		CreateCamera<CameraSocket::kDebug, DefaultDebugCamera>(std::nullopt, "DefaultDebugCamera");
 }
 
 

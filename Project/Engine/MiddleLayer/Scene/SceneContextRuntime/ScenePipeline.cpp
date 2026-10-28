@@ -42,6 +42,13 @@ void SceneContext::ScenePipeline::ImportScene(std::unique_ptr<SceneBehavior>&& s
 		sceneController->ChangeScene(sceneName_);
 	}
 
+#else
+
+	if (sceneName_ == ProjectConfig::Window::FirstSceneRelease())
+	{
+		sceneController->ChangeScene(sceneName_);
+	}
+
 #endif // DEBUG
 
 }
