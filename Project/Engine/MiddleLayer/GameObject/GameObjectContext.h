@@ -1,6 +1,7 @@
 #pragma once
 
 class Nexus;
+class GameObjectContextDiplomat;
 
 class GameObjectContext
 {
@@ -24,9 +25,11 @@ public:
 	GameObjectContext(NexusFieldProof proof_);
 	~GameObjectContext();
 
+	auto& AccessDiplomat() { return diplomat; }
 
 private:
 
+	std::unique_ptr<GameObjectContextDiplomat> diplomat;
 	std::unique_ptr<GameObjectCreator> gameObjectCreator;
 	std::unique_ptr<GameObjSetupper> gameObjSetupper;
 	std::unique_ptr<ObjFSDispatcher> objFSDispatcher;

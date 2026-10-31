@@ -305,6 +305,8 @@
     <ClCompile Include="Engine\MiddleLayer\GameObject\GameObjectRuntime\GameObjFrontSystems\GameObjLibrary\GameObjLibrary.cpp" />
     <ClCompile Include="Engine\MiddleLayer\GameObject\GameObjectRuntime\GameObjFrontSystems\GameObjController\GameObjController.cpp" />
     <ClCompile Include="Engine\MiddleLayer\GameObject\GameObjSetupper\GameObjSetupper.cpp" />
+    <ClCompile Include="Engine\MiddleLayer\GameObject\GameObjectContextDiplomat\GameObjectContextDiplomat.cpp" />
+    <ClCompile Include="Engine\MiddleLayer\GameObject\GameObjectContextDiplomat\GameObjectAgent\GameObjectAgent.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="Engine\LowerLayer\Core\Window\WindowContext.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Use</PrecompiledHeader>
@@ -480,6 +482,7 @@
     <ClInclude Include="Engine\LowerLayer\Core\SwapChain\SwapChainContextDiplomat\SwapChainContextToolLender\SwapChainContextToolLenderLicences.h" />
     <ClInclude Include="Engine\LowerLayer\Resource\Model\ModelContextDiplomat\ModelContextExecutionAgent\ModelAgentLicences.h" />
     <ClInclude Include="Engine\LowerLayer\Resource\Model\ModelContextIncludes.h" />
+    <ClInclude Include="Engine\MiddleLayer\GameObject\GameObjectContextDiplomat\GameObjectAgent\GameObjectAgentLicences.h" />
     <ClInclude Include="Engine\MiddleLayer\GameObject\GameObjectStructure\GameObjSystems.h" />
     <ClInclude Include="Engine\MiddleLayer\Render\RenderContextDiplomat\RenderContextExecutionAgent\RenderAgentLicences.h" />
     <ClInclude Include="Engine\MiddleLayer\Render\RenderContextRuntime\StaticRenderGraph\RenderGraphExecutor\FinalRenderer\FinalRenderer.h" />
@@ -783,6 +786,8 @@
     <ClInclude Include="Engine\MiddleLayer\GameObject\GameObjectRuntime\GameObjFrontSystems\GameObjController\GameObjController.h" />
     <ClInclude Include="Engine\MiddleLayer\GameObject\GameObjSetupper\GameObjSetupper.h" />
     <ClInclude Include="Engine\MiddleLayer\GameObject\ObjFSDispatcher\ObjFSDispatcher.h" />
+    <ClInclude Include="Engine\MiddleLayer\GameObject\GameObjectContextDiplomat\GameObjectContextDiplomat.h" />
+    <ClInclude Include="Engine\MiddleLayer\GameObject\GameObjectContextDiplomat\GameObjectAgent\GameObjectAgent.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

@@ -3,6 +3,8 @@
 #include "GameObjectCreator/GameObjectCreator.h"
 #include "GameObjSetupper/GameObjSetupper.h"
 #include "ObjFSDispatcher/ObjFSDispatcher.h"
+#include "GameObjectContextDiplomat/GameObjectAgent/GameObjectAgent.h"
+#include "GameObjectContextDiplomat/GameObjectContextDiplomat.h"	
 
 namespace
 {
@@ -22,7 +24,13 @@ GameObjectContext::GameObjectContext(NexusFieldProof proof_)
 	objFSDispatcher = std::make_unique<ObjFSDispatcher>(proof_,*gameObjectCreator,*gameObjSetupper);
 	Logger::Log("Instantiate: ObjFSDispatcher", fileName);
 
-	
+	diplomat = std::make_unique<GameObjectContextDiplomat>
+	(
+		proof_,
+		std::make_unique<ExecutionAgent>(proof_, *objFSDispatcher)
+	);
+	Logger::Log("Instantiate: GameObjectContextDiplomat", fileName);
+	Logger::Log("Instantiate: ExecutionAgent", fileName);
 
 
 	Logger::End("GameObjectContext: Constructor");
