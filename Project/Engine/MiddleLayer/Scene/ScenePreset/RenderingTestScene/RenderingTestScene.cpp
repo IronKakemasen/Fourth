@@ -1,10 +1,10 @@
 #include "PreCompileHeader.h"
 #include "RenderingTestScene.h"
 
-using namespace RenderStateComponent;
-using namespace ShaderPathComponent;
-using namespace RenderPassComponent;
-using namespace StructuredBufferModelData;
+//using namespace RenderStateComponent;
+//using namespace ShaderPathComponent;
+//using namespace RenderPassComponent;
+//using namespace StructuredBufferModelData;
 
 
 void RenderingTestScene::Init()

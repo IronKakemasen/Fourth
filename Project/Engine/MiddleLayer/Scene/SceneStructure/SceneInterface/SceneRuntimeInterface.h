@@ -1,5 +1,10 @@
 #pragma once
-#include "../SceneBehavior.h"
+
+
+
+//外部
+#include "../../../LowerLayer/Resource/Camera/CameraContextRuntime/CameraFrontlineSystems.h"
+
 
 class SceneRuntimeInterface
 {

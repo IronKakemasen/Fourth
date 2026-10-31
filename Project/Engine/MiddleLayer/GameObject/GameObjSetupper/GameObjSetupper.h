@@ -10,9 +10,11 @@ public:
 
 	//システムを取り付ける
 	template<typename SystemType>
-	void AttachSystem(GameObjectBehavior& obj_)
+	SystemType& AttachSystem(GameObjectBehavior& obj_)
 	{
 		std::get<std::unique_ptr<SystemType>>(obj_.systems) = std::make_unique<SystemType>();
+
+		return *std::get<std::unique_ptr<SystemType>>(obj_.systems);
 	}
 
 

@@ -5,9 +5,12 @@
 
 
 //外部
+#include "../../../LowerLayer/Resource/Camera/CameraContextRuntime/CameraFrontlineSystems.h"
 #include "../../../LowerLayer/Resource/Camera/CameraStructure/CameraDesc/CameraDesc.h"
 //エンジン備え付けのカメラ
 #include "../../../LowerLayer/Resource/Camera/PresetCameras/PresetCameraIncludes.h"
+
+#include "../../../LowerLayer/Resource/Model/ModelContextRuntime/ModelFrontlineSystems/ModelFrontlineSystems.h"
 
 
 using namespace ProjectConfig::Render;
@@ -81,7 +84,7 @@ void SceneBehavior::SetSystems
 	if (cameraSystems && modelSystems)
 	{
 		std::get<std::unique_ptr<SceneInitInterface>>(interfaces) = 
-			std::make_unique<SceneInitInterface>(cameraSystems, modelSystems);
+			std::make_unique<SceneInitInterface>(cameraSystems, modelSystems,objFrontlineSystems);
 
 		std::get<std::unique_ptr<SceneRuntimeInterface>>(interfaces) =
 			std::make_unique<SceneRuntimeInterface>(cameraSystems);

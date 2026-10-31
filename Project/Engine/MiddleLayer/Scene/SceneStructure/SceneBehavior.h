@@ -2,11 +2,11 @@
 #include "AllSceneInterfaceFwd.h"
 
 //外部
-#include "../../../LowerLayer/Resource/Camera/CameraContextRuntime/CameraFrontlineSystems.h"
-
-#include "../../../LowerLayer/Resource/Model/ModelContextRuntime/ModelFrontlineSystems/ModelFrontlineSystems.h"
-
 #include "../../GameObject/GameObjectRuntime/GameObjFrontSystems/GameObjFrontlineSystems.h"
+
+#include "../../../LowerLayer/Resource/Camera/CameraContext.h"
+
+#include "../../../LowerLayer/Resource/Model/ModelContext.h"
 
 class SceneContext;
 class Model;
@@ -30,6 +30,11 @@ public:
 
 protected:
 
+	template<typename ObjType>
+	ObjType* CreateObj(std::string const& name_)
+	{
+		return objFrontlineSystems->CreateObj(name_);
+	}
 
 private:
 

@@ -1,5 +1,10 @@
 #pragma once
-#include "../SceneBehavior.h"
+
+
+//外部
+#include "../../../LowerLayer/Resource/Camera/CameraContextRuntime/CameraFrontlineSystems.h"
+
+#include "../../../LowerLayer/Resource/Model/ModelContextRuntime/ModelFrontlineSystems/ModelFrontlineSystems.h"
 
 class SceneInitInterface
 {
@@ -7,8 +12,9 @@ public:
 	SceneInitInterface
 	(
 		CameraContext::FrontlineSystems* cameraSystems_,
-		ModelContext::FrontlineSystems* modelSystems_
-	):cameraSystems(cameraSystems_), modelSystems(modelSystems_)
+		ModelContext::FrontlineSystems* modelSystems_,
+		GameObjectContext::FrontlineSystems* objSystems_
+	):cameraSystems(cameraSystems_), modelSystems(modelSystems_), objSystems(objSystems_)
 	{
 
 	}
@@ -45,11 +51,18 @@ public:
 		);
 	}
 
+	//ゲームオブジェクトにシステムをアタッチする
+	template<typename SystemType>
+	SystemType& AttachSystem(GameObjectBehavior& obj_)
+	{
+		return objSystems->AttachSystem(obj_);
+	}
 
 
 private:
 
 	CameraContext::FrontlineSystems* cameraSystems;
 	ModelContext::FrontlineSystems* modelSystems;
+	GameObjectContext::FrontlineSystems* objSystems;
 };
 
