@@ -17507,6 +17507,8 @@ struct Vector4
 #include "GameObjectCreator/GameObjectCreator.h"
 #include "GameObjSetupper/GameObjSetupper.h"
 #include "ObjFSDispatcher/ObjFSDispatcher.h"
+#include "GameObjectContextDiplomat/GameObjectAgent/GameObjectAgent.h"
+#include "GameObjectContextDiplomat/GameObjectContextDiplomat.h"	
 namespace
 {
 	std::string const fileName = "GameObjectContext.cpp";
@@ -17520,6 +17522,13 @@ GameObjectContext::GameObjectContext(NexusFieldProof proof_)
 	Logger::Log("Instantiate: GameObjSetupper", fileName);
 	objFSDispatcher = std::make_unique<ObjFSDispatcher>(proof_,*gameObjectCreator,*gameObjSetupper);
 	Logger::Log("Instantiate: ObjFSDispatcher", fileName);
+	diplomat = std::make_unique<GameObjectContextDiplomat>
+	(
+		proof_,
+		std::make_unique<ExecutionAgent>(proof_, *objFSDispatcher)
+	);
+	Logger::Log("Instantiate: GameObjectContextDiplomat", fileName);
+	Logger::Log("Instantiate: ExecutionAgent", fileName);
 	Logger::End("GameObjectContext: Constructor");
 }
 GameObjectContext::~GameObjectContext()
@@ -17531,6 +17540,7 @@ GameObjectContext::~GameObjectContext()
 ========================================
 #pragma once
 class Nexus;
+class GameObjectContextDiplomat;
 class GameObjectContext
 {
 	//ゲームオブジェクトを作成する
@@ -17547,7 +17557,9 @@ public:
 	class ExecutionAgent;
 	GameObjectContext(NexusFieldProof proof_);
 	~GameObjectContext();
+	auto& AccessDiplomat() { return *diplomat; }
 private:
+	std::unique_ptr<GameObjectContextDiplomat> diplomat;
 	std::unique_ptr<GameObjectCreator> gameObjectCreator;
 	std::unique_ptr<GameObjSetupper> gameObjSetupper;
 	std::unique_ptr<ObjFSDispatcher> objFSDispatcher;
@@ -17563,6 +17575,91 @@ struct GameObjectContext::AgentKey
 private:
 	friend class ExecutionAgent;
 	explicit AgentKey() = default;
+};
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\MiddleLayer\GameObject\GameObjectContextDiplomat\GameObjectContextDiplomat.cpp ===
+========================================
+#include "PreCompileHeader.h"
+#include "GameObjectContextDiplomat.h"
+#include "GameObjectAgent/GameObjectAgent.h"
+GameObjectContextDiplomat::GameObjectContextDiplomat
+(
+	GameObjectContext::NexusFieldProof proof_,
+	std::unique_ptr<GameObjectContext::ExecutionAgent>&& executionAgent_
+)
+{
+	std::get<std::unique_ptr<GameObjectContext::ExecutionAgent>>(tools) = std::move(executionAgent_);
+}
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\MiddleLayer\GameObject\GameObjectContextDiplomat\GameObjectContextDiplomat.h ===
+========================================
+#pragma once
+#include "../GameObjectContext.h"
+class GameObjectContextDiplomat
+{
+public:
+	GameObjectContextDiplomat
+	(
+		GameObjectContext::NexusFieldProof proof_,
+		std::unique_ptr<GameObjectContext::ExecutionAgent>&& executionAgent_
+	);
+	template<typename ToolType>
+	ToolType& Access()
+	{
+		return *std::get<std::unique_ptr<ToolType>>(tools);
+	}
+private:
+	std::tuple
+	<
+		std::unique_ptr<GameObjectContext::ExecutionAgent>
+	>tools;
+};
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\MiddleLayer\GameObject\GameObjectContextDiplomat\GameObjectAgent\GameObjectAgent.cpp ===
+========================================
+#include "PreCompileHeader.h"
+#include "GameObjectAgent.h"
+#include "../../ObjFSDispatcher/ObjFSDispatcher.h"
+#include "GameObjectAgentLicences.h"
+GameObjectContext::ExecutionAgent::ExecutionAgent(NexusFieldProof proof_, ObjFSDispatcher& objFSDispatcher_)
+	:objFSDispatcher(objFSDispatcher_)
+{
+}
+GameObjectContext::FrontlineSystems* GameObjectContext::ExecutionAgent::DispatchFrontlineSystems(SceneContextProof proof_)
+{
+	return objFSDispatcher.Dispatch(AgentKey{});
+}
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\MiddleLayer\GameObject\GameObjectContextDiplomat\GameObjectAgent\GameObjectAgent.h ===
+========================================
+#pragma once
+#include "../../GameObjectContext.h"
+class GameObjectContext::ExecutionAgent
+{
+public:
+	struct SceneContextProof;
+	ExecutionAgent(NexusFieldProof proof_, ObjFSDispatcher& objFSDispatcher_);
+	//シーンにゲームオブジェクトの前線システムを渡す
+	FrontlineSystems* DispatchFrontlineSystems(SceneContextProof proof_);
+private:
+	ObjFSDispatcher& objFSDispatcher;
+};
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\MiddleLayer\GameObject\GameObjectContextDiplomat\GameObjectAgent\GameObjectAgentLicences.h ===
+========================================
+#pragma once
+#include "GameObjectAgent.h"
+class SceneContext;
+struct GameObjectContext::ExecutionAgent::SceneContextProof
+{
+private:
+	friend class SceneContext;
+	explicit SceneContextProof() = default;
 };
 
 ========================================
@@ -22476,10 +22573,10 @@ private:
 ========================================
 #include "PreCompileHeader.h"
 #include "RenderingTestScene.h"
-using namespace RenderStateComponent;
-using namespace ShaderPathComponent;
-using namespace RenderPassComponent;
-using namespace StructuredBufferModelData;
+//using namespace RenderStateComponent;
+//using namespace ShaderPathComponent;
+//using namespace RenderPassComponent;
+//using namespace StructuredBufferModelData;
 void RenderingTestScene::Init()
 {
 	//RenderState cP;
@@ -22548,9 +22645,12 @@ using SceneInterfacesPtr = std::tuple<SceneInitInterface*, SceneRuntimeInterface
 #include "SceneOutput/SceneOutput.h"
 #include "AllSceneInterfaceInclude.h"
 //外部
+#include "../../../LowerLayer/Resource/Camera/CameraContextRuntime/CameraFrontlineSystems.h"
 #include "../../../LowerLayer/Resource/Camera/CameraStructure/CameraDesc/CameraDesc.h"
 //エンジン備え付けのカメラ
 #include "../../../LowerLayer/Resource/Camera/PresetCameras/PresetCameraIncludes.h"
+#include "../../../LowerLayer/Resource/Model/ModelContextRuntime/ModelFrontlineSystems/ModelFrontlineSystems.h"
+#include "../../GameObject/GameObjectRuntime/GameObjFrontSystems/GameObjFrontlineSystems.h"
 using namespace ProjectConfig::Render;
 namespace
 {
@@ -22625,9 +22725,9 @@ void SceneBehavior::CreatePresetCamera()
 #pragma once
 #include "AllSceneInterfaceFwd.h"
 //外部
-#include "../../../LowerLayer/Resource/Camera/CameraContextRuntime/CameraFrontlineSystems.h"
-#include "../../../LowerLayer/Resource/Model/ModelContextRuntime/ModelFrontlineSystems/ModelFrontlineSystems.h"
-#include "../../GameObject/GameObjectRuntime/GameObjFrontSystems/GameObjFrontlineSystems.h"
+#include "../../GameObject/GameObjectContext.h"
+#include "../../../LowerLayer/Resource/Camera/CameraContext.h"
+#include "../../../LowerLayer/Resource/Model/ModelContext.h"
 class SceneContext;
 class Model;
 struct CameraDesc;
@@ -22684,7 +22784,9 @@ private:
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\MiddleLayer\Scene\SceneStructure\SceneInterface\SceneInitInterface.h ===
 ========================================
 #pragma once
-#include "../SceneBehavior.h"
+//外部
+#include "../../../LowerLayer/Resource/Camera/CameraContextRuntime/CameraFrontlineSystems.h"
+#include "../../../LowerLayer/Resource/Model/ModelContextRuntime/ModelFrontlineSystems/ModelFrontlineSystems.h"
 class SceneInitInterface
 {
 public:
@@ -22734,7 +22836,8 @@ private:
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\MiddleLayer\Scene\SceneStructure\SceneInterface\SceneRuntimeInterface.h ===
 ========================================
 #pragma once
-#include "../SceneBehavior.h"
+//外部
+#include "../../../LowerLayer/Resource/Camera/CameraContextRuntime/CameraFrontlineSystems.h"
 class SceneRuntimeInterface
 {
 public:
@@ -22759,7 +22862,10 @@ private:
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\MiddleLayer\Scene\SceneStructure\SceneOutput\SceneOutput.h ===
 ========================================
 #pragma once
-#include "../SceneBehavior.h"
+//外部
+#include "../../../../LowerLayer/Resource/Model/ModelContextRuntime/ModelFrontlineSystems/ModelFrontlineSystems.h"
+#include "../../../../LowerLayer/Resource/Camera/CameraContextRuntime/CameraSocket.h"
+class CameraBehavior;
 struct SceneBehavior::Output
 {
 	friend class SceneBehavior;
@@ -22838,7 +22944,7 @@ void Nexus::PrimaryInit()
 	InitializeInSequence<InitSequence::kCameraContext>();
 	InitializeInSequence<InitSequence::kSceneContext>();
 }
-//2段階目初期化
+//2次初期化
 void Nexus::SecondaryInit(aFourthProof proof_)
 {
 	InitializeInSequence<InitSequence::kRenderContext>();
@@ -24423,5 +24529,5 @@ namespace StringProcessing
 ========================================
 === SUMMARY ===
 ========================================
-Total Files      : 547
-Effective Lines  : 17767
+Total Files      : 552
+Effective Lines  : 17825

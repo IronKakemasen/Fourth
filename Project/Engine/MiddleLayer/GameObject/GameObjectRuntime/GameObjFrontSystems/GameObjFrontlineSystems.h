@@ -34,9 +34,9 @@ public:
 	//ゲームオブジェクトにシステムをアタッチする
 	//SceneInitInterfaceで使用可能
 	template<typename SystemType>
-	void AttachSystem(GameObjectBehavior& obj_)
+	SystemType& AttachSystem(GameObjectBehavior& obj_)
 	{
-		gameObjSetupper.AttachSystem<SystemType>(obj_);
+		return gameObjSetupper.AttachSystem<SystemType>(obj_);
 	}
 
 

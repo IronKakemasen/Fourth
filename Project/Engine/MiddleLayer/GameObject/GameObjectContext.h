@@ -25,7 +25,7 @@ public:
 	GameObjectContext(NexusFieldProof proof_);
 	~GameObjectContext();
 
-	auto& AccessDiplomat() { return diplomat; }
+	auto& AccessDiplomat() { return *diplomat; }
 
 private:
 

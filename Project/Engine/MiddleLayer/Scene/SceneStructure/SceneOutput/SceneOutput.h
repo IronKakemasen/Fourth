@@ -1,6 +1,14 @@
 #pragma once
 #include "../SceneBehavior.h"
 
+//外部
+#include "../../../../LowerLayer/Resource/Model/ModelContextRuntime/ModelFrontlineSystems/ModelFrontlineSystems.h"
+
+#include "../../../../LowerLayer/Resource/Camera/CameraContextRuntime/CameraSocket.h"
+
+
+class CameraBehavior;
+
 struct SceneBehavior::Output
 {
 	friend class SceneBehavior;
