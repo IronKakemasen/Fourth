@@ -1,16 +1,16 @@
 #pragma once
-
+#include "AllSceneInterfaceFwd.h"
 
 //外部
 #include "../../../LowerLayer/Resource/Camera/CameraContextRuntime/CameraFrontlineSystems.h"
 
 #include "../../../LowerLayer/Resource/Model/ModelContextRuntime/ModelFrontlineSystems/ModelFrontlineSystems.h"
 
+#include "../../GameObject/GameObjectRuntime/GameObjFrontSystems/GameObjFrontlineSystems.h"
+
 class SceneContext;
 class Model;
 struct CameraDesc;
-class SceneInitInterface;
-class SceneRuntimeInterface;
 
 class SceneBehavior
 {
@@ -34,7 +34,7 @@ protected:
 private:
 
 
-	//ここの中でモデルの生成などの処理を書く。シーンが切り替わっても一発しか呼びません。
+	//ここの中でゲームオブジェクトの生成などの処理を書く。シーンが切り替わっても一発しか呼びません。
 	virtual void Init() = 0;
 
 	//シーンのInit()の後に一括で一度だけ呼ばれる
@@ -59,7 +59,7 @@ private:
 	//他コンテキストのシステム
 	CameraContext::FrontlineSystems* cameraSystems = nullptr;
 	ModelContext::FrontlineSystems* modelSystems = nullptr;
-	
+	GameObjectContext::FrontlineSystems* objFrontlineSystems = nullptr;
 
 	//シーンの出力物
 	std::unique_ptr<Output> output;

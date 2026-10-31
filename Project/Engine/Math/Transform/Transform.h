@@ -32,7 +32,14 @@ public:
 
 	~Transform()
 	{
+		//親がいれば、先に親の子リストから自分を外す
 		if (parent) parent->BreakRelationship(this);
+		
+		//子がいれば、全員の親ポインタを外す
+		for (auto* child : children)
+		{
+			if (child) child->parent = nullptr;
+		}
 	}
 
 	inline void TranslatePosition(const Vector3& dstPos_)

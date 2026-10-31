@@ -17024,7 +17024,13 @@ public:
 	}
 	~Transform()
 	{
+		//親がいれば、先に親の子リストから自分を外す
 		if (parent) parent->BreakRelationship(this);
+		//子がいれば、全員の親ポインタを外す
+		for (auto* child : children)
+		{
+			if (child) child->parent = nullptr;
+		}
 	}
 	inline void TranslatePosition(const Vector3& dstPos_)
 	{
@@ -17498,6 +17504,9 @@ struct Vector4
 ========================================
 #include "PreCompileHeader.h"
 #include "GameObjectContext.h"
+#include "GameObjectCreator/GameObjectCreator.h"
+#include "GameObjSetupper/GameObjSetupper.h"
+#include "ObjFSDispatcher/ObjFSDispatcher.h"
 namespace
 {
 	std::string const fileName = "GameObjectContext.cpp";
@@ -17505,6 +17514,12 @@ namespace
 GameObjectContext::GameObjectContext(NexusFieldProof proof_)
 {
 	Logger::Entry("GameObjectContext: Constructor");
+	gameObjectCreator = std::make_unique<GameObjectCreator>(proof_);
+	Logger::Log("Instantiate: GameObjectCreator", fileName);
+	gameObjSetupper = std::make_unique<GameObjSetupper>(proof_);
+	Logger::Log("Instantiate: GameObjSetupper", fileName);
+	objFSDispatcher = std::make_unique<ObjFSDispatcher>(proof_,*gameObjectCreator,*gameObjSetupper);
+	Logger::Log("Instantiate: ObjFSDispatcher", fileName);
 	Logger::End("GameObjectContext: Constructor");
 }
 GameObjectContext::~GameObjectContext()
@@ -17520,15 +17535,22 @@ class GameObjectContext
 {
 	//ゲームオブジェクトを作成する
 	class GameObjectCreator;
-	//シーンデータからゲームオブジェクトの情報をインプットする
-	class ObjDataLoader;
+	//ゲームオブジェクトのセットアップを行う
+	class GameObjSetupper;
 public:
 	//1シーンが一つ持つ、前線システム群
 	class FrontlineSystems;
+	//FrontlineSystemsをシーンに渡す
+	class ObjFSDispatcher;
 	struct NexusFieldProof;
+	struct AgentKey;
+	class ExecutionAgent;
 	GameObjectContext(NexusFieldProof proof_);
 	~GameObjectContext();
 private:
+	std::unique_ptr<GameObjectCreator> gameObjectCreator;
+	std::unique_ptr<GameObjSetupper> gameObjSetupper;
+	std::unique_ptr<ObjFSDispatcher> objFSDispatcher;
 };
 struct GameObjectContext::NexusFieldProof
 {
@@ -17536,12 +17558,21 @@ private:
 	friend class Nexus;
 	explicit NexusFieldProof() = default;
 };
+struct GameObjectContext::AgentKey
+{
+private:
+	friend class ExecutionAgent;
+	explicit AgentKey() = default;
+};
 
 ========================================
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\MiddleLayer\GameObject\GameObjectCreator\GameObjectCreator.cpp ===
 ========================================
 #include "PreCompileHeader.h"
 #include "GameObjectCreator.h"
+GameObjectContext::GameObjectCreator::GameObjectCreator(NexusFieldProof proof_)
+{
+}
 
 ========================================
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\MiddleLayer\GameObject\GameObjectCreator\GameObjectCreator.h ===
@@ -17561,47 +17592,27 @@ public:
 };
 
 ========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\MiddleLayer\GameObject\GameObjectCreator\ObjDataLoader\ObjDataLoader.cpp ===
-========================================
-#include "PreCompileHeader.h"
-#include "ObjDataLoader.h"
-std::vector<std::string> GameObjectContext::ObjDataLoader::LoadUpdatePriority(std::string const& sceneName_)
-{
-	auto* miyajison = Miyajison::Get();
-	return miyajison->LoadData<std::vector<std::string>>(sceneName_, { DataKey::kGameObjectUpdatePriority });
-}
-
-========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\MiddleLayer\GameObject\GameObjectCreator\ObjDataLoader\ObjDataLoader.h ===
-========================================
-#pragma once
-#include "../../GameObjectContext.h"
-class GameObjectContext::ObjDataLoader
-{
-public:
-	std::vector<std::string> LoadUpdatePriority(std::string const& sceneName_);
-private:
-	struct DataKey
-	{
-		static inline std::string const kGameObjectUpdatePriority = "GameObjectUpdatePriority";
-	};
-};
-
-========================================
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\MiddleLayer\GameObject\GameObjectRuntime\GameObjFrontSystems\GameObjFrontlineSystems.cpp ===
 ========================================
 #include "PreCompileHeader.h"
 #include "GameObjFrontlineSystems.h"
 #include "GameObjLibrary/GameObjLibrary.h"
+#include "GameObjController/GameObjController.h"
 namespace
 {
 	auto const fileName = "GameObjFrontlineSystems.cpp";
 }
-GameObjectContext::FrontlineSystems::FrontlineSystems(NexusFieldProof proof_, GameObjectCreator& objCreator_)
-	:objCreator(objCreator_)
+GameObjectContext::FrontlineSystems::FrontlineSystems
+(
+	NexusFieldProof proof_,
+	GameObjectCreator& objCreator_,
+	GameObjSetupper& gameObjSetupper_
+) :objCreator(objCreator_), gameObjSetupper(gameObjSetupper_)
 {
 	objLibrary = std::make_unique<ObjLibrary>(proof_);
 	Logger::Log("Instantiate: ObjLibrary", fileName);
+	gameObjController = std::make_unique<GameObjController>(proof_);
+	Logger::Log("Instantiate: GameObjController", fileName);
 }
 GameObjectContext::FrontlineSystems::~FrontlineSystems()
 {
@@ -17614,27 +17625,27 @@ void GameObjectContext::FrontlineSystems::ImportObj
 {
 	objLibrary->Import(objName_,std::move(obj_));
 }
-void GameObjectContext::FrontlineSystems::Sort(std::vector<std::string> const& objPriorityList_)
-{
-	objLibrary->SortByPriority(objPriorityList_);
-}
 
 ========================================
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\MiddleLayer\GameObject\GameObjectRuntime\GameObjFrontSystems\GameObjFrontlineSystems.h ===
 ========================================
 #pragma once
 #include "../../GameObjectCreator/GameObjectCreator.h"
+#include "../../GameObjSetupper/GameObjSetupper.h"
 class GameObjectContext::FrontlineSystems
 {
 	class ObjLibrary;
+	class GameObjController;
 public:
 	FrontlineSystems
 	(
 		NexusFieldProof proof_,
-		GameObjectCreator& objCreator_
+		GameObjectCreator& objCreator_,
+		GameObjSetupper& gameObjSetupper_
 	);
 	~FrontlineSystems();
 	//ゲームオブジェクトを生成し、コンテナにぶち込む。
+	//これはシーンの初期化で触れる
 	template<typename ObjType>
 	ObjType* CreateObj(std::string const& name_)
 	{
@@ -17643,17 +17654,102 @@ public:
 		ImportObj(name_ , std::move(objUnique));
 		return objPtr;
 	}
-	//コンテナの中のゲームオブジェクトをソートする
-	///シーンのInit()が呼ばれた後じゃないとダメ
-	void Sort(std::vector<std::string> const& objPriorityList_);
+	//ゲームオブジェクトにシステムをアタッチする
+	//SceneInitInterfaceで使用可能
+	template<typename SystemType>
+	void AttachSystem(GameObjectBehavior& obj_)
+	{
+		gameObjSetupper.AttachSystem<SystemType>(obj_);
+	}
 private:
+	GameObjSetupper& gameObjSetupper;
 	GameObjectCreator& objCreator;
 	std::unique_ptr<ObjLibrary> objLibrary;
+	std::unique_ptr<GameObjController> gameObjController;
 	void ImportObj
 	(
 		std::string const& objName_,
 		std::unique_ptr<GameObjectBehavior>&& obj_
 	);
+};
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\MiddleLayer\GameObject\GameObjectRuntime\GameObjFrontSystems\GameObjController\GameObjController.cpp ===
+========================================
+#include "PreCompileHeader.h"
+#include "GameObjController.h"
+#include "ObjDataLoader/ObjDataLoader.h"
+#include "../GameObjLibrary/GameObjLibrary.h"
+GameObjectContext::FrontlineSystems::GameObjController::GameObjController(NexusFieldProof proof_)
+{
+}
+void GameObjectContext::FrontlineSystems::GameObjController::InitAllGameObj
+(
+	std::string const& sceneName_,
+	ObjLibrary& objLibrary_,
+	SceneInterfacesPtr sceneInterfacesPtr_
+)
+{
+	//シーンファイルからオブジェの初期化に必要な情報を引っ張ってくる
+	//オブジェクト更新優先順位リスト
+	auto objPriorityList = ObjDataLoader::LoadUpdatePriority(sceneName_);
+	//まずはゲームオブジェクトをソートする
+	objLibrary_.Sort(objPriorityList);
+	//全ゲームオブジェクトのAwake()とStart()を呼ぶ
+	auto& sortedObjContainer = objLibrary_.RefObjContainer();
+	for (auto* obj : sortedObjContainer)
+	{
+	}
+}
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\MiddleLayer\GameObject\GameObjectRuntime\GameObjFrontSystems\GameObjController\GameObjController.h ===
+========================================
+#pragma once
+#include "../GameObjFrontlineSystems.h"
+//外部
+#include "../../../../Scene/SceneStructure/AllSceneInterfaceFwd.h"
+class GameObjectContext::FrontlineSystems::GameObjController
+{
+	//ジェーソンファイルからオブジェの情報を引っ張ってくる
+	class ObjDataLoader;
+public:
+	GameObjController(NexusFieldProof proof_);
+	//シーンが作成された後に、
+	//ゲームオブジェクトの、Awake()とStart()を呼ぶ
+	void InitAllGameObj
+	(
+		std::string const& sceneName_,
+		ObjLibrary& objLibrary_,
+		SceneInterfacesPtr sceneInterfacesPtr_
+	);
+private:
+};
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\MiddleLayer\GameObject\GameObjectRuntime\GameObjFrontSystems\GameObjController\ObjDataLoader\ObjDataLoader.cpp ===
+========================================
+#include "PreCompileHeader.h"
+#include "ObjDataLoader.h"
+std::vector<std::string> GameObjectContext::FrontlineSystems::FrontlineSystems::GameObjController::ObjDataLoader::LoadUpdatePriority(std::string const& sceneName_)
+{
+	auto* miyajison = Miyajison::Get();
+	return miyajison->LoadData<std::vector<std::string>>(sceneName_, { DataKey::kGameObjectUpdatePriority });
+}
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\MiddleLayer\GameObject\GameObjectRuntime\GameObjFrontSystems\GameObjController\ObjDataLoader\ObjDataLoader.h ===
+========================================
+#pragma once
+#include "../GameObjController.h"
+class GameObjectContext::FrontlineSystems::FrontlineSystems::GameObjController::ObjDataLoader
+{
+	friend class GameObjController;
+	static std::vector<std::string> LoadUpdatePriority(std::string const& sceneName_);
+	struct DataKey
+	{
+		static inline std::string const kGameObjectUpdatePriority = "GameObjectUpdatePriority";
+	};
 };
 
 ========================================
@@ -17668,22 +17764,62 @@ namespace
 }
 GameObjectContext::FrontlineSystems::ObjLibrary::ObjLibrary(NexusFieldProof proof_)
 {
-	objMapCache = std::make_unique<std::unordered_map<std::string, std::vector<GameObjectBehavior*>>>();
+	objMapCache = std::make_unique<std::unordered_map<std::string, std::pair<bool , std::vector<GameObjectBehavior*>>>>();
+}
+void GameObjectContext::FrontlineSystems::ObjLibrary::Sort(std::vector<std::string> const& priorityList_)
+{
+	SortByPriority(priorityList_);
+}
+std::vector<GameObjectBehavior*>& GameObjectContext::FrontlineSystems::ObjLibrary::RefObjContainer()
+{
+	return sortedByProority;
 }
 void GameObjectContext::FrontlineSystems::ObjLibrary::SortByPriority(std::vector<std::string> const& priorityList_)
 {
 	//文字列データから優先順位ソート
+	//優先順位リストがちゃんと活用されたかチェック
+	//オブジェの名前とリストに表記されている名前が一致している確認する
+	//活用されなかったpriorityList_のオブジェ名
+	std::vector < std::string > mismatchedList;
+	sortedByProority.reserve(objUniqueMap.size());
 	for (auto const& srcName_ : priorityList_)
 	{
-		for (auto const& [name, objPtrVec] : *objMapCache)
+		bool hasMatched{};
+		for (auto& [name, doneFlag_objPtrVec] : *objMapCache)
 		{
 			if (srcName_ == name)
 			{
-				for (auto* objPtr : objPtrVec)
+				for (auto* objPtr : doneFlag_objPtrVec.second)
 				{
 					sortedByProority.emplace_back(objPtr);
 				}
+				//格納済みです
+				doneFlag_objPtrVec.first = true;
+				//活用されました
+				hasMatched = true;
 			}
+		}
+		if (!hasMatched) mismatchedList.emplace_back(srcName_);
+	}
+	std::string log;
+	for (auto const& mismatchedName: mismatchedList)
+	{
+		log += mismatchedName + ",";
+	}
+	ErrorMessageOutput::Assert::DetectError
+	(
+		mismatchedList.size() == 0,
+		"ミスマッチなオブジェ優先順位名: " + log,
+		fileName
+	);
+	//doneFlagが立ってない、つまり、初期化リストに記述されていないオブジェクトを
+	//つめていく
+	for (auto const& [name, doneFlag_objPtrVec] : *objMapCache)
+	{
+		if (doneFlag_objPtrVec.first) continue;
+		for (auto* objPtr : doneFlag_objPtrVec.second)
+		{
+			sortedByProority.emplace_back(objPtr);
 		}
 	}
 	//キャッシュデータ削除
@@ -17691,7 +17827,7 @@ void GameObjectContext::FrontlineSystems::ObjLibrary::SortByPriority(std::vector
 	ErrorMessageOutput::Assert::DetectError
 	(
 		objUniqueMap.size() == sortedByProority.size(),
-		"あるオブジェの優先リストとゲームオブジェクトリストの名前が一致してない可能性大",
+		"objUniqueMapとsortedByProrityのサイズが一致していない(エンジンのせい)",
 		fileName
 	);
 	Logger::Log("Sorted by Priority", fileName);
@@ -17709,7 +17845,8 @@ void GameObjectContext::FrontlineSystems::ObjLibrary::Import
 	//単一オブジェ検索用
 	forSerchContainer[objName_] = objPtr;
 	//優先度ソート用
-	(*objMapCache)[objName_].emplace_back(objPtr);
+	(*objMapCache)[objName_].second.emplace_back(objPtr);
+	(*objMapCache)[objName_].first = false;
 	Logger::Log("Import: " + nameID, fileName);
 }
 
@@ -17730,19 +17867,21 @@ public:
 	);
 	//単一のオブジェ限定のサーチ
 	void FindIdentifiableObj(std::string const& objName_);
-	//優先順位で並び替える
-	void SortByPriority(std::vector<std::string> const& priorityList_);
 	//更新用オブジェコンテナの参照を返す
 	std::vector<GameObjectBehavior*>& RefObjContainer();
+	//ソートする
+	void Sort(std::vector<std::string> const& priorityList_);
 private:
 	//本体のマップ
 	std::unordered_map<std::string, std::unique_ptr<GameObjectBehavior>> objUniqueMap;
 	//更新優先度ソート用のキャッシュ
-	std::unique_ptr<std::unordered_map<std::string, std::vector<GameObjectBehavior*>>> objMapCache;
+	std::unique_ptr<std::unordered_map<std::string, std::pair<bool, std::vector<GameObjectBehavior*>>>> objMapCache;
 	//更新優先度順に並び替えられたコンテナ
 	std::vector<GameObjectBehavior*> sortedByProority;
 	//検索用マップ。ただし、単一のものしか無理
 	std::unordered_map<std::string, GameObjectBehavior*> forSerchContainer;
+	//優先順位で並び替える
+	void SortByPriority(std::vector<std::string> const& priorityList_);
 };
 
 ========================================
@@ -17760,8 +17899,9 @@ GameObjectBehavior::GameObjectBehavior(Local_CreateLicence licence_)
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\MiddleLayer\GameObject\GameObjectStructure\GameObjectBehavior.h ===
 ========================================
 #pragma once
+#include "GameObjSystems.h"
 //外部
-#include "../../../Math/Transform/Transform.h"
+#include "../../Scene/SceneStructure/AllSceneInterfaceFwd.h"
 class Model;
 class GameObjectContext;
 class GameObjectBehavior
@@ -17776,12 +17916,6 @@ public:
 	struct Local_CreateLicence;
 	GameObjectBehavior(Local_CreateLicence licence_);
 	virtual ~GameObjectBehavior() = default;
-	//システムを取り付ける
-	template<typename SystemType>
-	void AttachSystem()
-	{
-		std::get<std::unique_ptr<SystemType>>(systems) = std::make_unique<SystemType>();
-	}
 	//システムのポインタを取得
 	template<typename SystemType>
 	auto* GetSystemPtr()
@@ -17790,29 +17924,123 @@ public:
 		std::get<std::unique_ptr<SystemType>>(systems) ?
 		std::get<std::unique_ptr<SystemType>>(systems).get() : nullptr;
 	}
-	Status WatchStatus()const {return status;}
+	Status WatchStatus()const { return status; }
 private:
 	//ゲームオブジェクトのステータス
 	Status status = Status::kActive;
 	//アタッチ可能なシステム
-	std::tuple<std::unique_ptr<Transform>> systems;
+	GameObjSystems systems;
 	//以下ゲームオブジェクト管理クラスが呼ぶ
 	//ただの更新処理
 	virtual void Update() = 0;
 	//ゲームオブジェクトのリセットに使用。シーンが切り替わった時に呼ばれる
 	virtual void Reset() = 0;
 	//実質、コンストラクタの代わり
-	virtual void Awake() = 0;
+	virtual void Awake(SceneInitInterface* sceneInitInterface_) = 0;
 	//更新処理の直前に呼ばれる。他のゲームオブジェクトはこの時点で生成されているので
 	//検索などはできる
-	virtual void Start() = 0;
-	//コンストラクタをシンプルにするための、エンジン層で受け持つ初期化関数群
+	virtual void Start(SceneRuntimeInterface* sceneRuntimeInterface_) = 0;
 };
 struct GameObjectBehavior::Local_CreateLicence
 {
 private:
 	friend class GameObjectContext;
 	explicit Local_CreateLicence() = default;
+};
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\MiddleLayer\GameObject\GameObjectStructure\GameObjSystems.h ===
+========================================
+#pragma once
+#include "../../../Math/Transform/Transform.h"
+using GameObjSystems = 
+std::tuple
+<
+	std::unique_ptr<Transform>
+>;
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\MiddleLayer\GameObject\GameObjSetupper\GameObjSetupper.cpp ===
+========================================
+#include "PreCompileHeader.h"
+#include "GameObjSetupper.h"
+GameObjectContext::GameObjSetupper::GameObjSetupper(NexusFieldProof proof_)
+{
+}
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\MiddleLayer\GameObject\GameObjSetupper\GameObjSetupper.h ===
+========================================
+#pragma once
+#include "../GameObjectContext.h"
+#include "../GameObjectStructure/GameObjectBehavior.h"
+class GameObjectContext::GameObjSetupper
+{
+public:
+	GameObjSetupper(NexusFieldProof proof_);
+	//システムを取り付ける
+	template<typename SystemType>
+	void AttachSystem(GameObjectBehavior& obj_)
+	{
+		std::get<std::unique_ptr<SystemType>>(obj_.systems) = std::make_unique<SystemType>();
+	}
+private:
+};
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\MiddleLayer\GameObject\ObjFSDispatcher\ObjFSDispatcher.cpp ===
+========================================
+#include "PreCompileHeader.h"
+#include "ObjFSDispatcher.h"
+#include "../GameObjectRuntime/GameObjFrontSystems/GameObjFrontlineSystems.h"
+GameObjectContext::ObjFSDispatcher::ObjFSDispatcher
+(
+	NexusFieldProof proof_,
+	GameObjectCreator& gameObjectCreator_,
+	GameObjSetupper& gameObjSetupper_
+)
+{
+	//シーンの総数をロード
+	auto* miyajison = Miyajison::Get();
+	UINT numScene = (UINT)miyajison->LoadData<int>("ProjectConfig", { "numScene" });
+	simpleFreeList.Resize(numScene, "ModelSys");
+	frontlineSystems.reserve(numScene);
+	UINT i{};
+	for (;i < numScene;++i)
+	{
+		frontlineSystems.emplace_back(std::make_unique<FrontlineSystems>(proof_, gameObjectCreator_, gameObjSetupper_));
+	}
+	Logger::Log("Instantiate: FrontlineSystems(" + std::to_string(i) + ")", "ObjFSDispatcher.cpp");
+}
+GameObjectContext::ObjFSDispatcher::~ObjFSDispatcher()
+{
+}
+GameObjectContext::FrontlineSystems* GameObjectContext::ObjFSDispatcher::Dispatch(AgentKey key_)
+{
+	return frontlineSystems[simpleFreeList.Distribute()].get();
+}
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\MiddleLayer\GameObject\ObjFSDispatcher\ObjFSDispatcher.h ===
+========================================
+#pragma once
+#include "../GameObjectContext.h"
+//外部
+#include "SimpleFreeList/SimpleFreeList.h"
+class GameObjectContext::ObjFSDispatcher
+{
+public:
+	ObjFSDispatcher
+	(
+		NexusFieldProof proof_, 
+		GameObjectCreator& gameObjectCreator_,
+		GameObjSetupper& gameObjSetupper_
+	);
+	~ObjFSDispatcher();
+	FrontlineSystems* Dispatch(AgentKey key_);
+private:
+	std::vector<std::unique_ptr<FrontlineSystems>> frontlineSystems;
+	SimpleFreeList simpleFreeList;
 };
 
 ========================================
@@ -22298,18 +22526,31 @@ public:
 };
 
 ========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\MiddleLayer\Scene\SceneStructure\AllSceneInterfaceFwd.h ===
+========================================
+#pragma once
+class SceneInitInterface;
+class SceneRuntimeInterface;
+using SceneInterfacesPtr = std::tuple<SceneInitInterface*, SceneRuntimeInterface*>;
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\MiddleLayer\Scene\SceneStructure\AllSceneInterfaceInclude.h ===
+========================================
+#pragma once
+#include "SceneInterface/SceneInitInterface.h"
+#include "SceneInterface/SceneRuntimeInterface.h"
+
+========================================
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\MiddleLayer\Scene\SceneStructure\SceneBehavior.cpp ===
 ========================================
 #include "PreCompileHeader.h"
 #include "SceneBehavior.h"
 #include "SceneOutput/SceneOutput.h"
-#include "SceneInterface/SceneInitInterface.h"
-#include "SceneInterface/SceneRuntimeInterface.h"
+#include "AllSceneInterfaceInclude.h"
 //外部
 #include "../../../LowerLayer/Resource/Camera/CameraStructure/CameraDesc/CameraDesc.h"
 //エンジン備え付けのカメラ
 #include "../../../LowerLayer/Resource/Camera/PresetCameras/PresetCameraIncludes.h"
-#include "../ScenePreset/RenderingTestScene/RenderingTestScene.h"
 using namespace ProjectConfig::Render;
 namespace
 {
@@ -22324,14 +22565,6 @@ void SceneBehavior::Update()
 {
 	//このシーンで使うカメラのアップデート
 	output->usingCamera = cameraSystems->CameraUpdate();
-	//static Vector3 a;
-	//a.data.x += 0.008f;
-	//a.data.y += 0.008f;
-	//a.data.z += 0.008f;
-	//for (int i = 0;i < 10;++i)
-	//{
-	//	RenderingTestScene::p[i]->RefTransform(0).Rotate(a);
-	//}
 	//このシーンのモデルのトランスフォームのアップデートを呼ぶ
 	modelSystems->UpdateModelTransform<Model::Type::kDynamic>();
 	if (output->leftStaticModelBatchingCnt-- == (UINT)NumBuffer::kDoubleBuffer)
@@ -22390,14 +22623,14 @@ void SceneBehavior::CreatePresetCamera()
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\MiddleLayer\Scene\SceneStructure\SceneBehavior.h ===
 ========================================
 #pragma once
+#include "AllSceneInterfaceFwd.h"
 //外部
 #include "../../../LowerLayer/Resource/Camera/CameraContextRuntime/CameraFrontlineSystems.h"
 #include "../../../LowerLayer/Resource/Model/ModelContextRuntime/ModelFrontlineSystems/ModelFrontlineSystems.h"
+#include "../../GameObject/GameObjectRuntime/GameObjFrontSystems/GameObjFrontlineSystems.h"
 class SceneContext;
 class Model;
 struct CameraDesc;
-class SceneInitInterface;
-class SceneRuntimeInterface;
 class SceneBehavior
 {
 	//おおざっぱだが必要な情報のみ開示したいのでフレンド登録
@@ -22411,7 +22644,7 @@ public:
 	struct Output;
 protected:
 private:
-	//ここの中でモデルの生成などの処理を書く。シーンが切り替わっても一発しか呼びません。
+	//ここの中でゲームオブジェクトの生成などの処理を書く。シーンが切り替わっても一発しか呼びません。
 	virtual void Init() = 0;
 	//シーンのInit()の後に一括で一度だけ呼ばれる
 	void SeparateModels();
@@ -22430,8 +22663,10 @@ private:
 	//他コンテキストのシステム
 	CameraContext::FrontlineSystems* cameraSystems = nullptr;
 	ModelContext::FrontlineSystems* modelSystems = nullptr;
+	GameObjectContext::FrontlineSystems* objFrontlineSystems = nullptr;
 	//シーンの出力物
 	std::unique_ptr<Output> output;
+	//シーンのインターフェース群
 	std::tuple
 	<
 		std::unique_ptr<SceneInitInterface>,		//シーン初期化用のインターフェース。初期化フェーズが終わったら破棄
@@ -24188,5 +24423,5 @@ namespace StringProcessing
 ========================================
 === SUMMARY ===
 ========================================
-Total Files      : 538
-Effective Lines  : 17612
+Total Files      : 547
+Effective Lines  : 17767

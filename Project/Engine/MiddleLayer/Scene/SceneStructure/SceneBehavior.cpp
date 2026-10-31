@@ -1,15 +1,14 @@
 #include "PreCompileHeader.h"
 #include "SceneBehavior.h"
 #include "SceneOutput/SceneOutput.h"
-#include "SceneInterface/SceneInitInterface.h"
-#include "SceneInterface/SceneRuntimeInterface.h"
+#include "AllSceneInterfaceInclude.h"
+
 
 //外部
 #include "../../../LowerLayer/Resource/Camera/CameraStructure/CameraDesc/CameraDesc.h"
 //エンジン備え付けのカメラ
 #include "../../../LowerLayer/Resource/Camera/PresetCameras/PresetCameraIncludes.h"
 
-#include "../ScenePreset/RenderingTestScene/RenderingTestScene.h"
 
 using namespace ProjectConfig::Render;
 

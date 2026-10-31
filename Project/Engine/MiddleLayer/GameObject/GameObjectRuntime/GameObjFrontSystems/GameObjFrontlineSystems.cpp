@@ -1,7 +1,7 @@
 #include "PreCompileHeader.h"
 #include "GameObjFrontlineSystems.h"
 #include "GameObjLibrary/GameObjLibrary.h"
-
+#include "GameObjController/GameObjController.h"
 
 namespace
 {
@@ -9,11 +9,18 @@ namespace
 }
 
 
-GameObjectContext::FrontlineSystems::FrontlineSystems(NexusFieldProof proof_, GameObjectCreator& objCreator_)
-	:objCreator(objCreator_)
+GameObjectContext::FrontlineSystems::FrontlineSystems
+(
+	NexusFieldProof proof_,
+	GameObjectCreator& objCreator_,
+	GameObjSetupper& gameObjSetupper_
+) :objCreator(objCreator_), gameObjSetupper(gameObjSetupper_)
 {
 	objLibrary = std::make_unique<ObjLibrary>(proof_);
 	Logger::Log("Instantiate: ObjLibrary", fileName);
+
+	gameObjController = std::make_unique<GameObjController>(proof_);
+	Logger::Log("Instantiate: GameObjController", fileName);
 
 }
 
@@ -31,7 +38,3 @@ void GameObjectContext::FrontlineSystems::ImportObj
 	objLibrary->Import(objName_,std::move(obj_));
 }
 
-void GameObjectContext::FrontlineSystems::Sort(std::vector<std::string> const& objPriorityList_)
-{
-	objLibrary->SortByPriority(objPriorityList_);
-}

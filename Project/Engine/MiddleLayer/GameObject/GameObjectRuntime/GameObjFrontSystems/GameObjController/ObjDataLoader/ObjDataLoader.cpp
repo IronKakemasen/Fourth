@@ -1,7 +1,7 @@
 #include "PreCompileHeader.h"
 #include "ObjDataLoader.h"
 
-std::vector<std::string> GameObjectContext::ObjDataLoader::LoadUpdatePriority(std::string const& sceneName_)
+std::vector<std::string> GameObjectContext::FrontlineSystems::FrontlineSystems::GameObjController::ObjDataLoader::LoadUpdatePriority(std::string const& sceneName_)
 {
 	auto* miyajison = Miyajison::Get();
 
