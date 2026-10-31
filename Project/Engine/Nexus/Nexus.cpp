@@ -76,7 +76,7 @@ void Nexus::PrimaryInit()
 
 }
 
-//2段階目初期化
+//2次初期化
 void Nexus::SecondaryInit(aFourthProof proof_)
 {
 	InitializeInSequence<InitSequence::kRenderContext>();
