@@ -6,15 +6,20 @@ class GameObjectContext
 {
 	//ゲームオブジェクトを作成する
 	class GameObjectCreator;
-	//シーンデータからゲームオブジェクトの情報をインプットする
-	class ObjDataLoader;
+	//ゲームオブジェクトのセットアップを行う
+	class GameObjSetupper;
 
 public:
 
 	//1シーンが一つ持つ、前線システム群
 	class FrontlineSystems;
+	//FrontlineSystemsをシーンに渡す
+	class ObjFSDispatcher;
 
 	struct NexusFieldProof;
+	struct AgentKey;
+
+	class ExecutionAgent;
 
 	GameObjectContext(NexusFieldProof proof_);
 	~GameObjectContext();
@@ -22,7 +27,9 @@ public:
 
 private:
 
-
+	std::unique_ptr<GameObjectCreator> gameObjectCreator;
+	std::unique_ptr<GameObjSetupper> gameObjSetupper;
+	std::unique_ptr<ObjFSDispatcher> objFSDispatcher;
 };
 
 
@@ -34,3 +41,15 @@ private:
 	explicit NexusFieldProof() = default;
 
 };
+
+struct GameObjectContext::AgentKey
+{
+private:
+
+	friend class ExecutionAgent;
+	explicit AgentKey() = default;
+
+};
+
+
+

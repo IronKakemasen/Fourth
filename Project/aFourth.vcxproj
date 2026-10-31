@@ -303,6 +303,8 @@
     <ClCompile Include="Engine\MiddleLayer\GameObject\GameObjectCreator\GameObjectCreator.cpp" />
     <ClCompile Include="Engine\MiddleLayer\GameObject\GameObjectRuntime\GameObjFrontSystems\GameObjFrontlineSystems.cpp" />
     <ClCompile Include="Engine\MiddleLayer\GameObject\GameObjectRuntime\GameObjFrontSystems\GameObjLibrary\GameObjLibrary.cpp" />
+    <ClCompile Include="Engine\MiddleLayer\GameObject\GameObjectRuntime\GameObjFrontSystems\GameObjController\GameObjController.cpp" />
+    <ClCompile Include="Engine\MiddleLayer\GameObject\GameObjSetupper\GameObjSetupper.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="Engine\LowerLayer\Core\Window\WindowContext.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Use</PrecompiledHeader>
@@ -438,7 +440,8 @@
     <ClCompile Include="Engine\MiddleLayer\Scene\ScenePreset\RenderingTestScene\RenderingTestScene.cpp" />
     <ClCompile Include="Engine\MiddleLayer\Render\RenderContextDiplomat\RenderContextDiplomat.cpp" />
     <ClCompile Include="Engine\MiddleLayer\Render\RenderContextDiplomat\RenderContextExecutionAgent\RenderContextExecutionAgent.cpp" />
-    <ClCompile Include="Engine\MiddleLayer\GameObject\GameObjectCreator\ObjDataLoader\ObjDataLoader.cpp" />
+    <ClCompile Include="Engine\MiddleLayer\GameObject\GameObjectRuntime\GameObjFrontSystems\GameObjController\ObjDataLoader\ObjDataLoader.cpp" />
+    <ClCompile Include="Engine\MiddleLayer\GameObject\ObjFSDispatcher\ObjFSDispatcher.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Application\AllCameraIncludes.h" />
@@ -477,6 +480,7 @@
     <ClInclude Include="Engine\LowerLayer\Core\SwapChain\SwapChainContextDiplomat\SwapChainContextToolLender\SwapChainContextToolLenderLicences.h" />
     <ClInclude Include="Engine\LowerLayer\Resource\Model\ModelContextDiplomat\ModelContextExecutionAgent\ModelAgentLicences.h" />
     <ClInclude Include="Engine\LowerLayer\Resource\Model\ModelContextIncludes.h" />
+    <ClInclude Include="Engine\MiddleLayer\GameObject\GameObjectStructure\GameObjSystems.h" />
     <ClInclude Include="Engine\MiddleLayer\Render\RenderContextDiplomat\RenderContextExecutionAgent\RenderAgentLicences.h" />
     <ClInclude Include="Engine\MiddleLayer\Render\RenderContextRuntime\StaticRenderGraph\RenderGraphExecutor\FinalRenderer\FinalRenderer.h" />
     <ClInclude Include="Engine\LowerLayer\Buffer\BufferContextDiplomats.h" />
@@ -552,6 +556,8 @@
     <ClInclude Include="Engine\LowerLayer\Resource\Texture\TextureContextDiplomat\TextureContextToolLender\TextureContextToolLenderLicences.h" />
     <ClInclude Include="Engine\Math\MathConstants.h" />
     <ClInclude Include="Engine\MiddleLayer\Scene\SceneContextDiplomat\SceneExecutionAgent\SceneExecutionAgentLicences.h" />
+    <ClInclude Include="Engine\MiddleLayer\Scene\SceneStructure\AllSceneInterfaceFwd.h" />
+    <ClInclude Include="Engine\MiddleLayer\Scene\SceneStructure\AllSceneInterfaceInclude.h" />
     <ClInclude Include="Engine\MiddleLayer\Scene\SceneStructure\SceneOutput\SceneOutput.h" />
     <ClInclude Include="Engine\Utility\ClosedHashMap\ClosedHashMap.h" />
     <ClInclude Include="Engine\MiddleLayer\Render\RenderContextRuntime\PSO_PoolDispatcher\GraphicsPSO_Key.h" />
@@ -771,9 +777,12 @@
     <ClInclude Include="Engine\MiddleLayer\GameObject\GameObjectCreator\GameObjectCreator.h" />
     <ClInclude Include="Engine\MiddleLayer\GameObject\GameObjectRuntime\GameObjFrontSystems\GameObjFrontlineSystems.h" />
     <ClInclude Include="Engine\MiddleLayer\GameObject\GameObjectRuntime\GameObjFrontSystems\GameObjLibrary\GameObjLibrary.h" />
-    <ClInclude Include="Engine\MiddleLayer\GameObject\GameObjectCreator\ObjDataLoader\ObjDataLoader.h" />
+    <ClInclude Include="Engine\MiddleLayer\GameObject\GameObjectRuntime\GameObjFrontSystems\GameObjController\ObjDataLoader\ObjDataLoader.h" />
     <ClInclude Include="Engine\MiddleLayer\Scene\SceneStructure\SceneInterface\SceneInitInterface.h" />
     <ClInclude Include="Engine\MiddleLayer\Scene\SceneStructure\SceneInterface\SceneRuntimeInterface.h" />
+    <ClInclude Include="Engine\MiddleLayer\GameObject\GameObjectRuntime\GameObjFrontSystems\GameObjController\GameObjController.h" />
+    <ClInclude Include="Engine\MiddleLayer\GameObject\GameObjSetupper\GameObjSetupper.h" />
+    <ClInclude Include="Engine\MiddleLayer\GameObject\ObjFSDispatcher\ObjFSDispatcher.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

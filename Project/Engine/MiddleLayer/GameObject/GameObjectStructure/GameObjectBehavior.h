@@ -1,7 +1,10 @@
 #pragma once
+#include "GameObjSystems.h"
+
 
 //外部
-#include "../../../Math/Transform/Transform.h"
+#include "../../Scene/SceneStructure/AllSceneInterfaceFwd.h"
+
 
 class Model;
 class GameObjectContext;
@@ -23,12 +26,6 @@ public:
 	GameObjectBehavior(Local_CreateLicence licence_);
 	virtual ~GameObjectBehavior() = default;
 	
-	//システムを取り付ける
-	template<typename SystemType>
-	void AttachSystem()
-	{
-		std::get<std::unique_ptr<SystemType>>(systems) = std::make_unique<SystemType>();
-	}
 
 	//システムのポインタを取得
 	template<typename SystemType>
@@ -39,7 +36,7 @@ public:
 		std::get<std::unique_ptr<SystemType>>(systems).get() : nullptr;
 	}
 
-	Status WatchStatus()const {return status;}
+	Status WatchStatus()const { return status; }
 
 private:
 
@@ -47,7 +44,7 @@ private:
 	Status status = Status::kActive;
 
 	//アタッチ可能なシステム
-	std::tuple<std::unique_ptr<Transform>> systems;
+	GameObjSystems systems;
 
 
 	//以下ゲームオブジェクト管理クラスが呼ぶ
@@ -57,12 +54,11 @@ private:
 	//ゲームオブジェクトのリセットに使用。シーンが切り替わった時に呼ばれる
 	virtual void Reset() = 0;
 	//実質、コンストラクタの代わり
-	virtual void Awake() = 0;
+	virtual void Awake(SceneInitInterface* sceneInitInterface_) = 0;
 	//更新処理の直前に呼ばれる。他のゲームオブジェクトはこの時点で生成されているので
 	//検索などはできる
-	virtual void Start() = 0;
+	virtual void Start(SceneRuntimeInterface* sceneRuntimeInterface_) = 0;
 
-	//コンストラクタをシンプルにするための、エンジン層で受け持つ初期化関数群
 
 };
 

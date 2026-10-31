@@ -1,22 +1,25 @@
 #pragma once
 #include "../../GameObjectCreator/GameObjectCreator.h"
-
+#include "../../GameObjSetupper/GameObjSetupper.h"
 
 class GameObjectContext::FrontlineSystems
 {
 	class ObjLibrary;
+	class GameObjController;
 
 public:
 
 	FrontlineSystems
 	(
 		NexusFieldProof proof_,
-		GameObjectCreator& objCreator_
+		GameObjectCreator& objCreator_,
+		GameObjSetupper& gameObjSetupper_
 	);
 
 	~FrontlineSystems();
 
 	//ゲームオブジェクトを生成し、コンテナにぶち込む。
+	//これはシーンの初期化で触れる
 	template<typename ObjType>
 	ObjType* CreateObj(std::string const& name_)
 	{
@@ -28,15 +31,22 @@ public:
 		return objPtr;
 	}
 
-	//コンテナの中のゲームオブジェクトをソートする
-	///シーンのInit()が呼ばれた後じゃないとダメ
-	void Sort(std::vector<std::string> const& objPriorityList_);
+	//ゲームオブジェクトにシステムをアタッチする
+	//SceneInitInterfaceで使用可能
+	template<typename SystemType>
+	void AttachSystem(GameObjectBehavior& obj_)
+	{
+		gameObjSetupper.AttachSystem<SystemType>(obj_);
+	}
+
 
 
 private:
 
+	GameObjSetupper& gameObjSetupper;
 	GameObjectCreator& objCreator;
 	std::unique_ptr<ObjLibrary> objLibrary;
+	std::unique_ptr<GameObjController> gameObjController;
 
 	void ImportObj
 	(
