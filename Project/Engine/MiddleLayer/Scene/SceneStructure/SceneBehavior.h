@@ -33,7 +33,7 @@ protected:
 	template<typename ObjType>
 	ObjType* CreateObj(std::string const& name_)
 	{
-		objFrontlineSystems->CreateObj(name_);
+		return objFrontlineSystems->CreateObj(name_);
 	}
 
 private:
