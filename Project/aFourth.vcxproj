@@ -66,7 +66,7 @@
       <TreatWarningAsError>true</TreatWarningAsError>
       <PrecompiledHeader>Use</PrecompiledHeader>
       <PrecompiledHeaderFile>PreCompileHeader.h</PrecompiledHeaderFile>
-      <AdditionalIncludeDirectories>$(ProjectDir)\Engine\Utility;$(ProjectDir)\Engine\PreCompileHeader;$(ProjectDir)\Engine\MiddleLayer\MiyaJison;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)\Engine\Utility;$(ProjectDir)\Engine\PreCompileHeader;$(ProjectDir)\Engine\MiddleLayer\MiyaJison;$(ProjectDir)\Engine\MiddleLayer\Scene\SceneStructure;$(ProjectDir)\Engine\MiddleLayer\GameObject\GameObjectStructure;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <ForcedIncludeFiles>PreCompileHeader.h;%(ForcedIncludeFiles)</ForcedIncludeFiles>
     </ClCompile>
     <Link>
@@ -92,7 +92,7 @@
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <PrecompiledHeader>Use</PrecompiledHeader>
       <PrecompiledHeaderFile>PreCompileHeader.h</PrecompiledHeaderFile>
-      <AdditionalIncludeDirectories>$(ProjectDir)\Engine\Utility;$(ProjectDir)\Engine\PreCompileHeader;$(ProjectDir)\Engine\MiddleLayer\MiyaJison;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)\Engine\Utility;$(ProjectDir)\Engine\PreCompileHeader;$(ProjectDir)\Engine\MiddleLayer\MiyaJison;$(ProjectDir)\Engine\MiddleLayer\Scene\SceneStructure;$(ProjectDir)\Engine\MiddleLayer\GameObject\GameObjectStructure;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <ForcedIncludeFiles>PreCompileHeader.h;%(ForcedIncludeFiles)</ForcedIncludeFiles>
       <TreatWarningAsError>true</TreatWarningAsError>
     </ClCompile>
@@ -307,6 +307,7 @@
     <ClCompile Include="Engine\MiddleLayer\GameObject\GameObjSetupper\GameObjSetupper.cpp" />
     <ClCompile Include="Engine\MiddleLayer\GameObject\GameObjectContextDiplomat\GameObjectContextDiplomat.cpp" />
     <ClCompile Include="Engine\MiddleLayer\GameObject\GameObjectContextDiplomat\GameObjectAgent\GameObjectAgent.cpp" />
+    <ClCompile Include="Engine\MiddleLayer\GameObject\GameObjectPreset\GridFloor\GridFloor.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="Engine\LowerLayer\Core\Window\WindowContext.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Use</PrecompiledHeader>
@@ -788,6 +789,7 @@
     <ClInclude Include="Engine\MiddleLayer\GameObject\ObjFSDispatcher\ObjFSDispatcher.h" />
     <ClInclude Include="Engine\MiddleLayer\GameObject\GameObjectContextDiplomat\GameObjectContextDiplomat.h" />
     <ClInclude Include="Engine\MiddleLayer\GameObject\GameObjectContextDiplomat\GameObjectAgent\GameObjectAgent.h" />
+    <ClInclude Include="Engine\MiddleLayer\GameObject\GameObjectPreset\GridFloor\GridFloor.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

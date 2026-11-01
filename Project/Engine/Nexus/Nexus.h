@@ -47,9 +47,10 @@ public:
 	template<typename ContextType>
 	auto& AccessContext(aFourthProof const& proof_)
 	{
-		if		constexpr (std::is_same_v<ContextType, ModelContext>)	return *modelContext;
-		else if constexpr (std::is_same_v<ContextType, CameraContext>)	return *cameraContext;
-		else if constexpr (std::is_same_v<ContextType, SceneContext>)	return *sceneContext;
+		if		constexpr (std::is_same_v<ContextType, ModelContext>)		return *modelContext;
+		else if constexpr (std::is_same_v<ContextType, CameraContext>)		return *cameraContext;
+		else if constexpr (std::is_same_v<ContextType, SceneContext>)		return *sceneContext;
+		else if constexpr (std::is_same_v<ContextType, GameObjectContext>)	return *gameObjectContext;
 
 	}
 

@@ -18,7 +18,7 @@ public:
 
 	~FrontlineSystems();
 
-	//ゲームオブジェクトを生成し、コンテナにぶち込む。
+	//ゲームオブジェクトを生成し、コンテナにぶち込む
 	//これはシーンの初期化で触れる
 	template<typename ObjType>
 	ObjType* CreateObj(std::string const& name_)
@@ -39,6 +39,13 @@ public:
 		return gameObjSetupper.AttachSystem<SystemType>(obj_);
 	}
 
+	//シーンの初期化後、全てのゲームオブジェクトの初期化、ランタイム用コンテナの構築を
+	//完了させる
+	void InitAllGameObj
+	(
+		std::string const& sceneName_,
+		SceneInterfacesPtr sceneInterfacesPtr_
+	);
 
 
 private:

@@ -17,8 +17,11 @@ public:
 	//単一のオブジェ限定のサーチ
 	void FindIdentifiableObj(std::string const& objName_);
 		
-	//更新用オブジェコンテナの参照を返す
-	std::vector<GameObjectBehavior*>& RefObjContainer();
+	//更新優先順にソートされたオブジェコンテナの参照を返す
+	std::vector<GameObjectBehavior*>& RefSortedObjContainer();
+
+	//objUniqueMapを返す
+	std::unordered_map<std::string, std::unique_ptr<GameObjectBehavior>>& RefObjUniqueMap();
 
 	//ソートする
 	void Sort(std::vector<std::string> const& priorityList_);

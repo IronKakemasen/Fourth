@@ -19,25 +19,25 @@ class SceneBehavior
 
 public:
 
+	//このシーンで使用しているカメラ、モデル、ライトなどの情報
+	struct Output;
+
 	//そこいらでインスタンス化させないため
 	struct InstancingLicense;
 
 	SceneBehavior(InstancingLicense license_);
 	virtual ~SceneBehavior();
 
-	//このシーンで使用しているカメラ、モデル、ライトなどの情報
-	struct Output;
-
+		
 protected:
 
 	template<typename ObjType>
 	ObjType* CreateObj(std::string const& name_)
 	{
-		return objFrontlineSystems->CreateObj(name_);
+		return objFrontlineSystems->CreateObj<ObjType>(name_);
 	}
 
 private:
-
 
 	//ここの中でゲームオブジェクトの生成などの処理を書く。シーンが切り替わっても一発しか呼びません。
 	virtual void Init() = 0;
@@ -49,8 +49,12 @@ private:
 	void SetSystems
 	(
 		CameraContext::FrontlineSystems* cameraSystems_,
-		ModelContext::FrontlineSystems* modelSystems_
+		ModelContext::FrontlineSystems* modelSystems_,
+		GameObjectContext::FrontlineSystems* objFrontlineSystems_
 	);
+
+	//ゲームオブジェクトの初期化
+	void InitAllGameObj(std::string const& sceneName_);
 
 	//シーンクリエイターがプリセットカメラを備え付ける
 	void CreatePresetCamera();
@@ -61,6 +65,9 @@ private:
 	//SceneControllerにこのシーンで使われているリソース伝えるため
 	Output const& WatchSceneOutput()const;
 
+	//ゲームオブジェクトの初期化専用インターフェースを削除する
+	void DeleteInitInterface();
+
 	//他コンテキストのシステム
 	CameraContext::FrontlineSystems* cameraSystems = nullptr;
 	ModelContext::FrontlineSystems* modelSystems = nullptr;
@@ -70,12 +77,7 @@ private:
 	std::unique_ptr<Output> output;
 
 	//シーンのインターフェース群
-	std::tuple
-	<
-		std::unique_ptr<SceneInitInterface>,		//シーン初期化用のインターフェース。初期化フェーズが終わったら破棄
-		std::unique_ptr<SceneRuntimeInterface>		//シーンのランタイム用インターフェース。破棄されない
-	> interfaces;
-
+	SceneInterfacesUnique interfaces;
 };
 
 

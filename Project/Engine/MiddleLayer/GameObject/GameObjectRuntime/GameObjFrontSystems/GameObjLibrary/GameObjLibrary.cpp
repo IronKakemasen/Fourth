@@ -17,10 +17,16 @@ void GameObjectContext::FrontlineSystems::ObjLibrary::Sort(std::vector<std::stri
 	SortByPriority(priorityList_);
 }
 
-std::vector<GameObjectBehavior*>& GameObjectContext::FrontlineSystems::ObjLibrary::RefObjContainer()
+std::vector<GameObjectBehavior*>& GameObjectContext::FrontlineSystems::ObjLibrary::RefSortedObjContainer()
 {
 	return sortedByProority;
 }
+
+std::unordered_map<std::string, std::unique_ptr<GameObjectBehavior>>& GameObjectContext::FrontlineSystems::ObjLibrary::RefObjUniqueMap()
+{
+	return objUniqueMap;
+}
+
 
 void GameObjectContext::FrontlineSystems::ObjLibrary::SortByPriority(std::vector<std::string> const& priorityList_)
 {
@@ -107,8 +113,10 @@ void GameObjectContext::FrontlineSystems::ObjLibrary::Import
 
 	//オブジェおおもと
 	objUniqueMap[nameID] = std::move(obj_);
+	
 	//単一オブジェ検索用
 	forSerchContainer[objName_] = objPtr;
+
 	//優先度ソート用
 	(*objMapCache)[objName_].second.emplace_back(objPtr);
 	(*objMapCache)[objName_].first = false;

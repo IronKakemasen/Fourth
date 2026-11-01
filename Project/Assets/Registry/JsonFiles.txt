@@ -3,3 +3,4 @@ key: "ShaderSettings" , value: "Assets/JsonFiles/AssetsJsonFile/ShaderSettings.j
 key: "RenderGraphSettings" , value: "Assets/JsonFiles/EngineCoreJsonFile/RenderGraphSettings.json"
 key: "RenderPassSettings" , value: "Assets/JsonFiles/EngineCoreJsonFile/RenderPassSettings.json"
 key: "RenderPathSettings" , value: "Assets/JsonFiles/EngineCoreJsonFile/RenderPathSettings.json"
+key: "RenderingTestScene" , value: "Assets/JsonFiles/SceneData/RenderingTestScene.json"
