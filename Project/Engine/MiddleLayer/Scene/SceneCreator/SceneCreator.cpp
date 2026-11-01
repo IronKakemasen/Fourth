@@ -11,12 +11,15 @@
 #include "../../../LowerLayer/Resource/Model/ModelContextDiplomat/ModelContextExecutionAgent/ModelContextExecutionAgent.h"
 #include "../../../LowerLayer/Resource/Model/ModelContextDiplomat/ModelContextExecutionAgent/ModelAgentLicences.h"
 
+#include "../../GameObject/GameObjectContextDiplomat/GameObjectContextDiplomat.h"
+#include "../../GameObject/GameObjectContextDiplomat/GameObjectAgent/GameObjectAgent.h"
+#include "../../GameObject/GameObjectContextDiplomat/GameObjectAgent/GameObjectAgentLicences.h"
+
 
 
 
 CameraContext::FrontlineSystems* SceneContext::SceneCreator::ReceiveCameraSystems(CameraContextDiplomat& cameraContextDiplomat_)
 {
-	//FrontlineSystemsを一つ渡してもらう
 	auto& agent = cameraContextDiplomat_.Access<CameraContext::ExecutionAgent>();
 	
 	return agent.DispatchFrontlineSystems(CameraContext::ExecutionAgent::SceneContextProof{});
@@ -24,8 +27,15 @@ CameraContext::FrontlineSystems* SceneContext::SceneCreator::ReceiveCameraSystem
 
 ModelContext::FrontlineSystems* SceneContext::SceneCreator::ReceiveModelSystems(ModelContextDiplomat& modelContextDiplomat_)
 {
-	//FrontlineSystemsを一つ渡してもらう
 	auto& agent = modelContextDiplomat_.Access<ModelContext::ExecutionAgent>();
 
 	return agent.DispatchFrontSystems(ModelContext::ExecutionAgent::SceneContextProof{});
+}
+
+GameObjectContext::FrontlineSystems* SceneContext::SceneCreator::ReceiveObjSystems(GameObjectContextDiplomat& gameObjectContextDiplomat_)
+{
+	auto& agent = gameObjectContextDiplomat_.Access<GameObjectContext::ExecutionAgent>();
+
+	return agent.DispatchFrontlineSystems(GameObjectContext::ExecutionAgent::SceneContextProof{});
+
 }

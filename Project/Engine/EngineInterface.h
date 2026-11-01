@@ -171,6 +171,7 @@ private:
 		auto& sceneContext	= nexus->AccessContext<SceneContext>(aFourthProof);
 		auto& cameraContext = nexus->AccessContext<CameraContext>(aFourthProof);
 		auto& modelContext	= nexus->AccessContext<ModelContext>(aFourthProof);
+		auto& gameObjContext = nexus->AccessContext<GameObjectContext>(aFourthProof);
 
 		//シーンコンテキストのエージェントがシーン作成関数を呼び出す
 		auto& agent = sceneContext.AccessDiplomat().Access<SceneContext::ExecutionAgent>();
@@ -193,7 +194,8 @@ private:
 				SceneContext::ExecutionAgent::EngineInterfaceProof{},
 				correspondedSceneNames[cnt++],
 				cameraContext.AccessDiplomat(),
-				modelContext.AccessDiplomat()
+				modelContext.AccessDiplomat(),
+				gameObjContext.AccessDiplomat()
 			), 
 			...
 		);	

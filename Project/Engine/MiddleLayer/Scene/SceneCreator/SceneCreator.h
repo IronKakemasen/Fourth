@@ -2,11 +2,6 @@
 #include "../SceneContext.h"
 #include "../SceneStructure/SceneBehavior.h"
 
-//外部
-#include "../../../LowerLayer/Resource/Camera/CameraContext.h"
-
-#include "../../../LowerLayer/Resource/Model/ModelContext.h"
-
 
 //FrontlineSystems
 class SceneContext::SceneCreator
@@ -18,8 +13,10 @@ public:
 	template<typename SceneType>
 	std::unique_ptr<SceneType> Create
 	(
+		std::string const& sceneName_,
 		CameraContextDiplomat& cameraContextDiplomat_,
-		ModelContextDiplomat& modelContextDiplomat_
+		ModelContextDiplomat& modelContextDiplomat_,
+		GameObjectContextDiplomat& gameObjectContextDiplomat_
 	)
 	{
 		auto sceneUnique = std::make_unique<SceneType>(SceneBehavior::InstancingLicense{});
@@ -28,14 +25,20 @@ public:
 		sceneUnique->SetSystems
 		(
 			ReceiveCameraSystems(cameraContextDiplomat_),
-			ReceiveModelSystems(modelContextDiplomat_)
+			ReceiveModelSystems(modelContextDiplomat_),
+			ReceiveObjSystems(gameObjectContextDiplomat_)
 		);
 
 		//プリセットカメラを備え付ける
 		sceneUnique->CreatePresetCamera();
 
+		auto* scenePtr = static_cast<SceneBehavior*>(sceneUnique.get());
+
 		//仮想初期化関数を呼ぶ
-		static_cast<SceneBehavior*>(sceneUnique.get())->Init();
+		scenePtr->Init();
+
+		//シーンのゲームオブジェクトの初期化、ランタイム用コンテナの構築
+		scenePtr->InitAllGameObj(sceneName_);
 
 		//モデルをスタティックとダイナミックに分ける
 		sceneUnique->SeparateModels();
@@ -45,11 +48,9 @@ public:
 
 private:
 
-	//FrontlineSystemsを一つもらう
 	CameraContext::FrontlineSystems* ReceiveCameraSystems(CameraContextDiplomat& cameraContextDiplomat_);
-	//FrontlineSystemsを一つもらう
 	ModelContext::FrontlineSystems* ReceiveModelSystems(ModelContextDiplomat& modelContextDiplomat_);
-
+	GameObjectContext::FrontlineSystems* ReceiveObjSystems(GameObjectContextDiplomat& gameObjectContextDiplomat_);
 
 };
 

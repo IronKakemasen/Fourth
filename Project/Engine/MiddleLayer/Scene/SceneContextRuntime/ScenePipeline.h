@@ -4,9 +4,8 @@
 //外部
 #include "../../../LowerLayer/Resource/Model/ModelContextRuntime/ModelFrontlineSystems/RenderStateKey.h"
 
-class ModelContextDiplomat;
-class CameraContextDiplomat;
 class BufferContextDiplomat;
+
 
 class Model;
 struct RenderStateKey;
@@ -55,20 +54,22 @@ public:
 		AgentKey key_,
 		std::string const& sceneName_,
 		CameraContextDiplomat& cameraContextDiplomat_,
-		ModelContextDiplomat& modelContextDiplomat_
+		ModelContextDiplomat& modelContextDiplomat_,
+		GameObjectContextDiplomat& gameObjectContextDiplomat_
 	)
 	{
 		SceneCreator sceneCreator;
 
-		ImportScene
+		//シーンの作成から、そのシーンの初期化までこの中で行っている
+		std::unique_ptr<SceneType> scene = sceneCreator.Create<SceneType>
 		(
-			sceneCreator.Create<SceneType>
-			(
-				cameraContextDiplomat_,
-				modelContextDiplomat_
-			),
-			sceneName_
+			sceneName_,
+			cameraContextDiplomat_,
+			modelContextDiplomat_,
+			gameObjectContextDiplomat_
 		);
+
+		ImportScene(std::move(scene), sceneName_);
 
 		Logger::Log("Instantiate: " + sceneName_, "ScenePipeline.h");
 	}

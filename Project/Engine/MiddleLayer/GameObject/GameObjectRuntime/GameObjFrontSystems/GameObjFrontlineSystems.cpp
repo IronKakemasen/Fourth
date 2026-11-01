@@ -29,6 +29,17 @@ GameObjectContext::FrontlineSystems::~FrontlineSystems()
 
 }
 
+void GameObjectContext::FrontlineSystems::InitAllGameObj
+(
+	std::string const& sceneName_,
+	SceneInterfacesPtr sceneInterfacesPtr_
+)
+{
+	gameObjController->InitAllGameObj(sceneName_, *objLibrary, sceneInterfacesPtr_);
+	Logger::Log(sceneName_ + ": Init All GameObj", fileName);
+}
+
+
 void GameObjectContext::FrontlineSystems::ImportObj
 (
 	std::string const& objName_,

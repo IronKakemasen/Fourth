@@ -55,7 +55,7 @@ public:
 	template<typename SystemType>
 	SystemType& AttachSystem(GameObjectBehavior& obj_)
 	{
-		return objSystems->AttachSystem(obj_);
+		return objSystems->AttachSystem<SystemType>(obj_);
 	}
 
 

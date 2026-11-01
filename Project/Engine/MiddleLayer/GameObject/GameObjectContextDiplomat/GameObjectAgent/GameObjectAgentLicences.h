@@ -8,5 +8,6 @@ struct GameObjectContext::ExecutionAgent::SceneContextProof
 private:
 
 	friend class SceneContext;
+
 	explicit SceneContextProof() = default;
 };

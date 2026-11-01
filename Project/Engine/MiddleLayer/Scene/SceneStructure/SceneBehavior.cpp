@@ -47,15 +47,36 @@ SceneBehavior::Output const& SceneBehavior::WatchSceneOutput()const
 	return *output; 
 }
 
+void SceneBehavior::DeleteInitInterface()
+{
+	std::get<std::unique_ptr<SceneInitInterface>>(interfaces).reset();
+	Logger::Log("Delete SceneInitInterface", fileName);
+}
+
 void SceneBehavior::SeparateModels()
 {
 	modelSystems->SeparateModels();
 }
 
+void SceneBehavior::InitAllGameObj(std::string const& sceneName_)
+{
+	objFrontlineSystems->InitAllGameObj
+	(
+		sceneName_,
+		std::make_tuple
+		(
+			std::get<std::unique_ptr<SceneInitInterface>>(interfaces).get(),
+			std::get<std::unique_ptr<SceneRuntimeInterface>>(interfaces).get()
+		)
+	);
+
+}
+
 void SceneBehavior::SetSystems
 (
 	CameraContext::FrontlineSystems* cameraSystems_,
-	ModelContext::FrontlineSystems* modelSystems_
+	ModelContext::FrontlineSystems* modelSystems_,
+	GameObjectContext::FrontlineSystems* objFrontlineSystems_
 )
 {
 	ErrorMessageOutput::Assert::DetectError
@@ -72,8 +93,16 @@ void SceneBehavior::SetSystems
 		fileName
 	);
 
+	ErrorMessageOutput::Assert::DetectError
+	(
+		objFrontlineSystems_,
+		"オブジェシステムがぬるです(エンジンのせい)",
+		fileName
+	);
+
 	cameraSystems = cameraSystems_;
 	modelSystems = modelSystems_;
+	objFrontlineSystems = objFrontlineSystems_;
 
 	//ヌルチェック重複は偽りの注意のせい
 
@@ -81,7 +110,7 @@ void SceneBehavior::SetSystems
 	if(modelSystems) output->modelContainer = modelSystems->WatchModelContainer();
 
 	//初期化用のインターフェースの作成
-	if (cameraSystems && modelSystems)
+	if (cameraSystems && modelSystems && objFrontlineSystems)
 	{
 		std::get<std::unique_ptr<SceneInitInterface>>(interfaces) = 
 			std::make_unique<SceneInitInterface>(cameraSystems, modelSystems,objFrontlineSystems);

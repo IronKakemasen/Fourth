@@ -36,7 +36,8 @@ public:
 		EngineInterfaceProof const& proof_,
 		std::string const& sceneName_,
 		CameraContextDiplomat& cameraContextDiplomat_,
-		ModelContextDiplomat& modelContextDiplomat_
+		ModelContextDiplomat& modelContextDiplomat_,
+		GameObjectContextDiplomat& gameObjectContextDiplomat_
 	)
 	{
 		scenePipeline.CreateScene<SceneType>
@@ -44,7 +45,8 @@ public:
 			AgentKey{},
 			sceneName_,
 			cameraContextDiplomat_,
-			modelContextDiplomat_
+			modelContextDiplomat_,
+			gameObjectContextDiplomat_
 		);
 	}
 

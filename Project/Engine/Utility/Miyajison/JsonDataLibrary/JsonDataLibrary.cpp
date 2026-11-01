@@ -1,7 +1,10 @@
 #include "PreCompileHeader.h"
 #include "JsonDataLibrary.h"
 
-
+namespace
+{
+	auto const fileName = "JsonDataLibrary.cpp";
+}
 
 void Miyajison::DataLibrary::Import
 (
@@ -16,14 +19,14 @@ void Miyajison::DataLibrary::Import
 	(
 		lib.find(fileName_) == lib.end(),
 		fileName_ + "ファイル名被ってる",
-		"DataLibrary.cpp"
+		fileName
 	);
 #endif // DEBUG
 
 	lib[fileName_] = jsonData_;
 	fileName_Path[fileName_] = filePath_;
 
-	Logger::Log("Import: " + fileName_, "JsonDataLibrary.cpp");
+	Logger::Log("Import: " + fileName_, fileName);
 }
 
 std::string const& Miyajison::DataLibrary::ToPath(std::string const& fileName_)
@@ -33,8 +36,8 @@ std::string const& Miyajison::DataLibrary::ToPath(std::string const& fileName_)
 	ErrorMessageOutput::Assert::DetectError
 	(
 		lib.find(fileName_) != lib.end(),
-		fileName_ + "\nんなファイル無いんだわ",
-		"JsonDataLibrary.cpp"
+		fileName_ + "\nがジェーソンファイルレジストリーに無い",
+		fileName
 	);
 
 #endif // DEBUG
@@ -52,7 +55,7 @@ nlohmann::json& Miyajison::DataLibrary::Export(HandleLicence licence_, std::stri
 	(
 		lib.find(fileName_) != lib.end(),
 		fileName_ + "\nんなファイル無いんだわ",
-		"JsonDataLibrary.cpp"
+		fileName
 	);
 
 #endif // DEBUG

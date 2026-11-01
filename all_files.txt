@@ -171,6 +171,7 @@ private:
 		auto& sceneContext	= nexus->AccessContext<SceneContext>(aFourthProof);
 		auto& cameraContext = nexus->AccessContext<CameraContext>(aFourthProof);
 		auto& modelContext	= nexus->AccessContext<ModelContext>(aFourthProof);
+		auto& gameObjContext = nexus->AccessContext<GameObjectContext>(aFourthProof);
 		//シーンコンテキストのエージェントがシーン作成関数を呼び出す
 		auto& agent = sceneContext.AccessDiplomat().Access<SceneContext::ExecutionAgent>();
 		//シーンの数とシーンネームの数が一致しているかチェック
@@ -189,7 +190,8 @@ private:
 				SceneContext::ExecutionAgent::EngineInterfaceProof{},
 				correspondedSceneNames[cnt++],
 				cameraContext.AccessDiplomat(),
-				modelContext.AccessDiplomat()
+				modelContext.AccessDiplomat(),
+				gameObjContext.AccessDiplomat()
 			), 
 			...
 		);	
@@ -218,8 +220,8 @@ Diplomat
 |-ExecutionAgent
 CmdProvider		...コマンドを"保持したい"パターンなどで経由。多少の結合度が強くなるのは仕方なし
 ToolLender		...コマンドにするにはオーバーヘッドが気になるケースで経由。結合度を疎にしやすい
-ExecutionAgent	..."保持する必要が無い"ケースで経由。限定的なケースでは特にこちらで対応したい。
-多少の結合度が強くなるのは仕方なし
+ExecutionAgent	..."保持する必要が無い"ケースで経由。特定のクラスでのみなどの限定的なケースではこちら
+で対応したい。そのコンテキスト内で多少の結合度が強くなるのは仕方なし
 
 ========================================
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\RenderPassComponent.h ===
@@ -17689,6 +17691,78 @@ public:
 };
 
 ========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\MiddleLayer\GameObject\GameObjectPreset\GridFloor\GridFloor.cpp ===
+========================================
+#include "PreCompileHeader.h"
+#include "GridFloor.h"
+void GridFloor::Update()
+{
+}
+//ゲームオブジェクトのリセットに使用。シーンが切り替わった時に呼ばれる
+void GridFloor::Reset()
+{
+}
+//実質、コンストラクタの代わり
+void GridFloor::Awake(SceneInitInterface* sceneInitInterface_)
+{
+}
+//更新処理の直前に呼ばれる。他のゲームオブジェクトはこの時点で生成されているので
+//検索などはできる
+void GridFloor::Start(SceneRuntimeInterface* sceneRuntimeInterface_)
+{
+}
+//using namespace RenderStateComponent;
+//using namespace ShaderPathComponent;
+//using namespace RenderPassComponent;
+//using namespace StructuredBufferModelData;
+	//RenderState cP;
+	//cP.blendModes.emplace_back(BlendMode::kOpaque);
+	//cP.blendModes.emplace_back(BlendMode::kAlphaBlend);
+	//cP.blendModes.emplace_back(BlendMode::kAdditive);
+	//cP.pass = Pass::kSceneOpaque;	
+	//cP.cullMode = CullMode::kBack;
+	//cP.meshType = MeshType::kStatic;
+	//cP.materialTypes.emplace_back(MaterialType::kStandard);
+	//std::vector<RenderState> playerC;
+	//playerC.emplace_back(std::move(cP));
+	//std::vector<MaterialCPU> materials;
+	//p = CreateModel<Model::Type::kDynamic>("CubeGltf", playerC, materials, 10, "Player");
+	//for (int i = 0;i < 10;++i)
+	//{
+	//	p[i]->RefTransform(0).TranslatePosition({ float(i) * 1.5f,0,4 });
+	//}
+	//RenderState cC;
+	//cC.blendModes.emplace_back(BlendMode::kOpaque);
+	//cC.pass = RenderPassComponent::Pass::kSceneOpaque;
+	//cC.cullMode = CullMode::kBack;
+	//cC.meshType = MeshType::kStatic;
+	//cC.materialTypes.emplace_back(MaterialType::kStandard);
+	//std::vector<RenderState> cubeC;
+	//cubeC.emplace_back(std::move(cC));
+	//auto c = CreateModel<Model::Type::kStatic>("CubeGltf", cubeC, materials, 5, "Cube");
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\MiddleLayer\GameObject\GameObjectPreset\GridFloor\GridFloor.h ===
+========================================
+#pragma once
+#include "GameObjectBehavior.h"
+class GridFloor: public GameObjectBehavior
+{
+public:
+	GridFloor(Local_CreateLicence licence_) :GameObjectBehavior(licence_) {};
+private:
+	//ただの更新処理
+	virtual void Update()override;
+	//ゲームオブジェクトのリセットに使用。シーンが切り替わった時に呼ばれる
+	virtual void Reset()override;
+	//実質、コンストラクタの代わり
+	virtual void Awake(SceneInitInterface* sceneInitInterface_)override;
+	//更新処理の直前に呼ばれる。他のゲームオブジェクトはこの時点で生成されているので
+	//検索などはできる
+	virtual void Start(SceneRuntimeInterface* sceneRuntimeInterface_)override;
+};
+
+========================================
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\MiddleLayer\GameObject\GameObjectRuntime\GameObjFrontSystems\GameObjFrontlineSystems.cpp ===
 ========================================
 #include "PreCompileHeader.h"
@@ -17713,6 +17787,15 @@ GameObjectContext::FrontlineSystems::FrontlineSystems
 }
 GameObjectContext::FrontlineSystems::~FrontlineSystems()
 {
+}
+void GameObjectContext::FrontlineSystems::InitAllGameObj
+(
+	std::string const& sceneName_,
+	SceneInterfacesPtr sceneInterfacesPtr_
+)
+{
+	gameObjController->InitAllGameObj(sceneName_, *objLibrary, sceneInterfacesPtr_);
+	Logger::Log(sceneName_ + ": Init All GameObj", fileName);
 }
 void GameObjectContext::FrontlineSystems::ImportObj
 (
@@ -17741,7 +17824,7 @@ public:
 		GameObjSetupper& gameObjSetupper_
 	);
 	~FrontlineSystems();
-	//ゲームオブジェクトを生成し、コンテナにぶち込む。
+	//ゲームオブジェクトを生成し、コンテナにぶち込む
 	//これはシーンの初期化で触れる
 	template<typename ObjType>
 	ObjType* CreateObj(std::string const& name_)
@@ -17754,10 +17837,17 @@ public:
 	//ゲームオブジェクトにシステムをアタッチする
 	//SceneInitInterfaceで使用可能
 	template<typename SystemType>
-	void AttachSystem(GameObjectBehavior& obj_)
+	SystemType& AttachSystem(GameObjectBehavior& obj_)
 	{
-		gameObjSetupper.AttachSystem<SystemType>(obj_);
+		return gameObjSetupper.AttachSystem<SystemType>(obj_);
 	}
+	//シーンの初期化後、全てのゲームオブジェクトの初期化、ランタイム用コンテナの構築を
+	//完了させる
+	void InitAllGameObj
+	(
+		std::string const& sceneName_,
+		SceneInterfacesPtr sceneInterfacesPtr_
+	);
 private:
 	GameObjSetupper& gameObjSetupper;
 	GameObjectCreator& objCreator;
@@ -17787,15 +17877,25 @@ void GameObjectContext::FrontlineSystems::GameObjController::InitAllGameObj
 	SceneInterfacesPtr sceneInterfacesPtr_
 )
 {
+	//シーンが用意した初期化インターフェース
+	auto* sceneInitInterface = std::get<SceneInitInterface*>(sceneInterfacesPtr_);
+	auto* sceneRuntimeInterface = std::get<SceneRuntimeInterface*>(sceneInterfacesPtr_);
+	//シーンのInit()が完了した後なので、この時点でそのシーンの
+	//全てのゲームオブジェクト、モデルが作られたことになる
 	//シーンファイルからオブジェの初期化に必要な情報を引っ張ってくる
 	//オブジェクト更新優先順位リスト
 	auto objPriorityList = ObjDataLoader::LoadUpdatePriority(sceneName_);
 	//まずはゲームオブジェクトをソートする
 	objLibrary_.Sort(objPriorityList);
 	//全ゲームオブジェクトのAwake()とStart()を呼ぶ
-	auto& sortedObjContainer = objLibrary_.RefObjContainer();
+	auto& sortedObjContainer = objLibrary_.RefSortedObjContainer();
 	for (auto* obj : sortedObjContainer)
 	{
+		obj->Awake(sceneInitInterface);
+	}
+	for (auto* obj : sortedObjContainer)
+	{
+		obj->Start(sceneRuntimeInterface);
 	}
 }
 
@@ -17867,9 +17967,13 @@ void GameObjectContext::FrontlineSystems::ObjLibrary::Sort(std::vector<std::stri
 {
 	SortByPriority(priorityList_);
 }
-std::vector<GameObjectBehavior*>& GameObjectContext::FrontlineSystems::ObjLibrary::RefObjContainer()
+std::vector<GameObjectBehavior*>& GameObjectContext::FrontlineSystems::ObjLibrary::RefSortedObjContainer()
 {
 	return sortedByProority;
+}
+std::unordered_map<std::string, std::unique_ptr<GameObjectBehavior>>& GameObjectContext::FrontlineSystems::ObjLibrary::RefObjUniqueMap()
+{
+	return objUniqueMap;
 }
 void GameObjectContext::FrontlineSystems::ObjLibrary::SortByPriority(std::vector<std::string> const& priorityList_)
 {
@@ -17964,8 +18068,10 @@ public:
 	);
 	//単一のオブジェ限定のサーチ
 	void FindIdentifiableObj(std::string const& objName_);
-	//更新用オブジェコンテナの参照を返す
-	std::vector<GameObjectBehavior*>& RefObjContainer();
+	//更新優先順にソートされたオブジェコンテナの参照を返す
+	std::vector<GameObjectBehavior*>& RefSortedObjContainer();
+	//objUniqueMapを返す
+	std::unordered_map<std::string, std::unique_ptr<GameObjectBehavior>>& RefObjUniqueMap();
 	//ソートする
 	void Sort(std::vector<std::string> const& priorityList_);
 private:
@@ -18077,9 +18183,10 @@ public:
 	GameObjSetupper(NexusFieldProof proof_);
 	//システムを取り付ける
 	template<typename SystemType>
-	void AttachSystem(GameObjectBehavior& obj_)
+	SystemType& AttachSystem(GameObjectBehavior& obj_)
 	{
 		std::get<std::unique_ptr<SystemType>>(obj_.systems) = std::make_unique<SystemType>();
+		return *std::get<std::unique_ptr<SystemType>>(obj_.systems);
 	}
 private:
 };
@@ -22138,7 +22245,8 @@ public:
 		EngineInterfaceProof const& proof_,
 		std::string const& sceneName_,
 		CameraContextDiplomat& cameraContextDiplomat_,
-		ModelContextDiplomat& modelContextDiplomat_
+		ModelContextDiplomat& modelContextDiplomat_,
+		GameObjectContextDiplomat& gameObjectContextDiplomat_
 	)
 	{
 		scenePipeline.CreateScene<SceneType>
@@ -22146,7 +22254,8 @@ public:
 			AgentKey{},
 			sceneName_,
 			cameraContextDiplomat_,
-			modelContextDiplomat_
+			modelContextDiplomat_,
+			gameObjectContextDiplomat_
 		);
 	}
 private:
@@ -22255,8 +22364,6 @@ void SceneContext::ScenePipeline::BatchSceneData
 #include "../SceneCreator/SceneCreator.h"
 //外部
 #include "../../../LowerLayer/Resource/Model/ModelContextRuntime/ModelFrontlineSystems/RenderStateKey.h"
-class ModelContextDiplomat;
-class CameraContextDiplomat;
 class BufferContextDiplomat;
 class Model;
 struct RenderStateKey;
@@ -22297,19 +22404,20 @@ public:
 		AgentKey key_,
 		std::string const& sceneName_,
 		CameraContextDiplomat& cameraContextDiplomat_,
-		ModelContextDiplomat& modelContextDiplomat_
+		ModelContextDiplomat& modelContextDiplomat_,
+		GameObjectContextDiplomat& gameObjectContextDiplomat_
 	)
 	{
 		SceneCreator sceneCreator;
-		ImportScene
+		//シーンの作成から、そのシーンの初期化までこの中で行っている
+		std::unique_ptr<SceneType> scene = sceneCreator.Create<SceneType>
 		(
-			sceneCreator.Create<SceneType>
-			(
-				cameraContextDiplomat_,
-				modelContextDiplomat_
-			),
-			sceneName_
+			sceneName_,
+			cameraContextDiplomat_,
+			modelContextDiplomat_,
+			gameObjectContextDiplomat_
 		);
+		ImportScene(std::move(scene), sceneName_);
 		Logger::Log("Instantiate: " + sceneName_, "ScenePipeline.h");
 	}
 private:
@@ -22454,17 +22562,23 @@ public:
 #include "../../../LowerLayer/Resource/Model/ModelContextDiplomat/ModelContextDiplomat.h"
 #include "../../../LowerLayer/Resource/Model/ModelContextDiplomat/ModelContextExecutionAgent/ModelContextExecutionAgent.h"
 #include "../../../LowerLayer/Resource/Model/ModelContextDiplomat/ModelContextExecutionAgent/ModelAgentLicences.h"
+#include "../../GameObject/GameObjectContextDiplomat/GameObjectContextDiplomat.h"
+#include "../../GameObject/GameObjectContextDiplomat/GameObjectAgent/GameObjectAgent.h"
+#include "../../GameObject/GameObjectContextDiplomat/GameObjectAgent/GameObjectAgentLicences.h"
 CameraContext::FrontlineSystems* SceneContext::SceneCreator::ReceiveCameraSystems(CameraContextDiplomat& cameraContextDiplomat_)
 {
-	//FrontlineSystemsを一つ渡してもらう
 	auto& agent = cameraContextDiplomat_.Access<CameraContext::ExecutionAgent>();
 	return agent.DispatchFrontlineSystems(CameraContext::ExecutionAgent::SceneContextProof{});
 }
 ModelContext::FrontlineSystems* SceneContext::SceneCreator::ReceiveModelSystems(ModelContextDiplomat& modelContextDiplomat_)
 {
-	//FrontlineSystemsを一つ渡してもらう
 	auto& agent = modelContextDiplomat_.Access<ModelContext::ExecutionAgent>();
 	return agent.DispatchFrontSystems(ModelContext::ExecutionAgent::SceneContextProof{});
+}
+GameObjectContext::FrontlineSystems* SceneContext::SceneCreator::ReceiveObjSystems(GameObjectContextDiplomat& gameObjectContextDiplomat_)
+{
+	auto& agent = gameObjectContextDiplomat_.Access<GameObjectContext::ExecutionAgent>();
+	return agent.DispatchFrontlineSystems(GameObjectContext::ExecutionAgent::SceneContextProof{});
 }
 
 ========================================
@@ -22473,9 +22587,6 @@ ModelContext::FrontlineSystems* SceneContext::SceneCreator::ReceiveModelSystems(
 #pragma once
 #include "../SceneContext.h"
 #include "../SceneStructure/SceneBehavior.h"
-//外部
-#include "../../../LowerLayer/Resource/Camera/CameraContext.h"
-#include "../../../LowerLayer/Resource/Model/ModelContext.h"
 //FrontlineSystems
 class SceneContext::SceneCreator
 {
@@ -22485,8 +22596,10 @@ public:
 	template<typename SceneType>
 	std::unique_ptr<SceneType> Create
 	(
+		std::string const& sceneName_,
 		CameraContextDiplomat& cameraContextDiplomat_,
-		ModelContextDiplomat& modelContextDiplomat_
+		ModelContextDiplomat& modelContextDiplomat_,
+		GameObjectContextDiplomat& gameObjectContextDiplomat_
 	)
 	{
 		auto sceneUnique = std::make_unique<SceneType>(SceneBehavior::InstancingLicense{});
@@ -22494,21 +22607,24 @@ public:
 		sceneUnique->SetSystems
 		(
 			ReceiveCameraSystems(cameraContextDiplomat_),
-			ReceiveModelSystems(modelContextDiplomat_)
+			ReceiveModelSystems(modelContextDiplomat_),
+			ReceiveObjSystems(gameObjectContextDiplomat_)
 		);
 		//プリセットカメラを備え付ける
 		sceneUnique->CreatePresetCamera();
+		auto* scenePtr = static_cast<SceneBehavior*>(sceneUnique.get());
 		//仮想初期化関数を呼ぶ
-		static_cast<SceneBehavior*>(sceneUnique.get())->Init();
+		scenePtr->Init();
+		//シーンのゲームオブジェクトの初期化、ランタイム用コンテナの構築
+		scenePtr->InitAllGameObj(sceneName_);
 		//モデルをスタティックとダイナミックに分ける
 		sceneUnique->SeparateModels();
 		return sceneUnique;
 	}
 private:
-	//FrontlineSystemsを一つもらう
 	CameraContext::FrontlineSystems* ReceiveCameraSystems(CameraContextDiplomat& cameraContextDiplomat_);
-	//FrontlineSystemsを一つもらう
 	ModelContext::FrontlineSystems* ReceiveModelSystems(ModelContextDiplomat& modelContextDiplomat_);
+	GameObjectContext::FrontlineSystems* ReceiveObjSystems(GameObjectContextDiplomat& gameObjectContextDiplomat_);
 };
 
 ========================================
@@ -22573,53 +22689,25 @@ private:
 ========================================
 #include "PreCompileHeader.h"
 #include "RenderingTestScene.h"
-//using namespace RenderStateComponent;
-//using namespace ShaderPathComponent;
-//using namespace RenderPassComponent;
-//using namespace StructuredBufferModelData;
+#include "../../../GameObject/GameObjectPreset/GridFloor/GridFloor.h"
 void RenderingTestScene::Init()
 {
-	//RenderState cP;
-	//cP.blendModes.emplace_back(BlendMode::kOpaque);
-	//cP.blendModes.emplace_back(BlendMode::kAlphaBlend);
-	//cP.blendModes.emplace_back(BlendMode::kAdditive);
-	//cP.pass = Pass::kSceneOpaque;	
-	//cP.cullMode = CullMode::kBack;
-	//cP.meshType = MeshType::kStatic;
-	//cP.materialTypes.emplace_back(MaterialType::kStandard);
-	//std::vector<RenderState> playerC;
-	//playerC.emplace_back(std::move(cP));
-	//std::vector<MaterialCPU> materials;
-	//p = CreateModel<Model::Type::kDynamic>("CubeGltf", playerC, materials, 10, "Player");
-	//for (int i = 0;i < 10;++i)
-	//{
-	//	p[i]->RefTransform(0).TranslatePosition({ float(i) * 1.5f,0,4 });
-	//}
-	//RenderState cC;
-	//cC.blendModes.emplace_back(BlendMode::kOpaque);
-	//cC.pass = RenderPassComponent::Pass::kSceneOpaque;
-	//cC.cullMode = CullMode::kBack;
-	//cC.meshType = MeshType::kStatic;
-	//cC.materialTypes.emplace_back(MaterialType::kStandard);
-	//std::vector<RenderState> cubeC;
-	//cubeC.emplace_back(std::move(cC));
-	//auto c = CreateModel<Model::Type::kStatic>("CubeGltf", cubeC, materials, 5, "Cube");
+	CreateObj<GridFloor>("Test");
 }
 
 ========================================
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\MiddleLayer\Scene\ScenePreset\RenderingTestScene\RenderingTestScene.h ===
 ========================================
 #pragma once
-#include "../../SceneStructure/SceneBehavior.h"
+#include "SceneBehavior.h"
 class RenderingTestScene : public SceneBehavior
 {
 public:
 	//パブリックで
 	RenderingTestScene(InstancingLicense license_):SceneBehavior(license_){}
-	//ここの中でモデルの生成などの処理を書く。一発しか呼びません。
-	//アクセス修飾子はどこでも
+	//ここの中でゲームオブジェクトの生成などの処理を書く。一発しか呼びません。
+	//アクセス修飾子はどれでも
 	virtual void Init()override;
-	static inline std::vector<Model*> p;
 };
 
 ========================================
@@ -22629,6 +22717,11 @@ public:
 class SceneInitInterface;
 class SceneRuntimeInterface;
 using SceneInterfacesPtr = std::tuple<SceneInitInterface*, SceneRuntimeInterface*>;
+using SceneInterfacesUnique = std::tuple
+<
+	std::unique_ptr<SceneInitInterface>,		//シーン初期化用のインターフェース。初期化フェーズが終わったら破棄
+	std::unique_ptr<SceneRuntimeInterface>		//シーンのランタイム用インターフェース。破棄されない
+>;
 
 ========================================
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\MiddleLayer\Scene\SceneStructure\AllSceneInterfaceInclude.h ===
@@ -22650,7 +22743,6 @@ using SceneInterfacesPtr = std::tuple<SceneInitInterface*, SceneRuntimeInterface
 //エンジン備え付けのカメラ
 #include "../../../LowerLayer/Resource/Camera/PresetCameras/PresetCameraIncludes.h"
 #include "../../../LowerLayer/Resource/Model/ModelContextRuntime/ModelFrontlineSystems/ModelFrontlineSystems.h"
-#include "../../GameObject/GameObjectRuntime/GameObjFrontSystems/GameObjFrontlineSystems.h"
 using namespace ProjectConfig::Render;
 namespace
 {
@@ -22676,14 +22768,32 @@ SceneBehavior::Output const& SceneBehavior::WatchSceneOutput()const
 {
 	return *output; 
 }
+void SceneBehavior::DeleteInitInterface()
+{
+	std::get<std::unique_ptr<SceneInitInterface>>(interfaces).reset();
+	Logger::Log("Delete SceneInitInterface", fileName);
+}
 void SceneBehavior::SeparateModels()
 {
 	modelSystems->SeparateModels();
 }
+void SceneBehavior::InitAllGameObj(std::string const& sceneName_)
+{
+	objFrontlineSystems->InitAllGameObj
+	(
+		sceneName_,
+		std::make_tuple
+		(
+			std::get<std::unique_ptr<SceneInitInterface>>(interfaces).get(),
+			std::get<std::unique_ptr<SceneRuntimeInterface>>(interfaces).get()
+		)
+	);
+}
 void SceneBehavior::SetSystems
 (
 	CameraContext::FrontlineSystems* cameraSystems_,
-	ModelContext::FrontlineSystems* modelSystems_
+	ModelContext::FrontlineSystems* modelSystems_,
+	GameObjectContext::FrontlineSystems* objFrontlineSystems_
 )
 {
 	ErrorMessageOutput::Assert::DetectError
@@ -22698,16 +22808,23 @@ void SceneBehavior::SetSystems
 		"モデルシステムがぬるです(エンジンのせい)",
 		fileName
 	);
+	ErrorMessageOutput::Assert::DetectError
+	(
+		objFrontlineSystems_,
+		"オブジェシステムがぬるです(エンジンのせい)",
+		fileName
+	);
 	cameraSystems = cameraSystems_;
 	modelSystems = modelSystems_;
+	objFrontlineSystems = objFrontlineSystems_;
 	//ヌルチェック重複は偽りの注意のせい
 	//シーン出力ようにモデルコンテナのアドレスを格納
 	if(modelSystems) output->modelContainer = modelSystems->WatchModelContainer();
 	//初期化用のインターフェースの作成
-	if (cameraSystems && modelSystems)
+	if (cameraSystems && modelSystems && objFrontlineSystems)
 	{
 		std::get<std::unique_ptr<SceneInitInterface>>(interfaces) = 
-			std::make_unique<SceneInitInterface>(cameraSystems, modelSystems);
+			std::make_unique<SceneInitInterface>(cameraSystems, modelSystems,objFrontlineSystems);
 		std::get<std::unique_ptr<SceneRuntimeInterface>>(interfaces) =
 			std::make_unique<SceneRuntimeInterface>(cameraSystems);
 	}
@@ -22725,7 +22842,7 @@ void SceneBehavior::CreatePresetCamera()
 #pragma once
 #include "AllSceneInterfaceFwd.h"
 //外部
-#include "../../GameObject/GameObjectContext.h"
+#include "../../GameObject/GameObjectRuntime/GameObjFrontSystems/GameObjFrontlineSystems.h"
 #include "../../../LowerLayer/Resource/Camera/CameraContext.h"
 #include "../../../LowerLayer/Resource/Model/ModelContext.h"
 class SceneContext;
@@ -22736,13 +22853,18 @@ class SceneBehavior
 	//おおざっぱだが必要な情報のみ開示したいのでフレンド登録
 	friend class SceneContext;
 public:
+	//このシーンで使用しているカメラ、モデル、ライトなどの情報
+	struct Output;
 	//そこいらでインスタンス化させないため
 	struct InstancingLicense;
 	SceneBehavior(InstancingLicense license_);
 	virtual ~SceneBehavior();
-	//このシーンで使用しているカメラ、モデル、ライトなどの情報
-	struct Output;
 protected:
+	template<typename ObjType>
+	ObjType* CreateObj(std::string const& name_)
+	{
+		return objFrontlineSystems->CreateObj<ObjType>(name_);
+	}
 private:
 	//ここの中でゲームオブジェクトの生成などの処理を書く。シーンが切り替わっても一発しか呼びません。
 	virtual void Init() = 0;
@@ -22752,14 +22874,19 @@ private:
 	void SetSystems
 	(
 		CameraContext::FrontlineSystems* cameraSystems_,
-		ModelContext::FrontlineSystems* modelSystems_
+		ModelContext::FrontlineSystems* modelSystems_,
+		GameObjectContext::FrontlineSystems* objFrontlineSystems_
 	);
+	//ゲームオブジェクトの初期化
+	void InitAllGameObj(std::string const& sceneName_);
 	//シーンクリエイターがプリセットカメラを備え付ける
 	void CreatePresetCamera();
 	//SceneContext::SceneControllerのみ呼べる
 	void Update();
 	//SceneControllerにこのシーンで使われているリソース伝えるため
 	Output const& WatchSceneOutput()const;
+	//ゲームオブジェクトの初期化専用インターフェースを削除する
+	void DeleteInitInterface();
 	//他コンテキストのシステム
 	CameraContext::FrontlineSystems* cameraSystems = nullptr;
 	ModelContext::FrontlineSystems* modelSystems = nullptr;
@@ -22767,11 +22894,7 @@ private:
 	//シーンの出力物
 	std::unique_ptr<Output> output;
 	//シーンのインターフェース群
-	std::tuple
-	<
-		std::unique_ptr<SceneInitInterface>,		//シーン初期化用のインターフェース。初期化フェーズが終わったら破棄
-		std::unique_ptr<SceneRuntimeInterface>		//シーンのランタイム用インターフェース。破棄されない
-	> interfaces;
+	SceneInterfacesUnique interfaces;
 };
 struct SceneBehavior::InstancingLicense
 {
@@ -22793,8 +22916,9 @@ public:
 	SceneInitInterface
 	(
 		CameraContext::FrontlineSystems* cameraSystems_,
-		ModelContext::FrontlineSystems* modelSystems_
-	):cameraSystems(cameraSystems_), modelSystems(modelSystems_)
+		ModelContext::FrontlineSystems* modelSystems_,
+		GameObjectContext::FrontlineSystems* objSystems_
+	):cameraSystems(cameraSystems_), modelSystems(modelSystems_), objSystems(objSystems_)
 	{
 	}
 	//カメラの作成＆登録
@@ -22827,9 +22951,16 @@ public:
 			modelName_
 		);
 	}
+	//ゲームオブジェクトにシステムをアタッチする
+	template<typename SystemType>
+	SystemType& AttachSystem(GameObjectBehavior& obj_)
+	{
+		return objSystems->AttachSystem<SystemType>(obj_);
+	}
 private:
 	CameraContext::FrontlineSystems* cameraSystems;
 	ModelContext::FrontlineSystems* modelSystems;
+	GameObjectContext::FrontlineSystems* objSystems;
 };
 
 ========================================
@@ -22862,6 +22993,7 @@ private:
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\MiddleLayer\Scene\SceneStructure\SceneOutput\SceneOutput.h ===
 ========================================
 #pragma once
+#include "../SceneBehavior.h"
 //外部
 #include "../../../../LowerLayer/Resource/Model/ModelContextRuntime/ModelFrontlineSystems/ModelFrontlineSystems.h"
 #include "../../../../LowerLayer/Resource/Camera/CameraContextRuntime/CameraSocket.h"
@@ -22998,9 +23130,10 @@ public:
 	template<typename ContextType>
 	auto& AccessContext(aFourthProof const& proof_)
 	{
-		if		constexpr (std::is_same_v<ContextType, ModelContext>)	return *modelContext;
-		else if constexpr (std::is_same_v<ContextType, CameraContext>)	return *cameraContext;
-		else if constexpr (std::is_same_v<ContextType, SceneContext>)	return *sceneContext;
+		if		constexpr (std::is_same_v<ContextType, ModelContext>)		return *modelContext;
+		else if constexpr (std::is_same_v<ContextType, CameraContext>)		return *cameraContext;
+		else if constexpr (std::is_same_v<ContextType, SceneContext>)		return *sceneContext;
+		else if constexpr (std::is_same_v<ContextType, GameObjectContext>)	return *gameObjectContext;
 	}
 private:
 	//初期化・生成順序
@@ -24135,6 +24268,10 @@ private:
 ========================================
 #include "PreCompileHeader.h"
 #include "JsonDataLibrary.h"
+namespace
+{
+	auto const fileName = "JsonDataLibrary.cpp";
+}
 void Miyajison::DataLibrary::Import
 (
 	HandleLicence licence_,
@@ -24148,12 +24285,12 @@ void Miyajison::DataLibrary::Import
 	(
 		lib.find(fileName_) == lib.end(),
 		fileName_ + "ファイル名被ってる",
-		"DataLibrary.cpp"
+		fileName
 	);
 #endif // DEBUG
 	lib[fileName_] = jsonData_;
 	fileName_Path[fileName_] = filePath_;
-	Logger::Log("Import: " + fileName_, "JsonDataLibrary.cpp");
+	Logger::Log("Import: " + fileName_, fileName);
 }
 std::string const& Miyajison::DataLibrary::ToPath(std::string const& fileName_)
 {
@@ -24161,8 +24298,8 @@ std::string const& Miyajison::DataLibrary::ToPath(std::string const& fileName_)
 	ErrorMessageOutput::Assert::DetectError
 	(
 		lib.find(fileName_) != lib.end(),
-		fileName_ + "\nんなファイル無いんだわ",
-		"JsonDataLibrary.cpp"
+		fileName_ + "\nがジェーソンファイルレジストリーに無い",
+		fileName
 	);
 #endif // DEBUG
 	return fileName_Path[fileName_];
@@ -24175,7 +24312,7 @@ nlohmann::json& Miyajison::DataLibrary::Export(HandleLicence licence_, std::stri
 	(
 		lib.find(fileName_) != lib.end(),
 		fileName_ + "\nんなファイル無いんだわ",
-		"JsonDataLibrary.cpp"
+		fileName
 	);
 #endif // DEBUG
 	return lib[fileName_];
@@ -24529,5 +24666,5 @@ namespace StringProcessing
 ========================================
 === SUMMARY ===
 ========================================
-Total Files      : 552
-Effective Lines  : 17825
+Total Files      : 554
+Effective Lines  : 17933
