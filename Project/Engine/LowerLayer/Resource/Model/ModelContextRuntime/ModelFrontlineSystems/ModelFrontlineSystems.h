@@ -43,6 +43,11 @@ public:
 	template<Model::Type modelType>
 	void UpdateModelTransform();
 
+	//モデルのトランスフォームの更新フラグをリセットする
+	template<Model::Type modelType>
+	void ResetModelTransformFrameFlag();
+
+
 	//モデルコンテナの分別を行う
 	void SeparateModels();
 

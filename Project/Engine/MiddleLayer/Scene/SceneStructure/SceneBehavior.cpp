@@ -29,9 +29,23 @@ SceneBehavior::~SceneBehavior() = default;
 
 void SceneBehavior::Update()
 {
-	//このシーンで使うカメラのアップデート
-	output->usingCamera = cameraSystems->CameraUpdate();
+	//ゲームオブジェクト、モデルのトランスフォームの更新フラグをリセットする
+	objFrontlineSystems->ResetObjTransformFrameFlag();
 
+	modelSystems->ResetModelTransformFrameFlag<Model::Type::kDynamic>();
+
+	if (output->leftStaticModelBatchingCnt == (UINT)NumBuffer::kDoubleBuffer)
+	{
+		modelSystems->ResetModelTransformFrameFlag<Model::Type::kStatic>();
+	}
+
+
+	//ゲームオブジェクトの更新、トランスフォームの更新
+	objFrontlineSystems->UpdateObjController
+	(
+		*std::get<std::unique_ptr<SceneRuntimeInterface>>(interfaces)
+	);
+	
 	//このシーンのモデルのトランスフォームのアップデートを呼ぶ
 	modelSystems->UpdateModelTransform<Model::Type::kDynamic>();
 	
@@ -39,6 +53,10 @@ void SceneBehavior::Update()
 	{
 		modelSystems->UpdateModelTransform<Model::Type::kStatic>();
 	}
+
+	//このシーンで使うカメラのアップデート
+	output->usingCamera = cameraSystems->UpdateCamera();
+
 }
 
 
@@ -70,6 +88,7 @@ void SceneBehavior::InitAllGameObj(std::string const& sceneName_)
 		)
 	);
 
+	DeleteInitInterface();
 }
 
 void SceneBehavior::SetSystems

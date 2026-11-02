@@ -53,7 +53,7 @@ private:
 		GameObjectContext::FrontlineSystems* objFrontlineSystems_
 	);
 
-	//ゲームオブジェクトの初期化
+	//ゲームオブジェクトの初期化。その後、ゲームオブジェクトのInitInterfaceを削除する
 	void InitAllGameObj(std::string const& sceneName_);
 
 	//シーンクリエイターがプリセットカメラを備え付ける

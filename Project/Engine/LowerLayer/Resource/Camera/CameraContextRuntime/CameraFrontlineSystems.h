@@ -48,7 +48,7 @@ public:
 
 	//カメラのアップデート
 	//socketMapにあるカメラのアップデートを呼ぶ。バッチングは別機関で行う
-	std::unordered_map<CameraSocket, CameraBehavior*> const& CameraUpdate();
+	std::unordered_map<CameraSocket, CameraBehavior*> const& UpdateCamera();
 
 private:
 

@@ -17703,12 +17703,12 @@ void GridFloor::Reset()
 {
 }
 //実質、コンストラクタの代わり
-void GridFloor::Awake(SceneInitInterface* sceneInitInterface_)
+void GridFloor::Awake(SceneInitInterface& sceneInitInterface_)
 {
 }
 //更新処理の直前に呼ばれる。他のゲームオブジェクトはこの時点で生成されているので
 //検索などはできる
-void GridFloor::Start(SceneRuntimeInterface* sceneRuntimeInterface_)
+void GridFloor::Start(SceneRuntimeInterface& sceneRuntimeInterface_)
 {
 }
 //using namespace RenderStateComponent;
@@ -17756,10 +17756,10 @@ private:
 	//ゲームオブジェクトのリセットに使用。シーンが切り替わった時に呼ばれる
 	virtual void Reset()override;
 	//実質、コンストラクタの代わり
-	virtual void Awake(SceneInitInterface* sceneInitInterface_)override;
+	virtual void Awake(SceneInitInterface& sceneInitInterface_)override;
 	//更新処理の直前に呼ばれる。他のゲームオブジェクトはこの時点で生成されているので
 	//検索などはできる
-	virtual void Start(SceneRuntimeInterface* sceneRuntimeInterface_)override;
+	virtual void Start(SceneRuntimeInterface& sceneRuntimeInterface_)override;
 };
 
 ========================================
@@ -17870,6 +17870,13 @@ private:
 GameObjectContext::FrontlineSystems::GameObjController::GameObjController(NexusFieldProof proof_)
 {
 }
+void GameObjectContext::FrontlineSystems::GameObjController::Run(SceneRuntimeInterface& runtimeInterface_)
+{
+	UpdateAllGameObj(runtimeInterface_);
+}
+void GameObjectContext::FrontlineSystems::GameObjController::UpdateAllGameObj(SceneRuntimeInterface& runtimeInterface_)
+{
+}
 void GameObjectContext::FrontlineSystems::GameObjController::InitAllGameObj
 (
 	std::string const& sceneName_,
@@ -17878,8 +17885,8 @@ void GameObjectContext::FrontlineSystems::GameObjController::InitAllGameObj
 )
 {
 	//シーンが用意した初期化インターフェース
-	auto* sceneInitInterface = std::get<SceneInitInterface*>(sceneInterfacesPtr_);
-	auto* sceneRuntimeInterface = std::get<SceneRuntimeInterface*>(sceneInterfacesPtr_);
+	auto& sceneInitInterface = *std::get<SceneInitInterface*>(sceneInterfacesPtr_);
+	auto& sceneRuntimeInterface = *std::get<SceneRuntimeInterface*>(sceneInterfacesPtr_);
 	//シーンのInit()が完了した後なので、この時点でそのシーンの
 	//全てのゲームオブジェクト、モデルが作られたことになる
 	//シーンファイルからオブジェの初期化に必要な情報を引っ張ってくる
@@ -17920,7 +17927,10 @@ public:
 		ObjLibrary& objLibrary_,
 		SceneInterfacesPtr sceneInterfacesPtr_
 	);
+	void Run(SceneRuntimeInterface& runtimeInterface_);
 private:
+	//ゲームオブジェクトの更新処理を呼ぶ
+	void UpdateAllGameObj(SceneRuntimeInterface& runtimeInterface_);
 };
 
 ========================================
@@ -18139,10 +18149,10 @@ private:
 	//ゲームオブジェクトのリセットに使用。シーンが切り替わった時に呼ばれる
 	virtual void Reset() = 0;
 	//実質、コンストラクタの代わり
-	virtual void Awake(SceneInitInterface* sceneInitInterface_) = 0;
+	virtual void Awake(SceneInitInterface& sceneInitInterface_) = 0;
 	//更新処理の直前に呼ばれる。他のゲームオブジェクトはこの時点で生成されているので
 	//検索などはできる
-	virtual void Start(SceneRuntimeInterface* sceneRuntimeInterface_) = 0;
+	virtual void Start(SceneRuntimeInterface& sceneRuntimeInterface_) = 0;
 };
 struct GameObjectBehavior::Local_CreateLicence
 {
@@ -22788,6 +22798,7 @@ void SceneBehavior::InitAllGameObj(std::string const& sceneName_)
 			std::get<std::unique_ptr<SceneRuntimeInterface>>(interfaces).get()
 		)
 	);
+	DeleteInitInterface();
 }
 void SceneBehavior::SetSystems
 (
@@ -22877,7 +22888,7 @@ private:
 		ModelContext::FrontlineSystems* modelSystems_,
 		GameObjectContext::FrontlineSystems* objFrontlineSystems_
 	);
-	//ゲームオブジェクトの初期化
+	//ゲームオブジェクトの初期化。その後、ゲームオブジェクトのInitInterfaceを削除する
 	void InitAllGameObj(std::string const& sceneName_);
 	//シーンクリエイターがプリセットカメラを備え付ける
 	void CreatePresetCamera();
@@ -24667,4 +24678,4 @@ namespace StringProcessing
 === SUMMARY ===
 ========================================
 Total Files      : 554
-Effective Lines  : 17933
+Effective Lines  : 17943

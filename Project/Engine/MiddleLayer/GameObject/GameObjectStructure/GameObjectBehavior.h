@@ -50,14 +50,14 @@ private:
 	//以下ゲームオブジェクト管理クラスが呼ぶ
 
 	//ただの更新処理
-	virtual void Update() = 0;
+	virtual void Update(SceneRuntimeInterface& sceneRuntimeInterface_) = 0;
 	//ゲームオブジェクトのリセットに使用。シーンが切り替わった時に呼ばれる
 	virtual void Reset() = 0;
 	//実質、コンストラクタの代わり
-	virtual void Awake(SceneInitInterface* sceneInitInterface_) = 0;
+	virtual void Awake(SceneInitInterface& sceneInitInterface_) = 0;
 	//更新処理の直前に呼ばれる。他のゲームオブジェクトはこの時点で生成されているので
 	//検索などはできる
-	virtual void Start(SceneRuntimeInterface* sceneRuntimeInterface_) = 0;
+	virtual void Start(SceneRuntimeInterface& sceneRuntimeInterface_) = 0;
 
 
 };
