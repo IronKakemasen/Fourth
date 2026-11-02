@@ -47,6 +47,14 @@ public:
 		SceneInterfacesPtr sceneInterfacesPtr_
 	);
 
+	//ゲームオブジェクトコントローラーの更新
+	void UpdateObjController
+	(
+		SceneRuntimeInterface& runtimeInterface_
+	);
+
+	//ゲームオブジェクトのトランスフォームの更新フラグをリセットする
+	void ResetObjTransformFrameFlag();
 
 private:
 

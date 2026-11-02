@@ -24,8 +24,23 @@ public:
 		SceneInterfacesPtr sceneInterfacesPtr_
 	);
 
+	void Run
+	(
+		ObjLibrary& objLibrary_,
+		SceneRuntimeInterface& runtimeInterface_
+	);
+
+	//ゲームオブジェクトのトランスフォームの更新フラグをリセットする
+	void ResetObjTransformFrameFlag(ObjLibrary& objLibrary_);
+
 private:
 
+	//ゲームオブジェクトの更新処理を呼ぶ
+	void UpdateAllGameObj
+	(
+		ObjLibrary& objLibrary_,
+		SceneRuntimeInterface& runtimeInterface_
+	);
 
 
 };

@@ -2,7 +2,7 @@
 #include "GridFloor.h"
 
 
-void GridFloor::Update()
+void GridFloor::Update(SceneRuntimeInterface& sceneRuntimeInterface_)
 {
 
 }
@@ -14,14 +14,14 @@ void GridFloor::Reset()
 }
 
 //実質、コンストラクタの代わり
-void GridFloor::Awake(SceneInitInterface* sceneInitInterface_)
+void GridFloor::Awake(SceneInitInterface& sceneInitInterface_)
 {
 
 }
 
 //更新処理の直前に呼ばれる。他のゲームオブジェクトはこの時点で生成されているので
 //検索などはできる
-void GridFloor::Start(SceneRuntimeInterface* sceneRuntimeInterface_)
+void GridFloor::Start(SceneRuntimeInterface& sceneRuntimeInterface_)
 {
 	
 }

@@ -35,6 +35,20 @@ void ModelContext::FrontlineSystems::UpdateModelTransform()
 	}
 }
 
+template<Model::Type modelType>
+void ModelContext::FrontlineSystems::ResetModelTransformFrameFlag()
+{
+	auto const& models = modelContainer->WatchSeparatedByModelType()[(UINT)modelType];
+	for (auto* model : models)
+	{
+		auto refTransforms = model->RefTransforms();
+		for (auto& trans : refTransforms)
+		{
+			trans.ResetFrameFlag();
+		}
+	}
+}
+
 
 std::vector<Model*> ModelContext::FrontlineSystems::AddModel(std::vector<std::unique_ptr<Model>>&& modelUniques_)
 {
@@ -66,3 +80,10 @@ void ModelContext::FrontlineSystems::UpdateModelTransform<Model::Type::kDynamic>
 
 template
 void ModelContext::FrontlineSystems::UpdateModelTransform<Model::Type::kStatic>();
+
+
+template
+void ModelContext::FrontlineSystems::ResetModelTransformFrameFlag<Model::Type::kDynamic>();
+
+template
+void ModelContext::FrontlineSystems::ResetModelTransformFrameFlag<Model::Type::kStatic>();

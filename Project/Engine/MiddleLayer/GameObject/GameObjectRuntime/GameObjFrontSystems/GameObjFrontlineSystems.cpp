@@ -49,3 +49,16 @@ void GameObjectContext::FrontlineSystems::ImportObj
 	objLibrary->Import(objName_,std::move(obj_));
 }
 
+void GameObjectContext::FrontlineSystems::UpdateObjController
+(
+	SceneRuntimeInterface& runtimeInterface_
+)
+{
+	gameObjController->Run(*objLibrary, runtimeInterface_);
+}
+
+//ゲームオブジェクトのトランスフォームの更新フラグをリセットする
+void GameObjectContext::FrontlineSystems::ResetObjTransformFrameFlag()
+{
+	gameObjController->ResetObjTransformFrameFlag(*objLibrary);
+}

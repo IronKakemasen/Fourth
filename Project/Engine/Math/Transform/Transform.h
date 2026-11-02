@@ -1,7 +1,9 @@
 #pragma once
 #include "../Quaternion/Quaternion.h"
 
+//トランスフォームを統括するものたち
 class ModelContext;
+class GameObjectContext;
 
 class Transform
 {
@@ -122,6 +124,8 @@ private:
 	//アプリケーション側は触る必要ないので
 	//トランスフォームを統括するものをフレンド登録
 	friend class ModelContext;
+	friend class GameObjectContext;
+
 
 	//回転更新処理
 	inline void RotationUpdate()

@@ -26,22 +26,22 @@ private:
 };
 
 
-void GridFloor::Update()
+void Template::Update()
 {
 
 }
 
-void GridFloor::Reset()
+void Template::Reset()
 {
 
 }
 
-void GridFloor::Awake(SceneInitInterface* sceneInitInterface_)
+void Template::Awake(SceneInitInterface& sceneInitInterface_)
 {
 
 }
 
-void GridFloor::Start(SceneRuntimeInterface* sceneRuntimeInterface_)
+void Template::Start(SceneRuntimeInterface& sceneRuntimeInterface_)
 {
 	
 }

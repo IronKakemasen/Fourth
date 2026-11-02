@@ -85,9 +85,6 @@ void ModelContext::ModelDataBatcher::OverrideBuffer<ConstantBufferBindSlots::kTr
 	{
 		auto& srcTransform = model_.RefTransform(i);
 		
-		//トランスフォームの更新用ダーティ判定をリセット
-		srcTransform.ResetFrameFlag();
-
 		//そのトランスフォームのデータを書き込む必要があるかどうか
 		if (!srcTransform.ShouldOverrideBuffer()) continue;
 

@@ -8,6 +8,62 @@ GameObjectContext::FrontlineSystems::GameObjController::GameObjController(NexusF
 
 }
 
+
+
+void GameObjectContext::FrontlineSystems::GameObjController::Run
+(
+	ObjLibrary& objLibrary_,
+	SceneRuntimeInterface& runtimeInterface_
+)
+{
+	UpdateAllGameObj(objLibrary_, runtimeInterface_);
+}
+
+void GameObjectContext::FrontlineSystems::GameObjController::ResetObjTransformFrameFlag(ObjLibrary& objLibrary_)
+{
+	auto& sortedObjContainer = objLibrary_.RefSortedObjContainer();
+
+	//トランスフォームの1フレーム１キリ更新フラグをリセットする
+	for (auto* obj : sortedObjContainer)
+	{
+		//ゲームオブジェクトのトランスフォームの更新
+		auto* trans = obj->GetSystemPtr<Transform>();
+
+		if (trans)
+		{
+			trans->ResetFrameFlag();
+			//モデルのトランスフォームと違い、バッチングするが必要ないので
+			//このカウントは初めからファルス状態にしておく
+			trans->DecrementNeedOverrideBufferCnt();
+		}
+	}
+
+}
+
+
+void GameObjectContext::FrontlineSystems::GameObjController::UpdateAllGameObj
+(
+	ObjLibrary& objLibrary_,
+	SceneRuntimeInterface& runtimeInterface_
+)
+{
+	//全ゲームオブジェクトのAwake()とStart()を呼ぶ
+	auto& sortedObjContainer = objLibrary_.RefSortedObjContainer();
+	for (auto* obj : sortedObjContainer)
+	{
+		//ゲームオブジェクトの更新処理
+		obj->Update(runtimeInterface_);
+
+		//ゲームオブジェクトのトランスフォームの更新
+		auto* trans = obj->GetSystemPtr<Transform>();
+		
+		if (trans)
+		{
+			trans->Update();
+		}
+	}
+}
+
 void GameObjectContext::FrontlineSystems::GameObjController::InitAllGameObj
 (
 	std::string const& sceneName_,
@@ -16,8 +72,8 @@ void GameObjectContext::FrontlineSystems::GameObjController::InitAllGameObj
 )
 {
 	//シーンが用意した初期化インターフェース
-	auto* sceneInitInterface = std::get<SceneInitInterface*>(sceneInterfacesPtr_);
-	auto* sceneRuntimeInterface = std::get<SceneRuntimeInterface*>(sceneInterfacesPtr_);
+	auto& sceneInitInterface = *std::get<SceneInitInterface*>(sceneInterfacesPtr_);
+	auto& sceneRuntimeInterface = *std::get<SceneRuntimeInterface*>(sceneInterfacesPtr_);
 
 
 	//シーンのInit()が完了した後なので、この時点でそのシーンの
