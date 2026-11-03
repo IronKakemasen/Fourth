@@ -112,12 +112,8 @@ void ModelContext::ModelDataBatcher::OverrideBuffer<ConstantBufferBindSlots::kMa
 	{
 		//そのマテリアルがダーティじゃないなら書き込まない
 		if (!model_.IsMaterialDirty(i)) continue;
-
-		auto& srcMaterial = model_.WatchMaterial(i);
-		//MaterialGPUに変換
-		MaterialGPU material(srcMaterial);
-
-		writeDstBufferPtr_->WriteElement(frameIndex_, material, perDrawIndices_[i].materialID);
+		
+		writeDstBufferPtr_->WriteElement(frameIndex_, model_.WatchMaterial(i), perDrawIndices_[i].materialID);
 
 		//マテリアルダーティのカウントを１つ消去
 		model_.DecrementMaterialDirtyCnt(i);

@@ -9855,7 +9855,7 @@ void CameraContext::FrontlineSystems::ImportCamera(std::unique_ptr<CameraBehavio
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-std::unordered_map<CameraSocket, CameraBehavior*> const& CameraContext::FrontlineSystems::CameraUpdate()
+std::unordered_map<CameraSocket, CameraBehavior*> const& CameraContext::FrontlineSystems::UpdateCamera()
 {
 	return cameraController->Update();
 }
@@ -9912,7 +9912,7 @@ public:
 	}
 	//カメラのアップデート
 	//socketMapにあるカメラのアップデートを呼ぶ。バッチングは別機関で行う
-	std::unordered_map<CameraSocket, CameraBehavior*> const& CameraUpdate();
+	std::unordered_map<CameraSocket, CameraBehavior*> const& UpdateCamera();
 private:
 	void ImportCamera(std::unique_ptr<CameraBehavior>&& camera_, std::string const& name_);
 	//明示的実体化必要
@@ -12789,8 +12789,6 @@ void ModelContext::ModelDataBatcher::OverrideBuffer<ConstantBufferBindSlots::kTr
 	for (size_t i = 0;i < numMesh_;++i)
 	{
 		auto& srcTransform = model_.RefTransform(i);
-		//トランスフォームの更新用ダーティ判定をリセット
-		srcTransform.ResetFrameFlag();
 		//そのトランスフォームのデータを書き込む必要があるかどうか
 		if (!srcTransform.ShouldOverrideBuffer()) continue;
 		TransformMatrixCPUGPU transformMatrix(srcTransform.WatchWorldMatrix());
@@ -12987,6 +12985,19 @@ void ModelContext::FrontlineSystems::UpdateModelTransform()
 		}
 	}
 }
+template<Model::Type modelType>
+void ModelContext::FrontlineSystems::ResetModelTransformFrameFlag()
+{
+	auto const& models = modelContainer->WatchSeparatedByModelType()[(UINT)modelType];
+	for (auto* model : models)
+	{
+		auto refTransforms = model->RefTransforms();
+		for (auto& trans : refTransforms)
+		{
+			trans.ResetFrameFlag();
+		}
+	}
+}
 std::vector<Model*> ModelContext::FrontlineSystems::AddModel(std::vector<std::unique_ptr<Model>>&& modelUniques_)
 {
 	std::vector<Model*> modelsPtr;
@@ -13010,6 +13021,10 @@ template
 void ModelContext::FrontlineSystems::UpdateModelTransform<Model::Type::kDynamic>();
 template
 void ModelContext::FrontlineSystems::UpdateModelTransform<Model::Type::kStatic>();
+template
+void ModelContext::FrontlineSystems::ResetModelTransformFrameFlag<Model::Type::kDynamic>();
+template
+void ModelContext::FrontlineSystems::ResetModelTransformFrameFlag<Model::Type::kStatic>();
 
 ========================================
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Model\ModelContextRuntime\ModelFrontlineSystems\ModelFrontlineSystems.h ===
@@ -13051,6 +13066,9 @@ public:
 	//モデルのトランスフォームのアップデート
 	template<Model::Type modelType>
 	void UpdateModelTransform();
+	//モデルのトランスフォームの更新フラグをリセットする
+	template<Model::Type modelType>
+	void ResetModelTransformFrameFlag();
 	//モデルコンテナの分別を行う
 	void SeparateModels();
 	ModelContainer const* WatchModelContainer()const;
@@ -17000,7 +17018,9 @@ struct Matrix4x4
 ========================================
 #pragma once
 #include "../Quaternion/Quaternion.h"
+//トランスフォームを統括するものたち
 class ModelContext;
+class GameObjectContext;
 class Transform
 {
 	static inline const Vector3 kRight = { 1.0f,0.0f,0.0f };
@@ -17104,6 +17124,7 @@ private:
 	//アプリケーション側は触る必要ないので
 	//トランスフォームを統括するものをフレンド登録
 	friend class ModelContext;
+	friend class GameObjectContext;
 	//回転更新処理
 	inline void RotationUpdate()
 	{
@@ -17695,7 +17716,7 @@ public:
 ========================================
 #include "PreCompileHeader.h"
 #include "GridFloor.h"
-void GridFloor::Update()
+void GridFloor::Update(SceneRuntimeInterface& sceneRuntimeInterface_)
 {
 }
 //ゲームオブジェクトのリセットに使用。シーンが切り替わった時に呼ばれる
@@ -17752,7 +17773,7 @@ public:
 	GridFloor(Local_CreateLicence licence_) :GameObjectBehavior(licence_) {};
 private:
 	//ただの更新処理
-	virtual void Update()override;
+	virtual void Update(SceneRuntimeInterface& sceneRuntimeInterface_)override;
 	//ゲームオブジェクトのリセットに使用。シーンが切り替わった時に呼ばれる
 	virtual void Reset()override;
 	//実質、コンストラクタの代わり
@@ -17805,6 +17826,18 @@ void GameObjectContext::FrontlineSystems::ImportObj
 {
 	objLibrary->Import(objName_,std::move(obj_));
 }
+void GameObjectContext::FrontlineSystems::UpdateObjController
+(
+	SceneRuntimeInterface& runtimeInterface_
+)
+{
+	gameObjController->Run(*objLibrary, runtimeInterface_);
+}
+//ゲームオブジェクトのトランスフォームの更新フラグをリセットする
+void GameObjectContext::FrontlineSystems::ResetObjTransformFrameFlag()
+{
+	gameObjController->ResetObjTransformFrameFlag(*objLibrary);
+}
 
 ========================================
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\MiddleLayer\GameObject\GameObjectRuntime\GameObjFrontSystems\GameObjFrontlineSystems.h ===
@@ -17848,6 +17881,13 @@ public:
 		std::string const& sceneName_,
 		SceneInterfacesPtr sceneInterfacesPtr_
 	);
+	//ゲームオブジェクトコントローラーの更新
+	void UpdateObjController
+	(
+		SceneRuntimeInterface& runtimeInterface_
+	);
+	//ゲームオブジェクトのトランスフォームの更新フラグをリセットする
+	void ResetObjTransformFrameFlag();
 private:
 	GameObjSetupper& gameObjSetupper;
 	GameObjectCreator& objCreator;
@@ -17870,12 +17910,50 @@ private:
 GameObjectContext::FrontlineSystems::GameObjController::GameObjController(NexusFieldProof proof_)
 {
 }
-void GameObjectContext::FrontlineSystems::GameObjController::Run(SceneRuntimeInterface& runtimeInterface_)
+void GameObjectContext::FrontlineSystems::GameObjController::Run
+(
+	ObjLibrary& objLibrary_,
+	SceneRuntimeInterface& runtimeInterface_
+)
 {
-	UpdateAllGameObj(runtimeInterface_);
+	UpdateAllGameObj(objLibrary_, runtimeInterface_);
 }
-void GameObjectContext::FrontlineSystems::GameObjController::UpdateAllGameObj(SceneRuntimeInterface& runtimeInterface_)
+void GameObjectContext::FrontlineSystems::GameObjController::ResetObjTransformFrameFlag(ObjLibrary& objLibrary_)
 {
+	auto& sortedObjContainer = objLibrary_.RefSortedObjContainer();
+	//トランスフォームの1フレーム１キリ更新フラグをリセットする
+	for (auto* obj : sortedObjContainer)
+	{
+		//ゲームオブジェクトのトランスフォームの更新
+		auto* trans = obj->GetSystemPtr<Transform>();
+		if (trans)
+		{
+			trans->ResetFrameFlag();
+			//モデルのトランスフォームと違い、バッチングするが必要ないので
+			//このカウントは初めからファルス状態にしておく
+			trans->DecrementNeedOverrideBufferCnt();
+		}
+	}
+}
+void GameObjectContext::FrontlineSystems::GameObjController::UpdateAllGameObj
+(
+	ObjLibrary& objLibrary_,
+	SceneRuntimeInterface& runtimeInterface_
+)
+{
+	//全ゲームオブジェクトのAwake()とStart()を呼ぶ
+	auto& sortedObjContainer = objLibrary_.RefSortedObjContainer();
+	for (auto* obj : sortedObjContainer)
+	{
+		//ゲームオブジェクトの更新処理
+		obj->Update(runtimeInterface_);
+		//ゲームオブジェクトのトランスフォームの更新
+		auto* trans = obj->GetSystemPtr<Transform>();
+		if (trans)
+		{
+			trans->Update();
+		}
+	}
 }
 void GameObjectContext::FrontlineSystems::GameObjController::InitAllGameObj
 (
@@ -17927,10 +18005,20 @@ public:
 		ObjLibrary& objLibrary_,
 		SceneInterfacesPtr sceneInterfacesPtr_
 	);
-	void Run(SceneRuntimeInterface& runtimeInterface_);
+	void Run
+	(
+		ObjLibrary& objLibrary_,
+		SceneRuntimeInterface& runtimeInterface_
+	);
+	//ゲームオブジェクトのトランスフォームの更新フラグをリセットする
+	void ResetObjTransformFrameFlag(ObjLibrary& objLibrary_);
 private:
 	//ゲームオブジェクトの更新処理を呼ぶ
-	void UpdateAllGameObj(SceneRuntimeInterface& runtimeInterface_);
+	void UpdateAllGameObj
+	(
+		ObjLibrary& objLibrary_,
+		SceneRuntimeInterface& runtimeInterface_
+	);
 };
 
 ========================================
@@ -18145,7 +18233,7 @@ private:
 	GameObjSystems systems;
 	//以下ゲームオブジェクト管理クラスが呼ぶ
 	//ただの更新処理
-	virtual void Update() = 0;
+	virtual void Update(SceneRuntimeInterface& sceneRuntimeInterface_) = 0;
 	//ゲームオブジェクトのリセットに使用。シーンが切り替わった時に呼ばれる
 	virtual void Reset() = 0;
 	//実質、コンストラクタの代わり
@@ -18195,6 +18283,12 @@ public:
 	template<typename SystemType>
 	SystemType& AttachSystem(GameObjectBehavior& obj_)
 	{
+		ErrorMessageOutput::Assert::DetectError
+		(
+			!std::get<std::unique_ptr<SystemType>>(obj_.systems),
+			"なんかのゲームオブジェクトに同じものをアタッチしている",
+			"GameObjSetupper.cpp"
+		);
 		std::get<std::unique_ptr<SystemType>>(obj_.systems) = std::make_unique<SystemType>();
 		return *std::get<std::unique_ptr<SystemType>>(obj_.systems);
 	}
@@ -22765,14 +22859,26 @@ SceneBehavior::SceneBehavior(InstancingLicense license_)
 SceneBehavior::~SceneBehavior() = default;
 void SceneBehavior::Update()
 {
-	//このシーンで使うカメラのアップデート
-	output->usingCamera = cameraSystems->CameraUpdate();
+	//ゲームオブジェクト、モデルのトランスフォームの更新フラグをリセットする
+	objFrontlineSystems->ResetObjTransformFrameFlag();
+	modelSystems->ResetModelTransformFrameFlag<Model::Type::kDynamic>();
+	if (output->leftStaticModelBatchingCnt == (UINT)NumBuffer::kDoubleBuffer)
+	{
+		modelSystems->ResetModelTransformFrameFlag<Model::Type::kStatic>();
+	}
+	//ゲームオブジェクトの更新、トランスフォームの更新
+	objFrontlineSystems->UpdateObjController
+	(
+		*std::get<std::unique_ptr<SceneRuntimeInterface>>(interfaces)
+	);
 	//このシーンのモデルのトランスフォームのアップデートを呼ぶ
 	modelSystems->UpdateModelTransform<Model::Type::kDynamic>();
 	if (output->leftStaticModelBatchingCnt-- == (UINT)NumBuffer::kDoubleBuffer)
 	{
 		modelSystems->UpdateModelTransform<Model::Type::kStatic>();
 	}
+	//このシーンで使うカメラのアップデート
+	output->usingCamera = cameraSystems->UpdateCamera();
 }
 SceneBehavior::Output const& SceneBehavior::WatchSceneOutput()const 
 {
@@ -24678,4 +24784,4 @@ namespace StringProcessing
 === SUMMARY ===
 ========================================
 Total Files      : 554
-Effective Lines  : 17943
+Effective Lines  : 18035

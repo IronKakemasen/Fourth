@@ -35,13 +35,25 @@ PixelShaderOutput main(MeshShaderOutput input_)
     //カメラの実データ配列からこのPassで使うものを指定する(数もどれかもPass依存)
     CameraData srcCameraData = cameraDataContainer[gPassConstants.cameraOffset];
 
-    float3 dirLightDir = normalize(float3(0.0f,-0.5f,0.5f));
+    //テクスチャデータのコンテナ
+    StructuredBuffer<uint> textureContainer = ResourceDescriptorHeap[gTextureContainerIndex];
+    
+    //モデルのマテリアルのコンテナ
+    StructuredBuffer<Material> materialContainer = ResourceDescriptorHeap[gMaterialContainerIndex];
+    //モデルのルートコンスタンツから自身のマテリアルデータを指定する
+    Material material = materialContainer[gPerDrawIndices.materialID];
+    //アルベドテクスチャをインデックスで引っ張ってくる
+    Texture2D<float4> albedoTexture = ResourceDescriptorHeap[material.albedoIndex];
+    float4 albedoTextureCol = albedoTexture.Sample(sampler_linearClamp, input_.texcoord);
+    float3 baseColor = material.baseColor.rgb * albedoTextureCol.rgb;
+    
+    float3 dirLightDir = normalize(float3(0.0f,-0.5f,0.25f));
     float3 normal = normalize(input_.normal);
     float3 toCamera = normalize(srcCameraData.worldPos.xyz - input_.worldPosition);
     
     float3 diffuse = DiffuseModelLambert(normal, dirLightDir, 0.25f, float3(1.0f,1.0f,1.0f), 1.0f);
     
-    output.color = float4(float3(1.0f, 1.0f, 1.0f) * diffuse, 1.0f);
+    output.color = float4(baseColor.rgb * diffuse, 1.0f);
     
     return output;
 }
