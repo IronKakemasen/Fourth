@@ -66,7 +66,7 @@
       <TreatWarningAsError>true</TreatWarningAsError>
       <PrecompiledHeader>Use</PrecompiledHeader>
       <PrecompiledHeaderFile>PreCompileHeader.h</PrecompiledHeaderFile>
-      <AdditionalIncludeDirectories>$(ProjectDir)\Engine\Utility;$(ProjectDir)\Engine\PreCompileHeader;$(ProjectDir)\Engine\MiddleLayer\MiyaJison;$(ProjectDir)\Engine\MiddleLayer\Scene\SceneStructure;$(ProjectDir)\Engine\MiddleLayer\GameObject\GameObjectStructure;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)\Engine\Utility;$(ProjectDir)\Engine\PreCompileHeader;$(ProjectDir)\Engine\MiddleLayer\MiyaJison;$(ProjectDir)\Engine\MiddleLayer\Scene\SceneStructure;$(ProjectDir)\Engine\MiddleLayer\GameObject\GameObjectStructure;$(ProjectDir)\Engine\MiddleLayer\GameObject\GameObjectSpecification;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <ForcedIncludeFiles>PreCompileHeader.h;%(ForcedIncludeFiles)</ForcedIncludeFiles>
     </ClCompile>
     <Link>
@@ -92,7 +92,7 @@
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <PrecompiledHeader>Use</PrecompiledHeader>
       <PrecompiledHeaderFile>PreCompileHeader.h</PrecompiledHeaderFile>
-      <AdditionalIncludeDirectories>$(ProjectDir)\Engine\Utility;$(ProjectDir)\Engine\PreCompileHeader;$(ProjectDir)\Engine\MiddleLayer\MiyaJison;$(ProjectDir)\Engine\MiddleLayer\Scene\SceneStructure;$(ProjectDir)\Engine\MiddleLayer\GameObject\GameObjectStructure;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)\Engine\Utility;$(ProjectDir)\Engine\PreCompileHeader;$(ProjectDir)\Engine\MiddleLayer\MiyaJison;$(ProjectDir)\Engine\MiddleLayer\Scene\SceneStructure;$(ProjectDir)\Engine\MiddleLayer\GameObject\GameObjectStructure;$(ProjectDir)\Engine\MiddleLayer\GameObject\GameObjectSpecification;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <ForcedIncludeFiles>PreCompileHeader.h;%(ForcedIncludeFiles)</ForcedIncludeFiles>
       <TreatWarningAsError>true</TreatWarningAsError>
     </ClCompile>
@@ -484,6 +484,7 @@
     <ClInclude Include="Engine\LowerLayer\Resource\Model\ModelContextDiplomat\ModelContextExecutionAgent\ModelAgentLicences.h" />
     <ClInclude Include="Engine\LowerLayer\Resource\Model\ModelContextIncludes.h" />
     <ClInclude Include="Engine\MiddleLayer\GameObject\GameObjectContextDiplomat\GameObjectAgent\GameObjectAgentLicences.h" />
+    <ClInclude Include="Engine\MiddleLayer\GameObject\GameObjectSpecification\GameObjectSpecification.h" />
     <ClInclude Include="Engine\MiddleLayer\GameObject\GameObjectStructure\GameObjSystems.h" />
     <ClInclude Include="Engine\MiddleLayer\Render\RenderContextDiplomat\RenderContextExecutionAgent\RenderAgentLicences.h" />
     <ClInclude Include="Engine\MiddleLayer\Render\RenderContextRuntime\StaticRenderGraph\RenderGraphExecutor\FinalRenderer\FinalRenderer.h" />

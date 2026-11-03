@@ -21,7 +21,8 @@ namespace ShaderPathComponent
 		kOffscreen,
 		//ピクセルシェーダーを通さないケースはあるので
 		kNone,
-
+		//グリッドライン
+		kGridLine,
 
 		kStandard
 

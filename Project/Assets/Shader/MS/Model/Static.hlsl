@@ -2,7 +2,7 @@
 #include "../../../Shared/StructuredBufferCameraData.h"
 #include "../../../Shared/ConstantBuffers.h"
 
-#include "HLSLI/ModelDrawCommon.hlsli"
+#include "../../HLSLI/ModelDrawCommon.hlsli"
 
 
 //そのモデルを構築するまでに利用するwvp
