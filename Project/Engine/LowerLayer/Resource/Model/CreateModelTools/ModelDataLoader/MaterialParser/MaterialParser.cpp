@@ -21,15 +21,11 @@ void ModelContext::ModelDataLoader::MaterialParser::ParseMaterial(MaterialCPU& d
 {
     //ベースカラー
     {
-        aiColor3D color(0.0f, 0.0f, 0.0f);
-
-        if (pSrcMaterial_->Get(AI_MATKEY_COLOR_DIFFUSE, color) == AI_SUCCESS)
-        {
-            dstMaterial_.baseColor.x = color.r;
-            dstMaterial_.baseColor.y = color.g;
-            dstMaterial_.baseColor.z = color.b;
-            dstMaterial_.baseColor.w = 1.0f;
-        }
+        //カラーの定義が無いのに勝手に書き込むので、1.0で書き込んじゃいます
+        dstMaterial_.baseColor.x = 1.0f;
+        dstMaterial_.baseColor.y = 1.0f;
+        dstMaterial_.baseColor.z = 1.0f;
+        dstMaterial_.baseColor.w = 1.0f;
     }
 
     //colorマップ

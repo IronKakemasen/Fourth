@@ -49,23 +49,13 @@ namespace StructuredBufferModelData
     {
         MaterialGPU() = default;
 
-        MaterialGPU(MaterialGPU const& materialGPU_)
-        {
-            albedoTexture = materialGPU_.albedoTexture;
-            normalTexture = materialGPU_.normalTexture;
-            emissiveTexture = materialGPU_.emissiveTexture;
-            baseColor = materialGPU_.baseColor;
-            roughness = materialGPU_.roughness;
-            metallic = materialGPU_.metallic;
-        }
-
         SRVHeapIndex albedoTexture = kInvalid;
         SRVHeapIndex normalTexture = kInvalid;
         SRVHeapIndex emissiveTexture = kInvalid;
         Vector4<float> baseColor = { float(kInvalid),float(kInvalid),float(kInvalid),float(kInvalid) };
         float roughness = float(kInvalid);
         float metallic = float(kInvalid);
-    };
+    };  
 
     struct MeshletCPUGPU
     {

@@ -135,7 +135,7 @@ std::vector<MaterialGPU> ModelContext::ModelCreator::ModelDescAssembler::Convert
 				dst.metallic	= src.metallic;
 
 			if (dst.baseColor.x == kInvalid && src.baseColor.x != kInvalid)
-				dst.baseColor = src.baseColor * 255.0f;
+				dst.baseColor = src.baseColor ;
 
 		}
 
@@ -147,7 +147,7 @@ std::vector<MaterialGPU> ModelContext::ModelCreator::ModelDescAssembler::Convert
 			//割とおきにな値
 			if (dst.roughness == kInvalid)		dst.roughness	= 0.25f;
 			if (dst.metallic == kInvalid )		dst.metallic	= 0.9f;
-			if (dst.baseColor.x == kInvalid)	dst.baseColor	= { 255,255,255,255 };
+			if (dst.baseColor.x == kInvalid)	dst.baseColor	= { 1.0f,1.0f,1.0f,1.0f };
 
 		}
 	}

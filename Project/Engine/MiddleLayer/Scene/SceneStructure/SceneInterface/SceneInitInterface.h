@@ -6,6 +6,8 @@
 
 #include "../../../LowerLayer/Resource/Model/ModelContextRuntime/ModelFrontlineSystems/ModelFrontlineSystems.h"
 
+#include "../../../GameObject/GameObjectRuntime/GameObjFrontSystems/GameObjFrontlineSystems.h"
+
 class SceneInitInterface
 {
 public:
