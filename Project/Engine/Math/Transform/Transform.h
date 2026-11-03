@@ -7,9 +7,9 @@ class GameObjectContext;
 
 class Transform
 {
-	static inline const Vector3 kRight = { 1.0f,0.0f,0.0f };
-	static inline const Vector3 kUp = { 0.0f,1.0f,0.0f };
-	static inline const Vector3 kBeyond = { 0.0f,0.0f,1.0f };
+	static inline const Vector3 kRight	 = { 1.0f,0.0f,0.0f };
+	static inline const Vector3 kUp		 = { 0.0f,1.0f,0.0f };
+	static inline const Vector3 kBeyond  = { 0.0f,0.0f,1.0f };
 
 	Vector3 pos;						//ワールド座標またはローカル座標
 	Vector3 scale;						//スケール

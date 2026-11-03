@@ -1,14 +1,7 @@
 #include "PreCompileHeader.h"
 #include "GridFloor.h"
 
-#include "../../../Scene/SceneStructure/AllSceneInterfaceInclude.h"
-#include "../../../../LowerLayer/Resource/Model/ModelStructure/Model.h"
-
-
-using namespace RenderStateComponent;
-using namespace ShaderPathComponent;
-using namespace RenderPassComponent;
-using namespace StructuredBufferModelData;
+#include "GameObjectSpecification.h"
 
 void GridFloor::Update(SceneRuntimeInterface& sceneRuntimeInterface_)
 {
@@ -45,6 +38,8 @@ void GridFloor::Awake(SceneInitInterface& sceneInitInterface_)
 	playerC.emplace_back(std::move(cP));
 
 	std::vector<MaterialCPU> materials;
+	materials.resize(1);
+	materials[0].samplerState = SamplerState::kLinearClamp;
 
 	p = sceneInitInterface_.CreateModel<Model::Type::kDynamic>("Plane200x200Obj", playerC, materials, 1, "Player");
 	for (int i = 0;i < 1;++i)

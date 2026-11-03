@@ -6,6 +6,7 @@
 #include "../../Engine/Math/Vector/Vector3.h"
 #include "../../Engine/Math/Vector/Vector4.h"
 #include "../../Engine/Math/Matrix/Matrix4x4.h"
+#include "StaticSampler.h"
 
 namespace StructuredBufferModelData
 {
@@ -43,6 +44,7 @@ namespace StructuredBufferModelData
         Vector4<float> baseColor = { float(kInvalid),float(kInvalid),float(kInvalid),float(kInvalid) };
         float roughness = float(kInvalid);
         float metallic = float(kInvalid);
+        StaticSampler::SamplerState samplerState = StaticSampler::SamplerState::kLinearClamp;
     };
 
     struct MaterialGPU
@@ -55,6 +57,8 @@ namespace StructuredBufferModelData
         Vector4<float> baseColor = { float(kInvalid),float(kInvalid),float(kInvalid),float(kInvalid) };
         float roughness = float(kInvalid);
         float metallic = float(kInvalid);
+        StaticSampler::SamplerState samplerState = StaticSampler::SamplerState::kLinearClamp;
+
     };  
 
     struct MeshletCPUGPU
@@ -126,6 +130,7 @@ struct Material
     float4 baseColor;
     float roughness;
     float metallic;
+    uint samplerState;
 };
 
 struct Meshlet

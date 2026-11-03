@@ -49,6 +49,7 @@ namespace ShaderTable
 		case RenderPassComponent::Pass::kSceneOpaque:
 
 			if (materialType_ == ShaderPathComponent::MaterialType::kStandard)pixelShader = "StandardPS";
+			else if (materialType_ == ShaderPathComponent::MaterialType::kGridLine) pixelShader = "FilteredGridPS";
 
 			break;
 

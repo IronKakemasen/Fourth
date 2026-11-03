@@ -26,6 +26,8 @@ private:
 };
 
 
+#include "GameObjectSpecification.h"(.cppでインクルード)
+
 void Template::Update()
 {
 

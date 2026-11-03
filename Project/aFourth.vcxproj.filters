@@ -1817,6 +1817,9 @@
     <ClInclude Include="Engine\MiddleLayer\GameObject\GameObjectPreset\GridFloor\GridFloor.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
+    <ClInclude Include="Engine\MiddleLayer\GameObject\GameObjectSpecification\GameObjectSpecification.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
