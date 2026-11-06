@@ -239,21 +239,18 @@ private:
 	//バッファ書き込み用ダーティカウントを１つ減らす
 	void DecrementNeedOverrideBufferCnt()
 	{
+
 #ifdef _DEBUG
 
 		ErrorMessageOutput::Assert::DetectError
 		(
-			needOverrideBufferCnt > 0 && needOverrideBufferCnt <= (UINT)ProjectConfig::Render::NumBuffer::kDoubleBuffer,
+			needOverrideBufferCnt <= (UINT)ProjectConfig::Render::NumBuffer::kDoubleBuffer,
 			"トランスフォームのダーティのインデックスがおかしい",
 			"Transform.h"
 		);
-
-		needOverrideBufferCnt--;
-#else
-		needOverrideBufferCnt--;
-
 #endif 
 
+		if (needOverrideBufferCnt > 0) needOverrideBufferCnt--;
 	}
 
 };

@@ -445,6 +445,8 @@
     <ClCompile Include="Engine\MiddleLayer\Render\RenderContextDiplomat\RenderContextExecutionAgent\RenderContextExecutionAgent.cpp" />
     <ClCompile Include="Engine\MiddleLayer\GameObject\GameObjectRuntime\GameObjFrontSystems\GameObjController\ObjDataLoader\ObjDataLoader.cpp" />
     <ClCompile Include="Engine\MiddleLayer\GameObject\ObjFSDispatcher\ObjFSDispatcher.cpp" />
+    <ClCompile Include="Engine\LowerLayer\Resource\Shader\ShaderParamBuffer\ShaderParamBufferCreator\ShaderParamBufferCreator.cpp" />
+    <ClCompile Include="Engine\LowerLayer\Resource\Shader\ShaderParamBuffer\ShaderParamDispathcer\ShaderParamDispatcher.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Application\AllCameraIncludes.h" />
@@ -483,6 +485,7 @@
     <ClInclude Include="Engine\LowerLayer\Core\SwapChain\SwapChainContextDiplomat\SwapChainContextToolLender\SwapChainContextToolLenderLicences.h" />
     <ClInclude Include="Engine\LowerLayer\Resource\Model\ModelContextDiplomat\ModelContextExecutionAgent\ModelAgentLicences.h" />
     <ClInclude Include="Engine\LowerLayer\Resource\Model\ModelContextIncludes.h" />
+    <ClInclude Include="Assets\Shared\ShaderParam.h" />
     <ClInclude Include="Engine\MiddleLayer\GameObject\GameObjectContextDiplomat\GameObjectAgent\GameObjectAgentLicences.h" />
     <ClInclude Include="Engine\MiddleLayer\GameObject\GameObjectSpecification\GameObjectSpecification.h" />
     <ClInclude Include="Engine\MiddleLayer\GameObject\GameObjectStructure\GameObjSystems.h" />
@@ -791,12 +794,11 @@
     <ClInclude Include="Engine\MiddleLayer\GameObject\GameObjectContextDiplomat\GameObjectContextDiplomat.h" />
     <ClInclude Include="Engine\MiddleLayer\GameObject\GameObjectContextDiplomat\GameObjectAgent\GameObjectAgent.h" />
     <ClInclude Include="Engine\MiddleLayer\GameObject\GameObjectPreset\GridFloor\GridFloor.h" />
+    <ClInclude Include="Engine\LowerLayer\Resource\Shader\ShaderParamBuffer\ShaderParamBufferCreator\ShaderParamBufferCreator.h" />
+    <ClInclude Include="Engine\LowerLayer\Resource\Shader\ShaderParamBuffer\ShaderParamDispathcer\ShaderParamDispatcher.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
-  </ItemGroup>
-  <ItemGroup>
-    <Text Include="Engine\LowerLayer\Resource\Shader\whenMakeNewShaderFile.txt" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="External\DirectXTex\DirectXTex_Desktop_2022_Win10.vcxproj">

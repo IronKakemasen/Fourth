@@ -89,7 +89,7 @@ struct ModelContext::ModelDataBatcher::BufferTypeTraits
 	<ConstantBuffers::ConstantBufferBindSlots::kTransformMatrixContainer>
 {
 	static inline std::string const kBufferName = "TransformMatrixContainer";
-	static constexpr UINT kArrSize = (UINT)ProjectConfig::Render::CBufferSize::kSizeOfTransformMatrixContainerBuffer;
+	static constexpr UINT kArrSize = (UINT)ProjectConfig::Render::BufferSize::kSizeOfTransformMatrixContainerBuffer;
 	static constexpr UINT kStructureSize = (UINT)sizeof(StructuredBufferModelData::TransformMatrixCPUGPU);
 };
 
@@ -98,7 +98,7 @@ struct ModelContext::ModelDataBatcher::BufferTypeTraits
 	<ConstantBuffers::ConstantBufferBindSlots::kMaterialContainer>
 {
 	static inline std::string const kBufferName = "MaterialContainer";
-	static constexpr UINT kArrSize = (UINT)ProjectConfig::Render::CBufferSize::kSizeOfMaterialContainerBuffer;
+	static constexpr UINT kArrSize = (UINT)ProjectConfig::Render::BufferSize::kSizeOfMaterialContainerBuffer;
 	static constexpr UINT kStructureSize = (UINT)sizeof(StructuredBufferModelData::MaterialGPU);
 };
 

@@ -32,8 +32,7 @@ void GameObjectContext::FrontlineSystems::GameObjController::ResetObjTransformFr
 		if (trans)
 		{
 			trans->ResetFrameFlag();
-			//モデルのトランスフォームと違い、バッチングするが必要ないので
-			//このカウントは初めからファルス状態にしておく
+			//冒頭の減算でカウンタが2になるのは、今フレームで再計算されたときだけにする
 			trans->DecrementNeedOverrideBufferCnt();
 		}
 	}
