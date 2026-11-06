@@ -2,10 +2,15 @@
 
 class Nexus;
 class ShaderContextDiplomat;
-
+class BufferContextDiplomat;
 
 class ShaderContext
 {
+	//シェーダー固有パラメータのバッファを生成
+	class ShaderParamBufferCreator;
+	//シェーダーパラメータを割り当てる
+	class ShaderParamDispatcher;
+
 public:
 
 	//ネクサスフィールドの証

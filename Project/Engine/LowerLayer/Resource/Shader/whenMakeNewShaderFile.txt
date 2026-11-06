@@ -6,3 +6,4 @@
 3.ShaderComponent.hのenumに追記
 4.必要であればシェーダーテーブルに追加
 5.必要であれば(追加Argmentsがあれば)、ShaderSettings.jsonに追記
+6.必要であれば、シェーダーパラメータを定義

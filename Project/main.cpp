@@ -3,7 +3,7 @@
 
 int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 {
-    //新たなシーンを作成するときは、パワーシェルでジェーソンファイル作成＆レジストリー登録
+    //新たなシーンを作成するときは、パワーシェルでジェーソンファイル作成＆レジストリー登録も忘れずに
 #ifdef _DEBUG
     aFourth<RenderingTestScene> engineInterface({ "RenderingTestScene" });
 

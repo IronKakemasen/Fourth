@@ -81,7 +81,6 @@ ModelContext::ModelDataCreator::MeshDataBufferCreator::CreateMeshDataBuffer
     ModelDataLibrary.Link(modelFileName_, meshletSize);
 
     
-
     //バッファコレクターに生成したバッファを仕分けしてもらう
     bufferCollector_->Distribute();
 

@@ -112,6 +112,8 @@ std::vector<MaterialGPU> ModelContext::ModelCreator::ModelDescAssembler::Convert
 			if (src.roughness != kInvalid)		dst.roughness		= src.roughness;
 			if (src.metallic != kInvalid)		dst.metallic		= src.metallic;
 			if (src.baseColor.x != kInvalid)	dst.baseColor		= src.baseColor;
+
+			dst.samplerState = src.samplerState;
 		}
 
 		//手動入力で満たされなかった部分を、モデル名に紐づけられているデータから入力する

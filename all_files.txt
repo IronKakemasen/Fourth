@@ -842,6 +842,7 @@ class ModelContext;
 class RenderContext;
 class TextureContext;
 class CameraContext;
+class ShaderContext;
 struct BufferContext::ToolLender::BasicBufferManagementLicence
 {
 private:
@@ -849,6 +850,7 @@ private:
 	friend class RenderContext;
 	friend class TextureContext;
 	friend class CameraContext;
+	friend class ShaderContext;
 	explicit BasicBufferManagementLicence() = default;
 };
 struct BufferContext::ToolLender::UsesGlobalConstantBuffersLicence
@@ -10538,8 +10540,8 @@ private:
 DefaultDebugCamera::DefaultDebugCamera(std::optional<CameraDesc> const& desc_)
 	: CameraBehavior(desc_)
 {
-	trans->TranslatePosition({ 0,0,-10 });
-	trans->LookAt({ 0.0f,-0.25f,1.0f });
+	trans->TranslatePosition({ 0,20,-10 });
+	trans->LookAt({ 0.0f,-0.75f,1.0f });
 }
 void DefaultDebugCamera::Update(Local_UpdateLicence licence_)
 {
@@ -11722,14 +11724,11 @@ void ModelContext::ModelDataLoader::MaterialParser::ParseMaterial(MaterialCPU& d
 {
     //ベースカラー
     {
-        aiColor3D color(0.0f, 0.0f, 0.0f);
-        if (pSrcMaterial_->Get(AI_MATKEY_COLOR_DIFFUSE, color) == AI_SUCCESS)
-        {
-            dstMaterial_.baseColor.x = color.r;
-            dstMaterial_.baseColor.y = color.g;
-            dstMaterial_.baseColor.z = color.b;
-            dstMaterial_.baseColor.w = 1.0f;
-        }
+        //カラーの定義が無いのに勝手に書き込むので、1.0で書き込んじゃいます
+        dstMaterial_.baseColor.x = 1.0f;
+        dstMaterial_.baseColor.y = 1.0f;
+        dstMaterial_.baseColor.z = 1.0f;
+        dstMaterial_.baseColor.w = 1.0f;
     }
     //colorマップ
     {
@@ -12136,6 +12135,7 @@ std::vector<MaterialGPU> ModelContext::ModelCreator::ModelDescAssembler::Convert
 			if (src.roughness != kInvalid)		dst.roughness		= src.roughness;
 			if (src.metallic != kInvalid)		dst.metallic		= src.metallic;
 			if (src.baseColor.x != kInvalid)	dst.baseColor		= src.baseColor;
+			dst.samplerState = src.samplerState;
 		}
 		//手動入力で満たされなかった部分を、モデル名に紐づけられているデータから入力する
 		if (i < materialsFromFile_.size())
@@ -12152,7 +12152,7 @@ std::vector<MaterialGPU> ModelContext::ModelCreator::ModelDescAssembler::Convert
 			if (dst.metallic == kInvalid && src.metallic != kInvalid)	
 				dst.metallic	= src.metallic;
 			if (dst.baseColor.x == kInvalid && src.baseColor.x != kInvalid)
-				dst.baseColor = src.baseColor * 255.0f;
+				dst.baseColor = src.baseColor ;
 		}
 		//手動入力もなくソースも無ければ、適当な値を入れておく
 		//あえて入れていないパラメータは、hlsl側でセンチネルとしての値が埋め込まれているので触らんように
@@ -12161,7 +12161,7 @@ std::vector<MaterialGPU> ModelContext::ModelCreator::ModelDescAssembler::Convert
 			//割とおきにな値
 			if (dst.roughness == kInvalid)		dst.roughness	= 0.25f;
 			if (dst.metallic == kInvalid )		dst.metallic	= 0.9f;
-			if (dst.baseColor.x == kInvalid)	dst.baseColor	= { 255,255,255,255 };
+			if (dst.baseColor.x == kInvalid)	dst.baseColor	= { 1.0f,1.0f,1.0f,1.0f };
 		}
 	}
 	return materialGPUContainer;
@@ -12172,7 +12172,6 @@ std::vector<MaterialGPU> ModelContext::ModelCreator::ModelDescAssembler::Convert
 ========================================
 #pragma once
 #include "../ModelCreator.h"
-#include "../../ModelStructure/ModelDescription/ModelDescription.h"
 //外部
 //効率のため
 #include "../../../Texture/TextureContext.h"
@@ -12319,7 +12318,7 @@ namespace
 ModelContext::ModelSlotAllocator::MaterialSlot::MaterialSlot(NexusFieldProof proof_)
 {
 	//使いまわしMaterialSlotのスロットのサイズを確保する
-	slotList.Resize((UINT)ProjectConfig::Render::CBufferSize::kSizeOfMaterialContainerBuffer,"ModelMaterialSlot");
+	slotList.Resize((UINT)ProjectConfig::Render::BufferSize::kSizeOfMaterialContainerBuffer,"ModelMaterialSlot");
 }
 uint32_t ModelContext::ModelSlotAllocator::MaterialSlot::AllocateFreeSlot()
 {
@@ -12440,7 +12439,7 @@ namespace
 ModelContext::ModelSlotAllocator::TransformMatrixSlot::TransformMatrixSlot(NexusFieldProof proof_)
 {
 	//使いまわしTransformMatrixのスロットのサイズを確保する
-	slotList.Resize((UINT)ProjectConfig::Render::CBufferSize::kSizeOfTransformMatrixContainerBuffer,"ModelTransformMatrixSlot");
+	slotList.Resize((UINT)ProjectConfig::Render::BufferSize::kSizeOfTransformMatrixContainerBuffer,"ModelTransformMatrixSlot");
 }
 uint32_t ModelContext::ModelSlotAllocator::TransformMatrixSlot::AllocateFreeSlot()
 {
@@ -12812,10 +12811,7 @@ void ModelContext::ModelDataBatcher::OverrideBuffer<ConstantBufferBindSlots::kMa
 	{
 		//そのマテリアルがダーティじゃないなら書き込まない
 		if (!model_.IsMaterialDirty(i)) continue;
-		auto& srcMaterial = model_.WatchMaterial(i);
-		//MaterialGPUに変換
-		MaterialGPU material(srcMaterial);
-		writeDstBufferPtr_->WriteElement(frameIndex_, material, perDrawIndices_[i].materialID);
+		writeDstBufferPtr_->WriteElement(frameIndex_, model_.WatchMaterial(i), perDrawIndices_[i].materialID);
 		//マテリアルダーティのカウントを１つ消去
 		model_.DecrementMaterialDirtyCnt(i);
 	}
@@ -12907,7 +12903,7 @@ struct ModelContext::ModelDataBatcher::BufferTypeTraits
 	<ConstantBuffers::ConstantBufferBindSlots::kTransformMatrixContainer>
 {
 	static inline std::string const kBufferName = "TransformMatrixContainer";
-	static constexpr UINT kArrSize = (UINT)ProjectConfig::Render::CBufferSize::kSizeOfTransformMatrixContainerBuffer;
+	static constexpr UINT kArrSize = (UINT)ProjectConfig::Render::BufferSize::kSizeOfTransformMatrixContainerBuffer;
 	static constexpr UINT kStructureSize = (UINT)sizeof(StructuredBufferModelData::TransformMatrixCPUGPU);
 };
 template<>
@@ -12915,7 +12911,7 @@ struct ModelContext::ModelDataBatcher::BufferTypeTraits
 	<ConstantBuffers::ConstantBufferBindSlots::kMaterialContainer>
 {
 	static inline std::string const kBufferName = "MaterialContainer";
-	static constexpr UINT kArrSize = (UINT)ProjectConfig::Render::CBufferSize::kSizeOfMaterialContainerBuffer;
+	static constexpr UINT kArrSize = (UINT)ProjectConfig::Render::BufferSize::kSizeOfMaterialContainerBuffer;
 	static constexpr UINT kStructureSize = (UINT)sizeof(StructuredBufferModelData::MaterialGPU);
 };
 
@@ -13556,6 +13552,7 @@ class Model
 		//マテリアル。可変長になっているのは、サブメッシュ分用意しているから
 		std::vector<StructuredBufferModelData::MaterialGPU> materials;
 		std::vector<UINT> areMaterialsDirtyCnt;
+		//トランスフォーム。サブメッシュ分用意されている
 		std::vector<Transform> transforms;
 	};
 public:
@@ -15600,8 +15597,13 @@ ShaderContext::~ShaderContext()
 #pragma once
 class Nexus;
 class ShaderContextDiplomat;
+class BufferContextDiplomat;
 class ShaderContext
 {
+	//シェーダー固有パラメータのバッファを生成
+	class ShaderParamBufferCreator;
+	//シェーダーパラメータを割り当てる
+	class ShaderParamDispatcher;
 public:
 	//ネクサスフィールドの証
 	struct NexusFieldProof;
@@ -15644,8 +15646,9 @@ private:
 1.まずシェーダーファイルをアセットに追加
 2.alt + Windowボタンでアセット更新コマンドを叩く
 3.ShaderComponent.hのenumに追記
-4.必要であれば(オフスク用でなければ)、ShaderTable.hに追記
+4.必要であればシェーダーテーブルに追加
 5.必要であれば(追加Argmentsがあれば)、ShaderSettings.jsonに追記
+6.必要であれば、シェーダーパラメータを定義
 
 ========================================
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Shader\ShaderContextDiplomat\ShaderContextDiplomat.cpp ===
@@ -16142,6 +16145,133 @@ private:
 };
 
 ========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Shader\ShaderParamBuffer\ShaderParamBufferCreator\ShaderParamBufferCreator.cpp ===
+========================================
+#include "PreCompileHeader.h"
+#include "ShaderParamBufferCreator.h"
+#include "../ShaderParamDispathcer/ShaderParamDispatcher.h"
+//外部
+#include "../../../../Buffer/BufferDefinition/BufferDescriptions/UploadStructuredBufferDescription/UploadStructuredBufferDescription.h"
+#include "../../../../Buffer/BufferDefinition/GPUBuffer/UploadStructuredBuffer/UploadStructuredBuffer.h"
+#include "../../../../Buffer/BufferContextToolsInclude.h"
+#include "../../../../Buffer/BufferContextDiplomats.h"
+BufferUniqueID ShaderContext::ShaderParamBufferCreator::CreateShaderParamSrvIndexGroupBuffer(BufferContextDiplomat& bufferContextDiplomat_)
+{
+	//BufferCreatorを借りる
+	auto bufferToolLender = bufferContextDiplomat_.Access<BufferContext::ToolLender>();
+	BufferContext::ToolLender::LicenceType<BufferContext::BufferCreator> licence{};
+	auto* bufferCreator = bufferToolLender->Lend<BufferContext::BufferCreator>(licence);
+	//別のタイミングで描画対象ごとに上書きしたいバッファなので
+	UploadStructuredBufferDescription desc
+	(
+		(UINT)sizeof(ShaderParam::ShaderParamSrvIndexGroupCPUGPU),
+		shaderParamSrvIndexGroupBufferSize,
+		0
+	);
+	//シェーダーパラメーターsrv群コンテナのバッファを作成
+	auto id_buffer = bufferCreator->CreateWithBuffer(desc, "ShaderParamSrvIndexGroup");
+	return id_buffer.first;
+}
+template<ShaderParam::Type type>
+BufferUniqueID ShaderContext::ShaderParamBufferCreator::CreateBuffer(BufferContextDiplomat& bufferContextDiplomat_)
+{
+	auto bufferToolLender = bufferContextDiplomat_.Access<BufferContext::ToolLender>();
+	BufferContext::ToolLender::LicenceType<BufferContext::BufferCreator> licence{};
+	auto* bufferCreator = bufferToolLender->Lend<BufferContext::BufferCreator>(licence);
+	//別のタイミングで描画対象ごとに上書きしたいバッファなので
+	UploadStructuredBufferDescription desc
+	(
+		(UINT)sizeof(ShaderParamDispatcher::ShaderParamTraits<type>::dataType),
+		ShaderParamDispatcher::ShaderParamTraits<type>::kReserveSize,
+		0
+	);
+	//最低でも確保しなくてはならないシェーダーパラメーターSRV群コンテナバッファのサイズを更新
+	shaderParamSrvIndexGroupBufferSize =
+		Comparison::Max(shaderParamSrvIndexGroupBufferSize, ShaderParamDispatcher::ShaderParamTraits<type>::kReserveSize);
+	//シェーダーパラメーターの配列バッファを作成
+	auto id_buffer = bufferCreator->CreateWithBuffer(desc, ShaderParamDispatcher::ShaderParamTraits<type>::kName);
+	return id_buffer.first;
+}
+template
+BufferUniqueID ShaderContext::ShaderParamBufferCreator::CreateBuffer<ShaderParam::Type::kGridLine>(BufferContextDiplomat& bufferContextDiplomat_);
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Shader\ShaderParamBuffer\ShaderParamBufferCreator\ShaderParamBufferCreator.h ===
+========================================
+#pragma once
+#include "../../ShaderContext.h"
+//外部
+#include "../../../../../../Assets/Shared/ShaderParam.h"
+class ShaderContext::ShaderParamBufferCreator
+{
+public:
+	ShaderParamBufferCreator
+	(
+		NexusFieldProof proof_,
+		ShaderParamDispatcher& shaderParamDispatcher_,
+		BufferContextDiplomat& bufferContextDiplomat_
+	);
+	//描画対象固有のシェーダーパラメータのバッファをサイズ分作成し、
+	//それらパラメータのsrvHeapIndex群のコンテナのバッファも作成する。これは描画対象の数ぶん必要
+private:
+	//描画対象固有のシェーダーパラメーター最大数
+	UINT shaderParamSrvIndexGroupBufferSize{};
+	template<ShaderParam::Type type>
+	BufferUniqueID CreateBuffer(BufferContextDiplomat& bufferContextDiplomat_);
+	BufferUniqueID CreateShaderParamSrvIndexGroupBuffer(BufferContextDiplomat& bufferContextDiplomat_);
+};
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Shader\ShaderParamBuffer\ShaderParamDispathcer\ShaderParamDispatcher.cpp ===
+========================================
+#include "PreCompileHeader.h"
+#include "ShaderParamDispatcher.h"
+ShaderContext::ShaderParamDispatcher::ShaderParamDispatcher(NexusFieldProof proof_)
+{
+	ReserveDispatchSize<ShaderParam::Type::kGridLine>();
+}
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Shader\ShaderParamBuffer\ShaderParamDispathcer\ShaderParamDispatcher.h ===
+========================================
+#pragma once
+#include "../../ShaderContext.h"
+//外部
+#include "../../../../../../Assets/Shared/ShaderParam.h"
+#include "SimpleFreeList/SimpleFreeList.h"
+class ShaderContext::ShaderParamDispatcher
+{
+public:
+	template<ShaderParam::Type>
+	struct ShaderParamTraits;
+	ShaderParamDispatcher(NexusFieldProof proof_);
+	template<ShaderParam::Type type>
+	uint32_t Dispatch()
+	{
+		return freeListMap[(UINT)type].Distribute();
+	}
+private:
+	template<ShaderParam::Type type>
+	void ReserveDispatchSize()
+	{
+		freeListMap[(UINT)type].Resize
+		(
+			ShaderParamTraits<type>::kReserveSize,
+			ShaderParamTraits<type>::kName
+		);
+	}
+	SimpleFreeList freeListMap[(UINT)ShaderParam::Type::kCount];
+};
+template<>
+struct ShaderContext::ShaderParamDispatcher::ShaderParamTraits<ShaderParam::Type::kGridLine>
+{
+	//シェーダーパラメータの割り当て上限数。同時に確保するバッファサイズ
+	static constexpr UINT kReserveSize = 10;
+	static inline const std::string kName = "GridLine";
+	using dataType = ShaderParam::GridLineCPUGPU;
+};
+
+========================================
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Shader\ShaderPathComponent\ShaderPathComponent.h ===
 ========================================
 #pragma once
@@ -16160,6 +16290,8 @@ namespace ShaderPathComponent
 		kOffscreen,
 		//ピクセルシェーダーを通さないケースはあるので
 		kNone,
+		//グリッドライン
+		kGridLine,
 		kStandard
 		,kCount
 	};
@@ -16206,6 +16338,7 @@ namespace ShaderTable
 		{
 		case RenderPassComponent::Pass::kSceneOpaque:
 			if (materialType_ == ShaderPathComponent::MaterialType::kStandard)pixelShader = "StandardPS";
+			else if (materialType_ == ShaderPathComponent::MaterialType::kGridLine) pixelShader = "FilteredGridPS";
 			break;
 		default:
 			ErrorMessageOutput::Assert::OutputError
@@ -17023,9 +17156,9 @@ class ModelContext;
 class GameObjectContext;
 class Transform
 {
-	static inline const Vector3 kRight = { 1.0f,0.0f,0.0f };
-	static inline const Vector3 kUp = { 0.0f,1.0f,0.0f };
-	static inline const Vector3 kBeyond = { 0.0f,0.0f,1.0f };
+	static inline const Vector3 kRight	 = { 1.0f,0.0f,0.0f };
+	static inline const Vector3 kUp		 = { 0.0f,1.0f,0.0f };
+	static inline const Vector3 kBeyond  = { 0.0f,0.0f,1.0f };
 	Vector3 pos;						//ワールド座標またはローカル座標
 	Vector3 scale;						//スケール
 	Vector3 rotation;					//ヨーピッチロール
@@ -17219,14 +17352,12 @@ private:
 #ifdef _DEBUG
 		ErrorMessageOutput::Assert::DetectError
 		(
-			needOverrideBufferCnt > 0 && needOverrideBufferCnt <= (UINT)ProjectConfig::Render::NumBuffer::kDoubleBuffer,
+			needOverrideBufferCnt <= (UINT)ProjectConfig::Render::NumBuffer::kDoubleBuffer,
 			"トランスフォームのダーティのインデックスがおかしい",
 			"Transform.h"
 		);
-		needOverrideBufferCnt--;
-#else
-		needOverrideBufferCnt--;
 #endif 
+		if (needOverrideBufferCnt > 0) needOverrideBufferCnt--;
 	}
 };
 
@@ -17716,8 +17847,15 @@ public:
 ========================================
 #include "PreCompileHeader.h"
 #include "GridFloor.h"
+#include "GameObjectSpecification.h"
 void GridFloor::Update(SceneRuntimeInterface& sceneRuntimeInterface_)
 {
+	static Vector3 s;
+	//for (int i = 0;i < 1;++i)
+	//{
+	//	p[i]->RefTransform(0).Rotate(s);
+	//}
+	//s.data.y+= 0.016666f;
 }
 //ゲームオブジェクトのリセットに使用。シーンが切り替わった時に呼ばれる
 void GridFloor::Reset()
@@ -17726,41 +17864,30 @@ void GridFloor::Reset()
 //実質、コンストラクタの代わり
 void GridFloor::Awake(SceneInitInterface& sceneInitInterface_)
 {
+	RenderState cP;
+	cP.blendModes.emplace_back(BlendMode::kOpaque);
+	cP.blendModes.emplace_back(BlendMode::kAlphaBlend);
+	cP.blendModes.emplace_back(BlendMode::kAdditive);
+	cP.pass = Pass::kSceneOpaque;	
+	cP.cullMode = CullMode::kBack;
+	cP.meshType = MeshType::kStatic;
+	cP.materialTypes.emplace_back(MaterialType::kStandard);
+	std::vector<RenderState> playerC;
+	playerC.emplace_back(std::move(cP));
+	std::vector<MaterialCPU> materials;
+	materials.resize(1);
+	materials[0].samplerState = SamplerState::kLinearClamp;
+	p = sceneInitInterface_.CreateModel<Model::Type::kDynamic>("Plane200x200Obj", playerC, materials, 1, "Player");
+	for (int i = 0;i < 1;++i)
+	{
+		p[i]->RefTransform(0).TranslatePosition({ 1.5f,-5,100 });
+	}
 }
 //更新処理の直前に呼ばれる。他のゲームオブジェクトはこの時点で生成されているので
 //検索などはできる
 void GridFloor::Start(SceneRuntimeInterface& sceneRuntimeInterface_)
 {
 }
-//using namespace RenderStateComponent;
-//using namespace ShaderPathComponent;
-//using namespace RenderPassComponent;
-//using namespace StructuredBufferModelData;
-	//RenderState cP;
-	//cP.blendModes.emplace_back(BlendMode::kOpaque);
-	//cP.blendModes.emplace_back(BlendMode::kAlphaBlend);
-	//cP.blendModes.emplace_back(BlendMode::kAdditive);
-	//cP.pass = Pass::kSceneOpaque;	
-	//cP.cullMode = CullMode::kBack;
-	//cP.meshType = MeshType::kStatic;
-	//cP.materialTypes.emplace_back(MaterialType::kStandard);
-	//std::vector<RenderState> playerC;
-	//playerC.emplace_back(std::move(cP));
-	//std::vector<MaterialCPU> materials;
-	//p = CreateModel<Model::Type::kDynamic>("CubeGltf", playerC, materials, 10, "Player");
-	//for (int i = 0;i < 10;++i)
-	//{
-	//	p[i]->RefTransform(0).TranslatePosition({ float(i) * 1.5f,0,4 });
-	//}
-	//RenderState cC;
-	//cC.blendModes.emplace_back(BlendMode::kOpaque);
-	//cC.pass = RenderPassComponent::Pass::kSceneOpaque;
-	//cC.cullMode = CullMode::kBack;
-	//cC.meshType = MeshType::kStatic;
-	//cC.materialTypes.emplace_back(MaterialType::kStandard);
-	//std::vector<RenderState> cubeC;
-	//cubeC.emplace_back(std::move(cC));
-	//auto c = CreateModel<Model::Type::kStatic>("CubeGltf", cubeC, materials, 5, "Cube");
 
 ========================================
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\MiddleLayer\GameObject\GameObjectPreset\GridFloor\GridFloor.h ===
@@ -17781,6 +17908,7 @@ private:
 	//更新処理の直前に呼ばれる。他のゲームオブジェクトはこの時点で生成されているので
 	//検索などはできる
 	virtual void Start(SceneRuntimeInterface& sceneRuntimeInterface_)override;
+	std::vector<Model*> p;
 };
 
 ========================================
@@ -17929,8 +18057,7 @@ void GameObjectContext::FrontlineSystems::GameObjController::ResetObjTransformFr
 		if (trans)
 		{
 			trans->ResetFrameFlag();
-			//モデルのトランスフォームと違い、バッチングするが必要ないので
-			//このカウントは初めからファルス状態にしておく
+			//冒頭の減算でカウンタが2になるのは、今フレームで再計算されたときだけにする
 			trans->DecrementNeedOverrideBufferCnt();
 		}
 	}
@@ -18186,6 +18313,18 @@ private:
 };
 
 ========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\MiddleLayer\GameObject\GameObjectSpecification\GameObjectSpecification.h ===
+========================================
+#pragma once
+#include "../../../LowerLayer/Resource/Model/ModelStructure/Model.h"
+#include "../../Scene/SceneStructure/AllSceneInterfaceInclude.h"
+using namespace RenderStateComponent;
+using namespace ShaderPathComponent;
+using namespace RenderPassComponent;
+using namespace StructuredBufferModelData;
+using namespace StaticSampler;
+
+========================================
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\MiddleLayer\GameObject\GameObjectStructure\GameObjectBehavior.cpp ===
 ========================================
 #include "PreCompileHeader.h"
@@ -18287,7 +18426,7 @@ public:
 		(
 			!std::get<std::unique_ptr<SystemType>>(obj_.systems),
 			"なんかのゲームオブジェクトに同じものをアタッチしている",
-			"GameObjSetupper.cpp"
+			"GameObjSetupper.h"
 		);
 		std::get<std::unique_ptr<SystemType>>(obj_.systems) = std::make_unique<SystemType>();
 		return *std::get<std::unique_ptr<SystemType>>(obj_.systems);
@@ -23027,6 +23166,7 @@ private:
 //外部
 #include "../../../LowerLayer/Resource/Camera/CameraContextRuntime/CameraFrontlineSystems.h"
 #include "../../../LowerLayer/Resource/Model/ModelContextRuntime/ModelFrontlineSystems/ModelFrontlineSystems.h"
+#include "../../../GameObject/GameObjectRuntime/GameObjFrontSystems/GameObjFrontlineSystems.h"
 class SceneInitInterface
 {
 public:
@@ -23922,12 +24062,12 @@ namespace ProjectConfig
 			kSingleBuffer = 1,
 			kDoubleBuffer = 2
 		};
-		enum class CBufferSize
+		enum class BufferSize
 		{
 			//TransformMatrixBufferの同時存在最大数
 			kSizeOfTransformMatrixContainerBuffer = 200,
 			//そのマテリアルバージョン
-			kSizeOfMaterialContainerBuffer = 200,
+			kSizeOfMaterialContainerBuffer = 200
 		};
 		constexpr D3D_SHADER_MODEL kRequiredShaderModel = D3D_SHADER_MODEL_6_6;
 		constexpr DXGI_FORMAT kSwapChainBufferFormat = DXGI_FORMAT_R16G16B16A16_FLOAT;
@@ -24783,5 +24923,5 @@ namespace StringProcessing
 ========================================
 === SUMMARY ===
 ========================================
-Total Files      : 554
-Effective Lines  : 18035
+Total Files      : 559
+Effective Lines  : 18144

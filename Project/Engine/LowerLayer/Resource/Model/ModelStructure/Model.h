@@ -23,6 +23,7 @@ class Model
 		//マテリアル。可変長になっているのは、サブメッシュ分用意しているから
 		std::vector<StructuredBufferModelData::MaterialGPU> materials;
 		std::vector<UINT> areMaterialsDirtyCnt;
+		//トランスフォーム。サブメッシュ分用意されている
 		std::vector<Transform> transforms;
 	};
 
