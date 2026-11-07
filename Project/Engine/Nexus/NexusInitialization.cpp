@@ -153,7 +153,7 @@ void Nexus::Init<Nexus::InitSequence::kSwapChainContext>()
 template<>
 void Nexus::Init<Nexus::InitSequence::kShaderContext>()
 {
-	shaderContext.reset(new ShaderContext(ShaderContext::NexusFieldProof{}));
+	shaderContext.reset(new ShaderContext(ShaderContext::NexusFieldProof{},bufferContext->AccessDiplomat()));
 	Logger::Log("Instantiate: ShaderContext", fileName);
 }
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////

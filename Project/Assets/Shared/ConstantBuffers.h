@@ -12,7 +12,8 @@ namespace ConstantBuffers
 		kMaterialContainer,
 		kTextureContainer,
 		kPassRefBufferIndices,
-		kCameraContainer
+		kCameraContainer,
+		kShaderParamArrSrvIndices
 
 		, kCount
 	};
@@ -21,7 +22,8 @@ namespace ConstantBuffers
 	{
 		kPerDrawIndices = ConstantBufferBindSlots::kCount,
 		kPassConstants,
-		kFinalColorBufferSrv
+		kFinalColorBufferSrv,
+		kShaderParamIndex
 
 		,kCount
 	};
@@ -34,7 +36,7 @@ namespace ConstantBuffers
 		
 		static constexpr uint8_t table[numRootConstants]
 		{
-			3,2,1
+			3,2,1,1
 		};
 
 		return table[dstIndex];
@@ -102,14 +104,31 @@ cbuffer CameraContainerIndexCB : register(b5)
 	uint gCameraContainerIndex;
 }
 
+cbuffer ShaderParamArrSrvIndicesIndexCB : register(b6)
+{
+	uint ShaderParamArrSrvIndicesIndex;
+}
 
-ConstantBuffer<PerDrawIndices> gPerDrawIndices: register(b6);
 
-ConstantBuffer<PassConstants> gPassConstants: register(b7);
 
-cbuffer FinalColorBufferSrvCB : register(b8)
+
+
+
+
+
+
+ConstantBuffer<PerDrawIndices> gPerDrawIndices: register(b7);
+
+ConstantBuffer<PassConstants> gPassConstants: register(b8);
+
+cbuffer FinalColorBufferSrvCB : register(b9)
 {
 	uint gFinalColorBufferSrv;
+}
+
+cbuffer ShaderParamIndexCB : register(b10)
+{
+	uint gShaderParamIndex;
 }
 
 

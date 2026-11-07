@@ -5,36 +5,140 @@
 
 //外部
 #include "../../../../Buffer/BufferDefinition/BufferDescriptions/UploadStructuredBufferDescription/UploadStructuredBufferDescription.h"
-#include "../../../../Buffer/BufferDefinition/GPUBuffer/UploadStructuredBuffer/UploadStructuredBuffer.h"
+#include "../../../../Buffer/BufferDefinition/AllBuffersInclude.h"
 #include "../../../../Buffer/BufferContextToolsInclude.h"
 #include "../../../../Buffer/BufferContextDiplomats.h"
 
-BufferUniqueID ShaderContext::ShaderParamBufferCreator::CreateShaderParamSrvIndexGroupBuffer(BufferContextDiplomat& bufferContextDiplomat_)
+namespace
 {
+	auto const fileName = "ShaderParamBufferCreator.cpp";
+}
+
+
+ShaderContext::ShaderParamBufferCreator::ShaderParamBufferCreator
+(
+	NexusFieldProof proof_,
+	ShaderParamDispatcher& shaderParamDispatcher_,
+	BufferContextDiplomat& bufferContextDiplomat_
+)
+{
+	shaderParamArrBufferCache.reserve((UINT)ShaderParam::Type::kCount);
+
+	//shaderParam配列のバッファを作成
+	CreateShaderParamsBuffer<ShaderParam::Type::kGridLine>(shaderParamDispatcher_,bufferContextDiplomat_);
+
+	//作成したシェーダーパラメーター配列のsrvHeapIndexをキャッシュに登録してあるので、
+	//それをもとにシェーダーパラメーター配列のsrvHeapIndex群のバッファを作成。
+	//そのバッファのポインタを返す
+	auto* shaderParamArrSrvIndexGroupBuffer = CreateShaderParamArrSrvIndexGroupBuffer(shaderParamDispatcher_, bufferContextDiplomat_);
+
+	//ShaderParamArrSrvIndexGroupBufferの中身は不動なのでここでかきこんじゃう
+	WriteShaderParamArrSrvIndex(shaderParamArrSrvIndexGroupBuffer);
+
+	//そのsrvHeapIndexのグローバル定数バッファを作成
+	CreateShaderParamSrvIndexGroupCBuffer(shaderParamArrSrvIndexGroupBuffer, bufferContextDiplomat_);
+}
+
+
+void ShaderContext::ShaderParamBufferCreator::CreateShaderParamSrvIndexGroupCBuffer
+(
+	GPUBufferBehavior* shaderParamArrSrvIndexGroupBuffer_,
+	BufferContextDiplomat& bufferContextDiplomat_
+)
+{
+	//定数バッファ作成コマンドをもらう
+	BufferContext::CmdProvider::LicenceType<BufferContextCmds::CreateCBufferCmd> licence;
+	auto createCBufferCmd = bufferContextDiplomat_.Access<BufferContext::CmdProvider>()->
+		Provide<BufferContextCmds::CreateCBufferCmd>(licence);
+
+	//srvHeapIndexを抽出
+	IReadable* readableBuffer = static_cast<IReadable*>(static_cast<UploadStructuredBuffer*>(shaderParamArrSrvIndexGroupBuffer_));
+
+	//定数バッファ生成コマンドで生成する
+	auto cBufferID_cBuffer = createCBufferCmd("ShaderParamArrSrvIndexGroup", UINT(sizeof(SRVHeapIndex)), (UINT)ConstantBuffers::ConstantBufferBindSlots::kShaderParamArrSrvIndices);
+
+	//その定数バッファのマップしたポインタにデータを書き込む
+	cBufferID_cBuffer.second->WriteInBoth<SRVHeapIndex>
+	(
+		{ readableBuffer->OutProperSRVHeapIndex() ,readableBuffer->OutProperSRVHeapIndex() }
+	);
+
+}
+
+void ShaderContext::ShaderParamBufferCreator::WriteShaderParamArrSrvIndex(GPUBufferBehavior* shaderParamArrSrvIndexGroupBuffer_)
+{
+	//書き込み去バッファ
+	auto* dstWriteBuf = static_cast<UploadStructuredBuffer*>(shaderParamArrSrvIndexGroupBuffer_);
+
+	for (auto* shaderArrBuf : shaderParamArrBufferCache)
+	{
+		//srvHeapIndexを抽出ため
+		IReadable* readableBuffer = static_cast<IReadable*>(static_cast<UploadStructuredBuffer*>(shaderArrBuf));
+
+		//表裏２面分書き込む
+		dstWriteBuf->WriteInBoth<SRVHeapIndex>
+		(
+			{
+				readableBuffer->OutProperSRVHeapIndex(0),
+				readableBuffer->OutProperSRVHeapIndex(1)
+			}
+		);
+	}
+}
+
+GPUBufferBehavior* ShaderContext::ShaderParamBufferCreator::CreateShaderParamArrSrvIndexGroupBuffer
+(
+	ShaderParamDispatcher& shaderParamDispatcher_,
+	BufferContextDiplomat& bufferContextDiplomat_
+)
+{
+	ErrorMessageOutput::Assert::DetectError
+	(
+		shaderParamSequence == ShaderParam::Type::kCount,
+		"ShaderParamArrバッファの作成数が足りない",
+		fileName
+	);
+
 	//BufferCreatorを借りる
 	auto bufferToolLender = bufferContextDiplomat_.Access<BufferContext::ToolLender>();
 	BufferContext::ToolLender::LicenceType<BufferContext::BufferCreator> licence{};
 	auto* bufferCreator = bufferToolLender->Lend<BufferContext::BufferCreator>(licence);
 
-	//別のタイミングで描画対象ごとに上書きしたいバッファなので
+	//シェーダーパラメーター配列バッファはダブルバッファなので、srvheapIndexは2つ
+	//その保管先も2面分ということでUploadStructuredBufferでいく
 	UploadStructuredBufferDescription desc
 	(
-		(UINT)sizeof(ShaderParam::ShaderParamSrvIndexGroupCPUGPU),
-		shaderParamSrvIndexGroupBufferSize,
+		(UINT)sizeof(ShaderParam::ShaderParamArrSrvIndexGroupCPUGPU),
+		1,
 		0
 	);
 
-	//シェーダーパラメーターsrv群コンテナのバッファを作成
-	auto id_buffer = bufferCreator->CreateWithBuffer(desc, "ShaderParamSrvIndexGroup");
+	//シェーダーパラメーター配列のsrv群のバッファを作成
+	auto id_buffer = bufferCreator->CreateWithBuffer(desc, "ShaderParamArrSrvIndexGroup");
 
-	return id_buffer.first;
+
+	return id_buffer.second;
 }
 
 
 
 template<ShaderParam::Type type>
-BufferUniqueID ShaderContext::ShaderParamBufferCreator::CreateBuffer(BufferContextDiplomat& bufferContextDiplomat_)
+void ShaderContext::ShaderParamBufferCreator::CreateShaderParamsBuffer
+(
+	ShaderParamDispatcher& shaderParamDispatcher_,
+	BufferContextDiplomat& bufferContextDiplomat_
+)
 {
+	ErrorMessageOutput::Assert::DetectError
+	(
+		shaderParamSequence == type,
+		"ShaderParamArrバッファの作成順序がおかしい",
+		fileName
+	);
+
+	shaderParamSequence = ShaderParam::Type((UINT)shaderParamSequence + 1);
+
+
 	auto bufferToolLender = bufferContextDiplomat_.Access<BufferContext::ToolLender>();
 	BufferContext::ToolLender::LicenceType<BufferContext::BufferCreator> licence{};
 	auto* bufferCreator = bufferToolLender->Lend<BufferContext::BufferCreator>(licence);
@@ -48,15 +152,19 @@ BufferUniqueID ShaderContext::ShaderParamBufferCreator::CreateBuffer(BufferConte
 		0
 	);
 
-	//最低でも確保しなくてはならないシェーダーパラメーターSRV群コンテナバッファのサイズを更新
-	shaderParamSrvIndexGroupBufferSize =
-		Comparison::Max(shaderParamSrvIndexGroupBufferSize, ShaderParamDispatcher::ShaderParamTraits<type>::kReserveSize);
-
 	//シェーダーパラメーターの配列バッファを作成
 	auto id_buffer = bufferCreator->CreateWithBuffer(desc, ShaderParamDispatcher::ShaderParamTraits<type>::kName);
 
-	return id_buffer.first;
+	//登録
+	shaderParamDispatcher_.ImportShaderParamsBufferID<type>(ShaderParamDispatcher::LocalKey{},id_buffer.first);
+
+	//キャッシュに登録
+	shaderParamArrBufferCache.emplace_back(id_buffer.second);
 }
 
 template
-BufferUniqueID ShaderContext::ShaderParamBufferCreator::CreateBuffer<ShaderParam::Type::kGridLine>(BufferContextDiplomat& bufferContextDiplomat_);
+void ShaderContext::ShaderParamBufferCreator::CreateShaderParamsBuffer<ShaderParam::Type::kGridLine>
+(
+	ShaderParamDispatcher& shaderParamDispatcher_,
+	BufferContextDiplomat& bufferContextDiplomat_
+);
