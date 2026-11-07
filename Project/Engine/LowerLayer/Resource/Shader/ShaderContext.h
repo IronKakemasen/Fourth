@@ -23,7 +23,11 @@ public:
 
 
 	
-	ShaderContext(NexusFieldProof proof_);
+	ShaderContext
+	(
+		NexusFieldProof proof_,
+		BufferContextDiplomat& bufferContextDiplomat_
+	);
 	~ShaderContext();
 	auto& AccessDiplomat() { return *diplomat; }
 
@@ -39,6 +43,7 @@ private:
 	std::unique_ptr<ShaderContextDiplomat> diplomat;
 	//シェーダーのデータがすべてここに
 	std::unique_ptr<ShaderLibrary> shaderLibrary;
+	std::unique_ptr<ShaderParamDispatcher> shaderParamDispatcher;
 };
 
 

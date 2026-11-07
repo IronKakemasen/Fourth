@@ -15,7 +15,7 @@ namespace ShaderParam
         kCount
     };
 
-    struct ShaderParamSrvIndexGroupCPUGPU
+    struct ShaderParamArrSrvIndexGroupCPUGPU
     {
         SRVHeapIndex gridLineSrv = kInvalid;
     };
@@ -45,6 +45,10 @@ struct GridLine
     float gridRatio;
 };
 
+struct ShaderParamSrvIndexGrou
+{
+    uint gridLineSrv;
+};
 
 
 #endif

@@ -52,9 +52,12 @@ namespace ProjectConfig
 		enum class BufferSize
 		{
 			//TransformMatrixBufferの同時存在最大数
-			kSizeOfTransformMatrixContainerBuffer = 200,
+			kTransformMatrixContainer = 200,
 			//そのマテリアルバージョン
-			kSizeOfMaterialContainerBuffer = 200
+			kMaterialContainer = 200,
+			//描画対象別のシェーダーパラメーターのsrv群コンテナバッファのサイズ
+			kShaderParamSrvGroupContainer = 200
+
 
 		};
 
