@@ -25,7 +25,7 @@ ShaderContext::ShaderParamBufferCreator::ShaderParamBufferCreator
 	shaderParamArrBufferCache.reserve((UINT)ShaderParam::Type::kCount);
 
 	//shaderParam配列のバッファを作成
-	CreateShaderParamsBuffer<ShaderParam::Type::kGridLine>(shaderParamDispatcher_,bufferContextDiplomat_);
+	CreateShaderParamsBuffer<ShaderParam::Type::kGridLine>(shaderParamDispatcher_, bufferContextDiplomat_);
 
 	//作成したシェーダーパラメーター配列のsrvHeapIndexをキャッシュに登録してあるので、
 	//それをもとにシェーダーパラメーター配列のsrvHeapIndex群のバッファを作成。
@@ -58,32 +58,47 @@ void ShaderContext::ShaderParamBufferCreator::CreateShaderParamSrvIndexGroupCBuf
 	auto cBufferID_cBuffer = createCBufferCmd("ShaderParamArrSrvIndexGroup", UINT(sizeof(SRVHeapIndex)), (UINT)ConstantBuffers::ConstantBufferBindSlots::kShaderParamArrSrvIndices);
 
 	//その定数バッファのマップしたポインタにデータを書き込む
+	//中身は不動なので、２面分書いちゃう
 	cBufferID_cBuffer.second->WriteInBoth<SRVHeapIndex>
 	(
-		{ readableBuffer->OutProperSRVHeapIndex() ,readableBuffer->OutProperSRVHeapIndex() }
+		{ readableBuffer->OutProperSRVHeapIndex(0) ,readableBuffer->OutProperSRVHeapIndex(1) }
 	);
 
 }
 
 void ShaderContext::ShaderParamBufferCreator::WriteShaderParamArrSrvIndex(GPUBufferBehavior* shaderParamArrSrvIndexGroupBuffer_)
 {
-	//書き込み去バッファ
+	//書き込みさきバッファ
 	auto* dstWriteBuf = static_cast<UploadStructuredBuffer*>(shaderParamArrSrvIndexGroupBuffer_);
 
-	for (auto* shaderArrBuf : shaderParamArrBufferCache)
+	//詰め込み先データ両面分
+	ShaderParam::ShaderParamArrSrvIndexGroupCPUGPU dataFrame0;
+	ShaderParam::ShaderParamArrSrvIndexGroupCPUGPU dataFrame1;
+
+	auto* dataFirstPtr0 = reinterpret_cast<SRVHeapIndex*>(&dataFrame0.gridLineSrv);
+	auto* dataFirstPtr1 = reinterpret_cast<SRVHeapIndex*>(&dataFrame1.gridLineSrv);
+
+
+	for (UINT n = 0; n < (UINT)ShaderParam::Type::kCount; ++n)
 	{
 		//srvHeapIndexを抽出ため
-		IReadable* readableBuffer = static_cast<IReadable*>(static_cast<UploadStructuredBuffer*>(shaderArrBuf));
+		IReadable* readableBuffer = 
+			static_cast<IReadable*>(static_cast<UploadStructuredBuffer*>(shaderParamArrBufferCache[n]));
 
 		//表裏２面分書き込む
-		dstWriteBuf->WriteInBoth<SRVHeapIndex>
-		(
-			{
-				readableBuffer->OutProperSRVHeapIndex(0),
-				readableBuffer->OutProperSRVHeapIndex(1)
-			}
-		);
+		*(dataFirstPtr0 + n) = readableBuffer->OutProperSRVHeapIndex(0);
+		*(dataFirstPtr1 + n) = readableBuffer->OutProperSRVHeapIndex(1);
 	}
+
+
+	dstWriteBuf->WriteInBoth<ShaderParam::ShaderParamArrSrvIndexGroupCPUGPU>
+	(
+		{ 
+			dataFrame0,
+			dataFrame1
+		}
+	);
+
 }
 
 GPUBufferBehavior* ShaderContext::ShaderParamBufferCreator::CreateShaderParamArrSrvIndexGroupBuffer
@@ -115,7 +130,6 @@ GPUBufferBehavior* ShaderContext::ShaderParamBufferCreator::CreateShaderParamArr
 
 	//シェーダーパラメーター配列のsrv群のバッファを作成
 	auto id_buffer = bufferCreator->CreateWithBuffer(desc, "ShaderParamArrSrvIndexGroup");
-
 
 	return id_buffer.second;
 }
@@ -156,7 +170,7 @@ void ShaderContext::ShaderParamBufferCreator::CreateShaderParamsBuffer
 	auto id_buffer = bufferCreator->CreateWithBuffer(desc, ShaderParamDispatcher::ShaderParamTraits<type>::kName);
 
 	//登録
-	shaderParamDispatcher_.ImportShaderParamsBufferID<type>(ShaderParamDispatcher::LocalKey{},id_buffer.first);
+	shaderParamDispatcher_.ImportShaderParamsBufferID<type>(ShaderParamDispatcher::LocalKey{}, id_buffer.first);
 
 	//キャッシュに登録
 	shaderParamArrBufferCache.emplace_back(id_buffer.second);
