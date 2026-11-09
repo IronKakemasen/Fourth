@@ -786,10 +786,13 @@
     <ClCompile Include="Engine\MiddleLayer\GameObject\GameObjectPreset\GridFloor\GridFloor.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="Engine\LowerLayer\Resource\Shader\ShaderParamBuffer\ShaderParamBufferCreator\ShaderParamBufferCreator.cpp">
+    <ClCompile Include="Engine\LowerLayer\Resource\Material\MaterialContext.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="Engine\LowerLayer\Resource\Shader\ShaderParamBuffer\ShaderParamDispathcer\ShaderParamDispatcher.cpp">
+    <ClCompile Include="Engine\LowerLayer\Resource\Material\MaterialBufferCreator\MaterialBufferCreator.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\LowerLayer\Resource\Material\MaterialIndexDispatcher\MaterialIndexDispatcher.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
   </ItemGroup>
@@ -1826,13 +1829,16 @@
     <ClInclude Include="Engine\MiddleLayer\GameObject\GameObjectSpecification\GameObjectSpecification.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="Assets\Shared\ShaderParam.h">
+    <ClInclude Include="Assets\Shared\Material.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\LowerLayer\Resource\Shader\ShaderParamBuffer\ShaderParamBufferCreator\ShaderParamBufferCreator.h">
+    <ClInclude Include="Engine\LowerLayer\Resource\Material\MaterialContext.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\LowerLayer\Resource\Shader\ShaderParamBuffer\ShaderParamDispathcer\ShaderParamDispatcher.h">
+    <ClInclude Include="Engine\LowerLayer\Resource\Material\MaterialBufferCreator\MaterialBufferCreator.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\LowerLayer\Resource\Material\MaterialIndexDispatcher\MaterialIndexDispatcher.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
   </ItemGroup>

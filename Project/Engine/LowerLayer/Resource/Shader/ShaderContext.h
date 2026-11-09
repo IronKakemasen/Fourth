@@ -6,10 +6,6 @@ class BufferContextDiplomat;
 
 class ShaderContext
 {
-	//シェーダー固有パラメータのバッファを生成
-	class ShaderParamBufferCreator;
-	//シェーダーパラメータを割り当てる
-	class ShaderParamDispatcher;
 
 public:
 
@@ -43,7 +39,6 @@ private:
 	std::unique_ptr<ShaderContextDiplomat> diplomat;
 	//シェーダーのデータがすべてここに
 	std::unique_ptr<ShaderLibrary> shaderLibrary;
-	std::unique_ptr<ShaderParamDispatcher> shaderParamDispatcher;
 };
 
 

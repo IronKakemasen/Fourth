@@ -5,7 +5,7 @@ class ModelContext;
 class RenderContext;
 class TextureContext;
 class CameraContext;
-class ShaderContext;
+class MaterialContext;
 
 
 struct BufferContext::ToolLender::BasicBufferManagementLicence
@@ -16,7 +16,7 @@ private:
 	friend class RenderContext;
 	friend class TextureContext;
 	friend class CameraContext;
-	friend class ShaderContext;
+	friend class MaterialContext;
 
 	explicit BasicBufferManagementLicence() = default;
 };

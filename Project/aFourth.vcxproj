@@ -445,8 +445,9 @@
     <ClCompile Include="Engine\MiddleLayer\Render\RenderContextDiplomat\RenderContextExecutionAgent\RenderContextExecutionAgent.cpp" />
     <ClCompile Include="Engine\MiddleLayer\GameObject\GameObjectRuntime\GameObjFrontSystems\GameObjController\ObjDataLoader\ObjDataLoader.cpp" />
     <ClCompile Include="Engine\MiddleLayer\GameObject\ObjFSDispatcher\ObjFSDispatcher.cpp" />
-    <ClCompile Include="Engine\LowerLayer\Resource\Shader\ShaderParamBuffer\ShaderParamBufferCreator\ShaderParamBufferCreator.cpp" />
-    <ClCompile Include="Engine\LowerLayer\Resource\Shader\ShaderParamBuffer\ShaderParamDispathcer\ShaderParamDispatcher.cpp" />
+    <ClCompile Include="Engine\LowerLayer\Resource\Material\MaterialContext.cpp" />
+    <ClCompile Include="Engine\LowerLayer\Resource\Material\MaterialBufferCreator\MaterialBufferCreator.cpp" />
+    <ClCompile Include="Engine\LowerLayer\Resource\Material\MaterialIndexDispatcher\MaterialIndexDispatcher.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Application\AllCameraIncludes.h" />
@@ -485,7 +486,7 @@
     <ClInclude Include="Engine\LowerLayer\Core\SwapChain\SwapChainContextDiplomat\SwapChainContextToolLender\SwapChainContextToolLenderLicences.h" />
     <ClInclude Include="Engine\LowerLayer\Resource\Model\ModelContextDiplomat\ModelContextExecutionAgent\ModelAgentLicences.h" />
     <ClInclude Include="Engine\LowerLayer\Resource\Model\ModelContextIncludes.h" />
-    <ClInclude Include="Assets\Shared\ShaderParam.h" />
+    <ClInclude Include="Assets\Shared\Material.h" />
     <ClInclude Include="Engine\MiddleLayer\GameObject\GameObjectContextDiplomat\GameObjectAgent\GameObjectAgentLicences.h" />
     <ClInclude Include="Engine\MiddleLayer\GameObject\GameObjectSpecification\GameObjectSpecification.h" />
     <ClInclude Include="Engine\MiddleLayer\GameObject\GameObjectStructure\GameObjSystems.h" />
@@ -794,8 +795,9 @@
     <ClInclude Include="Engine\MiddleLayer\GameObject\GameObjectContextDiplomat\GameObjectContextDiplomat.h" />
     <ClInclude Include="Engine\MiddleLayer\GameObject\GameObjectContextDiplomat\GameObjectAgent\GameObjectAgent.h" />
     <ClInclude Include="Engine\MiddleLayer\GameObject\GameObjectPreset\GridFloor\GridFloor.h" />
-    <ClInclude Include="Engine\LowerLayer\Resource\Shader\ShaderParamBuffer\ShaderParamBufferCreator\ShaderParamBufferCreator.h" />
-    <ClInclude Include="Engine\LowerLayer\Resource\Shader\ShaderParamBuffer\ShaderParamDispathcer\ShaderParamDispatcher.h" />
+    <ClInclude Include="Engine\LowerLayer\Resource\Material\MaterialContext.h" />
+    <ClInclude Include="Engine\LowerLayer\Resource\Material\MaterialBufferCreator\MaterialBufferCreator.h" />
+    <ClInclude Include="Engine\LowerLayer\Resource\Material\MaterialIndexDispatcher\MaterialIndexDispatcher.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

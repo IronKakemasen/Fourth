@@ -14,6 +14,7 @@
 #include "../LowerLayer/Resource/Model/ModelContext.h"
 #include "../LowerLayer/Resource/Texture/TextureContext.h"
 #include "../LowerLayer/Resource/Camera/CameraContext.h"
+#include "../LowerLayer/Resource/Material/MaterialContext.h"
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 #include "../LowerLayer/Buffer/BufferContext.h"
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -69,6 +70,7 @@ void Nexus::PrimaryInit()
 	InitializeInSequence<InitSequence::kPSO_Context>();
 	InitializeInSequence<InitSequence::kRootSignatureContext>();
 	InitializeInSequence<InitSequence::kTextureContext>();
+	InitializeInSequence<InitSequence::kMaterialContext>();
 	InitializeInSequence<InitSequence::kModelContext>();
 	InitializeInSequence<InitSequence::kGameObjectContext>();
 	InitializeInSequence<InitSequence::kCameraContext>();
