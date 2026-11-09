@@ -20,20 +20,22 @@ public:
 	//「シェーダーパラメーター配列」の
 	//インデックスをかえす
 	template<Material::Type type>
-	uint32_t DispatchShaderParamID()
+	uint32_t DispatchMaterialID()
 	{
 		return freeListMap[(UINT)type].Distribute();
 	}
 
 	template<Material::Type type>
-	void ImportShaderParamsBufferID(LocalKey key_, BufferUniqueID id_)
+	void ImportMaterialArrBufferID(LocalKey key_, BufferUniqueID id_)
 	{
-		shaderParamBufferIdArr[(UINT)type] = id_;
-		Logger::Log("Import " + Material::MaterialTypeTraits<type>::kName + "ArrBuf: " + std::to_string(id_), "ShaderParamDispatcher.h");
+		materialArrBufferIdArr[(UINT)type] = id_;
+		Logger::Log("Import " + Material::MaterialTypeTraits<type>::kName + "ArrBuf: " + std::to_string(id_), "MaterialIndexDispatcher.h");
 	}
 
 private:
 
+	//デバッグ用。ちゃんとReserveDispatchSize()が呼ばれたかチェック
+	Material::Type typeSepuence = Material::Type(0);
 
 	template<Material::Type type>
 	void ReserveDispatchSize()
@@ -43,12 +45,22 @@ private:
 			Material::MaterialTypeTraits<type>::kReserveSize,
 			Material::MaterialTypeTraits<type>::kName
 		);
+
+		ErrorMessageOutput::Assert::DetectError
+		(
+			typeSepuence == type,
+			"ShaderParamArrバッファの作成順序がおかしい",
+			"MaterialIndexDispatcher.h"
+		);
+
+		//デバッグ
+		typeSepuence = Material::Type((UINT)typeSepuence + 1);
+
 	}
 
-
-	std::array<SimpleFreeList, (UINT)Material::Type::kCount> freeListMap;
+	std::array<SimpleFreeList, (UINT)Material::kNumParamExists> freeListMap;
 	//書き込む必要があるので、シェーダーパラメーター配列のバッファIDは所持する
-	std::array<BufferUniqueID, (UINT)Material::Type::kCount> shaderParamBufferIdArr;
+	std::array<BufferUniqueID, (UINT)Material::kNumParamExists> materialArrBufferIdArr;
 };
 
 struct MaterialContext::MaterialIndexDispatcher::LocalKey

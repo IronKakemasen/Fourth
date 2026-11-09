@@ -55,8 +55,8 @@ namespace ProjectConfig
 			kTransformMatrixContainer = 200,
 			//そのマテリアルバージョン
 			kMaterialContainer = 200,
-			//描画対象別のシェーダーパラメーターのsrv群コンテナバッファのサイズ
-			kShaderParamSrvGroupContainer = 200
+			//描画対象別のマテリアルIDコンテナ最大数
+			kMaterialIDGroupContainer = 200
 
 
 		};

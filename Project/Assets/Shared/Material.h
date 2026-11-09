@@ -15,8 +15,7 @@ namespace Material
         
         
         
-        
-        
+       
         kOffscreen,
         kNone,
         kCount
@@ -40,7 +39,7 @@ namespace Material
         "MaterialContainerIndicesCPUGPUのデータサイズがおかしい"
     );
 
-    struct MaterialArrSrvIndexGroupCPUGPU
+    struct MaterialArrBufferSrvIndexGroupCPUGPU
     {
         SRVHeapIndex standardSrv = kInvalid;
         SRVHeapIndex gridLineSrv = kInvalid;
@@ -48,8 +47,8 @@ namespace Material
 
     static_assert
     (
-        sizeof(MaterialArrSrvIndexGroupCPUGPU) == sizeof(SRVHeapIndex) * kNumParamExists,
-        "MaterialArrSrvIndexGroupCPUGPUのデータサイズがおかしい"
+        sizeof(MaterialArrBufferSrvIndexGroupCPUGPU) == sizeof(SRVHeapIndex) * kNumParamExists,
+        "MaterialArrBufferSrvIndexGroupCPUGPUのデータサイズがおかしい"
     );
 
 	struct GridLineCPUGPU
@@ -104,7 +103,7 @@ struct Material::MaterialTypeTraits<Material::Type::kGridLine>
 
 #else
 
-struct GridLine
+struct MaterialGridLine
 {
     float4 gridColor;
     float4 backgroundColor;
@@ -112,13 +111,25 @@ struct GridLine
     float gridRatio;
 };
 
+struct MaterialStandard
+{
+    uint albedoIndex;
+    uint normalIndex;
+    uint emissiveIndex;
+    float4 baseColor;
+    float roughness;
+    float metallic;
+    uint samplerState;
+};
+
+
 struct MaterialContainerIndices
 {
     uint standardIndex;
     uint gridLineIndex;
 };
 
-struct MaterialArrSrvIndexGroup
+struct MaterialArrBufferSrvIndexGroup
 {
     uint standardSrv;
     uint gridLineSrv;
