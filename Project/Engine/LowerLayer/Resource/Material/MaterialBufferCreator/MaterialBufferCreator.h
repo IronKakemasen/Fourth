@@ -20,19 +20,19 @@ public:
 
 private:
 
-	//描画対象固有のシェーダーパラメーター最大数
-	UINT shaderParamIndexGroupBufferSize =
-		(UINT)ProjectConfig::Render::BufferSize::kShaderParamSrvGroupContainer;
+	//描画対象固有のマテリアルID群バッファの最大数
+	UINT materialIDGroupBufferSize=
+		(UINT)ProjectConfig::Render::BufferSize::kMaterialIDGroupContainer;
 
-	//shaderParamArrバッファのキャッシュ
-	std::vector<GPUBufferBehavior*> shaderParamArrBufferCache;
+	//マテリアル配列バッファのキャッシュ
+	std::vector<GPUBufferBehavior*> materialArrBufferCache;
 
-	//ちょいと雑だが、呼び出しシーケンスチェックのため
-	Material::Type shaderParamSequence = Material::Type(0);
+	//デバッグ用。ちょいと雑だが、呼び出しシーケンスチェックのため
+	Material::Type materialSequence = Material::Type(0);
 
-	//描画対象固有のシェーダーパラメータ配列のバッファをサイズ分作成
+	//マテリアル配列のバッファをサイズ分作成
 	template<Material::Type type>
-	void CreateShaderParamsBuffer
+	void CreateMaterialArrBuffer
 	(
 		MaterialIndexDispatcher& materialIndexDispatcher_,
 		BufferContextDiplomat& bufferContextDiplomat_
@@ -40,19 +40,19 @@ private:
 
 
 	//それらのsrvHeapIndex群のバッファも作成する
-	GPUBufferBehavior* CreateShaderParamArrSrvIndexGroupBuffer
+	GPUBufferBehavior* CreateMaterialArrSrvIndexGroupBuffer
 	(
 		MaterialIndexDispatcher& materialIndexDispatcher_,
 		BufferContextDiplomat& bufferContextDiplomat_
 	);
 
-	//ShaderParamArrバッファの表裏２面分のsrvIndexを書き込む
-	void WriteShaderParamArrSrvIndex(GPUBufferBehavior* shaderParamArrSrvIndexGroupBuffer_);
+	//MaterialArrバッファの表裏２面分のsrvIndexを書き込む
+	void WriteMaterialArrSrvIndices(GPUBufferBehavior* materialArrBufferSrvIndexGroupBuffer_);
 
-	//ShaderParamArrSrvIndexGroupのSrvIndexのグローバル定数バッファを作成する
-	void CreateShaderParamSrvIndexGroupCBuffer
+	//MaterialArrSrvIndexGroupのSrvIndexのグローバル定数バッファを作成する
+	void CreateMaterialArrBufferSrvIndexGroupCBuffer
 	(
-		GPUBufferBehavior* shaderParamArrSrvIndexGroupBuffer_,
+		GPUBufferBehavior* materialArrBufferSrvIndexGroupBuffer_,
 		BufferContextDiplomat& bufferContextDiplomat_
 	);
 

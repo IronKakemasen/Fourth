@@ -10641,22 +10641,22 @@ MaterialContext::MaterialBufferCreator::MaterialBufferCreator
 	BufferContextDiplomat& bufferContextDiplomat_
 )
 {
-	shaderParamArrBufferCache.reserve((UINT)Material::kNumParamExists);
+	materialArrBufferCache.reserve((UINT)Material::kNumParamExists);
 	//Material配列のバッファを作成
-	CreateShaderParamsBuffer<Material::Type::kStandard>(materialIndexDispatcher_, bufferContextDiplomat_);
-	CreateShaderParamsBuffer<Material::Type::kGridLine>(materialIndexDispatcher_, bufferContextDiplomat_);
+	CreateMaterialArrBuffer<Material::Type::kStandard>(materialIndexDispatcher_, bufferContextDiplomat_);
+	CreateMaterialArrBuffer<Material::Type::kGridLine>(materialIndexDispatcher_, bufferContextDiplomat_);
 	//作成したシェーダーパラメーター配列のsrvHeapIndexをキャッシュに登録してあるので、
 	//それをもとにシェーダーパラメーター配列のsrvHeapIndex群のバッファを作成。
 	//そのバッファのポインタを返す
-	auto* shaderParamArrSrvIndexGroupBuffer = CreateShaderParamArrSrvIndexGroupBuffer(materialIndexDispatcher_, bufferContextDiplomat_);
+	auto* shaderParamArrSrvIndexGroupBuffer = CreateMaterialArrSrvIndexGroupBuffer(materialIndexDispatcher_, bufferContextDiplomat_);
 	//ShaderParamArrSrvIndexGroupBufferの中身は不動なのでここでかきこんじゃう
-	WriteShaderParamArrSrvIndex(shaderParamArrSrvIndexGroupBuffer);
+	WriteMaterialArrSrvIndices(shaderParamArrSrvIndexGroupBuffer);
 	//そのsrvHeapIndexのグローバル定数バッファを作成
-	CreateShaderParamSrvIndexGroupCBuffer(shaderParamArrSrvIndexGroupBuffer, bufferContextDiplomat_);
+	CreateMaterialArrBufferSrvIndexGroupCBuffer(shaderParamArrSrvIndexGroupBuffer, bufferContextDiplomat_);
 }
-void MaterialContext::MaterialBufferCreator::CreateShaderParamSrvIndexGroupCBuffer
+void MaterialContext::MaterialBufferCreator::CreateMaterialArrBufferSrvIndexGroupCBuffer
 (
-	GPUBufferBehavior* shaderParamArrSrvIndexGroupBuffer_,
+	GPUBufferBehavior* materialArrBufferSrvIndexGroupBuffer_,
 	BufferContextDiplomat& bufferContextDiplomat_
 )
 {
@@ -10665,35 +10665,35 @@ void MaterialContext::MaterialBufferCreator::CreateShaderParamSrvIndexGroupCBuff
 	auto createCBufferCmd = bufferContextDiplomat_.Access<BufferContext::CmdProvider>()->
 		Provide<BufferContextCmds::CreateCBufferCmd>(licence);
 	//srvHeapIndexを抽出
-	IReadable* readableBuffer = static_cast<IReadable*>(static_cast<UploadStructuredBuffer*>(shaderParamArrSrvIndexGroupBuffer_));
+	IReadable* readableBuffer = static_cast<IReadable*>(static_cast<UploadStructuredBuffer*>(materialArrBufferSrvIndexGroupBuffer_));
 	//定数バッファ生成コマンドで生成する
 	auto cBufferID_cBuffer = createCBufferCmd("ShaderParamArrSrvIndexGroup", UINT(sizeof(SRVHeapIndex)), (UINT)ConstantBuffers::ConstantBufferBindSlots::kShaderParamArrSrvIndices);
 	//その定数バッファのマップしたポインタにデータを書き込む
 	//中身は不動なので、２面分書いちゃう
 	cBufferID_cBuffer.second->WriteInBoth<SRVHeapIndex>
-		(
-			{ readableBuffer->OutProperSRVHeapIndex(0) ,readableBuffer->OutProperSRVHeapIndex(1) }
-		);
+	(
+		{ readableBuffer->OutProperSRVHeapIndex(0) ,readableBuffer->OutProperSRVHeapIndex(1) }
+	);
 }
-void MaterialContext::MaterialBufferCreator::WriteShaderParamArrSrvIndex(GPUBufferBehavior* shaderParamArrSrvIndexGroupBuffer_)
+void MaterialContext::MaterialBufferCreator::WriteMaterialArrSrvIndices(GPUBufferBehavior* materialArrBufferSrvIndexGroupBuffer_)
 {
 	//書き込みさきバッファ
-	auto* dstWriteBuf = static_cast<UploadStructuredBuffer*>(shaderParamArrSrvIndexGroupBuffer_);
+	auto* dstWriteBuf = static_cast<UploadStructuredBuffer*>(materialArrBufferSrvIndexGroupBuffer_);
 	//詰め込み先データ両面分
-	Material::MaterialArrSrvIndexGroupCPUGPU dataFrame0;
-	Material::MaterialArrSrvIndexGroupCPUGPU dataFrame1;
+	Material::MaterialArrBufferSrvIndexGroupCPUGPU dataFrame0;
+	Material::MaterialArrBufferSrvIndexGroupCPUGPU dataFrame1;
 	auto* dataFirstPtr0 = reinterpret_cast<SRVHeapIndex*>(&dataFrame0.standardSrv);
 	auto* dataFirstPtr1 = reinterpret_cast<SRVHeapIndex*>(&dataFrame1.standardSrv);
 	for (UINT n = 0; n < (UINT)Material::kNumParamExists; ++n)
 	{
 		//srvHeapIndexを抽出ため
 		IReadable* readableBuffer =
-			static_cast<IReadable*>(static_cast<UploadStructuredBuffer*>(shaderParamArrBufferCache[n]));
+			static_cast<IReadable*>(static_cast<UploadStructuredBuffer*>(materialArrBufferCache[n]));
 		//表裏２面分書き込む
 		*(dataFirstPtr0 + n) = readableBuffer->OutProperSRVHeapIndex(0);
 		*(dataFirstPtr1 + n) = readableBuffer->OutProperSRVHeapIndex(1);
 	}
-	dstWriteBuf->WriteInBoth<Material::MaterialArrSrvIndexGroupCPUGPU>
+	dstWriteBuf->WriteInBoth<Material::MaterialArrBufferSrvIndexGroupCPUGPU>
 	(
 		{
 			dataFrame0,
@@ -10701,7 +10701,7 @@ void MaterialContext::MaterialBufferCreator::WriteShaderParamArrSrvIndex(GPUBuff
 		}
 	);
 }
-GPUBufferBehavior* MaterialContext::MaterialBufferCreator::CreateShaderParamArrSrvIndexGroupBuffer
+GPUBufferBehavior* MaterialContext::MaterialBufferCreator::CreateMaterialArrSrvIndexGroupBuffer
 (
 	MaterialIndexDispatcher& materialIndexDispatcher_,
 	BufferContextDiplomat& bufferContextDiplomat_
@@ -10709,7 +10709,7 @@ GPUBufferBehavior* MaterialContext::MaterialBufferCreator::CreateShaderParamArrS
 {
 	ErrorMessageOutput::Assert::DetectError
 	(
-		(UINT)shaderParamSequence == Material::kNumParamExists,
+		(UINT)materialSequence == Material::kNumParamExists,
 		"ShaderParamArrバッファの作成数が足りない",
 		fileName
 	);
@@ -10721,7 +10721,7 @@ GPUBufferBehavior* MaterialContext::MaterialBufferCreator::CreateShaderParamArrS
 	//その保管先も2面分ということでUploadStructuredBufferでいく
 	UploadStructuredBufferDescription desc
 	(
-		(UINT)sizeof(Material::MaterialArrSrvIndexGroupCPUGPU),
+		(UINT)sizeof(Material::MaterialArrBufferSrvIndexGroupCPUGPU),
 		1,
 		0
 	);
@@ -10730,7 +10730,7 @@ GPUBufferBehavior* MaterialContext::MaterialBufferCreator::CreateShaderParamArrS
 	return id_buffer.second;
 }
 template<Material::Type type>
-void MaterialContext::MaterialBufferCreator::CreateShaderParamsBuffer
+void MaterialContext::MaterialBufferCreator::CreateMaterialArrBuffer
 (
 	MaterialIndexDispatcher& materialIndexDispatcher_,
 	BufferContextDiplomat& bufferContextDiplomat_
@@ -10738,11 +10738,11 @@ void MaterialContext::MaterialBufferCreator::CreateShaderParamsBuffer
 {
 	ErrorMessageOutput::Assert::DetectError
 	(
-		shaderParamSequence == type,
+		materialSequence == type,
 		"ShaderParamArrバッファの作成順序がおかしい",
 		fileName
 	);
-	shaderParamSequence = Material::Type((UINT)shaderParamSequence + 1);
+	materialSequence = Material::Type((UINT)materialSequence + 1);
 	auto bufferToolLender = bufferContextDiplomat_.Access<BufferContext::ToolLender>();
 	BufferContext::ToolLender::LicenceType<BufferContext::BufferCreator> licence{};
 	auto* bufferCreator = bufferToolLender->Lend<BufferContext::BufferCreator>(licence);
@@ -10756,18 +10756,18 @@ void MaterialContext::MaterialBufferCreator::CreateShaderParamsBuffer
 	//シェーダーパラメーターの配列バッファを作成
 	auto id_buffer = bufferCreator->CreateWithBuffer(desc, Material::MaterialTypeTraits<type>::kName);
 	//登録
-	materialIndexDispatcher_.ImportShaderParamsBufferID<type>(MaterialIndexDispatcher::LocalKey{}, id_buffer.first);
+	materialIndexDispatcher_.ImportMaterialArrBufferID<type>(MaterialIndexDispatcher::LocalKey{}, id_buffer.first);
 	//キャッシュに登録
-	shaderParamArrBufferCache.emplace_back(id_buffer.second);
+	materialArrBufferCache.emplace_back(id_buffer.second);
 }
 template
-void MaterialContext::MaterialBufferCreator::CreateShaderParamsBuffer<Material::Type::kStandard>
+void MaterialContext::MaterialBufferCreator::CreateMaterialArrBuffer<Material::Type::kStandard>
 (
 	MaterialIndexDispatcher& materialIndexDispatcher_,
 	BufferContextDiplomat& bufferContextDiplomat_
 );
 template
-void MaterialContext::MaterialBufferCreator::CreateShaderParamsBuffer<Material::Type::kGridLine>
+void MaterialContext::MaterialBufferCreator::CreateMaterialArrBuffer<Material::Type::kGridLine>
 (
 	MaterialIndexDispatcher& materialIndexDispatcher_,
 	BufferContextDiplomat& bufferContextDiplomat_
@@ -10791,32 +10791,32 @@ public:
 		BufferContextDiplomat& bufferContextDiplomat_
 	);
 private:
-	//描画対象固有のシェーダーパラメーター最大数
-	UINT shaderParamIndexGroupBufferSize =
-		(UINT)ProjectConfig::Render::BufferSize::kShaderParamSrvGroupContainer;
-	//shaderParamArrバッファのキャッシュ
-	std::vector<GPUBufferBehavior*> shaderParamArrBufferCache;
-	//ちょいと雑だが、呼び出しシーケンスチェックのため
-	Material::Type shaderParamSequence = Material::Type(0);
-	//描画対象固有のシェーダーパラメータ配列のバッファをサイズ分作成
+	//描画対象固有のマテリアルID群バッファの最大数
+	UINT materialIDGroupBufferSize=
+		(UINT)ProjectConfig::Render::BufferSize::kMaterialIDGroupContainer;
+	//マテリアル配列バッファのキャッシュ
+	std::vector<GPUBufferBehavior*> materialArrBufferCache;
+	//デバッグ用。ちょいと雑だが、呼び出しシーケンスチェックのため
+	Material::Type materialSequence = Material::Type(0);
+	//マテリアル配列のバッファをサイズ分作成
 	template<Material::Type type>
-	void CreateShaderParamsBuffer
+	void CreateMaterialArrBuffer
 	(
 		MaterialIndexDispatcher& materialIndexDispatcher_,
 		BufferContextDiplomat& bufferContextDiplomat_
 	);
 	//それらのsrvHeapIndex群のバッファも作成する
-	GPUBufferBehavior* CreateShaderParamArrSrvIndexGroupBuffer
+	GPUBufferBehavior* CreateMaterialArrSrvIndexGroupBuffer
 	(
 		MaterialIndexDispatcher& materialIndexDispatcher_,
 		BufferContextDiplomat& bufferContextDiplomat_
 	);
-	//ShaderParamArrバッファの表裏２面分のsrvIndexを書き込む
-	void WriteShaderParamArrSrvIndex(GPUBufferBehavior* shaderParamArrSrvIndexGroupBuffer_);
-	//ShaderParamArrSrvIndexGroupのSrvIndexのグローバル定数バッファを作成する
-	void CreateShaderParamSrvIndexGroupCBuffer
+	//MaterialArrバッファの表裏２面分のsrvIndexを書き込む
+	void WriteMaterialArrSrvIndices(GPUBufferBehavior* materialArrBufferSrvIndexGroupBuffer_);
+	//MaterialArrSrvIndexGroupのSrvIndexのグローバル定数バッファを作成する
+	void CreateMaterialArrBufferSrvIndexGroupCBuffer
 	(
-		GPUBufferBehavior* shaderParamArrSrvIndexGroupBuffer_,
+		GPUBufferBehavior* materialArrBufferSrvIndexGroupBuffer_,
 		BufferContextDiplomat& bufferContextDiplomat_
 	);
 };
@@ -10828,7 +10828,14 @@ private:
 #include "MaterialIndexDispatcher.h"
 MaterialContext::MaterialIndexDispatcher::MaterialIndexDispatcher(NexusFieldProof proof_)
 {
+	ReserveDispatchSize<Material::Type::kStandard>();
 	ReserveDispatchSize<Material::Type::kGridLine>();
+	ErrorMessageOutput::Assert::DetectError
+	(
+		(UINT)typeSepuence  == Material::kNumParamExists,
+		"ReserveDispatchSize()を呼び足りない",
+		"MaterialIndexDispatcher.cpp"
+	);
 }
 
 ========================================
@@ -10847,17 +10854,19 @@ public:
 	//「シェーダーパラメーター配列」の
 	//インデックスをかえす
 	template<Material::Type type>
-	uint32_t DispatchShaderParamID()
+	uint32_t DispatchMaterialID()
 	{
 		return freeListMap[(UINT)type].Distribute();
 	}
 	template<Material::Type type>
-	void ImportShaderParamsBufferID(LocalKey key_, BufferUniqueID id_)
+	void ImportMaterialArrBufferID(LocalKey key_, BufferUniqueID id_)
 	{
-		shaderParamBufferIdArr[(UINT)type] = id_;
+		materialArrBufferIdArr[(UINT)type] = id_;
 		Logger::Log("Import " + Material::MaterialTypeTraits<type>::kName + "ArrBuf: " + std::to_string(id_), "ShaderParamDispatcher.h");
 	}
 private:
+	//デバッグ用。ちゃんとReserveDispatchSize()が呼ばれたかチェック
+	Material::Type typeSepuence = Material::Type(0);
 	template<Material::Type type>
 	void ReserveDispatchSize()
 	{
@@ -10866,10 +10875,18 @@ private:
 			Material::MaterialTypeTraits<type>::kReserveSize,
 			Material::MaterialTypeTraits<type>::kName
 		);
+		ErrorMessageOutput::Assert::DetectError
+		(
+			typeSepuence == type,
+			"ShaderParamArrバッファの作成順序がおかしい",
+			"MaterialIndexDispatcher.h"
+		);
+		//デバッグ
+		typeSepuence = Material::Type((UINT)typeSepuence + 1);
 	}
-	std::array<SimpleFreeList, (UINT)Material::Type::kCount> freeListMap;
+	std::array<SimpleFreeList, (UINT)Material::kNumParamExists> freeListMap;
 	//書き込む必要があるので、シェーダーパラメーター配列のバッファIDは所持する
-	std::array<BufferUniqueID, (UINT)Material::Type::kCount> shaderParamBufferIdArr;
+	std::array<BufferUniqueID, (UINT)Material::kNumParamExists> materialArrBufferIdArr;
 };
 struct MaterialContext::MaterialIndexDispatcher::LocalKey
 {
@@ -24273,8 +24290,8 @@ namespace ProjectConfig
 			kTransformMatrixContainer = 200,
 			//そのマテリアルバージョン
 			kMaterialContainer = 200,
-			//描画対象別のシェーダーパラメーターのsrv群コンテナバッファのサイズ
-			kShaderParamSrvGroupContainer = 200
+			//描画対象別のマテリアルIDコンテナ最大数
+			kMaterialIDGroupContainer = 200
 		};
 		constexpr D3D_SHADER_MODEL kRequiredShaderModel = D3D_SHADER_MODEL_6_6;
 		constexpr DXGI_FORMAT kSwapChainBufferFormat = DXGI_FORMAT_R16G16B16A16_FLOAT;
@@ -25131,4 +25148,4 @@ namespace StringProcessing
 === SUMMARY ===
 ========================================
 Total Files      : 561
-Effective Lines  : 18311
+Effective Lines  : 18326
