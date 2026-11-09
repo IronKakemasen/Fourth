@@ -15,9 +15,7 @@ namespace
     auto const fileName = "MaterialParser.cpp";
 }
 
-using namespace StructuredBufferModelData;
-
-void ModelContext::ModelDataLoader::MaterialParser::ParseMaterial(MaterialCPU& dstMaterial_, const aiMaterial* pSrcMaterial_)
+void ModelContext::ModelDataLoader::MaterialParser::ParseMaterial(Material::StandardCPU& dstMaterial_, const aiMaterial* pSrcMaterial_)
 {
     //ベースカラー
     {

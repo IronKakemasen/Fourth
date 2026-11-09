@@ -30,7 +30,7 @@ ModelContext::ModelCreator::ModelDescAssembler::ModelDescAssembler
 ModelContext::ModelCreator::ModelDescParts ModelContext::ModelCreator::ModelDescAssembler::Assemble
 (
 	std::string const& modelFileName_,
-	std::vector<MaterialCPU> const& inputMaterials_
+	std::vector<Material::StandardCPU> const& inputMaterials_
 )
 {
 	//modelDataLibraryにアクセス
@@ -83,15 +83,15 @@ std::vector<ConstantBuffers::PerDrawIndicesCPUGPU> ModelContext::ModelCreator::M
 }
 
 
-std::vector<MaterialGPU> ModelContext::ModelCreator::ModelDescAssembler::ConvertMaterialData
+std::vector<Material::StandardGPU> ModelContext::ModelCreator::ModelDescAssembler::ConvertMaterialData
 (
 	size_t const kNumMeshData_,
-	std::vector<MaterialCPU> const& materialsFromFile_,
-	std::vector<MaterialCPU> const& inputMaterials
+	std::vector<Material::StandardCPU> const& materialsFromFile_,
+	std::vector<Material::StandardCPU> const& inputMaterials
 )
 {
 	//テクスチャファイルパスから、テクスチャファイル名へ変換
-	std::vector<MaterialGPU> materialGPUContainer;
+	std::vector<Material::StandardGPU> materialGPUContainer;
 
 	//サブメッシュ分も拡張する
 	materialGPUContainer.resize(kNumMeshData_);
@@ -113,7 +113,7 @@ std::vector<MaterialGPU> ModelContext::ModelCreator::ModelDescAssembler::Convert
 			if (src.metallic != kInvalid)		dst.metallic		= src.metallic;
 			if (src.baseColor.x != kInvalid)	dst.baseColor		= src.baseColor;
 
-			dst.samplerState = src.samplerState;
+			dst.albedoTexSamplerState = src.albedoTexSamplerState;
 		}
 
 		//手動入力で満たされなかった部分を、モデル名に紐づけられているデータから入力する

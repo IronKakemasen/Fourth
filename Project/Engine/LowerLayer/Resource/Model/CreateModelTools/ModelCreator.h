@@ -9,7 +9,7 @@ class ModelContext::ModelCreator
 	using ModelDescParts = std::tuple
 	<
 		std::vector<ConstantBuffers::PerDrawIndicesCPUGPU>,
-		std::vector<StructuredBufferModelData::MaterialGPU>,
+		std::vector<Material::StandardGPU>,
 		std::vector<size_t>
 	>;
 
@@ -29,7 +29,7 @@ public:
 	(
 		std::string const& modelFileName_,
 		std::vector<RenderState> const& modelRenderStates_,
-		std::vector<StructuredBufferModelData::MaterialCPU> const& materials_,
+		std::vector<Material::StandardCPU> const& materials_,
 		UINT const numCreate_,
 		std::string const& modelName_ 
 	)
@@ -79,7 +79,7 @@ private:
 	ModelDescParts AssembleModelDescParts
 	(
 		std::string const& modelFileName_,
-		std::vector<StructuredBufferModelData::MaterialCPU> const& inputMaterials_
+		std::vector<Material::StandardCPU> const& inputMaterials_
 	);
 
 	//生成数。ネーミング用
