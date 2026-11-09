@@ -5,6 +5,7 @@
 //外部
 #include "../../../Buffer/BufferDefinition/TextureComponent.h"
 #include "../../../../Math/Transform/Transform.h"
+#include "../../../../../../Assets/Shared/Material.h"
 
 class ModelContext;
 class RenderContext;
@@ -21,7 +22,7 @@ class Model
 		//現在選択しているマテリアルタイプ
 		Material::Type materialType{};
 		//マテリアル。可変長になっているのは、サブメッシュ分用意しているから
-		std::vector<StructuredBufferModelData::MaterialGPU> materials;
+		std::vector<Material::StandardGPU> materials;
 		std::vector<UINT> areMaterialsDirtyCnt;
 		//トランスフォーム。サブメッシュ分用意されている
 		std::vector<Transform> transforms;
@@ -43,7 +44,7 @@ public:
 	(
 		Type type_,
 		const ModelDescription& modelDesc_,
-		std::vector<StructuredBufferModelData::MaterialGPU> const& materials_
+		std::vector<Material::StandardGPU> const& materials_
 	);
 
 	Model(const Model&) = delete;

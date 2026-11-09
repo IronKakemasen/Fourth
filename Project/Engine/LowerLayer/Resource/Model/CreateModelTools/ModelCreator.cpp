@@ -40,7 +40,7 @@ void ModelContext::ModelCreator::DeleteRenderStateCache(NexusFieldProof proof_ ,
 ModelContext::ModelCreator::ModelDescParts ModelContext::ModelCreator::AssembleModelDescParts
 (
 	std::string const& modelFileName_,
-	std::vector<MaterialCPU> const& inputMaterials_
+	std::vector<Material::StandardCPU> const& inputMaterials_
 )
 {
 	return modelDescAssembler->Assemble(modelFileName_, inputMaterials_);

@@ -4,6 +4,7 @@
 //外部
 #include "../../../../../../Assets/Shared/ConstantBuffers.h"
 #include "../../../../../../Assets/Shared/StructuredBufferModelData.h"
+#include "../../../../../../Assets/Shared/Material.h"
 
 class Model;
 struct IWritableCPU;
@@ -99,6 +100,6 @@ struct ModelContext::ModelDataBatcher::BufferTypeTraits
 {
 	static inline std::string const kBufferName = "MaterialContainer";
 	static constexpr UINT kArrSize = (UINT)ProjectConfig::Render::BufferSize::kMaterialContainer;
-	static constexpr UINT kStructureSize = (UINT)sizeof(StructuredBufferModelData::MaterialGPU);
+	static constexpr UINT kStructureSize = (UINT)sizeof(Material::StandardGPU);
 };
 

@@ -36,30 +36,6 @@ namespace StructuredBufferModelData
         Vector2 texcoord;
     };
 
-    struct MaterialCPU
-    {
-        std::string albedoTexture = "";
-        std::string normalTexture = "";
-        std::string emissiveTexture = "";
-        Vector4<float> baseColor = { float(kInvalid),float(kInvalid),float(kInvalid),float(kInvalid) };
-        float roughness = float(kInvalid);
-        float metallic = float(kInvalid);
-        StaticSampler::SamplerState samplerState = StaticSampler::SamplerState::kLinearClamp;
-    };
-
-    struct MaterialGPU
-    {
-        MaterialGPU() = default;
-
-        SRVHeapIndex albedoTexture = kInvalid;
-        SRVHeapIndex normalTexture = kInvalid;
-        SRVHeapIndex emissiveTexture = kInvalid;
-        Vector4<float> baseColor = { float(kInvalid),float(kInvalid),float(kInvalid),float(kInvalid) };
-        float roughness = float(kInvalid);
-        float metallic = float(kInvalid);
-        StaticSampler::SamplerState samplerState = StaticSampler::SamplerState::kLinearClamp;
-    };  
-
     struct MeshletCPUGPU
     {
         uint32_t vertexOffset;
@@ -78,8 +54,7 @@ namespace StructuredBufferModelData
 
     struct UniqueVertexIndexCPUGPU
     {
-        UniqueVertexIndexCPUGPU(uint32_t index_)
-            : index(index_) {}
+        UniqueVertexIndexCPUGPU(uint32_t index_): index(index_) {}
 
         uint32_t index{};
     };
@@ -107,8 +82,6 @@ namespace StructuredBufferModelData
         SRVHeapIndex meshlets{};
         SRVHeapIndex primitiveIndices{};
     };
-
-
 }
 
 #else
@@ -119,17 +92,6 @@ struct StandardVertex
     float4 normal;
     float4 tangent;
     float4 texcoord;
-};
-
-struct Material
-{
-    uint albedoIndex;
-    uint normalIndex;
-    uint emissiveIndex;
-    float4 baseColor;
-    float roughness;
-    float metallic;
-    uint samplerState;
 };
 
 struct Meshlet

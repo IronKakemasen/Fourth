@@ -29,9 +29,9 @@ void GridFloor::Awake(SceneInitInterface& sceneInitInterface_)
 	std::vector<RenderState> playerC;
 	playerC.emplace_back(std::move(cP));
 
-	std::vector<MaterialCPU> materials;
+	std::vector<Material::StandardCPU> materials;
 	materials.resize(1);
-	materials[0].samplerState = SamplerState::kLinearClamp;
+	materials[0].albedoTexSamplerState = SamplerState::kLinearClamp;
 
 	p = sceneInitInterface_.CreateModel<Model::Type::kDynamic>("Plane200x200Obj", playerC, materials, 1, "Player");
 	for (int i = 0;i < 1;++i)

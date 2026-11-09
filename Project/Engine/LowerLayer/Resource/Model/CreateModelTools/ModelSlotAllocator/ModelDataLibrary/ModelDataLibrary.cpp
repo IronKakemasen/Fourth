@@ -12,8 +12,6 @@ ModelContext::ModelSlotAllocator::ModelDataLibrary::ModelDataLibrary(NexusFieldP
 
 }
 
-using namespace StructuredBufferModelData;
-
 
 void ModelContext::ModelSlotAllocator::ModelDataLibrary::Log()const
 {

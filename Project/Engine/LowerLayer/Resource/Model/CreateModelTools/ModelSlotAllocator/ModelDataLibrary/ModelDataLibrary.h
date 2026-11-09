@@ -24,7 +24,7 @@ public:
 			modelData[modelFileName_].meshDataID = src_;
 
 		}
-		else if constexpr (std::is_same_v<DataType, StructuredBufferModelData::MaterialCPU>)
+		else if constexpr (std::is_same_v<DataType, Material::StandardCPU>)
 		{
 			modelData[modelFileName_].materialCPU = src_;
 

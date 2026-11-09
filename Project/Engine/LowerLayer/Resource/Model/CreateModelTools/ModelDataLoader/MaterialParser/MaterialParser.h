@@ -3,7 +3,7 @@
 
 
 //外部
-#include "../../../../../../../Assets/Shared/StructuredBufferModelData.h"
+#include "../../../../../../../Assets/Shared/Material.h"
 
 struct aiMaterial;
 struct aiString;
@@ -12,7 +12,7 @@ class  ModelContext::ModelDataLoader::MaterialParser
 {
 	friend class ModelContext::ModelDataLoader;
 
-	static void ParseMaterial(StructuredBufferModelData::MaterialCPU& dstMaterial_, const aiMaterial* pSrcMaterial_);
+	static void ParseMaterial(Material::StandardCPU& dstMaterial_, const aiMaterial* pSrcMaterial_);
 
 
 	//以下ヘルパー

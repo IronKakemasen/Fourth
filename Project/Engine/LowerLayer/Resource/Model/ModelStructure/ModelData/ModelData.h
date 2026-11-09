@@ -2,7 +2,7 @@
 #include "../../ModelContext.h"
 
 //外部
-#include "../../../../../../Assets/Shared/StructuredBufferModelData.h"
+#include "../../../../../../Assets/Shared/Material.h"
 
 struct ModelContext::ModelData
 {
@@ -10,7 +10,7 @@ struct ModelContext::ModelData
 	struct DataTypeTraits;
 
 	std::vector<MeshDataID> meshDataID;
-	std::vector<StructuredBufferModelData::MaterialCPU> materialCPU;
+	std::vector<Material::StandardCPU> materialCPU;
 	std::vector<size_t> meshletSize;
 };
 
@@ -21,7 +21,7 @@ struct ModelContext::ModelData::DataTypeTraits<MeshDataID>
 };
 
 template<>
-struct ModelContext::ModelData::DataTypeTraits<StructuredBufferModelData::MaterialCPU>
+struct ModelContext::ModelData::DataTypeTraits<Material::StandardCPU>
 {
 	static inline const std::string kName = "MaterialCPU";
 };

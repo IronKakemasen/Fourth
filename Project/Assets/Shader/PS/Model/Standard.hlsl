@@ -1,5 +1,6 @@
 #include "../../../Shared/StructuredBufferModelData.h"
 #include "../../../Shared/StructuredBufferCameraData.h"
+#include "../../../Shared/Material.h"
 #include "../../../Shared/ConstantBuffers.h"
 #include "../../HLSLI/ModelDrawCommon.hlsli"
 
@@ -39,14 +40,14 @@ PixelShaderOutput main(MeshShaderOutput input_)
     StructuredBuffer<uint> textureContainer = ResourceDescriptorHeap[gTextureContainerIndex];
     
     //モデルのマテリアルのコンテナ
-    StructuredBuffer<Material> materialContainer = ResourceDescriptorHeap[gMaterialContainerIndex];
+    StructuredBuffer<MaterialStandard> materialContainer = ResourceDescriptorHeap[gMaterialContainerIndex];
     //モデルのルートコンスタンツから自身のマテリアルデータを指定する
-    Material material = materialContainer[gPerDrawIndices.materialID];
+    MaterialStandard materialStandard = materialContainer[gPerDrawIndices.materialID];
     
     //アルベドテクスチャをインデックスで引っ張ってくる
-    Texture2D<float4> albedoTexture = ResourceDescriptorHeap[material.albedoIndex];
-    float4 albedoTextureCol = SampleColor(albedoTexture, material.samplerState, input_.texcoord);
-    float3 baseColor = material.baseColor.rgb * albedoTextureCol.rgb;
+    Texture2D<float4> albedoTexture = ResourceDescriptorHeap[materialStandard.albedoIndex];
+    float4 albedoTextureCol = SampleColor(albedoTexture, materialStandard.samplerState, input_.texcoord);
+    float3 baseColor = materialStandard.baseColor.rgb * albedoTextureCol.rgb;
     
     float3 dirLightDir = normalize(float3(0.0f,-0.5f,0.25f));
     float3 normal = normalize(input_.normal);

@@ -36,7 +36,7 @@ namespace Material
     static_assert
     (
         sizeof(MaterialContainerIndicesCPUGPU) == sizeof(UINT) * kNumParamExists,
-        "MaterialContainerIndicesCPUGPUのデータサイズがおかしい"
+        "MaterialContainerIndicesCPUGPU is incomplete"
     );
 
     struct MaterialArrBufferSrvIndexGroupCPUGPU
@@ -48,7 +48,7 @@ namespace Material
     static_assert
     (
         sizeof(MaterialArrBufferSrvIndexGroupCPUGPU) == sizeof(SRVHeapIndex) * kNumParamExists,
-        "MaterialArrBufferSrvIndexGroupCPUGPUのデータサイズがおかしい"
+        "MaterialArrBufferSrvIndexGroupCPUGPU is incomplete"
     );
 
 	struct GridLineCPUGPU

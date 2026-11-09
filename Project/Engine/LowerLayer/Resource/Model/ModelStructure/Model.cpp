@@ -12,7 +12,7 @@ Model::Model
 (
 	Type type_,
 	const ModelDescription& modelDesc_,
-	std::vector<StructuredBufferModelData::MaterialGPU> const& materials_
+	std::vector<Material::StandardGPU> const& materials_
 ) :modelDesc(modelDesc_), type(type_)
 {
 	//変更可能描画コンポーネントの初期設定は添え字0番に

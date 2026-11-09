@@ -1,6 +1,7 @@
 #pragma once
 #include "ShaderPathComponent.h"
 #include "../../../RenderPassComponent.h"
+#include "../../../../../Assets/Shared/Material.h"
 
 ///MeshType X Pass = MeshShader
 ///MaterialType X Pass = PixelShader
