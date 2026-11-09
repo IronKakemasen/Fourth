@@ -28,7 +28,7 @@ private:
 	std::vector<GPUBufferBehavior*> shaderParamArrBufferCache;
 
 	//ちょいと雑だが、呼び出しシーケンスチェックのため
-	Material::Type shaderParamSequence = Material::Type::kGridLine;
+	Material::Type shaderParamSequence = Material::Type(0);
 
 	//描画対象固有のシェーダーパラメータ配列のバッファをサイズ分作成
 	template<Material::Type type>

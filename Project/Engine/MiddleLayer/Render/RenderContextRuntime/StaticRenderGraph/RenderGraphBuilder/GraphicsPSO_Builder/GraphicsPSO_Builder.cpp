@@ -402,7 +402,7 @@ void RenderContext::StaticRenderGraph::PSO_Builder::InputPassOnlyInfo
 	//PSO_Keyのコンポーネントを入力
 	//shaderPathComponentはどちらもoffscreen専用
 	offscreenPassPsoDesc.second.mesh = MeshType::kOffscreen;
-	offscreenPassPsoDesc.second.material = MaterialType::kOffscreen;
+	offscreenPassPsoDesc.second.material = Material::Type::kOffscreen;
 	offscreenPassPsoDesc.second.cull = CullMode::kBack;
 	///ここは悪影響が出るか分からんが、実際の各レンダーターゲットのブレンドモードの値は、
 	///入力しているので恐らく問題ない。あくまでPSO_Keyのため

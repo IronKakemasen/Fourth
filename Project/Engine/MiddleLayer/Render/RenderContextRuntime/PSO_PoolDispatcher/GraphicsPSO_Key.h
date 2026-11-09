@@ -1,10 +1,10 @@
 #pragma once
-#include "../../../../LowerLayer/RenderPassComponent.h"
-#include "../../../../LowerLayer/RenderStateComponent.h"
 
 //外部
+#include "../../../../LowerLayer/RenderPassComponent.h"
+#include "../../../../LowerLayer/RenderStateComponent.h"
 #include "../../../../LowerLayer/Resource/Shader/ShaderPathComponent/ShaderPathComponent.h"
-
+#include "../../../../../Assets/Shared/Material.h"
 
 struct GraphicsPSO_Key
 {
@@ -29,7 +29,7 @@ private:
     {
         if      constexpr (sequence == kPass)         return RenderPassComponent::Pass{};
         else if constexpr (sequence == kMeshType)     return ShaderPathComponent::MeshType{};
-        else if constexpr (sequence == kMaterialType) return ShaderPathComponent::MaterialType{};
+        else if constexpr (sequence == kMaterialType) return Material::Type{};
         else if constexpr (sequence == kBlendMode)    return RenderStateComponent::BlendMode{};
         else if constexpr (sequence == KFillMode)     return RenderStateComponent::FillMode{};
         else if constexpr (sequence == kCullMode)     return RenderStateComponent::CullMode{};
@@ -46,7 +46,7 @@ public:
     (
         RenderPassComponent::Pass pass_,
         ShaderPathComponent::MeshType mesh_,
-        ShaderPathComponent::MaterialType material_,
+        Material::Type material_,
         RenderStateComponent::BlendMode blend_,
         RenderStateComponent::FillMode fill_,
         RenderStateComponent::CullMode cull_
@@ -57,7 +57,7 @@ public:
 
     RenderPassComponent::Pass pass = RenderPassComponent::Pass(kInvalid);
     ShaderPathComponent::MeshType mesh = ShaderPathComponent::MeshType(kInvalid);
-    ShaderPathComponent::MaterialType material = ShaderPathComponent::MaterialType(kInvalid);
+    Material::Type material = Material::Type(kInvalid);
     ///超重要。このPSOキーにおけるblendModeはつまるところkDependsModelかそれ以外の２パターン存在する
     ///kDependsModelを選択した場合、モデルのblendModeがそのパスにある
     ///kDependsModelを選択しているカラーバッファに影響する

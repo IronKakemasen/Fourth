@@ -19,7 +19,7 @@ class Model
 		//現在選択しているブレンドモード
 		RenderStateComponent::BlendMode blendMode{};
 		//現在選択しているマテリアルタイプ
-		ShaderPathComponent::MaterialType materialType{};
+		Material::Type materialType{};
 		//マテリアル。可変長になっているのは、サブメッシュ分用意しているから
 		std::vector<StructuredBufferModelData::MaterialGPU> materials;
 		std::vector<UINT> areMaterialsDirtyCnt;
@@ -53,7 +53,7 @@ public:
 
 	//上位レイヤーでモデルのパラメーターを弄るときに
 	void ChangeBlendMode(RenderStateComponent::BlendMode dst_);
-	void ChangeMaterialType(ShaderPathComponent::MaterialType dst_);
+	void ChangeMaterialType(Material::Type dst_);
 	void ChangeRoughness(size_t index_, float dst_);
 	void ChangeMetallic(size_t index_, float dst_);
 	void ChangeColor(size_t index_ , Vector4<float> const& dst_);
@@ -72,7 +72,7 @@ private:
 	bool DoesDraw
 	(
 		RenderStateComponent::BlendMode blendMode_,
-		ShaderPathComponent::MaterialType materialType_
+		Material::Type materialType_
 	)const
 	{
 		return

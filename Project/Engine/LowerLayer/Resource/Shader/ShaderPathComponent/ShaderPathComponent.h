@@ -15,19 +15,4 @@ namespace ShaderPathComponent
 
 	};
 
-	enum class MaterialType
-	{
-		//RenderPass専用！！
-		kOffscreen,
-		//ピクセルシェーダーを通さないケースはあるので
-		kNone,
-		//グリッドライン
-		kGridLine,
-
-		kStandard
-
-		,kCount
-
-	};
-
 };

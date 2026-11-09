@@ -61,7 +61,7 @@ void Model::ChangeBlendMode(RenderStateComponent::BlendMode dst_)
 
 }
 
-void Model::ChangeMaterialType(ShaderPathComponent::MaterialType dst_)
+void Model::ChangeMaterialType(Material::Type dst_)
 {
 	bool hasConfigured{};
 	//そもそもこのコンポーネントパターンを構築しているか

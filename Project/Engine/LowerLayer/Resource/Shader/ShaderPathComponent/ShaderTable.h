@@ -40,7 +40,7 @@ namespace ShaderTable
 		return meshShader;
 	}
 
-	inline std::optional<std::string> const GetPixelShader(RenderPassComponent::Pass pass_, ShaderPathComponent::MaterialType materialType_)
+	inline std::optional<std::string> const GetPixelShader(RenderPassComponent::Pass pass_, Material::Type materialType_)
 	{
 		std::optional<std::string> pixelShader;
 
@@ -48,8 +48,8 @@ namespace ShaderTable
 		{
 		case RenderPassComponent::Pass::kSceneOpaque:
 
-			if (materialType_ == ShaderPathComponent::MaterialType::kStandard)pixelShader = "StandardPS";
-			else if (materialType_ == ShaderPathComponent::MaterialType::kGridLine) pixelShader = "FilteredGridPS";
+			if (materialType_ == Material::Type::kStandard)pixelShader = "StandardPS";
+			else if (materialType_ == Material::Type::kGridLine) pixelShader = "FilteredGridPS";
 
 			break;
 
