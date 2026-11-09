@@ -185,7 +185,7 @@ void RenderContext::PassBehavior::RenderOffScreen
 	psoKey.fill = FillMode::kSolid;
 	psoKey.cull = CullMode::kBack;
 	psoKey.mesh = MeshType::kOffscreen;
-	psoKey.material = MaterialType::kOffscreen;
+	psoKey.material = Material::Type::kOffscreen;
 	psoKey.blend = BlendMode::kDependsRenderPass;
 
 	auto* srcPso = psoDispatcher_.AccessGraphicsPSO(psoKey);

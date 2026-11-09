@@ -5,14 +5,6 @@
 
 void GridFloor::Update(SceneRuntimeInterface& sceneRuntimeInterface_)
 {
-	static Vector3 s;
-
-	//for (int i = 0;i < 1;++i)
-	//{
-	//	p[i]->RefTransform(0).Rotate(s);
-	//}
-
-	//s.data.y+= 0.016666f;
 
 }
 
@@ -33,7 +25,7 @@ void GridFloor::Awake(SceneInitInterface& sceneInitInterface_)
 	cP.pass = Pass::kSceneOpaque;	
 	cP.cullMode = CullMode::kBack;
 	cP.meshType = MeshType::kStatic;
-	cP.materialTypes.emplace_back(MaterialType::kStandard);
+	cP.materialTypes.emplace_back(Material::Type::kStandard);
 	std::vector<RenderState> playerC;
 	playerC.emplace_back(std::move(cP));
 

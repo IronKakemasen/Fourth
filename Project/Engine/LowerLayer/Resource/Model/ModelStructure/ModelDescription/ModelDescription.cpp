@@ -57,8 +57,8 @@ ModelDescription::ModelDescription
 		{
 			if
 			(
-				material == ShaderPathComponent::MaterialType::kOffscreen ||
-				(UINT)material >= (UINT)ShaderPathComponent::MaterialType::kCount
+				material == Material::Type::kOffscreen ||
+				(UINT)material >= (UINT)Material::Type::kCount
 			)
 			{
 				errorMsg += "「そのMaterialTypeは選択不可(最低限処置)」";

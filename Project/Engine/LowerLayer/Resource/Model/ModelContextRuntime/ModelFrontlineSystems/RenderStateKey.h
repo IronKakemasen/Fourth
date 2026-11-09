@@ -1,6 +1,7 @@
 #pragma once
 #include "../../../../RenderPassComponent.h"
 #include "../../../../Resource/Shader/ShaderPathComponent/ShaderPathComponent.h"
+#include "../../../../../../Assets/Shared/Material.h"
 #include "../../../../RenderStateComponent.h"
 
 struct RenderStateKey
@@ -24,7 +25,7 @@ private:
     {
         if      constexpr (sequence == kPass)         return RenderPassComponent::Pass{};
         else if constexpr (sequence == kMeshType)     return ShaderPathComponent::MeshType{};
-        else if constexpr (sequence == kMaterialType) return ShaderPathComponent::MaterialType{};
+        else if constexpr (sequence == kMaterialType) return Material::Type{};
         else if constexpr (sequence == kBlendMode)    return RenderStateComponent::BlendMode{};
         else if constexpr (sequence == kCullMode)     return RenderStateComponent::CullMode{};
     }
@@ -33,7 +34,7 @@ private:
     RenderStateComponent::BlendMode blend = RenderStateComponent::BlendMode(kInvalid);
     RenderStateComponent::CullMode cull = RenderStateComponent::CullMode(kInvalid);
     ShaderPathComponent::MeshType mesh = ShaderPathComponent::MeshType(kInvalid);
-    ShaderPathComponent::MaterialType material = ShaderPathComponent::MaterialType(kInvalid);
+    Material::Type material = Material::Type(kInvalid);
 
 public:
 
@@ -48,7 +49,7 @@ public:
         RenderStateComponent::BlendMode blend_,
         RenderStateComponent::CullMode cull_,
         ShaderPathComponent::MeshType mesh_,
-        ShaderPathComponent::MaterialType material_
+        Material::Type material_
     ) :pass(pass_), mesh(mesh_), material(material_), blend(blend_), cull(cull_)
     {
 

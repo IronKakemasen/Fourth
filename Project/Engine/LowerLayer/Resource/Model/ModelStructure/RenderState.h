@@ -2,7 +2,7 @@
 #include "../../../RenderPassComponent.h"
 #include "../../../Resource/Shader/ShaderPathComponent/ShaderPathComponent.h"
 #include "../../../RenderStateComponent.h"
-
+#include "../../../../../Assets/Shared/Material.h"
 
 //モデルクラスのコンストラクタで設置可能
 struct RenderState
@@ -18,7 +18,7 @@ struct RenderState
 	//頂点処理方法
 	ShaderPathComponent::MeshType meshType = ShaderPathComponent::MeshType::kStatic;
 	//メッシュ描画方法も複数可
-	std::vector<ShaderPathComponent::MaterialType> materialTypes;
+	std::vector<Material::Type> materialTypes;
 
 	//デバッグ用
 	std::string modelName;

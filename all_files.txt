@@ -10641,8 +10641,9 @@ MaterialContext::MaterialBufferCreator::MaterialBufferCreator
 	BufferContextDiplomat& bufferContextDiplomat_
 )
 {
-	shaderParamArrBufferCache.reserve((UINT)Material::Type::kCount);
+	shaderParamArrBufferCache.reserve((UINT)Material::kNumParamExists);
 	//Material配列のバッファを作成
+	CreateShaderParamsBuffer<Material::Type::kStandard>(materialIndexDispatcher_, bufferContextDiplomat_);
 	CreateShaderParamsBuffer<Material::Type::kGridLine>(materialIndexDispatcher_, bufferContextDiplomat_);
 	//作成したシェーダーパラメーター配列のsrvHeapIndexをキャッシュに登録してあるので、
 	//それをもとにシェーダーパラメーター配列のsrvHeapIndex群のバッファを作成。
@@ -10679,11 +10680,11 @@ void MaterialContext::MaterialBufferCreator::WriteShaderParamArrSrvIndex(GPUBuff
 	//書き込みさきバッファ
 	auto* dstWriteBuf = static_cast<UploadStructuredBuffer*>(shaderParamArrSrvIndexGroupBuffer_);
 	//詰め込み先データ両面分
-	Material::ShaderParamArrSrvIndexGroupCPUGPU dataFrame0;
-	Material::ShaderParamArrSrvIndexGroupCPUGPU dataFrame1;
-	auto* dataFirstPtr0 = reinterpret_cast<SRVHeapIndex*>(&dataFrame0.gridLineSrv);
-	auto* dataFirstPtr1 = reinterpret_cast<SRVHeapIndex*>(&dataFrame1.gridLineSrv);
-	for (UINT n = 0; n < (UINT)Material::Type::kCount; ++n)
+	Material::MaterialArrSrvIndexGroupCPUGPU dataFrame0;
+	Material::MaterialArrSrvIndexGroupCPUGPU dataFrame1;
+	auto* dataFirstPtr0 = reinterpret_cast<SRVHeapIndex*>(&dataFrame0.standardSrv);
+	auto* dataFirstPtr1 = reinterpret_cast<SRVHeapIndex*>(&dataFrame1.standardSrv);
+	for (UINT n = 0; n < (UINT)Material::kNumParamExists; ++n)
 	{
 		//srvHeapIndexを抽出ため
 		IReadable* readableBuffer =
@@ -10692,13 +10693,13 @@ void MaterialContext::MaterialBufferCreator::WriteShaderParamArrSrvIndex(GPUBuff
 		*(dataFirstPtr0 + n) = readableBuffer->OutProperSRVHeapIndex(0);
 		*(dataFirstPtr1 + n) = readableBuffer->OutProperSRVHeapIndex(1);
 	}
-	dstWriteBuf->WriteInBoth<Material::ShaderParamArrSrvIndexGroupCPUGPU>
-		(
-			{
-				dataFrame0,
-				dataFrame1
-			}
-		);
+	dstWriteBuf->WriteInBoth<Material::MaterialArrSrvIndexGroupCPUGPU>
+	(
+		{
+			dataFrame0,
+			dataFrame1
+		}
+	);
 }
 GPUBufferBehavior* MaterialContext::MaterialBufferCreator::CreateShaderParamArrSrvIndexGroupBuffer
 (
@@ -10708,7 +10709,7 @@ GPUBufferBehavior* MaterialContext::MaterialBufferCreator::CreateShaderParamArrS
 {
 	ErrorMessageOutput::Assert::DetectError
 	(
-		shaderParamSequence == Material::Type::kCount,
+		(UINT)shaderParamSequence == Material::kNumParamExists,
 		"ShaderParamArrバッファの作成数が足りない",
 		fileName
 	);
@@ -10720,7 +10721,7 @@ GPUBufferBehavior* MaterialContext::MaterialBufferCreator::CreateShaderParamArrS
 	//その保管先も2面分ということでUploadStructuredBufferでいく
 	UploadStructuredBufferDescription desc
 	(
-		(UINT)sizeof(Material::ShaderParamArrSrvIndexGroupCPUGPU),
+		(UINT)sizeof(Material::MaterialArrSrvIndexGroupCPUGPU),
 		1,
 		0
 	);
@@ -10760,6 +10761,12 @@ void MaterialContext::MaterialBufferCreator::CreateShaderParamsBuffer
 	shaderParamArrBufferCache.emplace_back(id_buffer.second);
 }
 template
+void MaterialContext::MaterialBufferCreator::CreateShaderParamsBuffer<Material::Type::kStandard>
+(
+	MaterialIndexDispatcher& materialIndexDispatcher_,
+	BufferContextDiplomat& bufferContextDiplomat_
+);
+template
 void MaterialContext::MaterialBufferCreator::CreateShaderParamsBuffer<Material::Type::kGridLine>
 (
 	MaterialIndexDispatcher& materialIndexDispatcher_,
@@ -10790,7 +10797,7 @@ private:
 	//shaderParamArrバッファのキャッシュ
 	std::vector<GPUBufferBehavior*> shaderParamArrBufferCache;
 	//ちょいと雑だが、呼び出しシーケンスチェックのため
-	Material::Type shaderParamSequence = Material::Type::kGridLine;
+	Material::Type shaderParamSequence = Material::Type(0);
 	//描画対象固有のシェーダーパラメータ配列のバッファをサイズ分作成
 	template<Material::Type type>
 	void CreateShaderParamsBuffer
@@ -13392,6 +13399,7 @@ private:
 #pragma once
 #include "../../../../RenderPassComponent.h"
 #include "../../../../Resource/Shader/ShaderPathComponent/ShaderPathComponent.h"
+#include "../../../../../../Assets/Shared/Material.h"
 #include "../../../../RenderStateComponent.h"
 struct RenderStateKey
 {
@@ -13411,7 +13419,7 @@ private:
     {
         if      constexpr (sequence == kPass)         return RenderPassComponent::Pass{};
         else if constexpr (sequence == kMeshType)     return ShaderPathComponent::MeshType{};
-        else if constexpr (sequence == kMaterialType) return ShaderPathComponent::MaterialType{};
+        else if constexpr (sequence == kMaterialType) return Material::Type{};
         else if constexpr (sequence == kBlendMode)    return RenderStateComponent::BlendMode{};
         else if constexpr (sequence == kCullMode)     return RenderStateComponent::CullMode{};
     }
@@ -13419,7 +13427,7 @@ private:
     RenderStateComponent::BlendMode blend = RenderStateComponent::BlendMode(kInvalid);
     RenderStateComponent::CullMode cull = RenderStateComponent::CullMode(kInvalid);
     ShaderPathComponent::MeshType mesh = ShaderPathComponent::MeshType(kInvalid);
-    ShaderPathComponent::MaterialType material = ShaderPathComponent::MaterialType(kInvalid);
+    Material::Type material = Material::Type(kInvalid);
 public:
     template <Sequence sequence>
     using SequenceToType = decltype(sequenceToType<sequence>());
@@ -13430,7 +13438,7 @@ public:
         RenderStateComponent::BlendMode blend_,
         RenderStateComponent::CullMode cull_,
         ShaderPathComponent::MeshType mesh_,
-        ShaderPathComponent::MaterialType material_
+        Material::Type material_
     ) :pass(pass_), mesh(mesh_), material(material_), blend(blend_), cull(cull_)
     {
     }
@@ -13724,7 +13732,7 @@ void Model::ChangeBlendMode(RenderStateComponent::BlendMode dst_)
 	);
 	changeableParams.blendMode = dst_;
 }
-void Model::ChangeMaterialType(ShaderPathComponent::MaterialType dst_)
+void Model::ChangeMaterialType(Material::Type dst_)
 {
 	bool hasConfigured{};
 	//そもそもこのコンポーネントパターンを構築しているか
@@ -13860,7 +13868,7 @@ class Model
 		//現在選択しているブレンドモード
 		RenderStateComponent::BlendMode blendMode{};
 		//現在選択しているマテリアルタイプ
-		ShaderPathComponent::MaterialType materialType{};
+		Material::Type materialType{};
 		//マテリアル。可変長になっているのは、サブメッシュ分用意しているから
 		std::vector<StructuredBufferModelData::MaterialGPU> materials;
 		std::vector<UINT> areMaterialsDirtyCnt;
@@ -13888,7 +13896,7 @@ public:
 	Model& operator=(Model&&) = delete;
 	//上位レイヤーでモデルのパラメーターを弄るときに
 	void ChangeBlendMode(RenderStateComponent::BlendMode dst_);
-	void ChangeMaterialType(ShaderPathComponent::MaterialType dst_);
+	void ChangeMaterialType(Material::Type dst_);
 	void ChangeRoughness(size_t index_, float dst_);
 	void ChangeMetallic(size_t index_, float dst_);
 	void ChangeColor(size_t index_ , Vector4<float> const& dst_);
@@ -13904,7 +13912,7 @@ private:
 	bool DoesDraw
 	(
 		RenderStateComponent::BlendMode blendMode_,
-		ShaderPathComponent::MaterialType materialType_
+		Material::Type materialType_
 	)const
 	{
 		return
@@ -13956,6 +13964,7 @@ private:
 #include "../../../RenderPassComponent.h"
 #include "../../../Resource/Shader/ShaderPathComponent/ShaderPathComponent.h"
 #include "../../../RenderStateComponent.h"
+#include "../../../../../Assets/Shared/Material.h"
 //モデルクラスのコンストラクタで設置可能
 struct RenderState
 {
@@ -13969,7 +13978,7 @@ struct RenderState
 	//頂点処理方法
 	ShaderPathComponent::MeshType meshType = ShaderPathComponent::MeshType::kStatic;
 	//メッシュ描画方法も複数可
-	std::vector<ShaderPathComponent::MaterialType> materialTypes;
+	std::vector<Material::Type> materialTypes;
 	//デバッグ用
 	std::string modelName;
 };
@@ -14082,8 +14091,8 @@ ModelDescription::ModelDescription
 		{
 			if
 			(
-				material == ShaderPathComponent::MaterialType::kOffscreen ||
-				(UINT)material >= (UINT)ShaderPathComponent::MaterialType::kCount
+				material == Material::Type::kOffscreen ||
+				(UINT)material >= (UINT)Material::Type::kCount
 			)
 			{
 				errorMsg += "「そのMaterialTypeは選択不可(最低限処置)」";
@@ -16473,17 +16482,6 @@ namespace ShaderPathComponent
 		kStatic
 		,kCount
 	};
-	enum class MaterialType
-	{
-		//RenderPass専用！！
-		kOffscreen,
-		//ピクセルシェーダーを通さないケースはあるので
-		kNone,
-		//グリッドライン
-		kGridLine,
-		kStandard
-		,kCount
-	};
 };
 
 ========================================
@@ -16520,14 +16518,14 @@ namespace ShaderTable
 		);
 		return meshShader;
 	}
-	inline std::optional<std::string> const GetPixelShader(RenderPassComponent::Pass pass_, ShaderPathComponent::MaterialType materialType_)
+	inline std::optional<std::string> const GetPixelShader(RenderPassComponent::Pass pass_, Material::Type materialType_)
 	{
 		std::optional<std::string> pixelShader;
 		switch (pass_)
 		{
 		case RenderPassComponent::Pass::kSceneOpaque:
-			if (materialType_ == ShaderPathComponent::MaterialType::kStandard)pixelShader = "StandardPS";
-			else if (materialType_ == ShaderPathComponent::MaterialType::kGridLine) pixelShader = "FilteredGridPS";
+			if (materialType_ == Material::Type::kStandard)pixelShader = "StandardPS";
+			else if (materialType_ == Material::Type::kGridLine) pixelShader = "FilteredGridPS";
 			break;
 		default:
 			ErrorMessageOutput::Assert::OutputError
@@ -18039,12 +18037,6 @@ public:
 #include "GameObjectSpecification.h"
 void GridFloor::Update(SceneRuntimeInterface& sceneRuntimeInterface_)
 {
-	static Vector3 s;
-	//for (int i = 0;i < 1;++i)
-	//{
-	//	p[i]->RefTransform(0).Rotate(s);
-	//}
-	//s.data.y+= 0.016666f;
 }
 //ゲームオブジェクトのリセットに使用。シーンが切り替わった時に呼ばれる
 void GridFloor::Reset()
@@ -18060,7 +18052,7 @@ void GridFloor::Awake(SceneInitInterface& sceneInitInterface_)
 	cP.pass = Pass::kSceneOpaque;	
 	cP.cullMode = CullMode::kBack;
 	cP.meshType = MeshType::kStatic;
-	cP.materialTypes.emplace_back(MaterialType::kStandard);
+	cP.materialTypes.emplace_back(Material::Type::kStandard);
 	std::vector<RenderState> playerC;
 	playerC.emplace_back(std::move(cP));
 	std::vector<MaterialCPU> materials;
@@ -18938,10 +18930,11 @@ private:
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\MiddleLayer\Render\RenderContextRuntime\PSO_PoolDispatcher\GraphicsPSO_Key.h ===
 ========================================
 #pragma once
+//外部
 #include "../../../../LowerLayer/RenderPassComponent.h"
 #include "../../../../LowerLayer/RenderStateComponent.h"
-//外部
 #include "../../../../LowerLayer/Resource/Shader/ShaderPathComponent/ShaderPathComponent.h"
+#include "../../../../../Assets/Shared/Material.h"
 struct GraphicsPSO_Key
 {
     ///シーケンス
@@ -18961,7 +18954,7 @@ private:
     {
         if      constexpr (sequence == kPass)         return RenderPassComponent::Pass{};
         else if constexpr (sequence == kMeshType)     return ShaderPathComponent::MeshType{};
-        else if constexpr (sequence == kMaterialType) return ShaderPathComponent::MaterialType{};
+        else if constexpr (sequence == kMaterialType) return Material::Type{};
         else if constexpr (sequence == kBlendMode)    return RenderStateComponent::BlendMode{};
         else if constexpr (sequence == KFillMode)     return RenderStateComponent::FillMode{};
         else if constexpr (sequence == kCullMode)     return RenderStateComponent::CullMode{};
@@ -18974,7 +18967,7 @@ public:
     (
         RenderPassComponent::Pass pass_,
         ShaderPathComponent::MeshType mesh_,
-        ShaderPathComponent::MaterialType material_,
+        Material::Type material_,
         RenderStateComponent::BlendMode blend_,
         RenderStateComponent::FillMode fill_,
         RenderStateComponent::CullMode cull_
@@ -18983,7 +18976,7 @@ public:
     }
     RenderPassComponent::Pass pass = RenderPassComponent::Pass(kInvalid);
     ShaderPathComponent::MeshType mesh = ShaderPathComponent::MeshType(kInvalid);
-    ShaderPathComponent::MaterialType material = ShaderPathComponent::MaterialType(kInvalid);
+    Material::Type material = Material::Type(kInvalid);
     ///超重要。このPSOキーにおけるblendModeはつまるところkDependsModelかそれ以外の２パターン存在する
     ///kDependsModelを選択した場合、モデルのblendModeがそのパスにある
     ///kDependsModelを選択しているカラーバッファに影響する
@@ -19755,7 +19748,7 @@ void RenderContext::StaticRenderGraph::PSO_Builder::InputPassOnlyInfo
 	//PSO_Keyのコンポーネントを入力
 	//shaderPathComponentはどちらもoffscreen専用
 	offscreenPassPsoDesc.second.mesh = MeshType::kOffscreen;
-	offscreenPassPsoDesc.second.material = MaterialType::kOffscreen;
+	offscreenPassPsoDesc.second.material = Material::Type::kOffscreen;
 	offscreenPassPsoDesc.second.cull = CullMode::kBack;
 	///ここは悪影響が出るか分からんが、実際の各レンダーターゲットのブレンドモードの値は、
 	///入力しているので恐らく問題ない。あくまでPSO_Keyのため
@@ -20851,7 +20844,7 @@ void RenderContext::PassBehavior::RenderOffScreen
 	psoKey.fill = FillMode::kSolid;
 	psoKey.cull = CullMode::kBack;
 	psoKey.mesh = MeshType::kOffscreen;
-	psoKey.material = MaterialType::kOffscreen;
+	psoKey.material = Material::Type::kOffscreen;
 	psoKey.blend = BlendMode::kDependsRenderPass;
 	auto* srcPso = psoDispatcher_.AccessGraphicsPSO(psoKey);
 	cmdWrapper_.SetPipelineState(srcPso);
@@ -25138,4 +25131,4 @@ namespace StringProcessing
 === SUMMARY ===
 ========================================
 Total Files      : 561
-Effective Lines  : 18313
+Effective Lines  : 18311
