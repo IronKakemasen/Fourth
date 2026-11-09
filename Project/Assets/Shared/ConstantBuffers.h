@@ -23,7 +23,7 @@ namespace ConstantBuffers
 		kPerDrawIndices = ConstantBufferBindSlots::kCount,
 		kPassConstants,
 		kFinalColorBufferSrv,
-		kShaderParamIndex
+		kShaderParamIndicesContainerIndex
 
 		,kCount
 	};
@@ -106,7 +106,7 @@ cbuffer CameraContainerIndexCB : register(b5)
 
 cbuffer ShaderParamArrSrvIndicesIndexCB : register(b6)
 {
-	uint ShaderParamArrSrvIndicesIndex;
+	uint gShaderParamArrSrvIndicesIndex;
 }
 
 
@@ -126,9 +126,9 @@ cbuffer FinalColorBufferSrvCB : register(b9)
 	uint gFinalColorBufferSrv;
 }
 
-cbuffer ShaderParamIndexCB : register(b10)
+cbuffer ShaderParamIndicesContainerIndexCB : register(b10)
 {
-	uint gShaderParamIndex;
+	uint gShaderParamIndicesContainerIndex;
 }
 
 

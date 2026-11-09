@@ -15,10 +15,27 @@ namespace ShaderParam
         kCount
     };
 
+    struct ShaderParamContinerIndicesCPUGPU
+    {
+        UINT gridLineIndex = kInvalid;
+
+    };
+    static_assert
+    (
+        sizeof(ShaderParamContinerIndicesCPUGPU) == sizeof(UINT) * size_t(Type::kCount),
+        "ShaderParamContinerIndicesCPUGPUのデータサイズがおかしい"
+    );
+
     struct ShaderParamArrSrvIndexGroupCPUGPU
     {
         SRVHeapIndex gridLineSrv = kInvalid;
     };
+
+    static_assert
+    (
+        sizeof(ShaderParamArrSrvIndexGroupCPUGPU) == sizeof(SRVHeapIndex) * size_t(Type::kCount),
+        "ShaderParamArrSrvIndexGroupCPUGPUのデータサイズがおかしい"
+    );
 
 	struct GridLineCPUGPU
 	{
@@ -45,7 +62,12 @@ struct GridLine
     float gridRatio;
 };
 
-struct ShaderParamSrvIndexGrou
+struct ShaderParamContainerIndices
+{
+    uint gridLineIndex;
+};
+
+struct ShaderParamArrSrvIndexGroup
 {
     uint gridLineSrv;
 };
