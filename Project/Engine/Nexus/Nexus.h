@@ -19,6 +19,7 @@ class CameraContext;
 class DebugContext;
 class SceneContext;
 class GameObjectContext;
+class MaterialContext;
 
 
 //交易場
@@ -70,6 +71,7 @@ private:
 		kPSO_Context,
 		kRootSignatureContext,
 		kTextureContext,
+		kMaterialContext,
 		kModelContext,
 		kGameObjectContext,
 		kCameraContext,
@@ -123,6 +125,8 @@ private:
 	std::unique_ptr<RenderContext> renderContext;
 	//ゲームオブジェクトの生成、管理
 	std::unique_ptr<GameObjectContext> gameObjectContext;
+	//マテリアルバッファの作成、ディスパッチ
+	std::unique_ptr<MaterialContext> materialContext;
 	//モデルクラスの生成、管理
 	std::unique_ptr<ModelContext> modelContext;
 	//テクスチャファイルの読み込み、データ保持

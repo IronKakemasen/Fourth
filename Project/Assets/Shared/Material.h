@@ -4,16 +4,20 @@
 
 #include "../../Engine/Math/Vector/Vector4.h"
 
-namespace ShaderParam
+namespace Material
 {
     enum class Type
     {
+        //kStandard,
         kGridLine,
 
 
 
         kCount
     };
+
+    template<Material::Type>
+    struct MaterialTypeTraits;
 
     struct ShaderParamContinerIndicesCPUGPU
     {
@@ -45,12 +49,16 @@ namespace ShaderParam
         float gridRatio = 1.0f;
 	};
 
-
-    using ParamUniques = std::tuple
-    <
-        std::unique_ptr<GridLineCPUGPU>
-    >;
 }
+
+template<>
+struct Material::MaterialTypeTraits<Material::Type::kGridLine>
+{
+    static constexpr UINT kReserveSize = 10;
+    static inline const std::string kName = "GridLine";
+    using dataType = Material::GridLineCPUGPU;
+};
+
 
 #else
 

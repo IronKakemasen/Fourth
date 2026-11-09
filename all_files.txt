@@ -676,7 +676,7 @@ class ModelContext;
 class TextureContext;
 class RenderContext;
 class CameraContext;
-class ShaderContext;
+class MaterialContext;
 struct BufferContext::CmdProvider::UsesCBufferCreatorLicence
 {
 private:
@@ -684,7 +684,7 @@ private:
 	friend class TextureContext;
 	friend class RenderContext;
 	friend class CameraContext;
-	friend class ShaderContext;
+	friend class MaterialContext;
 	explicit UsesCBufferCreatorLicence() = default;
 };
 
@@ -844,7 +844,7 @@ class ModelContext;
 class RenderContext;
 class TextureContext;
 class CameraContext;
-class ShaderContext;
+class MaterialContext;
 struct BufferContext::ToolLender::BasicBufferManagementLicence
 {
 private:
@@ -852,7 +852,7 @@ private:
 	friend class RenderContext;
 	friend class TextureContext;
 	friend class CameraContext;
-	friend class ShaderContext;
+	friend class MaterialContext;
 	explicit BasicBufferManagementLicence() = default;
 };
 struct BufferContext::ToolLender::UsesGlobalConstantBuffersLicence
@@ -10562,6 +10562,316 @@ public:
 };
 
 ========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Material\MaterialContext.cpp ===
+========================================
+#include "PreCompileHeader.h"
+#include "MaterialContext.h"
+#include "MaterialBufferCreator/MaterialBufferCreator.h"
+#include "MaterialIndexDispatcher/MaterialIndexDispatcher.h"
+namespace
+{
+	auto fileName = "MaterialContext.cpp";
+}
+MaterialContext::MaterialContext
+(
+	NexusFieldProof proof_,
+	BufferContextDiplomat& bufferContextDiplomat_
+) 
+{
+	Logger::Entry("MaterialContext: Constructor");
+	materialIndexDispatcher = std::make_unique<MaterialIndexDispatcher>(proof_);
+	Logger::Log("Instantiate: MaterialIndexDispatcher", fileName);
+	//マテリアル関連のバッファを作成
+	MaterialBufferCreator materialBufferCreator(proof_, *materialIndexDispatcher, bufferContextDiplomat_);
+	Logger::End("MaterialContext: Constructor");
+}	
+MaterialContext::~MaterialContext()
+{
+}
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Material\MaterialContext.h ===
+========================================
+#pragma once
+class Nexus;
+class BufferContextDiplomat;
+class MaterialContext
+{
+	//マテリアルに関するバッファを生成する
+	class MaterialBufferCreator;
+	//マテリアルのインデックスを割り当てる
+	class MaterialIndexDispatcher;
+public:
+	struct NexusFieldProof;
+	MaterialContext
+	(
+		NexusFieldProof proof_,
+		BufferContextDiplomat& bufferContextDiplomat_
+	);
+	~MaterialContext();
+private:
+	std::unique_ptr<MaterialIndexDispatcher> materialIndexDispatcher;
+};
+struct MaterialContext::NexusFieldProof
+{
+private:
+	friend class Nexus;
+	explicit NexusFieldProof() = default;
+};
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Material\MaterialBufferCreator\MaterialBufferCreator.cpp ===
+========================================
+#include "PreCompileHeader.h"
+#include "MaterialBufferCreator.h"
+#include "../MaterialIndexDispatcher/MaterialIndexDispatcher.h"
+//外部
+#include "../../../Buffer/BufferDefinition/BufferDescriptions/UploadStructuredBufferDescription/UploadStructuredBufferDescription.h"
+#include "../../../Buffer/BufferDefinition/AllBuffersInclude.h"
+#include "../../../Buffer/BufferContextToolsInclude.h"
+#include "../../../Buffer/BufferContextDiplomats.h"
+namespace
+{
+	auto const fileName = "MaterialBufferCreator.cpp";
+}
+MaterialContext::MaterialBufferCreator::MaterialBufferCreator
+(
+	NexusFieldProof proof_,
+	MaterialIndexDispatcher& materialIndexDispatcher_,
+	BufferContextDiplomat& bufferContextDiplomat_
+)
+{
+	shaderParamArrBufferCache.reserve((UINT)Material::Type::kCount);
+	//Material配列のバッファを作成
+	CreateShaderParamsBuffer<Material::Type::kGridLine>(materialIndexDispatcher_, bufferContextDiplomat_);
+	//作成したシェーダーパラメーター配列のsrvHeapIndexをキャッシュに登録してあるので、
+	//それをもとにシェーダーパラメーター配列のsrvHeapIndex群のバッファを作成。
+	//そのバッファのポインタを返す
+	auto* shaderParamArrSrvIndexGroupBuffer = CreateShaderParamArrSrvIndexGroupBuffer(materialIndexDispatcher_, bufferContextDiplomat_);
+	//ShaderParamArrSrvIndexGroupBufferの中身は不動なのでここでかきこんじゃう
+	WriteShaderParamArrSrvIndex(shaderParamArrSrvIndexGroupBuffer);
+	//そのsrvHeapIndexのグローバル定数バッファを作成
+	CreateShaderParamSrvIndexGroupCBuffer(shaderParamArrSrvIndexGroupBuffer, bufferContextDiplomat_);
+}
+void MaterialContext::MaterialBufferCreator::CreateShaderParamSrvIndexGroupCBuffer
+(
+	GPUBufferBehavior* shaderParamArrSrvIndexGroupBuffer_,
+	BufferContextDiplomat& bufferContextDiplomat_
+)
+{
+	//定数バッファ作成コマンドをもらう
+	BufferContext::CmdProvider::LicenceType<BufferContextCmds::CreateCBufferCmd> licence;
+	auto createCBufferCmd = bufferContextDiplomat_.Access<BufferContext::CmdProvider>()->
+		Provide<BufferContextCmds::CreateCBufferCmd>(licence);
+	//srvHeapIndexを抽出
+	IReadable* readableBuffer = static_cast<IReadable*>(static_cast<UploadStructuredBuffer*>(shaderParamArrSrvIndexGroupBuffer_));
+	//定数バッファ生成コマンドで生成する
+	auto cBufferID_cBuffer = createCBufferCmd("ShaderParamArrSrvIndexGroup", UINT(sizeof(SRVHeapIndex)), (UINT)ConstantBuffers::ConstantBufferBindSlots::kShaderParamArrSrvIndices);
+	//その定数バッファのマップしたポインタにデータを書き込む
+	//中身は不動なので、２面分書いちゃう
+	cBufferID_cBuffer.second->WriteInBoth<SRVHeapIndex>
+		(
+			{ readableBuffer->OutProperSRVHeapIndex(0) ,readableBuffer->OutProperSRVHeapIndex(1) }
+		);
+}
+void MaterialContext::MaterialBufferCreator::WriteShaderParamArrSrvIndex(GPUBufferBehavior* shaderParamArrSrvIndexGroupBuffer_)
+{
+	//書き込みさきバッファ
+	auto* dstWriteBuf = static_cast<UploadStructuredBuffer*>(shaderParamArrSrvIndexGroupBuffer_);
+	//詰め込み先データ両面分
+	Material::ShaderParamArrSrvIndexGroupCPUGPU dataFrame0;
+	Material::ShaderParamArrSrvIndexGroupCPUGPU dataFrame1;
+	auto* dataFirstPtr0 = reinterpret_cast<SRVHeapIndex*>(&dataFrame0.gridLineSrv);
+	auto* dataFirstPtr1 = reinterpret_cast<SRVHeapIndex*>(&dataFrame1.gridLineSrv);
+	for (UINT n = 0; n < (UINT)Material::Type::kCount; ++n)
+	{
+		//srvHeapIndexを抽出ため
+		IReadable* readableBuffer =
+			static_cast<IReadable*>(static_cast<UploadStructuredBuffer*>(shaderParamArrBufferCache[n]));
+		//表裏２面分書き込む
+		*(dataFirstPtr0 + n) = readableBuffer->OutProperSRVHeapIndex(0);
+		*(dataFirstPtr1 + n) = readableBuffer->OutProperSRVHeapIndex(1);
+	}
+	dstWriteBuf->WriteInBoth<Material::ShaderParamArrSrvIndexGroupCPUGPU>
+		(
+			{
+				dataFrame0,
+				dataFrame1
+			}
+		);
+}
+GPUBufferBehavior* MaterialContext::MaterialBufferCreator::CreateShaderParamArrSrvIndexGroupBuffer
+(
+	MaterialIndexDispatcher& materialIndexDispatcher_,
+	BufferContextDiplomat& bufferContextDiplomat_
+)
+{
+	ErrorMessageOutput::Assert::DetectError
+	(
+		shaderParamSequence == Material::Type::kCount,
+		"ShaderParamArrバッファの作成数が足りない",
+		fileName
+	);
+	//BufferCreatorを借りる
+	auto bufferToolLender = bufferContextDiplomat_.Access<BufferContext::ToolLender>();
+	BufferContext::ToolLender::LicenceType<BufferContext::BufferCreator> licence{};
+	auto* bufferCreator = bufferToolLender->Lend<BufferContext::BufferCreator>(licence);
+	//シェーダーパラメーター配列バッファはダブルバッファなので、srvheapIndexは2つ
+	//その保管先も2面分ということでUploadStructuredBufferでいく
+	UploadStructuredBufferDescription desc
+	(
+		(UINT)sizeof(Material::ShaderParamArrSrvIndexGroupCPUGPU),
+		1,
+		0
+	);
+	//シェーダーパラメーター配列のsrv群のバッファを作成
+	auto id_buffer = bufferCreator->CreateWithBuffer(desc, "ShaderParamArrSrvIndexGroup");
+	return id_buffer.second;
+}
+template<Material::Type type>
+void MaterialContext::MaterialBufferCreator::CreateShaderParamsBuffer
+(
+	MaterialIndexDispatcher& materialIndexDispatcher_,
+	BufferContextDiplomat& bufferContextDiplomat_
+)
+{
+	ErrorMessageOutput::Assert::DetectError
+	(
+		shaderParamSequence == type,
+		"ShaderParamArrバッファの作成順序がおかしい",
+		fileName
+	);
+	shaderParamSequence = Material::Type((UINT)shaderParamSequence + 1);
+	auto bufferToolLender = bufferContextDiplomat_.Access<BufferContext::ToolLender>();
+	BufferContext::ToolLender::LicenceType<BufferContext::BufferCreator> licence{};
+	auto* bufferCreator = bufferToolLender->Lend<BufferContext::BufferCreator>(licence);
+	//別のタイミングで描画対象ごとに上書きしたいバッファなので
+	UploadStructuredBufferDescription desc
+	(
+		(UINT)sizeof(Material::MaterialTypeTraits<type>::dataType),
+		Material::MaterialTypeTraits<type>::kReserveSize,
+		0
+	);
+	//シェーダーパラメーターの配列バッファを作成
+	auto id_buffer = bufferCreator->CreateWithBuffer(desc, Material::MaterialTypeTraits<type>::kName);
+	//登録
+	materialIndexDispatcher_.ImportShaderParamsBufferID<type>(MaterialIndexDispatcher::LocalKey{}, id_buffer.first);
+	//キャッシュに登録
+	shaderParamArrBufferCache.emplace_back(id_buffer.second);
+}
+template
+void MaterialContext::MaterialBufferCreator::CreateShaderParamsBuffer<Material::Type::kGridLine>
+(
+	MaterialIndexDispatcher& materialIndexDispatcher_,
+	BufferContextDiplomat& bufferContextDiplomat_
+);
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Material\MaterialBufferCreator\MaterialBufferCreator.h ===
+========================================
+#pragma once
+#include "../MaterialContext.h"
+//外部
+#include "../../../../../../Assets/Shared/Material.h"
+class GPUBufferBehavior;
+class MaterialContext::MaterialBufferCreator
+{
+public:
+	MaterialBufferCreator
+	(
+		NexusFieldProof proof_,
+		MaterialIndexDispatcher& materialIndexDispatcher_,
+		BufferContextDiplomat& bufferContextDiplomat_
+	);
+private:
+	//描画対象固有のシェーダーパラメーター最大数
+	UINT shaderParamIndexGroupBufferSize =
+		(UINT)ProjectConfig::Render::BufferSize::kShaderParamSrvGroupContainer;
+	//shaderParamArrバッファのキャッシュ
+	std::vector<GPUBufferBehavior*> shaderParamArrBufferCache;
+	//ちょいと雑だが、呼び出しシーケンスチェックのため
+	Material::Type shaderParamSequence = Material::Type::kGridLine;
+	//描画対象固有のシェーダーパラメータ配列のバッファをサイズ分作成
+	template<Material::Type type>
+	void CreateShaderParamsBuffer
+	(
+		MaterialIndexDispatcher& materialIndexDispatcher_,
+		BufferContextDiplomat& bufferContextDiplomat_
+	);
+	//それらのsrvHeapIndex群のバッファも作成する
+	GPUBufferBehavior* CreateShaderParamArrSrvIndexGroupBuffer
+	(
+		MaterialIndexDispatcher& materialIndexDispatcher_,
+		BufferContextDiplomat& bufferContextDiplomat_
+	);
+	//ShaderParamArrバッファの表裏２面分のsrvIndexを書き込む
+	void WriteShaderParamArrSrvIndex(GPUBufferBehavior* shaderParamArrSrvIndexGroupBuffer_);
+	//ShaderParamArrSrvIndexGroupのSrvIndexのグローバル定数バッファを作成する
+	void CreateShaderParamSrvIndexGroupCBuffer
+	(
+		GPUBufferBehavior* shaderParamArrSrvIndexGroupBuffer_,
+		BufferContextDiplomat& bufferContextDiplomat_
+	);
+};
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Material\MaterialIndexDispatcher\MaterialIndexDispatcher.cpp ===
+========================================
+#include "PreCompileHeader.h"
+#include "MaterialIndexDispatcher.h"
+MaterialContext::MaterialIndexDispatcher::MaterialIndexDispatcher(NexusFieldProof proof_)
+{
+	ReserveDispatchSize<Material::Type::kGridLine>();
+}
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Material\MaterialIndexDispatcher\MaterialIndexDispatcher.h ===
+========================================
+#pragma once
+#include "../MaterialContext.h"
+//外部
+#include "../../../../../../Assets/Shared/Material.h"
+#include "SimpleFreeList/SimpleFreeList.h"
+class MaterialContext::MaterialIndexDispatcher
+{
+public:
+	struct LocalKey;
+	MaterialIndexDispatcher(NexusFieldProof proof_);
+	//「シェーダーパラメーター配列」の
+	//インデックスをかえす
+	template<Material::Type type>
+	uint32_t DispatchShaderParamID()
+	{
+		return freeListMap[(UINT)type].Distribute();
+	}
+	template<Material::Type type>
+	void ImportShaderParamsBufferID(LocalKey key_, BufferUniqueID id_)
+	{
+		shaderParamBufferIdArr[(UINT)type] = id_;
+		Logger::Log("Import " + Material::MaterialTypeTraits<type>::kName + "ArrBuf: " + std::to_string(id_), "ShaderParamDispatcher.h");
+	}
+private:
+	template<Material::Type type>
+	void ReserveDispatchSize()
+	{
+		freeListMap[(UINT)type].Resize
+		(
+			Material::MaterialTypeTraits<type>::kReserveSize,
+			Material::MaterialTypeTraits<type>::kName
+		);
+	}
+	std::array<SimpleFreeList, (UINT)Material::Type::kCount> freeListMap;
+	//書き込む必要があるので、シェーダーパラメーター配列のバッファIDは所持する
+	std::array<BufferUniqueID, (UINT)Material::Type::kCount> shaderParamBufferIdArr;
+};
+struct MaterialContext::MaterialIndexDispatcher::LocalKey
+{
+private:
+	friend class MaterialBufferCreator;
+	explicit LocalKey() = default;
+};
+
+========================================
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Model\ModelContext.cpp ===
 ========================================
 #include "PreCompileHeader.h"
@@ -15563,8 +15873,6 @@ private:
 #include "ShaderContext.h"
 #include "ShaderLibrary/ShaderLibrary.h"
 #include "ShaderLoader/ShaderLoader.h"
-#include "ShaderParamBuffer/ShaderParamDispathcer/ShaderParamDispatcher.h"
-#include "ShaderParamBuffer/ShaderParamBufferCreator/ShaderParamBufferCreator.h"
 #include "ShaderContextDiplomat/ShaderContextDiplomat.h"
 #include "ShaderContextDiplomat/ShaderContextToolLender/ShaderContextToolLender.h"
 namespace
@@ -15582,10 +15890,6 @@ ShaderContext::ShaderContext
 	Logger::Log("Instantiate: ShaderLibrary", fileName);
 	//全てのシェーダーファイルを読み込み、コンパイルしてライブラリーにぶっこむ
 	ShaderLoader shaderLoader(proof_, shaderLibrary.get());
-	shaderParamDispatcher = std::make_unique<ShaderParamDispatcher>(proof_);
-	Logger::Log("Instantiate: shaderParamDispatcher", fileName);
-	//シェーダーパラメーターの諸々バッファを作成
-	ShaderParamBufferCreator shaderParamBufferCreator(proof_,*shaderParamDispatcher,bufferContextDiplomat_);
 	diplomat.reset
 	(
 		new ShaderContextDiplomat
@@ -15612,10 +15916,6 @@ class ShaderContextDiplomat;
 class BufferContextDiplomat;
 class ShaderContext
 {
-	//シェーダー固有パラメータのバッファを生成
-	class ShaderParamBufferCreator;
-	//シェーダーパラメータを割り当てる
-	class ShaderParamDispatcher;
 public:
 	//ネクサスフィールドの証
 	struct NexusFieldProof;
@@ -15639,7 +15939,6 @@ private:
 	std::unique_ptr<ShaderContextDiplomat> diplomat;
 	//シェーダーのデータがすべてここに
 	std::unique_ptr<ShaderLibrary> shaderLibrary;
-	std::unique_ptr<ShaderParamDispatcher> shaderParamDispatcher;
 };
 struct ShaderContext::NexusFieldProof
 {
@@ -16159,271 +16458,6 @@ private:
 	);
 	//コンパイル結果が問題ないかチェックし、バイナリーデータを返す
 	Microsoft::WRL::ComPtr<IDxcBlob> CheckResult(IDxcResult* shaderResult_);
-};
-
-========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Shader\ShaderParamBuffer\ShaderParamBufferCreator\ShaderParamBufferCreator.cpp ===
-========================================
-#include "PreCompileHeader.h"
-#include "ShaderParamBufferCreator.h"
-#include "../ShaderParamDispathcer/ShaderParamDispatcher.h"
-//外部
-#include "../../../../Buffer/BufferDefinition/BufferDescriptions/UploadStructuredBufferDescription/UploadStructuredBufferDescription.h"
-#include "../../../../Buffer/BufferDefinition/AllBuffersInclude.h"
-#include "../../../../Buffer/BufferContextToolsInclude.h"
-#include "../../../../Buffer/BufferContextDiplomats.h"
-namespace
-{
-	auto const fileName = "ShaderParamBufferCreator.cpp";
-}
-ShaderContext::ShaderParamBufferCreator::ShaderParamBufferCreator
-(
-	NexusFieldProof proof_,
-	ShaderParamDispatcher& shaderParamDispatcher_,
-	BufferContextDiplomat& bufferContextDiplomat_
-)
-{
-	shaderParamArrBufferCache.reserve((UINT)ShaderParam::Type::kCount);
-	//shaderParam配列のバッファを作成
-	CreateShaderParamsBuffer<ShaderParam::Type::kGridLine>(shaderParamDispatcher_, bufferContextDiplomat_);
-	//作成したシェーダーパラメーター配列のsrvHeapIndexをキャッシュに登録してあるので、
-	//それをもとにシェーダーパラメーター配列のsrvHeapIndex群のバッファを作成。
-	//そのバッファのポインタを返す
-	auto* shaderParamArrSrvIndexGroupBuffer = CreateShaderParamArrSrvIndexGroupBuffer(shaderParamDispatcher_, bufferContextDiplomat_);
-	//ShaderParamArrSrvIndexGroupBufferの中身は不動なのでここでかきこんじゃう
-	WriteShaderParamArrSrvIndex(shaderParamArrSrvIndexGroupBuffer);
-	//そのsrvHeapIndexのグローバル定数バッファを作成
-	CreateShaderParamSrvIndexGroupCBuffer(shaderParamArrSrvIndexGroupBuffer, bufferContextDiplomat_);
-}
-void ShaderContext::ShaderParamBufferCreator::CreateShaderParamSrvIndexGroupCBuffer
-(
-	GPUBufferBehavior* shaderParamArrSrvIndexGroupBuffer_,
-	BufferContextDiplomat& bufferContextDiplomat_
-)
-{
-	//定数バッファ作成コマンドをもらう
-	BufferContext::CmdProvider::LicenceType<BufferContextCmds::CreateCBufferCmd> licence;
-	auto createCBufferCmd = bufferContextDiplomat_.Access<BufferContext::CmdProvider>()->
-		Provide<BufferContextCmds::CreateCBufferCmd>(licence);
-	//srvHeapIndexを抽出
-	IReadable* readableBuffer = static_cast<IReadable*>(static_cast<UploadStructuredBuffer*>(shaderParamArrSrvIndexGroupBuffer_));
-	//定数バッファ生成コマンドで生成する
-	auto cBufferID_cBuffer = createCBufferCmd("ShaderParamArrSrvIndexGroup", UINT(sizeof(SRVHeapIndex)), (UINT)ConstantBuffers::ConstantBufferBindSlots::kShaderParamArrSrvIndices);
-	//その定数バッファのマップしたポインタにデータを書き込む
-	//中身は不動なので、２面分書いちゃう
-	cBufferID_cBuffer.second->WriteInBoth<SRVHeapIndex>
-	(
-		{ readableBuffer->OutProperSRVHeapIndex(0) ,readableBuffer->OutProperSRVHeapIndex(1) }
-	);
-}
-void ShaderContext::ShaderParamBufferCreator::WriteShaderParamArrSrvIndex(GPUBufferBehavior* shaderParamArrSrvIndexGroupBuffer_)
-{
-	//書き込みさきバッファ
-	auto* dstWriteBuf = static_cast<UploadStructuredBuffer*>(shaderParamArrSrvIndexGroupBuffer_);
-	//詰め込み先データ両面分
-	ShaderParam::ShaderParamArrSrvIndexGroupCPUGPU dataFrame0;
-	ShaderParam::ShaderParamArrSrvIndexGroupCPUGPU dataFrame1;
-	auto* dataFirstPtr0 = reinterpret_cast<int*>(&dataFrame0.gridLineSrv);
-	auto* dataFirstPtr1 = reinterpret_cast<int*>(&dataFrame1.gridLineSrv);
-	for (UINT n = 0; n < (UINT)ShaderParam::Type::kCount; ++n)
-	{
-		//srvHeapIndexを抽出ため
-		IReadable* readableBuffer = 
-			static_cast<IReadable*>(static_cast<UploadStructuredBuffer*>(shaderParamArrBufferCache[n]));
-		//表裏２面分書き込む
-		*(dataFirstPtr0 + n) = readableBuffer->OutProperSRVHeapIndex(0);
-		*(dataFirstPtr1 + n) = readableBuffer->OutProperSRVHeapIndex(1);
-	}
-	dstWriteBuf->WriteInBoth<ShaderParam::ShaderParamArrSrvIndexGroupCPUGPU>
-	(
-		{ 
-			dataFrame0,
-			dataFrame1
-		}
-	);
-}
-GPUBufferBehavior* ShaderContext::ShaderParamBufferCreator::CreateShaderParamArrSrvIndexGroupBuffer
-(
-	ShaderParamDispatcher& shaderParamDispatcher_,
-	BufferContextDiplomat& bufferContextDiplomat_
-)
-{
-	ErrorMessageOutput::Assert::DetectError
-	(
-		shaderParamSequence == ShaderParam::Type::kCount,
-		"ShaderParamArrバッファの作成数が足りない",
-		fileName
-	);
-	//BufferCreatorを借りる
-	auto bufferToolLender = bufferContextDiplomat_.Access<BufferContext::ToolLender>();
-	BufferContext::ToolLender::LicenceType<BufferContext::BufferCreator> licence{};
-	auto* bufferCreator = bufferToolLender->Lend<BufferContext::BufferCreator>(licence);
-	//シェーダーパラメーター配列バッファはダブルバッファなので、srvheapIndexは2つ
-	//その保管先も2面分ということでUploadStructuredBufferでいく
-	UploadStructuredBufferDescription desc
-	(
-		(UINT)sizeof(ShaderParam::ShaderParamArrSrvIndexGroupCPUGPU),
-		1,
-		0
-	);
-	//シェーダーパラメーター配列のsrv群のバッファを作成
-	auto id_buffer = bufferCreator->CreateWithBuffer(desc, "ShaderParamArrSrvIndexGroup");
-	return id_buffer.second;
-}
-template<ShaderParam::Type type>
-void ShaderContext::ShaderParamBufferCreator::CreateShaderParamsBuffer
-(
-	ShaderParamDispatcher& shaderParamDispatcher_,
-	BufferContextDiplomat& bufferContextDiplomat_
-)
-{
-	ErrorMessageOutput::Assert::DetectError
-	(
-		shaderParamSequence == type,
-		"ShaderParamArrバッファの作成順序がおかしい",
-		fileName
-	);
-	shaderParamSequence = ShaderParam::Type((UINT)shaderParamSequence + 1);
-	auto bufferToolLender = bufferContextDiplomat_.Access<BufferContext::ToolLender>();
-	BufferContext::ToolLender::LicenceType<BufferContext::BufferCreator> licence{};
-	auto* bufferCreator = bufferToolLender->Lend<BufferContext::BufferCreator>(licence);
-	//別のタイミングで描画対象ごとに上書きしたいバッファなので
-	UploadStructuredBufferDescription desc
-	(
-		(UINT)sizeof(ShaderParamDispatcher::ShaderParamTraits<type>::dataType),
-		ShaderParamDispatcher::ShaderParamTraits<type>::kReserveSize,
-		0
-	);
-	//シェーダーパラメーターの配列バッファを作成
-	auto id_buffer = bufferCreator->CreateWithBuffer(desc, ShaderParamDispatcher::ShaderParamTraits<type>::kName);
-	//登録
-	shaderParamDispatcher_.ImportShaderParamsBufferID<type>(ShaderParamDispatcher::LocalKey{}, id_buffer.first);
-	//キャッシュに登録
-	shaderParamArrBufferCache.emplace_back(id_buffer.second);
-}
-template
-void ShaderContext::ShaderParamBufferCreator::CreateShaderParamsBuffer<ShaderParam::Type::kGridLine>
-(
-	ShaderParamDispatcher& shaderParamDispatcher_,
-	BufferContextDiplomat& bufferContextDiplomat_
-);
-
-========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Shader\ShaderParamBuffer\ShaderParamBufferCreator\ShaderParamBufferCreator.h ===
-========================================
-#pragma once
-#include "../../ShaderContext.h"
-//外部
-#include "../../../../../../Assets/Shared/ShaderParam.h"
-class GPUBufferBehavior;
-class ShaderContext::ShaderParamBufferCreator
-{
-public:
-	ShaderParamBufferCreator
-	(
-		NexusFieldProof proof_,
-		ShaderParamDispatcher& shaderParamDispatcher_,
-		BufferContextDiplomat& bufferContextDiplomat_
-	);
-private:
-	//描画対象固有のシェーダーパラメーター最大数
-	UINT shaderParamIndexGroupBufferSize = 
-		(UINT)ProjectConfig::Render::BufferSize::kShaderParamSrvGroupContainer;
-	//shaderParamArrバッファのキャッシュ
-	std::vector<GPUBufferBehavior*> shaderParamArrBufferCache;
-	//ちょいと雑だが、呼び出しシーケンスチェックのため
-	ShaderParam::Type shaderParamSequence = ShaderParam::Type::kGridLine;
-	//描画対象固有のシェーダーパラメータ配列のバッファをサイズ分作成
-	template<ShaderParam::Type type>
-	void CreateShaderParamsBuffer
-	(
-		ShaderParamDispatcher& shaderParamDispatcher_,
-		BufferContextDiplomat& bufferContextDiplomat_
-	);
-	//それらのsrvHeapIndex群のバッファも作成する
-	GPUBufferBehavior* CreateShaderParamArrSrvIndexGroupBuffer
-	(
-		ShaderParamDispatcher& shaderParamDispatcher_,
-		BufferContextDiplomat& bufferContextDiplomat_
-	);
-	//ShaderParamArrバッファの表裏２面分のsrvIndexを書き込む
-	void WriteShaderParamArrSrvIndex(GPUBufferBehavior* shaderParamArrSrvIndexGroupBuffer_);
-	//ShaderParamArrSrvIndexGroupのSrvIndexのグローバル定数バッファを作成する
-	void CreateShaderParamSrvIndexGroupCBuffer
-	(
-		GPUBufferBehavior* shaderParamArrSrvIndexGroupBuffer_,
-		BufferContextDiplomat& bufferContextDiplomat_
-	);
-};
-////最低でも確保しなくてはならないシェーダーパラメーターSRV群コンテナバッファのサイズを更新
-//shaderParamIndexGroupBufferSize =
-//Comparison::Max(shaderParamIndexGroupBufferSize, ShaderParamDispatcher::ShaderParamTraits<type>::kReserveSize);
-
-========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Shader\ShaderParamBuffer\ShaderParamDispathcer\ShaderParamDispatcher.cpp ===
-========================================
-#include "PreCompileHeader.h"
-#include "ShaderParamDispatcher.h"
-ShaderContext::ShaderParamDispatcher::ShaderParamDispatcher(NexusFieldProof proof_)
-{
-	ReserveDispatchSize<ShaderParam::Type::kGridLine>();
-}
-
-========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Shader\ShaderParamBuffer\ShaderParamDispathcer\ShaderParamDispatcher.h ===
-========================================
-#pragma once
-#include "../../ShaderContext.h"
-//外部
-#include "../../../../../../Assets/Shared/ShaderParam.h"
-#include "SimpleFreeList/SimpleFreeList.h"
-class ShaderContext::ShaderParamDispatcher
-{
-public:
-	struct LocalKey;
-	template<ShaderParam::Type>
-	struct ShaderParamTraits;
-	ShaderParamDispatcher(NexusFieldProof proof_);
-	//「シェーダーパラメーター配列」の
-	//インデックスをかえす
-	template<ShaderParam::Type type>
-	uint32_t DispatchShaderParamID()
-	{
-		return freeListMap[(UINT)type].Distribute();
-	}
-	template<ShaderParam::Type type>
-	void ImportShaderParamsBufferID(LocalKey key_,BufferUniqueID id_)
-	{
-		shaderParamBufferIdArr[(UINT)type] = id_;
-		Logger::Log("Import "+ ShaderParamDispatcher::ShaderParamTraits<type>::kName + "ArrBuf: " + std::to_string(id_), "ShaderParamDispatcher.h");
-	}
-private:
-	template<ShaderParam::Type type>
-	void ReserveDispatchSize()
-	{
-		freeListMap[(UINT)type].Resize
-		(
-			ShaderParamTraits<type>::kReserveSize,
-			ShaderParamTraits<type>::kName
-		);
-	}
-	std::array<SimpleFreeList, (UINT)ShaderParam::Type::kCount> freeListMap;
-	//書き込む必要があるので、シェーダーパラメーター配列のバッファIDは所持する
-	std::array<BufferUniqueID, (UINT)ShaderParam::Type::kCount> shaderParamBufferIdArr;
-};
-struct ShaderContext::ShaderParamDispatcher::LocalKey
-{
-private:
-	friend class ShaderParamBufferCreator;
-	explicit LocalKey() = default;
-};
-template<>
-struct ShaderContext::ShaderParamDispatcher::ShaderParamTraits<ShaderParam::Type::kGridLine>
-{
-	//シェーダーパラメータの割り当て上限数。同時に確保するバッファサイズ
-	static constexpr UINT kReserveSize = 10;
-	static inline const std::string kName = "GridLine";
-	using dataType = ShaderParam::GridLineCPUGPU;
 };
 
 ========================================
@@ -23444,6 +23478,7 @@ private:
 #include "../LowerLayer/Resource/Model/ModelContext.h"
 #include "../LowerLayer/Resource/Texture/TextureContext.h"
 #include "../LowerLayer/Resource/Camera/CameraContext.h"
+#include "../LowerLayer/Resource/Material/MaterialContext.h"
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 #include "../LowerLayer/Buffer/BufferContext.h"
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -23483,6 +23518,7 @@ void Nexus::PrimaryInit()
 	InitializeInSequence<InitSequence::kPSO_Context>();
 	InitializeInSequence<InitSequence::kRootSignatureContext>();
 	InitializeInSequence<InitSequence::kTextureContext>();
+	InitializeInSequence<InitSequence::kMaterialContext>();
 	InitializeInSequence<InitSequence::kModelContext>();
 	InitializeInSequence<InitSequence::kGameObjectContext>();
 	InitializeInSequence<InitSequence::kCameraContext>();
@@ -23522,6 +23558,7 @@ class CameraContext;
 class DebugContext;
 class SceneContext;
 class GameObjectContext;
+class MaterialContext;
 //交易場
 class Nexus
 {
@@ -23562,6 +23599,7 @@ private:
 		kPSO_Context,
 		kRootSignatureContext,
 		kTextureContext,
+		kMaterialContext,
 		kModelContext,
 		kGameObjectContext,
 		kCameraContext,
@@ -23607,6 +23645,8 @@ private:
 	std::unique_ptr<RenderContext> renderContext;
 	//ゲームオブジェクトの生成、管理
 	std::unique_ptr<GameObjectContext> gameObjectContext;
+	//マテリアルバッファの作成、ディスパッチ
+	std::unique_ptr<MaterialContext> materialContext;
 	//モデルクラスの生成、管理
 	std::unique_ptr<ModelContext> modelContext;
 	//テクスチャファイルの読み込み、データ保持
@@ -23718,6 +23758,8 @@ void Nexus::Finalize<Nexus::FinalizeSequence::kWindowContext>()
 #include "../LowerLayer/Resource/Texture/TextureContext.h"
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 #include "../LowerLayer/Resource/Camera/CameraContext.h"
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+#include "../LowerLayer/Resource/Material/MaterialContext.h"
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 #include "../MiddleLayer/Render/RenderContext.h"
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -23885,6 +23927,19 @@ void Nexus::Init<Nexus::InitSequence::kTextureContext>()
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 template<>
+void Nexus::Init<Nexus::InitSequence::kMaterialContext>()
+{
+	materialContext = std::make_unique<MaterialContext>
+	(
+		MaterialContext::NexusFieldProof{},
+		bufferContext->AccessDiplomat()
+	);
+	Logger::Log("Instantiate: MaterialContext", fileName);
+}
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+template<>
 void Nexus::Init<Nexus::InitSequence::kRenderContext>()
 {
 	renderContext.reset
@@ -24040,6 +24095,8 @@ template
 void Nexus::Init<Nexus::InitSequence::kDeleteModelDataCache>();
 template
 void Nexus::Init<Nexus::InitSequence::kGameObjectContext>();
+template
+void Nexus::Init<Nexus::InitSequence::kMaterialContext>();
 
 ========================================
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Nexus\NexusRun.cpp ===
@@ -25080,5 +25137,5 @@ namespace StringProcessing
 ========================================
 === SUMMARY ===
 ========================================
-Total Files      : 559
-Effective Lines  : 18270
+Total Files      : 561
+Effective Lines  : 18313

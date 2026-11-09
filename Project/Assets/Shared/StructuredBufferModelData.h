@@ -58,7 +58,6 @@ namespace StructuredBufferModelData
         float roughness = float(kInvalid);
         float metallic = float(kInvalid);
         StaticSampler::SamplerState samplerState = StaticSampler::SamplerState::kLinearClamp;
-
     };  
 
     struct MeshletCPUGPU

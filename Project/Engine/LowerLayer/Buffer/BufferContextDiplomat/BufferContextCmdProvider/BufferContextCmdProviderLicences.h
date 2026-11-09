@@ -5,7 +5,7 @@ class ModelContext;
 class TextureContext;
 class RenderContext;
 class CameraContext;
-class ShaderContext;
+class MaterialContext;
 
 
 struct BufferContext::CmdProvider::UsesCBufferCreatorLicence
@@ -16,7 +16,7 @@ private:
 	friend class TextureContext;
 	friend class RenderContext;
 	friend class CameraContext;
-	friend class ShaderContext;
+	friend class MaterialContext;
 
 
 	explicit UsesCBufferCreatorLicence() = default;

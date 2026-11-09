@@ -1,40 +1,40 @@
 #pragma once
-#include "../../ShaderContext.h"
+#include "../MaterialContext.h"
 
 
 //外部
-#include "../../../../../../Assets/Shared/ShaderParam.h"
+#include "../../../../../../Assets/Shared/Material.h"
 
 class GPUBufferBehavior;
 
-class ShaderContext::ShaderParamBufferCreator
+class MaterialContext::MaterialBufferCreator
 {
 public:
 
-	ShaderParamBufferCreator
+	MaterialBufferCreator
 	(
 		NexusFieldProof proof_,
-		ShaderParamDispatcher& shaderParamDispatcher_,
+		MaterialIndexDispatcher& materialIndexDispatcher_,
 		BufferContextDiplomat& bufferContextDiplomat_
 	);
 
 private:
 
 	//描画対象固有のシェーダーパラメーター最大数
-	UINT shaderParamIndexGroupBufferSize = 
+	UINT shaderParamIndexGroupBufferSize =
 		(UINT)ProjectConfig::Render::BufferSize::kShaderParamSrvGroupContainer;
 
 	//shaderParamArrバッファのキャッシュ
 	std::vector<GPUBufferBehavior*> shaderParamArrBufferCache;
 
 	//ちょいと雑だが、呼び出しシーケンスチェックのため
-	ShaderParam::Type shaderParamSequence = ShaderParam::Type::kGridLine;
+	Material::Type shaderParamSequence = Material::Type::kGridLine;
 
 	//描画対象固有のシェーダーパラメータ配列のバッファをサイズ分作成
-	template<ShaderParam::Type type>
+	template<Material::Type type>
 	void CreateShaderParamsBuffer
 	(
-		ShaderParamDispatcher& shaderParamDispatcher_,
+		MaterialIndexDispatcher& materialIndexDispatcher_,
 		BufferContextDiplomat& bufferContextDiplomat_
 	);
 
@@ -42,7 +42,7 @@ private:
 	//それらのsrvHeapIndex群のバッファも作成する
 	GPUBufferBehavior* CreateShaderParamArrSrvIndexGroupBuffer
 	(
-		ShaderParamDispatcher& shaderParamDispatcher_,
+		MaterialIndexDispatcher& materialIndexDispatcher_,
 		BufferContextDiplomat& bufferContextDiplomat_
 	);
 
@@ -56,9 +56,7 @@ private:
 		BufferContextDiplomat& bufferContextDiplomat_
 	);
 
+
+
 };
 
-
-////最低でも確保しなくてはならないシェーダーパラメーターSRV群コンテナバッファのサイズを更新
-//shaderParamIndexGroupBufferSize =
-//Comparison::Max(shaderParamIndexGroupBufferSize, ShaderParamDispatcher::ShaderParamTraits<type>::kReserveSize);
