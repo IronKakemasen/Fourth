@@ -448,6 +448,7 @@
     <ClCompile Include="Engine\LowerLayer\Resource\Material\MaterialContext.cpp" />
     <ClCompile Include="Engine\LowerLayer\Resource\Material\MaterialBufferCreator\MaterialBufferCreator.cpp" />
     <ClCompile Include="Engine\LowerLayer\Resource\Material\MaterialIndexDispatcher\MaterialIndexDispatcher.cpp" />
+    <ClCompile Include="Engine\LowerLayer\Resource\Material\MaterialAttacher\MaterialAttacher.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Application\AllCameraIncludes.h" />
@@ -798,6 +799,7 @@
     <ClInclude Include="Engine\LowerLayer\Resource\Material\MaterialContext.h" />
     <ClInclude Include="Engine\LowerLayer\Resource\Material\MaterialBufferCreator\MaterialBufferCreator.h" />
     <ClInclude Include="Engine\LowerLayer\Resource\Material\MaterialIndexDispatcher\MaterialIndexDispatcher.h" />
+    <ClInclude Include="Engine\LowerLayer\Resource\Material\MaterialAttacher\MaterialAttacher.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

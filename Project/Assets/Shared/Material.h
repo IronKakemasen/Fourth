@@ -27,7 +27,7 @@ namespace Material
     template<Material::Type>
     struct MaterialTypeTraits;
 
-    struct MaterialIDGroupCPUGPU
+    struct MaterialIndexGroupCPUGPU
     {
         UINT standardIndex = kInvalid;
         UINT gridLineIndex = kInvalid;
@@ -35,8 +35,8 @@ namespace Material
     };
     static_assert
     (
-        sizeof(MaterialIDGroupCPUGPU) == sizeof(UINT) * kNumParamExists,
-        "MaterialIDGroupCPUGPU is incomplete"
+        sizeof(MaterialIndexGroupCPUGPU) == sizeof(UINT) * kNumParamExists,
+        "MaterialIndexGroupCPUGPU is incomplete"
     );
 
     struct MaterialArrBufferSrvIndexGroupCPUGPU

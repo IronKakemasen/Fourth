@@ -13,6 +13,9 @@ class MaterialContext
 
 public:
 
+	//描画対象にマテリアルをアタッチする
+	class MaterialAttacher;
+
 	struct NexusFieldProof;
 
 	MaterialContext
@@ -27,6 +30,7 @@ public:
 private:
 
 	std::unique_ptr<MaterialIndexDispatcher> materialIndexDispatcher;
+	std::unique_ptr<MaterialAttacher> materialAttacher;
 
 };
 

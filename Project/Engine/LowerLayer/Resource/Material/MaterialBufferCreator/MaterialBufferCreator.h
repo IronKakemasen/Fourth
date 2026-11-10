@@ -23,7 +23,7 @@ private:
 
 	//描画対象固有のマテリアルID群バッファの最大数
 	UINT materialIDGroupArrBufferSize =
-		(UINT)ProjectConfig::Render::BufferSize::kMaterialIDGroupContainer;
+		(UINT)ProjectConfig::Render::BufferSize::kMaterialIndexGroupArr;
 
 	//マテリアル配列バッファのキャッシュ
 	std::vector<GPUBufferBehavior*> materialArrBufferCache;
