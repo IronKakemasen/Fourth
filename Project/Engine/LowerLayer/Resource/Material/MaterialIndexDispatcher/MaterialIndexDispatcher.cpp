@@ -4,19 +4,27 @@
 
 MaterialContext::MaterialIndexDispatcher::MaterialIndexDispatcher(NexusFieldProof proof_)
 {
-	ReserveDispatchSize<Material::Type::kStandard>();
-	ReserveDispatchSize<Material::Type::kGridLine>();
-
+	ReserveMaterialArrDispatchSize<Material::Type::kStandard>();
+	ReserveMaterialArrDispatchSize<Material::Type::kGridLine>();
 
 	ErrorMessageOutput::Assert::DetectError
 	(
 		(UINT)typeSepuence  == Material::kNumParamExists,
-		"ReserveDispatchSize()を呼び足りない",
+		"ReserveMaterialArrDispatchSize()を呼び足りない",
 		"MaterialIndexDispatcher.cpp"
 	);
+
+	materialIDFreeList.Resize((UINT)ProjectConfig::Render::BufferSize::kMaterialIndexGroupArr,"MaterialIndexGroupArr");
 }
 
-void MaterialContext::MaterialIndexDispatcher::ImportMaterialIDGroupArrBufferID(LocalKey key_, BufferUniqueID id_)
+
+UINT MaterialContext::MaterialIndexDispatcher::DispatchMaterialID()
+{
+	return materialIDFreeList.Distribute();
+}
+
+
+void MaterialContext::MaterialIndexDispatcher::ImportMaterialIDGroupArrBufferID(BufferUniqueID id_)
 {
 	materialIDGroupArrBufferID = id_;
 	Logger::Log("Import MaterialIDGroupArrBufferID: " + std::to_string(id_), "MaterialIndexDispatcher.cpp");

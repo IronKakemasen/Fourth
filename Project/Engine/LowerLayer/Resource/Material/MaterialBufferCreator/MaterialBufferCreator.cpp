@@ -108,7 +108,7 @@ GPUBufferBehavior* MaterialContext::MaterialBufferCreator::CreateMaterialIDGroup
 	//描画対象によってどのマテリアルを使用するかは違うのでCPUで書き込めるようにする
 	UploadStructuredBufferDescription desc
 	(
-		(UINT)sizeof(Material::MaterialIDGroupCPUGPU),
+		(UINT)sizeof(Material::MaterialIndexGroupCPUGPU),
 		materialIDGroupArrBufferSize,
 		0
 	);
@@ -117,7 +117,7 @@ GPUBufferBehavior* MaterialContext::MaterialBufferCreator::CreateMaterialIDGroup
 	auto id_buffer = bufferCreator->CreateWithBuffer(desc, "MaterialIDGroupArr");
 
 	//描画対象作成時に、中身を書き込みたいのでディスパッチャーに持たせる
-	materialIndexDispatcher_.ImportMaterialIDGroupArrBufferID(MaterialIndexDispatcher::LocalKey{}, id_buffer.first);
+	materialIndexDispatcher_.ImportMaterialIDGroupArrBufferID(id_buffer.first);
 
 	return id_buffer.second;
 }
@@ -227,7 +227,7 @@ void MaterialContext::MaterialBufferCreator::CreateMaterialArrBuffer
 	auto id_buffer = bufferCreator->CreateWithBuffer(desc, Material::MaterialTypeTraits<type>::kName);
 
 	//登録
-	materialIndexDispatcher_.ImportMaterialArrBufferID<type>(MaterialIndexDispatcher::LocalKey{}, id_buffer.first);
+	materialIndexDispatcher_.ImportMaterialArrBufferIndex<type>(id_buffer.first);
 
 	//キャッシュに登録
 	materialArrBufferCache.emplace_back(id_buffer.second);

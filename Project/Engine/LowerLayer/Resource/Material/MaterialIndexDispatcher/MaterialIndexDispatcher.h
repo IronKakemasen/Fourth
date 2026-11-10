@@ -13,26 +13,26 @@ class MaterialContext::MaterialIndexDispatcher
 
 public:
 
-	struct LocalKey;
-
 	MaterialIndexDispatcher(NexusFieldProof proof_);
 
-	//「シェーダーパラメーター配列」の
-	//インデックスをかえす
+	//マテリアルIDを返す
+	UINT DispatchMaterialID();
+
+	//「マテリアル配列」のインデックスをかえす
 	template<Material::Type type>
-	uint32_t DispatchMaterialID()
+	uint32_t DispatchMaterialArrIndex()
 	{
-		return freeListMap[(UINT)type].Distribute();
+		return materialArrIndexFreeList[(UINT)type].Distribute();
 	}
 
 	template<Material::Type type>
-	void ImportMaterialArrBufferID(LocalKey key_, BufferUniqueID id_)
+	void ImportMaterialArrBufferIndex(BufferUniqueID id_)
 	{
 		materialArrBufferIdArr[(UINT)type] = id_;
 		Logger::Log("Import " + Material::MaterialTypeTraits<type>::kName + "ArrBuf: " + std::to_string(id_), "MaterialIndexDispatcher.h");
 	}
 
-	void ImportMaterialIDGroupArrBufferID(LocalKey key_, BufferUniqueID id_);
+	void ImportMaterialIDGroupArrBufferID(BufferUniqueID id_);
 
 private:
 
@@ -40,9 +40,9 @@ private:
 	Material::Type typeSepuence = Material::Type(0);
 
 	template<Material::Type type>
-	void ReserveDispatchSize()
+	void ReserveMaterialArrDispatchSize()
 	{
-		freeListMap[(UINT)type].Resize
+		materialArrIndexFreeList[(UINT)type].Resize
 		(
 			Material::MaterialTypeTraits<type>::kReserveSize,
 			Material::MaterialTypeTraits<type>::kName
@@ -60,20 +60,16 @@ private:
 
 	}
 
-	std::array<SimpleFreeList, (UINT)Material::kNumParamExists> freeListMap;
-	//書き込む必要があるので、マテリアル配列のバッファIDは所持する
+	//マテリアル配列のフリーリスト
+	std::array<SimpleFreeList, (UINT)Material::kNumParamExists> materialArrIndexFreeList;
+	//書き込む必要があるので、マテリアル配列のバッファのインデックスは所持する
 	std::array<BufferUniqueID, (UINT)Material::kNumParamExists> materialArrBufferIdArr;
-	//各描画対象のマテリアルID群の配列のばっふぁID 
+
+	//マテリアル配列のインデックス群配列(Material::MaterialIndexGroupCPUGPU)の
+	//添え字のフリーリスト
+	SimpleFreeList materialIDFreeList;
+
+	//各描画対象のマテリアル配列インデックス群配列のバッファID 
 	BufferUniqueID materialIDGroupArrBufferID;
 
 };
-
-struct MaterialContext::MaterialIndexDispatcher::LocalKey
-{
-
-private:
-
-	friend class MaterialBufferCreator;
-	explicit LocalKey() = default;
-};
-
