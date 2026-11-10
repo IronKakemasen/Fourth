@@ -31,8 +31,8 @@ PixelShaderOutput main(MeshShaderOutput input_)
 {
     PixelShaderOutput output;
     
-    //カメラの実データ配列
-    StructuredBuffer<CameraData> cameraDataContainer = ResourceDescriptorHeap[gCameraContainerIndex];
+    //カメラの実データ配列                                                    
+    StructuredBuffer<CameraData> cameraDataContainer = ResourceDescriptorHeap[gCameraContainerSrvIndex];
     //カメラの実データ配列からこのPassで使うものを指定する(数もどれかもPass依存)
     CameraData srcCameraData = cameraDataContainer[gPassConstants.cameraOffset];
 

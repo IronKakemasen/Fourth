@@ -30,22 +30,41 @@ MaterialContext::MaterialBufferCreator::MaterialBufferCreator
 	CreateMaterialArrBuffer<Material::Type::kStandard>(materialIndexDispatcher_, bufferContextDiplomat_);
 	CreateMaterialArrBuffer<Material::Type::kGridLine>(materialIndexDispatcher_, bufferContextDiplomat_);
 
-	//作成したシェーダーパラメーター配列のsrvHeapIndexをキャッシュに登録してあるので、
-	//それをもとにシェーダーパラメーター配列のsrvHeapIndex群のバッファを作成。
+	//作成したマテリアル配列のsrvHeapIndexをキャッシュに登録してあるので、
+	//それをもとにマテリアル配列のsrvHeapIndex群のバッファを作成。
 	//そのバッファのポインタを返す
-	auto* shaderParamArrSrvIndexGroupBuffer = CreateMaterialArrSrvIndexGroupBuffer(materialIndexDispatcher_, bufferContextDiplomat_);
+	auto* materialArrSrvIndexGroupBuffer = CreateMaterialArrSrvIndexGroupBuffer(materialIndexDispatcher_, bufferContextDiplomat_);
 
-	//ShaderParamArrSrvIndexGroupBufferの中身は不動なのでここでかきこんじゃう
-	WriteMaterialArrSrvIndices(shaderParamArrSrvIndexGroupBuffer);
+	//MaterialArrSrvIndexGroupBufferの中身は不動なのでここでかきこんじゃう
+	WriteMaterialArrSrvIndices(materialArrSrvIndexGroupBuffer);
 
 	//そのsrvHeapIndexのグローバル定数バッファを作成
-	CreateMaterialArrBufferSrvIndexGroupCBuffer(shaderParamArrSrvIndexGroupBuffer, bufferContextDiplomat_);
+	CreateItsSrvCBuffer<ConstantBuffers::ConstantBufferBindSlots::kMaterialArrBufferSrvIndicesSrvIndex>
+	(
+		materialArrSrvIndexGroupBuffer,
+		"MaterialArrBufferSrvIndexGroupSrv",
+		bufferContextDiplomat_
+	);
+
+	//MaterialID群配列のバッファを作成する
+	auto* materialIDGroupArrBuffer = CreateMaterialIDGroupArrBuffer(materialIndexDispatcher_, bufferContextDiplomat_);
+
+	//そのsrvHeapIndexのグローバル定数バッファを作成
+	CreateItsSrvCBuffer<ConstantBuffers::ConstantBufferBindSlots::kMaterialIDGroupArrBufferSrv>
+	(
+		materialIDGroupArrBuffer,
+		"MaterialIDGroupArrSrv",
+		bufferContextDiplomat_
+	);
+
 }
 
 
-void MaterialContext::MaterialBufferCreator::CreateMaterialArrBufferSrvIndexGroupCBuffer
+template<ConstantBuffers::ConstantBufferBindSlots slot>
+void MaterialContext::MaterialBufferCreator::CreateItsSrvCBuffer
 (
-	GPUBufferBehavior* materialArrBufferSrvIndexGroupBuffer_,
+	GPUBufferBehavior* uploadStructuredBuffer_,
+	std::string const& cBufferName_,
 	BufferContextDiplomat& bufferContextDiplomat_
 )
 {
@@ -55,10 +74,15 @@ void MaterialContext::MaterialBufferCreator::CreateMaterialArrBufferSrvIndexGrou
 		Provide<BufferContextCmds::CreateCBufferCmd>(licence);
 
 	//srvHeapIndexを抽出
-	IReadable* readableBuffer = static_cast<IReadable*>(static_cast<UploadStructuredBuffer*>(materialArrBufferSrvIndexGroupBuffer_));
+	IReadable* readableBuffer = static_cast<IReadable*>(static_cast<UploadStructuredBuffer*>(uploadStructuredBuffer_));
 
 	//定数バッファ生成コマンドで生成する
-	auto cBufferID_cBuffer = createCBufferCmd("MaterialArrBufferSrvIndexGroup", UINT(sizeof(SRVHeapIndex)), (UINT)ConstantBuffers::ConstantBufferBindSlots::kShaderParamArrSrvIndices);
+	auto cBufferID_cBuffer = createCBufferCmd
+	(
+		cBufferName_,
+		UINT(sizeof(SRVHeapIndex)),
+		(UINT)slot
+	);
 
 	//その定数バッファのマップしたポインタにデータを書き込む
 	//中身は不動なので、２面分書いちゃう
@@ -68,6 +92,36 @@ void MaterialContext::MaterialBufferCreator::CreateMaterialArrBufferSrvIndexGrou
 	);
 
 }
+
+
+GPUBufferBehavior* MaterialContext::MaterialBufferCreator::CreateMaterialIDGroupArrBuffer
+(
+	MaterialIndexDispatcher& materialIndexDispatcher_,
+	BufferContextDiplomat& bufferContextDiplomat_
+)
+{
+	//BufferCreatorを借りる
+	auto bufferToolLender = bufferContextDiplomat_.Access<BufferContext::ToolLender>();
+	BufferContext::ToolLender::LicenceType<BufferContext::BufferCreator> licence{};
+	auto* bufferCreator = bufferToolLender->Lend<BufferContext::BufferCreator>(licence);
+
+	//描画対象によってどのマテリアルを使用するかは違うのでCPUで書き込めるようにする
+	UploadStructuredBufferDescription desc
+	(
+		(UINT)sizeof(Material::MaterialIDGroupCPUGPU),
+		materialIDGroupArrBufferSize,
+		0
+	);
+
+	//マテリアルID群配列バッファを作成
+	auto id_buffer = bufferCreator->CreateWithBuffer(desc, "MaterialIDGroupArr");
+
+	//描画対象作成時に、中身を書き込みたいのでディスパッチャーに持たせる
+	materialIndexDispatcher_.ImportMaterialIDGroupArrBufferID(MaterialIndexDispatcher::LocalKey{}, id_buffer.first);
+
+	return id_buffer.second;
+}
+
 
 void MaterialContext::MaterialBufferCreator::WriteMaterialArrSrvIndices(GPUBufferBehavior* materialArrBufferSrvIndexGroupBuffer_)
 {
@@ -195,3 +249,21 @@ void MaterialContext::MaterialBufferCreator::CreateMaterialArrBuffer<Material::T
 	MaterialIndexDispatcher& materialIndexDispatcher_,
 	BufferContextDiplomat& bufferContextDiplomat_
 );
+
+
+template
+void MaterialContext::MaterialBufferCreator::CreateItsSrvCBuffer<ConstantBuffers::ConstantBufferBindSlots::kMaterialArrBufferSrvIndicesSrvIndex>
+(
+	GPUBufferBehavior* uploadStructuredBuffer_,
+	std::string const& cBufferName_,
+	BufferContextDiplomat& bufferContextDiplomat_
+);
+
+template
+void MaterialContext::MaterialBufferCreator::CreateItsSrvCBuffer<ConstantBuffers::ConstantBufferBindSlots::kMaterialIDGroupArrBufferSrv>
+(
+	GPUBufferBehavior* uploadStructuredBuffer_,
+	std::string const& cBufferName_,
+	BufferContextDiplomat& bufferContextDiplomat_
+);
+

@@ -13,7 +13,8 @@ namespace ConstantBuffers
 		kTextureContainer,
 		kPassRefBufferIndices,
 		kCameraContainer,
-		kShaderParamArrSrvIndices
+		kMaterialArrBufferSrvIndicesSrvIndex,
+		kMaterialIDGroupArrBufferSrv
 
 		, kCount
 	};
@@ -23,7 +24,7 @@ namespace ConstantBuffers
 		kPerDrawIndices = ConstantBufferBindSlots::kCount,
 		kPassConstants,
 		kFinalColorBufferSrv,
-		kShaderParamIndicesContainerIndex
+		kMaterialIDGroupContainerIndex
 
 		,kCount
 	};
@@ -101,12 +102,17 @@ cbuffer PassRefBufferContainerIndexCB : register(b4)
 
 cbuffer CameraContainerIndexCB : register(b5)
 {
-	uint gCameraContainerIndex;
+	uint gCameraContainerSrvIndex;
 }
 
-cbuffer ShaderParamArrSrvIndicesIndexCB : register(b6)
+cbuffer MaterialArrBufferSrvIndicesSrvIndexCB : register(b6)
 {
-	uint gShaderParamArrSrvIndicesIndex;
+	uint gMaterialArrBufferSrvIndicesSrvIndex;
+}
+
+cbuffer MaterialIDGroupArrBufferSrvCB : register(b7)
+{
+	uint gMaterialIDGroupArrBufferSrv;
 }
 
 
@@ -117,18 +123,19 @@ cbuffer ShaderParamArrSrvIndicesIndexCB : register(b6)
 
 
 
-ConstantBuffer<PerDrawIndices> gPerDrawIndices: register(b7);
 
-ConstantBuffer<PassConstants> gPassConstants: register(b8);
+ConstantBuffer<PerDrawIndices> gPerDrawIndices: register(b8);
 
-cbuffer FinalColorBufferSrvCB : register(b9)
+ConstantBuffer<PassConstants> gPassConstants: register(b9);
+
+cbuffer FinalColorBufferSrvCB : register(b10)
 {
 	uint gFinalColorBufferSrv;
 }
 
-cbuffer ShaderParamIndicesContainerIndexCB : register(b10)
+cbuffer MaterialIDGroupContainerIndexCB : register(b11)
 {
-	uint gShaderParamIndicesContainerIndex;
+	uint gMaterialIDGroupContainerIndex;
 }
 
 

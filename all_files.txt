@@ -10645,18 +10645,34 @@ MaterialContext::MaterialBufferCreator::MaterialBufferCreator
 	//Material配列のバッファを作成
 	CreateMaterialArrBuffer<Material::Type::kStandard>(materialIndexDispatcher_, bufferContextDiplomat_);
 	CreateMaterialArrBuffer<Material::Type::kGridLine>(materialIndexDispatcher_, bufferContextDiplomat_);
-	//作成したシェーダーパラメーター配列のsrvHeapIndexをキャッシュに登録してあるので、
-	//それをもとにシェーダーパラメーター配列のsrvHeapIndex群のバッファを作成。
+	//作成したマテリアル配列のsrvHeapIndexをキャッシュに登録してあるので、
+	//それをもとにマテリアル配列のsrvHeapIndex群のバッファを作成。
 	//そのバッファのポインタを返す
-	auto* shaderParamArrSrvIndexGroupBuffer = CreateMaterialArrSrvIndexGroupBuffer(materialIndexDispatcher_, bufferContextDiplomat_);
-	//ShaderParamArrSrvIndexGroupBufferの中身は不動なのでここでかきこんじゃう
-	WriteMaterialArrSrvIndices(shaderParamArrSrvIndexGroupBuffer);
+	auto* materialArrSrvIndexGroupBuffer = CreateMaterialArrSrvIndexGroupBuffer(materialIndexDispatcher_, bufferContextDiplomat_);
+	//MaterialArrSrvIndexGroupBufferの中身は不動なのでここでかきこんじゃう
+	WriteMaterialArrSrvIndices(materialArrSrvIndexGroupBuffer);
 	//そのsrvHeapIndexのグローバル定数バッファを作成
-	CreateMaterialArrBufferSrvIndexGroupCBuffer(shaderParamArrSrvIndexGroupBuffer, bufferContextDiplomat_);
+	CreateItsSrvCBuffer<ConstantBuffers::ConstantBufferBindSlots::kMaterialArrBufferSrvIndicesSrvIndex>
+	(
+		materialArrSrvIndexGroupBuffer,
+		"MaterialArrBufferSrvIndexGroupSrv",
+		bufferContextDiplomat_
+	);
+	//MaterialID群配列のバッファを作成する
+	auto* materialIDGroupArrBuffer = CreateMaterialIDGroupArrBuffer(materialIndexDispatcher_, bufferContextDiplomat_);
+	//そのsrvHeapIndexのグローバル定数バッファを作成
+	CreateItsSrvCBuffer<ConstantBuffers::ConstantBufferBindSlots::kMaterialIDGroupArrBufferSrv>
+	(
+		materialIDGroupArrBuffer,
+		"MaterialIDGroupArrSrv",
+		bufferContextDiplomat_
+	);
 }
-void MaterialContext::MaterialBufferCreator::CreateMaterialArrBufferSrvIndexGroupCBuffer
+template<ConstantBuffers::ConstantBufferBindSlots slot>
+void MaterialContext::MaterialBufferCreator::CreateItsSrvCBuffer
 (
-	GPUBufferBehavior* materialArrBufferSrvIndexGroupBuffer_,
+	GPUBufferBehavior* uploadStructuredBuffer_,
+	std::string const& cBufferName_,
 	BufferContextDiplomat& bufferContextDiplomat_
 )
 {
@@ -10665,15 +10681,43 @@ void MaterialContext::MaterialBufferCreator::CreateMaterialArrBufferSrvIndexGrou
 	auto createCBufferCmd = bufferContextDiplomat_.Access<BufferContext::CmdProvider>()->
 		Provide<BufferContextCmds::CreateCBufferCmd>(licence);
 	//srvHeapIndexを抽出
-	IReadable* readableBuffer = static_cast<IReadable*>(static_cast<UploadStructuredBuffer*>(materialArrBufferSrvIndexGroupBuffer_));
+	IReadable* readableBuffer = static_cast<IReadable*>(static_cast<UploadStructuredBuffer*>(uploadStructuredBuffer_));
 	//定数バッファ生成コマンドで生成する
-	auto cBufferID_cBuffer = createCBufferCmd("ShaderParamArrSrvIndexGroup", UINT(sizeof(SRVHeapIndex)), (UINT)ConstantBuffers::ConstantBufferBindSlots::kShaderParamArrSrvIndices);
+	auto cBufferID_cBuffer = createCBufferCmd
+	(
+		cBufferName_,
+		UINT(sizeof(SRVHeapIndex)),
+		(UINT)slot
+	);
 	//その定数バッファのマップしたポインタにデータを書き込む
 	//中身は不動なので、２面分書いちゃう
 	cBufferID_cBuffer.second->WriteInBoth<SRVHeapIndex>
 	(
 		{ readableBuffer->OutProperSRVHeapIndex(0) ,readableBuffer->OutProperSRVHeapIndex(1) }
 	);
+}
+GPUBufferBehavior* MaterialContext::MaterialBufferCreator::CreateMaterialIDGroupArrBuffer
+(
+	MaterialIndexDispatcher& materialIndexDispatcher_,
+	BufferContextDiplomat& bufferContextDiplomat_
+)
+{
+	//BufferCreatorを借りる
+	auto bufferToolLender = bufferContextDiplomat_.Access<BufferContext::ToolLender>();
+	BufferContext::ToolLender::LicenceType<BufferContext::BufferCreator> licence{};
+	auto* bufferCreator = bufferToolLender->Lend<BufferContext::BufferCreator>(licence);
+	//描画対象によってどのマテリアルを使用するかは違うのでCPUで書き込めるようにする
+	UploadStructuredBufferDescription desc
+	(
+		(UINT)sizeof(Material::MaterialIDGroupCPUGPU),
+		materialIDGroupArrBufferSize,
+		0
+	);
+	//マテリアルID群配列バッファを作成
+	auto id_buffer = bufferCreator->CreateWithBuffer(desc, "MaterialIDGroupArr");
+	//描画対象作成時に、中身を書き込みたいのでディスパッチャーに持たせる
+	materialIndexDispatcher_.ImportMaterialIDGroupArrBufferID(MaterialIndexDispatcher::LocalKey{}, id_buffer.first);
+	return id_buffer.second;
 }
 void MaterialContext::MaterialBufferCreator::WriteMaterialArrSrvIndices(GPUBufferBehavior* materialArrBufferSrvIndexGroupBuffer_)
 {
@@ -10710,14 +10754,14 @@ GPUBufferBehavior* MaterialContext::MaterialBufferCreator::CreateMaterialArrSrvI
 	ErrorMessageOutput::Assert::DetectError
 	(
 		(UINT)materialSequence == Material::kNumParamExists,
-		"ShaderParamArrバッファの作成数が足りない",
+		"MaterialArrバッファの作成数が足りない",
 		fileName
 	);
 	//BufferCreatorを借りる
 	auto bufferToolLender = bufferContextDiplomat_.Access<BufferContext::ToolLender>();
 	BufferContext::ToolLender::LicenceType<BufferContext::BufferCreator> licence{};
 	auto* bufferCreator = bufferToolLender->Lend<BufferContext::BufferCreator>(licence);
-	//シェーダーパラメーター配列バッファはダブルバッファなので、srvheapIndexは2つ
+	//マテリアル配列バッファはダブルバッファなので、srvheapIndexは2つ
 	//その保管先も2面分ということでUploadStructuredBufferでいく
 	UploadStructuredBufferDescription desc
 	(
@@ -10725,8 +10769,8 @@ GPUBufferBehavior* MaterialContext::MaterialBufferCreator::CreateMaterialArrSrvI
 		1,
 		0
 	);
-	//シェーダーパラメーター配列のsrv群のバッファを作成
-	auto id_buffer = bufferCreator->CreateWithBuffer(desc, "ShaderParamArrSrvIndexGroup");
+	//マテリアル配列のsrv群のバッファを作成
+	auto id_buffer = bufferCreator->CreateWithBuffer(desc, "MaterialArrBufferSrvIndexGroup");
 	return id_buffer.second;
 }
 template<Material::Type type>
@@ -10753,7 +10797,7 @@ void MaterialContext::MaterialBufferCreator::CreateMaterialArrBuffer
 		Material::MaterialTypeTraits<type>::kReserveSize,
 		0
 	);
-	//シェーダーパラメーターの配列バッファを作成
+	//マテリアル配列バッファを作成
 	auto id_buffer = bufferCreator->CreateWithBuffer(desc, Material::MaterialTypeTraits<type>::kName);
 	//登録
 	materialIndexDispatcher_.ImportMaterialArrBufferID<type>(MaterialIndexDispatcher::LocalKey{}, id_buffer.first);
@@ -10772,6 +10816,20 @@ void MaterialContext::MaterialBufferCreator::CreateMaterialArrBuffer<Material::T
 	MaterialIndexDispatcher& materialIndexDispatcher_,
 	BufferContextDiplomat& bufferContextDiplomat_
 );
+template
+void MaterialContext::MaterialBufferCreator::CreateItsSrvCBuffer<ConstantBuffers::ConstantBufferBindSlots::kMaterialArrBufferSrvIndicesSrvIndex>
+(
+	GPUBufferBehavior* uploadStructuredBuffer_,
+	std::string const& cBufferName_,
+	BufferContextDiplomat& bufferContextDiplomat_
+);
+template
+void MaterialContext::MaterialBufferCreator::CreateItsSrvCBuffer<ConstantBuffers::ConstantBufferBindSlots::kMaterialIDGroupArrBufferSrv>
+(
+	GPUBufferBehavior* uploadStructuredBuffer_,
+	std::string const& cBufferName_,
+	BufferContextDiplomat& bufferContextDiplomat_
+);
 
 ========================================
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Material\MaterialBufferCreator\MaterialBufferCreator.h ===
@@ -10779,7 +10837,8 @@ void MaterialContext::MaterialBufferCreator::CreateMaterialArrBuffer<Material::T
 #pragma once
 #include "../MaterialContext.h"
 //外部
-#include "../../../../../../Assets/Shared/Material.h"
+#include "../../../../../Assets/Shared/Material.h"
+#include "../../../../../Assets/Shared/ConstantBuffers.h"
 class GPUBufferBehavior;
 class MaterialContext::MaterialBufferCreator
 {
@@ -10792,7 +10851,7 @@ public:
 	);
 private:
 	//描画対象固有のマテリアルID群バッファの最大数
-	UINT materialIDGroupBufferSize=
+	UINT materialIDGroupArrBufferSize =
 		(UINT)ProjectConfig::Render::BufferSize::kMaterialIDGroupContainer;
 	//マテリアル配列バッファのキャッシュ
 	std::vector<GPUBufferBehavior*> materialArrBufferCache;
@@ -10813,10 +10872,18 @@ private:
 	);
 	//MaterialArrバッファの表裏２面分のsrvIndexを書き込む
 	void WriteMaterialArrSrvIndices(GPUBufferBehavior* materialArrBufferSrvIndexGroupBuffer_);
-	//MaterialArrSrvIndexGroupのSrvIndexのグローバル定数バッファを作成する
-	void CreateMaterialArrBufferSrvIndexGroupCBuffer
+	//MaterialID群配列のバッファを作成する
+	GPUBufferBehavior* CreateMaterialIDGroupArrBuffer
 	(
-		GPUBufferBehavior* materialArrBufferSrvIndexGroupBuffer_,
+		MaterialIndexDispatcher& materialIndexDispatcher_,
+		BufferContextDiplomat& bufferContextDiplomat_
+	);
+	//バッファのSrvのグローバル定数バッファを作成する
+	template<ConstantBuffers::ConstantBufferBindSlots dstSlot>
+	void CreateItsSrvCBuffer
+	(
+		GPUBufferBehavior* uploadStructuredBuffer_,
+		std::string const& cBUfferName_,
 		BufferContextDiplomat& bufferContextDiplomat_
 	);
 };
@@ -10836,6 +10903,11 @@ MaterialContext::MaterialIndexDispatcher::MaterialIndexDispatcher(NexusFieldProo
 		"ReserveDispatchSize()を呼び足りない",
 		"MaterialIndexDispatcher.cpp"
 	);
+}
+void MaterialContext::MaterialIndexDispatcher::ImportMaterialIDGroupArrBufferID(LocalKey key_, BufferUniqueID id_)
+{
+	materialIDGroupArrBufferID = id_;
+	Logger::Log("Import MaterialIDGroupArrBufferID: " + std::to_string(id_), "MaterialIndexDispatcher.cpp");
 }
 
 ========================================
@@ -10862,8 +10934,9 @@ public:
 	void ImportMaterialArrBufferID(LocalKey key_, BufferUniqueID id_)
 	{
 		materialArrBufferIdArr[(UINT)type] = id_;
-		Logger::Log("Import " + Material::MaterialTypeTraits<type>::kName + "ArrBuf: " + std::to_string(id_), "ShaderParamDispatcher.h");
+		Logger::Log("Import " + Material::MaterialTypeTraits<type>::kName + "ArrBuf: " + std::to_string(id_), "MaterialIndexDispatcher.h");
 	}
+	void ImportMaterialIDGroupArrBufferID(LocalKey key_, BufferUniqueID id_);
 private:
 	//デバッグ用。ちゃんとReserveDispatchSize()が呼ばれたかチェック
 	Material::Type typeSepuence = Material::Type(0);
@@ -10885,8 +10958,10 @@ private:
 		typeSepuence = Material::Type((UINT)typeSepuence + 1);
 	}
 	std::array<SimpleFreeList, (UINT)Material::kNumParamExists> freeListMap;
-	//書き込む必要があるので、シェーダーパラメーター配列のバッファIDは所持する
+	//書き込む必要があるので、マテリアル配列のバッファIDは所持する
 	std::array<BufferUniqueID, (UINT)Material::kNumParamExists> materialArrBufferIdArr;
+	//各描画対象のマテリアルID群の配列のばっふぁID 
+	BufferUniqueID materialIDGroupArrBufferID;
 };
 struct MaterialContext::MaterialIndexDispatcher::LocalKey
 {
@@ -11119,7 +11194,7 @@ void ModelContext::ModelCreator::DeleteRenderStateCache(NexusFieldProof proof_ ,
 ModelContext::ModelCreator::ModelDescParts ModelContext::ModelCreator::AssembleModelDescParts
 (
 	std::string const& modelFileName_,
-	std::vector<MaterialCPU> const& inputMaterials_
+	std::vector<Material::StandardCPU> const& inputMaterials_
 )
 {
 	return modelDescAssembler->Assemble(modelFileName_, inputMaterials_);
@@ -11137,7 +11212,7 @@ class ModelContext::ModelCreator
 	using ModelDescParts = std::tuple
 	<
 		std::vector<ConstantBuffers::PerDrawIndicesCPUGPU>,
-		std::vector<StructuredBufferModelData::MaterialGPU>,
+		std::vector<Material::StandardGPU>,
 		std::vector<size_t>
 	>;
 public:
@@ -11153,7 +11228,7 @@ public:
 	(
 		std::string const& modelFileName_,
 		std::vector<RenderState> const& modelRenderStates_,
-		std::vector<StructuredBufferModelData::MaterialCPU> const& materials_,
+		std::vector<Material::StandardCPU> const& materials_,
 		UINT const numCreate_,
 		std::string const& modelName_ 
 	)
@@ -11192,7 +11267,7 @@ private:
 	ModelDescParts AssembleModelDescParts
 	(
 		std::string const& modelFileName_,
-		std::vector<StructuredBufferModelData::MaterialCPU> const& inputMaterials_
+		std::vector<Material::StandardCPU> const& inputMaterials_
 	);
 	//生成数。ネーミング用
 	UINT numCreate{};
@@ -12055,8 +12130,7 @@ namespace
 {
     auto const fileName = "MaterialParser.cpp";
 }
-using namespace StructuredBufferModelData;
-void ModelContext::ModelDataLoader::MaterialParser::ParseMaterial(MaterialCPU& dstMaterial_, const aiMaterial* pSrcMaterial_)
+void ModelContext::ModelDataLoader::MaterialParser::ParseMaterial(Material::StandardCPU& dstMaterial_, const aiMaterial* pSrcMaterial_)
 {
     //ベースカラー
     {
@@ -12125,13 +12199,13 @@ std::string ModelContext::ModelDataLoader::MaterialParser::Convert(const aiStrin
 #pragma once
 #include "../ModelDataLoader.h"
 //外部
-#include "../../../../../../../Assets/Shared/StructuredBufferModelData.h"
+#include "../../../../../../../Assets/Shared/Material.h"
 struct aiMaterial;
 struct aiString;
 class  ModelContext::ModelDataLoader::MaterialParser
 {
 	friend class ModelContext::ModelDataLoader;
-	static void ParseMaterial(StructuredBufferModelData::MaterialCPU& dstMaterial_, const aiMaterial* pSrcMaterial_);
+	static void ParseMaterial(Material::StandardCPU& dstMaterial_, const aiMaterial* pSrcMaterial_);
 	//以下ヘルパー
 private:
 	static std::string Convert(const aiString& path_);
@@ -12407,7 +12481,7 @@ ModelContext::ModelCreator::ModelDescAssembler::ModelDescAssembler
 ModelContext::ModelCreator::ModelDescParts ModelContext::ModelCreator::ModelDescAssembler::Assemble
 (
 	std::string const& modelFileName_,
-	std::vector<MaterialCPU> const& inputMaterials_
+	std::vector<Material::StandardCPU> const& inputMaterials_
 )
 {
 	//modelDataLibraryにアクセス
@@ -12447,15 +12521,15 @@ std::vector<ConstantBuffers::PerDrawIndicesCPUGPU> ModelContext::ModelCreator::M
 	}
 	return perDrawIndices;
 }
-std::vector<MaterialGPU> ModelContext::ModelCreator::ModelDescAssembler::ConvertMaterialData
+std::vector<Material::StandardGPU> ModelContext::ModelCreator::ModelDescAssembler::ConvertMaterialData
 (
 	size_t const kNumMeshData_,
-	std::vector<MaterialCPU> const& materialsFromFile_,
-	std::vector<MaterialCPU> const& inputMaterials
+	std::vector<Material::StandardCPU> const& materialsFromFile_,
+	std::vector<Material::StandardCPU> const& inputMaterials
 )
 {
 	//テクスチャファイルパスから、テクスチャファイル名へ変換
-	std::vector<MaterialGPU> materialGPUContainer;
+	std::vector<Material::StandardGPU> materialGPUContainer;
 	//サブメッシュ分も拡張する
 	materialGPUContainer.resize(kNumMeshData_);
 	for (size_t i = 0;i < kNumMeshData_;++i)
@@ -12471,7 +12545,7 @@ std::vector<MaterialGPU> ModelContext::ModelCreator::ModelDescAssembler::Convert
 			if (src.roughness != kInvalid)		dst.roughness		= src.roughness;
 			if (src.metallic != kInvalid)		dst.metallic		= src.metallic;
 			if (src.baseColor.x != kInvalid)	dst.baseColor		= src.baseColor;
-			dst.samplerState = src.samplerState;
+			dst.albedoTexSamplerState = src.albedoTexSamplerState;
 		}
 		//手動入力で満たされなかった部分を、モデル名に紐づけられているデータから入力する
 		if (i < materialsFromFile_.size())
@@ -12524,7 +12598,7 @@ public:
 	ModelDescParts Assemble
 	(
 		std::string const& modelFileName_,
-		std::vector<StructuredBufferModelData::MaterialCPU> const& inputMaterials_
+		std::vector<Material::StandardCPU> const& inputMaterials_
 	);
 private:
 	//PerDrawIndicesを詰める
@@ -12535,11 +12609,11 @@ private:
 	);
 	//引数のマテリアルデータをGPU仕様に変換する。
 	//もし、中身が空だった場合は、そのモデル名に紐づけられているマテリアルデータを入力
-	std::vector<StructuredBufferModelData::MaterialGPU> ConvertMaterialData
+	std::vector<Material::StandardGPU> ConvertMaterialData
 	(
 		size_t const kNumMeshData_,
-		std::vector<StructuredBufferModelData::MaterialCPU> const& materialsFromFile_,
-		std::vector<StructuredBufferModelData::MaterialCPU> const& inputMaterials
+		std::vector<Material::StandardCPU> const& materialsFromFile_,
+		std::vector<Material::StandardCPU> const& inputMaterials
 	);
 	//TransformやMaterialのスロットを割り当てる
 	ModelContext::ModelSlotAllocator& slotAllocator;
@@ -12692,7 +12766,6 @@ namespace
 ModelContext::ModelSlotAllocator::ModelDataLibrary::ModelDataLibrary(NexusFieldProof proof_)
 {
 }
-using namespace StructuredBufferModelData;
 void ModelContext::ModelSlotAllocator::ModelDataLibrary::Log()const
 {
 #ifdef _DEBUG
@@ -12735,7 +12808,7 @@ public:
 			ErrorMessageOutput::Assert::DetectError(src_.size() > 0, "メッシュデータの中身すっからかんやん！", "ModelDataLibrary.h");
 			modelData[modelFileName_].meshDataID = src_;
 		}
-		else if constexpr (std::is_same_v<DataType, StructuredBufferModelData::MaterialCPU>)
+		else if constexpr (std::is_same_v<DataType, Material::StandardCPU>)
 		{
 			modelData[modelFileName_].materialCPU = src_;
 		}
@@ -13173,6 +13246,7 @@ void ModelContext::ModelDataBatcher::ImportPerDrawBufferID<ConstantBufferBindSlo
 //外部
 #include "../../../../../../Assets/Shared/ConstantBuffers.h"
 #include "../../../../../../Assets/Shared/StructuredBufferModelData.h"
+#include "../../../../../../Assets/Shared/Material.h"
 class Model;
 struct IWritableCPU;
 class ModelContext::ModelDataBatcher
@@ -13248,7 +13322,7 @@ struct ModelContext::ModelDataBatcher::BufferTypeTraits
 {
 	static inline std::string const kBufferName = "MaterialContainer";
 	static constexpr UINT kArrSize = (UINT)ProjectConfig::Render::BufferSize::kMaterialContainer;
-	static constexpr UINT kStructureSize = (UINT)sizeof(StructuredBufferModelData::MaterialGPU);
+	static constexpr UINT kStructureSize = (UINT)sizeof(Material::StandardGPU);
 };
 
 ========================================
@@ -13378,7 +13452,7 @@ public:
 	(
 		std::string const& modelFileName_,
 		std::vector<RenderState> const& modelRenderStates_,
-		std::vector<StructuredBufferModelData::MaterialCPU> const& materials_,
+		std::vector<Material::StandardCPU> const& materials_,
 		UINT const numCreate_,
 		std::string const& modelName_
 	)
@@ -13707,7 +13781,7 @@ Model::Model
 (
 	Type type_,
 	const ModelDescription& modelDesc_,
-	std::vector<StructuredBufferModelData::MaterialGPU> const& materials_
+	std::vector<Material::StandardGPU> const& materials_
 ) :modelDesc(modelDesc_), type(type_)
 {
 	//変更可能描画コンポーネントの初期設定は添え字0番に
@@ -13873,6 +13947,7 @@ void Model::ChangeTexture<TextureComponent::TextureType::kEmissive>(size_t index
 //外部
 #include "../../../Buffer/BufferDefinition/TextureComponent.h"
 #include "../../../../Math/Transform/Transform.h"
+#include "../../../../../../Assets/Shared/Material.h"
 class ModelContext;
 class RenderContext;
 class Model
@@ -13887,7 +13962,7 @@ class Model
 		//現在選択しているマテリアルタイプ
 		Material::Type materialType{};
 		//マテリアル。可変長になっているのは、サブメッシュ分用意しているから
-		std::vector<StructuredBufferModelData::MaterialGPU> materials;
+		std::vector<Material::StandardGPU> materials;
 		std::vector<UINT> areMaterialsDirtyCnt;
 		//トランスフォーム。サブメッシュ分用意されている
 		std::vector<Transform> transforms;
@@ -13905,7 +13980,7 @@ public:
 	(
 		Type type_,
 		const ModelDescription& modelDesc_,
-		std::vector<StructuredBufferModelData::MaterialGPU> const& materials_
+		std::vector<Material::StandardGPU> const& materials_
 	);
 	Model(const Model&) = delete;
 	Model& operator=(const Model&) = delete;
@@ -14012,13 +14087,13 @@ struct RenderState
 #pragma once
 #include "../../ModelContext.h"
 //外部
-#include "../../../../../../Assets/Shared/StructuredBufferModelData.h"
+#include "../../../../../../Assets/Shared/Material.h"
 struct ModelContext::ModelData
 {
 	template<typename DataType>
 	struct DataTypeTraits;
 	std::vector<MeshDataID> meshDataID;
-	std::vector<StructuredBufferModelData::MaterialCPU> materialCPU;
+	std::vector<Material::StandardCPU> materialCPU;
 	std::vector<size_t> meshletSize;
 };
 template<>
@@ -14027,7 +14102,7 @@ struct ModelContext::ModelData::DataTypeTraits<MeshDataID>
 	static inline const std::string kName = "MeshDataID";
 };
 template<>
-struct ModelContext::ModelData::DataTypeTraits<StructuredBufferModelData::MaterialCPU>
+struct ModelContext::ModelData::DataTypeTraits<Material::StandardCPU>
 {
 	static inline const std::string kName = "MaterialCPU";
 };
@@ -14050,10 +14125,11 @@ struct ModelContext::ModelData::DataTypeTraits<size_t>
 #include "../../ModelContext.h"
 //外部
 #include "../../../../../../Assets/Shared/StructuredBufferModelData.h"
+#include "../../../../../../Assets/Shared/Material.h"
 struct ModelContext::ModelDataFromFile
 {
 	std::vector<StructuredBufferModelData::MeshCPU> resourceMesh;
-	std::vector<StructuredBufferModelData::MaterialCPU> resourceMaterial;
+	std::vector<Material::StandardCPU> resourceMaterial;
 };
 
 ========================================
@@ -16507,6 +16583,7 @@ namespace ShaderPathComponent
 #pragma once
 #include "ShaderPathComponent.h"
 #include "../../../RenderPassComponent.h"
+#include "../../../../../Assets/Shared/Material.h"
 ///MeshType X Pass = MeshShader
 ///MaterialType X Pass = PixelShader
 namespace ShaderTable
@@ -18072,9 +18149,9 @@ void GridFloor::Awake(SceneInitInterface& sceneInitInterface_)
 	cP.materialTypes.emplace_back(Material::Type::kStandard);
 	std::vector<RenderState> playerC;
 	playerC.emplace_back(std::move(cP));
-	std::vector<MaterialCPU> materials;
+	std::vector<Material::StandardCPU> materials;
 	materials.resize(1);
-	materials[0].samplerState = SamplerState::kLinearClamp;
+	materials[0].albedoTexSamplerState = SamplerState::kLinearClamp;
 	p = sceneInitInterface_.CreateModel<Model::Type::kDynamic>("Plane200x200Obj", playerC, materials, 1, "Player");
 	for (int i = 0;i < 1;++i)
 	{
@@ -23393,7 +23470,7 @@ public:
 	(
 		std::string const& modelFileName_,
 		std::vector<RenderState> const& modelRenderStates_,
-		std::vector<StructuredBufferModelData::MaterialCPU> const& materials_,
+		std::vector<Material::StandardCPU> const& materials_,
 		UINT const numCreate_,
 		std::string const& modelName_ = "nameLess"
 	)
@@ -25148,4 +25225,4 @@ namespace StringProcessing
 === SUMMARY ===
 ========================================
 Total Files      : 561
-Effective Lines  : 18326
+Effective Lines  : 18390

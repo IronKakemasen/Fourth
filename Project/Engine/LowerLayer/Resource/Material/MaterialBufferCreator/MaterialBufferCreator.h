@@ -3,7 +3,8 @@
 
 
 //外部
-#include "../../../../../../Assets/Shared/Material.h"
+#include "../../../../../Assets/Shared/Material.h"
+#include "../../../../../Assets/Shared/ConstantBuffers.h"
 
 class GPUBufferBehavior;
 
@@ -21,7 +22,7 @@ public:
 private:
 
 	//描画対象固有のマテリアルID群バッファの最大数
-	UINT materialIDGroupBufferSize=
+	UINT materialIDGroupArrBufferSize =
 		(UINT)ProjectConfig::Render::BufferSize::kMaterialIDGroupContainer;
 
 	//マテリアル配列バッファのキャッシュ
@@ -49,14 +50,20 @@ private:
 	//MaterialArrバッファの表裏２面分のsrvIndexを書き込む
 	void WriteMaterialArrSrvIndices(GPUBufferBehavior* materialArrBufferSrvIndexGroupBuffer_);
 
-	//MaterialArrSrvIndexGroupのSrvIndexのグローバル定数バッファを作成する
-	void CreateMaterialArrBufferSrvIndexGroupCBuffer
+	//MaterialID群配列のバッファを作成する
+	GPUBufferBehavior* CreateMaterialIDGroupArrBuffer
 	(
-		GPUBufferBehavior* materialArrBufferSrvIndexGroupBuffer_,
+		MaterialIndexDispatcher& materialIndexDispatcher_,
 		BufferContextDiplomat& bufferContextDiplomat_
 	);
 
-
-
+	//バッファのSrvのグローバル定数バッファを作成する
+	template<ConstantBuffers::ConstantBufferBindSlots dstSlot>
+	void CreateItsSrvCBuffer
+	(
+		GPUBufferBehavior* uploadStructuredBuffer_,
+		std::string const& cBUfferName_,
+		BufferContextDiplomat& bufferContextDiplomat_
+	);
 };
 

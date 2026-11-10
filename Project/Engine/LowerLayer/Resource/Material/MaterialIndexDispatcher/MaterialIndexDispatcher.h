@@ -3,7 +3,7 @@
 
 
 //外部
-#include "../../../../../../Assets/Shared/Material.h"
+#include "../../../../../Assets/Shared/Material.h"
 
 #include "SimpleFreeList/SimpleFreeList.h"
 
@@ -32,6 +32,8 @@ public:
 		Logger::Log("Import " + Material::MaterialTypeTraits<type>::kName + "ArrBuf: " + std::to_string(id_), "MaterialIndexDispatcher.h");
 	}
 
+	void ImportMaterialIDGroupArrBufferID(LocalKey key_, BufferUniqueID id_);
+
 private:
 
 	//デバッグ用。ちゃんとReserveDispatchSize()が呼ばれたかチェック
@@ -59,8 +61,11 @@ private:
 	}
 
 	std::array<SimpleFreeList, (UINT)Material::kNumParamExists> freeListMap;
-	//書き込む必要があるので、シェーダーパラメーター配列のバッファIDは所持する
+	//書き込む必要があるので、マテリアル配列のバッファIDは所持する
 	std::array<BufferUniqueID, (UINT)Material::kNumParamExists> materialArrBufferIdArr;
+	//各描画対象のマテリアルID群の配列のばっふぁID 
+	BufferUniqueID materialIDGroupArrBufferID;
+
 };
 
 struct MaterialContext::MaterialIndexDispatcher::LocalKey
