@@ -24,7 +24,7 @@ void main
     //メッシュデータのSrvIndex群配列(2段階参照)
     StructuredBuffer<MeshDataSRVHeapIndexGroup> meshDataSRVContainer = ResourceDescriptorHeap[gMeshDataIndexContainer];
     //カメラの実データ配列
-    StructuredBuffer<CameraData> cameraDataContainer = ResourceDescriptorHeap[gCameraContainerIndex];
+    StructuredBuffer<CameraData> cameraDataContainer = ResourceDescriptorHeap[gCameraContainerSrvIndex];
 
     //トランスフォーム実データ配列から、モデルの指定するインデックスをもとに引っ張ってくる
     TransformMatrix thisTransformMatrix = transformMatrixContainer[gPerDrawIndices.transformMatrixID];
