@@ -15,7 +15,7 @@ public:
 	MaterialBufferCreator
 	(
 		NexusFieldProof proof_,
-		MaterialIndexDispatcher& materialIndexDispatcher_,
+		MaterialDataBatcher& materialDataBatcher_,
 		BufferContextDiplomat& bufferContextDiplomat_
 	);
 
@@ -32,7 +32,7 @@ private:
 	template<Material::Type type>
 	void CreateMaterialArrBuffer
 	(
-		MaterialIndexDispatcher& materialIndexDispatcher_,
+		MaterialDataBatcher& materialDataBatcher_,
 		BufferContextDiplomat& bufferContextDiplomat_
 	);
 
@@ -40,17 +40,16 @@ private:
 	//それらのsrvHeapIndex群のバッファも作成する
 	GPUBufferBehavior* CreateMaterialArrSrvIndexGroupBuffer
 	(
-		MaterialIndexDispatcher& materialIndexDispatcher_,
 		BufferContextDiplomat& bufferContextDiplomat_
 	);
 
 	//MaterialArrバッファの表裏２面分のsrvIndexを書き込む
 	void WriteMaterialArrSrvIndices(GPUBufferBehavior* materialArrBufferSrvIndexGroupBuffer_);
 
-	//MaterialID群配列のバッファを作成する
-	GPUBufferBehavior* CreateMaterialIDGroupArrBuffer
+	//Material配列インデックス群配列のバッファを作成する
+	GPUBufferBehavior* CreateMaterialIndexGroupArrBuffer
 	(
-		MaterialIndexDispatcher& materialIndexDispatcher_,
+		MaterialDataBatcher& materialDataBatcher_,
 		BufferContextDiplomat& bufferContextDiplomat_
 	);
 

@@ -3,6 +3,7 @@
 
 
 #include "../MaterialIndexDispatcher/MaterialIndexDispatcher.h"
+#include "../MaterialRuntime/MaterialDataBatcher/MaterialDataBatcher.h"
 
 
 //外部
@@ -20,20 +21,20 @@ namespace
 MaterialContext::MaterialBufferCreator::MaterialBufferCreator
 (
 	NexusFieldProof proof_,
-	MaterialIndexDispatcher& materialIndexDispatcher_,
+	MaterialDataBatcher& materialDataBatcher_,
 	BufferContextDiplomat& bufferContextDiplomat_
 )
 {
 	materialArrBufferCache.reserve((UINT)Material::kNumParamExists);
 
 	//Material配列のバッファを作成
-	CreateMaterialArrBuffer<Material::Type::kStandard>(materialIndexDispatcher_, bufferContextDiplomat_);
-	CreateMaterialArrBuffer<Material::Type::kGridLine>(materialIndexDispatcher_, bufferContextDiplomat_);
+	CreateMaterialArrBuffer<Material::Type::kStandard>(materialDataBatcher_, bufferContextDiplomat_);
+	CreateMaterialArrBuffer<Material::Type::kGridLine>(materialDataBatcher_, bufferContextDiplomat_);
 
 	//作成したマテリアル配列のsrvHeapIndexをキャッシュに登録してあるので、
 	//それをもとにマテリアル配列のsrvHeapIndex群のバッファを作成。
 	//そのバッファのポインタを返す
-	auto* materialArrSrvIndexGroupBuffer = CreateMaterialArrSrvIndexGroupBuffer(materialIndexDispatcher_, bufferContextDiplomat_);
+	auto* materialArrSrvIndexGroupBuffer = CreateMaterialArrSrvIndexGroupBuffer(bufferContextDiplomat_);
 
 	//MaterialArrSrvIndexGroupBufferの中身は不動なのでここでかきこんじゃう
 	WriteMaterialArrSrvIndices(materialArrSrvIndexGroupBuffer);
@@ -47,7 +48,7 @@ MaterialContext::MaterialBufferCreator::MaterialBufferCreator
 	);
 
 	//MaterialID群配列のバッファを作成する
-	auto* materialIDGroupArrBuffer = CreateMaterialIDGroupArrBuffer(materialIndexDispatcher_, bufferContextDiplomat_);
+	auto* materialIDGroupArrBuffer = CreateMaterialIndexGroupArrBuffer(materialDataBatcher_, bufferContextDiplomat_);
 
 	//そのsrvHeapIndexのグローバル定数バッファを作成
 	CreateItsSrvCBuffer<ConstantBuffers::ConstantBufferBindSlots::kMaterialIDGroupArrBufferSrv>
@@ -94,9 +95,9 @@ void MaterialContext::MaterialBufferCreator::CreateItsSrvCBuffer
 }
 
 
-GPUBufferBehavior* MaterialContext::MaterialBufferCreator::CreateMaterialIDGroupArrBuffer
+GPUBufferBehavior* MaterialContext::MaterialBufferCreator::CreateMaterialIndexGroupArrBuffer
 (
-	MaterialIndexDispatcher& materialIndexDispatcher_,
+	MaterialDataBatcher& materialDataBatcher_,
 	BufferContextDiplomat& bufferContextDiplomat_
 )
 {
@@ -117,7 +118,7 @@ GPUBufferBehavior* MaterialContext::MaterialBufferCreator::CreateMaterialIDGroup
 	auto id_buffer = bufferCreator->CreateWithBuffer(desc, "MaterialIndexGroupArr");
 
 	//描画対象作成時に、中身を書き込みたいのでディスパッチャーに持たせる
-	materialIndexDispatcher_.ImportMaterialIDGroupArrBufferID(id_buffer.first);
+	materialDataBatcher_.ImportMaterialIDGroupArrBufferID(id_buffer.first);
 
 	return id_buffer.second;
 }
@@ -160,7 +161,6 @@ void MaterialContext::MaterialBufferCreator::WriteMaterialArrSrvIndices(GPUBuffe
 
 GPUBufferBehavior* MaterialContext::MaterialBufferCreator::CreateMaterialArrSrvIndexGroupBuffer
 (
-	MaterialIndexDispatcher& materialIndexDispatcher_,
 	BufferContextDiplomat& bufferContextDiplomat_
 )
 {
@@ -196,7 +196,7 @@ GPUBufferBehavior* MaterialContext::MaterialBufferCreator::CreateMaterialArrSrvI
 template<Material::Type type>
 void MaterialContext::MaterialBufferCreator::CreateMaterialArrBuffer
 (
-	MaterialIndexDispatcher& materialIndexDispatcher_,
+	MaterialDataBatcher& materialDataBatcher_,
 	BufferContextDiplomat& bufferContextDiplomat_
 )
 {
@@ -228,7 +228,7 @@ void MaterialContext::MaterialBufferCreator::CreateMaterialArrBuffer
 	auto id_buffer = bufferCreator->CreateWithBuffer(desc, Material::MaterialTypeTraits<type>::kName);
 
 	//登録
-	materialIndexDispatcher_.ImportMaterialArrBufferIndex<type>(id_buffer.first);
+	materialDataBatcher_.ImportMaterialArrBufferIndex<type>(id_buffer.first);
 
 	//キャッシュに登録
 	materialArrBufferCache.emplace_back(id_buffer.second);
@@ -240,14 +240,14 @@ void MaterialContext::MaterialBufferCreator::CreateMaterialArrBuffer
 template
 void MaterialContext::MaterialBufferCreator::CreateMaterialArrBuffer<Material::Type::kStandard>
 (
-	MaterialIndexDispatcher& materialIndexDispatcher_,
+	MaterialDataBatcher& materialDataBatcher_,
 	BufferContextDiplomat& bufferContextDiplomat_
 );
 
 template
 void MaterialContext::MaterialBufferCreator::CreateMaterialArrBuffer<Material::Type::kGridLine>
 (
-	MaterialIndexDispatcher& materialIndexDispatcher_,
+	MaterialDataBatcher& materialDataBatcher_,
 	BufferContextDiplomat& bufferContextDiplomat_
 );
 
