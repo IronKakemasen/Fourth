@@ -27,6 +27,16 @@ namespace Material
     template<Material::Type>
     struct MaterialTypeTraits;
 
+    template<Material::Type type>
+    inline void CheckIsMaterialTypeAttachable()
+    {
+        static_assert
+        (
+            ((UINT)type < (UINT)Type::kOffscreen),
+            "Detected unattachable Material Type (Material.h)"
+        );
+    }
+
     struct MaterialIndexGroupCPUGPU
     {
         UINT standardIndex = kInvalid;
@@ -123,7 +133,7 @@ struct MaterialStandard
 };
 
 
-struct MaterialIDGroup
+struct MaterialIndexGroup
 {
     uint standardIndex;
     uint gridLineIndex;

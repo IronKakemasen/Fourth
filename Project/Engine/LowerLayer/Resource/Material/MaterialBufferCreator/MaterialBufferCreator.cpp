@@ -109,12 +109,12 @@ GPUBufferBehavior* MaterialContext::MaterialBufferCreator::CreateMaterialIDGroup
 	UploadStructuredBufferDescription desc
 	(
 		(UINT)sizeof(Material::MaterialIndexGroupCPUGPU),
-		materialIDGroupArrBufferSize,
+		(UINT)ProjectConfig::Render::BufferSize::kMaterialIndexGroupArr, //描画対象固有のマテリアルID群バッファの最大数
 		0
 	);
 
 	//マテリアルID群配列バッファを作成
-	auto id_buffer = bufferCreator->CreateWithBuffer(desc, "MaterialIDGroupArr");
+	auto id_buffer = bufferCreator->CreateWithBuffer(desc, "MaterialIndexGroupArr");
 
 	//描画対象作成時に、中身を書き込みたいのでディスパッチャーに持たせる
 	materialIndexDispatcher_.ImportMaterialIDGroupArrBufferID(id_buffer.first);
@@ -200,15 +200,16 @@ void MaterialContext::MaterialBufferCreator::CreateMaterialArrBuffer
 	BufferContextDiplomat& bufferContextDiplomat_
 )
 {
+	Material::CheckIsMaterialTypeAttachable<type>();
+
 	ErrorMessageOutput::Assert::DetectError
 	(
 		materialSequence == type,
-		"ShaderParamArrバッファの作成順序がおかしい",
+		"Material配列バッファの作成順序がおかしい",
 		fileName
 	);
 
 	materialSequence = Material::Type((UINT)materialSequence + 1);
-
 
 	auto bufferToolLender = bufferContextDiplomat_.Access<BufferContext::ToolLender>();
 	BufferContext::ToolLender::LicenceType<BufferContext::BufferCreator> licence{};
