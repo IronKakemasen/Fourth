@@ -12,14 +12,15 @@ MaterialContext::MaterialAttacher::MaterialAttacher
 (
 	NexusFieldProof proof_,
 	MaterialIndexDispatcher& materialIndexDispatcher_,
-	BufferContextDiplomat& nufferContextDiplomat_
+	BufferContextDiplomat& bufferContextDiplomat_
 ) :materialIndexDispatcher(materialIndexDispatcher_)
 {
 	//bufferDispatcherを借りる
 	BufferContext::ToolLender::LicenceType<BufferContext::BufferDispatcher> licence;
-	bufferDispatcher = nufferContextDiplomat_.Access<BufferContext::ToolLender>()->
+	bufferDispatcher = bufferContextDiplomat_.Access<BufferContext::ToolLender>()->
 		Lend<BufferContext::BufferDispatcher>(licence);
 
+	materialIndexGroups.resize((UINT)ProjectConfig::Render::BufferSize::kMaterialIndexGroupArr);
 
 
 

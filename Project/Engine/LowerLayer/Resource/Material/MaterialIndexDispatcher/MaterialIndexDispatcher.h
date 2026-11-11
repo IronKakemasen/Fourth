@@ -68,8 +68,9 @@ private:
 	//マテリアル配列のインデックス群配列(Material::MaterialIndexGroupCPUGPU)の
 	//添え字のフリーリスト
 	SimpleFreeList materialIDFreeList;
-
 	//各描画対象のマテリアル配列インデックス群配列のバッファID 
 	BufferUniqueID materialIDGroupArrBufferID;
+
+
 
 };

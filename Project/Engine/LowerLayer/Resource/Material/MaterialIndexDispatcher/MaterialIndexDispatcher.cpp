@@ -15,6 +15,7 @@ MaterialContext::MaterialIndexDispatcher::MaterialIndexDispatcher(NexusFieldProo
 	);
 
 	materialIDFreeList.Resize((UINT)ProjectConfig::Render::BufferSize::kMaterialIndexGroupArr,"MaterialIndexGroupArr");
+
 }
 
 

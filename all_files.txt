@@ -10638,13 +10638,14 @@ MaterialContext::MaterialAttacher::MaterialAttacher
 (
 	NexusFieldProof proof_,
 	MaterialIndexDispatcher& materialIndexDispatcher_,
-	BufferContextDiplomat& nufferContextDiplomat_
+	BufferContextDiplomat& bufferContextDiplomat_
 ) :materialIndexDispatcher(materialIndexDispatcher_)
 {
 	//bufferDispatcherを借りる
 	BufferContext::ToolLender::LicenceType<BufferContext::BufferDispatcher> licence;
-	bufferDispatcher = nufferContextDiplomat_.Access<BufferContext::ToolLender>()->
+	bufferDispatcher = bufferContextDiplomat_.Access<BufferContext::ToolLender>()->
 		Lend<BufferContext::BufferDispatcher>(licence);
+	materialIndexGroups.resize((UINT)ProjectConfig::Render::BufferSize::kMaterialIndexGroupArr);
 }
 UINT MaterialContext::MaterialAttacher::DispatchMaterialID()
 {
@@ -10665,17 +10666,36 @@ public:
 	(
 		NexusFieldProof proof_,
 		MaterialIndexDispatcher& materialIndexDispatcher_,
-		BufferContextDiplomat& nufferContextDiplomat_
+		BufferContextDiplomat& bufferContextDiplomat_
 	);
 	//マテリアルIDを割り当てる
 	UINT DispatchMaterialID();
 	//対象のマテリアルID所持者に、マテリアルをアタッチする
-	template<Material::Type type,typename MaterialClass>
-	std::unique_ptr<MaterialClass> Attach(UINT materialID_)
+	template<Material::Type type>
+	auto Attach(UINT materialID_)
 	{
+		//危険は完全に防げていないが…
+		Material::CheckIsMaterialTypeAttachable<type>();
+		//マテリアルIDは描画対象のMaterialArrIndexGroupBufferの添え字でもあるので、
+		//今回アタッチしたマテリアルのインデックスをバッファと実データである
+		//materialIndexGroupsに書き込む
+		WriteMaterialIndex<type>(materialID_);
 		return std::make_unique<Material::MaterialTypeTraits<type>::dataType>();
 	}
+	//materialIndexGroups配列のバッファに一括バッチングする
 private:
+	//マテリアルIDの指す先の実データに該当マテリアルのインデックスを書き込む
+	template<Material::Type type>
+	void WriteMaterialIndex(UINT materialID_)
+	{
+		//ディスパッチャーが該当マテリアルのフリーリストからインデックスを割り当てる
+		UINT materialArrIndex = materialIndexDispatcher.DispatchMaterialArrIndex<type>();
+		//実データに書き込む
+		auto* firstMemberPtr = &materialIndexGroups[materialID_].standardIndex;
+		*(firstMemberPtr + UINT(type)) = materialArrIndex;
+	}
+	//マテリアル配列インデックス群のバッファに書き込むための実データ
+	std::vector<Material::MaterialIndexGroupCPUGPU> materialIndexGroups;
 	MaterialIndexDispatcher& materialIndexDispatcher;
 	//呼び出し回数が多いのと、いろんな場所でマテリアルをアタッチするので所持します
 	BufferContext::BufferDispatcher* bufferDispatcher;
@@ -10772,11 +10792,11 @@ GPUBufferBehavior* MaterialContext::MaterialBufferCreator::CreateMaterialIDGroup
 	UploadStructuredBufferDescription desc
 	(
 		(UINT)sizeof(Material::MaterialIndexGroupCPUGPU),
-		materialIDGroupArrBufferSize,
+		(UINT)ProjectConfig::Render::BufferSize::kMaterialIndexGroupArr, //描画対象固有のマテリアルID群バッファの最大数
 		0
 	);
 	//マテリアルID群配列バッファを作成
-	auto id_buffer = bufferCreator->CreateWithBuffer(desc, "MaterialIDGroupArr");
+	auto id_buffer = bufferCreator->CreateWithBuffer(desc, "MaterialIndexGroupArr");
 	//描画対象作成時に、中身を書き込みたいのでディスパッチャーに持たせる
 	materialIndexDispatcher_.ImportMaterialIDGroupArrBufferID(id_buffer.first);
 	return id_buffer.second;
@@ -10842,6 +10862,7 @@ void MaterialContext::MaterialBufferCreator::CreateMaterialArrBuffer
 	BufferContextDiplomat& bufferContextDiplomat_
 )
 {
+	Material::CheckIsMaterialTypeAttachable<type>();
 	ErrorMessageOutput::Assert::DetectError
 	(
 		materialSequence == type,
@@ -10912,9 +10933,6 @@ public:
 		BufferContextDiplomat& bufferContextDiplomat_
 	);
 private:
-	//描画対象固有のマテリアルID群バッファの最大数
-	UINT materialIDGroupArrBufferSize =
-		(UINT)ProjectConfig::Render::BufferSize::kMaterialIndexGroupArr;
 	//マテリアル配列バッファのキャッシュ
 	std::vector<GPUBufferBehavior*> materialArrBufferCache;
 	//デバッグ用。ちょいと雑だが、呼び出しシーケンスチェックのため
@@ -25290,4 +25308,4 @@ namespace StringProcessing
 === SUMMARY ===
 ========================================
 Total Files      : 563
-Effective Lines  : 18428
+Effective Lines  : 18438
