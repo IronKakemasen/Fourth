@@ -1,6 +1,11 @@
 #include "PreCompileHeader.h"
 #include "MaterialIndexDispatcher.h"
 
+namespace
+{
+	auto const fileName = "MaterialIndexDispatcher.cpp";
+}
+
 
 MaterialContext::MaterialIndexDispatcher::MaterialIndexDispatcher(NexusFieldProof proof_)
 {
@@ -11,7 +16,7 @@ MaterialContext::MaterialIndexDispatcher::MaterialIndexDispatcher(NexusFieldProo
 	(
 		(UINT)typeSepuence  == Material::kNumParamExists,
 		"ReserveMaterialArrDispatchSize()を呼び足りない",
-		"MaterialIndexDispatcher.cpp"
+		fileName
 	);
 
 	materialIDFreeList.Resize((UINT)ProjectConfig::Render::BufferSize::kMaterialIndexGroupArr,"MaterialIndexGroupArr");
@@ -23,13 +28,3 @@ UINT MaterialContext::MaterialIndexDispatcher::DispatchMaterialID()
 {
 	return materialIDFreeList.Distribute();
 }
-
-
-void MaterialContext::MaterialIndexDispatcher::ImportMaterialIDGroupArrBufferID(BufferUniqueID id_)
-{
-	materialIDGroupArrBufferID = id_;
-	Logger::Log("Import MaterialIDGroupArrBufferID: " + std::to_string(id_), "MaterialIndexDispatcher.cpp");
-}
-
-
-

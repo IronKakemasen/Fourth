@@ -1,10 +1,7 @@
 #pragma once
 #include "../MaterialIndexDispatcher/MaterialIndexDispatcher.h"
+#include "../MaterialRuntime/MaterialDataBatcher/MaterialDataBatcher.h"
 
-
-
-//外部
-#include "../../../Buffer/BufferRuntime/BufferDispatcher/BufferDispatcher.h"
 
 class MaterialContext::MaterialAttacher
 {
@@ -14,7 +11,7 @@ public:
 	(
 		NexusFieldProof proof_,
 		MaterialIndexDispatcher& materialIndexDispatcher_,
-		BufferContextDiplomat& bufferContextDiplomat_
+		MaterialDataBatcher& materialDataBatcher_
 	);
 
 	//マテリアルIDを割り当てる
@@ -34,7 +31,7 @@ public:
 
 		return std::make_unique<Material::MaterialTypeTraits<type>::dataType>();
 	}
-	//materialIndexGroups配列のバッファに一括バッチングする
+
 
 private:
 
@@ -46,20 +43,15 @@ private:
 		UINT materialArrIndex = materialIndexDispatcher.DispatchMaterialArrIndex<type>();
 
 		//実データに書き込む
-		auto* firstMemberPtr = &materialIndexGroups[materialID_].standardIndex;
-
-
-
-		*(firstMemberPtr + UINT(type)) = materialArrIndex;
-
+		materialDataBatcher.WriteInMaterialIndexGroups<type>(materialID_, materialArrIndex);
 	}
 
-	//マテリアル配列インデックス群のバッファに書き込むための実データ
-	std::vector<Material::MaterialIndexGroupCPUGPU> materialIndexGroups;
 
+	//マテリアルのインデックスを割り振るため
 	MaterialIndexDispatcher& materialIndexDispatcher;
+	//マテリアル配列インデックス群のバッファにバッチングするためにデータを記録する
+	MaterialDataBatcher& materialDataBatcher;
 
-	//呼び出し回数が多いのと、いろんな場所でマテリアルをアタッチするので所持します
-	BufferContext::BufferDispatcher* bufferDispatcher;
+
 };
 

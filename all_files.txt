@@ -10582,9 +10582,11 @@ MaterialContext::MaterialContext
 	Logger::Entry("MaterialContext: Constructor");
 	materialIndexDispatcher = std::make_unique<MaterialIndexDispatcher>(proof_);
 	Logger::Log("Instantiate: MaterialIndexDispatcher", fileName);
+	materialDataBatcher = std::make_unique<MaterialDataBatcher>(proof_);
+	Logger::Log("Instantiate: MaterialDataBatcher", fileName);
 	//マテリアル関連のバッファを作成
-	MaterialBufferCreator materialBufferCreator(proof_, *materialIndexDispatcher, bufferContextDiplomat_);
-	materialAttacher = std::make_unique<MaterialAttacher>(proof_, *materialIndexDispatcher, bufferContextDiplomat_);
+	MaterialBufferCreator materialBufferCreator(proof_, *materialDataBatcher, bufferContextDiplomat_);
+	materialAttacher = std::make_unique<MaterialAttacher>(proof_, *materialIndexDispatcher, *materialDataBatcher);
 	Logger::Log("Instantiate: MaterialAttacher", fileName);
 	Logger::End("MaterialContext: Constructor");
 }	
@@ -10604,10 +10606,14 @@ class MaterialContext
 	class MaterialBufferCreator;
 	//マテリアルのインデックスを割り当てる
 	class MaterialIndexDispatcher;
+	//マテリアルデータをバッファへ書き込みます
+	class MaterialDataBatcher;
 public:
 	//描画対象にマテリアルをアタッチする
 	class MaterialAttacher;
+	class ExecutionAgent;
 	struct NexusFieldProof;
+	struct AgentKey;
 	MaterialContext
 	(
 		NexusFieldProof proof_,
@@ -10617,6 +10623,7 @@ public:
 private:
 	std::unique_ptr<MaterialIndexDispatcher> materialIndexDispatcher;
 	std::unique_ptr<MaterialAttacher> materialAttacher;
+	std::unique_ptr<MaterialDataBatcher> materialDataBatcher;
 };
 struct MaterialContext::NexusFieldProof
 {
@@ -10624,28 +10631,25 @@ private:
 	friend class Nexus;
 	explicit NexusFieldProof() = default;
 };
+struct MaterialContext::AgentKey
+{
+private:
+	friend class ExecutionAgent;
+	explicit AgentKey() = default;
+};
 
 ========================================
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Material\MaterialAttacher\MaterialAttacher.cpp ===
 ========================================
 #include "PreCompileHeader.h"
 #include "MaterialAttacher.h"
-//外部
-#include "../../../Buffer/BufferContextDiplomat/BufferContextDiplomat.h"
-#include "../../../Buffer/BufferContextDiplomat/BufferToolLender/BufferToolLender.h"
-#include "../../../Buffer/BufferContextDiplomat/BufferToolLender/BufferToolLenderLicence.h"
 MaterialContext::MaterialAttacher::MaterialAttacher
 (
 	NexusFieldProof proof_,
 	MaterialIndexDispatcher& materialIndexDispatcher_,
-	BufferContextDiplomat& bufferContextDiplomat_
-) :materialIndexDispatcher(materialIndexDispatcher_)
+	MaterialDataBatcher& materialDataBatcher_
+) :materialIndexDispatcher(materialIndexDispatcher_), materialDataBatcher(materialDataBatcher_)
 {
-	//bufferDispatcherを借りる
-	BufferContext::ToolLender::LicenceType<BufferContext::BufferDispatcher> licence;
-	bufferDispatcher = bufferContextDiplomat_.Access<BufferContext::ToolLender>()->
-		Lend<BufferContext::BufferDispatcher>(licence);
-	materialIndexGroups.resize((UINT)ProjectConfig::Render::BufferSize::kMaterialIndexGroupArr);
 }
 UINT MaterialContext::MaterialAttacher::DispatchMaterialID()
 {
@@ -10657,8 +10661,7 @@ UINT MaterialContext::MaterialAttacher::DispatchMaterialID()
 ========================================
 #pragma once
 #include "../MaterialIndexDispatcher/MaterialIndexDispatcher.h"
-//外部
-#include "../../../Buffer/BufferRuntime/BufferDispatcher/BufferDispatcher.h"
+#include "../MaterialRuntime/MaterialDataBatcher/MaterialDataBatcher.h"
 class MaterialContext::MaterialAttacher
 {
 public:
@@ -10666,7 +10669,7 @@ public:
 	(
 		NexusFieldProof proof_,
 		MaterialIndexDispatcher& materialIndexDispatcher_,
-		BufferContextDiplomat& bufferContextDiplomat_
+		MaterialDataBatcher& materialDataBatcher_
 	);
 	//マテリアルIDを割り当てる
 	UINT DispatchMaterialID();
@@ -10682,7 +10685,6 @@ public:
 		WriteMaterialIndex<type>(materialID_);
 		return std::make_unique<Material::MaterialTypeTraits<type>::dataType>();
 	}
-	//materialIndexGroups配列のバッファに一括バッチングする
 private:
 	//マテリアルIDの指す先の実データに該当マテリアルのインデックスを書き込む
 	template<Material::Type type>
@@ -10691,14 +10693,12 @@ private:
 		//ディスパッチャーが該当マテリアルのフリーリストからインデックスを割り当てる
 		UINT materialArrIndex = materialIndexDispatcher.DispatchMaterialArrIndex<type>();
 		//実データに書き込む
-		auto* firstMemberPtr = &materialIndexGroups[materialID_].standardIndex;
-		*(firstMemberPtr + UINT(type)) = materialArrIndex;
+		materialDataBatcher.WriteInMaterialIndexGroups<type>(materialID_, materialArrIndex);
 	}
-	//マテリアル配列インデックス群のバッファに書き込むための実データ
-	std::vector<Material::MaterialIndexGroupCPUGPU> materialIndexGroups;
+	//マテリアルのインデックスを割り振るため
 	MaterialIndexDispatcher& materialIndexDispatcher;
-	//呼び出し回数が多いのと、いろんな場所でマテリアルをアタッチするので所持します
-	BufferContext::BufferDispatcher* bufferDispatcher;
+	//マテリアル配列インデックス群のバッファにバッチングするためにデータを記録する
+	MaterialDataBatcher& materialDataBatcher;
 };
 
 ========================================
@@ -10707,6 +10707,7 @@ private:
 #include "PreCompileHeader.h"
 #include "MaterialBufferCreator.h"
 #include "../MaterialIndexDispatcher/MaterialIndexDispatcher.h"
+#include "../MaterialRuntime/MaterialDataBatcher/MaterialDataBatcher.h"
 //外部
 #include "../../../Buffer/BufferDefinition/BufferDescriptions/UploadStructuredBufferDescription/UploadStructuredBufferDescription.h"
 #include "../../../Buffer/BufferDefinition/AllBuffersInclude.h"
@@ -10719,18 +10720,18 @@ namespace
 MaterialContext::MaterialBufferCreator::MaterialBufferCreator
 (
 	NexusFieldProof proof_,
-	MaterialIndexDispatcher& materialIndexDispatcher_,
+	MaterialDataBatcher& materialDataBatcher_,
 	BufferContextDiplomat& bufferContextDiplomat_
 )
 {
 	materialArrBufferCache.reserve((UINT)Material::kNumParamExists);
 	//Material配列のバッファを作成
-	CreateMaterialArrBuffer<Material::Type::kStandard>(materialIndexDispatcher_, bufferContextDiplomat_);
-	CreateMaterialArrBuffer<Material::Type::kGridLine>(materialIndexDispatcher_, bufferContextDiplomat_);
+	CreateMaterialArrBuffer<Material::Type::kStandard>(materialDataBatcher_, bufferContextDiplomat_);
+	CreateMaterialArrBuffer<Material::Type::kGridLine>(materialDataBatcher_, bufferContextDiplomat_);
 	//作成したマテリアル配列のsrvHeapIndexをキャッシュに登録してあるので、
 	//それをもとにマテリアル配列のsrvHeapIndex群のバッファを作成。
 	//そのバッファのポインタを返す
-	auto* materialArrSrvIndexGroupBuffer = CreateMaterialArrSrvIndexGroupBuffer(materialIndexDispatcher_, bufferContextDiplomat_);
+	auto* materialArrSrvIndexGroupBuffer = CreateMaterialArrSrvIndexGroupBuffer(bufferContextDiplomat_);
 	//MaterialArrSrvIndexGroupBufferの中身は不動なのでここでかきこんじゃう
 	WriteMaterialArrSrvIndices(materialArrSrvIndexGroupBuffer);
 	//そのsrvHeapIndexのグローバル定数バッファを作成
@@ -10741,7 +10742,7 @@ MaterialContext::MaterialBufferCreator::MaterialBufferCreator
 		bufferContextDiplomat_
 	);
 	//MaterialID群配列のバッファを作成する
-	auto* materialIDGroupArrBuffer = CreateMaterialIDGroupArrBuffer(materialIndexDispatcher_, bufferContextDiplomat_);
+	auto* materialIDGroupArrBuffer = CreateMaterialIndexGroupArrBuffer(materialDataBatcher_, bufferContextDiplomat_);
 	//そのsrvHeapIndexのグローバル定数バッファを作成
 	CreateItsSrvCBuffer<ConstantBuffers::ConstantBufferBindSlots::kMaterialIDGroupArrBufferSrv>
 	(
@@ -10778,9 +10779,9 @@ void MaterialContext::MaterialBufferCreator::CreateItsSrvCBuffer
 		{ readableBuffer->OutProperSRVHeapIndex(0) ,readableBuffer->OutProperSRVHeapIndex(1) }
 	);
 }
-GPUBufferBehavior* MaterialContext::MaterialBufferCreator::CreateMaterialIDGroupArrBuffer
+GPUBufferBehavior* MaterialContext::MaterialBufferCreator::CreateMaterialIndexGroupArrBuffer
 (
-	MaterialIndexDispatcher& materialIndexDispatcher_,
+	MaterialDataBatcher& materialDataBatcher_,
 	BufferContextDiplomat& bufferContextDiplomat_
 )
 {
@@ -10798,7 +10799,7 @@ GPUBufferBehavior* MaterialContext::MaterialBufferCreator::CreateMaterialIDGroup
 	//マテリアルID群配列バッファを作成
 	auto id_buffer = bufferCreator->CreateWithBuffer(desc, "MaterialIndexGroupArr");
 	//描画対象作成時に、中身を書き込みたいのでディスパッチャーに持たせる
-	materialIndexDispatcher_.ImportMaterialIDGroupArrBufferID(id_buffer.first);
+	materialDataBatcher_.ImportMaterialIDGroupArrBufferID(id_buffer.first);
 	return id_buffer.second;
 }
 void MaterialContext::MaterialBufferCreator::WriteMaterialArrSrvIndices(GPUBufferBehavior* materialArrBufferSrvIndexGroupBuffer_)
@@ -10829,7 +10830,6 @@ void MaterialContext::MaterialBufferCreator::WriteMaterialArrSrvIndices(GPUBuffe
 }
 GPUBufferBehavior* MaterialContext::MaterialBufferCreator::CreateMaterialArrSrvIndexGroupBuffer
 (
-	MaterialIndexDispatcher& materialIndexDispatcher_,
 	BufferContextDiplomat& bufferContextDiplomat_
 )
 {
@@ -10858,7 +10858,7 @@ GPUBufferBehavior* MaterialContext::MaterialBufferCreator::CreateMaterialArrSrvI
 template<Material::Type type>
 void MaterialContext::MaterialBufferCreator::CreateMaterialArrBuffer
 (
-	MaterialIndexDispatcher& materialIndexDispatcher_,
+	MaterialDataBatcher& materialDataBatcher_,
 	BufferContextDiplomat& bufferContextDiplomat_
 )
 {
@@ -10866,7 +10866,7 @@ void MaterialContext::MaterialBufferCreator::CreateMaterialArrBuffer
 	ErrorMessageOutput::Assert::DetectError
 	(
 		materialSequence == type,
-		"ShaderParamArrバッファの作成順序がおかしい",
+		"Material配列バッファの作成順序がおかしい",
 		fileName
 	);
 	materialSequence = Material::Type((UINT)materialSequence + 1);
@@ -10883,20 +10883,20 @@ void MaterialContext::MaterialBufferCreator::CreateMaterialArrBuffer
 	//マテリアル配列バッファを作成
 	auto id_buffer = bufferCreator->CreateWithBuffer(desc, Material::MaterialTypeTraits<type>::kName);
 	//登録
-	materialIndexDispatcher_.ImportMaterialArrBufferIndex<type>(id_buffer.first);
+	materialDataBatcher_.ImportMaterialArrBufferIndex<type>(id_buffer.first);
 	//キャッシュに登録
 	materialArrBufferCache.emplace_back(id_buffer.second);
 }
 template
 void MaterialContext::MaterialBufferCreator::CreateMaterialArrBuffer<Material::Type::kStandard>
 (
-	MaterialIndexDispatcher& materialIndexDispatcher_,
+	MaterialDataBatcher& materialDataBatcher_,
 	BufferContextDiplomat& bufferContextDiplomat_
 );
 template
 void MaterialContext::MaterialBufferCreator::CreateMaterialArrBuffer<Material::Type::kGridLine>
 (
-	MaterialIndexDispatcher& materialIndexDispatcher_,
+	MaterialDataBatcher& materialDataBatcher_,
 	BufferContextDiplomat& bufferContextDiplomat_
 );
 template
@@ -10929,7 +10929,7 @@ public:
 	MaterialBufferCreator
 	(
 		NexusFieldProof proof_,
-		MaterialIndexDispatcher& materialIndexDispatcher_,
+		MaterialDataBatcher& materialDataBatcher_,
 		BufferContextDiplomat& bufferContextDiplomat_
 	);
 private:
@@ -10941,21 +10941,20 @@ private:
 	template<Material::Type type>
 	void CreateMaterialArrBuffer
 	(
-		MaterialIndexDispatcher& materialIndexDispatcher_,
+		MaterialDataBatcher& materialDataBatcher_,
 		BufferContextDiplomat& bufferContextDiplomat_
 	);
 	//それらのsrvHeapIndex群のバッファも作成する
 	GPUBufferBehavior* CreateMaterialArrSrvIndexGroupBuffer
 	(
-		MaterialIndexDispatcher& materialIndexDispatcher_,
 		BufferContextDiplomat& bufferContextDiplomat_
 	);
 	//MaterialArrバッファの表裏２面分のsrvIndexを書き込む
 	void WriteMaterialArrSrvIndices(GPUBufferBehavior* materialArrBufferSrvIndexGroupBuffer_);
-	//MaterialID群配列のバッファを作成する
-	GPUBufferBehavior* CreateMaterialIDGroupArrBuffer
+	//Material配列インデックス群配列のバッファを作成する
+	GPUBufferBehavior* CreateMaterialIndexGroupArrBuffer
 	(
-		MaterialIndexDispatcher& materialIndexDispatcher_,
+		MaterialDataBatcher& materialDataBatcher_,
 		BufferContextDiplomat& bufferContextDiplomat_
 	);
 	//バッファのSrvのグローバル定数バッファを作成する
@@ -10973,6 +10972,10 @@ private:
 ========================================
 #include "PreCompileHeader.h"
 #include "MaterialIndexDispatcher.h"
+namespace
+{
+	auto const fileName = "MaterialIndexDispatcher.cpp";
+}
 MaterialContext::MaterialIndexDispatcher::MaterialIndexDispatcher(NexusFieldProof proof_)
 {
 	ReserveMaterialArrDispatchSize<Material::Type::kStandard>();
@@ -10981,18 +10984,13 @@ MaterialContext::MaterialIndexDispatcher::MaterialIndexDispatcher(NexusFieldProo
 	(
 		(UINT)typeSepuence  == Material::kNumParamExists,
 		"ReserveMaterialArrDispatchSize()を呼び足りない",
-		"MaterialIndexDispatcher.cpp"
+		fileName
 	);
 	materialIDFreeList.Resize((UINT)ProjectConfig::Render::BufferSize::kMaterialIndexGroupArr,"MaterialIndexGroupArr");
 }
 UINT MaterialContext::MaterialIndexDispatcher::DispatchMaterialID()
 {
 	return materialIDFreeList.Distribute();
-}
-void MaterialContext::MaterialIndexDispatcher::ImportMaterialIDGroupArrBufferID(BufferUniqueID id_)
-{
-	materialIDGroupArrBufferID = id_;
-	Logger::Log("Import MaterialIDGroupArrBufferID: " + std::to_string(id_), "MaterialIndexDispatcher.cpp");
 }
 
 ========================================
@@ -11015,13 +11013,6 @@ public:
 	{
 		return materialArrIndexFreeList[(UINT)type].Distribute();
 	}
-	template<Material::Type type>
-	void ImportMaterialArrBufferIndex(BufferUniqueID id_)
-	{
-		materialArrBufferIdArr[(UINT)type] = id_;
-		Logger::Log("Import " + Material::MaterialTypeTraits<type>::kName + "ArrBuf: " + std::to_string(id_), "MaterialIndexDispatcher.h");
-	}
-	void ImportMaterialIDGroupArrBufferID(BufferUniqueID id_);
 private:
 	//デバッグ用。ちゃんとReserveDispatchSize()が呼ばれたかチェック
 	Material::Type typeSepuence = Material::Type(0);
@@ -11044,13 +11035,100 @@ private:
 	}
 	//マテリアル配列のフリーリスト
 	std::array<SimpleFreeList, (UINT)Material::kNumParamExists> materialArrIndexFreeList;
-	//書き込む必要があるので、マテリアル配列のバッファのインデックスは所持する
-	std::array<BufferUniqueID, (UINT)Material::kNumParamExists> materialArrBufferIdArr;
 	//マテリアル配列のインデックス群配列(Material::MaterialIndexGroupCPUGPU)の
 	//添え字のフリーリスト
 	SimpleFreeList materialIDFreeList;
+};
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Material\MaterialRuntime\MaterialDataBatcher\MaterialDataBatcher.cpp ===
+========================================
+#include "PreCompileHeader.h"
+#include "MaterialDataBatcher.h"
+//外部
+#include "../../../../Buffer/BufferContextDiplomat/BufferContextDiplomat.h"
+#include "../../../../Buffer/BufferContextDiplomat/BufferToolLender/BufferToolLender.h"
+#include "../../../../Buffer/BufferContextDiplomat/BufferToolLender/BufferToolLenderLicence.h"
+namespace
+{
+	auto const fileName = "MaterialDataBatcher.cpp";
+}
+MaterialContext::MaterialDataBatcher::MaterialDataBatcher
+(
+	NexusFieldProof proof_
+) 
+{
+	materialIndexGroupsCache.resize((UINT)ProjectConfig::Render::BufferSize::kMaterialIndexGroupArr);
+}
+void MaterialContext::MaterialDataBatcher::ImportMaterialIDGroupArrBufferID(BufferUniqueID id_)
+{
+	materialIDGroupArrBufferID = id_;
+	Logger::Log("Import MaterialIDGroupArrBufferID: " + std::to_string(id_), fileName);
+}
+void MaterialContext::MaterialDataBatcher::WriteMaterialIndexGroups
+(
+	NexusFieldProof proof_, 
+	AgentKey key_,
+	BufferContextDiplomat& bufferContextDiplomat_
+)
+{
+	//bufferDispatcherを借りる
+	BufferContext::ToolLender::LicenceType<BufferContext::BufferDispatcher> licence;
+	auto& bufferDispatcher = *bufferContextDiplomat_.Access<BufferContext::ToolLender>()->
+	Lend<BufferContext::BufferDispatcher>(licence);
+	//バッチ先
+	materialIndexGroupsCache.clear();
+	materialIndexGroupsCache.shrink_to_fit();
+	Logger::Log("Delete materialIndexGroupsCache", fileName);
+}
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Material\MaterialRuntime\MaterialDataBatcher\MaterialDataBatcher.h ===
+========================================
+#pragma once
+#include "../../MaterialContext.h"
+//外部
+#include "../../../../../../Assets/Shared/Material.h"
+class MaterialContext::MaterialDataBatcher
+{
+public:
+	MaterialDataBatcher
+	(
+		NexusFieldProof proof_
+	);
+	//materialIndexGroupsにアタッチしたマテリアル配列のインデックスを書き込む
+	template<Material::Type type>
+	void WriteInMaterialIndexGroups(UINT materialID_,UINT materialArrIndex_)
+	{
+		//実データに書き込む
+		auto* firstMemberPtr = &materialIndexGroupsCache[materialID_].standardIndex;
+		*(firstMemberPtr + UINT(type)) = materialArrIndex_;
+	}
+	//全ての描画対象のマテリアル付与が終わった後に
+	//materialIndexGroups配列のバッファにバッチングする
+	void WriteMaterialIndexGroups
+	(
+		NexusFieldProof proof_,
+		AgentKey key_,
+		BufferContextDiplomat& bufferContextDiplomat_
+	);
+	//マテリアル配列バッファIDを入れる
+	template<Material::Type type>
+	void ImportMaterialArrBufferIndex(BufferUniqueID id_)
+	{
+		materialArrBufferIdArr[(UINT)type] = id_;
+		Logger::Log("Import " + Material::MaterialTypeTraits<type>::kName + "ArrBuf: " + std::to_string(id_), "MaterialIndexDispatcher.h");
+	}
+	//マテリアル配列インデックス群配列バッファIDを入れる
+	void ImportMaterialIDGroupArrBufferID(BufferUniqueID id_);
+private:
+	//マテリアル配列インデックス群のバッファに書き込むための実データ
+	std::vector<Material::MaterialIndexGroupCPUGPU> materialIndexGroupsCache;
+	//書き込む必要があるので、マテリアル配列のバッファIDは所持する
+	std::array<BufferUniqueID, (UINT)Material::kNumParamExists> materialArrBufferIdArr{ kInvalid };
 	//各描画対象のマテリアル配列インデックス群配列のバッファID 
-	BufferUniqueID materialIDGroupArrBufferID;
+	//こちらも同様、書き込む必要があるため
+	BufferUniqueID materialIDGroupArrBufferID = kInvalid;
 };
 
 ========================================
@@ -25307,5 +25385,5 @@ namespace StringProcessing
 ========================================
 === SUMMARY ===
 ========================================
-Total Files      : 563
-Effective Lines  : 18438
+Total Files      : 565
+Effective Lines  : 18493

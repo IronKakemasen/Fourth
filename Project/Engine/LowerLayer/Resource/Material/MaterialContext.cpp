@@ -18,14 +18,16 @@ MaterialContext::MaterialContext
 	Logger::Entry("MaterialContext: Constructor");
 
 
-
 	materialIndexDispatcher = std::make_unique<MaterialIndexDispatcher>(proof_);
 	Logger::Log("Instantiate: MaterialIndexDispatcher", fileName);
 
-	//マテリアル関連のバッファを作成
-	MaterialBufferCreator materialBufferCreator(proof_, *materialIndexDispatcher, bufferContextDiplomat_);
+	materialDataBatcher = std::make_unique<MaterialDataBatcher>(proof_);
+	Logger::Log("Instantiate: MaterialDataBatcher", fileName);
 
-	materialAttacher = std::make_unique<MaterialAttacher>(proof_, *materialIndexDispatcher, bufferContextDiplomat_);
+	//マテリアル関連のバッファを作成
+	MaterialBufferCreator materialBufferCreator(proof_, *materialDataBatcher, bufferContextDiplomat_);
+
+	materialAttacher = std::make_unique<MaterialAttacher>(proof_, *materialIndexDispatcher, *materialDataBatcher);
 	Logger::Log("Instantiate: MaterialAttacher", fileName);
 
 
