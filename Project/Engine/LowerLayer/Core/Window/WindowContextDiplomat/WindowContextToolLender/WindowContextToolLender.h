@@ -10,7 +10,7 @@ class WindowContext::ToolLender
 public:
 
 	template<typename ToolType>
-	using LicenceType = typename ToolTypeTraits<ToolType>::Type;
+	using LicenceType = typename ToolTypeTraits<ToolType>::Licence;
 
 	ToolLender
 	(
@@ -19,7 +19,7 @@ public:
 	);
 
 	template<typename ToolType>
-	ToolType& Lend(typename ToolTypeTraits<ToolType>::Type licence_)
+	ToolType& Lend(typename ToolTypeTraits<ToolType>::Licence licence_)
 	{
 		return std::get<ToolType>(tools);
 	}
@@ -33,5 +33,5 @@ private:
 template<>
 struct WindowContext::ToolLender::ToolTypeTraits<HWND>
 {
-	using Type = UsesHWNDLicence;
+	using Licence = UsesHWNDLicence;
 };

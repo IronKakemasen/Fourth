@@ -3,7 +3,15 @@
 
 class MaterialContext::ToolLender
 {
+	template<typename ToolType>
+	struct ToolTypeTraits;
+
+	struct AccessMaterialAttacherLicence;
+
 public:
+
+	template<typename ToolType>
+	using LicenceType = typename ToolTypeTraits<ToolType>::Licence;
 
 	ToolLender
 	(
@@ -12,7 +20,7 @@ public:
 	);
 
 	template<typename ToolType>
-	auto& Lend()
+	auto& Lend(typename ToolTypeTraits<ToolType>::Licence licence_)
 	{
 		return *std::get<ToolType*>(tools);
 	}
@@ -25,4 +33,12 @@ private:
 	>tools;
 
 };
+
+
+template<>
+struct MaterialContext::ToolLender::ToolTypeTraits<MaterialContext::MaterialAttacher>
+{
+	using Licence = AccessMaterialAttacherLicence;
+};
+
 

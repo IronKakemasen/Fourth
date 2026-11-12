@@ -5,7 +5,7 @@ class BufferContext::ToolLender
 {
 	//貸し出すツールのデータ型とそれに対応したLicenceのデータ型を結び付ける
 	template<typename ToolType>
-	struct CmdTypeTraits;
+	struct ToolTypeTraits;
 
 	//バッファクリエイターやアップローダー、ディスパッチャーを触ってもいい資格
 	struct BasicBufferManagementLicence;
@@ -28,7 +28,7 @@ public:
 
 	//ただのエイリアステンプレート
 	template<typename ToolType>
-	using LicenceType = typename CmdTypeTraits<ToolType>::Type;
+	using LicenceType = typename ToolTypeTraits<ToolType>::Licence;
 
 	ToolLender
 	(
@@ -43,7 +43,7 @@ public:
 
 	///ツールの貸し出し
 	template<typename ToolType>
-	auto* Lend(typename CmdTypeTraits<ToolType>::Type licence_)
+	auto* Lend(typename ToolTypeTraits<ToolType>::Licence licence_)
 	{
 		return std::get<ToolType*>(tools);
 	}
@@ -53,31 +53,31 @@ public:
 
 
 template<>
-struct BufferContext::ToolLender::CmdTypeTraits<BufferContext::BufferCreator>
+struct BufferContext::ToolLender::ToolTypeTraits<BufferContext::BufferCreator>
 {
-	using Type = BasicBufferManagementLicence;
+	using Licence = BasicBufferManagementLicence;
 };
 
 template<>
-struct BufferContext::ToolLender::CmdTypeTraits<BufferContext::BufferUploader>
+struct BufferContext::ToolLender::ToolTypeTraits<BufferContext::BufferUploader>
 {
-	using Type = BasicBufferManagementLicence;
+	using Licence = BasicBufferManagementLicence;
 };
 
 template<>
-struct BufferContext::ToolLender::CmdTypeTraits<BufferContext::BufferDispatcher>
+struct BufferContext::ToolLender::ToolTypeTraits<BufferContext::BufferDispatcher>
 {
-	using Type = BasicBufferManagementLicence;
+	using Licence = BasicBufferManagementLicence;
 };
 
 template<>
-struct BufferContext::ToolLender::CmdTypeTraits<BufferContext::BufferCollector>
+struct BufferContext::ToolLender::ToolTypeTraits<BufferContext::BufferCollector>
 {
-	using Type = BasicBufferManagementLicence;
+	using Licence = BasicBufferManagementLicence;
 };
 
 template<>
-struct BufferContext::ToolLender::CmdTypeTraits<BufferContext::GlobalConstantBuffers>
+struct BufferContext::ToolLender::ToolTypeTraits<BufferContext::GlobalConstantBuffers>
 {
-	using Type = UsesGlobalConstantBuffersLicence;
+	using Licence = UsesGlobalConstantBuffersLicence;
 };
