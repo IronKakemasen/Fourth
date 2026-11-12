@@ -450,6 +450,9 @@
     <ClCompile Include="Engine\LowerLayer\Resource\Material\MaterialIndexDispatcher\MaterialIndexDispatcher.cpp" />
     <ClCompile Include="Engine\LowerLayer\Resource\Material\MaterialAttacher\MaterialAttacher.cpp" />
     <ClCompile Include="Engine\LowerLayer\Resource\Material\MaterialRuntime\MaterialDataBatcher\MaterialDataBatcher.cpp" />
+    <ClCompile Include="Engine\LowerLayer\Resource\Material\MaterialContextDiplomat\MaterialContextDiplomat.cpp" />
+    <ClCompile Include="Engine\LowerLayer\Resource\Material\MaterialContextDiplomat\MaterialToolLender\MaterialToolLender.cpp" />
+    <ClCompile Include="Engine\LowerLayer\Resource\Material\MaterialContextDiplomat\MaterialExecutionAgent\MaterialExecutionAgent.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Application\AllCameraIncludes.h" />
@@ -802,6 +805,9 @@
     <ClInclude Include="Engine\LowerLayer\Resource\Material\MaterialIndexDispatcher\MaterialIndexDispatcher.h" />
     <ClInclude Include="Engine\LowerLayer\Resource\Material\MaterialAttacher\MaterialAttacher.h" />
     <ClInclude Include="Engine\LowerLayer\Resource\Material\MaterialRuntime\MaterialDataBatcher\MaterialDataBatcher.h" />
+    <ClInclude Include="Engine\LowerLayer\Resource\Material\MaterialContextDiplomat\MaterialContextDiplomat.h" />
+    <ClInclude Include="Engine\LowerLayer\Resource\Material\MaterialContextDiplomat\MaterialToolLender\MaterialToolLender.h" />
+    <ClInclude Include="Engine\LowerLayer\Resource\Material\MaterialContextDiplomat\MaterialExecutionAgent\MaterialExecutionAgent.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

@@ -87,6 +87,7 @@ void Nexus::SecondaryInit(aFourthProof proof_)
 	InitializeInSequence<InitSequence::kDeleteBufferUploaderCache>();
 	InitializeInSequence<InitSequence::kSortOutGlobalConstantBuffers>();
 	InitializeInSequence<InitSequence::kDeleteModelDataCache>();
+	InitializeInSequence<InitSequence::kWriteMaterialIndexGroupsArrBuffer>();
 
 	ErrorMessageOutput::Assert::DetectError(nextInit == InitSequence::kEnd, "初期化が正常に行われていない可能性がある", fileName);
 }

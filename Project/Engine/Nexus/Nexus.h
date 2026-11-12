@@ -76,10 +76,10 @@ private:
 		kGameObjectContext,
 		kCameraContext,
 		kSceneContext,
-		//ここまではコンストラクタ
+		//ここまではNexusのコンストラクタ
 
 
-		//コンストラクタからここまでに、シーン(モデル)の作成が完了してなければならない
+		//ここまでに、シーンの作成が完了してなければならない
 		kRenderContext,
 
 		kUploadAllResources,
@@ -87,6 +87,7 @@ private:
 		kDeleteBufferUploaderCache,
 		kSortOutGlobalConstantBuffers,
 		kDeleteModelDataCache,					///モデルデータキャッシュの削除は、アプリ層の初期化が終わったあと
+		kWriteMaterialIndexGroupsArrBuffer,
 
 		kEnd
 	}nextInit = InitSequence::kDebugContext;

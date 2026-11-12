@@ -26,7 +26,7 @@ public:
 
 	//全ての描画対象のマテリアル付与が終わった後に
 	//materialIndexGroups配列のバッファにバッチングする
-	void WriteMaterialIndexGroups
+	void WriteMaterialIndexGroupsArrBuffer
 	(
 		NexusFieldProof proof_,
 		AgentKey key_,
@@ -38,26 +38,26 @@ public:
 	void ImportMaterialArrBufferIndex(BufferUniqueID id_)
 	{
 		materialArrBufferIdArr[(UINT)type] = id_;
-		Logger::Log("Import " + Material::MaterialTypeTraits<type>::kName + "ArrBuf: " + std::to_string(id_), "MaterialIndexDispatcher.h");
+		Logger::Log("Import " + Material::MaterialTypeTraits<type>::kName + "ArrBuf: " + std::to_string(id_), "MaterialDataBatcher.h");
 	}
 
 	//マテリアル配列インデックス群配列バッファIDを入れる
-	void ImportMaterialIDGroupArrBufferID(BufferUniqueID id_);
+	void ImportMaterialIndexGroupArrBufferID(BufferUniqueID id_);
 
 
 	
 private:
 
-
 	//マテリアル配列インデックス群のバッファに書き込むための実データ
+	//ランタイムでマテリアルのアタッチを行う予定はないので、全描画対象にアタッチが終わったら解放する
 	std::vector<Material::MaterialIndexGroupCPUGPU> materialIndexGroupsCache;
 
 	//書き込む必要があるので、マテリアル配列のバッファIDは所持する
-	std::array<BufferUniqueID, (UINT)Material::kNumParamExists> materialArrBufferIdArr{ kInvalid };
+	std::array<BufferUniqueID, (UINT)Material::kNumParamExists> materialArrBufferIdArr;
 
 	//各描画対象のマテリアル配列インデックス群配列のバッファID 
 	//こちらも同様、書き込む必要があるため
-	BufferUniqueID materialIDGroupArrBufferID = kInvalid;
+	BufferUniqueID materialIndexGroupArrBufferID = kInvalid;
 
 };
 
