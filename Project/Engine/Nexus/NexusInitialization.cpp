@@ -28,6 +28,9 @@
 #include "../LowerLayer/Resource/Model/ModelContextDiplomat/ModelContextDiplomat.h"
 #include "../LowerLayer/Resource/Model/ModelContextDiplomat/ModelContextExecutionAgent/ModelContextExecutionAgent.h"
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+#include "../LowerLayer/Resource/Material/MaterialContextDiplomat/MaterialExecutionAgent/MaterialExecutionAgent.h"
+#include "../LowerLayer/Resource/Material/MaterialContextDiplomat/MaterialContextDiplomat.h"
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 #include "../LowerLayer/Resource/Texture/TextureContext.h"
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 #include "../LowerLayer/Resource/Camera/CameraContext.h"
@@ -341,6 +344,14 @@ void Nexus::Init<Nexus::InitSequence::kGameObjectContext>()
 	gameObjectContext = std::make_unique<GameObjectContext>(GameObjectContext::NexusFieldProof{});
 }
 
+template<>
+void Nexus::Init<Nexus::InitSequence::kWriteMaterialIndexGroupsArrBuffer>()
+{
+	auto& materialContextAgent = materialContext->AccessDiplomat().Access<MaterialContext::ExecutionAgent>();
+	materialContextAgent.WriteMaterialIndexGroupsArrBuffer(MaterialContext::NexusFieldProof{}, bufferContext->AccessDiplomat());
+
+}
+
 
 
 template
@@ -408,4 +419,7 @@ void Nexus::Init<Nexus::InitSequence::kGameObjectContext>();
 
 template
 void Nexus::Init<Nexus::InitSequence::kMaterialContext>();
+
+template
+void Nexus::Init<Nexus::InitSequence::kWriteMaterialIndexGroupsArrBuffer>();
 

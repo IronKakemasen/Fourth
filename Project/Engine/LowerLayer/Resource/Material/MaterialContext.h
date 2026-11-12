@@ -2,6 +2,8 @@
 
 class Nexus;
 class BufferContextDiplomat;
+class MaterialContextDiplomat;
+
 
 class MaterialContext
 {
@@ -17,7 +19,7 @@ public:
 	//描画対象にマテリアルをアタッチする
 	class MaterialAttacher;
 	class ExecutionAgent;
-
+	class ToolLender;
 
 	struct NexusFieldProof;
 	struct AgentKey;
@@ -30,9 +32,11 @@ public:
 
 	~MaterialContext();
 
+	auto& AccessDiplomat() { return *materialContextDiplomat; }
 
 private:
 
+	std::unique_ptr<MaterialContextDiplomat> materialContextDiplomat;
 	std::unique_ptr<MaterialIndexDispatcher> materialIndexDispatcher;
 	std::unique_ptr<MaterialAttacher> materialAttacher;
 	std::unique_ptr<MaterialDataBatcher> materialDataBatcher;

@@ -10569,6 +10569,9 @@ public:
 #include "MaterialBufferCreator/MaterialBufferCreator.h"
 #include "MaterialIndexDispatcher/MaterialIndexDispatcher.h"
 #include "MaterialAttacher/MaterialAttacher.h"
+#include "MaterialContextDiplomat/MaterialContextDiplomat.h"
+#include "MaterialContextDiplomat/MaterialExecutionAgent/MaterialExecutionAgent.h"
+#include "MaterialContextDiplomat/MaterialToolLender/MaterialToolLender.h"
 namespace
 {
 	auto fileName = "MaterialContext.cpp";
@@ -10588,6 +10591,15 @@ MaterialContext::MaterialContext
 	MaterialBufferCreator materialBufferCreator(proof_, *materialDataBatcher, bufferContextDiplomat_);
 	materialAttacher = std::make_unique<MaterialAttacher>(proof_, *materialIndexDispatcher, *materialDataBatcher);
 	Logger::Log("Instantiate: MaterialAttacher", fileName);
+	materialContextDiplomat = std::make_unique<MaterialContextDiplomat>
+	(
+		proof_,
+		std::make_unique<ExecutionAgent>(proof_, *materialDataBatcher),
+		std::make_unique<ToolLender>(proof_, materialAttacher.get())
+	);
+	Logger::Log("Instantiate: MaterialContextDiplomat", fileName);
+	Logger::Log("Instantiate: ExecutionAgent", fileName);
+	Logger::Log("Instantiate: ToolLender", fileName);
 	Logger::End("MaterialContext: Constructor");
 }	
 MaterialContext::~MaterialContext()
@@ -10600,6 +10612,7 @@ MaterialContext::~MaterialContext()
 #pragma once
 class Nexus;
 class BufferContextDiplomat;
+class MaterialContextDiplomat;
 class MaterialContext
 {
 	//マテリアルに関するバッファを生成する
@@ -10612,6 +10625,7 @@ public:
 	//描画対象にマテリアルをアタッチする
 	class MaterialAttacher;
 	class ExecutionAgent;
+	class ToolLender;
 	struct NexusFieldProof;
 	struct AgentKey;
 	MaterialContext
@@ -10620,7 +10634,9 @@ public:
 		BufferContextDiplomat& bufferContextDiplomat_
 	);
 	~MaterialContext();
+	auto& AccessDiplomat() { return *materialContextDiplomat; }
 private:
+	std::unique_ptr<MaterialContextDiplomat> materialContextDiplomat;
 	std::unique_ptr<MaterialIndexDispatcher> materialIndexDispatcher;
 	std::unique_ptr<MaterialAttacher> materialAttacher;
 	std::unique_ptr<MaterialDataBatcher> materialDataBatcher;
@@ -10798,8 +10814,8 @@ GPUBufferBehavior* MaterialContext::MaterialBufferCreator::CreateMaterialIndexGr
 	);
 	//マテリアルID群配列バッファを作成
 	auto id_buffer = bufferCreator->CreateWithBuffer(desc, "MaterialIndexGroupArr");
-	//描画対象作成時に、中身を書き込みたいのでディスパッチャーに持たせる
-	materialDataBatcher_.ImportMaterialIDGroupArrBufferID(id_buffer.first);
+	//描画対象作成時に、中身を書き込みたいのでマテリアルデータバッチャに持たせる
+	materialDataBatcher_.ImportMaterialIndexGroupArrBufferID(id_buffer.first);
 	return id_buffer.second;
 }
 void MaterialContext::MaterialBufferCreator::WriteMaterialArrSrvIndices(GPUBufferBehavior* materialArrBufferSrvIndexGroupBuffer_)
@@ -10968,6 +10984,143 @@ private:
 };
 
 ========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Material\MaterialContextDiplomat\MaterialContextDiplomat.cpp ===
+========================================
+#include "PreCompileHeader.h"
+#include "MaterialContextDiplomat.h"
+#include "MaterialToolLender/MaterialToolLender.h"
+#include "MaterialExecutionAgent/MaterialExecutionAgent.h"
+MaterialContextDiplomat::MaterialContextDiplomat
+(
+	MaterialContext::NexusFieldProof proof_,
+	std::unique_ptr<MaterialContext::ExecutionAgent>&& executionAgent_,
+	std::unique_ptr<MaterialContext::ToolLender>&& toolLender_
+)
+{
+	std::get<std::unique_ptr<MaterialContext::ExecutionAgent>>(tools) = std::move(executionAgent_);
+	std::get<std::unique_ptr<MaterialContext::ToolLender>>(tools) = std::move(toolLender_);
+}
+MaterialContextDiplomat::~MaterialContextDiplomat(){}
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Material\MaterialContextDiplomat\MaterialContextDiplomat.h ===
+========================================
+#pragma once
+#include "../MaterialContext.h"
+class MaterialContextDiplomat
+{
+public:
+	MaterialContextDiplomat
+	(
+		MaterialContext::NexusFieldProof proof_,
+		std::unique_ptr<MaterialContext::ExecutionAgent>&& executionAgent_,
+		std::unique_ptr<MaterialContext::ToolLender>&& toolLender_
+	);
+	~MaterialContextDiplomat();
+	template<typename ToolType>
+	auto& Access()
+	{
+		return *std::get<std::unique_ptr<ToolType>>(tools);
+	}
+private:
+	std::tuple
+	<
+		std::unique_ptr<MaterialContext::ExecutionAgent>,
+		std::unique_ptr<MaterialContext::ToolLender>
+	>tools;
+};
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Material\MaterialContextDiplomat\MaterialExecutionAgent\MaterialExecutionAgent.cpp ===
+========================================
+#include "PreCompileHeader.h"
+#include "MaterialExecutionAgent.h"
+#include "../../MaterialRuntime/MaterialDataBatcher/MaterialDataBatcher.h"
+MaterialContext::ExecutionAgent::ExecutionAgent
+(
+	NexusFieldProof proof_,
+	MaterialDataBatcher& materialDataBatcher_
+):materialDataBatcher(materialDataBatcher_)
+{
+}
+void MaterialContext::ExecutionAgent::WriteMaterialIndexGroupsArrBuffer
+(
+	NexusFieldProof proof_,
+	BufferContextDiplomat& bufferContextDiplomat_
+)
+{
+	//マテリアル配列インデックス群配列バッファに書き込む
+	//キャッシュは削除する
+	materialDataBatcher.WriteMaterialIndexGroupsArrBuffer
+	(
+		proof_,
+		AgentKey{},
+		bufferContextDiplomat_
+	);
+}
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Material\MaterialContextDiplomat\MaterialExecutionAgent\MaterialExecutionAgent.h ===
+========================================
+#pragma once
+#include "../../MaterialContext.h"
+class MaterialContext::ExecutionAgent
+{
+public:
+	ExecutionAgent
+	(
+		NexusFieldProof proof_,
+		MaterialDataBatcher& materialDataBatcher_
+	);
+	void WriteMaterialIndexGroupsArrBuffer
+	(
+		NexusFieldProof proof_,
+		BufferContextDiplomat& bufferContextDiplomat_
+	);
+private:
+	MaterialDataBatcher& materialDataBatcher;
+};
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Material\MaterialContextDiplomat\MaterialToolLender\MaterialToolLender.cpp ===
+========================================
+#include "PreCompileHeader.h"
+#include "MaterialToolLender.h"
+MaterialContext::ToolLender::ToolLender
+(
+	NexusFieldProof proof_,
+	MaterialAttacher* materialAttacher_
+)
+{
+	std::get<MaterialAttacher*>(tools) = materialAttacher_;
+}
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Material\MaterialContextDiplomat\MaterialToolLender\MaterialToolLender.h ===
+========================================
+#pragma once
+#include "../../MaterialContext.h"
+class MaterialContext::ToolLender
+{
+public:
+	ToolLender
+	(
+		NexusFieldProof proof_,
+		MaterialAttacher* materialAttacher_
+	);
+	template<typename ToolType>
+	auto& Lend()
+	{
+		return *std::get<ToolType*>(tools);
+	}
+private:
+	std::tuple
+	<
+		MaterialAttacher*
+	>tools;
+};
+
+========================================
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Material\MaterialIndexDispatcher\MaterialIndexDispatcher.cpp ===
 ========================================
 #include "PreCompileHeader.h"
@@ -11049,6 +11202,8 @@ private:
 #include "../../../../Buffer/BufferContextDiplomat/BufferContextDiplomat.h"
 #include "../../../../Buffer/BufferContextDiplomat/BufferToolLender/BufferToolLender.h"
 #include "../../../../Buffer/BufferContextDiplomat/BufferToolLender/BufferToolLenderLicence.h"
+#include "../../../../Buffer/BufferRuntime/BufferDispatcher/BufferDispatcher.h"
+#include "../../../../Buffer/BufferDefinition/GPUBuffer/UploadStructuredBuffer/UploadStructuredBuffer.h"
 namespace
 {
 	auto const fileName = "MaterialDataBatcher.cpp";
@@ -11060,12 +11215,12 @@ MaterialContext::MaterialDataBatcher::MaterialDataBatcher
 {
 	materialIndexGroupsCache.resize((UINT)ProjectConfig::Render::BufferSize::kMaterialIndexGroupArr);
 }
-void MaterialContext::MaterialDataBatcher::ImportMaterialIDGroupArrBufferID(BufferUniqueID id_)
+void MaterialContext::MaterialDataBatcher::ImportMaterialIndexGroupArrBufferID(BufferUniqueID id_)
 {
-	materialIDGroupArrBufferID = id_;
-	Logger::Log("Import MaterialIDGroupArrBufferID: " + std::to_string(id_), fileName);
+	materialIndexGroupArrBufferID = id_;
+	Logger::Log("Import MaterialIndexGroupArrBufferID: " + std::to_string(id_), fileName);
 }
-void MaterialContext::MaterialDataBatcher::WriteMaterialIndexGroups
+void MaterialContext::MaterialDataBatcher::WriteMaterialIndexGroupsArrBuffer
 (
 	NexusFieldProof proof_, 
 	AgentKey key_,
@@ -11076,7 +11231,17 @@ void MaterialContext::MaterialDataBatcher::WriteMaterialIndexGroups
 	BufferContext::ToolLender::LicenceType<BufferContext::BufferDispatcher> licence;
 	auto& bufferDispatcher = *bufferContextDiplomat_.Access<BufferContext::ToolLender>()->
 	Lend<BufferContext::BufferDispatcher>(licence);
-	//バッチ先
+	//バッチ先バッファ
+	auto* dstWriteInBuffer = static_cast<UploadStructuredBuffer*>(bufferDispatcher.Dispatch(materialIndexGroupArrBufferID));
+	//両面にマテリアル配列インデックス群配列のデータを書き込む
+	dstWriteInBuffer->WriteRangeInBoth< Material::MaterialIndexGroupCPUGPU >
+	(
+		{
+			materialIndexGroupsCache,
+			materialIndexGroupsCache
+		}
+	);
+	Logger::Log("Write materialIndexGroups", fileName);
 	materialIndexGroupsCache.clear();
 	materialIndexGroupsCache.shrink_to_fit();
 	Logger::Log("Delete materialIndexGroupsCache", fileName);
@@ -11106,7 +11271,7 @@ public:
 	}
 	//全ての描画対象のマテリアル付与が終わった後に
 	//materialIndexGroups配列のバッファにバッチングする
-	void WriteMaterialIndexGroups
+	void WriteMaterialIndexGroupsArrBuffer
 	(
 		NexusFieldProof proof_,
 		AgentKey key_,
@@ -11117,18 +11282,19 @@ public:
 	void ImportMaterialArrBufferIndex(BufferUniqueID id_)
 	{
 		materialArrBufferIdArr[(UINT)type] = id_;
-		Logger::Log("Import " + Material::MaterialTypeTraits<type>::kName + "ArrBuf: " + std::to_string(id_), "MaterialIndexDispatcher.h");
+		Logger::Log("Import " + Material::MaterialTypeTraits<type>::kName + "ArrBuf: " + std::to_string(id_), "MaterialDataBatcher.h");
 	}
 	//マテリアル配列インデックス群配列バッファIDを入れる
-	void ImportMaterialIDGroupArrBufferID(BufferUniqueID id_);
+	void ImportMaterialIndexGroupArrBufferID(BufferUniqueID id_);
 private:
 	//マテリアル配列インデックス群のバッファに書き込むための実データ
+	//ランタイムでマテリアルのアタッチを行う予定はないので、全描画対象にアタッチが終わったら解放する
 	std::vector<Material::MaterialIndexGroupCPUGPU> materialIndexGroupsCache;
 	//書き込む必要があるので、マテリアル配列のバッファIDは所持する
-	std::array<BufferUniqueID, (UINT)Material::kNumParamExists> materialArrBufferIdArr{ kInvalid };
+	std::array<BufferUniqueID, (UINT)Material::kNumParamExists> materialArrBufferIdArr;
 	//各描画対象のマテリアル配列インデックス群配列のバッファID 
 	//こちらも同様、書き込む必要があるため
-	BufferUniqueID materialIDGroupArrBufferID = kInvalid;
+	BufferUniqueID materialIndexGroupArrBufferID = kInvalid;
 };
 
 ========================================
@@ -23781,6 +23947,7 @@ void Nexus::SecondaryInit(aFourthProof proof_)
 	InitializeInSequence<InitSequence::kDeleteBufferUploaderCache>();
 	InitializeInSequence<InitSequence::kSortOutGlobalConstantBuffers>();
 	InitializeInSequence<InitSequence::kDeleteModelDataCache>();
+	InitializeInSequence<InitSequence::kWriteMaterialIndexGroupsArrBuffer>();
 	ErrorMessageOutput::Assert::DetectError(nextInit == InitSequence::kEnd, "初期化が正常に行われていない可能性がある", fileName);
 }
 
@@ -23852,14 +24019,15 @@ private:
 		kGameObjectContext,
 		kCameraContext,
 		kSceneContext,
-		//ここまではコンストラクタ
-		//コンストラクタからここまでに、シーン(モデル)の作成が完了してなければならない
+		//ここまではNexusのコンストラクタ
+		//ここまでに、シーンの作成が完了してなければならない
 		kRenderContext,
 		kUploadAllResources,
 		kKickCommands,
 		kDeleteBufferUploaderCache,
 		kSortOutGlobalConstantBuffers,
 		kDeleteModelDataCache,					///モデルデータキャッシュの削除は、アプリ層の初期化が終わったあと
+		kWriteMaterialIndexGroupsArrBuffer,
 		kEnd
 	}nextInit = InitSequence::kDebugContext;
 	//終了処理順序
@@ -24002,6 +24170,9 @@ void Nexus::Finalize<Nexus::FinalizeSequence::kWindowContext>()
 #include "../LowerLayer/Resource/Model/ModelContext.h"
 #include "../LowerLayer/Resource/Model/ModelContextDiplomat/ModelContextDiplomat.h"
 #include "../LowerLayer/Resource/Model/ModelContextDiplomat/ModelContextExecutionAgent/ModelContextExecutionAgent.h"
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+#include "../LowerLayer/Resource/Material/MaterialContextDiplomat/MaterialExecutionAgent/MaterialExecutionAgent.h"
+#include "../LowerLayer/Resource/Material/MaterialContextDiplomat/MaterialContextDiplomat.h"
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 #include "../LowerLayer/Resource/Texture/TextureContext.h"
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -24301,6 +24472,12 @@ void Nexus::Init<Nexus::InitSequence::kGameObjectContext>()
 {
 	gameObjectContext = std::make_unique<GameObjectContext>(GameObjectContext::NexusFieldProof{});
 }
+template<>
+void Nexus::Init<Nexus::InitSequence::kWriteMaterialIndexGroupsArrBuffer>()
+{
+	auto& materialContextAgent = materialContext->AccessDiplomat().Access<MaterialContext::ExecutionAgent>();
+	materialContextAgent.WriteMaterialIndexGroupsArrBuffer(MaterialContext::NexusFieldProof{}, bufferContext->AccessDiplomat());
+}
 template
 void Nexus::Init<Nexus::InitSequence::kDebugContext>();
 template
@@ -24345,6 +24522,8 @@ template
 void Nexus::Init<Nexus::InitSequence::kGameObjectContext>();
 template
 void Nexus::Init<Nexus::InitSequence::kMaterialContext>();
+template
+void Nexus::Init<Nexus::InitSequence::kWriteMaterialIndexGroupsArrBuffer>();
 
 ========================================
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Nexus\NexusRun.cpp ===
@@ -25385,5 +25564,5 @@ namespace StringProcessing
 ========================================
 === SUMMARY ===
 ========================================
-Total Files      : 565
-Effective Lines  : 18493
+Total Files      : 571
+Effective Lines  : 18621

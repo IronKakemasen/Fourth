@@ -117,8 +117,9 @@ GPUBufferBehavior* MaterialContext::MaterialBufferCreator::CreateMaterialIndexGr
 	//マテリアルID群配列バッファを作成
 	auto id_buffer = bufferCreator->CreateWithBuffer(desc, "MaterialIndexGroupArr");
 
-	//描画対象作成時に、中身を書き込みたいのでディスパッチャーに持たせる
-	materialDataBatcher_.ImportMaterialIDGroupArrBufferID(id_buffer.first);
+	//描画対象作成時に、中身を書き込みたいのでマテリアルデータバッチャに持たせる
+	materialDataBatcher_.ImportMaterialIndexGroupArrBufferID(id_buffer.first);
+
 
 	return id_buffer.second;
 }
