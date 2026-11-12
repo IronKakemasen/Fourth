@@ -38,8 +38,8 @@ private:
 
 	std::unique_ptr<MaterialContextDiplomat> materialContextDiplomat;
 	std::unique_ptr<MaterialIndexDispatcher> materialIndexDispatcher;
-	std::unique_ptr<MaterialAttacher> materialAttacher;
 	std::unique_ptr<MaterialDataBatcher> materialDataBatcher;
+	std::unique_ptr<MaterialAttacher> materialAttacher;
 
 };
 

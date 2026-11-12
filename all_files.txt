@@ -775,7 +775,7 @@ class BufferContext::ToolLender
 {
 	//貸し出すツールのデータ型とそれに対応したLicenceのデータ型を結び付ける
 	template<typename ToolType>
-	struct CmdTypeTraits;
+	struct ToolTypeTraits;
 	//バッファクリエイターやアップローダー、ディスパッチャーを触ってもいい資格
 	struct BasicBufferManagementLicence;
 	//定数バッファクラスを触ってもいい資格
@@ -792,7 +792,7 @@ class BufferContext::ToolLender
 public:
 	//ただのエイリアステンプレート
 	template<typename ToolType>
-	using LicenceType = typename CmdTypeTraits<ToolType>::Type;
+	using LicenceType = typename ToolTypeTraits<ToolType>::Licence;
 	ToolLender
 	(
 		NexusFieldProof proof_,
@@ -804,35 +804,35 @@ public:
 	);
 	///ツールの貸し出し
 	template<typename ToolType>
-	auto* Lend(typename CmdTypeTraits<ToolType>::Type licence_)
+	auto* Lend(typename ToolTypeTraits<ToolType>::Licence licence_)
 	{
 		return std::get<ToolType*>(tools);
 	}
 };
 template<>
-struct BufferContext::ToolLender::CmdTypeTraits<BufferContext::BufferCreator>
+struct BufferContext::ToolLender::ToolTypeTraits<BufferContext::BufferCreator>
 {
-	using Type = BasicBufferManagementLicence;
+	using Licence = BasicBufferManagementLicence;
 };
 template<>
-struct BufferContext::ToolLender::CmdTypeTraits<BufferContext::BufferUploader>
+struct BufferContext::ToolLender::ToolTypeTraits<BufferContext::BufferUploader>
 {
-	using Type = BasicBufferManagementLicence;
+	using Licence = BasicBufferManagementLicence;
 };
 template<>
-struct BufferContext::ToolLender::CmdTypeTraits<BufferContext::BufferDispatcher>
+struct BufferContext::ToolLender::ToolTypeTraits<BufferContext::BufferDispatcher>
 {
-	using Type = BasicBufferManagementLicence;
+	using Licence = BasicBufferManagementLicence;
 };
 template<>
-struct BufferContext::ToolLender::CmdTypeTraits<BufferContext::BufferCollector>
+struct BufferContext::ToolLender::ToolTypeTraits<BufferContext::BufferCollector>
 {
-	using Type = BasicBufferManagementLicence;
+	using Licence = BasicBufferManagementLicence;
 };
 template<>
-struct BufferContext::ToolLender::CmdTypeTraits<BufferContext::GlobalConstantBuffers>
+struct BufferContext::ToolLender::ToolTypeTraits<BufferContext::GlobalConstantBuffers>
 {
-	using Type = UsesGlobalConstantBuffersLicence;
+	using Licence = UsesGlobalConstantBuffersLicence;
 };
 
 ========================================
@@ -9162,14 +9162,14 @@ class WindowContext::ToolLender
 	struct UsesHWNDLicence;
 public:
 	template<typename ToolType>
-	using LicenceType = typename ToolTypeTraits<ToolType>::Type;
+	using LicenceType = typename ToolTypeTraits<ToolType>::Licence;
 	ToolLender
 	(
 		NexusFieldProof proof_,
 		HWND const& HWND_
 	);
 	template<typename ToolType>
-	ToolType& Lend(typename ToolTypeTraits<ToolType>::Type licence_)
+	ToolType& Lend(typename ToolTypeTraits<ToolType>::Licence licence_)
 	{
 		return std::get<ToolType>(tools);
 	}
@@ -9179,7 +9179,7 @@ private:
 template<>
 struct WindowContext::ToolLender::ToolTypeTraits<HWND>
 {
-	using Type = UsesHWNDLicence;
+	using Licence = UsesHWNDLicence;
 };
 
 ========================================
@@ -10638,8 +10638,8 @@ public:
 private:
 	std::unique_ptr<MaterialContextDiplomat> materialContextDiplomat;
 	std::unique_ptr<MaterialIndexDispatcher> materialIndexDispatcher;
-	std::unique_ptr<MaterialAttacher> materialAttacher;
 	std::unique_ptr<MaterialDataBatcher> materialDataBatcher;
+	std::unique_ptr<MaterialAttacher> materialAttacher;
 };
 struct MaterialContext::NexusFieldProof
 {
@@ -11102,14 +11102,19 @@ MaterialContext::ToolLender::ToolLender
 #include "../../MaterialContext.h"
 class MaterialContext::ToolLender
 {
+	template<typename ToolType>
+	struct ToolTypeTraits;
+	struct AccessMaterialAttacherLicence;
 public:
+	template<typename ToolType>
+	using LicenceType = typename ToolTypeTraits<ToolType>::Licence;
 	ToolLender
 	(
 		NexusFieldProof proof_,
 		MaterialAttacher* materialAttacher_
 	);
 	template<typename ToolType>
-	auto& Lend()
+	auto& Lend(typename ToolTypeTraits<ToolType>::Licence licence_)
 	{
 		return *std::get<ToolType*>(tools);
 	}
@@ -11118,6 +11123,24 @@ private:
 	<
 		MaterialAttacher*
 	>tools;
+};
+template<>
+struct MaterialContext::ToolLender::ToolTypeTraits<MaterialContext::MaterialAttacher>
+{
+	using Licence = AccessMaterialAttacherLicence;
+};
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Material\MaterialContextDiplomat\MaterialToolLender\MaterialToolLenderLicences.h ===
+========================================
+#pragma once
+#include "MaterialToolLender.h"
+class ModelContext;
+struct MaterialContext::ToolLender::AccessMaterialAttacherLicence
+{
+private:
+	friend class ModelContext;
+	explicit AccessMaterialAttacherLicence() = default;
 };
 
 ========================================
@@ -25564,5 +25587,5 @@ namespace StringProcessing
 ========================================
 === SUMMARY ===
 ========================================
-Total Files      : 571
-Effective Lines  : 18621
+Total Files      : 572
+Effective Lines  : 18638
