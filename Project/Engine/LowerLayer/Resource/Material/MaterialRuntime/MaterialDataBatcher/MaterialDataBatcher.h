@@ -19,7 +19,7 @@ public:
 	void WriteInMaterialIndexGroups(UINT materialID_,UINT materialArrIndex_)
 	{
 		//実データに書き込む
-		auto* firstMemberPtr = &materialIndexGroupsCache[materialID_].standardIndex;
+		auto* firstMemberPtr = &materialIndexGroups[materialID_].standardIndex;
 
 		*(firstMemberPtr + UINT(type)) = materialArrIndex_;
 	}
@@ -49,8 +49,7 @@ public:
 private:
 
 	//マテリアル配列インデックス群のバッファに書き込むための実データ
-	//ランタイムでマテリアルのアタッチを行う予定はないので、全描画対象にアタッチが終わったら解放する
-	std::vector<Material::MaterialIndexGroupCPUGPU> materialIndexGroupsCache;
+	std::vector<Material::MaterialIndexGroupCPUGPU> materialIndexGroups;
 
 	//書き込む必要があるので、マテリアル配列のバッファIDは所持する
 	std::array<BufferUniqueID, (UINT)Material::kNumParamExists> materialArrBufferIdArr;

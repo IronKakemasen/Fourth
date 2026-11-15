@@ -61,14 +61,6 @@ namespace Material
         "MaterialArrBufferSrvIndexGroupCPUGPU is incomplete"
     );
 
-	struct GridLineCPUGPU
-	{
-        Vector4<float> gridColor;
-        Vector4<float> backgroundColor;
-        float gridScale = 1.0f;
-        float gridRatio = 1.0f;
-	};
-
     struct StandardCPU
     {
         std::string albedoTexture = "";
@@ -91,6 +83,18 @@ namespace Material
         StaticSampler::SamplerState albedoTexSamplerState = StaticSampler::SamplerState::kLinearClamp;
 
     };
+
+    struct GridLineCPUGPU
+    {
+        Vector4<float> gridColor;
+        Vector4<float> backgroundColor;
+        float gridScale = 1.0f;
+        float gridRatio = 1.0f;
+    };
+
+
+
+
 
 }
 

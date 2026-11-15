@@ -12,7 +12,11 @@ MaterialContext::MaterialAttacher::MaterialAttacher
 ) :materialIndexDispatcher(materialIndexDispatcher_), materialDataBatcher(materialDataBatcher_)
 {
 
+}
 
+std::unique_ptr<Materials> MaterialContext::MaterialAttacher::CreateMaterials()
+{
+	return std::make_unique<Materials>(Materials::InstantiateLicence{} , DispatchMaterialID());
 }
 
 UINT MaterialContext::MaterialAttacher::DispatchMaterialID()

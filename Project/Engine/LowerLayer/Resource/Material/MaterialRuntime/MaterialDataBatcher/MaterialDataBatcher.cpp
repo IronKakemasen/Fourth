@@ -21,7 +21,7 @@ MaterialContext::MaterialDataBatcher::MaterialDataBatcher
 	NexusFieldProof proof_
 ) 
 {
-	materialIndexGroupsCache.resize((UINT)ProjectConfig::Render::BufferSize::kMaterialIndexGroupArr);
+	materialIndexGroups.resize((UINT)ProjectConfig::Render::BufferSize::kMaterialIndexGroupArr);
 }
 
 void MaterialContext::MaterialDataBatcher::ImportMaterialIndexGroupArrBufferID(BufferUniqueID id_)
@@ -50,16 +50,11 @@ void MaterialContext::MaterialDataBatcher::WriteMaterialIndexGroupsArrBuffer
 	dstWriteInBuffer->WriteRangeInBoth< Material::MaterialIndexGroupCPUGPU >
 	(
 		{
-			materialIndexGroupsCache,
-			materialIndexGroupsCache
+			materialIndexGroups,
+			materialIndexGroups
 		}
 	);
 	Logger::Log("Write materialIndexGroups", fileName);
-
-
-	materialIndexGroupsCache.clear();
-	materialIndexGroupsCache.shrink_to_fit();
-	Logger::Log("Delete materialIndexGroupsCache", fileName);
 }
 
 

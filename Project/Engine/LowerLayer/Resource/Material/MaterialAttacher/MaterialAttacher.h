@@ -1,7 +1,7 @@
 #pragma once
 #include "../MaterialIndexDispatcher/MaterialIndexDispatcher.h"
 #include "../MaterialRuntime/MaterialDataBatcher/MaterialDataBatcher.h"
-
+#include "../Materials/Materials.h"
 
 class MaterialContext::MaterialAttacher
 {
@@ -14,22 +14,37 @@ public:
 		MaterialDataBatcher& materialDataBatcher_
 	);
 
-	//マテリアルIDを割り当てる
-	UINT DispatchMaterialID();
+	//Materialsの実体を作成
+	std::unique_ptr<Materials> CreateMaterials();
 
 	//対象のマテリアルID所持者に、マテリアルをアタッチする
 	template<Material::Type type>
-	auto Attach(UINT materialID_)
+	auto& Attach(Materials& dst_)
 	{
 		//危険は完全に防げていないが…
 		Material::CheckIsMaterialTypeAttachable<type>();
 
+		auto& materialUniqueRef = std::get<std::unique_ptr<typename Material::MaterialTypeTraits<type>::dataType>>(dst_.params);
+
+#ifdef _DEBUG
+
+		ErrorMessageOutput::Assert::DetectError
+		(
+			!materialUniqueRef,
+			"マテリアルアタッチの重複: " + Material::MaterialTypeTraits<type>::kName,
+			"MaterialAttacher.h"
+		);
+
+#endif // _DEBUG
+			
 		//マテリアルIDは描画対象のMaterialArrIndexGroupBufferの添え字でもあるので、
 		//今回アタッチしたマテリアルのインデックスをバッファと実データである
 		//materialIndexGroupsに書き込む
-		WriteMaterialIndex<type>(materialID_);
+		WriteMaterialIndex<type>(dst_.materialID);
 
-		return std::make_unique<Material::MaterialTypeTraits<type>::dataType>();
+		materialUniqueRef = std::make_unique<typename Material::MaterialTypeTraits<type>::dataType>();
+
+		return *materialUniqueRef;
 	}
 
 
@@ -46,6 +61,8 @@ private:
 		materialDataBatcher.WriteInMaterialIndexGroups<type>(materialID_, materialArrIndex);
 	}
 
+	//マテリアルIDを割り当てる
+	UINT DispatchMaterialID();
 
 	//マテリアルのインデックスを割り振るため
 	MaterialIndexDispatcher& materialIndexDispatcher;
