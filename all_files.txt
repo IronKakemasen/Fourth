@@ -10667,6 +10667,10 @@ MaterialContext::MaterialAttacher::MaterialAttacher
 ) :materialIndexDispatcher(materialIndexDispatcher_), materialDataBatcher(materialDataBatcher_)
 {
 }
+std::unique_ptr<Materials> MaterialContext::MaterialAttacher::CreateMaterials()
+{
+	return std::make_unique<Materials>(Materials::InstantiateLicence{} , DispatchMaterialID());
+}
 UINT MaterialContext::MaterialAttacher::DispatchMaterialID()
 {
 	return materialIndexDispatcher.DispatchMaterialID();
@@ -10678,6 +10682,7 @@ UINT MaterialContext::MaterialAttacher::DispatchMaterialID()
 #pragma once
 #include "../MaterialIndexDispatcher/MaterialIndexDispatcher.h"
 #include "../MaterialRuntime/MaterialDataBatcher/MaterialDataBatcher.h"
+#include "../Materials/Materials.h"
 class MaterialContext::MaterialAttacher
 {
 public:
@@ -10687,19 +10692,29 @@ public:
 		MaterialIndexDispatcher& materialIndexDispatcher_,
 		MaterialDataBatcher& materialDataBatcher_
 	);
-	//マテリアルIDを割り当てる
-	UINT DispatchMaterialID();
+	//Materialsの実体を作成
+	std::unique_ptr<Materials> CreateMaterials();
 	//対象のマテリアルID所持者に、マテリアルをアタッチする
 	template<Material::Type type>
-	auto Attach(UINT materialID_)
+	auto& Attach(Materials& dst_)
 	{
 		//危険は完全に防げていないが…
 		Material::CheckIsMaterialTypeAttachable<type>();
+		auto& materialUniqueRef = std::get<std::unique_ptr<typename Material::MaterialTypeTraits<type>::dataType>>(dst_.params);
+#ifdef _DEBUG
+		ErrorMessageOutput::Assert::DetectError
+		(
+			!materialUniqueRef,
+			"マテリアルアタッチの重複: " + Material::MaterialTypeTraits<type>::kName,
+			"MaterialAttacher.h"
+		);
+#endif // _DEBUG
 		//マテリアルIDは描画対象のMaterialArrIndexGroupBufferの添え字でもあるので、
 		//今回アタッチしたマテリアルのインデックスをバッファと実データである
 		//materialIndexGroupsに書き込む
-		WriteMaterialIndex<type>(materialID_);
-		return std::make_unique<Material::MaterialTypeTraits<type>::dataType>();
+		WriteMaterialIndex<type>(dst_.materialID);
+		materialUniqueRef = std::make_unique<typename Material::MaterialTypeTraits<type>::dataType>();
+		return *materialUniqueRef;
 	}
 private:
 	//マテリアルIDの指す先の実データに該当マテリアルのインデックスを書き込む
@@ -10711,6 +10726,8 @@ private:
 		//実データに書き込む
 		materialDataBatcher.WriteInMaterialIndexGroups<type>(materialID_, materialArrIndex);
 	}
+	//マテリアルIDを割り当てる
+	UINT DispatchMaterialID();
 	//マテリアルのインデックスを割り振るため
 	MaterialIndexDispatcher& materialIndexDispatcher;
 	//マテリアル配列インデックス群のバッファにバッチングするためにデータを記録する
@@ -11050,7 +11067,6 @@ void MaterialContext::ExecutionAgent::WriteMaterialIndexGroupsArrBuffer
 )
 {
 	//マテリアル配列インデックス群配列バッファに書き込む
-	//キャッシュは削除する
 	materialDataBatcher.WriteMaterialIndexGroupsArrBuffer
 	(
 		proof_,
@@ -11236,7 +11252,7 @@ MaterialContext::MaterialDataBatcher::MaterialDataBatcher
 	NexusFieldProof proof_
 ) 
 {
-	materialIndexGroupsCache.resize((UINT)ProjectConfig::Render::BufferSize::kMaterialIndexGroupArr);
+	materialIndexGroups.resize((UINT)ProjectConfig::Render::BufferSize::kMaterialIndexGroupArr);
 }
 void MaterialContext::MaterialDataBatcher::ImportMaterialIndexGroupArrBufferID(BufferUniqueID id_)
 {
@@ -11260,14 +11276,11 @@ void MaterialContext::MaterialDataBatcher::WriteMaterialIndexGroupsArrBuffer
 	dstWriteInBuffer->WriteRangeInBoth< Material::MaterialIndexGroupCPUGPU >
 	(
 		{
-			materialIndexGroupsCache,
-			materialIndexGroupsCache
+			materialIndexGroups,
+			materialIndexGroups
 		}
 	);
 	Logger::Log("Write materialIndexGroups", fileName);
-	materialIndexGroupsCache.clear();
-	materialIndexGroupsCache.shrink_to_fit();
-	Logger::Log("Delete materialIndexGroupsCache", fileName);
 }
 
 ========================================
@@ -11289,7 +11302,7 @@ public:
 	void WriteInMaterialIndexGroups(UINT materialID_,UINT materialArrIndex_)
 	{
 		//実データに書き込む
-		auto* firstMemberPtr = &materialIndexGroupsCache[materialID_].standardIndex;
+		auto* firstMemberPtr = &materialIndexGroups[materialID_].standardIndex;
 		*(firstMemberPtr + UINT(type)) = materialArrIndex_;
 	}
 	//全ての描画対象のマテリアル付与が終わった後に
@@ -11311,13 +11324,93 @@ public:
 	void ImportMaterialIndexGroupArrBufferID(BufferUniqueID id_);
 private:
 	//マテリアル配列インデックス群のバッファに書き込むための実データ
-	//ランタイムでマテリアルのアタッチを行う予定はないので、全描画対象にアタッチが終わったら解放する
-	std::vector<Material::MaterialIndexGroupCPUGPU> materialIndexGroupsCache;
+	std::vector<Material::MaterialIndexGroupCPUGPU> materialIndexGroups;
 	//書き込む必要があるので、マテリアル配列のバッファIDは所持する
 	std::array<BufferUniqueID, (UINT)Material::kNumParamExists> materialArrBufferIdArr;
 	//各描画対象のマテリアル配列インデックス群配列のバッファID 
 	//こちらも同様、書き込む必要があるため
 	BufferUniqueID materialIndexGroupArrBufferID = kInvalid;
+};
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Material\Materials\Materials.cpp ===
+========================================
+#include "PreCompileHeader.h"
+#include "Materials.h"
+Materials::Materials(InstantiateLicence licence_, UINT materialID_)
+:materialID(materialID_)
+{
+	//全パラメーターのマテリアルのダーティカウントをダブルバッファ分にしておく(オン)にする
+	for (UINT i = 0;i < Material::kNumParamExists;++i)
+	{
+		dirtyArr[i] = (UINT)ProjectConfig::Render::NumBuffer::kDoubleBuffer;
+	}
+}
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Material\Materials\Materials.h ===
+========================================
+#pragma once
+//外部
+#include "../../../../../Assets/Shared/Material.h"
+class MaterialContext;
+struct Materials
+{
+private:
+    //インターフェースを絞るため
+    friend class MaterialContext;
+    struct InstantiateLicence {};
+public:
+    //IDはMaterialIndexDispatcherが割り当てる
+    Materials(InstantiateLicence licence_ ,UINT materialID_);
+    //これを呼び出したらマテリアルのダーティーをオンにします
+    template<Material::Type type>
+    auto& Ref()
+    {
+        //データ型チェック  
+        Material::CheckIsMaterialTypeAttachable<type>();
+        //ダーティカウントリセット
+        dirtyArr[UINT(type)] = (UINT)ProjectConfig::Render::NumBuffer::kDoubleBuffer;
+        auto* paramPtr =
+            std::get<std::unique_ptr<typename Material::MaterialTypeTraits<type>::dataType>>(params).get();
+#ifdef _DEBUG
+        ErrorMessageOutput::Assert::DetectError
+        (
+            paramPtr,
+            "アタッチしていないマテリアルの参照を取得すな: " + Material::MaterialTypeTraits<type>::kName,
+            "Materials.h"
+        );
+#endif // _DEBUG
+        return *paramPtr;
+    }
+    template<Material::Type type>
+    auto const& Watch()const
+    {
+        //データ型チェック  
+        Material::CheckIsMaterialTypeAttachable<type>();
+        auto* paramPtr =
+            std::get<std::unique_ptr<typename Material::MaterialTypeTraits<type>::dataType>>(params).get();
+#ifdef _DEBUG
+        ErrorMessageOutput::Assert::DetectError
+        (
+            paramPtr,
+            "アタッチしていないマテリアルの参照を取得すな: " + Material::MaterialTypeTraits<type>::kName,
+            "Materials.h"
+        );
+#endif // _DEBUG
+        return *paramPtr;
+    }
+private:
+    //マテリアル配列インデックス群配列のID
+    UINT materialID = kInvalid;
+    //パラメーター群
+    std::tuple
+    <
+        std::unique_ptr<Material::StandardGPU>,
+        std::unique_ptr<Material::GridLineCPUGPU>
+    > params;
+    //バッファ書き込みダーティ判定用
+    std::array<UINT, Material::kNumParamExists> dirtyArr;
 };
 
 ========================================
@@ -17483,14 +17576,14 @@ class TextureContext::ToolLender
 	struct UsesTextureLibLicence;
 public:
 	template<typename ToolType>
-	using LicenceType = typename ToolTypeTraits<ToolType>::Type;
+	using LicenceType = typename ToolTypeTraits<ToolType>::Licence;
 	ToolLender
 	(
 		NexusFieldProof proof_,
 		TextureLibrary* textureLibrary_
 	);
 	template<typename ToolType>
-	ToolType& Lend(typename ToolTypeTraits<ToolType>::Type licence_)
+	ToolType& Lend(typename ToolTypeTraits<ToolType>::Licence licence_)
 	{
 		return *std::get<ToolType*>(tools);
 	}
@@ -17503,7 +17596,7 @@ private:
 template<>
 struct TextureContext::ToolLender::ToolTypeTraits<TextureContext::TextureLibrary>
 {
-	using Type = UsesTextureLibLicence;
+	using Licence = UsesTextureLibLicence;
 };
 
 ========================================
@@ -25587,5 +25680,5 @@ namespace StringProcessing
 ========================================
 === SUMMARY ===
 ========================================
-Total Files      : 572
-Effective Lines  : 18638
+Total Files      : 574
+Effective Lines  : 18702

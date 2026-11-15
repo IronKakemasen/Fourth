@@ -19,7 +19,6 @@ void MaterialContext::ExecutionAgent::WriteMaterialIndexGroupsArrBuffer
 )
 {
 	//マテリアル配列インデックス群配列バッファに書き込む
-	//キャッシュは削除する
 	materialDataBatcher.WriteMaterialIndexGroupsArrBuffer
 	(
 		proof_,
