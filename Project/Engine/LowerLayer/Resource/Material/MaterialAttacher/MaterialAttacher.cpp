@@ -14,9 +14,9 @@ MaterialContext::MaterialAttacher::MaterialAttacher
 
 }
 
-std::unique_ptr<Materials> MaterialContext::MaterialAttacher::CreateMaterials()
+Materials MaterialContext::MaterialAttacher::CreateMaterials()
 {
-	return std::make_unique<Materials>(Materials::InstantiateLicence{} , DispatchMaterialID());
+	return Materials( DispatchMaterialID());
 }
 
 UINT MaterialContext::MaterialAttacher::DispatchMaterialID()

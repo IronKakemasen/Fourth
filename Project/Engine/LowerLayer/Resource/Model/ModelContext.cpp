@@ -26,7 +26,8 @@ ModelContext::ModelContext
 (
 	NexusFieldProof proof_,
 	BufferContextDiplomat& bufferContextDiplomat_,
-	TextureContextDiplomat& textureContextDiplomat_
+	TextureContextDiplomat& textureContextDiplomat_,
+	MaterialContextDiplomat& materialContextDiplomat_
 ) 
 {
 	Logger::Entry("ModelContext: Constructor");
@@ -45,7 +46,8 @@ ModelContext::ModelContext
 	(
 		proof_,
 		*modelSlotAllocator, 
-		textureContextDiplomat_
+		textureContextDiplomat_,
+		materialContextDiplomat_
 	);
 	Logger::Log("Instantiate: ModelCreator", fileName);
 

@@ -4,7 +4,7 @@ class Nexus;
 class BufferContextDiplomat;
 class ModelContextDiplomat;
 class TextureContextDiplomat;
-
+class MaterialContextDiplomat;
 
 class ModelContext
 {
@@ -46,12 +46,12 @@ public:
 	//コマンド提供者キー
 	struct ProviderKey;
 
-
 	ModelContext
 	(
 		NexusFieldProof proof_, 
 		BufferContextDiplomat& bufferContextDiplomat_,
-		TextureContextDiplomat& textureContextDiplomat_
+		TextureContextDiplomat& textureContextDiplomat_,
+		MaterialContextDiplomat& materialContextDiplomat_
 	);
 	~ModelContext();
 

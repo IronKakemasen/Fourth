@@ -3,9 +3,8 @@
 
 
 //外部
-#include "../../../Buffer/BufferDefinition/TextureComponent.h"
 #include "../../../../Math/Transform/Transform.h"
-#include "../../../../../../Assets/Shared/Material.h"
+#include "../../Material/Materials/Materials.h"
 
 class ModelContext;
 class RenderContext;
@@ -21,9 +20,15 @@ class Model
 		RenderStateComponent::BlendMode blendMode{};
 		//現在選択しているマテリアルタイプ
 		Material::Type materialType{};
+
+		//マテリアル。可変長になっているのは、サブメッシュ分用意しているから
+		std::vector<Materials> materialsContainer;
+
 		//マテリアル。可変長になっているのは、サブメッシュ分用意しているから
 		std::vector<Material::StandardGPU> materials;
 		std::vector<UINT> areMaterialsDirtyCnt;
+		
+		
 		//トランスフォーム。サブメッシュ分用意されている
 		std::vector<Transform> transforms;
 	};
@@ -44,7 +49,8 @@ public:
 	(
 		Type type_,
 		const ModelDescription& modelDesc_,
-		std::vector<Material::StandardGPU> const& materials_
+		std::vector<Material::StandardGPU> const& materials_,
+		std::vector<Materials> materialsContainer_
 	);
 
 	Model(const Model&) = delete;
@@ -60,6 +66,11 @@ public:
 	void ChangeColor(size_t index_ , Vector4<float> const& dst_);
 	template<TextureComponent::TextureType textureType>
 	void ChangeTexture(size_t index_, SRVHeapIndex dst_);
+	
+	Materials& RefMaterials(size_t index_);
+	std::span<Materials> RefMaterialsContainer();
+
+
 	Transform& RefTransform(size_t index_);
 	std::span<Transform> RefTransforms();
 

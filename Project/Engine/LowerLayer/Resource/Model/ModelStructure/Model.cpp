@@ -12,7 +12,8 @@ Model::Model
 (
 	Type type_,
 	const ModelDescription& modelDesc_,
-	std::vector<Material::StandardGPU> const& materials_
+	std::vector<Material::StandardGPU> const& materials_,
+	std::vector<Materials> materialsContainer_
 ) :modelDesc(modelDesc_), type(type_)
 {
 	//変更可能描画コンポーネントの初期設定は添え字0番に
@@ -22,6 +23,11 @@ Model::Model
 	changeableParams.materials = materials_;
 	//マテリアルのダーティ検知用(ダブルバッファ分)
 	changeableParams.areMaterialsDirtyCnt.resize(materials_.size(), (UINT)NumBuffer::kDoubleBuffer);
+
+
+	///gennkouuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuu
+	changeableParams.materialsContainer = std::move(materialsContainer_);
+
 
 	//サブメッシュ分のトランスフォームを確保
 	auto const numMeshes = modelDesc_.WatchPerDrawIndices().size();
@@ -146,6 +152,17 @@ std::span<Transform> Model::RefTransforms()
 {
 	return changeableParams.transforms;
 }
+
+Materials& Model::RefMaterials(size_t index_)
+{
+	return changeableParams.materialsContainer[index_];
+}
+
+std::span<Materials> Model::RefMaterialsContainer()
+{
+	return changeableParams.materialsContainer;
+}
+
 
 template<>
 void Model::ChangeTexture<TextureComponent::TextureType::kAlbedo>(size_t index_, SRVHeapIndex dst_)

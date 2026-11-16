@@ -15,7 +15,7 @@ public:
 	);
 
 	//Materialsの実体を作成
-	std::unique_ptr<Materials> CreateMaterials();
+	Materials CreateMaterials();
 
 	//対象のマテリアルID所持者に、マテリアルをアタッチする
 	template<Material::Type type>
