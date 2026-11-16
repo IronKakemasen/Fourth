@@ -72,10 +72,6 @@ std::vector<ConstantBuffers::PerDrawIndicesCPUGPU> ModelContext::ModelCreator::M
 		perDrawIndex.transformMatrixID =
 			slotAllocator.AllocateSlot<ModelContext::ModelSlotAllocator::TransformMatrixSlot>(licence);
 
-		//マテリアルIDを割り当てる
-		perDrawIndex.materialID =
-			slotAllocator.AllocateSlot<ModelContext::ModelSlotAllocator::MaterialSlot>(licence);
-
 		perDrawIndices.emplace_back(std::move(perDrawIndex));
 	}
 

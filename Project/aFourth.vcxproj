@@ -416,7 +416,6 @@
     <ClCompile Include="Engine\LowerLayer\Resource\Texture\TextureContext.cpp" />
     <ClCompile Include="Engine\LowerLayer\Resource\Texture\TextureLibrary\TextureLibrary.cpp" />
     <ClCompile Include="Engine\LowerLayer\Resource\Texture\TextureBufferCreator\TextureBufferCreator.cpp" />
-    <ClCompile Include="Engine\LowerLayer\Resource\Model\CreateModelTools\ModelSlotAllocator\MaterialSlot\MaterialSlot.cpp" />
     <ClCompile Include="Engine\LowerLayer\Resource\Texture\TextureContextDiplomat\TextureContextDiplomat.cpp" />
     <ClCompile Include="Engine\LowerLayer\Resource\Texture\TextureContextDiplomat\TextureContextToolLender\TextureContextToolLender.cpp" />
     <ClCompile Include="Engine\MiddleLayer\Render\RenderPass\RuntimePassInfo\RuntimePassInfo.cpp" />
@@ -759,7 +758,6 @@
     <ClInclude Include="Engine\LowerLayer\Resource\Texture\TextureContext.h" />
     <ClInclude Include="Engine\LowerLayer\Resource\Texture\TextureLibrary\TextureLibrary.h" />
     <ClInclude Include="Engine\LowerLayer\Resource\Texture\TextureBufferCreator\TextureBufferCreator.h" />
-    <ClInclude Include="Engine\LowerLayer\Resource\Model\CreateModelTools\ModelSlotAllocator\MaterialSlot\MaterialSlot.h" />
     <ClInclude Include="Engine\LowerLayer\Resource\Texture\TextureContextDiplomat\TextureContextDiplomat.h" />
     <ClInclude Include="Engine\LowerLayer\Resource\Texture\TextureContextDiplomat\TextureContextToolLender\TextureContextToolLender.h" />
     <ClInclude Include="Engine\MiddleLayer\Render\RenderPass\RuntimePassInfo\RuntimePassInfo.h" />

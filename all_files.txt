@@ -12420,7 +12420,6 @@ void ModelContext::ModelDataCreator::PerDrawDataBufferCreator::CreatePerDrawCons
 )
 {
 	Create<ConstantBufferBindSlots::kTransformMatrixContainer>(bufferCreator_, modelDataBatcher_, createCBufferCmd_);
-	Create<ConstantBufferBindSlots::kMaterialContainer>(bufferCreator_, modelDataBatcher_, createCBufferCmd_);
 }
 std::array<SRVHeapIndex, UINT(NumBuffer::kDoubleBuffer)>
 ModelContext::ModelDataCreator::PerDrawDataBufferCreator::ExtractSrvHeapIndices(UploadStructuredBuffer* srcBuffer_)
@@ -13047,9 +13046,6 @@ std::vector<ConstantBuffers::PerDrawIndicesCPUGPU> ModelContext::ModelCreator::M
 		//トランスフォームIDを割り当てる
 		perDrawIndex.transformMatrixID =
 			slotAllocator.AllocateSlot<ModelContext::ModelSlotAllocator::TransformMatrixSlot>(licence);
-		//マテリアルIDを割り当てる
-		perDrawIndex.materialID =
-			slotAllocator.AllocateSlot<ModelContext::ModelSlotAllocator::MaterialSlot>(licence);
 		perDrawIndices.emplace_back(std::move(perDrawIndex));
 	}
 	return perDrawIndices;
@@ -13161,7 +13157,6 @@ private:
 #include "ModelSlotAllocator.h"
 #include "ModelDataLibrary/ModelDataLibrary.h"
 #include "TransformMatrixSlot/TransformMatrixSlot.h"
-#include "MaterialSlot/MaterialSlot.h"
 namespace
 {
 	auto const fileName = "ModelSlotAllocator.cpp";
@@ -13172,8 +13167,6 @@ ModelContext::ModelSlotAllocator::ModelSlotAllocator(NexusFieldProof proof_)
 	Logger::Log("Instantiate: ModelDataLibrary", fileName);
 	transformMatrixSlot.reset(new TransformMatrixSlot(proof_));
 	Logger::Log("Instantiate: transformMatrixSlot", fileName);
-	materialSlot.reset(new MaterialSlot(proof_));
-	Logger::Log("Instantiate: MaterialSlot", fileName);
 }
 ModelContext::ModelSlotAllocator::~ModelSlotAllocator()
 {
@@ -13186,12 +13179,6 @@ uint32_t ModelContext::ModelSlotAllocator::AllocateSlot
 <ModelContext::ModelSlotAllocator::TransformMatrixSlot>(AllocateLicence licence_)
 {
 	return transformMatrixSlot->AllocateFreeSlot();
-}
-template<>
-uint32_t ModelContext::ModelSlotAllocator::AllocateSlot
-<ModelContext::ModelSlotAllocator::MaterialSlot>(AllocateLicence licence_)
-{
-	return materialSlot->AllocateFreeSlot();
 }
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -13214,8 +13201,6 @@ class ModelContext::ModelSlotAllocator
 public:
 	//TransformMatrixContainerBufferのスロットの割り当てを行う
 	class TransformMatrixSlot;
-	//MaterialContainerBufferのスロット割り当てを行う
-	class MaterialSlot;
 	struct HandleLicence;
 	struct AllocateLicence;
 	ModelSlotAllocator(NexusFieldProof proof_);
@@ -13227,7 +13212,6 @@ public:
 private:
 	std::unique_ptr<ModelDataLibrary> modelDataLibrary;
 	std::unique_ptr<TransformMatrixSlot> transformMatrixSlot;
-	std::unique_ptr<MaterialSlot> materialSlot;
 };
 struct ModelContext::ModelSlotAllocator::HandleLicence
 {
@@ -13245,47 +13229,6 @@ private:
 template<>
 uint32_t ModelContext::ModelSlotAllocator::AllocateSlot
 <ModelContext::ModelSlotAllocator::TransformMatrixSlot>(AllocateLicence licence_);
-template<>
-uint32_t ModelContext::ModelSlotAllocator::AllocateSlot
-<ModelContext::ModelSlotAllocator::MaterialSlot>(AllocateLicence licence_);
-
-========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Model\CreateModelTools\ModelSlotAllocator\MaterialSlot\MaterialSlot.cpp ===
-========================================
-#include "PreCompileHeader.h"
-#include "MaterialSlot.h"
-namespace
-{
-	auto const fileName = "MaterialSlot.cpp";
-}
-ModelContext::ModelSlotAllocator::MaterialSlot::MaterialSlot(NexusFieldProof proof_)
-{
-	//使いまわしMaterialSlotのスロットのサイズを確保する
-	slotList.Resize((UINT)ProjectConfig::Render::BufferSize::kMaterialContainer,"ModelMaterialSlot");
-}
-uint32_t ModelContext::ModelSlotAllocator::MaterialSlot::AllocateFreeSlot()
-{
-	uint32_t const numAllocated = slotList.Distribute();
-	Logger::Log("Allocate: MaterialSlot[" + std::to_string(numAllocated) + "]", fileName);
-	return numAllocated;
-}
-
-========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Model\CreateModelTools\ModelSlotAllocator\MaterialSlot\MaterialSlot.h ===
-========================================
-#pragma once
-#include "../ModelSlotAllocator.h"
-//外部
-#include "SimpleFreeList/SimpleFreeList.h"
-class ModelContext::ModelSlotAllocator::MaterialSlot
-{
-public:
-	MaterialSlot(NexusFieldProof proof_);
-	uint32_t AllocateFreeSlot();
-private:
-	//TransformContainerの空きインデックスのリスト
-	SimpleFreeList slotList;
-};
 
 ========================================
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Model\CreateModelTools\ModelSlotAllocator\ModelDataLibrary\ModelDataLibrary.cpp ===
@@ -13689,9 +13632,9 @@ void ModelContext::ModelDataBatcher::BatchModelData
 	//トランスフォームの書き込み先バッファ
 	BufferUniqueID transformContainerBufferID = perDrawBufferLibrary->Export<ConstantBufferBindSlots::kTransformMatrixContainer>();
 	auto dstWriteBufferTransform = static_cast<IWritableCPU*>(static_cast<UploadStructuredBuffer*>(dispatcher.Dispatch(transformContainerBufferID)));
-	//マテリアルの書き込み先バッファ
-	BufferUniqueID materialContainerBufferID = perDrawBufferLibrary->Export<ConstantBufferBindSlots::kMaterialContainer>();
-	auto dstWriteBufferMaterial = static_cast<IWritableCPU*>(static_cast<UploadStructuredBuffer*>(dispatcher.Dispatch(materialContainerBufferID)));
+	////マテリアルの書き込み先バッファ
+	//BufferUniqueID materialContainerBufferID = perDrawBufferLibrary->Export<ConstantBufferBindSlots::kMaterialContainer>();
+	//auto dstWriteBufferMaterial = static_cast<IWritableCPU*>(static_cast<UploadStructuredBuffer*>(dispatcher.Dispatch(materialContainerBufferID)));
 	//モデルの所持するデータをバッファに書き込んでいく
 	for (Model* model : models_)
 	{
@@ -13705,14 +13648,14 @@ void ModelContext::ModelDataBatcher::BatchModelData
 			numMeshes,
 			dstWriteBufferTransform
 		);
-		OverrideBuffer<ConstantBuffers::ConstantBufferBindSlots::kMaterialContainer>
-		(
-			frameIndex_,
-			*model,
-			perDrawIndices,
-			numMeshes,
-			dstWriteBufferMaterial
-		);
+		//OverrideBuffer<ConstantBuffers::ConstantBufferBindSlots::kMaterialContainer>
+		//(
+		//	frameIndex_,
+		//	*model,
+		//	perDrawIndices,
+		//	numMeshes,
+		//	dstWriteBufferMaterial
+		//);
 	}
 }
 template<>
@@ -13738,27 +13681,28 @@ void ModelContext::ModelDataBatcher::OverrideBuffer<ConstantBufferBindSlots::kTr
 		srcTransform.DecrementNeedOverrideBufferCnt();
 	}
 }
-template<>
-void ModelContext::ModelDataBatcher::OverrideBuffer<ConstantBufferBindSlots::kMaterialContainer>
-(
-	UINT const frameIndex_,
-	Model& model_,
-	std::vector<ConstantBuffers::PerDrawIndicesCPUGPU> const& perDrawIndices_,
-	size_t const numMesh_,
-	IWritableCPU* writeDstBufferPtr_
-)
-{
-	////やってることはトランスフォームとほぼ変わらない。
-	//for (size_t i = 0;i < numMesh_;++i)
-	//{
-	//	//そのマテリアルがダーティじゃないなら書き込まない
-	//	if (!model_.IsMaterialDirty(i)) continue;
-	//	
-	//	writeDstBufferPtr_->WriteElement(frameIndex_, model_.WatchMaterial(i), perDrawIndices_[i].materialID);
-	//	//マテリアルダーティのカウントを１つ消去
-	//	model_.DecrementMaterialDirtyCnt(i);
-	//}
-}
+//template<>
+//void ModelContext::ModelDataBatcher::OverrideBuffer<ConstantBufferBindSlots::kMaterialContainer>
+//(
+//	UINT const frameIndex_,
+//	Model& model_,
+//	std::vector<ConstantBuffers::PerDrawIndicesCPUGPU> const& perDrawIndices_,
+//	size_t const numMesh_,
+//	IWritableCPU* writeDstBufferPtr_
+//)
+//{
+//	////やってることはトランスフォームとほぼ変わらない。
+//	//for (size_t i = 0;i < numMesh_;++i)
+//	//{
+//	//	//そのマテリアルがダーティじゃないなら書き込まない
+//	//	if (!model_.IsMaterialDirty(i)) continue;
+//	//	
+//	//	writeDstBufferPtr_->WriteElement(frameIndex_, model_.WatchMaterial(i), perDrawIndices_[i].materialID);
+//
+//	//	//マテリアルダーティのカウントを１つ消去
+//	//	model_.DecrementMaterialDirtyCnt(i);
+//	//}
+//}
 template<ConstantBufferBindSlots bindSlot>
 void ModelContext::ModelDataBatcher::ImportPerDrawBufferID
 (Local_InputBufferUniqueIDLicence licence_, BufferUniqueID id_)
@@ -13768,9 +13712,9 @@ void ModelContext::ModelDataBatcher::ImportPerDrawBufferID
 template
 void ModelContext::ModelDataBatcher::ImportPerDrawBufferID<ConstantBufferBindSlots::kTransformMatrixContainer>
 (Local_InputBufferUniqueIDLicence licence_, BufferUniqueID id_);
-template
-void ModelContext::ModelDataBatcher::ImportPerDrawBufferID<ConstantBufferBindSlots::kMaterialContainer>
-(Local_InputBufferUniqueIDLicence licence_, BufferUniqueID id_);
+//template
+//void ModelContext::ModelDataBatcher::ImportPerDrawBufferID<ConstantBufferBindSlots::kMaterialContainer>
+//(Local_InputBufferUniqueIDLicence licence_, BufferUniqueID id_);
 
 ========================================
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Model\ModelContextRuntime\ModelDataBatcher\ModelDataBatcher.h ===
@@ -13833,15 +13777,15 @@ void ModelContext::ModelDataBatcher::OverrideBuffer<ConstantBuffers::ConstantBuf
 	size_t const numMesh_,
 	IWritableCPU* writeDstBufferPtr_
 );
-template<>
-void ModelContext::ModelDataBatcher::OverrideBuffer<ConstantBuffers::ConstantBufferBindSlots::kMaterialContainer>
-(
-	UINT const frameIndex_,
-	Model& model_,
-	std::vector<ConstantBuffers::PerDrawIndicesCPUGPU> const& perDrawIndices_,
-	size_t const numMesh_,
-	IWritableCPU* writeDstBufferPtr_
-);
+//template<>
+//void ModelContext::ModelDataBatcher::OverrideBuffer<ConstantBuffers::ConstantBufferBindSlots::kMaterialContainer>
+//(
+//	UINT const frameIndex_,
+//	Model& model_,
+//	std::vector<ConstantBuffers::PerDrawIndicesCPUGPU> const& perDrawIndices_,
+//	size_t const numMesh_,
+//	IWritableCPU* writeDstBufferPtr_
+//);
 template<>
 struct ModelContext::ModelDataBatcher::BufferTypeTraits
 	<ConstantBuffers::ConstantBufferBindSlots::kTransformMatrixContainer>
@@ -13849,14 +13793,6 @@ struct ModelContext::ModelDataBatcher::BufferTypeTraits
 	static inline std::string const kBufferName = "TransformMatrixContainer";
 	static constexpr UINT kArrSize = (UINT)ProjectConfig::Render::BufferSize::kTransformMatrixContainer;
 	static constexpr UINT kStructureSize = (UINT)sizeof(StructuredBufferModelData::TransformMatrixCPUGPU);
-};
-template<>
-struct ModelContext::ModelDataBatcher::BufferTypeTraits
-	<ConstantBuffers::ConstantBufferBindSlots::kMaterialContainer>
-{
-	static inline std::string const kBufferName = "MaterialContainer";
-	static constexpr UINT kArrSize = (UINT)ProjectConfig::Render::BufferSize::kMaterialContainer;
-	static constexpr UINT kStructureSize = (UINT)sizeof(Material::StandardGPU);
 };
 
 ========================================
@@ -14483,9 +14419,7 @@ private:
 	auto const& WatchPerDrawIndices()const { return modelDesc.WatchPerDrawIndices(); }
 	//ドローコマンドオンリー
 	auto const& WatchMeshletSize()const { return modelDesc.WatchMeshletSize(); }
-	//主にマテリアルのデータをバッファにバッチングするため
 	auto const& WatchMaterialsContainer()const { return changeableParams.materialsContainer; }
-	//主にトランスフォームのデータをバッチングするため
 	auto const& WatchTransform(size_t index_)const { return changeableParams.transforms[index_]; }
 	Type type;
 	ChangeableParams changeableParams;
@@ -24822,8 +24756,6 @@ namespace ProjectConfig
 		{
 			//TransformMatrixBufferの同時存在最大数
 			kTransformMatrixContainer = 200,
-			//そのマテリアルバージョン
-			kMaterialContainer = 200,
 			//描画対象別のマテリアルインデックス群配列のサイズ
 			kMaterialIndexGroupArr = 200
 		};
@@ -25681,5 +25613,5 @@ namespace StringProcessing
 ========================================
 === SUMMARY ===
 ========================================
-Total Files      : 574
-Effective Lines  : 18677
+Total Files      : 572
+Effective Lines  : 18597

@@ -26,7 +26,7 @@ public:
 
 	//全ての描画対象のマテリアル付与が終わった後に
 	//materialIndexGroups配列のバッファにバッチングする
-	void WriteMaterialIndexGroupsArrBuffer
+	void WriteInMaterialIndexGroupsArrBuffer
 	(
 		NexusFieldProof proof_,
 		AgentKey key_,

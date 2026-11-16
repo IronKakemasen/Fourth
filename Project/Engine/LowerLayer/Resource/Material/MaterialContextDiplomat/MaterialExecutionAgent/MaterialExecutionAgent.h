@@ -11,7 +11,7 @@ public:
 		MaterialDataBatcher& materialDataBatcher_
 	);
 
-	void WriteMaterialIndexGroupsArrBuffer
+	void WriteInMaterialIndexGroupsArrBuffer
 	(
 		NexusFieldProof proof_,
 		BufferContextDiplomat& bufferContextDiplomat_

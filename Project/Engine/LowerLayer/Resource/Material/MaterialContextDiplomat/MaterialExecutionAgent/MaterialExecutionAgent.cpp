@@ -12,14 +12,14 @@ MaterialContext::ExecutionAgent::ExecutionAgent
 
 }
 
-void MaterialContext::ExecutionAgent::WriteMaterialIndexGroupsArrBuffer
+void MaterialContext::ExecutionAgent::WriteInMaterialIndexGroupsArrBuffer
 (
 	NexusFieldProof proof_,
 	BufferContextDiplomat& bufferContextDiplomat_
 )
 {
 	//マテリアル配列インデックス群配列バッファに書き込む
-	materialDataBatcher.WriteMaterialIndexGroupsArrBuffer
+	materialDataBatcher.WriteInMaterialIndexGroupsArrBuffer
 	(
 		proof_,
 		AgentKey{},

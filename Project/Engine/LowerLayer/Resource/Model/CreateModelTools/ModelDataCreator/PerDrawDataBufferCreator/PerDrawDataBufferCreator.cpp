@@ -23,8 +23,6 @@ void ModelContext::ModelDataCreator::PerDrawDataBufferCreator::CreatePerDrawCons
 )
 {
 	Create<ConstantBufferBindSlots::kTransformMatrixContainer>(bufferCreator_, modelDataBatcher_, createCBufferCmd_);
-	Create<ConstantBufferBindSlots::kMaterialContainer>(bufferCreator_, modelDataBatcher_, createCBufferCmd_);
-
 }
 
 

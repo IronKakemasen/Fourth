@@ -74,15 +74,15 @@ void ModelContext::ModelDataBatcher::OverrideBuffer<ConstantBuffers::ConstantBuf
 	IWritableCPU* writeDstBufferPtr_
 );
 
-template<>
-void ModelContext::ModelDataBatcher::OverrideBuffer<ConstantBuffers::ConstantBufferBindSlots::kMaterialContainer>
-(
-	UINT const frameIndex_,
-	Model& model_,
-	std::vector<ConstantBuffers::PerDrawIndicesCPUGPU> const& perDrawIndices_,
-	size_t const numMesh_,
-	IWritableCPU* writeDstBufferPtr_
-);
+//template<>
+//void ModelContext::ModelDataBatcher::OverrideBuffer<ConstantBuffers::ConstantBufferBindSlots::kMaterialContainer>
+//(
+//	UINT const frameIndex_,
+//	Model& model_,
+//	std::vector<ConstantBuffers::PerDrawIndicesCPUGPU> const& perDrawIndices_,
+//	size_t const numMesh_,
+//	IWritableCPU* writeDstBufferPtr_
+//);
 
 
 template<>
@@ -93,13 +93,3 @@ struct ModelContext::ModelDataBatcher::BufferTypeTraits
 	static constexpr UINT kArrSize = (UINT)ProjectConfig::Render::BufferSize::kTransformMatrixContainer;
 	static constexpr UINT kStructureSize = (UINT)sizeof(StructuredBufferModelData::TransformMatrixCPUGPU);
 };
-
-template<>
-struct ModelContext::ModelDataBatcher::BufferTypeTraits
-	<ConstantBuffers::ConstantBufferBindSlots::kMaterialContainer>
-{
-	static inline std::string const kBufferName = "MaterialContainer";
-	static constexpr UINT kArrSize = (UINT)ProjectConfig::Render::BufferSize::kMaterialContainer;
-	static constexpr UINT kStructureSize = (UINT)sizeof(Material::StandardGPU);
-};
-
