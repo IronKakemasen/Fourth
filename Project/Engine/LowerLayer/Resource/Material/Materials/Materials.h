@@ -7,8 +7,9 @@
 class MaterialContext;
 class ModelContext;
 
-struct Materials
+class Materials
 {
+public:
     //これを呼び出したらマテリアルのダーティーをオンにします
     template<Material::Type type>
     auto& Ref()
@@ -19,31 +20,7 @@ struct Materials
         //ダーティカウントリセット
         dirtyArr[UINT(type)] = (UINT)ProjectConfig::Render::NumBuffer::kDoubleBuffer;
 
-        auto* paramPtr =
-            std::get<std::unique_ptr<typename Material::MaterialTypeTraits<type>::dataType>>(params).get();
-
-#ifdef _DEBUG
-
-        ErrorMessageOutput::Assert::DetectError
-        (
-            paramPtr,
-            "アタッチしていないマテリアルの参照を取得すな: " + Material::MaterialTypeTraits<type>::kName,
-            "Materials.h"
-        );
-
-#endif // _DEBUG
-
-        return *paramPtr;
-    }
-
-    template<Material::Type type>
-    auto const& Watch()const
-    {
-        //データ型チェック  
-        Material::CheckIsMaterialTypeAttachable<type>();
-
-        auto* paramPtr =
-            std::get<std::unique_ptr<typename Material::MaterialTypeTraits<type>::dataType>>(params).get();
+        auto* paramPtr = GetMaterialPtr<type>();
 
 #ifdef _DEBUG
 
@@ -68,9 +45,36 @@ private:
     //IDはMaterialIndexDispatcherが割り当てる
     Materials(UINT materialID_);
 
-    //マテリアルダーティチェック
+    //マテリアルタイプからマテリアルの実データを取り出す
+    //ヌルの可能性はある
     template<Material::Type type>
-    bool IsMaterialDirty() { return dirtyArr[(UINT)type]; }
+    auto* GetMaterialPtr()
+    {
+        return
+        std::get<std::unique_ptr<typename Material::MaterialTypeTraits<type>::dataType>>(params).get();
+    }
+
+    template<Material::Type type>
+    auto* GetMaterialConstPtr()const
+    {
+        return
+            std::get<std::unique_ptr<typename Material::MaterialTypeTraits<type>::dataType>>(params).get();
+    }
+
+    //マテリアルダーティチェックして、ダーティーだったらそのマテリアルのポインタを返す
+    //ほぼバッチング専用
+    template<Material::Type type>
+    auto* GetMaterialPtrIfDirty()const 
+    {
+        auto* dstMaterial = GetMaterialConstPtr<type>();
+        
+        if (dirtyArr[(UINT)type] == 0)
+        {
+            dstMaterial = nullptr;
+        }
+
+        return dstMaterial;
+    }
 
     //ダーティカウントを一つ減らす
     template<Material::Type type>
@@ -82,7 +86,7 @@ private:
 
         ErrorMessageOutput::Assert::DetectError
         (
-            dst > 0 && dst <= (UINT)ProjectConfig::Render::NumBuffer::kDoubleBuffer,
+            dst <= (UINT)ProjectConfig::Render::NumBuffer::kDoubleBuffer,
             "マテリアルのダーティのインデックスがおかしい",
             "Materials.h"
         );

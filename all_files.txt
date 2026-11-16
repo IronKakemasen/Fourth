@@ -11048,11 +11048,25 @@ private:
 };
 
 ========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Material\MaterialContextDiplomat\MaterialExecutionAgent\MaterialAgentLicences.h ===
+========================================
+#pragma once
+#include "MaterialExecutionAgent.h"
+class SceneContext;
+struct MaterialContext::ExecutionAgent::SceneContextProof
+{
+private:
+	friend class SceneContext;
+	explicit SceneContextProof() = default;
+};
+
+========================================
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Material\MaterialContextDiplomat\MaterialExecutionAgent\MaterialExecutionAgent.cpp ===
 ========================================
 #include "PreCompileHeader.h"
 #include "MaterialExecutionAgent.h"
 #include "../../MaterialRuntime/MaterialDataBatcher/MaterialDataBatcher.h"
+#include "MaterialAgentLicences.h"
 MaterialContext::ExecutionAgent::ExecutionAgent
 (
 	NexusFieldProof proof_,
@@ -11060,17 +11074,33 @@ MaterialContext::ExecutionAgent::ExecutionAgent
 ):materialDataBatcher(materialDataBatcher_)
 {
 }
-void MaterialContext::ExecutionAgent::WriteMaterialIndexGroupsArrBuffer
+void MaterialContext::ExecutionAgent::WriteInMaterialIndexGroupsArrBuffer
 (
 	NexusFieldProof proof_,
 	BufferContextDiplomat& bufferContextDiplomat_
 )
 {
 	//マテリアル配列インデックス群配列バッファに書き込む
-	materialDataBatcher.WriteMaterialIndexGroupsArrBuffer
+	materialDataBatcher.WriteInMaterialIndexGroupsArrBuffer
 	(
 		proof_,
 		AgentKey{},
+		bufferContextDiplomat_
+	);
+}
+void MaterialContext::ExecutionAgent::WriteInAllMaterialData
+(
+	SceneContextProof proof_,
+	std::vector<MaterialBatchFormat>& src_,
+	UINT frameIndex_,
+	BufferContextDiplomat& bufferContextDiplomat_
+)
+{
+	materialDataBatcher.WriteInAllMaterialData
+	(
+		AgentKey{},
+		src_,
+		frameIndex_,
 		bufferContextDiplomat_
 	);
 }
@@ -11080,17 +11110,28 @@ void MaterialContext::ExecutionAgent::WriteMaterialIndexGroupsArrBuffer
 ========================================
 #pragma once
 #include "../../MaterialContext.h"
+struct MaterialBatchFormat;
 class MaterialContext::ExecutionAgent
 {
 public:
+	struct SceneContextProof;
 	ExecutionAgent
 	(
 		NexusFieldProof proof_,
 		MaterialDataBatcher& materialDataBatcher_
 	);
-	void WriteMaterialIndexGroupsArrBuffer
+	//マテリアル配列インデックス群配列のバッファにデータを書き込む
+	void WriteInMaterialIndexGroupsArrBuffer
 	(
 		NexusFieldProof proof_,
+		BufferContextDiplomat& bufferContextDiplomat_
+	);
+	//マテリアルデータをマテリアル配列にバッチングする
+	void WriteInAllMaterialData
+	(
+		SceneContextProof proof_,
+		std::vector<MaterialBatchFormat>& src_,
+		UINT frameIndex_,
 		BufferContextDiplomat& bufferContextDiplomat_
 	);
 private:
@@ -11233,10 +11274,23 @@ private:
 };
 
 ========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Material\MaterialRuntime\MaterialBatchFormat.h ===
+========================================
+#pragma once
+class Materials;
+struct MaterialBatchFormat
+{
+	UINT materialID = kInvalid;
+	Materials* materialsPtr;
+};
+
+========================================
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Material\MaterialRuntime\MaterialDataBatcher\MaterialDataBatcher.cpp ===
 ========================================
 #include "PreCompileHeader.h"
 #include "MaterialDataBatcher.h"
+#include "../MaterialBatchFormat.h"
+#include "../../Materials/Materials.h"
 //外部
 #include "../../../../Buffer/BufferContextDiplomat/BufferContextDiplomat.h"
 #include "../../../../Buffer/BufferContextDiplomat/BufferToolLender/BufferToolLender.h"
@@ -11254,12 +11308,60 @@ MaterialContext::MaterialDataBatcher::MaterialDataBatcher
 {
 	materialIndexGroups.resize((UINT)ProjectConfig::Render::BufferSize::kMaterialIndexGroupArr);
 }
+void MaterialContext::MaterialDataBatcher::WriteInAllMaterialData
+(
+	AgentKey key_,
+	std::vector<MaterialBatchFormat>& src_,
+	UINT frameIndex_,
+	BufferContextDiplomat& bufferContextDiplomat_
+) 
+{
+	//bufferDispatcherを借りる
+	BufferContext::ToolLender::LicenceType<BufferContext::BufferDispatcher> licence;
+	auto& bufferDispatcher = *bufferContextDiplomat_.Access<BufferContext::ToolLender>()->
+		Lend<BufferContext::BufferDispatcher>(licence);
+	for (auto& dst : src_)
+	{
+#ifdef _DEBUG
+		ErrorMessageOutput::Assert::DetectError
+		(
+			dst.materialsPtr,
+			"materialsPtrがぬる(エンジンのせい)",
+			fileName
+		);
+#endif // _DEBUG
+		//該当タイプのマテリアルが存在しかつダーティならバッチングをする
+		Material::Type callCheck = Material::Type::kStandard;
+		WriteInMaterialData<Material::Type::kStandard>
+		(
+			dst,
+			callCheck,
+			frameIndex_,
+			bufferDispatcher
+		);
+		WriteInMaterialData<Material::Type::kGridLine>
+		(
+			dst,
+			callCheck,
+			frameIndex_,
+			bufferDispatcher
+		);
+#ifdef _DEBUG
+		ErrorMessageOutput::Assert::DetectError
+		(
+			(UINT)callCheck == Material::kNumParamExists,
+			"書き込んでいないマテリアルデータの種類がある(エンジンのせい)",
+			fileName
+		);
+#endif // _DEBUG
+	}
+}
 void MaterialContext::MaterialDataBatcher::ImportMaterialIndexGroupArrBufferID(BufferUniqueID id_)
 {
 	materialIndexGroupArrBufferID = id_;
 	Logger::Log("Import MaterialIndexGroupArrBufferID: " + std::to_string(id_), fileName);
 }
-void MaterialContext::MaterialDataBatcher::WriteMaterialIndexGroupsArrBuffer
+void MaterialContext::MaterialDataBatcher::WriteInMaterialIndexGroupsArrBuffer
 (
 	NexusFieldProof proof_, 
 	AgentKey key_,
@@ -11282,6 +11384,50 @@ void MaterialContext::MaterialDataBatcher::WriteMaterialIndexGroupsArrBuffer
 	);
 	Logger::Log("Write materialIndexGroups", fileName);
 }
+template<Material::Type type>
+void MaterialContext::MaterialDataBatcher::WriteInMaterialData
+(
+	MaterialBatchFormat& src_,
+	Material::Type& callCheck_,
+	UINT frameIndex_,
+	BufferContext::BufferDispatcher& bufferDispatcher_
+)
+{
+	Material::CheckIsMaterialTypeAttachable<type>();
+	auto* material = src_.materialsPtr->GetMaterialPtrIfDirty<type>();
+	callCheck_ = Material::Type((UINT)callCheck_ + 1);
+	if (material)
+	{
+		//マテリアルIDからバッチング対象のマテリアル配列のインデックスを引き、入力する
+		//マテリアルインデックス群の先頭メンバ変数(standardIndex)のアドレス
+		auto* standardIndexPtr = reinterpret_cast<UINT*>(&materialIndexGroups[src_.materialID].standardIndex);
+		UINT dstMaterialArrIndex = *(standardIndexPtr + (UINT)type );
+		//所持していたマテリアル配列のバッファIDからバッファを取得
+		auto* bufferBeWritten = bufferDispatcher_.Dispatch(materialArrBufferIdArr[(UINT)type]);
+		auto* writeable = static_cast<UploadStructuredBuffer*>(bufferBeWritten);
+		//実データを書き込む
+		writeable->WriteElement<typename Material::MaterialTypeTraits<type>::dataType>
+			(frameIndex_, *material, dstMaterialArrIndex);
+		//バッファの片面に書き込んだのでダーティカウントを1へらす
+		src_.materialsPtr->DecrementDirtyCnt<type>();
+	}
+}
+template
+void MaterialContext::MaterialDataBatcher::WriteInMaterialData<Material::Type::kStandard>
+(
+	MaterialBatchFormat& src_,
+	Material::Type& callCheck_,
+	UINT frameIndex_,
+	BufferContext::BufferDispatcher& bufferDispatcher_
+);
+template
+void MaterialContext::MaterialDataBatcher::WriteInMaterialData<Material::Type::kGridLine>
+(
+	MaterialBatchFormat& src_,
+	Material::Type& callCheck_,
+	UINT frameIndex_,
+	BufferContext::BufferDispatcher& bufferDispatcher_
+);
 
 ========================================
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Material\MaterialRuntime\MaterialDataBatcher\MaterialDataBatcher.h ===
@@ -11290,12 +11436,24 @@ void MaterialContext::MaterialDataBatcher::WriteMaterialIndexGroupsArrBuffer
 #include "../../MaterialContext.h"
 //外部
 #include "../../../../../../Assets/Shared/Material.h"
+//パフォーマンスのため
+#include "../../../../Buffer/BufferContext.h"
+struct MaterialBatchFormat;
 class MaterialContext::MaterialDataBatcher
 {
 public:
 	MaterialDataBatcher
 	(
 		NexusFieldProof proof_
+	);
+	//マテリアルデータをマテリアル配列にバッチングする
+	//代理人がシーンのBatchingPlaceで呼ぶ
+	void WriteInAllMaterialData
+	(
+		AgentKey key_,
+		std::vector<MaterialBatchFormat>& src_,
+		UINT frameIndex_,
+		BufferContextDiplomat& bufferContextDiplomat_
 	);
 	//materialIndexGroupsにアタッチしたマテリアル配列のインデックスを書き込む
 	template<Material::Type type>
@@ -11307,7 +11465,7 @@ public:
 	}
 	//全ての描画対象のマテリアル付与が終わった後に
 	//materialIndexGroups配列のバッファにバッチングする
-	void WriteMaterialIndexGroupsArrBuffer
+	void WriteInMaterialIndexGroupsArrBuffer
 	(
 		NexusFieldProof proof_,
 		AgentKey key_,
@@ -11323,6 +11481,15 @@ public:
 	//マテリアル配列インデックス群配列バッファIDを入れる
 	void ImportMaterialIndexGroupArrBufferID(BufferUniqueID id_);
 private:
+	//マテリアル配列バッファに実データを書き込む
+	template<Material::Type type>
+	void WriteInMaterialData
+	(
+		MaterialBatchFormat& src_,
+		Material::Type& callCheck_,
+		UINT frameIndex_,
+		BufferContext::BufferDispatcher& bufferDispatcher_
+	);
 	//マテリアル配列インデックス群のバッファに書き込むための実データ
 	std::vector<Material::MaterialIndexGroupCPUGPU> materialIndexGroups;
 	//書き込む必要があるので、マテリアル配列のバッファIDは所持する
@@ -11355,8 +11522,9 @@ Materials::Materials(UINT materialID_)
 #include "../../../../../Assets/Shared/Material.h"
 class MaterialContext;
 class ModelContext;
-struct Materials
+class Materials
 {
+public:
     //これを呼び出したらマテリアルのダーティーをオンにします
     template<Material::Type type>
     auto& Ref()
@@ -11365,25 +11533,7 @@ struct Materials
         Material::CheckIsMaterialTypeAttachable<type>();
         //ダーティカウントリセット
         dirtyArr[UINT(type)] = (UINT)ProjectConfig::Render::NumBuffer::kDoubleBuffer;
-        auto* paramPtr =
-            std::get<std::unique_ptr<typename Material::MaterialTypeTraits<type>::dataType>>(params).get();
-#ifdef _DEBUG
-        ErrorMessageOutput::Assert::DetectError
-        (
-            paramPtr,
-            "アタッチしていないマテリアルの参照を取得すな: " + Material::MaterialTypeTraits<type>::kName,
-            "Materials.h"
-        );
-#endif // _DEBUG
-        return *paramPtr;
-    }
-    template<Material::Type type>
-    auto const& Watch()const
-    {
-        //データ型チェック  
-        Material::CheckIsMaterialTypeAttachable<type>();
-        auto* paramPtr =
-            std::get<std::unique_ptr<typename Material::MaterialTypeTraits<type>::dataType>>(params).get();
+        auto* paramPtr = GetMaterialPtr<type>();
 #ifdef _DEBUG
         ErrorMessageOutput::Assert::DetectError
         (
@@ -11400,9 +11550,32 @@ private:
     friend class ModelContext;
     //IDはMaterialIndexDispatcherが割り当てる
     Materials(UINT materialID_);
-    //マテリアルダーティチェック
+    //マテリアルタイプからマテリアルの実データを取り出す
+    //ヌルの可能性はある
     template<Material::Type type>
-    bool IsMaterialDirty() { return dirtyArr[(UINT)type]; }
+    auto* GetMaterialPtr()
+    {
+        return
+        std::get<std::unique_ptr<typename Material::MaterialTypeTraits<type>::dataType>>(params).get();
+    }
+    template<Material::Type type>
+    auto* GetMaterialConstPtr()const
+    {
+        return
+            std::get<std::unique_ptr<typename Material::MaterialTypeTraits<type>::dataType>>(params).get();
+    }
+    //マテリアルダーティチェックして、ダーティーだったらそのマテリアルのポインタを返す
+    //ほぼバッチング専用
+    template<Material::Type type>
+    auto* GetMaterialPtrIfDirty()const 
+    {
+        auto* dstMaterial = GetMaterialConstPtr<type>();
+        if (dirtyArr[(UINT)type] == 0)
+        {
+            dstMaterial = nullptr;
+        }
+        return dstMaterial;
+    }
     //ダーティカウントを一つ減らす
     template<Material::Type type>
     void DecrementDirtyCnt()
@@ -11411,7 +11584,7 @@ private:
         auto& dst = dirtyArr[(UINT)type];
         ErrorMessageOutput::Assert::DetectError
         (
-            dst > 0 && dst <= (UINT)ProjectConfig::Render::NumBuffer::kDoubleBuffer,
+            dst <= (UINT)ProjectConfig::Render::NumBuffer::kDoubleBuffer,
             "マテリアルのダーティのインデックスがおかしい",
             "Materials.h"
         );
@@ -24527,7 +24700,7 @@ template<>
 void Nexus::Init<Nexus::InitSequence::kWriteMaterialIndexGroupsArrBuffer>()
 {
 	auto& materialContextAgent = materialContext->AccessDiplomat().Access<MaterialContext::ExecutionAgent>();
-	materialContextAgent.WriteMaterialIndexGroupsArrBuffer(MaterialContext::NexusFieldProof{}, bufferContext->AccessDiplomat());
+	materialContextAgent.WriteInMaterialIndexGroupsArrBuffer(MaterialContext::NexusFieldProof{}, bufferContext->AccessDiplomat());
 }
 template
 void Nexus::Init<Nexus::InitSequence::kDebugContext>();
@@ -25613,5 +25786,5 @@ namespace StringProcessing
 ========================================
 === SUMMARY ===
 ========================================
-Total Files      : 572
-Effective Lines  : 18597
+Total Files      : 574
+Effective Lines  : 18738
