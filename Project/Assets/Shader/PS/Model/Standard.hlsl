@@ -1,8 +1,5 @@
-#include "../../../Shared/StructuredBufferModelData.h"
-#include "../../../Shared/StructuredBufferCameraData.h"
-#include "../../../Shared/Material.h"
-#include "../../../Shared/ConstantBuffers.h"
 #include "../../HLSLI/ModelDrawCommon.hlsli"
+#include "../../../Shared/StructuredBufferCameraData.h"
 
 
 struct MeshShaderOutput
@@ -37,13 +34,11 @@ PixelShaderOutput main(MeshShaderOutput input_)
     CameraData srcCameraData = cameraDataContainer[gPassConstants.cameraOffset];
 
     //テクスチャデータのコンテナ
-    StructuredBuffer<uint> textureContainer = ResourceDescriptorHeap[gTextureContainerIndex];
+    //StructuredBuffer<uint> textureContainer = ResourceDescriptorHeap[gTextureContainerIndex];
     
-    //モデルのマテリアルのコンテナ
-    StructuredBuffer<MaterialStandard> materialContainer = ResourceDescriptorHeap[gMaterialContainerIndex];
     //モデルのルートコンスタンツから自身のマテリアルデータを指定する
-    MaterialStandard materialStandard = materialContainer[gPerDrawIndices.materialID];
-    
+    MaterialStandard materialStandard = LoadMaterialStandard(gPerDrawIndices.materialID);
+        
     //アルベドテクスチャをインデックスで引っ張ってくる
     Texture2D<float4> albedoTexture = ResourceDescriptorHeap[materialStandard.albedoIndex];
     float4 albedoTextureCol = SampleColor(albedoTexture, materialStandard.samplerState, input_.texcoord);

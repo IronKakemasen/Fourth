@@ -54,8 +54,9 @@ std::vector<std::unique_ptr<Model>> ModelContext::ModelCreator::Create
 		"Model::Type::KCountを選択してんじゃない ModelCreator.h"
 	);
 
+	//作成するモデルのユニーク
 	std::vector<std::unique_ptr<Model>> modelUniques;
-
+	modelUniques.reserve(numCreate_);
 
 	for (UINT i = 0;i < numCreate_;++i)
 	{
@@ -63,6 +64,7 @@ std::vector<std::unique_ptr<Model>> ModelContext::ModelCreator::Create
 		auto [perDrawIndices, materialsGPU, meshletSize] = AssembleModelDescParts(modelFileName_, materials_);
 
 		//マテリアルの入れ物を作成し、デフォルトでMaterial::StandardGPUをアタッチする
+		//サブメッシュ分用意する
 		std::vector<Materials> materials;
 		materials.reserve(meshletSize.size());
 
@@ -75,8 +77,10 @@ std::vector<std::unique_ptr<Model>> ModelContext::ModelCreator::Create
 
 			//Material::StandardGPUの値をコピーする
 			materials[k].Ref<Material::Type::kStandard>() = materialsGPU[k];
-		}
 
+			//描画対象ごとルートコンスタンツの一つ、マテリアルIDを記録
+			perDrawIndices[k].materialID = materials[k].materialID;
+		}
 
 		///一つのDescに詰める
 		ModelDescription modelDesc
@@ -94,7 +98,6 @@ std::vector<std::unique_ptr<Model>> ModelContext::ModelCreator::Create
 			(
 				modelType, 
 				modelDesc, 
-				materialsGPU,	//この後消す
 				std::move(materials)
 			)
 		);

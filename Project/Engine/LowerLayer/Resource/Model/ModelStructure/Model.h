@@ -25,8 +25,8 @@ class Model
 		std::vector<Materials> materialsContainer;
 
 		//マテリアル。可変長になっているのは、サブメッシュ分用意しているから
-		std::vector<Material::StandardGPU> materials;
-		std::vector<UINT> areMaterialsDirtyCnt;
+		//std::vector<Material::StandardGPU> materials;
+		//std::vector<UINT> areMaterialsDirtyCnt;
 		
 		
 		//トランスフォーム。サブメッシュ分用意されている
@@ -49,7 +49,6 @@ public:
 	(
 		Type type_,
 		const ModelDescription& modelDesc_,
-		std::vector<Material::StandardGPU> const& materials_,
 		std::vector<Materials> materialsContainer_
 	);
 
@@ -61,15 +60,9 @@ public:
 	//上位レイヤーでモデルのパラメーターを弄るときに
 	void ChangeBlendMode(RenderStateComponent::BlendMode dst_);
 	void ChangeMaterialType(Material::Type dst_);
-	void ChangeRoughness(size_t index_, float dst_);
-	void ChangeMetallic(size_t index_, float dst_);
-	void ChangeColor(size_t index_ , Vector4<float> const& dst_);
-	template<TextureComponent::TextureType textureType>
-	void ChangeTexture(size_t index_, SRVHeapIndex dst_);
 	
 	Materials& RefMaterials(size_t index_);
 	std::span<Materials> RefMaterialsContainer();
-
 
 	Transform& RefTransform(size_t index_);
 	std::span<Transform> RefTransforms();
@@ -103,34 +96,9 @@ private:
 	auto const& WatchPerDrawIndices()const { return modelDesc.WatchPerDrawIndices(); }
 	//ドローコマンドオンリー
 	auto const& WatchMeshletSize()const { return modelDesc.WatchMeshletSize(); }
-	//主にバッファにバッチングするため
-	auto const& WatchMaterial(size_t index_)const { return changeableParams.materials[index_]; }
-	//マテリアルのダーティー検出
-	bool const IsMaterialDirty(size_t index_)const { return changeableParams.areMaterialsDirtyCnt[index_]; }
+	
+	auto const& WatchMaterialsContainer()const { return changeableParams.materialsContainer; }
 	auto const& WatchTransform(size_t index_)const { return changeableParams.transforms[index_]; }
-	//マテリアルのダーティーカウントを1つ減らす
-	//IsMaterialDirty()通過後、呼び出すこと
-	void DecrementMaterialDirtyCnt(size_t index_) 
-	{
-#ifdef _DEBUG
-
-		auto& dst = changeableParams.areMaterialsDirtyCnt[index_];
-
-		ErrorMessageOutput::Assert::DetectError
-		(
-			dst > 0 && dst <= (UINT)ProjectConfig::Render::NumBuffer::kDoubleBuffer,
-			"マテリアルのダーティのインデックスがおかしい",
-			"Model.h"
-		);
-
-		dst--;
-
-#else
-		changeableParams.areMaterialsDirtyCnt[index_]--; 
-
-#endif // _DEBUG
-
-	}
 
 	Type type;
 	ChangeableParams changeableParams;

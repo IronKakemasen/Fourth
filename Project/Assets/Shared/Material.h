@@ -1,9 +1,12 @@
 #pragma once
+#ifndef FOURTH_SHARED_MATERIAL_H
+#define FOURTH_SHARED_MATERIAL_H
+
+#include "StaticSampler.h"
 
 #ifdef __cplusplus
 
 #include "../../Engine/LowerLayer/Buffer/BufferDefinition/TextureComponent.h"
-#include "StaticSampler.h"
 #include "../../Engine/Math/Vector/Vector4.h"
 
 namespace Material
@@ -178,5 +181,7 @@ struct MaterialArrBufferSrvIndexGroup
     uint gridLineSrv;
 };
 
+
+#endif
 
 #endif

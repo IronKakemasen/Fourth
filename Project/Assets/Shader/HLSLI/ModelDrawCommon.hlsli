@@ -1,6 +1,8 @@
 #pragma once
-#include "../../Shared/StaticSampler.h"
 
+#include "../../Shared/StructuredBufferModelData.h"
+#include "../../Shared/Material.h"
+#include "../../Shared/ConstantBuffers.h"
 
 struct MS_StandardOutput
 {
@@ -19,6 +21,22 @@ uint3 UnpackPrimitiveIndex(uint packedIndex_)
         (packedIndex_ >> 10) & 0x3FF,
         (packedIndex_ >> 20) & 0x3FF
     );
+}
+
+MaterialStandard LoadMaterialStandard(uint materialID_)
+{
+    StructuredBuffer<MaterialArrBufferSrvIndexGroup> srvGroupBuffer =
+        ResourceDescriptorHeap[gMaterialArrBufferSrvIndicesSrvIndex];
+
+    StructuredBuffer<MaterialIndexGroup> indexGroupArr =
+        ResourceDescriptorHeap[gMaterialIDGroupArrBufferSrv];
+
+    StructuredBuffer<MaterialStandard> standardArr =
+        ResourceDescriptorHeap[srvGroupBuffer[0].standardSrv];
+
+    MaterialIndexGroup indexGroup = indexGroupArr[materialID_];
+
+    return standardArr[indexGroup.standardIndex];
 }
 
 float4 SampleColor(Texture2D<float4> texture_,uint samplerState_,float2 texcoord_)

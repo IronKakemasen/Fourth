@@ -5,6 +5,7 @@
 #include "../../../../../Assets/Shared/Material.h"
 
 class MaterialContext;
+class ModelContext;
 
 struct Materials
 {
@@ -62,6 +63,7 @@ private:
 
     //インターフェースを絞るため
     friend class MaterialContext;
+    friend class ModelContext;
 
     //IDはMaterialIndexDispatcherが割り当てる
     Materials(UINT materialID_);

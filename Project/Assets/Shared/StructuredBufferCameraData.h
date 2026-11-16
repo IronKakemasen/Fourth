@@ -1,4 +1,6 @@
 #pragma once
+#ifndef FOURTH_SHARED_STRUCTURED_BUFFER_CAMERA_DATA_H
+#define FOURTH_SHARED_STRUCTURED_BUFFER_CAMERA_DATA_H
 
 #ifdef __cplusplus
 
@@ -20,6 +22,7 @@ namespace StructuredBufferCameraData
 
 #else
 
+
 struct CameraData
 {
 	row_major float4x4 view;
@@ -29,5 +32,7 @@ struct CameraData
 	float4 lookDir;
 };
 
+
+#endif
 
 #endif
