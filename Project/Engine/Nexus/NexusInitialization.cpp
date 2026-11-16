@@ -255,7 +255,8 @@ void Nexus::Init<Nexus::InitSequence::kModelContext>()
 	(
 		ModelContext::NexusFieldProof{},
 		bufferContext->AccessDiplomat(),
-		textureContext->AccessDiplomat()
+		textureContext->AccessDiplomat(),
+		materialContext->AccessDiplomat()
 	);
 	Logger::Log("Instantiate: ModelContext", fileName);
 }

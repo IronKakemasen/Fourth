@@ -2,6 +2,7 @@
 
 #ifdef __cplusplus
 
+#include "../../Engine/LowerLayer/Buffer/BufferDefinition/TextureComponent.h"
 #include "StaticSampler.h"
 #include "../../Engine/Math/Vector/Vector4.h"
 
@@ -82,14 +83,42 @@ namespace Material
         float metallic = float(kInvalid);
         StaticSampler::SamplerState albedoTexSamplerState = StaticSampler::SamplerState::kLinearClamp;
 
+        void ChangeRoughness(float dst_) { roughness = dst_; }
+        void ChangeMetallic(float dst_) { metallic = dst_; }
+        void ChangeColor(Vector4<float> const& dst_) { baseColor = dst_; }
+        void ChangeAlbedoTexSamplerState(StaticSampler::SamplerState dst_) { albedoTexSamplerState = dst_; }
+        template<TextureComponent::TextureType textureType>
+        void ChangeTexture(SRVHeapIndex dst_)
+        {
+            static_assert
+            (
+                (UINT)textureType < (UINT)TextureComponent::TextureType::kSprite,
+                "Detected Invalid TextureType Material.h"
+            );
+
+            if constexpr (textureType == TextureComponent::TextureType::kAlbedo) albedoTexture = dst_;
+            else if constexpr (textureType == TextureComponent::TextureType::kEmissive) emissiveTexture = dst_;
+            else if constexpr (textureType == TextureComponent::TextureType::kNormal) normalTexture = dst_;
+        }
+
     };
 
     struct GridLineCPUGPU
     {
+    private:
+
         Vector4<float> gridColor;
         Vector4<float> backgroundColor;
         float gridScale = 1.0f;
         float gridRatio = 1.0f;
+
+    public:
+
+        void ChangeGridColor(Vector4<float> const& dst_) { gridColor = dst_; }
+        void ChangeBackgroundColor(Vector4<float> const& dst_) { backgroundColor = dst_; }
+        void ChangeGridScale(float dst_) { gridScale = dst_; }
+        void ChangeGridRatio(float dst_) { gridRatio = dst_; }
+
     };
 
 

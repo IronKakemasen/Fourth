@@ -1,7 +1,7 @@
 #include "PreCompileHeader.h"
 #include "Materials.h"
 
-Materials::Materials(InstantiateLicence licence_, UINT materialID_)
+Materials::Materials(UINT materialID_)
 :materialID(materialID_)
 {
 	//全パラメーターのマテリアルのダーティカウントをダブルバッファ分にしておく(オン)にする
@@ -9,6 +9,4 @@ Materials::Materials(InstantiateLicence licence_, UINT materialID_)
 	{
 		dirtyArr[i] = (UINT)ProjectConfig::Render::NumBuffer::kDoubleBuffer;
 	}
-		
-
 }

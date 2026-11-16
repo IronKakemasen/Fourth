@@ -2,6 +2,12 @@
 #include "../ModelContext.h"
 #include "../ModelStructure/Model.h"
 
+
+//外部
+//パフォーマンスのため
+#include "../../Material/MaterialContext.h"
+
+
 class ModelContext::ModelCreator
 {
 	class ModelDescAssembler;
@@ -19,7 +25,8 @@ public:
 	(
 		NexusFieldProof proof_, 
 		ModelSlotAllocator& slotAllocator_,
-		TextureContextDiplomat& textureContextDiplomat_
+		TextureContextDiplomat& textureContextDiplomat_,
+		MaterialContextDiplomat& materialContextDiplomat_
 	);
 
 	~ModelCreator();
@@ -31,47 +38,13 @@ public:
 		std::vector<RenderState> const& modelRenderStates_,
 		std::vector<Material::StandardCPU> const& materials_,
 		UINT const numCreate_,
-		std::string const& modelName_ 
-	)
-	{
-		ErrorMessageOutput::Assert::DetectError
-		(
-			modelType != Model::Type::kCount,
-			"Model::Type::KCountを選択してんじゃない",
-			"ModelCreator.h"
-		);
-
-		std::vector<std::unique_ptr<Model>> modelUniques;
-
-		for (UINT i = 0;i < numCreate_;++i)
-		{
-			//モデルのディスクリプションの要素を組み立てる
-			auto [perDrawIndices, materialsGPU, meshletSize] = AssembleModelDescParts(modelFileName_, materials_);
-
-			///一つのDescに詰める
-			ModelDescription modelDesc
-			(
-				modelName_ + std::to_string(numCreate++),
-				perDrawIndices,
-				modelRenderStates_,
-				meshletSize
-			);
-
-			///モデルクラスのインスタンス化
-			modelUniques.emplace_back(std::make_unique<Model>(modelType, modelDesc, materialsGPU));
-
-		}
-
-		//レンダーステートキャッシュに登録
-		renderStatesCache.append_range(modelRenderStates_);
-
-		return modelUniques;
-	}
+		std::string const& modelName_
+	);
 
 
 	//PSO生成時に必要
 	std::vector<RenderState> const& WatchRenderStateCache(AgentKey key_)const;
-	//↑を呼出し後、キャッシュは削除してほしい
+	//↑を呼出し後、renderStatesCacheは削除
 	void DeleteRenderStateCache(NexusFieldProof proof_, AgentKey key_);
 
 private:
@@ -88,7 +61,8 @@ private:
 	std::unique_ptr<ModelDescAssembler> modelDescAssembler;
 	//PSO生成時に生成された全モデルのレンダーステートパターンが必要
 	std::vector<RenderState> renderStatesCache;
-
+	//モデルに必須のマテリアルをアタッチする
+	MaterialContext::MaterialAttacher* materialAttacher;
 	
 };
 

@@ -2,6 +2,13 @@
 #include "ModelCreator.h"
 #include "ModelDescAssembler/ModelDescAssembler.h"
 
+//外部
+#include "../../Material/MaterialContextDiplomat/MaterialContextDiplomat.h"
+#include "../../Material/MaterialContextDiplomat/MaterialToolLender/MaterialToolLender.h"
+#include "../../Material/MaterialContextDiplomat/MaterialToolLender/MaterialToolLenderLicences.h"
+#include "../../Material/MaterialAttacher/MaterialAttacher.h"
+
+
 namespace
 {
 	auto const fileName = "ModelCreator.cpp";
@@ -13,17 +20,92 @@ ModelContext::ModelCreator::ModelCreator
 (
 	NexusFieldProof proof_,
 	ModelSlotAllocator& slotAllocator_,
-	TextureContextDiplomat& textureContextDiplomat_
+	TextureContextDiplomat& textureContextDiplomat_,
+	MaterialContextDiplomat& materialContextDiplomat_
 ) 
 {
 	modelDescAssembler = std::make_unique<ModelDescAssembler>(proof_, slotAllocator_, textureContextDiplomat_);
-}
 
+	//materialAttacherを借りる
+	auto& materialToolLender = materialContextDiplomat_.Access<MaterialContext::ToolLender>();
+	MaterialContext::ToolLender::LicenceType<MaterialContext::MaterialAttacher> licence;
+	materialAttacher = &materialToolLender.Lend<MaterialContext::MaterialAttacher>(licence);
+
+}
 
 ModelContext::ModelCreator::~ModelCreator()
 {
 
 }
+
+template<Model::Type modelType>
+std::vector<std::unique_ptr<Model>> ModelContext::ModelCreator::Create
+(
+	std::string const& modelFileName_,
+	std::vector<RenderState> const& modelRenderStates_,
+	std::vector<Material::StandardCPU> const& materials_,
+	UINT const numCreate_,
+	std::string const& modelName_
+)
+{
+	static_assert
+	(
+		modelType != Model::Type::kCount,
+		"Model::Type::KCountを選択してんじゃない ModelCreator.h"
+	);
+
+	std::vector<std::unique_ptr<Model>> modelUniques;
+
+
+	for (UINT i = 0;i < numCreate_;++i)
+	{
+		//モデルの要素を組み立てる
+		auto [perDrawIndices, materialsGPU, meshletSize] = AssembleModelDescParts(modelFileName_, materials_);
+
+		//マテリアルの入れ物を作成し、デフォルトでMaterial::StandardGPUをアタッチする
+		std::vector<Materials> materials;
+		materials.reserve(meshletSize.size());
+
+		for (UINT k = 0;k < meshletSize.size();++k)
+		{
+			//モデルにマテリアルの入れ物を作成し、マテリアルIDを割り当てる
+			materials.emplace_back(materialAttacher->CreateMaterials());
+			//Material::StandardGPUをアタッチする
+			materialAttacher->Attach<Material::Type::kStandard>(materials[k]);
+
+			//Material::StandardGPUの値をコピーする
+			materials[k].Ref<Material::Type::kStandard>() = materialsGPU[k];
+		}
+
+
+		///一つのDescに詰める
+		ModelDescription modelDesc
+		(
+			modelName_ + std::to_string(numCreate++),
+			perDrawIndices,
+			modelRenderStates_,
+			meshletSize
+		);
+
+		///モデルクラスのインスタンス化
+		modelUniques.emplace_back
+		(
+			std::make_unique<Model>
+			(
+				modelType, 
+				modelDesc, 
+				materialsGPU,	//この後消す
+				std::move(materials)
+			)
+		);
+	}
+
+	//レンダーステートキャッシュに登録
+	renderStatesCache.append_range(modelRenderStates_);
+
+	return modelUniques;
+}
+
 
 std::vector<RenderState>const& ModelContext::ModelCreator::WatchRenderStateCache(AgentKey key_)const
 {
@@ -47,3 +129,22 @@ ModelContext::ModelCreator::ModelDescParts ModelContext::ModelCreator::AssembleM
 }
 
 
+template
+std::vector<std::unique_ptr<Model>> ModelContext::ModelCreator::Create<Model::Type::kDynamic>
+(
+	std::string const& modelFileName_,
+	std::vector<RenderState> const& modelRenderStates_,
+	std::vector<Material::StandardCPU> const& materials_,
+	UINT const numCreate_,
+	std::string const& modelName_
+);
+
+template
+std::vector<std::unique_ptr<Model>> ModelContext::ModelCreator::Create<Model::Type::kStatic>
+(
+	std::string const& modelFileName_,
+	std::vector<RenderState> const& modelRenderStates_,
+	std::vector<Material::StandardCPU> const& materials_,
+	UINT const numCreate_,
+	std::string const& modelName_
+);

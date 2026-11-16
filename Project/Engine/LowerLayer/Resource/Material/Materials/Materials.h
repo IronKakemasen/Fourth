@@ -8,17 +8,6 @@ class MaterialContext;
 
 struct Materials
 {
-private:
-    //インターフェースを絞るため
-    friend class MaterialContext;
-
-    struct InstantiateLicence { explicit InstantiateLicence() = default; };
-
-public:
-
-    //IDはMaterialIndexDispatcherが割り当てる
-    Materials(InstantiateLicence licence_ ,UINT materialID_);
-
     //これを呼び出したらマテリアルのダーティーをオンにします
     template<Material::Type type>
     auto& Ref()
@@ -70,6 +59,39 @@ public:
     }
 
 private:
+
+    //インターフェースを絞るため
+    friend class MaterialContext;
+
+    //IDはMaterialIndexDispatcherが割り当てる
+    Materials(UINT materialID_);
+
+    //マテリアルダーティチェック
+    template<Material::Type type>
+    bool IsMaterialDirty() { return dirtyArr[(UINT)type]; }
+
+    //ダーティカウントを一つ減らす
+    template<Material::Type type>
+    void DecrementDirtyCnt()
+    {
+#ifdef _DEBUG
+
+        auto& dst = dirtyArr[(UINT)type];
+
+        ErrorMessageOutput::Assert::DetectError
+        (
+            dst > 0 && dst <= (UINT)ProjectConfig::Render::NumBuffer::kDoubleBuffer,
+            "マテリアルのダーティのインデックスがおかしい",
+            "Materials.h"
+        );
+
+        dst--;
+
+#else
+        dirtyArr[(UINT)type]--;
+
+#endif // _DEBUG
+    }
 
     //マテリアル配列インデックス群配列のID
     UINT materialID = kInvalid;
