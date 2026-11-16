@@ -349,7 +349,7 @@ template<>
 void Nexus::Init<Nexus::InitSequence::kWriteMaterialIndexGroupsArrBuffer>()
 {
 	auto& materialContextAgent = materialContext->AccessDiplomat().Access<MaterialContext::ExecutionAgent>();
-	materialContextAgent.WriteMaterialIndexGroupsArrBuffer(MaterialContext::NexusFieldProof{}, bufferContext->AccessDiplomat());
+	materialContextAgent.WriteInMaterialIndexGroupsArrBuffer(MaterialContext::NexusFieldProof{}, bufferContext->AccessDiplomat());
 
 }
 

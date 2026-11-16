@@ -38,9 +38,9 @@ void ModelContext::ModelDataBatcher::BatchModelData
 	BufferUniqueID transformContainerBufferID = perDrawBufferLibrary->Export<ConstantBufferBindSlots::kTransformMatrixContainer>();
 	auto dstWriteBufferTransform = static_cast<IWritableCPU*>(static_cast<UploadStructuredBuffer*>(dispatcher.Dispatch(transformContainerBufferID)));
 
-	//マテリアルの書き込み先バッファ
-	BufferUniqueID materialContainerBufferID = perDrawBufferLibrary->Export<ConstantBufferBindSlots::kMaterialContainer>();
-	auto dstWriteBufferMaterial = static_cast<IWritableCPU*>(static_cast<UploadStructuredBuffer*>(dispatcher.Dispatch(materialContainerBufferID)));
+	////マテリアルの書き込み先バッファ
+	//BufferUniqueID materialContainerBufferID = perDrawBufferLibrary->Export<ConstantBufferBindSlots::kMaterialContainer>();
+	//auto dstWriteBufferMaterial = static_cast<IWritableCPU*>(static_cast<UploadStructuredBuffer*>(dispatcher.Dispatch(materialContainerBufferID)));
 
 	//モデルの所持するデータをバッファに書き込んでいく
 	for (Model* model : models_)
@@ -57,14 +57,14 @@ void ModelContext::ModelDataBatcher::BatchModelData
 			dstWriteBufferTransform
 		);
 
-		OverrideBuffer<ConstantBuffers::ConstantBufferBindSlots::kMaterialContainer>
-		(
-			frameIndex_,
-			*model,
-			perDrawIndices,
-			numMeshes,
-			dstWriteBufferMaterial
-		);
+		//OverrideBuffer<ConstantBuffers::ConstantBufferBindSlots::kMaterialContainer>
+		//(
+		//	frameIndex_,
+		//	*model,
+		//	perDrawIndices,
+		//	numMeshes,
+		//	dstWriteBufferMaterial
+		//);
 	}
 }
 
@@ -97,28 +97,28 @@ void ModelContext::ModelDataBatcher::OverrideBuffer<ConstantBufferBindSlots::kTr
 
 }
 
-template<>
-void ModelContext::ModelDataBatcher::OverrideBuffer<ConstantBufferBindSlots::kMaterialContainer>
-(
-	UINT const frameIndex_,
-	Model& model_,
-	std::vector<ConstantBuffers::PerDrawIndicesCPUGPU> const& perDrawIndices_,
-	size_t const numMesh_,
-	IWritableCPU* writeDstBufferPtr_
-)
-{
-	////やってることはトランスフォームとほぼ変わらない。
-	//for (size_t i = 0;i < numMesh_;++i)
-	//{
-	//	//そのマテリアルがダーティじゃないなら書き込まない
-	//	if (!model_.IsMaterialDirty(i)) continue;
-	//	
-	//	writeDstBufferPtr_->WriteElement(frameIndex_, model_.WatchMaterial(i), perDrawIndices_[i].materialID);
-
-	//	//マテリアルダーティのカウントを１つ消去
-	//	model_.DecrementMaterialDirtyCnt(i);
-	//}
-}
+//template<>
+//void ModelContext::ModelDataBatcher::OverrideBuffer<ConstantBufferBindSlots::kMaterialContainer>
+//(
+//	UINT const frameIndex_,
+//	Model& model_,
+//	std::vector<ConstantBuffers::PerDrawIndicesCPUGPU> const& perDrawIndices_,
+//	size_t const numMesh_,
+//	IWritableCPU* writeDstBufferPtr_
+//)
+//{
+//	////やってることはトランスフォームとほぼ変わらない。
+//	//for (size_t i = 0;i < numMesh_;++i)
+//	//{
+//	//	//そのマテリアルがダーティじゃないなら書き込まない
+//	//	if (!model_.IsMaterialDirty(i)) continue;
+//	//	
+//	//	writeDstBufferPtr_->WriteElement(frameIndex_, model_.WatchMaterial(i), perDrawIndices_[i].materialID);
+//
+//	//	//マテリアルダーティのカウントを１つ消去
+//	//	model_.DecrementMaterialDirtyCnt(i);
+//	//}
+//}
 
 
 template<ConstantBufferBindSlots bindSlot>
@@ -133,6 +133,6 @@ template
 void ModelContext::ModelDataBatcher::ImportPerDrawBufferID<ConstantBufferBindSlots::kTransformMatrixContainer>
 (Local_InputBufferUniqueIDLicence licence_, BufferUniqueID id_);
 
-template
-void ModelContext::ModelDataBatcher::ImportPerDrawBufferID<ConstantBufferBindSlots::kMaterialContainer>
-(Local_InputBufferUniqueIDLicence licence_, BufferUniqueID id_);
+//template
+//void ModelContext::ModelDataBatcher::ImportPerDrawBufferID<ConstantBufferBindSlots::kMaterialContainer>
+//(Local_InputBufferUniqueIDLicence licence_, BufferUniqueID id_);

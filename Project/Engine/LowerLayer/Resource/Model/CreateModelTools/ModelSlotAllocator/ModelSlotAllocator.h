@@ -13,8 +13,6 @@ public:
 
 	//TransformMatrixContainerBufferのスロットの割り当てを行う
 	class TransformMatrixSlot;
-	//MaterialContainerBufferのスロット割り当てを行う
-	class MaterialSlot;
 
 	struct HandleLicence;
 	struct AllocateLicence;
@@ -32,7 +30,6 @@ private:
 
 	std::unique_ptr<ModelDataLibrary> modelDataLibrary;
 	std::unique_ptr<TransformMatrixSlot> transformMatrixSlot;
-	std::unique_ptr<MaterialSlot> materialSlot;
 
 };
 
@@ -59,6 +56,3 @@ template<>
 uint32_t ModelContext::ModelSlotAllocator::AllocateSlot
 <ModelContext::ModelSlotAllocator::TransformMatrixSlot>(AllocateLicence licence_);
 
-template<>
-uint32_t ModelContext::ModelSlotAllocator::AllocateSlot
-<ModelContext::ModelSlotAllocator::MaterialSlot>(AllocateLicence licence_);

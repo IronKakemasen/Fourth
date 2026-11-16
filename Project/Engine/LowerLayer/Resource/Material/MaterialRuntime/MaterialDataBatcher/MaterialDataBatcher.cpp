@@ -31,7 +31,7 @@ void MaterialContext::MaterialDataBatcher::ImportMaterialIndexGroupArrBufferID(B
 }
 
 
-void MaterialContext::MaterialDataBatcher::WriteMaterialIndexGroupsArrBuffer
+void MaterialContext::MaterialDataBatcher::WriteInMaterialIndexGroupsArrBuffer
 (
 	NexusFieldProof proof_, 
 	AgentKey key_,

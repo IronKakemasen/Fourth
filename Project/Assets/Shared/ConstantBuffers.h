@@ -12,7 +12,6 @@ namespace ConstantBuffers
 	{
 		kMeshDataContainer,
 		kTransformMatrixContainer,
-		kMaterialContainer,
 		kTextureContainer,
 		kPassRefBufferIndices,
 		kCameraContainer,
@@ -89,32 +88,27 @@ cbuffer TransformMatrixContainerIndexCB : register(b1)
 	uint gTransformMatrixContainerIndex;
 }
 
-cbuffer MaterialContainerIndexCB : register(b2)
-{
-	uint gMaterialContainerIndex;
-}
-
-cbuffer TextureContainerIndexCB : register(b3)
+cbuffer TextureContainerIndexCB : register(b2)
 {
 	uint gTextureContainerIndex;
 }
 
-cbuffer PassRefBufferContainerIndexCB : register(b4)
+cbuffer PassRefBufferContainerIndexCB : register(b3)
 {
 	uint gPassRefBufferContainerIndex;
 }
 
-cbuffer CameraContainerIndexCB : register(b5)
+cbuffer CameraContainerIndexCB : register(b4)
 {
 	uint gCameraContainerSrvIndex;
 }
 
-cbuffer MaterialArrBufferSrvIndicesSrvIndexCB : register(b6)
+cbuffer MaterialArrBufferSrvIndicesSrvIndexCB : register(b5)
 {
 	uint gMaterialArrBufferSrvIndicesSrvIndex;
 }
 
-cbuffer MaterialIDGroupArrBufferSrvCB : register(b7)
+cbuffer MaterialIDGroupArrBufferSrvCB : register(b6)
 {
 	uint gMaterialIDGroupArrBufferSrv;
 }
@@ -128,16 +122,16 @@ cbuffer MaterialIDGroupArrBufferSrvCB : register(b7)
 
 
 
-ConstantBuffer<PerDrawIndices> gPerDrawIndices: register(b8);
+ConstantBuffer<PerDrawIndices> gPerDrawIndices: register(b7);
 
-ConstantBuffer<PassConstants> gPassConstants: register(b9);
+ConstantBuffer<PassConstants> gPassConstants: register(b8);
 
-cbuffer FinalColorBufferSrvCB : register(b10)
+cbuffer FinalColorBufferSrvCB : register(b9)
 {
 	uint gFinalColorBufferSrv;
 }
 
-cbuffer MaterialIDGroupContainerIndexCB : register(b11)
+cbuffer MaterialIDGroupContainerIndexCB : register(b10)
 {
 	uint gMaterialIDGroupContainerIndex;
 }

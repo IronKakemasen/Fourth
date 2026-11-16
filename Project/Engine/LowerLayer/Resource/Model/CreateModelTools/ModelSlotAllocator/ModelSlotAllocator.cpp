@@ -2,7 +2,6 @@
 #include "ModelSlotAllocator.h"
 #include "ModelDataLibrary/ModelDataLibrary.h"
 #include "TransformMatrixSlot/TransformMatrixSlot.h"
-#include "MaterialSlot/MaterialSlot.h"
 
 namespace
 {
@@ -17,10 +16,6 @@ ModelContext::ModelSlotAllocator::ModelSlotAllocator(NexusFieldProof proof_)
 
 	transformMatrixSlot.reset(new TransformMatrixSlot(proof_));
 	Logger::Log("Instantiate: transformMatrixSlot", fileName);
-
-	materialSlot.reset(new MaterialSlot(proof_));
-	Logger::Log("Instantiate: MaterialSlot", fileName);
-
 }
 
 ModelContext::ModelSlotAllocator::~ModelSlotAllocator()
@@ -37,12 +32,6 @@ uint32_t ModelContext::ModelSlotAllocator::AllocateSlot
 	return transformMatrixSlot->AllocateFreeSlot();
 }
 
-template<>
-uint32_t ModelContext::ModelSlotAllocator::AllocateSlot
-<ModelContext::ModelSlotAllocator::MaterialSlot>(AllocateLicence licence_)
-{
-	return materialSlot->AllocateFreeSlot();
-}
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////

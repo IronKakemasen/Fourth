@@ -53,8 +53,6 @@ namespace ProjectConfig
 		{
 			//TransformMatrixBufferの同時存在最大数
 			kTransformMatrixContainer = 200,
-			//そのマテリアルバージョン
-			kMaterialContainer = 200,
 			//描画対象別のマテリアルインデックス群配列のサイズ
 			kMaterialIndexGroupArr = 200
 
