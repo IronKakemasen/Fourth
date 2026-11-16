@@ -12,18 +12,12 @@ Model::Model
 (
 	Type type_,
 	const ModelDescription& modelDesc_,
-	std::vector<Material::StandardGPU> const& materials_,
 	std::vector<Materials> materialsContainer_
 ) :modelDesc(modelDesc_), type(type_)
 {
 	//変更可能描画コンポーネントの初期設定は添え字0番に
 	changeableParams.blendMode = modelDesc_.WatchRenderStates()[0].blendModes[0];
 	changeableParams.materialType = modelDesc_.WatchRenderStates()[0].materialTypes[0];
-
-	changeableParams.materials = materials_;
-	//マテリアルのダーティ検知用(ダブルバッファ分)
-	changeableParams.areMaterialsDirtyCnt.resize(materials_.size(), (UINT)NumBuffer::kDoubleBuffer);
-
 
 	///gennkouuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuu
 	changeableParams.materialsContainer = std::move(materialsContainer_);
@@ -93,49 +87,6 @@ void Model::ChangeMaterialType(Material::Type dst_)
 	changeableParams.materialType = dst_;
 }
 
-void Model::ChangeRoughness(size_t index_, float dst_)
-{
-	static auto const errorMsg = WatchName() + "のラフネスアクセス違反";
-	ErrorMessageOutput::Assert::DetectError
-	(
-		index_ < changeableParams.materials.size(),
-		errorMsg,
-		fileName
-	);
-
-	changeableParams.areMaterialsDirtyCnt[index_] = (UINT)NumBuffer::kDoubleBuffer;
-	changeableParams.materials[index_].roughness = dst_;
-}
-
-void Model::ChangeMetallic(size_t index_, float dst_)
-{
-	static auto const errorMsg = WatchName() + "のメタリックアクセス違反";
-	ErrorMessageOutput::Assert::DetectError
-	(
-		index_ < changeableParams.materials.size(),
-		errorMsg,
-		fileName
-	);
-
-	changeableParams.areMaterialsDirtyCnt[index_] = (UINT)NumBuffer::kDoubleBuffer;
-	changeableParams.materials[index_].metallic = dst_;
-
-}
-
-void Model::ChangeColor(size_t index_, Vector4<float> const& dst_)
-{
-	static auto const errorMsg = WatchName() + "のカラーインデックスアクセス違反";
-	ErrorMessageOutput::Assert::DetectError
-	(
-		index_ < changeableParams.materials.size(),
-		errorMsg,
-		fileName
-	);
-
-	changeableParams.areMaterialsDirtyCnt[index_] = (UINT)NumBuffer::kDoubleBuffer;
-	changeableParams.materials[index_].baseColor = dst_;
-}
-
 Transform& Model::RefTransform(size_t index_)
 {
 	ErrorMessageOutput::Assert::DetectError
@@ -163,52 +114,4 @@ std::span<Materials> Model::RefMaterialsContainer()
 	return changeableParams.materialsContainer;
 }
 
-
-template<>
-void Model::ChangeTexture<TextureComponent::TextureType::kAlbedo>(size_t index_, SRVHeapIndex dst_)
-{
-	ErrorMessageOutput::Assert::DetectError
-	(
-		index_ < changeableParams.materials.size(),
-		WatchName() + "のアルベドテクスチャアクセス違反",
-		fileName
-	);
-
-	changeableParams.areMaterialsDirtyCnt[index_] = (UINT)NumBuffer::kDoubleBuffer;
-	changeableParams.materials[index_].albedoTexture = dst_;
-}
-template<>
-void Model::ChangeTexture<TextureComponent::TextureType::kNormal>(size_t index_, SRVHeapIndex dst_)
-{
-	ErrorMessageOutput::Assert::DetectError
-	(
-		index_ < changeableParams.materials.size(),
-		WatchName() + "の法線テクスチャアクセス違反",
-		fileName
-	);
-
-	changeableParams.areMaterialsDirtyCnt[index_] = (UINT)NumBuffer::kDoubleBuffer;
-	changeableParams.materials[index_].normalTexture = dst_;
-}
-template<>
-void Model::ChangeTexture<TextureComponent::TextureType::kEmissive>(size_t index_, SRVHeapIndex dst_)
-{
-	ErrorMessageOutput::Assert::DetectError
-	(
-		index_ < changeableParams.materials.size(),
-		WatchName() + "のエミッシブテクスチャアクセス違反",
-		fileName
-	);
-
-	changeableParams.areMaterialsDirtyCnt[index_] = (UINT)NumBuffer::kDoubleBuffer;
-	changeableParams.materials[index_].emissiveTexture = dst_;
-}
-
-
-template
-void Model::ChangeTexture<TextureComponent::TextureType::kAlbedo>(size_t index_, SRVHeapIndex dst_);
-template
-void Model::ChangeTexture<TextureComponent::TextureType::kNormal>(size_t index_, SRVHeapIndex dst_);
-template
-void Model::ChangeTexture<TextureComponent::TextureType::kEmissive>(size_t index_, SRVHeapIndex dst_);
 

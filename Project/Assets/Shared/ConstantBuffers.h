@@ -1,5 +1,8 @@
 #pragma once
 
+#ifndef FOURTH_SHARED_CONSTANT_BUFFERS_H
+#define FOURTH_SHARED_CONSTANT_BUFFERS_H
+
 #ifdef __cplusplus
 #include "../../Engine/Math/Vector/Vector4.h"
 
@@ -60,6 +63,7 @@ namespace ConstantBuffers
 
 
 #else
+
 
 struct PerDrawIndices
 {
@@ -141,3 +145,4 @@ cbuffer MaterialIDGroupContainerIndexCB : register(b11)
 
 #endif
 
+#endif 

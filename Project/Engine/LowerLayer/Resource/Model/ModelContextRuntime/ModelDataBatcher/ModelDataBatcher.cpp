@@ -107,17 +107,17 @@ void ModelContext::ModelDataBatcher::OverrideBuffer<ConstantBufferBindSlots::kMa
 	IWritableCPU* writeDstBufferPtr_
 )
 {
-	//やってることはトランスフォームとほぼ変わらない。
-	for (size_t i = 0;i < numMesh_;++i)
-	{
-		//そのマテリアルがダーティじゃないなら書き込まない
-		if (!model_.IsMaterialDirty(i)) continue;
-		
-		writeDstBufferPtr_->WriteElement(frameIndex_, model_.WatchMaterial(i), perDrawIndices_[i].materialID);
+	////やってることはトランスフォームとほぼ変わらない。
+	//for (size_t i = 0;i < numMesh_;++i)
+	//{
+	//	//そのマテリアルがダーティじゃないなら書き込まない
+	//	if (!model_.IsMaterialDirty(i)) continue;
+	//	
+	//	writeDstBufferPtr_->WriteElement(frameIndex_, model_.WatchMaterial(i), perDrawIndices_[i].materialID);
 
-		//マテリアルダーティのカウントを１つ消去
-		model_.DecrementMaterialDirtyCnt(i);
-	}
+	//	//マテリアルダーティのカウントを１つ消去
+	//	model_.DecrementMaterialDirtyCnt(i);
+	//}
 }
 
 

@@ -11673,12 +11673,15 @@ std::vector<std::unique_ptr<Model>> ModelContext::ModelCreator::Create
 		modelType != Model::Type::kCount,
 		"Model::Type::KCountを選択してんじゃない ModelCreator.h"
 	);
+	//作成するモデルのユニーク
 	std::vector<std::unique_ptr<Model>> modelUniques;
+	modelUniques.reserve(numCreate_);
 	for (UINT i = 0;i < numCreate_;++i)
 	{
 		//モデルの要素を組み立てる
 		auto [perDrawIndices, materialsGPU, meshletSize] = AssembleModelDescParts(modelFileName_, materials_);
 		//マテリアルの入れ物を作成し、デフォルトでMaterial::StandardGPUをアタッチする
+		//サブメッシュ分用意する
 		std::vector<Materials> materials;
 		materials.reserve(meshletSize.size());
 		for (UINT k = 0;k < meshletSize.size();++k)
@@ -11689,6 +11692,8 @@ std::vector<std::unique_ptr<Model>> ModelContext::ModelCreator::Create
 			materialAttacher->Attach<Material::Type::kStandard>(materials[k]);
 			//Material::StandardGPUの値をコピーする
 			materials[k].Ref<Material::Type::kStandard>() = materialsGPU[k];
+			//描画対象ごとルートコンスタンツの一つ、マテリアルIDを記録
+			perDrawIndices[k].materialID = materials[k].materialID;
 		}
 		///一つのDescに詰める
 		ModelDescription modelDesc
@@ -11705,7 +11710,6 @@ std::vector<std::unique_ptr<Model>> ModelContext::ModelCreator::Create
 			(
 				modelType, 
 				modelDesc, 
-				materialsGPU,	//この後消す
 				std::move(materials)
 			)
 		);
@@ -13744,15 +13748,16 @@ void ModelContext::ModelDataBatcher::OverrideBuffer<ConstantBufferBindSlots::kMa
 	IWritableCPU* writeDstBufferPtr_
 )
 {
-	//やってることはトランスフォームとほぼ変わらない。
-	for (size_t i = 0;i < numMesh_;++i)
-	{
-		//そのマテリアルがダーティじゃないなら書き込まない
-		if (!model_.IsMaterialDirty(i)) continue;
-		writeDstBufferPtr_->WriteElement(frameIndex_, model_.WatchMaterial(i), perDrawIndices_[i].materialID);
-		//マテリアルダーティのカウントを１つ消去
-		model_.DecrementMaterialDirtyCnt(i);
-	}
+	////やってることはトランスフォームとほぼ変わらない。
+	//for (size_t i = 0;i < numMesh_;++i)
+	//{
+	//	//そのマテリアルがダーティじゃないなら書き込まない
+	//	if (!model_.IsMaterialDirty(i)) continue;
+	//	
+	//	writeDstBufferPtr_->WriteElement(frameIndex_, model_.WatchMaterial(i), perDrawIndices_[i].materialID);
+	//	//マテリアルダーティのカウントを１つ消去
+	//	model_.DecrementMaterialDirtyCnt(i);
+	//}
 }
 template<ConstantBufferBindSlots bindSlot>
 void ModelContext::ModelDataBatcher::ImportPerDrawBufferID
@@ -14310,16 +14315,12 @@ Model::Model
 (
 	Type type_,
 	const ModelDescription& modelDesc_,
-	std::vector<Material::StandardGPU> const& materials_,
 	std::vector<Materials> materialsContainer_
 ) :modelDesc(modelDesc_), type(type_)
 {
 	//変更可能描画コンポーネントの初期設定は添え字0番に
 	changeableParams.blendMode = modelDesc_.WatchRenderStates()[0].blendModes[0];
 	changeableParams.materialType = modelDesc_.WatchRenderStates()[0].materialTypes[0];
-	changeableParams.materials = materials_;
-	//マテリアルのダーティ検知用(ダブルバッファ分)
-	changeableParams.areMaterialsDirtyCnt.resize(materials_.size(), (UINT)NumBuffer::kDoubleBuffer);
 	///gennkouuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuu
 	changeableParams.materialsContainer = std::move(materialsContainer_);
 	//サブメッシュ分のトランスフォームを確保
@@ -14378,42 +14379,6 @@ void Model::ChangeMaterialType(Material::Type dst_)
 	);
 	changeableParams.materialType = dst_;
 }
-void Model::ChangeRoughness(size_t index_, float dst_)
-{
-	static auto const errorMsg = WatchName() + "のラフネスアクセス違反";
-	ErrorMessageOutput::Assert::DetectError
-	(
-		index_ < changeableParams.materials.size(),
-		errorMsg,
-		fileName
-	);
-	changeableParams.areMaterialsDirtyCnt[index_] = (UINT)NumBuffer::kDoubleBuffer;
-	changeableParams.materials[index_].roughness = dst_;
-}
-void Model::ChangeMetallic(size_t index_, float dst_)
-{
-	static auto const errorMsg = WatchName() + "のメタリックアクセス違反";
-	ErrorMessageOutput::Assert::DetectError
-	(
-		index_ < changeableParams.materials.size(),
-		errorMsg,
-		fileName
-	);
-	changeableParams.areMaterialsDirtyCnt[index_] = (UINT)NumBuffer::kDoubleBuffer;
-	changeableParams.materials[index_].metallic = dst_;
-}
-void Model::ChangeColor(size_t index_, Vector4<float> const& dst_)
-{
-	static auto const errorMsg = WatchName() + "のカラーインデックスアクセス違反";
-	ErrorMessageOutput::Assert::DetectError
-	(
-		index_ < changeableParams.materials.size(),
-		errorMsg,
-		fileName
-	);
-	changeableParams.areMaterialsDirtyCnt[index_] = (UINT)NumBuffer::kDoubleBuffer;
-	changeableParams.materials[index_].baseColor = dst_;
-}
 Transform& Model::RefTransform(size_t index_)
 {
 	ErrorMessageOutput::Assert::DetectError
@@ -14436,48 +14401,6 @@ std::span<Materials> Model::RefMaterialsContainer()
 {
 	return changeableParams.materialsContainer;
 }
-template<>
-void Model::ChangeTexture<TextureComponent::TextureType::kAlbedo>(size_t index_, SRVHeapIndex dst_)
-{
-	ErrorMessageOutput::Assert::DetectError
-	(
-		index_ < changeableParams.materials.size(),
-		WatchName() + "のアルベドテクスチャアクセス違反",
-		fileName
-	);
-	changeableParams.areMaterialsDirtyCnt[index_] = (UINT)NumBuffer::kDoubleBuffer;
-	changeableParams.materials[index_].albedoTexture = dst_;
-}
-template<>
-void Model::ChangeTexture<TextureComponent::TextureType::kNormal>(size_t index_, SRVHeapIndex dst_)
-{
-	ErrorMessageOutput::Assert::DetectError
-	(
-		index_ < changeableParams.materials.size(),
-		WatchName() + "の法線テクスチャアクセス違反",
-		fileName
-	);
-	changeableParams.areMaterialsDirtyCnt[index_] = (UINT)NumBuffer::kDoubleBuffer;
-	changeableParams.materials[index_].normalTexture = dst_;
-}
-template<>
-void Model::ChangeTexture<TextureComponent::TextureType::kEmissive>(size_t index_, SRVHeapIndex dst_)
-{
-	ErrorMessageOutput::Assert::DetectError
-	(
-		index_ < changeableParams.materials.size(),
-		WatchName() + "のエミッシブテクスチャアクセス違反",
-		fileName
-	);
-	changeableParams.areMaterialsDirtyCnt[index_] = (UINT)NumBuffer::kDoubleBuffer;
-	changeableParams.materials[index_].emissiveTexture = dst_;
-}
-template
-void Model::ChangeTexture<TextureComponent::TextureType::kAlbedo>(size_t index_, SRVHeapIndex dst_);
-template
-void Model::ChangeTexture<TextureComponent::TextureType::kNormal>(size_t index_, SRVHeapIndex dst_);
-template
-void Model::ChangeTexture<TextureComponent::TextureType::kEmissive>(size_t index_, SRVHeapIndex dst_);
 
 ========================================
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Model\ModelStructure\Model.h ===
@@ -14503,8 +14426,8 @@ class Model
 		//マテリアル。可変長になっているのは、サブメッシュ分用意しているから
 		std::vector<Materials> materialsContainer;
 		//マテリアル。可変長になっているのは、サブメッシュ分用意しているから
-		std::vector<Material::StandardGPU> materials;
-		std::vector<UINT> areMaterialsDirtyCnt;
+		//std::vector<Material::StandardGPU> materials;
+		//std::vector<UINT> areMaterialsDirtyCnt;
 		//トランスフォーム。サブメッシュ分用意されている
 		std::vector<Transform> transforms;
 	};
@@ -14521,7 +14444,6 @@ public:
 	(
 		Type type_,
 		const ModelDescription& modelDesc_,
-		std::vector<Material::StandardGPU> const& materials_,
 		std::vector<Materials> materialsContainer_
 	);
 	Model(const Model&) = delete;
@@ -14531,11 +14453,6 @@ public:
 	//上位レイヤーでモデルのパラメーターを弄るときに
 	void ChangeBlendMode(RenderStateComponent::BlendMode dst_);
 	void ChangeMaterialType(Material::Type dst_);
-	void ChangeRoughness(size_t index_, float dst_);
-	void ChangeMetallic(size_t index_, float dst_);
-	void ChangeColor(size_t index_ , Vector4<float> const& dst_);
-	template<TextureComponent::TextureType textureType>
-	void ChangeTexture(size_t index_, SRVHeapIndex dst_);
 	Materials& RefMaterials(size_t index_);
 	std::span<Materials> RefMaterialsContainer();
 	Transform& RefTransform(size_t index_);
@@ -14566,28 +14483,10 @@ private:
 	auto const& WatchPerDrawIndices()const { return modelDesc.WatchPerDrawIndices(); }
 	//ドローコマンドオンリー
 	auto const& WatchMeshletSize()const { return modelDesc.WatchMeshletSize(); }
-	//主にバッファにバッチングするため
-	auto const& WatchMaterial(size_t index_)const { return changeableParams.materials[index_]; }
-	//マテリアルのダーティー検出
-	bool const IsMaterialDirty(size_t index_)const { return changeableParams.areMaterialsDirtyCnt[index_]; }
+	//主にマテリアルのデータをバッファにバッチングするため
+	auto const& WatchMaterialsContainer()const { return changeableParams.materialsContainer; }
+	//主にトランスフォームのデータをバッチングするため
 	auto const& WatchTransform(size_t index_)const { return changeableParams.transforms[index_]; }
-	//マテリアルのダーティーカウントを1つ減らす
-	//IsMaterialDirty()通過後、呼び出すこと
-	void DecrementMaterialDirtyCnt(size_t index_) 
-	{
-#ifdef _DEBUG
-		auto& dst = changeableParams.areMaterialsDirtyCnt[index_];
-		ErrorMessageOutput::Assert::DetectError
-		(
-			dst > 0 && dst <= (UINT)ProjectConfig::Render::NumBuffer::kDoubleBuffer,
-			"マテリアルのダーティのインデックスがおかしい",
-			"Model.h"
-		);
-		dst--;
-#else
-		changeableParams.areMaterialsDirtyCnt[index_]--; 
-#endif // _DEBUG
-	}
 	Type type;
 	ChangeableParams changeableParams;
 	ModelDescription modelDesc;
@@ -14762,7 +14661,7 @@ ModelDescription::ModelDescription
 ///その後RenderStatesを参加するPassの種類分セットする
 struct ModelDescription
 {
-	ModelDescription() {};
+	ModelDescription() = default;
 	//中で入力チェック
 	ModelDescription
 	(
@@ -25783,4 +25682,4 @@ namespace StringProcessing
 === SUMMARY ===
 ========================================
 Total Files      : 574
-Effective Lines  : 18784
+Effective Lines  : 18677

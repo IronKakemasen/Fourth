@@ -12,7 +12,7 @@
 ///その後RenderStatesを参加するPassの種類分セットする
 struct ModelDescription
 {
-	ModelDescription() {};
+	ModelDescription() = default;
 	//中で入力チェック
 	ModelDescription
 	(

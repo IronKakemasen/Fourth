@@ -1,4 +1,6 @@
 #pragma once
+#ifndef FOURTH_SHARED_STRUCTURED_BUFFER_MODEL_DATA_H
+#define FOURTH_SHARED_STRUCTURED_BUFFER_MODEL_DATA_H
 
 #ifdef __cplusplus
 
@@ -6,7 +8,6 @@
 #include "../../Engine/Math/Vector/Vector3.h"
 #include "../../Engine/Math/Vector/Vector4.h"
 #include "../../Engine/Math/Matrix/Matrix4x4.h"
-#include "StaticSampler.h"
 
 namespace StructuredBufferModelData
 {
@@ -86,6 +87,7 @@ namespace StructuredBufferModelData
 
 #else
 
+
 struct StandardVertex
 {
     float4 localPos;
@@ -115,5 +117,7 @@ struct MeshDataSRVHeapIndexGroup
     uint primitiveIndices;
 
 };
+
+#endif
 
 #endif

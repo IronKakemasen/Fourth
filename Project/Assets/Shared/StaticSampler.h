@@ -1,5 +1,8 @@
 #pragma once
 
+#ifndef FOURTH_SHARED_STATIC_SAMPLER_H
+#define FOURTH_SHARED_STATIC_SAMPLER_H
+
 #ifdef __cplusplus
 
 
@@ -34,3 +37,4 @@ SamplerState sampler_anisotropicClamp      : register(s5);
 
 #endif
 
+#endif
