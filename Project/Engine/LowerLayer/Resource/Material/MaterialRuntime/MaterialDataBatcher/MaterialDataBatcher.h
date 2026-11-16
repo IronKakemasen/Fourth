@@ -5,6 +5,12 @@
 //外部
 #include "../../../../../../Assets/Shared/Material.h"
 
+//パフォーマンスのため
+#include "../../../../Buffer/BufferContext.h"
+
+
+struct MaterialBatchFormat;
+
 class MaterialContext::MaterialDataBatcher
 {
 public:
@@ -12,6 +18,16 @@ public:
 	MaterialDataBatcher
 	(
 		NexusFieldProof proof_
+	);
+
+	//マテリアルデータをマテリアル配列にバッチングする
+	//代理人がシーンのBatchingPlaceで呼ぶ
+	void WriteInAllMaterialData
+	(
+		AgentKey key_,
+		std::vector<MaterialBatchFormat>& src_,
+		UINT frameIndex_,
+		BufferContextDiplomat& bufferContextDiplomat_
 	);
 
 	//materialIndexGroupsにアタッチしたマテリアル配列のインデックスを書き込む
@@ -48,6 +64,16 @@ public:
 	
 private:
 
+	//マテリアル配列バッファに実データを書き込む
+	template<Material::Type type>
+	void WriteInMaterialData
+	(
+		MaterialBatchFormat& src_,
+		Material::Type& callCheck_,
+		UINT frameIndex_,
+		BufferContext::BufferDispatcher& bufferDispatcher_
+	);
+
 	//マテリアル配列インデックス群のバッファに書き込むための実データ
 	std::vector<Material::MaterialIndexGroupCPUGPU> materialIndexGroups;
 
@@ -59,4 +85,3 @@ private:
 	BufferUniqueID materialIndexGroupArrBufferID = kInvalid;
 
 };
-

@@ -133,7 +133,7 @@ namespace Material
 template<>
 struct Material::MaterialTypeTraits<Material::Type::kStandard>
 {
-    static constexpr UINT kReserveSize = 10;
+    static constexpr UINT kReserveSize = 200;
     static inline const std::string kName = "Standard";
     using dataType = Material::StandardGPU;
 };

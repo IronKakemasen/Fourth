@@ -1,7 +1,7 @@
 #include "PreCompileHeader.h"
 #include "MaterialExecutionAgent.h"
 #include "../../MaterialRuntime/MaterialDataBatcher/MaterialDataBatcher.h"
-
+#include "MaterialAgentLicences.h"
 
 MaterialContext::ExecutionAgent::ExecutionAgent
 (
@@ -26,3 +26,21 @@ void MaterialContext::ExecutionAgent::WriteInMaterialIndexGroupsArrBuffer
 		bufferContextDiplomat_
 	);
 }
+
+void MaterialContext::ExecutionAgent::WriteInAllMaterialData
+(
+	SceneContextProof proof_,
+	std::vector<MaterialBatchFormat>& src_,
+	UINT frameIndex_,
+	BufferContextDiplomat& bufferContextDiplomat_
+)
+{
+	materialDataBatcher.WriteInAllMaterialData
+	(
+		AgentKey{},
+		src_,
+		frameIndex_,
+		bufferContextDiplomat_
+	);
+}
+
