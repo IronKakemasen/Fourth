@@ -37,7 +37,8 @@ public:
 		std::string const& sceneName_,
 		CameraContextDiplomat& cameraContextDiplomat_,
 		ModelContextDiplomat& modelContextDiplomat_,
-		GameObjectContextDiplomat& gameObjectContextDiplomat_
+		GameObjectContextDiplomat& gameObjectContextDiplomat_,
+		MaterialContextDiplomat& materialContextDiplomat_
 	)
 	{
 		scenePipeline.CreateScene<SceneType>
@@ -46,7 +47,8 @@ public:
 			sceneName_,
 			cameraContextDiplomat_,
 			modelContextDiplomat_,
-			gameObjectContextDiplomat_
+			gameObjectContextDiplomat_,
+			materialContextDiplomat_
 		);
 	}
 

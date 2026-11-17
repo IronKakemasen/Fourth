@@ -8,6 +8,10 @@ class CameraContext
 {
 	//カメラのバッファを作成する
 	class CameraBufferCreator;
+	//FrontlineSystemsの分配を行う
+	class FrontlineSystemsDispatcher;
+	//カメラ作成
+	class CameraCreator;
 
 public:
 
@@ -18,10 +22,6 @@ public:
 	class CameraDataBatcher;
 	//カメラのランタイムシステムを束ねたもの。1シーンに1つ存在
 	class FrontlineSystems;
-	//FrontlineSystemsの分配を行う
-	class FrontlineSystemsDispatcher;
-	//カメラ作成
-	class CameraCreator;
 
 	class ExecutionAgent;
 

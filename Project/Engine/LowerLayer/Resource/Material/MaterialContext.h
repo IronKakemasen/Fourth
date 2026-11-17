@@ -13,11 +13,16 @@ class MaterialContext
 	class MaterialIndexDispatcher;
 	//マテリアルデータをバッファへ書き込みます
 	class MaterialDataBatcher;
+	//前線システムをディスパッチする
+	class FrontlineSystemsDispatcher;
 
 public:
 
 	//描画対象にマテリアルをアタッチする
 	class MaterialAttacher;
+	//各シーンが所持するマテリアルの前線システム
+	class FrontlineSystems;
+
 	class ExecutionAgent;
 	class ToolLender;
 
@@ -40,7 +45,7 @@ private:
 	std::unique_ptr<MaterialIndexDispatcher> materialIndexDispatcher;
 	std::unique_ptr<MaterialDataBatcher> materialDataBatcher;
 	std::unique_ptr<MaterialAttacher> materialAttacher;
-
+	std::unique_ptr<FrontlineSystemsDispatcher> frontlineSystemsDispatcher;
 };
 
 

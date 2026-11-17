@@ -52,7 +52,7 @@ public:
 		else if constexpr (std::is_same_v<ContextType, CameraContext>)		return *cameraContext;
 		else if constexpr (std::is_same_v<ContextType, SceneContext>)		return *sceneContext;
 		else if constexpr (std::is_same_v<ContextType, GameObjectContext>)	return *gameObjectContext;
-
+		else if constexpr (std::is_same_v<ContextType, MaterialContext>)	return *materialContext;
 	}
 
 private:

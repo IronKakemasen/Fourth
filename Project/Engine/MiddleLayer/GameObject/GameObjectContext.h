@@ -9,13 +9,13 @@ class GameObjectContext
 	class GameObjectCreator;
 	//ゲームオブジェクトのセットアップを行う
 	class GameObjSetupper;
+	//FrontlineSystemsをシーンに渡す
+	class ObjFSDispatcher;
 
 public:
 
 	//1シーンが一つ持つ、前線システム群
 	class FrontlineSystems;
-	//FrontlineSystemsをシーンに渡す
-	class ObjFSDispatcher;
 
 	struct NexusFieldProof;
 	struct AgentKey;

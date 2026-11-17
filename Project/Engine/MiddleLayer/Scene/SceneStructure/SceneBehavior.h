@@ -8,6 +8,8 @@
 
 #include "../../../LowerLayer/Resource/Model/ModelContext.h"
 
+#include "../../../LowerLayer/Resource/Material/MaterialContext.h"
+
 class SceneContext;
 class Model;
 struct CameraDesc;
@@ -34,7 +36,7 @@ protected:
 	template<typename ObjType>
 	ObjType* CreateObj(std::string const& name_)
 	{
-		return objFrontlineSystems->CreateObj<ObjType>(name_);
+		return objSystems->CreateObj<ObjType>(name_);
 	}
 
 private:
@@ -50,7 +52,8 @@ private:
 	(
 		CameraContext::FrontlineSystems* cameraSystems_,
 		ModelContext::FrontlineSystems* modelSystems_,
-		GameObjectContext::FrontlineSystems* objFrontlineSystems_
+		GameObjectContext::FrontlineSystems* objFrontlineSystems_,
+		MaterialContext::FrontlineSystems* materialSystems_
 	);
 
 	//ゲームオブジェクトの初期化。その後、ゲームオブジェクトのInitInterfaceを削除する
@@ -71,7 +74,8 @@ private:
 	//他コンテキストのシステム
 	CameraContext::FrontlineSystems* cameraSystems = nullptr;
 	ModelContext::FrontlineSystems* modelSystems = nullptr;
-	GameObjectContext::FrontlineSystems* objFrontlineSystems = nullptr;
+	GameObjectContext::FrontlineSystems* objSystems = nullptr;
+	MaterialContext::FrontlineSystems* materialSystems = nullptr;
 
 	//シーンの出力物
 	std::unique_ptr<Output> output;

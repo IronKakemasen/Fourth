@@ -30,7 +30,7 @@ SceneBehavior::~SceneBehavior() = default;
 void SceneBehavior::Update()
 {
 	//ゲームオブジェクト、モデルのトランスフォームの更新フラグをリセットする
-	objFrontlineSystems->ResetObjTransformFrameFlag();
+	objSystems->ResetObjTransformFrameFlag();
 
 	modelSystems->ResetModelTransformFrameFlag<Model::Type::kDynamic>();
 
@@ -41,7 +41,7 @@ void SceneBehavior::Update()
 
 
 	//ゲームオブジェクトの更新、トランスフォームの更新
-	objFrontlineSystems->UpdateObjController
+	objSystems->UpdateObjController
 	(
 		*std::get<std::unique_ptr<SceneRuntimeInterface>>(interfaces)
 	);
@@ -78,7 +78,7 @@ void SceneBehavior::SeparateModels()
 
 void SceneBehavior::InitAllGameObj(std::string const& sceneName_)
 {
-	objFrontlineSystems->InitAllGameObj
+	objSystems->InitAllGameObj
 	(
 		sceneName_,
 		std::make_tuple
@@ -95,7 +95,8 @@ void SceneBehavior::SetSystems
 (
 	CameraContext::FrontlineSystems* cameraSystems_,
 	ModelContext::FrontlineSystems* modelSystems_,
-	GameObjectContext::FrontlineSystems* objFrontlineSystems_
+	GameObjectContext::FrontlineSystems* objFrontlineSystems_,
+	MaterialContext::FrontlineSystems* materialSystems_
 )
 {
 	ErrorMessageOutput::Assert::DetectError
@@ -119,9 +120,17 @@ void SceneBehavior::SetSystems
 		fileName
 	);
 
+	ErrorMessageOutput::Assert::DetectError
+	(
+		materialSystems_,
+		"マテリアルシステムがぬるです(エンジンのせい)",
+		fileName
+	);
+
 	cameraSystems = cameraSystems_;
 	modelSystems = modelSystems_;
-	objFrontlineSystems = objFrontlineSystems_;
+	objSystems = objFrontlineSystems_;
+	materialSystems = materialSystems_;
 
 	//ヌルチェック重複は偽りの注意のせい
 
@@ -129,10 +138,10 @@ void SceneBehavior::SetSystems
 	if(modelSystems) output->modelContainer = modelSystems->WatchModelContainer();
 
 	//初期化用のインターフェースの作成
-	if (cameraSystems && modelSystems && objFrontlineSystems)
+	if (cameraSystems && modelSystems && objSystems)
 	{
 		std::get<std::unique_ptr<SceneInitInterface>>(interfaces) = 
-			std::make_unique<SceneInitInterface>(cameraSystems, modelSystems,objFrontlineSystems);
+			std::make_unique<SceneInitInterface>(cameraSystems, modelSystems,objSystems);
 
 		std::get<std::unique_ptr<SceneRuntimeInterface>>(interfaces) =
 			std::make_unique<SceneRuntimeInterface>(cameraSystems);

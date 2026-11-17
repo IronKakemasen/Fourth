@@ -25,13 +25,12 @@ class ModelContext
 	class ModelCreator;
 	//モデルの書き込まなくてはならないデータ(TransformMatrixなど)のバッチングを行う
 	class ModelDataBatcher;
+	//FrontlineSystemsをシーンにディスパッチする
+	class ModelFSDispatcher;
 
 public:
 	//シーンが1つ所持するモデルのシステム群
 	class FrontlineSystems;
-	//FrontlineSystemsをシーンにディスパッチする
-	class ModelFSDispatcher;
-
 
 	//代行者
 	class ExecutionAgent;

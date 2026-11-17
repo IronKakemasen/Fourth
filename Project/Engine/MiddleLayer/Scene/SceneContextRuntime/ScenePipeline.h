@@ -55,7 +55,8 @@ public:
 		std::string const& sceneName_,
 		CameraContextDiplomat& cameraContextDiplomat_,
 		ModelContextDiplomat& modelContextDiplomat_,
-		GameObjectContextDiplomat& gameObjectContextDiplomat_
+		GameObjectContextDiplomat& gameObjectContextDiplomat_,
+		MaterialContextDiplomat& materialContextDiplomat_
 	)
 	{
 		SceneCreator sceneCreator;
@@ -66,7 +67,8 @@ public:
 			sceneName_,
 			cameraContextDiplomat_,
 			modelContextDiplomat_,
-			gameObjectContextDiplomat_
+			gameObjectContextDiplomat_,
+			materialContextDiplomat_
 		);
 
 		ImportScene(std::move(scene), sceneName_);

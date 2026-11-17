@@ -12,7 +12,8 @@ public:
 	ExecutionAgent
 	(
 		NexusFieldProof proof_,
-		MaterialDataBatcher& materialDataBatcher_
+		MaterialDataBatcher& materialDataBatcher_,
+		FrontlineSystemsDispatcher& frontlineSystemsDispatcher_
 	);
 
 	//マテリアル配列インデックス群配列のバッファにデータを書き込む
@@ -21,6 +22,9 @@ public:
 		NexusFieldProof proof_,
 		BufferContextDiplomat& bufferContextDiplomat_
 	);
+
+	//マテリアルの前線システムをシーンにディスパッチする
+	FrontlineSystems* DispatchFrontlineSystems(SceneContextProof proof_);
 
 	//マテリアルデータをマテリアル配列にバッチングする
 	void WriteInAllMaterialData
@@ -35,6 +39,7 @@ public:
 private:
 
 	MaterialDataBatcher& materialDataBatcher;
+	FrontlineSystemsDispatcher& frontlineSystemsDispatcher;
 
 };
 

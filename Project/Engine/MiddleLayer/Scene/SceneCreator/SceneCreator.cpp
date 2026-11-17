@@ -15,27 +15,40 @@
 #include "../../GameObject/GameObjectContextDiplomat/GameObjectAgent/GameObjectAgent.h"
 #include "../../GameObject/GameObjectContextDiplomat/GameObjectAgent/GameObjectAgentLicences.h"
 
+#include "../../../LowerLayer/Resource/Material/MaterialContextDiplomat/MaterialContextDiplomat.h"
+#include "../../../LowerLayer/Resource/Material/MaterialContextDiplomat/MaterialExecutionAgent/MaterialAgentLicences.h"
+#include "../../../LowerLayer/Resource/Material/MaterialContextDiplomat/MaterialExecutionAgent/MaterialExecutionAgent.h"
 
-
-
-CameraContext::FrontlineSystems* SceneContext::SceneCreator::ReceiveCameraSystems(CameraContextDiplomat& cameraContextDiplomat_)
+template<>
+CameraContext::FrontlineSystems* SceneContext::SceneCreator::ReceiveSystems(CameraContextDiplomat& diplomat_)
 {
-	auto& agent = cameraContextDiplomat_.Access<CameraContext::ExecutionAgent>();
-	
+	auto& agent = diplomat_.Access<CameraContext::ExecutionAgent>();
+
 	return agent.DispatchFrontlineSystems(CameraContext::ExecutionAgent::SceneContextProof{});
 }
 
-ModelContext::FrontlineSystems* SceneContext::SceneCreator::ReceiveModelSystems(ModelContextDiplomat& modelContextDiplomat_)
+template<>
+ModelContext::FrontlineSystems* SceneContext::SceneCreator::ReceiveSystems(ModelContextDiplomat& diplomat_)
 {
-	auto& agent = modelContextDiplomat_.Access<ModelContext::ExecutionAgent>();
+	auto& agent = diplomat_.Access<ModelContext::ExecutionAgent>();
 
 	return agent.DispatchFrontSystems(ModelContext::ExecutionAgent::SceneContextProof{});
 }
 
-GameObjectContext::FrontlineSystems* SceneContext::SceneCreator::ReceiveObjSystems(GameObjectContextDiplomat& gameObjectContextDiplomat_)
+template<>
+GameObjectContext::FrontlineSystems* SceneContext::SceneCreator::ReceiveSystems(GameObjectContextDiplomat& diplomat_)
 {
-	auto& agent = gameObjectContextDiplomat_.Access<GameObjectContext::ExecutionAgent>();
+	auto& agent = diplomat_.Access<GameObjectContext::ExecutionAgent>();
 
 	return agent.DispatchFrontlineSystems(GameObjectContext::ExecutionAgent::SceneContextProof{});
-
 }
+
+template<>
+MaterialContext::FrontlineSystems* SceneContext::SceneCreator::ReceiveSystems(MaterialContextDiplomat& diplomat_)
+{
+	auto& agent = diplomat_.Access<MaterialContext::ExecutionAgent>();
+
+	return agent.DispatchFrontlineSystems(MaterialContext::ExecutionAgent::SceneContextProof{});
+}
+
+
