@@ -2,12 +2,14 @@
 #include "MaterialExecutionAgent.h"
 #include "../../MaterialRuntime/MaterialDataBatcher/MaterialDataBatcher.h"
 #include "MaterialAgentLicences.h"
+#include "../../MaterialFSDispatcher/MaterialFSDispatcher.h"
 
 MaterialContext::ExecutionAgent::ExecutionAgent
 (
 	NexusFieldProof proof_,
-	MaterialDataBatcher& materialDataBatcher_
-):materialDataBatcher(materialDataBatcher_)
+	MaterialDataBatcher& materialDataBatcher_,
+	FrontlineSystemsDispatcher& frontlineSystemsDispatcher_
+):materialDataBatcher(materialDataBatcher_), frontlineSystemsDispatcher(frontlineSystemsDispatcher_)
 {
 
 }
@@ -25,6 +27,11 @@ void MaterialContext::ExecutionAgent::WriteInMaterialIndexGroupsArrBuffer
 		AgentKey{},
 		bufferContextDiplomat_
 	);
+}
+
+MaterialContext::FrontlineSystems* MaterialContext::ExecutionAgent::DispatchFrontlineSystems(SceneContextProof proof_)
+{
+	return frontlineSystemsDispatcher.Dispatch(AgentKey{});
 }
 
 void MaterialContext::ExecutionAgent::WriteInAllMaterialData

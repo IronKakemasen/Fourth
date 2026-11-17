@@ -28,8 +28,6 @@ public:
 	~PSO_Context();
 	auto& AccessDiplomat() { return *diplomat; }
 
-
-
 private:
 
 	std::unique_ptr<PSO_Creator> psoCreator;

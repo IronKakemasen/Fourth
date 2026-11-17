@@ -453,6 +453,9 @@
     <ClCompile Include="Engine\LowerLayer\Resource\Material\MaterialContextDiplomat\MaterialToolLender\MaterialToolLender.cpp" />
     <ClCompile Include="Engine\LowerLayer\Resource\Material\MaterialContextDiplomat\MaterialExecutionAgent\MaterialExecutionAgent.cpp" />
     <ClCompile Include="Engine\LowerLayer\Resource\Material\Materials\Materials.cpp" />
+    <ClCompile Include="Engine\LowerLayer\Resource\Material\MaterialRuntime\MaterialFrontlineSystems\MaterialFrontlineSystems.cpp" />
+    <ClCompile Include="Engine\LowerLayer\Resource\Material\MaterialRuntime\MaterialFrontlineSystems\RenderingObjCollector\RenderingObjCollector.cpp" />
+    <ClCompile Include="Engine\LowerLayer\Resource\Material\MaterialFSDispatcher\MaterialFSDispatcher.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Application\AllCameraIncludes.h" />
@@ -811,6 +814,9 @@
     <ClInclude Include="Engine\LowerLayer\Resource\Material\MaterialContextDiplomat\MaterialToolLender\MaterialToolLender.h" />
     <ClInclude Include="Engine\LowerLayer\Resource\Material\MaterialContextDiplomat\MaterialExecutionAgent\MaterialExecutionAgent.h" />
     <ClInclude Include="Engine\LowerLayer\Resource\Material\Materials\Materials.h" />
+    <ClInclude Include="Engine\LowerLayer\Resource\Material\MaterialRuntime\MaterialFrontlineSystems\MaterialFrontlineSystems.h" />
+    <ClInclude Include="Engine\LowerLayer\Resource\Material\MaterialRuntime\MaterialFrontlineSystems\RenderingObjCollector\RenderingObjCollector.h" />
+    <ClInclude Include="Engine\LowerLayer\Resource\Material\MaterialFSDispatcher\MaterialFSDispatcher.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

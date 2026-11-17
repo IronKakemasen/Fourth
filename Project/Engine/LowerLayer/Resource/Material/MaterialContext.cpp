@@ -6,7 +6,7 @@
 #include "MaterialContextDiplomat/MaterialContextDiplomat.h"
 #include "MaterialContextDiplomat/MaterialExecutionAgent/MaterialExecutionAgent.h"
 #include "MaterialContextDiplomat/MaterialToolLender/MaterialToolLender.h"
-
+#include "MaterialFSDispatcher/MaterialFSDispatcher.h"
 
 namespace
 {
@@ -34,10 +34,17 @@ MaterialContext::MaterialContext
 	materialAttacher = std::make_unique<MaterialAttacher>(proof_, *materialIndexDispatcher, *materialDataBatcher);
 	Logger::Log("Instantiate: MaterialAttacher", fileName);
 
+	frontlineSystemsDispatcher = std::make_unique<FrontlineSystemsDispatcher>
+	(
+		proof_,
+		*materialAttacher
+	);
+	Logger::Log("Instantiate: FrontlineSystemsDispatcher", fileName);
+
 	materialContextDiplomat = std::make_unique<MaterialContextDiplomat>
 	(
 		proof_,
-		std::make_unique<ExecutionAgent>(proof_, *materialDataBatcher),
+		std::make_unique<ExecutionAgent>(proof_, *materialDataBatcher,*frontlineSystemsDispatcher),
 		std::make_unique<ToolLender>(proof_, materialAttacher.get())
 	);
 	Logger::Log("Instantiate: MaterialContextDiplomat", fileName);

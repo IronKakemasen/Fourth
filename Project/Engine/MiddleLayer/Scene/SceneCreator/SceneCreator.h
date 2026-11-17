@@ -16,7 +16,8 @@ public:
 		std::string const& sceneName_,
 		CameraContextDiplomat& cameraContextDiplomat_,
 		ModelContextDiplomat& modelContextDiplomat_,
-		GameObjectContextDiplomat& gameObjectContextDiplomat_
+		GameObjectContextDiplomat& gameObjectContextDiplomat_,
+		MaterialContextDiplomat& materialContextDiplomat_
 	)
 	{
 		auto sceneUnique = std::make_unique<SceneType>(SceneBehavior::InstancingLicense{});
@@ -24,9 +25,10 @@ public:
 		//他コンテキストのシステムをセット
 		sceneUnique->SetSystems
 		(
-			ReceiveCameraSystems(cameraContextDiplomat_),
-			ReceiveModelSystems(modelContextDiplomat_),
-			ReceiveObjSystems(gameObjectContextDiplomat_)
+			ReceiveSystems<CameraContext::FrontlineSystems>(cameraContextDiplomat_),
+			ReceiveSystems<ModelContext::FrontlineSystems>(modelContextDiplomat_),
+			ReceiveSystems<GameObjectContext::FrontlineSystems>(gameObjectContextDiplomat_),
+			ReceiveSystems<MaterialContext::FrontlineSystems>(materialContextDiplomat_)
 		);
 
 		//プリセットカメラを備え付ける
@@ -48,9 +50,16 @@ public:
 
 private:
 
-	CameraContext::FrontlineSystems* ReceiveCameraSystems(CameraContextDiplomat& cameraContextDiplomat_);
-	ModelContext::FrontlineSystems* ReceiveModelSystems(ModelContextDiplomat& modelContextDiplomat_);
-	GameObjectContext::FrontlineSystems* ReceiveObjSystems(GameObjectContextDiplomat& gameObjectContextDiplomat_);
-
+	//シーンのシステム群を他コンテキストから構成する
+	template<typename SystemsType, typename DiplomatType>
+	SystemsType* ReceiveSystems(DiplomatType& diplomat_);
 };
 
+template<>
+CameraContext::FrontlineSystems* SceneContext::SceneCreator::ReceiveSystems(CameraContextDiplomat& diplomat_);
+template<>
+ModelContext::FrontlineSystems* SceneContext::SceneCreator::ReceiveSystems(ModelContextDiplomat& diplomat_);
+template<>
+GameObjectContext::FrontlineSystems* SceneContext::SceneCreator::ReceiveSystems(GameObjectContextDiplomat& diplomat_);
+template<>
+MaterialContext::FrontlineSystems* SceneContext::SceneCreator::ReceiveSystems(MaterialContextDiplomat& diplomat_);
