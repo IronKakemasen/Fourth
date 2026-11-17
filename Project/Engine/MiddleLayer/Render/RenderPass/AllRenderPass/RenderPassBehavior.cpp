@@ -244,8 +244,9 @@ void RenderContext::PassBehavior::RenderModels
 		//psoをセット
 		cmdWrapper_.SetPipelineState(srcPso);
 
-		//perDrawIndicesのバインドスロット
-		auto const bindSlot = ConstantBuffers::RootConstantsBindSlots::kPerDrawIndices;
+		//modelConstansのバインドスロット
+		static auto const bindSlotModelConstants = ConstantBuffers::RootConstantsBindSlots::kModelConstans;
+		static auto const bindSlotMaterialID = ConstantBuffers::RootConstantsBindSlots::kMaterialID;
 
 		//おなじPSOごとに仕分けられているので、そこでも走査
 		for (auto const& model : state_models.second)
@@ -254,7 +255,6 @@ void RenderContext::PassBehavior::RenderModels
 			if (!model->DoesDraw(psoKey.blend, psoKey.material)) continue;
 
 			//以下マルチメッシュ分も含めてドローコール
-			auto const& perDrawIndices = model->WatchPerDrawIndices();
 			auto const& meshletSize = model->WatchMeshletSize();
 
 			for (size_t i = 0;i < meshletSize.size();++i)
@@ -262,9 +262,18 @@ void RenderContext::PassBehavior::RenderModels
 				//モデルのルートコンスタンツを転送
 				cmdWrapper_.SetGraphicsRoot32BitConstants
 				(
-					(UINT)bindSlot,
-					ConstantBuffers::Num32BitValuesTable(bindSlot),
-					&perDrawIndices[i],
+					(UINT)bindSlotModelConstants,
+					ConstantBuffers::Num32BitValuesTable(bindSlotModelConstants),
+					&model->WatchModelConstants()[i],
+					0
+				);
+
+				//マテリアルIDをルートコンスタンツで転送
+				cmdWrapper_.SetGraphicsRoot32BitConstants
+				(
+					(UINT)bindSlotMaterialID,
+					ConstantBuffers::Num32BitValuesTable(bindSlotMaterialID),
+					&model->WatchMaterials(i).WatchMaterialID(),
 					0
 				);
 

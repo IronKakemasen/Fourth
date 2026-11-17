@@ -11713,6 +11713,7 @@ Materials::Materials(UINT materialID_)
 #include "../../../../../Assets/Shared/Material.h"
 class MaterialContext;
 class ModelContext;
+class RenderContext;
 class Materials
 {
 public:
@@ -11739,6 +11740,7 @@ private:
     //インターフェースを絞るため
     friend class MaterialContext;
     friend class ModelContext;
+    friend class RenderContext;
     //IDはMaterialIndexDispatcherが割り当てる
     Materials(UINT materialID_);
     //マテリアルタイプからマテリアルの実データを取り出す
@@ -11784,6 +11786,7 @@ private:
         dirtyArr[(UINT)type]--;
 #endif // _DEBUG
     }
+    auto const& WatchMaterialID()const { return materialID; }
     //マテリアル配列インデックス群配列のID
     UINT materialID = kInvalid;
     //パラメーター群
@@ -12043,7 +12046,7 @@ std::vector<std::unique_ptr<Model>> ModelContext::ModelCreator::Create
 	for (UINT i = 0;i < numCreate_;++i)
 	{
 		//モデルの要素を組み立てる
-		auto [perDrawIndices, materialsGPU, meshletSize] = AssembleModelDescParts(modelFileName_, materials_);
+		auto [modelConstans, materialsGPU, meshletSize] = AssembleModelDescParts(modelFileName_, materials_);
 		//マテリアルの入れ物を作成し、デフォルトでMaterial::StandardGPUをアタッチする
 		//サブメッシュ分用意する
 		std::vector<Materials> materials;
@@ -12056,14 +12059,12 @@ std::vector<std::unique_ptr<Model>> ModelContext::ModelCreator::Create
 			materialAttacher->Attach<Material::Type::kStandard>(materials[k]);
 			//Material::StandardGPUの値をコピーする
 			materials[k].Ref<Material::Type::kStandard>() = materialsGPU[k];
-			//描画対象ごとルートコンスタンツの一つ、マテリアルIDを記録
-			perDrawIndices[k].materialID = materials[k].materialID;
 		}
 		///一つのDescに詰める
 		ModelDescription modelDesc
 		(
 			modelName_ + std::to_string(numCreate++),
-			perDrawIndices,
+			modelConstans,
 			modelRenderStates_,
 			meshletSize
 		);
@@ -12132,7 +12133,7 @@ class ModelContext::ModelCreator
 	class ModelDescAssembler;
 	using ModelDescParts = std::tuple
 	<
-		std::vector<ConstantBuffers::PerDrawIndicesCPUGPU>,
+		std::vector<ConstantBuffers::ModelConstansCPUGPU>,
 		std::vector<Material::StandardGPU>,
 		std::vector<size_t>
 	>;
@@ -13394,25 +13395,25 @@ ModelContext::ModelCreator::ModelDescParts ModelContext::ModelCreator::ModelDesc
 		modelData.meshletSize
 	);
 }
-std::vector<ConstantBuffers::PerDrawIndicesCPUGPU> ModelContext::ModelCreator::ModelDescAssembler::PackPerDrawIndices
+std::vector<ConstantBuffers::ModelConstansCPUGPU> ModelContext::ModelCreator::ModelDescAssembler::PackPerDrawIndices
 (
 	const std::vector<MeshDataID>& meshDataIDs_,
 	size_t const kNumMeshData_
 )
 {
-	std::vector<ConstantBuffers::PerDrawIndicesCPUGPU> perDrawIndices;
+	std::vector<ConstantBuffers::ModelConstansCPUGPU> modelConstans;
 	auto const licence = ModelContext::ModelSlotAllocator::AllocateLicence{};
 	for (size_t i = 0;i < kNumMeshData_;++i)
 	{
 		//メッシュデータIDを割り当てる
-		ConstantBuffers::PerDrawIndicesCPUGPU perDrawIndex;
+		ConstantBuffers::ModelConstansCPUGPU perDrawIndex;
 		perDrawIndex.meshDataID = meshDataIDs_[i];
 		//トランスフォームIDを割り当てる
 		perDrawIndex.transformMatrixID =
 			slotAllocator.AllocateSlot<ModelContext::ModelSlotAllocator::TransformMatrixSlot>(licence);
-		perDrawIndices.emplace_back(std::move(perDrawIndex));
+		modelConstans.emplace_back(std::move(perDrawIndex));
 	}
-	return perDrawIndices;
+	return modelConstans;
 }
 std::vector<Material::StandardGPU> ModelContext::ModelCreator::ModelDescAssembler::ConvertMaterialData
 (
@@ -13494,8 +13495,8 @@ public:
 		std::vector<Material::StandardCPU> const& inputMaterials_
 	);
 private:
-	//PerDrawIndicesを詰める
-	std::vector<ConstantBuffers::PerDrawIndicesCPUGPU> PackPerDrawIndices
+	//modelConstansを詰める
+	std::vector<ConstantBuffers::ModelConstansCPUGPU> PackPerDrawIndices
 	(
 		const std::vector<MeshDataID>& meshDataIDs_,
 		size_t const kNumMeshData_
@@ -14002,13 +14003,13 @@ void ModelContext::ModelDataBatcher::BatchModelData
 	//モデルの所持するデータをバッファに書き込んでいく
 	for (Model* model : models_)
 	{
-		auto const& perDrawIndices = model->WatchPerDrawIndices();
-		auto const numMeshes = perDrawIndices.size();
+		auto const& modelConstans = model->WatchPerDrawIndices();
+		auto const numMeshes = modelConstans.size();
 		OverrideBuffer<ConstantBuffers::ConstantBufferBindSlots::kTransformMatrixContainer>
 		(
 			frameIndex_,
 			*model,
-			perDrawIndices,
+			modelConstans,
 			numMeshes,
 			dstWriteBufferTransform
 		);
@@ -14016,7 +14017,7 @@ void ModelContext::ModelDataBatcher::BatchModelData
 		//(
 		//	frameIndex_,
 		//	*model,
-		//	perDrawIndices,
+		//	modelConstans,
 		//	numMeshes,
 		//	dstWriteBufferMaterial
 		//);
@@ -14027,12 +14028,12 @@ void ModelContext::ModelDataBatcher::OverrideBuffer<ConstantBufferBindSlots::kTr
 (
 	UINT const frameIndex_,
 	Model& model_,
-	std::vector<ConstantBuffers::PerDrawIndicesCPUGPU> const& perDrawIndices_,
+	std::vector<ConstantBuffers::ModelConstansCPUGPU> const& modelConstans_,
 	size_t const numMesh_,
 	IWritableCPU* writeDstBufferPtr_
 )
 {
-	//書き込み用のダーティ判定しながら、該当インデックス(perDrawIndices)を辿って、バッファに書き込む
+	//書き込み用のダーティ判定しながら、該当インデックス(modelConstans)を辿って、バッファに書き込む
 	//もちろんサブメッシュ分も
 	for (size_t i = 0;i < numMesh_;++i)
 	{
@@ -14040,7 +14041,7 @@ void ModelContext::ModelDataBatcher::OverrideBuffer<ConstantBufferBindSlots::kTr
 		//そのトランスフォームのデータを書き込む必要があるかどうか
 		if (!srcTransform.ShouldOverrideBuffer()) continue;
 		TransformMatrixCPUGPU transformMatrix(srcTransform.WatchWorldMatrix());
-		writeDstBufferPtr_->WriteElement(frameIndex_, transformMatrix, perDrawIndices_[i].transformMatrixID);
+		writeDstBufferPtr_->WriteElement(frameIndex_, transformMatrix, modelConstans_[i].transformMatrixID);
 		//トランスフォームのバッファ書き込みカウントを１つ減らす
 		srcTransform.DecrementNeedOverrideBufferCnt();
 	}
@@ -14050,7 +14051,7 @@ void ModelContext::ModelDataBatcher::OverrideBuffer<ConstantBufferBindSlots::kTr
 //(
 //	UINT const frameIndex_,
 //	Model& model_,
-//	std::vector<ConstantBuffers::PerDrawIndicesCPUGPU> const& perDrawIndices_,
+//	std::vector<ConstantBuffers::ModelConstansCPUGPU> const& modelConstans_,
 //	size_t const numMesh_,
 //	IWritableCPU* writeDstBufferPtr_
 //)
@@ -14061,7 +14062,7 @@ void ModelContext::ModelDataBatcher::OverrideBuffer<ConstantBufferBindSlots::kTr
 //	//	//そのマテリアルがダーティじゃないなら書き込まない
 //	//	if (!model_.IsMaterialDirty(i)) continue;
 //	//	
-//	//	writeDstBufferPtr_->WriteElement(frameIndex_, model_.WatchMaterial(i), perDrawIndices_[i].materialID);
+//	//	writeDstBufferPtr_->WriteElement(frameIndex_, model_.WatchMaterial(i), modelConstans_[i].materialID);
 //
 //	//	//マテリアルダーティのカウントを１つ消去
 //	//	model_.DecrementMaterialDirtyCnt(i);
@@ -14121,7 +14122,7 @@ private:
 	(
 		UINT const frameIndex_,
 		Model& model_,
-		std::vector<ConstantBuffers::PerDrawIndicesCPUGPU> const& perDrawIndices_,
+		std::vector<ConstantBuffers::ModelConstansCPUGPU> const& modelConstans_,
 		size_t const numMesh_,
 		IWritableCPU* writeDstBufferPtr_
 	);
@@ -14137,7 +14138,7 @@ void ModelContext::ModelDataBatcher::OverrideBuffer<ConstantBuffers::ConstantBuf
 (
 	UINT const frameIndex_,
 	Model& model_,
-	std::vector<ConstantBuffers::PerDrawIndicesCPUGPU> const& perDrawIndices_,
+	std::vector<ConstantBuffers::ModelConstansCPUGPU> const& modelConstans_,
 	size_t const numMesh_,
 	IWritableCPU* writeDstBufferPtr_
 );
@@ -14146,7 +14147,7 @@ void ModelContext::ModelDataBatcher::OverrideBuffer<ConstantBuffers::ConstantBuf
 //(
 //	UINT const frameIndex_,
 //	Model& model_,
-//	std::vector<ConstantBuffers::PerDrawIndicesCPUGPU> const& perDrawIndices_,
+//	std::vector<ConstantBuffers::ModelConstansCPUGPU> const& modelConstans_,
 //	size_t const numMesh_,
 //	IWritableCPU* writeDstBufferPtr_
 //);
@@ -14679,28 +14680,6 @@ void Model::ChangeMaterialType(Material::Type dst_)
 	);
 	changeableParams.materialType = dst_;
 }
-Transform& Model::RefTransform(size_t index_)
-{
-	ErrorMessageOutput::Assert::DetectError
-	(
-		index_ < changeableParams.transforms.size(),
-		WatchName() + "には" + std::to_string(index_) + "番目のトランスフォームはない",
-		fileName
-	);
-	return changeableParams.transforms[index_];
-}
-std::span<Transform> Model::RefTransforms()
-{
-	return changeableParams.transforms;
-}
-Materials& Model::RefMaterials(size_t index_)
-{
-	return changeableParams.materialsContainer[index_];
-}
-std::span<Materials> Model::RefMaterialsContainer()
-{
-	return changeableParams.materialsContainer;
-}
 
 ========================================
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Model\ModelStructure\Model.h ===
@@ -14753,10 +14732,32 @@ public:
 	//上位レイヤーでモデルのパラメーターを弄るときに
 	void ChangeBlendMode(RenderStateComponent::BlendMode dst_);
 	void ChangeMaterialType(Material::Type dst_);
-	Materials& RefMaterials(size_t index_);
-	std::span<Materials> RefMaterialsContainer();
-	Transform& RefTransform(size_t index_);
-	std::span<Transform> RefTransforms();
+	Materials& RefMaterials(size_t index_) 
+	{
+#ifdef _DEBUG
+		ErrorMessageOutput::Assert::DetectError
+		(
+			index_ < changeableParams.transforms.size(),
+			modelDesc.WatchRenderStates()[0].modelName + "には" + std::to_string(index_) + "番目のトランスフォームはない",
+			"Model.h"
+		);
+#endif
+		return changeableParams.materialsContainer[index_]; 
+	}
+	std::span<Materials> RefMaterialsContainer() { return changeableParams.materialsContainer; }
+	Transform& RefTransform(size_t index_)
+	{
+#ifdef _DEBUG
+		ErrorMessageOutput::Assert::DetectError
+		(
+			index_ < changeableParams.transforms.size(),
+			modelDesc.WatchRenderStates()[0].modelName + "には" + std::to_string(index_) + "番目のマテリアルはない",
+			"Model.h"
+		);
+#endif
+		return changeableParams.transforms[index_];
+	}
+	std::span<Transform> RefTransforms() { return changeableParams.transforms; }
 private:
 	//モデルクラスは上位層でも触るクラスであり、インターフェースを汚したくないので
 	friend class ModelContext;
@@ -14780,6 +14781,7 @@ private:
 	//PSO生成、モデル分別のときに利用
 	auto const& WatchRenderStates()const { return modelDesc.WatchRenderStates(); }
 	//ランタイムでドローコマンドをたたくため、バッチング先インデックスがどこかを知るために使用
+	Materials const& WatchMaterials(size_t index_)const { return changeableParams.materialsContainer[index_]; }
 	auto const& WatchPerDrawIndices()const { return modelDesc.WatchPerDrawIndices(); }
 	//ドローコマンドオンリー
 	auto const& WatchMeshletSize()const { return modelDesc.WatchMeshletSize(); }
@@ -14884,10 +14886,10 @@ namespace
 ModelDescription::ModelDescription
 (
 	std::string const& modelName_,
-	std::vector<ConstantBuffers::PerDrawIndicesCPUGPU> const& perDrawIndices_,
+	std::vector<ConstantBuffers::ModelConstansCPUGPU> const& modelConstans_,
 	std::vector<RenderState> const& renderStates_,
 	std::vector<size_t> const& meshletSize_
-) :perDrawIndices(perDrawIndices_), renderStates(renderStates_), meshletSize(meshletSize_)
+) :modelConstans(modelConstans_), renderStates(renderStates_), meshletSize(meshletSize_)
 {
 #ifdef _DEBUG
 	std::string errorMsg{};
@@ -14935,7 +14937,7 @@ ModelDescription::ModelDescription
 	}
 	ErrorMessageOutput::Assert::DetectError(errorMsg.length() == 0, modelName_ + errorMsg, fileName);
 	if (renderStates.size() == 0)		errorMsg += "「renderStatesが空」";
-	if (perDrawIndices.size() == 0)		errorMsg += "「perDrawIndicesが空」";
+	if (modelConstans.size() == 0)		errorMsg += "「modelConstansが空」";
 	ErrorMessageOutput::Assert::DetectError(errorMsg.length() == 0, modelName_ +  errorMsg, fileName);
 	UINT cnt{};
 	for (auto& renderState : renderStates)
@@ -14964,19 +14966,19 @@ struct ModelDescription
 	ModelDescription
 	(
 		std::string const& modelName_,
-		std::vector<ConstantBuffers::PerDrawIndicesCPUGPU> const& perDrawIndices_,
+		std::vector<ConstantBuffers::ModelConstansCPUGPU> const& modelConstans_,
 		std::vector<RenderState> const& renderStates_,
 		std::vector<size_t> const& meshletSize_
 	);
 	//初期化フェーズで利用
 	inline auto const& WatchRenderStates()const { return renderStates; }
 	//ランタイムでドローコマンドをたたくために使用
-	inline auto const& WatchPerDrawIndices()const { return perDrawIndices; }
+	inline auto const& WatchPerDrawIndices()const { return modelConstans; }
 	inline auto const& WatchMeshletSize()const { return meshletSize; }
 private:
 	//ModelDescAssemblerに設定してもらう
 	//可変長になっているのは、マルチメッシュのため！！！！
-	std::vector<ConstantBuffers::PerDrawIndicesCPUGPU> perDrawIndices;
+	std::vector<ConstantBuffers::ModelConstansCPUGPU> modelConstans;
 	//メッシュレットのサイズ。描画コマンドたたくのに必要
 	std::vector<size_t> meshletSize;
 	//これ以下は自分で決める
@@ -21727,24 +21729,32 @@ void RenderContext::PassBehavior::RenderModels
 		auto* srcPso = psoDispatcher_.AccessGraphicsPSO(psoKey);
 		//psoをセット
 		cmdWrapper_.SetPipelineState(srcPso);
-		//perDrawIndicesのバインドスロット
-		auto const bindSlot = ConstantBuffers::RootConstantsBindSlots::kPerDrawIndices;
+		//modelConstansのバインドスロット
+		static auto const bindSlotModelConstants = ConstantBuffers::RootConstantsBindSlots::kModelConstans;
+		static auto const bindSlotMaterialID = ConstantBuffers::RootConstantsBindSlots::kMaterialID;
 		//おなじPSOごとに仕分けられているので、そこでも走査
 		for (auto const& model : state_models.second)
 		{
 			//そのモデルを描画するかどうか
 			if (!model->DoesDraw(psoKey.blend, psoKey.material)) continue;
 			//以下マルチメッシュ分も含めてドローコール
-			auto const& perDrawIndices = model->WatchPerDrawIndices();
 			auto const& meshletSize = model->WatchMeshletSize();
 			for (size_t i = 0;i < meshletSize.size();++i)
 			{
 				//モデルのルートコンスタンツを転送
 				cmdWrapper_.SetGraphicsRoot32BitConstants
 				(
-					(UINT)bindSlot,
-					ConstantBuffers::Num32BitValuesTable(bindSlot),
-					&perDrawIndices[i],
+					(UINT)bindSlotModelConstants,
+					ConstantBuffers::Num32BitValuesTable(bindSlotModelConstants),
+					&model->WatchPerDrawIndices()[i],
+					0
+				);
+				//マテリアルIDをルートコンスタンツで転送
+				cmdWrapper_.SetGraphicsRoot32BitConstants
+				(
+					(UINT)bindSlotMaterialID,
+					ConstantBuffers::Num32BitValuesTable(bindSlotMaterialID),
+					&model->WatchMaterials(i).WatchMaterialID(),
 					0
 				);
 				//ドロー
@@ -26016,4 +26026,4 @@ namespace StringProcessing
 === SUMMARY ===
 ========================================
 Total Files      : 580
-Effective Lines  : 18908
+Effective Lines  : 18914

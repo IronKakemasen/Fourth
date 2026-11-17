@@ -9,10 +9,10 @@ namespace
 ModelDescription::ModelDescription
 (
 	std::string const& modelName_,
-	std::vector<ConstantBuffers::PerDrawIndicesCPUGPU> const& perDrawIndices_,
+	std::vector<ConstantBuffers::ModelConstantsCPUGPU> const& modelConstans_,
 	std::vector<RenderState> const& renderStates_,
 	std::vector<size_t> const& meshletSize_
-) :perDrawIndices(perDrawIndices_), renderStates(renderStates_), meshletSize(meshletSize_)
+) :modelConstans(modelConstans_), renderStates(renderStates_), meshletSize(meshletSize_)
 {
 #ifdef _DEBUG
 
@@ -69,7 +69,7 @@ ModelDescription::ModelDescription
 	ErrorMessageOutput::Assert::DetectError(errorMsg.length() == 0, modelName_ + errorMsg, fileName);
 
 	if (renderStates.size() == 0)		errorMsg += "「renderStatesが空」";
-	if (perDrawIndices.size() == 0)		errorMsg += "「perDrawIndicesが空」";
+	if (modelConstans.size() == 0)		errorMsg += "「modelConstansが空」";
 
 	ErrorMessageOutput::Assert::DetectError(errorMsg.length() == 0, modelName_ +  errorMsg, fileName);
 

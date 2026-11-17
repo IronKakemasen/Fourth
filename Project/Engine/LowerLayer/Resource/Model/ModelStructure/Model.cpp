@@ -24,7 +24,7 @@ Model::Model
 
 
 	//サブメッシュ分のトランスフォームを確保
-	auto const numMeshes = modelDesc_.WatchPerDrawIndices().size();
+	auto const numMeshes = modelDesc_.WatchModelConstants().size();
 	changeableParams.transforms.resize(numMeshes);
 	//サブメッシュのペアレント化
 	auto& mainTrans = changeableParams.transforms[0];
@@ -86,32 +86,4 @@ void Model::ChangeMaterialType(Material::Type dst_)
 
 	changeableParams.materialType = dst_;
 }
-
-Transform& Model::RefTransform(size_t index_)
-{
-	ErrorMessageOutput::Assert::DetectError
-	(
-		index_ < changeableParams.transforms.size(),
-		WatchName() + "には" + std::to_string(index_) + "番目のトランスフォームはない",
-		fileName
-	);
-
-	return changeableParams.transforms[index_];
-}
-
-std::span<Transform> Model::RefTransforms()
-{
-	return changeableParams.transforms;
-}
-
-Materials& Model::RefMaterials(size_t index_)
-{
-	return changeableParams.materialsContainer[index_];
-}
-
-std::span<Materials> Model::RefMaterialsContainer()
-{
-	return changeableParams.materialsContainer;
-}
-
 

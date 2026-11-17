@@ -37,7 +37,7 @@ PixelShaderOutput main(MeshShaderOutput input_)
     //StructuredBuffer<uint> textureContainer = ResourceDescriptorHeap[gTextureContainerIndex];
     
     //モデルのルートコンスタンツから自身のマテリアルデータを指定する
-    MaterialStandard materialStandard = LoadMaterialStandard(gPerDrawIndices.materialID);
+    MaterialStandard materialStandard = LoadMaterialStandard(gMaterialID);
         
     //アルベドテクスチャをインデックスで引っ張ってくる
     Texture2D<float4> albedoTexture = ResourceDescriptorHeap[materialStandard.albedoIndex];

@@ -23,9 +23,10 @@ namespace ConstantBuffers
 
 	enum class RootConstantsBindSlots
 	{
-		kPerDrawIndices = ConstantBufferBindSlots::kCount,
+		kModelConstans = ConstantBufferBindSlots::kCount,
 		kPassConstants,
-		kFinalColorBufferSrv
+		kFinalColorBufferSrv,
+		kMaterialID
 
 		,kCount
 	};
@@ -38,18 +39,17 @@ namespace ConstantBuffers
 		
 		static constexpr uint8_t table[numRootConstants]
 		{
-			3,2,1
+			2,2,1,1
 		};
 
 		return table[dstIndex];
 	}
 
 
-	struct PerDrawIndicesCPUGPU
+	struct ModelConstantsCPUGPU
 	{
 		MeshDataID meshDataID;
 		UINT transformMatrixID;
-		UINT materialID;
 	};
 
 	struct PassConstantsCPUGPU
@@ -63,11 +63,10 @@ namespace ConstantBuffers
 #else
 
 
-struct PerDrawIndices
+struct ModelConstants
 {
 	uint meshDataID;
 	uint transformMatrixID;
-	uint materialID;
 };
 
 struct PassConstants
@@ -121,7 +120,7 @@ cbuffer MaterialIDGroupArrBufferSrvCB : register(b6)
 
 
 
-ConstantBuffer<PerDrawIndices> gPerDrawIndices: register(b7);
+ConstantBuffer<ModelConstants> gModelConstants: register(b7);
 
 ConstantBuffer<PassConstants> gPassConstants: register(b8);
 
@@ -130,6 +129,10 @@ cbuffer FinalColorBufferSrvCB : register(b9)
 	uint gFinalColorBufferSrv;
 }
 
+cbuffer MaterialIDCB : register(b10)
+{
+	uint gMaterialID;
+}
 
 
 

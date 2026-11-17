@@ -14,7 +14,7 @@ class ModelContext::ModelCreator
 
 	using ModelDescParts = std::tuple
 	<
-		std::vector<ConstantBuffers::PerDrawIndicesCPUGPU>,
+		std::vector<ConstantBuffers::ModelConstantsCPUGPU>,
 		std::vector<Material::StandardGPU>,
 		std::vector<size_t>
 	>;

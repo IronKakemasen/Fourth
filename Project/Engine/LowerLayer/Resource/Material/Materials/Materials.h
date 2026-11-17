@@ -6,6 +6,7 @@
 
 class MaterialContext;
 class ModelContext;
+class RenderContext;
 
 class Materials
 {
@@ -41,9 +42,11 @@ private:
     //インターフェースを絞るため
     friend class MaterialContext;
     friend class ModelContext;
+    friend class RenderContext;
 
     //IDはMaterialIndexDispatcherが割り当てる
     Materials(UINT materialID_);
+
 
     //マテリアルタイプからマテリアルの実データを取り出す
     //ヌルの可能性はある
@@ -98,6 +101,8 @@ private:
 
 #endif // _DEBUG
     }
+
+    auto const& WatchMaterialID()const { return materialID; }
 
     //マテリアル配列インデックス群配列のID
     UINT materialID = kInvalid;
