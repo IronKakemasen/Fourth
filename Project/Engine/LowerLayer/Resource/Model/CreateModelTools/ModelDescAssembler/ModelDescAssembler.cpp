@@ -45,37 +45,37 @@ ModelContext::ModelCreator::ModelDescParts ModelContext::ModelCreator::ModelDesc
 
 	return ModelDescParts
 	(
-		PackPerDrawIndices(modelData.meshDataID, kNumMeshData),
+		PackModelConstants(modelData.meshDataID, kNumMeshData),
 		ConvertMaterialData(kNumMeshData, modelData.materialCPU, inputMaterials_),
 		modelData.meshletSize
 	);
 
 }
 
-std::vector<ConstantBuffers::PerDrawIndicesCPUGPU> ModelContext::ModelCreator::ModelDescAssembler::PackPerDrawIndices
+std::vector<ConstantBuffers::ModelConstantsCPUGPU> ModelContext::ModelCreator::ModelDescAssembler::PackModelConstants
 (
 	const std::vector<MeshDataID>& meshDataIDs_,
 	size_t const kNumMeshData_
 )
 {
-	std::vector<ConstantBuffers::PerDrawIndicesCPUGPU> perDrawIndices;
+	std::vector<ConstantBuffers::ModelConstantsCPUGPU> modelConstans;
 
 	auto const licence = ModelContext::ModelSlotAllocator::AllocateLicence{};
 
 	for (size_t i = 0;i < kNumMeshData_;++i)
 	{
 		//メッシュデータIDを割り当てる
-		ConstantBuffers::PerDrawIndicesCPUGPU perDrawIndex;
+		ConstantBuffers::ModelConstantsCPUGPU perDrawIndex;
 		perDrawIndex.meshDataID = meshDataIDs_[i];
 
 		//トランスフォームIDを割り当てる
 		perDrawIndex.transformMatrixID =
 			slotAllocator.AllocateSlot<ModelContext::ModelSlotAllocator::TransformMatrixSlot>(licence);
 
-		perDrawIndices.emplace_back(std::move(perDrawIndex));
+		modelConstans.emplace_back(std::move(perDrawIndex));
 	}
 
-	return perDrawIndices;
+	return modelConstans;
 }
 
 

@@ -48,7 +48,7 @@ private:
 	(
 		UINT const frameIndex_,
 		Model& model_,
-		std::vector<ConstantBuffers::PerDrawIndicesCPUGPU> const& perDrawIndices_,
+		std::vector<ConstantBuffers::ModelConstantsCPUGPU> const& modelConstans_,
 		size_t const numMesh_,
 		IWritableCPU* writeDstBufferPtr_
 	);
@@ -69,7 +69,7 @@ void ModelContext::ModelDataBatcher::OverrideBuffer<ConstantBuffers::ConstantBuf
 (
 	UINT const frameIndex_,
 	Model& model_,
-	std::vector<ConstantBuffers::PerDrawIndicesCPUGPU> const& perDrawIndices_,
+	std::vector<ConstantBuffers::ModelConstantsCPUGPU> const& modelConstans_,
 	size_t const numMesh_,
 	IWritableCPU* writeDstBufferPtr_
 );
@@ -79,7 +79,7 @@ void ModelContext::ModelDataBatcher::OverrideBuffer<ConstantBuffers::ConstantBuf
 //(
 //	UINT const frameIndex_,
 //	Model& model_,
-//	std::vector<ConstantBuffers::PerDrawIndicesCPUGPU> const& perDrawIndices_,
+//	std::vector<ConstantBuffers::ModelConstantsCPUGPU> const& modelConstans_,
 //	size_t const numMesh_,
 //	IWritableCPU* writeDstBufferPtr_
 //);

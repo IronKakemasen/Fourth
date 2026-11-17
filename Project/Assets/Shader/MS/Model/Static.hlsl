@@ -27,9 +27,9 @@ void main
     StructuredBuffer<CameraData> cameraDataContainer = ResourceDescriptorHeap[gCameraContainerSrvIndex];
 
     //トランスフォーム実データ配列から、モデルの指定するインデックスをもとに引っ張ってくる
-    TransformMatrix thisTransformMatrix = transformMatrixContainer[gPerDrawIndices.transformMatrixID];
+    TransformMatrix thisTransformMatrix = transformMatrixContainer[gModelConstants.transformMatrixID];
     //メッシュデータのSrvIndex群配列から個々のMeshDataIDをもとに該当のSrvIndex群を引っ張る
-    MeshDataSRVHeapIndexGroup srcMeshDataSrvGroup = meshDataSRVContainer[gPerDrawIndices.meshDataID];
+    MeshDataSRVHeapIndexGroup srcMeshDataSrvGroup = meshDataSRVContainer[gModelConstants.meshDataID];
     //カメラの実データ配列からこのPassで使うものを指定する(数もどれかもPass依存)
     CameraData srcCameraData = cameraDataContainer[gPassConstants.cameraOffset];
     

@@ -61,7 +61,7 @@ std::vector<std::unique_ptr<Model>> ModelContext::ModelCreator::Create
 	for (UINT i = 0;i < numCreate_;++i)
 	{
 		//モデルの要素を組み立てる
-		auto [perDrawIndices, materialsGPU, meshletSize] = AssembleModelDescParts(modelFileName_, materials_);
+		auto [modelConstans, materialsGPU, meshletSize] = AssembleModelDescParts(modelFileName_, materials_);
 
 		//マテリアルの入れ物を作成し、デフォルトでMaterial::StandardGPUをアタッチする
 		//サブメッシュ分用意する
@@ -77,16 +77,13 @@ std::vector<std::unique_ptr<Model>> ModelContext::ModelCreator::Create
 
 			//Material::StandardGPUの値をコピーする
 			materials[k].Ref<Material::Type::kStandard>() = materialsGPU[k];
-
-			//描画対象ごとルートコンスタンツの一つ、マテリアルIDを記録
-			perDrawIndices[k].materialID = materials[k].materialID;
 		}
 
 		///一つのDescに詰める
 		ModelDescription modelDesc
 		(
 			modelName_ + std::to_string(numCreate++),
-			perDrawIndices,
+			modelConstans,
 			modelRenderStates_,
 			meshletSize
 		);

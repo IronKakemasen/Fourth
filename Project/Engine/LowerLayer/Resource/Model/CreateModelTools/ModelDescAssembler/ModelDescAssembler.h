@@ -28,8 +28,8 @@ public:
 
 private:
 
-	//PerDrawIndicesを詰める
-	std::vector<ConstantBuffers::PerDrawIndicesCPUGPU> PackPerDrawIndices
+	//modelConstansを詰める
+	std::vector<ConstantBuffers::ModelConstantsCPUGPU> PackModelConstants
 	(
 		const std::vector<MeshDataID>& meshDataIDs_,
 		size_t const kNumMeshData_

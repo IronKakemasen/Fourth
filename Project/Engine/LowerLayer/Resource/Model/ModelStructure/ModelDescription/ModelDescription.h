@@ -17,7 +17,7 @@ struct ModelDescription
 	ModelDescription
 	(
 		std::string const& modelName_,
-		std::vector<ConstantBuffers::PerDrawIndicesCPUGPU> const& perDrawIndices_,
+		std::vector<ConstantBuffers::ModelConstantsCPUGPU> const& modelConstans_,
 		std::vector<RenderState> const& renderStates_,
 		std::vector<size_t> const& meshletSize_
 	);
@@ -26,7 +26,7 @@ struct ModelDescription
 	inline auto const& WatchRenderStates()const { return renderStates; }
 	
 	//ランタイムでドローコマンドをたたくために使用
-	inline auto const& WatchPerDrawIndices()const { return perDrawIndices; }
+	inline auto const& WatchModelConstants()const { return modelConstans; }
 	inline auto const& WatchMeshletSize()const { return meshletSize; }
 
 
@@ -34,7 +34,7 @@ private:
 
 	//ModelDescAssemblerに設定してもらう
 	//可変長になっているのは、マルチメッシュのため！！！！
-	std::vector<ConstantBuffers::PerDrawIndicesCPUGPU> perDrawIndices;
+	std::vector<ConstantBuffers::ModelConstantsCPUGPU> modelConstans;
 	//メッシュレットのサイズ。描画コマンドたたくのに必要
 	std::vector<size_t> meshletSize;
 
