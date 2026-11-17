@@ -21,7 +21,7 @@ void MaterialContext::FrontlineSystems::RenderingObjCollector::Collect(Materials
 	materialBatchFormats.emplace_back(materialsPtr_->materialID, materialsPtr_);
 }
 
-std::vector<MaterialBatchFormat> const& MaterialContext::FrontlineSystems::RenderingObjCollector::WatchData()const
+std::vector<MaterialBatchFormat>& MaterialContext::FrontlineSystems::RenderingObjCollector::RefData()
 {
 	return materialBatchFormats;
 }

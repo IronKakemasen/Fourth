@@ -58,7 +58,6 @@ namespace Material
         SRVHeapIndex standardSrv = kInvalid;
         SRVHeapIndex gridLineSrv = kInvalid;
     };
-
     static_assert
     (
         sizeof(MaterialArrBufferSrvIndexGroupCPUGPU) == sizeof(SRVHeapIndex) * kNumParamExists,
@@ -110,8 +109,8 @@ namespace Material
     {
     private:
 
-        Vector4<float> gridColor;
-        Vector4<float> backgroundColor;
+        Vector4<float> gridColor = {0.0f,0.0f,0.0f,1.0f};
+        Vector4<float> backgroundColor = {0.75f,0.75f ,0.75f,1.0f };
         float gridScale = 1.0f;
         float gridRatio = 1.0f;
 

@@ -343,6 +343,8 @@ Release/
 *.lastbuildstate
 *.pdb
 
+all_files.txt
+
 !External/assimp/lib/Debug/*.lib
 !External/assimp/lib/Release/*.lib
 !**/Model/**/*.obj
