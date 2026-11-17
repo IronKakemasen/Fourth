@@ -23,24 +23,13 @@ public:
 	void CollectMaterialBatchFormat(Materials* materialsPtr_);
 
 	//マテリアルのバッチングに必要な情報を見せる
-	std::vector<MaterialBatchFormat> const& WatchMaterialBatchFormas()const;
+	std::vector<MaterialBatchFormat>& RefMaterialBatchFormats();
 
 	//マテリアルのアタッチ
 	template<Material::Type type>
-	void AttachMaterial(Materials* materialsPtr_)
+	auto& AttachMaterial(Materials& materials_)
 	{
-#ifdef _DEBUG
-
-		ErrorMessageOutput::Assert::DetectError
-		(
-			materialsPtr_,
-			"materialsPtrがぬる(エンジンのせい)",
-			"MaterialFrontlineSystems.h"
-		);
-
-#endif // _DEBUG
-
-		materialAttacher.Attach<type>(materialsPtr_);
+		return materialAttacher.Attach<type>(materials_);
 	}
 
 private:

@@ -86,7 +86,7 @@ private:
 
         ErrorMessageOutput::Assert::DetectError
         (
-            dst <= (UINT)ProjectConfig::Render::NumBuffer::kDoubleBuffer,
+            dst > 0 && dst <= (UINT)ProjectConfig::Render::NumBuffer::kDoubleBuffer,
             "マテリアルのダーティのインデックスがおかしい",
             "Materials.h"
         );

@@ -32,7 +32,7 @@ void MaterialContext::FrontlineSystems::CollectMaterialBatchFormat(Materials* ma
 	renderingObjCollector->Collect(materialsPtr_);
 }
 
-std::vector<MaterialBatchFormat> const& MaterialContext::FrontlineSystems::WatchMaterialBatchFormas()const
+std::vector<MaterialBatchFormat>& MaterialContext::FrontlineSystems::RefMaterialBatchFormats()
 {
-	return renderingObjCollector->WatchData();
+	return renderingObjCollector->RefData();
 }

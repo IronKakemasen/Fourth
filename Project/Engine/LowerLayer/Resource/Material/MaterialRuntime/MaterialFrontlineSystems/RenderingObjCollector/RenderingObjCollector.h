@@ -11,7 +11,7 @@ public:
 
 	void Collect(Materials* materialsPtr_);
 
-	std::vector<MaterialBatchFormat> const& WatchData()const;
+	std::vector<MaterialBatchFormat>& RefData();
 
 private:
 

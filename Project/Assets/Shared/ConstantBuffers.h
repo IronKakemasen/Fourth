@@ -25,8 +25,7 @@ namespace ConstantBuffers
 	{
 		kPerDrawIndices = ConstantBufferBindSlots::kCount,
 		kPassConstants,
-		kFinalColorBufferSrv,
-		kMaterialIDGroupContainerIndex
+		kFinalColorBufferSrv
 
 		,kCount
 	};
@@ -39,7 +38,7 @@ namespace ConstantBuffers
 		
 		static constexpr uint8_t table[numRootConstants]
 		{
-			3,2,1,1
+			3,2,1
 		};
 
 		return table[dstIndex];
@@ -131,10 +130,7 @@ cbuffer FinalColorBufferSrvCB : register(b9)
 	uint gFinalColorBufferSrv;
 }
 
-cbuffer MaterialIDGroupContainerIndexCB : register(b10)
-{
-	uint gMaterialIDGroupContainerIndex;
-}
+
 
 
 #endif
