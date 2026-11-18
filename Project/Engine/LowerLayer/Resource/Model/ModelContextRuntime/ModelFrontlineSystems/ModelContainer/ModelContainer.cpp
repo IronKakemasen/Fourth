@@ -41,14 +41,40 @@ void ModelContext::FrontlineSystems::ModelContainer::Add(Local_InitLicence licen
 	}
 	else if constexpr (type == Model::MeshUpdateType::kDynamic)
 	{
-		Logger::Log("Add: " + model->WatchName() + "to Static kDynamic", fileName);
+		Logger::Log("Add: " + model->WatchName() + "to Dynamic Container", fileName);
 	}
 
 #endif // _DEBUG
 
 }
 
+template<Model::MeshUpdateType type>
+std::vector<Model*>& ModelContext::FrontlineSystems::ModelContainer::RefSeparatedByModelType()
+{
+	return separatedByModelType[UINT(type)];
+}
+
+template<Model::MeshUpdateType type>
+std::vector<Model*> const& ModelContext::FrontlineSystems::ModelContainer::WatchSeparatedByModelType()const
+{
+	return separatedByModelType[UINT(type)];
+}
+
+
+
 template
 void ModelContext::FrontlineSystems::ModelContainer::Add<Model::MeshUpdateType::kStatic>(Local_InitLicence licence_, std::unique_ptr<Model>&& model_);
 template
 void ModelContext::FrontlineSystems::ModelContainer::Add<Model::MeshUpdateType::kDynamic>(Local_InitLicence licence_, std::unique_ptr<Model>&& model_);
+
+template
+std::vector<Model*>& ModelContext::FrontlineSystems::ModelContainer::RefSeparatedByModelType < Model::MeshUpdateType::kStatic >();
+template
+std::vector<Model*>& ModelContext::FrontlineSystems::ModelContainer::RefSeparatedByModelType  < Model::MeshUpdateType::kDynamic >();
+
+
+template
+std::vector<Model*> const& ModelContext::FrontlineSystems::ModelContainer::WatchSeparatedByModelType < Model::MeshUpdateType::kStatic >()const;
+template
+std::vector<Model*> const& ModelContext::FrontlineSystems::ModelContainer::WatchSeparatedByModelType < Model::MeshUpdateType::kDynamic >()const;
+

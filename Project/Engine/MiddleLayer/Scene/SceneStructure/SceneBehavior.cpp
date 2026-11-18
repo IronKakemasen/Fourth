@@ -34,7 +34,7 @@ void SceneBehavior::Update()
 
 	modelSystems->ResetModelTransformFrameFlag<Model::MeshUpdateType::kDynamic>();
 
-	if (output->leftStaticModelBatchingCnt == (UINT)NumBuffer::kDoubleBuffer)
+	if (output->leftStaticBatchingCnt == (UINT)NumBuffer::kDoubleBuffer)
 	{
 		modelSystems->ResetModelTransformFrameFlag<Model::MeshUpdateType::kStatic>();
 	}
@@ -49,7 +49,7 @@ void SceneBehavior::Update()
 	//このシーンのモデルのトランスフォームのアップデートを呼ぶ
 	modelSystems->UpdateModelTransform<Model::MeshUpdateType::kDynamic>();
 	
-	if (output->leftStaticModelBatchingCnt-- == (UINT)NumBuffer::kDoubleBuffer)
+	if (output->leftStaticBatchingCnt == (UINT)NumBuffer::kDoubleBuffer)
 	{
 		modelSystems->UpdateModelTransform<Model::MeshUpdateType::kStatic>();
 	}
@@ -57,6 +57,8 @@ void SceneBehavior::Update()
 	//このシーンで使うカメラのアップデート
 	output->usingCamera = cameraSystems->UpdateCamera();
 
+	//Staticののこりバッチング回数を1減らす
+	output->leftStaticBatchingCnt--;
 }
 
 
@@ -156,6 +158,8 @@ void SceneBehavior::SetSystems
 				*objSystems
 			);
 
+		//全描画対象のマテリアルバッチング用データのアドレスを渡す
+		output->materialBatchFormatsPtr = &materialSystems->RefMaterialBatchFormatsArr();
 	}
 }
 

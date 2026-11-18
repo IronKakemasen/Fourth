@@ -50,9 +50,6 @@ void RenderContext::StaticRenderGraph::PathOperator::FillInRefBufferSrvIndices
 	BufferContext::ToolLender::LicenceType<BufferContext::BufferDispatcher> bLicence;
 	auto& bufferDispatcher = *bToolLender->Lend<BufferContext::BufferDispatcher>(bLicence);
 
-	//参照バッファ群srv書き込み先のバッファ
-	auto* dstBuffer = static_cast<UploadStructuredBuffer*>(bufferDispatcher.Dispatch(targetFillInRefBufferID));
-
 	//参照バッファの格納順は記録しているので、そこからバッファを検索→srvIndex格納
 	auto const numRefBuffers = traceRefBuffersTag.size();
 	std::array<UINT, BuildOutput::PassSetUpper::kNumRefBufferType> refBufferCnts{};

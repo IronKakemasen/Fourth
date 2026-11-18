@@ -4,7 +4,6 @@
 #define WIN32_LEAN_AND_MEAN
 #endif
 
-#include <wrl.h>
 #include <dxgidebug.h>
 #include <windows.h>
 #include <d3d12.h>
@@ -34,7 +33,6 @@
 #include <variant>
 #include <type_traits> 
 #include <bit>
-#include <cstdint>
 
 #include "../Math/MathConstants.h"
 //abort()やassert()でエラーを吐いて文字列を出力する

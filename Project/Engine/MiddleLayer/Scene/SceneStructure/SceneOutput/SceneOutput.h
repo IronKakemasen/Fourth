@@ -8,6 +8,7 @@
 
 
 class CameraBehavior;
+struct MaterialBatchFormat;
 
 struct SceneBehavior::Output
 {
@@ -15,15 +16,17 @@ struct SceneBehavior::Output
 
 	auto const& WatchUsingCamera()const { return usingCamera; }
 	auto const* WatchModelContainer()const { return modelContainer; }
-	auto const& WatchLeftStaticModelBatchingCnt()const { return leftStaticModelBatchingCnt; }
+	auto const& WatchLeftStaticModelBatchingCnt()const { return leftStaticBatchingCnt; }
 
 private:
-
+	//全描画対象のバッチングに必要なMaterialBatchFormatのコンテナ
+	std::array<std::vector<MaterialBatchFormat>, (UINT)Materials::UpdateType::kCount>*
+		materialBatchFormatsPtr = nullptr;
 	//使用しているカメラ。更新必要
 	std::unordered_map<CameraSocket, CameraBehavior*> usingCamera;
 	//このシーンのモデルコンテナ
 	ModelContext::FrontlineSystems::ModelContainer const* modelContainer = nullptr;
-	//staticなモデルを毎回バッチング処理しないようにするため
-	UINT leftStaticModelBatchingCnt = (UINT)ProjectConfig::Render::NumBuffer::kDoubleBuffer;
+	//static対象を毎回バッチング処理しないようにするため
+	UINT leftStaticBatchingCnt = (UINT)ProjectConfig::Render::NumBuffer::kDoubleBuffer;
 };
 
