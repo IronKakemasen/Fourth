@@ -133,7 +133,7 @@ std::pair<std::array<ColorBuffer*, D3D12_SIMULTANEOUS_RENDER_TARGET_COUNT>,Depth
 )
 {
 	auto const numColorBuffers = colorBuffersInfo_.size();
-	std::array<ColorBuffer*, D3D12_SIMULTANEOUS_RENDER_TARGET_COUNT> colorBuffers;
+	std::array<ColorBuffer*, D3D12_SIMULTANEOUS_RENDER_TARGET_COUNT> colorBuffers{};
 	DepthStencilBuffer* depthStencilBuffer = nullptr;
 
 	//描画先にステートを変化するためのバリアを張る
