@@ -41,32 +41,31 @@ void GameObjectContext::FrontlineSystems::ObjLibrary::SortByPriority(std::vector
 
 	for (auto const& srcName_ : priorityList_)
 	{
-		bool hasMatched{};
-
-		for (auto& [name, doneFlag_objPtrVec] : *objMapCache)
+		auto it = objMapCache->find(srcName_);
+		if (it == objMapCache->end())
 		{
-			if (srcName_ == name)
-			{
-				for (auto* objPtr : doneFlag_objPtrVec.second)
-				{
-					sortedByProority.emplace_back(objPtr);
-				}
-
-				//格納済みです
-				doneFlag_objPtrVec.first = true;
-				//活用されました
-				hasMatched = true;
-			}
+			mismatchedList.emplace_back(srcName_);
+			continue;
 		}
 
-		if (!hasMatched) mismatchedList.emplace_back(srcName_);
+		auto& [done, objects] = it->second;
+		for (auto* objPtr : objects)
+		{
+			sortedByProority.emplace_back(objPtr);
+		}
+
+		done = true;
 	}
 
 	std::string log;
-	for (auto const& mismatchedName: mismatchedList)
+#ifdef _DEBUG
+
+	for (auto const& mismatchedName : mismatchedList)
 	{
 		log += mismatchedName + ",";
 	}
+
+#endif // _DEBUG
 
 	ErrorMessageOutput::Assert::DetectError
 	(
@@ -74,7 +73,6 @@ void GameObjectContext::FrontlineSystems::ObjLibrary::SortByPriority(std::vector
 		"ミスマッチなオブジェ優先順位名: " + log,
 		fileName
 	);
-
 
 	//doneFlagが立ってない、つまり、初期化リストに記述されていないオブジェクトを
 	//つめていく

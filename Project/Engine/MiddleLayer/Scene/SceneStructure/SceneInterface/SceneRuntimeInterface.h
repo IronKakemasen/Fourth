@@ -34,7 +34,7 @@ public:
 		return gameObjSystems.FindObjects(objName_)[0];
 	}
 	//複数バージョン
-	[[nodiscard]] std::vector<GameObjectBehavior*> FindObjects(std::string const& objName_)
+	[[nodiscard]] std::vector<GameObjectBehavior*>& FindObjects(std::string const& objName_)
 	{
 		return gameObjSystems.FindObjects(objName_);
 	}

@@ -26,6 +26,9 @@ public:
 	template<Materials::UpdateType type>
 	std::vector<MaterialBatchFormat>& RefMaterialBatchFormats();
 
+	std::array<std::vector<MaterialBatchFormat>, (UINT)Materials::UpdateType::kCount>&
+		RefMaterialBatchFormatsArr();
+
 	//マテリアルのアタッチ
 	template<Material::Type type>
 	auto& AttachMaterial(Materials& materials_)

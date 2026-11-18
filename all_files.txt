@@ -11615,7 +11615,12 @@ void MaterialContext::FrontlineSystems::CollectMaterialBatchFormat(Materials* ma
 template<Materials::UpdateType type>
 std::vector<MaterialBatchFormat>& MaterialContext::FrontlineSystems::RefMaterialBatchFormats()
 {
-	return renderingObjCollector->RefData<type>();
+	return renderingObjCollector->RefMaterialBatchFormats<type>();
+}
+std::array<std::vector<MaterialBatchFormat>, (UINT)Materials::UpdateType::kCount>&
+MaterialContext::FrontlineSystems::RefMaterialBatchFormatsArr()
+{
+	return renderingObjCollector->RefMaterialBatchFormatsArr();
 }
 template
 void MaterialContext::FrontlineSystems::CollectMaterialBatchFormat<Materials::UpdateType::kStatic>(Materials* materialsPtr_);
@@ -11649,6 +11654,8 @@ public:
 	//マテリアルのバッチングに必要な情報を見せる
 	template<Materials::UpdateType type>
 	std::vector<MaterialBatchFormat>& RefMaterialBatchFormats();
+	std::array<std::vector<MaterialBatchFormat>, (UINT)Materials::UpdateType::kCount>&
+		RefMaterialBatchFormatsArr();
 	//マテリアルのアタッチ
 	template<Material::Type type>
 	auto& AttachMaterial(Materials& materials_)
@@ -11668,6 +11675,20 @@ private:
 MaterialContext::FrontlineSystems::RenderingObjCollector::RenderingObjCollector(NexusFieldProof proof_)
 {
 }
+std::array<std::vector<MaterialBatchFormat>, (UINT)Materials::UpdateType::kCount>&
+MaterialContext::FrontlineSystems::RenderingObjCollector::RefMaterialBatchFormatsArr()
+{
+	return materialBatchFormatsArr;
+}
+template<Materials::UpdateType type>
+std::vector<MaterialBatchFormat>& MaterialContext::FrontlineSystems::RenderingObjCollector::RefMaterialBatchFormats()
+{
+	return materialBatchFormatsArr[(UINT)type];
+}
+template
+std::vector<MaterialBatchFormat>& MaterialContext::FrontlineSystems::RenderingObjCollector::RefMaterialBatchFormats<Materials::UpdateType::kStatic>();
+template
+std::vector<MaterialBatchFormat>& MaterialContext::FrontlineSystems::RenderingObjCollector::RefMaterialBatchFormats<Materials::UpdateType::kDynamic>();
 
 ========================================
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Material\MaterialRuntime\MaterialFrontlineSystems\RenderingObjCollector\RenderingObjCollector.h ===
@@ -11679,6 +11700,7 @@ class MaterialContext::FrontlineSystems::RenderingObjCollector
 {
 public:
 	RenderingObjCollector(NexusFieldProof proof_);
+	//数が多いのでヘッダで定義
 	template<Materials::UpdateType type>
 	void Collect(Materials* materialsPtr_)
 	{
@@ -11693,10 +11715,9 @@ public:
 		materialBatchFormatsArr[(UINT)type].emplace_back(materialsPtr_->materialID, materialsPtr_);
 	}
 	template<Materials::UpdateType type>
-	std::vector<MaterialBatchFormat>& RefData()
-	{
-		return materialBatchFormatsArr[(UINT)type];
-	}
+	std::vector<MaterialBatchFormat>& RefMaterialBatchFormats();
+	std::array<std::vector<MaterialBatchFormat>, (UINT)Materials::UpdateType::kCount>&
+		RefMaterialBatchFormatsArr();
 private:
 	std::array<std::vector<MaterialBatchFormat>, (UINT)Materials::UpdateType::kCount> materialBatchFormatsArr;
 };
@@ -14233,7 +14254,7 @@ ModelContext::FrontlineSystems::~FrontlineSystems()
 template<Model::MeshUpdateType modelType>
 void ModelContext::FrontlineSystems::UpdateModelTransform()
 {
-	auto const& models = modelContainer->WatchSeparatedByModelType()[(UINT)modelType];
+	auto& models = modelContainer->RefSeparatedByModelType <modelType>();
 	for (auto* model : models)
 	{
 		auto refTransforms = model->RefTransforms();
@@ -14246,7 +14267,7 @@ void ModelContext::FrontlineSystems::UpdateModelTransform()
 template<Model::MeshUpdateType modelType>
 void ModelContext::FrontlineSystems::ResetModelTransformFrameFlag()
 {
-	auto const& models = modelContainer->WatchSeparatedByModelType()[(UINT)modelType];
+	auto& models = modelContainer->RefSeparatedByModelType<modelType>();
 	for (auto* model : models)
 	{
 		auto refTransforms = model->RefTransforms();
@@ -14442,14 +14463,32 @@ void ModelContext::FrontlineSystems::ModelContainer::Add(Local_InitLicence licen
 	}
 	else if constexpr (type == Model::MeshUpdateType::kDynamic)
 	{
-		Logger::Log("Add: " + model->WatchName() + "to Static kDynamic", fileName);
+		Logger::Log("Add: " + model->WatchName() + "to Dynamic Container", fileName);
 	}
 #endif // _DEBUG
+}
+template<Model::MeshUpdateType type>
+std::vector<Model*>& ModelContext::FrontlineSystems::ModelContainer::RefSeparatedByModelType()
+{
+	return separatedByModelType[UINT(type)];
+}
+template<Model::MeshUpdateType type>
+std::vector<Model*> const& ModelContext::FrontlineSystems::ModelContainer::WatchSeparatedByModelType()const
+{
+	return separatedByModelType[UINT(type)];
 }
 template
 void ModelContext::FrontlineSystems::ModelContainer::Add<Model::MeshUpdateType::kStatic>(Local_InitLicence licence_, std::unique_ptr<Model>&& model_);
 template
 void ModelContext::FrontlineSystems::ModelContainer::Add<Model::MeshUpdateType::kDynamic>(Local_InitLicence licence_, std::unique_ptr<Model>&& model_);
+template
+std::vector<Model*>& ModelContext::FrontlineSystems::ModelContainer::RefSeparatedByModelType < Model::MeshUpdateType::kStatic >();
+template
+std::vector<Model*>& ModelContext::FrontlineSystems::ModelContainer::RefSeparatedByModelType  < Model::MeshUpdateType::kDynamic >();
+template
+std::vector<Model*> const& ModelContext::FrontlineSystems::ModelContainer::WatchSeparatedByModelType < Model::MeshUpdateType::kStatic >()const;
+template
+std::vector<Model*> const& ModelContext::FrontlineSystems::ModelContainer::WatchSeparatedByModelType < Model::MeshUpdateType::kDynamic >()const;
 
 ========================================
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Model\ModelContextRuntime\ModelFrontlineSystems\ModelContainer\ModelContainer.h ===
@@ -14468,13 +14507,16 @@ public:
 	struct Local_InitLicence;
 	ModelContainer(NexusFieldProof proof_);
 	~ModelContainer();
-	//モデルのタイプ別に仕分けされたコンテナを見るため
-	auto const& WatchSeparatedByModelType()const { return separatedByModelType; }
-	//レンダーステート別
+	//レンダーステート別に仕分けされたコンテナを見る
 	auto const& WatchSeparatedByRenderState()const { return separatedByRenderState; }
 	//modelCreatorが作成したモデル本体を格納
 	template<Model::MeshUpdateType type>
 	void Add(Local_InitLicence licence_, std::unique_ptr<Model>&& model_);
+	//モデルのタイプ別に仕分けされたコンテナを見るため
+	template<Model::MeshUpdateType type>
+	std::vector<Model*>& RefSeparatedByModelType();
+	template<Model::MeshUpdateType type>
+	std::vector<Model*> const& WatchSeparatedByModelType()const;
 	//ランタイムでPSO切り替えコストを低減させるために、モデルクラスをおなじrenderStateごとに分別する
 	void SeparateModels(Local_InitLicence licence_);
 private:
@@ -14537,7 +14579,7 @@ ModelContext::FrontlineSystems::ModelContainer::ModelSeparator::SeparateAllModel
 			separatedByRenderState[pass][key.second].second.emplace_back((*itr).get());
 		}
 	}
-	return std::move(separatedByRenderState);
+	return separatedByRenderState;
 }
 std::vector<std::pair<RenderStateKey, uint64_t>> ModelContext::FrontlineSystems::ModelContainer::ModelSeparator::PackToKey(Model const& model_)
 {
@@ -19263,28 +19305,26 @@ void GameObjectContext::FrontlineSystems::ObjLibrary::SortByPriority(std::vector
 	sortedByProority.reserve(objUniqueMap.size());
 	for (auto const& srcName_ : priorityList_)
 	{
-		bool hasMatched{};
-		for (auto& [name, doneFlag_objPtrVec] : *objMapCache)
+		auto it = objMapCache->find(srcName_);
+		if (it == objMapCache->end())
 		{
-			if (srcName_ == name)
-			{
-				for (auto* objPtr : doneFlag_objPtrVec.second)
-				{
-					sortedByProority.emplace_back(objPtr);
-				}
-				//格納済みです
-				doneFlag_objPtrVec.first = true;
-				//活用されました
-				hasMatched = true;
-			}
+			mismatchedList.emplace_back(srcName_);
+			continue;
 		}
-		if (!hasMatched) mismatchedList.emplace_back(srcName_);
+		auto& [done, objects] = it->second;
+		for (auto* objPtr : objects)
+		{
+			sortedByProority.emplace_back(objPtr);
+		}
+		done = true;
 	}
 	std::string log;
-	for (auto const& mismatchedName: mismatchedList)
+#ifdef _DEBUG
+	for (auto const& mismatchedName : mismatchedList)
 	{
 		log += mismatchedName + ",";
 	}
+#endif // _DEBUG
 	ErrorMessageOutput::Assert::DetectError
 	(
 		mismatchedList.size() == 0,
@@ -21430,8 +21470,6 @@ void RenderContext::StaticRenderGraph::PathOperator::FillInRefBufferSrvIndices
 	auto bToolLender = bufferContextDiplomat_.Access<BufferContext::ToolLender>();
 	BufferContext::ToolLender::LicenceType<BufferContext::BufferDispatcher> bLicence;
 	auto& bufferDispatcher = *bToolLender->Lend<BufferContext::BufferDispatcher>(bLicence);
-	//参照バッファ群srv書き込み先のバッファ
-	auto* dstBuffer = static_cast<UploadStructuredBuffer*>(bufferDispatcher.Dispatch(targetFillInRefBufferID));
 	//参照バッファの格納順は記録しているので、そこからバッファを検索→srvIndex格納
 	auto const numRefBuffers = traceRefBuffersTag.size();
 	std::array<UINT, BuildOutput::PassSetUpper::kNumRefBufferType> refBufferCnts{};
@@ -21638,6 +21676,7 @@ void RenderContext::PassBehavior::BeginPass(RuntimeWrapper& cmdWrapper_, BufferC
 	std::array<D3D12_RECT, D3D12_SIMULTANEOUS_RENDER_TARGET_COUNT> scissorRects;
 	std::array<D3D12_VIEWPORT, D3D12_SIMULTANEOUS_RENDER_TARGET_COUNT> viewports;
 	//まずPassの所持する全てのバッファの書き込みバリアを張る
+	std::pair<std::array<ColorBuffer*, D3D12_SIMULTANEOUS_RENDER_TARGET_COUNT>, DepthStencilBuffer*> renderTargets =
 	PitchOwnBuffersBarrierWriting
 	(
 		colorBuffersInfo,
@@ -21649,10 +21688,8 @@ void RenderContext::PassBehavior::BeginPass(RuntimeWrapper& cmdWrapper_, BufferC
 	for (UINT i = 0;i < numColorBuffers;++i)
 	{
 		auto const& src = colorBuffersInfo[i];
-		//バッファ検索
-		ColorBuffer* colorBuffer = FindBufferWithID<ColorBuffer>(src.bufferID, bufDispatcher_);
 		//パラメーターかき集め
-		rtHandles[i] = PullHandleCPU<ColorBuffer>(colorBuffer, bufDispatcher_);
+		rtHandles[i] = PullHandleCPU<ColorBuffer>(renderTargets.first[i], bufDispatcher_);
 		scissorRects[i] = src.scissorRect;
 		viewports[i] = src.viewport;
 		//ビュークリア
@@ -21662,12 +21699,10 @@ void RenderContext::PassBehavior::BeginPass(RuntimeWrapper& cmdWrapper_, BufferC
 	SetMatrix<D3D12_RECT>(numColorBuffers, scissorRects.data(), cmdWrapper_);
 	SetMatrix<D3D12_VIEWPORT>(numColorBuffers, viewports.data(), cmdWrapper_);
 	//深度ステンシルバッファ
-	if (depthStencilBufferInfo.has_value())
+	if (renderTargets.second)
 	{
-		//バッファ検索
-		auto* depthStencilBuffer = FindBufferWithID<DepthStencilBuffer>(depthStencilBufferInfo->bufferID, bufDispatcher_);
 		//ハンドル取得
-		D3D12_CPU_DESCRIPTOR_HANDLE dsvHandle = PullHandleCPU<DepthStencilBuffer>(depthStencilBuffer, bufDispatcher_);
+		D3D12_CPU_DESCRIPTOR_HANDLE dsvHandle = PullHandleCPU<DepthStencilBuffer>(renderTargets.second, bufDispatcher_);
 		//ビュークリア
 		ClearDepthStencilBufferView(dsvHandle, cmdWrapper_);
 		//描画先の設定
@@ -21682,7 +21717,7 @@ void RenderContext::PassBehavior::BeginPass(RuntimeWrapper& cmdWrapper_, BufferC
 	//このパスのルートコンスタンツを転送
 	TransferRootConstants(cmdWrapper_);
 }
-void RenderContext::PassBehavior::PitchOwnBuffersBarrierWriting
+std::pair<std::array<ColorBuffer*, D3D12_SIMULTANEOUS_RENDER_TARGET_COUNT>,DepthStencilBuffer*> RenderContext::PassBehavior::PitchOwnBuffersBarrierWriting
 (
 	std::vector<RuntimePassInfo::ColorBuffer> const& colorBuffersInfo_,
 	std::optional<RuntimePassInfo::DepthStencilBuffer> const& depthStencilBufferInfo_,
@@ -21690,25 +21725,30 @@ void RenderContext::PassBehavior::PitchOwnBuffersBarrierWriting
 	BufferContext::BufferDispatcher& bufDispatcher_
 )
 {
+	auto const numColorBuffers = colorBuffersInfo_.size();
+	std::array<ColorBuffer*, D3D12_SIMULTANEOUS_RENDER_TARGET_COUNT> colorBuffers;
+	DepthStencilBuffer* depthStencilBuffer = nullptr;
 	//描画先にステートを変化するためのバリアを張る
-	for (auto const& src: colorBuffersInfo_)
+	for (size_t i = 0;i< numColorBuffers;++i)
 	{
 		//バッファ検索
-		ColorBuffer* colorBuffer = FindBufferWithID<ColorBuffer>(src.bufferID, bufDispatcher_);
+		colorBuffers[i] = FindBufferWithID<ColorBuffer>(colorBuffersInfo_[i].bufferID, bufDispatcher_);
 		//カラーバッファの状態をレンダーターゲットにするためにバリアを生成
 		//Read -> Writeへ
-		CreateBarrier<BufferUsage::kWrite>(colorBuffer);
+		CreateBarrier<BufferUsage::kWrite>(colorBuffers[i]);
 	}
 	if (depthStencilBufferInfo_.has_value())
 	{
 		//バッファ検索
-		auto* depthStencilBuffer = FindBufferWithID<DepthStencilBuffer>(depthStencilBufferInfo_->bufferID, bufDispatcher_);
+		depthStencilBuffer = FindBufferWithID<DepthStencilBuffer>(depthStencilBufferInfo_->bufferID, bufDispatcher_);
 		//状態をレンダーターゲットにするためにバリアを生成
 		//Read -> Writeへ
 		CreateBarrier<BufferUsage::kWrite>(depthStencilBuffer);
 	}
 	//キャッシュされたバリアを張る
 	PitchBarrierCached(cmdWrapper_);
+	//検索した描画先バッファを返す
+	return std::make_pair(colorBuffers, depthStencilBuffer);
 }
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -22020,7 +22060,8 @@ private:
 	//とりあえず10確保しておこう
 	static constexpr UINT kBarrierCacheCapacity = 10;
 	//Pass自身が所持するバッファをすべてに描画先バリアを張る
-	void PitchOwnBuffersBarrierWriting
+	//その後、検索したバッファを返す
+	std::pair<std::array<ColorBuffer*, D3D12_SIMULTANEOUS_RENDER_TARGET_COUNT>, DepthStencilBuffer*> PitchOwnBuffersBarrierWriting
 	(
 		std::vector<RuntimePassInfo::ColorBuffer> const& colorBuffersInfo_,
 		std::optional<RuntimePassInfo::DepthStencilBuffer> const& depthStencilBufferInfo_,
@@ -23839,7 +23880,7 @@ void SceneContext::ScenePipeline::SceneDataBatchingPlace::BatchingPlace
 	(
 		ModelContext::ExecutionAgent::SceneContextProof{},
 		frameIndex_,
-		sceneOutput.WatchModelContainer()->WatchSeparatedByModelType()[(UINT)Model::MeshUpdateType::kDynamic],
+		sceneOutput.WatchModelContainer()->WatchSeparatedByModelType<Model::MeshUpdateType::kDynamic>(),
 		bufferContextDiplomat_
 	);
 	if (sceneOutput.WatchLeftStaticModelBatchingCnt() <= (UINT)NumBuffer::kDoubleBuffer)
@@ -23848,7 +23889,7 @@ void SceneContext::ScenePipeline::SceneDataBatchingPlace::BatchingPlace
 		(
 			ModelContext::ExecutionAgent::SceneContextProof{},
 			frameIndex_,
-			sceneOutput.WatchModelContainer()->WatchSeparatedByModelType()[(UINT)Model::MeshUpdateType::kStatic],
+			sceneOutput.WatchModelContainer()->WatchSeparatedByModelType<Model::MeshUpdateType::kStatic>(),
 			bufferContextDiplomat_
 		);
 	}
@@ -24103,7 +24144,7 @@ void SceneBehavior::Update()
 	//ゲームオブジェクト、モデルのトランスフォームの更新フラグをリセットする
 	objSystems->ResetObjTransformFrameFlag();
 	modelSystems->ResetModelTransformFrameFlag<Model::MeshUpdateType::kDynamic>();
-	if (output->leftStaticModelBatchingCnt == (UINT)NumBuffer::kDoubleBuffer)
+	if (output->leftStaticBatchingCnt == (UINT)NumBuffer::kDoubleBuffer)
 	{
 		modelSystems->ResetModelTransformFrameFlag<Model::MeshUpdateType::kStatic>();
 	}
@@ -24114,12 +24155,14 @@ void SceneBehavior::Update()
 	);
 	//このシーンのモデルのトランスフォームのアップデートを呼ぶ
 	modelSystems->UpdateModelTransform<Model::MeshUpdateType::kDynamic>();
-	if (output->leftStaticModelBatchingCnt-- == (UINT)NumBuffer::kDoubleBuffer)
+	if (output->leftStaticBatchingCnt == (UINT)NumBuffer::kDoubleBuffer)
 	{
 		modelSystems->UpdateModelTransform<Model::MeshUpdateType::kStatic>();
 	}
 	//このシーンで使うカメラのアップデート
 	output->usingCamera = cameraSystems->UpdateCamera();
+	//Staticののこりバッチング回数を1減らす
+	output->leftStaticBatchingCnt--;
 }
 SceneBehavior::Output const& SceneBehavior::WatchSceneOutput()const 
 {
@@ -24203,6 +24246,8 @@ void SceneBehavior::SetSystems
 				*cameraSystems,
 				*objSystems
 			);
+		//全描画対象のマテリアルバッチング用データのアドレスを渡す
+		output->materialBatchFormatsPtr = &materialSystems->RefMaterialBatchFormatsArr();
 	}
 }
 void SceneBehavior::CreatePresetCamera()
@@ -24394,7 +24439,7 @@ public:
 		return gameObjSystems.FindObjects(objName_)[0];
 	}
 	//複数バージョン
-	[[nodiscard]] std::vector<GameObjectBehavior*> FindObjects(std::string const& objName_)
+	[[nodiscard]] std::vector<GameObjectBehavior*>& FindObjects(std::string const& objName_)
 	{
 		return gameObjSystems.FindObjects(objName_);
 	}
@@ -24412,19 +24457,23 @@ private:
 #include "../../../../LowerLayer/Resource/Model/ModelContextRuntime/ModelFrontlineSystems/ModelFrontlineSystems.h"
 #include "../../../../LowerLayer/Resource/Camera/CameraContextRuntime/CameraSocket.h"
 class CameraBehavior;
+struct MaterialBatchFormat;
 struct SceneBehavior::Output
 {
 	friend class SceneBehavior;
 	auto const& WatchUsingCamera()const { return usingCamera; }
 	auto const* WatchModelContainer()const { return modelContainer; }
-	auto const& WatchLeftStaticModelBatchingCnt()const { return leftStaticModelBatchingCnt; }
+	auto const& WatchLeftStaticModelBatchingCnt()const { return leftStaticBatchingCnt; }
 private:
+	//全描画対象のバッチングに必要なMaterialBatchFormatのコンテナ
+	std::array<std::vector<MaterialBatchFormat>, (UINT)Materials::UpdateType::kCount>*
+		materialBatchFormatsPtr = nullptr;
 	//使用しているカメラ。更新必要
 	std::unordered_map<CameraSocket, CameraBehavior*> usingCamera;
 	//このシーンのモデルコンテナ
 	ModelContext::FrontlineSystems::ModelContainer const* modelContainer = nullptr;
-	//staticなモデルを毎回バッチング処理しないようにするため
-	UINT leftStaticModelBatchingCnt = (UINT)ProjectConfig::Render::NumBuffer::kDoubleBuffer;
+	//static対象を毎回バッチング処理しないようにするため
+	UINT leftStaticBatchingCnt = (UINT)ProjectConfig::Render::NumBuffer::kDoubleBuffer;
 };
 
 ========================================
@@ -25161,7 +25210,6 @@ void Nexus::Run(aFourthProof proof_)
 #ifndef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN
 #endif
-#include <wrl.h>
 #include <dxgidebug.h>
 #include <windows.h>
 #include <d3d12.h>
@@ -25189,7 +25237,6 @@ void Nexus::Run(aFourthProof proof_)
 #include <variant>
 #include <type_traits> 
 #include <bit>
-#include <cstdint>
 #include "../Math/MathConstants.h"
 //abort()やassert()でエラーを吐いて文字列を出力する
 #include "../LowerLayer/DebugSystem/ErrorMessageOutput/ErrorMessageOutput.h"
@@ -26119,4 +26166,4 @@ namespace StringProcessing
 === SUMMARY ===
 ========================================
 Total Files      : 580
-Effective Lines  : 18998
+Effective Lines  : 19044

@@ -86,7 +86,8 @@ private:
 	static constexpr UINT kBarrierCacheCapacity = 10;
 
 	//Pass自身が所持するバッファをすべてに描画先バリアを張る
-	void PitchOwnBuffersBarrierWriting
+	//その後、検索したバッファを返す
+	std::pair<std::array<ColorBuffer*, D3D12_SIMULTANEOUS_RENDER_TARGET_COUNT>, DepthStencilBuffer*> PitchOwnBuffersBarrierWriting
 	(
 		std::vector<RuntimePassInfo::ColorBuffer> const& colorBuffersInfo_,
 		std::optional<RuntimePassInfo::DepthStencilBuffer> const& depthStencilBufferInfo_,

@@ -50,7 +50,7 @@ ModelContext::FrontlineSystems::ModelContainer::ModelSeparator::SeparateAllModel
 		}
 	}
 
-	return std::move(separatedByRenderState);
+	return separatedByRenderState;
 }
 
 std::vector<std::pair<RenderStateKey, uint64_t>> ModelContext::FrontlineSystems::ModelContainer::ModelSeparator::PackToKey(Model const& model_)

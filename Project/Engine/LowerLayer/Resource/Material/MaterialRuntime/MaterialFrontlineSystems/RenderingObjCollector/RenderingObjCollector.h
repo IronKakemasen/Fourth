@@ -9,7 +9,7 @@ public:
 
 	RenderingObjCollector(NexusFieldProof proof_);
 	
-
+	//数が多いのでヘッダで定義
 	template<Materials::UpdateType type>
 	void Collect(Materials* materialsPtr_)
 	{
@@ -26,10 +26,10 @@ public:
 	}
 
 	template<Materials::UpdateType type>
-	std::vector<MaterialBatchFormat>& RefData()
-	{
-		return materialBatchFormatsArr[(UINT)type];
-	}
+	std::vector<MaterialBatchFormat>& RefMaterialBatchFormats();
+
+	std::array<std::vector<MaterialBatchFormat>, (UINT)Materials::UpdateType::kCount>&
+		RefMaterialBatchFormatsArr();
 
 private:
 

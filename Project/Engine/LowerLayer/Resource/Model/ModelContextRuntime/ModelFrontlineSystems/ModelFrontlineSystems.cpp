@@ -23,7 +23,7 @@ ModelContext::FrontlineSystems::~FrontlineSystems()
 template<Model::MeshUpdateType modelType>
 void ModelContext::FrontlineSystems::UpdateModelTransform()
 {
-	auto const& models = modelContainer->WatchSeparatedByModelType()[(UINT)modelType];
+	auto& models = modelContainer->RefSeparatedByModelType <modelType>();
 	for (auto* model : models)
 	{
 		auto refTransforms = model->RefTransforms();
@@ -37,7 +37,7 @@ void ModelContext::FrontlineSystems::UpdateModelTransform()
 template<Model::MeshUpdateType modelType>
 void ModelContext::FrontlineSystems::ResetModelTransformFrameFlag()
 {
-	auto const& models = modelContainer->WatchSeparatedByModelType()[(UINT)modelType];
+	auto& models = modelContainer->RefSeparatedByModelType<modelType>();
 	for (auto* model : models)
 	{
 		auto refTransforms = model->RefTransforms();

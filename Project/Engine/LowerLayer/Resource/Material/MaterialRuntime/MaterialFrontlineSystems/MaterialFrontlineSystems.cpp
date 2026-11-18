@@ -34,7 +34,13 @@ void MaterialContext::FrontlineSystems::CollectMaterialBatchFormat(Materials* ma
 template<Materials::UpdateType type>
 std::vector<MaterialBatchFormat>& MaterialContext::FrontlineSystems::RefMaterialBatchFormats()
 {
-	return renderingObjCollector->RefData<type>();
+	return renderingObjCollector->RefMaterialBatchFormats<type>();
+}
+
+std::array<std::vector<MaterialBatchFormat>, (UINT)Materials::UpdateType::kCount>&
+MaterialContext::FrontlineSystems::RefMaterialBatchFormatsArr()
+{
+	return renderingObjCollector->RefMaterialBatchFormatsArr();
 }
 
 
