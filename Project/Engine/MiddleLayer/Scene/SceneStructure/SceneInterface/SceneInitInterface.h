@@ -2,11 +2,13 @@
 
 
 //外部
-#include "../../../LowerLayer/Resource/Camera/CameraContextRuntime/CameraFrontlineSystems.h"
+#include "../../../../LowerLayer/Resource/Camera/CameraContextRuntime/CameraFrontlineSystems.h"
 
-#include "../../../LowerLayer/Resource/Model/ModelContextRuntime/ModelFrontlineSystems/ModelFrontlineSystems.h"
+#include "../../../../LowerLayer/Resource/Model/ModelContextRuntime/ModelFrontlineSystems/ModelFrontlineSystems.h"
 
 #include "../../../GameObject/GameObjectRuntime/GameObjFrontSystems/GameObjFrontlineSystems.h"
+
+#include "../../../../LowerLayer/Resource/Material/MaterialRuntime/MaterialFrontlineSystems/MaterialFrontlineSystems.h"
 
 class SceneInitInterface
 {
@@ -15,8 +17,10 @@ public:
 	(
 		CameraContext::FrontlineSystems* cameraSystems_,
 		ModelContext::FrontlineSystems* modelSystems_,
-		GameObjectContext::FrontlineSystems* objSystems_
-	):cameraSystems(cameraSystems_), modelSystems(modelSystems_), objSystems(objSystems_)
+		GameObjectContext::FrontlineSystems* objSystems_,
+		MaterialContext::FrontlineSystems* materialSystems_
+	):cameraSystems(cameraSystems_), modelSystems(modelSystems_),
+		objSystems(objSystems_),materialSystems(materialSystems_)
 	{
 
 	}
@@ -60,11 +64,19 @@ public:
 		return objSystems->AttachSystem<SystemType>(obj_);
 	}
 
+	//描画対象にマテリアルをアタッチする
+	template<Material::Type type>
+	auto& Attach(Materials& dst_)
+	{
+		return materialSystems->AttachMaterial<type>(dst_);
+	}
+
 
 private:
 
 	CameraContext::FrontlineSystems* cameraSystems;
 	ModelContext::FrontlineSystems* modelSystems;
 	GameObjectContext::FrontlineSystems* objSystems;
+	MaterialContext::FrontlineSystems* materialSystems;
 };
 

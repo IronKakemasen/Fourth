@@ -3,8 +3,8 @@
 
 
 //外部
-#include "../../../LowerLayer/Resource/Camera/CameraContextRuntime/CameraFrontlineSystems.h"
-
+#include "../../../../LowerLayer/Resource/Camera/CameraContextRuntime/CameraFrontlineSystems.h"
+#include "../../../GameObject/GameObjectRuntime/GameObjFrontSystems/GameObjFrontlineSystems.h"
 
 class SceneRuntimeInterface
 {
@@ -12,8 +12,9 @@ public:
 
 	SceneRuntimeInterface
 	(
-		CameraContext::FrontlineSystems* cameraSystems_
-	): cameraSystems(cameraSystems_)
+		CameraContext::FrontlineSystems* cameraSystems_,
+		GameObjectContext::FrontlineSystems* gameObjSystems_
+	): cameraSystems(cameraSystems_), gameObjSystems(gameObjSystems_)
 	{
 
 	}
@@ -26,9 +27,23 @@ public:
 		return cameraSystems->GetCmdConnectCamera<dstSocket>();
 	}
 
+	//オブジェを名前から検索する
+	//単一バージョン
+	[[nodiscard]] GameObjectBehavior* FindAnObject(std::string const& objName_)
+	{
+		return gameObjSystems->FindObjects(objName_)[0];
+	}
+	//複数バージョン
+	[[nodiscard]] std::vector<GameObjectBehavior*> FindObjects(std::string const& objName_)
+	{
+		return gameObjSystems->FindObjects(objName_);
+	}
+
+
 
 private:
 
 	CameraContext::FrontlineSystems* cameraSystems;
+	GameObjectContext::FrontlineSystems* gameObjSystems;
 };
 

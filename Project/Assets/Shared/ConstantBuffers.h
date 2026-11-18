@@ -23,7 +23,7 @@ namespace ConstantBuffers
 
 	enum class RootConstantsBindSlots
 	{
-		kModelConstans = ConstantBufferBindSlots::kCount,
+		kModelConstants = ConstantBufferBindSlots::kCount,
 		kPassConstants,
 		kFinalColorBufferSrv,
 		kMaterialID

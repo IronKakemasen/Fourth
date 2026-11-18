@@ -101,6 +101,26 @@ void GameObjectContext::FrontlineSystems::ObjLibrary::SortByPriority(std::vector
 	Logger::Log("Sorted by Priority", fileName);
 }
 
+std::vector<GameObjectBehavior*>& GameObjectContext::FrontlineSystems::ObjLibrary::FindGameObj(std::string const& objName_)
+{
+#ifdef _DEBUG
+	auto& objects = forSearchObjMap[objName_];
+
+	ErrorMessageOutput::Assert::DetectError
+	(
+		objects.size() > 0,
+		objName_ + "こんな名前のゲームオブジェクトは存在しねぇ",
+		fileName
+	);
+
+	return objects;
+
+#endif // DEBUG
+
+	return forSearchObjMap[objName_];
+}
+
+
 void GameObjectContext::FrontlineSystems::ObjLibrary::Import
 (
 	std::string const& objName_,
@@ -114,8 +134,8 @@ void GameObjectContext::FrontlineSystems::ObjLibrary::Import
 	//オブジェおおもと
 	objUniqueMap[nameID] = std::move(obj_);
 	
-	//単一オブジェ検索用
-	forSerchContainer[objName_] = objPtr;
+	//オブジェ検索用
+	forSearchObjMap[objName_].emplace_back(objPtr);
 
 	//優先度ソート用
 	(*objMapCache)[objName_].second.emplace_back(objPtr);

@@ -57,6 +57,13 @@ void GameObjectContext::FrontlineSystems::UpdateObjController
 	gameObjController->Run(*objLibrary, runtimeInterface_);
 }
 
+
+std::vector<GameObjectBehavior*>& GameObjectContext::FrontlineSystems::FindObjects(std::string const& objName_)
+{
+	return objLibrary->FindGameObj(objName_);
+}
+
+
 //ゲームオブジェクトのトランスフォームの更新フラグをリセットする
 void GameObjectContext::FrontlineSystems::ResetObjTransformFrameFlag()
 {

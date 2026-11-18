@@ -68,7 +68,7 @@ public:
 		ErrorMessageOutput::Assert::DetectError
 		(
 			index_ < changeableParams.materialsContainer.size(),
-			modelDesc.WatchRenderStates()[0].modelName + "には" + std::to_string(index_) + "番目のトランスフォームはない",
+			modelDesc.WatchRenderStates()[0].modelName + "には" + std::to_string(index_) + "番目のマテリアルはない",
 			"Model.h"
 		);
 
@@ -85,7 +85,7 @@ public:
 		ErrorMessageOutput::Assert::DetectError
 		(
 			index_ < changeableParams.transforms.size(),
-			modelDesc.WatchRenderStates()[0].modelName + "には" + std::to_string(index_) + "番目のマテリアルはない",
+			modelDesc.WatchRenderStates()[0].modelName + "には" + std::to_string(index_) + "番目のトランスフォームはない",
 			"Model.h"
 		);
 

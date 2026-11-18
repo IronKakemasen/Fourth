@@ -244,8 +244,8 @@ void RenderContext::PassBehavior::RenderModels
 		//psoをセット
 		cmdWrapper_.SetPipelineState(srcPso);
 
-		//modelConstansのバインドスロット
-		static auto const bindSlotModelConstants = ConstantBuffers::RootConstantsBindSlots::kModelConstans;
+		//modelConstantsのバインドスロット
+		static auto const bindSlotModelConstants = ConstantBuffers::RootConstantsBindSlots::kModelConstants;
 		static auto const bindSlotMaterialID = ConstantBuffers::RootConstantsBindSlots::kMaterialID;
 
 		//おなじPSOごとに仕分けられているので、そこでも走査

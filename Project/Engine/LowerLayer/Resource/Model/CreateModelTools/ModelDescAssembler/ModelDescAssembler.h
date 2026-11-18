@@ -28,7 +28,7 @@ public:
 
 private:
 
-	//modelConstansを詰める
+	//modelConstantsを詰める
 	std::vector<ConstantBuffers::ModelConstantsCPUGPU> PackModelConstants
 	(
 		const std::vector<MeshDataID>& meshDataIDs_,

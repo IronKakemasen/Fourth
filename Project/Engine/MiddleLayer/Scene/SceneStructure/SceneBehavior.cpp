@@ -138,13 +138,23 @@ void SceneBehavior::SetSystems
 	if(modelSystems) output->modelContainer = modelSystems->WatchModelContainer();
 
 	//初期化用のインターフェースの作成
-	if (cameraSystems && modelSystems && objSystems)
+	if (cameraSystems && modelSystems && objSystems && materialSystems)
 	{
 		std::get<std::unique_ptr<SceneInitInterface>>(interfaces) = 
-			std::make_unique<SceneInitInterface>(cameraSystems, modelSystems,objSystems);
+			std::make_unique<SceneInitInterface>
+			(
+				cameraSystems, 
+				modelSystems,
+				objSystems,
+				materialSystems
+			);
 
 		std::get<std::unique_ptr<SceneRuntimeInterface>>(interfaces) =
-			std::make_unique<SceneRuntimeInterface>(cameraSystems);
+			std::make_unique<SceneRuntimeInterface>
+			(
+				cameraSystems,
+				objSystems
+			);
 
 	}
 }
