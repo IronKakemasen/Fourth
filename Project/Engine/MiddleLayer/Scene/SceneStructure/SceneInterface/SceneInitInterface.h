@@ -15,10 +15,10 @@ class SceneInitInterface
 public:
 	SceneInitInterface
 	(
-		CameraContext::FrontlineSystems* cameraSystems_,
-		ModelContext::FrontlineSystems* modelSystems_,
-		GameObjectContext::FrontlineSystems* objSystems_,
-		MaterialContext::FrontlineSystems* materialSystems_
+		CameraContext::FrontlineSystems& cameraSystems_,
+		ModelContext::FrontlineSystems& modelSystems_,
+		GameObjectContext::FrontlineSystems& objSystems_,
+		MaterialContext::FrontlineSystems& materialSystems_
 	):cameraSystems(cameraSystems_), modelSystems(modelSystems_),
 		objSystems(objSystems_),materialSystems(materialSystems_)
 	{
@@ -33,11 +33,11 @@ public:
 		std::string const& name_
 	)
 	{
-		return cameraSystems->CreateCamera<dstSocket, CameraType>(cameraDesc_, name_);
+		return cameraSystems.CreateCamera<dstSocket, CameraType>(cameraDesc_, name_);
 	}
 
 	//モデル作成し、そのポインタを返す
-	template<Model::Type modelType>
+	template<Model::MeshUpdateType meshUpdateType,Materials::UpdateType materialUpdateType>
 	[[nodiscard]] std::vector<Model*> CreateModel
 	(
 		std::string const& modelFileName_,
@@ -47,7 +47,8 @@ public:
 		std::string const& modelName_ = "nameLess"
 	)
 	{
-		return modelSystems->CreateModel<modelType>
+		//モデルを作成すると同時に、そのモデルのマテリアルのアドレスを更新タイプ別に回収する
+		std::vector<Model*> models = modelSystems.CreateModel<meshUpdateType>
 		(
 			modelFileName_,
 			modelRenderStates_,
@@ -55,28 +56,39 @@ public:
 			numCreate_,
 			modelName_
 		);
+
+		for (auto* model : models)
+		{
+			auto materialsContainer = model->RefMaterialsContainer();
+			for (auto& materials : materialsContainer)
+			{
+				materialSystems.CollectMaterialBatchFormat<materialUpdateType>(&materials);
+			}
+		}
+
+		return models;
 	}
 
 	//ゲームオブジェクトにシステムをアタッチする
 	template<typename SystemType>
 	SystemType& AttachSystem(GameObjectBehavior& obj_)
 	{
-		return objSystems->AttachSystem<SystemType>(obj_);
+		return objSystems.AttachSystem<SystemType>(obj_);
 	}
 
 	//描画対象にマテリアルをアタッチする
 	template<Material::Type type>
 	auto& Attach(Materials& dst_)
 	{
-		return materialSystems->AttachMaterial<type>(dst_);
+		return materialSystems.AttachMaterial<type>(dst_);
 	}
 
 
 private:
 
-	CameraContext::FrontlineSystems* cameraSystems;
-	ModelContext::FrontlineSystems* modelSystems;
-	GameObjectContext::FrontlineSystems* objSystems;
-	MaterialContext::FrontlineSystems* materialSystems;
+	CameraContext::FrontlineSystems& cameraSystems;
+	ModelContext::FrontlineSystems& modelSystems;
+	GameObjectContext::FrontlineSystems& objSystems;
+	MaterialContext::FrontlineSystems& materialSystems;
 };
 

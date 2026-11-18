@@ -6,14 +6,13 @@ class KeyPackager;
 
 class ModelContext::FrontlineSystems::ModelContainer::ModelSeparator
 {
-	using Output = std::pair<std::vector<SeparatedByRenderState>, std::array < std::vector<Model*>, (UINT)Model::Type::kCount > >;
-
 public:
 
 	ModelSeparator();
 	~ModelSeparator();
 
-	[[nodiscard]] Output SeparateAllModels(std::vector<std::unique_ptr<Model>>& modelContainer_);
+	[[nodiscard]] std::vector<ModelContext::FrontlineSystems::ModelContainer::SeparatedByRenderState> 
+		SeparateAllModels(std::vector<std::unique_ptr<Model>>& modelContainer_);
 
 private:
 

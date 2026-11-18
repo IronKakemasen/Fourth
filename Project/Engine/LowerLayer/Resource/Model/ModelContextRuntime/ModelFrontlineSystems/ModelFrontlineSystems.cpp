@@ -20,10 +20,9 @@ ModelContext::FrontlineSystems::~FrontlineSystems()
 
 }
 
-template<Model::Type modelType>
+template<Model::MeshUpdateType modelType>
 void ModelContext::FrontlineSystems::UpdateModelTransform()
 {
-
 	auto const& models = modelContainer->WatchSeparatedByModelType()[(UINT)modelType];
 	for (auto* model : models)
 	{
@@ -35,7 +34,7 @@ void ModelContext::FrontlineSystems::UpdateModelTransform()
 	}
 }
 
-template<Model::Type modelType>
+template<Model::MeshUpdateType modelType>
 void ModelContext::FrontlineSystems::ResetModelTransformFrameFlag()
 {
 	auto const& models = modelContainer->WatchSeparatedByModelType()[(UINT)modelType];
@@ -49,7 +48,7 @@ void ModelContext::FrontlineSystems::ResetModelTransformFrameFlag()
 	}
 }
 
-
+template<Model::MeshUpdateType type>
 std::vector<Model*> ModelContext::FrontlineSystems::AddModel(std::vector<std::unique_ptr<Model>>&& modelUniques_)
 {
 	std::vector<Model*> modelsPtr;
@@ -58,10 +57,11 @@ std::vector<Model*> ModelContext::FrontlineSystems::AddModel(std::vector<std::un
 	for (auto itr = modelUniques_.begin();itr != modelUniques_.end();++itr)
 	{
 		modelsPtr.emplace_back((*itr).get());
-		modelContainer->Add(ModelContainer::Local_InitLicence{}, std::move((*itr)));
+		modelContainer->Add<type>(ModelContainer::Local_InitLicence{}, std::move((*itr)));
 	}
 
 	return modelsPtr;
+
 }
 
 void ModelContext::FrontlineSystems::SeparateModels()
@@ -76,14 +76,17 @@ ModelContext::FrontlineSystems::ModelContainer const* ModelContext::FrontlineSys
 
 
 template
-void ModelContext::FrontlineSystems::UpdateModelTransform<Model::Type::kDynamic>();
+void ModelContext::FrontlineSystems::UpdateModelTransform<Model::MeshUpdateType::kDynamic>();
+template
+void ModelContext::FrontlineSystems::UpdateModelTransform<Model::MeshUpdateType::kStatic>();
+
 
 template
-void ModelContext::FrontlineSystems::UpdateModelTransform<Model::Type::kStatic>();
-
+void ModelContext::FrontlineSystems::ResetModelTransformFrameFlag<Model::MeshUpdateType::kDynamic>();
+template
+void ModelContext::FrontlineSystems::ResetModelTransformFrameFlag<Model::MeshUpdateType::kStatic>();
 
 template
-void ModelContext::FrontlineSystems::ResetModelTransformFrameFlag<Model::Type::kDynamic>();
-
+std::vector<Model*> ModelContext::FrontlineSystems::AddModel<Model::MeshUpdateType::kStatic>(std::vector<std::unique_ptr<Model>>&& modelUniques_);
 template
-void ModelContext::FrontlineSystems::ResetModelTransformFrameFlag<Model::Type::kStatic>();
+std::vector<Model*> ModelContext::FrontlineSystems::AddModel<Model::MeshUpdateType::kDynamic>(std::vector<std::unique_ptr<Model>>&& modelUniques_);

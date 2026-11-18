@@ -10,10 +10,9 @@ using namespace ProjectConfig::Render;
 
 Model::Model
 (
-	Type type_,
 	const ModelDescription& modelDesc_,
 	std::vector<Materials> materialsContainer_
-) :modelDesc(modelDesc_), type(type_)
+) :modelDesc(modelDesc_)
 {
 	//変更可能描画コンポーネントの初期設定は添え字0番に
 	changeableParams.blendMode = modelDesc_.WatchRenderStates()[0].blendModes[0];

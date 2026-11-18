@@ -23,11 +23,6 @@ class Model
 
 		//マテリアル。可変長になっているのは、サブメッシュ分用意しているから
 		std::vector<Materials> materialsContainer;
-
-		//マテリアル。可変長になっているのは、サブメッシュ分用意しているから
-		//std::vector<Material::StandardGPU> materials;
-		//std::vector<UINT> areMaterialsDirtyCnt;
-		
 		
 		//トランスフォーム。サブメッシュ分用意されている
 		std::vector<Transform> transforms;
@@ -35,7 +30,7 @@ class Model
 
 public:
 
-	enum class Type
+	enum class MeshUpdateType
 	{
 		//ランタイム時にバッチング、トランスフォームやマテリアルのアップデート対象から外れる
 		kStatic,
@@ -47,7 +42,6 @@ public:
 
 	Model
 	(
-		Type type_,
 		const ModelDescription& modelDesc_,
 		std::vector<Materials> materialsContainer_
 	);
@@ -115,21 +109,19 @@ private:
 	}
 
 	auto const& WatchName()const { return modelDesc.WatchRenderStates()[0].modelName; }
-	auto const WatchModelType()const { return type; }
 	//たぶんimguiでモデルの情報を表示するときに使うと思う
 	auto const& WatchChangeables()const { return changeableParams; }
 	//PSO生成、モデル分別のときに利用
 	auto const& WatchRenderStates()const { return modelDesc.WatchRenderStates(); }
 	//ランタイムでドローコマンドをたたくため、バッチング先インデックスがどこかを知るために使用
-	Materials const& WatchMaterials(size_t index_)const { return changeableParams.materialsContainer[index_]; }
 	auto const& WatchModelConstants()const { return modelDesc.WatchModelConstants(); }
 	//ドローコマンドオンリー
 	auto const& WatchMeshletSize()const { return modelDesc.WatchMeshletSize(); }
-	
+	auto const& WatchMaterials(size_t index_) { return changeableParams.materialsContainer[index_]; }
+
 	auto const& WatchMaterialsContainer()const { return changeableParams.materialsContainer; }
 	auto const& WatchTransform(size_t index_)const { return changeableParams.transforms[index_]; }
 
-	Type type;
 	ChangeableParams changeableParams;
 	ModelDescription modelDesc;
 

@@ -8,13 +8,31 @@ class MaterialContext::FrontlineSystems::RenderingObjCollector
 public:
 
 	RenderingObjCollector(NexusFieldProof proof_);
+	
 
-	void Collect(Materials* materialsPtr_);
+	template<Materials::UpdateType type>
+	void Collect(Materials* materialsPtr_)
+	{
+#ifdef _DEBUG
+		ErrorMessageOutput::Assert::DetectError
+		(
+			materialsPtr_,
+			"materialsPtrがぬる(エンジンのせい)",
+			"RenderingObjCollector.cpp"
+		);
+#endif // _DEBUG
 
-	std::vector<MaterialBatchFormat>& RefData();
+		materialBatchFormatsArr[(UINT)type].emplace_back(materialsPtr_->materialID, materialsPtr_);
+	}
+
+	template<Materials::UpdateType type>
+	std::vector<MaterialBatchFormat>& RefData()
+	{
+		return materialBatchFormatsArr[(UINT)type];
+	}
 
 private:
 
-	std::vector<MaterialBatchFormat> materialBatchFormats;
+	std::array<std::vector<MaterialBatchFormat>, (UINT)Materials::UpdateType::kCount> materialBatchFormatsArr;
 };
 

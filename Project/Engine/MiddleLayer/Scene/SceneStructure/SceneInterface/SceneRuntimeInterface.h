@@ -12,8 +12,8 @@ public:
 
 	SceneRuntimeInterface
 	(
-		CameraContext::FrontlineSystems* cameraSystems_,
-		GameObjectContext::FrontlineSystems* gameObjSystems_
+		CameraContext::FrontlineSystems& cameraSystems_,
+		GameObjectContext::FrontlineSystems& gameObjSystems_
 	): cameraSystems(cameraSystems_), gameObjSystems(gameObjSystems_)
 	{
 
@@ -24,26 +24,26 @@ public:
 	template<CameraSocket dstSocket>
 	[[nodiscard]] CameraContext::FrontlineSystems::CmdConnectCamera<dstSocket> GetCmdConnectCamera()
 	{
-		return cameraSystems->GetCmdConnectCamera<dstSocket>();
+		return cameraSystems.GetCmdConnectCamera<dstSocket>();
 	}
 
 	//オブジェを名前から検索する
 	//単一バージョン
 	[[nodiscard]] GameObjectBehavior* FindAnObject(std::string const& objName_)
 	{
-		return gameObjSystems->FindObjects(objName_)[0];
+		return gameObjSystems.FindObjects(objName_)[0];
 	}
 	//複数バージョン
 	[[nodiscard]] std::vector<GameObjectBehavior*> FindObjects(std::string const& objName_)
 	{
-		return gameObjSystems->FindObjects(objName_);
+		return gameObjSystems.FindObjects(objName_);
 	}
 
 
 
 private:
 
-	CameraContext::FrontlineSystems* cameraSystems;
-	GameObjectContext::FrontlineSystems* gameObjSystems;
+	CameraContext::FrontlineSystems& cameraSystems;
+	GameObjectContext::FrontlineSystems& gameObjSystems;
 };
 

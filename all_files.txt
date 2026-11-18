@@ -11607,20 +11607,29 @@ MaterialContext::FrontlineSystems::FrontlineSystems
 MaterialContext::FrontlineSystems::~FrontlineSystems()
 {
 }
+template<Materials::UpdateType type>
 void MaterialContext::FrontlineSystems::CollectMaterialBatchFormat(Materials* materialsPtr_)
 {
-	renderingObjCollector->Collect(materialsPtr_);
+	renderingObjCollector->Collect<type>(materialsPtr_);
 }
+template<Materials::UpdateType type>
 std::vector<MaterialBatchFormat>& MaterialContext::FrontlineSystems::RefMaterialBatchFormats()
 {
-	return renderingObjCollector->RefData();
+	return renderingObjCollector->RefData<type>();
 }
+template
+void MaterialContext::FrontlineSystems::CollectMaterialBatchFormat<Materials::UpdateType::kStatic>(Materials* materialsPtr_);
+template
+void MaterialContext::FrontlineSystems::CollectMaterialBatchFormat<Materials::UpdateType::kDynamic>(Materials* materialsPtr_);
+template
+std::vector<MaterialBatchFormat>& MaterialContext::FrontlineSystems::RefMaterialBatchFormats<Materials::UpdateType::kStatic>();
+template
+std::vector<MaterialBatchFormat>& MaterialContext::FrontlineSystems::RefMaterialBatchFormats<Materials::UpdateType::kDynamic>();
 
 ========================================
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Material\MaterialRuntime\MaterialFrontlineSystems\MaterialFrontlineSystems.h ===
 ========================================
 #pragma once
-#include "../../MaterialContext.h"
 #include "../../MaterialAttacher/MaterialAttacher.h"
 struct MaterialBatchFormat;
 class MaterialContext::FrontlineSystems
@@ -11635,8 +11644,10 @@ public:
 	);
 	~FrontlineSystems();
 	//マテリアルのバッチングに必要な情報を描画対象からかき集める
+	template<Materials::UpdateType type>
 	void CollectMaterialBatchFormat(Materials* materialsPtr_);
 	//マテリアルのバッチングに必要な情報を見せる
+	template<Materials::UpdateType type>
 	std::vector<MaterialBatchFormat>& RefMaterialBatchFormats();
 	//マテリアルのアタッチ
 	template<Material::Type type>
@@ -11657,22 +11668,6 @@ private:
 MaterialContext::FrontlineSystems::RenderingObjCollector::RenderingObjCollector(NexusFieldProof proof_)
 {
 }
-void MaterialContext::FrontlineSystems::RenderingObjCollector::Collect(Materials* materialsPtr_)
-{
-#ifdef _DEBUG
-	ErrorMessageOutput::Assert::DetectError
-	(
-		materialsPtr_,
-		"materialsPtrがぬる(エンジンのせい)",
-		"RenderingObjCollector.cpp"
-	);
-#endif // _DEBUG
-	materialBatchFormats.emplace_back(materialsPtr_->materialID, materialsPtr_);
-}
-std::vector<MaterialBatchFormat>& MaterialContext::FrontlineSystems::RenderingObjCollector::RefData()
-{
-	return materialBatchFormats;
-}
 
 ========================================
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Material\MaterialRuntime\MaterialFrontlineSystems\RenderingObjCollector\RenderingObjCollector.h ===
@@ -11684,10 +11679,26 @@ class MaterialContext::FrontlineSystems::RenderingObjCollector
 {
 public:
 	RenderingObjCollector(NexusFieldProof proof_);
-	void Collect(Materials* materialsPtr_);
-	std::vector<MaterialBatchFormat>& RefData();
+	template<Materials::UpdateType type>
+	void Collect(Materials* materialsPtr_)
+	{
+#ifdef _DEBUG
+		ErrorMessageOutput::Assert::DetectError
+		(
+			materialsPtr_,
+			"materialsPtrがぬる(エンジンのせい)",
+			"RenderingObjCollector.cpp"
+		);
+#endif // _DEBUG
+		materialBatchFormatsArr[(UINT)type].emplace_back(materialsPtr_->materialID, materialsPtr_);
+	}
+	template<Materials::UpdateType type>
+	std::vector<MaterialBatchFormat>& RefData()
+	{
+		return materialBatchFormatsArr[(UINT)type];
+	}
 private:
-	std::vector<MaterialBatchFormat> materialBatchFormats;
+	std::array<std::vector<MaterialBatchFormat>, (UINT)Materials::UpdateType::kCount> materialBatchFormatsArr;
 };
 
 ========================================
@@ -11717,6 +11728,13 @@ class RenderContext;
 class Materials
 {
 public:
+    //ランタイムでバッチングするかどうか
+    enum class UpdateType
+    {
+        kStatic,    //しない
+        kDynamic,   //する
+        kCount
+    };
     //これを呼び出したらマテリアルのダーティーをオンにします
     template<Material::Type type>
     auto& Ref()
@@ -12025,7 +12043,7 @@ ModelContext::ModelCreator::ModelCreator
 ModelContext::ModelCreator::~ModelCreator()
 {
 }
-template<Model::Type modelType>
+template<Model::MeshUpdateType type>
 std::vector<std::unique_ptr<Model>> ModelContext::ModelCreator::Create
 (
 	std::string const& modelFileName_,
@@ -12037,8 +12055,8 @@ std::vector<std::unique_ptr<Model>> ModelContext::ModelCreator::Create
 {
 	static_assert
 	(
-		modelType != Model::Type::kCount,
-		"Model::Type::KCountを選択してんじゃない ModelCreator.h"
+		type != Model::MeshUpdateType::kCount,
+		"Model::MeshUpdateType::KCountを選択してんじゃない ModelCreator.cpp"
 	);
 	//作成するモデルのユニーク
 	std::vector<std::unique_ptr<Model>> modelUniques;
@@ -12073,7 +12091,6 @@ std::vector<std::unique_ptr<Model>> ModelContext::ModelCreator::Create
 		(
 			std::make_unique<Model>
 			(
-				modelType, 
 				modelDesc, 
 				std::move(materials)
 			)
@@ -12101,7 +12118,7 @@ ModelContext::ModelCreator::ModelDescParts ModelContext::ModelCreator::AssembleM
 	return modelDescAssembler->Assemble(modelFileName_, inputMaterials_);
 }
 template
-std::vector<std::unique_ptr<Model>> ModelContext::ModelCreator::Create<Model::Type::kDynamic>
+std::vector<std::unique_ptr<Model>> ModelContext::ModelCreator::Create<Model::MeshUpdateType::kDynamic>
 (
 	std::string const& modelFileName_,
 	std::vector<RenderState> const& modelRenderStates_,
@@ -12110,7 +12127,7 @@ std::vector<std::unique_ptr<Model>> ModelContext::ModelCreator::Create<Model::Ty
 	std::string const& modelName_
 );
 template
-std::vector<std::unique_ptr<Model>> ModelContext::ModelCreator::Create<Model::Type::kStatic>
+std::vector<std::unique_ptr<Model>> ModelContext::ModelCreator::Create<Model::MeshUpdateType::kStatic>
 (
 	std::string const& modelFileName_,
 	std::vector<RenderState> const& modelRenderStates_,
@@ -12146,7 +12163,7 @@ public:
 		MaterialContextDiplomat& materialContextDiplomat_
 	);
 	~ModelCreator();
-	template<Model::Type modelType>
+	template<Model::MeshUpdateType type>
 	std::vector<std::unique_ptr<Model>> Create
 	(
 		std::string const& modelFileName_,
@@ -14213,7 +14230,7 @@ ModelContext::FrontlineSystems::FrontlineSystems(NexusFieldProof proof_, ModelCr
 ModelContext::FrontlineSystems::~FrontlineSystems()
 {
 }
-template<Model::Type modelType>
+template<Model::MeshUpdateType modelType>
 void ModelContext::FrontlineSystems::UpdateModelTransform()
 {
 	auto const& models = modelContainer->WatchSeparatedByModelType()[(UINT)modelType];
@@ -14226,7 +14243,7 @@ void ModelContext::FrontlineSystems::UpdateModelTransform()
 		}
 	}
 }
-template<Model::Type modelType>
+template<Model::MeshUpdateType modelType>
 void ModelContext::FrontlineSystems::ResetModelTransformFrameFlag()
 {
 	auto const& models = modelContainer->WatchSeparatedByModelType()[(UINT)modelType];
@@ -14239,6 +14256,7 @@ void ModelContext::FrontlineSystems::ResetModelTransformFrameFlag()
 		}
 	}
 }
+template<Model::MeshUpdateType type>
 std::vector<Model*> ModelContext::FrontlineSystems::AddModel(std::vector<std::unique_ptr<Model>>&& modelUniques_)
 {
 	std::vector<Model*> modelsPtr;
@@ -14246,7 +14264,7 @@ std::vector<Model*> ModelContext::FrontlineSystems::AddModel(std::vector<std::un
 	for (auto itr = modelUniques_.begin();itr != modelUniques_.end();++itr)
 	{
 		modelsPtr.emplace_back((*itr).get());
-		modelContainer->Add(ModelContainer::Local_InitLicence{}, std::move((*itr)));
+		modelContainer->Add<type>(ModelContainer::Local_InitLicence{}, std::move((*itr)));
 	}
 	return modelsPtr;
 }
@@ -14259,13 +14277,17 @@ ModelContext::FrontlineSystems::ModelContainer const* ModelContext::FrontlineSys
 	return modelContainer.get();
 }
 template
-void ModelContext::FrontlineSystems::UpdateModelTransform<Model::Type::kDynamic>();
+void ModelContext::FrontlineSystems::UpdateModelTransform<Model::MeshUpdateType::kDynamic>();
 template
-void ModelContext::FrontlineSystems::UpdateModelTransform<Model::Type::kStatic>();
+void ModelContext::FrontlineSystems::UpdateModelTransform<Model::MeshUpdateType::kStatic>();
 template
-void ModelContext::FrontlineSystems::ResetModelTransformFrameFlag<Model::Type::kDynamic>();
+void ModelContext::FrontlineSystems::ResetModelTransformFrameFlag<Model::MeshUpdateType::kDynamic>();
 template
-void ModelContext::FrontlineSystems::ResetModelTransformFrameFlag<Model::Type::kStatic>();
+void ModelContext::FrontlineSystems::ResetModelTransformFrameFlag<Model::MeshUpdateType::kStatic>();
+template
+std::vector<Model*> ModelContext::FrontlineSystems::AddModel<Model::MeshUpdateType::kStatic>(std::vector<std::unique_ptr<Model>>&& modelUniques_);
+template
+std::vector<Model*> ModelContext::FrontlineSystems::AddModel<Model::MeshUpdateType::kDynamic>(std::vector<std::unique_ptr<Model>>&& modelUniques_);
 
 ========================================
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Model\ModelContextRuntime\ModelFrontlineSystems\ModelFrontlineSystems.h ===
@@ -14282,7 +14304,7 @@ public:
 	FrontlineSystems(NexusFieldProof proof_, ModelCreator& modelCreator_);
 	~FrontlineSystems();
 	//モデル作成し、そのポインタを返す
-	template<Model::Type modelType>
+	template<Model::MeshUpdateType type>
 	std::vector<Model*> CreateModel
 	(
 		std::string const& modelFileName_,
@@ -14292,9 +14314,9 @@ public:
 		std::string const& modelName_
 	)
 	{
-		return AddModel
+		return AddModel<type>
 		(
-			modelCreator.Create<modelType>
+			modelCreator.Create<type>
 			(
 				modelFileName_,
 				modelRenderStates_,
@@ -14305,15 +14327,16 @@ public:
 		);
 	}
 	//モデルのトランスフォームのアップデート
-	template<Model::Type modelType>
+	template<Model::MeshUpdateType modelType>
 	void UpdateModelTransform();
 	//モデルのトランスフォームの更新フラグをリセットする
-	template<Model::Type modelType>
+	template<Model::MeshUpdateType modelType>
 	void ResetModelTransformFrameFlag();
 	//モデルコンテナの分別を行う
 	void SeparateModels();
 	ModelContainer const* WatchModelContainer()const;
 private:
+	template<Model::MeshUpdateType modelType>
 	std::vector<Model*> AddModel(std::vector<std::unique_ptr<Model>>&& modelUniques_);
 	std::unique_ptr<ModelContainer> modelContainer;
 	ModelCreator& modelCreator;
@@ -14400,19 +14423,33 @@ ModelContext::FrontlineSystems::ModelContainer::ModelContainer(NexusFieldProof p
 ModelContext::FrontlineSystems::ModelContainer::~ModelContainer()
 {
 }
-void ModelContext::FrontlineSystems::ModelContainer::Add(Local_InitLicence licence_, std::unique_ptr<Model>&& model_)
-{
-	const auto& model =  container.emplace_back(std::move(model_));
-	Logger::Log("Add: " + model->WatchName(), fileName);
-}
 void ModelContext::FrontlineSystems::ModelContainer::SeparateModels(Local_InitLicence licence_)
 {
 	ModelSeparator modelSeparator;
-	auto output = modelSeparator.SeparateAllModels(container);
-	separatedByRenderState = std::move(output.first);
-	separatedByModelType = std::move(output.second);
+	separatedByRenderState = modelSeparator.SeparateAllModels(container);
 	Logger::Log("Model Separating comp", fileName);
 }
+template<Model::MeshUpdateType type>
+void ModelContext::FrontlineSystems::ModelContainer::Add(Local_InitLicence licence_, std::unique_ptr<Model>&& model_)
+{
+	auto* model = container.emplace_back(std::move(model_)).get();
+	//Static/Dynamic別で仕分ける
+	separatedByModelType[UINT(type)].emplace_back(model);
+#ifdef _DEBUG
+	if constexpr (type == Model::MeshUpdateType::kStatic)
+	{
+		Logger::Log("Add: " + model->WatchName() + "to Static Container", fileName);
+	}
+	else if constexpr (type == Model::MeshUpdateType::kDynamic)
+	{
+		Logger::Log("Add: " + model->WatchName() + "to Static kDynamic", fileName);
+	}
+#endif // _DEBUG
+}
+template
+void ModelContext::FrontlineSystems::ModelContainer::Add<Model::MeshUpdateType::kStatic>(Local_InitLicence licence_, std::unique_ptr<Model>&& model_);
+template
+void ModelContext::FrontlineSystems::ModelContainer::Add<Model::MeshUpdateType::kDynamic>(Local_InitLicence licence_, std::unique_ptr<Model>&& model_);
 
 ========================================
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Model\ModelContextRuntime\ModelFrontlineSystems\ModelContainer\ModelContainer.h ===
@@ -14436,6 +14473,7 @@ public:
 	//レンダーステート別
 	auto const& WatchSeparatedByRenderState()const { return separatedByRenderState; }
 	//modelCreatorが作成したモデル本体を格納
+	template<Model::MeshUpdateType type>
 	void Add(Local_InitLicence licence_, std::unique_ptr<Model>&& model_);
 	//ランタイムでPSO切り替えコストを低減させるために、モデルクラスをおなじrenderStateごとに分別する
 	void SeparateModels(Local_InitLicence licence_);
@@ -14446,7 +14484,7 @@ private:
 	//第一添え字は、Passで指定
 	std::vector<SeparatedByRenderState> separatedByRenderState;
 	//staticかdynamicかで仕分けられている
-	std::array < std::vector<Model*>, (UINT)Model::Type::kCount > separatedByModelType;
+	std::array < std::vector<Model*>, (UINT)Model::MeshUpdateType::kCount > separatedByModelType;
 };
 struct ModelContext::FrontlineSystems::ModelContainer::Local_InitLicence
 {
@@ -14482,11 +14520,10 @@ ModelContext::FrontlineSystems::ModelContainer::ModelSeparator::ModelSeparator()
 ModelContext::FrontlineSystems::ModelContainer::ModelSeparator::~ModelSeparator()
 {
 }
-[[nodiscard]] ModelContext::FrontlineSystems::ModelContainer::ModelSeparator::Output
+[[nodiscard]] std::vector<ModelContext::FrontlineSystems::ModelContainer::SeparatedByRenderState>
 ModelContext::FrontlineSystems::ModelContainer::ModelSeparator::SeparateAllModels(std::vector<std::unique_ptr<Model>>& modelContainer_)
 {
 	std::vector<SeparatedByRenderState> separatedByRenderState;
-	std::array < std::vector<Model*>, (UINT)Model::Type::kCount> separatedByModelType;
 	separatedByRenderState.resize((UINT)Pass::kCount);
 	for (auto itr = modelContainer_.begin();itr != modelContainer_.end();++itr)
 	{
@@ -14499,10 +14536,8 @@ ModelContext::FrontlineSystems::ModelContainer::ModelSeparator::SeparateAllModel
 			separatedByRenderState[pass][key.second].first = key.first;
 			separatedByRenderState[pass][key.second].second.emplace_back((*itr).get());
 		}
-		//ランタイムデータバッチング用にモデルタイプ別に仕分けていく
-		separatedByModelType[(UINT)(*itr)->WatchModelType()].emplace_back((*itr).get());
 	}
-	return std::make_pair(std::move(separatedByRenderState), std::move(separatedByModelType));
+	return std::move(separatedByRenderState);
 }
 std::vector<std::pair<RenderStateKey, uint64_t>> ModelContext::FrontlineSystems::ModelContainer::ModelSeparator::PackToKey(Model const& model_)
 {
@@ -14544,11 +14579,11 @@ std::vector<std::pair<RenderStateKey, uint64_t>> ModelContext::FrontlineSystems:
 class KeyPackager;
 class ModelContext::FrontlineSystems::ModelContainer::ModelSeparator
 {
-	using Output = std::pair<std::vector<SeparatedByRenderState>, std::array < std::vector<Model*>, (UINT)Model::Type::kCount > >;
 public:
 	ModelSeparator();
 	~ModelSeparator();
-	[[nodiscard]] Output SeparateAllModels(std::vector<std::unique_ptr<Model>>& modelContainer_);
+	[[nodiscard]] std::vector<ModelContext::FrontlineSystems::ModelContainer::SeparatedByRenderState> 
+		SeparateAllModels(std::vector<std::unique_ptr<Model>>& modelContainer_);
 private:
 	//レンダーステートをキーに詰める
 	std::vector<std::pair<RenderStateKey, uint64_t>> PackToKey(Model const& model_);
@@ -14614,10 +14649,9 @@ namespace
 using namespace ProjectConfig::Render;
 Model::Model
 (
-	Type type_,
 	const ModelDescription& modelDesc_,
 	std::vector<Materials> materialsContainer_
-) :modelDesc(modelDesc_), type(type_)
+) :modelDesc(modelDesc_)
 {
 	//変更可能描画コンポーネントの初期設定は添え字0番に
 	changeableParams.blendMode = modelDesc_.WatchRenderStates()[0].blendModes[0];
@@ -14704,14 +14738,11 @@ class Model
 		Material::Type materialType{};
 		//マテリアル。可変長になっているのは、サブメッシュ分用意しているから
 		std::vector<Materials> materialsContainer;
-		//マテリアル。可変長になっているのは、サブメッシュ分用意しているから
-		//std::vector<Material::StandardGPU> materials;
-		//std::vector<UINT> areMaterialsDirtyCnt;
 		//トランスフォーム。サブメッシュ分用意されている
 		std::vector<Transform> transforms;
 	};
 public:
-	enum class Type
+	enum class MeshUpdateType
 	{
 		//ランタイム時にバッチング、トランスフォームやマテリアルのアップデート対象から外れる
 		kStatic,
@@ -14721,7 +14752,6 @@ public:
 	};
 	Model
 	(
-		Type type_,
 		const ModelDescription& modelDesc_,
 		std::vector<Materials> materialsContainer_
 	);
@@ -14775,19 +14805,17 @@ private:
 		changeableParams.materialType == materialType_;
 	}
 	auto const& WatchName()const { return modelDesc.WatchRenderStates()[0].modelName; }
-	auto const WatchModelType()const { return type; }
 	//たぶんimguiでモデルの情報を表示するときに使うと思う
 	auto const& WatchChangeables()const { return changeableParams; }
 	//PSO生成、モデル分別のときに利用
 	auto const& WatchRenderStates()const { return modelDesc.WatchRenderStates(); }
 	//ランタイムでドローコマンドをたたくため、バッチング先インデックスがどこかを知るために使用
-	Materials const& WatchMaterials(size_t index_)const { return changeableParams.materialsContainer[index_]; }
 	auto const& WatchModelConstants()const { return modelDesc.WatchModelConstants(); }
 	//ドローコマンドオンリー
 	auto const& WatchMeshletSize()const { return modelDesc.WatchMeshletSize(); }
+	auto const& WatchMaterials(size_t index_) { return changeableParams.materialsContainer[index_]; }
 	auto const& WatchMaterialsContainer()const { return changeableParams.materialsContainer; }
 	auto const& WatchTransform(size_t index_)const { return changeableParams.transforms[index_]; }
-	Type type;
 	ChangeableParams changeableParams;
 	ModelDescription modelDesc;
 };
@@ -18895,7 +18923,8 @@ void GridFloor::Awake(SceneInitInterface& sceneInitInterface_)
 	std::vector<Material::StandardCPU> materials;
 	materials.resize(1);
 	materials[0].albedoTexSamplerState = SamplerState::kLinearClamp;
-	p = sceneInitInterface_.CreateModel<Model::Type::kDynamic>("Plane200x200Obj", playerC, materials, 1, "Player");
+	p = sceneInitInterface_.CreateModel<Model::MeshUpdateType::kDynamic,Materials::UpdateType::kDynamic>
+		("Plane200x200Obj", playerC, materials, 1, "Player");
 	for (int i = 0;i < 1;++i)
 	{
 		p[i]->RefTransform(0).TranslatePosition({ 1.5f,-5,100 });
@@ -23810,7 +23839,7 @@ void SceneContext::ScenePipeline::SceneDataBatchingPlace::BatchingPlace
 	(
 		ModelContext::ExecutionAgent::SceneContextProof{},
 		frameIndex_,
-		sceneOutput.WatchModelContainer()->WatchSeparatedByModelType()[(UINT)Model::Type::kDynamic],
+		sceneOutput.WatchModelContainer()->WatchSeparatedByModelType()[(UINT)Model::MeshUpdateType::kDynamic],
 		bufferContextDiplomat_
 	);
 	if (sceneOutput.WatchLeftStaticModelBatchingCnt() <= (UINT)NumBuffer::kDoubleBuffer)
@@ -23819,7 +23848,7 @@ void SceneContext::ScenePipeline::SceneDataBatchingPlace::BatchingPlace
 		(
 			ModelContext::ExecutionAgent::SceneContextProof{},
 			frameIndex_,
-			sceneOutput.WatchModelContainer()->WatchSeparatedByModelType()[(UINT)Model::Type::kStatic],
+			sceneOutput.WatchModelContainer()->WatchSeparatedByModelType()[(UINT)Model::MeshUpdateType::kStatic],
 			bufferContextDiplomat_
 		);
 	}
@@ -24073,10 +24102,10 @@ void SceneBehavior::Update()
 {
 	//ゲームオブジェクト、モデルのトランスフォームの更新フラグをリセットする
 	objSystems->ResetObjTransformFrameFlag();
-	modelSystems->ResetModelTransformFrameFlag<Model::Type::kDynamic>();
+	modelSystems->ResetModelTransformFrameFlag<Model::MeshUpdateType::kDynamic>();
 	if (output->leftStaticModelBatchingCnt == (UINT)NumBuffer::kDoubleBuffer)
 	{
-		modelSystems->ResetModelTransformFrameFlag<Model::Type::kStatic>();
+		modelSystems->ResetModelTransformFrameFlag<Model::MeshUpdateType::kStatic>();
 	}
 	//ゲームオブジェクトの更新、トランスフォームの更新
 	objSystems->UpdateObjController
@@ -24084,10 +24113,10 @@ void SceneBehavior::Update()
 		*std::get<std::unique_ptr<SceneRuntimeInterface>>(interfaces)
 	);
 	//このシーンのモデルのトランスフォームのアップデートを呼ぶ
-	modelSystems->UpdateModelTransform<Model::Type::kDynamic>();
+	modelSystems->UpdateModelTransform<Model::MeshUpdateType::kDynamic>();
 	if (output->leftStaticModelBatchingCnt-- == (UINT)NumBuffer::kDoubleBuffer)
 	{
-		modelSystems->UpdateModelTransform<Model::Type::kStatic>();
+		modelSystems->UpdateModelTransform<Model::MeshUpdateType::kStatic>();
 	}
 	//このシーンで使うカメラのアップデート
 	output->usingCamera = cameraSystems->UpdateCamera();
@@ -24163,16 +24192,16 @@ void SceneBehavior::SetSystems
 		std::get<std::unique_ptr<SceneInitInterface>>(interfaces) = 
 			std::make_unique<SceneInitInterface>
 			(
-				cameraSystems, 
-				modelSystems,
-				objSystems,
-				materialSystems
+				*cameraSystems, 
+				*modelSystems,
+				*objSystems,
+				*materialSystems
 			);
 		std::get<std::unique_ptr<SceneRuntimeInterface>>(interfaces) =
 			std::make_unique<SceneRuntimeInterface>
 			(
-				cameraSystems,
-				objSystems
+				*cameraSystems,
+				*objSystems
 			);
 	}
 }
@@ -24267,10 +24296,10 @@ class SceneInitInterface
 public:
 	SceneInitInterface
 	(
-		CameraContext::FrontlineSystems* cameraSystems_,
-		ModelContext::FrontlineSystems* modelSystems_,
-		GameObjectContext::FrontlineSystems* objSystems_,
-		MaterialContext::FrontlineSystems* materialSystems_
+		CameraContext::FrontlineSystems& cameraSystems_,
+		ModelContext::FrontlineSystems& modelSystems_,
+		GameObjectContext::FrontlineSystems& objSystems_,
+		MaterialContext::FrontlineSystems& materialSystems_
 	):cameraSystems(cameraSystems_), modelSystems(modelSystems_),
 		objSystems(objSystems_),materialSystems(materialSystems_)
 	{
@@ -24283,10 +24312,10 @@ public:
 		std::string const& name_
 	)
 	{
-		return cameraSystems->CreateCamera<dstSocket, CameraType>(cameraDesc_, name_);
+		return cameraSystems.CreateCamera<dstSocket, CameraType>(cameraDesc_, name_);
 	}
 	//モデル作成し、そのポインタを返す
-	template<Model::Type modelType>
+	template<Model::MeshUpdateType meshUpdateType,Materials::UpdateType materialUpdateType>
 	[[nodiscard]] std::vector<Model*> CreateModel
 	(
 		std::string const& modelFileName_,
@@ -24296,7 +24325,8 @@ public:
 		std::string const& modelName_ = "nameLess"
 	)
 	{
-		return modelSystems->CreateModel<modelType>
+		//モデルを作成すると同時に、そのモデルのマテリアルのアドレスを更新タイプ別に回収する
+		std::vector<Model*> models = modelSystems.CreateModel<meshUpdateType>
 		(
 			modelFileName_,
 			modelRenderStates_,
@@ -24304,24 +24334,33 @@ public:
 			numCreate_,
 			modelName_
 		);
+		for (auto* model : models)
+		{
+			auto materialsContainer = model->RefMaterialsContainer();
+			for (auto& materials : materialsContainer)
+			{
+				materialSystems.CollectMaterialBatchFormat<materialUpdateType>(&materials);
+			}
+		}
+		return models;
 	}
 	//ゲームオブジェクトにシステムをアタッチする
 	template<typename SystemType>
 	SystemType& AttachSystem(GameObjectBehavior& obj_)
 	{
-		return objSystems->AttachSystem<SystemType>(obj_);
+		return objSystems.AttachSystem<SystemType>(obj_);
 	}
 	//描画対象にマテリアルをアタッチする
 	template<Material::Type type>
 	auto& Attach(Materials& dst_)
 	{
-		return materialSystems->AttachMaterial<type>(dst_);
+		return materialSystems.AttachMaterial<type>(dst_);
 	}
 private:
-	CameraContext::FrontlineSystems* cameraSystems;
-	ModelContext::FrontlineSystems* modelSystems;
-	GameObjectContext::FrontlineSystems* objSystems;
-	MaterialContext::FrontlineSystems* materialSystems;
+	CameraContext::FrontlineSystems& cameraSystems;
+	ModelContext::FrontlineSystems& modelSystems;
+	GameObjectContext::FrontlineSystems& objSystems;
+	MaterialContext::FrontlineSystems& materialSystems;
 };
 
 ========================================
@@ -24336,8 +24375,8 @@ class SceneRuntimeInterface
 public:
 	SceneRuntimeInterface
 	(
-		CameraContext::FrontlineSystems* cameraSystems_,
-		GameObjectContext::FrontlineSystems* gameObjSystems_
+		CameraContext::FrontlineSystems& cameraSystems_,
+		GameObjectContext::FrontlineSystems& gameObjSystems_
 	): cameraSystems(cameraSystems_), gameObjSystems(gameObjSystems_)
 	{
 	}
@@ -24346,22 +24385,22 @@ public:
 	template<CameraSocket dstSocket>
 	[[nodiscard]] CameraContext::FrontlineSystems::CmdConnectCamera<dstSocket> GetCmdConnectCamera()
 	{
-		return cameraSystems->GetCmdConnectCamera<dstSocket>();
+		return cameraSystems.GetCmdConnectCamera<dstSocket>();
 	}
 	//オブジェを名前から検索する
 	//単一バージョン
 	[[nodiscard]] GameObjectBehavior* FindAnObject(std::string const& objName_)
 	{
-		return gameObjSystems->FindObjects(objName_)[0];
+		return gameObjSystems.FindObjects(objName_)[0];
 	}
 	//複数バージョン
 	[[nodiscard]] std::vector<GameObjectBehavior*> FindObjects(std::string const& objName_)
 	{
-		return gameObjSystems->FindObjects(objName_);
+		return gameObjSystems.FindObjects(objName_);
 	}
 private:
-	CameraContext::FrontlineSystems* cameraSystems;
-	GameObjectContext::FrontlineSystems* gameObjSystems;
+	CameraContext::FrontlineSystems& cameraSystems;
+	GameObjectContext::FrontlineSystems& gameObjSystems;
 };
 
 ========================================
@@ -26080,4 +26119,4 @@ namespace StringProcessing
 === SUMMARY ===
 ========================================
 Total Files      : 580
-Effective Lines  : 18959
+Effective Lines  : 18998

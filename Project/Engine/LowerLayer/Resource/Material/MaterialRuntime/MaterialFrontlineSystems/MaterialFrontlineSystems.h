@@ -1,5 +1,4 @@
 #pragma once
-#include "../../MaterialContext.h"
 #include "../../MaterialAttacher/MaterialAttacher.h"
 
 struct MaterialBatchFormat;
@@ -20,9 +19,11 @@ public:
 	~FrontlineSystems();
 
 	//マテリアルのバッチングに必要な情報を描画対象からかき集める
+	template<Materials::UpdateType type>
 	void CollectMaterialBatchFormat(Materials* materialsPtr_);
 
 	//マテリアルのバッチングに必要な情報を見せる
+	template<Materials::UpdateType type>
 	std::vector<MaterialBatchFormat>& RefMaterialBatchFormats();
 
 	//マテリアルのアタッチ

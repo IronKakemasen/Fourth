@@ -33,7 +33,8 @@ void GridFloor::Awake(SceneInitInterface& sceneInitInterface_)
 	materials.resize(1);
 	materials[0].albedoTexSamplerState = SamplerState::kLinearClamp;
 
-	p = sceneInitInterface_.CreateModel<Model::Type::kDynamic>("Plane200x200Obj", playerC, materials, 1, "Player");
+	p = sceneInitInterface_.CreateModel<Model::MeshUpdateType::kDynamic,Materials::UpdateType::kDynamic>
+		("Plane200x200Obj", playerC, materials, 1, "Player");
 	for (int i = 0;i < 1;++i)
 	{
 		p[i]->RefTransform(0).TranslatePosition({ 1.5f,-5,100 });

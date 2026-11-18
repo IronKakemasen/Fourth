@@ -41,7 +41,7 @@ void SceneContext::ScenePipeline::SceneDataBatchingPlace::BatchingPlace
 	(
 		ModelContext::ExecutionAgent::SceneContextProof{},
 		frameIndex_,
-		sceneOutput.WatchModelContainer()->WatchSeparatedByModelType()[(UINT)Model::Type::kDynamic],
+		sceneOutput.WatchModelContainer()->WatchSeparatedByModelType()[(UINT)Model::MeshUpdateType::kDynamic],
 		bufferContextDiplomat_
 	);
 
@@ -51,7 +51,7 @@ void SceneContext::ScenePipeline::SceneDataBatchingPlace::BatchingPlace
 		(
 			ModelContext::ExecutionAgent::SceneContextProof{},
 			frameIndex_,
-			sceneOutput.WatchModelContainer()->WatchSeparatedByModelType()[(UINT)Model::Type::kStatic],
+			sceneOutput.WatchModelContainer()->WatchSeparatedByModelType()[(UINT)Model::MeshUpdateType::kStatic],
 			bufferContextDiplomat_
 		);
 	}
