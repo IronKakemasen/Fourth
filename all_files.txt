@@ -12046,7 +12046,7 @@ std::vector<std::unique_ptr<Model>> ModelContext::ModelCreator::Create
 	for (UINT i = 0;i < numCreate_;++i)
 	{
 		//モデルの要素を組み立てる
-		auto [modelConstans, materialsGPU, meshletSize] = AssembleModelDescParts(modelFileName_, materials_);
+		auto [modelConstants, materialsGPU, meshletSize] = AssembleModelDescParts(modelFileName_, materials_);
 		//マテリアルの入れ物を作成し、デフォルトでMaterial::StandardGPUをアタッチする
 		//サブメッシュ分用意する
 		std::vector<Materials> materials;
@@ -12064,7 +12064,7 @@ std::vector<std::unique_ptr<Model>> ModelContext::ModelCreator::Create
 		ModelDescription modelDesc
 		(
 			modelName_ + std::to_string(numCreate++),
-			modelConstans,
+			modelConstants,
 			modelRenderStates_,
 			meshletSize
 		);
@@ -12133,7 +12133,7 @@ class ModelContext::ModelCreator
 	class ModelDescAssembler;
 	using ModelDescParts = std::tuple
 	<
-		std::vector<ConstantBuffers::ModelConstansCPUGPU>,
+		std::vector<ConstantBuffers::ModelConstantsCPUGPU>,
 		std::vector<Material::StandardGPU>,
 		std::vector<size_t>
 	>;
@@ -13390,30 +13390,30 @@ ModelContext::ModelCreator::ModelDescParts ModelContext::ModelCreator::ModelDesc
 	size_t const kNumMeshData = modelData.meshDataID.size();
 	return ModelDescParts
 	(
-		PackPerDrawIndices(modelData.meshDataID, kNumMeshData),
+		PackModelConstants(modelData.meshDataID, kNumMeshData),
 		ConvertMaterialData(kNumMeshData, modelData.materialCPU, inputMaterials_),
 		modelData.meshletSize
 	);
 }
-std::vector<ConstantBuffers::ModelConstansCPUGPU> ModelContext::ModelCreator::ModelDescAssembler::PackPerDrawIndices
+std::vector<ConstantBuffers::ModelConstantsCPUGPU> ModelContext::ModelCreator::ModelDescAssembler::PackModelConstants
 (
 	const std::vector<MeshDataID>& meshDataIDs_,
 	size_t const kNumMeshData_
 )
 {
-	std::vector<ConstantBuffers::ModelConstansCPUGPU> modelConstans;
+	std::vector<ConstantBuffers::ModelConstantsCPUGPU> modelConstants;
 	auto const licence = ModelContext::ModelSlotAllocator::AllocateLicence{};
 	for (size_t i = 0;i < kNumMeshData_;++i)
 	{
 		//メッシュデータIDを割り当てる
-		ConstantBuffers::ModelConstansCPUGPU perDrawIndex;
+		ConstantBuffers::ModelConstantsCPUGPU perDrawIndex;
 		perDrawIndex.meshDataID = meshDataIDs_[i];
 		//トランスフォームIDを割り当てる
 		perDrawIndex.transformMatrixID =
 			slotAllocator.AllocateSlot<ModelContext::ModelSlotAllocator::TransformMatrixSlot>(licence);
-		modelConstans.emplace_back(std::move(perDrawIndex));
+		modelConstants.emplace_back(std::move(perDrawIndex));
 	}
-	return modelConstans;
+	return modelConstants;
 }
 std::vector<Material::StandardGPU> ModelContext::ModelCreator::ModelDescAssembler::ConvertMaterialData
 (
@@ -13495,8 +13495,8 @@ public:
 		std::vector<Material::StandardCPU> const& inputMaterials_
 	);
 private:
-	//modelConstansを詰める
-	std::vector<ConstantBuffers::ModelConstansCPUGPU> PackPerDrawIndices
+	//modelConstantsを詰める
+	std::vector<ConstantBuffers::ModelConstantsCPUGPU> PackModelConstants
 	(
 		const std::vector<MeshDataID>& meshDataIDs_,
 		size_t const kNumMeshData_
@@ -14003,13 +14003,13 @@ void ModelContext::ModelDataBatcher::BatchModelData
 	//モデルの所持するデータをバッファに書き込んでいく
 	for (Model* model : models_)
 	{
-		auto const& modelConstans = model->WatchPerDrawIndices();
-		auto const numMeshes = modelConstans.size();
+		auto const& modelConstants = model->WatchModelConstants();
+		auto const numMeshes = modelConstants.size();
 		OverrideBuffer<ConstantBuffers::ConstantBufferBindSlots::kTransformMatrixContainer>
 		(
 			frameIndex_,
 			*model,
-			modelConstans,
+			modelConstants,
 			numMeshes,
 			dstWriteBufferTransform
 		);
@@ -14017,7 +14017,7 @@ void ModelContext::ModelDataBatcher::BatchModelData
 		//(
 		//	frameIndex_,
 		//	*model,
-		//	modelConstans,
+		//	modelConstants,
 		//	numMeshes,
 		//	dstWriteBufferMaterial
 		//);
@@ -14028,12 +14028,12 @@ void ModelContext::ModelDataBatcher::OverrideBuffer<ConstantBufferBindSlots::kTr
 (
 	UINT const frameIndex_,
 	Model& model_,
-	std::vector<ConstantBuffers::ModelConstansCPUGPU> const& modelConstans_,
+	std::vector<ConstantBuffers::ModelConstantsCPUGPU> const& modelConstants_,
 	size_t const numMesh_,
 	IWritableCPU* writeDstBufferPtr_
 )
 {
-	//書き込み用のダーティ判定しながら、該当インデックス(modelConstans)を辿って、バッファに書き込む
+	//書き込み用のダーティ判定しながら、該当インデックス(modelConstants)を辿って、バッファに書き込む
 	//もちろんサブメッシュ分も
 	for (size_t i = 0;i < numMesh_;++i)
 	{
@@ -14041,7 +14041,7 @@ void ModelContext::ModelDataBatcher::OverrideBuffer<ConstantBufferBindSlots::kTr
 		//そのトランスフォームのデータを書き込む必要があるかどうか
 		if (!srcTransform.ShouldOverrideBuffer()) continue;
 		TransformMatrixCPUGPU transformMatrix(srcTransform.WatchWorldMatrix());
-		writeDstBufferPtr_->WriteElement(frameIndex_, transformMatrix, modelConstans_[i].transformMatrixID);
+		writeDstBufferPtr_->WriteElement(frameIndex_, transformMatrix, modelConstants_[i].transformMatrixID);
 		//トランスフォームのバッファ書き込みカウントを１つ減らす
 		srcTransform.DecrementNeedOverrideBufferCnt();
 	}
@@ -14051,7 +14051,7 @@ void ModelContext::ModelDataBatcher::OverrideBuffer<ConstantBufferBindSlots::kTr
 //(
 //	UINT const frameIndex_,
 //	Model& model_,
-//	std::vector<ConstantBuffers::ModelConstansCPUGPU> const& modelConstans_,
+//	std::vector<ConstantBuffers::ModelConstantsCPUGPU> const& modelConstants_,
 //	size_t const numMesh_,
 //	IWritableCPU* writeDstBufferPtr_
 //)
@@ -14062,7 +14062,7 @@ void ModelContext::ModelDataBatcher::OverrideBuffer<ConstantBufferBindSlots::kTr
 //	//	//そのマテリアルがダーティじゃないなら書き込まない
 //	//	if (!model_.IsMaterialDirty(i)) continue;
 //	//	
-//	//	writeDstBufferPtr_->WriteElement(frameIndex_, model_.WatchMaterial(i), modelConstans_[i].materialID);
+//	//	writeDstBufferPtr_->WriteElement(frameIndex_, model_.WatchMaterial(i), modelConstants_[i].materialID);
 //
 //	//	//マテリアルダーティのカウントを１つ消去
 //	//	model_.DecrementMaterialDirtyCnt(i);
@@ -14122,7 +14122,7 @@ private:
 	(
 		UINT const frameIndex_,
 		Model& model_,
-		std::vector<ConstantBuffers::ModelConstansCPUGPU> const& modelConstans_,
+		std::vector<ConstantBuffers::ModelConstantsCPUGPU> const& modelConstants_,
 		size_t const numMesh_,
 		IWritableCPU* writeDstBufferPtr_
 	);
@@ -14138,7 +14138,7 @@ void ModelContext::ModelDataBatcher::OverrideBuffer<ConstantBuffers::ConstantBuf
 (
 	UINT const frameIndex_,
 	Model& model_,
-	std::vector<ConstantBuffers::ModelConstansCPUGPU> const& modelConstans_,
+	std::vector<ConstantBuffers::ModelConstantsCPUGPU> const& modelConstants_,
 	size_t const numMesh_,
 	IWritableCPU* writeDstBufferPtr_
 );
@@ -14147,7 +14147,7 @@ void ModelContext::ModelDataBatcher::OverrideBuffer<ConstantBuffers::ConstantBuf
 //(
 //	UINT const frameIndex_,
 //	Model& model_,
-//	std::vector<ConstantBuffers::ModelConstansCPUGPU> const& modelConstans_,
+//	std::vector<ConstantBuffers::ModelConstantsCPUGPU> const& modelConstants_,
 //	size_t const numMesh_,
 //	IWritableCPU* writeDstBufferPtr_
 //);
@@ -14625,7 +14625,7 @@ Model::Model
 	///gennkouuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuu
 	changeableParams.materialsContainer = std::move(materialsContainer_);
 	//サブメッシュ分のトランスフォームを確保
-	auto const numMeshes = modelDesc_.WatchPerDrawIndices().size();
+	auto const numMeshes = modelDesc_.WatchModelConstants().size();
 	changeableParams.transforms.resize(numMeshes);
 	//サブメッシュのペアレント化
 	auto& mainTrans = changeableParams.transforms[0];
@@ -14737,8 +14737,8 @@ public:
 #ifdef _DEBUG
 		ErrorMessageOutput::Assert::DetectError
 		(
-			index_ < changeableParams.transforms.size(),
-			modelDesc.WatchRenderStates()[0].modelName + "には" + std::to_string(index_) + "番目のトランスフォームはない",
+			index_ < changeableParams.materialsContainer.size(),
+			modelDesc.WatchRenderStates()[0].modelName + "には" + std::to_string(index_) + "番目のマテリアルはない",
 			"Model.h"
 		);
 #endif
@@ -14751,7 +14751,7 @@ public:
 		ErrorMessageOutput::Assert::DetectError
 		(
 			index_ < changeableParams.transforms.size(),
-			modelDesc.WatchRenderStates()[0].modelName + "には" + std::to_string(index_) + "番目のマテリアルはない",
+			modelDesc.WatchRenderStates()[0].modelName + "には" + std::to_string(index_) + "番目のトランスフォームはない",
 			"Model.h"
 		);
 #endif
@@ -14782,7 +14782,7 @@ private:
 	auto const& WatchRenderStates()const { return modelDesc.WatchRenderStates(); }
 	//ランタイムでドローコマンドをたたくため、バッチング先インデックスがどこかを知るために使用
 	Materials const& WatchMaterials(size_t index_)const { return changeableParams.materialsContainer[index_]; }
-	auto const& WatchPerDrawIndices()const { return modelDesc.WatchPerDrawIndices(); }
+	auto const& WatchModelConstants()const { return modelDesc.WatchModelConstants(); }
 	//ドローコマンドオンリー
 	auto const& WatchMeshletSize()const { return modelDesc.WatchMeshletSize(); }
 	auto const& WatchMaterialsContainer()const { return changeableParams.materialsContainer; }
@@ -14886,10 +14886,10 @@ namespace
 ModelDescription::ModelDescription
 (
 	std::string const& modelName_,
-	std::vector<ConstantBuffers::ModelConstansCPUGPU> const& modelConstans_,
+	std::vector<ConstantBuffers::ModelConstantsCPUGPU> const& modelConstants_,
 	std::vector<RenderState> const& renderStates_,
 	std::vector<size_t> const& meshletSize_
-) :modelConstans(modelConstans_), renderStates(renderStates_), meshletSize(meshletSize_)
+) :modelConstants(modelConstants_), renderStates(renderStates_), meshletSize(meshletSize_)
 {
 #ifdef _DEBUG
 	std::string errorMsg{};
@@ -14937,7 +14937,7 @@ ModelDescription::ModelDescription
 	}
 	ErrorMessageOutput::Assert::DetectError(errorMsg.length() == 0, modelName_ + errorMsg, fileName);
 	if (renderStates.size() == 0)		errorMsg += "「renderStatesが空」";
-	if (modelConstans.size() == 0)		errorMsg += "「modelConstansが空」";
+	if (modelConstants.size() == 0)		errorMsg += "「modelConstantsが空」";
 	ErrorMessageOutput::Assert::DetectError(errorMsg.length() == 0, modelName_ +  errorMsg, fileName);
 	UINT cnt{};
 	for (auto& renderState : renderStates)
@@ -14966,19 +14966,19 @@ struct ModelDescription
 	ModelDescription
 	(
 		std::string const& modelName_,
-		std::vector<ConstantBuffers::ModelConstansCPUGPU> const& modelConstans_,
+		std::vector<ConstantBuffers::ModelConstantsCPUGPU> const& modelConstants_,
 		std::vector<RenderState> const& renderStates_,
 		std::vector<size_t> const& meshletSize_
 	);
 	//初期化フェーズで利用
 	inline auto const& WatchRenderStates()const { return renderStates; }
 	//ランタイムでドローコマンドをたたくために使用
-	inline auto const& WatchPerDrawIndices()const { return modelConstans; }
+	inline auto const& WatchModelConstants()const { return modelConstants; }
 	inline auto const& WatchMeshletSize()const { return meshletSize; }
 private:
 	//ModelDescAssemblerに設定してもらう
 	//可変長になっているのは、マルチメッシュのため！！！！
-	std::vector<ConstantBuffers::ModelConstansCPUGPU> modelConstans;
+	std::vector<ConstantBuffers::ModelConstantsCPUGPU> modelConstants;
 	//メッシュレットのサイズ。描画コマンドたたくのに必要
 	std::vector<size_t> meshletSize;
 	//これ以下は自分で決める
@@ -18979,6 +18979,10 @@ void GameObjectContext::FrontlineSystems::UpdateObjController
 {
 	gameObjController->Run(*objLibrary, runtimeInterface_);
 }
+std::vector<GameObjectBehavior*>& GameObjectContext::FrontlineSystems::FindObjects(std::string const& objName_)
+{
+	return objLibrary->FindGameObj(objName_);
+}
 //ゲームオブジェクトのトランスフォームの更新フラグをリセットする
 void GameObjectContext::FrontlineSystems::ResetObjTransformFrameFlag()
 {
@@ -19032,6 +19036,8 @@ public:
 	(
 		SceneRuntimeInterface& runtimeInterface_
 	);
+	//オブジェを名前から検索する
+	std::vector<GameObjectBehavior*>& FindObjects(std::string const& objName_);
 	//ゲームオブジェクトのトランスフォームの更新フラグをリセットする
 	void ResetObjTransformFrameFlag();
 private:
@@ -19276,6 +19282,20 @@ void GameObjectContext::FrontlineSystems::ObjLibrary::SortByPriority(std::vector
 	);
 	Logger::Log("Sorted by Priority", fileName);
 }
+std::vector<GameObjectBehavior*>& GameObjectContext::FrontlineSystems::ObjLibrary::FindGameObj(std::string const& objName_)
+{
+#ifdef _DEBUG
+	auto& objects = forSearchObjMap[objName_];
+	ErrorMessageOutput::Assert::DetectError
+	(
+		objects.size() > 0,
+		objName_ + "こんな名前のゲームオブジェクトは存在しねぇ",
+		fileName
+	);
+	return objects;
+#endif // DEBUG
+	return forSearchObjMap[objName_];
+}
 void GameObjectContext::FrontlineSystems::ObjLibrary::Import
 (
 	std::string const& objName_,
@@ -19286,8 +19306,8 @@ void GameObjectContext::FrontlineSystems::ObjLibrary::Import
 	auto* objPtr = obj_.get();
 	//オブジェおおもと
 	objUniqueMap[nameID] = std::move(obj_);
-	//単一オブジェ検索用
-	forSerchContainer[objName_] = objPtr;
+	//オブジェ検索用
+	forSearchObjMap[objName_].emplace_back(objPtr);
 	//優先度ソート用
 	(*objMapCache)[objName_].second.emplace_back(objPtr);
 	(*objMapCache)[objName_].first = false;
@@ -19309,8 +19329,8 @@ public:
 		std::string const& objName_,
 		std::unique_ptr<GameObjectBehavior>&& obj_
 	);
-	//単一のオブジェ限定のサーチ
-	void FindIdentifiableObj(std::string const& objName_);
+	//名前からゲームオブジェクトを検索する
+	std::vector<GameObjectBehavior*>& FindGameObj(std::string const& objName_);
 	//更新優先順にソートされたオブジェコンテナの参照を返す
 	std::vector<GameObjectBehavior*>& RefSortedObjContainer();
 	//objUniqueMapを返す
@@ -19324,8 +19344,8 @@ private:
 	std::unique_ptr<std::unordered_map<std::string, std::pair<bool, std::vector<GameObjectBehavior*>>>> objMapCache;
 	//更新優先度順に並び替えられたコンテナ
 	std::vector<GameObjectBehavior*> sortedByProority;
-	//検索用マップ。ただし、単一のものしか無理
-	std::unordered_map<std::string, GameObjectBehavior*> forSerchContainer;
+	//ゲームオブジェクト検索用マップ
+	std::unordered_map<std::string, std::vector<GameObjectBehavior*>> forSearchObjMap;
 	//優先順位で並び替える
 	void SortByPriority(std::vector<std::string> const& priorityList_);
 };
@@ -21729,8 +21749,8 @@ void RenderContext::PassBehavior::RenderModels
 		auto* srcPso = psoDispatcher_.AccessGraphicsPSO(psoKey);
 		//psoをセット
 		cmdWrapper_.SetPipelineState(srcPso);
-		//modelConstansのバインドスロット
-		static auto const bindSlotModelConstants = ConstantBuffers::RootConstantsBindSlots::kModelConstans;
+		//modelConstantsのバインドスロット
+		static auto const bindSlotModelConstants = ConstantBuffers::RootConstantsBindSlots::kModelConstants;
 		static auto const bindSlotMaterialID = ConstantBuffers::RootConstantsBindSlots::kMaterialID;
 		//おなじPSOごとに仕分けられているので、そこでも走査
 		for (auto const& model : state_models.second)
@@ -21746,7 +21766,7 @@ void RenderContext::PassBehavior::RenderModels
 				(
 					(UINT)bindSlotModelConstants,
 					ConstantBuffers::Num32BitValuesTable(bindSlotModelConstants),
-					&model->WatchPerDrawIndices()[i],
+					&model->WatchModelConstants()[i],
 					0
 				);
 				//マテリアルIDをルートコンスタンツで転送
@@ -24138,12 +24158,22 @@ void SceneBehavior::SetSystems
 	//シーン出力ようにモデルコンテナのアドレスを格納
 	if(modelSystems) output->modelContainer = modelSystems->WatchModelContainer();
 	//初期化用のインターフェースの作成
-	if (cameraSystems && modelSystems && objSystems)
+	if (cameraSystems && modelSystems && objSystems && materialSystems)
 	{
 		std::get<std::unique_ptr<SceneInitInterface>>(interfaces) = 
-			std::make_unique<SceneInitInterface>(cameraSystems, modelSystems,objSystems);
+			std::make_unique<SceneInitInterface>
+			(
+				cameraSystems, 
+				modelSystems,
+				objSystems,
+				materialSystems
+			);
 		std::get<std::unique_ptr<SceneRuntimeInterface>>(interfaces) =
-			std::make_unique<SceneRuntimeInterface>(cameraSystems);
+			std::make_unique<SceneRuntimeInterface>
+			(
+				cameraSystems,
+				objSystems
+			);
 	}
 }
 void SceneBehavior::CreatePresetCamera()
@@ -24228,9 +24258,10 @@ private:
 ========================================
 #pragma once
 //外部
-#include "../../../LowerLayer/Resource/Camera/CameraContextRuntime/CameraFrontlineSystems.h"
-#include "../../../LowerLayer/Resource/Model/ModelContextRuntime/ModelFrontlineSystems/ModelFrontlineSystems.h"
+#include "../../../../LowerLayer/Resource/Camera/CameraContextRuntime/CameraFrontlineSystems.h"
+#include "../../../../LowerLayer/Resource/Model/ModelContextRuntime/ModelFrontlineSystems/ModelFrontlineSystems.h"
 #include "../../../GameObject/GameObjectRuntime/GameObjFrontSystems/GameObjFrontlineSystems.h"
+#include "../../../../LowerLayer/Resource/Material/MaterialRuntime/MaterialFrontlineSystems/MaterialFrontlineSystems.h"
 class SceneInitInterface
 {
 public:
@@ -24238,8 +24269,10 @@ public:
 	(
 		CameraContext::FrontlineSystems* cameraSystems_,
 		ModelContext::FrontlineSystems* modelSystems_,
-		GameObjectContext::FrontlineSystems* objSystems_
-	):cameraSystems(cameraSystems_), modelSystems(modelSystems_), objSystems(objSystems_)
+		GameObjectContext::FrontlineSystems* objSystems_,
+		MaterialContext::FrontlineSystems* materialSystems_
+	):cameraSystems(cameraSystems_), modelSystems(modelSystems_),
+		objSystems(objSystems_),materialSystems(materialSystems_)
 	{
 	}
 	//カメラの作成＆登録
@@ -24278,10 +24311,17 @@ public:
 	{
 		return objSystems->AttachSystem<SystemType>(obj_);
 	}
+	//描画対象にマテリアルをアタッチする
+	template<Material::Type type>
+	auto& Attach(Materials& dst_)
+	{
+		return materialSystems->AttachMaterial<type>(dst_);
+	}
 private:
 	CameraContext::FrontlineSystems* cameraSystems;
 	ModelContext::FrontlineSystems* modelSystems;
 	GameObjectContext::FrontlineSystems* objSystems;
+	MaterialContext::FrontlineSystems* materialSystems;
 };
 
 ========================================
@@ -24289,14 +24329,16 @@ private:
 ========================================
 #pragma once
 //外部
-#include "../../../LowerLayer/Resource/Camera/CameraContextRuntime/CameraFrontlineSystems.h"
+#include "../../../../LowerLayer/Resource/Camera/CameraContextRuntime/CameraFrontlineSystems.h"
+#include "../../../GameObject/GameObjectRuntime/GameObjFrontSystems/GameObjFrontlineSystems.h"
 class SceneRuntimeInterface
 {
 public:
 	SceneRuntimeInterface
 	(
-		CameraContext::FrontlineSystems* cameraSystems_
-	): cameraSystems(cameraSystems_)
+		CameraContext::FrontlineSystems* cameraSystems_,
+		GameObjectContext::FrontlineSystems* gameObjSystems_
+	): cameraSystems(cameraSystems_), gameObjSystems(gameObjSystems_)
 	{
 	}
 	//カメラ切り替えコマンドを返す
@@ -24306,8 +24348,20 @@ public:
 	{
 		return cameraSystems->GetCmdConnectCamera<dstSocket>();
 	}
+	//オブジェを名前から検索する
+	//単一バージョン
+	[[nodiscard]] GameObjectBehavior* FindAnObject(std::string const& objName_)
+	{
+		return gameObjSystems->FindObjects(objName_)[0];
+	}
+	//複数バージョン
+	[[nodiscard]] std::vector<GameObjectBehavior*> FindObjects(std::string const& objName_)
+	{
+		return gameObjSystems->FindObjects(objName_);
+	}
 private:
 	CameraContext::FrontlineSystems* cameraSystems;
+	GameObjectContext::FrontlineSystems* gameObjSystems;
 };
 
 ========================================
@@ -26026,4 +26080,4 @@ namespace StringProcessing
 === SUMMARY ===
 ========================================
 Total Files      : 580
-Effective Lines  : 18914
+Effective Lines  : 18959

@@ -58,7 +58,7 @@ std::vector<ConstantBuffers::ModelConstantsCPUGPU> ModelContext::ModelCreator::M
 	size_t const kNumMeshData_
 )
 {
-	std::vector<ConstantBuffers::ModelConstantsCPUGPU> modelConstans;
+	std::vector<ConstantBuffers::ModelConstantsCPUGPU> modelConstants;
 
 	auto const licence = ModelContext::ModelSlotAllocator::AllocateLicence{};
 
@@ -72,10 +72,10 @@ std::vector<ConstantBuffers::ModelConstantsCPUGPU> ModelContext::ModelCreator::M
 		perDrawIndex.transformMatrixID =
 			slotAllocator.AllocateSlot<ModelContext::ModelSlotAllocator::TransformMatrixSlot>(licence);
 
-		modelConstans.emplace_back(std::move(perDrawIndex));
+		modelConstants.emplace_back(std::move(perDrawIndex));
 	}
 
-	return modelConstans;
+	return modelConstants;
 }
 
 

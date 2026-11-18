@@ -45,14 +45,14 @@ void ModelContext::ModelDataBatcher::BatchModelData
 	//モデルの所持するデータをバッファに書き込んでいく
 	for (Model* model : models_)
 	{
-		auto const& modelConstans = model->WatchModelConstants();
-		auto const numMeshes = modelConstans.size();
+		auto const& modelConstants = model->WatchModelConstants();
+		auto const numMeshes = modelConstants.size();
 
 		OverrideBuffer<ConstantBuffers::ConstantBufferBindSlots::kTransformMatrixContainer>
 		(
 			frameIndex_,
 			*model,
-			modelConstans,
+			modelConstants,
 			numMeshes,
 			dstWriteBufferTransform
 		);
@@ -61,7 +61,7 @@ void ModelContext::ModelDataBatcher::BatchModelData
 		//(
 		//	frameIndex_,
 		//	*model,
-		//	modelConstans,
+		//	modelConstants,
 		//	numMeshes,
 		//	dstWriteBufferMaterial
 		//);
@@ -74,12 +74,12 @@ void ModelContext::ModelDataBatcher::OverrideBuffer<ConstantBufferBindSlots::kTr
 (
 	UINT const frameIndex_,
 	Model& model_,
-	std::vector<ConstantBuffers::ModelConstantsCPUGPU> const& modelConstans_,
+	std::vector<ConstantBuffers::ModelConstantsCPUGPU> const& modelConstants_,
 	size_t const numMesh_,
 	IWritableCPU* writeDstBufferPtr_
 )
 {
-	//書き込み用のダーティ判定しながら、該当インデックス(modelConstans)を辿って、バッファに書き込む
+	//書き込み用のダーティ判定しながら、該当インデックス(modelConstants)を辿って、バッファに書き込む
 	//もちろんサブメッシュ分も
 	for (size_t i = 0;i < numMesh_;++i)
 	{
@@ -89,7 +89,7 @@ void ModelContext::ModelDataBatcher::OverrideBuffer<ConstantBufferBindSlots::kTr
 		if (!srcTransform.ShouldOverrideBuffer()) continue;
 
 		TransformMatrixCPUGPU transformMatrix(srcTransform.WatchWorldMatrix());
-		writeDstBufferPtr_->WriteElement(frameIndex_, transformMatrix, modelConstans_[i].transformMatrixID);
+		writeDstBufferPtr_->WriteElement(frameIndex_, transformMatrix, modelConstants_[i].transformMatrixID);
 
 		//トランスフォームのバッファ書き込みカウントを１つ減らす
 		srcTransform.DecrementNeedOverrideBufferCnt();
@@ -102,7 +102,7 @@ void ModelContext::ModelDataBatcher::OverrideBuffer<ConstantBufferBindSlots::kTr
 //(
 //	UINT const frameIndex_,
 //	Model& model_,
-//	std::vector<ConstantBuffers::ModelConstantsCPUGPU> const& modelConstans_,
+//	std::vector<ConstantBuffers::ModelConstantsCPUGPU> const& modelConstants_,
 //	size_t const numMesh_,
 //	IWritableCPU* writeDstBufferPtr_
 //)
@@ -113,7 +113,7 @@ void ModelContext::ModelDataBatcher::OverrideBuffer<ConstantBufferBindSlots::kTr
 //	//	//そのマテリアルがダーティじゃないなら書き込まない
 //	//	if (!model_.IsMaterialDirty(i)) continue;
 //	//	
-//	//	writeDstBufferPtr_->WriteElement(frameIndex_, model_.WatchMaterial(i), modelConstans_[i].materialID);
+//	//	writeDstBufferPtr_->WriteElement(frameIndex_, model_.WatchMaterial(i), modelConstants_[i].materialID);
 //
 //	//	//マテリアルダーティのカウントを１つ消去
 //	//	model_.DecrementMaterialDirtyCnt(i);

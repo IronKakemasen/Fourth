@@ -53,6 +53,9 @@ public:
 		SceneRuntimeInterface& runtimeInterface_
 	);
 
+	//オブジェを名前から検索する
+	std::vector<GameObjectBehavior*>& FindObjects(std::string const& objName_);
+
 	//ゲームオブジェクトのトランスフォームの更新フラグをリセットする
 	void ResetObjTransformFrameFlag();
 

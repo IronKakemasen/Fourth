@@ -61,7 +61,7 @@ std::vector<std::unique_ptr<Model>> ModelContext::ModelCreator::Create
 	for (UINT i = 0;i < numCreate_;++i)
 	{
 		//モデルの要素を組み立てる
-		auto [modelConstans, materialsGPU, meshletSize] = AssembleModelDescParts(modelFileName_, materials_);
+		auto [modelConstants, materialsGPU, meshletSize] = AssembleModelDescParts(modelFileName_, materials_);
 
 		//マテリアルの入れ物を作成し、デフォルトでMaterial::StandardGPUをアタッチする
 		//サブメッシュ分用意する
@@ -83,7 +83,7 @@ std::vector<std::unique_ptr<Model>> ModelContext::ModelCreator::Create
 		ModelDescription modelDesc
 		(
 			modelName_ + std::to_string(numCreate++),
-			modelConstans,
+			modelConstants,
 			modelRenderStates_,
 			meshletSize
 		);
