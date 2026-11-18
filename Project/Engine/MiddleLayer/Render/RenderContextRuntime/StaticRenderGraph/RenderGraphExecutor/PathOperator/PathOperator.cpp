@@ -51,7 +51,6 @@ void RenderContext::StaticRenderGraph::PathOperator::FillInRefBufferSrvIndices
 	auto& bufferDispatcher = *bToolLender->Lend<BufferContext::BufferDispatcher>(bLicence);
 
 	//参照バッファの格納順は記録しているので、そこからバッファを検索→srvIndex格納
-	auto const numRefBuffers = traceRefBuffersTag.size();
 	std::array<UINT, BuildOutput::PassSetUpper::kNumRefBufferType> refBufferCnts{};
 
 	for (size_t i = 0;i< traceRefBuffersTag.size();++i)
