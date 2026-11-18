@@ -11,6 +11,16 @@ class RenderContext;
 class Materials
 {
 public:
+
+    //ランタイムでバッチングするかどうか
+    enum class UpdateType
+    {
+        kStatic,    //しない
+        kDynamic,   //する
+
+        kCount
+    };
+
     //これを呼び出したらマテリアルのダーティーをオンにします
     template<Material::Type type>
     auto& Ref()
@@ -38,6 +48,7 @@ public:
     }
 
 private:
+
 
     //インターフェースを絞るため
     friend class MaterialContext;

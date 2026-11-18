@@ -31,7 +31,7 @@ public:
 
 	~ModelCreator();
 
-	template<Model::Type modelType>
+	template<Model::MeshUpdateType type>
 	std::vector<std::unique_ptr<Model>> Create
 	(
 		std::string const& modelFileName_,

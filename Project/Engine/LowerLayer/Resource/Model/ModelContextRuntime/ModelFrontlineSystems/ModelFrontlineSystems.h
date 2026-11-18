@@ -16,7 +16,7 @@ public:
 	~FrontlineSystems();
 
 	//モデル作成し、そのポインタを返す
-	template<Model::Type modelType>
+	template<Model::MeshUpdateType type>
 	std::vector<Model*> CreateModel
 	(
 		std::string const& modelFileName_,
@@ -26,9 +26,9 @@ public:
 		std::string const& modelName_
 	)
 	{
-		return AddModel
+		return AddModel<type>
 		(
-			modelCreator.Create<modelType>
+			modelCreator.Create<type>
 			(
 				modelFileName_,
 				modelRenderStates_,
@@ -40,11 +40,11 @@ public:
 	}
 
 	//モデルのトランスフォームのアップデート
-	template<Model::Type modelType>
+	template<Model::MeshUpdateType modelType>
 	void UpdateModelTransform();
 
 	//モデルのトランスフォームの更新フラグをリセットする
-	template<Model::Type modelType>
+	template<Model::MeshUpdateType modelType>
 	void ResetModelTransformFrameFlag();
 
 
@@ -55,6 +55,7 @@ public:
 
 private:
 
+	template<Model::MeshUpdateType modelType>
 	std::vector<Model*> AddModel(std::vector<std::unique_ptr<Model>>&& modelUniques_);
 
 	std::unique_ptr<ModelContainer> modelContainer;

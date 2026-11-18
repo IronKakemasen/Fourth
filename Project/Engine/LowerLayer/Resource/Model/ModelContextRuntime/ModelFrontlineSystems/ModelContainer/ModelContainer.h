@@ -25,6 +25,7 @@ public:
 	auto const& WatchSeparatedByRenderState()const { return separatedByRenderState; }
 
 	//modelCreatorが作成したモデル本体を格納
+	template<Model::MeshUpdateType type>
 	void Add(Local_InitLicence licence_, std::unique_ptr<Model>&& model_);
 
 	//ランタイムでPSO切り替えコストを低減させるために、モデルクラスをおなじrenderStateごとに分別する
@@ -41,7 +42,7 @@ private:
 	std::vector<SeparatedByRenderState> separatedByRenderState;
 
 	//staticかdynamicかで仕分けられている
-	std::array < std::vector<Model*>, (UINT)Model::Type::kCount > separatedByModelType;
+	std::array < std::vector<Model*>, (UINT)Model::MeshUpdateType::kCount > separatedByModelType;
 };
 
 struct ModelContext::FrontlineSystems::ModelContainer::Local_InitLicence

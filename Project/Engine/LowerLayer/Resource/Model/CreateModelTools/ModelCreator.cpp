@@ -38,7 +38,7 @@ ModelContext::ModelCreator::~ModelCreator()
 
 }
 
-template<Model::Type modelType>
+template<Model::MeshUpdateType type>
 std::vector<std::unique_ptr<Model>> ModelContext::ModelCreator::Create
 (
 	std::string const& modelFileName_,
@@ -50,8 +50,8 @@ std::vector<std::unique_ptr<Model>> ModelContext::ModelCreator::Create
 {
 	static_assert
 	(
-		modelType != Model::Type::kCount,
-		"Model::Type::KCountを選択してんじゃない ModelCreator.h"
+		type != Model::MeshUpdateType::kCount,
+		"Model::MeshUpdateType::KCountを選択してんじゃない ModelCreator.cpp"
 	);
 
 	//作成するモデルのユニーク
@@ -93,7 +93,6 @@ std::vector<std::unique_ptr<Model>> ModelContext::ModelCreator::Create
 		(
 			std::make_unique<Model>
 			(
-				modelType, 
 				modelDesc, 
 				std::move(materials)
 			)
@@ -130,7 +129,7 @@ ModelContext::ModelCreator::ModelDescParts ModelContext::ModelCreator::AssembleM
 
 
 template
-std::vector<std::unique_ptr<Model>> ModelContext::ModelCreator::Create<Model::Type::kDynamic>
+std::vector<std::unique_ptr<Model>> ModelContext::ModelCreator::Create<Model::MeshUpdateType::kDynamic>
 (
 	std::string const& modelFileName_,
 	std::vector<RenderState> const& modelRenderStates_,
@@ -140,7 +139,7 @@ std::vector<std::unique_ptr<Model>> ModelContext::ModelCreator::Create<Model::Ty
 );
 
 template
-std::vector<std::unique_ptr<Model>> ModelContext::ModelCreator::Create<Model::Type::kStatic>
+std::vector<std::unique_ptr<Model>> ModelContext::ModelCreator::Create<Model::MeshUpdateType::kStatic>
 (
 	std::string const& modelFileName_,
 	std::vector<RenderState> const& modelRenderStates_,

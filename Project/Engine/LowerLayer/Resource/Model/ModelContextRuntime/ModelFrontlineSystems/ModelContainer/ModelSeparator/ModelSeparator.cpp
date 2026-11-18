@@ -29,11 +29,10 @@ ModelContext::FrontlineSystems::ModelContainer::ModelSeparator::~ModelSeparator(
 
 }
 
-[[nodiscard]] ModelContext::FrontlineSystems::ModelContainer::ModelSeparator::Output
+[[nodiscard]] std::vector<ModelContext::FrontlineSystems::ModelContainer::SeparatedByRenderState>
 ModelContext::FrontlineSystems::ModelContainer::ModelSeparator::SeparateAllModels(std::vector<std::unique_ptr<Model>>& modelContainer_)
 {
 	std::vector<SeparatedByRenderState> separatedByRenderState;
-	std::array < std::vector<Model*>, (UINT)Model::Type::kCount> separatedByModelType;
 
 	separatedByRenderState.resize((UINT)Pass::kCount);
 
@@ -49,12 +48,9 @@ ModelContext::FrontlineSystems::ModelContainer::ModelSeparator::SeparateAllModel
 			separatedByRenderState[pass][key.second].first = key.first;
 			separatedByRenderState[pass][key.second].second.emplace_back((*itr).get());
 		}
-
-		//ランタイムデータバッチング用にモデルタイプ別に仕分けていく
-		separatedByModelType[(UINT)(*itr)->WatchModelType()].emplace_back((*itr).get());
 	}
 
-	return std::make_pair(std::move(separatedByRenderState), std::move(separatedByModelType));
+	return std::move(separatedByRenderState);
 }
 
 std::vector<std::pair<RenderStateKey, uint64_t>> ModelContext::FrontlineSystems::ModelContainer::ModelSeparator::PackToKey(Model const& model_)

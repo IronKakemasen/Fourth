@@ -32,11 +32,11 @@ void SceneBehavior::Update()
 	//ゲームオブジェクト、モデルのトランスフォームの更新フラグをリセットする
 	objSystems->ResetObjTransformFrameFlag();
 
-	modelSystems->ResetModelTransformFrameFlag<Model::Type::kDynamic>();
+	modelSystems->ResetModelTransformFrameFlag<Model::MeshUpdateType::kDynamic>();
 
 	if (output->leftStaticModelBatchingCnt == (UINT)NumBuffer::kDoubleBuffer)
 	{
-		modelSystems->ResetModelTransformFrameFlag<Model::Type::kStatic>();
+		modelSystems->ResetModelTransformFrameFlag<Model::MeshUpdateType::kStatic>();
 	}
 
 
@@ -47,11 +47,11 @@ void SceneBehavior::Update()
 	);
 	
 	//このシーンのモデルのトランスフォームのアップデートを呼ぶ
-	modelSystems->UpdateModelTransform<Model::Type::kDynamic>();
+	modelSystems->UpdateModelTransform<Model::MeshUpdateType::kDynamic>();
 	
 	if (output->leftStaticModelBatchingCnt-- == (UINT)NumBuffer::kDoubleBuffer)
 	{
-		modelSystems->UpdateModelTransform<Model::Type::kStatic>();
+		modelSystems->UpdateModelTransform<Model::MeshUpdateType::kStatic>();
 	}
 
 	//このシーンで使うカメラのアップデート
@@ -143,17 +143,17 @@ void SceneBehavior::SetSystems
 		std::get<std::unique_ptr<SceneInitInterface>>(interfaces) = 
 			std::make_unique<SceneInitInterface>
 			(
-				cameraSystems, 
-				modelSystems,
-				objSystems,
-				materialSystems
+				*cameraSystems, 
+				*modelSystems,
+				*objSystems,
+				*materialSystems
 			);
 
 		std::get<std::unique_ptr<SceneRuntimeInterface>>(interfaces) =
 			std::make_unique<SceneRuntimeInterface>
 			(
-				cameraSystems,
-				objSystems
+				*cameraSystems,
+				*objSystems
 			);
 
 	}
