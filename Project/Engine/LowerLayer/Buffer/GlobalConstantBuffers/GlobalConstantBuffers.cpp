@@ -20,7 +20,6 @@ void BufferContext::GlobalConstantBuffers::PackRuntimeContainer(NexusFieldProof 
 	//デバッグ用
 	std::vector<uint8_t> forChecking{};
 	
-
 	//昇順は担保されてるはずだからそのまま詰めてく
 	for (auto const& [key, value] : gpuVirtualAddressMap)
 	{
@@ -32,6 +31,8 @@ void BufferContext::GlobalConstantBuffers::PackRuntimeContainer(NexusFieldProof 
 		gpuVirtualAddressVector[1].emplace_back(value.second[1]);
 	}
 
+#ifdef _DEBUG
+
 	auto const numActualCBuffers = forChecking.size();
 	auto const numRequiredCBuffers = (size_t)ConstantBuffers::ConstantBufferBindSlots::kCount;
 
@@ -42,11 +43,13 @@ void BufferContext::GlobalConstantBuffers::PackRuntimeContainer(NexusFieldProof 
 		fileName
 	);
 
-	Logger::Log("===== List of cBuffer slots =====",fileName);
+	Logger::Log("===== List of cBuffer slots =====", fileName);
 	for (auto const& [key, value] : gpuVirtualAddressMap)
 	{
 		Logger::Log("Slot[" + std::to_string(key) + "]: " + value.first);
 	}
+
+#endif // _DEBUG
 
 	gpuVirtualAddressMap.clear();
 }

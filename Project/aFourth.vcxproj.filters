@@ -1898,6 +1898,9 @@
     <ClInclude Include="Engine\LowerLayer\Resource\Material\MaterialFSDispatcher\MaterialFSDispatcher.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
+    <ClInclude Include="Engine\LowerLayer\Resource\Material\MaterialContextDiplomats.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

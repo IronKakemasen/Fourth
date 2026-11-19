@@ -42,7 +42,8 @@ public:
 		UINT const frameIndex_,
 		ModelContextDiplomat& modelContextDiplomat_,
 		CameraContextDiplomat& cameraContextDiplomat_,
-		BufferContextDiplomat& bufferContextDiplomat_
+		BufferContextDiplomat& bufferContextDiplomat_,
+		MaterialContextDiplomat& materialContextDiplomat_
 	);
 
 

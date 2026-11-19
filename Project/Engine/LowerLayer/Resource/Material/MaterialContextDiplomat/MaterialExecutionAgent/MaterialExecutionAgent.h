@@ -30,7 +30,7 @@ public:
 	void WriteInAllMaterialData
 	(
 		SceneContextProof proof_,
-		std::vector<MaterialBatchFormat>& src_,
+		std::vector<MaterialBatchFormat> const& src_,
 		UINT frameIndex_,
 		BufferContextDiplomat& bufferContextDiplomat_
 	);

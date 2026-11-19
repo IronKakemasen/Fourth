@@ -60,7 +60,12 @@ public:
         uint32_t index = Hash(key_) & mask;
         ValueType value;
 
+#ifdef _DEBUG
+
         uint32_t loopNum{};
+
+#endif // _DEBUG
+
         while (true)
         {
             const Slot& slot = slots[index];
@@ -71,6 +76,8 @@ public:
                 value = slot.value;
                 break;
             }
+
+#ifdef _DEBUG
 
             //スロットが空の場合は見つからなかった証拠
             ErrorMessageOutput::Assert::DetectError
@@ -88,6 +95,9 @@ public:
                 "スロットオーバーです",
                 "ClosedHashMap.h"
             );
+
+#endif // _DEBUG
+
 
             index = NextSlot(index);
         }

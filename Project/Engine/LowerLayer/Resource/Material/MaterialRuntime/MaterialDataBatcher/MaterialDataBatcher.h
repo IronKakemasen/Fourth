@@ -25,7 +25,7 @@ public:
 	void WriteInAllMaterialData
 	(
 		AgentKey key_,
-		std::vector<MaterialBatchFormat>& src_,
+		std::vector<MaterialBatchFormat> const& src_,
 		UINT frameIndex_,
 		BufferContextDiplomat& bufferContextDiplomat_
 	);
@@ -68,7 +68,7 @@ private:
 	template<Material::Type type>
 	void WriteInMaterialData
 	(
-		MaterialBatchFormat& src_,
+		MaterialBatchFormat const& src_,
 		Material::Type& callCheck_,
 		UINT frameIndex_,
 		BufferContext::BufferDispatcher& bufferDispatcher_

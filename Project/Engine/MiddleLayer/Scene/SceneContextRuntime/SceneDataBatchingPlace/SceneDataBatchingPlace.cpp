@@ -9,6 +9,8 @@
 #include "../../../../LowerLayer/Resource/Model/ModelContextDiplomatIncludes.h"
 #include "../../../../LowerLayer/Resource/Model/ModelContextRuntime/ModelFrontlineSystems/ModelContainer/ModelContainer.h"
 
+#include "../../../../LowerLayer/Resource/Material/MaterialContextDiplomats.h"
+
 using namespace ProjectConfig::Render;
 
 void SceneContext::ScenePipeline::SceneDataBatchingPlace::BatchingPlace
@@ -17,13 +19,19 @@ void SceneContext::ScenePipeline::SceneDataBatchingPlace::BatchingPlace
 	SceneController const& sceneController_,
 	ModelContextDiplomat& modelContextDiplomat_,
 	CameraContextDiplomat& cameraContextDiplomat_,
-	BufferContextDiplomat& bufferContextDiplomat_
+	BufferContextDiplomat& bufferContextDiplomat_,
+	MaterialContextDiplomat& materialContextDiplomat_
 )
 {
 	auto const& sceneOutput = sceneController_.WatchCurrentSceneOutput();
 
+	//モデルコンテキストの代行者
+	auto& modelAgent = modelContextDiplomat_.Access<ModelContext::ExecutionAgent>();
 	//カメラコンテキストの代行者
 	auto& cameraAgent = cameraContextDiplomat_.Access<CameraContext::ExecutionAgent>();
+	//マテリアルコンテキストの代行者
+	auto& materialAgent = materialContextDiplomat_.Access<MaterialContext::ExecutionAgent>();
+
 	//カメラデータのバッチング
 	cameraAgent.BatchCameraData
 	(
@@ -33,8 +41,6 @@ void SceneContext::ScenePipeline::SceneDataBatchingPlace::BatchingPlace
 		bufferContextDiplomat_
 	);
 
-	//モデルコンテキストの代行者
-	auto& modelAgent = modelContextDiplomat_.Access<ModelContext::ExecutionAgent>();
 	
 	//モデルデータのバッチング
 	modelAgent.BatchModelData
@@ -45,7 +51,18 @@ void SceneContext::ScenePipeline::SceneDataBatchingPlace::BatchingPlace
 		bufferContextDiplomat_
 	);
 
-	if (sceneOutput.WatchLeftStaticModelBatchingCnt() <= (UINT)NumBuffer::kDoubleBuffer)
+	//マテリアルデータのバッチング
+	materialAgent.WriteInAllMaterialData
+	(
+		MaterialContext::ExecutionAgent::SceneContextProof{},
+		sceneOutput.WatchCollectedMaterialBatchFormatsArr()[UINT(Materials::UpdateType::kDynamic)],
+		frameIndex_,
+		bufferContextDiplomat_
+	);
+
+
+	//Staticなものはここでまとめて
+	if (sceneOutput.WatchLeftStaticBatchingCnt() <= (UINT)NumBuffer::kDoubleBuffer)
 	{
 		modelAgent.BatchModelData
 		(
@@ -54,6 +71,15 @@ void SceneContext::ScenePipeline::SceneDataBatchingPlace::BatchingPlace
 			sceneOutput.WatchModelContainer()->WatchSeparatedByModelType<Model::MeshUpdateType::kStatic>(),
 			bufferContextDiplomat_
 		);
+
+		materialAgent.WriteInAllMaterialData
+		(
+			MaterialContext::ExecutionAgent::SceneContextProof{},
+			sceneOutput.WatchCollectedMaterialBatchFormatsArr()[UINT(Materials::UpdateType::kStatic)],
+			frameIndex_,
+			bufferContextDiplomat_
+		);
+
 	}
 }
 
