@@ -24,7 +24,8 @@ void SceneContext::ExecutionAgent::BatchSceneData
 	UINT const frameIndex_,
 	ModelContextDiplomat& modelContextDiplomat_,
 	CameraContextDiplomat& cameraContextDiplomat_,
-	BufferContextDiplomat& bufferContextDiplomat_
+	BufferContextDiplomat& bufferContextDiplomat_,
+	MaterialContextDiplomat& materialContextDiplomat_
 )
 {
 	scenePipeline.BatchSceneData
@@ -34,6 +35,7 @@ void SceneContext::ExecutionAgent::BatchSceneData
 		frameIndex_,
 		modelContextDiplomat_,
 		cameraContextDiplomat_,
-		bufferContextDiplomat_
+		bufferContextDiplomat_,
+		materialContextDiplomat_
 	);
 }

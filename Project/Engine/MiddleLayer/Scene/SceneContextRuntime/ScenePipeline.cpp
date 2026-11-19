@@ -70,7 +70,8 @@ void SceneContext::ScenePipeline::BatchSceneData
 	UINT const frameIndex_,
 	ModelContextDiplomat& modelContextDiplomat_,
 	CameraContextDiplomat& cameraContextDiplomat_,
-	BufferContextDiplomat& bufferContextDiplomat_
+	BufferContextDiplomat& bufferContextDiplomat_,
+	MaterialContextDiplomat& materialContextDiplomat_
 )
 {
 	//シーンで使用したデータのバッチング
@@ -81,7 +82,8 @@ void SceneContext::ScenePipeline::BatchSceneData
 		*sceneController,
 		modelContextDiplomat_,
 		cameraContextDiplomat_,
-		bufferContextDiplomat_
+		bufferContextDiplomat_,
+		materialContextDiplomat_
 	);
 
 }

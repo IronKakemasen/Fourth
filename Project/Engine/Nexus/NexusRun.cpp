@@ -39,14 +39,15 @@ void Nexus::Run(aFourthProof proof_)
 	//コマンドの記録開始
 	cmd_ExecutionAgent.StartRecordingCommands(CommandContext::NexusFieldProof{}, frameIndex);
 
-	//シーンデータのバッチング
+	//シーンデータのバッファへのバッチング
 	scene_ExecutionAgent.BatchSceneData
 	(
 		SceneContext::NexusFieldProof{},
 		frameIndex,
 		modelContext->AccessDiplomat(),
 		cameraContext->AccessDiplomat(),
-		bufferContext->AccessDiplomat()
+		bufferContext->AccessDiplomat(),
+		materialContext->AccessDiplomat()
 	);
 
 	//全ての描画コマンドはここに

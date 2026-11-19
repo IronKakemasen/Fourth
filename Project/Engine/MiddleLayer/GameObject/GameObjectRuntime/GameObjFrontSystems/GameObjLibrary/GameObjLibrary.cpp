@@ -57,22 +57,22 @@ void GameObjectContext::FrontlineSystems::ObjLibrary::SortByPriority(std::vector
 		done = true;
 	}
 
-	std::string log;
 #ifdef _DEBUG
+
+	std::string log;
 
 	for (auto const& mismatchedName : mismatchedList)
 	{
 		log += mismatchedName + ",";
 	}
-
-#endif // _DEBUG
-
 	ErrorMessageOutput::Assert::DetectError
 	(
 		mismatchedList.size() == 0,
 		"ミスマッチなオブジェ優先順位名: " + log,
 		fileName
 	);
+
+#endif // _DEBUG
 
 	//doneFlagが立ってない、つまり、初期化リストに記述されていないオブジェクトを
 	//つめていく

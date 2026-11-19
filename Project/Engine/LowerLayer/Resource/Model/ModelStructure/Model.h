@@ -32,7 +32,7 @@ public:
 
 	enum class MeshUpdateType
 	{
-		//ランタイム時にバッチング、トランスフォームやマテリアルのアップデート対象から外れる
+		//ランタイム時にバッチング、アップデート対象から外れる
 		kStatic,
 		//ランタイム時にデータが変動する
 		kDynamic,
@@ -117,7 +117,7 @@ private:
 	auto const& WatchModelConstants()const { return modelDesc.WatchModelConstants(); }
 	//ドローコマンドオンリー
 	auto const& WatchMeshletSize()const { return modelDesc.WatchMeshletSize(); }
-	auto const& WatchMaterials(size_t index_) { return changeableParams.materialsContainer[index_]; }
+	auto const& WatchMaterials(size_t index_)const { return changeableParams.materialsContainer[index_]; }
 
 	auto const& WatchMaterialsContainer()const { return changeableParams.materialsContainer; }
 	auto const& WatchTransform(size_t index_)const { return changeableParams.transforms[index_]; }

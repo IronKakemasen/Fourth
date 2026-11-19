@@ -4986,6 +4986,7 @@ void BufferContext::GlobalConstantBuffers::PackRuntimeContainer(NexusFieldProof 
 		gpuVirtualAddressVector[0].emplace_back(value.second[0]);
 		gpuVirtualAddressVector[1].emplace_back(value.second[1]);
 	}
+#ifdef _DEBUG
 	auto const numActualCBuffers = forChecking.size();
 	auto const numRequiredCBuffers = (size_t)ConstantBuffers::ConstantBufferBindSlots::kCount;
 	ErrorMessageOutput::Assert::DetectError
@@ -4994,11 +4995,12 @@ void BufferContext::GlobalConstantBuffers::PackRuntimeContainer(NexusFieldProof 
 		"定数バッファの生成数が合わない実 " + std::to_string(numActualCBuffers) + " : 必 " + std::to_string(numRequiredCBuffers),
 		fileName
 	);
-	Logger::Log("===== List of cBuffer slots =====",fileName);
+	Logger::Log("===== List of cBuffer slots =====", fileName);
 	for (auto const& [key, value] : gpuVirtualAddressMap)
 	{
 		Logger::Log("Slot[" + std::to_string(key) + "]: " + value.first);
 	}
+#endif // _DEBUG
 	gpuVirtualAddressMap.clear();
 }
 void BufferContext::GlobalConstantBuffers::Import
@@ -10669,6 +10671,16 @@ private:
 };
 
 ========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Material\MaterialContextDiplomats.h ===
+========================================
+#pragma once
+#include "MaterialContextDiplomat/MaterialContextDiplomat.h"
+#include "MaterialContextDiplomat/MaterialExecutionAgent/MaterialAgentLicences.h"
+#include "MaterialContextDiplomat/MaterialExecutionAgent/MaterialExecutionAgent.h"
+#include "MaterialContextDiplomat/MaterialToolLender/MaterialToolLender.h"
+#include "MaterialContextDiplomat/MaterialToolLender/MaterialToolLenderLicences.h"
+
+========================================
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Material\MaterialAttacher\MaterialAttacher.cpp ===
 ========================================
 #include "PreCompileHeader.h"
@@ -11111,7 +11123,7 @@ MaterialContext::FrontlineSystems* MaterialContext::ExecutionAgent::DispatchFron
 void MaterialContext::ExecutionAgent::WriteInAllMaterialData
 (
 	SceneContextProof proof_,
-	std::vector<MaterialBatchFormat>& src_,
+	std::vector<MaterialBatchFormat> const& src_,
 	UINT frameIndex_,
 	BufferContextDiplomat& bufferContextDiplomat_
 )
@@ -11153,7 +11165,7 @@ public:
 	void WriteInAllMaterialData
 	(
 		SceneContextProof proof_,
-		std::vector<MaterialBatchFormat>& src_,
+		std::vector<MaterialBatchFormat> const& src_,
 		UINT frameIndex_,
 		BufferContextDiplomat& bufferContextDiplomat_
 	);
@@ -11397,7 +11409,7 @@ MaterialContext::MaterialDataBatcher::MaterialDataBatcher
 void MaterialContext::MaterialDataBatcher::WriteInAllMaterialData
 (
 	AgentKey key_,
-	std::vector<MaterialBatchFormat>& src_,
+	std::vector<MaterialBatchFormat> const& src_,
 	UINT frameIndex_,
 	BufferContextDiplomat& bufferContextDiplomat_
 ) 
@@ -11473,7 +11485,7 @@ void MaterialContext::MaterialDataBatcher::WriteInMaterialIndexGroupsArrBuffer
 template<Material::Type type>
 void MaterialContext::MaterialDataBatcher::WriteInMaterialData
 (
-	MaterialBatchFormat& src_,
+	MaterialBatchFormat const& src_,
 	Material::Type& callCheck_,
 	UINT frameIndex_,
 	BufferContext::BufferDispatcher& bufferDispatcher_
@@ -11501,7 +11513,7 @@ void MaterialContext::MaterialDataBatcher::WriteInMaterialData
 template
 void MaterialContext::MaterialDataBatcher::WriteInMaterialData<Material::Type::kStandard>
 (
-	MaterialBatchFormat& src_,
+	MaterialBatchFormat const& src_,
 	Material::Type& callCheck_,
 	UINT frameIndex_,
 	BufferContext::BufferDispatcher& bufferDispatcher_
@@ -11509,7 +11521,7 @@ void MaterialContext::MaterialDataBatcher::WriteInMaterialData<Material::Type::k
 template
 void MaterialContext::MaterialDataBatcher::WriteInMaterialData<Material::Type::kGridLine>
 (
-	MaterialBatchFormat& src_,
+	MaterialBatchFormat const& src_,
 	Material::Type& callCheck_,
 	UINT frameIndex_,
 	BufferContext::BufferDispatcher& bufferDispatcher_
@@ -11537,7 +11549,7 @@ public:
 	void WriteInAllMaterialData
 	(
 		AgentKey key_,
-		std::vector<MaterialBatchFormat>& src_,
+		std::vector<MaterialBatchFormat> const& src_,
 		UINT frameIndex_,
 		BufferContextDiplomat& bufferContextDiplomat_
 	);
@@ -11571,7 +11583,7 @@ private:
 	template<Material::Type type>
 	void WriteInMaterialData
 	(
-		MaterialBatchFormat& src_,
+		MaterialBatchFormat const& src_,
 		Material::Type& callCheck_,
 		UINT frameIndex_,
 		BufferContext::BufferDispatcher& bufferDispatcher_
@@ -14855,7 +14867,7 @@ private:
 	auto const& WatchModelConstants()const { return modelDesc.WatchModelConstants(); }
 	//ドローコマンドオンリー
 	auto const& WatchMeshletSize()const { return modelDesc.WatchMeshletSize(); }
-	auto const& WatchMaterials(size_t index_) { return changeableParams.materialsContainer[index_]; }
+	auto const& WatchMaterials(size_t index_)const { return changeableParams.materialsContainer[index_]; }
 	auto const& WatchMaterialsContainer()const { return changeableParams.materialsContainer; }
 	auto const& WatchTransform(size_t index_)const { return changeableParams.transforms[index_]; }
 	ChangeableParams changeableParams;
@@ -19318,19 +19330,19 @@ void GameObjectContext::FrontlineSystems::ObjLibrary::SortByPriority(std::vector
 		}
 		done = true;
 	}
-	std::string log;
 #ifdef _DEBUG
+	std::string log;
 	for (auto const& mismatchedName : mismatchedList)
 	{
 		log += mismatchedName + ",";
 	}
-#endif // _DEBUG
 	ErrorMessageOutput::Assert::DetectError
 	(
 		mismatchedList.size() == 0,
 		"ミスマッチなオブジェ優先順位名: " + log,
 		fileName
 	);
+#endif // _DEBUG
 	//doneFlagが立ってない、つまり、初期化リストに記述されていないオブジェクトを
 	//つめていく
 	for (auto const& [name, doneFlag_objPtrVec] : *objMapCache)
@@ -21471,7 +21483,6 @@ void RenderContext::StaticRenderGraph::PathOperator::FillInRefBufferSrvIndices
 	BufferContext::ToolLender::LicenceType<BufferContext::BufferDispatcher> bLicence;
 	auto& bufferDispatcher = *bToolLender->Lend<BufferContext::BufferDispatcher>(bLicence);
 	//参照バッファの格納順は記録しているので、そこからバッファを検索→srvIndex格納
-	auto const numRefBuffers = traceRefBuffersTag.size();
 	std::array<UINT, BuildOutput::PassSetUpper::kNumRefBufferType> refBufferCnts{};
 	for (size_t i = 0;i< traceRefBuffersTag.size();++i)
 	{
@@ -21726,7 +21737,7 @@ std::pair<std::array<ColorBuffer*, D3D12_SIMULTANEOUS_RENDER_TARGET_COUNT>,Depth
 )
 {
 	auto const numColorBuffers = colorBuffersInfo_.size();
-	std::array<ColorBuffer*, D3D12_SIMULTANEOUS_RENDER_TARGET_COUNT> colorBuffers;
+	std::array<ColorBuffer*, D3D12_SIMULTANEOUS_RENDER_TARGET_COUNT> colorBuffers{};
 	DepthStencilBuffer* depthStencilBuffer = nullptr;
 	//描画先にステートを変化するためのバリアを張る
 	for (size_t i = 0;i< numColorBuffers;++i)
@@ -23561,7 +23572,8 @@ void SceneContext::ExecutionAgent::BatchSceneData
 	UINT const frameIndex_,
 	ModelContextDiplomat& modelContextDiplomat_,
 	CameraContextDiplomat& cameraContextDiplomat_,
-	BufferContextDiplomat& bufferContextDiplomat_
+	BufferContextDiplomat& bufferContextDiplomat_,
+	MaterialContextDiplomat& materialContextDiplomat_
 )
 {
 	scenePipeline.BatchSceneData
@@ -23571,7 +23583,8 @@ void SceneContext::ExecutionAgent::BatchSceneData
 		frameIndex_,
 		modelContextDiplomat_,
 		cameraContextDiplomat_,
-		bufferContextDiplomat_
+		bufferContextDiplomat_,
+		materialContextDiplomat_
 	);
 }
 
@@ -23597,7 +23610,8 @@ public:
 		UINT const frameIndex_,
 		ModelContextDiplomat& modelContextDiplomat_,
 		CameraContextDiplomat& cameraContextDiplomat_,
-		BufferContextDiplomat& bufferContextDiplomat_
+		BufferContextDiplomat& bufferContextDiplomat_,
+		MaterialContextDiplomat& materialContextDiplomat_
 	);
 	template<typename SceneType>
 	void CreateScene
@@ -23704,7 +23718,8 @@ void SceneContext::ScenePipeline::BatchSceneData
 	UINT const frameIndex_,
 	ModelContextDiplomat& modelContextDiplomat_,
 	CameraContextDiplomat& cameraContextDiplomat_,
-	BufferContextDiplomat& bufferContextDiplomat_
+	BufferContextDiplomat& bufferContextDiplomat_,
+	MaterialContextDiplomat& materialContextDiplomat_
 )
 {
 	//シーンで使用したデータのバッチング
@@ -23715,7 +23730,8 @@ void SceneContext::ScenePipeline::BatchSceneData
 		*sceneController,
 		modelContextDiplomat_,
 		cameraContextDiplomat_,
-		bufferContextDiplomat_
+		bufferContextDiplomat_,
+		materialContextDiplomat_
 	);
 }
 
@@ -23756,7 +23772,8 @@ public:
 		UINT const frameIndex_,
 		ModelContextDiplomat& modelContextDiplomat_,
 		CameraContextDiplomat& cameraContextDiplomat_,
-		BufferContextDiplomat& bufferContextDiplomat_
+		BufferContextDiplomat& bufferContextDiplomat_,
+		MaterialContextDiplomat& materialContextDiplomat_
 	);
 	//シーンを作成する
 	//エンジンインターフェースの初期化で呼び出される
@@ -23852,6 +23869,7 @@ private:
 #include "../../../../LowerLayer/Resource/Camera/CameraContextDiplomats.h"
 #include "../../../../LowerLayer/Resource/Model/ModelContextDiplomatIncludes.h"
 #include "../../../../LowerLayer/Resource/Model/ModelContextRuntime/ModelFrontlineSystems/ModelContainer/ModelContainer.h"
+#include "../../../../LowerLayer/Resource/Material/MaterialContextDiplomats.h"
 using namespace ProjectConfig::Render;
 void SceneContext::ScenePipeline::SceneDataBatchingPlace::BatchingPlace
 (
@@ -23859,12 +23877,17 @@ void SceneContext::ScenePipeline::SceneDataBatchingPlace::BatchingPlace
 	SceneController const& sceneController_,
 	ModelContextDiplomat& modelContextDiplomat_,
 	CameraContextDiplomat& cameraContextDiplomat_,
-	BufferContextDiplomat& bufferContextDiplomat_
+	BufferContextDiplomat& bufferContextDiplomat_,
+	MaterialContextDiplomat& materialContextDiplomat_
 )
 {
 	auto const& sceneOutput = sceneController_.WatchCurrentSceneOutput();
+	//モデルコンテキストの代行者
+	auto& modelAgent = modelContextDiplomat_.Access<ModelContext::ExecutionAgent>();
 	//カメラコンテキストの代行者
 	auto& cameraAgent = cameraContextDiplomat_.Access<CameraContext::ExecutionAgent>();
+	//マテリアルコンテキストの代行者
+	auto& materialAgent = materialContextDiplomat_.Access<MaterialContext::ExecutionAgent>();
 	//カメラデータのバッチング
 	cameraAgent.BatchCameraData
 	(
@@ -23873,8 +23896,6 @@ void SceneContext::ScenePipeline::SceneDataBatchingPlace::BatchingPlace
 		frameIndex_,
 		bufferContextDiplomat_
 	);
-	//モデルコンテキストの代行者
-	auto& modelAgent = modelContextDiplomat_.Access<ModelContext::ExecutionAgent>();
 	//モデルデータのバッチング
 	modelAgent.BatchModelData
 	(
@@ -23883,13 +23904,29 @@ void SceneContext::ScenePipeline::SceneDataBatchingPlace::BatchingPlace
 		sceneOutput.WatchModelContainer()->WatchSeparatedByModelType<Model::MeshUpdateType::kDynamic>(),
 		bufferContextDiplomat_
 	);
-	if (sceneOutput.WatchLeftStaticModelBatchingCnt() <= (UINT)NumBuffer::kDoubleBuffer)
+	//マテリアルデータのバッチング
+	materialAgent.WriteInAllMaterialData
+	(
+		MaterialContext::ExecutionAgent::SceneContextProof{},
+		sceneOutput.WatchCollectedMaterialBatchFormatsArr()[UINT(Materials::UpdateType::kDynamic)],
+		frameIndex_,
+		bufferContextDiplomat_
+	);
+	//Staticなものはここでまとめて
+	if (sceneOutput.WatchLeftStaticBatchingCnt() <= (UINT)NumBuffer::kDoubleBuffer)
 	{
 		modelAgent.BatchModelData
 		(
 			ModelContext::ExecutionAgent::SceneContextProof{},
 			frameIndex_,
 			sceneOutput.WatchModelContainer()->WatchSeparatedByModelType<Model::MeshUpdateType::kStatic>(),
+			bufferContextDiplomat_
+		);
+		materialAgent.WriteInAllMaterialData
+		(
+			MaterialContext::ExecutionAgent::SceneContextProof{},
+			sceneOutput.WatchCollectedMaterialBatchFormatsArr()[UINT(Materials::UpdateType::kStatic)],
+			frameIndex_,
 			bufferContextDiplomat_
 		);
 	}
@@ -23910,7 +23947,8 @@ public:
 		SceneController const& sceneController_,
 		ModelContextDiplomat& modelContextDiplomat_,
 		CameraContextDiplomat& cameraContextDiplomat_,
-		BufferContextDiplomat& bufferContextDiplomat_
+		BufferContextDiplomat& bufferContextDiplomat_,
+		MaterialContextDiplomat& materialContextDiplomat_
 	);
 };
 
@@ -24463,7 +24501,8 @@ struct SceneBehavior::Output
 	friend class SceneBehavior;
 	auto const& WatchUsingCamera()const { return usingCamera; }
 	auto const* WatchModelContainer()const { return modelContainer; }
-	auto const& WatchLeftStaticModelBatchingCnt()const { return leftStaticBatchingCnt; }
+	auto const& WatchLeftStaticBatchingCnt()const { return leftStaticBatchingCnt; }
+	auto const& WatchCollectedMaterialBatchFormatsArr()const{return (*materialBatchFormatsPtr);}
 private:
 	//全描画対象のバッチングに必要なMaterialBatchFormatのコンテナ
 	std::array<std::vector<MaterialBatchFormat>, (UINT)Materials::UpdateType::kCount>*
@@ -25166,14 +25205,15 @@ void Nexus::Run(aFourthProof proof_)
 	auto const frameIndex = swap_ExecutionAgent.GetFrameIndex(SwapChainContext::NexusFieldProof{});
 	//コマンドの記録開始
 	cmd_ExecutionAgent.StartRecordingCommands(CommandContext::NexusFieldProof{}, frameIndex);
-	//シーンデータのバッチング
+	//シーンデータのバッファへのバッチング
 	scene_ExecutionAgent.BatchSceneData
 	(
 		SceneContext::NexusFieldProof{},
 		frameIndex,
 		modelContext->AccessDiplomat(),
 		cameraContext->AccessDiplomat(),
-		bufferContext->AccessDiplomat()
+		bufferContext->AccessDiplomat(),
+		materialContext->AccessDiplomat()
 	);
 	//全ての描画コマンドはここに
 	render_ExecutionAgent.RenderGraphRun
@@ -25397,7 +25437,9 @@ public:
     {
         uint32_t index = Hash(key_) & mask;
         ValueType value;
+#ifdef _DEBUG
         uint32_t loopNum{};
+#endif // _DEBUG
         while (true)
         {
             const Slot& slot = slots[index];
@@ -25407,6 +25449,7 @@ public:
                 value = slot.value;
                 break;
             }
+#ifdef _DEBUG
             //スロットが空の場合は見つからなかった証拠
             ErrorMessageOutput::Assert::DetectError
             (
@@ -25421,6 +25464,7 @@ public:
                 "スロットオーバーです",
                 "ClosedHashMap.h"
             );
+#endif // _DEBUG
             index = NextSlot(index);
         }
         return value;
@@ -26165,5 +26209,5 @@ namespace StringProcessing
 ========================================
 === SUMMARY ===
 ========================================
-Total Files      : 580
-Effective Lines  : 19044
+Total Files      : 581
+Effective Lines  : 19068

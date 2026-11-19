@@ -27,7 +27,7 @@ MaterialContext::MaterialDataBatcher::MaterialDataBatcher
 void MaterialContext::MaterialDataBatcher::WriteInAllMaterialData
 (
 	AgentKey key_,
-	std::vector<MaterialBatchFormat>& src_,
+	std::vector<MaterialBatchFormat> const& src_,
 	UINT frameIndex_,
 	BufferContextDiplomat& bufferContextDiplomat_
 ) 
@@ -120,7 +120,7 @@ void MaterialContext::MaterialDataBatcher::WriteInMaterialIndexGroupsArrBuffer
 template<Material::Type type>
 void MaterialContext::MaterialDataBatcher::WriteInMaterialData
 (
-	MaterialBatchFormat& src_,
+	MaterialBatchFormat const& src_,
 	Material::Type& callCheck_,
 	UINT frameIndex_,
 	BufferContext::BufferDispatcher& bufferDispatcher_
@@ -156,7 +156,7 @@ void MaterialContext::MaterialDataBatcher::WriteInMaterialData
 template
 void MaterialContext::MaterialDataBatcher::WriteInMaterialData<Material::Type::kStandard>
 (
-	MaterialBatchFormat& src_,
+	MaterialBatchFormat const& src_,
 	Material::Type& callCheck_,
 	UINT frameIndex_,
 	BufferContext::BufferDispatcher& bufferDispatcher_
@@ -165,7 +165,7 @@ void MaterialContext::MaterialDataBatcher::WriteInMaterialData<Material::Type::k
 template
 void MaterialContext::MaterialDataBatcher::WriteInMaterialData<Material::Type::kGridLine>
 (
-	MaterialBatchFormat& src_,
+	MaterialBatchFormat const& src_,
 	Material::Type& callCheck_,
 	UINT frameIndex_,
 	BufferContext::BufferDispatcher& bufferDispatcher_

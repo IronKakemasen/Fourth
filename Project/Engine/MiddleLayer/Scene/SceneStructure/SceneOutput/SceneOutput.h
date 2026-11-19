@@ -16,7 +16,8 @@ struct SceneBehavior::Output
 
 	auto const& WatchUsingCamera()const { return usingCamera; }
 	auto const* WatchModelContainer()const { return modelContainer; }
-	auto const& WatchLeftStaticModelBatchingCnt()const { return leftStaticBatchingCnt; }
+	auto const& WatchLeftStaticBatchingCnt()const { return leftStaticBatchingCnt; }
+	auto const& WatchCollectedMaterialBatchFormatsArr()const{return (*materialBatchFormatsPtr);}
 
 private:
 	//全描画対象のバッチングに必要なMaterialBatchFormatのコンテナ
