@@ -1,3 +1,8 @@
+#include "../../HLSLI/MaterialCommon.hlsli"
+
+
+//ーーーシェーダートイで公開されていたグリッド描画コードをAIに簡略化してもらいましたーーー
+
 //https://www.shadertoy.com/view/XtBfzz
 
 // The MIT License
@@ -16,28 +21,20 @@
 
 
 
-
-cbuffer GridConstants : register(b0)
-{
-    float4 GridColor;
-    float4 BackgroundColor;
-
-    float GridScale;
-    float GridRatio;
-    float2 Padding;
-};
-
 struct PSInput
 {
     float4 position : SV_Position;
     float2 uv : TEXCOORD0;
 };
 
-// ShaderToy original analytic grid filtering
-float gridTextureGradBox(
+
+float gridTextureGradBox
+(
     float2 p,
     float2 ddxUV,
-    float2 ddyUV)
+    float2 ddyUV,
+    float gridRatio_
+)
 {
     float2 w = max(abs(ddxUV), abs(ddyUV)) + 0.01;
 
@@ -46,26 +43,30 @@ float gridTextureGradBox(
 
     float2 i =
         (
-            floor(a) + min(frac(a) * GridRatio, 1.0)
-            - floor(b) - min(frac(b) * GridRatio, 1.0)
-        ) / (GridRatio * w);
+            floor(a) + min(frac(a) * gridRatio_, 1.0)
+            - floor(b) - min(frac(b) * gridRatio_, 1.0)
+        ) / (gridRatio_ * w);
 
     return (1.0 - i.x) * (1.0 - i.y);
 }
 
 // Pixel Shader
-float4 PSMain(PSInput input) : SV_Target
+float4 main(PSInput input) : SV_Target
 {
-    float2 uv = input.uv * GridScale;
+    
+    MaterialGridLine materialGridLine = LoadMaterialGridLine(gMaterialID);
+    
+    float2 uv = input.uv * materialGridLine.gridScale;
 
     float2 dx = ddx(uv);
     float2 dy = ddy(uv);
 
-    float grid = gridTextureGradBox(uv, dx, dy);
+    float grid = gridTextureGradBox(uv, dx, dy, materialGridLine.gridRatio);
 
-    float3 color = lerp(
-        BackgroundColor.rgb,
-        GridColor.rgb,
+    float3 color = lerp
+    (
+        materialGridLine.backgroundColor.rgb,
+        materialGridLine.gridColor.rgb,
         grid
     );
 

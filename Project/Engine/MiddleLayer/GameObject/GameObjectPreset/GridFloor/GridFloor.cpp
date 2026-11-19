@@ -5,6 +5,22 @@
 
 void GridFloor::Update(SceneRuntimeInterface& sceneRuntimeInterface_)
 {
+	//static Vector3 r;
+	//static Vector3 t;
+	//static Vector4<float> c = {0.0f,0.0f ,0.0f ,1.0f};
+
+	//r += {0.016f, 0.016f, 0.016f };
+	//c += {0.0016f, 0.0025f, 0.005f, 0.0f };
+
+	//for (int i = 0;i < 10;++i)
+	//{
+	//	p[i]->RefTransform(0).Rotate(r);
+	//	p[i]->RefMaterials(0).Ref<Material::Type::kStandard>().baseColor = c;
+	//}
+
+	//t.data.z += 0.01666f;
+
+	//RefSystem<Transform>().TranslatePosition(t);
 
 }
 
@@ -17,6 +33,8 @@ void GridFloor::Reset()
 //実質、コンストラクタの代わり
 void GridFloor::Awake(SceneInitInterface& sceneInitInterface_)
 {
+	sceneInitInterface_.AttachSystem<Transform>(*this);
+
 	RenderState cP;
 	cP.blendModes.emplace_back(BlendMode::kOpaque);
 	cP.blendModes.emplace_back(BlendMode::kAlphaBlend);
@@ -25,7 +43,7 @@ void GridFloor::Awake(SceneInitInterface& sceneInitInterface_)
 	cP.pass = Pass::kSceneOpaque;	
 	cP.cullMode = CullMode::kBack;
 	cP.meshType = MeshType::kStatic;
-	cP.materialTypes.emplace_back(Material::Type::kStandard);
+	cP.materialTypes.emplace_back(Material::Type::kGridLine);
 	std::vector<RenderState> playerC;
 	playerC.emplace_back(std::move(cP));
 
@@ -34,11 +52,13 @@ void GridFloor::Awake(SceneInitInterface& sceneInitInterface_)
 	materials[0].albedoTexSamplerState = SamplerState::kLinearClamp;
 
 	p = sceneInitInterface_.CreateModel<Model::MeshUpdateType::kDynamic,Materials::UpdateType::kDynamic>
-		("Plane200x200Obj", playerC, materials, 1, "Player");
-	for (int i = 0;i < 1;++i)
-	{
-		p[i]->RefTransform(0).TranslatePosition({ 1.5f,-5,100 });
-	}
+		("Plane200x200Obj", playerC, materials, 10, "Player");
+	//for (int i = 0;i < 10;++i)
+	//{
+	//	RefSystem<Transform>().BeParent(&p[i]->RefTransform(0));
+
+	//	p[i]->RefTransform(0).TranslatePosition({ -8.0f + float(2.5f * float(i)),-2.0,1.0f });
+	//}
 
 	
 }
@@ -47,7 +67,7 @@ void GridFloor::Awake(SceneInitInterface& sceneInitInterface_)
 //検索などはできる
 void GridFloor::Start(SceneRuntimeInterface& sceneRuntimeInterface_)
 {
-	
+
 }
 
 

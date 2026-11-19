@@ -9,7 +9,6 @@ GameObjectContext::FrontlineSystems::GameObjController::GameObjController(NexusF
 }
 
 
-
 void GameObjectContext::FrontlineSystems::GameObjController::Run
 (
 	ObjLibrary& objLibrary_,
@@ -23,18 +22,16 @@ void GameObjectContext::FrontlineSystems::GameObjController::ResetObjTransformFr
 {
 	auto& sortedObjContainer = objLibrary_.RefSortedObjContainer();
 
-	//トランスフォームの1フレーム１キリ更新フラグをリセットする
+	//トランスフォームのフレームフラグ関連をリセットする
 	for (auto* obj : sortedObjContainer)
 	{
 		//ゲームオブジェクトのトランスフォームの更新
-		auto* trans = obj->GetSystemPtr<Transform>();
+		auto& trans = obj->RefSystem<Transform>();
 
-		if (trans)
-		{
-			trans->ResetFrameFlag();
-			//冒頭の減算でカウンタが2になるのは、今フレームで再計算されたときだけにする
-			trans->DecrementNeedOverrideBufferCnt();
-		}
+		//更新1フレームガードをリセット
+		trans.ResetFrameFlag();
+		//冒頭の減算でカウンタが2になるのは、今フレームで再計算されたときだけにする
+		trans.DecrementNeedOverrideBufferCnt();
 	}
 
 }
@@ -54,12 +51,9 @@ void GameObjectContext::FrontlineSystems::GameObjController::UpdateAllGameObj
 		obj->Update(runtimeInterface_);
 
 		//ゲームオブジェクトのトランスフォームの更新
-		auto* trans = obj->GetSystemPtr<Transform>();
+		auto& trans = obj->RefSystem<Transform>();
 		
-		if (trans)
-		{
-			trans->Update();
-		}
+		trans.Update();
 	}
 }
 

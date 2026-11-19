@@ -1,7 +1,6 @@
 #include "ShaderLibrary.h"
 #include "../ShaderLoader/ShaderCompiler/ShaderCompiler.h"
 
-#include <regex>
 
 
 namespace
@@ -17,8 +16,10 @@ ShaderContext::ShaderLibrary::ShaderLibrary(NexusFieldProof proof_)
 ///+//////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+//////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+//////////////////////////////////////////////////////////////////////////////////////////////////////
-IDxcBlob* ShaderContext::ShaderLibrary::Export(std::string fileName_)
-{   
+IDxcBlob* ShaderContext::ShaderLibrary::Export(std::string const& fileName_)
+{
+#ifdef _DEBUG
+
     ErrorMessageOutput::Assert::DetectError
     (
         data.find(fileName_) != data.end(),
@@ -33,6 +34,7 @@ IDxcBlob* ShaderContext::ShaderLibrary::Export(std::string fileName_)
         fileName
     );
 
+#endif
 
 
     return data[fileName_].Get();

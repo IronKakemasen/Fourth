@@ -74,17 +74,6 @@ void ModelContext::ModelDataBatcher::OverrideBuffer<ConstantBuffers::ConstantBuf
 	IWritableCPU* writeDstBufferPtr_
 );
 
-//template<>
-//void ModelContext::ModelDataBatcher::OverrideBuffer<ConstantBuffers::ConstantBufferBindSlots::kMaterialContainer>
-//(
-//	UINT const frameIndex_,
-//	Model& model_,
-//	std::vector<ConstantBuffers::ModelConstantsCPUGPU> const& modelConstants_,
-//	size_t const numMesh_,
-//	IWritableCPU* writeDstBufferPtr_
-//);
-
-
 template<>
 struct ModelContext::ModelDataBatcher::BufferTypeTraits
 	<ConstantBuffers::ConstantBufferBindSlots::kTransformMatrixContainer>

@@ -23,8 +23,8 @@ void ShaderContext::ShaderLoader::CompileAllShaderFiles(NexusFieldProof proof_, 
     ShaderContext::Compiler compiler(proof_);
 
     //シェーダーモデル
-    auto const psProfile = L"ps_6_6";
-    auto const msProfile = L"ms_6_6";
+    static auto const psProfile = L"ps_6_6";
+    static auto const msProfile = L"ms_6_6";
 
     //メッシュシェーダーファイル名とそのパスが登録されているファイル
     std::unordered_map<std::string, std::string> shaderRegistryMS =

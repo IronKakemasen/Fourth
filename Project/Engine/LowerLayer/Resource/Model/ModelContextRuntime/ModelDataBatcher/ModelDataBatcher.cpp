@@ -38,10 +38,6 @@ void ModelContext::ModelDataBatcher::BatchModelData
 	BufferUniqueID transformContainerBufferID = perDrawBufferLibrary->Export<ConstantBufferBindSlots::kTransformMatrixContainer>();
 	auto dstWriteBufferTransform = static_cast<IWritableCPU*>(static_cast<UploadStructuredBuffer*>(dispatcher.Dispatch(transformContainerBufferID)));
 
-	////マテリアルの書き込み先バッファ
-	//BufferUniqueID materialContainerBufferID = perDrawBufferLibrary->Export<ConstantBufferBindSlots::kMaterialContainer>();
-	//auto dstWriteBufferMaterial = static_cast<IWritableCPU*>(static_cast<UploadStructuredBuffer*>(dispatcher.Dispatch(materialContainerBufferID)));
-
 	//モデルの所持するデータをバッファに書き込んでいく
 	for (Model* model : models_)
 	{
@@ -56,15 +52,6 @@ void ModelContext::ModelDataBatcher::BatchModelData
 			numMeshes,
 			dstWriteBufferTransform
 		);
-
-		//OverrideBuffer<ConstantBuffers::ConstantBufferBindSlots::kMaterialContainer>
-		//(
-		//	frameIndex_,
-		//	*model,
-		//	modelConstants,
-		//	numMeshes,
-		//	dstWriteBufferMaterial
-		//);
 	}
 }
 
@@ -97,30 +84,6 @@ void ModelContext::ModelDataBatcher::OverrideBuffer<ConstantBufferBindSlots::kTr
 
 }
 
-//template<>
-//void ModelContext::ModelDataBatcher::OverrideBuffer<ConstantBufferBindSlots::kMaterialContainer>
-//(
-//	UINT const frameIndex_,
-//	Model& model_,
-//	std::vector<ConstantBuffers::ModelConstantsCPUGPU> const& modelConstants_,
-//	size_t const numMesh_,
-//	IWritableCPU* writeDstBufferPtr_
-//)
-//{
-//	////やってることはトランスフォームとほぼ変わらない。
-//	//for (size_t i = 0;i < numMesh_;++i)
-//	//{
-//	//	//そのマテリアルがダーティじゃないなら書き込まない
-//	//	if (!model_.IsMaterialDirty(i)) continue;
-//	//	
-//	//	writeDstBufferPtr_->WriteElement(frameIndex_, model_.WatchMaterial(i), modelConstants_[i].materialID);
-//
-//	//	//マテリアルダーティのカウントを１つ消去
-//	//	model_.DecrementMaterialDirtyCnt(i);
-//	//}
-//}
-
-
 template<ConstantBufferBindSlots bindSlot>
 void ModelContext::ModelDataBatcher::ImportPerDrawBufferID
 (Local_InputBufferUniqueIDLicence licence_, BufferUniqueID id_)
@@ -132,7 +95,3 @@ void ModelContext::ModelDataBatcher::ImportPerDrawBufferID
 template
 void ModelContext::ModelDataBatcher::ImportPerDrawBufferID<ConstantBufferBindSlots::kTransformMatrixContainer>
 (Local_InputBufferUniqueIDLicence licence_, BufferUniqueID id_);
-
-//template
-//void ModelContext::ModelDataBatcher::ImportPerDrawBufferID<ConstantBufferBindSlots::kMaterialContainer>
-//(Local_InputBufferUniqueIDLicence licence_, BufferUniqueID id_);

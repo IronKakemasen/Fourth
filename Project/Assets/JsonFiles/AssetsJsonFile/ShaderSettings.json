@@ -23,5 +23,10 @@
                              "Args":  [
                                           "none"
                                       ]
-                         }
+                         },
+    "FilteredGridPS":  {
+                           "Args":  [
+                                        "none"
+                                    ]
+                       }
 }
