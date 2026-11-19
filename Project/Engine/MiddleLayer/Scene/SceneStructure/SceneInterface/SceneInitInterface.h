@@ -78,7 +78,7 @@ public:
 
 	//描画対象にマテリアルをアタッチする
 	template<Material::Type type>
-	auto& Attach(Materials& dst_)
+	auto& AttachMaterial(Materials& dst_)
 	{
 		return materialSystems.AttachMaterial<type>(dst_);
 	}

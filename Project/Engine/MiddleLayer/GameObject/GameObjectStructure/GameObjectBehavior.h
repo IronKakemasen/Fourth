@@ -29,11 +29,21 @@ public:
 
 	//システムのポインタを取得
 	template<typename SystemType>
-	auto* GetSystemPtr()
+	auto& RefSystem()
 	{
-		return 
-		std::get<std::unique_ptr<SystemType>>(systems) ?
-		std::get<std::unique_ptr<SystemType>>(systems).get() : nullptr;
+#ifdef _DEBUG
+
+		ErrorMessageOutput::Assert::DetectError
+		(
+			std::get<std::unique_ptr<SystemType>>(systems).get(),
+			"アタッチしていないシステムの参照を取得すな",
+			"GameObjectContext.h"
+		);
+
+#endif // _DEBUG
+
+
+		return *std::get<std::unique_ptr<SystemType>>(systems);
 	}
 
 	Status WatchStatus()const { return status; }

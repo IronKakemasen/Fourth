@@ -148,14 +148,6 @@ struct Material::MaterialTypeTraits<Material::Type::kGridLine>
 
 #else
 
-struct MaterialGridLine
-{
-    float4 gridColor;
-    float4 backgroundColor;
-    float gridScale;
-    float gridRatio;
-};
-
 struct MaterialStandard
 {
     uint albedoIndex;
@@ -165,6 +157,14 @@ struct MaterialStandard
     float roughness;
     float metallic;
     uint samplerState;
+};
+
+struct MaterialGridLine
+{
+    float4 gridColor;
+    float4 backgroundColor;
+    float gridScale;
+    float gridRatio;
 };
 
 

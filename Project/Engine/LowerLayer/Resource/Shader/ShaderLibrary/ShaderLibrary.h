@@ -8,7 +8,7 @@ public:
 	ShaderLibrary(NexusFieldProof proof_);
 
 	///シェーダーバイナリオブジェのポインタを輸出
-	IDxcBlob* Export(std::string fileName_);
+	IDxcBlob* Export(std::string const& fileName_);
 	//輸入
 	void Import(NexusFieldProof proof_, const std::string& fileName_, Microsoft::WRL::ComPtr<IDxcBlob>&& data_);
 

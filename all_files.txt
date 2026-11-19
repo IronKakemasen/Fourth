@@ -14798,7 +14798,7 @@ class Model
 public:
 	enum class MeshUpdateType
 	{
-		//ランタイム時にバッチング、トランスフォームやマテリアルのアップデート対象から外れる
+		//ランタイム時にバッチング、アップデート対象から外れる
 		kStatic,
 		//ランタイム時にデータが変動する
 		kDynamic,
@@ -16997,7 +16997,6 @@ private:
 ========================================
 #include "ShaderLibrary.h"
 #include "../ShaderLoader/ShaderCompiler/ShaderCompiler.h"
-#include <regex>
 namespace
 {
     std::string const fileName = "ShaderLibrary.cpp";
@@ -17008,8 +17007,9 @@ ShaderContext::ShaderLibrary::ShaderLibrary(NexusFieldProof proof_)
 ///+//////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+//////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+//////////////////////////////////////////////////////////////////////////////////////////////////////
-IDxcBlob* ShaderContext::ShaderLibrary::Export(std::string fileName_)
-{   
+IDxcBlob* ShaderContext::ShaderLibrary::Export(std::string const& fileName_)
+{
+#ifdef _DEBUG
     ErrorMessageOutput::Assert::DetectError
     (
         data.find(fileName_) != data.end(),
@@ -17022,6 +17022,7 @@ IDxcBlob* ShaderContext::ShaderLibrary::Export(std::string fileName_)
         fileName_ + "このキーの中身がない",
         fileName
     );
+#endif
     return data[fileName_].Get();
 }
 ///+//////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -17048,7 +17049,7 @@ class ShaderContext::ShaderLibrary
 public:
 	ShaderLibrary(NexusFieldProof proof_);
 	///シェーダーバイナリオブジェのポインタを輸出
-	IDxcBlob* Export(std::string fileName_);
+	IDxcBlob* Export(std::string const& fileName_);
 	//輸入
 	void Import(NexusFieldProof proof_, const std::string& fileName_, Microsoft::WRL::ComPtr<IDxcBlob>&& data_);
 private:
@@ -17079,8 +17080,8 @@ void ShaderContext::ShaderLoader::CompileAllShaderFiles(NexusFieldProof proof_, 
 {
     ShaderContext::Compiler compiler(proof_);
     //シェーダーモデル
-    auto const psProfile = L"ps_6_6";
-    auto const msProfile = L"ms_6_6";
+    static auto const psProfile = L"ps_6_6";
+    static auto const msProfile = L"ms_6_6";
     //メッシュシェーダーファイル名とそのパスが登録されているファイル
     std::unordered_map<std::string, std::string> shaderRegistryMS =
         RegistryLoader::Load<RegistryLoader::RegistryFileType::kMSFiles>();
@@ -17429,12 +17430,14 @@ namespace ShaderTable
 			);
 			break;
 		}
+#ifdef _DEBUG
 		ErrorMessageOutput::Assert::DetectError
 		(
 			meshShader.size() > 0,
 			"shaderTableにて設定外の組み合わせがきた(メッシュシェーダ)",
 			"ShaderTable.h"
 		);
+#endif // _DEBUG
 		return meshShader;
 	}
 	inline std::optional<std::string> const GetPixelShader(RenderPassComponent::Pass pass_, Material::Type materialType_)
@@ -18737,27 +18740,128 @@ inline Vector3 operator*(const float num_,Vector3 const& vec_)
 #pragma once
 ///CPU⇔GPUデータ間のやり取りで使う
 ///データアライメント揃えるの汚いしバグの温床なんで
+///operatorはAIに出力してもらいました
+#pragma once
+#include <array>
+#include <cstddef>
+#include <type_traits>
 template<typename T>
 struct Vector4
 {
-	T x{};
-	T y{};
-	T z{};
-	T w{};
-	Vector4(std::array<T,4>const& entries) : x(entries[0]), y(entries[1]), z(entries[2]), w(entries[3]) {}
-	Vector4(T x_, T y_, T z_, T w_) : x(x_), y(y_), z(z_), w(w_) {}
-	Vector4() = default;
-	auto operator*(float scalar_) const
-	{
-		return Vector4<T>
-		{
-			static_cast<T>(x* scalar_),
-			static_cast<T>(y* scalar_),
-			static_cast<T>(z* scalar_),
-			static_cast<T>(w* scalar_)
-		};
-	}
+    T x{};
+    T y{};
+    T z{};
+    T w{};
+    constexpr Vector4() = default;
+    constexpr Vector4(T x_, T y_, T z_, T w_)
+        : x(x_), y(y_), z(z_), w(w_)
+    {
+    }
+    constexpr Vector4(const std::array<T, 4>& entries)
+        : x(entries[0]), y(entries[1]), z(entries[2]), w(entries[3])
+    {
+    }
+    constexpr T& operator[](std::size_t index)
+    {
+        return (&x)[index];
+    }
+    constexpr const T& operator[](std::size_t index) const
+    {
+        return (&x)[index];
+    }
+    constexpr Vector4 operator+() const
+    {
+        return *this;
+    }
+    constexpr Vector4 operator-() const
+    {
+        return Vector4(-x, -y, -z, -w);
+    }
+    constexpr Vector4& operator+=(const Vector4& rhs)
+    {
+        x += rhs.x;
+        y += rhs.y;
+        z += rhs.z;
+        w += rhs.w;
+        return *this;
+    }
+    constexpr Vector4& operator-=(const Vector4& rhs)
+    {
+        x -= rhs.x;
+        y -= rhs.y;
+        z -= rhs.z;
+        w -= rhs.w;
+        return *this;
+    }
+    template<typename U, typename = std::enable_if_t<std::is_arithmetic_v<U>>>
+    constexpr auto operator*(U scalar) const
+        -> Vector4<std::common_type_t<T, U>>
+    {
+        using R = std::common_type_t<T, U>;
+        return Vector4<R>(
+            static_cast<R>(x) * static_cast<R>(scalar),
+            static_cast<R>(y) * static_cast<R>(scalar),
+            static_cast<R>(z) * static_cast<R>(scalar),
+            static_cast<R>(w) * static_cast<R>(scalar)
+        );
+    }
+    template<typename U, typename = std::enable_if_t<std::is_arithmetic_v<U>>>
+    constexpr auto operator/(U scalar) const
+        -> Vector4<std::common_type_t<T, U>>
+    {
+        using R = std::common_type_t<T, U>;
+        return Vector4<R>(
+            static_cast<R>(x) / static_cast<R>(scalar),
+            static_cast<R>(y) / static_cast<R>(scalar),
+            static_cast<R>(z) / static_cast<R>(scalar),
+            static_cast<R>(w) / static_cast<R>(scalar)
+        );
+    }
+    template<typename U, typename = std::enable_if_t<std::is_arithmetic_v<U>>>
+    constexpr Vector4& operator*=(U scalar)
+    {
+        x = static_cast<T>(x * scalar);
+        y = static_cast<T>(y * scalar);
+        z = static_cast<T>(z * scalar);
+        w = static_cast<T>(w * scalar);
+        return *this;
+    }
+    template<typename U, typename = std::enable_if_t<std::is_arithmetic_v<U>>>
+    constexpr Vector4& operator/=(U scalar)
+    {
+        x = static_cast<T>(x / scalar);
+        y = static_cast<T>(y / scalar);
+        z = static_cast<T>(z / scalar);
+        w = static_cast<T>(w / scalar);
+        return *this;
+    }
+    constexpr bool operator==(const Vector4& rhs) const
+    {
+        return x == rhs.x && y == rhs.y && z == rhs.z && w == rhs.w;
+    }
+    constexpr bool operator!=(const Vector4& rhs) const
+    {
+        return !(*this == rhs);
+    }
 };
+template<typename T>
+constexpr Vector4<T> operator+(Vector4<T> lhs, const Vector4<T>& rhs)
+{
+    lhs += rhs;
+    return lhs;
+}
+template<typename T>
+constexpr Vector4<T> operator-(Vector4<T> lhs, const Vector4<T>& rhs)
+{
+    lhs -= rhs;
+    return lhs;
+}
+template<typename U, typename T, typename = std::enable_if_t<std::is_arithmetic_v<U>>>
+constexpr auto operator*(U scalar, const Vector4<T>& vector)
+-> Vector4<std::common_type_t<T, U>>
+{
+    return vector * scalar;
+}
 
 ========================================
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\MiddleLayer\GameObject\GameObjectContext.cpp ===
@@ -18956,6 +19060,18 @@ public:
 #include "GameObjectSpecification.h"
 void GridFloor::Update(SceneRuntimeInterface& sceneRuntimeInterface_)
 {
+	//static Vector3 r;
+	//static Vector3 t;
+	//static Vector4<float> c = {0.0f,0.0f ,0.0f ,1.0f};
+	//r += {0.016f, 0.016f, 0.016f };
+	//c += {0.0016f, 0.0025f, 0.005f, 0.0f };
+	//for (int i = 0;i < 10;++i)
+	//{
+	//	p[i]->RefTransform(0).Rotate(r);
+	//	p[i]->RefMaterials(0).Ref<Material::Type::kStandard>().baseColor = c;
+	//}
+	//t.data.z += 0.01666f;
+	//RefSystem<Transform>().TranslatePosition(t);
 }
 //ゲームオブジェクトのリセットに使用。シーンが切り替わった時に呼ばれる
 void GridFloor::Reset()
@@ -18964,6 +19080,7 @@ void GridFloor::Reset()
 //実質、コンストラクタの代わり
 void GridFloor::Awake(SceneInitInterface& sceneInitInterface_)
 {
+	sceneInitInterface_.AttachSystem<Transform>(*this);
 	RenderState cP;
 	cP.blendModes.emplace_back(BlendMode::kOpaque);
 	cP.blendModes.emplace_back(BlendMode::kAlphaBlend);
@@ -18971,18 +19088,19 @@ void GridFloor::Awake(SceneInitInterface& sceneInitInterface_)
 	cP.pass = Pass::kSceneOpaque;	
 	cP.cullMode = CullMode::kBack;
 	cP.meshType = MeshType::kStatic;
-	cP.materialTypes.emplace_back(Material::Type::kStandard);
+	cP.materialTypes.emplace_back(Material::Type::kGridLine);
 	std::vector<RenderState> playerC;
 	playerC.emplace_back(std::move(cP));
 	std::vector<Material::StandardCPU> materials;
 	materials.resize(1);
 	materials[0].albedoTexSamplerState = SamplerState::kLinearClamp;
 	p = sceneInitInterface_.CreateModel<Model::MeshUpdateType::kDynamic,Materials::UpdateType::kDynamic>
-		("Plane200x200Obj", playerC, materials, 1, "Player");
-	for (int i = 0;i < 1;++i)
-	{
-		p[i]->RefTransform(0).TranslatePosition({ 1.5f,-5,100 });
-	}
+		("Plane200x200Obj", playerC, materials, 10, "Player");
+	//for (int i = 0;i < 10;++i)
+	//{
+	//	RefSystem<Transform>().BeParent(&p[i]->RefTransform(0));
+	//	p[i]->RefTransform(0).TranslatePosition({ -8.0f + float(2.5f * float(i)),-2.0,1.0f });
+	//}
 }
 //更新処理の直前に呼ばれる。他のゲームオブジェクトはこの時点で生成されているので
 //検索などはできる
@@ -19156,17 +19274,15 @@ void GameObjectContext::FrontlineSystems::GameObjController::Run
 void GameObjectContext::FrontlineSystems::GameObjController::ResetObjTransformFrameFlag(ObjLibrary& objLibrary_)
 {
 	auto& sortedObjContainer = objLibrary_.RefSortedObjContainer();
-	//トランスフォームの1フレーム１キリ更新フラグをリセットする
+	//トランスフォームのフレームフラグ関連をリセットする
 	for (auto* obj : sortedObjContainer)
 	{
 		//ゲームオブジェクトのトランスフォームの更新
-		auto* trans = obj->GetSystemPtr<Transform>();
-		if (trans)
-		{
-			trans->ResetFrameFlag();
-			//冒頭の減算でカウンタが2になるのは、今フレームで再計算されたときだけにする
-			trans->DecrementNeedOverrideBufferCnt();
-		}
+		auto& trans = obj->RefSystem<Transform>();
+		//更新1フレームガードをリセット
+		trans.ResetFrameFlag();
+		//冒頭の減算でカウンタが2になるのは、今フレームで再計算されたときだけにする
+		trans.DecrementNeedOverrideBufferCnt();
 	}
 }
 void GameObjectContext::FrontlineSystems::GameObjController::UpdateAllGameObj
@@ -19182,11 +19298,8 @@ void GameObjectContext::FrontlineSystems::GameObjController::UpdateAllGameObj
 		//ゲームオブジェクトの更新処理
 		obj->Update(runtimeInterface_);
 		//ゲームオブジェクトのトランスフォームの更新
-		auto* trans = obj->GetSystemPtr<Transform>();
-		if (trans)
-		{
-			trans->Update();
-		}
+		auto& trans = obj->RefSystem<Transform>();
+		trans.Update();
 	}
 }
 void GameObjectContext::FrontlineSystems::GameObjController::InitAllGameObj
@@ -19477,11 +19590,17 @@ public:
 	virtual ~GameObjectBehavior() = default;
 	//システムのポインタを取得
 	template<typename SystemType>
-	auto* GetSystemPtr()
+	auto& RefSystem()
 	{
-		return 
-		std::get<std::unique_ptr<SystemType>>(systems) ?
-		std::get<std::unique_ptr<SystemType>>(systems).get() : nullptr;
+#ifdef _DEBUG
+		ErrorMessageOutput::Assert::DetectError
+		(
+			std::get<std::unique_ptr<SystemType>>(systems).get(),
+			"アタッチしていないシステムの参照を取得すな",
+			"GameObjectContext.h"
+		);
+#endif // _DEBUG
+		return *std::get<std::unique_ptr<SystemType>>(systems);
 	}
 	Status WatchStatus()const { return status; }
 private:
@@ -24435,7 +24554,7 @@ public:
 	}
 	//描画対象にマテリアルをアタッチする
 	template<Material::Type type>
-	auto& Attach(Materials& dst_)
+	auto& AttachMaterial(Materials& dst_)
 	{
 		return materialSystems.AttachMaterial<type>(dst_);
 	}
@@ -26210,4 +26329,4 @@ namespace StringProcessing
 === SUMMARY ===
 ========================================
 Total Files      : 581
-Effective Lines  : 19068
+Effective Lines  : 19159

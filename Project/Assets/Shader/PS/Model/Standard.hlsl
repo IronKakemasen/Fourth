@@ -1,14 +1,10 @@
-#include "../../HLSLI/ModelDrawCommon.hlsli"
 #include "../../../Shared/StructuredBufferCameraData.h"
 
 
-struct MeshShaderOutput
-{
-    float4 position : SV_Position;
-    float2 texcoord : TEXCOORD0;
-    float3 normal : NORMAL0;
-    float3 worldPosition : POSITION0;
-};
+#include "../../HLSLI/ModelDrawCommon.hlsli"
+#include "../../HLSLI/MaterialCommon.hlsli"
+#include "../../HLSLI/SamplerCommon.hlsli"
+
 
 struct PixelShaderOutput
 {
@@ -24,7 +20,7 @@ float3 DiffuseModelLambert(float3 normal_, float3 lightDir_, float3 diffuse_,
     return lightColor_ * cos * diffuse_ * intensity_;
 }
 
-PixelShaderOutput main(MeshShaderOutput input_)
+PixelShaderOutput main(MS_StandardOutput input_)
 {
     PixelShaderOutput output;
     

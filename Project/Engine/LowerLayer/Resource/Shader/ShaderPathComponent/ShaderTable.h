@@ -31,12 +31,16 @@ namespace ShaderTable
 			break;
 		}
 
+#ifdef _DEBUG
+
 		ErrorMessageOutput::Assert::DetectError
 		(
 			meshShader.size() > 0,
 			"shaderTableにて設定外の組み合わせがきた(メッシュシェーダ)",
 			"ShaderTable.h"
 		);
+
+#endif // _DEBUG
 
 		return meshShader;
 	}
@@ -55,6 +59,7 @@ namespace ShaderTable
 			break;
 
 		default:
+
 
 			ErrorMessageOutput::Assert::OutputError
 			(
