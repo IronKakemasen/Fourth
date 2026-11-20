@@ -13,7 +13,8 @@ struct RenderContext::PassDesc
 		RenderPassState renderPassState_,
 		std::vector<RenderContext::RequiredBufferInfo::ColorBuffer> const& colorBuffersInfo_,
 		std::optional<RenderContext::RequiredBufferInfo::DepthStencilBuffer> const& depthStencilBufferInfo_,
-		std::vector <std::string> const& referenceBufferNames_
+		std::vector <std::string> const& referenceBufferNames_,
+		std::vector <std::string> const& writeSharingBufferNames_
 	);
 
 private:
@@ -33,6 +34,8 @@ private:
 
 	//参照するバッファ(テクスチャ)の名前一覧
 	std::vector <std::string> referenceBufferNames;
+	//書き込みシェアするバッファ(レンダーターゲット)の名前一覧
+	std::vector<std::string> writeSharingBufferNames;
 
 	//デバッグ用
 	std::string passName;

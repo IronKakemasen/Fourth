@@ -13,7 +13,8 @@ RenderContext::PassDesc::PassDesc
 	RenderPassState renderPassState_,
 	std::vector<RenderContext::RequiredBufferInfo::ColorBuffer> const& colorBuffersInfo_,
 	std::optional<RenderContext::RequiredBufferInfo::DepthStencilBuffer> const& depthStencilBufferInfo_,
-	std::vector <std::string> const& referenceBufferNames_
+	std::vector <std::string> const& referenceBufferNames_,
+	std::vector <std::string> const& writeSharingBufferNames_
 ):
 	renderPassState(renderPassState_) ,
 	colorBuffersInfo(colorBuffersInfo_),

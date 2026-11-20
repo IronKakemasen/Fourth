@@ -76,7 +76,7 @@ protected:
 
 private:
 
-	//Passの設計図
+	//Passの設計図。初期化が済んだら、RuntimePassInfoへ情報を移して削除される
 	std::unique_ptr<PassDesc> desc;
 	//ランタイムで必要になるPassの情報をまとめたもの
 	std::unique_ptr<RuntimePassInfo> runtimePassInfo;

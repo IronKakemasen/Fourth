@@ -16,7 +16,7 @@ RenderContext::RenderPassCreator::RenderPassCreator
 }
 
 
-std::unique_ptr<RenderContext::PassDesc> RenderContext::RenderPassCreator::CreateDesc(std::string const passName_, BufferContextDiplomat& bufferContextDiplomat_)
+std::unique_ptr<RenderContext::PassDesc> RenderContext::RenderPassCreator::CreateDesc(std::string const& passName_, BufferContextDiplomat& bufferContextDiplomat_)
 {
 	//パスのセッティングを読み込む
 	std::unique_ptr<PassDesc> desc = PassSettingsLoader::Load(passName_);

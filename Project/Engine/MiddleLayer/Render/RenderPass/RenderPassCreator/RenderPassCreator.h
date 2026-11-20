@@ -23,7 +23,7 @@ public:
 	PassType* Create
 	(
 		NexusFieldProof proof_,
-		std::string const passName_,
+		std::string const& passName_,
 		BufferContextDiplomat& bufferContextDiplomat_
 	)
 	{
@@ -44,7 +44,7 @@ public:
 private:
 
 	//パスのディスクを生成
-	std::unique_ptr<PassDesc> CreateDesc(std::string const passName_, BufferContextDiplomat& bufferContextDiplomat_);
+	std::unique_ptr<PassDesc> CreateDesc(std::string const& passName_, BufferContextDiplomat& bufferContextDiplomat_);
 	
 	//パスの具現化
 	template<typename PassType>

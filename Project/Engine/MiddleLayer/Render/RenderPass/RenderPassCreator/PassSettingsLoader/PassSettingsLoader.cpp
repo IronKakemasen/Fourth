@@ -15,13 +15,14 @@ namespace
 [[nodiscard]] std::unique_ptr<RenderContext::PassDesc> RenderContext::RenderPassCreator::PassSettingsLoader::Load(std::string const& passName_)
 {
 	return std::make_unique<PassDesc>
-	(
-		passName_,
-		ParseShaderFile(passName_),
-		ParseRenderPassState(passName_),
-		ParseColorBufferInfo(passName_),
-		ParseDepthStencilBufferInfo(passName_),
-		ParseReferenceBufferNames(passName_)
+		(
+			passName_,
+			ParseShaderFile(passName_),
+			ParseRenderPassState(passName_),
+			ParseColorBufferInfo(passName_),
+			ParseDepthStencilBufferInfo(passName_),
+			ParseReferenceBufferNames(passName_),
+			std::vector < std::string >{}
 	);
 }
 
@@ -110,7 +111,7 @@ std::optional<RenderContext::RequiredBufferInfo::DepthStencilBuffer> RenderConte
 	auto* miyajison = Miyajison::Get();
 
 	//深度バッファ使わんならしらん
-	if (!miyajison->LoadData<bool>(DataKeyString::kSrcJsonFileName, { passName_,DataKeyString::kUseDepthStencilB }))
+	if (!miyajison->LoadData<bool>(DataKeyString::kSrcJsonFileName, { passName_,DataKeyString::kDoesOwnDepthStencilB }))
 		return std::nullopt;
 
 	depthStencilBufferInfo.emplace();
@@ -161,10 +162,10 @@ RenderContext::RenderPassState RenderContext::RenderPassCreator::PassSettingsLoa
 {
 	auto* miyajison = Miyajison::Get();
 
-	bool doesUseDepthBuffer =
-		miyajison->LoadData<bool>(DataKeyString::kSrcJsonFileName, { passName_,DataKeyString::kUseDepthStencilB });
+	bool doesOwnDepthStencil =
+		miyajison->LoadData<bool>(DataKeyString::kSrcJsonFileName, { passName_,DataKeyString::kDoesOwnDepthStencilB });
 
-	return doesUseDepthBuffer ? RenderPassState
+	return doesOwnDepthStencil ? RenderPassState
 	(
 		DepthTest(miyajison->LoadData<int>(DataKeyString::kSrcJsonFileName, { passName_,DataKeyString::kDepthTestI })),
 		DepthEnable(miyajison->LoadData<bool>(DataKeyString::kSrcJsonFileName, { passName_,DataKeyString::kDepthEnableB })),

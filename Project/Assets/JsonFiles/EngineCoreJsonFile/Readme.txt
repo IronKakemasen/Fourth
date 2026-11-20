@@ -18,25 +18,25 @@ ps : string
 
 ※すべて配列形式で指定する。
 
-colorBufferName : string[]
-カラーバッファ名。
+ownedColorBufferNames : string[]
+そのパスが所持するカラーバッファ名。
 
-blendMode : string[]
+blendModes : string[]
 ブレンドモードenumを文字列で指定。kDependsModelはモデル依存。
 
-colorFormat : int[]
+colorFormats : int[]
 カラーフォーマット。
 
-clearColor : double[][]
+clearColors : double[][]
 Clear時の色をRGBWで指定。
 
-colorWidth : int[]
+colorWidths : int[]
 カラーバッファの幅。-1にしてくれれば、ウィンドウサイズと認識します
 
-colorHeight : int[]
+colorHeights : int[]
 カラーバッファの高さ。同上
 
-numBuffer_Color : int[]
+numBuffer_Colors : int[]
 バッファ数。シングル / ダブルを指定。
 
 
