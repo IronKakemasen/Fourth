@@ -26,6 +26,9 @@ RenderContext::StaticRenderGraph::BuildOutput RenderContext::StaticRenderGraph::
 	//グラフィックス用の巨大共通ルートシグネチャ
 	buildOutput.rootSigBuilder = RootSigBuilder::Build(proof_, rootSignatureContextDiplomat_);
 
+	//全てのPassの不足している初期化部分(RuntimePassInfoの作成、ルートコンスタンツバッファの作成など)を行う。
+	buildOutput.passSetUpper = PassSetUpper::Setup(proof_, renderPassCreator_, passContainer_, bufferContextDiplomat_);
+
 	//存在しなければならない全てのPSOを生成
 	buildOutput.pso_Builder = PSO_Builder::Build
 	(
@@ -38,8 +41,6 @@ RenderContext::StaticRenderGraph::BuildOutput RenderContext::StaticRenderGraph::
 		shaderContextDiplomat_
 	);
 
-	//全てのPassの不足している初期化部分(PassInfoの作成、ルートコンスタンツバッファの作成など)を行う。
-	buildOutput.passSetUpper = PassSetUpper::Setup(proof_, renderPassCreator_, passContainer_, bufferContextDiplomat_);
 
 	return buildOutput;
 }

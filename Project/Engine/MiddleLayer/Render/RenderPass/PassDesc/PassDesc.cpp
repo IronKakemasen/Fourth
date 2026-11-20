@@ -14,14 +14,17 @@ RenderContext::PassDesc::PassDesc
 	std::vector<RenderContext::RequiredBufferInfo::ColorBuffer> const& colorBuffersInfo_,
 	std::optional<RenderContext::RequiredBufferInfo::DepthStencilBuffer> const& depthStencilBufferInfo_,
 	std::vector <std::string> const& referenceBufferNames_,
-	std::vector <std::string> const& writeSharingBufferNames_
+	std::vector <std::string> const& writeSharingColorBufferNames_,
+	std::string const& writeSharingDepthBufferName_
 ):
 	renderPassState(renderPassState_) ,
 	colorBuffersInfo(colorBuffersInfo_),
 	depthStencilBufferInfo(depthStencilBufferInfo_),
 	ms_psFileName(ms_psFileName_),
 	referenceBufferNames(referenceBufferNames_), 
-	passName(name_)
+	passName(name_),
+	writeSharingColorBufferNames(writeSharingColorBufferNames_),
+	writeSharingDepthBufferName(writeSharingDepthBufferName_)
 {
 
 }

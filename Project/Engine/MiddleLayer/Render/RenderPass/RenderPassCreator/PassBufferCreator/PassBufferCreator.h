@@ -10,6 +10,8 @@ class RenderContext::RenderPassCreator::PassBufferCreator
 		std::string const passName_,
 		PassDesc& desc_,
 		std::unordered_map<std::string, BufferUniqueID>& passBufferCache_,
+		std::unordered_map<std::string, std::vector<RequiredBufferInfo::ColorBuffer*>>& colorBufferInfosMapCache_,
+		std::unordered_map<std::string, RequiredBufferInfo::DepthStencilBuffer*>& depthBufferInfoMapCache_,
 		BufferContextDiplomat& bufferContextDiplomat_
 	);
 };

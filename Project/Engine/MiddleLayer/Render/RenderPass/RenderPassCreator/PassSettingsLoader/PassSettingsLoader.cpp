@@ -14,15 +14,16 @@ namespace
 
 [[nodiscard]] std::unique_ptr<RenderContext::PassDesc> RenderContext::RenderPassCreator::PassSettingsLoader::Load(std::string const& passName_)
 {
-	return std::make_unique<PassDesc>
-		(
-			passName_,
-			ParseShaderFile(passName_),
-			ParseRenderPassState(passName_),
-			ParseColorBufferInfo(passName_),
-			ParseDepthStencilBufferInfo(passName_),
-			ParseReferenceBufferNames(passName_),
-			std::vector < std::string >{}
+	return std::make_unique<PassDesc>	
+	(
+		passName_,
+		ParseShaderFile(passName_),
+		ParseRenderPassState(passName_),
+		ParseColorBufferInfo(passName_),
+		ParseDepthStencilBufferInfo(passName_),
+		ParseReferenceBufferNames(passName_),
+		ParseWriteSharingColorBufferNames(passName_),
+		ParseWriteSharingDepthBufferName(passName_)
 	);
 }
 
@@ -35,9 +36,16 @@ std::vector<RenderContext::RequiredBufferInfo::ColorBuffer> RenderContext::Rende
 
 	auto* miyajison = Miyajison::Get();
 
+	//自前のカラーバッファを作るかどうかで早期リターン
+	if (!miyajison->LoadData<bool>(DataKeyString::kSrcJsonFileName, { passName_,DataKeyString::kDoesOwnColorBuffersB }))
+	{
+		return colorBufferInfo;
+	}
+
 	//カラーバッファのフォーマット。以降、こいつの数といくつかのパラメーターは同期している前提で進める
 	auto const colorBufferFormats = 
 		miyajison->LoadData<std::vector<int>>(DataKeyString::kSrcJsonFileName, { passName_,DataKeyString::kColorFormatI });
+	
 	//カラーバッファの数
 	auto const numColorBuffers = colorBufferFormats.size();
 
@@ -110,9 +118,12 @@ std::optional<RenderContext::RequiredBufferInfo::DepthStencilBuffer> RenderConte
 
 	auto* miyajison = Miyajison::Get();
 
-	//深度バッファ使わんならしらん
+	
+	//自前の深度バッファを作るかどうかで早期リターン
 	if (!miyajison->LoadData<bool>(DataKeyString::kSrcJsonFileName, { passName_,DataKeyString::kDoesOwnDepthStencilB }))
+	{
 		return std::nullopt;
+	}
 
 	depthStencilBufferInfo.emplace();
 
@@ -204,3 +215,19 @@ std::vector<std::string> RenderContext::RenderPassCreator::PassSettingsLoader::P
 
 	return miyajison->LoadData<std::vector<std::string>>(DataKeyString::kSrcJsonFileName, { passName_,DataKeyString::kReferenceBufferNames });
 }
+
+std::vector<std::string> RenderContext::RenderPassCreator::PassSettingsLoader::ParseWriteSharingColorBufferNames(std::string const& passName_)
+{
+	auto* miyajison = Miyajison::Get();
+
+	return miyajison->LoadData<std::vector<std::string>>(DataKeyString::kSrcJsonFileName, { passName_,DataKeyString::kWriteSharingColorBufferNames });
+}
+
+std::string RenderContext::RenderPassCreator::PassSettingsLoader::ParseWriteSharingDepthBufferName(std::string const& passName_)
+{
+	auto* miyajison = Miyajison::Get();
+
+	return miyajison->LoadData<std::string>(DataKeyString::kSrcJsonFileName, { passName_,DataKeyString::kWriteSharingDepthBufferName });
+}
+
+

@@ -14047,9 +14047,6 @@ void ModelContext::ModelDataBatcher::BatchModelData
 	//トランスフォームの書き込み先バッファ
 	BufferUniqueID transformContainerBufferID = perDrawBufferLibrary->Export<ConstantBufferBindSlots::kTransformMatrixContainer>();
 	auto dstWriteBufferTransform = static_cast<IWritableCPU*>(static_cast<UploadStructuredBuffer*>(dispatcher.Dispatch(transformContainerBufferID)));
-	////マテリアルの書き込み先バッファ
-	//BufferUniqueID materialContainerBufferID = perDrawBufferLibrary->Export<ConstantBufferBindSlots::kMaterialContainer>();
-	//auto dstWriteBufferMaterial = static_cast<IWritableCPU*>(static_cast<UploadStructuredBuffer*>(dispatcher.Dispatch(materialContainerBufferID)));
 	//モデルの所持するデータをバッファに書き込んでいく
 	for (Model* model : models_)
 	{
@@ -14063,14 +14060,6 @@ void ModelContext::ModelDataBatcher::BatchModelData
 			numMeshes,
 			dstWriteBufferTransform
 		);
-		//OverrideBuffer<ConstantBuffers::ConstantBufferBindSlots::kMaterialContainer>
-		//(
-		//	frameIndex_,
-		//	*model,
-		//	modelConstants,
-		//	numMeshes,
-		//	dstWriteBufferMaterial
-		//);
 	}
 }
 template<>
@@ -14096,28 +14085,6 @@ void ModelContext::ModelDataBatcher::OverrideBuffer<ConstantBufferBindSlots::kTr
 		srcTransform.DecrementNeedOverrideBufferCnt();
 	}
 }
-//template<>
-//void ModelContext::ModelDataBatcher::OverrideBuffer<ConstantBufferBindSlots::kMaterialContainer>
-//(
-//	UINT const frameIndex_,
-//	Model& model_,
-//	std::vector<ConstantBuffers::ModelConstantsCPUGPU> const& modelConstants_,
-//	size_t const numMesh_,
-//	IWritableCPU* writeDstBufferPtr_
-//)
-//{
-//	////やってることはトランスフォームとほぼ変わらない。
-//	//for (size_t i = 0;i < numMesh_;++i)
-//	//{
-//	//	//そのマテリアルがダーティじゃないなら書き込まない
-//	//	if (!model_.IsMaterialDirty(i)) continue;
-//	//	
-//	//	writeDstBufferPtr_->WriteElement(frameIndex_, model_.WatchMaterial(i), modelConstants_[i].materialID);
-//
-//	//	//マテリアルダーティのカウントを１つ消去
-//	//	model_.DecrementMaterialDirtyCnt(i);
-//	//}
-//}
 template<ConstantBufferBindSlots bindSlot>
 void ModelContext::ModelDataBatcher::ImportPerDrawBufferID
 (Local_InputBufferUniqueIDLicence licence_, BufferUniqueID id_)
@@ -14127,9 +14094,6 @@ void ModelContext::ModelDataBatcher::ImportPerDrawBufferID
 template
 void ModelContext::ModelDataBatcher::ImportPerDrawBufferID<ConstantBufferBindSlots::kTransformMatrixContainer>
 (Local_InputBufferUniqueIDLicence licence_, BufferUniqueID id_);
-//template
-//void ModelContext::ModelDataBatcher::ImportPerDrawBufferID<ConstantBufferBindSlots::kMaterialContainer>
-//(Local_InputBufferUniqueIDLicence licence_, BufferUniqueID id_);
 
 ========================================
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Resource\Model\ModelContextRuntime\ModelDataBatcher\ModelDataBatcher.h ===
@@ -14192,15 +14156,6 @@ void ModelContext::ModelDataBatcher::OverrideBuffer<ConstantBuffers::ConstantBuf
 	size_t const numMesh_,
 	IWritableCPU* writeDstBufferPtr_
 );
-//template<>
-//void ModelContext::ModelDataBatcher::OverrideBuffer<ConstantBuffers::ConstantBufferBindSlots::kMaterialContainer>
-//(
-//	UINT const frameIndex_,
-//	Model& model_,
-//	std::vector<ConstantBuffers::ModelConstantsCPUGPU> const& modelConstants_,
-//	size_t const numMesh_,
-//	IWritableCPU* writeDstBufferPtr_
-//);
 template<>
 struct ModelContext::ModelDataBatcher::BufferTypeTraits
 	<ConstantBuffers::ConstantBufferBindSlots::kTransformMatrixContainer>
@@ -19088,7 +19043,7 @@ void GridFloor::Awake(SceneInitInterface& sceneInitInterface_)
 	cP.pass = Pass::kSceneOpaque;	
 	cP.cullMode = CullMode::kBack;
 	cP.meshType = MeshType::kStatic;
-	cP.materialTypes.emplace_back(Material::Type::kGridLine);
+	cP.materialTypes.emplace_back(Material::Type::kStandard);
 	std::vector<RenderState> playerC;
 	playerC.emplace_back(std::move(cP));
 	std::vector<Material::StandardCPU> materials;
@@ -22181,7 +22136,7 @@ protected:
 		BufferContext::BufferDispatcher& bufDispatcher_
 	);
 private:
-	//Passの設計図
+	//Passの設計図。初期化が済んだら、RuntimePassInfoへ情報を移して削除される
 	std::unique_ptr<PassDesc> desc;
 	//ランタイムで必要になるPassの情報をまとめたもの
 	std::unique_ptr<RuntimePassInfo> runtimePassInfo;
@@ -22515,14 +22470,18 @@ RenderContext::PassDesc::PassDesc
 	RenderPassState renderPassState_,
 	std::vector<RenderContext::RequiredBufferInfo::ColorBuffer> const& colorBuffersInfo_,
 	std::optional<RenderContext::RequiredBufferInfo::DepthStencilBuffer> const& depthStencilBufferInfo_,
-	std::vector <std::string> const& referenceBufferNames_
+	std::vector <std::string> const& referenceBufferNames_,
+	std::vector <std::string> const& writeSharingColorBufferNames_,
+	std::string const& writeSharingDepthBufferName_
 ):
 	renderPassState(renderPassState_) ,
 	colorBuffersInfo(colorBuffersInfo_),
 	depthStencilBufferInfo(depthStencilBufferInfo_),
 	ms_psFileName(ms_psFileName_),
 	referenceBufferNames(referenceBufferNames_), 
-	passName(name_)
+	passName(name_),
+	writeSharingColorBufferNames(writeSharingColorBufferNames_),
+	writeSharingDepthBufferName(writeSharingDepthBufferName_)
 {
 }
 void RenderContext::PassDesc::DebugLog()const
@@ -22606,7 +22565,9 @@ struct RenderContext::PassDesc
 		RenderPassState renderPassState_,
 		std::vector<RenderContext::RequiredBufferInfo::ColorBuffer> const& colorBuffersInfo_,
 		std::optional<RenderContext::RequiredBufferInfo::DepthStencilBuffer> const& depthStencilBufferInfo_,
-		std::vector <std::string> const& referenceBufferNames_
+		std::vector <std::string> const& referenceBufferNames_,
+		std::vector <std::string> const& writeSharingColorBufferNames_,
+		std::string const& writeSharingDepthBufferName_
 	);
 private:
 	void DebugLog()const;
@@ -22619,6 +22580,9 @@ private:
 	std::optional<RenderContext::RequiredBufferInfo::DepthStencilBuffer> depthStencilBufferInfo;
 	//参照するバッファ(テクスチャ)の名前一覧
 	std::vector <std::string> referenceBufferNames;
+	//書き込みシェアするバッファ(レンダーターゲット)の名前一覧
+	std::vector<std::string> writeSharingColorBufferNames;
+	std::string writeSharingDepthBufferName{};
 	//デバッグ用
 	std::string passName;
 };
@@ -22693,7 +22657,7 @@ RenderContext::RenderPassCreator::RenderPassCreator
 :passContainer(container_)
 {
 }
-std::unique_ptr<RenderContext::PassDesc> RenderContext::RenderPassCreator::CreateDesc(std::string const passName_, BufferContextDiplomat& bufferContextDiplomat_)
+std::unique_ptr<RenderContext::PassDesc> RenderContext::RenderPassCreator::CreateDesc(std::string const& passName_, BufferContextDiplomat& bufferContextDiplomat_)
 {
 	//パスのセッティングを読み込む
 	std::unique_ptr<PassDesc> desc = PassSettingsLoader::Load(passName_);
@@ -22728,7 +22692,7 @@ public:
 	PassType* Create
 	(
 		NexusFieldProof proof_,
-		std::string const passName_,
+		std::string const& passName_,
 		BufferContextDiplomat& bufferContextDiplomat_
 	)
 	{
@@ -22742,7 +22706,7 @@ public:
 	std::unordered_map<std::string, BufferUniqueID> const& WatchPassBufferCache(NexusFieldProof proof_)const;
 private:
 	//パスのディスクを生成
-	std::unique_ptr<PassDesc> CreateDesc(std::string const passName_, BufferContextDiplomat& bufferContextDiplomat_);
+	std::unique_ptr<PassDesc> CreateDesc(std::string const& passName_, BufferContextDiplomat& bufferContextDiplomat_);
 	//パスの具現化
 	template<typename PassType>
 	PassType* InstantiatePass(NexusFieldProof proof_, std::unique_ptr<PassDesc> desc_)
@@ -22755,7 +22719,7 @@ private:
 	}
 	//パスユニークの保管用
 	RenderPassContainer& passContainer;
-	//一時的にパスのバッファを保存しておくもの。ま、このクラス自体が消滅するんだけどね
+	//後に検索のため一時的にパスのバッファを保存しておくもの。ま、このクラス自体が消滅するんだけどね
 	std::unordered_map<std::string, BufferUniqueID> passBufferCache;
 };
 
@@ -22849,14 +22813,16 @@ namespace
 }
 [[nodiscard]] std::unique_ptr<RenderContext::PassDesc> RenderContext::RenderPassCreator::PassSettingsLoader::Load(std::string const& passName_)
 {
-	return std::make_unique<PassDesc>
+	return std::make_unique<PassDesc>	
 	(
 		passName_,
 		ParseShaderFile(passName_),
 		ParseRenderPassState(passName_),
 		ParseColorBufferInfo(passName_),
 		ParseDepthStencilBufferInfo(passName_),
-		ParseReferenceBufferNames(passName_)
+		ParseReferenceBufferNames(passName_),
+		ParseWriteSharingColorBufferNames(passName_),
+		ParseWriteSharingDepthBufferName(passName_)
 	);
 }
 std::vector<RenderContext::RequiredBufferInfo::ColorBuffer> RenderContext::RenderPassCreator::PassSettingsLoader::ParseColorBufferInfo
@@ -22866,6 +22832,11 @@ std::vector<RenderContext::RequiredBufferInfo::ColorBuffer> RenderContext::Rende
 {
 	std::vector<RenderContext::RequiredBufferInfo::ColorBuffer> colorBufferInfo;
 	auto* miyajison = Miyajison::Get();
+	//自前のカラーバッファを作るかどうかで早期リターン
+	if (!miyajison->LoadData<bool>(DataKeyString::kSrcJsonFileName, { passName_,DataKeyString::kDoesOwnColorBuffersB }))
+	{
+		return colorBufferInfo;
+	}
 	//カラーバッファのフォーマット。以降、こいつの数といくつかのパラメーターは同期している前提で進める
 	auto const colorBufferFormats = 
 		miyajison->LoadData<std::vector<int>>(DataKeyString::kSrcJsonFileName, { passName_,DataKeyString::kColorFormatI });
@@ -22926,9 +22897,11 @@ std::optional<RenderContext::RequiredBufferInfo::DepthStencilBuffer> RenderConte
 {
 	std::optional<RenderContext::RequiredBufferInfo::DepthStencilBuffer> depthStencilBufferInfo;
 	auto* miyajison = Miyajison::Get();
-	//深度バッファ使わんならしらん
-	if (!miyajison->LoadData<bool>(DataKeyString::kSrcJsonFileName, { passName_,DataKeyString::kUseDepthStencilB }))
+	//自前の深度バッファを作るかどうかで早期リターン
+	if (!miyajison->LoadData<bool>(DataKeyString::kSrcJsonFileName, { passName_,DataKeyString::kDoesOwnDepthStencilB }))
+	{
 		return std::nullopt;
+	}
 	depthStencilBufferInfo.emplace();
 	depthStencilBufferInfo->dsvFormat = (DXGI_FORMAT)
 		miyajison->LoadData<int>(DataKeyString::kSrcJsonFileName, { passName_,DataKeyString::kDsvFormatI});
@@ -22963,9 +22936,9 @@ RenderContext::RenderPassState RenderContext::RenderPassCreator::PassSettingsLoa
 )
 {
 	auto* miyajison = Miyajison::Get();
-	bool doesUseDepthBuffer =
-		miyajison->LoadData<bool>(DataKeyString::kSrcJsonFileName, { passName_,DataKeyString::kUseDepthStencilB });
-	return doesUseDepthBuffer ? RenderPassState
+	bool doesOwnDepthStencil =
+		miyajison->LoadData<bool>(DataKeyString::kSrcJsonFileName, { passName_,DataKeyString::kDoesOwnDepthStencilB });
+	return doesOwnDepthStencil ? RenderPassState
 	(
 		DepthTest(miyajison->LoadData<int>(DataKeyString::kSrcJsonFileName, { passName_,DataKeyString::kDepthTestI })),
 		DepthEnable(miyajison->LoadData<bool>(DataKeyString::kSrcJsonFileName, { passName_,DataKeyString::kDepthEnableB })),
@@ -22997,6 +22970,16 @@ std::vector<std::string> RenderContext::RenderPassCreator::PassSettingsLoader::P
 	auto* miyajison = Miyajison::Get();
 	return miyajison->LoadData<std::vector<std::string>>(DataKeyString::kSrcJsonFileName, { passName_,DataKeyString::kReferenceBufferNames });
 }
+std::vector<std::string> RenderContext::RenderPassCreator::PassSettingsLoader::ParseWriteSharingColorBufferNames(std::string const& passName_)
+{
+	auto* miyajison = Miyajison::Get();
+	return miyajison->LoadData<std::vector<std::string>>(DataKeyString::kSrcJsonFileName, { passName_,DataKeyString::kWriteSharingColorBufferNames });
+}
+std::string RenderContext::RenderPassCreator::PassSettingsLoader::ParseWriteSharingDepthBufferName(std::string const& passName_)
+{
+	auto* miyajison = Miyajison::Get();
+	return miyajison->LoadData<std::string>(DataKeyString::kSrcJsonFileName, { passName_,DataKeyString::kWriteSharingDepthBufferName });
+}
 
 ========================================
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\MiddleLayer\Render\RenderPass\RenderPassCreator\PassSettingsLoader\PassSettingsLoader.h ===
@@ -23009,11 +22992,19 @@ class RenderContext::RenderPassCreator::PassSettingsLoader
 	static [[nodiscard]] std::unique_ptr<PassDesc> Load(std::string const& passName_);
 	//以下ヘルパー
 private:
+	//自前のカラーバッファの情報
 	static std::vector<RenderContext::RequiredBufferInfo::ColorBuffer> ParseColorBufferInfo(std::string const& passName_);
+	//自前の深度バッファの情報
 	static std::optional<RenderContext::RequiredBufferInfo::DepthStencilBuffer> ParseDepthStencilBufferInfo(std::string const& passName_);
+	//パスの情報
 	static RenderPassState ParseRenderPassState(std::string const& passName_);
+	//オフスクリーンは自前のシェーダーファイルがあるのでそれを読み込む
 	static std::optional<std::pair<std::string, std::string >> ParseShaderFile(std::string const& passName_);
+	//参照するバッファの名前
 	static std::vector<std::string> ParseReferenceBufferNames(std::string const& passName_);
+	//バッファ書き込みをシェアする他パスのバッファの名前
+	static std::vector<std::string> ParseWriteSharingColorBufferNames(std::string const& passName_);
+	static std::string ParseWriteSharingDepthBufferName(std::string const& passName_);
 	struct DataKeyString
 	{
 		//パスの情報が詰まったjsonファイル名
@@ -23023,32 +23014,36 @@ private:
 		static inline std::string const kMS						= "ms";
 		static inline std::string const kPS						= "ps";
 		//カラーバッファの設定
-		static inline std::string const kColorBufferName		= "colorBufferName";
-		static inline std::string const kBlendMode				= "blendMode";
-		static inline std::string const kColorFormatI	 		= "colorFormat";
-		static inline std::string const kClearColorV4	 		= "clearColor";
-		static inline std::string const kColorWidthI	 		= "colorWidth";
-		static inline std::string const kColorHeightI	 		= "colorHeight";
-		static inline std::string const kNumBuffer_colorI		= "numBuffer_Color";
-		//深度バッファの設定
-		static inline std::string const kDepthBufferName 		= "depthBufferName";
-		static inline std::string const kUseDepthStencilB 		= "useDepthStencil";
-		static inline std::string const kDsvFormatI		 		= "dsvFormat";
-		static inline std::string const kSrvFormatI		 		= "srvFormat";
-		static inline std::string const kClearDepthF	 		= "clearDepth";
-		static inline std::string const kClearStencilFlagB		= "clearStencilFlag";
-		static inline std::string const kClearStencilI	 		= "clearStencil";
-		static inline std::string const kDepthWidthI	 		= "depthWidth";
-		static inline std::string const kDepthHeightI	 		= "depthHeight";
-		static inline std::string const kNumBuffer_depthI		= "numBuffer_Depth";
-		//深度・ステンシル設定
-		static inline std::string const kDepthTestI		 		= "depthTest";
-		static inline std::string const kDepthEnableB	 		= "depthEnable";
-		static inline std::string const kDepthBiasI		 		= "depthBias";
-		static inline std::string const kDepthBiasClampF 		= "depthBiasClamp";
-		static inline std::string const kSlopeScaledDepthBiasF	= "slopeScaledDepthBias";
-		//参照するテクスチャ名
-		static inline std::string const kReferenceBufferNames	= "referenceBufferNames";
+		static inline std::string const kDoesOwnColorBuffersB	 = "doesOwnColorBuffers";
+		static inline std::string const kColorBufferName		 = "ownedColorBufferNames";
+		static inline std::string const kBlendMode				 = "blendModes";
+		static inline std::string const kColorFormatI	 		 = "colorFormats";
+		static inline std::string const kClearColorV4	 		 = "clearColors";
+		static inline std::string const kColorWidthI	 		 = "colorWidths";
+		static inline std::string const kColorHeightI	 		 = "colorHeights";
+		static inline std::string const kNumBuffer_colorI		 = "numBuffer_Colors";
+		//深度バッファの設定										   
+		static inline std::string const kDoesOwnDepthStencilB	 = "doesOwnDepthStencil";
+		static inline std::string const kDepthBufferName 		 = "ownedDepthBufferName";
+		static inline std::string const kDsvFormatI		 		 = "dsvFormat";
+		static inline std::string const kSrvFormatI		 		 = "srvFormat";
+		static inline std::string const kClearDepthF	 		 = "clearDepth";
+		static inline std::string const kClearStencilFlagB		 = "clearStencilFlag";
+		static inline std::string const kClearStencilI	 		 = "clearStencil";
+		static inline std::string const kDepthWidthI	 		 = "depthWidth";
+		static inline std::string const kDepthHeightI	 		 = "depthHeight";
+		static inline std::string const kNumBuffer_depthI		 = "numBuffer_Depth";
+		//深度・ステンシル設定									  
+		static inline std::string const kDepthTestI		 		 = "depthTest";
+		static inline std::string const kDepthEnableB	 		 = "depthEnable";
+		static inline std::string const kDepthBiasI		 		 = "depthBias";
+		static inline std::string const kDepthBiasClampF 		 = "depthBiasClamp";
+		static inline std::string const kSlopeScaledDepthBiasF	 = "slopeScaledDepthBias";
+		//参照するバッファ名
+		static inline std::string const kReferenceBufferNames	 = "referenceBufferNames";
+		//書き込みシェアするバッファ名
+		static inline std::string const kWriteSharingColorBufferNames = "writeSharingColorBufferNames";
+		static inline std::string const kWriteSharingDepthBufferName  = "writeSharingDepthBufferName";
 	};
 };
 
@@ -26329,4 +26324,4 @@ namespace StringProcessing
 === SUMMARY ===
 ========================================
 Total Files      : 581
-Effective Lines  : 19159
+Effective Lines  : 19190

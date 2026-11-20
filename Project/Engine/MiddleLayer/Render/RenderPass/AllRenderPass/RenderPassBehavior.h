@@ -37,8 +37,17 @@ public:
 		[[maybe_unused]] BufferContext::BufferDispatcher& bufDispatcher_
 	) = 0;
 
+	//レンダーターゲットのあれこれの描画コマンドをたたく
+	//自身の所持するバッファを全てレンダーターゲットへステート遷移
+	//Pass個人が呼ぶ必要はない
+	void BeginPass(RuntimeWrapper& cmdWrapper_, BufferContext::BufferDispatcher& bufDispatcher_);
+
+
 	PassDesc const* WatchDesc() const;
 
+	//PassDescを削除する
+	void DeletePassDesc(NexusFieldProof proof_);
+	
 	//初期化用のPassDescからランタイム用へ
 	void CreatePassInfo
 	(
@@ -48,12 +57,6 @@ public:
 		UINT const refOffset_
 	);
 
-	//レンダーターゲットのあれこれの描画コマンドをたたく
-	//自身の所持するバッファを全てレンダーターゲットへステート遷移
-	//Pass個人が呼ぶ必要はない
-	void BeginPass(RuntimeWrapper& cmdWrapper_, BufferContext::BufferDispatcher& bufDispatcher_);
-
-	
 protected:
 
 	//モデルを描画する

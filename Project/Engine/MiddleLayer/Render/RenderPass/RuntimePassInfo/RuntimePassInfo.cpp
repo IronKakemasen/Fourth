@@ -6,15 +6,14 @@
 RenderContext::RuntimePassInfo::RuntimePassInfo
 (
 	NexusFieldProof proof_,
-	std::unique_ptr<PassDesc> desc_,
+	PassDesc const& desc_,
 	std::vector<BufferUniqueID> const& refColorBuffersID_,
 	std::vector<BufferUniqueID> const& refDepthStencilBuffersID_,
 	UINT const refOffset_
 )
 {
 	///パスディスクからランタイムに必要な情報のみピック
-	//ここでPassDescのお役は終了
-	PickUpRuntimeRequirementsFromDesc(*desc_);
+	PickUpRuntimeRequirementsFromDesc(desc_);
 
 	//その他情報を入力
 	InputOtherParams(refColorBuffersID_,refDepthStencilBuffersID_,refOffset_);
@@ -69,9 +68,6 @@ void RenderContext::RuntimePassInfo::PickUpRuntimeRequirementsFromDesc(PassDesc 
 			info->doesClearStencil  = src->doesClearStencil;
 		}
 	}
-
-
-
 }
 
 

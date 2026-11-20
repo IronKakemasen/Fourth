@@ -14,7 +14,7 @@ struct RenderContext::RuntimePassInfo
 	RuntimePassInfo
 	(
 		NexusFieldProof proof_,
-		std::unique_ptr<PassDesc> desc_,
+		PassDesc const& desc_,
 		std::vector<BufferUniqueID> const& refColorBuffersID_,
 		std::vector<BufferUniqueID> const& refDepthStencilBuffersID_,
 		UINT const refOffset_

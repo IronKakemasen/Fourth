@@ -125,6 +125,13 @@ void RenderContext::StaticRenderGraph::PassSetUpper::CreateAllPassInfo
 			
 		}
 
+		//書き込みシェアするバッファの追加
+		for (auto const& name : desc.writeSharingColorBufferNames)
+		{
+			//検索
+			//passBufferCache.at(name)
+		}
+
 		///PassDesc -> RuntimePassInfoに詰め変える
 		pass->CreatePassInfo(proof_, refColorBuffersID , refDepthStencilBuffersID, refOffset);
 		

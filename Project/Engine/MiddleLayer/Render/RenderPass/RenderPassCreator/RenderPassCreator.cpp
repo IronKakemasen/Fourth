@@ -20,8 +20,17 @@ std::unique_ptr<RenderContext::PassDesc> RenderContext::RenderPassCreator::Creat
 {
 	//パスのセッティングを読み込む
 	std::unique_ptr<PassDesc> desc = PassSettingsLoader::Load(passName_);
+
 	//その設定をもとにバッファを作成しそのユニークをディスクに記録
-	PassBufferCreator::CreateBuffer(passName_, *desc, passBufferCache,bufferContextDiplomat_);
+	PassBufferCreator::CreateBuffer
+	(
+		passName_, 
+		*desc, 
+		passBufferCache,
+		colorBufferInfosMapCache,
+		depthBufferInfoMapCache,
+		bufferContextDiplomat_
+	);
 
 	return desc;
 }
@@ -31,3 +40,15 @@ std::unordered_map<std::string, BufferUniqueID> const& RenderContext::RenderPass
 	return passBufferCache;
 }
 
+
+std::unordered_map<std::string, std::vector<RenderContext::RequiredBufferInfo::ColorBuffer*>> const&
+RenderContext::RenderPassCreator::WatchColorBufferInfosMapCache(NexusFieldProof proof_)const
+{
+	return colorBufferInfosMapCache;
+}
+
+std::unordered_map<std::string, RenderContext::RequiredBufferInfo::DepthStencilBuffer*> const&
+RenderContext::RenderPassCreator::WatchDepthBufferInfoMapCache(NexusFieldProof proof_)const
+{
+	return depthBufferInfoMapCache;
+}

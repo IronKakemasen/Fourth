@@ -17,6 +17,8 @@ void RenderContext::RenderPassCreator::PassBufferCreator::CreateBuffer
 	std::string const passName_,
 	PassDesc& desc_,
 	std::unordered_map<std::string, BufferUniqueID>& passBufferCache_,
+	std::unordered_map<std::string, std::vector<RequiredBufferInfo::ColorBuffer*>>& colorBufferInfosMapCache_,
+	std::unordered_map<std::string, RequiredBufferInfo::DepthStencilBuffer*>& depthBufferInfoMapCache_,
 	BufferContextDiplomat& bufferContextDiplomat_
 )
 {
@@ -40,6 +42,9 @@ void RenderContext::RenderPassCreator::PassBufferCreator::CreateBuffer
 		passBufferCache_[info.bufferName] = id;
 
 		info.bufferID = id;
+
+		//後に書き込みシェアバッファ検索用として追加
+		colorBufferInfosMapCache_[passName_].emplace_back(&colorBuffersInfo[i]);
 	}
 
 	//深度ステンシルバッファを作成
@@ -65,6 +70,9 @@ void RenderContext::RenderPassCreator::PassBufferCreator::CreateBuffer
 		passBufferCache_[info->bufferName] = id;
 
 		desc_.depthStencilBufferInfo->bufferID = id;
+
+		//後に書き込みシェアバッファ検索用として追加
+		depthBufferInfoMapCache_[passName_] = &desc_.depthStencilBufferInfo.value();
 	}
 
 }
