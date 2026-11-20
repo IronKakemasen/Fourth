@@ -43,7 +43,7 @@ void GridFloor::Awake(SceneInitInterface& sceneInitInterface_)
 	cP.pass = Pass::kSceneOpaque;	
 	cP.cullMode = CullMode::kBack;
 	cP.meshType = MeshType::kStatic;
-	cP.materialTypes.emplace_back(Material::Type::kGridLine);
+	cP.materialTypes.emplace_back(Material::Type::kStandard);
 	std::vector<RenderState> playerC;
 	playerC.emplace_back(std::move(cP));
 

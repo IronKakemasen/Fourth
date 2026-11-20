@@ -32,17 +32,18 @@ private:
 		static inline std::string const kPS						= "ps";
 
 		//カラーバッファの設定
-		static inline std::string const kColorBufferName		= "colorBufferName";
-		static inline std::string const kBlendMode				= "blendMode";
-		static inline std::string const kColorFormatI	 		= "colorFormat";
-		static inline std::string const kClearColorV4	 		= "clearColor";
-		static inline std::string const kColorWidthI	 		= "colorWidth";
-		static inline std::string const kColorHeightI	 		= "colorHeight";
-		static inline std::string const kNumBuffer_colorI		= "numBuffer_Color";
+		static inline std::string const kDoesOwnColorBufferB	= "doesOwnColorBuffer";
+		static inline std::string const kColorBufferName		= "ownedColorBufferNames";
+		static inline std::string const kBlendMode				= "blendModes";
+		static inline std::string const kColorFormatI	 		= "colorFormats";
+		static inline std::string const kClearColorV4	 		= "clearColors";
+		static inline std::string const kColorWidthI	 		= "colorWidths";
+		static inline std::string const kColorHeightI	 		= "colorHeights";
+		static inline std::string const kNumBuffer_colorI		= "numBuffer_Colors";
 
 		//深度バッファの設定
-		static inline std::string const kDepthBufferName 		= "depthBufferName";
-		static inline std::string const kUseDepthStencilB 		= "useDepthStencil";
+		static inline std::string const kDoesOwnDepthStencilB	= "doesOwnDepthStencil";
+		static inline std::string const kDepthBufferName 		= "ownedDepthBufferName";
 		static inline std::string const kDsvFormatI		 		= "dsvFormat";
 		static inline std::string const kSrvFormatI		 		= "srvFormat";
 		static inline std::string const kClearDepthF	 		= "clearDepth";
