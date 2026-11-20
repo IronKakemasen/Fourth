@@ -65,6 +65,10 @@ RenderContext::StaticRenderGraph::BuildOutput::PSO_Builder RenderContext::Static
 	CreateAllPSO(proof_, psoDispatcher_, allPSODesc, rootSignature_, pso_ContextDiplomat_);
 	Logger::Log("Create All Graphics PSO", fileName);
 
+	//不要になったPassDescを削除
+	DeletePassDesc(proof_, passContainer_);
+	Logger::Log("Delete All Pass Desc", fileName);
+
 	return output;
 }
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -519,3 +523,16 @@ ID3D12PipelineState* RenderContext::StaticRenderGraph::PSO_Builder::CreateFinalR
 	return psoCreator.Create(psoDesc, rootSignature_, "FinalRendering");
 }
 
+void RenderContext::StaticRenderGraph::PSO_Builder::DeletePassDesc
+(
+	NexusFieldProof proof_,
+	RenderPassContainer& passContainer_
+)
+{
+	auto const& allPassPtrMap = passContainer_.AccessAllPassPtrMap(proof_);
+
+	for (auto& [passType, passPtr] : allPassPtrMap)
+	{
+		passPtr->DeletePassDesc(proof_);
+	}
+}

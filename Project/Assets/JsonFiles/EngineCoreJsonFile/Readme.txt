@@ -18,6 +18,9 @@ ps : string
 
 ※すべて配列形式で指定する。
 
+doesOwnColorBuffers: bool
+自前のカラーバッファを所持するかどうか
+
 ownedColorBufferNames : string[]
 そのパスが所持するカラーバッファ名。
 
@@ -97,3 +100,11 @@ Slope Scaled Depth Bias。
 
 referenceBufferNames : string[]
 HLSLで参照するバッファの名前。
+
+
+【書き込みシェアするバッファ】
+
+カラーバッファ
+writeSharingColorBufferNames : string[]
+深度バッファ
+writeSharingDepthBufferName : string

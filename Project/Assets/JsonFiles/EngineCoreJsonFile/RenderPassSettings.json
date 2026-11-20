@@ -1,9 +1,11 @@
 {
+
   "SceneCompositor": {
     "isOffScreen": true,
     "ms": "FullScreenTriangleMS",
     "ps": "SceneCompositorPS",
 
+    "doesOwnColorBuffers": true,
     "ownedColorBufferNames": [ "sceneColor" ],
     "blendModes": [ "kOpaque" ],
     "colorFormats": [ 29 ],
@@ -22,12 +24,21 @@
 
     "doesOwnDepthStencil": false,
 
-    "referenceBufferNames": [ "opaqueColor", "opaqueDepth" ]
+    "referenceBufferNames": [ "opaqueColor", "opaqueDepth" ],
+
+    "writeSharingColorBufferNames": [],
+    "writeSharingDepthBufferName": ""
   },
+
+
+
+
 
   "SceneOpaque": {
     "isOffScreen": false,
 
+
+    "doesOwnColorBuffers": true,
     "ownedColorBufferNames": [ "opaqueColor" ],
     "blendModes": [ "kDependsModel" ],
     "colorFormats": [ 29 ],
@@ -61,6 +72,13 @@
     "depthBiasClamp": 0.0,
     "slopeScaledDepthBias": 0.0,
 
-    "referenceBufferNames": []
+    "referenceBufferNames": [],
+
+    "writeSharingColorBufferNames": [],
+    "writeSharingDepthBufferName": ""
+
   }
+
+
+
 }

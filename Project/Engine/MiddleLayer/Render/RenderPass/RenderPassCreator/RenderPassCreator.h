@@ -39,6 +39,12 @@ public:
 
 
 	std::unordered_map<std::string, BufferUniqueID> const& WatchPassBufferCache(NexusFieldProof proof_)const;
+	
+	std::unordered_map<std::string, std::vector<RequiredBufferInfo::ColorBuffer*>> const&
+		WatchColorBufferInfosMapCache(NexusFieldProof proof_)const;
+	
+	std::unordered_map<std::string, RequiredBufferInfo::DepthStencilBuffer*> const& 
+		WatchDepthBufferInfoMapCache(NexusFieldProof proof_)const;
 
 
 private:
@@ -59,8 +65,14 @@ private:
 
 	//パスユニークの保管用
 	RenderPassContainer& passContainer;
-	//一時的にパスのバッファを保存しておくもの。ま、このクラス自体が消滅するんだけどね
+	
+	//後に検索のため一時的にパスのバッファを保存しておくもの。ま、このクラス自体が消滅するんだけどね
+	//参照バッファ検索時に使用
 	std::unordered_map<std::string, BufferUniqueID> passBufferCache;
+	//そのRequiredBufferInfo::ColorBuffer,DepthStencilBufferバージョン
+	//書き込みシェアバッファ検索時に使用
+	std::unordered_map<std::string, std::vector<RequiredBufferInfo::ColorBuffer*>> colorBufferInfosMapCache;
+	std::unordered_map<std::string, RequiredBufferInfo::DepthStencilBuffer*> depthBufferInfoMapCache;
 
 };
 

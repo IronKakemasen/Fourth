@@ -87,11 +87,17 @@ private:
 		ID3D12RootSignature* rootSignature_
 	);
 
+	//PassDescが必要なくなるので削除する
+	static void DeletePassDesc
+	(
+		NexusFieldProof proof_,
+		RenderPassContainer& passContainer_
+	);
+
 	struct DataKey
 	{
 		static auto const inline kFinalRenderingMeshShader = "FullScreenTriangleMS";
 		static auto const inline kFinalRenderingPixelShader = "FinalRenderingPS";
-
 	};
 
 };
