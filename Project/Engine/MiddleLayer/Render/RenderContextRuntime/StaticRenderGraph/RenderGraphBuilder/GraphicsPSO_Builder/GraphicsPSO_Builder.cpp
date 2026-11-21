@@ -65,10 +65,6 @@ RenderContext::StaticRenderGraph::BuildOutput::PSO_Builder RenderContext::Static
 	CreateAllPSO(proof_, psoDispatcher_, allPSODesc, rootSignature_, pso_ContextDiplomat_);
 	Logger::Log("Create All Graphics PSO", fileName);
 
-	//不要になったPassDescを削除
-	DeletePassDesc(proof_, passContainer_);
-	Logger::Log("Delete All Pass Desc", fileName);
-
 	return output;
 }
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -159,7 +155,7 @@ std::vector<RenderContext::StaticRenderGraph::PSO_Builder::PsoDesc_Key> RenderCo
 	for (UINT i = 0u; i < (UINT)Pass::kCount;++i)
 	{
 		//そのPassのDesc
-		auto const& passDesc = *allPassPtrMap.at(Pass(i))->WatchDesc();
+		auto& passDesc = allPassPtrMap.at(Pass(i))->RefPassDesc(proof_);
 		//パスの中身をログ出力。頼りはログのみ
 		passDesc.DebugLog();
 
@@ -535,4 +531,6 @@ void RenderContext::StaticRenderGraph::PSO_Builder::DeletePassDesc
 	{
 		passPtr->DeletePassDesc(proof_);
 	}
+
+	Logger::Log("Delete All Pass Desc", fileName);
 }

@@ -27,7 +27,7 @@ std::unique_ptr<RenderContext::PassDesc> RenderContext::RenderPassCreator::Creat
 		passName_, 
 		*desc, 
 		passBufferCache,
-		colorBufferInfosMapCache,
+		colorBufferInfoMapCache,
 		depthBufferInfoMapCache,
 		bufferContextDiplomat_
 	);
@@ -41,10 +41,10 @@ std::unordered_map<std::string, BufferUniqueID> const& RenderContext::RenderPass
 }
 
 
-std::unordered_map<std::string, std::vector<RenderContext::RequiredBufferInfo::ColorBuffer*>> const&
-RenderContext::RenderPassCreator::WatchColorBufferInfosMapCache(NexusFieldProof proof_)const
+std::unordered_map<std::string, RenderContext::RequiredBufferInfo::ColorBuffer*> const&
+RenderContext::RenderPassCreator::WatchColorBufferInfoMapCache(NexusFieldProof proof_)const
 {
-	return colorBufferInfosMapCache;
+	return colorBufferInfoMapCache;
 }
 
 std::unordered_map<std::string, RenderContext::RequiredBufferInfo::DepthStencilBuffer*> const&

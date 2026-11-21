@@ -22,6 +22,12 @@ class RenderContext::StaticRenderGraph::PSO_Builder
 		ShaderContextDiplomat& shaderContextDiplomat_
 	);
 
+	//PassDescが必要なくなるので削除する
+	static void DeletePassDesc
+	(
+		NexusFieldProof proof_,
+		RenderPassContainer& passContainer_
+	);
 
 	//以下ヘルパー
 private:
@@ -85,13 +91,6 @@ private:
 		PSO_ContextDiplomat& pso_ContextDiplomat_,
 		ShaderContextDiplomat& shaderContextDiplomat_,
 		ID3D12RootSignature* rootSignature_
-	);
-
-	//PassDescが必要なくなるので削除する
-	static void DeletePassDesc
-	(
-		NexusFieldProof proof_,
-		RenderPassContainer& passContainer_
 	);
 
 	struct DataKey
