@@ -17,7 +17,7 @@ void RenderContext::RenderPassCreator::PassBufferCreator::CreateBuffer
 	std::string const passName_,
 	PassDesc& desc_,
 	std::unordered_map<std::string, BufferUniqueID>& passBufferCache_,
-	std::unordered_map<std::string, std::vector<RequiredBufferInfo::ColorBuffer*>>& colorBufferInfosMapCache_,
+	std::unordered_map<std::string, RequiredBufferInfo::ColorBuffer*>& colorBufferInfosMapCache_,
 	std::unordered_map<std::string, RequiredBufferInfo::DepthStencilBuffer*>& depthBufferInfoMapCache_,
 	BufferContextDiplomat& bufferContextDiplomat_
 )
@@ -34,17 +34,31 @@ void RenderContext::RenderPassCreator::PassBufferCreator::CreateBuffer
 	for (size_t i = 0;i < numColorBufferRequired;++i)
 	{
 		auto& info = colorBuffersInfo[i];
+
+#ifdef _DEBUG
+
+		//バッファ名の重複チェック
+		ErrorMessageOutput::Assert::DetectError
+		(
+			passBufferCache_.find(info.bufferName) == passBufferCache_.end(),
+			passName_ + " のカラーバッファ名: " + info.bufferName + "が被ってる",
+			"PassBufferCreator.cpp"
+		);
+
+#endif // _DEBUG
+
 		ColorBufferDescription colorBufferDesc(info.clearColor, info.width, info.height, info.format, info.numBuffer);
 		
 		//バッファを作成し、そのユニークを保存
 		BufferUniqueID id = bufferCreator->CreateWithBuffer(colorBufferDesc, info.bufferName).first;
-		//後にPass達が他Passのバッファを参照するタメに必要なのでこちらにも保存
-		passBufferCache_[info.bufferName] = id;
 
 		info.bufferID = id;
 
+		//後にPass達が他Passのバッファを参照するタメに必要なのでこちらにも保存
+		passBufferCache_[info.bufferName] = id;
+
 		//後に書き込みシェアバッファ検索用として追加
-		colorBufferInfosMapCache_[passName_].emplace_back(&colorBuffersInfo[i]);
+		colorBufferInfosMapCache_[info.bufferName] = &colorBuffersInfo[i];
 	}
 
 	//深度ステンシルバッファを作成
@@ -52,6 +66,18 @@ void RenderContext::RenderPassCreator::PassBufferCreator::CreateBuffer
 	if (desc_.depthStencilBufferInfo.has_value())
 	{
 		auto& info = desc_.depthStencilBufferInfo;
+
+#ifdef _DEBUG
+
+		//バッファ名の重複チェック
+		ErrorMessageOutput::Assert::DetectError
+		(
+			passBufferCache_.find(info->bufferName) == passBufferCache_.end(),
+			passName_ + " の深度バッファ名: " + info->bufferName + "が被ってる",
+			"PassBufferCreator.cpp"
+		);
+
+#endif // _DEBUG
 
 		DepthStencilBufferDescription desc
 		(
@@ -66,13 +92,14 @@ void RenderContext::RenderPassCreator::PassBufferCreator::CreateBuffer
 
 		//バッファを作成し、そのユニークを保存
 		BufferUniqueID id = bufferCreator->CreateWithBuffer(desc, info->bufferName).first;
-		//後にPass達が他Passのバッファを参照するタメに必要なのでこちらにも保存
-		passBufferCache_[info->bufferName] = id;
 
 		desc_.depthStencilBufferInfo->bufferID = id;
 
+		//後にPass達が他Passのバッファを参照するタメに必要なのでこちらにも保存
+		passBufferCache_[info->bufferName] = id;
+
 		//後に書き込みシェアバッファ検索用として追加
-		depthBufferInfoMapCache_[passName_] = &desc_.depthStencilBufferInfo.value();
+		depthBufferInfoMapCache_[info->bufferName] = &desc_.depthStencilBufferInfo.value();
 	}
 
 }

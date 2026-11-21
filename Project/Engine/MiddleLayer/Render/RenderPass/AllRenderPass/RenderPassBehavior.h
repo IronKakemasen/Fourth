@@ -42,8 +42,10 @@ public:
 	//Pass個人が呼ぶ必要はない
 	void BeginPass(RuntimeWrapper& cmdWrapper_, BufferContext::BufferDispatcher& bufDispatcher_);
 
+	//====以下初期化用=====
 
-	PassDesc const* WatchDesc() const;
+	//PassDescの参照を返す
+	PassDesc& RefPassDesc(NexusFieldProof proof);
 
 	//PassDescを削除する
 	void DeletePassDesc(NexusFieldProof proof_);
@@ -56,6 +58,8 @@ public:
 		std::vector<BufferUniqueID> const& refDepthStencilBuffersID_,
 		UINT const refOffset_
 	);
+
+	//==================
 
 protected:
 

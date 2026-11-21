@@ -41,6 +41,8 @@ RenderContext::StaticRenderGraph::BuildOutput RenderContext::StaticRenderGraph::
 		shaderContextDiplomat_
 	);
 
+	//不必要になった全てのパスのPassDescを削除
+	PSO_Builder::DeletePassDesc(proof_, passContainer_);
 
 	return buildOutput;
 }

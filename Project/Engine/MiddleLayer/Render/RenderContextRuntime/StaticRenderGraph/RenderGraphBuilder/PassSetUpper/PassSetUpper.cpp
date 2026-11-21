@@ -77,7 +77,7 @@ void RenderContext::StaticRenderGraph::PassSetUpper::CreateAllPassInfo
 	//パスDescがどのバッファを使用するかの名前リストを所持しているので、それと組み合わせて埋めていく
 	for (auto const& [kPassEnum, pass]: allPassPtrMap)
 	{
-		PassDesc const& desc = *pass->WatchDesc();
+		PassDesc const& desc = pass->RefPassDesc(proof_);
 		std::string const& dsrPassName = desc.passName;
 
 		//そのパスがバッファ配列の何番目を参照するか、であるPassConstantsCPUGPUのoffset

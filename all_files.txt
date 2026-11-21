@@ -20193,6 +20193,8 @@ RenderContext::StaticRenderGraph::BuildOutput RenderContext::StaticRenderGraph::
 	buildOutput.pathBuilder = PathBuilder::Build(proof_, pathAssembler_, bufferContextDiplomat_);
 	//グラフィックス用の巨大共通ルートシグネチャ
 	buildOutput.rootSigBuilder = RootSigBuilder::Build(proof_, rootSignatureContextDiplomat_);
+	//全てのPassの不足している初期化部分(RuntimePassInfoの作成、ルートコンスタンツバッファの作成など)を行う。
+	buildOutput.passSetUpper = PassSetUpper::Setup(proof_, renderPassCreator_, passContainer_, bufferContextDiplomat_);
 	//存在しなければならない全てのPSOを生成
 	buildOutput.pso_Builder = PSO_Builder::Build
 	(
@@ -20204,8 +20206,8 @@ RenderContext::StaticRenderGraph::BuildOutput RenderContext::StaticRenderGraph::
 		pso_ContextDiplomat_,
 		shaderContextDiplomat_
 	);
-	//全てのPassの不足している初期化部分(PassInfoの作成、ルートコンスタンツバッファの作成など)を行う。
-	buildOutput.passSetUpper = PassSetUpper::Setup(proof_, renderPassCreator_, passContainer_, bufferContextDiplomat_);
+	//不必要になった全てのパスのPassDescを削除
+	PSO_Builder::DeletePassDesc(proof_, passContainer_);
 	return buildOutput;
 }
 
@@ -20560,7 +20562,7 @@ std::vector<RenderContext::StaticRenderGraph::PSO_Builder::PsoDesc_Key> RenderCo
 	for (UINT i = 0u; i < (UINT)Pass::kCount;++i)
 	{
 		//そのPassのDesc
-		auto const& passDesc = *allPassPtrMap.at(Pass(i))->WatchDesc();
+		auto& passDesc = allPassPtrMap.at(Pass(i))->RefPassDesc(proof_);
 		//パスの中身をログ出力。頼りはログのみ
 		passDesc.DebugLog();
 		//FillModeの個数分作る。ただしオフスクPassはWireFrameを用意する必要はないんで、
@@ -20857,6 +20859,19 @@ ID3D12PipelineState* RenderContext::StaticRenderGraph::PSO_Builder::CreateFinalR
 	auto& psoCreator = *psoContextToolLender->Lend<PSO_Context::PSO_Creator>(usesPsoCreatorLicence);
 	return psoCreator.Create(psoDesc, rootSignature_, "FinalRendering");
 }
+void RenderContext::StaticRenderGraph::PSO_Builder::DeletePassDesc
+(
+	NexusFieldProof proof_,
+	RenderPassContainer& passContainer_
+)
+{
+	auto const& allPassPtrMap = passContainer_.AccessAllPassPtrMap(proof_);
+	for (auto& [passType, passPtr] : allPassPtrMap)
+	{
+		passPtr->DeletePassDesc(proof_);
+	}
+	Logger::Log("Delete All Pass Desc", fileName);
+}
 
 ========================================
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\MiddleLayer\Render\RenderContextRuntime\StaticRenderGraph\RenderGraphBuilder\GraphicsPSO_Builder\GraphicsPSO_Builder.h ===
@@ -20879,6 +20894,12 @@ class RenderContext::StaticRenderGraph::PSO_Builder
 		ModelContextDiplomat& modelContextDiplomat_,
 		PSO_ContextDiplomat& pso_ContextDiplomat_,
 		ShaderContextDiplomat& shaderContextDiplomat_
+	);
+	//PassDescが必要なくなるので削除する
+	static void DeletePassDesc
+	(
+		NexusFieldProof proof_,
+		RenderPassContainer& passContainer_
 	);
 	//以下ヘルパー
 private:
@@ -21063,7 +21084,7 @@ void RenderContext::StaticRenderGraph::PassSetUpper::CreateAllPassInfo
 	//パスDescがどのバッファを使用するかの名前リストを所持しているので、それと組み合わせて埋めていく
 	for (auto const& [kPassEnum, pass]: allPassPtrMap)
 	{
-		PassDesc const& desc = *pass->WatchDesc();
+		PassDesc const& desc = pass->RefPassDesc(proof_);
 		std::string const& dsrPassName = desc.passName;
 		//そのパスがバッファ配列の何番目を参照するか、であるPassConstantsCPUGPUのoffset
 		//普通にallRefBufferUniquesのけつ番目でいいはず
@@ -21099,6 +21120,12 @@ void RenderContext::StaticRenderGraph::PassSetUpper::CreateAllPassInfo
 				refDepthStencilBuffersID.emplace_back(refID);
 			}
 			allRefBufferNames.emplace_back(refBufferName);
+		}
+		//書き込みシェアするバッファの追加
+		for (auto const& name : desc.writeSharingColorBufferNames)
+		{
+			//検索
+			//passBufferCache.at(name)
 		}
 		///PassDesc -> RuntimePassInfoに詰め変える
 		pass->CreatePassInfo(proof_, refColorBuffersID , refDepthStencilBuffersID, refOffset);
@@ -21724,13 +21751,6 @@ using namespace ShaderPathComponent;
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-RenderContext::PassDesc const* RenderContext::PassBehavior::WatchDesc() const
-{
-	return desc ? desc.get() : nullptr;
-}
-///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 void RenderContext::PassBehavior::CreatePassInfo
 (
 	NexusFieldProof proof_,
@@ -21739,7 +21759,21 @@ void RenderContext::PassBehavior::CreatePassInfo
 	UINT const refOffset_
 ) 
 {
-	runtimePassInfo.reset(new RuntimePassInfo(proof_, std::move(desc), refColorBuffersID_, refDepthStencilBuffersID_,refOffset_));
+	runtimePassInfo.reset(new RuntimePassInfo(proof_, *desc, refColorBuffersID_, refDepthStencilBuffersID_,refOffset_));
+}
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+void RenderContext::PassBehavior::DeletePassDesc(NexusFieldProof proof_)
+{
+	desc.reset();
+}
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+RenderContext::PassDesc& RenderContext::PassBehavior::RefPassDesc(NexusFieldProof proof)
+{
+	return *desc;
 }
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -22106,7 +22140,15 @@ public:
 		RuntimeWrapper& cmdWrapper_,
 		[[maybe_unused]] BufferContext::BufferDispatcher& bufDispatcher_
 	) = 0;
-	PassDesc const* WatchDesc() const;
+	//レンダーターゲットのあれこれの描画コマンドをたたく
+	//自身の所持するバッファを全てレンダーターゲットへステート遷移
+	//Pass個人が呼ぶ必要はない
+	void BeginPass(RuntimeWrapper& cmdWrapper_, BufferContext::BufferDispatcher& bufDispatcher_);
+	//====以下初期化用=====
+	//PassDescの参照を返す
+	PassDesc& RefPassDesc(NexusFieldProof proof);
+	//PassDescを削除する
+	void DeletePassDesc(NexusFieldProof proof_);
 	//初期化用のPassDescからランタイム用へ
 	void CreatePassInfo
 	(
@@ -22115,10 +22157,7 @@ public:
 		std::vector<BufferUniqueID> const& refDepthStencilBuffersID_,
 		UINT const refOffset_
 	);
-	//レンダーターゲットのあれこれの描画コマンドをたたく
-	//自身の所持するバッファを全てレンダーターゲットへステート遷移
-	//Pass個人が呼ぶ必要はない
-	void BeginPass(RuntimeWrapper& cmdWrapper_, BufferContext::BufferDispatcher& bufDispatcher_);
+	//==================
 protected:
 	//モデルを描画する
 	void RenderModels
@@ -22662,12 +22701,30 @@ std::unique_ptr<RenderContext::PassDesc> RenderContext::RenderPassCreator::Creat
 	//パスのセッティングを読み込む
 	std::unique_ptr<PassDesc> desc = PassSettingsLoader::Load(passName_);
 	//その設定をもとにバッファを作成しそのユニークをディスクに記録
-	PassBufferCreator::CreateBuffer(passName_, *desc, passBufferCache,bufferContextDiplomat_);
+	PassBufferCreator::CreateBuffer
+	(
+		passName_, 
+		*desc, 
+		passBufferCache,
+		colorBufferInfoMapCache,
+		depthBufferInfoMapCache,
+		bufferContextDiplomat_
+	);
 	return desc;
 }
 std::unordered_map<std::string, BufferUniqueID> const& RenderContext::RenderPassCreator::WatchPassBufferCache(NexusFieldProof proof_)const
 {
 	return passBufferCache;
+}
+std::unordered_map<std::string, RenderContext::RequiredBufferInfo::ColorBuffer*> const&
+RenderContext::RenderPassCreator::WatchColorBufferInfoMapCache(NexusFieldProof proof_)const
+{
+	return colorBufferInfoMapCache;
+}
+std::unordered_map<std::string, RenderContext::RequiredBufferInfo::DepthStencilBuffer*> const&
+RenderContext::RenderPassCreator::WatchDepthBufferInfoMapCache(NexusFieldProof proof_)const
+{
+	return depthBufferInfoMapCache;
 }
 
 ========================================
@@ -22704,6 +22761,10 @@ public:
 		return InstantiatePass<PassType>(proof_, std::move(passDesc));
 	}
 	std::unordered_map<std::string, BufferUniqueID> const& WatchPassBufferCache(NexusFieldProof proof_)const;
+	std::unordered_map<std::string, RequiredBufferInfo::ColorBuffer*> const&
+		WatchColorBufferInfoMapCache(NexusFieldProof proof_)const;
+	std::unordered_map<std::string, RequiredBufferInfo::DepthStencilBuffer*> const& 
+		WatchDepthBufferInfoMapCache(NexusFieldProof proof_)const;
 private:
 	//パスのディスクを生成
 	std::unique_ptr<PassDesc> CreateDesc(std::string const& passName_, BufferContextDiplomat& bufferContextDiplomat_);
@@ -22720,7 +22781,12 @@ private:
 	//パスユニークの保管用
 	RenderPassContainer& passContainer;
 	//後に検索のため一時的にパスのバッファを保存しておくもの。ま、このクラス自体が消滅するんだけどね
+	//参照バッファ検索時に使用
 	std::unordered_map<std::string, BufferUniqueID> passBufferCache;
+	//そのRequiredBufferInfo::ColorBuffer,DepthStencilBufferバージョン
+	//書き込みシェアバッファ検索時に使用
+	std::unordered_map<std::string, RequiredBufferInfo::ColorBuffer*> colorBufferInfoMapCache;
+	std::unordered_map<std::string, RequiredBufferInfo::DepthStencilBuffer*> depthBufferInfoMapCache;
 };
 
 ========================================
@@ -22741,6 +22807,8 @@ void RenderContext::RenderPassCreator::PassBufferCreator::CreateBuffer
 	std::string const passName_,
 	PassDesc& desc_,
 	std::unordered_map<std::string, BufferUniqueID>& passBufferCache_,
+	std::unordered_map<std::string, RequiredBufferInfo::ColorBuffer*>& colorBufferInfosMapCache_,
+	std::unordered_map<std::string, RequiredBufferInfo::DepthStencilBuffer*>& depthBufferInfoMapCache_,
 	BufferContextDiplomat& bufferContextDiplomat_
 )
 {
@@ -22756,9 +22824,20 @@ void RenderContext::RenderPassCreator::PassBufferCreator::CreateBuffer
 		ColorBufferDescription colorBufferDesc(info.clearColor, info.width, info.height, info.format, info.numBuffer);
 		//バッファを作成し、そのユニークを保存
 		BufferUniqueID id = bufferCreator->CreateWithBuffer(colorBufferDesc, info.bufferName).first;
+		info.bufferID = id;
+#ifdef _DEBUG
+		//バッファ名の重複チェック
+		ErrorMessageOutput::Assert::DetectError
+		(
+			passBufferCache_.find(info.bufferName) == passBufferCache_.end(),
+			passName_ + " のカラーバッファ名: " + info.bufferName + "が被ってる",
+			"PassBufferCreator.cpp"
+		);
+#endif // _DEBUG
 		//後にPass達が他Passのバッファを参照するタメに必要なのでこちらにも保存
 		passBufferCache_[info.bufferName] = id;
-		info.bufferID = id;
+		//後に書き込みシェアバッファ検索用として追加
+		colorBufferInfosMapCache_[info.bufferName] = &colorBuffersInfo[i];
 	}
 	//深度ステンシルバッファを作成
 	if (desc_.depthStencilBufferInfo.has_value())
@@ -22776,9 +22855,20 @@ void RenderContext::RenderPassCreator::PassBufferCreator::CreateBuffer
 		);
 		//バッファを作成し、そのユニークを保存
 		BufferUniqueID id = bufferCreator->CreateWithBuffer(desc, info->bufferName).first;
+		desc_.depthStencilBufferInfo->bufferID = id;
+#ifdef _DEBUG
+		//バッファ名の重複チェック
+		ErrorMessageOutput::Assert::DetectError
+		(
+			passBufferCache_.find(info->bufferName) == passBufferCache_.end(),
+			passName_ + " の深度バッファ名: " + info->bufferName + "が被ってる",
+			"PassBufferCreator.cpp"
+		);
+#endif // _DEBUG
 		//後にPass達が他Passのバッファを参照するタメに必要なのでこちらにも保存
 		passBufferCache_[info->bufferName] = id;
-		desc_.depthStencilBufferInfo->bufferID = id;
+		//後に書き込みシェアバッファ検索用として追加
+		depthBufferInfoMapCache_[info->bufferName] = &desc_.depthStencilBufferInfo.value();
 	}
 }
 
@@ -22795,6 +22885,8 @@ class RenderContext::RenderPassCreator::PassBufferCreator
 		std::string const passName_,
 		PassDesc& desc_,
 		std::unordered_map<std::string, BufferUniqueID>& passBufferCache_,
+		std::unordered_map<std::string, RequiredBufferInfo::ColorBuffer*>& colorBufferInfosMapCache_,
+		std::unordered_map<std::string, RequiredBufferInfo::DepthStencilBuffer*>& depthBufferInfoMapCache_,
 		BufferContextDiplomat& bufferContextDiplomat_
 	);
 };
@@ -23057,15 +23149,14 @@ private:
 RenderContext::RuntimePassInfo::RuntimePassInfo
 (
 	NexusFieldProof proof_,
-	std::unique_ptr<PassDesc> desc_,
+	PassDesc const& desc_,
 	std::vector<BufferUniqueID> const& refColorBuffersID_,
 	std::vector<BufferUniqueID> const& refDepthStencilBuffersID_,
 	UINT const refOffset_
 )
 {
 	///パスディスクからランタイムに必要な情報のみピック
-	//ここでPassDescのお役は終了
-	PickUpRuntimeRequirementsFromDesc(*desc_);
+	PickUpRuntimeRequirementsFromDesc(desc_);
 	//その他情報を入力
 	InputOtherParams(refColorBuffersID_,refDepthStencilBuffersID_,refOffset_);
 }
@@ -23151,7 +23242,7 @@ struct RenderContext::RuntimePassInfo
 	RuntimePassInfo
 	(
 		NexusFieldProof proof_,
-		std::unique_ptr<PassDesc> desc_,
+		PassDesc const& desc_,
 		std::vector<BufferUniqueID> const& refColorBuffersID_,
 		std::vector<BufferUniqueID> const& refDepthStencilBuffersID_,
 		UINT const refOffset_
@@ -26324,4 +26415,4 @@ namespace StringProcessing
 === SUMMARY ===
 ========================================
 Total Files      : 581
-Effective Lines  : 19190
+Effective Lines  : 19259
