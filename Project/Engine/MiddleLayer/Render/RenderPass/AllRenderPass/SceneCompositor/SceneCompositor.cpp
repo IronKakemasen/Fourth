@@ -25,6 +25,6 @@ void SceneCompositor::Update
 )
 {
 	//オフスクリーンレンダリングのみです
-	RenderOffScreen(psoDispatcher_, cmdWrapper_ ,bufDispatcher_);
+	RenderOffScreen(psoDispatcher_, cmdWrapper_ );
 
 }

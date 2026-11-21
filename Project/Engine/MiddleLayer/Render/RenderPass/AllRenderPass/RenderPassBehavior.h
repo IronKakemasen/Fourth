@@ -17,7 +17,7 @@ class GPUBufferBehavior;
 ///☆重要☆
 ///バッファのステート遷移は、使う人(Pass)が責任を持つことにします。
 ///自身の所持する描画用のバッファはもちろん、参照するバッファも
-///そうすれば、自身のバッファを誰がどう使うとかは気にしなくてよくなるので
+///そうすれば、自身のバッファを誰がどう使うとかは気にしなくてよくなる
 ///銭湯でよく見る、座っていた人が次の人のためにお湯を掛けるのではなく、
 ///これから座る人がお湯をかけましょう
 
@@ -38,7 +38,7 @@ public:
 	) = 0;
 
 	//レンダーターゲットのあれこれの描画コマンドをたたく
-	//自身の所持するバッファを全てレンダーターゲットへステート遷移
+	//自身の所持するバッファと書き込み共有バッファを全てレンダーターゲットへステート遷移
 	//Pass個人が呼ぶ必要はない
 	void BeginPass(RuntimeWrapper& cmdWrapper_, BufferContext::BufferDispatcher& bufDispatcher_);
 
@@ -59,7 +59,6 @@ public:
 		UINT const refOffset_
 	);
 
-	//
 
 	//==================
 
@@ -74,12 +73,11 @@ protected:
 		RuntimeWrapper& cmdWrapper_
 	);
 
-	//オフスクにレンダリングをする
+	//オフスクレンダリングをする
 	void RenderOffScreen
 	(
 		PSO_PoolDispatcher& psoDispatcher_,
-		RuntimeWrapper& cmdWrapper_,
-		BufferContext::BufferDispatcher& bufDispatcher_
+		RuntimeWrapper& cmdWrapper_
 	);
 
 
@@ -96,10 +94,17 @@ private:
 
 	//Pass自身が所持するバッファをすべてに描画先バリアを張る
 	//その後、検索したバッファを返す
-	std::pair<std::array<ColorBuffer*, D3D12_SIMULTANEOUS_RENDER_TARGET_COUNT>, DepthStencilBuffer*> PitchOwnBuffersBarrierWriting
+	std::pair<std::array<ColorBuffer*, D3D12_SIMULTANEOUS_RENDER_TARGET_COUNT>, DepthStencilBuffer*> TransitionDstWriteBuffersWriting
 	(
 		std::vector<RuntimePassInfo::ColorBuffer> const& colorBuffersInfo_,
 		std::optional<RuntimePassInfo::DepthStencilBuffer> const& depthStencilBufferInfo_,
+		RuntimeWrapper& cmdWrapper_,
+		BufferContext::BufferDispatcher& bufDispatcher_
+	);
+
+	//参照バッファのステートをreadへ遷移させ、そのバリアを張る
+	void TransitionRefBuffersReading
+	(
 		RuntimeWrapper& cmdWrapper_,
 		BufferContext::BufferDispatcher& bufDispatcher_
 	);

@@ -21076,11 +21076,11 @@ void RenderContext::StaticRenderGraph::PassSetUpper::CreateAllPassInfo
 	for (auto const& [kPassEnum, pass]: allPassPtrMap)
 	{
 		//各パスの書き込み共有バッファをバッファ名から埋めていく
-		AddWriteShareingBuffer(proof_, *pass, renderPassCreator_);
+		AddWriteSharingBuffer(proof_, *pass, renderPassCreator_);
 		//パスの参照バッファを追加し、desc -> runtimePassInfoへ情報を詰める
 		//後にパスの参照先バッファID群のバッファ作成のために必要になるため、
 		//パスの参照バッファIDを記録しておく
-		AddRefBuffer
+		AddRefBufferFuncReturn addRefBufferFuncReturn = AddRefBuffer
 		(
 			proof_,
 			*pass,
@@ -21089,6 +21089,8 @@ void RenderContext::StaticRenderGraph::PassSetUpper::CreateAllPassInfo
 			allRefBufferNames,
 			bufferContextDiplomat_
 		);
+		//RuntimePassInfoを作成する
+		CreateRuntimePassInfo(proof_, *pass, std::move(addRefBufferFuncReturn));
 	}
 #ifdef  _DEBUG
 	Logger::Log("- - - - - All Pass Reference Buffers - - - - - ", fileName);
@@ -21104,13 +21106,13 @@ void RenderContext::StaticRenderGraph::PassSetUpper::CreateAllPassInfo
 	Logger::Log("- - - - - - - - - - - - - - - - - - - - ", fileName);
 #endif //  _DEBUG
 }
-void RenderContext::StaticRenderGraph::PassSetUpper::AddRefBuffer
+RenderContext::StaticRenderGraph::PassSetUpper::AddRefBufferFuncReturn RenderContext::StaticRenderGraph::PassSetUpper::AddRefBuffer
 (
 	NexusFieldProof proof_,
 	PassBehavior& pass_,
 	BuildOutput::PassSetUpper& output_,
 	RenderPassCreator& renderPassCreator_,
-	std::vector<std::string >& debug_allRefBufferNames_,
+	[[maybe_unused]] std::vector<std::string >& debug_allRefBufferNames_,
 	BufferContextDiplomat& bufferContextDiplomat_
 )
 {
@@ -21122,14 +21124,11 @@ void RenderContext::StaticRenderGraph::PassSetUpper::AddRefBuffer
 	auto const& passBufferCache = renderPassCreator_.WatchPassBufferCache(proof_);
 	//パスのディスク
 	PassDesc& desc = pass_.RefPassDesc(proof_);
-	//そのパスがバッファ配列の何番目を参照するか、であるPassConstantsCPUGPUのoffset
-	//普通にallRefBufferUniquesのけつ番目でいいはず
-	UINT const refOffset = UINT(output_.refBufferTagTrace.size());
+	AddRefBufferFuncReturn addRefBufferFuncReturn;
+	//パスの所持する、参照バッファ配列のオフセット
+	addRefBufferFuncReturn.refOffset = UINT(output_.refBufferTagTrace.size());
 	//そのPassが参照するバッファ一覧で回す
 	std::vector<std::string> const& refBufferNames = desc.referenceBufferNames;
-	//そのPassの参照先ばっふぁID格納用
-	std::vector<BufferUniqueID> refColorBuffersID;
-	std::vector<BufferUniqueID> refDepthStencilBuffersID;
 	for (auto const& refBufferName : refBufferNames)
 	{
 		//参照するバッファID
@@ -21144,7 +21143,7 @@ void RenderContext::StaticRenderGraph::PassSetUpper::AddRefBuffer
 			//これはランタイムで使用する全パスの参照バッファ格納先(カラーバッファ)
 			output_.refBuffersArr[(UINT)ClassTraits<ColorBuffer>::kTag].emplace_back(refID);
 			//そのパスが参照するバッファIDの格納
-			refColorBuffersID.emplace_back(refID);
+			addRefBufferFuncReturn.refColorBuffersID.emplace_back(refID);
 		}
 		else
 		{
@@ -21153,17 +21152,26 @@ void RenderContext::StaticRenderGraph::PassSetUpper::AddRefBuffer
 			//これはランタイムで使用する全パスの参照バッファ格納先(深度ステンシルバッファ)
 			output_.refBuffersArr[(UINT)ClassTraits<DepthStencilBuffer>::kTag].emplace_back(refID);
 			//そのパスが参照するバッファIDの格納
-			refDepthStencilBuffersID.emplace_back(refID);
+			addRefBufferFuncReturn.refDepthStencilBuffersID.emplace_back(refID);
 		}
 #ifdef _DEBUG
 		//名前確認デバッグ用
 		debug_allRefBufferNames_.emplace_back(refBufferName);
 #endif // _DEBUG
 	}
-	///RuntimePassInfoを作成する
-	pass_.CreatePassInfo(proof_, refColorBuffersID, refDepthStencilBuffersID, refOffset);
+	return addRefBufferFuncReturn;
 }
-void RenderContext::StaticRenderGraph::PassSetUpper::AddWriteShareingBuffer
+void RenderContext::StaticRenderGraph::PassSetUpper::CreateRuntimePassInfo
+(
+	NexusFieldProof proof_,
+	PassBehavior& pass_,
+	AddRefBufferFuncReturn addRefBufferFuncReturn_
+)
+{
+	//RuntimePassInfoを作成する
+	pass_.CreatePassInfo(proof_, addRefBufferFuncReturn_.refColorBuffersID, addRefBufferFuncReturn_.refDepthStencilBuffersID, addRefBufferFuncReturn_.refOffset);
+}
+void RenderContext::StaticRenderGraph::PassSetUpper::AddWriteSharingBuffer
 (
 	NexusFieldProof proof_,
 	PassBehavior& pass_,
@@ -21171,23 +21179,26 @@ void RenderContext::StaticRenderGraph::PassSetUpper::AddWriteShareingBuffer
 )
 {
 	//書き込みシェアバッファ取り付けのためのキャッシュ
-	auto const& colorBufferInfoMapCahce = renderPassCreator_.WatchColorBufferInfoMapCache(proof_);
-	auto const& depthBufferInfoMapCahce = renderPassCreator_.WatchDepthBufferInfoMapCache(proof_);
+	auto const& colorBufferInfoMapCache = renderPassCreator_.WatchColorBufferInfoMapCache(proof_);
+	auto const& depthBufferInfoMapCache = renderPassCreator_.WatchDepthBufferInfoMapCache(proof_);
 	PassDesc& desc = pass_.RefPassDesc(proof_);
 	//書き込みシェアするバッファの追加(ColorBuffer)
 	for (auto const& name : desc.writeSharingColorBufferNames)
 	{
 		//検索
-		auto* colorBufferinfo = colorBufferInfoMapCahce.at(name);
+		RequiredBufferInfo::ColorBuffer colorBufferinfo = *colorBufferInfoMapCache.at(name);
+		//自前バッファでなければクリアしない
+		colorBufferinfo.doClear = false;
 		//書き込むので自前バッファとして追加
-		desc.colorBuffersInfo.emplace_back(*colorBufferinfo);
+		desc.colorBuffersInfo.emplace_back(colorBufferinfo);
 	}
 	//書き込みシェアするバッファの追加(DepthBuffer)
 	std::string const& depthBufferInfoName = desc.writeSharingDepthBufferName;
 	if (depthBufferInfoName.size() > 0)
 	{
-		auto* depthBufferinfo = depthBufferInfoMapCahce.at(depthBufferInfoName);
-		desc.depthStencilBufferInfo = *depthBufferinfo;
+		RequiredBufferInfo::DepthStencilBuffer depthBufferinfo = *depthBufferInfoMapCache.at(depthBufferInfoName);
+		depthBufferinfo.doClear = false;
+		desc.depthStencilBufferInfo = depthBufferinfo;
 	}
 }
 void RenderContext::StaticRenderGraph::PassSetUpper::SetFinalColorBuffer
@@ -21295,18 +21306,32 @@ private:
 	);
 	//各パスの参照バッファをバッファ名から埋めていき、
 	//Outputの全パスの参照バッファ格納先にIDを登録する
-	//PassDescをもとにRuntimePassInfoを作成する（名前的に違和感あるが…）
-	static void AddRefBuffer
+	struct AddRefBufferFuncReturn
+	{
+		//そのパスがバッファ配列の何番目を参照するか、であるPassConstantsCPUGPUのoffset
+		UINT refOffset;
+		//そのPassの参照先バッファID格納用
+		std::vector<BufferUniqueID> refColorBuffersID;
+		std::vector<BufferUniqueID> refDepthStencilBuffersID;
+	};
+	static AddRefBufferFuncReturn AddRefBuffer
 	(
 		NexusFieldProof proof_,
 		PassBehavior& pass_,
 		BuildOutput::PassSetUpper& output_,
 		RenderPassCreator& renderPassCreator_,
-		std::vector<std::string >& debug_allRefBufferNames_,
+		[[maybe_unused]] std::vector<std::string >& debug_allRefBufferNames_,
 		BufferContextDiplomat& bufferContextDiplomat_
 	);
+	//RuntimePassInfoを作成する
+	static void CreateRuntimePassInfo
+	(
+		NexusFieldProof proof_,
+		PassBehavior& pass_,
+		AddRefBufferFuncReturn addRefBufferFuncReturn_
+	);
 	//各パスの書き込み共有バッファをバッファ名から埋めていく
-	static void AddWriteShareingBuffer
+	static void AddWriteSharingBuffer
 	(
 		NexusFieldProof proof_,
 		PassBehavior& pass_,
@@ -21898,8 +21923,8 @@ void RenderContext::PassBehavior::BeginPass(RuntimeWrapper& cmdWrapper_, BufferC
 		rtHandles[i] = PullHandleCPU<ColorBuffer>(renderTargets.first[i], bufDispatcher_);
 		scissorRects[i] = src.scissorRect;
 		viewports[i] = src.viewport;
-		//ビュークリア
-		ClearColorBufferView(rtHandles[i], src.clearColor.data(), cmdWrapper_);
+		//ビュークリア。自前バッファのみ
+		if(src.doClear) ClearColorBufferView(rtHandles[i], src.clearColor.data(), cmdWrapper_);
 	}
 	//行列のセット(深度のみのパスだとまずいかも)
 	SetMatrix<D3D12_RECT>(numColorBuffers, scissorRects.data(), cmdWrapper_);
@@ -21909,7 +21934,7 @@ void RenderContext::PassBehavior::BeginPass(RuntimeWrapper& cmdWrapper_, BufferC
 	{
 		//ハンドル取得
 		D3D12_CPU_DESCRIPTOR_HANDLE dsvHandle = PullHandleCPU<DepthStencilBuffer>(renderTargets.second, bufDispatcher_);
-		//ビュークリア
+		//ビュークリア。おなじく自前バッファのみ
 		ClearDepthStencilBufferView(dsvHandle, cmdWrapper_);
 		//描画先の設定
 		SetRenderTargets(rtHandles, numColorBuffers, &dsvHandle, cmdWrapper_);
@@ -22153,7 +22178,18 @@ void RenderContext::PassBehavior::ClearDepthStencilBufferView
 )
 {
 	auto const& depthSInfo = runtimePassInfo->WatchDepthStencilBufferInfo();
-	cmdWrapper_.ClearDepthStencilView(handleCPU_, depthSInfo->doesClearStencil, depthSInfo->clearDepth, depthSInfo->clearStencil, 0, nullptr);
+	if (depthSInfo->doClear)
+	{
+		cmdWrapper_.ClearDepthStencilView
+		(
+			handleCPU_, 
+			depthSInfo->doesClearStencil, 
+			depthSInfo->clearDepth, 
+			depthSInfo->clearStencil, 
+			0,
+			nullptr
+		);
+	}
 }
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -22211,7 +22247,7 @@ class GPUBufferBehavior;
 ///☆重要☆
 ///バッファのステート遷移は、使う人(Pass)が責任を持つことにします。
 ///自身の所持する描画用のバッファはもちろん、参照するバッファも
-///そうすれば、自身のバッファを誰がどう使うとかは気にしなくてよくなるので
+///そうすれば、自身のバッファを誰がどう使うとかは気にしなくてよくなる
 ///銭湯でよく見る、座っていた人が次の人のためにお湯を掛けるのではなく、
 ///これから座る人がお湯をかけましょう
 class RenderContext::PassBehavior
@@ -22244,7 +22280,6 @@ public:
 		std::vector<BufferUniqueID> const& refDepthStencilBuffersID_,
 		UINT const refOffset_
 	);
-	//
 	//==================
 protected:
 	//モデルを描画する
@@ -22554,20 +22589,23 @@ struct RenderContext::RequiredBufferInfo
 {
 	struct ColorBuffer
 	{
+		ColorBuffer() = default;
 		std::string bufferName;
 		DXGI_FORMAT format;
+		//クリアするかどうか。自前バッファであればtrue。witesharing用との区別のため
+		bool doClear = true;
 		std::vector<float> clearColor{};
 		uint32_t width{};
 		uint32_t height{};
 		//シングルかダブルか
 		ProjectConfig::Render::NumBuffer numBuffer{};
 		RenderStateComponent::BlendMode blendMode = RenderStateComponent::BlendMode::kDependsModel;
-		BufferUniqueID bufferID;
-		ColorBuffer() = default;
+		BufferUniqueID bufferID = kInvalid;
 	};
 	struct DepthStencilBuffer
 	{
 		DepthStencilBuffer() = default;
+		bool doClear = true;
 		std::string bufferName;
 		DXGI_FORMAT dsvFormat;
 		DXGI_FORMAT srvFormat;
@@ -22577,7 +22615,7 @@ struct RenderContext::RequiredBufferInfo
 		uint32_t width{};
 		uint32_t height{};
 		ProjectConfig::Render::NumBuffer numBuffer{};
-		BufferUniqueID bufferID;
+		BufferUniqueID bufferID = kInvalid;
 	};
 };
 
@@ -22595,8 +22633,8 @@ RenderContext::PassDesc::PassDesc
 	std::string const& name_,
 	std::optional<std::pair<std::string, std::string >> const& ms_psFileName_,
 	RenderPassState renderPassState_,
-	std::vector<RenderContext::RequiredBufferInfo::ColorBuffer> const& colorBuffersInfo_,
-	std::optional<RenderContext::RequiredBufferInfo::DepthStencilBuffer> const& depthStencilBufferInfo_,
+	std::vector<RequiredBufferInfo::ColorBuffer> const& colorBuffersInfo_,
+	std::optional<RequiredBufferInfo::DepthStencilBuffer> const& depthStencilBufferInfo_,
 	std::vector <std::string> const& referenceBufferNames_,
 	std::vector <std::string> const& writeSharingColorBufferNames_,
 	std::string const& writeSharingDepthBufferName_
@@ -22690,8 +22728,8 @@ struct RenderContext::PassDesc
 		std::string const& name_,
 		std::optional<std::pair<std::string, std::string >> const& ms_psFileName_,
 		RenderPassState renderPassState_,
-		std::vector<RenderContext::RequiredBufferInfo::ColorBuffer> const& colorBuffersInfo_,
-		std::optional<RenderContext::RequiredBufferInfo::DepthStencilBuffer> const& depthStencilBufferInfo_,
+		std::vector<RequiredBufferInfo::ColorBuffer> const& colorBuffersInfo_,
+		std::optional<RequiredBufferInfo::DepthStencilBuffer> const& depthStencilBufferInfo_,
 		std::vector <std::string> const& referenceBufferNames_,
 		std::vector <std::string> const& writeSharingColorBufferNames_,
 		std::string const& writeSharingDepthBufferName_
@@ -22703,8 +22741,8 @@ private:
 	//renderPassComponentの塊
 	RenderPassState renderPassState;
 	//必要なバッファの情報
-	std::vector<RenderContext::RequiredBufferInfo::ColorBuffer> colorBuffersInfo;
-	std::optional<RenderContext::RequiredBufferInfo::DepthStencilBuffer> depthStencilBufferInfo;
+	std::vector<RequiredBufferInfo::ColorBuffer> colorBuffersInfo;
+	std::optional<RequiredBufferInfo::DepthStencilBuffer> depthStencilBufferInfo;
 	//参照するバッファ(テクスチャ)の名前一覧
 	std::vector <std::string> referenceBufferNames;
 	//書き込みシェアするバッファ(レンダーターゲット)の名前一覧
@@ -22909,6 +22947,9 @@ void RenderContext::RenderPassCreator::PassBufferCreator::CreateBuffer
 	//カラーバッファを作成
 	auto& colorBuffersInfo = desc_.colorBuffersInfo;
 	auto const numColorBufferRequired = colorBuffersInfo.size();
+	//colorBuffersInfoのポインタを下で渡しているので、colorBuffersInfoのサイズ再確保
+	//が起きないように、書き込みシェアバッファ分もリザーブしておく
+	colorBuffersInfo.reserve(numColorBufferRequired + desc_.writeSharingColorBufferNames.size());
 	for (size_t i = 0;i < numColorBufferRequired;++i)
 	{
 		auto& info = colorBuffersInfo[i];
@@ -23140,9 +23181,13 @@ RenderContext::RenderPassState RenderContext::RenderPassCreator::PassSettingsLoa
 )
 {
 	auto* miyajison = Miyajison::Get();
-	bool doesOwnDepthStencil =
-		miyajison->LoadData<bool>(DataKeyString::kSrcJsonFileName, { passName_,DataKeyString::kDoesOwnDepthStencilB });
-	return doesOwnDepthStencil ? RenderPassState
+	//自前深度バッファがあるかどうか
+	bool doesOwnDepthStencil = miyajison->LoadData<bool>
+		(DataKeyString::kSrcJsonFileName, { passName_,DataKeyString::kDoesOwnDepthStencilB });
+	//書き込みシェアする深度バッファがあるかどうか
+	bool isThereWriteSharingDepthBuffer = (bool)miyajison->LoadData<std::string>
+		(DataKeyString::kSrcJsonFileName, { passName_,DataKeyString::kWriteSharingDepthBufferName }).size();
+	return (doesOwnDepthStencil || isThereWriteSharingDepthBuffer) ? RenderPassState
 	(
 		DepthTest(miyajison->LoadData<int>(DataKeyString::kSrcJsonFileName, { passName_,DataKeyString::kDepthTestI })),
 		DepthEnable(miyajison->LoadData<bool>(DataKeyString::kSrcJsonFileName, { passName_,DataKeyString::kDepthEnableB })),
@@ -23150,7 +23195,7 @@ RenderContext::RenderPassState RenderContext::RenderPassCreator::PassSettingsLoa
 		FLOAT(miyajison->LoadData<float>(DataKeyString::kSrcJsonFileName, { passName_,DataKeyString::kDepthBiasClampF })),
 		FLOAT(miyajison->LoadData<float>(DataKeyString::kSrcJsonFileName, { passName_,DataKeyString::kSlopeScaledDepthBiasF }))
 	)
-	: RenderPassState{};	//深度バッファ使わないならダミー値で構わん
+	: RenderPassState{};	
 }
 std::optional<std::pair<std::string, std::string >> RenderContext::RenderPassCreator::PassSettingsLoader::ParseShaderFile
 (
@@ -23294,10 +23339,11 @@ void RenderContext::RuntimePassInfo::PickUpRuntimeRequirementsFromDesc(PassDesc 
 		{
 			auto& info = colorBuffersInfo[i];
 			auto const& src = desc_.colorBuffersInfo[i];
-			info.blendMode = src.blendMode;
-			info.bufferID = src.bufferID;
-			info.clearColor = src.clearColor;
-			info.viewport = AssembleMatrix<D3D12_VIEWPORT>(src.width, src.height);
+			info.doClear	 = src.doClear;
+			info.blendMode	 = src.blendMode;
+			info.bufferID	 = src.bufferID;
+			info.clearColor  = src.clearColor;
+			info.viewport	 = AssembleMatrix<D3D12_VIEWPORT>(src.width, src.height);
 			info.scissorRect = AssembleMatrix<D3D12_RECT>(src.width, src.height);
 		}
 	}
@@ -23308,6 +23354,7 @@ void RenderContext::RuntimePassInfo::PickUpRuntimeRequirementsFromDesc(PassDesc 
 		if (src.has_value())
 		{
 			depthStencilBufferInfo.emplace();
+			info->doClear			= src->doClear;
 			info->bufferID			= src->bufferID;
 			info->clearDepth		= src->clearDepth;
 			info->clearStencil		= src->clearStencil;
@@ -23361,6 +23408,7 @@ struct RenderContext::RuntimePassInfo
 	);
 	struct ColorBuffer
 	{
+		bool doClear;
 		std::vector<float> clearColor{};
 		D3D12_VIEWPORT viewport;
 		D3D12_RECT scissorRect;
@@ -23369,6 +23417,7 @@ struct RenderContext::RuntimePassInfo
 	};
 	struct DepthStencilBuffer
 	{
+		bool doClear = true;
 		float clearDepth{};
 		D3D12_CLEAR_FLAGS doesClearStencil;
 		int clearStencil{};
@@ -23395,6 +23444,7 @@ private:
 	std::vector<BufferUniqueID> refColorBuffersID;
 	//その深度ステンシルバッファバージョン
 	std::vector<BufferUniqueID> refDepthStencilBuffersID;
+	//ルートコンスタンツ
 	ConstantBuffers::PassConstantsCPUGPU rootConstants;
 	//PassDescからランタイムに必要な情報をピックする
 	void PickUpRuntimeRequirementsFromDesc(PassDesc const& desc_);
@@ -26527,4 +26577,4 @@ namespace StringProcessing
 === SUMMARY ===
 ========================================
 Total Files      : 581
-Effective Lines  : 19350
+Effective Lines  : 19393

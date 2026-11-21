@@ -45,10 +45,11 @@ void RenderContext::RuntimePassInfo::PickUpRuntimeRequirementsFromDesc(PassDesc 
 			auto& info = colorBuffersInfo[i];
 			auto const& src = desc_.colorBuffersInfo[i];
 
-			info.blendMode = src.blendMode;
-			info.bufferID = src.bufferID;
-			info.clearColor = src.clearColor;
-			info.viewport = AssembleMatrix<D3D12_VIEWPORT>(src.width, src.height);
+			info.doClear	 = src.doClear;
+			info.blendMode	 = src.blendMode;
+			info.bufferID	 = src.bufferID;
+			info.clearColor  = src.clearColor;
+			info.viewport	 = AssembleMatrix<D3D12_VIEWPORT>(src.width, src.height);
 			info.scissorRect = AssembleMatrix<D3D12_RECT>(src.width, src.height);
 		}
 	}
@@ -62,6 +63,7 @@ void RenderContext::RuntimePassInfo::PickUpRuntimeRequirementsFromDesc(PassDesc 
 		{
 			depthStencilBufferInfo.emplace();
 
+			info->doClear			= src->doClear;
 			info->bufferID			= src->bufferID;
 			info->clearDepth		= src->clearDepth;
 			info->clearStencil		= src->clearStencil;

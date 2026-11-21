@@ -75,16 +75,21 @@ void RenderContext::PassBehavior::BeginPass(RuntimeWrapper& cmdWrapper_, BufferC
 	std::array<D3D12_RECT, D3D12_SIMULTANEOUS_RENDER_TARGET_COUNT> scissorRects;
 	std::array<D3D12_VIEWPORT, D3D12_SIMULTANEOUS_RENDER_TARGET_COUNT> viewports;
 
-
-	//まずPassの所持する全てのバッファの書き込みバリアを張る
+	//まず描画先バッファのバリアを生成する
 	std::pair<std::array<ColorBuffer*, D3D12_SIMULTANEOUS_RENDER_TARGET_COUNT>, DepthStencilBuffer*> renderTargets =
-	PitchOwnBuffersBarrierWriting
+	TransitionDstWriteBuffersWriting
 	(
 		colorBuffersInfo,
 		depthStencilBufferInfo,
 		cmdWrapper_,
 		bufDispatcher_
 	);
+
+	//参照バッファのバリアを生成する
+	TransitionRefBuffersReading(cmdWrapper_, bufDispatcher_);
+
+	//キャッシュされたバリアを張る
+	PitchBarrierCached(cmdWrapper_);
 
 	//カラーバッファ
 	for (UINT i = 0;i < numColorBuffers;++i)
@@ -96,8 +101,8 @@ void RenderContext::PassBehavior::BeginPass(RuntimeWrapper& cmdWrapper_, BufferC
 		scissorRects[i] = src.scissorRect;
 		viewports[i] = src.viewport;
 
-		//ビュークリア
-		ClearColorBufferView(rtHandles[i], src.clearColor.data(), cmdWrapper_);
+		//ビュークリア。自前バッファのみ
+		if(src.doClear) ClearColorBufferView(rtHandles[i], src.clearColor.data(), cmdWrapper_);
 	}
 
 	//行列のセット(深度のみのパスだとまずいかも)
@@ -111,9 +116,8 @@ void RenderContext::PassBehavior::BeginPass(RuntimeWrapper& cmdWrapper_, BufferC
 		//ハンドル取得
 		D3D12_CPU_DESCRIPTOR_HANDLE dsvHandle = PullHandleCPU<DepthStencilBuffer>(renderTargets.second, bufDispatcher_);
 		
-		//ビュークリア
+		//ビュークリア。おなじく自前バッファのみ
 		ClearDepthStencilBufferView(dsvHandle, cmdWrapper_);
-
 
 		//描画先の設定
 		SetRenderTargets(rtHandles, numColorBuffers, &dsvHandle, cmdWrapper_);
@@ -127,11 +131,10 @@ void RenderContext::PassBehavior::BeginPass(RuntimeWrapper& cmdWrapper_, BufferC
 
 	//このパスのルートコンスタンツを転送
 	TransferRootConstants(cmdWrapper_);
-
 }
 
 
-std::pair<std::array<ColorBuffer*, D3D12_SIMULTANEOUS_RENDER_TARGET_COUNT>,DepthStencilBuffer*> RenderContext::PassBehavior::PitchOwnBuffersBarrierWriting
+std::pair<std::array<ColorBuffer*, D3D12_SIMULTANEOUS_RENDER_TARGET_COUNT>,DepthStencilBuffer*> RenderContext::PassBehavior::TransitionDstWriteBuffersWriting
 (
 	std::vector<RuntimePassInfo::ColorBuffer> const& colorBuffersInfo_,
 	std::optional<RuntimePassInfo::DepthStencilBuffer> const& depthStencilBufferInfo_,
@@ -164,40 +167,21 @@ std::pair<std::array<ColorBuffer*, D3D12_SIMULTANEOUS_RENDER_TARGET_COUNT>,Depth
 		CreateBarrier<BufferUsage::kWrite>(depthStencilBuffer);
 	}
 
-	//キャッシュされたバリアを張る
-	PitchBarrierCached(cmdWrapper_);
-
 	//検索した描画先バッファを返す
 	return std::make_pair(colorBuffers, depthStencilBuffer);
 }
-
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-void RenderContext::PassBehavior::RenderOffScreen
+void RenderContext::PassBehavior::TransitionRefBuffersReading
 (
-	PSO_PoolDispatcher& psoDispatcher_, 
 	RuntimeWrapper& cmdWrapper_,
 	BufferContext::BufferDispatcher& bufDispatcher_
 )
 {
-	//参照先のバッファID
-	//カラーバッファのと深度ステンシルバッファの
+	//カラーバッファのと深度ステンシルバッファの参照先バッファID
 	auto const& refBuffersIDColors = runtimePassInfo->WatchReferenceBufferIDs<ColorBuffer>();
 	auto const& refBuffersIDDepths = runtimePassInfo->WatchReferenceBufferIDs<DepthStencilBuffer>();
-
-
-	//psoDispatcherがキーをもとにpsoを検索
-	GraphicsPSO_Key psoKey;
-	psoKey.pass = runtimePassInfo->WatchPass();
-	psoKey.fill = FillMode::kSolid;
-	psoKey.cull = CullMode::kBack;
-	psoKey.mesh = MeshType::kOffscreen;
-	psoKey.material = Material::Type::kOffscreen;
-	psoKey.blend = BlendMode::kDependsRenderPass;
-
-	auto* srcPso = psoDispatcher_.AccessGraphicsPSO(psoKey);
-	cmdWrapper_.SetPipelineState(srcPso);
 
 	//すでに描画先の設定は終わっているので、全ての参照バッファのステートをReadへ遷移させる
 	for (auto const& id : refBuffersIDColors)
@@ -215,14 +199,30 @@ void RenderContext::PassBehavior::RenderOffScreen
 		//Write -> Read  へ
 		CreateBarrier<BufferUsage::kRead>(depthStencilBuffer);
 	}
+}
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+void RenderContext::PassBehavior::RenderOffScreen
+(
+	PSO_PoolDispatcher& psoDispatcher_, 
+	RuntimeWrapper& cmdWrapper_
+)
+{
+	//psoDispatcherがキーをもとにpsoを検索
+	GraphicsPSO_Key psoKey;
+	psoKey.pass = runtimePassInfo->WatchPass();
+	psoKey.fill = FillMode::kSolid;
+	psoKey.cull = CullMode::kBack;
+	psoKey.mesh = MeshType::kOffscreen;
+	psoKey.material = Material::Type::kOffscreen;
+	psoKey.blend = BlendMode::kDependsRenderPass;
 
-	//キャッシュされたバリアを張る
-	PitchBarrierCached(cmdWrapper_);
+	auto* srcPso = psoDispatcher_.AccessGraphicsPSO(psoKey);
+	cmdWrapper_.SetPipelineState(srcPso);
 
 	//どんなオフスクだろうが、フルスクリーントライアングルで頂点情報形成
 	cmdWrapper_.DispatchMesh(3, 1, 1);
-
-
 }
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -390,8 +390,19 @@ void RenderContext::PassBehavior::ClearDepthStencilBufferView
 )
 {
 	auto const& depthSInfo = runtimePassInfo->WatchDepthStencilBufferInfo();
-
-	cmdWrapper_.ClearDepthStencilView(handleCPU_, depthSInfo->doesClearStencil, depthSInfo->clearDepth, depthSInfo->clearStencil, 0, nullptr);
+	
+	if (depthSInfo->doClear)
+	{
+		cmdWrapper_.ClearDepthStencilView
+		(
+			handleCPU_, 
+			depthSInfo->doesClearStencil, 
+			depthSInfo->clearDepth, 
+			depthSInfo->clearStencil, 
+			0,
+			nullptr
+		);
+	}
 }
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

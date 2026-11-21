@@ -30,19 +30,34 @@ private:
 
 	//各パスの参照バッファをバッファ名から埋めていき、
 	//Outputの全パスの参照バッファ格納先にIDを登録する
-	//PassDescをもとにRuntimePassInfoを作成する（名前的に違和感あるが…）
-	static void AddRefBuffer
+	struct AddRefBufferFuncReturn
+	{
+		//そのパスがバッファ配列の何番目を参照するか、であるPassConstantsCPUGPUのoffset
+		UINT refOffset;
+		//そのPassの参照先バッファID格納用
+		std::vector<BufferUniqueID> refColorBuffersID;
+		std::vector<BufferUniqueID> refDepthStencilBuffersID;
+	};
+	static AddRefBufferFuncReturn AddRefBuffer
 	(
 		NexusFieldProof proof_,
 		PassBehavior& pass_,
 		BuildOutput::PassSetUpper& output_,
 		RenderPassCreator& renderPassCreator_,
-		std::vector<std::string >& debug_allRefBufferNames_,
+		[[maybe_unused]] std::vector<std::string >& debug_allRefBufferNames_,
 		BufferContextDiplomat& bufferContextDiplomat_
 	);
 
+	//RuntimePassInfoを作成する
+	static void CreateRuntimePassInfo
+	(
+		NexusFieldProof proof_,
+		PassBehavior& pass_,
+		AddRefBufferFuncReturn addRefBufferFuncReturn_
+	);
+
 	//各パスの書き込み共有バッファをバッファ名から埋めていく
-	static void AddWriteShareingBuffer
+	static void AddWriteSharingBuffer
 	(
 		NexusFieldProof proof_,
 		PassBehavior& pass_,

@@ -173,10 +173,16 @@ RenderContext::RenderPassState RenderContext::RenderPassCreator::PassSettingsLoa
 {
 	auto* miyajison = Miyajison::Get();
 
-	bool doesOwnDepthStencil =
-		miyajison->LoadData<bool>(DataKeyString::kSrcJsonFileName, { passName_,DataKeyString::kDoesOwnDepthStencilB });
+	//自前深度バッファがあるかどうか
+	bool doesOwnDepthStencil = miyajison->LoadData<bool>
+		(DataKeyString::kSrcJsonFileName, { passName_,DataKeyString::kDoesOwnDepthStencilB });
 
-	return doesOwnDepthStencil ? RenderPassState
+	//書き込みシェアする深度バッファがあるかどうか
+	bool isThereWriteSharingDepthBuffer = (bool)miyajison->LoadData<std::string>
+		(DataKeyString::kSrcJsonFileName, { passName_,DataKeyString::kWriteSharingDepthBufferName }).size();
+	
+	
+	return (doesOwnDepthStencil || isThereWriteSharingDepthBuffer) ? RenderPassState
 	(
 		DepthTest(miyajison->LoadData<int>(DataKeyString::kSrcJsonFileName, { passName_,DataKeyString::kDepthTestI })),
 		DepthEnable(miyajison->LoadData<bool>(DataKeyString::kSrcJsonFileName, { passName_,DataKeyString::kDepthEnableB })),
@@ -184,7 +190,7 @@ RenderContext::RenderPassState RenderContext::RenderPassCreator::PassSettingsLoa
 		FLOAT(miyajison->LoadData<float>(DataKeyString::kSrcJsonFileName, { passName_,DataKeyString::kDepthBiasClampF })),
 		FLOAT(miyajison->LoadData<float>(DataKeyString::kSrcJsonFileName, { passName_,DataKeyString::kSlopeScaledDepthBiasF }))
 	)
-	: RenderPassState{};	//深度バッファ使わないならダミー値で構わん
+	: RenderPassState{};	
 
 }
 

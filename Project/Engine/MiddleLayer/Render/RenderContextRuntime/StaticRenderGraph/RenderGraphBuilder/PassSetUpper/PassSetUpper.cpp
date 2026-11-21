@@ -66,12 +66,12 @@ void RenderContext::StaticRenderGraph::PassSetUpper::CreateAllPassInfo
 	for (auto const& [kPassEnum, pass]: allPassPtrMap)
 	{
 		//各パスの書き込み共有バッファをバッファ名から埋めていく
-		AddWriteShareingBuffer(proof_, *pass, renderPassCreator_);
+		AddWriteSharingBuffer(proof_, *pass, renderPassCreator_);
 
 		//パスの参照バッファを追加し、desc -> runtimePassInfoへ情報を詰める
 		//後にパスの参照先バッファID群のバッファ作成のために必要になるため、
 		//パスの参照バッファIDを記録しておく
-		AddRefBuffer
+		AddRefBufferFuncReturn addRefBufferFuncReturn = AddRefBuffer
 		(
 			proof_,
 			*pass,
@@ -80,6 +80,9 @@ void RenderContext::StaticRenderGraph::PassSetUpper::CreateAllPassInfo
 			allRefBufferNames,
 			bufferContextDiplomat_
 		);
+
+		//RuntimePassInfoを作成する
+		CreateRuntimePassInfo(proof_, *pass, std::move(addRefBufferFuncReturn));
 	}
 
 #ifdef  _DEBUG
@@ -102,13 +105,13 @@ void RenderContext::StaticRenderGraph::PassSetUpper::CreateAllPassInfo
 
 }
 
-void RenderContext::StaticRenderGraph::PassSetUpper::AddRefBuffer
+RenderContext::StaticRenderGraph::PassSetUpper::AddRefBufferFuncReturn RenderContext::StaticRenderGraph::PassSetUpper::AddRefBuffer
 (
 	NexusFieldProof proof_,
 	PassBehavior& pass_,
 	BuildOutput::PassSetUpper& output_,
 	RenderPassCreator& renderPassCreator_,
-	std::vector<std::string >& debug_allRefBufferNames_,
+	[[maybe_unused]] std::vector<std::string >& debug_allRefBufferNames_,
 	BufferContextDiplomat& bufferContextDiplomat_
 )
 {
@@ -123,15 +126,12 @@ void RenderContext::StaticRenderGraph::PassSetUpper::AddRefBuffer
 	//パスのディスク
 	PassDesc& desc = pass_.RefPassDesc(proof_);
 
-	//そのパスがバッファ配列の何番目を参照するか、であるPassConstantsCPUGPUのoffset
-	//普通にallRefBufferUniquesのけつ番目でいいはず
-	UINT const refOffset = UINT(output_.refBufferTagTrace.size());
+	AddRefBufferFuncReturn addRefBufferFuncReturn;
+	//パスの所持する、参照バッファ配列のオフセット
+	addRefBufferFuncReturn.refOffset = UINT(output_.refBufferTagTrace.size());
 
 	//そのPassが参照するバッファ一覧で回す
 	std::vector<std::string> const& refBufferNames = desc.referenceBufferNames;
-	//そのPassの参照先ばっふぁID格納用
-	std::vector<BufferUniqueID> refColorBuffersID;
-	std::vector<BufferUniqueID> refDepthStencilBuffersID;
 
 	for (auto const& refBufferName : refBufferNames)
 	{
@@ -150,7 +150,7 @@ void RenderContext::StaticRenderGraph::PassSetUpper::AddRefBuffer
 			output_.refBuffersArr[(UINT)ClassTraits<ColorBuffer>::kTag].emplace_back(refID);
 
 			//そのパスが参照するバッファIDの格納
-			refColorBuffersID.emplace_back(refID);
+			addRefBufferFuncReturn.refColorBuffersID.emplace_back(refID);
 		}
 		else
 		{
@@ -160,7 +160,7 @@ void RenderContext::StaticRenderGraph::PassSetUpper::AddRefBuffer
 			output_.refBuffersArr[(UINT)ClassTraits<DepthStencilBuffer>::kTag].emplace_back(refID);
 
 			//そのパスが参照するバッファIDの格納
-			refDepthStencilBuffersID.emplace_back(refID);
+			addRefBufferFuncReturn.refDepthStencilBuffersID.emplace_back(refID);
 		}
 #ifdef _DEBUG
 
@@ -171,12 +171,21 @@ void RenderContext::StaticRenderGraph::PassSetUpper::AddRefBuffer
 
 	}
 
-	///RuntimePassInfoを作成する
-	pass_.CreatePassInfo(proof_, refColorBuffersID, refDepthStencilBuffersID, refOffset);
-
+	return addRefBufferFuncReturn;
 }
 
-void RenderContext::StaticRenderGraph::PassSetUpper::AddWriteShareingBuffer
+void RenderContext::StaticRenderGraph::PassSetUpper::CreateRuntimePassInfo
+(
+	NexusFieldProof proof_,
+	PassBehavior& pass_,
+	AddRefBufferFuncReturn addRefBufferFuncReturn_
+)
+{
+	//RuntimePassInfoを作成する
+	pass_.CreatePassInfo(proof_, addRefBufferFuncReturn_.refColorBuffersID, addRefBufferFuncReturn_.refDepthStencilBuffersID, addRefBufferFuncReturn_.refOffset);
+}
+
+void RenderContext::StaticRenderGraph::PassSetUpper::AddWriteSharingBuffer
 (
 	NexusFieldProof proof_,
 	PassBehavior& pass_,
@@ -184,8 +193,8 @@ void RenderContext::StaticRenderGraph::PassSetUpper::AddWriteShareingBuffer
 )
 {
 	//書き込みシェアバッファ取り付けのためのキャッシュ
-	auto const& colorBufferInfoMapCahce = renderPassCreator_.WatchColorBufferInfoMapCache(proof_);
-	auto const& depthBufferInfoMapCahce = renderPassCreator_.WatchDepthBufferInfoMapCache(proof_);
+	auto const& colorBufferInfoMapCache = renderPassCreator_.WatchColorBufferInfoMapCache(proof_);
+	auto const& depthBufferInfoMapCache = renderPassCreator_.WatchDepthBufferInfoMapCache(proof_);
 
 	PassDesc& desc = pass_.RefPassDesc(proof_);
 
@@ -193,17 +202,22 @@ void RenderContext::StaticRenderGraph::PassSetUpper::AddWriteShareingBuffer
 	for (auto const& name : desc.writeSharingColorBufferNames)
 	{
 		//検索
-		auto* colorBufferinfo = colorBufferInfoMapCahce.at(name);
+		RequiredBufferInfo::ColorBuffer colorBufferinfo = *colorBufferInfoMapCache.at(name);
+		//自前バッファでなければクリアしない
+		colorBufferinfo.doClear = false;
+
 		//書き込むので自前バッファとして追加
-		desc.colorBuffersInfo.emplace_back(*colorBufferinfo);
+		desc.colorBuffersInfo.emplace_back(colorBufferinfo);
 	}
 
 	//書き込みシェアするバッファの追加(DepthBuffer)
 	std::string const& depthBufferInfoName = desc.writeSharingDepthBufferName;
 	if (depthBufferInfoName.size() > 0)
 	{
-		auto* depthBufferinfo = depthBufferInfoMapCahce.at(depthBufferInfoName);
-		desc.depthStencilBufferInfo = *depthBufferinfo;
+		RequiredBufferInfo::DepthStencilBuffer depthBufferinfo = *depthBufferInfoMapCache.at(depthBufferInfoName);
+		depthBufferinfo.doClear = false;
+
+		desc.depthStencilBufferInfo = depthBufferinfo;
 	}
 }
 
