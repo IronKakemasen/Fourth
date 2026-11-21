@@ -16,16 +16,16 @@
 
 
 
+using namespace RenderStateComponent;
+using namespace ShaderPathComponent;
+
+
 RenderContext::PassBehavior::PassBehavior(NexusFieldProof proof_, std::unique_ptr<PassDesc>&& desc_)
 	:desc(std::move(desc_))
 {
 	//ランタイムバリアキャッシュのキャパ確保
 	barrierCache.reserve(kBarrierCacheCapacity);
 }
-
-using namespace RenderStateComponent;
-using namespace ShaderPathComponent;
-
 
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

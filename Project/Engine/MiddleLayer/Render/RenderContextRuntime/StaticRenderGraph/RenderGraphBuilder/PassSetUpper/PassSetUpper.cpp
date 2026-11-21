@@ -31,16 +31,18 @@ namespace
 {
 	BuildOutput::PassSetUpper output;
 
-	///全てのパスが参照するバッファのIDが横一列に詰まっている
-	///このIDを辿って、ランタイムの一歩目にsrvHeapIndexを詰めていく
+	//パスの参照バッファ、書き込みシェアバッファをPassDescから詰めていく
+	//そして、PassDescをもとにRuntimePassInfoを作成する
 	CreateAllPassInfo(proof_, output, renderPassCreator_, passContainer_, bufferContextDiplomat_);
 	Logger::Log("Create All PassInfo", fileName);
 
-	///パスが参照するバッファのsrvHeapIndexを詰めるためのバッファのID
-	///UploadStructuredBufferでダブルです。中身の初期化もしていません
+	//参照バッファのsrv配列のバッファを作成する
 	CreateReferenceBufferSrvArray(proof_, output,bufferContextDiplomat_);
 	Logger::Log("Create ReferenceBufferSrvArray", fileName);
 
+	//最終パス(フロントバッファを描画)で参照するカラーバッファを詰める
+	SetFinalColorBuffer(proof_, output, renderPassCreator_);
+	Logger::Log("Set Final Pass RefColorBuffer", fileName);
 
 	return output;
 }
@@ -56,88 +58,30 @@ void RenderContext::StaticRenderGraph::PassSetUpper::CreateAllPassInfo
 {
 	//全てのPassが入ってるコンテナ
 	auto const& allPassPtrMap = passContainer_.AccessAllPassPtrMap(proof_);
-	//名前 :　パスのバッファのユニークID
-	auto const& passBufferCache = renderPassCreator_.WatchPassBufferCache(proof_);
-	
-	//デバッグ用
+
+	//参照先バッファの名前一覧デバッグ用。並び順が重要なので
 	std::vector<std::string > allRefBufferNames;
-
-	//bufferDispatcherを借りる
-	auto toolLender = bufferContextDiplomat_.Access<BufferContext::ToolLender>();
-	BufferContext::ToolLender::LicenceType<BufferContext::BufferDispatcher> licenceTool;
-	auto* bufferDispatcher = toolLender->Lend<BufferContext::BufferDispatcher>(licenceTool);
-
-	//フロントバッファ参照カラーバッファの名前をjsonfileから取得
-	Miyajison* miyajison = Miyajison::Get();
-	auto const finalColorBufferName = miyajison->LoadData<std::string>(DataKey::kRenderGraphSettings, { DataKey::kFinalColorBuffer });
-	//最終カラーバッファと名前が一致しているカラーバッファのIDを格納
-	output_.finalColorBufferID = passBufferCache.at(finalColorBufferName);
-
 
 	//パスDescがどのバッファを使用するかの名前リストを所持しているので、それと組み合わせて埋めていく
 	for (auto const& [kPassEnum, pass]: allPassPtrMap)
 	{
-		PassDesc const& desc = pass->RefPassDesc(proof_);
-		std::string const& dsrPassName = desc.passName;
+		//各パスの書き込み共有バッファをバッファ名から埋めていく
+		AddWriteShareingBuffer(proof_, *pass, renderPassCreator_);
 
-		//そのパスがバッファ配列の何番目を参照するか、であるPassConstantsCPUGPUのoffset
-		//普通にallRefBufferUniquesのけつ番目でいいはず
-		UINT const refOffset = UINT(output_.refBufferTagTrace.size());
-
-		//そのPassが参照するバッファ一覧で回す
-		std::vector<std::string> const& refBufferNames = desc.referenceBufferNames;
-		//そのPassの参照先ばっふぁID格納用
-		std::vector<BufferUniqueID> refColorBuffersID;
-		std::vector<BufferUniqueID> refDepthStencilBuffersID;
-
-		for (auto const& refBufferName : refBufferNames)
-		{
-			//参照するバッファID
-			//passCreatorが所持するidキャッシュから名前で引く
-			BufferUniqueID refID = passBufferCache.at(refBufferName);
-
-
-			//ここで参照先IDの指すバッファがカラーバッファなのか、深度バッファなのかで
-			auto* buffer = bufferDispatcher->Dispatch(refID);
-
-			if (dynamic_cast<ColorBuffer*>(buffer))
-			{
-				//参照先バッファをdynamicCastで確認して、何のバッファなのかTagを追加していく
-				output_.refBufferTagTrace.emplace_back(ClassTraits<ColorBuffer>::kTag);
-				//これはランタイムで使用する全パスの参照バッファ格納先(カラーバッファ)
-				output_.refBuffersArr[(UINT)ClassTraits<ColorBuffer>::kTag].emplace_back(refID);
-
-				//そのパスが参照するバッファIDの格納
-				refColorBuffersID.emplace_back(refID);
-			}
-			else
-			{
-				//参照先バッファをdynamicCastで確認して、何のバッファなのかTagを追加していく
-				output_.refBufferTagTrace.emplace_back(ClassTraits<DepthStencilBuffer>::kTag);
-				//これはランタイムで使用する全パスの参照バッファ格納先(深度ステンシルバッファ)
-				output_.refBuffersArr[(UINT)ClassTraits<DepthStencilBuffer>::kTag].emplace_back(refID);
-
-				//そのパスが参照するバッファIDの格納
-				refDepthStencilBuffersID.emplace_back(refID);
-			}
-
-			allRefBufferNames.emplace_back(refBufferName);
-			
-		}
-
-		//書き込みシェアするバッファの追加
-		for (auto const& name : desc.writeSharingColorBufferNames)
-		{
-			//検索
-			//passBufferCache.at(name)
-		}
-
-		///PassDesc -> RuntimePassInfoに詰め変える
-		pass->CreatePassInfo(proof_, refColorBuffersID , refDepthStencilBuffersID, refOffset);
-		
+		//パスの参照バッファを追加し、desc -> runtimePassInfoへ情報を詰める
+		//後にパスの参照先バッファID群のバッファ作成のために必要になるため、
+		//パスの参照バッファIDを記録しておく
+		AddRefBuffer
+		(
+			proof_,
+			*pass,
+			output_,
+			renderPassCreator_,
+			allRefBufferNames,
+			bufferContextDiplomat_
+		);
 	}
 
-	//デバッグ表記
 #ifdef  _DEBUG
 
 	Logger::Log("- - - - - All Pass Reference Buffers - - - - - ", fileName);
@@ -157,6 +101,129 @@ void RenderContext::StaticRenderGraph::PassSetUpper::CreateAllPassInfo
 #endif //  _DEBUG
 
 }
+
+void RenderContext::StaticRenderGraph::PassSetUpper::AddRefBuffer
+(
+	NexusFieldProof proof_,
+	PassBehavior& pass_,
+	BuildOutput::PassSetUpper& output_,
+	RenderPassCreator& renderPassCreator_,
+	std::vector<std::string >& debug_allRefBufferNames_,
+	BufferContextDiplomat& bufferContextDiplomat_
+)
+{
+	//bufferDispatcherを借りる
+	auto toolLender = bufferContextDiplomat_.Access<BufferContext::ToolLender>();
+	BufferContext::ToolLender::LicenceType<BufferContext::BufferDispatcher> licenceTool;
+	auto* bufferDispatcher = toolLender->Lend<BufferContext::BufferDispatcher>(licenceTool);
+
+	//名前 :　パスのバッファのユニークID
+	auto const& passBufferCache = renderPassCreator_.WatchPassBufferCache(proof_);
+
+	//パスのディスク
+	PassDesc& desc = pass_.RefPassDesc(proof_);
+
+	//そのパスがバッファ配列の何番目を参照するか、であるPassConstantsCPUGPUのoffset
+	//普通にallRefBufferUniquesのけつ番目でいいはず
+	UINT const refOffset = UINT(output_.refBufferTagTrace.size());
+
+	//そのPassが参照するバッファ一覧で回す
+	std::vector<std::string> const& refBufferNames = desc.referenceBufferNames;
+	//そのPassの参照先ばっふぁID格納用
+	std::vector<BufferUniqueID> refColorBuffersID;
+	std::vector<BufferUniqueID> refDepthStencilBuffersID;
+
+	for (auto const& refBufferName : refBufferNames)
+	{
+		//参照するバッファID
+		//passCreatorが所持するidキャッシュから名前で引く
+		BufferUniqueID refID = passBufferCache.at(refBufferName);
+
+		//ここで参照先IDの指すバッファがカラーバッファなのか、深度バッファなのかで
+		auto* buffer = bufferDispatcher->Dispatch(refID);
+
+		if (dynamic_cast<ColorBuffer*>(buffer))
+		{
+			//参照先バッファをdynamicCastで確認して、何のバッファなのかTagを追加していく
+			output_.refBufferTagTrace.emplace_back(ClassTraits<ColorBuffer>::kTag);
+			//これはランタイムで使用する全パスの参照バッファ格納先(カラーバッファ)
+			output_.refBuffersArr[(UINT)ClassTraits<ColorBuffer>::kTag].emplace_back(refID);
+
+			//そのパスが参照するバッファIDの格納
+			refColorBuffersID.emplace_back(refID);
+		}
+		else
+		{
+			//参照先バッファをdynamicCastで確認して、何のバッファなのかTagを追加していく
+			output_.refBufferTagTrace.emplace_back(ClassTraits<DepthStencilBuffer>::kTag);
+			//これはランタイムで使用する全パスの参照バッファ格納先(深度ステンシルバッファ)
+			output_.refBuffersArr[(UINT)ClassTraits<DepthStencilBuffer>::kTag].emplace_back(refID);
+
+			//そのパスが参照するバッファIDの格納
+			refDepthStencilBuffersID.emplace_back(refID);
+		}
+#ifdef _DEBUG
+
+		//名前確認デバッグ用
+		debug_allRefBufferNames_.emplace_back(refBufferName);
+
+#endif // _DEBUG
+
+	}
+
+	///RuntimePassInfoを作成する
+	pass_.CreatePassInfo(proof_, refColorBuffersID, refDepthStencilBuffersID, refOffset);
+
+}
+
+void RenderContext::StaticRenderGraph::PassSetUpper::AddWriteShareingBuffer
+(
+	NexusFieldProof proof_,
+	PassBehavior& pass_,
+	RenderPassCreator& renderPassCreator_
+)
+{
+	//書き込みシェアバッファ取り付けのためのキャッシュ
+	auto const& colorBufferInfoMapCahce = renderPassCreator_.WatchColorBufferInfoMapCache(proof_);
+	auto const& depthBufferInfoMapCahce = renderPassCreator_.WatchDepthBufferInfoMapCache(proof_);
+
+	PassDesc& desc = pass_.RefPassDesc(proof_);
+
+	//書き込みシェアするバッファの追加(ColorBuffer)
+	for (auto const& name : desc.writeSharingColorBufferNames)
+	{
+		//検索
+		auto* colorBufferinfo = colorBufferInfoMapCahce.at(name);
+		//書き込むので自前バッファとして追加
+		desc.colorBuffersInfo.emplace_back(*colorBufferinfo);
+	}
+
+	//書き込みシェアするバッファの追加(DepthBuffer)
+	std::string const& depthBufferInfoName = desc.writeSharingDepthBufferName;
+	if (depthBufferInfoName.size() > 0)
+	{
+		auto* depthBufferinfo = depthBufferInfoMapCahce.at(depthBufferInfoName);
+		desc.depthStencilBufferInfo = *depthBufferinfo;
+	}
+}
+
+void RenderContext::StaticRenderGraph::PassSetUpper::SetFinalColorBuffer
+(
+	NexusFieldProof proof_,
+	BuildOutput::PassSetUpper& output_,
+	RenderPassCreator& renderPassCreator_
+)
+{
+	//名前 :　パスのバッファのユニークID
+	auto const& passBufferCache = renderPassCreator_.WatchPassBufferCache(proof_);
+
+	//フロントバッファ参照カラーバッファの名前をjsonfileから取得
+	Miyajison* miyajison = Miyajison::Get();
+	auto const finalColorBufferName = miyajison->LoadData<std::string>(DataKey::kRenderGraphSettings, { DataKey::kFinalColorBuffer });
+	//最終カラーバッファと名前が一致しているカラーバッファのIDを格納
+	output_.finalColorBufferID = passBufferCache.at(finalColorBufferName);
+}
+
 
 void RenderContext::StaticRenderGraph::PassSetUpper::CreateReferenceBufferSrvArray
 (
