@@ -22,6 +22,7 @@ struct RenderContext::RuntimePassInfo
 
 	struct ColorBuffer
 	{
+		bool doClear;
 		std::vector<float> clearColor{};
 		D3D12_VIEWPORT viewport;
 		D3D12_RECT scissorRect;
@@ -31,6 +32,7 @@ struct RenderContext::RuntimePassInfo
 
 	struct DepthStencilBuffer
 	{
+		bool doClear = true;
 		float clearDepth{};
 		D3D12_CLEAR_FLAGS doesClearStencil;
 		int clearStencil{};
@@ -65,7 +67,7 @@ private:
 	std::vector<BufferUniqueID> refColorBuffersID;
 	//その深度ステンシルバッファバージョン
 	std::vector<BufferUniqueID> refDepthStencilBuffersID;
-
+	//ルートコンスタンツ
 	ConstantBuffers::PassConstantsCPUGPU rootConstants;
 
 	//PassDescからランタイムに必要な情報をピックする

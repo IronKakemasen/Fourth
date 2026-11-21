@@ -14,7 +14,6 @@
 namespace
 {
 	auto const fileName = "PassBufferCreator.cpp";
-
 }
 
 void RenderContext::RenderPassCreator::PassBufferCreator::CreateBuffer
@@ -30,10 +29,15 @@ void RenderContext::RenderPassCreator::PassBufferCreator::CreateBuffer
 	BufferContext::ToolLender::LicenceType<BufferContext::BufferCreator> borrowLicence;
 	auto bufferCreator = bufferContextDiplomat_.Access<BufferContext::ToolLender>()->Lend<BufferContext::BufferCreator>(borrowLicence);
 
-
 	//カラーバッファを作成
 	auto& colorBuffersInfo = desc_.colorBuffersInfo;
 	auto const numColorBufferRequired = colorBuffersInfo.size();
+
+	//colorBuffersInfoの要素へのポインタを下でキャッシュに登録するので
+	//あとで書き込みシェアバッファを追加しても再確保が起きないように
+	//その追加分も含めてあらかじめリザーブしておく
+	colorBuffersInfo.reserve(numColorBufferRequired + desc_.writeSharingColorBufferNames.size());
+
 	for (size_t i = 0;i < numColorBufferRequired;++i)
 	{
 		auto& info = colorBuffersInfo[i];

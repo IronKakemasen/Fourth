@@ -11,8 +11,8 @@ struct RenderContext::PassDesc
 		std::string const& name_,
 		std::optional<std::pair<std::string, std::string >> const& ms_psFileName_,
 		RenderPassState renderPassState_,
-		std::vector<RenderContext::RequiredBufferInfo::ColorBuffer> const& colorBuffersInfo_,
-		std::optional<RenderContext::RequiredBufferInfo::DepthStencilBuffer> const& depthStencilBufferInfo_,
+		std::vector<RequiredBufferInfo::ColorBuffer> const& colorBuffersInfo_,
+		std::optional<RequiredBufferInfo::DepthStencilBuffer> const& depthStencilBufferInfo_,
 		std::vector <std::string> const& referenceBufferNames_,
 		std::vector <std::string> const& writeSharingColorBufferNames_,
 		std::string const& writeSharingDepthBufferName_
@@ -30,8 +30,8 @@ private:
 	RenderPassState renderPassState;
 
 	//必要なバッファの情報
-	std::vector<RenderContext::RequiredBufferInfo::ColorBuffer> colorBuffersInfo;
-	std::optional<RenderContext::RequiredBufferInfo::DepthStencilBuffer> depthStencilBufferInfo;
+	std::vector<RequiredBufferInfo::ColorBuffer> colorBuffersInfo;
+	std::optional<RequiredBufferInfo::DepthStencilBuffer> depthStencilBufferInfo;
 
 	//参照するバッファ(テクスチャ)の名前一覧
 	std::vector <std::string> referenceBufferNames;

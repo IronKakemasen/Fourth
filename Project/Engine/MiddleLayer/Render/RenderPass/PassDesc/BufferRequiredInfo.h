@@ -8,22 +8,27 @@ struct RenderContext::RequiredBufferInfo
 {
 	struct ColorBuffer
 	{
+		ColorBuffer() = default;
+
 		std::string bufferName;
 		DXGI_FORMAT format;
+		//クリアするかどうか。自前バッファであればtrue。witesharing用との区別のため
+		bool doClear = true;
 		std::vector<float> clearColor{};
 		uint32_t width{};
 		uint32_t height{};
 		//シングルかダブルか
 		ProjectConfig::Render::NumBuffer numBuffer{};
 		RenderStateComponent::BlendMode blendMode = RenderStateComponent::BlendMode::kDependsModel;
-		BufferUniqueID bufferID;
+		BufferUniqueID bufferID = kInvalid;
 
-		ColorBuffer() = default;
 	};
 
 	struct DepthStencilBuffer
 	{
 		DepthStencilBuffer() = default;
+
+		bool doClear = true;
 
 		std::string bufferName;
 		DXGI_FORMAT dsvFormat;
@@ -34,7 +39,7 @@ struct RenderContext::RequiredBufferInfo
 		uint32_t width{};
 		uint32_t height{};
 		ProjectConfig::Render::NumBuffer numBuffer{};
-		BufferUniqueID bufferID;
+		BufferUniqueID bufferID = kInvalid;
 
 	};
 };
