@@ -11,6 +11,11 @@
 #include "../../../../../LowerLayer/Buffer/BufferContextDiplomat/BufferToolLender/BufferToolLender.h"
 #include "../../../../../LowerLayer/Buffer/BufferContextDiplomat/BufferToolLender/BufferToolLenderLicence.h"
 
+namespace
+{
+	auto const fileName = "PassBufferCreator.cpp";
+
+}
 
 void RenderContext::RenderPassCreator::PassBufferCreator::CreateBuffer
 (
@@ -26,11 +31,9 @@ void RenderContext::RenderPassCreator::PassBufferCreator::CreateBuffer
 	auto bufferCreator = bufferContextDiplomat_.Access<BufferContext::ToolLender>()->Lend<BufferContext::BufferCreator>(borrowLicence);
 
 
+	//カラーバッファを作成
 	auto& colorBuffersInfo = desc_.colorBuffersInfo;
 	auto const numColorBufferRequired = colorBuffersInfo.size();
-
-	//カラーバッファを作成
-	std::vector<ColorBufferDescription> colorBufferDescs;
 	for (size_t i = 0;i < numColorBufferRequired;++i)
 	{
 		auto& info = colorBuffersInfo[i];
@@ -42,7 +45,7 @@ void RenderContext::RenderPassCreator::PassBufferCreator::CreateBuffer
 		(
 			passBufferCache_.find(info.bufferName) == passBufferCache_.end(),
 			passName_ + " のカラーバッファ名: " + info.bufferName + "が被ってる",
-			"PassBufferCreator.cpp"
+			fileName
 		);
 
 #endif // _DEBUG
@@ -62,7 +65,6 @@ void RenderContext::RenderPassCreator::PassBufferCreator::CreateBuffer
 	}
 
 	//深度ステンシルバッファを作成
-
 	if (desc_.depthStencilBufferInfo.has_value())
 	{
 		auto& info = desc_.depthStencilBufferInfo;
@@ -74,7 +76,15 @@ void RenderContext::RenderPassCreator::PassBufferCreator::CreateBuffer
 		(
 			passBufferCache_.find(info->bufferName) == passBufferCache_.end(),
 			passName_ + " の深度バッファ名: " + info->bufferName + "が被ってる",
-			"PassBufferCreator.cpp"
+			fileName
+		);
+
+		//書き込みシェアバッファと自前バッファが同時に存在しているのは間違っているので
+		ErrorMessageOutput::Assert::DetectError
+		(
+			desc_.writeSharingDepthBufferName.size() == 0,
+			passName_ + ": 書き込みシェアバッファと自前バッファが同時に存在している",
+			fileName
 		);
 
 #endif // _DEBUG
@@ -102,4 +112,23 @@ void RenderContext::RenderPassCreator::PassBufferCreator::CreateBuffer
 		depthBufferInfoMapCache_[info->bufferName] = &desc_.depthStencilBufferInfo.value();
 	}
 
+
+#ifdef _DEBUG
+
+	//書き込み先バッファが最低でも１つあるかチェック
+
+	size_t writeInBufferCnt =
+		(size_t)numColorBufferRequired +
+		desc_.writeSharingColorBufferNames.size() +
+		(size_t)desc_.depthStencilBufferInfo.has_value() +
+		desc_.writeSharingDepthBufferName.size();
+
+	ErrorMessageOutput::Assert::DetectError
+	(
+		writeInBufferCnt > 0,
+		passName_ + ": 書き込み先バッファが１つもないやん",
+		fileName
+	);
+
+#endif
 }

@@ -59,6 +59,8 @@ public:
 		UINT const refOffset_
 	);
 
+	//
+
 	//==================
 
 protected:

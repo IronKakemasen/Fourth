@@ -17,7 +17,8 @@ class RenderContext::StaticRenderGraph::PassSetUpper
 	//以下ヘルパー
 private:
 
-	//全パスの所持するPassDesc -> PassInfoに移し替える
+	//パスの参照バッファ、書き込みシェアバッファをPassDescから詰めていく
+	//そして、PassDescをもとにRuntimePassInfoを作成する
 	static void CreateAllPassInfo
 	(
 		NexusFieldProof proof_,
@@ -25,6 +26,35 @@ private:
 		RenderPassCreator& renderPassCreator_,
 		RenderPassContainer& passContainer_,
 		BufferContextDiplomat& bufferContextDiplomat_
+	);
+
+	//各パスの参照バッファをバッファ名から埋めていき、
+	//Outputの全パスの参照バッファ格納先にIDを登録する
+	//PassDescをもとにRuntimePassInfoを作成する（名前的に違和感あるが…）
+	static void AddRefBuffer
+	(
+		NexusFieldProof proof_,
+		PassBehavior& pass_,
+		BuildOutput::PassSetUpper& output_,
+		RenderPassCreator& renderPassCreator_,
+		std::vector<std::string >& debug_allRefBufferNames_,
+		BufferContextDiplomat& bufferContextDiplomat_
+	);
+
+	//各パスの書き込み共有バッファをバッファ名から埋めていく
+	static void AddWriteShareingBuffer
+	(
+		NexusFieldProof proof_,
+		PassBehavior& pass_,
+		RenderPassCreator& renderPassCreator_
+	);
+
+	//スワップチェーンのフロントバッファが参照する最終カラーバッファを詰める
+	static void SetFinalColorBuffer
+	(
+		NexusFieldProof proof_,
+		BuildOutput::PassSetUpper& output_,
+		RenderPassCreator& renderPassCreator_
 	);
 
 	///各パスが参照するバッファのsrvHeapIndexを配列したもののバッファ、そしてそのsrvHeapIndexの定数バッファを作成
@@ -35,6 +65,7 @@ private:
 		BuildOutput::PassSetUpper& output_,
 		BufferContextDiplomat& bufferContextDiplomat_
 	);
+
 
 	struct DataKey
 	{
