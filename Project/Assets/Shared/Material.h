@@ -9,6 +9,8 @@
 #include "../../Engine/LowerLayer/Buffer/BufferDefinition/TextureComponent.h"
 #include "../../Engine/Math/Vector/Vector4.h"
 
+class ModelContext;
+
 namespace Material
 {
     enum class Type
@@ -77,6 +79,9 @@ namespace Material
 
     struct StandardGPU
     {
+        friend class ModelContext;
+
+    private:
         SRVHeapIndex albedoTexture = kInvalid;
         SRVHeapIndex normalTexture = kInvalid;
         SRVHeapIndex emissiveTexture = kInvalid;
@@ -84,6 +89,8 @@ namespace Material
         float roughness = float(kInvalid);
         float metallic = float(kInvalid);
         StaticSampler::SamplerState albedoTexSamplerState = StaticSampler::SamplerState::kLinearClamp;
+
+    public:
 
         void ChangeRoughness(float dst_) { roughness = dst_; }
         void ChangeMetallic(float dst_) { metallic = dst_; }

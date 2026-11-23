@@ -60,9 +60,9 @@ std::vector<std::unique_ptr<Model>> ModelContext::ModelCreator::Create
 	for (UINT i = 0;i < numCreate_;++i)
 	{
 		//モデルの要素を組み立てる
-		auto [modelConstants, materialsGPU, meshletSize] = AssembleModelDescParts(modelFileName_);
+		auto [modelConstants, meshletSize] = AssembleModelDescParts(modelFileName_);
 
-		//マテリアルの入れ物を作成し、デフォルトでMaterial::StandardGPUをアタッチする
+		//マテリアルの入れ物を作成する
 		//サブメッシュ分用意する
 		std::vector<Materials> materials;
 		materials.reserve(meshletSize.size());
@@ -71,11 +71,6 @@ std::vector<std::unique_ptr<Model>> ModelContext::ModelCreator::Create
 		{
 			//モデルにマテリアルの入れ物を作成し、マテリアルIDを割り当てる
 			materials.emplace_back(materialAttacher->CreateMaterials());
-			//Material::StandardGPUをアタッチする
-			materialAttacher->Attach<Material::Type::kStandard>(materials[k]);
-
-			//Material::StandardGPUの値をコピーする
-			materials[k].Ref<Material::Type::kStandard>() = materialsGPU[k];
 		}
 
 		///一つのDescに詰める
@@ -103,6 +98,44 @@ std::vector<std::unique_ptr<Model>> ModelContext::ModelCreator::Create
 
 	return modelUniques;
 }
+
+
+void ModelContext::ModelCreator::InputMaterialStandard(std::string const& modelFileName_, Model& model_)
+{
+	auto const numMesh = model_.changeableParams.materialsContainer.size();
+
+	//モデルのレンダーステートにMaterialStandardタイプがあるかチェック
+#ifdef _DEBUG
+
+	UINT passCnt{};
+	for (auto const& renderState : model_.modelDesc.WatchRenderStates())
+	{
+		for (auto const& materialType : renderState.materialTypes)
+		{
+			if (materialType == Material::Type::kStandard) passCnt++;
+		}
+	}
+
+	ErrorMessageOutput::Assert::DetectError
+	(
+		passCnt == numMesh,
+		model_.WatchName() + ": MaterialStandardをレンダーステートに登録していないのに入力すな",
+		fileName
+	);
+
+#endif // _DEBUG
+
+	//モデルファイル名からマテリアルデータを拾う
+	std::vector<Material::StandardGPU> src = modelDescAssembler->LoadModelMaterialData(modelFileName_);
+
+	//データ入力
+	for (size_t i = 0;i < numMesh;++i)
+	{
+		auto& dst = model_.changeableParams.materialsContainer[i];
+		dst.Ref<Material::Type::kStandard>() = src[i];
+	}
+}
+
 
 
 std::vector<RenderState>const& ModelContext::ModelCreator::WatchRenderStateCache(AgentKey key_)const

@@ -14,5 +14,7 @@ class RenderContext::RenderPassCreator::PassBufferCreator
 		std::unordered_map<std::string, RequiredBufferInfo::DepthStencilBuffer*>& depthBufferInfoMapCache_,
 		BufferContextDiplomat& bufferContextDiplomat_
 	);
+
+
 };
 

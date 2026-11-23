@@ -67,6 +67,13 @@ public:
 		return models;
 	}
 
+	//モデルファイルからMaterial::StandardGPUを入力する
+	//さきにMaterial::Type::kStandardをアタッチしてね
+	void InputModelMaterialStandardFromFile(std::string const& modelFileName_, Model& model_)
+	{
+		modelSystems.InputMaterialStandard(modelFileName_, model_);
+	}
+
 	//ゲームオブジェクトにシステムをアタッチする
 	template<typename SystemType>
 	SystemType& AttachSystem(GameObjectBehavior& obj_)

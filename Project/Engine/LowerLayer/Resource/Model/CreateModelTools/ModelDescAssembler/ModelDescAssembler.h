@@ -20,10 +20,13 @@ public:
 	);
 
 	//モデルクラスのRenderStates以外のディスクリプションを作ってあげる
-	ModelDescParts Assemble
-	(
-		std::string const& modelFileName_
-	);
+	ModelDescParts Assemble(std::string const& modelFileName_);
+
+	//ちょっと責務ごっちゃだが、ギリ許容範囲ということで…
+	//モデルファイルからマテリアルデータ(Material::StandardGPU)を読み込む
+	//サブメッシュも含むのでvector
+	std::vector<Material::StandardGPU> LoadModelMaterialData(std::string const& modelFileName_);
+
 
 private:
 

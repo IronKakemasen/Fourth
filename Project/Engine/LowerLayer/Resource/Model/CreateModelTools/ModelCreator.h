@@ -15,7 +15,6 @@ class ModelContext::ModelCreator
 	using ModelDescParts = std::tuple
 	<
 		std::vector<ConstantBuffers::ModelConstantsCPUGPU>,
-		std::vector<Material::StandardGPU>,
 		std::vector<size_t>
 	>;
 
@@ -39,6 +38,9 @@ public:
 		UINT const numCreate_,
 		std::string const& modelName_
 	);
+
+	//モデルのMaterial::StandardGPUをモデルファイルから入力する
+	void InputMaterialStandard(std::string const& modelFileName_, Model& model_);
 
 
 	//PSO生成時に必要
