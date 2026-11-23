@@ -37,9 +37,6 @@ void GridFloor::Awake(SceneInitInterface& sceneInitInterface_)
 
 	RenderState cP;
 	cP.blendModes.emplace_back(BlendMode::kOpaque);
-	cP.blendModes.emplace_back(BlendMode::kAlphaBlend);
-	cP.blendModes.emplace_back(BlendMode::kAdditive);
-
 	cP.pass = Pass::kSceneOpaque;	
 	cP.cullMode = CullMode::kBack;
 	cP.meshType = MeshType::kStatic;
@@ -47,12 +44,16 @@ void GridFloor::Awake(SceneInitInterface& sceneInitInterface_)
 	std::vector<RenderState> playerC;
 	playerC.emplace_back(std::move(cP));
 
-	std::vector<Material::StandardCPU> materials;
-	materials.resize(1);
-	materials[0].albedoTexSamplerState = SamplerState::kLinearClamp;
 
 	p = sceneInitInterface_.CreateModel<Model::MeshUpdateType::kDynamic,Materials::UpdateType::kDynamic>
-		("Plane200x200Obj", playerC, materials, 10, "Player");
+		("Plane200x200Obj", playerC, 1, "Player");
+
+
+
+
+
+
+
 	//for (int i = 0;i < 10;++i)
 	//{
 	//	RefSystem<Transform>().BeParent(&p[i]->RefTransform(0));

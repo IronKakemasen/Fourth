@@ -29,8 +29,7 @@ ModelContext::ModelCreator::ModelDescAssembler::ModelDescAssembler
 
 ModelContext::ModelCreator::ModelDescParts ModelContext::ModelCreator::ModelDescAssembler::Assemble
 (
-	std::string const& modelFileName_,
-	std::vector<Material::StandardCPU> const& inputMaterials_
+	std::string const& modelFileName_
 )
 {
 	//modelDataLibraryにアクセス
@@ -46,7 +45,7 @@ ModelContext::ModelCreator::ModelDescParts ModelContext::ModelCreator::ModelDesc
 	return ModelDescParts
 	(
 		PackModelConstants(modelData.meshDataID, kNumMeshData),
-		ConvertMaterialData(kNumMeshData, modelData.materialCPU, inputMaterials_),
+		ConvertMaterialData(kNumMeshData, modelData.materialCPU),
 		modelData.meshletSize
 	);
 
@@ -82,8 +81,7 @@ std::vector<ConstantBuffers::ModelConstantsCPUGPU> ModelContext::ModelCreator::M
 std::vector<Material::StandardGPU> ModelContext::ModelCreator::ModelDescAssembler::ConvertMaterialData
 (
 	size_t const kNumMeshData_,
-	std::vector<Material::StandardCPU> const& materialsFromFile_,
-	std::vector<Material::StandardCPU> const& inputMaterials
+	std::vector<Material::StandardCPU> const& materialsFromFile_
 )
 {
 	//テクスチャファイルパスから、テクスチャファイル名へ変換
@@ -96,58 +94,41 @@ std::vector<Material::StandardGPU> ModelContext::ModelCreator::ModelDescAssemble
 	{
 		auto& dst = materialGPUContainer[i];
 
-		//データの手動入力があればそちらが優先
-		if (i < inputMaterials.size())
+		//ソースが無いケースのために適当なデフォルト値を入れておく
+		//あえて入れていないパラメータは、hlsl側でセンチネルとしての値が埋め込まれているので触らんように
 		{
-			auto const& src = inputMaterials[i];
+			if (dst.albedoTexture == kInvalid)
+				dst.albedoTexture = textureLib->Export("white4x4_albedo");
 
-			if (src.albedoTexture.size() > 0)	dst.albedoTexture	= textureLib->Export(src.albedoTexture);
-			if (src.normalTexture.size() > 0)	dst.normalTexture	= textureLib->Export(src.normalTexture);
-			if (src.emissiveTexture.size() > 0) dst.emissiveTexture = textureLib->Export(src.emissiveTexture);
-
-			if (src.roughness != kInvalid)		dst.roughness		= src.roughness;
-			if (src.metallic != kInvalid)		dst.metallic		= src.metallic;
-			if (src.baseColor.x != kInvalid)	dst.baseColor		= src.baseColor;
-
-			dst.albedoTexSamplerState = src.albedoTexSamplerState;
+			//割とおきにな値
+			dst.roughness = 0.25f;
+			dst.metallic = 0.9f;
+			dst.baseColor = { 1.0f,1.0f,1.0f,1.0f };
 		}
 
-		//手動入力で満たされなかった部分を、モデル名に紐づけられているデータから入力する
+
+		//モデル名に紐づけられているデータから入力する
 		if (i < materialsFromFile_.size())
 		{
 			auto const& src = materialsFromFile_[i];
 
-			if (dst.albedoTexture == kInvalid && src.albedoTexture.size() > 0)
-				dst.albedoTexture	= textureLib->Export(src.albedoTexture);
+			if (src.albedoTexture.size() > 0)
+				dst.albedoTexture   = textureLib->Export(src.albedoTexture);
 
-			if (dst.normalTexture == kInvalid && src.normalTexture.size() > 0)
-				dst.normalTexture	= textureLib->Export(src.normalTexture);
+			if (src.normalTexture.size() > 0)
+				dst.normalTexture   = textureLib->Export(src.normalTexture);
 
-			if (dst.emissiveTexture == kInvalid && src.emissiveTexture.size() > 0)	
+			if (src.emissiveTexture.size() > 0)	
 				dst.emissiveTexture = textureLib->Export(src.emissiveTexture);
 
-			if (dst.roughness == kInvalid && src.roughness != kInvalid)
-				dst.roughness	= src.roughness;
+			if (src.roughness != kInvalid)   dst.roughness = src.roughness;
 
-			if (dst.metallic == kInvalid && src.metallic != kInvalid)	
-				dst.metallic	= src.metallic;
+			if (src.metallic != kInvalid)    dst.metallic  = src.metallic;
 
-			if (dst.baseColor.x == kInvalid && src.baseColor.x != kInvalid)
-				dst.baseColor = src.baseColor ;
+			if (src.baseColor.x != kInvalid) dst.baseColor = src.baseColor;
 
 		}
 
-		//手動入力もなくソースも無ければ、適当な値を入れておく
-		//あえて入れていないパラメータは、hlsl側でセンチネルとしての値が埋め込まれているので触らんように
-		{
-			if (dst.albedoTexture == kInvalid)dst.albedoTexture = textureLib->Export("white4x4_albedo");
-			
-			//割とおきにな値
-			if (dst.roughness == kInvalid)		dst.roughness	= 0.25f;
-			if (dst.metallic == kInvalid )		dst.metallic	= 0.9f;
-			if (dst.baseColor.x == kInvalid)	dst.baseColor	= { 1.0f,1.0f,1.0f,1.0f };
-
-		}
 	}
 
 	return materialGPUContainer;

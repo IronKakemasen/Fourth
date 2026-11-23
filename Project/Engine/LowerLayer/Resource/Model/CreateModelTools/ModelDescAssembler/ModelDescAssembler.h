@@ -22,8 +22,7 @@ public:
 	//モデルクラスのRenderStates以外のディスクリプションを作ってあげる
 	ModelDescParts Assemble
 	(
-		std::string const& modelFileName_,
-		std::vector<Material::StandardCPU> const& inputMaterials_
+		std::string const& modelFileName_
 	);
 
 private:
@@ -40,8 +39,7 @@ private:
 	std::vector<Material::StandardGPU> ConvertMaterialData
 	(
 		size_t const kNumMeshData_,
-		std::vector<Material::StandardCPU> const& materialsFromFile_,
-		std::vector<Material::StandardCPU> const& inputMaterials
+		std::vector<Material::StandardCPU> const& materialsFromFile_
 	);
 
 

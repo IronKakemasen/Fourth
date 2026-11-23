@@ -1,7 +1,6 @@
 {
 
-  "SceneCompositor": 
-  {
+  "SceneCompositor": {
 
     "isOffScreen": true,
     "ms": "FullScreenTriangleMS",
@@ -36,15 +35,14 @@
 
 
 
-  
-  "GridLine": 
-  {
-    
+
+  "GridLine": {
+
     "isOffScreen": false,
 
 
     "doesOwnColorBuffers": false,
-    
+
 
     "doesOwnDepthStencil": false,
 
@@ -56,16 +54,16 @@
 
     "referenceBufferNames": [],
 
-    "writeSharingColorBufferNames": [],
-    "writeSharingDepthBufferName": ""
+    "writeSharingColorBufferNames": [ "opaqueColor" ],
+    "writeSharingDepthBufferName": "opaqueDepth"
+
 
   },
 
 
 
 
-  "SceneOpaque": 
-  {
+  "SceneOpaque": {
 
     "isOffScreen": false,
 
@@ -105,8 +103,8 @@
 
     "referenceBufferNames": [],
 
-    "writeSharingColorBufferNames": ["opaqueColor"],
-    "writeSharingDepthBufferName": "opaqueDepth"
+    "writeSharingColorBufferNames": [],
+    "writeSharingDepthBufferName": ""
 
   }
 

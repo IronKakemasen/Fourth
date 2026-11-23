@@ -1,14 +1,14 @@
 #include "PreCompileHeader.h"
-#include "GridlinePass.h"
+#include "GridLinePass.h"
 #include "../../PassDesc/PassDesc.h"
 
-GridlinePass::GridlinePass(RenderContext::NexusFieldProof proof_, std::unique_ptr<RenderContext::PassDesc>&& desc_)
+GridLinePass::GridLinePass(RenderContext::NexusFieldProof proof_, std::unique_ptr<RenderContext::PassDesc>&& desc_)
 	:RenderContext::PassBehavior(proof_, std::move(desc_))
 {
 
 }
 
-void GridlinePass::Update
+void GridLinePass::Update
 (
 	[[maybe_unused]] std::unordered_map<uint64_t, std::pair<RenderStateKey, std::vector<Model*>>> const& modelContainer_,
 	[[maybe_unused]] RenderStateComponent::FillMode const modelFillMode_,

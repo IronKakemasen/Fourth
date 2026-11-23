@@ -43,7 +43,6 @@ std::vector<std::unique_ptr<Model>> ModelContext::ModelCreator::Create
 (
 	std::string const& modelFileName_,
 	std::vector<RenderState> const& modelRenderStates_,
-	std::vector<Material::StandardCPU> const& materials_,
 	UINT const numCreate_,
 	std::string const& modelName_
 )
@@ -61,7 +60,7 @@ std::vector<std::unique_ptr<Model>> ModelContext::ModelCreator::Create
 	for (UINT i = 0;i < numCreate_;++i)
 	{
 		//モデルの要素を組み立てる
-		auto [modelConstants, materialsGPU, meshletSize] = AssembleModelDescParts(modelFileName_, materials_);
+		auto [modelConstants, materialsGPU, meshletSize] = AssembleModelDescParts(modelFileName_);
 
 		//マテリアルの入れ物を作成し、デフォルトでMaterial::StandardGPUをアタッチする
 		//サブメッシュ分用意する
@@ -120,11 +119,10 @@ void ModelContext::ModelCreator::DeleteRenderStateCache(NexusFieldProof proof_ ,
 
 ModelContext::ModelCreator::ModelDescParts ModelContext::ModelCreator::AssembleModelDescParts
 (
-	std::string const& modelFileName_,
-	std::vector<Material::StandardCPU> const& inputMaterials_
+	std::string const& modelFileName_
 )
 {
-	return modelDescAssembler->Assemble(modelFileName_, inputMaterials_);
+	return modelDescAssembler->Assemble(modelFileName_);
 }
 
 
@@ -133,7 +131,6 @@ std::vector<std::unique_ptr<Model>> ModelContext::ModelCreator::Create<Model::Me
 (
 	std::string const& modelFileName_,
 	std::vector<RenderState> const& modelRenderStates_,
-	std::vector<Material::StandardCPU> const& materials_,
 	UINT const numCreate_,
 	std::string const& modelName_
 );
@@ -143,7 +140,6 @@ std::vector<std::unique_ptr<Model>> ModelContext::ModelCreator::Create<Model::Me
 (
 	std::string const& modelFileName_,
 	std::vector<RenderState> const& modelRenderStates_,
-	std::vector<Material::StandardCPU> const& materials_,
 	UINT const numCreate_,
 	std::string const& modelName_
 );

@@ -2,11 +2,11 @@
 #include "../RenderPassBehavior.h"
 
 
-class GridlinePass :public RenderContext::PassBehavior
+class GridLinePass :public RenderContext::PassBehavior
 {
 public:
 
-	GridlinePass(RenderContext::NexusFieldProof proof_, std::unique_ptr<RenderContext::PassDesc>&& desc_);
+	GridLinePass(RenderContext::NexusFieldProof proof_, std::unique_ptr<RenderContext::PassDesc>&& desc_);
 
 	virtual void Update
 	(
