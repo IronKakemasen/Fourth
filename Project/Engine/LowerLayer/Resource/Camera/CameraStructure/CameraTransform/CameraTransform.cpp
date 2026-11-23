@@ -29,8 +29,8 @@ void CameraBehavior::CameraTransform::Clear()
 		base.lookDir = { 0,0,1 };
 		base.rotationInterpolationCoe = 1.0f;
 
-		projection.farClip = 0.1f;
-		projection.nearClip = 1000.0f;
+		projection.farClip = 1000.0f;
+		projection.nearClip = 0.1f;
 		projection.fovY = MathConstants::kPi * MathConstants::kHalf;
 		projection.aspectRatio = (float)ProjectConfig::Window::Width() / (float)ProjectConfig::Window::Height();
 	}
@@ -90,14 +90,14 @@ void CameraBehavior::CameraTransform::UpdateMatrices(CameraBehavior::Local_Updat
 void CameraBehavior::CameraTransform::UpdateProjectionMatrixReverseZ()
 {
 	const float cotTheta{ 1.0f / tanf(projection.fovY * MathConstants::kHalf) };
-	const float inv_frustumHeight{ 1.0f / (projection.farClip - projection.nearClip) };
+	const float inv_frustumHeight{ 1.0f / (projection.nearClip - projection.farClip) };
 
 	matrices.proj = Matrix4x4
 	{
 		cotTheta / projection.aspectRatio, 0.0f, 0.0f, 0.0f,
 		0.0f, cotTheta, 0.0f, 0.0f,
-		0.0f, 0.0f, projection.farClip * inv_frustumHeight, 1.0f,
-		0.0f, 0.0f, -projection.nearClip * projection.farClip * inv_frustumHeight, 0.0f,
+		0.0f, 0.0f, projection.nearClip * inv_frustumHeight, 1.0f,
+		0.0f, 0.0f, -projection.farClip * projection.nearClip * inv_frustumHeight, 0.0f,
 	};
 
 }

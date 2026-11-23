@@ -24,6 +24,14 @@ namespace RenderPassTraits
 
 	};
 
+	template<>
+	struct PassClassTraits<GridlinePass>
+	{
+		static inline const std::string name = "Gridline";
+		static constexpr RenderPassComponent::Pass kPassEnum = RenderPassComponent::Pass::kGridLine;
+	};
+
+
 	//名前から列挙型を特定
 	constexpr RenderPassComponent::Pass PassNameToPassType(std::string const& passName_)
 	{
@@ -37,16 +45,20 @@ namespace RenderPassTraits
 		{
 			pass = PassClassTraits<SceneCompositor>::kPassEnum;
 		}
-		else
-		{
-			ErrorMessageOutput::Assert::OutputError(passName_ + "こんなパスネームは存在しない", "RenderPassComponent.cpp");
-		}
+
+
+		ErrorMessageOutput::Assert::DetectError
+		(
+			pass != RenderPassComponent::Pass::kCount,
+			passName_ + "こんなパスネームは存在しない",
+			"RenderPassTraits.h"
+		);
 
 		return pass;
 	}
 
 
-	//クラスから列挙型を特定
+	//列挙型からクラスを特定
     template<RenderPassComponent::Pass passType>
     struct PassTypeToPassClass;
 
@@ -60,6 +72,12 @@ namespace RenderPassTraits
 	struct PassTypeToPassClass<RenderPassComponent::Pass::kSceneCompositor>
 	{
 		using PassClass = SceneCompositor;
+	};
+
+	template<>
+	struct PassTypeToPassClass<RenderPassComponent::Pass::kGridLine>
+	{
+		using PassClass = GridlinePass;
 	};
 
 }

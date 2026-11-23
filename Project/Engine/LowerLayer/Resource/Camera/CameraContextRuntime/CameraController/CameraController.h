@@ -9,7 +9,7 @@ public:
 
 	CameraController(NexusFieldProof proof_);
 
-	std::unordered_map<CameraSocket, CameraBehavior*> const& Update();
+	std::unordered_map<CameraSocket, CameraBehavior*>* Update();
 
 	//ソケットに接続するカメラを接続する
 	template<CameraSocket dstSocket_>
@@ -22,7 +22,7 @@ public:
 private:
 
 	//ソケットに接続されているカメラ(描画のために使用しているカメラ)の更新処理を呼ぶ
-	std::unordered_map<CameraSocket, CameraBehavior*> const& RunCamera();
+	std::unordered_map<CameraSocket, CameraBehavior*>* RunCamera();
 
 	//現在の接続しているカメラ
 	std::unordered_map<CameraSocket, CameraBehavior*> socketMap;

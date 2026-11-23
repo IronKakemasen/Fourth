@@ -1,11 +1,6 @@
 #include "PreCompileHeader.h"
 #include "SceneOpaque.h"
 #include "../../PassDesc/PassDesc.h"
-#include "../../RuntimePassInfo/RuntimePassInfo.h"
-
-//外部
-#include "../../../../../LowerLayer/Resource/Model/ModelStructure/Model.h"
-#include "../../../../../LowerLayer/Core/Command/RuntimeWrapper/RuntimeWrapper.h"
 
 SceneOpaque::SceneOpaque(RenderContext::NexusFieldProof proof_ , std::unique_ptr<RenderContext::PassDesc>&& desc_)
 :RenderContext::PassBehavior(proof_, std::move(desc_))
