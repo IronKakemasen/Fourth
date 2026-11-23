@@ -116,8 +116,8 @@ namespace Material
     {
     private:
 
-        Vector4<float> gridColor = {0.0f,0.0f,0.0f,1.0f};
-        Vector4<float> backgroundColor = {0.35f,0.35f,0.35f,1.0f };
+        Vector4<float> gridColor = { 0.15f, 0.20f, 0.3f, 1.0f };
+        Vector4<float> backgroundColor = { 0.5f, 0.5f, 0.5f, 1.0f };
         float gridRatio = 0.04f;
 
     public:

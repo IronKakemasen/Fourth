@@ -1,4 +1,5 @@
 #include "../../HLSLI/MaterialCommon.hlsli"
+#include "../../HLSLI/CameraCommon.hlsli"
 
 
 //ーーーシェーダートイで公開されていたグリッド描画コードをAIに簡略化してもらいましたーーー
@@ -20,7 +21,6 @@
 // --- analytically box-filtered grid ---
 
 
-
 struct PSInput
 {
     float4 position : SV_Position;
@@ -30,7 +30,6 @@ struct PSInput
 };
 
 
-// 周期的なグリッド線の積分
 float gridIntegral(float x, float lineWidth)
 {
     float cell = floor(x);
@@ -38,66 +37,229 @@ float gridIntegral(float x, float lineWidth)
 
     float halfWidth = lineWidth * 0.5;
 
-    float local =
+    float localArea =
         min(f, halfWidth) +
         max(f - (1.0 - halfWidth), 0.0);
 
-    return cell * lineWidth + local;
+    return cell * lineWidth + localArea;
 }
 
-// Pixel Shader用グリッドフィルタ
-float gridTextureGradBox(
-    float2 p,
-    float2 ddxUV,
-    float2 ddyUV,
+// ========================================
+// 1方向のグリッド線のカバレッジ
+// ========================================
+
+float gridCoverage1D(
+    float p,
+    float pixelWidth,
     float lineWidth
 )
 {
-    float2 w = max(
-        abs(ddxUV) + abs(ddyUV),
-        0.000001
+    pixelWidth = max(pixelWidth, 0.000001);
+    lineWidth = clamp(lineWidth, 0.0001, 0.99);
+
+    float a = p - pixelWidth * 0.5;
+    float b = p + pixelWidth * 0.5;
+
+    return saturate(
+        (gridIntegral(b, lineWidth) -
+         gridIntegral(a, lineWidth)) / pixelWidth
     );
-
-    // ピクセルが覆う範囲
-    float2 a = p - w * 0.5;
-    float2 b = p + w * 0.5;
-
-    // X方向の線のカバー率
-    float coverageX =
-        (gridIntegral(b.x, lineWidth) -
-         gridIntegral(a.x, lineWidth)) / w.x;
-
-    // Y方向の線のカバー率
-    float coverageY =
-        (gridIntegral(b.y, lineWidth) -
-         gridIntegral(a.y, lineWidth)) / w.y;
-
-    return saturate(max(coverageX, coverageY));
 }
 
+// ========================================
 // Pixel Shader
+// ========================================
+
 float4 main(PSInput input) : SV_Target
 {
     MaterialGridLine materialGridLine =
         LoadMaterialGridLine(gMaterialID);
 
-    // ワールド座標のXZを使用
-    float2 gridUV = input.worldPosition.xz;
+    // ------------------------------------
+    // ワールド座標 XZ
+    // ------------------------------------
 
-    float2 dx = ddx(gridUV);
-    float2 dy = ddy(gridUV);
+    float2 p = input.worldPosition.xz;
 
-    float grid = gridTextureGradBox(
-        gridUV,
-        dx,
-        dy,
-        materialGridLine.gridRatio
+    float2 dx = ddx(p);
+    float2 dy = ddy(p);
+
+    // X・Zそれぞれのピクセル幅
+    float2 fw = max(
+        abs(dx) + abs(dy),
+        float2(0.000001, 0.000001)
     );
 
+    // ------------------------------------
+    // カメラ距離フェード
+    // ------------------------------------
+
+    CameraData srcCamera = AccessCamera(0);
+
+    float cameraDistance = length(
+        input.worldPosition - srcCamera.worldPos.xyz
+    );
+
+    const float fadeStart = 12.0;
+    const float fadeEnd = 50.0;
+
+    float distanceFade = 1.0 - smoothstep(
+        fadeStart,
+        fadeEnd,
+        cameraDistance
+    );
+
+    // ------------------------------------
+    // 1mグリッド
+    // X方向とZ方向を独立して計算
+    // ------------------------------------
+
+    const float fineWidth = 0.035;
+
+    float fineCoverageX = gridCoverage1D(
+        p.x,
+        fw.x,
+        fineWidth
+    );
+
+    float fineCoverageZ = gridCoverage1D(
+        p.y,
+        fw.y,
+        fineWidth
+    );
+
+    // X方向のLOD
+    float fineLODX = 1.0 - smoothstep(
+        0.15,
+        0.5,
+        fw.x
+    );
+
+    // Z方向のLOD
+    float fineLODZ = 1.0 - smoothstep(
+        0.15,
+        0.5,
+        fw.y
+    );
+
+    float fineAlphaX =
+        fineCoverageX * fineLODX;
+
+    float fineAlphaZ =
+        fineCoverageZ * fineLODZ;
+
+    // 2方向の線を合成
+    float fineAlpha =
+        1.0 - (1.0 - fineAlphaX)
+            * (1.0 - fineAlphaZ);
+
+    // ------------------------------------
+    // 5mグリッド
+    // ------------------------------------
+
+    const float majorInterval = 5.0;
+    const float majorWidth = 0.075;
+
+    float majorCoverageX = gridCoverage1D(
+        p.x / majorInterval,
+        fw.x / majorInterval,
+        majorWidth / majorInterval
+    );
+
+    float majorCoverageZ = gridCoverage1D(
+        p.y / majorInterval,
+        fw.y / majorInterval,
+        majorWidth / majorInterval
+    );
+
+    // X方向のLOD
+    float majorLODX = 1.0 - smoothstep(
+        0.8,
+        2.5,
+        fw.x
+    );
+
+    // Z方向のLOD
+    float majorLODZ = 1.0 - smoothstep(
+        0.8,
+        2.5,
+        fw.y
+    );
+
+    float majorAlphaX =
+        majorCoverageX * majorLODX;
+
+    float majorAlphaZ =
+        majorCoverageZ * majorLODZ;
+
+    float majorAlpha =
+        1.0 - (1.0 - majorAlphaX)
+            * (1.0 - majorAlphaZ);
+
+    // ------------------------------------
+    // 背景と通常グリッド
+    // ------------------------------------
+
+    float3 backgroundColor =
+        materialGridLine.backgroundColor.rgb;
+
+    float3 gridColor =
+        materialGridLine.gridColor.rgb;
+
     float3 color = lerp(
-        materialGridLine.backgroundColor.rgb,
-        materialGridLine.gridColor.rgb,
-        grid
+        backgroundColor,
+        gridColor,
+        fineAlpha * distanceFade
+    );
+
+    // ------------------------------------
+    // 5mごとの太線
+    // ------------------------------------
+
+    float3 majorColor = float3(
+        0.38,
+        0.42,
+        0.49
+    );
+
+    color = lerp(
+        color,
+        majorColor,
+        majorAlpha * distanceFade * 0.65
+    );
+
+    // ------------------------------------
+    // 原点のX軸・Z軸
+    // ------------------------------------
+
+    float3 middleLineCol = float3(
+        0.50,
+        0.41,
+        0.26
+    );
+
+    const float axisWidth = 0.055;
+
+    // X軸: Z = 0
+    float axisX = 1.0 - smoothstep(
+        axisWidth * 0.5 - fw.y * 0.5,
+        axisWidth * 0.5 + fw.y * 0.5,
+        abs(p.y)
+    );
+
+    // Z軸: X = 0
+    float axisZ = 1.0 - smoothstep(
+        axisWidth * 0.5 - fw.x * 0.5,
+        axisWidth * 0.5 + fw.x * 0.5,
+        abs(p.x)
+    );
+
+    float axis = max(axisX, axisZ);
+
+    color = lerp(
+        color,
+        middleLineCol,
+        axis * distanceFade
     );
 
     return float4(color, 1.0);
