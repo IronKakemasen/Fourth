@@ -40,8 +40,8 @@ void GridFloor::Awake(SceneInitInterface& sceneInitInterface_)
 	cP.pass = Pass::kSceneOpaque;	
 	cP.cullMode = CullMode::kBack;
 	cP.meshType = MeshType::kStatic;
-	cP.materialTypes.emplace_back(Material::Type::kStandard);
-	//cP.materialTypes.emplace_back(Material::Type::kGridLine);
+	//cP.materialTypes.emplace_back(Material::Type::kStandard);
+	cP.materialTypes.emplace_back(Material::Type::kGridLine);
 
 	std::vector<RenderState> playerC;
 	playerC.emplace_back(std::move(cP));
@@ -50,9 +50,9 @@ void GridFloor::Awake(SceneInitInterface& sceneInitInterface_)
 	p = sceneInitInterface_.CreateModel<Model::MeshUpdateType::kDynamic,Materials::UpdateType::kDynamic>
 		("Plane200x200Obj", playerC, 1, "Player");
 
-	sceneInitInterface_.AttachMaterial<Material::Type::kStandard>(p[0]->RefMaterials(0));
+	sceneInitInterface_.AttachMaterial<Material::Type::kGridLine>(p[0]->RefMaterials(0));
 
-	sceneInitInterface_.InputModelMaterialStandardFromFile("Plane200x200Obj", *p[0]);
+	//sceneInitInterface_.InputModelMaterialStandardFromFile("Plane200x200Obj", *p[0]);
 
 
 	//for (int i = 0;i < 10;++i)

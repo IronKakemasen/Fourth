@@ -237,7 +237,8 @@ namespace RenderPassComponent
 	enum class Pass
 	{
 		kSceneOpaque,
-        kSceneCompositor
+        kSceneCompositor,
+		kGridLine
 		,kCount
 	};
     enum class DepthEnable
@@ -12082,7 +12083,6 @@ std::vector<std::unique_ptr<Model>> ModelContext::ModelCreator::Create
 (
 	std::string const& modelFileName_,
 	std::vector<RenderState> const& modelRenderStates_,
-	std::vector<Material::StandardCPU> const& materials_,
 	UINT const numCreate_,
 	std::string const& modelName_
 )
@@ -12098,8 +12098,8 @@ std::vector<std::unique_ptr<Model>> ModelContext::ModelCreator::Create
 	for (UINT i = 0;i < numCreate_;++i)
 	{
 		//モデルの要素を組み立てる
-		auto [modelConstants, materialsGPU, meshletSize] = AssembleModelDescParts(modelFileName_, materials_);
-		//マテリアルの入れ物を作成し、デフォルトでMaterial::StandardGPUをアタッチする
+		auto [modelConstants, meshletSize] = AssembleModelDescParts(modelFileName_);
+		//マテリアルの入れ物を作成する
 		//サブメッシュ分用意する
 		std::vector<Materials> materials;
 		materials.reserve(meshletSize.size());
@@ -12107,10 +12107,6 @@ std::vector<std::unique_ptr<Model>> ModelContext::ModelCreator::Create
 		{
 			//モデルにマテリアルの入れ物を作成し、マテリアルIDを割り当てる
 			materials.emplace_back(materialAttacher->CreateMaterials());
-			//Material::StandardGPUをアタッチする
-			materialAttacher->Attach<Material::Type::kStandard>(materials[k]);
-			//Material::StandardGPUの値をコピーする
-			materials[k].Ref<Material::Type::kStandard>() = materialsGPU[k];
 		}
 		///一つのDescに詰める
 		ModelDescription modelDesc
@@ -12134,6 +12130,35 @@ std::vector<std::unique_ptr<Model>> ModelContext::ModelCreator::Create
 	renderStatesCache.append_range(modelRenderStates_);
 	return modelUniques;
 }
+void ModelContext::ModelCreator::InputMaterialStandard(std::string const& modelFileName_, Model& model_)
+{
+	auto const numMesh = model_.changeableParams.materialsContainer.size();
+	//モデルのレンダーステートにMaterialStandardタイプがあるかチェック
+#ifdef _DEBUG
+	UINT passCnt{};
+	for (auto const& renderState : model_.modelDesc.WatchRenderStates())
+	{
+		for (auto const& materialType : renderState.materialTypes)
+		{
+			if (materialType == Material::Type::kStandard) passCnt++;
+		}
+	}
+	ErrorMessageOutput::Assert::DetectError
+	(
+		passCnt == numMesh,
+		model_.WatchName() + ": MaterialStandardをレンダーステートに登録していないのに入力すな",
+		fileName
+	);
+#endif // _DEBUG
+	//モデルファイル名からマテリアルデータを拾う
+	std::vector<Material::StandardGPU> src = modelDescAssembler->LoadModelMaterialData(modelFileName_);
+	//データ入力
+	for (size_t i = 0;i < numMesh;++i)
+	{
+		auto& dst = model_.changeableParams.materialsContainer[i];
+		dst.Ref<Material::Type::kStandard>() = src[i];
+	}
+}
 std::vector<RenderState>const& ModelContext::ModelCreator::WatchRenderStateCache(AgentKey key_)const
 {
 	return renderStatesCache;
@@ -12145,18 +12170,16 @@ void ModelContext::ModelCreator::DeleteRenderStateCache(NexusFieldProof proof_ ,
 }
 ModelContext::ModelCreator::ModelDescParts ModelContext::ModelCreator::AssembleModelDescParts
 (
-	std::string const& modelFileName_,
-	std::vector<Material::StandardCPU> const& inputMaterials_
+	std::string const& modelFileName_
 )
 {
-	return modelDescAssembler->Assemble(modelFileName_, inputMaterials_);
+	return modelDescAssembler->Assemble(modelFileName_);
 }
 template
 std::vector<std::unique_ptr<Model>> ModelContext::ModelCreator::Create<Model::MeshUpdateType::kDynamic>
 (
 	std::string const& modelFileName_,
 	std::vector<RenderState> const& modelRenderStates_,
-	std::vector<Material::StandardCPU> const& materials_,
 	UINT const numCreate_,
 	std::string const& modelName_
 );
@@ -12165,7 +12188,6 @@ std::vector<std::unique_ptr<Model>> ModelContext::ModelCreator::Create<Model::Me
 (
 	std::string const& modelFileName_,
 	std::vector<RenderState> const& modelRenderStates_,
-	std::vector<Material::StandardCPU> const& materials_,
 	UINT const numCreate_,
 	std::string const& modelName_
 );
@@ -12185,7 +12207,6 @@ class ModelContext::ModelCreator
 	using ModelDescParts = std::tuple
 	<
 		std::vector<ConstantBuffers::ModelConstantsCPUGPU>,
-		std::vector<Material::StandardGPU>,
 		std::vector<size_t>
 	>;
 public:
@@ -12202,10 +12223,11 @@ public:
 	(
 		std::string const& modelFileName_,
 		std::vector<RenderState> const& modelRenderStates_,
-		std::vector<Material::StandardCPU> const& materials_,
 		UINT const numCreate_,
 		std::string const& modelName_
 	);
+	//モデルのMaterial::StandardGPUをモデルファイルから入力する
+	void InputMaterialStandard(std::string const& modelFileName_, Model& model_);
 	//PSO生成時に必要
 	std::vector<RenderState> const& WatchRenderStateCache(AgentKey key_)const;
 	//↑を呼出し後、renderStatesCacheは削除
@@ -12213,8 +12235,7 @@ public:
 private:
 	ModelDescParts AssembleModelDescParts
 	(
-		std::string const& modelFileName_,
-		std::vector<Material::StandardCPU> const& inputMaterials_
+		std::string const& modelFileName_
 	);
 	//生成数。ネーミング用
 	UINT numCreate{};
@@ -13428,23 +13449,31 @@ ModelContext::ModelCreator::ModelDescAssembler::ModelDescAssembler
 }
 ModelContext::ModelCreator::ModelDescParts ModelContext::ModelCreator::ModelDescAssembler::Assemble
 (
-	std::string const& modelFileName_,
-	std::vector<Material::StandardCPU> const& inputMaterials_
+	std::string const& modelFileName_
 )
 {
 	//modelDataLibraryにアクセス
 	auto& modelDataLibrary = slotAllocator.AccessModelDataLibrary(ModelContext::ModelSlotAllocator::HandleLicence{});
 	//モデルファイル名からサブメッシュ分含む、
-	//メッシュデータのユニークID、マテリアル、メッシュレットのサイズを検索
+	//メッシュデータのユニークID、メッシュレットのサイズを検索
 	auto const& modelData = modelDataLibrary.Find(modelFileName_);
 	//サブメッシュ含む、メッシュの総数
 	size_t const kNumMeshData = modelData.meshDataID.size();
 	return ModelDescParts
 	(
 		PackModelConstants(modelData.meshDataID, kNumMeshData),
-		ConvertMaterialData(kNumMeshData, modelData.materialCPU, inputMaterials_),
 		modelData.meshletSize
 	);
+}
+std::vector<Material::StandardGPU> ModelContext::ModelCreator::ModelDescAssembler::LoadModelMaterialData(std::string const& modelFileName_)
+{
+	//modelDataLibraryにアクセス
+	auto& modelDataLibrary = slotAllocator.AccessModelDataLibrary(ModelContext::ModelSlotAllocator::HandleLicence{});
+	//マテリアルデータを検索
+	auto const& modelData = modelDataLibrary.Find(modelFileName_);
+	//サブメッシュ含む、メッシュの総数
+	size_t const kNumMeshData = modelData.meshDataID.size();
+	return ConvertMaterialData(kNumMeshData, modelData.materialCPU);
 }
 std::vector<ConstantBuffers::ModelConstantsCPUGPU> ModelContext::ModelCreator::ModelDescAssembler::PackModelConstants
 (
@@ -13469,8 +13498,7 @@ std::vector<ConstantBuffers::ModelConstantsCPUGPU> ModelContext::ModelCreator::M
 std::vector<Material::StandardGPU> ModelContext::ModelCreator::ModelDescAssembler::ConvertMaterialData
 (
 	size_t const kNumMeshData_,
-	std::vector<Material::StandardCPU> const& materialsFromFile_,
-	std::vector<Material::StandardCPU> const& inputMaterials
+	std::vector<Material::StandardCPU> const& materialsFromFile_
 )
 {
 	//テクスチャファイルパスから、テクスチャファイル名へ変換
@@ -13480,43 +13508,29 @@ std::vector<Material::StandardGPU> ModelContext::ModelCreator::ModelDescAssemble
 	for (size_t i = 0;i < kNumMeshData_;++i)
 	{
 		auto& dst = materialGPUContainer[i];
-		//データの手動入力があればそちらが優先
-		if (i < inputMaterials.size())
+		//ソースが無いケースのために適当なデフォルト値を入れておく
+		//あえて入れていないパラメータは、hlsl側でセンチネルとしての値が埋め込まれているので触らんように
 		{
-			auto const& src = inputMaterials[i];
-			if (src.albedoTexture.size() > 0)	dst.albedoTexture	= textureLib->Export(src.albedoTexture);
-			if (src.normalTexture.size() > 0)	dst.normalTexture	= textureLib->Export(src.normalTexture);
-			if (src.emissiveTexture.size() > 0) dst.emissiveTexture = textureLib->Export(src.emissiveTexture);
-			if (src.roughness != kInvalid)		dst.roughness		= src.roughness;
-			if (src.metallic != kInvalid)		dst.metallic		= src.metallic;
-			if (src.baseColor.x != kInvalid)	dst.baseColor		= src.baseColor;
-			dst.albedoTexSamplerState = src.albedoTexSamplerState;
+			if (dst.albedoTexture == kInvalid)
+				dst.albedoTexture = textureLib->Export("white4x4_albedo");
+			//割とおきにな値
+			dst.roughness = 0.25f;
+			dst.metallic = 0.9f;
+			dst.baseColor = { 1.0f,1.0f,1.0f,1.0f };
 		}
-		//手動入力で満たされなかった部分を、モデル名に紐づけられているデータから入力する
+		//モデル名に紐づけられているデータから入力する
 		if (i < materialsFromFile_.size())
 		{
 			auto const& src = materialsFromFile_[i];
-			if (dst.albedoTexture == kInvalid && src.albedoTexture.size() > 0)
-				dst.albedoTexture	= textureLib->Export(src.albedoTexture);
-			if (dst.normalTexture == kInvalid && src.normalTexture.size() > 0)
-				dst.normalTexture	= textureLib->Export(src.normalTexture);
-			if (dst.emissiveTexture == kInvalid && src.emissiveTexture.size() > 0)	
+			if (src.albedoTexture.size() > 0)
+				dst.albedoTexture   = textureLib->Export(src.albedoTexture);
+			if (src.normalTexture.size() > 0)
+				dst.normalTexture   = textureLib->Export(src.normalTexture);
+			if (src.emissiveTexture.size() > 0)	
 				dst.emissiveTexture = textureLib->Export(src.emissiveTexture);
-			if (dst.roughness == kInvalid && src.roughness != kInvalid)
-				dst.roughness	= src.roughness;
-			if (dst.metallic == kInvalid && src.metallic != kInvalid)	
-				dst.metallic	= src.metallic;
-			if (dst.baseColor.x == kInvalid && src.baseColor.x != kInvalid)
-				dst.baseColor = src.baseColor ;
-		}
-		//手動入力もなくソースも無ければ、適当な値を入れておく
-		//あえて入れていないパラメータは、hlsl側でセンチネルとしての値が埋め込まれているので触らんように
-		{
-			if (dst.albedoTexture == kInvalid)dst.albedoTexture = textureLib->Export("white4x4_albedo");
-			//割とおきにな値
-			if (dst.roughness == kInvalid)		dst.roughness	= 0.25f;
-			if (dst.metallic == kInvalid )		dst.metallic	= 0.9f;
-			if (dst.baseColor.x == kInvalid)	dst.baseColor	= { 1.0f,1.0f,1.0f,1.0f };
+			if (src.roughness != kInvalid)   dst.roughness = src.roughness;
+			if (src.metallic != kInvalid)    dst.metallic  = src.metallic;
+			if (src.baseColor.x != kInvalid) dst.baseColor = src.baseColor;
 		}
 	}
 	return materialGPUContainer;
@@ -13540,11 +13554,11 @@ public:
 		TextureContextDiplomat& textureContextDiplomat_
 	);
 	//モデルクラスのRenderStates以外のディスクリプションを作ってあげる
-	ModelDescParts Assemble
-	(
-		std::string const& modelFileName_,
-		std::vector<Material::StandardCPU> const& inputMaterials_
-	);
+	ModelDescParts Assemble(std::string const& modelFileName_);
+	//ちょっと責務ごっちゃだが、ギリ許容範囲ということで…
+	//モデルファイルからマテリアルデータ(Material::StandardGPU)を読み込む
+	//サブメッシュも含むのでvector
+	std::vector<Material::StandardGPU> LoadModelMaterialData(std::string const& modelFileName_);
 private:
 	//modelConstantsを詰める
 	std::vector<ConstantBuffers::ModelConstantsCPUGPU> PackModelConstants
@@ -13557,8 +13571,7 @@ private:
 	std::vector<Material::StandardGPU> ConvertMaterialData
 	(
 		size_t const kNumMeshData_,
-		std::vector<Material::StandardCPU> const& materialsFromFile_,
-		std::vector<Material::StandardCPU> const& inputMaterials
+		std::vector<Material::StandardCPU> const& materialsFromFile_
 	);
 	//TransformやMaterialのスロットを割り当てる
 	ModelContext::ModelSlotAllocator& slotAllocator;
@@ -14219,6 +14232,10 @@ ModelContext::FrontlineSystems::FrontlineSystems(NexusFieldProof proof_, ModelCr
 ModelContext::FrontlineSystems::~FrontlineSystems()
 {
 }
+void ModelContext::FrontlineSystems::InputMaterialStandard(std::string const& modelFileName_, Model& model_)
+{
+	modelCreator.InputMaterialStandard(modelFileName_, model_);
+}
 template<Model::MeshUpdateType modelType>
 void ModelContext::FrontlineSystems::UpdateModelTransform()
 {
@@ -14298,7 +14315,6 @@ public:
 	(
 		std::string const& modelFileName_,
 		std::vector<RenderState> const& modelRenderStates_,
-		std::vector<Material::StandardCPU> const& materials_,
 		UINT const numCreate_,
 		std::string const& modelName_
 	)
@@ -14309,12 +14325,13 @@ public:
 			(
 				modelFileName_,
 				modelRenderStates_,
-				materials_,
 				numCreate_,
 				modelName_
 			)
 		);
 	}
+	//モデルファイルからMaterialStandardを入力する
+	void InputMaterialStandard(std::string const& modelFileName_, Model& model_);
 	//モデルのトランスフォームのアップデート
 	template<Model::MeshUpdateType modelType>
 	void UpdateModelTransform();
@@ -14574,7 +14591,7 @@ std::vector<std::pair<RenderStateKey, uint64_t>> ModelContext::FrontlineSystems:
 					renderState.meshType,
 					materialType
 				);
-				keys.emplace_back(std::make_pair(renderStateKey, packedKey));
+				keys.emplace_back(std::move(std::make_pair(renderStateKey, packedKey)));
 			}
 		}
 	}
@@ -19039,19 +19056,17 @@ void GridFloor::Awake(SceneInitInterface& sceneInitInterface_)
 	sceneInitInterface_.AttachSystem<Transform>(*this);
 	RenderState cP;
 	cP.blendModes.emplace_back(BlendMode::kOpaque);
-	cP.blendModes.emplace_back(BlendMode::kAlphaBlend);
-	cP.blendModes.emplace_back(BlendMode::kAdditive);
 	cP.pass = Pass::kSceneOpaque;	
 	cP.cullMode = CullMode::kBack;
 	cP.meshType = MeshType::kStatic;
 	cP.materialTypes.emplace_back(Material::Type::kStandard);
+	//cP.materialTypes.emplace_back(Material::Type::kGridLine);
 	std::vector<RenderState> playerC;
 	playerC.emplace_back(std::move(cP));
-	std::vector<Material::StandardCPU> materials;
-	materials.resize(1);
-	materials[0].albedoTexSamplerState = SamplerState::kLinearClamp;
 	p = sceneInitInterface_.CreateModel<Model::MeshUpdateType::kDynamic,Materials::UpdateType::kDynamic>
-		("Plane200x200Obj", playerC, materials, 10, "Player");
+		("Plane200x200Obj", playerC, 1, "Player");
+	sceneInitInterface_.AttachMaterial<Material::Type::kStandard>(p[0]->RefMaterials(0));
+	sceneInitInterface_.InputModelMaterialStandardFromFile("Plane200x200Obj", *p[0]);
 	//for (int i = 0;i < 10;++i)
 	//{
 	//	RefSystem<Transform>().BeParent(&p[i]->RefTransform(0));
@@ -20593,6 +20608,7 @@ std::vector<RenderContext::StaticRenderGraph::PSO_Builder::PsoDesc_Key> RenderCo
 			);
 		}
 	}
+#ifdef _DEBUG
 	std::string allPsoDescName = "= = = = All PSO_Desc List = = = = \n";
 	//生成されたPSODescのデバッグ出力
 	for (auto const& psoDesc : allPsoDesc)
@@ -20600,6 +20616,7 @@ std::vector<RenderContext::StaticRenderGraph::PSO_Builder::PsoDesc_Key> RenderCo
 		allPsoDescName += psoDesc.first.psoName + "\n";
 	}
 	Logger::Log(allPsoDescName);
+#endif // _DEBUG
 	return allPsoDesc;
 }
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -21824,8 +21841,15 @@ struct RenderContext::RenderPassState
 #pragma once
 class SceneOpaque;
 class SceneCompositor;
-using AllPassPtr = std::tuple<SceneOpaque*, SceneCompositor*>;
-using AllPassTypes = std::tuple<SceneOpaque, SceneCompositor>;
+class GridLinePass;
+using AllPassPtr = std::tuple
+<
+	SceneOpaque*, SceneCompositor*, GridLinePass*
+>;
+using AllPassTypes = std::tuple
+<
+	SceneOpaque, SceneCompositor, GridLinePass
+>;
 
 ========================================
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\MiddleLayer\Render\RenderPass\AllRenderPass\AllPassInclude.h ===
@@ -21833,10 +21857,12 @@ using AllPassTypes = std::tuple<SceneOpaque, SceneCompositor>;
 #pragma once
 #include "SceneOpaque/SceneOpaque.h"
 #include "SceneCompositor/SceneCompositor.h"
+#include "Gridline/GridLinePass.h"
 using AllPassUnique = std::tuple
 <
 	std::unique_ptr<SceneOpaque>,
-	std::unique_ptr<SceneCompositor>
+	std::unique_ptr<SceneCompositor>,
+	std::unique_ptr<GridLinePass>
 >;
 
 ========================================
@@ -22453,6 +22479,12 @@ namespace RenderPassTraits
 		static inline const std::string name = "SceneCompositor";
 		static constexpr RenderPassComponent::Pass kPassEnum = RenderPassComponent::Pass::kSceneCompositor;
 	};
+	template<>
+	struct PassClassTraits<GridLinePass>
+	{
+		static inline const std::string name = "GridLine";
+		static constexpr RenderPassComponent::Pass kPassEnum = RenderPassComponent::Pass::kGridLine;
+	};
 	//名前から列挙型を特定
 	constexpr RenderPassComponent::Pass PassNameToPassType(std::string const& passName_)
 	{
@@ -22465,13 +22497,19 @@ namespace RenderPassTraits
 		{
 			pass = PassClassTraits<SceneCompositor>::kPassEnum;
 		}
-		else
+		else if (passName_ == PassClassTraits<GridLinePass>::name)
 		{
-			ErrorMessageOutput::Assert::OutputError(passName_ + "こんなパスネームは存在しない", "RenderPassComponent.cpp");
+			pass = PassClassTraits<GridLinePass>::kPassEnum;
 		}
+		ErrorMessageOutput::Assert::DetectError
+		(
+			pass != RenderPassComponent::Pass::kCount,
+			passName_ + "こんなパスネームは存在しない",
+			"RenderPassTraits.h"
+		);
 		return pass;
 	}
-	//クラスから列挙型を特定
+	//列挙型からクラスを特定
     template<RenderPassComponent::Pass passType>
     struct PassTypeToPassClass;
 	template<>
@@ -22483,6 +22521,11 @@ namespace RenderPassTraits
 	struct PassTypeToPassClass<RenderPassComponent::Pass::kSceneCompositor>
 	{
 		using PassClass = SceneCompositor;
+	};
+	template<>
+	struct PassTypeToPassClass<RenderPassComponent::Pass::kGridLine>
+	{
+		using PassClass = GridLinePass;
 	};
 }
 
@@ -22499,15 +22542,54 @@ namespace RenderPassTraits
 多すぎて覚醒しそう
 
 ========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\MiddleLayer\Render\RenderPass\AllRenderPass\Gridline\GridlinePass.cpp ===
+========================================
+#include "PreCompileHeader.h"
+#include "GridLinePass.h"
+#include "../../PassDesc/PassDesc.h"
+GridLinePass::GridLinePass(RenderContext::NexusFieldProof proof_, std::unique_ptr<RenderContext::PassDesc>&& desc_)
+	:RenderContext::PassBehavior(proof_, std::move(desc_))
+{
+}
+void GridLinePass::Update
+(
+	[[maybe_unused]] std::unordered_map<uint64_t, std::pair<RenderStateKey, std::vector<Model*>>> const& modelContainer_,
+	[[maybe_unused]] RenderStateComponent::FillMode const modelFillMode_,
+	RenderContext::PSO_PoolDispatcher& psoDispatcher_,
+	RuntimeWrapper& cmdWrapper_,
+	[[maybe_unused]] BufferContext::BufferDispatcher& bufDispatcher_
+)
+{
+	//モデルの描画はもちろんします。
+	RenderModels(modelContainer_, modelFillMode_, psoDispatcher_, cmdWrapper_);
+}
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\MiddleLayer\Render\RenderPass\AllRenderPass\Gridline\GridlinePass.h ===
+========================================
+#pragma once
+#include "../RenderPassBehavior.h"
+class GridLinePass :public RenderContext::PassBehavior
+{
+public:
+	GridLinePass(RenderContext::NexusFieldProof proof_, std::unique_ptr<RenderContext::PassDesc>&& desc_);
+	virtual void Update
+	(
+		[[maybe_unused]] std::unordered_map<uint64_t, std::pair<RenderStateKey, std::vector<Model*>>> const& modelContainer_,
+		[[maybe_unused]] RenderStateComponent::FillMode const modelFillMode_,
+		RenderContext::PSO_PoolDispatcher& psoDispatcher_,
+		RuntimeWrapper& cmdWrapper_,
+		[[maybe_unused]] BufferContext::BufferDispatcher& bufDispatcher_
+	)override;
+private:
+};
+
+========================================
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\MiddleLayer\Render\RenderPass\AllRenderPass\SceneCompositor\SceneCompositor.cpp ===
 ========================================
 #include "PreCompileHeader.h"
 #include "SceneCompositor.h"
 #include "../../PassDesc/PassDesc.h"
-#include "../../RuntimePassInfo/RuntimePassInfo.h"
-//外部
-#include "../../../../../LowerLayer/Resource/Model/ModelStructure/Model.h"
-#include "../../../../../LowerLayer/Core/Command/RuntimeWrapper/RuntimeWrapper.h"
 SceneCompositor::SceneCompositor(RenderContext::NexusFieldProof proof_, std::unique_ptr<RenderContext::PassDesc>&& desc_)
 	:RenderContext::PassBehavior(proof_, std::move(desc_))
 {
@@ -22551,10 +22633,6 @@ private:
 #include "PreCompileHeader.h"
 #include "SceneOpaque.h"
 #include "../../PassDesc/PassDesc.h"
-#include "../../RuntimePassInfo/RuntimePassInfo.h"
-//外部
-#include "../../../../../LowerLayer/Resource/Model/ModelStructure/Model.h"
-#include "../../../../../LowerLayer/Core/Command/RuntimeWrapper/RuntimeWrapper.h"
 SceneOpaque::SceneOpaque(RenderContext::NexusFieldProof proof_ , std::unique_ptr<RenderContext::PassDesc>&& desc_)
 :RenderContext::PassBehavior(proof_, std::move(desc_))
 {
@@ -23602,8 +23680,8 @@ void CreateSceneTexture::Run
 	BufferContext::BufferDispatcher& bufDispatcher_
 )
 {
-	//SceneOpaque -> SceneCompositor
 	CallPassUpdate<SceneOpaque>(modelContainer_,modelFillMode_,psoDispatcher_,cmdWrapper_,bufDispatcher_);
+	CallPassUpdate<GridLinePass>(modelContainer_, modelFillMode_, psoDispatcher_, cmdWrapper_, bufDispatcher_);
 	CallPassUpdate<SceneCompositor>(modelContainer_, modelFillMode_, psoDispatcher_, cmdWrapper_, bufDispatcher_);
 }
 
@@ -24785,7 +24863,6 @@ public:
 	(
 		std::string const& modelFileName_,
 		std::vector<RenderState> const& modelRenderStates_,
-		std::vector<Material::StandardCPU> const& materials_,
 		UINT const numCreate_,
 		std::string const& modelName_ = "nameLess"
 	)
@@ -24795,7 +24872,6 @@ public:
 		(
 			modelFileName_,
 			modelRenderStates_,
-			materials_,
 			numCreate_,
 			modelName_
 		);
@@ -24808,6 +24884,12 @@ public:
 			}
 		}
 		return models;
+	}
+	//モデルファイルからMaterial::StandardGPUを入力する
+	//さきにMaterial::Type::kStandardをアタッチしてね
+	void InputModelMaterialStandardFromFile(std::string const& modelFileName_, Model& model_)
+	{
+		modelSystems.InputMaterialStandard(modelFileName_, model_);
 	}
 	//ゲームオブジェクトにシステムをアタッチする
 	template<typename SystemType>
@@ -26591,5 +26673,5 @@ namespace StringProcessing
 ========================================
 === SUMMARY ===
 ========================================
-Total Files      : 581
-Effective Lines  : 19404
+Total Files      : 583
+Effective Lines  : 19465
