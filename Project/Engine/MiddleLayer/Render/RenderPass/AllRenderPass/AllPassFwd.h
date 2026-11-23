@@ -2,15 +2,15 @@
 
 class SceneOpaque;
 class SceneCompositor;
-class GridlinePass;
+class GridLinePass;
 
 
 using AllPassPtr = std::tuple
 <
-	SceneOpaque*, SceneCompositor*, GridlinePass*
+	SceneOpaque*, SceneCompositor*, GridLinePass*
 >;
 
 using AllPassTypes = std::tuple
 <
-	SceneOpaque, SceneCompositor, GridlinePass
+	SceneOpaque, SceneCompositor, GridLinePass
 >;

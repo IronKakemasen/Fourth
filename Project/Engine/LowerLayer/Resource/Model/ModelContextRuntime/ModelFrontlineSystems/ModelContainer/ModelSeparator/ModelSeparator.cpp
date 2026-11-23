@@ -82,7 +82,7 @@ std::vector<std::pair<RenderStateKey, uint64_t>> ModelContext::FrontlineSystems:
 				);
 
 
-				keys.emplace_back(std::make_pair(renderStateKey, packedKey));
+				keys.emplace_back(std::move(std::make_pair(renderStateKey, packedKey)));
 			}
 		}
 	}

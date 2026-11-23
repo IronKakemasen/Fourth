@@ -36,7 +36,6 @@ public:
 	(
 		std::string const& modelFileName_,
 		std::vector<RenderState> const& modelRenderStates_,
-		std::vector<Material::StandardCPU> const& materials_,
 		UINT const numCreate_,
 		std::string const& modelName_
 	);
@@ -51,8 +50,7 @@ private:
 
 	ModelDescParts AssembleModelDescParts
 	(
-		std::string const& modelFileName_,
-		std::vector<Material::StandardCPU> const& inputMaterials_
+		std::string const& modelFileName_
 	);
 
 	//生成数。ネーミング用
