@@ -20,6 +20,13 @@ ModelContext::FrontlineSystems::~FrontlineSystems()
 
 }
 
+
+void ModelContext::FrontlineSystems::InputMaterialStandard(std::string const& modelFileName_, Model& model_)
+{
+	modelCreator.InputMaterialStandard(modelFileName_, model_);
+}
+
+
 template<Model::MeshUpdateType modelType>
 void ModelContext::FrontlineSystems::UpdateModelTransform()
 {

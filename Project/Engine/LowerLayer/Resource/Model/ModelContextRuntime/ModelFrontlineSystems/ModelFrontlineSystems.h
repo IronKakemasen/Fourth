@@ -37,6 +37,10 @@ public:
 		);
 	}
 
+	//モデルファイルからMaterialStandardを入力する
+	void InputMaterialStandard(std::string const& modelFileName_, Model& model_);
+
+
 	//モデルのトランスフォームのアップデート
 	template<Model::MeshUpdateType modelType>
 	void UpdateModelTransform();

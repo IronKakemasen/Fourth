@@ -36,7 +36,7 @@ ModelContext::ModelCreator::ModelDescParts ModelContext::ModelCreator::ModelDesc
 	auto& modelDataLibrary = slotAllocator.AccessModelDataLibrary(ModelContext::ModelSlotAllocator::HandleLicence{});
 	
 	//モデルファイル名からサブメッシュ分含む、
-	//メッシュデータのユニークID、マテリアル、メッシュレットのサイズを検索
+	//メッシュデータのユニークID、メッシュレットのサイズを検索
 	auto const& modelData = modelDataLibrary.Find(modelFileName_);
 
 	//サブメッシュ含む、メッシュの総数
@@ -45,11 +45,25 @@ ModelContext::ModelCreator::ModelDescParts ModelContext::ModelCreator::ModelDesc
 	return ModelDescParts
 	(
 		PackModelConstants(modelData.meshDataID, kNumMeshData),
-		ConvertMaterialData(kNumMeshData, modelData.materialCPU),
 		modelData.meshletSize
 	);
 
+
 }
+
+std::vector<Material::StandardGPU> ModelContext::ModelCreator::ModelDescAssembler::LoadModelMaterialData(std::string const& modelFileName_)
+{
+	//modelDataLibraryにアクセス
+	auto& modelDataLibrary = slotAllocator.AccessModelDataLibrary(ModelContext::ModelSlotAllocator::HandleLicence{});
+	//マテリアルデータを検索
+	auto const& modelData = modelDataLibrary.Find(modelFileName_);
+
+	//サブメッシュ含む、メッシュの総数
+	size_t const kNumMeshData = modelData.meshDataID.size();
+
+	return ConvertMaterialData(kNumMeshData, modelData.materialCPU);
+}
+
 
 std::vector<ConstantBuffers::ModelConstantsCPUGPU> ModelContext::ModelCreator::ModelDescAssembler::PackModelConstants
 (
