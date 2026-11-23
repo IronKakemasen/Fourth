@@ -7,7 +7,7 @@
 DefaultDebugCamera::DefaultDebugCamera(std::optional<CameraDesc> const& desc_)
 	: CameraBehavior(desc_)
 {
-	trans->TranslatePosition({ 0,20,-10 });
+	trans->TranslatePosition({ 0,5,-10 });
 	trans->LookAt({ 0.0f,-0.75f,1.0f });
 }
 

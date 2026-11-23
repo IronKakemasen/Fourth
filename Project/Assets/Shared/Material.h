@@ -117,15 +117,13 @@ namespace Material
     private:
 
         Vector4<float> gridColor = {0.0f,0.0f,0.0f,1.0f};
-        Vector4<float> backgroundColor = {0.75f,0.75f ,0.75f,1.0f };
-        float gridScale = 1.0f;
-        float gridRatio = 1.0f;
+        Vector4<float> backgroundColor = {0.35f,0.35f,0.35f,1.0f };
+        float gridRatio = 0.04f;
 
     public:
 
         void ChangeGridColor(Vector4<float> const& dst_) { gridColor = dst_; }
         void ChangeBackgroundColor(Vector4<float> const& dst_) { backgroundColor = dst_; }
-        void ChangeGridScale(float dst_) { gridScale = dst_; }
         void ChangeGridRatio(float dst_) { gridRatio = dst_; }
 
     };
@@ -170,7 +168,6 @@ struct MaterialGridLine
 {
     float4 gridColor;
     float4 backgroundColor;
-    float gridScale;
     float gridRatio;
 };
 

@@ -25,46 +25,76 @@ struct PSInput
 {
     float4 position : SV_Position;
     float2 uv : TEXCOORD0;
+    float3 worldPosition : POSITION0;
+
 };
 
 
-float gridTextureGradBox
-(
+// 周期的なグリッド線の積分
+float gridIntegral(float x, float lineWidth)
+{
+    float cell = floor(x);
+    float f = frac(x);
+
+    float halfWidth = lineWidth * 0.5;
+
+    float local =
+        min(f, halfWidth) +
+        max(f - (1.0 - halfWidth), 0.0);
+
+    return cell * lineWidth + local;
+}
+
+// Pixel Shader用グリッドフィルタ
+float gridTextureGradBox(
     float2 p,
     float2 ddxUV,
     float2 ddyUV,
-    float gridRatio_
+    float lineWidth
 )
 {
-    float2 w = max(abs(ddxUV), abs(ddyUV)) + 0.01;
+    float2 w = max(
+        abs(ddxUV) + abs(ddyUV),
+        0.000001
+    );
 
-    float2 a = p + 0.5 * w;
-    float2 b = p - 0.5 * w;
+    // ピクセルが覆う範囲
+    float2 a = p - w * 0.5;
+    float2 b = p + w * 0.5;
 
-    float2 i =
-        (
-            floor(a) + min(frac(a) * gridRatio_, 1.0)
-            - floor(b) - min(frac(b) * gridRatio_, 1.0)
-        ) / (gridRatio_ * w);
+    // X方向の線のカバー率
+    float coverageX =
+        (gridIntegral(b.x, lineWidth) -
+         gridIntegral(a.x, lineWidth)) / w.x;
 
-    return (1.0 - i.x) * (1.0 - i.y);
+    // Y方向の線のカバー率
+    float coverageY =
+        (gridIntegral(b.y, lineWidth) -
+         gridIntegral(a.y, lineWidth)) / w.y;
+
+    return saturate(max(coverageX, coverageY));
 }
 
 // Pixel Shader
 float4 main(PSInput input) : SV_Target
 {
-    
-    MaterialGridLine materialGridLine = LoadMaterialGridLine(gMaterialID);
-    
-    float2 uv = input.uv * materialGridLine.gridScale;
+    MaterialGridLine materialGridLine =
+        LoadMaterialGridLine(gMaterialID);
 
-    float2 dx = ddx(uv);
-    float2 dy = ddy(uv);
+    // ワールド座標のXZを使用
+    float2 gridUV = input.worldPosition.xz;
 
-    float grid = gridTextureGradBox(uv, dx, dy, materialGridLine.gridRatio);
+    float2 dx = ddx(gridUV);
+    float2 dy = ddy(gridUV);
 
-    float3 color = lerp
-    (
+    float grid = gridTextureGradBox(
+        gridUV,
+        dx,
+        dy,
+        materialGridLine.gridRatio
+    );
+
+    float3 color = lerp(
         materialGridLine.backgroundColor.rgb,
         materialGridLine.gridColor.rgb,
         grid
