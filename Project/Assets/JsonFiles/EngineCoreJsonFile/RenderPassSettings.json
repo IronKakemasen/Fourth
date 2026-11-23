@@ -1,6 +1,8 @@
 {
 
-  "SceneCompositor": {
+  "SceneCompositor": 
+  {
+
     "isOffScreen": true,
     "ms": "FullScreenTriangleMS",
     "ps": "SceneCompositorPS",
@@ -34,9 +36,38 @@
 
 
 
-  "SceneOpaque": {
+  
+  "GridLine": 
+  {
+    
     "isOffScreen": false,
 
+
+    "doesOwnColorBuffers": false,
+    
+
+    "doesOwnDepthStencil": false,
+
+    "depthTest": 1,
+    "depthEnable": true,
+    "depthBias": 0,
+    "depthBiasClamp": 0.0,
+    "slopeScaledDepthBias": 0.0,
+
+    "referenceBufferNames": [],
+
+    "writeSharingColorBufferNames": [],
+    "writeSharingDepthBufferName": ""
+
+  },
+
+
+
+
+  "SceneOpaque": 
+  {
+
+    "isOffScreen": false,
 
     "doesOwnColorBuffers": true,
     "ownedColorBufferNames": [ "opaqueColor" ],
@@ -74,8 +105,8 @@
 
     "referenceBufferNames": [],
 
-    "writeSharingColorBufferNames": [],
-    "writeSharingDepthBufferName": ""
+    "writeSharingColorBufferNames": ["opaqueColor"],
+    "writeSharingDepthBufferName": "opaqueDepth"
 
   }
 

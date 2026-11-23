@@ -8,8 +8,9 @@ namespace RenderPassComponent
 	enum class Pass
 	{
 		kSceneOpaque,
-        kSceneCompositor
-		
+        kSceneCompositor,
+		kGridLine
+
 		
 		,kCount
 	};

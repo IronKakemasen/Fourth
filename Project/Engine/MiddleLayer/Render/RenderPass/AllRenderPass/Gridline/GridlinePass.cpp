@@ -1,0 +1,23 @@
+#include "PreCompileHeader.h"
+#include "GridlinePass.h"
+#include "../../PassDesc/PassDesc.h"
+
+GridlinePass::GridlinePass(RenderContext::NexusFieldProof proof_, std::unique_ptr<RenderContext::PassDesc>&& desc_)
+	:RenderContext::PassBehavior(proof_, std::move(desc_))
+{
+
+}
+
+void GridlinePass::Update
+(
+	[[maybe_unused]] std::unordered_map<uint64_t, std::pair<RenderStateKey, std::vector<Model*>>> const& modelContainer_,
+	[[maybe_unused]] RenderStateComponent::FillMode const modelFillMode_,
+	RenderContext::PSO_PoolDispatcher& psoDispatcher_,
+	RuntimeWrapper& cmdWrapper_,
+	[[maybe_unused]] BufferContext::BufferDispatcher& bufDispatcher_
+)
+{
+	//モデルの描画はもちろんします。
+	RenderModels(modelContainer_, modelFillMode_, psoDispatcher_, cmdWrapper_);
+
+}

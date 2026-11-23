@@ -8,8 +8,8 @@ struct CameraDesc
 	float rotationZ{};
 	float rotationInterpolationCoe = 1.0f;
 
-	float farClip = 0.1f;
-	float nearClip = 1000.0f;
+	float farClip = 1000.0f;
+	float nearClip = 0.1f;
 	float fovY = ProjectConfig::Window::kDefaultFovY;
 	float aspectRatio = (float)ProjectConfig::Window::Width() / (float)ProjectConfig::Window::Height();
 };

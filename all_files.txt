@@ -8804,6 +8804,7 @@ struct SwapChainContext::ToolLender::ToolTypeTraits<SwapChainContext::SwapChainB
 class RenderContext;
 struct SwapChainContext::ToolLender::UsesSwapChainBufferLicence
 {
+private:
 	friend class RenderContext;
 	explicit UsesSwapChainBufferLicence() = default;
 };
@@ -9863,7 +9864,7 @@ void CameraContext::FrontlineSystems::ImportCamera(std::unique_ptr<CameraBehavio
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-std::unordered_map<CameraSocket, CameraBehavior*> const& CameraContext::FrontlineSystems::UpdateCamera()
+std::unordered_map<CameraSocket, CameraBehavior*>* CameraContext::FrontlineSystems::UpdateCamera()
 {
 	return cameraController->Update();
 }
@@ -9920,7 +9921,7 @@ public:
 	}
 	//カメラのアップデート
 	//socketMapにあるカメラのアップデートを呼ぶ。バッチングは別機関で行う
-	std::unordered_map<CameraSocket, CameraBehavior*> const& UpdateCamera();
+	std::unordered_map<CameraSocket, CameraBehavior*>* UpdateCamera();
 private:
 	void ImportCamera(std::unique_ptr<CameraBehavior>&& camera_, std::string const& name_);
 	//明示的実体化必要
@@ -9955,11 +9956,11 @@ enum class CameraSocket
 CameraContext::FrontlineSystems::CameraController::CameraController(NexusFieldProof proof_)
 {
 }
-std::unordered_map<CameraSocket, CameraBehavior*> const& CameraContext::FrontlineSystems::CameraController::Update()
+std::unordered_map<CameraSocket, CameraBehavior*>* CameraContext::FrontlineSystems::CameraController::Update()
 {
 	return RunCamera();
 }
-std::unordered_map<CameraSocket, CameraBehavior*> const& CameraContext::FrontlineSystems::CameraController::RunCamera()
+std::unordered_map<CameraSocket, CameraBehavior*>* CameraContext::FrontlineSystems::CameraController::RunCamera()
 {
 	CameraBehavior::Local_UpdateLicence licenceUpdate;
 	//更新する必要があるカメラ(描画のために使用しているカメラ)の更新処理を呼ぶ
@@ -9968,7 +9969,7 @@ std::unordered_map<CameraSocket, CameraBehavior*> const& CameraContext::Frontlin
 		camera->Update(licenceUpdate);
 		camera->UpdateMatrices(licenceUpdate);
 	}
-	return socketMap;
+	return &socketMap;
 }
 
 ========================================
@@ -9981,7 +9982,7 @@ class CameraContext::FrontlineSystems::CameraController
 {
 public:
 	CameraController(NexusFieldProof proof_);
-	std::unordered_map<CameraSocket, CameraBehavior*> const& Update();
+	std::unordered_map<CameraSocket, CameraBehavior*>* Update();
 	//ソケットに接続するカメラを接続する
 	template<CameraSocket dstSocket_>
 	void Connect(CameraBehavior* dstCamera_)
@@ -9990,7 +9991,7 @@ public:
 	}
 private:
 	//ソケットに接続されているカメラ(描画のために使用しているカメラ)の更新処理を呼ぶ
-	std::unordered_map<CameraSocket, CameraBehavior*> const& RunCamera();
+	std::unordered_map<CameraSocket, CameraBehavior*>* RunCamera();
 	//現在の接続しているカメラ
 	std::unordered_map<CameraSocket, CameraBehavior*> socketMap;
 };
@@ -10303,8 +10304,8 @@ struct CameraDesc
 	Vector3 lookDir = { 0,0,1 };
 	float rotationZ{};
 	float rotationInterpolationCoe = 1.0f;
-	float farClip = 0.1f;
-	float nearClip = 1000.0f;
+	float farClip = 1000.0f;
+	float nearClip = 0.1f;
 	float fovY = ProjectConfig::Window::kDefaultFovY;
 	float aspectRatio = (float)ProjectConfig::Window::Width() / (float)ProjectConfig::Window::Height();
 };
@@ -10336,8 +10337,8 @@ void CameraBehavior::CameraTransform::Clear()
 		base.rotationZ = {};
 		base.lookDir = { 0,0,1 };
 		base.rotationInterpolationCoe = 1.0f;
-		projection.farClip = 0.1f;
-		projection.nearClip = 1000.0f;
+		projection.farClip = 1000.0f;
+		projection.nearClip = 0.1f;
 		projection.fovY = MathConstants::kPi * MathConstants::kHalf;
 		projection.aspectRatio = (float)ProjectConfig::Window::Width() / (float)ProjectConfig::Window::Height();
 	}
@@ -10385,13 +10386,13 @@ void CameraBehavior::CameraTransform::UpdateMatrices(CameraBehavior::Local_Updat
 void CameraBehavior::CameraTransform::UpdateProjectionMatrixReverseZ()
 {
 	const float cotTheta{ 1.0f / tanf(projection.fovY * MathConstants::kHalf) };
-	const float inv_frustumHeight{ 1.0f / (projection.farClip - projection.nearClip) };
+	const float inv_frustumHeight{ 1.0f / (projection.nearClip - projection.farClip) };
 	matrices.proj = Matrix4x4
 	{
 		cotTheta / projection.aspectRatio, 0.0f, 0.0f, 0.0f,
 		0.0f, cotTheta, 0.0f, 0.0f,
-		0.0f, 0.0f, projection.farClip * inv_frustumHeight, 1.0f,
-		0.0f, 0.0f, -projection.nearClip * projection.farClip * inv_frustumHeight, 0.0f,
+		0.0f, 0.0f, projection.nearClip * inv_frustumHeight, 1.0f,
+		0.0f, 0.0f, -projection.farClip * projection.nearClip * inv_frustumHeight, 0.0f,
 	};
 }
 //回転更新処理
@@ -10466,8 +10467,8 @@ private:
 	//投影方法関連
 	struct Projection
 	{
-		float farClip = 0.1f;
-		float nearClip = 1000.0f;
+		float farClip = 1000.0f;
+		float nearClip = 0.1f;
 		float fovY = ProjectConfig::Window::kDefaultFovY;
 		float aspectRatio =  (float)ProjectConfig::Window::Width() / (float)ProjectConfig::Window::Height();
 	};
@@ -21906,15 +21907,19 @@ void RenderContext::PassBehavior::BeginPass(RuntimeWrapper& cmdWrapper_, BufferC
 	std::array<D3D12_CPU_DESCRIPTOR_HANDLE, D3D12_SIMULTANEOUS_RENDER_TARGET_COUNT> rtHandles;
 	std::array<D3D12_RECT, D3D12_SIMULTANEOUS_RENDER_TARGET_COUNT> scissorRects;
 	std::array<D3D12_VIEWPORT, D3D12_SIMULTANEOUS_RENDER_TARGET_COUNT> viewports;
-	//まずPassの所持する全てのバッファの書き込みバリアを張る
+	//まず描画先バッファのバリアを生成する
 	std::pair<std::array<ColorBuffer*, D3D12_SIMULTANEOUS_RENDER_TARGET_COUNT>, DepthStencilBuffer*> renderTargets =
-	PitchOwnBuffersBarrierWriting
+	TransitionDstWriteBuffersWriting
 	(
 		colorBuffersInfo,
 		depthStencilBufferInfo,
 		cmdWrapper_,
 		bufDispatcher_
 	);
+	//参照バッファのバリアを生成する
+	TransitionRefBuffersReading(cmdWrapper_, bufDispatcher_);
+	//キャッシュされたバリアを張る
+	PitchBarrierCached(cmdWrapper_);
 	//カラーバッファ
 	for (UINT i = 0;i < numColorBuffers;++i)
 	{
@@ -21948,7 +21953,7 @@ void RenderContext::PassBehavior::BeginPass(RuntimeWrapper& cmdWrapper_, BufferC
 	//このパスのルートコンスタンツを転送
 	TransferRootConstants(cmdWrapper_);
 }
-std::pair<std::array<ColorBuffer*, D3D12_SIMULTANEOUS_RENDER_TARGET_COUNT>,DepthStencilBuffer*> RenderContext::PassBehavior::PitchOwnBuffersBarrierWriting
+std::pair<std::array<ColorBuffer*, D3D12_SIMULTANEOUS_RENDER_TARGET_COUNT>,DepthStencilBuffer*> RenderContext::PassBehavior::TransitionDstWriteBuffersWriting
 (
 	std::vector<RuntimePassInfo::ColorBuffer> const& colorBuffersInfo_,
 	std::optional<RuntimePassInfo::DepthStencilBuffer> const& depthStencilBufferInfo_,
@@ -21976,35 +21981,21 @@ std::pair<std::array<ColorBuffer*, D3D12_SIMULTANEOUS_RENDER_TARGET_COUNT>,Depth
 		//Read -> Writeへ
 		CreateBarrier<BufferUsage::kWrite>(depthStencilBuffer);
 	}
-	//キャッシュされたバリアを張る
-	PitchBarrierCached(cmdWrapper_);
 	//検索した描画先バッファを返す
 	return std::make_pair(colorBuffers, depthStencilBuffer);
 }
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-void RenderContext::PassBehavior::RenderOffScreen
+void RenderContext::PassBehavior::TransitionRefBuffersReading
 (
-	PSO_PoolDispatcher& psoDispatcher_, 
 	RuntimeWrapper& cmdWrapper_,
 	BufferContext::BufferDispatcher& bufDispatcher_
 )
 {
-	//参照先のバッファID
-	//カラーバッファのと深度ステンシルバッファの
+	//カラーバッファのと深度ステンシルバッファの参照先バッファID
 	auto const& refBuffersIDColors = runtimePassInfo->WatchReferenceBufferIDs<ColorBuffer>();
 	auto const& refBuffersIDDepths = runtimePassInfo->WatchReferenceBufferIDs<DepthStencilBuffer>();
-	//psoDispatcherがキーをもとにpsoを検索
-	GraphicsPSO_Key psoKey;
-	psoKey.pass = runtimePassInfo->WatchPass();
-	psoKey.fill = FillMode::kSolid;
-	psoKey.cull = CullMode::kBack;
-	psoKey.mesh = MeshType::kOffscreen;
-	psoKey.material = Material::Type::kOffscreen;
-	psoKey.blend = BlendMode::kDependsRenderPass;
-	auto* srcPso = psoDispatcher_.AccessGraphicsPSO(psoKey);
-	cmdWrapper_.SetPipelineState(srcPso);
 	//すでに描画先の設定は終わっているので、全ての参照バッファのステートをReadへ遷移させる
 	for (auto const& id : refBuffersIDColors)
 	{
@@ -22020,8 +22011,26 @@ void RenderContext::PassBehavior::RenderOffScreen
 		//Write -> Read  へ
 		CreateBarrier<BufferUsage::kRead>(depthStencilBuffer);
 	}
-	//キャッシュされたバリアを張る
-	PitchBarrierCached(cmdWrapper_);
+}
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+void RenderContext::PassBehavior::RenderOffScreen
+(
+	PSO_PoolDispatcher& psoDispatcher_, 
+	RuntimeWrapper& cmdWrapper_
+)
+{
+	//psoDispatcherがキーをもとにpsoを検索
+	GraphicsPSO_Key psoKey;
+	psoKey.pass = runtimePassInfo->WatchPass();
+	psoKey.fill = FillMode::kSolid;
+	psoKey.cull = CullMode::kBack;
+	psoKey.mesh = MeshType::kOffscreen;
+	psoKey.material = Material::Type::kOffscreen;
+	psoKey.blend = BlendMode::kDependsRenderPass;
+	auto* srcPso = psoDispatcher_.AccessGraphicsPSO(psoKey);
+	cmdWrapper_.SetPipelineState(srcPso);
 	//どんなオフスクだろうが、フルスクリーントライアングルで頂点情報形成
 	cmdWrapper_.DispatchMesh(3, 1, 1);
 }
@@ -22264,7 +22273,7 @@ public:
 		[[maybe_unused]] BufferContext::BufferDispatcher& bufDispatcher_
 	) = 0;
 	//レンダーターゲットのあれこれの描画コマンドをたたく
-	//自身の所持するバッファを全てレンダーターゲットへステート遷移
+	//自身の所持するバッファと書き込み共有バッファを全てレンダーターゲットへステート遷移
 	//Pass個人が呼ぶ必要はない
 	void BeginPass(RuntimeWrapper& cmdWrapper_, BufferContext::BufferDispatcher& bufDispatcher_);
 	//====以下初期化用=====
@@ -22290,12 +22299,11 @@ protected:
 		PSO_PoolDispatcher& psoDispatcher_,
 		RuntimeWrapper& cmdWrapper_
 	);
-	//オフスクにレンダリングをする
+	//オフスクレンダリングをする
 	void RenderOffScreen
 	(
 		PSO_PoolDispatcher& psoDispatcher_,
-		RuntimeWrapper& cmdWrapper_,
-		BufferContext::BufferDispatcher& bufDispatcher_
+		RuntimeWrapper& cmdWrapper_
 	);
 private:
 	//Passの設計図。初期化が済んだら、RuntimePassInfoへ情報を移して削除される
@@ -22308,10 +22316,16 @@ private:
 	static constexpr UINT kBarrierCacheCapacity = 10;
 	//Pass自身が所持するバッファをすべてに描画先バリアを張る
 	//その後、検索したバッファを返す
-	std::pair<std::array<ColorBuffer*, D3D12_SIMULTANEOUS_RENDER_TARGET_COUNT>, DepthStencilBuffer*> PitchOwnBuffersBarrierWriting
+	std::pair<std::array<ColorBuffer*, D3D12_SIMULTANEOUS_RENDER_TARGET_COUNT>, DepthStencilBuffer*> TransitionDstWriteBuffersWriting
 	(
 		std::vector<RuntimePassInfo::ColorBuffer> const& colorBuffersInfo_,
 		std::optional<RuntimePassInfo::DepthStencilBuffer> const& depthStencilBufferInfo_,
+		RuntimeWrapper& cmdWrapper_,
+		BufferContext::BufferDispatcher& bufDispatcher_
+	);
+	//参照バッファのステートをreadへ遷移させ、そのバリアを張る
+	void TransitionRefBuffersReading
+	(
 		RuntimeWrapper& cmdWrapper_,
 		BufferContext::BufferDispatcher& bufDispatcher_
 	);
@@ -22508,7 +22522,7 @@ void SceneCompositor::Update
 )
 {
 	//オフスクリーンレンダリングのみです
-	RenderOffScreen(psoDispatcher_, cmdWrapper_ ,bufDispatcher_);
+	RenderOffScreen(psoDispatcher_, cmdWrapper_ );
 }
 
 ========================================
@@ -22947,8 +22961,9 @@ void RenderContext::RenderPassCreator::PassBufferCreator::CreateBuffer
 	//カラーバッファを作成
 	auto& colorBuffersInfo = desc_.colorBuffersInfo;
 	auto const numColorBufferRequired = colorBuffersInfo.size();
-	//colorBuffersInfoのポインタを下で渡しているので、colorBuffersInfoのサイズ再確保
-	//が起きないように、書き込みシェアバッファ分もリザーブしておく
+	//colorBuffersInfoの要素へのポインタを下でキャッシュに登録するので
+	//あとで書き込みシェアバッファを追加しても再確保が起きないように
+	//その追加分も含めてあらかじめリザーブしておく
 	colorBuffersInfo.reserve(numColorBufferRequired + desc_.writeSharingColorBufferNames.size());
 	for (size_t i = 0;i < numColorBufferRequired;++i)
 	{
@@ -24866,7 +24881,7 @@ struct MaterialBatchFormat;
 struct SceneBehavior::Output
 {
 	friend class SceneBehavior;
-	auto const& WatchUsingCamera()const { return usingCamera; }
+	auto const& WatchUsingCamera()const { return *usingCamera; }
 	auto const* WatchModelContainer()const { return modelContainer; }
 	auto const& WatchLeftStaticBatchingCnt()const { return leftStaticBatchingCnt; }
 	auto const& WatchCollectedMaterialBatchFormatsArr()const{return (*materialBatchFormatsPtr);}
@@ -24875,7 +24890,7 @@ private:
 	std::array<std::vector<MaterialBatchFormat>, (UINT)Materials::UpdateType::kCount>*
 		materialBatchFormatsPtr = nullptr;
 	//使用しているカメラ。更新必要
-	std::unordered_map<CameraSocket, CameraBehavior*> usingCamera;
+	std::unordered_map<CameraSocket, CameraBehavior*>* usingCamera;
 	//このシーンのモデルコンテナ
 	ModelContext::FrontlineSystems::ModelContainer const* modelContainer = nullptr;
 	//static対象を毎回バッチング処理しないようにするため
@@ -26577,4 +26592,4 @@ namespace StringProcessing
 === SUMMARY ===
 ========================================
 Total Files      : 581
-Effective Lines  : 19393
+Effective Lines  : 19404

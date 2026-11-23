@@ -5,6 +5,8 @@ class RenderContext;
 
 struct SwapChainContext::ToolLender::UsesSwapChainBufferLicence
 {
+private:
+
 	friend class RenderContext;
 	explicit UsesSwapChainBufferLicence() = default;
 };

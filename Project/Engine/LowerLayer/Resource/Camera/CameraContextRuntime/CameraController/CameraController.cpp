@@ -9,12 +9,12 @@ CameraContext::FrontlineSystems::CameraController::CameraController(NexusFieldPr
 
 }
 
-std::unordered_map<CameraSocket, CameraBehavior*> const& CameraContext::FrontlineSystems::CameraController::Update()
+std::unordered_map<CameraSocket, CameraBehavior*>* CameraContext::FrontlineSystems::CameraController::Update()
 {
 	return RunCamera();
 }
 
-std::unordered_map<CameraSocket, CameraBehavior*> const& CameraContext::FrontlineSystems::CameraController::RunCamera()
+std::unordered_map<CameraSocket, CameraBehavior*>* CameraContext::FrontlineSystems::CameraController::RunCamera()
 {
 	CameraBehavior::Local_UpdateLicence licenceUpdate;
 
@@ -25,5 +25,5 @@ std::unordered_map<CameraSocket, CameraBehavior*> const& CameraContext::Frontlin
 		camera->UpdateMatrices(licenceUpdate);
 	}
 
-	return socketMap;
+	return &socketMap;
 }

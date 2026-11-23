@@ -1,0 +1,24 @@
+#pragma once
+#include "../RenderPassBehavior.h"
+
+
+class GridlinePass :public RenderContext::PassBehavior
+{
+public:
+
+	GridlinePass(RenderContext::NexusFieldProof proof_, std::unique_ptr<RenderContext::PassDesc>&& desc_);
+
+	virtual void Update
+	(
+		[[maybe_unused]] std::unordered_map<uint64_t, std::pair<RenderStateKey, std::vector<Model*>>> const& modelContainer_,
+		[[maybe_unused]] RenderStateComponent::FillMode const modelFillMode_,
+		RenderContext::PSO_PoolDispatcher& psoDispatcher_,
+		RuntimeWrapper& cmdWrapper_,
+		[[maybe_unused]] BufferContext::BufferDispatcher& bufDispatcher_
+	)override;
+
+
+private:
+
+};
+
