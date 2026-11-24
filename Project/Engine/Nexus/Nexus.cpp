@@ -82,6 +82,7 @@ void Nexus::PrimaryInit()
 void Nexus::SecondaryInit(aFourthProof proof_)
 {
 	InitializeInSequence<InitSequence::kRenderContext>();
+	InitializeInSequence<InitSequence::InstantiateImguiDebugger>();
 	InitializeInSequence<InitSequence::kUploadAllResources>();
 	InitializeInSequence<InitSequence::kKickCommands>();
 	InitializeInSequence<InitSequence::kDeleteBufferUploaderCache>();

@@ -1,6 +1,7 @@
 #include "Nexus.h"
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-#include "../LowerLayer/DebugSystem/DebugContext.h"
+#include "../LowerLayer/DebugSystem/DebugContextDiplomat/DebugContextDiplomat.h"
+#include "../LowerLayer/DebugSystem/DebugContextDiplomat/DebugExecutionAgent/DebugExecutionAgent.h"
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 #include "../LowerLayer/Core/Device/DeviceContext.h"
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -10,13 +11,11 @@
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 #include "../LowerLayer/Core/SwapChain/SwapChainContext.h"
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-#include "../LowerLayer/Core/Command/CommandContext.h"
 #include "../LowerLayer/Core/Command/CommandContextDiplomat/CommandContextDiplomat.h"
 #include "../LowerLayer/Core/Command/CommandContextDiplomat/CommandContextExecutionAgent/CommandContextExecutionAgent.h"
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 #include "../LowerLayer/Resource/Shader/ShaderContext.h"
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-#include "../LowerLayer/Buffer/BufferContext.h"
 #include "../LowerLayer/Buffer/BufferContextDiplomat/BufferContextDiplomat.h"
 #include "../LowerLayer/Buffer/BufferContextDiplomat/BufferContextExecutionAgent/BufferContextExecutionAgent.h"
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -24,7 +23,6 @@
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 #include "../LowerLayer/Resource/RootSignature/RootSignatureContext.h"
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-#include "../LowerLayer/Resource/Model/ModelContext.h"
 #include "../LowerLayer/Resource/Model/ModelContextDiplomat/ModelContextDiplomat.h"
 #include "../LowerLayer/Resource/Model/ModelContextDiplomat/ModelContextExecutionAgent/ModelContextExecutionAgent.h"
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -42,6 +40,7 @@
 #include "../MiddleLayer/Scene/SceneContext.h"
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 #include "../MiddleLayer/GameObject/GameObjectContext.h"
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
 namespace
@@ -54,7 +53,11 @@ namespace
 template<>
 void Nexus::Init<Nexus::InitSequence::kDebugContext>()
 {
-	debugContext = std::make_unique<DebugContext>(DebugContext::NexusFieldProof{});
+	debugContext = std::make_unique<DebugContext>
+	(
+		DebugContext::NexusFieldProof{}
+	);
+
 	Logger::Log("Instantiate: DebugContext", fileName);
 }
 
@@ -350,7 +353,20 @@ void Nexus::Init<Nexus::InitSequence::kWriteMaterialIndexGroupsArrBuffer>()
 {
 	auto& materialContextAgent = materialContext->AccessDiplomat().Access<MaterialContext::ExecutionAgent>();
 	materialContextAgent.WriteInMaterialIndexGroupsArrBuffer(MaterialContext::NexusFieldProof{}, bufferContext->AccessDiplomat());
+}
 
+template<>
+void Nexus::Init<Nexus::InitSequence::InstantiateImguiDebugger>()
+{
+	auto& agent = debugContext->AccessDiplomat().Access<DebugContext::ExecutionAgent>();
+	
+	agent.InstantiateImguiDebugger
+	(
+		DebugContext::NexusFieldProof{},
+		windowContext->AccessDiplomat(),
+		deviceContext->AccessDiplomat(),
+		descriptorHeapContext->AccessDiplomat()
+	);
 }
 
 
@@ -423,4 +439,7 @@ void Nexus::Init<Nexus::InitSequence::kMaterialContext>();
 
 template
 void Nexus::Init<Nexus::InitSequence::kWriteMaterialIndexGroupsArrBuffer>();
+
+template
+void Nexus::Init<Nexus::InitSequence::InstantiateImguiDebugger>();
 

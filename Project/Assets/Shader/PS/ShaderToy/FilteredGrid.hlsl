@@ -159,7 +159,7 @@ float4 main(PSInput input) : SV_Target
         fineAlpha * distanceFade
     );
 
-    float3 majorColor = float3(0.38, 0.42, 0.49);
+    float3 majorColor = float3(0.52, 0.43, 0.28);
 
     color = lerp(
         color,
