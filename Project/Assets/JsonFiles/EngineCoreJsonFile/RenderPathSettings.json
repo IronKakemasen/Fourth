@@ -2,7 +2,6 @@
     "CreateSceneTexture": {
       "UsePass": [
         "SceneOpaque",
-        "GridLine",
         "SceneCompositor"
       ]
     }

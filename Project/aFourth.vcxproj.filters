@@ -819,9 +819,6 @@
     <ClCompile Include="Engine\LowerLayer\Resource\Material\MaterialFSDispatcher\MaterialFSDispatcher.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
-    <ClCompile Include="Engine\MiddleLayer\Render\RenderPass\AllRenderPass\Gridline\GridLinePass.cpp">
-      <Filter>ソース ファイル</Filter>
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Engine\LowerLayer\Core\Window\WindowContext.h">
@@ -1902,9 +1899,6 @@
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
     <ClInclude Include="Engine\LowerLayer\Resource\Material\MaterialContextDiplomats.h">
-      <Filter>ヘッダー ファイル</Filter>
-    </ClInclude>
-    <ClInclude Include="Engine\MiddleLayer\Render\RenderPass\AllRenderPass\Gridline\GridLinePass.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
   </ItemGroup>

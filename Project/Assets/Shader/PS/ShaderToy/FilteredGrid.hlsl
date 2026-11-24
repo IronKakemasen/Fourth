@@ -2,7 +2,7 @@
 #include "../../HLSLI/CameraCommon.hlsli"
 
 
-//ーーーシェーダートイで公開されていたグリッド描画コードをAIに簡略化してもらいましたーーー
+//ーーーシェーダートイで公開されていたグリッド描画コードをAIに再構築してもらいましたーーー
 
 //https://www.shadertoy.com/view/XtBfzz
 
@@ -75,24 +75,15 @@ float4 main(PSInput input) : SV_Target
     MaterialGridLine materialGridLine =
         LoadMaterialGridLine(gMaterialID);
 
-    // ------------------------------------
-    // ワールド座標 XZ
-    // ------------------------------------
-
     float2 p = input.worldPosition.xz;
 
     float2 dx = ddx(p);
     float2 dy = ddy(p);
 
-    // X・Zそれぞれのピクセル幅
     float2 fw = max(
         abs(dx) + abs(dy),
-        float2(0.000001, 0.000001)
+        float2(1e-6, 1e-6)
     );
-
-    // ------------------------------------
-    // カメラ距離フェード
-    // ------------------------------------
 
     CameraData srcCamera = AccessCamera(0);
 
@@ -100,63 +91,34 @@ float4 main(PSInput input) : SV_Target
         input.worldPosition - srcCamera.worldPos.xyz
     );
 
-    const float fadeStart = 12.0;
-    const float fadeEnd = 50.0;
+    const float fadeStart = 15.0;
+    const float fadeEnd = 65.0;
 
-    float distanceFade = 1.0 - smoothstep(
-        fadeStart,
-        fadeEnd,
-        cameraDistance
-    );
+    float distanceFade =
+        1.0 - smoothstep(fadeStart, fadeEnd, cameraDistance);
 
-    // ------------------------------------
-    // 1mグリッド
-    // X方向とZ方向を独立して計算
-    // ------------------------------------
-
+    // Fine Grid
     const float fineWidth = 0.035;
 
-    float fineCoverageX = gridCoverage1D(
-        p.x,
-        fw.x,
-        fineWidth
-    );
+    float fineCoverageX =
+        gridCoverage1D(p.x, fw.x, fineWidth);
 
-    float fineCoverageZ = gridCoverage1D(
-        p.y,
-        fw.y,
-        fineWidth
-    );
+    float fineCoverageZ =
+        gridCoverage1D(p.y, fw.y, fineWidth);
 
-    // X方向のLOD
-    float fineLODX = 1.0 - smoothstep(
-        0.15,
-        0.5,
-        fw.x
-    );
+    float fineLODX =
+        1.0 - smoothstep(0.20, 0.65, fw.x);
 
-    // Z方向のLOD
-    float fineLODZ = 1.0 - smoothstep(
-        0.15,
-        0.5,
-        fw.y
-    );
+    float fineLODZ =
+        1.0 - smoothstep(0.20, 0.65, fw.y);
 
-    float fineAlphaX =
-        fineCoverageX * fineLODX;
+    float fineAlphaX = fineCoverageX * fineLODX;
+    float fineAlphaZ = fineCoverageZ * fineLODZ;
 
-    float fineAlphaZ =
-        fineCoverageZ * fineLODZ;
-
-    // 2方向の線を合成
     float fineAlpha =
-        1.0 - (1.0 - fineAlphaX)
-            * (1.0 - fineAlphaZ);
+        1.0 - (1.0 - fineAlphaX) * (1.0 - fineAlphaZ);
 
-    // ------------------------------------
-    // 5mグリッド
-    // ------------------------------------
-
+    // Major Grid (5m)
     const float majorInterval = 5.0;
     const float majorWidth = 0.075;
 
@@ -172,34 +134,19 @@ float4 main(PSInput input) : SV_Target
         majorWidth / majorInterval
     );
 
-    // X方向のLOD
-    float majorLODX = 1.0 - smoothstep(
-        0.8,
-        2.5,
-        fw.x
-    );
+    float majorLODX =
+        1.0 - smoothstep(0.8, 2.5, fw.x);
 
-    // Z方向のLOD
-    float majorLODZ = 1.0 - smoothstep(
-        0.8,
-        2.5,
-        fw.y
-    );
+    float majorLODZ =
+        1.0 - smoothstep(0.8, 2.5, fw.y);
 
-    float majorAlphaX =
-        majorCoverageX * majorLODX;
-
-    float majorAlphaZ =
-        majorCoverageZ * majorLODZ;
+    float majorAlphaX = majorCoverageX * majorLODX;
+    float majorAlphaZ = majorCoverageZ * majorLODZ;
 
     float majorAlpha =
-        1.0 - (1.0 - majorAlphaX)
-            * (1.0 - majorAlphaZ);
+        1.0 - (1.0 - majorAlphaX) * (1.0 - majorAlphaZ);
 
-    // ------------------------------------
-    // 背景と通常グリッド
-    // ------------------------------------
-
+    // Background and Grid Color
     float3 backgroundColor =
         materialGridLine.backgroundColor.rgb;
 
@@ -212,55 +159,37 @@ float4 main(PSInput input) : SV_Target
         fineAlpha * distanceFade
     );
 
-    // ------------------------------------
-    // 5mごとの太線
-    // ------------------------------------
-
-    float3 majorColor = float3(
-        0.38,
-        0.42,
-        0.49
-    );
+    float3 majorColor = float3(0.38, 0.42, 0.49);
 
     color = lerp(
         color,
         majorColor,
-        majorAlpha * distanceFade * 0.65
+        majorAlpha * distanceFade * 0.8
     );
 
-    // ------------------------------------
-    // 原点のX軸・Z軸
-    // ------------------------------------
-
-    float3 middleLineCol = float3(
-        0.50,
-        0.41,
-        0.26
-    );
-
+    // X Axis: Red / Z Axis: Green
     const float axisWidth = 0.055;
 
-    // X軸: Z = 0
     float axisX = 1.0 - smoothstep(
         axisWidth * 0.5 - fw.y * 0.5,
         axisWidth * 0.5 + fw.y * 0.5,
         abs(p.y)
     );
 
-    // Z軸: X = 0
     float axisZ = 1.0 - smoothstep(
         axisWidth * 0.5 - fw.x * 0.5,
         axisWidth * 0.5 + fw.x * 0.5,
         abs(p.x)
     );
 
-    float axis = max(axisX, axisZ);
+    float3 xAxisColor = float3(0.65, 0.28, 0.27);
+    float3 zAxisColor = float3(0.28, 0.52, 0.36);
+    
+    axisX *= distanceFade;
+    axisZ *= distanceFade;
 
-    color = lerp(
-        color,
-        middleLineCol,
-        axis * distanceFade
-    );
+    color = lerp(color, xAxisColor, axisX);
+    color = lerp(color, zAxisColor, axisZ);
 
     return float4(color, 1.0);
 }
