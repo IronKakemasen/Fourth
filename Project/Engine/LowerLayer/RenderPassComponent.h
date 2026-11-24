@@ -9,10 +9,10 @@ namespace RenderPassComponent
 	{
 		kSceneOpaque,
         kSceneCompositor,
-		kGridLine
+
 
 		
-		,kCount
+		kCount
 	};
 
     enum class DepthEnable
@@ -26,7 +26,7 @@ namespace RenderPassComponent
     {
         kLessEqual,
         kGreaterEqual
-        , kCount
+        ,kCount
     };
 
     inline const D3D12_COMPARISON_FUNC Convert(DepthTest depthTest_)

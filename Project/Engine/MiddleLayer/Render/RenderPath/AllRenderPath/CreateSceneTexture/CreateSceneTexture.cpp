@@ -20,7 +20,6 @@ void CreateSceneTexture::Run
 {
 	
 	CallPassUpdate<SceneOpaque>(modelContainer_,modelFillMode_,psoDispatcher_,cmdWrapper_,bufDispatcher_);
-	CallPassUpdate<GridLinePass>(modelContainer_, modelFillMode_, psoDispatcher_, cmdWrapper_, bufDispatcher_);
 	CallPassUpdate<SceneCompositor>(modelContainer_, modelFillMode_, psoDispatcher_, cmdWrapper_, bufDispatcher_);
 
 

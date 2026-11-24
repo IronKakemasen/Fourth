@@ -36,33 +36,6 @@
 
 
 
-  "GridLine": {
-
-    "isOffScreen": false,
-
-
-    "doesOwnColorBuffers": false,
-
-
-    "doesOwnDepthStencil": false,
-
-    "depthTest": 1,
-    "depthEnable": true,
-    "depthBias": 0,
-    "depthBiasClamp": 0.0,
-    "slopeScaledDepthBias": 0.0,
-
-    "referenceBufferNames": [],
-
-    "writeSharingColorBufferNames": [ "opaqueColor" ],
-    "writeSharingDepthBufferName": "opaqueDepth"
-
-
-  },
-
-
-
-
   "SceneOpaque": {
 
     "isOffScreen": false,

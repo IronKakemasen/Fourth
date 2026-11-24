@@ -238,8 +238,7 @@ namespace RenderPassComponent
 	{
 		kSceneOpaque,
         kSceneCompositor,
-		kGridLine
-		,kCount
+		kCount
 	};
     enum class DepthEnable
     {
@@ -251,7 +250,7 @@ namespace RenderPassComponent
     {
         kLessEqual,
         kGreaterEqual
-        , kCount
+        ,kCount
     };
     inline const D3D12_COMPARISON_FUNC Convert(DepthTest depthTest_)
     {
@@ -10548,7 +10547,7 @@ private:
 DefaultDebugCamera::DefaultDebugCamera(std::optional<CameraDesc> const& desc_)
 	: CameraBehavior(desc_)
 {
-	trans->TranslatePosition({ 0,20,-10 });
+	trans->TranslatePosition({ 0,5,-3 });
 	trans->LookAt({ 0.0f,-0.75f,1.0f });
 }
 void DefaultDebugCamera::Update(Local_UpdateLicence licence_)
@@ -19059,14 +19058,14 @@ void GridFloor::Awake(SceneInitInterface& sceneInitInterface_)
 	cP.pass = Pass::kSceneOpaque;	
 	cP.cullMode = CullMode::kBack;
 	cP.meshType = MeshType::kStatic;
-	cP.materialTypes.emplace_back(Material::Type::kStandard);
-	//cP.materialTypes.emplace_back(Material::Type::kGridLine);
+	//cP.materialTypes.emplace_back(Material::Type::kStandard);
+	cP.materialTypes.emplace_back(Material::Type::kGridLine);
 	std::vector<RenderState> playerC;
 	playerC.emplace_back(std::move(cP));
 	p = sceneInitInterface_.CreateModel<Model::MeshUpdateType::kDynamic,Materials::UpdateType::kDynamic>
 		("Plane200x200Obj", playerC, 1, "Player");
-	sceneInitInterface_.AttachMaterial<Material::Type::kStandard>(p[0]->RefMaterials(0));
-	sceneInitInterface_.InputModelMaterialStandardFromFile("Plane200x200Obj", *p[0]);
+	sceneInitInterface_.AttachMaterial<Material::Type::kGridLine>(p[0]->RefMaterials(0));
+	//sceneInitInterface_.InputModelMaterialStandardFromFile("Plane200x200Obj", *p[0]);
 	//for (int i = 0;i < 10;++i)
 	//{
 	//	RefSystem<Transform>().BeParent(&p[i]->RefTransform(0));
@@ -21841,14 +21840,13 @@ struct RenderContext::RenderPassState
 #pragma once
 class SceneOpaque;
 class SceneCompositor;
-class GridLinePass;
 using AllPassPtr = std::tuple
 <
-	SceneOpaque*, SceneCompositor*, GridLinePass*
+	SceneOpaque*, SceneCompositor*
 >;
 using AllPassTypes = std::tuple
 <
-	SceneOpaque, SceneCompositor, GridLinePass
+	SceneOpaque, SceneCompositor
 >;
 
 ========================================
@@ -21857,12 +21855,10 @@ using AllPassTypes = std::tuple
 #pragma once
 #include "SceneOpaque/SceneOpaque.h"
 #include "SceneCompositor/SceneCompositor.h"
-#include "Gridline/GridLinePass.h"
 using AllPassUnique = std::tuple
 <
 	std::unique_ptr<SceneOpaque>,
-	std::unique_ptr<SceneCompositor>,
-	std::unique_ptr<GridLinePass>
+	std::unique_ptr<SceneCompositor>
 >;
 
 ========================================
@@ -22479,12 +22475,6 @@ namespace RenderPassTraits
 		static inline const std::string name = "SceneCompositor";
 		static constexpr RenderPassComponent::Pass kPassEnum = RenderPassComponent::Pass::kSceneCompositor;
 	};
-	template<>
-	struct PassClassTraits<GridLinePass>
-	{
-		static inline const std::string name = "GridLine";
-		static constexpr RenderPassComponent::Pass kPassEnum = RenderPassComponent::Pass::kGridLine;
-	};
 	//名前から列挙型を特定
 	constexpr RenderPassComponent::Pass PassNameToPassType(std::string const& passName_)
 	{
@@ -22496,10 +22486,6 @@ namespace RenderPassTraits
 		else if (passName_ == PassClassTraits<SceneCompositor>::name)
 		{
 			pass = PassClassTraits<SceneCompositor>::kPassEnum;
-		}
-		else if (passName_ == PassClassTraits<GridLinePass>::name)
-		{
-			pass = PassClassTraits<GridLinePass>::kPassEnum;
 		}
 		ErrorMessageOutput::Assert::DetectError
 		(
@@ -22522,11 +22508,6 @@ namespace RenderPassTraits
 	{
 		using PassClass = SceneCompositor;
 	};
-	template<>
-	struct PassTypeToPassClass<RenderPassComponent::Pass::kGridLine>
-	{
-		using PassClass = GridLinePass;
-	};
 }
 
 ========================================
@@ -22540,49 +22521,6 @@ namespace RenderPassTraits
 5.RenderPassTraitsに追記
 6.jsonファイルにデータを追記
 多すぎて覚醒しそう
-
-========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\MiddleLayer\Render\RenderPass\AllRenderPass\Gridline\GridlinePass.cpp ===
-========================================
-#include "PreCompileHeader.h"
-#include "GridLinePass.h"
-#include "../../PassDesc/PassDesc.h"
-GridLinePass::GridLinePass(RenderContext::NexusFieldProof proof_, std::unique_ptr<RenderContext::PassDesc>&& desc_)
-	:RenderContext::PassBehavior(proof_, std::move(desc_))
-{
-}
-void GridLinePass::Update
-(
-	[[maybe_unused]] std::unordered_map<uint64_t, std::pair<RenderStateKey, std::vector<Model*>>> const& modelContainer_,
-	[[maybe_unused]] RenderStateComponent::FillMode const modelFillMode_,
-	RenderContext::PSO_PoolDispatcher& psoDispatcher_,
-	RuntimeWrapper& cmdWrapper_,
-	[[maybe_unused]] BufferContext::BufferDispatcher& bufDispatcher_
-)
-{
-	//モデルの描画はもちろんします。
-	RenderModels(modelContainer_, modelFillMode_, psoDispatcher_, cmdWrapper_);
-}
-
-========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\MiddleLayer\Render\RenderPass\AllRenderPass\Gridline\GridlinePass.h ===
-========================================
-#pragma once
-#include "../RenderPassBehavior.h"
-class GridLinePass :public RenderContext::PassBehavior
-{
-public:
-	GridLinePass(RenderContext::NexusFieldProof proof_, std::unique_ptr<RenderContext::PassDesc>&& desc_);
-	virtual void Update
-	(
-		[[maybe_unused]] std::unordered_map<uint64_t, std::pair<RenderStateKey, std::vector<Model*>>> const& modelContainer_,
-		[[maybe_unused]] RenderStateComponent::FillMode const modelFillMode_,
-		RenderContext::PSO_PoolDispatcher& psoDispatcher_,
-		RuntimeWrapper& cmdWrapper_,
-		[[maybe_unused]] BufferContext::BufferDispatcher& bufDispatcher_
-	)override;
-private:
-};
 
 ========================================
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\MiddleLayer\Render\RenderPass\AllRenderPass\SceneCompositor\SceneCompositor.cpp ===
@@ -23681,7 +23619,6 @@ void CreateSceneTexture::Run
 )
 {
 	CallPassUpdate<SceneOpaque>(modelContainer_,modelFillMode_,psoDispatcher_,cmdWrapper_,bufDispatcher_);
-	CallPassUpdate<GridLinePass>(modelContainer_, modelFillMode_, psoDispatcher_, cmdWrapper_, bufDispatcher_);
 	CallPassUpdate<SceneCompositor>(modelContainer_, modelFillMode_, psoDispatcher_, cmdWrapper_, bufDispatcher_);
 }
 
@@ -26673,5 +26610,5 @@ namespace StringProcessing
 ========================================
 === SUMMARY ===
 ========================================
-Total Files      : 583
-Effective Lines  : 19465
+Total Files      : 581
+Effective Lines  : 19416

@@ -308,7 +308,6 @@
     <ClCompile Include="Engine\MiddleLayer\GameObject\GameObjectContextDiplomat\GameObjectContextDiplomat.cpp" />
     <ClCompile Include="Engine\MiddleLayer\GameObject\GameObjectContextDiplomat\GameObjectAgent\GameObjectAgent.cpp" />
     <ClCompile Include="Engine\MiddleLayer\GameObject\GameObjectPreset\GridFloor\GridFloor.cpp" />
-    <ClCompile Include="Engine\MiddleLayer\Render\RenderPass\AllRenderPass\Gridline\GridLinePass.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="Engine\LowerLayer\Core\Window\WindowContext.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Use</PrecompiledHeader>
@@ -819,7 +818,6 @@
     <ClInclude Include="Engine\LowerLayer\Resource\Material\MaterialRuntime\MaterialFrontlineSystems\MaterialFrontlineSystems.h" />
     <ClInclude Include="Engine\LowerLayer\Resource\Material\MaterialRuntime\MaterialFrontlineSystems\RenderingObjCollector\RenderingObjCollector.h" />
     <ClInclude Include="Engine\LowerLayer\Resource\Material\MaterialFSDispatcher\MaterialFSDispatcher.h" />
-    <ClInclude Include="Engine\MiddleLayer\Render\RenderPass\AllRenderPass\Gridline\GridLinePass.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
