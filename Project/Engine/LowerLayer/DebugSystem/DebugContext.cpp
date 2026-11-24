@@ -1,21 +1,62 @@
 #include "PreCompileHeader.h"
 #include "DebugContext.h"
 #include "RuntimeDebugger/RuntimeDebugger.h"
+#include "ImGuiDebugger/ImGuiDebugger.h"
+#include "DebugContextDiplomat/DebugContextDiplomat.h"
+#include "DebugContextDiplomat/DebugExecutionAgent/DebugExecutionAgent.h"
 
 
-DebugContext::DebugContext(NexusFieldProof proof_)
+
+namespace
+{
+	auto const fileName = "DebugContext.cpp";
+}
+
+DebugContext::DebugContext
+(
+	NexusFieldProof proof_
+)
 {
 	Logger::Entry("DebugContext: Constructor");
 
 #ifdef _DEBUG
 
 	runtimeDebugger = std::make_unique<RuntimeDebugger>(proof_);
-	Logger::Log("Instantiate: RuntimeDebugger", "DebugContext.cpp");
+	Logger::Log("Instantiate: RuntimeDebugger", fileName);
 
 #endif // DEBUG
 
+	diplomat = std::make_unique<DebugContextDiplomat>
+	(
+		proof_,
+		std::make_unique<ExecutionAgent>(proof_, *this)
+	);
+	Logger::End("DebugContext: DebugContextDiplomat");
+	Logger::End("DebugContext: ExecutionAgent");
+
 
 	Logger::End("DebugContext: Constructor");
+}
+
+void DebugContext::InstantiateImguiDebugger
+(
+	NexusFieldProof proof_,
+	AgentKey key_,
+	WindowContextDiplomat& windowContextDip_,
+	DeviceContextDiplomat& deviceContextDip_,
+	DescriptorHeapContextDiplomat& descriptorHeapContextDip_
+)
+{
+	imGuiDebugger = std::make_unique<ImGuiDebugger>
+	(
+		proof_,
+		windowContextDip_,
+		deviceContextDip_,
+		descriptorHeapContextDip_
+	);
+
+	Logger::Log("Instantiate: ImGuiDebugger", fileName);
+
 }
 
 

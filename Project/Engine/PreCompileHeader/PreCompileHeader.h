@@ -14,7 +14,6 @@
 #include <dxcapi.h>
 
 #include "../../External/d3dx12/d3dx12.h"
-#include "../../External/imgui/imgui.h"
 
 #include <vector>
 #include <memory>

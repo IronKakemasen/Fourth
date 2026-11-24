@@ -9244,14 +9244,40 @@ class WindowContext::WindowProcedure
 #include "PreCompileHeader.h"
 #include "DebugContext.h"
 #include "RuntimeDebugger/RuntimeDebugger.h"
-DebugContext::DebugContext(NexusFieldProof proof_)
+#include "ImGuiDebugger/ImGuiDebugger.h"
+namespace
+{
+	auto const fileName = "DebugContext.cpp";
+}
+DebugContext::DebugContext
+(
+	NexusFieldProof proof_
+)
 {
 	Logger::Entry("DebugContext: Constructor");
 #ifdef _DEBUG
 	runtimeDebugger = std::make_unique<RuntimeDebugger>(proof_);
-	Logger::Log("Instantiate: RuntimeDebugger", "DebugContext.cpp");
+	Logger::Log("Instantiate: RuntimeDebugger", fileName);
 #endif // DEBUG
 	Logger::End("DebugContext: Constructor");
+}
+void DebugContext::InstantiateImguiDebugger
+(
+	NexusFieldProof proof_,
+	AgentKey key_,
+	WindowContextDiplomat& windowContextDip_,
+	DeviceContextDiplomat& deviceContextDip_,
+	DescriptorHeapContextDiplomat& descriptorHeapContextDip_
+)
+{
+	imGuiDebugger = std::make_unique<ImGuiDebugger>
+	(
+		proof_,
+		windowContextDip_,
+		deviceContextDip_,
+		descriptorHeapContextDip_
+	);
+	Logger::Log("Instantiate: ImGuiDebugger", fileName);
 }
 DebugContext::~DebugContext()
 {
@@ -9262,22 +9288,114 @@ DebugContext::~DebugContext()
 ========================================
 #pragma once
 class Nexus;
+class WindowContextDiplomat;
+class DeviceContextDiplomat;
+class DescriptorHeapContextDiplomat;
+class DebugContextDiplomat;
 class DebugContext
 {
 public:
+	class ImGuiDebugger;
+	class ExecutionAgent;
 	//ネクサスフィールドの証
 	struct NexusFieldProof;
-	DebugContext(NexusFieldProof proof_);
+	struct AgentKey;
+	DebugContext
+	(
+		NexusFieldProof proof_
+	);
 	~DebugContext();
+	void InstantiateImguiDebugger
+	(
+		NexusFieldProof proof_,
+		AgentKey key_,
+		WindowContextDiplomat& windowContextDip_,
+		DeviceContextDiplomat& deviceContextDip_,
+		DescriptorHeapContextDiplomat& descriptorHeapContextDip_
+	);
+	auto& AccessDiplomat() { return *diplomat; }
 private:
 	class RuntimeDebugger;
+	std::unique_ptr<ImGuiDebugger> imGuiDebugger;
 	std::unique_ptr<RuntimeDebugger> runtimeDebugger;
+	std::unique_ptr<DescriptorHeapContextDiplomat> diplomat;
 };
 struct DebugContext::NexusFieldProof
 {
 private:
 	friend class Nexus;
 	explicit NexusFieldProof() = default;
+};
+struct DebugContext::AgentKey
+{
+private:
+	friend class ExecutionAgent;
+	explicit AgentKey() = default;
+};
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\DebugSystem\DebugContextDiplomat\DebugContextDiplomat.cpp ===
+========================================
+#include "PreCompileHeader.h"
+#include "DebugContextDiplomat.h"
+#include "DebugExecutionAgent/DebugExecutionAgent.h"
+DebugContextDiplomat::DebugContextDiplomat
+(
+	DebugContext::NexusFieldProof proof_,
+	std::unique_ptr<DebugContext::ExecutionAgent>&& executionAgent_
+)
+{
+	std::get<std::unique_ptr<DebugContext::ExecutionAgent>>(tools) = std::move(executionAgent_);
+}
+DebugContextDiplomat::~DebugContextDiplomat()
+{
+}
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\DebugSystem\DebugContextDiplomat\DebugContextDiplomat.h ===
+========================================
+#pragma once
+#include "../DebugContext.h"
+class DebugContextDiplomat
+{
+public:
+	DebugContextDiplomat
+	(
+		DebugContext::NexusFieldProof proof_,
+		std::unique_ptr<DebugContext::ExecutionAgent>&& executionAgent_
+	);
+	template<typename ToolType>
+	auto& Access()
+	{
+		return *std::get<std::unique_ptr<ToolType>>(tools);
+	}
+private:
+	std::tuple
+	<
+		std::unique_ptr<DebugContext::ExecutionAgent>
+	>tools;
+};
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\DebugSystem\DebugContextDiplomat\DebugExecutionAgent\DebugExecutionAgent.cpp ===
+========================================
+#include "PreCompileHeader.h"
+#include "DebugExecutionAgent.h"
+DebugContext::ExecutionAgent::ExecutionAgent(NexusFieldProof proof_, DebugContext& debugContext_)
+	:debugContext(debugContext_)
+{
+}
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\DebugSystem\DebugContextDiplomat\DebugExecutionAgent\DebugExecutionAgent.h ===
+========================================
+#pragma once
+#include "../../DebugContext.h"
+class DebugContext::ExecutionAgent
+{
+public:
+	ExecutionAgent(NexusFieldProof proof_, DebugContext& debugContext_);
+private:
 };
 
 ========================================
@@ -9332,6 +9450,90 @@ namespace ErrorMessageOutput
 		void DetectError(bool positiveResult_, const std::string& message_, const std::string& fileName_);
 	}
 }
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\DebugSystem\ImGuiDebugger\ImGuiDebugger.cpp ===
+========================================
+#include "PreCompileHeader.h"
+#include "ImGuiDebugger.h"
+DebugContext::ImGuiDebugger::ImGuiDebugger
+(
+	NexusFieldProof proof_,
+	WindowContextDiplomat& windowContextDip_,
+	DeviceContextDiplomat& deviceContextDip_,
+	DescriptorHeapContextDiplomat& descriptorHeapContextDip_
+) 
+{
+}
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\DebugSystem\ImGuiDebugger\ImGuiDebugger.h ===
+========================================
+#pragma once
+#include "../DebugContext.h"
+class DebugContext::ImGuiDebugger
+{
+	class SetUpper;
+public:
+	ImGuiDebugger
+	(
+		NexusFieldProof proof_,
+		WindowContextDiplomat& windowContextDip_,
+		DeviceContextDiplomat& deviceContextDip_,
+		DescriptorHeapContextDiplomat& descriptorHeapContextDip_
+	);
+private:
+};
+//hWnd device,srvFormat,srvDescriptor,handle
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\DebugSystem\ImGuiDebugger\ImGuiInclude.h ===
+========================================
+#pragma once
+#ifndef NDEBUG
+#define IMGUI_DEFINE_MATH_OPERATORS
+#include "../../../../External/imgui/imgui.h"
+#include "../../../../External/imgui/imgui_impl_dx12.h"
+#include "../../../../External/imgui/imgui_impl_win32.h"
+#endif
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\DebugSystem\ImGuiDebugger\ImGuiSetUpper\ImGuiSetUpper.cpp ===
+========================================
+#include "PreCompileHeader.h"
+#include "ImGuiSetUpper.h"
+#include "../ImGuiInclude.h"
+void DebugContext::ImGuiDebugger::SetUpper::InitializeImGui
+(
+	NexusFieldProof proof_,
+	WindowContextDiplomat& windowContextDip_,
+	DeviceContextDiplomat& deviceContextDip_,
+	DescriptorHeapContextDiplomat& descriptorHeapContextDip_
+)
+{
+#ifndef NDEBUG
+	//IMGUI_CHECKVERSION();
+	//ImGui::CreateContext();
+	//ImGui::StyleColorsClassic();
+#endif
+}
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\DebugSystem\ImGuiDebugger\ImGuiSetUpper\ImGuiSetUpper.h ===
+========================================
+#pragma once
+#include "../ImGuiDebugger.h"
+class DebugContext::ImGuiDebugger::SetUpper
+{
+	friend class ImGuiDebugger;
+	void InitializeImGui
+	(
+		NexusFieldProof proof_,
+		WindowContextDiplomat& windowContextDip_,
+		DeviceContextDiplomat& deviceContextDip_,
+		DescriptorHeapContextDiplomat& descriptorHeapContextDip_
+	);
+};
 
 ========================================
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\DebugSystem\Logger\Logger.cpp ===
@@ -19052,25 +19254,17 @@ void GridFloor::Reset()
 //実質、コンストラクタの代わり
 void GridFloor::Awake(SceneInitInterface& sceneInitInterface_)
 {
-	sceneInitInterface_.AttachSystem<Transform>(*this);
-	RenderState cP;
-	cP.blendModes.emplace_back(BlendMode::kOpaque);
-	cP.pass = Pass::kSceneOpaque;	
-	cP.cullMode = CullMode::kBack;
-	cP.meshType = MeshType::kStatic;
-	//cP.materialTypes.emplace_back(Material::Type::kStandard);
-	cP.materialTypes.emplace_back(Material::Type::kGridLine);
-	std::vector<RenderState> playerC;
-	playerC.emplace_back(std::move(cP));
-	p = sceneInitInterface_.CreateModel<Model::MeshUpdateType::kDynamic,Materials::UpdateType::kDynamic>
-		("Plane200x200Obj", playerC, 1, "Player");
+	RenderState renderState;
+	renderState.blendModes.emplace_back(BlendMode::kOpaque);
+	renderState.pass = Pass::kSceneOpaque;	
+	renderState.cullMode = CullMode::kBack;
+	renderState.meshType = MeshType::kStatic;
+	renderState.materialTypes.emplace_back(Material::Type::kGridLine);
+	std::vector<RenderState> renderStates;
+	renderStates.emplace_back(std::move(renderState));
+	p = sceneInitInterface_.CreateModel<Model::MeshUpdateType::kStatic,Materials::UpdateType::kStatic>
+		("Plane200x200Obj", renderStates, 1, "GridFloor");
 	sceneInitInterface_.AttachMaterial<Material::Type::kGridLine>(p[0]->RefMaterials(0));
-	//sceneInitInterface_.InputModelMaterialStandardFromFile("Plane200x200Obj", *p[0]);
-	//for (int i = 0;i < 10;++i)
-	//{
-	//	RefSystem<Transform>().BeParent(&p[i]->RefTransform(0));
-	//	p[i]->RefTransform(0).TranslatePosition({ -8.0f + float(2.5f * float(i)),-2.0,1.0f });
-	//}
 }
 //更新処理の直前に呼ばれる。他のゲームオブジェクトはこの時点で生成されているので
 //検索などはできる
@@ -19247,12 +19441,12 @@ void GameObjectContext::FrontlineSystems::GameObjController::ResetObjTransformFr
 	//トランスフォームのフレームフラグ関連をリセットする
 	for (auto* obj : sortedObjContainer)
 	{
-		//ゲームオブジェクトのトランスフォームの更新
-		auto& trans = obj->RefSystem<Transform>();
+		auto* trans = obj->GetSystemPtr<Transform>();
+		if (!trans) return;
 		//更新1フレームガードをリセット
-		trans.ResetFrameFlag();
+		trans->ResetFrameFlag();
 		//冒頭の減算でカウンタが2になるのは、今フレームで再計算されたときだけにする
-		trans.DecrementNeedOverrideBufferCnt();
+		trans->DecrementNeedOverrideBufferCnt();
 	}
 }
 void GameObjectContext::FrontlineSystems::GameObjController::UpdateAllGameObj
@@ -19267,9 +19461,10 @@ void GameObjectContext::FrontlineSystems::GameObjController::UpdateAllGameObj
 	{
 		//ゲームオブジェクトの更新処理
 		obj->Update(runtimeInterface_);
+		auto* trans = obj->GetSystemPtr<Transform>();
+		if (!trans) return;
 		//ゲームオブジェクトのトランスフォームの更新
-		auto& trans = obj->RefSystem<Transform>();
-		trans.Update();
+		trans->Update();
 	}
 }
 void GameObjectContext::FrontlineSystems::GameObjController::InitAllGameObj
@@ -19531,8 +19726,6 @@ using namespace StaticSampler;
 ========================================
 #include "PreCompileHeader.h"
 #include "GameObjectBehavior.h"
-//外部
-#include "../../../LowerLayer/Resource/Model/ModelStructure/Model.h"
 GameObjectBehavior::GameObjectBehavior(Local_CreateLicence licence_)
 {
 }
@@ -19560,17 +19753,9 @@ public:
 	virtual ~GameObjectBehavior() = default;
 	//システムのポインタを取得
 	template<typename SystemType>
-	auto& RefSystem()
+	auto* GetSystemPtr()
 	{
-#ifdef _DEBUG
-		ErrorMessageOutput::Assert::DetectError
-		(
-			std::get<std::unique_ptr<SystemType>>(systems).get(),
-			"アタッチしていないシステムの参照を取得すな",
-			"GameObjectContext.h"
-		);
-#endif // _DEBUG
-		return *std::get<std::unique_ptr<SystemType>>(systems);
+		return std::get<std::unique_ptr<SystemType>>(systems).get();
 	}
 	Status WatchStatus()const { return status; }
 private:
@@ -25239,7 +25424,10 @@ namespace
 template<>
 void Nexus::Init<Nexus::InitSequence::kDebugContext>()
 {
-	debugContext = std::make_unique<DebugContext>(DebugContext::NexusFieldProof{});
+	debugContext = std::make_unique<DebugContext>
+	(
+		DebugContext::NexusFieldProof{}
+	);
 	Logger::Log("Instantiate: DebugContext", fileName);
 }
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -25660,7 +25848,6 @@ void Nexus::Run(aFourthProof proof_)
 #include <directXMath.h>
 #include <dxcapi.h>
 #include "../../External/d3dx12/d3dx12.h"
-#include "../../External/imgui/imgui.h"
 #include <vector>
 #include <memory>
 #include <string>
@@ -26610,5 +26797,5 @@ namespace StringProcessing
 ========================================
 === SUMMARY ===
 ========================================
-Total Files      : 581
-Effective Lines  : 19416
+Total Files      : 590
+Effective Lines  : 19548

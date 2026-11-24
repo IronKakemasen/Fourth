@@ -82,6 +82,7 @@ private:
 		//ここまでに、シーンの作成が完了してなければならない
 		kRenderContext,
 
+		InstantiateImguiDebugger,
 		kUploadAllResources,
 		kKickCommands,
 		kDeleteBufferUploaderCache,

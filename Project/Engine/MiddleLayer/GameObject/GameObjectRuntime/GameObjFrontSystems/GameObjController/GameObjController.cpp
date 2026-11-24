@@ -25,13 +25,13 @@ void GameObjectContext::FrontlineSystems::GameObjController::ResetObjTransformFr
 	//トランスフォームのフレームフラグ関連をリセットする
 	for (auto* obj : sortedObjContainer)
 	{
-		//ゲームオブジェクトのトランスフォームの更新
-		auto& trans = obj->RefSystem<Transform>();
+		auto* trans = obj->GetSystemPtr<Transform>();
+		if (!trans) return;
 
 		//更新1フレームガードをリセット
-		trans.ResetFrameFlag();
+		trans->ResetFrameFlag();
 		//冒頭の減算でカウンタが2になるのは、今フレームで再計算されたときだけにする
-		trans.DecrementNeedOverrideBufferCnt();
+		trans->DecrementNeedOverrideBufferCnt();
 	}
 
 }
@@ -50,10 +50,11 @@ void GameObjectContext::FrontlineSystems::GameObjController::UpdateAllGameObj
 		//ゲームオブジェクトの更新処理
 		obj->Update(runtimeInterface_);
 
+		auto* trans = obj->GetSystemPtr<Transform>();
+		if (!trans) return;
+
 		//ゲームオブジェクトのトランスフォームの更新
-		auto& trans = obj->RefSystem<Transform>();
-		
-		trans.Update();
+		trans->Update();
 	}
 }
 

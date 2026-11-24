@@ -33,35 +33,21 @@ void GridFloor::Reset()
 //実質、コンストラクタの代わり
 void GridFloor::Awake(SceneInitInterface& sceneInitInterface_)
 {
-	sceneInitInterface_.AttachSystem<Transform>(*this);
+	RenderState renderState;
+	renderState.blendModes.emplace_back(BlendMode::kOpaque);
+	renderState.pass = Pass::kSceneOpaque;	
+	renderState.cullMode = CullMode::kBack;
+	renderState.meshType = MeshType::kStatic;
+	renderState.materialTypes.emplace_back(Material::Type::kGridLine);
 
-	RenderState cP;
-	cP.blendModes.emplace_back(BlendMode::kOpaque);
-	cP.pass = Pass::kSceneOpaque;	
-	cP.cullMode = CullMode::kBack;
-	cP.meshType = MeshType::kStatic;
-	//cP.materialTypes.emplace_back(Material::Type::kStandard);
-	cP.materialTypes.emplace_back(Material::Type::kGridLine);
-
-	std::vector<RenderState> playerC;
-	playerC.emplace_back(std::move(cP));
+	std::vector<RenderState> renderStates;
+	renderStates.emplace_back(std::move(renderState));
 
 
-	p = sceneInitInterface_.CreateModel<Model::MeshUpdateType::kDynamic,Materials::UpdateType::kDynamic>
-		("Plane200x200Obj", playerC, 1, "Player");
+	p = sceneInitInterface_.CreateModel<Model::MeshUpdateType::kStatic,Materials::UpdateType::kStatic>
+		("Plane200x200Obj", renderStates, 1, "GridFloor");
 
 	sceneInitInterface_.AttachMaterial<Material::Type::kGridLine>(p[0]->RefMaterials(0));
-
-	//sceneInitInterface_.InputModelMaterialStandardFromFile("Plane200x200Obj", *p[0]);
-
-
-	//for (int i = 0;i < 10;++i)
-	//{
-	//	RefSystem<Transform>().BeParent(&p[i]->RefTransform(0));
-
-	//	p[i]->RefTransform(0).TranslatePosition({ -8.0f + float(2.5f * float(i)),-2.0,1.0f });
-	//}
-
 	
 }
 
