@@ -41,10 +41,31 @@ DescriptorHeapContext::ViewCreator::ViewCreator
 	descriptorHeapPoolArray.at(UINT(DescriptorHeapContext::ViewCreator::HeapType::kDSV)) =
 		descriptorHeapPoolContainer_.Export<D3D12_DESCRIPTOR_HEAP_TYPE_DSV>(proof_);
 
+	//DescriptorHeapの予約済みスロット数ぶん、インデックスを進める
+	ReserveHeapSlot<HeapType::kRTV>();
+	ReserveHeapSlot<HeapType::kSRVUAV>();
+	ReserveHeapSlot<HeapType::kDSV>();
+
 	Logger::Log("Set: commandCreateView", fileName);
 
 }
 
+template<DescriptorHeapContext::ViewCreator::HeapType heapType>
+void DescriptorHeapContext::ViewCreator::ReserveHeapSlot()
+{
+	auto& dst = reservedHeapIndicesArr[UINT(heapType)];
+	UINT constexpr reservedHeapSize = HeapTypeTraits<heapType>::kReservedHeapSize;
+
+	dst.reserve(reservedHeapSize);
+
+	for (UINT i = 0;i < reservedHeapSize;++i)
+	{
+		auto* targetHeap = AccessHeapPool<heapType>();
+		auto [allocateIndex, handleCPU, handleGPU] = targetHeap->DistributeFreeHeapIndex(DescriptorHeapPool::CreateViewKey{});
+
+		dst.emplace_back(handleCPU, handleGPU);
+	}
+}
 
 template<>
 void DescriptorHeapContext::ViewCreator::Log<DescriptorHeapContext::ViewCreator::HeapType::kRTV>
@@ -71,13 +92,18 @@ void DescriptorHeapContext::ViewCreator::Log<DescriptorHeapContext::ViewCreator:
 template
 void DescriptorHeapContext::ViewCreator::Log<DescriptorHeapContext::ViewCreator::HeapType::kRTV>
 (const uint32_t handle_)const;
-
 template
 void DescriptorHeapContext::ViewCreator::Log<DescriptorHeapContext::ViewCreator::HeapType::kSRVUAV>
 (const uint32_t handle_)const;
-
 template
 void DescriptorHeapContext::ViewCreator::Log<DescriptorHeapContext::ViewCreator::HeapType::kDSV>
 (const uint32_t handle_)const;
+
+template
+void DescriptorHeapContext::ViewCreator::ReserveHeapSlot<DescriptorHeapContext::ViewCreator::HeapType::kRTV>();
+template
+void DescriptorHeapContext::ViewCreator::ReserveHeapSlot<DescriptorHeapContext::ViewCreator::HeapType::kDSV>();
+template
+void DescriptorHeapContext::ViewCreator::ReserveHeapSlot<DescriptorHeapContext::ViewCreator::HeapType::kSRVUAV>();
 
 

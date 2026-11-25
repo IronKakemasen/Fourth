@@ -14,7 +14,7 @@ class DescriptorHeapContext::ToolLender
 	std::tuple
 	<
 		ViewCreator*,
-		ID3D12DescriptorHeap*	//srvUav
+		ID3D12DescriptorHeap*	//srvUav。他のタイプがもし必要になったら考える
 	> tools;
 
 public:
@@ -22,20 +22,20 @@ public:
 
 	//ただのエイリアステンプレート
 	template<typename ToolType>
-	using LicenceType = typename CmdTypeTraits<ToolType>::Type;
+	using LicenceType = typename CmdTypeTraits<ToolType>::Licence;
 
 	ToolLender
 	(
 		NexusFieldProof proof_, 
-		DescriptorHeapContext::ViewCreator* viewCretator_,
+		DescriptorHeapContext::ViewCreator& viewCretator_,
 		DescriptorHeapPoolContainer& descriptorHeapPoolContainer_
 	);
 	
 	///ツールの貸し出し
 	template<typename ToolType>
-	auto* Lend(typename CmdTypeTraits<ToolType>::Type licence_)
+	auto& Lend(typename CmdTypeTraits<ToolType>::Licence licence_)
 	{
-		return std::get<ToolType*>(tools);
+		return *std::get<ToolType*>(tools);
 	}
 
 };
@@ -44,13 +44,13 @@ public:
 template<>
 struct DescriptorHeapContext::ToolLender::CmdTypeTraits<DescriptorHeapContext::ViewCreator>
 {
-	using Type = BasicViewManagementLicence;
+	using Licence = BasicViewManagementLicence;
 };
 
 template<>
 struct DescriptorHeapContext::ToolLender::CmdTypeTraits<ID3D12DescriptorHeap>
 {
-	using Type = UsesSrvDescriptorHeapLicence;
+	using Licence = UsesSrvDescriptorHeapLicence;
 };
 
 

@@ -48,7 +48,7 @@ DescriptorHeapContext::DescriptorHeapContext
 		new DescriptorHeapContextDiplomat
 		(
 			proof_,
-			std::make_unique<ToolLender>(proof_, viewCreator.get(), *descriptorHeapPoolContainer)
+			std::make_unique<ToolLender>(proof_, *viewCreator, *descriptorHeapPoolContainer)
 		)
 	);
 	Logger::Log("Instantiate: ToolLender", fileName);

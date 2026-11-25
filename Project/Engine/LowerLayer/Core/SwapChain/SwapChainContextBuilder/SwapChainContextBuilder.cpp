@@ -83,8 +83,8 @@ std::unique_ptr<SwapChainContext::SwapChainBuffer> SwapChainContext::Builder::Cr
 
 	//ビュークリエイターを一時的に借りる
 	DescriptorHeapContext::ToolLender::LicenceType<DescriptorHeapContext::ViewCreator> licence;
-	auto* toolLender = descriptorheapContextDiplomat_.Access<DescriptorHeapContext::ToolLender>();
-	auto* viewCreator = toolLender->Lend<DescriptorHeapContext::ViewCreator>(licence);
+	auto& toolLender = descriptorheapContextDiplomat_.Access<DescriptorHeapContext::ToolLender>();
+	auto& viewCreator = toolLender.Lend<DescriptorHeapContext::ViewCreator>(licence);
 
 	//rtvディスク生成
 	auto rtvDesc = CreateRTV_Desc();
@@ -93,7 +93,7 @@ std::unique_ptr<SwapChainContext::SwapChainBuffer> SwapChainContext::Builder::Cr
 	for (int i = 0;i < (int)NumBuffer::kDoubleBuffer;++i)
 	{
 		//rtvを作成
-		std::tie(std::ignore, rtvHandles[i], std::ignore) = viewCreator->CreateView<>(resources[i].Get(), &rtvDesc);
+		std::tie(std::ignore, rtvHandles[i], std::ignore) = viewCreator.CreateView<>(resources[i].Get(), &rtvDesc);
 	}
 
 	Logger::Log("Create SwapChainBuffers", fileName);

@@ -31,9 +31,9 @@ void RenderContext::StaticRenderGraph::CommonCmdExecutor::ExecuteCommonCmds
 )
 {
 	//srvDescriptorHeapにアクセス
-	auto dToolLender = descriptorHeapContextDiplomat_.Access<DescriptorHeapContext::ToolLender>();
+	auto& dToolLender = descriptorHeapContextDiplomat_.Access<DescriptorHeapContext::ToolLender>();
 	DescriptorHeapContext::ToolLender::LicenceType<ID3D12DescriptorHeap> dLicence;
-	auto* srvUavDescriptorHeap = dToolLender->Lend<ID3D12DescriptorHeap>(dLicence);
+	auto* srvUavDescriptorHeap = &dToolLender.Lend<ID3D12DescriptorHeap>(dLicence);
 
 	//GlobalConstantBuffersにアクセス
 	auto bToolLender = bufferContextDiplomat_.Access<BufferContext::ToolLender>();

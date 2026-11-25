@@ -485,6 +485,7 @@
     <ClInclude Include="Engine\EngineInstanceLimiter.h" />
     <ClInclude Include="Engine\EngineInterface.h" />
     <ClInclude Include="Engine\LowerLayer\DebugSystem\ImGuiDebugger\ImGuiInclude.h" />
+    <ClInclude Include="Engine\LowerLayer\DebugSystem\ImGuiDebugger\ImGuiWndProcHandler.h" />
     <ClInclude Include="Engine\LowerLayer\Resource\Camera\CameraCreator\CameraCreator.h" />
     <ClInclude Include="Engine\LowerLayer\Core\Command\CommandContextBuilder\CommandContextBuilder.h" />
     <ClInclude Include="Engine\LowerLayer\DebugSystem\DebugContext.h" />

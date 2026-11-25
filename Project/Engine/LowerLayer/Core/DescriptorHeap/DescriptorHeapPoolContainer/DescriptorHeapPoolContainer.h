@@ -1,5 +1,4 @@
 #pragma once
-#include "../DescriptorHeapContext.h"
 #include "../DescriptorHeapPool/DescriptorHeapPool.h"
 
 class DescriptorHeapContext::DescriptorHeapPoolContainer
