@@ -29,7 +29,7 @@ DebugContext::DebugContext
 	diplomat = std::make_unique<DebugContextDiplomat>
 	(
 		proof_,
-		std::make_unique<ExecutionAgent>(proof_, *this)
+		std::make_unique<ExecutionAgent>(proof_, *this,*imGuiDebugger)
 	);
 	Logger::End("DebugContext: DebugContextDiplomat");
 	Logger::End("DebugContext: ExecutionAgent");

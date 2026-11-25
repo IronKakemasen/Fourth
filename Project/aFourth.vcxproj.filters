@@ -1985,6 +1985,12 @@
     <ClInclude Include="Engine\LowerLayer\DebugSystem\ImGuiDebugger\ImGuiWndProcHandler.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
+    <ClInclude Include="Engine\LowerLayer\DebugSystem\DebugContextDiplomat\DebugExecutionAgent\DebugAgentLicences.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\LowerLayer\DebugSystem\DebugContextDiplomats.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

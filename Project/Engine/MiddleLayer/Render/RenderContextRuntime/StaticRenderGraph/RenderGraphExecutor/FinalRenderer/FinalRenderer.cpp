@@ -14,6 +14,9 @@
 #include "../../../../../../LowerLayer/Buffer/BufferContextDiplomats.h"
 #include "../../../../../../LowerLayer/Buffer/BufferDefinition/GPUBuffer/ColorBuffer/ColorBuffer.h"
 
+#include "../../../../../../LowerLayer/DebugSystem/DebugContextDiplomats.h"
+
+
 
 RenderContext::StaticRenderGraph::FinalRenderer::FinalRenderer
 (
@@ -28,12 +31,14 @@ RenderContext::StaticRenderGraph::FinalRenderer::FinalRenderer
 
 
 
-void RenderContext::StaticRenderGraph::FinalRenderer::Update
+void RenderContext::StaticRenderGraph::FinalRenderer::RenderBackBuffer
 (
 	UINT const frameIndex_,
 	RuntimeWrapper& runtimeWrapper_,
 	SwapChainContextDiplomat& swapChainContextDiplomat_,
-	BufferContextDiplomat& bufferContextDiplomat_
+	BufferContextDiplomat& bufferContextDiplomat_,
+	DebugContextDiplomat& debugContextDiplomat_,
+	CommandContextDiplomat& commandContextDiplomat_
 )
 {
 	//スワップチェーンバッファにアクセスする
@@ -88,6 +93,10 @@ void RenderContext::StaticRenderGraph::FinalRenderer::Update
 
 	//描画
 	runtimeWrapper_.DispatchMesh(3, 1, 1);
+
+	//バックバッファをPRESENTにする前にImGuiをの描画を差し込む
+	auto& debugAgent = debugContextDiplomat_.Access<DebugContext::ExecutionAgent>();
+	debugAgent.RenderImGui(DebugContext::ExecutionAgent::RenderContextProof{}, commandContextDiplomat_);
 
 	//バリアを張る→Present
 	auto barrier = swapChianBuffer.CreateBarrier<D3D12_RESOURCE_STATE_PRESENT>(frameIndex_);

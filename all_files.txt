@@ -1019,9 +1019,9 @@ BufferContext::BufferAssembler::BufferAssembler
 	:resourceCreator(resourceCreator_)
 {
 	//ビュークリエイターを借りる
-	auto* toolLender = descriptorheapContextDiplomat_.Access<DescriptorHeapContext::ToolLender>();
+	auto& toolLender = descriptorheapContextDiplomat_.Access<DescriptorHeapContext::ToolLender>();
 	DescriptorHeapContext::ToolLender::LicenceType<DescriptorHeapContext::ViewCreator> licence;
-	viewCreator = toolLender->Lend<DescriptorHeapContext::ViewCreator>(licence);
+	viewCreator = &toolLender.Lend<DescriptorHeapContext::ViewCreator>(licence);
 }
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -5186,8 +5186,8 @@ CommandContext::CommandContext
 	diplomat = std::make_unique<CommandContextDiplomat>
 	(
 		proof_,
-		std::make_unique<CommandProvider>(proof_, resourceUploader.get()),
-		std::make_unique<ToolLender>(proof_, commandQueue.Get(), runtimeWrapper.get()),
+		std::make_unique<CommandProvider>(proof_, *resourceUploader),
+		std::make_unique<ToolLender>(proof_, *commandQueue.Get(),*commandList.Get(), *runtimeWrapper),
 		std::make_unique<ExecutionAgent>(proof_, *resourceUploader,*runtimeCommandController)
 	);
 	Logger::Log("Instantiate: CommandContextDiplomat", fileName);
@@ -5462,7 +5462,7 @@ private:
 #include "CommandContextCmdProvider.h"
 #include "CommandContextCmdProviderLicences.h"
 #include "../../ResourceUploader/ResourceUploader.h"
-CommandContext::CommandProvider::CommandProvider(NexusFieldProof proof_, CommandContext::ResourceUploader* resourceUploader_)
+CommandContext::CommandProvider::CommandProvider(NexusFieldProof proof_, ResourceUploader& resourceUploader_)
 	:resourceUploader(resourceUploader_)
 {
 }
@@ -5470,13 +5470,13 @@ template<>
 CommandContextCmds::UploadBufferCommand  CommandContext::CommandProvider::Provide<CommandContextCmds::UploadBufferCommand >
 (typename CmdTypeTraits<CommandContextCmds::UploadBufferCommand >::Type licence_)
 {
-	return resourceUploader->ProvideUploadCommand(ProviderKey{});
+	return resourceUploader.ProvideUploadCommand(ProviderKey{});
 }
 template<>
 CommandContextCmds::PitchBarrierCommand CommandContext::CommandProvider::Provide<CommandContextCmds::PitchBarrierCommand>
 (typename CmdTypeTraits<CommandContextCmds::PitchBarrierCommand>::Type licence_)
 {
-	return resourceUploader->ProvideBarrierPitchCommand(ProviderKey{});
+	return resourceUploader.ProvideBarrierPitchCommand(ProviderKey{});
 }
 
 ========================================
@@ -5495,12 +5495,12 @@ class CommandContext::CommandProvider
 public:
 	template<typename CommandType>
 	using LicenceType = typename CmdTypeTraits<CommandType>::Type;
-	CommandProvider(NexusFieldProof proof_, CommandContext::ResourceUploader* resourceUploader_);
+	CommandProvider(NexusFieldProof proof_, ResourceUploader& resourceUploader_);
 	///コマンド提供
 	template<typename CommandType>
 	CommandType Provide(typename CmdTypeTraits<CommandType>::Type licence_);
 private:
-	CommandContext::ResourceUploader* resourceUploader;
+	ResourceUploader& resourceUploader;
 };
 template<>
 struct CommandContext::CommandProvider::CmdTypeTraits<CommandContextCmds::UploadBufferCommand >
@@ -5593,6 +5593,7 @@ private:
 #include "CommandContextToolLender.h"
 class SwapChainContext;
 class RenderContext;
+class DebugContext;
 struct CommandContext::ToolLender::AccessCommandQueueLicence
 {
 private:
@@ -5605,6 +5606,12 @@ private:
 	friend class RenderContext;
 	explicit UsesRuntimeCmdWrapperLicence() = default;
 };
+struct CommandContext::ToolLender::AccessCommandListLicence
+{
+private:
+	friend class DebugContext;
+	explicit AccessCommandListLicence() = default;
+};
 
 ========================================
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Core\Command\CommandContextDiplomat\CommandContextToolLender\CommandContextToolLender.cpp ===
@@ -5614,12 +5621,14 @@ private:
 CommandContext::ToolLender::ToolLender
 (
 	NexusFieldProof proof_,
-	ID3D12CommandQueue* cmdQueue_,
-	RuntimeWrapper* runtimeWrapper_
+	ID3D12CommandQueue& cmdQueue_,
+	ID3D12GraphicsCommandList6& cmdList_,
+	RuntimeWrapper& runtimeWrapper_
 )
 {
-	std::get<ID3D12CommandQueue*>(tools) = cmdQueue_;
-	std::get<RuntimeWrapper*>(tools) = runtimeWrapper_;
+	std::get<ID3D12CommandQueue*>(tools) = &cmdQueue_;
+	std::get<RuntimeWrapper*>(tools) = &runtimeWrapper_;
+	std::get<ID3D12GraphicsCommandList6*>(tools) = &cmdList_;
 }
 
 ========================================
@@ -5636,38 +5645,47 @@ class CommandContext::ToolLender
 	struct AccessCommandQueueLicence;
 	//RuntimeCmdWrapperをしようする資格
 	struct UsesRuntimeCmdWrapperLicence;
+	////CommandListを扱う資格
+	struct AccessCommandListLicence;
 	///貸し出せるツール
 	std::tuple
 	<
 		ID3D12CommandQueue*,
-		RuntimeWrapper*
+		RuntimeWrapper*,
+		ID3D12GraphicsCommandList6*
 	> tools;
 public:
 	//ただのエイリアステンプレート
 	template<typename ToolType>
-	using LicenceType = typename CmdTypeTraits<ToolType>::Type;
+	using LicenceType = typename CmdTypeTraits<ToolType>::Licence;
 	ToolLender
 	(
 		NexusFieldProof proof_,
-		ID3D12CommandQueue* cmdQueue_,
-		RuntimeWrapper* runtimeWrapper_
+		ID3D12CommandQueue& cmdQueue_,
+		ID3D12GraphicsCommandList6& cmdList_,
+		RuntimeWrapper& runtimeWrapper_
 	);
 	///ツールの貸し出し
 	template<typename ToolType>
-	auto* Lend(typename CmdTypeTraits<ToolType>::Type licence_)
+	auto& Lend(typename CmdTypeTraits<ToolType>::Licence licence_)
 	{
-		return std::get<ToolType*>(tools);
+		return *std::get<ToolType*>(tools);
 	}
 };
 template<>
 struct CommandContext::ToolLender::CmdTypeTraits<ID3D12CommandQueue>
 {
-	using Type = AccessCommandQueueLicence;
+	using Licence = AccessCommandQueueLicence;
 };
 template<>
 struct CommandContext::ToolLender::CmdTypeTraits<RuntimeWrapper>
 {
-	using Type = UsesRuntimeCmdWrapperLicence;
+	using Licence = UsesRuntimeCmdWrapperLicence;
+};
+template<>
+struct CommandContext::ToolLender::CmdTypeTraits<ID3D12GraphicsCommandList6>
+{
+	using Licence = AccessCommandListLicence;
 };
 
 ========================================
@@ -6194,7 +6212,7 @@ DescriptorHeapContext::DescriptorHeapContext
 		new DescriptorHeapContextDiplomat
 		(
 			proof_,
-			std::make_unique<ToolLender>(proof_, viewCreator.get(), *descriptorHeapPoolContainer)
+			std::make_unique<ToolLender>(proof_, *viewCreator, *descriptorHeapPoolContainer)
 		)
 	);
 	Logger::Log("Instantiate: ToolLender", fileName);
@@ -6290,9 +6308,9 @@ public:
 		std::unique_ptr<DescriptorHeapContext::ToolLender>&& toolLender_
 	);
 	template<typename ToolType>
-	ToolType* Access()
+	ToolType& Access()
 	{
-		return std::get<std::unique_ptr<ToolType>>(tools).get();
+		return *std::get<std::unique_ptr<ToolType>>(tools);
 	}
 private:
 	//提供するツールのテーブル
@@ -6311,13 +6329,13 @@ private:
 DescriptorHeapContext::ToolLender::ToolLender
 (
 	NexusFieldProof proof_,
-	DescriptorHeapContext::ViewCreator* viewCretator_,
+	DescriptorHeapContext::ViewCreator& viewCretator_,
 	DescriptorHeapPoolContainer& descriptorHeapPoolContainer_
 ) 
 {
-	std::get<DescriptorHeapContext::ViewCreator*>(tools) = viewCretator_;
+	std::get<DescriptorHeapContext::ViewCreator*>(tools) = &viewCretator_;
 	std::get<ID3D12DescriptorHeap*>(tools) = 
-		descriptorHeapPoolContainer_.Export<D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV>(proof_)->AccessHeap(proof_);
+		descriptorHeapPoolContainer_.Export<D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV>(proof_)->AccessHeap();
 }
 
 ========================================
@@ -6335,34 +6353,34 @@ class DescriptorHeapContext::ToolLender
 	std::tuple
 	<
 		ViewCreator*,
-		ID3D12DescriptorHeap*	//srvUav
+		ID3D12DescriptorHeap*	//srvUav。他のタイプがもし必要になったら考える
 	> tools;
 public:
 	//ただのエイリアステンプレート
 	template<typename ToolType>
-	using LicenceType = typename CmdTypeTraits<ToolType>::Type;
+	using LicenceType = typename CmdTypeTraits<ToolType>::Licence;
 	ToolLender
 	(
 		NexusFieldProof proof_, 
-		DescriptorHeapContext::ViewCreator* viewCretator_,
+		DescriptorHeapContext::ViewCreator& viewCretator_,
 		DescriptorHeapPoolContainer& descriptorHeapPoolContainer_
 	);
 	///ツールの貸し出し
 	template<typename ToolType>
-	auto* Lend(typename CmdTypeTraits<ToolType>::Type licence_)
+	auto& Lend(typename CmdTypeTraits<ToolType>::Licence licence_)
 	{
-		return std::get<ToolType*>(tools);
+		return *std::get<ToolType*>(tools);
 	}
 };
 template<>
 struct DescriptorHeapContext::ToolLender::CmdTypeTraits<DescriptorHeapContext::ViewCreator>
 {
-	using Type = BasicViewManagementLicence;
+	using Licence = BasicViewManagementLicence;
 };
 template<>
 struct DescriptorHeapContext::ToolLender::CmdTypeTraits<ID3D12DescriptorHeap>
 {
-	using Type = UsesSrvDescriptorHeapLicence;
+	using Licence = UsesSrvDescriptorHeapLicence;
 };
 
 ========================================
@@ -6373,17 +6391,20 @@ struct DescriptorHeapContext::ToolLender::CmdTypeTraits<ID3D12DescriptorHeap>
 class SwapChainContext;
 class BufferContext;
 class RenderContext;
+class DebugContext;
 struct DescriptorHeapContext::ToolLender::BasicViewManagementLicence
 {
 private:
 	friend class SwapChainContext;
 	friend class BufferContext;
+	friend class DebugContext;
 	explicit BasicViewManagementLicence() = default;
 };
 struct DescriptorHeapContext::ToolLender::UsesSrvDescriptorHeapLicence
 {
 private:
 	friend class RenderContext;
+	friend class DebugContext;
 	explicit UsesSrvDescriptorHeapLicence() = default;
 };
 
@@ -6421,19 +6442,19 @@ DescriptorHeapContext::DescriptorHeapCreator::DescriptorHeapCreator
 	container_.Import<D3D12_DESCRIPTOR_HEAP_TYPE_RTV>
 	(
 		proof_,
-		std::move(Create<D3D12_DESCRIPTOR_HEAP_TYPE_RTV>(createDescriptorHeapCmd,kNumDescriptorsRTVHeap, false, rtvDHIncrementSize))
+		Create<D3D12_DESCRIPTOR_HEAP_TYPE_RTV>(createDescriptorHeapCmd,kNumDescriptorsRTVHeap, false, rtvDHIncrementSize)
 	);
 	Logger::Log("Create: DescriptorHeapRTV", fileName);
 	container_.Import<D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV>
 	(
 		proof_,
-		std::move(Create<D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV>(createDescriptorHeapCmd,kNumDescriptorSRVHeap, true, srvDHIncrementSize))
+		Create<D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV>(createDescriptorHeapCmd,kNumDescriptorSRVHeap, true, srvDHIncrementSize)
 	);
 	Logger::Log("Create: DescriptorHeapSRV", fileName);
 	container_.Import<D3D12_DESCRIPTOR_HEAP_TYPE_DSV>
 	(
 		proof_,
-		std::move(Create<D3D12_DESCRIPTOR_HEAP_TYPE_DSV>(createDescriptorHeapCmd,kNumDescriptorsDSVHeap, false, dsvDHIncrementSize))
+		Create<D3D12_DESCRIPTOR_HEAP_TYPE_DSV>(createDescriptorHeapCmd,kNumDescriptorsDSVHeap, false, dsvDHIncrementSize)
 	);
 	Logger::Log("Create: DescriptorHeapDSV", fileName);
 }
@@ -6554,7 +6575,7 @@ void DescriptorHeapPool::CollectHeapIndex(uint32_t index_, CollectHeapIndexKey k
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-ID3D12DescriptorHeap* DescriptorHeapPool::AccessHeap(DescriptorHeapContext::NexusFieldProof proof_)
+ID3D12DescriptorHeap* DescriptorHeapPool::AccessHeap()
 {
 	return descriptorHeap.Get();
 }
@@ -6587,7 +6608,7 @@ public:
 	//ヒープインデックスを回収
 	void CollectHeapIndex(uint32_t index_, CollectHeapIndexKey key_);
 	//ID3D12DescriptorHeapにアクセス
-	ID3D12DescriptorHeap* AccessHeap(DescriptorHeapContext::NexusFieldProof proof_);
+	ID3D12DescriptorHeap* AccessHeap();
 private:
 	Microsoft::WRL::ComPtr<ID3D12DescriptorHeap> descriptorHeap;
 	//ハンドルのインクリメントサイズ
@@ -6638,7 +6659,6 @@ DescriptorHeapContext::DescriptorHeapPoolContainer::DescriptorHeapPoolContainer(
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Core\DescriptorHeap\DescriptorHeapPoolContainer\DescriptorHeapPoolContainer.h ===
 ========================================
 #pragma once
-#include "../DescriptorHeapContext.h"
 #include "../DescriptorHeapPool/DescriptorHeapPool.h"
 class DescriptorHeapContext::DescriptorHeapPoolContainer
 {
@@ -6706,7 +6726,24 @@ DescriptorHeapContext::ViewCreator::ViewCreator
 		descriptorHeapPoolContainer_.Export<D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV>(proof_);
 	descriptorHeapPoolArray.at(UINT(DescriptorHeapContext::ViewCreator::HeapType::kDSV)) =
 		descriptorHeapPoolContainer_.Export<D3D12_DESCRIPTOR_HEAP_TYPE_DSV>(proof_);
+	//DescriptorHeapの予約済みスロット数ぶん、インデックスを進める
+	ReserveHeapSlot<HeapType::kRTV>();
+	ReserveHeapSlot<HeapType::kSRVUAV>();
+	ReserveHeapSlot<HeapType::kDSV>();
 	Logger::Log("Set: commandCreateView", fileName);
+}
+template<DescriptorHeapContext::ViewCreator::HeapType heapType>
+void DescriptorHeapContext::ViewCreator::ReserveHeapSlot()
+{
+	auto& dst = reservedHeapIndicesArr[UINT(heapType)];
+	UINT constexpr reservedHeapSize = HeapTypeTraits<heapType>::kReservedHeapSize;
+	dst.reserve(reservedHeapSize);
+	for (UINT i = 0;i < reservedHeapSize;++i)
+	{
+		auto* targetHeap = AccessHeapPool<heapType>();
+		auto [allocateIndex, handleCPU, handleGPU] = targetHeap->DistributeFreeHeapIndex(DescriptorHeapPool::CreateViewKey{});
+		dst.emplace_back(handleCPU, handleGPU);
+	}
 }
 template<>
 void DescriptorHeapContext::ViewCreator::Log<DescriptorHeapContext::ViewCreator::HeapType::kRTV>
@@ -6735,6 +6772,12 @@ void DescriptorHeapContext::ViewCreator::Log<DescriptorHeapContext::ViewCreator:
 template
 void DescriptorHeapContext::ViewCreator::Log<DescriptorHeapContext::ViewCreator::HeapType::kDSV>
 (const uint32_t handle_)const;
+template
+void DescriptorHeapContext::ViewCreator::ReserveHeapSlot<DescriptorHeapContext::ViewCreator::HeapType::kRTV>();
+template
+void DescriptorHeapContext::ViewCreator::ReserveHeapSlot<DescriptorHeapContext::ViewCreator::HeapType::kDSV>();
+template
+void DescriptorHeapContext::ViewCreator::ReserveHeapSlot<DescriptorHeapContext::ViewCreator::HeapType::kSRVUAV>();
 
 ========================================
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Core\DescriptorHeap\ViewCreator\ViewCreator.h ===
@@ -6745,24 +6788,38 @@ void DescriptorHeapContext::ViewCreator::Log<DescriptorHeapContext::ViewCreator:
 class GPUBufferBehavior;
 class DescriptorHeapContext::ViewCreator
 {
+public:
 	enum class HeapType
 	{
 		kRTV,
 		kSRVUAV,
 		kDSV
-		,kCount
+		, kCount
 	};
-	//DescriptorHeapPoolのアドレス
-	std::array < DescriptorHeapPool*, UINT(HeapType::kCount) > descriptorHeapPoolArray;
-	//コマンド
-	DeviceContextCmds::CreateView<D3D12_RENDER_TARGET_VIEW_DESC> rtvCmd;
-	DeviceContextCmds::CreateView<D3D12_SHADER_RESOURCE_VIEW_DESC> srvCmd;
-	DeviceContextCmds::CreateView<D3D12_DEPTH_STENCIL_VIEW_DESC> dsvCmd;
-	DeviceContextCmds::CreateUAV uavCmd;
+	//srvDescriptorHeapの予約済みスロット
+	enum class ReservedSrvIndex
+	{
+		kImGui,
+		kCount
+	};
+	enum class ReservedDsvIndex
+	{
+		kCount
+	};
+	enum class ReservedRtvIndex
+	{
+		kCount
+	};
+private:
+	struct HeapHandles
+	{
+		D3D12_CPU_DESCRIPTOR_HANDLE cpu;
+		D3D12_GPU_DESCRIPTOR_HANDLE gpu;
+	};
 	template<typename ViewDescType>
 	struct DescTypeTraits;
-	template<typename ViewDescType>
-	using DescType = typename DescTypeTraits<ViewDescType>::Type;
+	template<HeapType heapType>
+	struct HeapTypeTraits;
 public:
 	ViewCreator
 	(
@@ -6777,7 +6834,7 @@ public:
 		//ViewTypeどのヒープを使うべきか分岐
 		constexpr HeapType type = DescTypeTraits<ViewDescType>::heapType;
 		//ディスクリプタヒープを取り出す
-		DescriptorHeapPool* targetHeap = descriptorHeapPoolArray.at((UINT)type);
+		DescriptorHeapPool* targetHeap = AccessHeapPool<type>();
 		//空きヒープインデックスを割り当てる
 		auto[allocateIndex, handleCPU, handleGPU] = targetHeap->DistributeFreeHeapIndex(DescriptorHeapPool::CreateViewKey{});
 		//ビュー生成
@@ -6801,9 +6858,48 @@ public:
 		//uint、CPU・GPUのインデックスを返す
 		return std::make_tuple(allocateIndex, handleCPU, handleGPU);
 	}
+	//予約したディスクリプタヒープの特定スロットのハンドルを見る
+	template<HeapType heapType>
+	HeapHandles const& WatchReservedHeapHandles(UINT slot_)const
+	{
+		return reservedHeapIndicesArr.at(UINT(heapType))[slot_];
+	}
 private:
 	template<HeapType heapType>
+	auto* AccessHeapPool()
+	{
+		//ディスクリプタヒープを取り出す
+		return descriptorHeapPoolArray.at((UINT)heapType);
+	}
+	template<HeapType heapType>
 	void Log(const uint32_t handle_)const;
+	template<HeapType heapType>
+	void ReserveHeapSlot();
+	//DescriptorHeapPoolのアドレス
+	std::array<DescriptorHeapPool*, UINT(HeapType::kCount)> descriptorHeapPoolArray;
+	//ビュークリエイターを通してビューを作らない、
+	//他機構(imGuiなど)が予約したDescriptorHeapのハンドルデータ
+	std::array<std::vector<HeapHandles>, UINT(HeapType::kCount)> reservedHeapIndicesArr;
+	//コマンド
+	DeviceContextCmds::CreateView<D3D12_RENDER_TARGET_VIEW_DESC> rtvCmd;
+	DeviceContextCmds::CreateView<D3D12_SHADER_RESOURCE_VIEW_DESC> srvCmd;
+	DeviceContextCmds::CreateView<D3D12_DEPTH_STENCIL_VIEW_DESC> dsvCmd;
+	DeviceContextCmds::CreateUAV uavCmd;
+};
+template<>
+struct DescriptorHeapContext::ViewCreator::HeapTypeTraits < DescriptorHeapContext::ViewCreator::HeapType::kRTV>
+{
+	static constexpr UINT kReservedHeapSize = (UINT)ReservedRtvIndex::kCount;
+};
+template<>
+struct DescriptorHeapContext::ViewCreator::HeapTypeTraits < DescriptorHeapContext::ViewCreator::HeapType::kSRVUAV>
+{
+	static constexpr UINT kReservedHeapSize = (UINT)ReservedSrvIndex::kCount;
+};
+template<>
+struct DescriptorHeapContext::ViewCreator::HeapTypeTraits < DescriptorHeapContext::ViewCreator::HeapType::kDSV>
+{
+	static constexpr UINT kReservedHeapSize = (UINT)ReservedDsvIndex::kCount;
 };
 template<>
 struct DescriptorHeapContext::ViewCreator::DescTypeTraits<D3D12_RENDER_TARGET_VIEW_DESC>
@@ -8713,15 +8809,15 @@ std::unique_ptr<SwapChainContext::SwapChainBuffer> SwapChainContext::Builder::Cr
 	}
 	//ビュークリエイターを一時的に借りる
 	DescriptorHeapContext::ToolLender::LicenceType<DescriptorHeapContext::ViewCreator> licence;
-	auto* toolLender = descriptorheapContextDiplomat_.Access<DescriptorHeapContext::ToolLender>();
-	auto* viewCreator = toolLender->Lend<DescriptorHeapContext::ViewCreator>(licence);
+	auto& toolLender = descriptorheapContextDiplomat_.Access<DescriptorHeapContext::ToolLender>();
+	auto& viewCreator = toolLender.Lend<DescriptorHeapContext::ViewCreator>(licence);
 	//rtvディスク生成
 	auto rtvDesc = CreateRTV_Desc();
 	std::array<D3D12_CPU_DESCRIPTOR_HANDLE, (UINT)NumBuffer::kDoubleBuffer> rtvHandles;
 	for (int i = 0;i < (int)NumBuffer::kDoubleBuffer;++i)
 	{
 		//rtvを作成
-		std::tie(std::ignore, rtvHandles[i], std::ignore) = viewCreator->CreateView<>(resources[i].Get(), &rtvDesc);
+		std::tie(std::ignore, rtvHandles[i], std::ignore) = viewCreator.CreateView<>(resources[i].Get(), &rtvDesc);
 	}
 	Logger::Log("Create SwapChainBuffers", fileName);
 	//バッファ生成
@@ -8767,7 +8863,7 @@ Microsoft::WRL::ComPtr<IDXGISwapChain4> SwapChainContext::Builder::CreateSwapCha
 	//コマンドキューを一時的に借りる
 	auto& commandContextToolLender = commandContextDiplomat_.Access<CommandContext::ToolLender>();
 	CommandContext::ToolLender::LicenceType<ID3D12CommandQueue> cmdQueueAccesslicence{};
-	auto* commandQueue = commandContextToolLender.Lend<ID3D12CommandQueue>(cmdQueueAccesslicence);
+	auto* commandQueue = &commandContextToolLender.Lend<ID3D12CommandQueue>(cmdQueueAccesslicence);
 	//スワップチェーン生成コマンドを借りる
 	auto& commandProvider = deviceContextDiplomat_.Access<DeviceContext::CommandProvider>();
 	DeviceContext::CommandProvider::LicenceType<DeviceContextCmds::CreateSwapChain> dLicence;
@@ -9314,16 +9410,18 @@ private:
 ========================================
 #include "PreCompileHeader.h"
 #include "WindowProcedure.h"
+//外部
+#include "../../../DebugSystem/ImGuiDebugger/ImGuiWndProcHandler.h"
 LRESULT CALLBACK WindowContext::WindowProcedure::WndProc(HWND hWnd_, UINT msg_, WPARAM wParam_, LPARAM lParam_)
 {
-	//#ifdef USE_IMGUI
-	//	//ImGuiにメッセージを渡す
-	//	if (ImGui_ImplWin32_WndProcHandler(hWnd_, msg_, wParam_, lParam_))
-	//	{
-	//		return true;
-	//	}
-	//#endif
-		//メッセージに応じてゲーム固有の処理を行う
+#ifndef NDEBUG
+	//ImGuiにメッセージを渡す
+	if (ImGui_ImplWin32_WndProcHandler(hWnd_, msg_, wParam_, lParam_))
+	{
+		return true;
+	}
+#endif
+	//メッセージに応じてゲーム固有の処理を行う
 	switch (msg_)
 	{
 		//ウィンドウが破棄された
@@ -9373,7 +9471,7 @@ DebugContext::DebugContext
 	diplomat = std::make_unique<DebugContextDiplomat>
 	(
 		proof_,
-		std::make_unique<ExecutionAgent>(proof_, *this)
+		std::make_unique<ExecutionAgent>(proof_, *this,*imGuiDebugger)
 	);
 	Logger::End("DebugContext: DebugContextDiplomat");
 	Logger::End("DebugContext: ExecutionAgent");
@@ -9410,6 +9508,7 @@ class WindowContextDiplomat;
 class DeviceContextDiplomat;
 class DescriptorHeapContextDiplomat;
 class DebugContextDiplomat;
+class CommandContextDiplomat;
 class DebugContext
 {
 public:
@@ -9450,6 +9549,14 @@ private:
 	friend class ExecutionAgent;
 	explicit AgentKey() = default;
 };
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\DebugSystem\DebugContextDiplomats.h ===
+========================================
+#pragma once
+#include "DebugContextDiplomat/DebugContextDiplomat.h"
+#include "DebugContextDiplomat/DebugExecutionAgent/DebugAgentLicences.h"
+#include "DebugContextDiplomat/DebugExecutionAgent/DebugExecutionAgent.h"
 
 ========================================
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\DebugSystem\DebugContextDiplomat\DebugContextDiplomat.cpp ===
@@ -9496,12 +9603,31 @@ private:
 };
 
 ========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\DebugSystem\DebugContextDiplomat\DebugExecutionAgent\DebugAgentLicences.h ===
+========================================
+#pragma once
+#include "DebugExecutionAgent.h"
+class RenderContext;
+struct DebugContext::ExecutionAgent::RenderContextProof
+{
+private:
+	friend class RenderContext;
+	explicit RenderContextProof() = default;
+};
+
+========================================
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\DebugSystem\DebugContextDiplomat\DebugExecutionAgent\DebugExecutionAgent.cpp ===
 ========================================
 #include "PreCompileHeader.h"
 #include "DebugExecutionAgent.h"
-DebugContext::ExecutionAgent::ExecutionAgent(NexusFieldProof proof_, DebugContext& debugContext_)
-	:debugContext(debugContext_)
+#include "DebugAgentLicences.h"
+#include "../../ImGuiDebugger/ImGuiDebugger.h"
+DebugContext::ExecutionAgent::ExecutionAgent
+(
+	NexusFieldProof proof_, 
+	DebugContext& debugContext_,
+	ImGuiDebugger& imGuiDebugger_
+):debugContext(debugContext_), imGuiDebugger(imGuiDebugger_)
 {
 }
 void DebugContext::ExecutionAgent::InstantiateImguiDebugger
@@ -9521,6 +9647,21 @@ void DebugContext::ExecutionAgent::InstantiateImguiDebugger
 		descriptorHeapContextDip_
 	);
 }
+void DebugContext::ExecutionAgent::BeginImGuiNewFrame
+(
+	NexusFieldProof proof_
+)
+{
+	imGuiDebugger.BeginNewFrame(proof_, AgentKey{});
+}
+void DebugContext::ExecutionAgent::RenderImGui
+(
+	RenderContextProof proof_,
+	CommandContextDiplomat& commandContextDiplomat_
+)
+{
+	imGuiDebugger.Render(AgentKey{}, commandContextDiplomat_);
+}
 
 ========================================
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\DebugSystem\DebugContextDiplomat\DebugExecutionAgent\DebugExecutionAgent.h ===
@@ -9530,7 +9671,13 @@ void DebugContext::ExecutionAgent::InstantiateImguiDebugger
 class DebugContext::ExecutionAgent
 {
 public:
-	ExecutionAgent(NexusFieldProof proof_, DebugContext& debugContext_);
+	struct RenderContextProof;
+	ExecutionAgent
+	(
+		NexusFieldProof proof_,
+		DebugContext& debugContext_,
+		ImGuiDebugger& imGuiDebugger_
+	);
 	void InstantiateImguiDebugger
 	(
 		NexusFieldProof proof_,
@@ -9538,8 +9685,18 @@ public:
 		DeviceContextDiplomat& deviceContextDip_,
 		DescriptorHeapContextDiplomat& descriptorHeapContextDip_
 	);
+	void BeginImGuiNewFrame
+	(
+		NexusFieldProof proof_
+	);
+	void RenderImGui
+	(
+		RenderContextProof proof_,
+		CommandContextDiplomat& commandContextDiplomat_
+	);
 private:
 	DebugContext& debugContext;
+	ImGuiDebugger& imGuiDebugger;
 };
 
 ========================================
@@ -9600,6 +9757,10 @@ namespace ErrorMessageOutput
 ========================================
 #include "PreCompileHeader.h"
 #include "ImGuiDebugger.h"
+#include "ImGuiSetUpper/ImGuiSetUpper.h"
+#include "ImGuiInclude.h"
+//外部
+#include "../../Core/Command/CommandContextDiplomats.h"
 DebugContext::ImGuiDebugger::ImGuiDebugger
 (
 	NexusFieldProof proof_,
@@ -9608,6 +9769,56 @@ DebugContext::ImGuiDebugger::ImGuiDebugger
 	DescriptorHeapContextDiplomat& descriptorHeapContextDip_
 ) 
 {
+	SetUpper::InitializeImGui
+	(
+		proof_,
+		windowContextDip_,
+		deviceContextDip_,
+		descriptorHeapContextDip_
+	);
+}
+void DebugContext::ImGuiDebugger::BeginNewFrame
+(
+	NexusFieldProof proof_,
+	AgentKey key_
+)
+{
+#ifndef NDEBUG
+	ImGui_ImplDX12_NewFrame();
+	ImGui_ImplWin32_NewFrame();
+	ImGui::NewFrame();
+#endif
+#ifndef NDEBUG
+	static bool showWindow = true;
+	static int counter = 0;
+	if (showWindow)
+	{
+		ImGui::Begin("Nexus Debug Window", &showWindow);
+		ImGui::Text("Hello, ImGui!");
+		ImGui::Text("This is a test window.");
+		if (ImGui::Button("Click me"))
+		{
+			++counter;
+		}
+		ImGui::Text("Button clicked: %d times", counter);
+		ImGui::End();
+	}
+#endif
+}
+void DebugContext::ImGuiDebugger::Render
+(
+	AgentKey key_,
+	CommandContextDiplomat& commandContextDiplomat_
+) 
+{
+#ifndef NDEBUG
+	//コマンドリストを借りる
+	auto* cndList = &commandContextDiplomat_.Access<CommandContext::ToolLender>().
+		Lend<ID3D12GraphicsCommandList6>(CommandContext::ToolLender::LicenceType<ID3D12GraphicsCommandList6>{});
+	ImGui::Render();
+	//commandListにImguiの描画コマンドを積む
+	ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), cndList);
+#endif
 }
 
 ========================================
@@ -9626,6 +9837,16 @@ public:
 		DeviceContextDiplomat& deviceContextDip_,
 		DescriptorHeapContextDiplomat& descriptorHeapContextDip_
 	);
+	void BeginNewFrame
+	(
+		NexusFieldProof proof_,
+		AgentKey key_
+	);
+	void Render
+	(
+		AgentKey key_,
+		CommandContextDiplomat& commandContextDiplomat_
+	);
 private:
 };
 
@@ -9641,6 +9862,21 @@ private:
 #endif
 
 ========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\DebugSystem\ImGuiDebugger\ImGuiWndProcHandler.h ===
+========================================
+#pragma once
+#include "ImGuiInclude.h"
+#ifndef NDEBUG
+extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler
+(
+    HWND hWnd,
+    UINT msg,
+    WPARAM wParam,
+    LPARAM lParam
+);
+#endif
+
+========================================
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\DebugSystem\ImGuiDebugger\ImGuiSetUpper\ImGuiSetUpper.cpp ===
 ========================================
 #include "PreCompileHeader.h"
@@ -9653,6 +9889,10 @@ private:
 #include "../../../Core/Device/DeviceContextDiplomat/DeviceContextDiplomat.h"
 #include "../../../Core/Device/DeviceContextDiplomat/DeviceContextCommandExecutor/DeviceContextCommandExecutor.h"
 #include "../../../Core/Device/DeviceContextDiplomat/DeviceContextCommandExecutor/DeviceCmdExecutorLicences.h"
+#include "../../../Core/DescriptorHeap/DescriptorHeapContextDiplomat/DescriptorHeapContextDiplomat.h"
+#include "../../../Core/DescriptorHeap/DescriptorHeapContextDiplomat/DescriptorHeapToolLender/DescriptorHeapToolLender.h"
+#include "../../../Core/DescriptorHeap/DescriptorHeapContextDiplomat/DescriptorHeapToolLender/DescriptorHeapToolLenderLicences.h"
+#include "../../../Core/DescriptorHeap/ViewCreator/ViewCreator.h"
 void DebugContext::ImGuiDebugger::SetUpper::InitializeImGui
 (
 	NexusFieldProof proof_,
@@ -9665,18 +9905,34 @@ void DebugContext::ImGuiDebugger::SetUpper::InitializeImGui
 	//ウィンドウのハンドルを借りる
 	auto& windowHandle = windowContextDip_.Access<WindowContext::ToolLender>().
 		Lend<HWND>(WindowContext::ToolLender::LicenceType<HWND>{});
+	//srvUavのディスクリプタヒープとビュークリエイターを借りる
+	auto& descriptorHeapToolLender = 
+		descriptorHeapContextDip_.Access<DescriptorHeapContext::ToolLender>();
+	auto* srvDescriptorHeap = 
+		&descriptorHeapToolLender.Lend<ID3D12DescriptorHeap>(DescriptorHeapContext::ToolLender::LicenceType<ID3D12DescriptorHeap>{});
+	auto& viewCreator = 
+		descriptorHeapToolLender.Lend<DescriptorHeapContext::ViewCreator>(DescriptorHeapContext::ToolLender::LicenceType<DescriptorHeapContext::ViewCreator>{});
+	//予約しておいたImGui用のdescriptorHeapのハンドル
+	auto const& imguiHandle = viewCreator.WatchReservedHeapHandles
+		<DescriptorHeapContext::ViewCreator::HeapType::kSRVUAV>((UINT)DescriptorHeapContext::ViewCreator::ReservedSrvIndex::kImGui);
 	IMGUI_CHECKVERSION();
 	ImGui::CreateContext();
 	ImGui::StyleColorsClassic();
 	ImGui_ImplWin32_Init(windowHandle);
 	//deviceが必要なImGui初期化関数を呼んでもらう
-	//auto& deviceAgent = deviceContextDip_.Access<DeviceContext::CommandExecutor>().
-	//	CallImGuiInit
-	//	(
-	//		DeviceContext::CommandExecutor::DebugContextProof{},
-	//		kImGuiRtvformat,
-	//	)
-	//srvFormat,srvDescriptor,handle
+	deviceContextDip_.Access<DeviceContext::CommandExecutor>().
+	CallImGuiInit
+	(
+		DeviceContext::CommandExecutor::DebugContextProof{},
+		ProjectConfig::Render::kSwapChainBufferFormat,
+		srvDescriptorHeap,
+		imguiHandle.cpu,
+		imguiHandle.gpu
+	);
+	ImGui::GetIO().ConfigFlags |= ImGuiConfigFlags_DockingEnable;
+	ImGui::PushStyleColor(ImGuiCol_TitleBgActive, ImVec4(0.5f, 0.5f, 0.1f, 1.0f));
+	ImGui::PushStyleColor(ImGuiCol_TitleBg, ImVec4(0.1f, 0.1f, 0.1f, 1.0f));
+	Logger::Log("Complete ImGui Initializing", "ImGuiSetUpper.cpp");
 #endif
 }
 
@@ -9688,15 +9944,13 @@ void DebugContext::ImGuiDebugger::SetUpper::InitializeImGui
 class DebugContext::ImGuiDebugger::SetUpper
 {
 	friend class ImGuiDebugger;
-	void InitializeImGui
+	static void InitializeImGui
 	(
 		NexusFieldProof proof_,
 		WindowContextDiplomat& windowContextDip_,
 		DeviceContextDiplomat& deviceContextDip_,
 		DescriptorHeapContextDiplomat& descriptorHeapContextDip_
 	);
-private:
-	static constexpr DXGI_FORMAT kImGuiRtvformat = DXGI_FORMAT_R8G8B8A8_UNORM;
 };
 
 ========================================
@@ -20256,7 +20510,8 @@ void RenderContext::ExecutionAgent::RenderGraphRun
 	CommandContextDiplomat& commandContextDiplomat_,
 	BufferContextDiplomat& bufferContextDiplomat_,
 	SceneContextDiplomat& sceneContextDiplomat_,
-	SwapChainContextDiplomat& swapChainContextDiplomat_
+	SwapChainContextDiplomat& swapChainContextDiplomat_,
+	DebugContextDiplomat& debugContextDiplomat_
 )
 {
 	staticRenderGraph.Run
@@ -20268,7 +20523,8 @@ void RenderContext::ExecutionAgent::RenderGraphRun
 		commandContextDiplomat_,
 		bufferContextDiplomat_,
 		sceneContextDiplomat_,
-		swapChainContextDiplomat_
+		swapChainContextDiplomat_,
+		debugContextDiplomat_
 	);
 }
 
@@ -20280,6 +20536,7 @@ void RenderContext::ExecutionAgent::RenderGraphRun
 class DescriptorHeapContextDiplomat;
 class CommandContextDiplomat;
 class SceneContextDiplomat;
+class DebugContextDiplomat;
 class RenderContext::ExecutionAgent
 {
 public:
@@ -20296,7 +20553,8 @@ public:
 		CommandContextDiplomat& commandContextDiplomat_,
 		BufferContextDiplomat& bufferContextDiplomat_,
 		SceneContextDiplomat& sceneContextDiplomat_,
-		SwapChainContextDiplomat& swapChainContextDiplomat_
+		SwapChainContextDiplomat& swapChainContextDiplomat_,
+		DebugContextDiplomat& debugContextDiplomat_
 	);
 private:
 	StaticRenderGraph& staticRenderGraph;
@@ -20593,13 +20851,14 @@ void RenderContext::StaticRenderGraph::Run
 	CommandContextDiplomat& commandContextDiplomat_,
 	BufferContextDiplomat& bufferContextDiplomat_,
 	SceneContextDiplomat& sceneContextDiplomat_,
-	SwapChainContextDiplomat& swapChainContextDiplomat_
+	SwapChainContextDiplomat& swapChainContextDiplomat_,
+	DebugContextDiplomat& debugContextDiplomat_
 )
 {
 	//runtimeCmdWrapperにアクセス
 	auto& cToolLender = commandContextDiplomat_.Access<CommandContext::ToolLender>();
 	CommandContext::ToolLender::LicenceType<RuntimeWrapper> cLicence;
-	auto& runtimeCmdWrapper = *cToolLender.Lend<RuntimeWrapper>(cLicence);
+	auto& runtimeCmdWrapper = cToolLender.Lend<RuntimeWrapper>(cLicence);
 	//共通の描画コマンドをたたく
 	commonCmdExecutor->ExecuteCommonCmds
 	(
@@ -20617,7 +20876,15 @@ void RenderContext::StaticRenderGraph::Run
 		runtimeCmdWrapper
 	);
 	//最終描画
-	finalRenderer->Update(frameIndex_, runtimeCmdWrapper, swapChainContextDiplomat_,bufferContextDiplomat_);
+	finalRenderer->RenderBackBuffer
+	(
+		frameIndex_, 
+		runtimeCmdWrapper, 
+		swapChainContextDiplomat_,
+		bufferContextDiplomat_,
+		debugContextDiplomat_,
+		commandContextDiplomat_
+	);
 }
 
 ========================================
@@ -20698,6 +20965,7 @@ class RuntimeWrapper;
 class DescriptorHeapContextDiplomat;
 class CommandContextDiplomat;
 class SceneContextDiplomat;
+class DebugContextDiplomat;
 class RenderContext::StaticRenderGraph
 {
 	//レンダーグラフの初期化手助けクラス
@@ -20736,7 +21004,8 @@ public:
 		CommandContextDiplomat& commandContextDiplomat_,
 		BufferContextDiplomat& bufferContextDiplomat_,
 		SceneContextDiplomat& sceneContextDiplomat_,
-		SwapChainContextDiplomat& swapChainContextDiplomat_
+		SwapChainContextDiplomat& swapChainContextDiplomat_,
+		DebugContextDiplomat& debugContextDiplomat_
 	);
 private:
 	struct BuildOutput
@@ -21829,9 +22098,9 @@ void RenderContext::StaticRenderGraph::CommonCmdExecutor::ExecuteCommonCmds
 )
 {
 	//srvDescriptorHeapにアクセス
-	auto dToolLender = descriptorHeapContextDiplomat_.Access<DescriptorHeapContext::ToolLender>();
+	auto& dToolLender = descriptorHeapContextDiplomat_.Access<DescriptorHeapContext::ToolLender>();
 	DescriptorHeapContext::ToolLender::LicenceType<ID3D12DescriptorHeap> dLicence;
-	auto* srvUavDescriptorHeap = dToolLender->Lend<ID3D12DescriptorHeap>(dLicence);
+	auto* srvUavDescriptorHeap = &dToolLender.Lend<ID3D12DescriptorHeap>(dLicence);
 	//GlobalConstantBuffersにアクセス
 	auto bToolLender = bufferContextDiplomat_.Access<BufferContext::ToolLender>();
 	BufferContext::ToolLender::LicenceType<BufferContext::GlobalConstantBuffers> bLicence;
@@ -21927,6 +22196,7 @@ private:
 #include "../../../../../../LowerLayer/Buffer/BufferRuntime/BufferDispatcher/BufferDispatcher.h"
 #include "../../../../../../LowerLayer/Buffer/BufferContextDiplomats.h"
 #include "../../../../../../LowerLayer/Buffer/BufferDefinition/GPUBuffer/ColorBuffer/ColorBuffer.h"
+#include "../../../../../../LowerLayer/DebugSystem/DebugContextDiplomats.h"
 RenderContext::StaticRenderGraph::FinalRenderer::FinalRenderer
 (
 	NexusFieldProof proof_,
@@ -21936,12 +22206,14 @@ RenderContext::StaticRenderGraph::FinalRenderer::FinalRenderer
 	:finalRenderingPso(finalRenderingPso_), finalRefBufferID(finalRefBufferID_)
 {
 }
-void RenderContext::StaticRenderGraph::FinalRenderer::Update
+void RenderContext::StaticRenderGraph::FinalRenderer::RenderBackBuffer
 (
 	UINT const frameIndex_,
 	RuntimeWrapper& runtimeWrapper_,
 	SwapChainContextDiplomat& swapChainContextDiplomat_,
-	BufferContextDiplomat& bufferContextDiplomat_
+	BufferContextDiplomat& bufferContextDiplomat_,
+	DebugContextDiplomat& debugContextDiplomat_,
+	CommandContextDiplomat& commandContextDiplomat_
 )
 {
 	//スワップチェーンバッファにアクセスする
@@ -21984,6 +22256,9 @@ void RenderContext::StaticRenderGraph::FinalRenderer::Update
 	runtimeWrapper_.SetPipelineState(finalRenderingPso);
 	//描画
 	runtimeWrapper_.DispatchMesh(3, 1, 1);
+	//バックバッファをPRESENTにする前にImGuiをの描画を差し込む
+	auto& debugAgent = debugContextDiplomat_.Access<DebugContext::ExecutionAgent>();
+	debugAgent.RenderImGui(DebugContext::ExecutionAgent::RenderContextProof{}, commandContextDiplomat_);
 	//バリアを張る→Present
 	auto barrier = swapChianBuffer.CreateBarrier<D3D12_RESOURCE_STATE_PRESENT>(frameIndex_);
 	runtimeWrapper_.ResourceBarrier(1, &barrier);
@@ -22003,12 +22278,14 @@ public:
 		ID3D12PipelineState* finalRenderingPso_,
 		BufferUniqueID finalRefBufferID
 	);
-	void Update
+	void RenderBackBuffer
 	(
 		UINT const frameIndex_,
 		RuntimeWrapper& runtimeWrapper_,
 		SwapChainContextDiplomat& swapChainContextDiplomat_,
-		BufferContextDiplomat& bufferContextDiplomat_
+		BufferContextDiplomat& bufferContextDiplomat_,
+		DebugContextDiplomat& debugContextDiplomat_,
+		CommandContextDiplomat& commandContextDiplomat_
 	);
 private:
 	//最終描画用PSO
@@ -25308,6 +25585,7 @@ Nexus::~Nexus()
 	Logger::Entry("Nexus: Destructor");
 	FinalizeInSequence<FinalizeSequence::kCommandContext>();
 	FinalizeInSequence<FinalizeSequence::kWindowContext>();
+	FinalizeInSequence<FinalizeSequence::kImGuiFinalization>();
 	ErrorMessageOutput::Assert::DetectError(nextFin == FinalizeSequence::kEnd, "終了処理が正常に行われていない可能性がある", fileName);
 	Logger::End("Nexus: Destructor");
 }
@@ -25429,8 +25707,9 @@ private:
 	enum class FinalizeSequence
 	{
 		kCommandContext,
-		kWindowContext
-		, kEnd
+		kWindowContext,
+		kImGuiFinalization,
+		kEnd
 	}nextFin = FinalizeSequence::kCommandContext;
 	//デバッガー。DebugLayer, PointerValidator, LeakChecker
 	std::unique_ptr<DebugContext> debugContext;
@@ -25516,6 +25795,7 @@ private:
 #include "../LowerLayer/Core/Command/CommandContext.h"
 #include "../LowerLayer/Core/Window/WindowContextDiplomat/WindowContextExecutionAgent/WindowContextExecutionAgent.h"
 #include "../LowerLayer/Core/Window/WindowContextDiplomat/WindowContextDiplomat.h"
+#include "../LowerLayer/DebugSystem/ImGuiDebugger/ImGuiInclude.h"
 namespace
 {
 	std::string const fileName = "NexusFinalization.cpp";
@@ -25532,6 +25812,21 @@ void Nexus::Finalize<Nexus::FinalizeSequence::kWindowContext>()
 	auto& agent = windowContext->AccessDiplomat().Access<WindowContext::ExecutionAgent>();
 	agent.WindowContextFinalize(WindowContext::NexusFieldProof{});
 }
+template<>
+void Nexus::Finalize<Nexus::FinalizeSequence::kImGuiFinalization>()
+{
+#ifndef NDEBUG
+	ImGui_ImplDX12_Shutdown();
+	ImGui_ImplWin32_Shutdown();
+	ImGui::DestroyContext();
+#endif
+}
+template
+void Nexus::Finalize<Nexus::FinalizeSequence::kWindowContext>();
+template
+void Nexus::Finalize<Nexus::FinalizeSequence::kCommandContext>();
+template
+void Nexus::Finalize<Nexus::FinalizeSequence::kImGuiFinalization>();
 
 ========================================
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Nexus\NexusInitialization.cpp ===
@@ -25957,16 +26252,25 @@ void Nexus::Init<Nexus::InitSequence::InstantiateImguiDebugger>();
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 #include "../MiddleLayer/Render/RenderContextDiplomat/RenderContextDiplomat.h"
 #include "../MiddleLayer/Render/RenderContextDiplomat/RenderContextExecutionAgent/RenderContextExecutionAgent.h"
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+#include "../LowerLayer/DebugSystem/DebugContextDiplomat/DebugContextDiplomat.h"
+#include "../LowerLayer/DebugSystem/DebugContextDiplomat/DebugExecutionAgent/DebugExecutionAgent.h"
 void Nexus::Run(aFourthProof proof_)
 {
 	//SwapChainContextの代行クラス
 	auto& swap_ExecutionAgent = swapChainContext->AccessDiplomat().Access<SwapChainContext::ExecutionAgent>();
 	//CommandContextの代行クラス
-	auto& cmd_ExecutionAgent = commandContext->AccessDiplomat().Access<CommandContext::ExecutionAgent>();
+	auto& cmd_Diplomat = commandContext->AccessDiplomat();
+	auto& cmd_ExecutionAgent = cmd_Diplomat.Access<CommandContext::ExecutionAgent>();
 	//SceneContextの代行クラス
 	auto& scene_ExecutionAgent = sceneContext->AccessDiplomat().Access<SceneContext::ExecutionAgent>();
 	//RenderContextの代行クラス
 	auto& render_ExecutionAgent = renderContext->AccessDiplomat().Access<RenderContext::ExecutionAgent>();
+	//DebugContextの代行クラス
+	auto& debug_Diplomat = debugContext->AccessDiplomat();
+	auto& debug_ExecutionAgent = debug_Diplomat.Access<DebugContext::ExecutionAgent>();
+	//ImGuiのフレーム開始関数を呼ぶ
+	debug_ExecutionAgent.BeginImGuiNewFrame(DebugContext::NexusFieldProof{});
 	//シーンの更新処理
 	scene_ExecutionAgent.RunScenePipeline(SceneContext::NexusFieldProof{});
 	//フレームインデックスをスワップチェーンから取得
@@ -25983,16 +26287,17 @@ void Nexus::Run(aFourthProof proof_)
 		bufferContext->AccessDiplomat(),
 		materialContext->AccessDiplomat()
 	);
-	//全ての描画コマンドはここに
+	//全ての描画コマンドはここに(ImGuiも)
 	render_ExecutionAgent.RenderGraphRun
 	(
 		RenderContext::NexusFieldProof{},
 		frameIndex,
 		descriptorHeapContext->AccessDiplomat(),
-		commandContext->AccessDiplomat(),
+		cmd_Diplomat,
 		bufferContext->AccessDiplomat(),
 		sceneContext->AccessDiplomat(),
-		swapChainContext->AccessDiplomat()
+		swapChainContext->AccessDiplomat(),
+		debug_Diplomat
 	);
 	//コマンドを送る
 	cmd_ExecutionAgent.ExecuteCommands(CommandContext::NexusFieldProof{},frameIndex);
@@ -26976,5 +27281,5 @@ namespace StringProcessing
 ========================================
 === SUMMARY ===
 ========================================
-Total Files      : 593
-Effective Lines  : 19687
+Total Files      : 596
+Effective Lines  : 19943

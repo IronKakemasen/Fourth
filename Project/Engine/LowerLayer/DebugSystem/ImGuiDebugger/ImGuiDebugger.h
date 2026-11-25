@@ -16,6 +16,17 @@ public:
 		DescriptorHeapContextDiplomat& descriptorHeapContextDip_
 	);
 
+	void BeginNewFrame
+	(
+		NexusFieldProof proof_,
+		AgentKey key_
+	);
+
+	void Render
+	(
+		AgentKey key_,
+		CommandContextDiplomat& commandContextDiplomat_
+	);
 
 private:
 

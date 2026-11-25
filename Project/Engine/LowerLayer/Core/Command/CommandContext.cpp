@@ -53,8 +53,8 @@ CommandContext::CommandContext
 	diplomat = std::make_unique<CommandContextDiplomat>
 	(
 		proof_,
-		std::make_unique<CommandProvider>(proof_, resourceUploader.get()),
-		std::make_unique<ToolLender>(proof_, commandQueue.Get(), runtimeWrapper.get()),
+		std::make_unique<CommandProvider>(proof_, *resourceUploader),
+		std::make_unique<ToolLender>(proof_, *commandQueue.Get(),*commandList.Get(), *runtimeWrapper),
 		std::make_unique<ExecutionAgent>(proof_, *resourceUploader,*runtimeCommandController)
 	);
 

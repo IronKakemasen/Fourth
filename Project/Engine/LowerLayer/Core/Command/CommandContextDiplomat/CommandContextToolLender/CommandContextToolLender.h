@@ -12,33 +12,37 @@ class CommandContext::ToolLender
 	struct AccessCommandQueueLicence;
 	//RuntimeCmdWrapperをしようする資格
 	struct UsesRuntimeCmdWrapperLicence;
+	////CommandListを扱う資格
+	struct AccessCommandListLicence;
 
 	///貸し出せるツール
 	std::tuple
 	<
 		ID3D12CommandQueue*,
-		RuntimeWrapper*
+		RuntimeWrapper*,
+		ID3D12GraphicsCommandList6*
 	> tools;
 
 public:
 
 	//ただのエイリアステンプレート
 	template<typename ToolType>
-	using LicenceType = typename CmdTypeTraits<ToolType>::Type;
+	using LicenceType = typename CmdTypeTraits<ToolType>::Licence;
 
 	ToolLender
 	(
 		NexusFieldProof proof_,
-		ID3D12CommandQueue* cmdQueue_,
-		RuntimeWrapper* runtimeWrapper_
+		ID3D12CommandQueue& cmdQueue_,
+		ID3D12GraphicsCommandList6& cmdList_,
+		RuntimeWrapper& runtimeWrapper_
 	);
 
 
 	///ツールの貸し出し
 	template<typename ToolType>
-	auto* Lend(typename CmdTypeTraits<ToolType>::Type licence_)
+	auto& Lend(typename CmdTypeTraits<ToolType>::Licence licence_)
 	{
-		return std::get<ToolType*>(tools);
+		return *std::get<ToolType*>(tools);
 	}
 
 };
@@ -47,13 +51,20 @@ public:
 template<>
 struct CommandContext::ToolLender::CmdTypeTraits<ID3D12CommandQueue>
 {
-	using Type = AccessCommandQueueLicence;
+	using Licence = AccessCommandQueueLicence;
 };
 
 template<>
 struct CommandContext::ToolLender::CmdTypeTraits<RuntimeWrapper>
 {
-	using Type = UsesRuntimeCmdWrapperLicence;
+	using Licence = UsesRuntimeCmdWrapperLicence;
 };
+
+template<>
+struct CommandContext::ToolLender::CmdTypeTraits<ID3D12GraphicsCommandList6>
+{
+	using Licence = AccessCommandListLicence;
+};
+
 
 

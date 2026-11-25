@@ -5,7 +5,14 @@ class DebugContext::ExecutionAgent
 {
 public:
 
-	ExecutionAgent(NexusFieldProof proof_, DebugContext& debugContext_);
+	struct RenderContextProof;
+
+	ExecutionAgent
+	(
+		NexusFieldProof proof_,
+		DebugContext& debugContext_,
+		ImGuiDebugger& imGuiDebugger_
+	);
 
 	void InstantiateImguiDebugger
 	(
@@ -15,8 +22,21 @@ public:
 		DescriptorHeapContextDiplomat& descriptorHeapContextDip_
 	);
 
+	void BeginImGuiNewFrame
+	(
+		NexusFieldProof proof_
+	);
+
+	void RenderImGui
+	(
+		RenderContextProof proof_,
+		CommandContextDiplomat& commandContextDiplomat_
+	);
+
 private:
 
 	DebugContext& debugContext;
+	ImGuiDebugger& imGuiDebugger;
+
 };
 

@@ -65,6 +65,13 @@ void DebugContext::ImGuiDebugger::SetUpper::InitializeImGui
 		imguiHandle.gpu
 	);
 
+	ImGui::GetIO().ConfigFlags |= ImGuiConfigFlags_DockingEnable;
+
+	ImGui::PushStyleColor(ImGuiCol_TitleBgActive, ImVec4(0.5f, 0.5f, 0.1f, 1.0f));
+
+	ImGui::PushStyleColor(ImGuiCol_TitleBg, ImVec4(0.1f, 0.1f, 0.1f, 1.0f));
+
+
 	Logger::Log("Complete ImGui Initializing", "ImGuiSetUpper.cpp");
 
 #endif
