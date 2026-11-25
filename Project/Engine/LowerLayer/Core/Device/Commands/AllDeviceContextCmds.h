@@ -6,4 +6,6 @@
 #include "CreatePSO/CommandCreatePSO.h"
 #include "CreateRootSignature/CommandCreateRootSignature.h"
 #include "PrepareUpload/CommandPrepareUpload.h"
-
+#include "InitImGui/InitImGui.h"
+#include "CreateFenceObject/CommandCreateFenceObject.h"
+#include "StructureCommandContext/CommandStructureCommandContext.h"

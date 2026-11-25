@@ -1,7 +1,7 @@
 #pragma once
 #include "../DebugContext.h"
 
-class DebugContext::RuntimeDebugger
+class DebugContext::PrimaryDebugger
 {
 	class DebugLayer;
 	class PointerValidator;
@@ -9,8 +9,8 @@ class DebugContext::RuntimeDebugger
 
 public:
 
-	RuntimeDebugger(NexusFieldProof proof_);
-	~RuntimeDebugger();
+	PrimaryDebugger(NexusFieldProof proof_);
+	~PrimaryDebugger();
 
 private:
 

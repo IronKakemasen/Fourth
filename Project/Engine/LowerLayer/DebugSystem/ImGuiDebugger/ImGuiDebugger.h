@@ -22,4 +22,3 @@ private:
 
 };
 
-//hWnd device,srvFormat,srvDescriptor,handle

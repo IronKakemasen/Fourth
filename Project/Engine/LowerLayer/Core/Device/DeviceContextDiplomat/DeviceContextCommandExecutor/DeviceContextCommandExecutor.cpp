@@ -1,10 +1,8 @@
-
 #include "DeviceContextCommandExecutor.h"
-#include "../../Commands/DeviceContextCommandBehavior.h"
-
+#include "DeviceCmdExecutorLicences.h"
 //コマンド群
-#include "../../Commands/StructureCommandContext/CommandStructureCommandContext.h"
-#include "../../Commands/CreateFenceObject/CommandCreateFenceObject.h"
+#include "../../Commands/AllDeviceContextCmds.h"
+
 
 
 using namespace  ProjectConfig::Render;
@@ -48,7 +46,7 @@ UINT DeviceContext::CommandExecutor::CalcDescriptorHandleIncrementSize(D3D12_DES
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-[[nodiscard]] Microsoft::WRL::ComPtr<ID3D12Fence> DeviceContext::CommandExecutor::CreateFence(CommandContext::NexusFieldProof  proof_)
+[[nodiscard]] Microsoft::WRL::ComPtr<ID3D12Fence> DeviceContext::CommandExecutor::CreateFence(CommandContextProof proof_)
 {
 	Microsoft::WRL::ComPtr<ID3D12Fence> fence;
 	auto* device = deviceGetter(DeviceContext::AccessKey{});
@@ -62,13 +60,13 @@ UINT DeviceContext::CommandExecutor::CalcDescriptorHandleIncrementSize(D3D12_DES
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 [[nodiscard]] CommandContextCorePartsRuntime
-DeviceContext::CommandExecutor::CreateCommandContextCorePartsForRuntime(CommandContext::NexusFieldProof proof_)
+DeviceContext::CommandExecutor::CreateCommandContextCorePartsForRuntime(CommandContextProof proof_)
 {
 	//ランタイム用なので万能型
 	auto const cmdListType = D3D12_COMMAND_LIST_TYPE_DIRECT;
 
 	//コアパーツ生成ツール
-	CommandStructureCommandContext tool(DeviceContext::GenerateKey{});
+	CommandStructureCommandContext cmd(DeviceContext::GenerateKey{});
 	auto* device = deviceGetter(DeviceContext::AccessKey{});
 
 	Microsoft::WRL::ComPtr<ID3D12CommandQueue> cmdQueue;
@@ -77,28 +75,28 @@ DeviceContext::CommandExecutor::CreateCommandContextCorePartsForRuntime(CommandC
 
 	//生成
 	{
-		cmdQueue = tool.CreateCommandQueue(device, cmdListType);
+		cmdQueue = cmd.CreateCommandQueue(device, cmdListType);
 
 		for (int i = 0;i < (UINT)NumBuffer::kDoubleBuffer;++i)
 		{
-			cmdAllocators.at(i) = tool.CreateCommandAllocator(device, cmdListType);
+			cmdAllocators.at(i) = cmd.CreateCommandAllocator(device, cmdListType);
 		}
 
-		cmdList = tool.CreateCommandList(device, cmdAllocators.at(0).Get(), cmdListType);
+		cmdList = cmd.CreateCommandList(device, cmdAllocators.at(0).Get(), cmdListType);
 	}
 
 	return std::make_tuple(cmdQueue, cmdAllocators, cmdList);
 }
 
 [[nodiscard]] CommandContextCorePartsUpload
-DeviceContext::CommandExecutor::CreateCommandContextCorePartsForUpload(CommandContext::NexusFieldProof proof_)
+DeviceContext::CommandExecutor::CreateCommandContextCorePartsForUpload(CommandContextProof proof_)
 {
 	//コマンドリストのタイプはアップロードしかしないのでコピーだけでいいんだけど、
 	//ちょいめんどいのでいったん
 	auto const cmdListType = D3D12_COMMAND_LIST_TYPE_DIRECT;
 
 	//コアパーツ生成ツール
-	CommandStructureCommandContext tool(DeviceContext::GenerateKey{});
+	CommandStructureCommandContext cmd(DeviceContext::GenerateKey{});
 	auto* device = deviceGetter(DeviceContext::AccessKey{});
 
 	Microsoft::WRL::ComPtr<ID3D12CommandAllocator> cmdAllocator;
@@ -106,8 +104,8 @@ DeviceContext::CommandExecutor::CreateCommandContextCorePartsForUpload(CommandCo
 
 	//生成
 	{
-		cmdAllocator = tool.CreateCommandAllocator(device, cmdListType);
-		cmdList = tool.CreateCommandList(device, cmdAllocator.Get(), cmdListType);
+		cmdAllocator = cmd.CreateCommandAllocator(device, cmdListType);
+		cmdList = cmd.CreateCommandList(device, cmdAllocator.Get(), cmdListType);
 	}
 
 	return std::make_tuple(cmdAllocator, cmdList);
@@ -116,3 +114,25 @@ DeviceContext::CommandExecutor::CreateCommandContextCorePartsForUpload(CommandCo
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+void DeviceContext::CommandExecutor::CallImGuiInit
+(
+	DebugContextProof proof_,
+	DXGI_FORMAT format_,
+	ID3D12DescriptorHeap* srvUavDescriptorHeap_,
+	D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle_,
+	D3D12_GPU_DESCRIPTOR_HANDLE gpuHandle_
+)
+{
+	//デバイスを借りる
+	auto* device = deviceGetter(DeviceContext::AccessKey{});
+	InitImGui cmd(DeviceContext::GenerateKey{});
+
+	cmd.ImplDX12Init
+	(
+		device, 
+		format_, 
+		srvUavDescriptorHeap_, 
+		cpuHandle_, 
+		gpuHandle_
+	);
+}

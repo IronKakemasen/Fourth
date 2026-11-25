@@ -13,5 +13,9 @@ class DebugContext::ImGuiDebugger::SetUpper
 		DescriptorHeapContextDiplomat& descriptorHeapContextDip_
 	);
 
+private:
+
+	static constexpr DXGI_FORMAT kImGuiRtvformat = DXGI_FORMAT_R8G8B8A8_UNORM;
+
 };
 

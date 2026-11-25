@@ -5341,6 +5341,7 @@ namespace CommandContextCmds
 //外部
 #include "../../Device/DeviceContextDiplomat/DeviceContextDiplomat.h"
 #include "../../Device/DeviceContextDiplomat/DeviceContextCommandExecutor/DeviceContextCommandExecutor.h"
+#include "../../Device/DeviceContextDiplomat/DeviceContextCommandExecutor/DeviceCmdExecutorLicences.h"
 namespace
 {
 	auto fileName = "CommandContextBuilder.cpp";
@@ -5356,13 +5357,13 @@ CommandContext::Builder::Output CommandContext::Builder::CreateCoreParts
 	//deviceContextのCmdExecutorにアクセス
 	auto& cmdExecutor = deviceContextDiplomat_.Access<DeviceContext::CommandExecutor>();
 	//フェンス作成
-	output.fence = std::move(cmdExecutor.CreateFence(proof_));
+	output.fence = std::move(cmdExecutor.CreateFence(DeviceContext::CommandExecutor::CommandContextProof{}));
 	//フェンスイベント作成
 	output.fenceEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
 	ErrorMessageOutput::Assert::DetectError((output.fenceEvent != nullptr), "フェンスイベント作成失敗", fileName);
 	Logger::Log("Create: FenceEvent", fileName);
 	//コアパーツ作成
-	auto [cmdQueue, cmdAllocators, cmdList] = cmdExecutor.CreateCommandContextCorePartsForRuntime(proof_);
+	auto [cmdQueue, cmdAllocators, cmdList] = cmdExecutor.CreateCommandContextCorePartsForRuntime(DeviceContext::CommandExecutor::CommandContextProof{});
 	output.commandQueue = std::move(cmdQueue);
 	output.commandAllocators = std::move(cmdAllocators);
 	output.commandList = std::move(cmdList);
@@ -5677,6 +5678,7 @@ struct CommandContext::ToolLender::CmdTypeTraits<RuntimeWrapper>
 //外部
 #include "../../Device/DeviceContextDiplomat/DeviceContextDiplomat.h"
 #include "../../Device/DeviceContextDiplomat/DeviceContextCommandExecutor/DeviceContextCommandExecutor.h"
+#include "../../Device/DeviceContextDiplomat/DeviceContextCommandExecutor/DeviceCmdExecutorLicences.h"
 namespace
 {
 	auto fileName = "ResourceUploader.cpp";
@@ -5691,7 +5693,8 @@ CommandContext::ResourceUploader::ResourceUploader
 {
 	auto& cmdExecutor = deviceContextDiplomat_.Access<DeviceContext::CommandExecutor>();
 	//リソースアップロード用
-	auto [allocator_forUpload, cmdList_forUpload] = cmdExecutor.CreateCommandContextCorePartsForUpload(proof_);
+	auto [allocator_forUpload, cmdList_forUpload] = 
+		cmdExecutor.CreateCommandContextCorePartsForUpload(DeviceContext::CommandExecutor::CommandContextProof{});
 	allocator = std::move(allocator_forUpload);
 	commandList = std::move(cmdList_forUpload);
 	//最初開いてるから閉じておく
@@ -7027,6 +7030,9 @@ namespace DeviceContextCmds
 #include "CreatePSO/CommandCreatePSO.h"
 #include "CreateRootSignature/CommandCreateRootSignature.h"
 #include "PrepareUpload/CommandPrepareUpload.h"
+#include "InitImGui/InitImGui.h"
+#include "CreateFenceObject/CommandCreateFenceObject.h"
+#include "StructureCommandContext/CommandStructureCommandContext.h"
 
 ========================================
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Core\Device\Commands\DeviceContextCommandBehavior.cpp ===
@@ -7328,6 +7334,57 @@ template<>
 void CommandCreateView::CreateView(ID3D12Device8* device_, ID3D12Resource* resource_, const D3D12_DEPTH_STENCIL_VIEW_DESC* desc_, D3D12_CPU_DESCRIPTOR_HANDLE descriptorHandleCPU_);
 
 ========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Core\Device\Commands\InitImGui\InitImGui.cpp ===
+========================================
+#include "PreCompileHeader.h"
+#include "InitImGui.h"
+#include "../../../../DebugSystem/ImGuiDebugger/ImGuiInclude.h"
+InitImGui::InitImGui(DeviceContext::GenerateKey generateKey_)
+	:DeviceContextCommandBehavior(generateKey_)
+{
+}
+void InitImGui::ImplDX12Init
+(
+	ID3D12Device8* device_,
+	DXGI_FORMAT format_,
+	ID3D12DescriptorHeap* srvUavDescriptorHeap_,
+	D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle_,
+	D3D12_GPU_DESCRIPTOR_HANDLE gpuHandle_
+)
+{
+#ifndef NDEBUG
+	ImGui_ImplDX12_Init
+	(
+		device_,
+		(UINT)ProjectConfig::Render::NumBuffer::kDoubleBuffer,
+		format_,
+		srvUavDescriptorHeap_,
+		cpuHandle_,
+		gpuHandle_
+	);
+#endif // !NDEBUG
+}
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Core\Device\Commands\InitImGui\InitImGui.h ===
+========================================
+#pragma once
+#include "../DeviceContextCommandBehavior.h"
+struct InitImGui : public DeviceContextCommandBehavior
+{
+	//DeviceContext::CommandProviderクラスのみ生成可能
+	InitImGui(DeviceContext::GenerateKey generateKey_);
+	void ImplDX12Init
+	(
+		ID3D12Device8* device_,
+		DXGI_FORMAT format_,
+		ID3D12DescriptorHeap* srvUavDescriptorHeap_,
+		D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle_,
+		D3D12_GPU_DESCRIPTOR_HANDLE gpuHandle_
+	);
+};
+
+========================================
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Core\Device\Commands\PrepareUpload\CommandPrepareUpload.cpp ===
 ========================================
 #include "PreCompileHeader.h"
@@ -7563,13 +7620,32 @@ private:
 };
 
 ========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Core\Device\DeviceContextDiplomat\DeviceContextCommandExecutor\DeviceCmdExecutorLicences.h ===
+========================================
+#pragma once
+#include "DeviceContextCommandExecutor.h"
+class CommandContext;
+class DebugContext;
+struct DeviceContext::CommandExecutor::CommandContextProof
+{
+private:
+	friend class CommandContext;
+	explicit CommandContextProof() = default;
+};
+struct DeviceContext::CommandExecutor::DebugContextProof
+{
+private:
+	friend class DebugContext;
+	explicit DebugContextProof() = default;
+};
+
+========================================
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Core\Device\DeviceContextDiplomat\DeviceContextCommandExecutor\DeviceContextCommandExecutor.cpp ===
 ========================================
 #include "DeviceContextCommandExecutor.h"
-#include "../../Commands/DeviceContextCommandBehavior.h"
+#include "DeviceCmdExecutorLicences.h"
 //コマンド群
-#include "../../Commands/StructureCommandContext/CommandStructureCommandContext.h"
-#include "../../Commands/CreateFenceObject/CommandCreateFenceObject.h"
+#include "../../Commands/AllDeviceContextCmds.h"
 using namespace  ProjectConfig::Render;
 using CommandContextCorePartsRuntime =
 std::tuple
@@ -7605,7 +7681,7 @@ UINT DeviceContext::CommandExecutor::CalcDescriptorHandleIncrementSize(D3D12_DES
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-[[nodiscard]] Microsoft::WRL::ComPtr<ID3D12Fence> DeviceContext::CommandExecutor::CreateFence(CommandContext::NexusFieldProof  proof_)
+[[nodiscard]] Microsoft::WRL::ComPtr<ID3D12Fence> DeviceContext::CommandExecutor::CreateFence(CommandContextProof proof_)
 {
 	Microsoft::WRL::ComPtr<ID3D12Fence> fence;
 	auto* device = deviceGetter(DeviceContext::AccessKey{});
@@ -7617,60 +7693,82 @@ UINT DeviceContext::CommandExecutor::CalcDescriptorHandleIncrementSize(D3D12_DES
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 [[nodiscard]] CommandContextCorePartsRuntime
-DeviceContext::CommandExecutor::CreateCommandContextCorePartsForRuntime(CommandContext::NexusFieldProof proof_)
+DeviceContext::CommandExecutor::CreateCommandContextCorePartsForRuntime(CommandContextProof proof_)
 {
 	//ランタイム用なので万能型
 	auto const cmdListType = D3D12_COMMAND_LIST_TYPE_DIRECT;
 	//コアパーツ生成ツール
-	CommandStructureCommandContext tool(DeviceContext::GenerateKey{});
+	CommandStructureCommandContext cmd(DeviceContext::GenerateKey{});
 	auto* device = deviceGetter(DeviceContext::AccessKey{});
 	Microsoft::WRL::ComPtr<ID3D12CommandQueue> cmdQueue;
 	std::array < Microsoft::WRL::ComPtr<ID3D12CommandAllocator>, (UINT)NumBuffer::kDoubleBuffer > cmdAllocators;
 	Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList6> cmdList;
 	//生成
 	{
-		cmdQueue = tool.CreateCommandQueue(device, cmdListType);
+		cmdQueue = cmd.CreateCommandQueue(device, cmdListType);
 		for (int i = 0;i < (UINT)NumBuffer::kDoubleBuffer;++i)
 		{
-			cmdAllocators.at(i) = tool.CreateCommandAllocator(device, cmdListType);
+			cmdAllocators.at(i) = cmd.CreateCommandAllocator(device, cmdListType);
 		}
-		cmdList = tool.CreateCommandList(device, cmdAllocators.at(0).Get(), cmdListType);
+		cmdList = cmd.CreateCommandList(device, cmdAllocators.at(0).Get(), cmdListType);
 	}
 	return std::make_tuple(cmdQueue, cmdAllocators, cmdList);
 }
 [[nodiscard]] CommandContextCorePartsUpload
-DeviceContext::CommandExecutor::CreateCommandContextCorePartsForUpload(CommandContext::NexusFieldProof proof_)
+DeviceContext::CommandExecutor::CreateCommandContextCorePartsForUpload(CommandContextProof proof_)
 {
 	//コマンドリストのタイプはアップロードしかしないのでコピーだけでいいんだけど、
 	//ちょいめんどいのでいったん
 	auto const cmdListType = D3D12_COMMAND_LIST_TYPE_DIRECT;
 	//コアパーツ生成ツール
-	CommandStructureCommandContext tool(DeviceContext::GenerateKey{});
+	CommandStructureCommandContext cmd(DeviceContext::GenerateKey{});
 	auto* device = deviceGetter(DeviceContext::AccessKey{});
 	Microsoft::WRL::ComPtr<ID3D12CommandAllocator> cmdAllocator;
 	Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList6> cmdList;
 	//生成
 	{
-		cmdAllocator = tool.CreateCommandAllocator(device, cmdListType);
-		cmdList = tool.CreateCommandList(device, cmdAllocator.Get(), cmdListType);
+		cmdAllocator = cmd.CreateCommandAllocator(device, cmdListType);
+		cmdList = cmd.CreateCommandList(device, cmdAllocator.Get(), cmdListType);
 	}
 	return std::make_tuple(cmdAllocator, cmdList);
 }
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+void DeviceContext::CommandExecutor::CallImGuiInit
+(
+	DebugContextProof proof_,
+	DXGI_FORMAT format_,
+	ID3D12DescriptorHeap* srvUavDescriptorHeap_,
+	D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle_,
+	D3D12_GPU_DESCRIPTOR_HANDLE gpuHandle_
+)
+{
+	//デバイスを借りる
+	auto* device = deviceGetter(DeviceContext::AccessKey{});
+	InitImGui cmd(DeviceContext::GenerateKey{});
+	cmd.ImplDX12Init
+	(
+		device, 
+		format_, 
+		srvUavDescriptorHeap_, 
+		cpuHandle_, 
+		gpuHandle_
+	);
+}
 
 ========================================
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Core\Device\DeviceContextDiplomat\DeviceContextCommandExecutor\DeviceContextCommandExecutor.h ===
 ========================================
 #pragma once
 #include "../../DeviceContext.h"
-#include "../../../Command/CommandContext.h"
 class DeviceContextCommandBehavior;
 //コマンドを実行するクラス
 class DeviceContext::CommandExecutor
 {
 public:
+	struct CommandContextProof;
+	struct DebugContextProof;
 	CommandExecutor
 	(
 		NexusFieldProof proof_,
@@ -7679,7 +7777,7 @@ public:
 	//DescriptorHeapのハンドルインクリメントサイズを返す関数
 	UINT CalcDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE type_);
 	//フェンス生成
-	[[nodiscard]] Microsoft::WRL::ComPtr<ID3D12Fence> CreateFence(CommandContext::NexusFieldProof proof_);
+	[[nodiscard]] Microsoft::WRL::ComPtr<ID3D12Fence> CreateFence(CommandContextProof proof_);
 	//CommandContextのコアパーツ生成.ランタイム用
 	[[nodiscard]] std::tuple
 	<
@@ -7687,10 +7785,19 @@ public:
 		std::array<Microsoft::WRL::ComPtr<ID3D12CommandAllocator>, (UINT)ProjectConfig::Render::NumBuffer::kDoubleBuffer>,
 		Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList6>
 	>
-	CreateCommandContextCorePartsForRuntime(CommandContext::NexusFieldProof proof_);
+	CreateCommandContextCorePartsForRuntime(CommandContextProof proof_);
 	//リソースアップロード用
 	[[nodiscard]] std::tuple<Microsoft::WRL::ComPtr<ID3D12CommandAllocator>, Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList6>>
-	CreateCommandContextCorePartsForUpload(CommandContext::NexusFieldProof proof_);
+	CreateCommandContextCorePartsForUpload(CommandContextProof proof_);
+	//IMGuiの初期化関数を呼ぶ
+	void CallImGuiInit
+	(
+		DebugContextProof proof_,
+		DXGI_FORMAT format_,
+		ID3D12DescriptorHeap* srvUavDescriptorHeap_,
+		D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle_,
+		D3D12_GPU_DESCRIPTOR_HANDLE gpuHandle_
+	);
 private:
 	//デバイスコンテキストのコアパーツにアクセスする関数
 	std::function< ID3D12Device8* (DeviceContext::AccessKey)> deviceGetter;
@@ -9193,9 +9300,11 @@ struct WindowContext::ToolLender::ToolTypeTraits<HWND>
 #pragma once
 #include "WindowContextToolLender.h"
 class SwapChainContext;
+class DebugContext;
 struct WindowContext::ToolLender::UsesHWNDLicence
 {
 private:
+	friend class DebugContext;
 	friend class SwapChainContext;
 	explicit UsesHWNDLicence() = default;
 };
@@ -9243,8 +9352,10 @@ class WindowContext::WindowProcedure
 ========================================
 #include "PreCompileHeader.h"
 #include "DebugContext.h"
-#include "RuntimeDebugger/RuntimeDebugger.h"
+#include "PrimaryDebugger/PrimaryDebugger.h"
 #include "ImGuiDebugger/ImGuiDebugger.h"
+#include "DebugContextDiplomat/DebugContextDiplomat.h"
+#include "DebugContextDiplomat/DebugExecutionAgent/DebugExecutionAgent.h"
 namespace
 {
 	auto const fileName = "DebugContext.cpp";
@@ -9256,9 +9367,16 @@ DebugContext::DebugContext
 {
 	Logger::Entry("DebugContext: Constructor");
 #ifdef _DEBUG
-	runtimeDebugger = std::make_unique<RuntimeDebugger>(proof_);
-	Logger::Log("Instantiate: RuntimeDebugger", fileName);
+	primaryDebugger = std::make_unique<PrimaryDebugger>(proof_);
+	Logger::Log("Instantiate: PrimaryDebugger", fileName);
 #endif // DEBUG
+	diplomat = std::make_unique<DebugContextDiplomat>
+	(
+		proof_,
+		std::make_unique<ExecutionAgent>(proof_, *this)
+	);
+	Logger::End("DebugContext: DebugContextDiplomat");
+	Logger::End("DebugContext: ExecutionAgent");
 	Logger::End("DebugContext: Constructor");
 }
 void DebugContext::InstantiateImguiDebugger
@@ -9315,10 +9433,10 @@ public:
 	);
 	auto& AccessDiplomat() { return *diplomat; }
 private:
-	class RuntimeDebugger;
+	class PrimaryDebugger;
 	std::unique_ptr<ImGuiDebugger> imGuiDebugger;
-	std::unique_ptr<RuntimeDebugger> runtimeDebugger;
-	std::unique_ptr<DescriptorHeapContextDiplomat> diplomat;
+	std::unique_ptr<PrimaryDebugger> primaryDebugger;
+	std::unique_ptr<DebugContextDiplomat> diplomat;
 };
 struct DebugContext::NexusFieldProof
 {
@@ -9364,6 +9482,7 @@ public:
 		DebugContext::NexusFieldProof proof_,
 		std::unique_ptr<DebugContext::ExecutionAgent>&& executionAgent_
 	);
+	~DebugContextDiplomat();
 	template<typename ToolType>
 	auto& Access()
 	{
@@ -9385,6 +9504,23 @@ DebugContext::ExecutionAgent::ExecutionAgent(NexusFieldProof proof_, DebugContex
 	:debugContext(debugContext_)
 {
 }
+void DebugContext::ExecutionAgent::InstantiateImguiDebugger
+(
+	NexusFieldProof proof_,
+	WindowContextDiplomat& windowContextDip_,
+	DeviceContextDiplomat& deviceContextDip_,
+	DescriptorHeapContextDiplomat& descriptorHeapContextDip_
+)
+{
+	debugContext.InstantiateImguiDebugger
+	(
+		proof_,
+		AgentKey{},
+		windowContextDip_,
+		deviceContextDip_,
+		descriptorHeapContextDip_
+	);
+}
 
 ========================================
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\DebugSystem\DebugContextDiplomat\DebugExecutionAgent\DebugExecutionAgent.h ===
@@ -9395,7 +9531,15 @@ class DebugContext::ExecutionAgent
 {
 public:
 	ExecutionAgent(NexusFieldProof proof_, DebugContext& debugContext_);
+	void InstantiateImguiDebugger
+	(
+		NexusFieldProof proof_,
+		WindowContextDiplomat& windowContextDip_,
+		DeviceContextDiplomat& deviceContextDip_,
+		DescriptorHeapContextDiplomat& descriptorHeapContextDip_
+	);
 private:
+	DebugContext& debugContext;
 };
 
 ========================================
@@ -9484,7 +9628,6 @@ public:
 	);
 private:
 };
-//hWnd device,srvFormat,srvDescriptor,handle
 
 ========================================
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\DebugSystem\ImGuiDebugger\ImGuiInclude.h ===
@@ -9503,6 +9646,13 @@ private:
 #include "PreCompileHeader.h"
 #include "ImGuiSetUpper.h"
 #include "../ImGuiInclude.h"
+//外部
+#include "../../../Core/Window/WindowContextDiplomat/WindowContextDiplomat.h"
+#include "../../../Core/Window/WindowContextDiplomat/WindowContextToolLender/WindowContextToolLender.h"
+#include "../../../Core/Window/WindowContextDiplomat/WindowContextToolLender/WindowContextToolLenderLicences.h"
+#include "../../../Core/Device/DeviceContextDiplomat/DeviceContextDiplomat.h"
+#include "../../../Core/Device/DeviceContextDiplomat/DeviceContextCommandExecutor/DeviceContextCommandExecutor.h"
+#include "../../../Core/Device/DeviceContextDiplomat/DeviceContextCommandExecutor/DeviceCmdExecutorLicences.h"
 void DebugContext::ImGuiDebugger::SetUpper::InitializeImGui
 (
 	NexusFieldProof proof_,
@@ -9512,9 +9662,21 @@ void DebugContext::ImGuiDebugger::SetUpper::InitializeImGui
 )
 {
 #ifndef NDEBUG
-	//IMGUI_CHECKVERSION();
-	//ImGui::CreateContext();
-	//ImGui::StyleColorsClassic();
+	//ウィンドウのハンドルを借りる
+	auto& windowHandle = windowContextDip_.Access<WindowContext::ToolLender>().
+		Lend<HWND>(WindowContext::ToolLender::LicenceType<HWND>{});
+	IMGUI_CHECKVERSION();
+	ImGui::CreateContext();
+	ImGui::StyleColorsClassic();
+	ImGui_ImplWin32_Init(windowHandle);
+	//deviceが必要なImGui初期化関数を呼んでもらう
+	//auto& deviceAgent = deviceContextDip_.Access<DeviceContext::CommandExecutor>().
+	//	CallImGuiInit
+	//	(
+	//		DeviceContext::CommandExecutor::DebugContextProof{},
+	//		kImGuiRtvformat,
+	//	)
+	//srvFormat,srvDescriptor,handle
 #endif
 }
 
@@ -9533,6 +9695,8 @@ class DebugContext::ImGuiDebugger::SetUpper
 		DeviceContextDiplomat& deviceContextDip_,
 		DescriptorHeapContextDiplomat& descriptorHeapContextDip_
 	);
+private:
+	static constexpr DXGI_FORMAT kImGuiRtvformat = DXGI_FORMAT_R8G8B8A8_UNORM;
 };
 
 ========================================
@@ -9638,20 +9802,20 @@ public:
 };
 
 ========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\DebugSystem\RuntimeDebugger\RuntimeDebugger.cpp ===
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\DebugSystem\PrimaryDebugger\PrimaryDebugger.cpp ===
 ========================================
-#include "RuntimeDebugger.h"
+#include "PrimaryDebugger.h"
 #include "DebugSystems/DebugLayer/DebugLayer.h"
 #include "DebugSystems/PointerValidator/PointerValidator.h"
 #include "DebugSystems/LeakChecker/LeakChecker.h"
-DebugContext::RuntimeDebugger::RuntimeDebugger(NexusFieldProof proof_)
+DebugContext::PrimaryDebugger::PrimaryDebugger(NexusFieldProof proof_)
 {
 	using namespace ProjectConfig::Debug;
 	if (kEnableDebugLayer) debugLayer = std::make_unique<DebugLayer>(proof_);
 	if (kEnablePointerValidator) pointerValidator = std::make_unique<PointerValidator>(proof_);
 	if (kEnableLeakChecker) leakChecker = std::make_unique<LeakChecker>(proof_);
 }
-DebugContext::RuntimeDebugger::~RuntimeDebugger()
+DebugContext::PrimaryDebugger::~PrimaryDebugger()
 {
 }
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -9659,18 +9823,18 @@ DebugContext::RuntimeDebugger::~RuntimeDebugger()
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 ========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\DebugSystem\RuntimeDebugger\RuntimeDebugger.h ===
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\DebugSystem\PrimaryDebugger\PrimaryDebugger.h ===
 ========================================
 #pragma once
 #include "../DebugContext.h"
-class DebugContext::RuntimeDebugger
+class DebugContext::PrimaryDebugger
 {
 	class DebugLayer;
 	class PointerValidator;
 	class LeakChecker;
 public:
-	RuntimeDebugger(NexusFieldProof proof_);
-	~RuntimeDebugger();
+	PrimaryDebugger(NexusFieldProof proof_);
+	~PrimaryDebugger();
 private:
 	std::unique_ptr<DebugLayer> debugLayer;
 	std::unique_ptr<PointerValidator> pointerValidator;
@@ -9678,10 +9842,10 @@ private:
 };
 
 ========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\DebugSystem\RuntimeDebugger\DebugSystems\DebugLayer\DebugLayer.cpp ===
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\DebugSystem\PrimaryDebugger\DebugSystems\DebugLayer\DebugLayer.cpp ===
 ========================================
 #include "DebugLayer.h"
-DebugContext::RuntimeDebugger::DebugLayer::DebugLayer(NexusFieldProof proof_)
+DebugContext::PrimaryDebugger::DebugLayer::DebugLayer(NexusFieldProof proof_)
 {
 	if (SUCCEEDED(D3D12GetDebugInterface(IID_PPV_ARGS(&debugController))))
 	{
@@ -9691,11 +9855,11 @@ DebugContext::RuntimeDebugger::DebugLayer::DebugLayer(NexusFieldProof proof_)
 }
 
 ========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\DebugSystem\RuntimeDebugger\DebugSystems\DebugLayer\DebugLayer.h ===
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\DebugSystem\PrimaryDebugger\DebugSystems\DebugLayer\DebugLayer.h ===
 ========================================
 #pragma once
-#include "../../RuntimeDebugger.h"
-class DebugContext::RuntimeDebugger::DebugLayer
+#include "../../PrimaryDebugger.h"
+class DebugContext::PrimaryDebugger::DebugLayer
 {
 	Microsoft::WRL::ComPtr <ID3D12Debug1> debugController = nullptr;
 public:
@@ -9703,13 +9867,13 @@ public:
 };
 
 ========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\DebugSystem\RuntimeDebugger\DebugSystems\LeakChecker\LeakChecker.cpp ===
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\DebugSystem\PrimaryDebugger\DebugSystems\LeakChecker\LeakChecker.cpp ===
 ========================================
 #include "LeakChecker.h"
-DebugContext::RuntimeDebugger::LeakChecker::LeakChecker(NexusFieldProof proof_)
+DebugContext::PrimaryDebugger::LeakChecker::LeakChecker(NexusFieldProof proof_)
 {
 }
-DebugContext::RuntimeDebugger::LeakChecker::~LeakChecker()
+DebugContext::PrimaryDebugger::LeakChecker::~LeakChecker()
 {
 	//リソースリークチェック
 	Microsoft::WRL::ComPtr<IDXGIDebug1> debug = nullptr;
@@ -9722,11 +9886,11 @@ DebugContext::RuntimeDebugger::LeakChecker::~LeakChecker()
 }
 
 ========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\DebugSystem\RuntimeDebugger\DebugSystems\LeakChecker\LeakChecker.h ===
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\DebugSystem\PrimaryDebugger\DebugSystems\LeakChecker\LeakChecker.h ===
 ========================================
 #pragma once
-#include "../../RuntimeDebugger.h"
-class DebugContext::RuntimeDebugger::LeakChecker
+#include "../../PrimaryDebugger.h"
+class DebugContext::PrimaryDebugger::LeakChecker
 {
 public:
 	LeakChecker(NexusFieldProof proof_);
@@ -9736,10 +9900,10 @@ public:
 };
 
 ========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\DebugSystem\RuntimeDebugger\DebugSystems\PointerValidator\PointerValidator.cpp ===
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\DebugSystem\PrimaryDebugger\DebugSystems\PointerValidator\PointerValidator.cpp ===
 ========================================
 #include "PointerValidator.h"
-DebugContext::RuntimeDebugger::PointerValidator::PointerValidator(NexusFieldProof proof_)
+DebugContext::PrimaryDebugger::PointerValidator::PointerValidator(NexusFieldProof proof_)
 {
 	//＜ポインタ破壊などを検知するためのもの＞
 	_CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
@@ -9747,11 +9911,11 @@ DebugContext::RuntimeDebugger::PointerValidator::PointerValidator(NexusFieldProo
 }
 
 ========================================
-=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\DebugSystem\RuntimeDebugger\DebugSystems\PointerValidator\PointerValidator.h ===
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\DebugSystem\PrimaryDebugger\DebugSystems\PointerValidator\PointerValidator.h ===
 ========================================
 #pragma once
-#include "../../RuntimeDebugger.h"
-class DebugContext::RuntimeDebugger::PointerValidator
+#include "../../PrimaryDebugger.h"
+class DebugContext::PrimaryDebugger::PointerValidator
 {
 public:
 	PointerValidator(NexusFieldProof proof_);
@@ -19442,7 +19606,7 @@ void GameObjectContext::FrontlineSystems::GameObjController::ResetObjTransformFr
 	for (auto* obj : sortedObjContainer)
 	{
 		auto* trans = obj->GetSystemPtr<Transform>();
-		if (!trans) return;
+		if (!trans) continue;
 		//更新1フレームガードをリセット
 		trans->ResetFrameFlag();
 		//冒頭の減算でカウンタが2になるのは、今フレームで再計算されたときだけにする
@@ -19462,7 +19626,7 @@ void GameObjectContext::FrontlineSystems::GameObjController::UpdateAllGameObj
 		//ゲームオブジェクトの更新処理
 		obj->Update(runtimeInterface_);
 		auto* trans = obj->GetSystemPtr<Transform>();
-		if (!trans) return;
+		if (!trans) continue;
 		//ゲームオブジェクトのトランスフォームの更新
 		trans->Update();
 	}
@@ -25170,6 +25334,7 @@ void Nexus::PrimaryInit()
 void Nexus::SecondaryInit(aFourthProof proof_)
 {
 	InitializeInSequence<InitSequence::kRenderContext>();
+	InitializeInSequence<InitSequence::InstantiateImguiDebugger>();
 	InitializeInSequence<InitSequence::kUploadAllResources>();
 	InitializeInSequence<InitSequence::kKickCommands>();
 	InitializeInSequence<InitSequence::kDeleteBufferUploaderCache>();
@@ -25251,6 +25416,7 @@ private:
 		//ここまではNexusのコンストラクタ
 		//ここまでに、シーンの作成が完了してなければならない
 		kRenderContext,
+		InstantiateImguiDebugger,
 		kUploadAllResources,
 		kKickCommands,
 		kDeleteBufferUploaderCache,
@@ -25372,7 +25538,8 @@ void Nexus::Finalize<Nexus::FinalizeSequence::kWindowContext>()
 ========================================
 #include "Nexus.h"
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-#include "../LowerLayer/DebugSystem/DebugContext.h"
+#include "../LowerLayer/DebugSystem/DebugContextDiplomat/DebugContextDiplomat.h"
+#include "../LowerLayer/DebugSystem/DebugContextDiplomat/DebugExecutionAgent/DebugExecutionAgent.h"
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 #include "../LowerLayer/Core/Device/DeviceContext.h"
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -25382,13 +25549,11 @@ void Nexus::Finalize<Nexus::FinalizeSequence::kWindowContext>()
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 #include "../LowerLayer/Core/SwapChain/SwapChainContext.h"
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-#include "../LowerLayer/Core/Command/CommandContext.h"
 #include "../LowerLayer/Core/Command/CommandContextDiplomat/CommandContextDiplomat.h"
 #include "../LowerLayer/Core/Command/CommandContextDiplomat/CommandContextExecutionAgent/CommandContextExecutionAgent.h"
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 #include "../LowerLayer/Resource/Shader/ShaderContext.h"
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-#include "../LowerLayer/Buffer/BufferContext.h"
 #include "../LowerLayer/Buffer/BufferContextDiplomat/BufferContextDiplomat.h"
 #include "../LowerLayer/Buffer/BufferContextDiplomat/BufferContextExecutionAgent/BufferContextExecutionAgent.h"
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -25396,7 +25561,6 @@ void Nexus::Finalize<Nexus::FinalizeSequence::kWindowContext>()
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 #include "../LowerLayer/Resource/RootSignature/RootSignatureContext.h"
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-#include "../LowerLayer/Resource/Model/ModelContext.h"
 #include "../LowerLayer/Resource/Model/ModelContextDiplomat/ModelContextDiplomat.h"
 #include "../LowerLayer/Resource/Model/ModelContextDiplomat/ModelContextExecutionAgent/ModelContextExecutionAgent.h"
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -25414,6 +25578,7 @@ void Nexus::Finalize<Nexus::FinalizeSequence::kWindowContext>()
 #include "../MiddleLayer/Scene/SceneContext.h"
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 #include "../MiddleLayer/GameObject/GameObjectContext.h"
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 namespace
 {
 	std::string const fileName = "NexusInitialization.cpp";
@@ -25711,6 +25876,18 @@ void Nexus::Init<Nexus::InitSequence::kWriteMaterialIndexGroupsArrBuffer>()
 	auto& materialContextAgent = materialContext->AccessDiplomat().Access<MaterialContext::ExecutionAgent>();
 	materialContextAgent.WriteInMaterialIndexGroupsArrBuffer(MaterialContext::NexusFieldProof{}, bufferContext->AccessDiplomat());
 }
+template<>
+void Nexus::Init<Nexus::InitSequence::InstantiateImguiDebugger>()
+{
+	auto& agent = debugContext->AccessDiplomat().Access<DebugContext::ExecutionAgent>();
+	agent.InstantiateImguiDebugger
+	(
+		DebugContext::NexusFieldProof{},
+		windowContext->AccessDiplomat(),
+		deviceContext->AccessDiplomat(),
+		descriptorHeapContext->AccessDiplomat()
+	);
+}
 template
 void Nexus::Init<Nexus::InitSequence::kDebugContext>();
 template
@@ -25757,6 +25934,8 @@ template
 void Nexus::Init<Nexus::InitSequence::kMaterialContext>();
 template
 void Nexus::Init<Nexus::InitSequence::kWriteMaterialIndexGroupsArrBuffer>();
+template
+void Nexus::Init<Nexus::InitSequence::InstantiateImguiDebugger>();
 
 ========================================
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\Nexus\NexusRun.cpp ===
@@ -26797,5 +26976,5 @@ namespace StringProcessing
 ========================================
 === SUMMARY ===
 ========================================
-Total Files      : 590
-Effective Lines  : 19548
+Total Files      : 593
+Effective Lines  : 19687

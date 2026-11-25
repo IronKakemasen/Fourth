@@ -1,7 +1,7 @@
 #pragma once
-#include "../../RuntimeDebugger.h"
+#include "../../PrimaryDebugger.h"
 
-class DebugContext::RuntimeDebugger::LeakChecker
+class DebugContext::PrimaryDebugger::LeakChecker
 {
 public:
 

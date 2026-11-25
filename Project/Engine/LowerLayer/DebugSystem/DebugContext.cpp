@@ -1,6 +1,6 @@
 #include "PreCompileHeader.h"
 #include "DebugContext.h"
-#include "RuntimeDebugger/RuntimeDebugger.h"
+#include "PrimaryDebugger/PrimaryDebugger.h"
 #include "ImGuiDebugger/ImGuiDebugger.h"
 #include "DebugContextDiplomat/DebugContextDiplomat.h"
 #include "DebugContextDiplomat/DebugExecutionAgent/DebugExecutionAgent.h"
@@ -21,8 +21,8 @@ DebugContext::DebugContext
 
 #ifdef _DEBUG
 
-	runtimeDebugger = std::make_unique<RuntimeDebugger>(proof_);
-	Logger::Log("Instantiate: RuntimeDebugger", fileName);
+	primaryDebugger = std::make_unique<PrimaryDebugger>(proof_);
+	Logger::Log("Instantiate: PrimaryDebugger", fileName);
 
 #endif // DEBUG
 
