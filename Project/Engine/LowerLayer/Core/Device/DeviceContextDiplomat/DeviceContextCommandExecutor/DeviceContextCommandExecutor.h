@@ -1,6 +1,5 @@
 #pragma once
 #include "../../DeviceContext.h"
-#include "../../../Command/CommandContext.h"
 
 class DeviceContextCommandBehavior;
 
@@ -8,6 +7,9 @@ class DeviceContextCommandBehavior;
 class DeviceContext::CommandExecutor
 {
 public:
+
+	struct CommandContextProof;
+	struct DebugContextProof;
 
 	CommandExecutor
 	(
@@ -19,7 +21,7 @@ public:
 	UINT CalcDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE type_);
 
 	//フェンス生成
-	[[nodiscard]] Microsoft::WRL::ComPtr<ID3D12Fence> CreateFence(CommandContext::NexusFieldProof proof_);
+	[[nodiscard]] Microsoft::WRL::ComPtr<ID3D12Fence> CreateFence(CommandContextProof proof_);
 
 	//CommandContextのコアパーツ生成.ランタイム用
 	[[nodiscard]] std::tuple
@@ -28,12 +30,21 @@ public:
 		std::array<Microsoft::WRL::ComPtr<ID3D12CommandAllocator>, (UINT)ProjectConfig::Render::NumBuffer::kDoubleBuffer>,
 		Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList6>
 	>
-	CreateCommandContextCorePartsForRuntime(CommandContext::NexusFieldProof proof_);
+	CreateCommandContextCorePartsForRuntime(CommandContextProof proof_);
 
 	//リソースアップロード用
 	[[nodiscard]] std::tuple<Microsoft::WRL::ComPtr<ID3D12CommandAllocator>, Microsoft::WRL::ComPtr<ID3D12GraphicsCommandList6>>
-	CreateCommandContextCorePartsForUpload(CommandContext::NexusFieldProof proof_);
+	CreateCommandContextCorePartsForUpload(CommandContextProof proof_);
 
+	//IMGuiの初期化関数を呼ぶ
+	void CallImGuiInit
+	(
+		DebugContextProof proof_,
+		DXGI_FORMAT format_,
+		ID3D12DescriptorHeap* srvUavDescriptorHeap_,
+		D3D12_CPU_DESCRIPTOR_HANDLE cpuHandle_,
+		D3D12_GPU_DESCRIPTOR_HANDLE gpuHandle_
+	);
 
 private:
 

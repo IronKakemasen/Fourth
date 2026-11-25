@@ -1,8 +1,8 @@
 #pragma once
-#include "../../RuntimeDebugger.h"
+#include "../../PrimaryDebugger.h"
 
 
-class DebugContext::RuntimeDebugger::DebugLayer
+class DebugContext::PrimaryDebugger::DebugLayer
 {
 	Microsoft::WRL::ComPtr <ID3D12Debug1> debugController = nullptr;
 

@@ -1,7 +1,7 @@
 
 #include "PointerValidator.h"
 
-DebugContext::RuntimeDebugger::PointerValidator::PointerValidator(NexusFieldProof proof_)
+DebugContext::PrimaryDebugger::PointerValidator::PointerValidator(NexusFieldProof proof_)
 {
 	//＜ポインタ破壊などを検知するためのもの＞
 	_CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);

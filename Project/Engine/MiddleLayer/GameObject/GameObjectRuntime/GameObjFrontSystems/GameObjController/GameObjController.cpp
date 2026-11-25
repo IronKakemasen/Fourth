@@ -26,7 +26,7 @@ void GameObjectContext::FrontlineSystems::GameObjController::ResetObjTransformFr
 	for (auto* obj : sortedObjContainer)
 	{
 		auto* trans = obj->GetSystemPtr<Transform>();
-		if (!trans) return;
+		if (!trans) continue;
 
 		//更新1フレームガードをリセット
 		trans->ResetFrameFlag();
@@ -51,7 +51,7 @@ void GameObjectContext::FrontlineSystems::GameObjController::UpdateAllGameObj
 		obj->Update(runtimeInterface_);
 
 		auto* trans = obj->GetSystemPtr<Transform>();
-		if (!trans) return;
+		if (!trans) continue;
 
 		//ゲームオブジェクトのトランスフォームの更新
 		trans->Update();

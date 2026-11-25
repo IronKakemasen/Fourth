@@ -5,7 +5,7 @@
 //外部
 #include "../../Device/DeviceContextDiplomat/DeviceContextDiplomat.h"
 #include "../../Device/DeviceContextDiplomat/DeviceContextCommandExecutor/DeviceContextCommandExecutor.h"
-
+#include "../../Device/DeviceContextDiplomat/DeviceContextCommandExecutor/DeviceCmdExecutorLicences.h"
 
 namespace
 {
@@ -26,7 +26,7 @@ CommandContext::Builder::Output CommandContext::Builder::CreateCoreParts
 	auto& cmdExecutor = deviceContextDiplomat_.Access<DeviceContext::CommandExecutor>();
 
 	//フェンス作成
-	output.fence = std::move(cmdExecutor.CreateFence(proof_));
+	output.fence = std::move(cmdExecutor.CreateFence(DeviceContext::CommandExecutor::CommandContextProof{}));
 
 	//フェンスイベント作成
 	output.fenceEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
@@ -35,7 +35,7 @@ CommandContext::Builder::Output CommandContext::Builder::CreateCoreParts
 
 
 	//コアパーツ作成
-	auto [cmdQueue, cmdAllocators, cmdList] = cmdExecutor.CreateCommandContextCorePartsForRuntime(proof_);
+	auto [cmdQueue, cmdAllocators, cmdList] = cmdExecutor.CreateCommandContextCorePartsForRuntime(DeviceContext::CommandExecutor::CommandContextProof{});
 
 	output.commandQueue = std::move(cmdQueue);
 	output.commandAllocators = std::move(cmdAllocators);

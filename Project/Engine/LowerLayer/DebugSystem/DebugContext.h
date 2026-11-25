@@ -37,10 +37,10 @@ public:
 
 private:
 
-	class RuntimeDebugger;
+	class PrimaryDebugger;
 
 	std::unique_ptr<ImGuiDebugger> imGuiDebugger;
-	std::unique_ptr<RuntimeDebugger> runtimeDebugger;
+	std::unique_ptr<PrimaryDebugger> primaryDebugger;
 	std::unique_ptr<DebugContextDiplomat> diplomat;
 };
 

@@ -1,9 +1,9 @@
-#include "RuntimeDebugger.h"
+#include "PrimaryDebugger.h"
 #include "DebugSystems/DebugLayer/DebugLayer.h"
 #include "DebugSystems/PointerValidator/PointerValidator.h"
 #include "DebugSystems/LeakChecker/LeakChecker.h"
 
-DebugContext::RuntimeDebugger::RuntimeDebugger(NexusFieldProof proof_)
+DebugContext::PrimaryDebugger::PrimaryDebugger(NexusFieldProof proof_)
 {
 	using namespace ProjectConfig::Debug;
 
@@ -13,7 +13,7 @@ DebugContext::RuntimeDebugger::RuntimeDebugger(NexusFieldProof proof_)
 
 }
 
-DebugContext::RuntimeDebugger::~RuntimeDebugger()
+DebugContext::PrimaryDebugger::~PrimaryDebugger()
 {
 
 }
