@@ -5,6 +5,8 @@ class WindowContextDiplomat;
 class DeviceContextDiplomat;
 class DescriptorHeapContextDiplomat;
 class DebugContextDiplomat;
+class CommandContextDiplomat;
+
 
 class DebugContext
 {

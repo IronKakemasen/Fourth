@@ -17,13 +17,14 @@ void RenderContext::StaticRenderGraph::Run
 	CommandContextDiplomat& commandContextDiplomat_,
 	BufferContextDiplomat& bufferContextDiplomat_,
 	SceneContextDiplomat& sceneContextDiplomat_,
-	SwapChainContextDiplomat& swapChainContextDiplomat_
+	SwapChainContextDiplomat& swapChainContextDiplomat_,
+	DebugContextDiplomat& debugContextDiplomat_
 )
 {
 	//runtimeCmdWrapperにアクセス
 	auto& cToolLender = commandContextDiplomat_.Access<CommandContext::ToolLender>();
 	CommandContext::ToolLender::LicenceType<RuntimeWrapper> cLicence;
-	auto& runtimeCmdWrapper = *cToolLender.Lend<RuntimeWrapper>(cLicence);
+	auto& runtimeCmdWrapper = cToolLender.Lend<RuntimeWrapper>(cLicence);
 
 	//共通の描画コマンドをたたく
 	commonCmdExecutor->ExecuteCommonCmds
@@ -44,7 +45,15 @@ void RenderContext::StaticRenderGraph::Run
 	);
 
 	//最終描画
-	finalRenderer->Update(frameIndex_, runtimeCmdWrapper, swapChainContextDiplomat_,bufferContextDiplomat_);
+	finalRenderer->RenderBackBuffer
+	(
+		frameIndex_, 
+		runtimeCmdWrapper, 
+		swapChainContextDiplomat_,
+		bufferContextDiplomat_,
+		debugContextDiplomat_,
+		commandContextDiplomat_
+	);
 
 }
 

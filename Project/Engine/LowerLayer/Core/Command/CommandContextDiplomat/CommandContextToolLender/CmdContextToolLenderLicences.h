@@ -4,7 +4,7 @@
 
 class SwapChainContext;
 class RenderContext;
-
+class DebugContext;
 
 struct CommandContext::ToolLender::AccessCommandQueueLicence
 {
@@ -21,5 +21,15 @@ private:
 	friend class RenderContext;
 	explicit UsesRuntimeCmdWrapperLicence() = default;
 };
+
+
+struct CommandContext::ToolLender::AccessCommandListLicence
+{
+private:
+
+	friend class DebugContext;
+	explicit AccessCommandListLicence() = default;
+};
+
 
 

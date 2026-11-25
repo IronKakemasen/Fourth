@@ -480,6 +480,8 @@
     <ClInclude Include="Application\AllGameObjectIncludes.h" />
     <ClInclude Include="Application\AllSceneIncludes.h" />
     <ClInclude Include="Engine\LowerLayer\Core\Device\DeviceContextDiplomat\DeviceContextCommandExecutor\DeviceCmdExecutorLicences.h" />
+    <ClInclude Include="Engine\LowerLayer\DebugSystem\DebugContextDiplomats.h" />
+    <ClInclude Include="Engine\LowerLayer\DebugSystem\DebugContextDiplomat\DebugExecutionAgent\DebugAgentLicences.h" />
     <ClInclude Include="Engine\LowerLayer\DebugSystem\DebugContextDiplomat\DebugExecutionAgent\DebugExecutionAgent.h" />
     <ClInclude Include="Engine\LowerLayer\DebugSystem\DebugContextDiplomat\DebugContextDiplomat.h" />
     <ClInclude Include="Engine\EngineInstanceLimiter.h" />

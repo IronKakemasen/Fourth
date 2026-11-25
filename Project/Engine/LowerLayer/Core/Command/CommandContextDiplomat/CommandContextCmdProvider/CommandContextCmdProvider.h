@@ -16,7 +16,7 @@ public:
 	template<typename CommandType>
 	using LicenceType = typename CmdTypeTraits<CommandType>::Type;
 
-	CommandProvider(NexusFieldProof proof_, CommandContext::ResourceUploader* resourceUploader_);
+	CommandProvider(NexusFieldProof proof_, ResourceUploader& resourceUploader_);
 
 	///コマンド提供
 	template<typename CommandType>
@@ -24,7 +24,7 @@ public:
 
 private:
 
-	CommandContext::ResourceUploader* resourceUploader;
+	ResourceUploader& resourceUploader;
 };
 
 

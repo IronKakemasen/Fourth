@@ -7,7 +7,6 @@
 
 LRESULT CALLBACK WindowContext::WindowProcedure::WndProc(HWND hWnd_, UINT msg_, WPARAM wParam_, LPARAM lParam_)
 {
-
 #ifndef NDEBUG
 
 	//ImGuiにメッセージを渡す

@@ -16,6 +16,9 @@
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 #include "../MiddleLayer/Render/RenderContextDiplomat/RenderContextDiplomat.h"
 #include "../MiddleLayer/Render/RenderContextDiplomat/RenderContextExecutionAgent/RenderContextExecutionAgent.h"
+///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+#include "../LowerLayer/DebugSystem/DebugContextDiplomat/DebugContextDiplomat.h"
+#include "../LowerLayer/DebugSystem/DebugContextDiplomat/DebugExecutionAgent/DebugExecutionAgent.h"
 
 
 
@@ -24,11 +27,18 @@ void Nexus::Run(aFourthProof proof_)
 	//SwapChainContextの代行クラス
 	auto& swap_ExecutionAgent = swapChainContext->AccessDiplomat().Access<SwapChainContext::ExecutionAgent>();
 	//CommandContextの代行クラス
-	auto& cmd_ExecutionAgent = commandContext->AccessDiplomat().Access<CommandContext::ExecutionAgent>();
+	auto& cmd_Diplomat = commandContext->AccessDiplomat();
+	auto& cmd_ExecutionAgent = cmd_Diplomat.Access<CommandContext::ExecutionAgent>();
 	//SceneContextの代行クラス
 	auto& scene_ExecutionAgent = sceneContext->AccessDiplomat().Access<SceneContext::ExecutionAgent>();
 	//RenderContextの代行クラス
 	auto& render_ExecutionAgent = renderContext->AccessDiplomat().Access<RenderContext::ExecutionAgent>();
+	//DebugContextの代行クラス
+	auto& debug_Diplomat = debugContext->AccessDiplomat();
+	auto& debug_ExecutionAgent = debug_Diplomat.Access<DebugContext::ExecutionAgent>();
+
+	//ImGuiのフレーム開始関数を呼ぶ
+	debug_ExecutionAgent.BeginImGuiNewFrame(DebugContext::NexusFieldProof{});
 
 	//シーンの更新処理
 	scene_ExecutionAgent.RunScenePipeline(SceneContext::NexusFieldProof{});
@@ -50,16 +60,17 @@ void Nexus::Run(aFourthProof proof_)
 		materialContext->AccessDiplomat()
 	);
 
-	//全ての描画コマンドはここに
+	//全ての描画コマンドはここに(ImGuiも)
 	render_ExecutionAgent.RenderGraphRun
 	(
 		RenderContext::NexusFieldProof{},
 		frameIndex,
 		descriptorHeapContext->AccessDiplomat(),
-		commandContext->AccessDiplomat(),
+		cmd_Diplomat,
 		bufferContext->AccessDiplomat(),
 		sceneContext->AccessDiplomat(),
-		swapChainContext->AccessDiplomat()
+		swapChainContext->AccessDiplomat(),
+		debug_Diplomat
 	);
 
 	//コマンドを送る

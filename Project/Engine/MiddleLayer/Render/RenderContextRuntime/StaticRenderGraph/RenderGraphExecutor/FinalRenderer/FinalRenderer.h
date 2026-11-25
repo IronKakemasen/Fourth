@@ -12,12 +12,14 @@ public:
 		BufferUniqueID finalRefBufferID
 	);
 
-	void Update
+	void RenderBackBuffer
 	(
 		UINT const frameIndex_,
 		RuntimeWrapper& runtimeWrapper_,
 		SwapChainContextDiplomat& swapChainContextDiplomat_,
-		BufferContextDiplomat& bufferContextDiplomat_
+		BufferContextDiplomat& bufferContextDiplomat_,
+		DebugContextDiplomat& debugContextDiplomat_,
+		CommandContextDiplomat& commandContextDiplomat_
 	);
 
 

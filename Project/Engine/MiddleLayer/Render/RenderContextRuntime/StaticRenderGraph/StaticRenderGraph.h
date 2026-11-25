@@ -8,6 +8,8 @@ class RuntimeWrapper;
 class DescriptorHeapContextDiplomat;
 class CommandContextDiplomat;
 class SceneContextDiplomat;
+class DebugContextDiplomat;
+
 
 class RenderContext::StaticRenderGraph
 {
@@ -52,7 +54,8 @@ public:
 		CommandContextDiplomat& commandContextDiplomat_,
 		BufferContextDiplomat& bufferContextDiplomat_,
 		SceneContextDiplomat& sceneContextDiplomat_,
-		SwapChainContextDiplomat& swapChainContextDiplomat_
+		SwapChainContextDiplomat& swapChainContextDiplomat_,
+		DebugContextDiplomat& debugContextDiplomat_
 	);
 
 private:

@@ -1,8 +1,14 @@
 #include "PreCompileHeader.h"
 #include "DebugExecutionAgent.h"
+#include "DebugAgentLicences.h"
+#include "../../ImGuiDebugger/ImGuiDebugger.h"
 
-DebugContext::ExecutionAgent::ExecutionAgent(NexusFieldProof proof_, DebugContext& debugContext_)
-	:debugContext(debugContext_)
+DebugContext::ExecutionAgent::ExecutionAgent
+(
+	NexusFieldProof proof_, 
+	DebugContext& debugContext_,
+	ImGuiDebugger& imGuiDebugger_
+):debugContext(debugContext_), imGuiDebugger(imGuiDebugger_)
 {
 
 }
@@ -24,4 +30,21 @@ void DebugContext::ExecutionAgent::InstantiateImguiDebugger
 		deviceContextDip_,
 		descriptorHeapContextDip_
 	);
+}
+
+void DebugContext::ExecutionAgent::BeginImGuiNewFrame
+(
+	NexusFieldProof proof_
+)
+{
+	imGuiDebugger.BeginNewFrame(proof_, AgentKey{});
+}
+
+void DebugContext::ExecutionAgent::RenderImGui
+(
+	RenderContextProof proof_,
+	CommandContextDiplomat& commandContextDiplomat_
+)
+{
+	imGuiDebugger.Render(AgentKey{}, commandContextDiplomat_);
 }

@@ -97,10 +97,11 @@ private:
 	enum class FinalizeSequence
 	{
 		kCommandContext,
-		kWindowContext
+		kWindowContext,
+		kImGuiFinalization,
 
 
-		, kEnd
+		kEnd
 	}nextFin = FinalizeSequence::kCommandContext;
 
 	//デバッガー。DebugLayer, PointerValidator, LeakChecker

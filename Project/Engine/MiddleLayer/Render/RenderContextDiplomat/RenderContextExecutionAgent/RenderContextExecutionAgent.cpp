@@ -20,7 +20,8 @@ void RenderContext::ExecutionAgent::RenderGraphRun
 	CommandContextDiplomat& commandContextDiplomat_,
 	BufferContextDiplomat& bufferContextDiplomat_,
 	SceneContextDiplomat& sceneContextDiplomat_,
-	SwapChainContextDiplomat& swapChainContextDiplomat_
+	SwapChainContextDiplomat& swapChainContextDiplomat_,
+	DebugContextDiplomat& debugContextDiplomat_
 )
 {
 	staticRenderGraph.Run
@@ -32,7 +33,8 @@ void RenderContext::ExecutionAgent::RenderGraphRun
 		commandContextDiplomat_,
 		bufferContextDiplomat_,
 		sceneContextDiplomat_,
-		swapChainContextDiplomat_
+		swapChainContextDiplomat_,
+		debugContextDiplomat_
 	);
 
 }
