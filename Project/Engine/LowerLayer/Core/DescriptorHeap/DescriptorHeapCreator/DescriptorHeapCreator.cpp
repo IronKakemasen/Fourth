@@ -35,21 +35,21 @@ DescriptorHeapContext::DescriptorHeapCreator::DescriptorHeapCreator
 	container_.Import<D3D12_DESCRIPTOR_HEAP_TYPE_RTV>
 	(
 		proof_,
-		std::move(Create<D3D12_DESCRIPTOR_HEAP_TYPE_RTV>(createDescriptorHeapCmd,kNumDescriptorsRTVHeap, false, rtvDHIncrementSize))
+		Create<D3D12_DESCRIPTOR_HEAP_TYPE_RTV>(createDescriptorHeapCmd,kNumDescriptorsRTVHeap, false, rtvDHIncrementSize)
 	);
 	Logger::Log("Create: DescriptorHeapRTV", fileName);
 
 	container_.Import<D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV>
 	(
 		proof_,
-		std::move(Create<D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV>(createDescriptorHeapCmd,kNumDescriptorSRVHeap, true, srvDHIncrementSize))
+		Create<D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV>(createDescriptorHeapCmd,kNumDescriptorSRVHeap, true, srvDHIncrementSize)
 	);
 	Logger::Log("Create: DescriptorHeapSRV", fileName);
 
 	container_.Import<D3D12_DESCRIPTOR_HEAP_TYPE_DSV>
 	(
 		proof_,
-		std::move(Create<D3D12_DESCRIPTOR_HEAP_TYPE_DSV>(createDescriptorHeapCmd,kNumDescriptorsDSVHeap, false, dsvDHIncrementSize))
+		Create<D3D12_DESCRIPTOR_HEAP_TYPE_DSV>(createDescriptorHeapCmd,kNumDescriptorsDSVHeap, false, dsvDHIncrementSize)
 	);
 	Logger::Log("Create: DescriptorHeapDSV", fileName);
 

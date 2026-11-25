@@ -12,6 +12,11 @@
 #include "../../../Core/Device/DeviceContextDiplomat/DeviceContextCommandExecutor/DeviceContextCommandExecutor.h"
 #include "../../../Core/Device/DeviceContextDiplomat/DeviceContextCommandExecutor/DeviceCmdExecutorLicences.h"
 
+#include "../../../Core/DescriptorHeap/DescriptorHeapContextDiplomat/DescriptorHeapContextDiplomat.h"
+#include "../../../Core/DescriptorHeap/DescriptorHeapContextDiplomat/DescriptorHeapToolLender/DescriptorHeapToolLender.h"
+#include "../../../Core/DescriptorHeap/DescriptorHeapContextDiplomat/DescriptorHeapToolLender/DescriptorHeapToolLenderLicences.h"
+#include "../../../Core/DescriptorHeap/ViewCreator/ViewCreator.h"
+
 
 
 
@@ -29,22 +34,38 @@ void DebugContext::ImGuiDebugger::SetUpper::InitializeImGui
 	auto& windowHandle = windowContextDip_.Access<WindowContext::ToolLender>().
 		Lend<HWND>(WindowContext::ToolLender::LicenceType<HWND>{});
 
+	//srvUavのディスクリプタヒープとビュークリエイターを借りる
+	auto& descriptorHeapToolLender = 
+		descriptorHeapContextDip_.Access<DescriptorHeapContext::ToolLender>();
+	auto* srvDescriptorHeap = 
+		&descriptorHeapToolLender.Lend<ID3D12DescriptorHeap>(DescriptorHeapContext::ToolLender::LicenceType<ID3D12DescriptorHeap>{});
+	auto& viewCreator = 
+		descriptorHeapToolLender.Lend<DescriptorHeapContext::ViewCreator>(DescriptorHeapContext::ToolLender::LicenceType<DescriptorHeapContext::ViewCreator>{});
+
+	//予約しておいたImGui用のdescriptorHeapのハンドル
+	auto const& imguiHandle = viewCreator.WatchReservedHeapHandles
+		<DescriptorHeapContext::ViewCreator::HeapType::kSRVUAV>((UINT)DescriptorHeapContext::ViewCreator::ReservedSrvIndex::kImGui);
+
 	IMGUI_CHECKVERSION();
+
 	ImGui::CreateContext();
+
 	ImGui::StyleColorsClassic();
+
 	ImGui_ImplWin32_Init(windowHandle);
 
 	//deviceが必要なImGui初期化関数を呼んでもらう
-	//auto& deviceAgent = deviceContextDip_.Access<DeviceContext::CommandExecutor>().
-	//	CallImGuiInit
-	//	(
-	//		DeviceContext::CommandExecutor::DebugContextProof{},
-	//		kImGuiRtvformat,
-	//	)
+	deviceContextDip_.Access<DeviceContext::CommandExecutor>().
+	CallImGuiInit
+	(
+		DeviceContext::CommandExecutor::DebugContextProof{},
+		ProjectConfig::Render::kSwapChainBufferFormat,
+		srvDescriptorHeap,
+		imguiHandle.cpu,
+		imguiHandle.gpu
+	);
 
-
-
-	//srvFormat,srvDescriptor,handle
+	Logger::Log("Complete ImGui Initializing", "ImGuiSetUpper.cpp");
 
 #endif
 }

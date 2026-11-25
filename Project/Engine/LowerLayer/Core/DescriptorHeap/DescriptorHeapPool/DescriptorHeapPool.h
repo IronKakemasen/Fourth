@@ -31,7 +31,7 @@ public:
 	void CollectHeapIndex(uint32_t index_, CollectHeapIndexKey key_);
 
 	//ID3D12DescriptorHeapにアクセス
-	ID3D12DescriptorHeap* AccessHeap(DescriptorHeapContext::NexusFieldProof proof_);
+	ID3D12DescriptorHeap* AccessHeap();
 
 private:
 

@@ -1,17 +1,24 @@
 #include "PreCompileHeader.h"
 #include "WindowProcedure.h"
 
+
+//外部
+#include "../../../DebugSystem/ImGuiDebugger/ImGuiWndProcHandler.h"
+
 LRESULT CALLBACK WindowContext::WindowProcedure::WndProc(HWND hWnd_, UINT msg_, WPARAM wParam_, LPARAM lParam_)
 {
-	//#ifdef USE_IMGUI
-	//	//ImGuiにメッセージを渡す
-	//	if (ImGui_ImplWin32_WndProcHandler(hWnd_, msg_, wParam_, lParam_))
-	//	{
-	//		return true;
-	//	}
-	//#endif
 
-		//メッセージに応じてゲーム固有の処理を行う
+#ifndef NDEBUG
+
+	//ImGuiにメッセージを渡す
+	if (ImGui_ImplWin32_WndProcHandler(hWnd_, msg_, wParam_, lParam_))
+	{
+		return true;
+	}
+
+#endif
+
+	//メッセージに応じてゲーム固有の処理を行う
 	switch (msg_)
 	{
 		//ウィンドウが破棄された
