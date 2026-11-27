@@ -320,6 +320,7 @@
     <ClCompile Include="Engine\LowerLayer\DebugSystem\ImGuiDebugger\ImGuiDebugger.cpp" />
     <ClCompile Include="Engine\LowerLayer\DebugSystem\ImGuiDebugger\ImGuiSetUpper\ImGuiSetUpper.cpp" />
     <ClCompile Include="Engine\LowerLayer\Core\Device\Commands\InitImGui\InitImGui.cpp" />
+    <ClCompile Include="Engine\LowerLayer\DebugSystem\ImGuiDebugger\ImGuiInterface\ImGuiInterface.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="Engine\LowerLayer\Core\Window\WindowContext.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Use</PrecompiledHeader>
@@ -848,6 +849,7 @@
     <ClInclude Include="Engine\LowerLayer\DebugSystem\ImGuiDebugger\ImGuiDebugger.h" />
     <ClInclude Include="Engine\LowerLayer\DebugSystem\ImGuiDebugger\ImGuiSetUpper\ImGuiSetUpper.h" />
     <ClInclude Include="Engine\LowerLayer\Core\Device\Commands\InitImGui\InitImGui.h" />
+    <ClInclude Include="Engine\LowerLayer\DebugSystem\ImGuiDebugger\ImGuiInterface\ImGuiInterface.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

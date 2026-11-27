@@ -97,8 +97,8 @@ private:
 	enum class FinalizeSequence
 	{
 		kCommandContext,
-		kWindowContext,
 		kImGuiFinalization,
+		kWindowContext,
 
 
 		kEnd

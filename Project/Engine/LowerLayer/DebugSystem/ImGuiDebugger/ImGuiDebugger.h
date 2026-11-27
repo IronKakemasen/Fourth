@@ -5,7 +5,7 @@
 class DebugContext::ImGuiDebugger
 {
 	class SetUpper;
-
+		
 public:
 
 	ImGuiDebugger
@@ -27,9 +27,6 @@ public:
 		AgentKey key_,
 		CommandContextDiplomat& commandContextDiplomat_
 	);
-
-private:
-
 
 };
 
