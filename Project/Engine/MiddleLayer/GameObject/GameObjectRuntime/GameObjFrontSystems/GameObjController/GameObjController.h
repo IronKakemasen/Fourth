@@ -10,6 +10,8 @@ class GameObjectContext::FrontlineSystems::GameObjController
 {
 	//ジェーソンファイルからオブジェの情報を引っ張ってくる
 	class ObjDataLoader;
+	//ゲームオブジェクトのパラメーター表示、変更、保存をImGuiでおこなう
+	class ObjDebugger;
 
 public:
 

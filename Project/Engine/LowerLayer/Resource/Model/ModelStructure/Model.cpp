@@ -60,6 +60,11 @@ void Model::ChangeBlendMode(RenderStateComponent::BlendMode dst_)
 
 }
 
+void Model::ChangeVisible(bool dst_)
+{
+	changeableParams.isVisible = dst_;
+}
+
 void Model::ChangeMaterialType(Material::Type dst_)
 {
 	bool hasConfigured{};

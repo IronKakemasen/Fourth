@@ -30,6 +30,7 @@ public:
 	void RenderImGui
 	(
 		RenderContextProof proof_,
+		D3D12_GPU_DESCRIPTOR_HANDLE finalRefBufferGpuHandle_,
 		CommandContextDiplomat& commandContextDiplomat_
 	);
 

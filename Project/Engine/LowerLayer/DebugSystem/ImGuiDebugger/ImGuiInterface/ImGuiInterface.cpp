@@ -61,7 +61,7 @@ ImGuiInterface::Window::~Window()
 {
 #ifndef NDEBUG
 
-	Debug();
+	if(ProjectConfig::Debug::kEnableImGuiCallChack) Debug();
 
 	ImGui::End();
 

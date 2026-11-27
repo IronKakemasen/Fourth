@@ -24,7 +24,7 @@ namespace ProjectConfig
 		}
 
 		static inline constexpr LPCWSTR kTitle = L"Fourth";
-		static constexpr std::array<float, 4> kColor = { 1.0f,0.0f,0.0f,1.0f };
+		static constexpr std::array<float, 4> kColor = { 0.0f,0.0f,0.0f,1.0f };
 		static constexpr float kDefaultFovY = MathConstants::kPi * MathConstants::kHalf;
 
 		static auto const& FirstSceneDebug() { return kFirstSceneDebug; }
@@ -63,9 +63,11 @@ namespace ProjectConfig
 		constexpr DXGI_FORMAT kSwapChainBufferFormat = DXGI_FORMAT_R16G16B16A16_FLOAT;
 	}
 
-	//デバッグモードの時のみ有効です
 	namespace Debug
 	{
+
+#ifdef _DEBUG
+
 		//DebugLayer
 		constexpr bool kEnableDebugLayer = true;
 		//ポインター破壊検知
@@ -74,6 +76,16 @@ namespace ProjectConfig
 		constexpr bool kEnableLeakChecker = true;
 		//Jsonファイルを読み込むときに型チェックを行うかどうか
 		constexpr bool kEnableJsonDataCheck = true;
+
+#endif // DEBUG
+
+
+#ifndef NDEBUG
+
+		constexpr bool kEnableImGuiCallChack = true;
+
+#endif
+
 	}
 
 	namespace Core

@@ -180,6 +180,8 @@ void SceneBehavior::SetSystems
 void SceneBehavior::SetSceneConfig(std::unique_ptr<SceneConfig>&& sceneConfig_)
 {
 	sceneConfig = std::move(sceneConfig_);
+
+	output->alwaysUpdateStatic = sceneConfig->alwaysUpdateStatic;
 }
 
 void SceneBehavior::CreatePresetCamera()

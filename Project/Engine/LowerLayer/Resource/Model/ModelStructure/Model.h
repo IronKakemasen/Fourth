@@ -54,7 +54,8 @@ public:
 	//上位レイヤーでモデルのパラメーターを弄るときに
 	void ChangeBlendMode(RenderStateComponent::BlendMode dst_);
 	void ChangeMaterialType(Material::Type dst_);
-	
+	void ChangeVisible(bool dst_);
+
 	Materials& RefMaterials(size_t index_) 
 	{
 #ifdef _DEBUG

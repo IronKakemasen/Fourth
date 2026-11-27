@@ -22,6 +22,11 @@ std::vector<GameObjectBehavior*>& GameObjectContext::FrontlineSystems::ObjLibrar
 	return sortedByProority;
 }
 
+std::vector<std::string> const& GameObjectContext::FrontlineSystems::ObjLibrary::WatchSortedObjContainerNameList()const
+{
+	return sortedByProorityNameList;
+}
+
 std::unordered_map<std::string, std::unique_ptr<GameObjectBehavior>>& GameObjectContext::FrontlineSystems::ObjLibrary::RefObjUniqueMap()
 {
 	return objUniqueMap;
@@ -38,6 +43,7 @@ void GameObjectContext::FrontlineSystems::ObjLibrary::SortByPriority(std::vector
 	std::vector < std::string > mismatchedList;
 
 	sortedByProority.reserve(objUniqueMap.size());
+	sortedByProorityNameList.reserve(objUniqueMap.size());
 
 	for (auto const& srcName_ : priorityList_)
 	{
@@ -48,10 +54,26 @@ void GameObjectContext::FrontlineSystems::ObjLibrary::SortByPriority(std::vector
 			continue;
 		}
 
+
+#ifndef NDEBUG
+
+		UINT cnt{};
+
+#endif // !NDEBUG
+
 		auto& [done, objects] = it->second;
 		for (auto* objPtr : objects)
 		{
 			sortedByProority.emplace_back(objPtr);
+
+#ifndef NDEBUG
+
+			//デバッグUI表示用に記録しておく
+			auto objName = srcName_ + std::to_string(cnt++);
+			sortedByProorityNameList.emplace_back(objName);
+
+#endif // !NDEBUG
+
 		}
 
 		done = true;
@@ -80,9 +102,24 @@ void GameObjectContext::FrontlineSystems::ObjLibrary::SortByPriority(std::vector
 	{
 		if (doneFlag_objPtrVec.first) continue;
 
+#ifndef NDEBUG
+
+		UINT cnt{};
+
+#endif // !NDEBUG
+
 		for (auto* objPtr : doneFlag_objPtrVec.second)
 		{
 			sortedByProority.emplace_back(objPtr);
+
+#ifndef NDEBUG
+
+			//デバッグUI表示用に記録しておく
+			auto objName = name + std::to_string(cnt++);
+			sortedByProorityNameList.emplace_back(objName);
+
+#endif // !NDEBUG
+
 		}
 	}
 
