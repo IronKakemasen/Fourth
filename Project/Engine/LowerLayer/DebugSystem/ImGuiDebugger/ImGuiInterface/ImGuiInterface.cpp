@@ -35,6 +35,8 @@ ImGuiInterface::Window::Window
 
 int ImGuiInterface::ConvertAttachFlagsToImGuiStyle(WindowAttach flags_)
 {
+#ifndef NDEBUG
+
 	ImGuiWindowFlags flags{};
 
 	if ((int)flags_ & (int)WindowAttach::kAddMenuBar)	flags	|= ImGuiWindowFlags_MenuBar;
@@ -46,6 +48,13 @@ int ImGuiInterface::ConvertAttachFlagsToImGuiStyle(WindowAttach flags_)
 	if ((int)flags_ & (int)WindowAttach::kNoResize)		flags	|= ImGuiWindowFlags_NoResize;
 
 	return flags;
+
+#else
+
+	return 0;
+
+#endif
+
 }
 
 ImGuiInterface::Window::~Window()

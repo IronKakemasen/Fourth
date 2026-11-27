@@ -2,7 +2,7 @@
 #include "SceneBehavior.h"
 #include "SceneOutput/SceneOutput.h"
 #include "AllSceneInterfaceInclude.h"
-
+#include "SceneConfig/SceneConfig.h"
 
 //外部
 #include "../../../LowerLayer/Resource/Camera/CameraContextRuntime/CameraFrontlineSystems.h"
@@ -34,11 +34,18 @@ void SceneBehavior::Update()
 
 	modelSystems->ResetModelTransformFrameFlag<Model::MeshUpdateType::kDynamic>();
 
-	if (output->leftStaticBatchingCnt == (UINT)NumBuffer::kDoubleBuffer)
+	//オブジェ配置シーンのように静的オブジェクトを常に更新したい場合があるので分岐
+	if (!sceneConfig->alwaysUpdateStatic)
+	{
+		if (output->leftStaticBatchingCnt == (UINT)NumBuffer::kDoubleBuffer)
+		{
+			modelSystems->ResetModelTransformFrameFlag<Model::MeshUpdateType::kStatic>();
+		}
+	}
+	else
 	{
 		modelSystems->ResetModelTransformFrameFlag<Model::MeshUpdateType::kStatic>();
 	}
-
 
 	//ゲームオブジェクトの更新、トランスフォームの更新
 	objSystems->UpdateObjController
@@ -49,7 +56,14 @@ void SceneBehavior::Update()
 	//このシーンのモデルのトランスフォームのアップデートを呼ぶ
 	modelSystems->UpdateModelTransform<Model::MeshUpdateType::kDynamic>();
 	
-	if (output->leftStaticBatchingCnt == (UINT)NumBuffer::kDoubleBuffer)
+	if (!sceneConfig->alwaysUpdateStatic)
+	{
+		if (output->leftStaticBatchingCnt == (UINT)NumBuffer::kDoubleBuffer)
+		{
+			modelSystems->UpdateModelTransform<Model::MeshUpdateType::kStatic>();
+		}
+	}
+	else
 	{
 		modelSystems->UpdateModelTransform<Model::MeshUpdateType::kStatic>();
 	}
@@ -163,6 +177,10 @@ void SceneBehavior::SetSystems
 	}
 }
 
+void SceneBehavior::SetSceneConfig(std::unique_ptr<SceneConfig>&& sceneConfig_)
+{
+	sceneConfig = std::move(sceneConfig_);
+}
 
 void SceneBehavior::CreatePresetCamera()
 {

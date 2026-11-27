@@ -1,6 +1,8 @@
 {
-    "GameObjectUpdatePriority":
-    [
+  "GameObjectUpdatePriority": [
 
-    ]
+  ],
+
+  "alwaysUpdateStatic": false
+
 }

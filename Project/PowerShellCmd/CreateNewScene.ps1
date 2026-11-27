@@ -62,7 +62,8 @@ $jsonTemplate = @'
     "GameObjectUpdatePriority":
     [
 
-    ]
+    ],
+    "alwaysUpdateStatic": false
 }
 '@
 

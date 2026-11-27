@@ -1,11 +1,14 @@
 #pragma once
 #include "../SceneContext.h"
-#include "../SceneStructure/SceneBehavior.h"
+#include "../SceneStructure/SceneConfig/SceneConfig.h"
 
 
 //FrontlineSystems
 class SceneContext::SceneCreator
 {
+	//jsonにあるシーンのコンフィグを読み込む
+	class SceneConfigLoder;
+
 public:
 	SceneCreator() = default;
 
@@ -39,11 +42,14 @@ public:
 		//仮想初期化関数を呼ぶ
 		scenePtr->Init();
 
+		//シーン設定をジェーソンファイルから読み込む
+		scenePtr->SetSceneConfig(LoadSceneConfig(sceneName_));
+
 		//シーンのゲームオブジェクトの初期化、ランタイム用コンテナの構築
 		scenePtr->InitAllGameObj(sceneName_);
 
 		//モデルをスタティックとダイナミックに分ける
-		sceneUnique->SeparateModels();
+		scenePtr->SeparateModels();
 
 		return sceneUnique;
 	}
@@ -53,6 +59,9 @@ private:
 	//シーンのシステム群を他コンテキストから構成する
 	template<typename SystemsType, typename DiplomatType>
 	SystemsType* ReceiveSystems(DiplomatType& diplomat_);
+
+	//シーン設定をジェーソンファイルから読み込む
+	std::unique_ptr<SceneBehavior::SceneConfig> LoadSceneConfig(std::string const& sceneName_);
 };
 
 template<>

@@ -16,7 +16,12 @@ struct SceneBehavior::Output
 
 	auto const& WatchUsingCamera()const { return *usingCamera; }
 	auto const* WatchModelContainer()const { return modelContainer; }
-	auto const& WatchLeftStaticBatchingCnt()const { return leftStaticBatchingCnt; }
+	bool DoesBatchStatcs()const 
+	{
+		return 
+			leftStaticBatchingCnt <= (UINT)ProjectConfig::Render::NumBuffer::kDoubleBuffer &&
+			alwaysUpdateStatic; 
+	}
 	auto const& WatchCollectedMaterialBatchFormatsArr()const{return (*materialBatchFormatsPtr);}
 
 private:
@@ -29,5 +34,7 @@ private:
 	ModelContext::FrontlineSystems::ModelContainer const* modelContainer = nullptr;
 	//static対象を毎回バッチング処理しないようにするため
 	UINT leftStaticBatchingCnt = (UINT)ProjectConfig::Render::NumBuffer::kDoubleBuffer;
+	//staticなものを常にバッチング処理するかどうか。sceneBehaviorのもつalwaysUpdateStaticと同じ
+	bool alwaysUpdateStatic = true;
 };
 
