@@ -469,6 +469,7 @@
     <ClCompile Include="Engine\LowerLayer\Resource\Material\MaterialRuntime\MaterialFrontlineSystems\MaterialFrontlineSystems.cpp" />
     <ClCompile Include="Engine\LowerLayer\Resource\Material\MaterialRuntime\MaterialFrontlineSystems\RenderingObjCollector\RenderingObjCollector.cpp" />
     <ClCompile Include="Engine\LowerLayer\Resource\Material\MaterialFSDispatcher\MaterialFSDispatcher.cpp" />
+    <ClCompile Include="Engine\MiddleLayer\Scene\SceneCreator\SceneConfigLoder\SceneConfigLoder.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Application\AllCameraIncludes.h" />
@@ -599,6 +600,7 @@
     <ClInclude Include="Engine\MiddleLayer\Scene\SceneContextDiplomat\SceneExecutionAgent\SceneExecutionAgentLicences.h" />
     <ClInclude Include="Engine\MiddleLayer\Scene\SceneStructure\AllSceneInterfaceFwd.h" />
     <ClInclude Include="Engine\MiddleLayer\Scene\SceneStructure\AllSceneInterfaceInclude.h" />
+    <ClInclude Include="Engine\MiddleLayer\Scene\SceneStructure\SceneConfig\SceneConfig.h" />
     <ClInclude Include="Engine\MiddleLayer\Scene\SceneStructure\SceneOutput\SceneOutput.h" />
     <ClInclude Include="Engine\Utility\ClosedHashMap\ClosedHashMap.h" />
     <ClInclude Include="Engine\MiddleLayer\Render\RenderContextRuntime\PSO_PoolDispatcher\GraphicsPSO_Key.h" />
@@ -850,6 +852,7 @@
     <ClInclude Include="Engine\LowerLayer\DebugSystem\ImGuiDebugger\ImGuiSetUpper\ImGuiSetUpper.h" />
     <ClInclude Include="Engine\LowerLayer\Core\Device\Commands\InitImGui\InitImGui.h" />
     <ClInclude Include="Engine\LowerLayer\DebugSystem\ImGuiDebugger\ImGuiInterface\ImGuiInterface.h" />
+    <ClInclude Include="Engine\MiddleLayer\Scene\SceneCreator\SceneConfigLoder\SceneConfigLoder.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

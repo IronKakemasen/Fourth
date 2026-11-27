@@ -62,7 +62,7 @@ void SceneContext::ScenePipeline::SceneDataBatchingPlace::BatchingPlace
 
 
 	//Staticなものはここでまとめて
-	if (sceneOutput.WatchLeftStaticBatchingCnt() <= (UINT)NumBuffer::kDoubleBuffer)
+	if (sceneOutput.DoesBatchStatcs())
 	{
 		modelAgent.BatchModelData
 		(

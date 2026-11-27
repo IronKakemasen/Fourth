@@ -1,5 +1,6 @@
 #include "PreCompileHeader.h"
 #include "SceneCreator.h"
+#include "SceneConfigLoder/SceneConfigLoder.h"
 
 
 //外部
@@ -18,6 +19,11 @@
 #include "../../../LowerLayer/Resource/Material/MaterialContextDiplomat/MaterialContextDiplomat.h"
 #include "../../../LowerLayer/Resource/Material/MaterialContextDiplomat/MaterialExecutionAgent/MaterialAgentLicences.h"
 #include "../../../LowerLayer/Resource/Material/MaterialContextDiplomat/MaterialExecutionAgent/MaterialExecutionAgent.h"
+
+std::unique_ptr<SceneBehavior::SceneConfig> SceneContext::SceneCreator::LoadSceneConfig(std::string const& sceneName_)
+{
+	return SceneConfigLoder::Load(sceneName_);
+}
 
 template<>
 CameraContext::FrontlineSystems* SceneContext::SceneCreator::ReceiveSystems(CameraContextDiplomat& diplomat_)

@@ -19,6 +19,9 @@ class SceneBehavior
 	//おおざっぱだが必要な情報のみ開示したいのでフレンド登録
 	friend class SceneContext;
 
+	//シーンのコンフィグ
+	struct SceneConfig;
+
 public:
 
 	//このシーンで使用しているカメラ、モデル、ライトなどの情報
@@ -62,6 +65,9 @@ private:
 	//シーンクリエイターがプリセットカメラを備え付ける
 	void CreatePresetCamera();
 
+	//jsonファイルから設定を読み込み書き込まれたデータを取り込む
+	void SetSceneConfig(std::unique_ptr<SceneConfig>&& sceneConfig_);
+
 	//SceneContext::SceneControllerのみ呼べる
 	void Update();
 
@@ -79,6 +85,8 @@ private:
 
 	//シーンの出力物
 	std::unique_ptr<Output> output;
+	//シーンの設定
+	std::unique_ptr<SceneConfig> sceneConfig;
 
 	//シーンのインターフェース群
 	SceneInterfacesUnique interfaces;
