@@ -9761,6 +9761,9 @@ namespace ErrorMessageOutput
 #include "ImGuiInclude.h"
 //外部
 #include "../../Core/Command/CommandContextDiplomats.h"
+#include "ImGuiInterface/ImGuiInterface.h"
+#include "../../../Math/Vector/Vector3.h"
+#include "../../../Math/Vector/Vector4.h"
 DebugContext::ImGuiDebugger::ImGuiDebugger
 (
 	NexusFieldProof proof_,
@@ -9787,21 +9790,31 @@ void DebugContext::ImGuiDebugger::BeginNewFrame
 	ImGui_ImplDX12_NewFrame();
 	ImGui_ImplWin32_NewFrame();
 	ImGui::NewFrame();
-#endif
-#ifndef NDEBUG
-	static bool showWindow = true;
-	static int counter = 0;
-	if (showWindow)
 	{
-		ImGui::Begin("Nexus Debug Window", &showWindow);
-		ImGui::Text("Hello, ImGui!");
-		ImGui::Text("This is a test window.");
-		if (ImGui::Button("Click me"))
+		static int       counter = 0;
+		static bool      enabled = true;
+		static int       level = 3;
+		static float     gain = 0.5f;
+		static Vector3   position = Vector3(0.0f, 0.0f, 0.0f);
+		static Vector4<float> color(1.0f, 0.5f, 0.2f, 1.0f);
+		ImGuiInterface::Window window("Sample Window");
+		if (window)
 		{
-			++counter;
+			ImGuiInterface::Text("Hello, ImGui!");
+			ImGuiInterface::Separator();
+			if (ImGuiInterface::Button("Click me")) ++counter;
+			ImGuiInterface::Text("Clicked: %d times", counter);
+			ImGuiInterface::Separator();
+			ImGuiInterface::Text("enabled=%d level=%d gain=%.2f", enabled, level, gain);
+			ImGuiInterface::RadioButton("radio", 3,3);
+			ImGuiInterface::BeginChild("AAAAA");
+			ImGuiInterface::Checkbox("Enabled", &enabled);
+			ImGuiInterface::Slider("Level", level, 0, 10);          // int 版
+			ImGuiInterface::Slider("Gain", gain, 0.0f, 1.0f);       // float 版
+			ImGuiInterface::DragVector3("Position", position);      // 速度は省略(0.01f)
+			ImGuiInterface::ColorEdit4("Color", color);
+			ImGuiInterface::EndChild();
 		}
-		ImGui::Text("Button clicked: %d times", counter);
-		ImGui::End();
 	}
 #endif
 }
@@ -9847,7 +9860,6 @@ public:
 		AgentKey key_,
 		CommandContextDiplomat& commandContextDiplomat_
 	);
-private:
 };
 
 ========================================
@@ -9875,6 +9887,300 @@ extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler
     LPARAM lParam
 );
 #endif
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\DebugSystem\ImGuiDebugger\ImGuiInterface\ImGuiInterface.cpp ===
+========================================
+#include "PreCompileHeader.h"
+#include "ImGuiInterface.h"
+#include "../ImGuiInclude.h"
+#include "../../../../Math/Vector/Vector3.h"
+#include "../../../../Math/Vector/Vector4.h"
+namespace
+{
+	auto const fileName = "ImGuiInterface.cpp";
+}
+ImGuiInterface::Window::Window
+(
+	char const* name_, 
+	WindowAttach attach_
+)	
+{
+#ifndef NDEBUG
+	//attachFlagsResultをもとにImGui::Beginを呼ぶ
+	visible = ImGui::Begin
+	(
+		name_,
+		nullptr,
+		ImGuiWindowFlags(ConvertAttachFlagsToImGuiStyle(attach_))
+	);
+	//デバッグ用に
+	curWindowName = name_;
+#endif
+}
+int ImGuiInterface::ConvertAttachFlagsToImGuiStyle(WindowAttach flags_)
+{
+	ImGuiWindowFlags flags{};
+	if ((int)flags_ & (int)WindowAttach::kAddMenuBar)	flags	|= ImGuiWindowFlags_MenuBar;
+	if ((int)flags_ & (int)WindowAttach::kNoMove)		flags	|= ImGuiWindowFlags_NoMove;
+	if ((int)flags_ & (int)WindowAttach::kNoCollapse)	flags	|= ImGuiWindowFlags_NoCollapse;
+	if ((int)flags_ & (int)WindowAttach::kNoResize)		flags	|= ImGuiWindowFlags_NoResize;
+	return flags;
+}
+ImGuiInterface::Window::~Window()
+{
+#ifndef NDEBUG
+	Debug();
+	ImGui::End();
+#endif
+}
+void ImGuiInterface::Debug()
+{
+	ErrorMessageOutput::Assert::DetectError
+	(
+		treeNodeCnt == 0,
+		curWindowName + "でImGuiInterface::TreePop()呼び足りない",
+		fileName
+	);
+	ErrorMessageOutput::Assert::DetectError
+	(
+		childCnt == 0,
+		curWindowName + "でImGuiInterface::EndChild()呼び足りない",
+		fileName
+	);
+	ErrorMessageOutput::Assert::DetectError
+	(
+		menuCnt == 0,
+		curWindowName + "でImGuiInterface::EndMenu()呼び足りない",
+		fileName
+	);
+}
+void ImGuiInterface::Text(char const* fmt_, ...)
+{
+#ifndef NDEBUG
+	va_list args;
+	va_start(args, fmt_);
+	ImGui::TextV(fmt_, args);
+	va_end(args);
+#endif
+}
+void ImGuiInterface::Separator()
+{
+#ifndef NDEBUG
+	ImGui::Separator();
+#endif
+}
+bool ImGuiInterface::Button(char const* label_)
+{
+#ifndef NDEBUG
+	return ImGui::Button(label_);
+#else
+	return {};
+#endif
+}
+void ImGuiInterface::Checkbox(char const* label_, bool* valuePtr_)
+{
+#ifndef NDEBUG
+	ImGui::Checkbox(label_, valuePtr_);
+#endif
+}
+template<>
+void ImGuiInterface::Slider(char const* label_, int& value_, int min_, int max_)
+{
+#ifndef NDEBUG
+	ImGui::SliderInt(label_, &value_, min_, max_);
+#endif
+}
+template<>
+void ImGuiInterface::Slider(char const* label_, float& value_, float min_, float max_)
+{
+#ifndef NDEBUG
+	ImGui::SliderFloat(label_, &value_, min_, max_);
+#endif
+}
+void ImGuiInterface::DragVector3(char const* label_, Vector3& vec3_, float speed_)
+{
+#ifndef NDEBUG
+	ImGui::DragFloat3(label_, &vec3_.data.x, speed_);
+#endif
+}
+void ImGuiInterface::ColorEdit4(char const* label_, Vector4<float>& vec4_)
+{
+#ifndef NDEBUG
+	ImGui::ColorEdit4(label_, &vec4_.x);
+#endif
+}
+void ImGuiInterface::SameLine()
+{
+#ifndef NDEBUG
+	ImGui::SameLine();
+#endif
+}
+bool ImGuiInterface::RadioButton(char const* label_, int value_ , int dst_)
+{
+#ifndef NDEBUG
+	return ImGui::RadioButton(label_, value_ == dst_);
+#else
+	return false;
+#endif
+}
+bool ImGuiInterface::TreeNodeBool(char const* label_)
+{
+#ifndef NDEBUG
+	bool isOpened = ImGui::TreeNode(label_);
+	treeNodeCnt += isOpened;
+	return isOpened;
+#else
+	return true;
+#endif
+}
+void ImGuiInterface::TreePop()
+{
+#ifndef NDEBUG
+	ErrorMessageOutput::Assert::DetectError
+	(
+		treeNodeCnt > 0,
+		curWindowName + "TreePop()過剰呼び出し",
+		fileName
+	);
+	treeNodeCnt--;	
+	ImGui::TreePop();
+#endif
+}
+void ImGuiInterface::BeginChild(char const* label_)
+{
+#ifndef NDEBUG
+	childCnt++;
+	ImGui::BeginChild(label_);
+#endif
+}
+void ImGuiInterface::EndChild()
+{
+#ifndef NDEBUG
+	ErrorMessageOutput::Assert::DetectError
+	(
+		childCnt > 0,
+		curWindowName + "EndChild()過剰呼び出し",
+		fileName
+	);
+	childCnt--;
+	ImGui::EndChild();
+#endif
+}
+bool ImGuiInterface::BeginMenuBool(char const* label_)
+{
+#ifndef NDEBUG
+	bool isOpened = ImGui::BeginMenu(label_);
+	menuCnt += isOpened;
+	return isOpened;
+#else
+	return false;
+#endif
+}
+void ImGuiInterface::EndMenu()
+{
+#ifndef NDEBUG
+	ErrorMessageOutput::Assert::DetectError
+	(
+		menuCnt > 0,
+		curWindowName + "EndMenu()過剰呼び出し",
+		fileName
+	);
+	menuCnt--;
+	ImGui::EndMenu();
+#endif
+}
+bool ImGuiInterface::MenuItemBool(char const* label_)
+{
+#ifndef NDEBUG
+	return ImGui::MenuItem(label_);
+#else
+	return false;
+#endif
+}
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\DebugSystem\ImGuiDebugger\ImGuiInterface\ImGuiInterface.h ===
+========================================
+#pragma once
+struct Vector3;
+template<typename T>
+struct Vector4;
+class ImGuiInterface 
+{
+public:
+	ImGuiInterface() = delete;
+	enum class WindowAttach:UINT
+	{
+		kNone		= 0,
+		kAddMenuBar = 1 << 0,  
+		kNoCollapse = 1 << 1,  
+		kNoMove		= 1 << 2,  
+		kNoResize	= 1 << 3
+	};
+	friend constexpr WindowAttach operator|(WindowAttach left_, WindowAttach right_)
+	{
+		return static_cast<WindowAttach>(static_cast<UINT>(left_) | static_cast<UINT>(right_));
+	}
+	class Window
+	{
+	public:
+		Window
+		(
+			char const* name_,
+			WindowAttach attach_ = WindowAttach::kNone
+		);
+		~Window();
+		Window(Window const&) = delete;
+		Window& operator=(Window const&) = delete;
+		//ウィンドウがたたまれているかどうかなどを返すため
+		explicit operator bool() const { return visible; }
+	private:
+		bool visible = false;
+	};
+	//フォーマット形式のテキスト出力
+	static void Text(char const* fmt_, ...);
+	//区切り線
+	static void Separator();
+	//ボタン
+	static bool Button(char const* label_);
+	//チェックボックス（そのまま）
+	static void Checkbox(char const* label_, bool* valuePtr_);
+	//スライダー
+	template<typename ValueType>
+	static void Slider(char const* label_, ValueType& value_, ValueType min_, ValueType max_);
+	//ベクタ3専用
+	static void DragVector3(char const* label_, Vector3& vec3_, float speed_ = 0.01f);
+	//カラー(Vector4<float>)
+	static void ColorEdit4(char const* label_, Vector4<float>& vec4_);
+	//横並び
+	static void SameLine();
+	//ラジオボタン
+	static bool RadioButton(char const* label_, int value_, int dst_);
+	//折り畳み
+	static bool TreeNodeBool(char const* label_);
+	static void TreePop();
+	//子ウィンドウ開始
+	static void BeginChild(char const* label_);
+	static void EndChild();
+	//メニュー
+	static bool BeginMenuBool(char const* label_);
+	static void EndMenu();
+	static bool MenuItemBool(char const* label_);
+private:
+	//アタッチフラグをImGuiように変換
+	static int ConvertAttachFlagsToImGuiStyle(WindowAttach flags_);
+	//以下デバッグ用
+	static inline std::string curWindowName;
+	static inline int treeNodeCnt{};
+	static inline int childCnt{};
+	static inline int menuCnt{};
+	static void Debug();
+};
+template<>
+void ImGuiInterface::Slider(char const* label_, int& value_, int min_, int max_);
+template<>
+void ImGuiInterface::Slider(char const* label_, float& value_, float min_, float max_);
 
 ========================================
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\DebugSystem\ImGuiDebugger\ImGuiSetUpper\ImGuiSetUpper.cpp ===
@@ -9930,8 +10236,9 @@ void DebugContext::ImGuiDebugger::SetUpper::InitializeImGui
 		imguiHandle.gpu
 	);
 	ImGui::GetIO().ConfigFlags |= ImGuiConfigFlags_DockingEnable;
-	ImGui::PushStyleColor(ImGuiCol_TitleBgActive, ImVec4(0.5f, 0.5f, 0.1f, 1.0f));
-	ImGui::PushStyleColor(ImGuiCol_TitleBg, ImVec4(0.1f, 0.1f, 0.1f, 1.0f));
+	ImGuiStyle& style = ImGui::GetStyle();
+	style.Colors[ImGuiCol_TitleBg] = ImVec4(0.1f, 0.1f, 0.1f, 1.0f);
+	style.Colors[ImGuiCol_TitleBgActive] = ImVec4(0.5f, 0.5f, 0.1f, 1.0f);
 	Logger::Log("Complete ImGui Initializing", "ImGuiSetUpper.cpp");
 #endif
 }
@@ -22192,7 +22499,6 @@ private:
 #include "../../../../../../LowerLayer/Core/SwapChain/SwapChainContextDiplomats.h"
 #include "../../../../../../LowerLayer/Core/SwapChain/SwapChainBuffer/SwapChainBuffer.h"
 #include "../../../../../../LowerLayer/Core/Command/RuntimeWrapper/RuntimeWrapper.h"
-#include "../../../../../../../Assets/Shared/ConstantBuffers.h"
 #include "../../../../../../LowerLayer/Buffer/BufferRuntime/BufferDispatcher/BufferDispatcher.h"
 #include "../../../../../../LowerLayer/Buffer/BufferContextDiplomats.h"
 #include "../../../../../../LowerLayer/Buffer/BufferDefinition/GPUBuffer/ColorBuffer/ColorBuffer.h"
@@ -25584,8 +25890,8 @@ Nexus::~Nexus()
 {
 	Logger::Entry("Nexus: Destructor");
 	FinalizeInSequence<FinalizeSequence::kCommandContext>();
-	FinalizeInSequence<FinalizeSequence::kWindowContext>();
 	FinalizeInSequence<FinalizeSequence::kImGuiFinalization>();
+	FinalizeInSequence<FinalizeSequence::kWindowContext>();
 	ErrorMessageOutput::Assert::DetectError(nextFin == FinalizeSequence::kEnd, "終了処理が正常に行われていない可能性がある", fileName);
 	Logger::End("Nexus: Destructor");
 }
@@ -25707,8 +26013,8 @@ private:
 	enum class FinalizeSequence
 	{
 		kCommandContext,
-		kWindowContext,
 		kImGuiFinalization,
+		kWindowContext,
 		kEnd
 	}nextFin = FinalizeSequence::kCommandContext;
 	//デバッガー。DebugLayer, PointerValidator, LeakChecker
@@ -27281,5 +27587,5 @@ namespace StringProcessing
 ========================================
 === SUMMARY ===
 ========================================
-Total Files      : 596
-Effective Lines  : 19943
+Total Files      : 598
+Effective Lines  : 20175

@@ -1141,6 +1141,7 @@ static void             SetPlatformImeDataFn_DefaultImpl(ImGuiViewport* viewport
 
 namespace ImGui
 {
+
 // Item
 static void             ItemHandleShortcut(ImGuiID id);
 

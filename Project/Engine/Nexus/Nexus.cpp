@@ -49,8 +49,8 @@ Nexus::~Nexus()
 
 
 	FinalizeInSequence<FinalizeSequence::kCommandContext>();
-	FinalizeInSequence<FinalizeSequence::kWindowContext>();
 	FinalizeInSequence<FinalizeSequence::kImGuiFinalization>();
+	FinalizeInSequence<FinalizeSequence::kWindowContext>();
 
 	ErrorMessageOutput::Assert::DetectError(nextFin == FinalizeSequence::kEnd, "終了処理が正常に行われていない可能性がある", fileName);
 
