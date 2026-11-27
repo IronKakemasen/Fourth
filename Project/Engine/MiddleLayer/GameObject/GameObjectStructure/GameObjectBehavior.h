@@ -33,7 +33,7 @@ public:
 		return std::get<std::unique_ptr<SystemType>>(systems).get();
 	}
 
-	Status WatchStatus()const { return status; }
+	bool IsActive()const { return status == Status::kActive; }
 
 private:
 
@@ -56,6 +56,10 @@ private:
 	//検索などはできる
 	virtual void Start(SceneRuntimeInterface& sceneRuntimeInterface_) = 0;
 
+protected:
+
+	//アクティブ切り替え
+	void ChangeStatus(Status dst_);
 
 };
 

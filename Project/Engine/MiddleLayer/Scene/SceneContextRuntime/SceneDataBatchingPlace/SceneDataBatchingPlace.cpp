@@ -62,7 +62,7 @@ void SceneContext::ScenePipeline::SceneDataBatchingPlace::BatchingPlace
 
 
 	//Staticなものはここでまとめて
-	if (sceneOutput.DoesBatchStatcs())
+	if (sceneOutput.DoBatchStatics())
 	{
 		modelAgent.BatchModelData
 		(

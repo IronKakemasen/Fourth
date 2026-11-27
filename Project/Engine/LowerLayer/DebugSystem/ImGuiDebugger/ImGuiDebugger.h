@@ -25,8 +25,15 @@ public:
 	void Render
 	(
 		AgentKey key_,
+		D3D12_GPU_DESCRIPTOR_HANDLE finalRefBufferGpuHandle_,
 		CommandContextDiplomat& commandContextDiplomat_
 	);
+
+private:
+
+	static float constexpr kSceneViewScaleX = 0.625f;
+	static float constexpr kSceneViewScaleY = 0.43f;
+
 
 };
 

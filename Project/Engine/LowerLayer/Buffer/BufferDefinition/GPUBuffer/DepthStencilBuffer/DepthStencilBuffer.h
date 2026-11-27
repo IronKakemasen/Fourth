@@ -23,5 +23,8 @@ public:
 	virtual D3D12_CPU_DESCRIPTOR_HANDLE OutProperDSVHeapHandle()const override;
 	//適切なsrvHeapインデックスを渡す
 	virtual SRVHeapIndex OutProperSRVHeapIndex(int frameIndex_ = 0)const override;
+	//適切なSRVHandleGPUを出す
+	virtual D3D12_GPU_DESCRIPTOR_HANDLE OutProperSRVHandleGPU(int index_ = 0) const override;
+
 };
 

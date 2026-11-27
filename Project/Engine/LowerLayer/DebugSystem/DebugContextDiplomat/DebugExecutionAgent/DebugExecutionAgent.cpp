@@ -43,8 +43,9 @@ void DebugContext::ExecutionAgent::BeginImGuiNewFrame
 void DebugContext::ExecutionAgent::RenderImGui
 (
 	RenderContextProof proof_,
+	D3D12_GPU_DESCRIPTOR_HANDLE finalRefBufferGpuHandle_,
 	CommandContextDiplomat& commandContextDiplomat_
 )
 {
-	imGuiDebugger.Render(AgentKey{}, commandContextDiplomat_);
+	imGuiDebugger.Render(AgentKey{}, finalRefBufferGpuHandle_,commandContextDiplomat_);
 }

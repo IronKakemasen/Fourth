@@ -7,9 +7,13 @@ DebugContext::PrimaryDebugger::PrimaryDebugger(NexusFieldProof proof_)
 {
 	using namespace ProjectConfig::Debug;
 
+#ifdef _DEBUG
+
 	if (kEnableDebugLayer) debugLayer = std::make_unique<DebugLayer>(proof_);
 	if (kEnablePointerValidator) pointerValidator = std::make_unique<PointerValidator>(proof_);
 	if (kEnableLeakChecker) leakChecker = std::make_unique<LeakChecker>(proof_);
+
+#endif // _DEBUG
 
 }
 

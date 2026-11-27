@@ -50,7 +50,7 @@ void DebugContext::ImGuiDebugger::SetUpper::InitializeImGui
 
 	ImGui::CreateContext();
 
-	ImGui::StyleColorsClassic();
+	//ImGui::StyleColorsClassic();
 
 	ImGui_ImplWin32_Init(windowHandle);
 
@@ -68,9 +68,26 @@ void DebugContext::ImGuiDebugger::SetUpper::InitializeImGui
 	ImGui::GetIO().ConfigFlags |= ImGuiConfigFlags_DockingEnable;
 
 	ImGuiStyle& style = ImGui::GetStyle();
-	style.Colors[ImGuiCol_TitleBg] = ImVec4(0.1f, 0.1f, 0.1f, 1.0f);
-	style.Colors[ImGuiCol_TitleBgActive] = ImVec4(0.5f, 0.5f, 0.1f, 1.0f);
 
+	//テキスト
+	style.Colors[ImGuiCol_Text] =
+		ImVec4(0xDC / 255.0f, 0xE6 / 255.0f, 0xEF / 255.0f, 1.0f);
+
+	//通常時
+	style.Colors[ImGuiCol_Border] =
+		ImVec4(0x45 / 255.0f, 0x4B / 255.0f, 0x55 / 255.0f, 1.0f);
+
+	//選択時
+	style.Colors[ImGuiCol_Header] =
+		ImVec4(0x35 / 255.0f, 0xA9 / 255.0f, 0xC9 / 255.0f, 1.0f);
+	style.Colors[ImGuiCol_HeaderHovered] =
+		ImVec4(0x35 / 255.0f, 0xA9 / 255.0f, 0xC9 / 255.0f, 0.8f);
+	style.Colors[ImGuiCol_HeaderActive] =
+		ImVec4(0x35 / 255.0f, 0xA9 / 255.0f, 0xC9 / 255.0f, 1.0f);
+
+	//警告時
+	style.Colors[ImGuiCol_PlotHistogram] =
+		ImVec4(0xC7 / 255.0f, 0x8B / 255.0f, 0x45 / 255.0f, 1.0f);
 
 	Logger::Log("Complete ImGui Initializing", "ImGuiSetUpper.cpp");
 

@@ -40,24 +40,28 @@ void RenderContext::StaticRenderGraph::FinalRenderer::RenderBackBuffer
 	CommandContextDiplomat& commandContextDiplomat_
 )
 {
-	//スワップチェーンバッファにアクセスする
-	auto sToolLender = swapChainContextDiplomat_.Access<SwapChainContext::ToolLender>();
-	SwapChainContext::ToolLender::LicenceType<SwapChainContext::SwapChainBuffer> sLicence;
-	auto& swapChianBuffer = sToolLender.Lend<SwapChainContext::SwapChainBuffer>(sLicence);
-
 	//BufferDispatcherにアクセス
 	auto bToolLender = bufferContextDiplomat_.Access<BufferContext::ToolLender>();
 	BufferContext::ToolLender::LicenceType<BufferContext::BufferDispatcher> bLicence;
 	auto& bufferDispatcher = *bToolLender->Lend<BufferContext::BufferDispatcher>(bLicence);
 
+	//参照する最終カラーバッファ
+	auto* refColorBuffer = static_cast<ColorBuffer*>(bufferDispatcher.Dispatch(finalRefBufferID));
+
+	//スワップチェーンバッファにアクセスする
+	auto sToolLender = swapChainContextDiplomat_.Access<SwapChainContext::ToolLender>();
+	SwapChainContext::ToolLender::LicenceType<SwapChainContext::SwapChainBuffer> sLicence;
+	auto& swapChianBuffer = sToolLender.Lend<SwapChainContext::SwapChainBuffer>(sLicence);
+
+	//スワップチェーンバッファの情報
 	auto const& rtvHandle = swapChianBuffer.OutProperRtvHandle(frameIndex_);
 	auto const& viewport_scissor = swapChianBuffer.WatchMatrices();
 
-	//参照するカラーバッファのsrvIndexをルートコンスタンツで送る
-	auto* refColorBuffer = static_cast<ColorBuffer*>(bufferDispatcher.Dispatch(finalRefBufferID));
+	//バックバッファが参照する最終カラーバッファ
 	SRVHeapIndex refBufferSrvHeapIndex = refColorBuffer->OutProperSRVHeapIndex();
 	auto const bindSlot = ConstantBuffers::RootConstantsBindSlots::kFinalColorBufferSrv;
 
+	//参照する最終カラーバッファのsrvIndexをルートコンスタンツで送る
 	runtimeWrapper_.SetGraphicsRoot32BitConstants
 	(
 		(UINT)bindSlot,
@@ -90,14 +94,41 @@ void RenderContext::StaticRenderGraph::FinalRenderer::RenderBackBuffer
 	//psoのセット
 	runtimeWrapper_.SetPipelineState(finalRenderingPso);
 
-	//描画
+
+
+#ifndef NDEBUG
+
+	DrawOnImGuiWindow
+	(
+		refColorBuffer,
+		debugContextDiplomat_,
+		commandContextDiplomat_
+	);
+
+#else
+
+	//フルスクリーンで描画
 	runtimeWrapper_.DispatchMesh(3, 1, 1);
 
-	//バックバッファをPRESENTにする前にImGuiをの描画を差し込む
-	auto& debugAgent = debugContextDiplomat_.Access<DebugContext::ExecutionAgent>();
-	debugAgent.RenderImGui(DebugContext::ExecutionAgent::RenderContextProof{}, commandContextDiplomat_);
+#endif // !NDEBUG
+
 
 	//バリアを張る→Present
 	auto barrier = swapChianBuffer.CreateBarrier<D3D12_RESOURCE_STATE_PRESENT>(frameIndex_);
 	runtimeWrapper_.ResourceBarrier(1, &barrier);
+}
+
+void RenderContext::StaticRenderGraph::FinalRenderer::DrawOnImGuiWindow
+(
+	ColorBuffer* refColorBuffer_,
+	DebugContextDiplomat& debugContextDiplomat_,
+	CommandContextDiplomat& commandContextDiplomat_
+)
+{
+	//バックバッファをPRESENTにする前にImGuiの描画を差し込む
+	D3D12_GPU_DESCRIPTOR_HANDLE gpuHadle = refColorBuffer_->OutProperSRVHandleGPU();
+
+	auto& debugAgent = debugContextDiplomat_.Access<DebugContext::ExecutionAgent>();
+	debugAgent.RenderImGui(DebugContext::ExecutionAgent::RenderContextProof{}, gpuHadle, commandContextDiplomat_);
+
 }

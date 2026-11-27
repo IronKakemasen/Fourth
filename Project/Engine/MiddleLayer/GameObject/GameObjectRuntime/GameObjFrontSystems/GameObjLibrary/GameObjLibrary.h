@@ -20,6 +20,8 @@ public:
 		
 	//更新優先順にソートされたオブジェコンテナの参照を返す
 	std::vector<GameObjectBehavior*>& RefSortedObjContainer();
+	//とその名簿
+	std::vector<std::string> const& WatchSortedObjContainerNameList()const;
 
 	//objUniqueMapを返す
 	std::unordered_map<std::string, std::unique_ptr<GameObjectBehavior>>& RefObjUniqueMap();
@@ -35,6 +37,9 @@ private:
 	std::unique_ptr<std::unordered_map<std::string, std::pair<bool, std::vector<GameObjectBehavior*>>>> objMapCache;
 	//更新優先度順に並び替えられたコンテナ
 	std::vector<GameObjectBehavior*> sortedByProority;
+	//とその名簿。デバッグUI表示に利用
+	std::vector<std::string> sortedByProorityNameList;
+
 	//ゲームオブジェクト検索用マップ
 	std::unordered_map<std::string, std::vector<GameObjectBehavior*>> forSearchObjMap;
 

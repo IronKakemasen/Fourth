@@ -2,6 +2,9 @@
 #include "GameObjController.h"
 #include "ObjDataLoader/ObjDataLoader.h"
 #include "../GameObjLibrary/GameObjLibrary.h"
+#include "ObjDebugger/ObjDebugger.h"
+
+
 
 GameObjectContext::FrontlineSystems::GameObjController::GameObjController(NexusFieldProof proof_)
 {
@@ -22,9 +25,38 @@ void GameObjectContext::FrontlineSystems::GameObjController::ResetObjTransformFr
 {
 	auto& sortedObjContainer = objLibrary_.RefSortedObjContainer();
 
+	//デバッグUI表示用
+#ifndef NDEBUG
+
+	UINT objCnt{};
+	auto const& objNameList = objLibrary_.WatchSortedObjContainerNameList();
+
+#endif // !NDEBUG
+
+
 	//トランスフォームのフレームフラグ関連をリセットする
 	for (auto* obj : sortedObjContainer)
 	{
+
+		if (!obj->IsActive())
+		{
+
+#ifndef NDEBUG
+
+			objCnt++;
+
+#endif // !NDEBUG
+
+			continue;
+		}
+
+#ifndef NDEBUG
+
+		ObjDebugger::ShowActiveList(objNameList[objCnt++]);
+
+#endif // !NDEBUG
+
+
 		auto* trans = obj->GetSystemPtr<Transform>();
 		if (!trans) continue;
 
@@ -32,6 +64,8 @@ void GameObjectContext::FrontlineSystems::GameObjController::ResetObjTransformFr
 		trans->ResetFrameFlag();
 		//冒頭の減算でカウンタが2になるのは、今フレームで再計算されたときだけにする
 		trans->DecrementNeedOverrideBufferCnt();
+
+
 	}
 
 }
@@ -47,6 +81,8 @@ void GameObjectContext::FrontlineSystems::GameObjController::UpdateAllGameObj
 	auto& sortedObjContainer = objLibrary_.RefSortedObjContainer();
 	for (auto* obj : sortedObjContainer)
 	{
+		if (obj->IsActive())continue;
+
 		//ゲームオブジェクトの更新処理
 		obj->Update(runtimeInterface_);
 

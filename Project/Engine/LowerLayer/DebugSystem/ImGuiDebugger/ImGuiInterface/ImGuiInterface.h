@@ -23,7 +23,7 @@ public:
 
 	friend constexpr WindowAttach operator|(WindowAttach left_, WindowAttach right_)
 	{
-		return static_cast<WindowAttach>(static_cast<UINT>(left_) | static_cast<UINT>(right_));
+		return WindowAttach(UINT(left_) | UINT(right_));
 	}
 
 

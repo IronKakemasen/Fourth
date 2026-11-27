@@ -6,10 +6,6 @@
 //外部
 #include "../../Core/Command/CommandContextDiplomats.h"
 
-#include "ImGuiInterface/ImGuiInterface.h"
-#include "../../../Math/Vector/Vector3.h"
-#include "../../../Math/Vector/Vector4.h"
-
 
 DebugContext::ImGuiDebugger::ImGuiDebugger
 (
@@ -41,42 +37,6 @@ void DebugContext::ImGuiDebugger::BeginNewFrame
 	ImGui_ImplWin32_NewFrame();
 	ImGui::NewFrame();
 
-	{
-		static int       counter = 0;
-		static bool      enabled = true;
-		static int       level = 3;
-		static float     gain = 0.5f;
-		static Vector3   position = Vector3(0.0f, 0.0f, 0.0f);
-		static Vector4<float> color(1.0f, 0.5f, 0.2f, 1.0f);
-
-		ImGuiInterface::Window window("Sample Window",ImGuiInterface::WindowAttach::kNoMove);
-		if (window)
-		{
-			ImGuiInterface::Text("Hello, ImGui!");
-			ImGuiInterface::Separator();
-
-			if (ImGuiInterface::Button("Click me")) ++counter;
-			ImGuiInterface::Text("Clicked: %d times", counter);
-
-			ImGuiInterface::Separator();
-
-			ImGuiInterface::Text("enabled=%d level=%d gain=%.2f", enabled, level, gain);
-
-			ImGuiInterface::RadioButton("radio", 3,3);
-
-			ImGuiInterface::BeginChild("AAAAA");
-
-			ImGuiInterface::Checkbox("Enabled", &enabled);
-			ImGuiInterface::Slider("Level", level, 0, 10);          // int 版
-			ImGuiInterface::Slider("Gain", gain, 0.0f, 1.0f);       // float 版
-			ImGuiInterface::DragVector3("Position", position);      // 速度は省略(0.01f)
-			ImGuiInterface::ColorEdit4("Color", color);
-
-			ImGuiInterface::EndChild();
-
-		}
-	}
-
 #endif
 
 }
@@ -84,10 +44,31 @@ void DebugContext::ImGuiDebugger::BeginNewFrame
 void DebugContext::ImGuiDebugger::Render
 (
 	AgentKey key_,
+	D3D12_GPU_DESCRIPTOR_HANDLE finalRefBufferGpuHandle_,
 	CommandContextDiplomat& commandContextDiplomat_
 ) 
 {
 #ifndef NDEBUG
+
+	static float const width = (float)ProjectConfig::Window::Width() * kSceneViewScaleX;
+	static float const height = (float)ProjectConfig::Window::Width() * kSceneViewScaleY;
+
+	//最終描画結果をImGUiウィンドウで描画
+	ImGui::Begin
+	(
+		"SceneView",
+		nullptr, 
+		ImGuiWindowFlags_NoMove|
+		ImGuiWindowFlags_NoCollapse|
+		ImGuiWindowFlags_NoResize
+	);
+
+	ImGui::Image
+	(
+		ImMapTextures(finalRefBufferGpuHandle_.ptr), 
+		ImVec2(width, height)
+	);
+	ImGui::End();
 
 	//コマンドリストを借りる
 	auto* cndList = &commandContextDiplomat_.Access<CommandContext::ToolLender>().

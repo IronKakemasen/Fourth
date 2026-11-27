@@ -40,8 +40,11 @@ public:
 		DataType const& data_
 	)
 	{
-		Check<DataType>(fileName_,nest_);
 
+#ifdef _DEBUG
+
+		if (!ProjectConfig::Debug::kEnableJsonDataCheck) Check<DataType>(fileName_,nest_);
+#endif
 		nlohmann::json* current = &PullJsonData(fileName_);
 
 		for (size_t i = 0; i + 1 < nest_.size(); ++i)
@@ -94,7 +97,6 @@ private:
 	template<typename DataType>
 	void Check(std::string const& fileName_ , std::vector<std::string> const& nest_)
 	{
-		if (!ProjectConfig::Debug::kEnableJsonDataCheck) return;
 
 		ErrorMessageOutput::Assert::DetectError
 		(
@@ -120,5 +122,6 @@ private:
 		{
 			ErrorMessageOutput::Assert::OutputError("データ型に異常あり", "Miyajison.h");
 		}
+
 	}
 };

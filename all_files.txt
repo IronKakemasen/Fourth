@@ -9790,32 +9790,6 @@ void DebugContext::ImGuiDebugger::BeginNewFrame
 	ImGui_ImplDX12_NewFrame();
 	ImGui_ImplWin32_NewFrame();
 	ImGui::NewFrame();
-	{
-		static int       counter = 0;
-		static bool      enabled = true;
-		static int       level = 3;
-		static float     gain = 0.5f;
-		static Vector3   position = Vector3(0.0f, 0.0f, 0.0f);
-		static Vector4<float> color(1.0f, 0.5f, 0.2f, 1.0f);
-		ImGuiInterface::Window window("Sample Window");
-		if (window)
-		{
-			ImGuiInterface::Text("Hello, ImGui!");
-			ImGuiInterface::Separator();
-			if (ImGuiInterface::Button("Click me")) ++counter;
-			ImGuiInterface::Text("Clicked: %d times", counter);
-			ImGuiInterface::Separator();
-			ImGuiInterface::Text("enabled=%d level=%d gain=%.2f", enabled, level, gain);
-			ImGuiInterface::RadioButton("radio", 3,3);
-			ImGuiInterface::BeginChild("AAAAA");
-			ImGuiInterface::Checkbox("Enabled", &enabled);
-			ImGuiInterface::Slider("Level", level, 0, 10);          // int 版
-			ImGuiInterface::Slider("Gain", gain, 0.0f, 1.0f);       // float 版
-			ImGuiInterface::DragVector3("Position", position);      // 速度は省略(0.01f)
-			ImGuiInterface::ColorEdit4("Color", color);
-			ImGuiInterface::EndChild();
-		}
-	}
 #endif
 }
 void DebugContext::ImGuiDebugger::Render
@@ -9920,17 +9894,21 @@ ImGuiInterface::Window::Window
 }
 int ImGuiInterface::ConvertAttachFlagsToImGuiStyle(WindowAttach flags_)
 {
+#ifndef NDEBUG
 	ImGuiWindowFlags flags{};
 	if ((int)flags_ & (int)WindowAttach::kAddMenuBar)	flags	|= ImGuiWindowFlags_MenuBar;
 	if ((int)flags_ & (int)WindowAttach::kNoMove)		flags	|= ImGuiWindowFlags_NoMove;
 	if ((int)flags_ & (int)WindowAttach::kNoCollapse)	flags	|= ImGuiWindowFlags_NoCollapse;
 	if ((int)flags_ & (int)WindowAttach::kNoResize)		flags	|= ImGuiWindowFlags_NoResize;
 	return flags;
+#else
+	return 0;
+#endif
 }
 ImGuiInterface::Window::~Window()
 {
 #ifndef NDEBUG
-	Debug();
+	if(ProjectConfig::Debug::kEnableImGuiCallChack) Debug();
 	ImGui::End();
 #endif
 }
@@ -10120,7 +10098,7 @@ public:
 	};
 	friend constexpr WindowAttach operator|(WindowAttach left_, WindowAttach right_)
 	{
-		return static_cast<WindowAttach>(static_cast<UINT>(left_) | static_cast<UINT>(right_));
+		return WindowAttach(UINT(left_) | UINT(right_));
 	}
 	class Window
 	{
@@ -10372,9 +10350,11 @@ public:
 DebugContext::PrimaryDebugger::PrimaryDebugger(NexusFieldProof proof_)
 {
 	using namespace ProjectConfig::Debug;
+#ifdef _DEBUG
 	if (kEnableDebugLayer) debugLayer = std::make_unique<DebugLayer>(proof_);
 	if (kEnablePointerValidator) pointerValidator = std::make_unique<PointerValidator>(proof_);
 	if (kEnableLeakChecker) leakChecker = std::make_unique<LeakChecker>(proof_);
+#endif // _DEBUG
 }
 DebugContext::PrimaryDebugger::~PrimaryDebugger()
 {
@@ -15644,6 +15624,10 @@ void Model::ChangeBlendMode(RenderStateComponent::BlendMode dst_)
 	);
 	changeableParams.blendMode = dst_;
 }
+void Model::ChangeVisible(bool dst_)
+{
+	changeableParams.isVisible = dst_;
+}
 void Model::ChangeMaterialType(Material::Type dst_)
 {
 	bool hasConfigured{};
@@ -15715,6 +15699,7 @@ public:
 	//上位レイヤーでモデルのパラメーターを弄るときに
 	void ChangeBlendMode(RenderStateComponent::BlendMode dst_);
 	void ChangeMaterialType(Material::Type dst_);
+	void ChangeVisible(bool dst_);
 	Materials& RefMaterials(size_t index_) 
 	{
 #ifdef _DEBUG
@@ -19959,18 +19944,6 @@ public:
 #include "GameObjectSpecification.h"
 void GridFloor::Update(SceneRuntimeInterface& sceneRuntimeInterface_)
 {
-	//static Vector3 r;
-	//static Vector3 t;
-	//static Vector4<float> c = {0.0f,0.0f ,0.0f ,1.0f};
-	//r += {0.016f, 0.016f, 0.016f };
-	//c += {0.0016f, 0.0025f, 0.005f, 0.0f };
-	//for (int i = 0;i < 10;++i)
-	//{
-	//	p[i]->RefTransform(0).Rotate(r);
-	//	p[i]->RefMaterials(0).Ref<Material::Type::kStandard>().baseColor = c;
-	//}
-	//t.data.z += 0.01666f;
-	//RefSystem<Transform>().TranslatePosition(t);
 }
 //ゲームオブジェクトのリセットに使用。シーンが切り替わった時に呼ばれる
 void GridFloor::Reset()
@@ -19987,9 +19960,9 @@ void GridFloor::Awake(SceneInitInterface& sceneInitInterface_)
 	renderState.materialTypes.emplace_back(Material::Type::kGridLine);
 	std::vector<RenderState> renderStates;
 	renderStates.emplace_back(std::move(renderState));
-	p = sceneInitInterface_.CreateModel<Model::MeshUpdateType::kStatic,Materials::UpdateType::kStatic>
-		("Plane200x200Obj", renderStates, 1, "GridFloor");
-	sceneInitInterface_.AttachMaterial<Material::Type::kGridLine>(p[0]->RefMaterials(0));
+	plane = sceneInitInterface_.CreateModel<Model::MeshUpdateType::kStatic,Materials::UpdateType::kStatic>
+		("Plane200x200Obj", renderStates, 1, "GridFloor")[0];
+	sceneInitInterface_.AttachMaterial<Material::Type::kGridLine>(plane->RefMaterials(0));
 }
 //更新処理の直前に呼ばれる。他のゲームオブジェクトはこの時点で生成されているので
 //検索などはできる
@@ -20016,7 +19989,7 @@ private:
 	//更新処理の直前に呼ばれる。他のゲームオブジェクトはこの時点で生成されているので
 	//検索などはできる
 	virtual void Start(SceneRuntimeInterface& sceneRuntimeInterface_)override;
-	std::vector<Model*> p;
+	Model* plane;
 };
 
 ========================================
@@ -20166,6 +20139,7 @@ void GameObjectContext::FrontlineSystems::GameObjController::ResetObjTransformFr
 	//トランスフォームのフレームフラグ関連をリセットする
 	for (auto* obj : sortedObjContainer)
 	{
+		if (obj->IsActive())continue;
 		auto* trans = obj->GetSystemPtr<Transform>();
 		if (!trans) continue;
 		//更新1フレームガードをリセット
@@ -20184,6 +20158,7 @@ void GameObjectContext::FrontlineSystems::GameObjController::UpdateAllGameObj
 	auto& sortedObjContainer = objLibrary_.RefSortedObjContainer();
 	for (auto* obj : sortedObjContainer)
 	{
+		if (obj->IsActive())continue;
 		//ゲームオブジェクトの更新処理
 		obj->Update(runtimeInterface_);
 		auto* trans = obj->GetSystemPtr<Transform>();
@@ -20232,6 +20207,8 @@ class GameObjectContext::FrontlineSystems::GameObjController
 {
 	//ジェーソンファイルからオブジェの情報を引っ張ってくる
 	class ObjDataLoader;
+	//ゲームオブジェクトのパラメーター表示、変更、保存をImGuiでおこなう
+	class ObjDebugger;
 public:
 	GameObjController(NexusFieldProof proof_);
 	//シーンが作成された後に、
@@ -20282,6 +20259,48 @@ class GameObjectContext::FrontlineSystems::FrontlineSystems::GameObjController::
 	{
 		static inline std::string const kGameObjectUpdatePriority = "GameObjectUpdatePriority";
 	};
+};
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\MiddleLayer\GameObject\GameObjectRuntime\GameObjFrontSystems\GameObjController\ObjDebugger\ObjDebugger.cpp ===
+========================================
+#include "PreCompileHeader.h"
+#include "ObjDebugger.h"
+#include "ImGuiInterface.h"
+void GameObjectContext::FrontlineSystems::GameObjController::ObjDebugger::DebugAllGameObjects(std::vector<GameObjectBehavior*>& objects_)
+{
+	ImGuiInterface::Window window("ObjHierarchy");
+	for (auto* obj : objects_)
+	{
+	}
+	if (window)
+	{
+		//ImGuiInterface::Text("Hello, ImGui!");
+		//ImGuiInterface::Separator();
+		//if (ImGuiInterface::Button("Click me")) ++counter;
+		//ImGuiInterface::Text("Clicked: %d times", counter);
+		//ImGuiInterface::Separator();
+		//ImGuiInterface::Text("enabled=%d level=%d gain=%.2f", enabled, level, gain);
+		//ImGuiInterface::RadioButton("radio", 3, 3);
+		//ImGuiInterface::BeginChild("AAAAA");
+		//ImGuiInterface::Checkbox("Enabled", &enabled);
+		//ImGuiInterface::Slider("Level", level, 0, 10);          // int 版
+		//ImGuiInterface::Slider("Gain", gain, 0.0f, 1.0f);       // float 版
+		//ImGuiInterface::DragVector3("Position", position);      // 速度は省略(0.01f)
+		//ImGuiInterface::ColorEdit4("Color", color);
+		//ImGuiInterface::EndChild();
+	}
+}
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\MiddleLayer\GameObject\GameObjectRuntime\GameObjFrontSystems\GameObjController\ObjDebugger\ObjDebugger.h ===
+========================================
+#pragma once
+#include "../GameObjController.h"
+class GameObjectContext::FrontlineSystems::GameObjController::ObjDebugger
+{
+	friend class GameObjController;
+	void DebugAllGameObjects(std::vector<GameObjectBehavior*>& objects_);
 };
 
 ========================================
@@ -20438,6 +20457,8 @@ private:
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\MiddleLayer\GameObject\GameObjectSpecification\GameObjectSpecification.h ===
 ========================================
 #pragma once
+//ゲームオブジェクトのcppでインクルードしてくれ
+//ヘッダで読み込まんといて
 #include "../../../LowerLayer/Resource/Model/ModelStructure/Model.h"
 #include "../../Scene/SceneStructure/AllSceneInterfaceInclude.h"
 using namespace RenderStateComponent;
@@ -20453,6 +20474,10 @@ using namespace StaticSampler;
 #include "GameObjectBehavior.h"
 GameObjectBehavior::GameObjectBehavior(Local_CreateLicence licence_)
 {
+}
+void GameObjectBehavior::ChangeStatus(Status dst_)
+{
+	status = dst_;
 }
 
 ========================================
@@ -20482,7 +20507,7 @@ public:
 	{
 		return std::get<std::unique_ptr<SystemType>>(systems).get();
 	}
-	Status WatchStatus()const { return status; }
+	bool IsActive()const { return status == Status::kActive; }
 private:
 	//ゲームオブジェクトのステータス
 	Status status = Status::kActive;
@@ -20498,6 +20523,9 @@ private:
 	//更新処理の直前に呼ばれる。他のゲームオブジェクトはこの時点で生成されているので
 	//検索などはできる
 	virtual void Start(SceneRuntimeInterface& sceneRuntimeInterface_) = 0;
+protected:
+	//アクティブ切り替え
+	void ChangeStatus(Status dst_);
 };
 struct GameObjectBehavior::Local_CreateLicence
 {
@@ -25242,7 +25270,7 @@ void SceneContext::ScenePipeline::SceneDataBatchingPlace::BatchingPlace
 		bufferContextDiplomat_
 	);
 	//Staticなものはここでまとめて
-	if (sceneOutput.WatchLeftStaticBatchingCnt() <= (UINT)NumBuffer::kDoubleBuffer)
+	if (sceneOutput.DoBatchStatics())
 	{
 		modelAgent.BatchModelData
 		(
@@ -25286,6 +25314,7 @@ public:
 ========================================
 #include "PreCompileHeader.h"
 #include "SceneCreator.h"
+#include "SceneConfigLoder/SceneConfigLoder.h"
 //外部
 #include "../../../LowerLayer/Resource/Camera/CameraContextDiplomat/CameraContextDiplomat.h"
 #include "../../../LowerLayer/Resource/Camera/CameraContextDiplomat/CameraContextExecutionAgent/CameraContextExecutionAgent.h"
@@ -25299,6 +25328,10 @@ public:
 #include "../../../LowerLayer/Resource/Material/MaterialContextDiplomat/MaterialContextDiplomat.h"
 #include "../../../LowerLayer/Resource/Material/MaterialContextDiplomat/MaterialExecutionAgent/MaterialAgentLicences.h"
 #include "../../../LowerLayer/Resource/Material/MaterialContextDiplomat/MaterialExecutionAgent/MaterialExecutionAgent.h"
+std::unique_ptr<SceneBehavior::SceneConfig> SceneContext::SceneCreator::LoadSceneConfig(std::string const& sceneName_)
+{
+	return SceneConfigLoder::Load(sceneName_);
+}
 template<>
 CameraContext::FrontlineSystems* SceneContext::SceneCreator::ReceiveSystems(CameraContextDiplomat& diplomat_)
 {
@@ -25329,10 +25362,12 @@ MaterialContext::FrontlineSystems* SceneContext::SceneCreator::ReceiveSystems(Ma
 ========================================
 #pragma once
 #include "../SceneContext.h"
-#include "../SceneStructure/SceneBehavior.h"
+#include "../SceneStructure/SceneConfig/SceneConfig.h"
 //FrontlineSystems
 class SceneContext::SceneCreator
 {
+	//jsonにあるシーンのコンフィグを読み込む
+	class SceneConfigLoder;
 public:
 	SceneCreator() = default;
 	//シーンを作成する
@@ -25360,16 +25395,20 @@ public:
 		auto* scenePtr = static_cast<SceneBehavior*>(sceneUnique.get());
 		//仮想初期化関数を呼ぶ
 		scenePtr->Init();
+		//シーン設定をジェーソンファイルから読み込む
+		scenePtr->SetSceneConfig(LoadSceneConfig(sceneName_));
 		//シーンのゲームオブジェクトの初期化、ランタイム用コンテナの構築
 		scenePtr->InitAllGameObj(sceneName_);
 		//モデルをスタティックとダイナミックに分ける
-		sceneUnique->SeparateModels();
+		scenePtr->SeparateModels();
 		return sceneUnique;
 	}
 private:
 	//シーンのシステム群を他コンテキストから構成する
 	template<typename SystemsType, typename DiplomatType>
 	SystemsType* ReceiveSystems(DiplomatType& diplomat_);
+	//シーン設定をジェーソンファイルから読み込む
+	std::unique_ptr<SceneBehavior::SceneConfig> LoadSceneConfig(std::string const& sceneName_);
 };
 template<>
 CameraContext::FrontlineSystems* SceneContext::SceneCreator::ReceiveSystems(CameraContextDiplomat& diplomat_);
@@ -25379,6 +25418,37 @@ template<>
 GameObjectContext::FrontlineSystems* SceneContext::SceneCreator::ReceiveSystems(GameObjectContextDiplomat& diplomat_);
 template<>
 MaterialContext::FrontlineSystems* SceneContext::SceneCreator::ReceiveSystems(MaterialContextDiplomat& diplomat_);
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\MiddleLayer\Scene\SceneCreator\SceneConfigLoder\SceneConfigLoder.cpp ===
+========================================
+#include "PreCompileHeader.h"
+#include "SceneConfigLoder.h"
+std::unique_ptr<SceneBehavior::SceneConfig> 
+SceneContext::SceneCreator::SceneConfigLoder::Load(std::string const& sceneName_)
+{
+	auto* miyajison = Miyajison::Get();
+	return std::make_unique<SceneBehavior::SceneConfig>
+	(
+		miyajison->LoadData<bool>(sceneName_, { DataKey::kAlwaysUpdateStaticB })
+	);
+}
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\MiddleLayer\Scene\SceneCreator\SceneConfigLoder\SceneConfigLoder.h ===
+========================================
+#pragma once
+#include "../SceneCreator.h"
+class SceneContext::SceneCreator::SceneConfigLoder
+{
+	friend class SceneCreator;
+	static std::unique_ptr<SceneBehavior::SceneConfig> Load(std::string const& sceneName_);
+private:
+	struct DataKey
+	{
+		static inline const std::string kAlwaysUpdateStaticB = "alwaysUpdateStatic";
+	};
+};
 
 ========================================
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\MiddleLayer\Scene\SceneLibrary\SceneLibrary.cpp ===
@@ -25490,6 +25560,7 @@ using SceneInterfacesUnique = std::tuple
 #include "SceneBehavior.h"
 #include "SceneOutput/SceneOutput.h"
 #include "AllSceneInterfaceInclude.h"
+#include "SceneConfig/SceneConfig.h"
 //外部
 #include "../../../LowerLayer/Resource/Camera/CameraContextRuntime/CameraFrontlineSystems.h"
 #include "../../../LowerLayer/Resource/Camera/CameraStructure/CameraDesc/CameraDesc.h"
@@ -25511,7 +25582,15 @@ void SceneBehavior::Update()
 	//ゲームオブジェクト、モデルのトランスフォームの更新フラグをリセットする
 	objSystems->ResetObjTransformFrameFlag();
 	modelSystems->ResetModelTransformFrameFlag<Model::MeshUpdateType::kDynamic>();
-	if (output->leftStaticBatchingCnt == (UINT)NumBuffer::kDoubleBuffer)
+	//オブジェ配置シーンのように静的オブジェクトを常に更新したい場合があるので分岐
+	if (!sceneConfig->alwaysUpdateStatic)
+	{
+		if (output->leftStaticBatchingCnt == (UINT)NumBuffer::kDoubleBuffer)
+		{
+			modelSystems->ResetModelTransformFrameFlag<Model::MeshUpdateType::kStatic>();
+		}
+	}
+	else
 	{
 		modelSystems->ResetModelTransformFrameFlag<Model::MeshUpdateType::kStatic>();
 	}
@@ -25522,7 +25601,14 @@ void SceneBehavior::Update()
 	);
 	//このシーンのモデルのトランスフォームのアップデートを呼ぶ
 	modelSystems->UpdateModelTransform<Model::MeshUpdateType::kDynamic>();
-	if (output->leftStaticBatchingCnt == (UINT)NumBuffer::kDoubleBuffer)
+	if (!sceneConfig->alwaysUpdateStatic)
+	{
+		if (output->leftStaticBatchingCnt == (UINT)NumBuffer::kDoubleBuffer)
+		{
+			modelSystems->UpdateModelTransform<Model::MeshUpdateType::kStatic>();
+		}
+	}
+	else
 	{
 		modelSystems->UpdateModelTransform<Model::MeshUpdateType::kStatic>();
 	}
@@ -25617,6 +25703,11 @@ void SceneBehavior::SetSystems
 		output->materialBatchFormatsPtr = &materialSystems->RefMaterialBatchFormatsArr();
 	}
 }
+void SceneBehavior::SetSceneConfig(std::unique_ptr<SceneConfig>&& sceneConfig_)
+{
+	sceneConfig = std::move(sceneConfig_);
+	output->alwaysUpdateStatic = sceneConfig->alwaysUpdateStatic;
+}
 void SceneBehavior::CreatePresetCamera()
 {
 	//各シーンに1つは存在するデバッグカメラを作成
@@ -25641,6 +25732,8 @@ class SceneBehavior
 {
 	//おおざっぱだが必要な情報のみ開示したいのでフレンド登録
 	friend class SceneContext;
+	//シーンのコンフィグ
+	struct SceneConfig;
 public:
 	//このシーンで使用しているカメラ、モデル、ライトなどの情報
 	struct Output;
@@ -25671,6 +25764,8 @@ private:
 	void InitAllGameObj(std::string const& sceneName_);
 	//シーンクリエイターがプリセットカメラを備え付ける
 	void CreatePresetCamera();
+	//jsonファイルから設定を読み込み書き込まれたデータを取り込む
+	void SetSceneConfig(std::unique_ptr<SceneConfig>&& sceneConfig_);
 	//SceneContext::SceneControllerのみ呼べる
 	void Update();
 	//SceneControllerにこのシーンで使われているリソース伝えるため
@@ -25684,6 +25779,8 @@ private:
 	MaterialContext::FrontlineSystems* materialSystems = nullptr;
 	//シーンの出力物
 	std::unique_ptr<Output> output;
+	//シーンの設定
+	std::unique_ptr<SceneConfig> sceneConfig;
 	//シーンのインターフェース群
 	SceneInterfacesUnique interfaces;
 };
@@ -25692,6 +25789,21 @@ struct SceneBehavior::InstancingLicense
 private:
 	friend class SceneContext;
 	explicit InstancingLicense() = default;
+};
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\MiddleLayer\Scene\SceneStructure\SceneConfig\SceneConfig.h ===
+========================================
+#pragma once
+#include "../SceneBehavior.h"
+struct SceneBehavior::SceneConfig
+{
+	SceneConfig
+	(
+		bool alwaysUpdateStatic_
+	):alwaysUpdateStatic(alwaysUpdateStatic_){}
+	//staticなものを常に更新するかどうかのフラグ
+	bool alwaysUpdateStatic = true;
 };
 
 ========================================
@@ -25834,7 +25946,12 @@ struct SceneBehavior::Output
 	friend class SceneBehavior;
 	auto const& WatchUsingCamera()const { return *usingCamera; }
 	auto const* WatchModelContainer()const { return modelContainer; }
-	auto const& WatchLeftStaticBatchingCnt()const { return leftStaticBatchingCnt; }
+	bool DoBatchStatics()const 
+	{
+		return 
+			leftStaticBatchingCnt <= (UINT)ProjectConfig::Render::NumBuffer::kDoubleBuffer ||
+			alwaysUpdateStatic; 
+	}
 	auto const& WatchCollectedMaterialBatchFormatsArr()const{return (*materialBatchFormatsPtr);}
 private:
 	//全描画対象のバッチングに必要なMaterialBatchFormatのコンテナ
@@ -25846,6 +25963,8 @@ private:
 	ModelContext::FrontlineSystems::ModelContainer const* modelContainer = nullptr;
 	//static対象を毎回バッチング処理しないようにするため
 	UINT leftStaticBatchingCnt = (UINT)ProjectConfig::Render::NumBuffer::kDoubleBuffer;
+	//staticなものを常にバッチング処理するかどうか。sceneBehaviorのもつalwaysUpdateStaticと同じ
+	bool alwaysUpdateStatic = false;
 };
 
 ========================================
@@ -26732,9 +26851,9 @@ namespace ProjectConfig
 		constexpr D3D_SHADER_MODEL kRequiredShaderModel = D3D_SHADER_MODEL_6_6;
 		constexpr DXGI_FORMAT kSwapChainBufferFormat = DXGI_FORMAT_R16G16B16A16_FLOAT;
 	}
-	//デバッグモードの時のみ有効です
 	namespace Debug
 	{
+#ifdef _DEBUG
 		//DebugLayer
 		constexpr bool kEnableDebugLayer = true;
 		//ポインター破壊検知
@@ -26743,6 +26862,10 @@ namespace ProjectConfig
 		constexpr bool kEnableLeakChecker = true;
 		//Jsonファイルを読み込むときに型チェックを行うかどうか
 		constexpr bool kEnableJsonDataCheck = true;
+#endif // DEBUG
+#ifndef NDEBUG
+		constexpr bool kEnableImGuiCallChack = true;
+#endif
 	}
 	namespace Core
 	{
@@ -27118,7 +27241,9 @@ public:
 		DataType const& data_
 	)
 	{
-		Check<DataType>(fileName_,nest_);
+#ifdef _DEBUG
+		if (!ProjectConfig::Debug::kEnableJsonDataCheck) Check<DataType>(fileName_,nest_);
+#endif
 		nlohmann::json* current = &PullJsonData(fileName_);
 		for (size_t i = 0; i + 1 < nest_.size(); ++i)
 		{
@@ -27158,7 +27283,6 @@ private:
 	template<typename DataType>
 	void Check(std::string const& fileName_ , std::vector<std::string> const& nest_)
 	{
-		if (!ProjectConfig::Debug::kEnableJsonDataCheck) return;
 		ErrorMessageOutput::Assert::DetectError
 		(
 			!nest_.empty(),
@@ -27587,5 +27711,5 @@ namespace StringProcessing
 ========================================
 === SUMMARY ===
 ========================================
-Total Files      : 598
-Effective Lines  : 20175
+Total Files      : 603
+Effective Lines  : 20241

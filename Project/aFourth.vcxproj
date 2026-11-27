@@ -66,7 +66,7 @@
       <TreatWarningAsError>true</TreatWarningAsError>
       <PrecompiledHeader>Use</PrecompiledHeader>
       <PrecompiledHeaderFile>PreCompileHeader.h</PrecompiledHeaderFile>
-      <AdditionalIncludeDirectories>$(ProjectDir)\Engine\Utility;$(ProjectDir)\Engine\PreCompileHeader;$(ProjectDir)\Engine\MiddleLayer\MiyaJison;$(ProjectDir)\Engine\MiddleLayer\Scene\SceneStructure;$(ProjectDir)\Engine\MiddleLayer\GameObject\GameObjectStructure;$(ProjectDir)\Engine\MiddleLayer\GameObject\GameObjectSpecification;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)\Engine\Utility;$(ProjectDir)\Engine\PreCompileHeader;$(ProjectDir)\Engine\MiddleLayer\MiyaJison;$(ProjectDir)\Engine\MiddleLayer\Scene\SceneStructure;$(ProjectDir)\Engine\MiddleLayer\GameObject\GameObjectStructure;$(ProjectDir)\Engine\MiddleLayer\GameObject\GameObjectSpecification;$(ProjectDir)\Engine\LowerLayer\DebugSystem\ImGuiDebugger\ImGuiInterface;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <ForcedIncludeFiles>PreCompileHeader.h;%(ForcedIncludeFiles)</ForcedIncludeFiles>
     </ClCompile>
     <Link>
@@ -92,7 +92,7 @@
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <PrecompiledHeader>Use</PrecompiledHeader>
       <PrecompiledHeaderFile>PreCompileHeader.h</PrecompiledHeaderFile>
-      <AdditionalIncludeDirectories>$(ProjectDir)\Engine\Utility;$(ProjectDir)\Engine\PreCompileHeader;$(ProjectDir)\Engine\MiddleLayer\MiyaJison;$(ProjectDir)\Engine\MiddleLayer\Scene\SceneStructure;$(ProjectDir)\Engine\MiddleLayer\GameObject\GameObjectStructure;$(ProjectDir)\Engine\MiddleLayer\GameObject\GameObjectSpecification;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)\Engine\Utility;$(ProjectDir)\Engine\PreCompileHeader;$(ProjectDir)\Engine\MiddleLayer\MiyaJison;$(ProjectDir)\Engine\MiddleLayer\Scene\SceneStructure;$(ProjectDir)\Engine\MiddleLayer\GameObject\GameObjectStructure;$(ProjectDir)\Engine\MiddleLayer\GameObject\GameObjectSpecification;$(ProjectDir)\Engine\LowerLayer\DebugSystem\ImGuiDebugger\ImGuiInterface;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <ForcedIncludeFiles>PreCompileHeader.h;%(ForcedIncludeFiles)</ForcedIncludeFiles>
       <TreatWarningAsError>true</TreatWarningAsError>
     </ClCompile>
@@ -470,6 +470,7 @@
     <ClCompile Include="Engine\LowerLayer\Resource\Material\MaterialRuntime\MaterialFrontlineSystems\RenderingObjCollector\RenderingObjCollector.cpp" />
     <ClCompile Include="Engine\LowerLayer\Resource\Material\MaterialFSDispatcher\MaterialFSDispatcher.cpp" />
     <ClCompile Include="Engine\MiddleLayer\Scene\SceneCreator\SceneConfigLoder\SceneConfigLoder.cpp" />
+    <ClCompile Include="Engine\MiddleLayer\GameObject\GameObjectRuntime\GameObjFrontSystems\GameObjController\ObjDebugger\ObjDebugger.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Application\AllCameraIncludes.h" />
@@ -853,6 +854,7 @@
     <ClInclude Include="Engine\LowerLayer\Core\Device\Commands\InitImGui\InitImGui.h" />
     <ClInclude Include="Engine\LowerLayer\DebugSystem\ImGuiDebugger\ImGuiInterface\ImGuiInterface.h" />
     <ClInclude Include="Engine\MiddleLayer\Scene\SceneCreator\SceneConfigLoder\SceneConfigLoder.h" />
+    <ClInclude Include="Engine\MiddleLayer\GameObject\GameObjectRuntime\GameObjFrontSystems\GameObjController\ObjDebugger\ObjDebugger.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

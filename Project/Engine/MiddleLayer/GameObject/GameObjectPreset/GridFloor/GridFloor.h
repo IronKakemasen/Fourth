@@ -22,6 +22,6 @@ private:
 	virtual void Start(SceneRuntimeInterface& sceneRuntimeInterface_)override;
 
 
-	std::vector<Model*> p;
+	Model* plane;
 };
 

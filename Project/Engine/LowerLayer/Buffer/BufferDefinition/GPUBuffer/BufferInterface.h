@@ -188,6 +188,8 @@ public:
 	//適切なバリアを出す
 	virtual std::optional<D3D12_RESOURCE_BARRIER> CreateBarrier(BufferUsage usage_) = 0;
 	virtual void Swap()override;
+	//ほぼデバッグ用。srvのgpuハンドルを返す
+	virtual D3D12_GPU_DESCRIPTOR_HANDLE OutProperSRVHandleGPU(int index_ = 0)const = 0;
 
 protected:
 

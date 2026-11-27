@@ -5,22 +5,6 @@
 
 void GridFloor::Update(SceneRuntimeInterface& sceneRuntimeInterface_)
 {
-	//static Vector3 r;
-	//static Vector3 t;
-	//static Vector4<float> c = {0.0f,0.0f ,0.0f ,1.0f};
-
-	//r += {0.016f, 0.016f, 0.016f };
-	//c += {0.0016f, 0.0025f, 0.005f, 0.0f };
-
-	//for (int i = 0;i < 10;++i)
-	//{
-	//	p[i]->RefTransform(0).Rotate(r);
-	//	p[i]->RefMaterials(0).Ref<Material::Type::kStandard>().baseColor = c;
-	//}
-
-	//t.data.z += 0.01666f;
-
-	//RefSystem<Transform>().TranslatePosition(t);
 
 }
 
@@ -43,11 +27,10 @@ void GridFloor::Awake(SceneInitInterface& sceneInitInterface_)
 	std::vector<RenderState> renderStates;
 	renderStates.emplace_back(std::move(renderState));
 
+	plane = sceneInitInterface_.CreateModel<Model::MeshUpdateType::kStatic,Materials::UpdateType::kStatic>
+		("Plane200x200Obj", renderStates, 1, "GridFloor")[0];
 
-	p = sceneInitInterface_.CreateModel<Model::MeshUpdateType::kStatic,Materials::UpdateType::kStatic>
-		("Plane200x200Obj", renderStates, 1, "GridFloor");
-
-	sceneInitInterface_.AttachMaterial<Material::Type::kGridLine>(p[0]->RefMaterials(0));
+	sceneInitInterface_.AttachMaterial<Material::Type::kGridLine>(plane->RefMaterials(0));
 	
 }
 
