@@ -3,7 +3,7 @@
 #include "ImGuiSetUpper/ImGuiSetUpper.h"
 #include "ImGuiInclude.h"
 #include "ImGuiInterface/ImGuiInterface.h"
-
+#include "HierarchyWindow/HierarchyWindow.h"
 
 //外部
 #include "../../Core/Command/CommandContextDiplomats.h"
@@ -12,6 +12,10 @@
 using namespace ProjectConfig;
 using namespace ProjectConfig::Debug;
 
+namespace
+{
+	auto const fileName = "ImGuiDebugger.cpp";
+}
 
 DebugContext::ImGuiDebugger::ImGuiDebugger
 (
@@ -28,7 +32,12 @@ DebugContext::ImGuiDebugger::ImGuiDebugger
 		deviceContextDip_,
 		descriptorHeapContextDip_
 	);
+
+	hierarchyWindow = std::make_unique<HierarchyWindow>();
+	Logger::Log("Instantiate: hierarchyWindow", fileName);
 }
+
+DebugContext::ImGuiDebugger::~ImGuiDebugger() {}
 
 void DebugContext::ImGuiDebugger::BeginNewFrame
 (
