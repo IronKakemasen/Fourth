@@ -321,6 +321,7 @@
     <ClCompile Include="Engine\LowerLayer\DebugSystem\ImGuiDebugger\ImGuiSetUpper\ImGuiSetUpper.cpp" />
     <ClCompile Include="Engine\LowerLayer\Core\Device\Commands\InitImGui\InitImGui.cpp" />
     <ClCompile Include="Engine\LowerLayer\DebugSystem\ImGuiDebugger\ImGuiInterface\ImGuiInterface.cpp" />
+    <ClCompile Include="Engine\LowerLayer\DebugSystem\ImGuiDebugger\HierarchyWindow\HierarchyWindow.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="Engine\LowerLayer\Core\Window\WindowContext.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Use</PrecompiledHeader>
@@ -855,6 +856,7 @@
     <ClInclude Include="Engine\LowerLayer\DebugSystem\ImGuiDebugger\ImGuiInterface\ImGuiInterface.h" />
     <ClInclude Include="Engine\MiddleLayer\Scene\SceneCreator\SceneConfigLoder\SceneConfigLoder.h" />
     <ClInclude Include="Engine\MiddleLayer\GameObject\GameObjectRuntime\GameObjFrontSystems\GameObjController\ObjDebugger\ObjDebugger.h" />
+    <ClInclude Include="Engine\LowerLayer\DebugSystem\ImGuiDebugger\HierarchyWindow\HierarchyWindow.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

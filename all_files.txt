@@ -9778,10 +9778,15 @@ namespace ErrorMessageOutput
 #include "ImGuiSetUpper/ImGuiSetUpper.h"
 #include "ImGuiInclude.h"
 #include "ImGuiInterface/ImGuiInterface.h"
+#include "HierarchyWindow/HierarchyWindow.h"
 //外部
 #include "../../Core/Command/CommandContextDiplomats.h"
 using namespace ProjectConfig;
 using namespace ProjectConfig::Debug;
+namespace
+{
+	auto const fileName = "ImGuiDebugger.cpp";
+}
 DebugContext::ImGuiDebugger::ImGuiDebugger
 (
 	NexusFieldProof proof_,
@@ -9797,7 +9802,10 @@ DebugContext::ImGuiDebugger::ImGuiDebugger
 		deviceContextDip_,
 		descriptorHeapContextDip_
 	);
+	hierarchyWindow = std::make_unique<HierarchyWindow>();
+	Logger::Log("Instantiate: hierarchyWindow", fileName);
 }
+DebugContext::ImGuiDebugger::~ImGuiDebugger() {}
 void DebugContext::ImGuiDebugger::BeginNewFrame
 (
 	NexusFieldProof proof_,
@@ -9855,6 +9863,7 @@ void DebugContext::ImGuiDebugger::Render
 class DebugContext::ImGuiDebugger
 {
 	class SetUpper;
+	class HierarchyWindow;
 public:
 	ImGuiDebugger
 	(
@@ -9863,6 +9872,7 @@ public:
 		DeviceContextDiplomat& deviceContextDip_,
 		DescriptorHeapContextDiplomat& descriptorHeapContextDip_
 	);
+	~ImGuiDebugger();
 	void BeginNewFrame
 	(
 		NexusFieldProof proof_,
@@ -9875,6 +9885,7 @@ public:
 		CommandContextDiplomat& commandContextDiplomat_
 	);
 private:
+	std::unique_ptr<HierarchyWindow> hierarchyWindow;
 };
 
 ========================================
@@ -9902,6 +9913,163 @@ extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler
     LPARAM lParam
 );
 #endif
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\DebugSystem\ImGuiDebugger\HierarchyWindow\HierarchyWindow.cpp ===
+========================================
+#include "PreCompileHeader.h"
+#include "HierarchyWindow.h"
+#include "ImGuiInterface.h"
+using namespace ProjectConfig;
+namespace
+{
+	auto const fileName = "HierarchyWindow.cpp";
+}
+DebugContext::ImGuiDebugger::HierarchyWindow::HierarchyWindow()
+{
+#ifndef NDEBUG
+	Reserve<Tag::kGameObject>();
+	ErrorMessageOutput::Assert::DetectError
+	(
+		callChecker == Tag::kCount,
+		"なにかがリザーブされてない(エンジン)",
+		fileName
+	);
+#endif
+}
+void DebugContext::ImGuiDebugger::HierarchyWindow::ShowHierarchyWindow()
+{
+#ifndef NDEBUG
+	//ウィンドウのサイズと位置を指定
+	ImGuiInterface::SetNextWindowSize(Debug::ImGuiLayout::kHierarchyWindowRateX, Debug::ImGuiLayout::kHierarchyWindowRateY);
+	ImGuiInterface::SetNextWindowPos(0.0f, 0.0f);
+	ImGuiInterface::Window window
+	(
+		kHierarchyWindowName,
+		ImGuiInterface::WindowAttach::kNoMove	  |
+		ImGuiInterface::WindowAttach::kNoCollapse |
+		ImGuiInterface::WindowAttach::kNoResize
+	);
+	//ゲームオブジェクト一覧表示
+	ShowChildWindow<Tag::kGameObject>();
+	//リストのクリア
+	Clear<Tag::kGameObject>();
+	ErrorMessageOutput::Assert::DetectError
+	(
+		callChecker == Tag::kCount,
+		"なにかがリザーブされてない(エンジン)",
+		fileName
+	);
+#endif // !NDEBUG
+}
+template<DebugContext::ImGuiDebugger::HierarchyWindow::Tag tag>
+void DebugContext::ImGuiDebugger::HierarchyWindow::ShowChildWindow()
+{
+	if (ImGuiInterface::TreeNodeBool(TagTraits<tag>::kName))
+	{
+		ImGuiInterface::Text(kActiveListWindowName);
+		ImGuiInterface::BeginChild(kActiveListWindowName, 0.0f, 215.0f);
+		auto const& dstActiveList = activeListArr.at((UINT)tag);
+		for (auto const* name_ : dstActiveList)
+		{
+			ImGuiInterface::Text(name_->c_str());
+		}
+		ImGuiInterface::EndChild();
+		//アクティブ・非アクティブリスト子ウィンドウ間のスペース
+		ImGuiInterface::Separator();
+		ImGuiInterface::Separator();
+		ImGuiInterface::Text(kInActiveListWindowName);
+		ImGuiInterface::BeginChild(kInActiveListWindowName, 0.0f, 215.0f);
+		auto const& dstInActiveList = inActiveListArr.at((UINT)tag);
+		for (auto const* name_ : dstInActiveList)
+		{
+			ImGuiInterface::Text(name_->c_str());
+		}
+		ImGuiInterface::EndChild();
+		ImGuiInterface::TreePop();
+	}
+}
+template
+void DebugContext::ImGuiDebugger::HierarchyWindow::ShowChildWindow < DebugContext::ImGuiDebugger::HierarchyWindow::Tag::kGameObject> ();
+
+========================================
+=== FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\DebugSystem\ImGuiDebugger\HierarchyWindow\HierarchyWindow.h ===
+========================================
+#pragma once
+#include "../ImGuiDebugger.h"
+class DebugContext::ImGuiDebugger::HierarchyWindow
+{
+public:
+	enum class Tag
+	{
+		kGameObject,
+		kCount
+	};
+	HierarchyWindow();
+	//ヒエラルキーウィンドウの表示
+	void ShowHierarchyWindow();
+	//アクティブリストへの追加
+	template<Tag tag>
+	void AddToActiveList(AgentKey key_,std::string const& name_)
+	{
+		activeListArr[UINT(tag)].emplace_back(&name_);
+	}
+	//非アクティブリストへの追加
+	template<Tag tag>
+	void AddToInActiveList(AgentKey key_, std::string const& name_)
+	{
+		inActiveListArr[UINT(tag)].emplace_back(&name_);
+	}
+private:
+	template<Tag tag>
+	struct TagTraits;
+	//サイズ確保
+	template<Tag tag>
+	void Reserve()
+	{
+		ErrorMessageOutput::Assert::DetectError
+		(
+			callChecker == tag,
+			"Reserve()が正常に行われていない可能性がある(エンジン)",
+			"HierarchyWindow.h"
+		);
+		UINT constexpr reserveSize = TagTraits<tag>::kListSize;
+		activeListArr[UINT(tag)].reserve(reserveSize);
+		inActiveListArr[UINT(tag)].reserve(reserveSize);
+		callChecker = Tag((UINT)callChecker + 1);
+		Logger::Log("Reserved " + std::string(TagTraits<tag>::kName) + "Lists: " + std::to_string(reserveSize), "HierarchyWindow.h");
+	}
+	//クリア
+	template<Tag tag>
+	void Clear()
+	{
+		ErrorMessageOutput::Assert::DetectError
+		(
+			callChecker == tag,
+			"Clear()が正常に行われていない可能性がある(エンジン)",
+			"HierarchyWindow.h"
+		);
+		activeListArr[UINT(tag)].clear();
+		inActiveListArr[UINT(tag)].clear();
+		callChecker = Tag((UINT)callChecker + 1);
+	}
+	//子ウィンドウでリストを表示する
+	template<Tag tag>
+	void ShowChildWindow();
+	char const* kHierarchyWindowName	= "Hierarchy";
+	char const* kActiveListWindowName	= "ActiveList";
+	char const* kInActiveListWindowName	= "InActiveList";
+	std::array<std::vector<std::string const*> ,UINT(Tag::kCount)>  activeListArr;
+	std::array<std::vector<std::string const*>, UINT(Tag::kCount)>  inActiveListArr;
+	//デバッグ用
+	Tag callChecker = Tag(0);
+};
+template<>
+struct DebugContext::ImGuiDebugger::HierarchyWindow::TagTraits<DebugContext::ImGuiDebugger::HierarchyWindow::Tag::kGameObject>
+{
+	static constexpr UINT kListSize = 1000;
+	static inline char const* kName = "GameObject";
+};
 
 ========================================
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\DebugSystem\ImGuiDebugger\ImGuiInterface\ImGuiInterface.cpp ===
@@ -10194,8 +10362,15 @@ public:
 	static void TextFormatable(char const* fmt_, ...);
 	//ただの文字列形式
 	static void Text(char const* text_);
+	//ウィンドウサイズの指定
+	//引数は画面に対する比率
+	static void SetNextWindowSize(float windowScalex_, float windowScaleY_);
+	//ウィンドウの位置指定
+	static void SetNextWindowPos(float stScaleX_, float stScaleY_);
 	//区切り線
 	static void Separator();
+	//横並び
+	static void SameLine();
 	//ボタン
 	static bool Button(char const* label_);
 	//チェックボックス（そのまま）
@@ -10207,8 +10382,6 @@ public:
 	static void DragVector3(char const* label_, Vector3& vec3_, float speed_ = 0.01f);
 	//カラー(Vector4<float>)
 	static void ColorEdit4(char const* label_, Vector4<float>& vec4_);
-	//横並び
-	static void SameLine();
 	//ラジオボタン
 	static bool RadioButton(char const* label_, int value_, int dst_);
 	//折り畳み
@@ -10221,11 +10394,6 @@ public:
 	static bool BeginMenuBool(char const* label_);
 	static void EndMenu();
 	static bool MenuItemBool(char const* label_);
-	static float CalcValidWindowPos(float stScale_);
-	//ウィンドウサイズの指定
-	static void SetNextWindowSize(float windowScalex_, float windowScaleY_);
-	//ウィンドウの位置指定
-	static void SetNextWindowPos(float stScaleX_, float stScaleY_);
 private:
 	//アタッチフラグをImGuiように変換
 	static int ConvertAttachFlagsToImGuiStyle(WindowAttach flags_);
@@ -27929,5 +28097,5 @@ namespace StringProcessing
 ========================================
 === SUMMARY ===
 ========================================
-Total Files      : 603
-Effective Lines  : 20419
+Total Files      : 605
+Effective Lines  : 20557

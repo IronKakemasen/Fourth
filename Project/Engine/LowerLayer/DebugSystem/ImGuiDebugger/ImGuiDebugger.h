@@ -5,7 +5,8 @@
 class DebugContext::ImGuiDebugger
 {
 	class SetUpper;
-		
+	class HierarchyWindow;
+
 public:
 
 	ImGuiDebugger
@@ -15,6 +16,8 @@ public:
 		DeviceContextDiplomat& deviceContextDip_,
 		DescriptorHeapContextDiplomat& descriptorHeapContextDip_
 	);
+
+	~ImGuiDebugger();
 
 	void BeginNewFrame
 	(
@@ -31,6 +34,7 @@ public:
 
 private:
 
+	std::unique_ptr<HierarchyWindow> hierarchyWindow;
 
 
 };
