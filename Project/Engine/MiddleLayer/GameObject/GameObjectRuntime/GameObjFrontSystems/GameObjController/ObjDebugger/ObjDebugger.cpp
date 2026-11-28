@@ -14,10 +14,9 @@ void GameObjectContext::FrontlineSystems::GameObjController::ObjDebugger::ShowHi
 {
 #ifndef NDEBUG
 
-	static float const HierarchyWindowWidth = Debug::ImGuiLayout::kHierarchyWindowRateX * (float)Window::Width();
-	static float const HierarchyWindowHeight = Debug::ImGuiLayout::kHierarchyWindowRateY * (float)Window::Height();
-
-	ImGuiInterface::SetWindowSize(HierarchyWindowWidth, HierarchyWindowHeight);
+	//ウィンドウのサイズと位置を指定
+	ImGuiInterface::SetNextWindowSize(Debug::ImGuiLayout::kHierarchyWindowRateX, Debug::ImGuiLayout::kHierarchyWindowRateY);
+	ImGuiInterface::SetNextWindowPos(0.0f, 0.0f);
 
 	ImGuiInterface::Window window
 	(

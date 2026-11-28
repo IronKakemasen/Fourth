@@ -335,14 +335,36 @@ bool ImGuiInterface::MenuItemBool(char const* label_)
 
 }
 
-void ImGuiInterface::SetWindowSize(float x_, float y_)
+void ImGuiInterface::SetNextWindowSize(float windowScaleX_, float windowScaleY_)
 {
 #ifndef NDEBUG
 
 	ImGui::SetNextWindowSize
 	(
-		ImVec2(x_, y_),
-		ImGuiCond_FirstUseEver
+		ImVec2
+		(
+			ProjectConfig::Window::Width() * windowScaleX_,
+			ProjectConfig::Window::Height() * windowScaleY_
+		)
+	);
+
+#endif
+
+}
+
+void ImGuiInterface::SetNextWindowPos(float stScaleX_, float stScaleY_)
+{
+#ifndef NDEBUG
+
+	static constexpr float adjustPixel = 1.0f;
+
+	ImGui::SetNextWindowPos
+	(
+		ImVec2
+		(
+			(float)ProjectConfig::Window::Width() * stScaleX_ + adjustPixel,
+			(float)ProjectConfig::Window::Height() * stScaleY_ + adjustPixel
+		)
 	);
 
 #endif
