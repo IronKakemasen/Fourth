@@ -98,6 +98,7 @@ void RenderContext::StaticRenderGraph::FinalRenderer::RenderBackBuffer
 
 #ifndef NDEBUG
 
+	//リリース以外では最終描画結果をImGuiウィンドウに描画
 	DrawOnImGuiWindow
 	(
 		refColorBuffer,

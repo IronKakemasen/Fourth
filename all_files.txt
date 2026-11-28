@@ -4287,6 +4287,8 @@ public:
 	//適切なバリアを出す
 	virtual std::optional<D3D12_RESOURCE_BARRIER> CreateBarrier(BufferUsage usage_) = 0;
 	virtual void Swap()override;
+	//ほぼデバッグ用。srvのgpuハンドルを返す
+	virtual D3D12_GPU_DESCRIPTOR_HANDLE OutProperSRVHandleGPU(int index_ = 0)const = 0;
 protected:
 	virtual int ProperBufferIndex(BufferUsage usage_)const override;
 	virtual void SynchronizeStatus(ProjectConfig::Render::NumBuffer numBuffer_)override;
@@ -4523,7 +4525,7 @@ D3D12_CPU_DESCRIPTOR_HANDLE ColorBuffer::OutProperRTVHeapHandle()const
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-SRVHeapIndex ColorBuffer::OutProperSRVHeapIndex(int frameIndex_)const
+SRVHeapIndex ColorBuffer::OutProperSRVHeapIndex(int index_)const
 {
 	int dstBufferIndex = ProperBufferIndex(BufferUsage::kRead);
 	return WatchIndex<ViewType::kSRV, SRVHeapIndex >(dstBufferIndex);
@@ -4531,6 +4533,11 @@ SRVHeapIndex ColorBuffer::OutProperSRVHeapIndex(int frameIndex_)const
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+D3D12_GPU_DESCRIPTOR_HANDLE ColorBuffer::OutProperSRVHandleGPU(int index_ ) const
+{
+	int dstBufferIndex = ProperBufferIndex(BufferUsage::kRead);
+	return WatchIndex<ViewType::kSRV, D3D12_GPU_DESCRIPTOR_HANDLE >(dstBufferIndex);
+}
 
 ========================================
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Buffer\BufferDefinition\GPUBuffer\ColorBuffer\ColorBuffer.h ===
@@ -4554,7 +4561,9 @@ public:
 	//適切なRTVヒープインデックスを出す
 	virtual D3D12_CPU_DESCRIPTOR_HANDLE OutProperRTVHeapHandle()const override;
 	//適切なSRVヒープインデックスを出す
-	virtual SRVHeapIndex OutProperSRVHeapIndex(int frameIndex_ = 0)const override;
+	virtual SRVHeapIndex OutProperSRVHeapIndex(int index_ = 0)const override;
+	//適切なSRVHandleGPUを出す
+	virtual D3D12_GPU_DESCRIPTOR_HANDLE OutProperSRVHandleGPU(int index_ = 0) const override;
 };
 
 ========================================
@@ -4693,6 +4702,11 @@ SRVHeapIndex DepthStencilBuffer::OutProperSRVHeapIndex(int frameIndex_)const
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+D3D12_GPU_DESCRIPTOR_HANDLE DepthStencilBuffer::OutProperSRVHandleGPU(int index_) const
+{
+	int dstBufferIndex = ProperBufferIndex(BufferUsage::kRead);
+	return WatchIndex<ViewType::kSRV, D3D12_GPU_DESCRIPTOR_HANDLE >(dstBufferIndex);
+}
 
 ========================================
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\Buffer\BufferDefinition\GPUBuffer\DepthStencilBuffer\DepthStencilBuffer.h ===
@@ -4717,6 +4731,8 @@ public:
 	virtual D3D12_CPU_DESCRIPTOR_HANDLE OutProperDSVHeapHandle()const override;
 	//適切なsrvHeapインデックスを渡す
 	virtual SRVHeapIndex OutProperSRVHeapIndex(int frameIndex_ = 0)const override;
+	//適切なSRVHandleGPUを出す
+	virtual D3D12_GPU_DESCRIPTOR_HANDLE OutProperSRVHandleGPU(int index_ = 0) const override;
 };
 
 ========================================
@@ -9657,10 +9673,11 @@ void DebugContext::ExecutionAgent::BeginImGuiNewFrame
 void DebugContext::ExecutionAgent::RenderImGui
 (
 	RenderContextProof proof_,
+	D3D12_GPU_DESCRIPTOR_HANDLE finalRefBufferGpuHandle_,
 	CommandContextDiplomat& commandContextDiplomat_
 )
 {
-	imGuiDebugger.Render(AgentKey{}, commandContextDiplomat_);
+	imGuiDebugger.Render(AgentKey{}, finalRefBufferGpuHandle_,commandContextDiplomat_);
 }
 
 ========================================
@@ -9692,6 +9709,7 @@ public:
 	void RenderImGui
 	(
 		RenderContextProof proof_,
+		D3D12_GPU_DESCRIPTOR_HANDLE finalRefBufferGpuHandle_,
 		CommandContextDiplomat& commandContextDiplomat_
 	);
 private:
@@ -9761,9 +9779,7 @@ namespace ErrorMessageOutput
 #include "ImGuiInclude.h"
 //外部
 #include "../../Core/Command/CommandContextDiplomats.h"
-#include "ImGuiInterface/ImGuiInterface.h"
-#include "../../../Math/Vector/Vector3.h"
-#include "../../../Math/Vector/Vector4.h"
+using namespace ProjectConfig;
 DebugContext::ImGuiDebugger::ImGuiDebugger
 (
 	NexusFieldProof proof_,
@@ -9795,10 +9811,31 @@ void DebugContext::ImGuiDebugger::BeginNewFrame
 void DebugContext::ImGuiDebugger::Render
 (
 	AgentKey key_,
+	D3D12_GPU_DESCRIPTOR_HANDLE finalRefBufferGpuHandle_,
 	CommandContextDiplomat& commandContextDiplomat_
 ) 
 {
 #ifndef NDEBUG
+	static float const imageWidth  = Debug::ImGuiLayout::kSceneViewImageRateX * (float)Window::Width();
+	static float const imageheight = Debug::ImGuiLayout::kSceneViewImageRateY * (float)Window::Height();
+	static float const windowWidth  = Debug::ImGuiLayout::kSceneViewWindowRateX * (float)Window::Width();
+	static float const windowHeight = Debug::ImGuiLayout::kSceneViewWindowRateY * (float)Window::Height();
+	ImGui::SetNextWindowSize(ImVec2(windowWidth, windowHeight), ImGuiCond_FirstUseEver);
+	//最終描画結果をImGUiウィンドウで描画
+	ImGui::Begin
+	(
+		"SceneView",
+		nullptr, 
+		ImGuiWindowFlags_NoMove		|
+		ImGuiWindowFlags_NoCollapse |
+		ImGuiWindowFlags_NoResize
+	);
+	ImGui::Image
+	(
+		ImMapTextures(finalRefBufferGpuHandle_.ptr), 
+		ImVec2(imageWidth, imageheight)
+	);
+	ImGui::End();
 	//コマンドリストを借りる
 	auto* cndList = &commandContextDiplomat_.Access<CommandContext::ToolLender>().
 		Lend<ID3D12GraphicsCommandList6>(CommandContext::ToolLender::LicenceType<ID3D12GraphicsCommandList6>{});
@@ -9832,8 +9869,10 @@ public:
 	void Render
 	(
 		AgentKey key_,
+		D3D12_GPU_DESCRIPTOR_HANDLE finalRefBufferGpuHandle_,
 		CommandContextDiplomat& commandContextDiplomat_
 	);
+private:
 };
 
 ========================================
@@ -9908,7 +9947,7 @@ int ImGuiInterface::ConvertAttachFlagsToImGuiStyle(WindowAttach flags_)
 ImGuiInterface::Window::~Window()
 {
 #ifndef NDEBUG
-	if(ProjectConfig::Debug::kEnableImGuiCallChack) Debug();
+	if(ProjectConfig::Debug::kEnableImGuiCallCheck) Debug();
 	ImGui::End();
 #endif
 }
@@ -9933,13 +9972,19 @@ void ImGuiInterface::Debug()
 		fileName
 	);
 }
-void ImGuiInterface::Text(char const* fmt_, ...)
+void ImGuiInterface::TextFormatable(char const* fmt_, ...)
 {
 #ifndef NDEBUG
 	va_list args;
 	va_start(args, fmt_);
 	ImGui::TextV(fmt_, args);
 	va_end(args);
+#endif
+}
+void ImGuiInterface::Text(char const* text_)
+{
+#ifndef NDEBUG
+	ImGui::TextUnformatted(text_);
 #endif
 }
 void ImGuiInterface::Separator()
@@ -10025,11 +10070,11 @@ void ImGuiInterface::TreePop()
 	ImGui::TreePop();
 #endif
 }
-void ImGuiInterface::BeginChild(char const* label_)
+void ImGuiInterface::BeginChild(char const* label_, float width_, float height_)
 {
 #ifndef NDEBUG
 	childCnt++;
-	ImGui::BeginChild(label_);
+	ImGui::BeginChild(label_, ImVec2(width_, height_), ImGuiChildFlags_Border);
 #endif
 }
 void ImGuiInterface::EndChild()
@@ -10076,6 +10121,16 @@ bool ImGuiInterface::MenuItemBool(char const* label_)
 	return false;
 #endif
 }
+void ImGuiInterface::SetWindowSize(float x_, float y_)
+{
+#ifndef NDEBUG
+	ImGui::SetNextWindowSize
+	(
+		ImVec2(x_, y_),
+		ImGuiCond_FirstUseEver
+	);
+#endif
+}
 
 ========================================
 === FILE: C:\Users\yakii\OneDrive\文件\allForOne\Fourth\Project\Engine\LowerLayer\DebugSystem\ImGuiDebugger\ImGuiInterface\ImGuiInterface.h ===
@@ -10117,7 +10172,9 @@ public:
 		bool visible = false;
 	};
 	//フォーマット形式のテキスト出力
-	static void Text(char const* fmt_, ...);
+	static void TextFormatable(char const* fmt_, ...);
+	//ただの文字列形式
+	static void Text(char const* text_);
 	//区切り線
 	static void Separator();
 	//ボタン
@@ -10139,12 +10196,14 @@ public:
 	static bool TreeNodeBool(char const* label_);
 	static void TreePop();
 	//子ウィンドウ開始
-	static void BeginChild(char const* label_);
+	static void BeginChild(char const* label_, float width_ = 0.0f, float height_ = 0.0f);
 	static void EndChild();
 	//メニュー
 	static bool BeginMenuBool(char const* label_);
 	static void EndMenu();
 	static bool MenuItemBool(char const* label_);
+	//ウィンドウサイズの指定
+	static void SetWindowSize(float x_, float y_);
 private:
 	//アタッチフラグをImGuiように変換
 	static int ConvertAttachFlagsToImGuiStyle(WindowAttach flags_);
@@ -10201,7 +10260,7 @@ void DebugContext::ImGuiDebugger::SetUpper::InitializeImGui
 		<DescriptorHeapContext::ViewCreator::HeapType::kSRVUAV>((UINT)DescriptorHeapContext::ViewCreator::ReservedSrvIndex::kImGui);
 	IMGUI_CHECKVERSION();
 	ImGui::CreateContext();
-	ImGui::StyleColorsClassic();
+	//ImGui::StyleColorsClassic();
 	ImGui_ImplWin32_Init(windowHandle);
 	//deviceが必要なImGui初期化関数を呼んでもらう
 	deviceContextDip_.Access<DeviceContext::CommandExecutor>().
@@ -10215,8 +10274,22 @@ void DebugContext::ImGuiDebugger::SetUpper::InitializeImGui
 	);
 	ImGui::GetIO().ConfigFlags |= ImGuiConfigFlags_DockingEnable;
 	ImGuiStyle& style = ImGui::GetStyle();
-	style.Colors[ImGuiCol_TitleBg] = ImVec4(0.1f, 0.1f, 0.1f, 1.0f);
-	style.Colors[ImGuiCol_TitleBgActive] = ImVec4(0.5f, 0.5f, 0.1f, 1.0f);
+	//テキスト
+	style.Colors[ImGuiCol_Text] =
+		ImVec4(0xDC / 255.0f, 0xE6 / 255.0f, 0xEF / 255.0f, 1.0f);
+	//通常時
+	style.Colors[ImGuiCol_Border] =
+		ImVec4(0x45 / 255.0f, 0x4B / 255.0f, 0x55 / 255.0f, 1.0f);
+	//選択時
+	style.Colors[ImGuiCol_Header] =
+		ImVec4(0x35 / 255.0f, 0xA9 / 255.0f, 0xC9 / 255.0f, 1.0f);
+	style.Colors[ImGuiCol_HeaderHovered] =
+		ImVec4(0x35 / 255.0f, 0xA9 / 255.0f, 0xC9 / 255.0f, 0.8f);
+	style.Colors[ImGuiCol_HeaderActive] =
+		ImVec4(0x35 / 255.0f, 0xA9 / 255.0f, 0xC9 / 255.0f, 1.0f);
+	//警告時
+	style.Colors[ImGuiCol_PlotHistogram] =
+		ImVec4(0xC7 / 255.0f, 0x8B / 255.0f, 0x45 / 255.0f, 1.0f);
 	Logger::Log("Complete ImGui Initializing", "ImGuiSetUpper.cpp");
 #endif
 }
@@ -20122,7 +20195,11 @@ private:
 #include "GameObjController.h"
 #include "ObjDataLoader/ObjDataLoader.h"
 #include "../GameObjLibrary/GameObjLibrary.h"
+#include "ObjDebugger/ObjDebugger.h"
 GameObjectContext::FrontlineSystems::GameObjController::GameObjController(NexusFieldProof proof_)
+{
+}
+GameObjectContext::FrontlineSystems::GameObjController::~GameObjController()
 {
 }
 void GameObjectContext::FrontlineSystems::GameObjController::Run
@@ -20136,10 +20213,26 @@ void GameObjectContext::FrontlineSystems::GameObjController::Run
 void GameObjectContext::FrontlineSystems::GameObjController::ResetObjTransformFrameFlag(ObjLibrary& objLibrary_)
 {
 	auto& sortedObjContainer = objLibrary_.RefSortedObjContainer();
+	//デバッグUI表示用
+#ifndef NDEBUG
+	UINT objCnt{};
+	auto const& objNameList = objLibrary_.WatchSortedObjContainerNameList();
+#endif // !NDEBUG
 	//トランスフォームのフレームフラグ関連をリセットする
 	for (auto* obj : sortedObjContainer)
 	{
-		if (obj->IsActive())continue;
+		if (!obj->IsActive())
+		{
+#ifndef NDEBUG
+			//ヒエラルキーウィンドウの非アクティブリストに追加
+			objDebugger->AddInActiveList(objNameList[objCnt++]);
+#endif // !NDEBUG
+			continue;
+		}
+#ifndef NDEBUG
+		//ヒエラルキーウィンドウのアクティブリストに追加
+		objDebugger->AddActiveList(objNameList[objCnt++]);
+#endif // !NDEBUG
 		auto* trans = obj->GetSystemPtr<Transform>();
 		if (!trans) continue;
 		//更新1フレームガードをリセット
@@ -20147,6 +20240,8 @@ void GameObjectContext::FrontlineSystems::GameObjController::ResetObjTransformFr
 		//冒頭の減算でカウンタが2になるのは、今フレームで再計算されたときだけにする
 		trans->DecrementNeedOverrideBufferCnt();
 	}
+	//ヒエラルキーウィンドウを開く
+	objDebugger->ShowHierarchyWindow();
 }
 void GameObjectContext::FrontlineSystems::GameObjController::UpdateAllGameObj
 (
@@ -20158,7 +20253,7 @@ void GameObjectContext::FrontlineSystems::GameObjController::UpdateAllGameObj
 	auto& sortedObjContainer = objLibrary_.RefSortedObjContainer();
 	for (auto* obj : sortedObjContainer)
 	{
-		if (obj->IsActive())continue;
+		if (!obj->IsActive())continue;
 		//ゲームオブジェクトの更新処理
 		obj->Update(runtimeInterface_);
 		auto* trans = obj->GetSystemPtr<Transform>();
@@ -20184,8 +20279,10 @@ void GameObjectContext::FrontlineSystems::GameObjController::InitAllGameObj
 	auto objPriorityList = ObjDataLoader::LoadUpdatePriority(sceneName_);
 	//まずはゲームオブジェクトをソートする
 	objLibrary_.Sort(objPriorityList);
-	//全ゲームオブジェクトのAwake()とStart()を呼ぶ
 	auto& sortedObjContainer = objLibrary_.RefSortedObjContainer();
+	//オブジェクトのデバッガーに、そうオブジェクト数を知らせる
+	objDebugger = std::make_unique<ObjDebugger>(sortedObjContainer.size());
+	//全ゲームオブジェクトのAwake()とStart()を呼ぶ
 	for (auto* obj : sortedObjContainer)
 	{
 		obj->Awake(sceneInitInterface);
@@ -20211,6 +20308,7 @@ class GameObjectContext::FrontlineSystems::GameObjController
 	class ObjDebugger;
 public:
 	GameObjController(NexusFieldProof proof_);
+	~GameObjController();
 	//シーンが作成された後に、
 	//ゲームオブジェクトの、Awake()とStart()を呼ぶ
 	void InitAllGameObj
@@ -20233,6 +20331,7 @@ private:
 		ObjLibrary& objLibrary_,
 		SceneRuntimeInterface& runtimeInterface_
 	);
+	std::unique_ptr<ObjDebugger> objDebugger;
 };
 
 ========================================
@@ -20267,29 +20366,52 @@ class GameObjectContext::FrontlineSystems::FrontlineSystems::GameObjController::
 #include "PreCompileHeader.h"
 #include "ObjDebugger.h"
 #include "ImGuiInterface.h"
-void GameObjectContext::FrontlineSystems::GameObjController::ObjDebugger::DebugAllGameObjects(std::vector<GameObjectBehavior*>& objects_)
+using namespace ProjectConfig;
+GameObjectContext::FrontlineSystems::GameObjController::ObjDebugger::ObjDebugger(size_t sumGameObject_)
 {
-	ImGuiInterface::Window window("ObjHierarchy");
-	for (auto* obj : objects_)
+	activeList.reserve(sumGameObject_);
+	inActiveList.reserve(sumGameObject_);
+}
+void GameObjectContext::FrontlineSystems::GameObjController::ObjDebugger::ShowHierarchyWindow()
+{
+#ifndef NDEBUG
+	static float const HierarchyWindowWidth = Debug::ImGuiLayout::kHierarchyWindowRateX * (float)Window::Width();
+	static float const HierarchyWindowHeight = Debug::ImGuiLayout::kHierarchyWindowRateY * (float)Window::Height();
+	ImGuiInterface::SetWindowSize(HierarchyWindowWidth, HierarchyWindowHeight);
+	ImGuiInterface::Window window
+	(
+		kHierarchyWindowName,
+		ImGuiInterface::WindowAttach::kNoMove	  |
+		ImGuiInterface::WindowAttach::kNoCollapse |
+		ImGuiInterface::WindowAttach::kNoResize
+	);
+	ImGuiInterface::Text(kActiveListWindoName);
+	ImGuiInterface::BeginChild(kActiveListWindoName, 0.0f, 215.0f);
+	for (auto const* name_ : activeList)
 	{
+		ImGuiInterface::Text(name_->c_str());
 	}
-	if (window)
+	ImGuiInterface::EndChild();
+	ImGuiInterface::Separator();
+	ImGuiInterface::Separator();
+	ImGuiInterface::Text(kInActiveListWindoName);
+	ImGuiInterface::BeginChild(kInActiveListWindoName, 0.0f, 215.0f);
+	for (auto const* name_ : inActiveList)
 	{
-		//ImGuiInterface::Text("Hello, ImGui!");
-		//ImGuiInterface::Separator();
-		//if (ImGuiInterface::Button("Click me")) ++counter;
-		//ImGuiInterface::Text("Clicked: %d times", counter);
-		//ImGuiInterface::Separator();
-		//ImGuiInterface::Text("enabled=%d level=%d gain=%.2f", enabled, level, gain);
-		//ImGuiInterface::RadioButton("radio", 3, 3);
-		//ImGuiInterface::BeginChild("AAAAA");
-		//ImGuiInterface::Checkbox("Enabled", &enabled);
-		//ImGuiInterface::Slider("Level", level, 0, 10);          // int 版
-		//ImGuiInterface::Slider("Gain", gain, 0.0f, 1.0f);       // float 版
-		//ImGuiInterface::DragVector3("Position", position);      // 速度は省略(0.01f)
-		//ImGuiInterface::ColorEdit4("Color", color);
-		//ImGuiInterface::EndChild();
+		ImGuiInterface::Text(name_->c_str());
 	}
+	ImGuiInterface::EndChild();
+	activeList.clear();
+	inActiveList.clear();
+#endif // !NDEBUG
+}
+void GameObjectContext::FrontlineSystems::GameObjController::ObjDebugger::AddActiveList(std::string const& name_)
+{
+	activeList.emplace_back(&name_);
+}
+void GameObjectContext::FrontlineSystems::GameObjController::ObjDebugger::AddInActiveList(std::string const& name_)
+{
+	inActiveList.emplace_back(&name_);
 }
 
 ========================================
@@ -20299,8 +20421,17 @@ void GameObjectContext::FrontlineSystems::GameObjController::ObjDebugger::DebugA
 #include "../GameObjController.h"
 class GameObjectContext::FrontlineSystems::GameObjController::ObjDebugger
 {
-	friend class GameObjController;
-	void DebugAllGameObjects(std::vector<GameObjectBehavior*>& objects_);
+public:
+	ObjDebugger(size_t sumGameObject_);
+	void ShowHierarchyWindow();
+	void AddActiveList(std::string const& name_);
+	void AddInActiveList(std::string const& name_);
+private:
+	char const* kHierarchyWindowName	= "Hierarchy";
+	char const* kActiveListWindoName	= "ActiveList";
+	char const* kInActiveListWindoName	= "InActiveList";
+	std::vector<std::string const*> activeList;
+	std::vector<std::string const*> inActiveList;
 };
 
 ========================================
@@ -20325,6 +20456,10 @@ std::vector<GameObjectBehavior*>& GameObjectContext::FrontlineSystems::ObjLibrar
 {
 	return sortedByProority;
 }
+std::vector<std::string> const& GameObjectContext::FrontlineSystems::ObjLibrary::WatchSortedObjContainerNameList()const
+{
+	return sortedByProorityNameList;
+}
 std::unordered_map<std::string, std::unique_ptr<GameObjectBehavior>>& GameObjectContext::FrontlineSystems::ObjLibrary::RefObjUniqueMap()
 {
 	return objUniqueMap;
@@ -20337,6 +20472,7 @@ void GameObjectContext::FrontlineSystems::ObjLibrary::SortByPriority(std::vector
 	//活用されなかったpriorityList_のオブジェ名
 	std::vector < std::string > mismatchedList;
 	sortedByProority.reserve(objUniqueMap.size());
+	sortedByProorityNameList.reserve(objUniqueMap.size());
 	for (auto const& srcName_ : priorityList_)
 	{
 		auto it = objMapCache->find(srcName_);
@@ -20345,10 +20481,18 @@ void GameObjectContext::FrontlineSystems::ObjLibrary::SortByPriority(std::vector
 			mismatchedList.emplace_back(srcName_);
 			continue;
 		}
+#ifndef NDEBUG
+		UINT cnt{};
+#endif // !NDEBUG
 		auto& [done, objects] = it->second;
 		for (auto* objPtr : objects)
 		{
 			sortedByProority.emplace_back(objPtr);
+#ifndef NDEBUG
+			//デバッグUI表示用に記録しておく
+			auto objName = srcName_ +"[" + std::to_string(cnt++) + "]";
+			sortedByProorityNameList.emplace_back(objName);
+#endif // !NDEBUG
 		}
 		done = true;
 	}
@@ -20370,9 +20514,17 @@ void GameObjectContext::FrontlineSystems::ObjLibrary::SortByPriority(std::vector
 	for (auto const& [name, doneFlag_objPtrVec] : *objMapCache)
 	{
 		if (doneFlag_objPtrVec.first) continue;
+#ifndef NDEBUG
+		UINT cnt{};
+#endif // !NDEBUG
 		for (auto* objPtr : doneFlag_objPtrVec.second)
 		{
 			sortedByProority.emplace_back(objPtr);
+#ifndef NDEBUG
+			//デバッグUI表示用に記録しておく
+			auto objName = name + "[" + std::to_string(cnt++) + "]";
+			sortedByProorityNameList.emplace_back(objName);
+#endif // !NDEBUG
 		}
 	}
 	//キャッシュデータ削除
@@ -20436,6 +20588,8 @@ public:
 	std::vector<GameObjectBehavior*>& FindGameObj(std::string const& objName_);
 	//更新優先順にソートされたオブジェコンテナの参照を返す
 	std::vector<GameObjectBehavior*>& RefSortedObjContainer();
+	//とその名簿
+	std::vector<std::string> const& WatchSortedObjContainerNameList()const;
 	//objUniqueMapを返す
 	std::unordered_map<std::string, std::unique_ptr<GameObjectBehavior>>& RefObjUniqueMap();
 	//ソートする
@@ -20447,6 +20601,8 @@ private:
 	std::unique_ptr<std::unordered_map<std::string, std::pair<bool, std::vector<GameObjectBehavior*>>>> objMapCache;
 	//更新優先度順に並び替えられたコンテナ
 	std::vector<GameObjectBehavior*> sortedByProority;
+	//とその名簿。デバッグUI表示に利用
+	std::vector<std::string> sortedByProorityNameList;
 	//ゲームオブジェクト検索用マップ
 	std::unordered_map<std::string, std::vector<GameObjectBehavior*>> forSearchObjMap;
 	//優先順位で並び替える
@@ -22550,20 +22706,23 @@ void RenderContext::StaticRenderGraph::FinalRenderer::RenderBackBuffer
 	CommandContextDiplomat& commandContextDiplomat_
 )
 {
-	//スワップチェーンバッファにアクセスする
-	auto sToolLender = swapChainContextDiplomat_.Access<SwapChainContext::ToolLender>();
-	SwapChainContext::ToolLender::LicenceType<SwapChainContext::SwapChainBuffer> sLicence;
-	auto& swapChianBuffer = sToolLender.Lend<SwapChainContext::SwapChainBuffer>(sLicence);
 	//BufferDispatcherにアクセス
 	auto bToolLender = bufferContextDiplomat_.Access<BufferContext::ToolLender>();
 	BufferContext::ToolLender::LicenceType<BufferContext::BufferDispatcher> bLicence;
 	auto& bufferDispatcher = *bToolLender->Lend<BufferContext::BufferDispatcher>(bLicence);
+	//参照する最終カラーバッファ
+	auto* refColorBuffer = static_cast<ColorBuffer*>(bufferDispatcher.Dispatch(finalRefBufferID));
+	//スワップチェーンバッファにアクセスする
+	auto sToolLender = swapChainContextDiplomat_.Access<SwapChainContext::ToolLender>();
+	SwapChainContext::ToolLender::LicenceType<SwapChainContext::SwapChainBuffer> sLicence;
+	auto& swapChianBuffer = sToolLender.Lend<SwapChainContext::SwapChainBuffer>(sLicence);
+	//スワップチェーンバッファの情報
 	auto const& rtvHandle = swapChianBuffer.OutProperRtvHandle(frameIndex_);
 	auto const& viewport_scissor = swapChianBuffer.WatchMatrices();
-	//参照するカラーバッファのsrvIndexをルートコンスタンツで送る
-	auto* refColorBuffer = static_cast<ColorBuffer*>(bufferDispatcher.Dispatch(finalRefBufferID));
+	//バックバッファが参照する最終カラーバッファ
 	SRVHeapIndex refBufferSrvHeapIndex = refColorBuffer->OutProperSRVHeapIndex();
 	auto const bindSlot = ConstantBuffers::RootConstantsBindSlots::kFinalColorBufferSrv;
+	//参照する最終カラーバッファのsrvIndexをルートコンスタンツで送る
 	runtimeWrapper_.SetGraphicsRoot32BitConstants
 	(
 		(UINT)bindSlot,
@@ -22588,14 +22747,33 @@ void RenderContext::StaticRenderGraph::FinalRenderer::RenderBackBuffer
 	runtimeWrapper_.RSSetScissorRects(1, viewport_scissor.second);
 	//psoのセット
 	runtimeWrapper_.SetPipelineState(finalRenderingPso);
-	//描画
+#ifndef NDEBUG
+	//リリース以外では最終描画結果をImGuiウィンドウに描画
+	DrawOnImGuiWindow
+	(
+		refColorBuffer,
+		debugContextDiplomat_,
+		commandContextDiplomat_
+	);
+#else
+	//フルスクリーンで描画
 	runtimeWrapper_.DispatchMesh(3, 1, 1);
-	//バックバッファをPRESENTにする前にImGuiをの描画を差し込む
-	auto& debugAgent = debugContextDiplomat_.Access<DebugContext::ExecutionAgent>();
-	debugAgent.RenderImGui(DebugContext::ExecutionAgent::RenderContextProof{}, commandContextDiplomat_);
+#endif // !NDEBUG
 	//バリアを張る→Present
 	auto barrier = swapChianBuffer.CreateBarrier<D3D12_RESOURCE_STATE_PRESENT>(frameIndex_);
 	runtimeWrapper_.ResourceBarrier(1, &barrier);
+}
+void RenderContext::StaticRenderGraph::FinalRenderer::DrawOnImGuiWindow
+(
+	ColorBuffer* refColorBuffer_,
+	DebugContextDiplomat& debugContextDiplomat_,
+	CommandContextDiplomat& commandContextDiplomat_
+)
+{
+	//バックバッファをPRESENTにする前にImGuiの描画を差し込む
+	D3D12_GPU_DESCRIPTOR_HANDLE gpuHadle = refColorBuffer_->OutProperSRVHandleGPU();
+	auto& debugAgent = debugContextDiplomat_.Access<DebugContext::ExecutionAgent>();
+	debugAgent.RenderImGui(DebugContext::ExecutionAgent::RenderContextProof{}, gpuHadle, commandContextDiplomat_);
 }
 
 ========================================
@@ -22622,6 +22800,13 @@ public:
 		CommandContextDiplomat& commandContextDiplomat_
 	);
 private:
+	//リリース以外ではImGuiウィンドウに最終描画結果を映す
+	void DrawOnImGuiWindow
+	(
+		ColorBuffer* refColorBuffer_,
+		DebugContextDiplomat& debugContextDiplomat_,
+		CommandContextDiplomat& commandContextDiplomat_
+	);
 	//最終描画用PSO
 	ID3D12PipelineState* finalRenderingPso;
 	//最終参照テクスチャsrvHeapIndex
@@ -25515,7 +25700,7 @@ private:
 #include "../../../GameObject/GameObjectPreset/GridFloor/GridFloor.h"
 void RenderingTestScene::Init()
 {
-	CreateObj<GridFloor>("Test");
+	CreateObj<GridFloor>("GridFloor");
 }
 
 ========================================
@@ -26822,7 +27007,7 @@ namespace ProjectConfig
 			static Window window;
 		}
 		static inline constexpr LPCWSTR kTitle = L"Fourth";
-		static constexpr std::array<float, 4> kColor = { 1.0f,0.0f,0.0f,1.0f };
+		static constexpr std::array<float, 4> kColor = { 0.0f,0.0f,0.0f,1.0f };
 		static constexpr float kDefaultFovY = MathConstants::kPi * MathConstants::kHalf;
 		static auto const& FirstSceneDebug() { return kFirstSceneDebug; }
 		static auto const& FirstSceneRelease() { return kFirstSceneRelease; }
@@ -26864,7 +27049,16 @@ namespace ProjectConfig
 		constexpr bool kEnableJsonDataCheck = true;
 #endif // DEBUG
 #ifndef NDEBUG
-		constexpr bool kEnableImGuiCallChack = true;
+		constexpr bool kEnableImGuiCallCheck = true;
+		struct ImGuiLayout
+		{
+			static float constexpr kSceneViewImageRateX		= 0.675f;
+			static float constexpr kSceneViewImageRateY		= kSceneViewImageRateX;
+			static float constexpr kSceneViewWindowRateX	= kSceneViewImageRateX + 0.1f;
+			static float constexpr kSceneViewWindowRateY	= kSceneViewImageRateY + 0.05f;
+			static float constexpr kHierarchyWindowRateX	= 0.125f;
+			static float constexpr kHierarchyWindowRateY	= kSceneViewWindowRateY;
+		};
 #endif
 	}
 	namespace Core
@@ -27224,7 +27418,9 @@ public:
 	template<typename DataType>
 	DataType LoadData(std::string const& fileName_, std::vector<std::string> const& nest_)
 	{
-		Check<DataType>(fileName_,nest_);
+#ifdef _DEBUG
+		if (ProjectConfig::Debug::kEnableJsonDataCheck) Check<DataType>(fileName_, nest_);
+#endif
 		nlohmann::json* current = &PullJsonData(fileName_);
 		//ポインタをずらしながら階層を辿る
 		for (const auto& key : nest_)
@@ -27242,7 +27438,7 @@ public:
 	)
 	{
 #ifdef _DEBUG
-		if (!ProjectConfig::Debug::kEnableJsonDataCheck) Check<DataType>(fileName_,nest_);
+		if (ProjectConfig::Debug::kEnableJsonDataCheck) Check<DataType>(fileName_,nest_);
 #endif
 		nlohmann::json* current = &PullJsonData(fileName_);
 		for (size_t i = 0; i + 1 < nest_.size(); ++i)
@@ -27712,4 +27908,4 @@ namespace StringProcessing
 === SUMMARY ===
 ========================================
 Total Files      : 603
-Effective Lines  : 20241
+Effective Lines  : 20403

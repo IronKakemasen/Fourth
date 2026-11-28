@@ -61,7 +61,7 @@ ImGuiInterface::Window::~Window()
 {
 #ifndef NDEBUG
 
-	if(ProjectConfig::Debug::kEnableImGuiCallChack) Debug();
+	if(ProjectConfig::Debug::kEnableImGuiCallCheck) Debug();
 
 	ImGui::End();
 
@@ -93,7 +93,7 @@ void ImGuiInterface::Debug()
 }
 
 
-void ImGuiInterface::Text(char const* fmt_, ...)
+void ImGuiInterface::TextFormatable(char const* fmt_, ...)
 {
 #ifndef NDEBUG
 
@@ -104,6 +104,17 @@ void ImGuiInterface::Text(char const* fmt_, ...)
 
 #endif
 }
+
+void ImGuiInterface::Text(char const* text_)
+{
+#ifndef NDEBUG
+
+	ImGui::TextUnformatted(text_);
+
+#endif
+
+}
+
 
 void ImGuiInterface::Separator()
 {
@@ -243,13 +254,13 @@ void ImGuiInterface::TreePop()
 
 }
 
-void ImGuiInterface::BeginChild(char const* label_)
+void ImGuiInterface::BeginChild(char const* label_, float width_, float height_)
 {
 
 #ifndef NDEBUG
 
 	childCnt++;
-	ImGui::BeginChild(label_);
+	ImGui::BeginChild(label_, ImVec2(width_, height_), ImGuiChildFlags_Border);
 
 #endif
 
@@ -319,6 +330,20 @@ bool ImGuiInterface::MenuItemBool(char const* label_)
 #else
 
 	return false;
+
+#endif
+
+}
+
+void ImGuiInterface::SetWindowSize(float x_, float y_)
+{
+#ifndef NDEBUG
+
+	ImGui::SetNextWindowSize
+	(
+		ImVec2(x_, y_),
+		ImGuiCond_FirstUseEver
+	);
 
 #endif
 

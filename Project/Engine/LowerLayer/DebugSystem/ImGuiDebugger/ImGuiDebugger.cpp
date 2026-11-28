@@ -7,6 +7,9 @@
 #include "../../Core/Command/CommandContextDiplomats.h"
 
 
+using namespace ProjectConfig;
+
+
 DebugContext::ImGuiDebugger::ImGuiDebugger
 (
 	NexusFieldProof proof_,
@@ -50,23 +53,30 @@ void DebugContext::ImGuiDebugger::Render
 {
 #ifndef NDEBUG
 
-	static float const width = (float)ProjectConfig::Window::Width() * kSceneViewScaleX;
-	static float const height = (float)ProjectConfig::Window::Width() * kSceneViewScaleY;
+	static float const imageWidth  = Debug::ImGuiLayout::kSceneViewImageRateX * (float)Window::Width();
+	static float const imageheight = Debug::ImGuiLayout::kSceneViewImageRateY * (float)Window::Height();
+
+
+	static float const windowWidth  = Debug::ImGuiLayout::kSceneViewWindowRateX * (float)Window::Width();
+	static float const windowHeight = Debug::ImGuiLayout::kSceneViewWindowRateY * (float)Window::Height();
+
+	ImGui::SetNextWindowSize(ImVec2(windowWidth, windowHeight), ImGuiCond_FirstUseEver);
 
 	//最終描画結果をImGUiウィンドウで描画
 	ImGui::Begin
 	(
 		"SceneView",
 		nullptr, 
-		ImGuiWindowFlags_NoMove|
-		ImGuiWindowFlags_NoCollapse|
+		ImGuiWindowFlags_NoMove		|
+		ImGuiWindowFlags_NoCollapse |
 		ImGuiWindowFlags_NoResize
 	);
+
 
 	ImGui::Image
 	(
 		ImMapTextures(finalRefBufferGpuHandle_.ptr), 
-		ImVec2(width, height)
+		ImVec2(imageWidth, imageheight)
 	);
 	ImGui::End();
 

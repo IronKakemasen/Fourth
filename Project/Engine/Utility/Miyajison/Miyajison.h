@@ -19,7 +19,11 @@ public:
 	template<typename DataType>
 	DataType LoadData(std::string const& fileName_, std::vector<std::string> const& nest_)
 	{
-		Check<DataType>(fileName_,nest_);
+
+#ifdef _DEBUG
+
+		if (ProjectConfig::Debug::kEnableJsonDataCheck) Check<DataType>(fileName_, nest_);
+#endif
 
 		nlohmann::json* current = &PullJsonData(fileName_);
 
@@ -43,7 +47,7 @@ public:
 
 #ifdef _DEBUG
 
-		if (!ProjectConfig::Debug::kEnableJsonDataCheck) Check<DataType>(fileName_,nest_);
+		if (ProjectConfig::Debug::kEnableJsonDataCheck) Check<DataType>(fileName_,nest_);
 #endif
 		nlohmann::json* current = &PullJsonData(fileName_);
 
