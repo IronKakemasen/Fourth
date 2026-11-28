@@ -4,7 +4,7 @@
 
 void RenderingTestScene::Init()
 {
-	CreateObj<GridFloor>("Test");
+	CreateObj<GridFloor>("GridFloor");
 
 }
 

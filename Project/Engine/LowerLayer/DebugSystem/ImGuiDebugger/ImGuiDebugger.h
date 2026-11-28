@@ -31,8 +31,6 @@ public:
 
 private:
 
-	static float constexpr kSceneViewScaleX = 0.625f;
-	static float constexpr kSceneViewScaleY = 0.43f;
 
 
 };

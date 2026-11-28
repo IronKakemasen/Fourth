@@ -69,7 +69,7 @@ void GameObjectContext::FrontlineSystems::ObjLibrary::SortByPriority(std::vector
 #ifndef NDEBUG
 
 			//デバッグUI表示用に記録しておく
-			auto objName = srcName_ + std::to_string(cnt++);
+			auto objName = srcName_ +"[" + std::to_string(cnt++) + "]";
 			sortedByProorityNameList.emplace_back(objName);
 
 #endif // !NDEBUG
@@ -115,7 +115,7 @@ void GameObjectContext::FrontlineSystems::ObjLibrary::SortByPriority(std::vector
 #ifndef NDEBUG
 
 			//デバッグUI表示用に記録しておく
-			auto objName = name + std::to_string(cnt++);
+			auto objName = name + "[" + std::to_string(cnt++) + "]";
 			sortedByProorityNameList.emplace_back(objName);
 
 #endif // !NDEBUG

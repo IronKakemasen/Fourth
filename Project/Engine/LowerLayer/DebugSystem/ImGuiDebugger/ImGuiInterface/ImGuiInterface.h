@@ -26,7 +26,6 @@ public:
 		return WindowAttach(UINT(left_) | UINT(right_));
 	}
 
-
 	class Window
 	{
 	public:
@@ -51,7 +50,11 @@ public:
 	};
 
 	//フォーマット形式のテキスト出力
-	static void Text(char const* fmt_, ...);
+	static void TextFormatable(char const* fmt_, ...);
+	//ただの文字列形式
+	static void Text(char const* text_);
+
+
 	//区切り線
 	static void Separator();
 	//ボタン
@@ -73,12 +76,15 @@ public:
 	static bool TreeNodeBool(char const* label_);
 	static void TreePop();
 	//子ウィンドウ開始
-	static void BeginChild(char const* label_);
+	static void BeginChild(char const* label_, float width_ = 0.0f, float height_ = 0.0f);
 	static void EndChild();
 	//メニュー
 	static bool BeginMenuBool(char const* label_);
 	static void EndMenu();
 	static bool MenuItemBool(char const* label_);
+	//ウィンドウサイズの指定
+	static void SetWindowSize(float x_, float y_);
+
 
 private:
 

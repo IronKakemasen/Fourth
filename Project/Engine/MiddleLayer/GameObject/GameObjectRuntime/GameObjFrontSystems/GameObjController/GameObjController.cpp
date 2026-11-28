@@ -11,6 +11,10 @@ GameObjectContext::FrontlineSystems::GameObjController::GameObjController(NexusF
 
 }
 
+GameObjectContext::FrontlineSystems::GameObjController::~GameObjController()
+{
+
+}
 
 void GameObjectContext::FrontlineSystems::GameObjController::Run
 (
@@ -43,7 +47,8 @@ void GameObjectContext::FrontlineSystems::GameObjController::ResetObjTransformFr
 
 #ifndef NDEBUG
 
-			objCnt++;
+			//ヒエラルキーウィンドウの非アクティブリストに追加
+			objDebugger->AddInActiveList(objNameList[objCnt++]);
 
 #endif // !NDEBUG
 
@@ -52,7 +57,8 @@ void GameObjectContext::FrontlineSystems::GameObjController::ResetObjTransformFr
 
 #ifndef NDEBUG
 
-		ObjDebugger::ShowActiveList(objNameList[objCnt++]);
+		//ヒエラルキーウィンドウのアクティブリストに追加
+		objDebugger->AddActiveList(objNameList[objCnt++]);
 
 #endif // !NDEBUG
 
@@ -68,6 +74,9 @@ void GameObjectContext::FrontlineSystems::GameObjController::ResetObjTransformFr
 
 	}
 
+	//ヒエラルキーウィンドウを開く
+	objDebugger->ShowHierarchyWindow();
+
 }
 
 
@@ -81,7 +90,7 @@ void GameObjectContext::FrontlineSystems::GameObjController::UpdateAllGameObj
 	auto& sortedObjContainer = objLibrary_.RefSortedObjContainer();
 	for (auto* obj : sortedObjContainer)
 	{
-		if (obj->IsActive())continue;
+		if (!obj->IsActive())continue;
 
 		//ゲームオブジェクトの更新処理
 		obj->Update(runtimeInterface_);
@@ -115,9 +124,12 @@ void GameObjectContext::FrontlineSystems::GameObjController::InitAllGameObj
 
 	//まずはゲームオブジェクトをソートする
 	objLibrary_.Sort(objPriorityList);
+	auto& sortedObjContainer = objLibrary_.RefSortedObjContainer();
+
+	//オブジェクトのデバッガーに、そうオブジェクト数を知らせる
+	objDebugger = std::make_unique<ObjDebugger>(sortedObjContainer.size());
 
 	//全ゲームオブジェクトのAwake()とStart()を呼ぶ
-	auto& sortedObjContainer = objLibrary_.RefSortedObjContainer();
 	for (auto* obj : sortedObjContainer)
 	{
 		obj->Awake(sceneInitInterface);

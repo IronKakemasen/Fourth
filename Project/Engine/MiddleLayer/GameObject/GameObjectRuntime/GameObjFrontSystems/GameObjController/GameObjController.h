@@ -16,6 +16,7 @@ class GameObjectContext::FrontlineSystems::GameObjController
 public:
 
 	GameObjController(NexusFieldProof proof_);
+	~GameObjController();
 
 	//シーンが作成された後に、
 	//ゲームオブジェクトの、Awake()とStart()を呼ぶ
@@ -44,6 +45,6 @@ private:
 		SceneRuntimeInterface& runtimeInterface_
 	);
 
-
+	std::unique_ptr<ObjDebugger> objDebugger;
 };
 
