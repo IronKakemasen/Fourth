@@ -9777,9 +9777,11 @@ namespace ErrorMessageOutput
 #include "ImGuiDebugger.h"
 #include "ImGuiSetUpper/ImGuiSetUpper.h"
 #include "ImGuiInclude.h"
+#include "ImGuiInterface/ImGuiInterface.h"
 //外部
 #include "../../Core/Command/CommandContextDiplomats.h"
 using namespace ProjectConfig;
+using namespace ProjectConfig::Debug;
 DebugContext::ImGuiDebugger::ImGuiDebugger
 (
 	NexusFieldProof proof_,
@@ -9816,11 +9818,11 @@ void DebugContext::ImGuiDebugger::Render
 ) 
 {
 #ifndef NDEBUG
-	static float const imageWidth  = Debug::ImGuiLayout::kSceneViewImageRateX * (float)Window::Width();
-	static float const imageheight = Debug::ImGuiLayout::kSceneViewImageRateY * (float)Window::Height();
-	static float const windowWidth  = Debug::ImGuiLayout::kSceneViewWindowRateX * (float)Window::Width();
-	static float const windowHeight = Debug::ImGuiLayout::kSceneViewWindowRateY * (float)Window::Height();
-	ImGui::SetNextWindowSize(ImVec2(windowWidth, windowHeight), ImGuiCond_FirstUseEver);
+	static float const imageWidth  = ImGuiLayout::kSceneViewImageRateX * (float)Window::Width();
+	static float const imageheight = ImGuiLayout::kSceneViewImageRateY * (float)Window::Height();
+	//ウィンドウの位置とサイズを決定
+	ImGuiInterface::SetNextWindowSize(ImGuiLayout::kSceneViewWindowRateX, ImGuiLayout::kSceneViewWindowRateY);
+	ImGuiInterface::SetNextWindowPos(ImGuiLayout::kHierarchyWindowRateX, 0.0f);
 	//最終描画結果をImGUiウィンドウで描画
 	ImGui::Begin
 	(
@@ -10121,13 +10123,30 @@ bool ImGuiInterface::MenuItemBool(char const* label_)
 	return false;
 #endif
 }
-void ImGuiInterface::SetWindowSize(float x_, float y_)
+void ImGuiInterface::SetNextWindowSize(float windowScaleX_, float windowScaleY_)
 {
 #ifndef NDEBUG
 	ImGui::SetNextWindowSize
 	(
-		ImVec2(x_, y_),
-		ImGuiCond_FirstUseEver
+		ImVec2
+		(
+			ProjectConfig::Window::Width() * windowScaleX_,
+			ProjectConfig::Window::Height() * windowScaleY_
+		)
+	);
+#endif
+}
+void ImGuiInterface::SetNextWindowPos(float stScaleX_, float stScaleY_)
+{
+#ifndef NDEBUG
+	static constexpr float adjustPixel = 1.0f;
+	ImGui::SetNextWindowPos
+	(
+		ImVec2
+		(
+			(float)ProjectConfig::Window::Width() * stScaleX_ + adjustPixel,
+			(float)ProjectConfig::Window::Height() * stScaleY_ + adjustPixel
+		)
 	);
 #endif
 }
@@ -10202,8 +10221,11 @@ public:
 	static bool BeginMenuBool(char const* label_);
 	static void EndMenu();
 	static bool MenuItemBool(char const* label_);
+	static float CalcValidWindowPos(float stScale_);
 	//ウィンドウサイズの指定
-	static void SetWindowSize(float x_, float y_);
+	static void SetNextWindowSize(float windowScalex_, float windowScaleY_);
+	//ウィンドウの位置指定
+	static void SetNextWindowPos(float stScaleX_, float stScaleY_);
 private:
 	//アタッチフラグをImGuiように変換
 	static int ConvertAttachFlagsToImGuiStyle(WindowAttach flags_);
@@ -20375,9 +20397,9 @@ GameObjectContext::FrontlineSystems::GameObjController::ObjDebugger::ObjDebugger
 void GameObjectContext::FrontlineSystems::GameObjController::ObjDebugger::ShowHierarchyWindow()
 {
 #ifndef NDEBUG
-	static float const HierarchyWindowWidth = Debug::ImGuiLayout::kHierarchyWindowRateX * (float)Window::Width();
-	static float const HierarchyWindowHeight = Debug::ImGuiLayout::kHierarchyWindowRateY * (float)Window::Height();
-	ImGuiInterface::SetWindowSize(HierarchyWindowWidth, HierarchyWindowHeight);
+	//ウィンドウのサイズと位置を指定
+	ImGuiInterface::SetNextWindowSize(Debug::ImGuiLayout::kHierarchyWindowRateX, Debug::ImGuiLayout::kHierarchyWindowRateY);
+	ImGuiInterface::SetNextWindowPos(0.0f, 0.0f);
 	ImGuiInterface::Window window
 	(
 		kHierarchyWindowName,
@@ -27054,7 +27076,7 @@ namespace ProjectConfig
 		{
 			static float constexpr kSceneViewImageRateX		= 0.675f;
 			static float constexpr kSceneViewImageRateY		= kSceneViewImageRateX;
-			static float constexpr kSceneViewWindowRateX	= kSceneViewImageRateX + 0.1f;
+			static float constexpr kSceneViewWindowRateX	= kSceneViewImageRateX + 0.0125f;
 			static float constexpr kSceneViewWindowRateY	= kSceneViewImageRateY + 0.05f;
 			static float constexpr kHierarchyWindowRateX	= 0.125f;
 			static float constexpr kHierarchyWindowRateY	= kSceneViewWindowRateY;
@@ -27908,4 +27930,4 @@ namespace StringProcessing
 === SUMMARY ===
 ========================================
 Total Files      : 603
-Effective Lines  : 20403
+Effective Lines  : 20419

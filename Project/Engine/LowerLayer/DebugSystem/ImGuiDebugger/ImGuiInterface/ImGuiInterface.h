@@ -54,38 +54,59 @@ public:
 	//ただの文字列形式
 	static void Text(char const* text_);
 
+	//ウィンドウサイズの指定
+	//引数は画面に対する比率
+	static void SetNextWindowSize(float windowScalex_, float windowScaleY_);
+	//ウィンドウの位置指定
+	static void SetNextWindowPos(float stScaleX_, float stScaleY_);
 
 	//区切り線
 	static void Separator();
+	//横並び
+	static void SameLine();
+
+	
 	//ボタン
 	static bool Button(char const* label_);
+	
+	
 	//チェックボックス（そのまま）
 	static void Checkbox(char const* label_, bool* valuePtr_);
+	
+	
 	//スライダー
 	template<typename ValueType>
 	static void Slider(char const* label_, ValueType& value_, ValueType min_, ValueType max_);
+	
+	
 	//ベクタ3専用
 	static void DragVector3(char const* label_, Vector3& vec3_, float speed_ = 0.01f);
+	
+	
 	//カラー(Vector4<float>)
 	static void ColorEdit4(char const* label_, Vector4<float>& vec4_);
-	//横並び
-	static void SameLine();
+		
+	
 	//ラジオボタン
 	static bool RadioButton(char const* label_, int value_, int dst_);
+	
+	
 	//折り畳み
 	static bool TreeNodeBool(char const* label_);
 	static void TreePop();
+	
+	
 	//子ウィンドウ開始
 	static void BeginChild(char const* label_, float width_ = 0.0f, float height_ = 0.0f);
 	static void EndChild();
+	
+	
 	//メニュー
 	static bool BeginMenuBool(char const* label_);
 	static void EndMenu();
 	static bool MenuItemBool(char const* label_);
-	//ウィンドウサイズの指定
-	static void SetWindowSize(float x_, float y_);
-
-
+	
+	
 private:
 
 	//アタッチフラグをImGuiように変換

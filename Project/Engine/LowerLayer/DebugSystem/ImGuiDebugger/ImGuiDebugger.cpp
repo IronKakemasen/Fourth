@@ -2,12 +2,15 @@
 #include "ImGuiDebugger.h"
 #include "ImGuiSetUpper/ImGuiSetUpper.h"
 #include "ImGuiInclude.h"
+#include "ImGuiInterface/ImGuiInterface.h"
+
 
 //外部
 #include "../../Core/Command/CommandContextDiplomats.h"
 
 
 using namespace ProjectConfig;
+using namespace ProjectConfig::Debug;
 
 
 DebugContext::ImGuiDebugger::ImGuiDebugger
@@ -53,14 +56,12 @@ void DebugContext::ImGuiDebugger::Render
 {
 #ifndef NDEBUG
 
-	static float const imageWidth  = Debug::ImGuiLayout::kSceneViewImageRateX * (float)Window::Width();
-	static float const imageheight = Debug::ImGuiLayout::kSceneViewImageRateY * (float)Window::Height();
+	static float const imageWidth  = ImGuiLayout::kSceneViewImageRateX * (float)Window::Width();
+	static float const imageheight = ImGuiLayout::kSceneViewImageRateY * (float)Window::Height();
 
-
-	static float const windowWidth  = Debug::ImGuiLayout::kSceneViewWindowRateX * (float)Window::Width();
-	static float const windowHeight = Debug::ImGuiLayout::kSceneViewWindowRateY * (float)Window::Height();
-
-	ImGui::SetNextWindowSize(ImVec2(windowWidth, windowHeight), ImGuiCond_FirstUseEver);
+	//ウィンドウの位置とサイズを決定
+	ImGuiInterface::SetNextWindowSize(ImGuiLayout::kSceneViewWindowRateX, ImGuiLayout::kSceneViewWindowRateY);
+	ImGuiInterface::SetNextWindowPos(ImGuiLayout::kHierarchyWindowRateX, 0.0f);
 
 	//最終描画結果をImGUiウィンドウで描画
 	ImGui::Begin

@@ -89,7 +89,7 @@ namespace ProjectConfig
 			static float constexpr kSceneViewImageRateX		= 0.675f;
 			static float constexpr kSceneViewImageRateY		= kSceneViewImageRateX;
 
-			static float constexpr kSceneViewWindowRateX	= kSceneViewImageRateX + 0.1f;
+			static float constexpr kSceneViewWindowRateX	= kSceneViewImageRateX + 0.0125f;
 			static float constexpr kSceneViewWindowRateY	= kSceneViewImageRateY + 0.05f;
 
 			static float constexpr kHierarchyWindowRateX	= 0.125f;
